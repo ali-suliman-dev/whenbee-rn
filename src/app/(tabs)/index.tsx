@@ -15,7 +15,10 @@ import { useTheme } from '@/src/theme/useTheme';
 import { type } from '@/src/theme/typography';
 import { useToday } from '@/src/features/today/useToday';
 import { FocusCard } from '@/src/features/today/FocusCard';
-import { HoneycombStripPlaceholder } from '@/src/features/today/HoneycombStripPlaceholder';
+import { HoneycombStrip } from '@/src/components/honeycomb/HoneycombStrip';
+import type { HoneycombCell } from '@/src/components/honeycomb/Honeycomb';
+import { useCategoriesStore } from '@/src/stores/categoriesStore';
+import { useCalibrationStore } from '@/src/stores/calibrationStore';
 
 // Date label, e.g. "Fri · Jun 12" — the day + date, no clock (the time added
 // nothing here and ticked distractingly).
@@ -28,6 +31,22 @@ function dateLabel(now: Date): string {
 export default function Today() {
   const t = useTheme();
   const { focus, summary, categoryName } = useToday();
+
+  // Build the honey strip from the tracked categories + their cached stats. One
+  // hex per tracked category; sharpness/tier come straight from the calibration
+  // cache (monotonic — cells only ever rise).
+  const categories = useCategoriesStore((s) => s.categories);
+  const statsByCategory = useCalibrationStore((s) => s.statsByCategory);
+  const logs = useCalibrationStore((s) => s.logs);
+  const honeyCells: HoneycombCell[] = categories.map((c) => {
+    const stat = statsByCategory[c.id];
+    return {
+      categoryId: c.id,
+      label: c.name,
+      sharpness: stat?.sharpness ?? 0,
+      tier: stat?.tier ?? 'Raw',
+    };
+  });
 
   const logChip: ViewStyle = {
     flexDirection: 'row',
@@ -121,7 +140,11 @@ export default function Today() {
             }
           />
 
-          <HoneycombStripPlaceholder onPress={() => router.push('/(tabs)/whenbee')} />
+          <HoneycombStrip
+            cells={honeyCells}
+            logs={logs}
+            onPress={() => router.push('/(tabs)/whenbee')}
+          />
 
           {focus && summary ? (
             <FocusCard

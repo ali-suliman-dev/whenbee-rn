@@ -47,6 +47,12 @@ export const tokens = {
     md: { offset: 6, opacity: 1, radius: 0 },
   },
 
+  // Honeycomb cell geometry — flat-top hexagon WIDTH (point-to-point across the
+  // flats) per surface. Height derives as width × √3/2 in the component, so the
+  // hexes stay regular. strip = the Today HUD; hub = the Whenbee grid; detail =
+  // the category screen. The wax-cap rim width also lives here.
+  honeycomb: { strip: 22, hub: 56, detail: 80, capRim: 1.5 },
+
   motion: {
     fast: 120, base: 220, slow: 360, press: 110, reveal: 600, draw: 950, sheet: 340,
     pulse: 700, toast: 300, honeyFill: 900, float: 3800,
