@@ -13,6 +13,13 @@ jest.mock('expo-sqlite/kv-store', () => {
 
 jest.mock('expo-haptics', () => ({ impactAsync: jest.fn(() => Promise.resolve()), ImpactFeedbackStyle: { Light: 'light' }, notificationAsync: jest.fn(() => Promise.resolve()), NotificationFeedbackType: { Success: 'success', Error: 'error' } }));
 
+// expo-sqlite pulls expo-asset (not installed) through its hooks; stub it so the
+// db barrel is importable in tests. Stores inject createMemoryDatabase(), so the
+// real sqlite adapter (openDatabaseAsync) is never exercised under jest.
+jest.mock('expo-sqlite', () => ({
+  openDatabaseAsync: jest.fn(() => Promise.reject(new Error('sqlite unavailable in tests'))),
+}));
+
 // Patch react-native-reanimated mock: add useReducedMotion (not included by default)
 jest.mock('react-native-reanimated', () => {
   const Reanimated = require('react-native-reanimated/mock');
