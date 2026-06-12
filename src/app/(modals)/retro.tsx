@@ -1,5 +1,6 @@
 import { View, Text, TextInput, ScrollView, type TextStyle } from 'react-native';
 import { Screen } from '@/src/components/Screen';
+import { SheetGrabber } from '@/src/components/SheetGrabber';
 import { AppButton } from '@/src/components/AppButton';
 import { useTheme } from '@/src/theme/useTheme';
 import { type } from '@/src/theme/typography';
@@ -42,9 +43,11 @@ export default function Retro() {
   return (
     <Screen>
       <ScrollView
-        contentContainerStyle={{ gap: t.space[5], paddingTop: t.space[4], paddingBottom: t.space[6] }}
+        contentContainerStyle={{ gap: t.space[5], paddingTop: t.space[3], paddingBottom: t.space[6] }}
         showsVerticalScrollIndicator={false}
       >
+        <SheetGrabber />
+
         <View style={{ gap: t.space[1] }}>
           <Text style={heading}>How long did it really take?</Text>
           <Text style={sub}>A rough number is plenty.</Text>

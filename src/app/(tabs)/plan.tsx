@@ -1,7 +1,9 @@
 import { useState } from 'react';
 import { View, ScrollView, Modal, TextInput } from 'react-native';
 import { useTheme } from '@/src/theme/useTheme';
+import { type } from '@/src/theme/typography';
 import { Screen } from '@/src/components/Screen';
+import { ActiveTimerBar } from '@/src/components/ActiveTimerBar';
 import { AppText } from '@/src/components/AppText';
 import { AppButton } from '@/src/components/AppButton';
 import { Card } from '@/src/components/Card';
@@ -14,14 +16,17 @@ import { BufferChips } from '@/src/features/planner/BufferChips';
 import { TaskRow } from '@/src/features/planner/TaskRow';
 import { PlanTimeline } from '@/src/features/planner/PlanTimeline';
 import { VerdictCard } from '@/src/features/planner/VerdictCard';
+import type { PlanVerdict } from '@/src/domain/types';
+import type { TextStyle } from 'react-native';
 
 const CATEGORY_IDS = Object.keys(CATEGORY_NAMES);
 
 // ──────────────────────────────────────────────────────────────────────────────
 // Plan — the reverse Start-By day planner (free in the MVP; no paywall here).
-// Compose a deadline + ordered tasks (durations pre-filled from learned data),
-// build a backward-pass plan, and act on the kind "cut one" verdict. An active
-// plan can be re-projected, but only applies on explicit confirm (diff sheet).
+// One clear job per block: a finish time, breathing room, the tasks, then a single
+// "Build my plan" that reveals ONE consolidated result — the Start-By time as the
+// focal answer, the timeline, and a single calm verdict. No amber here: amber is
+// reserved for honey/reward, so the over-cases read as a neutral heads-up.
 // ──────────────────────────────────────────────────────────────────────────────
 
 export default function Plan() {
@@ -48,6 +53,10 @@ export default function Plan() {
   const [newCategory, setNewCategory] = useState<string>(CATEGORY_IDS[0] ?? 'admin');
   const [diff, setDiff] = useState<ReprojectDiff | null>(null);
   const [saved, setSaved] = useState(false);
+  // The result stays hidden until the user explicitly builds — visibility of system
+  // status + real user control (the button had no job before). Once built, edits to
+  // tasks/deadline keep the result live (it's reactive).
+  const [built, setBuilt] = useState(false);
 
   function commitNewTask() {
     const label = newLabel.trim();
@@ -77,18 +86,19 @@ export default function Plan() {
   }
 
   function applyReproject() {
-    // The diff already reflects the active plan against `now`. "Applying" just
-    // re-saves the active plan with the current clock so its createdAt anchor
-    // advances; the timeline shown in the sheet is what the user confirmed.
     saveActive();
     setDiff(null);
   }
 
   const hasDeadline = draft.deadline !== null;
+  const showResult = built && result !== null && draft.deadline !== null;
 
   return (
     <Screen>
-      <ScrollView contentContainerStyle={{ gap: t.space[5], paddingTop: t.space[4], paddingBottom: t.space[12] }}>
+      <ScrollView
+        contentContainerStyle={{ gap: t.space[6], paddingTop: t.space[4], paddingBottom: t.space[12] }}
+        showsVerticalScrollIndicator={false}
+      >
         <View style={{ gap: t.space[1] }}>
           <AppText variant="label" style={{ color: t.colors.primary }}>
             ● Start-By Plan
@@ -98,6 +108,8 @@ export default function Plan() {
             Pick a finish time and your tasks — Whenbee says when to start, honestly.
           </AppText>
         </View>
+
+        <ActiveTimerBar />
 
         <DeadlinePicker now={planner.now} value={draft.deadline} onChange={setDeadline} />
 
@@ -135,9 +147,14 @@ export default function Plan() {
                   />
                 ))}
               </View>
+              {/* Balanced pair — identical structure, equal flex, shared baseline. */}
               <View style={{ flexDirection: 'row', gap: t.space[3] }}>
-                <AppButton label="Add" variant="indigo" onPress={commitNewTask} />
-                <AppButton label="Cancel" variant="ghost" onPress={() => setAdding(false)} />
+                <View style={{ flex: 1 }}>
+                  <AppButton label="Add" variant="indigo" size="md" fullWidth onPress={commitNewTask} />
+                </View>
+                <View style={{ flex: 1 }}>
+                  <AppButton label="Cancel" variant="ghost" size="md" fullWidth onPress={() => setAdding(false)} />
+                </View>
               </View>
             </Card>
           ) : (
@@ -145,22 +162,23 @@ export default function Plan() {
           )}
         </View>
 
-        {/* THE ONE primary action */}
+        {/* THE primary action — reveals the result */}
         {hasDeadline && (
           <AppButton
             label="Build my plan"
             variant="indigo"
             fullWidth
-            onPress={() => setSaved(false)}
+            onPress={() => {
+              setBuilt(true);
+              setSaved(false);
+            }}
           />
         )}
 
-        {/* Result */}
-        {result && draft.deadline !== null && (
+        {/* Result — one consolidated block */}
+        {showResult && result && draft.deadline !== null && (
           <View style={{ gap: t.space[4] }}>
-            <Card>
-              <Headline verdictKind={result.verdict.kind} startBy={result.startBy} deadline={draft.deadline} feasible={result.verdict.kind === 'push-deadline' ? result.verdict.feasibleDeadline : null} />
-            </Card>
+            <StartByHero verdict={result.verdict} startBy={result.startBy} deadline={draft.deadline} />
 
             <PlanTimeline items={result.timeline} />
 
@@ -172,9 +190,9 @@ export default function Plan() {
             />
 
             <View style={{ flexDirection: 'row', gap: t.space[3] }}>
-              <AppButton label="Save plan" variant="ghost" onPress={onSave} />
+              <AppButton label="Save plan" variant="ghost" size="md" onPress={onSave} />
               {saved && active && (
-                <AppButton label="I'm behind / re-project" variant="ghost" onPress={openReproject} />
+                <AppButton label="I'm behind / re-project" variant="ghost" size="md" onPress={openReproject} />
               )}
             </View>
             {saved && (
@@ -214,39 +232,44 @@ function LabelField({ value, onChange }: { value: string; onChange: (v: string) 
         paddingVertical: t.space[3],
         color: t.colors.ink,
         fontSize: t.fontSize.base,
-        minHeight: 44,
+        minHeight: t.size.control.sm,
       }}
     />
   );
 }
 
-function Headline({
-  verdictKind,
+/**
+ * Start-By hero — the screen's actual answer, with the time as the focal number.
+ * "fits"/"cut" cases lead with the start-by time; the "push-deadline" case has no
+ * feasible start at the chosen deadline, so it leads with the earliest finish that
+ * fits. Neutral throughout (the time is indigo — the hero accent — never amber).
+ */
+function StartByHero({
+  verdict,
   startBy,
   deadline,
-  feasible,
 }: {
-  verdictKind: string;
+  verdict: PlanVerdict;
   startBy: number;
   deadline: number;
-  feasible: number | null;
 }) {
   const t = useTheme();
-  if (verdictKind === 'push-deadline' && feasible !== null) {
-    return (
-      <AppText variant="title" style={{ color: t.colors.amberText }}>
-        Won&apos;t fit by {formatClock(deadline)} — finish by {formatClock(feasible)} or cut tasks
-      </AppText>
-    );
-  }
+  const isPush = verdict.kind === 'push-deadline';
+  const focal = isPush ? verdict.feasibleDeadline : startBy;
+  const eyebrow = isPush ? 'FINISH BY' : 'START BY';
+  const sub = isPush ? 'the earliest everything fits' : `to finish by ${formatClock(deadline)}`;
+
+  const eyebrowStyle: TextStyle = { ...(type.eyebrow as unknown as TextStyle), color: t.colors.inkSoft };
+  const focalStyle: TextStyle = { ...(type.honestNumberXl as unknown as TextStyle), color: t.colors.primary };
+
   return (
-    <AppText variant="title">
-      Start by{' '}
-      <AppText variant="title" style={{ color: t.colors.primary, fontVariant: ['tabular-nums'] }}>
-        {formatClock(startBy)}
-      </AppText>{' '}
-      to finish by {formatClock(deadline)}
-    </AppText>
+    <Card tone="focal">
+      <View style={{ gap: t.space[1] }}>
+        <AppText style={eyebrowStyle}>{eyebrow}</AppText>
+        <AppText style={focalStyle}>{formatClock(focal)}</AppText>
+        <AppText variant="caption">{sub}</AppText>
+      </View>
+    </Card>
   );
 }
 
@@ -286,7 +309,7 @@ function ReprojectSheet({
                 </View>
                 <View style={{ gap: t.space[0.5] }}>
                   <AppText variant="caption">Now starts</AppText>
-                  <AppText variant="body" style={{ color: t.colors.amberText, fontVariant: ['tabular-nums'] }}>
+                  <AppText variant="body" style={{ color: t.colors.ink, fontVariant: ['tabular-nums'] }}>
                     {diff.newResult.verdict.kind === 'push-deadline'
                       ? `finish ${formatClock(diff.newResult.verdict.feasibleDeadline)}`
                       : formatClock(diff.newResult.startBy)}
@@ -303,8 +326,8 @@ function ReprojectSheet({
             </View>
           )}
           <View style={{ flexDirection: 'row', gap: t.space[3] }}>
-            <AppButton label="Apply" variant="indigo" onPress={onConfirm} />
-            <AppButton label="Keep current" variant="ghost" onPress={onCancel} />
+            <AppButton label="Apply" variant="indigo" size="md" onPress={onConfirm} />
+            <AppButton label="Keep current" variant="ghost" size="md" onPress={onCancel} />
           </View>
         </View>
       </View>
@@ -312,18 +335,24 @@ function ReprojectSheet({
   );
 }
 
-/** A read-only verdict summary line inside the sheet (no action buttons). */
+/** A read-only verdict summary line inside the sheet (no action buttons, neutral). */
 function VerdictCardLite({ verdict, deadline }: { verdict: ReprojectDiff['newResult']['verdict']; deadline: number }) {
   const t = useTheme();
   let msg = '';
   if (verdict.kind === 'fits') msg = `Still fits — start by ${formatClock(verdict.startBy)}.`;
-  else if (verdict.kind === 'cut-one') msg = `Cut ${verdict.cut.label} to stay on time.`;
-  else if (verdict.kind === 'multi-cut') msg = `Cut ${verdict.cuts.map((c) => c.label).join(', ')} to stay on time.`;
-  else msg = `Won't fit by ${formatClock(deadline)} — finish by ${formatClock(verdict.feasibleDeadline)} or cut tasks.`;
-  const tone = verdict.kind === 'fits' ? t.colors.ink : t.colors.amberText;
+  else if (verdict.kind === 'cut-one') msg = `Drop ${verdict.cut.label} to stay on time.`;
+  else if (verdict.kind === 'multi-cut') msg = `Drop ${verdict.cuts.map((c) => c.label).join(', ')} to stay on time.`;
+  else msg = `About ${verdict.overshootMin}m over — push the finish to ${formatClock(verdict.feasibleDeadline)} or drop a task.`;
+  void deadline;
   return (
-    <Card style={verdict.kind === 'fits' ? undefined : { backgroundColor: t.colors.accentSoft, borderColor: t.colors.accentEdge }}>
-      <AppText variant="body" style={{ color: tone }}>
+    <Card
+      style={
+        verdict.kind === 'fits'
+          ? { backgroundColor: t.colors.primarySoft, borderColor: t.colors.primary }
+          : { backgroundColor: t.colors.surfaceSunken, borderColor: t.colors.border }
+      }
+    >
+      <AppText variant="body" style={{ color: t.colors.ink }}>
         {msg}
       </AppText>
     </Card>

@@ -11,6 +11,7 @@ import { haptics } from '@/src/lib/haptics';
 import { Ionicons } from '@expo/vector-icons';
 import { Screen } from '@/src/components/Screen';
 import { ScreenHeader } from '@/src/components/ScreenHeader';
+import { ActiveTimerBar } from '@/src/components/ActiveTimerBar';
 import { useTheme } from '@/src/theme/useTheme';
 import { type } from '@/src/theme/typography';
 import { useToday } from '@/src/features/today/useToday';
@@ -52,17 +53,20 @@ export default function Today() {
   const logChip: ViewStyle = {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: t.space[2],
+    gap: t.space[3],
     alignSelf: 'stretch',
+    // Sits as the natural last item, not a pinned footer — a small extra top
+    // margin lifts it just clear of the content above (the row gap does the rest).
+    marginTop: t.space[2],
     backgroundColor: t.colors.surface,
     borderWidth: t.borderWidth.hairline,
     borderColor: t.colors.hairline,
     borderRadius: t.radii.card,
     borderCurve: 'continuous',
     paddingHorizontal: t.space[4],
-    paddingVertical: t.space[3],
+    paddingVertical: t.space[4],
   };
-  const logChipText: TextStyle = { ...(type.bodySm as unknown as TextStyle), color: t.colors.ink };
+  const logChipText: TextStyle = { ...(type.bodySm as unknown as TextStyle), color: t.colors.ink, flex: 1 };
 
   const emptyCopy: TextStyle = {
     ...(type.body as unknown as TextStyle),
@@ -119,9 +123,8 @@ export default function Today() {
       <View style={{ flex: 1 }}>
         <ScrollView
           contentContainerStyle={{
-            flexGrow: 1,
             gap: t.space[5],
-            // Reserve the FAB's footprint so the bottom-pinned log chip never sits under it.
+            // Reserve the FAB's footprint so the log chip never sits under it.
             paddingBottom: FAB_SIZE + t.space[8],
           }}
           showsVerticalScrollIndicator={false}
@@ -140,6 +143,8 @@ export default function Today() {
               </Pressable>
             }
           />
+
+          <ActiveTimerBar />
 
           <View style={{ gap: t.space[2] }}>
             <HoneycombStrip
@@ -174,18 +179,15 @@ export default function Today() {
             </Text>
           )}
 
-          {/* Flexible spacer anchors the secondary log action to the bottom when
-              content is short (kills the dead lower void), scrolls when it isn't. */}
-          <View style={{ flex: 1 }} />
-
           <Pressable
             onPress={() => router.push('/(modals)/retro')}
             accessibilityRole="button"
-            accessibilityLabel="Finished something? Log it and ripen your honey"
+            accessibilityLabel="Log something you finished to ripen your honey"
             style={logChip}
           >
-            <Ionicons name="time-outline" size={18} color={t.colors.inkSoft} />
-            <Text style={logChipText}>Finished something? Log it &amp; ripen your honey</Text>
+            <Ionicons name="time-outline" size={t.iconSize.sm} color={t.colors.inkSoft} />
+            <Text style={logChipText}>Finished something? Log it — it ripens your honey</Text>
+            <Ionicons name="chevron-forward" size={t.iconSize.sm} color={t.colors.inkSoft} />
           </Pressable>
         </ScrollView>
 
