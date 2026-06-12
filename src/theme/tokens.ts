@@ -14,8 +14,16 @@ import { Easing } from 'react-native-reanimated';
 // ──────────────────────────────────────────────────────────────────────────────
 
 export const tokens = {
-  // 4-based rhythm + two sub-8 micro steps (kills inline gap: 2/3/6).
-  space: { 0: 0, 0.5: 2, 1: 4, 1.5: 6, 2: 8, 3: 12, 4: 16, 5: 20, 6: 24, 8: 32, 10: 40, 12: 48, 16: 64 },
+  // 4-based rhythm + sub-8 micro steps (kills inline gap: 2/3/6). 2.5:10 is the
+  // half-step the chip vertical padding needs to clear the 44pt target.
+  space: { 0: 0, 0.5: 2, 1: 4, 1.5: 6, 2: 8, 2.5: 10, 3: 12, 4: 16, 5: 20, 6: 24, 8: 32, 10: 40, 12: 48, 16: 64 },
+
+  // Control-height system — HIG-compliant touch targets (44pt floor). Buttons and
+  // tappable controls size from here, so nothing is ad-hoc under the 44pt minimum.
+  size: { control: { sm: 44, md: 52, lg: 56 } },
+
+  // Icon sizing scale — replaces inline 12/16/18/20/22/24/30 across the app.
+  iconSize: { xs: 12, sm: 16, md: 20, lg: 24, xl: 32 },
 
   // One honest radius set with clear semantics — every CARD uses `card`.
   //   sm   tags / small chips
@@ -149,6 +157,26 @@ export const tokens = {
       textMuted: '#ADA9B5',
       primaryText: '#14151D',
       paper: '#F4F1EA',
+    },
+  },
+
+  // ── brand illustration palette ──────────────────────────────────────────────
+  // Fixed art colors for the Whenbee mascot (BeeMascot). Brand art does NOT recolor
+  // by mode — a mascot reads as the SAME bee in light and dark, the way a logo does.
+  // Indigo body ≈ primary, amber stripes ≈ accent family, dark ink ≈ ink, but the
+  // exact illustration shades (highlights/shadows/wing cream) live here so they are
+  // token-sourced without polluting the semantic UI ramp.
+  brand: {
+    bee: {
+      body: '#5F4EE4', // indigo body (≈ primary)
+      bodyHi: '#6F60E7', // top highlight
+      bodyLo: '#4F3CE2', // bottom shade
+      stripe: '#F6B442', // amber band / head (≈ accent)
+      stripeLo: '#EA980B', // head shadow (≈ accentEdge)
+      wing: '#FCE7C5', // pale wing cream
+      ink: '#262D40', // eyes / smile / stinger (≈ ink)
+      antenna: '#191E2B', // antenna stalks + tips
+      antennaHi: '#474B55', // antenna tip highlight
     },
   },
 } as const;
