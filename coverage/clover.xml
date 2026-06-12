@@ -1,0 +1,125 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<coverage generated="1781251198120" clover="3.2.0">
+  <project timestamp="1781251198120" name="All files">
+    <metrics statements="89" coveredstatements="89" conditionals="37" coveredconditionals="33" methods="21" coveredmethods="21" elements="147" coveredelements="143" complexity="0" loc="89" ncloc="89" packages="1" files="10" classes="10"/>
+    <file name="constants.ts" path="/Users/alisuliman/Business/income/Apps/Whenbee/src/engine/constants.ts">
+      <metrics statements="16" coveredstatements="16" conditionals="0" coveredconditionals="0" methods="0" coveredmethods="0"/>
+      <line num="4" count="1" type="stmt"/>
+      <line num="5" count="1" type="stmt"/>
+      <line num="7" count="1" type="stmt"/>
+      <line num="8" count="1" type="stmt"/>
+      <line num="9" count="1" type="stmt"/>
+      <line num="10" count="1" type="stmt"/>
+      <line num="13" count="1" type="stmt"/>
+      <line num="18" count="1" type="stmt"/>
+      <line num="21" count="1" type="stmt"/>
+      <line num="22" count="1" type="stmt"/>
+      <line num="23" count="1" type="stmt"/>
+      <line num="24" count="1" type="stmt"/>
+      <line num="27" count="1" type="stmt"/>
+      <line num="28" count="1" type="stmt"/>
+      <line num="29" count="1" type="stmt"/>
+      <line num="32" count="1" type="stmt"/>
+    </file>
+    <file name="ewma.ts" path="/Users/alisuliman/Business/income/Apps/Whenbee/src/engine/ewma.ts">
+      <metrics statements="3" coveredstatements="3" conditionals="2" coveredconditionals="2" methods="2" coveredmethods="2"/>
+      <line num="6" count="4" type="stmt"/>
+      <line num="7" count="4" type="cond" truecount="2" falsecount="0"/>
+      <line num="17" count="4" type="stmt"/>
+    </file>
+    <file name="index.ts" path="/Users/alisuliman/Business/income/Apps/Whenbee/src/engine/index.ts">
+      <metrics statements="0" coveredstatements="0" conditionals="0" coveredconditionals="0" methods="0" coveredmethods="0"/>
+    </file>
+    <file name="insight.ts" path="/Users/alisuliman/Business/income/Apps/Whenbee/src/engine/insight.ts">
+      <metrics statements="13" coveredstatements="13" conditionals="9" coveredconditionals="7" methods="5" coveredmethods="5"/>
+      <line num="5" count="2" type="cond" truecount="1" falsecount="1"/>
+      <line num="6" count="8" type="stmt"/>
+      <line num="7" count="8" type="stmt"/>
+      <line num="12" count="1" type="stmt"/>
+      <line num="13" count="1" type="cond" truecount="1" falsecount="1"/>
+      <line num="14" count="1" type="stmt"/>
+      <line num="15" count="1" type="stmt"/>
+      <line num="16" count="1" type="stmt"/>
+      <line num="33" count="2" type="stmt"/>
+      <line num="34" count="2" type="cond" truecount="5" falsecount="0"/>
+      <line num="36" count="1" type="stmt"/>
+      <line num="37" count="1" type="stmt"/>
+      <line num="38" count="1" type="stmt"/>
+    </file>
+    <file name="multiplier.ts" path="/Users/alisuliman/Business/income/Apps/Whenbee/src/engine/multiplier.ts">
+      <metrics statements="12" coveredstatements="12" conditionals="8" coveredconditionals="8" methods="4" coveredmethods="4"/>
+      <line num="9" count="11" type="stmt"/>
+      <line num="10" count="11" type="stmt"/>
+      <line num="11" count="11" type="stmt"/>
+      <line num="16" count="5" type="stmt"/>
+      <line num="17" count="5" type="stmt"/>
+      <line num="22" count="2" type="stmt"/>
+      <line num="36" count="3" type="cond" truecount="2" falsecount="0"/>
+      <line num="37" count="3" type="cond" truecount="2" falsecount="0"/>
+      <line num="39" count="3" type="stmt"/>
+      <line num="40" count="3" type="cond" truecount="2" falsecount="0"/>
+      <line num="42" count="3" type="cond" truecount="2" falsecount="0"/>
+      <line num="44" count="3" type="stmt"/>
+    </file>
+    <file name="priors.ts" path="/Users/alisuliman/Business/income/Apps/Whenbee/src/engine/priors.ts">
+      <metrics statements="3" coveredstatements="3" conditionals="2" coveredconditionals="2" methods="1" coveredmethods="1"/>
+      <line num="8" count="1" type="stmt"/>
+      <line num="22" count="1" type="stmt"/>
+      <line num="37" count="3" type="cond" truecount="2" falsecount="0"/>
+    </file>
+    <file name="ratio.ts" path="/Users/alisuliman/Business/income/Apps/Whenbee/src/engine/ratio.ts">
+      <metrics statements="3" coveredstatements="3" conditionals="2" coveredconditionals="2" methods="1" coveredmethods="1"/>
+      <line num="5" count="7" type="cond" truecount="2" falsecount="0"/>
+      <line num="6" count="6" type="stmt"/>
+      <line num="7" count="6" type="stmt"/>
+    </file>
+    <file name="sharpness.ts" path="/Users/alisuliman/Business/income/Apps/Whenbee/src/engine/sharpness.ts">
+      <metrics statements="14" coveredstatements="14" conditionals="6" coveredconditionals="6" methods="5" coveredmethods="5"/>
+      <line num="10" count="4" type="cond" truecount="2" falsecount="0"/>
+      <line num="11" count="3" type="stmt"/>
+      <line num="12" count="16" type="stmt"/>
+      <line num="13" count="16" type="stmt"/>
+      <line num="14" count="3" type="stmt"/>
+      <line num="19" count="6" type="stmt"/>
+      <line num="20" count="6" type="stmt"/>
+      <line num="21" count="30" type="cond" truecount="2" falsecount="0"/>
+      <line num="23" count="6" type="stmt"/>
+      <line num="28" count="2" type="stmt"/>
+      <line num="29" count="2" type="stmt"/>
+      <line num="30" count="2" type="cond" truecount="2" falsecount="0"/>
+      <line num="31" count="1" type="stmt"/>
+      <line num="32" count="1" type="stmt"/>
+    </file>
+    <file name="trend.ts" path="/Users/alisuliman/Business/income/Apps/Whenbee/src/engine/trend.ts">
+      <metrics statements="9" coveredstatements="9" conditionals="4" coveredconditionals="2" methods="2" coveredmethods="2"/>
+      <line num="16" count="1" type="stmt"/>
+      <line num="17" count="1" type="stmt"/>
+      <line num="18" count="1" type="stmt"/>
+      <line num="19" count="6" type="stmt"/>
+      <line num="20" count="6" type="stmt"/>
+      <line num="21" count="6" type="stmt"/>
+      <line num="25" count="1" type="cond" truecount="1" falsecount="1"/>
+      <line num="26" count="1" type="cond" truecount="1" falsecount="1"/>
+      <line num="27" count="1" type="stmt"/>
+    </file>
+    <file name="update.ts" path="/Users/alisuliman/Business/income/Apps/Whenbee/src/engine/update.ts">
+      <metrics statements="16" coveredstatements="16" conditionals="4" coveredconditionals="4" methods="1" coveredmethods="1"/>
+      <line num="45" count="3" type="stmt"/>
+      <line num="49" count="3" type="cond" truecount="2" falsecount="0"/>
+      <line num="50" count="1" type="stmt"/>
+      <line num="59" count="2" type="stmt"/>
+      <line num="61" count="2" type="stmt"/>
+      <line num="62" count="2" type="stmt"/>
+      <line num="63" count="2" type="stmt"/>
+      <line num="65" count="2" type="stmt"/>
+      <line num="66" count="2" type="cond" truecount="2" falsecount="0"/>
+      <line num="67" count="1" type="stmt"/>
+      <line num="68" count="1" type="stmt"/>
+      <line num="69" count="1" type="stmt"/>
+      <line num="72" count="2" type="stmt"/>
+      <line num="73" count="2" type="stmt"/>
+      <line num="74" count="2" type="stmt"/>
+      <line num="76" count="2" type="stmt"/>
+    </file>
+  </project>
+</coverage>

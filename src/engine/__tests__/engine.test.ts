@@ -1,0 +1,203 @@
+import { clampRatio } from '../ratio';
+import { updateEwma, alphaFor } from '../ewma';
+import { blendWithPrior, honestNumber, resolveSuggestion } from '../multiplier';
+import { sharpnessFromWindow, tierFor, logsToNextTier } from '../sharpness';
+import { detectInsight } from '../insight';
+import { buildTrendSeries } from '../trend';
+import { applyLog } from '../update';
+import { priorFor, GLOBAL_PRIOR, CATEGORY_PRIORS } from '../priors';
+
+describe('clampRatio', () => {
+  it('clamps a disaster to the 6× ceiling', () => {
+    expect(clampRatio(10, 600)).toBe(6); // raw 60 → 6
+  });
+  it('clamps a freakishly fast task to the 1/6 floor', () => {
+    expect(clampRatio(60, 5)).toBeCloseTo(1 / 6, 10);
+  });
+  it('passes a normal 2× through', () => {
+    expect(clampRatio(15, 30)).toBe(2);
+  });
+  it('throws when the estimate is not positive', () => {
+    expect(() => clampRatio(0, 10)).toThrow(RangeError);
+  });
+});
+
+describe('updateEwma + alphaFor', () => {
+  it('seeds from 0 at α·ln(r) on the first balanced timed log', () => {
+    const a = alphaFor('balanced', 'timed'); // 0.3
+    expect(updateEwma(0, 2, a)).toBeCloseTo(0.3 * Math.log(2), 10); // ≈ 0.20794
+  });
+  it('halves α for retro entries', () => {
+    expect(alphaFor('balanced', 'retro')).toBeCloseTo(0.15, 10);
+  });
+});
+
+describe('blendWithPrior', () => {
+  it('returns exactly the prior at n=0', () => {
+    expect(blendWithPrior(0, 0, 2.0)).toBeCloseTo(2.0, 10);
+  });
+  it('lets personal data pull M toward the EWMA as n grows', () => {
+    // n=8, logEwma=ln(2.5), prior=2.0, k=4
+    const m = blendWithPrior(8, Math.log(2.5), 2.0);
+    // exp((8·ln2.5 + 4·ln2)/12) = exp((7.3289+2.7726)/12) ≈ exp(0.8418) ≈ 2.3205
+    expect(m).toBeCloseTo(2.3205, 3);
+  });
+});
+
+describe('honestNumber', () => {
+  it('rounds 15 × 1.9 to the nearest 5 → 30', () => {
+    expect(honestNumber(15, 1.9)).toBe(30); // 28.5 → 30
+  });
+  it('never returns below 5', () => {
+    expect(honestNumber(1, 0.2)).toBe(5);
+  });
+});
+
+describe('resolveSuggestion fallback', () => {
+  const category = { mEffective: 2.0, n: 9 };
+  it('uses the category when recurring lacks 3 logs', () => {
+    const s = resolveSuggestion({ guessMinutes: 15, category, recurring: { mEffective: 3.0, n: 2 } });
+    expect(s.multiplier).toBe(2.0);
+    expect(s.basis).toBe('personal');
+    expect(s.label).toBe('based on your last 9 times');
+  });
+  it('uses the recurring multiplier once it has ≥3 logs', () => {
+    const s = resolveSuggestion({ guessMinutes: 15, category, recurring: { mEffective: 3.0, n: 4 } });
+    expect(s.multiplier).toBe(3.0);
+    expect(s.honestMinutes).toBe(45);
+  });
+  it('labels a cold category as typical patterns', () => {
+    const s = resolveSuggestion({ guessMinutes: 20, category: { mEffective: 2.2, n: 1 }, recurring: null });
+    expect(s.basis).toBe('prior');
+    expect(s.label).toBe('based on typical patterns');
+  });
+});
+
+describe('sharpness + tiers', () => {
+  it('scores a perfect window at 100', () => {
+    expect(sharpnessFromWindow([1, 1, 1])).toBe(100);
+  });
+  it('returns 0 for an empty window', () => {
+    expect(sharpnessFromWindow([])).toBe(0);
+  });
+  it('maps thresholds to the right tier labels', () => {
+    expect(tierFor(0)).toBe('Raw');
+    expect(tierFor(63)).toBe('Setting'); // 40 ≤ 63 < 64
+    expect(tierFor(64)).toBe('Ripening');
+    expect(tierFor(93)).toBe('Honest');
+  });
+  it('estimates logs to the next tier', () => {
+    expect(logsToNextTier(78)).toBe(1); // (82-78)/4 = 1
+    expect(logsToNextTier(95)).toBe(0); // already Honest
+  });
+});
+
+describe('applyLog monotonic sharpness', () => {
+  it('never lowers sharpness even on a bad log', () => {
+    // window after this log is [1×6, 6, 6] → raw accuracy 79; stored is already 90.
+    const res = applyLog({
+      estimateMin: 10,
+      actualMin: 60,
+      status: 'completed',
+      source: 'timed',
+      adaptSpeed: 'balanced',
+      prior: 2.0,
+      category: { n: 8, logEwma: Math.log(2), mEffective: 2.0, sharpness: 90 },
+      recurring: null,
+      recentClampedRatios: [1, 1, 1, 1, 1, 1, 6],
+    });
+    expect(res.counted).toBe(true);
+    expect(res.category.sharpness).toBe(90); // raw window dropped to 79, stored value held
+    expect(res.category.n).toBe(9);
+  });
+  it('does not train the model on an abandoned log', () => {
+    const res = applyLog({
+      estimateMin: 10,
+      actualMin: 5,
+      status: 'abandoned',
+      source: 'timed',
+      adaptSpeed: 'balanced',
+      prior: 2.0,
+      category: { n: 3, logEwma: 0.1, mEffective: 1.8, sharpness: 50 },
+      recurring: null,
+      recentClampedRatios: [1, 1, 1],
+    });
+    expect(res.counted).toBe(false);
+  });
+  it('advances the recurring rolling stat alongside the category', () => {
+    const res = applyLog({
+      estimateMin: 15,
+      actualMin: 30,
+      status: 'completed',
+      source: 'timed',
+      adaptSpeed: 'balanced',
+      prior: 2.0,
+      category: { n: 4, logEwma: Math.log(2), mEffective: 2.0, sharpness: 60 },
+      recurring: { n: 2, logEwma: Math.log(2), mEffective: 2.0 },
+      recentClampedRatios: [2, 2, 2, 2],
+    });
+    expect(res.counted).toBe(true);
+    expect(res.recurring).not.toBeNull();
+    expect(res.recurring!.n).toBe(3);
+    expect(res.category.n).toBe(5);
+  });
+});
+
+describe('detectInsight', () => {
+  it('fires when n≥5, |M-1|≥0.4 and variance shrinks', () => {
+    const settling = [
+      Math.log(3),
+      Math.log(0.5),
+      Math.log(2.4),
+      Math.log(1.8),
+      Math.log(1.95),
+      Math.log(1.9),
+      Math.log(1.92),
+      Math.log(1.9),
+    ];
+    const insight = detectInsight({ categoryId: 'cleaning', n: 8, mEffective: 1.9, orderedLogRatios: settling });
+    expect(insight).not.toBeNull();
+    expect(insight!.honestForFifteen).toBe(29); // round(15·1.9)
+    expect(insight!.headline).toBe('~29m vs your 15m guess · runs 1.9×');
+  });
+  it('returns null when M is too close to 1', () => {
+    expect(
+      detectInsight({ categoryId: 'calls', n: 9, mEffective: 1.1, orderedLogRatios: Array(9).fill(0.05) }),
+    ).toBeNull();
+  });
+});
+
+describe('buildTrendSeries', () => {
+  it('captions a settling category as stabilizing', () => {
+    // big early overruns that settle toward an honest pace pull rolling M down > 0.2
+    const steps = [
+      { loggedAt: 1, clampedRatio: 6.0, alpha: 0.45 },
+      { loggedAt: 2, clampedRatio: 5.0, alpha: 0.45 },
+      { loggedAt: 3, clampedRatio: 1.2, alpha: 0.45 },
+      { loggedAt: 4, clampedRatio: 1.1, alpha: 0.45 },
+      { loggedAt: 5, clampedRatio: 1.0, alpha: 0.45 },
+      { loggedAt: 6, clampedRatio: 1.05, alpha: 0.45 },
+    ];
+    const series = buildTrendSeries({ steps, prior: 1.5 });
+    expect(series.points).toHaveLength(6);
+    // first M ≈ 1.625, last M ≈ 1.291 → drop ≈ 0.334 > 0.2
+    expect(series.caption).toBe('stabilizing');
+  });
+});
+
+describe('priors', () => {
+  it('returns the seeded prior for a known category', () => {
+    expect(priorFor('cleaning')).toBe(2.0);
+    expect(priorFor('admin')).toBe(2.2);
+  });
+  it('falls back to the global prior for custom/unknown categories', () => {
+    expect(priorFor('knitting')).toBe(GLOBAL_PRIOR);
+    expect(GLOBAL_PRIOR).toBe(1.8);
+  });
+  it('keeps every seeded prior inside the plausible (1, 6] range', () => {
+    for (const v of Object.values(CATEGORY_PRIORS)) {
+      expect(v).toBeGreaterThan(1);
+      expect(v).toBeLessThanOrEqual(6);
+    }
+  });
+});
