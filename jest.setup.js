@@ -32,9 +32,24 @@ jest.mock('@expo/vector-icons', () => {
   return new Proxy({}, { get: (_t, key) => make(String(key)) });
 });
 
-// Patch react-native-reanimated mock: add useReducedMotion (not included by default)
+// Patch react-native-reanimated mock: the bundled mock omits a few hooks the
+// Live Timer relies on (frame callback + the derived/reaction graph). Stub them
+// so components render in jest; they're UI-thread drivers with no JS effect under
+// test (we assert store/router behaviour, not per-frame animation).
 jest.mock('react-native-reanimated', () => {
   const Reanimated = require('react-native-reanimated/mock');
   Reanimated.useReducedMotion = () => false;
+  if (!Reanimated.useFrameCallback) {
+    Reanimated.useFrameCallback = () => ({ setActive: () => {}, isActive: false });
+  }
+  if (!Reanimated.useDerivedValue) {
+    Reanimated.useDerivedValue = (fn) => ({ value: typeof fn === 'function' ? fn() : 0 });
+  }
+  if (!Reanimated.useAnimatedReaction) {
+    Reanimated.useAnimatedReaction = () => {};
+  }
+  if (!Reanimated.addWhitelistedNativeProps) {
+    Reanimated.addWhitelistedNativeProps = () => {};
+  }
   return Reanimated;
 });

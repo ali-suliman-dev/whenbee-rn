@@ -1,0 +1,98 @@
+import {
+  formatClock,
+  formatMmSs,
+  projectedFinish,
+  minutesLeft,
+  isOverrun,
+} from '@/src/lib/time';
+
+// Build a deterministic local epoch from explicit Y/M/D h:m so the formatted
+// output is independent of the machine's timezone (we read it back via Date too).
+function at(hour: number, min: number): number {
+  return new Date(2024, 0, 15, hour, min, 0, 0).getTime();
+}
+
+describe('formatClock', () => {
+  it('formats a morning time as 12h with no leading zero on the hour', () => {
+    expect(formatClock(at(9, 42))).toBe('9:42');
+  });
+
+  it('pads the minutes to two digits', () => {
+    expect(formatClock(at(9, 5))).toBe('9:05');
+    expect(formatClock(at(9, 0))).toBe('9:00');
+  });
+
+  it('converts afternoon times to 12h (no leading zero, no am/pm needed)', () => {
+    expect(formatClock(at(13, 7))).toBe('1:07');
+    expect(formatClock(at(23, 59))).toBe('11:59');
+  });
+
+  it('renders midnight and noon as 12', () => {
+    expect(formatClock(at(0, 0))).toBe('12:00');
+    expect(formatClock(at(12, 30))).toBe('12:30');
+  });
+});
+
+describe('formatMmSs', () => {
+  it('formats minutes:seconds with a two-digit second', () => {
+    expect(formatMmSs(845)).toBe('14:05'); // 14m 5s
+  });
+
+  it('handles zero and sub-minute values', () => {
+    expect(formatMmSs(0)).toBe('0:00');
+    expect(formatMmSs(9)).toBe('0:09');
+    expect(formatMmSs(60)).toBe('1:00');
+  });
+
+  it('does not cap minutes (long sessions read straight through)', () => {
+    expect(formatMmSs(3661)).toBe('61:01');
+  });
+
+  it('floors fractional seconds', () => {
+    expect(formatMmSs(125.9)).toBe('2:05');
+  });
+});
+
+describe('projectedFinish', () => {
+  it('returns start + duration in ms', () => {
+    const start = at(9, 14);
+    expect(projectedFinish(start, 28)).toBe(start + 28 * 60000);
+  });
+
+  it('formats round-trip to the expected clock', () => {
+    const start = at(9, 14);
+    expect(formatClock(projectedFinish(start, 28))).toBe('9:42');
+  });
+
+  it('handles a zero-minute estimate', () => {
+    const start = at(9, 14);
+    expect(projectedFinish(start, 0)).toBe(start);
+  });
+});
+
+describe('minutesLeft', () => {
+  it('returns whole minutes remaining, flooring elapsed minutes', () => {
+    expect(minutesLeft(15, 0)).toBe(15);
+    expect(minutesLeft(15, 59)).toBe(15); // <1 min elapsed
+    expect(minutesLeft(15, 60)).toBe(14); // exactly 1 min elapsed
+    expect(minutesLeft(15, 119)).toBe(14);
+  });
+
+  it('goes negative on overrun', () => {
+    expect(minutesLeft(15, 16 * 60)).toBe(-1);
+    expect(minutesLeft(15, 20 * 60)).toBe(-5);
+  });
+});
+
+describe('isOverrun', () => {
+  it('is false while elapsed is under the estimate', () => {
+    expect(isOverrun(15, 0)).toBe(false);
+    expect(isOverrun(15, 14 * 60 + 59)).toBe(false);
+  });
+
+  it('becomes true at and past the estimate', () => {
+    expect(isOverrun(15, 15 * 60)).toBe(true);
+    expect(isOverrun(15, 15 * 60 + 1)).toBe(true);
+    expect(isOverrun(15, 30 * 60)).toBe(true);
+  });
+});
