@@ -9,3 +9,4 @@ export { detectInsight } from './insight';
 export { buildTrendSeries } from './trend';
 export { applyLog } from './update';
 export type { ApplyLogInput, ApplyLogResult } from './update';
+export { planBackward, DEFAULT_BUFFER_MIN } from './planner';
