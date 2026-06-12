@@ -42,6 +42,13 @@ export interface TimerParams {
   estimateMin: number;
   /** Original user guess — drives calibration. Falls back to estimateMin. */
   guessMin: number;
+  /**
+   * The honest number the user actually SAW before starting the timer.
+   * Banked as the reclaim anchor. Defaults to `estimateMin` (the ring target)
+   * when absent — this covers the case where estimateMin IS the honest number
+   * passed from Today or Add-Task.
+   */
+  suggestedHonestMin?: number;
 }
 
 export interface UseTimerResult {
@@ -65,7 +72,8 @@ export interface UseTimerResult {
 }
 
 export function useTimer(params: TimerParams): UseTimerResult {
-  const { taskId, label, category, estimateMin, guessMin } = params;
+  const { taskId, label, category, estimateMin, guessMin, suggestedHonestMin = estimateMin } =
+    params;
   const reducedMotion = useReducedMotion();
 
   const start = useTimerStore((s) => s.start);
@@ -125,6 +133,8 @@ export function useTimer(params: TimerParams): UseTimerResult {
 
     // estimateMin here = the user's GUESS (ratio = actual / guess), NOT the
     // honest suggestion the ring filled toward.
+    // suggestedHonestMin = the honest number the user SAW (defaults to estimateMin
+    // which IS the honest number passed from Today / Add-Task).
     const result = await applyLog({
       category,
       estimateMin: guessMin,
@@ -133,6 +143,7 @@ export function useTimer(params: TimerParams): UseTimerResult {
       source: 'timed',
       adaptSpeed,
       label,
+      suggestedHonestMin,
     });
 
     useRewardStore.getState().setReward({
@@ -146,7 +157,7 @@ export function useTimer(params: TimerParams): UseTimerResult {
     if (taskId) useTasksStore.getState().removeTask(taskId);
 
     router.replace('/(modals)/reward');
-  }, [stop, applyLog, category, guessMin, label, taskId]);
+  }, [stop, applyLog, category, guessMin, label, taskId, suggestedHonestMin]);
 
   const onAbandon = useCallback(async () => {
     cancel();

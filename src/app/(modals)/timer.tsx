@@ -50,16 +50,20 @@ export default function Timer() {
     category?: string;
     estimateMin?: string;
     guessMin?: string;
+    suggestedHonestMin?: string;
   }>();
 
   const estimateMin = num(params.estimateMin, 15);
   // guessMin drives calibration; fall back to the honest estimate if absent.
   const guessMin = num(params.guessMin, estimateMin);
+  // suggestedHonestMin = the honest number the user SAW; defaults to estimateMin
+  // (which IS the honest number from Today/Add-Task when not passed separately).
+  const suggestedHonestMin = num(params.suggestedHonestMin, estimateMin);
   const label = str(params.label, 'Focus session');
   const category = str(params.category, 'getting_ready');
   const taskId = Array.isArray(params.taskId) ? params.taskId[0] : params.taskId;
 
-  const timer = useTimer({ taskId, label, category, estimateMin, guessMin });
+  const timer = useTimer({ taskId, label, category, estimateMin, guessMin, suggestedHonestMin });
 
   // Pulsing indigo live dot (static under reduced motion).
   const pulse = useSharedValue(reducedMotion ? 1 : 0.4);

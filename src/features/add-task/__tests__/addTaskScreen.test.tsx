@@ -56,7 +56,7 @@ describe('Add Task screen', () => {
     expect(screen.getByText('Added to today')).toBeOnTheScreen();
   });
 
-  it('Add & start: navigates to timer with guessMin + honest estimateMin params', () => {
+  it('Add & start: navigates to timer with guessMin + honest estimateMin + suggestedHonestMin params', () => {
     render(<AddTask />);
     fireEvent.changeText(screen.getByLabelText('Task title'), 'Leave for work');
     fireEvent.press(screen.getByText('Getting ready'));
@@ -73,6 +73,9 @@ describe('Add Task screen', () => {
         category: 'getting_ready',
         estimateMin: '30', // honest = round5(15 × 2.0)
         guessMin: '15',
+        // suggestedHonestMin = the honest number shown in the Add-Task sheet
+        // so reclaim banks against the exact number the user saw.
+        suggestedHonestMin: '30',
       },
     });
   });

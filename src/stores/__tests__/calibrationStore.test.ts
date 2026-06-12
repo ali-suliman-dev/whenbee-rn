@@ -411,4 +411,29 @@ describe('calibrationStore — reclaim deposit (Task A.4)', () => {
 
     expect(companion.reclaimedMinutesLifetime).toBe(sumDividends);
   });
+
+  it('retro log with suggestedHonestMin:null falls back to honestNumber(guess, M_before) and still deposits reclaim', async () => {
+    // cleaning prior = 2.0 → honestNumber(15, 2.0) = round5(30) = 30.
+    // actual=40: reclaimDividend(guess=15, actual=40, honestFallback=30)
+    //   = max(0, |40-15| - |40-30|) = max(0, 25 - 10) = 15.
+    // So even with no suggested honest (retro path), deposit > 0 via fallback.
+    const db = freshDb();
+    const res = await useCalibrationStore.getState().applyLog({
+      category: 'cleaning',
+      estimateMin: 15,
+      actualMin: 40,
+      suggestedHonestMin: null,
+      status: 'completed',
+      source: 'retro',
+      adaptSpeed: 'balanced',
+      nowMs: T0,
+    });
+
+    expect(res.counted).toBe(true);
+    // Engine fell back to honestNumber(15, 2.0)=30 → deposit = max(0, 25-10) = 15.
+    expect(res.reclaimDeltaMin).toBe(15);
+
+    const companion = await db.getCompanion();
+    expect(companion.reclaimedMinutesLifetime).toBe(15);
+  });
 });

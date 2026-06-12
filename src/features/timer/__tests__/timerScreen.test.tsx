@@ -43,6 +43,7 @@ beforeEach(() => {
     category: 'getting_ready',
     estimateMin: '28',
     guessMin: '15',
+    suggestedHonestMin: '28',
   };
   useTimerStore.setState({
     taskLabel: null,
@@ -80,7 +81,7 @@ describe('Live Timer screen', () => {
     expect(screen.getByText('you guessed 15')).toBeOnTheScreen();
   });
 
-  it('Stop & log: applyLog completed/timed with the GUESS, hands off, navigates to reward', async () => {
+  it('Stop & log: applyLog completed/timed with the GUESS (not honest), hands off, navigates to reward', async () => {
     render(<Timer />);
     const applyLog = useCalibrationStore.getState().applyLog as jest.Mock;
 
@@ -93,14 +94,36 @@ describe('Live Timer screen', () => {
     const arg = applyLog.mock.calls[0][0];
     expect(arg.status).toBe('completed');
     expect(arg.source).toBe('timed');
-    // ratio = actual / GUESS → estimateMin passed to engine is the guess (15).
+    // CRITICAL: calibration trains on the naïve GUESS (15), not the honest
+    // estimate (28). ratio = actual / guess, so estimateMin passed to engine
+    // must be guessMin. A guess=15, actual=30 produces mEffective≈2.0.
     expect(arg.estimateMin).toBe(15);
+    // NOT 28 (the honest ring target) — that would corrupt the model.
+    expect(arg.estimateMin).not.toBe(28);
     expect(arg.category).toBe('getting_ready');
+    // The honest number the user SAW is banked for reclaim.
+    expect(arg.suggestedHonestMin).toBe(28);
 
     // Reward hand-off populated + task removed + navigation.
     expect(useRewardStore.getState().guessMin).toBe(15);
     expect(useRewardStore.getState().result).toEqual(okResult);
     expect(mockReplace).toHaveBeenCalledWith('/(modals)/reward');
+  });
+
+  it('suggestedHonestMin defaults to estimateMin when not passed as a route param', async () => {
+    delete (mockParams as Record<string, string>).suggestedHonestMin;
+    render(<Timer />);
+    const applyLog = useCalibrationStore.getState().applyLog as jest.Mock;
+
+    fireEvent.press(screen.getByText('Stop & log'));
+    await Promise.resolve();
+    await Promise.resolve();
+
+    const arg = applyLog.mock.calls[0][0];
+    // Falls back to estimateMin (the honest ring target = 28).
+    expect(arg.suggestedHonestMin).toBe(28);
+    // Calibration driver still uses the guess.
+    expect(arg.estimateMin).toBe(15);
   });
 
   it('falls back to estimateMin as the guess when guessMin param is absent', async () => {

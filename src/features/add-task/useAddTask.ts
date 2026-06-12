@@ -72,6 +72,9 @@ export function useAddTask(): UseAddTaskResult {
   const onAddAndStart = () => {
     if (!canSubmit || category === null || suggestion === null) return;
     const task = addTask({ label: title.trim(), category, guessMin });
+    // suggestedHonestMin = the honest number the user SAW in the Add-Task sheet
+    // (suggestion.honestMinutes). Passed explicitly so the timer's applyLog banks
+    // reclaim against the number actually shown, not a re-derived fallback.
     router.replace({
       pathname: '/(modals)/timer',
       params: {
@@ -80,6 +83,7 @@ export function useAddTask(): UseAddTaskResult {
         category,
         estimateMin: String(suggestion.honestMinutes),
         guessMin: String(guessMin),
+        suggestedHonestMin: String(suggestion.honestMinutes),
       },
     });
   };
