@@ -13,6 +13,11 @@ import { useCategoriesStore } from '@/src/stores/categoriesStore';
 import { useTasksStore } from '@/src/stores/tasksStore';
 import { useRewardStore } from '@/src/stores/rewardStore';
 import { projectedFinish, formatClock } from '@/src/lib/time';
+import {
+  ensureNotificationPermission,
+  scheduleTimerDone,
+  cancelTimerDone,
+} from '@/src/services/timerNotifications';
 import type { AdaptSpeed } from '@/src/domain/types';
 
 // ──────────────────────────────────────────────────────────────────────────────
@@ -81,14 +86,33 @@ export function useTimer(params: TimerParams): UseTimerResult {
   const cancel = useTimerStore((s) => s.cancel);
   const applyLog = useCalibrationStore((s) => s.applyLog);
 
-  // Start the timer exactly once on mount. We read startedAt straight from the
-  // store afterwards so the UI-thread driver and the persisted log agree.
+  // ATTACH vs RESTART: if a session is already running for THIS task (reopened from
+  // the active-timer bar, or restored at boot), attach to its existing startedAt —
+  // calling start() again would reset the clock and lose elapsed time. Only start a
+  // fresh session when none is running for this task.
   const started = useRef(false);
+  const startedFresh = useRef(false);
   if (!started.current) {
-    start({ label, category, estimateMin });
+    const s = useTimerStore.getState();
+    const sameTask = taskId ? s.taskId === taskId : s.taskLabel === label;
+    if (!(s.isRunning && sameTask)) {
+      start({ label, category, estimateMin, guessMin, taskId: taskId ?? null, suggestedHonestMin });
+      startedFresh.current = true;
+    }
     started.current = true;
   }
   const startedAt = useTimerStore.getState().startedAt ?? Date.now();
+
+  // On a FRESH start only, schedule the local "estimate is up" ping (so the timer
+  // works backgrounded/closed) and ask permission gently the first time. Attaching
+  // to an existing session keeps the notification already scheduled at its start.
+  useEffect(() => {
+    if (!startedFresh.current) return;
+    void (async () => {
+      const granted = await ensureNotificationPermission();
+      if (granted) await scheduleTimerDone({ label, startedAt, estimateMin });
+    })();
+  }, [label, startedAt, estimateMin]);
 
   const estimateSec = Math.max(0, Math.round(estimateMin * 60));
 
@@ -126,6 +150,7 @@ export function useTimer(params: TimerParams): UseTimerResult {
 
   const onStopAndLog = useCallback(async () => {
     const { actualMin } = stop(Date.now());
+    void cancelTimerDone();
 
     const adaptSpeed: AdaptSpeed =
       useCategoriesStore.getState().categories.find((c) => c.id === category)?.adaptSpeed ??
@@ -161,6 +186,7 @@ export function useTimer(params: TimerParams): UseTimerResult {
 
   const onAbandon = useCallback(async () => {
     cancel();
+    void cancelTimerDone();
     const adaptSpeed: AdaptSpeed =
       useCategoriesStore.getState().categories.find((c) => c.id === category)?.adaptSpeed ??
       'balanced';
@@ -177,13 +203,10 @@ export function useTimer(params: TimerParams): UseTimerResult {
     router.dismiss();
   }, [cancel, applyLog, category, guessMin, label]);
 
-  // Defensive: if the screen unmounts without a stop (hardware back), clear the
-  // running timer so we don't leave a phantom active session persisted.
-  useEffect(() => {
-    return () => {
-      if (useTimerStore.getState().isRunning) cancel();
-    };
-  }, [cancel]);
+  // NOTE: no destroy-on-dismiss. Closing the sheet MINIMIZES the timer — a running
+  // session is cleared ONLY by an explicit Stop (onStopAndLog) or Abandon
+  // (onAbandon), never by unmount. The persisted snapshot + ActiveTimerBar let the
+  // user reopen it; the local notification still fires when the estimate elapses.
 
   return {
     elapsedSec,

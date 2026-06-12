@@ -1,6 +1,6 @@
 import { useEffect } from 'react';
 import { View, Pressable, Alert, type ViewStyle, type TextStyle } from 'react-native';
-import { useLocalSearchParams } from 'expo-router';
+import { router, useLocalSearchParams } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import Animated, {
   useSharedValue,
@@ -91,6 +91,13 @@ export default function Timer() {
     );
   }
 
+  // ✕ MINIMIZES: close the sheet but keep the timer running. The ActiveTimerBar on
+  // Today/Plan reopens the same session. A close control that destroyed the timer
+  // would break the mental model — Abandon (with confirm) is the explicit teardown.
+  function minimize() {
+    router.dismiss();
+  }
+
   // ── styles ──
   const topRow: ViewStyle = {
     flexDirection: 'row',
@@ -99,19 +106,19 @@ export default function Timer() {
     paddingTop: t.space[2],
   };
   const closeBtn: ViewStyle = {
-    width: 44,
-    height: 44,
+    width: t.size.control.sm,
+    height: t.size.control.sm,
     borderRadius: t.radii.full,
     backgroundColor: t.colors.surface,
-    borderWidth: t.borderWidth.thick,
-    borderColor: t.colors.hairline,
+    borderWidth: t.borderWidth.hairline,
+    borderColor: t.colors.border,
     alignItems: 'center',
     justifyContent: 'center',
   };
   const eyebrowRow: ViewStyle = { flexDirection: 'row', alignItems: 'center', gap: t.space[2] };
   const liveDot: ViewStyle = {
-    width: 8,
-    height: 8,
+    width: t.space[2],
+    height: t.space[2],
     borderRadius: t.radii.full,
     backgroundColor: t.colors.primary,
   };
@@ -128,7 +135,7 @@ export default function Timer() {
     justifyContent: 'center',
     paddingBottom: t.space[4],
   };
-  const spacer44: ViewStyle = { width: 44, height: 44 };
+  const spacer44: ViewStyle = { width: t.size.control.sm, height: t.size.control.sm };
 
   return (
     <Screen>
@@ -136,13 +143,13 @@ export default function Timer() {
         {/* Top row: ✕ · eyebrow · spacer */}
         <View style={topRow}>
           <Pressable
-            onPress={confirmAbandon}
+            onPress={minimize}
             accessibilityRole="button"
-            accessibilityLabel="Abandon this task"
+            accessibilityLabel="Minimize timer"
             style={closeBtn}
             hitSlop={8}
           >
-            <Ionicons name="close" size={22} color={t.colors.ink} />
+            <Ionicons name="chevron-down" size={t.iconSize.md} color={t.colors.ink} />
           </Pressable>
 
           <View style={eyebrowRow}>

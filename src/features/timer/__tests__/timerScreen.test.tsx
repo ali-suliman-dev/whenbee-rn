@@ -55,6 +55,9 @@ beforeEach(() => {
     pausedAccumMs: 0,
     pausedAt: null,
     isRunning: false,
+    guessMin: 0,
+    taskId: null,
+    suggestedHonestMin: 0,
   });
   useTasksStore.setState({ tasks: [] });
   useRewardStore.getState().clear();
@@ -65,16 +68,50 @@ beforeEach(() => {
 });
 
 describe('Live Timer screen', () => {
-  it('starts the timer store on mount with the task + honest estimate', () => {
-    const startSpy = jest.spyOn(useTimerStore.getState(), 'start');
+  // NOTE: these assert the resulting store STATE rather than spying `start`.
+  // jest.spyOn(store, 'start') doesn't reliably restore on this zustand singleton
+  // (the spy leaks across tests and stops calling through), which would mask a
+  // real fresh-start. Asserting the effect is both robust and what we care about.
+  it('starts the timer store on mount with the full calibration params', () => {
     render(<Timer />);
-    expect(startSpy).toHaveBeenCalledWith({
-      label: 'Leave for work',
+    const st = useTimerStore.getState();
+    expect(st.isRunning).toBe(true);
+    expect(typeof st.startedAt).toBe('number');
+    expect(st.taskLabel).toBe('Leave for work');
+    expect(st.category).toBe('getting_ready');
+    expect(st.estimateMin).toBe(28);
+    expect(st.guessMin).toBe(15);
+    expect(st.taskId).toBe('task-1');
+    expect(st.suggestedHonestMin).toBe(28);
+  });
+
+  it('attaches to a running session instead of restarting (preserves startedAt)', () => {
+    // A session is already running for this task (e.g. reopened from the bar).
+    useTimerStore.setState({
+      taskLabel: 'Leave for work',
       category: 'getting_ready',
       estimateMin: 28,
+      guessMin: 15,
+      taskId: 'task-1',
+      suggestedHonestMin: 28,
+      startedAt: 123456,
+      pausedAccumMs: 0,
+      pausedAt: null,
+      isRunning: true,
     });
+    render(<Timer />);
+    // A restart would overwrite startedAt with Date.now(); attach keeps it.
+    expect(useTimerStore.getState().startedAt).toBe(123456);
     expect(useTimerStore.getState().isRunning).toBe(true);
-    startSpy.mockRestore();
+  });
+
+  it('✕ minimizes: dismisses the sheet but keeps the timer running (no log)', () => {
+    render(<Timer />);
+    const applyLog = useCalibrationStore.getState().applyLog as jest.Mock;
+    fireEvent.press(screen.getByLabelText('Minimize timer'));
+    expect(mockDismiss).toHaveBeenCalled();
+    expect(useTimerStore.getState().isRunning).toBe(true);
+    expect(applyLog).not.toHaveBeenCalled();
   });
 
   it('renders the task name and the "you guessed" sub', () => {

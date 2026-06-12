@@ -67,6 +67,58 @@ describe('timerStore', () => {
     expect(state.pausedAccumMs).toBe(0);
   });
 
+  it('start defaults guessMin/suggestedHonestMin to estimateMin and taskId to null', () => {
+    useTimerStore.getState().start({ label: 'X', category: 'admin', estimateMin: 20 }, T0);
+    const st = useTimerStore.getState();
+    expect(st.guessMin).toBe(20);
+    expect(st.suggestedHonestMin).toBe(20);
+    expect(st.taskId).toBeNull();
+  });
+
+  it('start records the full calibration params when provided', () => {
+    useTimerStore.getState().start(
+      { label: 'Leave', category: 'getting_ready', estimateMin: 28, guessMin: 15, taskId: 'task-1', suggestedHonestMin: 28 },
+      T0,
+    );
+    const st = useTimerStore.getState();
+    expect(st.guessMin).toBe(15);
+    expect(st.taskId).toBe('task-1');
+    expect(st.suggestedHonestMin).toBe(28);
+  });
+
+  it('resumeFromKv restores guessMin, taskId, and suggestedHonestMin (full fidelity)', () => {
+    useTimerStore.getState().start(
+      { label: 'Leave', category: 'getting_ready', estimateMin: 28, guessMin: 15, taskId: 'task-1', suggestedHonestMin: 28 },
+      T0,
+    );
+    // wipe in-memory state but leave kv intact
+    useTimerStore.getState().cancel();
+    // cancel also clears kv, so re-persist by starting + manually restoring kv is
+    // not possible; instead persist then wipe ONLY the in-memory store.
+    useTimerStore.getState().start(
+      { label: 'Leave', category: 'getting_ready', estimateMin: 28, guessMin: 15, taskId: 'task-1', suggestedHonestMin: 28 },
+      T0,
+    );
+    useTimerStore.setState({
+      taskLabel: null,
+      category: null,
+      estimateMin: 0,
+      startedAt: null,
+      pausedAccumMs: 0,
+      pausedAt: null,
+      isRunning: false,
+      guessMin: 0,
+      taskId: null,
+      suggestedHonestMin: 0,
+    });
+    useTimerStore.getState().resumeFromKv();
+    const st = useTimerStore.getState();
+    expect(st.guessMin).toBe(15);
+    expect(st.taskId).toBe('task-1');
+    expect(st.suggestedHonestMin).toBe(28);
+    expect(st.startedAt).toBe(T0);
+  });
+
   it('resumeFromKv rehydrates a running timer that was persisted', () => {
     const s = useTimerStore.getState();
     s.start({ label: 'Vacuum', category: 'cleaning', estimateMin: 15 }, T0);
