@@ -30,3 +30,6 @@ export const INSIGHT_VARIANCE_HALF = 4; // compare var(last 4 lnr) vs var(first 
 
 /** Trend "stabilizing" caption threshold. */
 export const TREND_STABILIZING_DROP = 0.2;
+
+/** Sub-1-minute deposits are stored but never rendered (no "+0m"). */
+export const RECLAIM_MIN_DISPLAY = 1;
