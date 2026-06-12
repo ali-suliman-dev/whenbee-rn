@@ -4,12 +4,14 @@ import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { Screen } from '@/src/components/Screen';
 import { AppButton } from '@/src/components/AppButton';
+import { SheetGrabber } from '@/src/components/SheetGrabber';
 import { Toast } from '@/src/components/Toast';
 import { useTheme } from '@/src/theme/useTheme';
 import { type } from '@/src/theme/typography';
 import { useAddTask } from '@/src/features/add-task/useAddTask';
 import { CategoryChips } from '@/src/features/shared/CategoryChips';
 import { TimeChips } from '@/src/features/shared/TimeChips';
+import { GuessWheel } from '@/src/features/shared/GuessWheel';
 
 // ──────────────────────────────────────────────────────────────────────────────
 // Add Task (Screen 10, formSheet) — add an ad-hoc task and surface the honest
@@ -77,9 +79,11 @@ export default function AddTask() {
   return (
     <Screen>
       <ScrollView
-        contentContainerStyle={{ gap: t.space[5], paddingTop: t.space[4], paddingBottom: t.space[6] }}
+        contentContainerStyle={{ gap: t.space[5], paddingTop: t.space[3], paddingBottom: t.space[6] }}
         showsVerticalScrollIndicator={false}
       >
+        <SheetGrabber />
+
         <View style={{ gap: t.space[1] }}>
           <Text style={heading}>New task</Text>
           <Text style={sub}>What are you working on?</Text>
@@ -105,6 +109,7 @@ export default function AddTask() {
         <View style={{ gap: t.space[2] }}>
           <Text style={fieldLabel}>YOUR GUESS</Text>
           <TimeChips value={a.guessMin} onChange={a.setGuessMin} />
+          <GuessWheel value={a.guessMin} onChange={a.setGuessMin} />
         </View>
 
         {a.suggestion ? (
