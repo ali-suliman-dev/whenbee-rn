@@ -189,6 +189,9 @@ export const useCalibrationStore = create<CalibrationState>((set, get) => ({
       },
       recurring,
       recentClampedRatios,
+      // Task A.4 will pass the actual honest number shown in the UI; null triggers the
+      // engine fallback (honestNumber(estimate, M_before)) until then.
+      suggestedHonestMin: null,
     });
 
     // 6. Persist the raw event (always — abandoned logs are self-awareness data).
