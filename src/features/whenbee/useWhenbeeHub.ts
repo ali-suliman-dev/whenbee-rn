@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useCalibrationStore } from '@/src/stores/calibrationStore';
 import { useCategoriesStore } from '@/src/stores/categoriesStore';
 import { tierFor, CATEGORY_NAMES } from '@/src/engine';
@@ -33,6 +33,8 @@ export interface WhenbeeHubVM {
   tier: Tier;
   /** One cell per tracked category, ready for <Honeycomb size="hub" />. */
   cells: HoneycombCell[];
+  /** Re-pull the async reclaim totals (call on screen focus — deposits don't push). */
+  refresh: () => void;
 }
 
 /** Title-case a custom-category slug (e.g. "deep_work" → "Deep Work"). */
@@ -62,8 +64,12 @@ export function useWhenbeeHub(): WhenbeeHubVM {
   const categories = useCategoriesStore((s) => s.categories);
 
   const [reclaim, setReclaim] = useState(EMPTY_RECLAIM);
+  // A bump counter the screen ticks on focus to re-pull the async totals — a
+  // deposit during the live loop updates the bank but does NOT push to this hook.
+  const [focusTick, setFocusTick] = useState(0);
+  const refresh = useCallback(() => setFocusTick((n) => n + 1), []);
 
-  // Reclaim totals are an async read; refresh whenever the tracked set changes.
+  // Reclaim totals are an async read; refresh on tracked-set change AND on focus.
   useEffect(() => {
     let active = true;
     void loadReclaimSummary().then((summary) => {
@@ -78,7 +84,7 @@ export function useWhenbeeHub(): WhenbeeHubVM {
     return () => {
       active = false;
     };
-  }, [loadReclaimSummary, categories]);
+  }, [loadReclaimSummary, categories, focusTick]);
 
   // Cells + lead tier + blind spot derive synchronously from the calibration cache.
   const cells = useMemo<HoneycombCell[]>(
@@ -119,5 +125,6 @@ export function useWhenbeeHub(): WhenbeeHubVM {
     blindSpot,
     tier,
     cells,
+    refresh,
   };
 }
