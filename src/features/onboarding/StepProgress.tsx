@@ -19,7 +19,7 @@ export function StepProgress({ current, total = 3 }: { current: number; total?: 
           style={{
             flex: 1,
             height: 4,
-            borderRadius: t.radii.pill,
+            borderRadius: t.radii.full,
             backgroundColor: i <= current ? t.colors.primary : t.colors.hairline,
           }}
         />

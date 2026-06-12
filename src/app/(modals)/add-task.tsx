@@ -21,10 +21,9 @@ import { GuessWheel } from '@/src/features/shared/GuessWheel';
 // Actions gate gently on title + category (no scold).
 // ──────────────────────────────────────────────────────────────────────────────
 
-const TOAST_DISMISS_MS = 700; // let the toast land before the sheet closes
-
 export default function AddTask() {
   const t = useTheme();
+  const toastDismissMs = t.motion.pulse; // let the toast land before the sheet closes
   const a = useAddTask();
   const [toastVisible, setToastVisible] = useState(false);
   const dismissTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -38,18 +37,18 @@ export default function AddTask() {
   function handleAddToToday() {
     if (!a.addToToday()) return;
     setToastVisible(true);
-    dismissTimer.current = setTimeout(() => router.back(), TOAST_DISMISS_MS);
+    dismissTimer.current = setTimeout(() => router.back(), toastDismissMs);
   }
 
   const heading: TextStyle = { ...(type.subtitle as unknown as TextStyle), color: t.colors.ink };
   const sub: TextStyle = { ...(type.body as unknown as TextStyle), color: t.colors.inkSoft };
   const fieldLabel: TextStyle = { ...(type.eyebrow as unknown as TextStyle), color: t.colors.inkSoft };
 
-  const input: ViewStyle & TextStyle = {
+  const input: TextStyle = {
     ...(type.body as unknown as TextStyle),
     color: t.colors.ink,
     backgroundColor: t.colors.surface,
-    borderWidth: 1.5,
+    borderWidth: t.borderWidth.thin,
     borderColor: t.colors.hairline,
     borderRadius: t.radii.md,
     paddingHorizontal: t.space[4],
@@ -62,19 +61,12 @@ export default function AddTask() {
     flexDirection: 'row',
     alignItems: 'center',
     gap: t.space[2],
-    backgroundColor: t.colors.primaryTint,
+    backgroundColor: t.colors.primarySoft,
     borderRadius: t.radii.md,
     paddingHorizontal: t.space[4],
     paddingVertical: t.space[3],
   };
   const sugText: TextStyle = { ...(type.bodySm as unknown as TextStyle), color: t.colors.primary, flex: 1 };
-
-  const linkText: TextStyle = {
-    ...(type.bodySm as unknown as TextStyle),
-    color: t.colors.primary,
-    textAlign: 'center',
-    paddingVertical: t.space[2],
-  };
 
   return (
     <Screen>
@@ -129,13 +121,13 @@ export default function AddTask() {
             disabled={!a.canSubmit}
             onPress={a.onAddAndStart}
           />
-          <Text
-            style={[linkText, !a.canSubmit ? { opacity: 0.4 } : null]}
-            onPress={a.canSubmit ? handleAddToToday : undefined}
-            accessibilityRole="button"
-          >
-            Add to today
-          </Text>
+          <AppButton
+            label="Add to today"
+            variant="ghost"
+            fullWidth
+            disabled={!a.canSubmit}
+            onPress={handleAddToToday}
+          />
         </View>
       </ScrollView>
 

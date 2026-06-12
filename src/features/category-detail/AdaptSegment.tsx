@@ -34,10 +34,10 @@ export function AdaptSegment({ value, onChange }: AdaptSegmentProps) {
   const header: TextStyle = { ...(type.heading as unknown as TextStyle), color: t.colors.ink };
   const track: ViewStyle = {
     flexDirection: 'row',
-    backgroundColor: t.colors.paper,
-    borderRadius: t.radii.pill,
-    padding: 4,
-    gap: 4,
+    backgroundColor: t.colors.surfaceSunken,
+    borderRadius: t.radii.full,
+    padding: t.space[1],
+    gap: t.space[1],
   };
   const hint: TextStyle = { ...(type.caption as unknown as TextStyle), color: t.colors.inkSoft };
 
@@ -47,7 +47,7 @@ export function AdaptSegment({ value, onChange }: AdaptSegmentProps) {
       minHeight: 44,
       alignItems: 'center',
       justifyContent: 'center',
-      borderRadius: t.radii.pill,
+      borderRadius: t.radii.full,
       borderCurve: 'continuous',
       backgroundColor: selected ? t.colors.surface : 'transparent',
       ...(selected ? { boxShadow: `0px 1px 4px ${t.colors.shadowSoft}` } : {}),

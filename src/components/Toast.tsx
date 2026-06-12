@@ -20,7 +20,6 @@ import { AppText } from './AppText';
 // by a short-lived boolean in component state).
 // ──────────────────────────────────────────────────────────────────────────────
 
-const FADE_DURATION = 300;
 const AUTO_HIDE_MS = 1900;
 
 export function Toast({
@@ -35,29 +34,29 @@ export function Toast({
   const opacity = useSharedValue(0);
 
   useEffect(() => {
-    const dur = reducedMotion ? 0 : FADE_DURATION;
+    const dur = reducedMotion ? 0 : t.motion.toast;
     if (visible) {
       opacity.value = withTiming(1, { duration: dur });
     } else {
       opacity.value = withTiming(0, { duration: dur });
     }
-  }, [visible, reducedMotion, opacity]);
+  }, [visible, reducedMotion, opacity, t.motion.toast]);
 
   const animStyle = useAnimatedStyle(() => ({ opacity: opacity.value }));
 
   const pill: ViewStyle = {
     position: 'absolute',
-    bottom: 48,
+    bottom: t.space[12],
     alignSelf: 'center',
-    backgroundColor: t.colors.night,
-    borderRadius: t.radii.pill,
+    backgroundColor: t.colors.inverseSurface,
+    borderRadius: t.radii.full,
     paddingHorizontal: t.space[5],
     paddingVertical: t.space[3],
     maxWidth: '80%',
   };
 
   const textStyle: TextStyle = {
-    color: t.colors.onIndigo,
+    color: t.colors.inverseText,
     fontSize: t.fontSize.sm,
     fontWeight: t.fontWeight.medium as TextStyle['fontWeight'],
     textAlign: 'center',

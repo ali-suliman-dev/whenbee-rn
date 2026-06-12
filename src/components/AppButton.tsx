@@ -6,7 +6,7 @@ import Animated, {
   withSpring,
   useReducedMotion,
 } from 'react-native-reanimated';
-import * as Haptics from 'expo-haptics';
+import { haptics } from '@/src/lib/haptics';
 import { useTheme } from '@/src/theme/useTheme';
 import { AppText } from './AppText';
 import type { ReactNode } from 'react';
@@ -92,12 +92,12 @@ export function AppButton({
 
   function handlePressOut() {
     if (reducedMotion) return;
-    pressY.set(withSpring(0, { damping: 13, stiffness: 340 }));
+    pressY.set(withSpring(0, t.motion.spring));
   }
 
   const wrapper: ViewStyle = {
     alignSelf: fullWidth ? 'stretch' : 'flex-start',
-    opacity: disabled ? 0.4 : 1,
+    opacity: disabled ? t.opacity.disabled : 1,
     // Reserve the depth so the edge doesn't overlap siblings.
     paddingBottom: EDGE,
   };
@@ -110,14 +110,14 @@ export function AppButton({
     right: 0,
     bottom: 0,
     height: PILL_H,
-    borderRadius: t.radii.pill,
+    borderRadius: t.radii.full,
     borderCurve: 'continuous',
     backgroundColor: edge[resolved],
   };
 
   const pillContainer: ViewStyle = {
     height: PILL_H,
-    borderRadius: t.radii.pill,
+    borderRadius: t.radii.full,
     borderCurve: 'continuous',
     backgroundColor: bg[resolved],
     alignItems: 'center',
@@ -132,7 +132,7 @@ export function AppButton({
       accessibilityRole="button"
       disabled={disabled}
       onPress={() => {
-        Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
+        haptics.light();
         onPress();
       }}
       onPressIn={handlePressIn}

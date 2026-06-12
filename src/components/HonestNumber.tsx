@@ -52,7 +52,7 @@ export function HonestNumber({
   const row: ViewStyle = {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 2,
+    gap: t.space[0.5],
   };
 
   // Cast needed: `fontVariant` in our const type is readonly tuple, but TextStyle expects mutable
@@ -70,7 +70,7 @@ export function HonestNumber({
     color: t.colors.inkSoft,
     // Align visually to cap-height, not raw baseline
     alignSelf: 'flex-end',
-    paddingBottom: 2,
+    paddingBottom: t.space[0.5],
   };
 
   return (

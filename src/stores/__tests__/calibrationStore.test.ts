@@ -1,4 +1,5 @@
 import { useCalibrationStore } from '../calibrationStore';
+import { useCategoriesStore } from '../categoriesStore';
 import {
   createMemoryDatabase,
   makeCategoryStatsRepo,
@@ -7,6 +8,7 @@ import {
   type TaskEventRow,
 } from '@/src/db';
 import { priorFor } from '@/src/engine';
+import type { LogStatus, LogSource, AdaptSpeed } from '@/src/domain/types';
 
 const T0 = 1_000_000_000_000;
 
@@ -29,6 +31,8 @@ function seedEvent(over: Partial<TaskEventRow>): TaskEventRow {
     startedAt: null,
     endedAt: null,
     createdAt: T0,
+    suggestedHonestMin: null,
+    reclaimDividendMin: 0,
     ...over,
   };
 }
@@ -179,6 +183,7 @@ describe('calibrationStore — loadCategoryDetail', () => {
       priorMult: priorFor('cleaning'),
       adaptSpeed: 'balanced',
       updatedAt: T0,
+      reclaimedMinutes: 0,
     });
 
     // 8 completed events whose ln(ratio) variance SHRINKS over time:
@@ -244,6 +249,7 @@ describe('calibrationStore — resetCategory', () => {
       priorMult: priorFor('cleaning'),
       adaptSpeed: 'reactive',
       updatedAt: T0,
+      reclaimedMinutes: 0,
     });
     await db.insertTaskEvent(seedEvent({ id: 'r1', createdAt: T0 }));
     await db.insertTaskEvent(seedEvent({ id: 'r2', createdAt: T0 + 1 }));
@@ -271,5 +277,343 @@ describe('calibrationStore — resetCategory', () => {
     expect(cached?.n).toBe(0);
     expect(cached?.mEffective).toBeCloseTo(priorFor('cleaning'), 5);
     expect(cached?.tier).toBe('Raw');
+  });
+});
+
+describe('calibrationStore — reclaim deposit (Task A.4)', () => {
+  it('a counted log with suggestedHonestMin returns correct reclaimDeltaMin and banks lifetime + category', async () => {
+    const db = freshDb();
+    const res = await useCalibrationStore.getState().applyLog({
+      category: 'cleaning',
+      estimateMin: 15,
+      actualMin: 32,
+      suggestedHonestMin: 30,
+      status: 'completed',
+      source: 'timed',
+      adaptSpeed: 'balanced',
+      nowMs: T0,
+    });
+
+    // delta = max(0, |actual - estimate| - |actual - honest|)
+    // = max(0, |32-15| - |32-30|) = max(0, 17 - 2) = 15
+    expect(res.reclaimDeltaMin).toBe(15);
+    // Companion lifetime total AFTER this deposit (0 + 15).
+    expect(res.reclaimLifetimeMin).toBe(15);
+
+    // lifetime banked
+    const companion = await db.getCompanion();
+    expect(companion.reclaimedMinutesLifetime).toBe(15);
+
+    // category reclaimedMinutes incremented (starts at 0, +15 = 15)
+    const stat = await makeCategoryStatsRepo(db).get('cleaning');
+    expect(stat.reclaimedMinutes).toBe(15);
+  });
+
+  it('an abandoned log returns reclaimDeltaMin: 0 and does not change the lifetime', async () => {
+    const db = freshDb();
+    const res = await useCalibrationStore.getState().applyLog({
+      category: 'cleaning',
+      estimateMin: 15,
+      actualMin: 32,
+      suggestedHonestMin: 30,
+      status: 'abandoned',
+      source: 'timed',
+      adaptSpeed: 'balanced',
+      nowMs: T0,
+    });
+
+    expect(res.reclaimDeltaMin).toBe(0);
+    // Not counted → lifetime total is the unchanged current value (0).
+    expect(res.reclaimLifetimeMin).toBe(0);
+    const companion = await db.getCompanion();
+    expect(companion.reclaimedMinutesLifetime).toBe(0);
+  });
+
+  it('a log whose reclaimDeltaMin computes to 0 does not change the lifetime total', async () => {
+    const db = freshDb();
+    // estimate === suggestedHonestMin → delta is 0 (no improvement over naive)
+    const res = await useCalibrationStore.getState().applyLog({
+      category: 'cleaning',
+      estimateMin: 15,
+      actualMin: 30,
+      suggestedHonestMin: 15, // same as estimate → no reclaim
+      status: 'completed',
+      source: 'timed',
+      adaptSpeed: 'balanced',
+      nowMs: T0,
+    });
+
+    expect(res.reclaimDeltaMin).toBe(0);
+    // Counted but zero deposit → lifetime total unchanged (still 0).
+    expect(res.reclaimLifetimeMin).toBe(0);
+    const companion = await db.getCompanion();
+    expect(companion.reclaimedMinutesLifetime).toBe(0);
+  });
+
+  it('lifetime is non-decreasing at every step across a mixed sequence', async () => {
+    const db = freshDb();
+    const store = useCalibrationStore.getState();
+
+    interface Step {
+      estimateMin: number;
+      actualMin: number;
+      suggestedHonestMin: number;
+      status: LogStatus;
+      source: LogSource;
+      adaptSpeed: AdaptSpeed;
+    }
+
+    const steps: Step[] = [
+      { estimateMin: 15, actualMin: 32, suggestedHonestMin: 30, status: 'completed', source: 'timed', adaptSpeed: 'balanced' },
+      { estimateMin: 20, actualMin: 25, suggestedHonestMin: 22, status: 'completed', source: 'timed', adaptSpeed: 'balanced' },
+      { estimateMin: 10, actualMin: 40, suggestedHonestMin: 20, status: 'abandoned', source: 'timed', adaptSpeed: 'balanced' },
+      { estimateMin: 30, actualMin: 60, suggestedHonestMin: 55, status: 'completed', source: 'retro', adaptSpeed: 'reactive' },
+      { estimateMin: 5,  actualMin: 10, suggestedHonestMin: 9,  status: 'completed', source: 'timed', adaptSpeed: 'balanced' },
+      { estimateMin: 45, actualMin: 50, suggestedHonestMin: 48, status: 'completed', source: 'timed', adaptSpeed: 'balanced' },
+      { estimateMin: 60, actualMin: 60, suggestedHonestMin: 60, status: 'completed', source: 'retro', adaptSpeed: 'steady' },
+      { estimateMin: 15, actualMin: 18, suggestedHonestMin: 16, status: 'abandoned', source: 'timed', adaptSpeed: 'balanced' },
+      { estimateMin: 20, actualMin: 45, suggestedHonestMin: 40, status: 'completed', source: 'timed', adaptSpeed: 'balanced' },
+      { estimateMin: 10, actualMin: 11, suggestedHonestMin: 10, status: 'completed', source: 'timed', adaptSpeed: 'balanced' },
+      { estimateMin: 25, actualMin: 35, suggestedHonestMin: 30, status: 'completed', source: 'timed', adaptSpeed: 'reactive' },
+      { estimateMin: 15, actualMin: 50, suggestedHonestMin: 45, status: 'completed', source: 'timed', adaptSpeed: 'balanced' },
+      { estimateMin: 30, actualMin: 30, suggestedHonestMin: 30, status: 'completed', source: 'retro', adaptSpeed: 'balanced' },
+      { estimateMin: 10, actualMin: 20, suggestedHonestMin: 18, status: 'abandoned', source: 'timed', adaptSpeed: 'balanced' },
+      { estimateMin: 60, actualMin: 90, suggestedHonestMin: 85, status: 'completed', source: 'timed', adaptSpeed: 'balanced' },
+      { estimateMin: 5,  actualMin: 8,  suggestedHonestMin: 7,  status: 'completed', source: 'timed', adaptSpeed: 'balanced' },
+      { estimateMin: 20, actualMin: 22, suggestedHonestMin: 20, status: 'completed', source: 'retro', adaptSpeed: 'balanced' },
+      { estimateMin: 45, actualMin: 90, suggestedHonestMin: 80, status: 'completed', source: 'timed', adaptSpeed: 'reactive' },
+      { estimateMin: 30, actualMin: 35, suggestedHonestMin: 32, status: 'abandoned', source: 'timed', adaptSpeed: 'balanced' },
+      { estimateMin: 15, actualMin: 28, suggestedHonestMin: 25, status: 'completed', source: 'timed', adaptSpeed: 'balanced' },
+    ];
+
+    let prevLifetime = 0;
+    for (let i = 0; i < steps.length; i++) {
+      const step = steps[i]!;
+      await store.applyLog({ category: 'cleaning', ...step, nowMs: T0 + i });
+      const companion = await db.getCompanion();
+      expect(companion.reclaimedMinutesLifetime).toBeGreaterThanOrEqual(prevLifetime);
+      prevLifetime = companion.reclaimedMinutesLifetime;
+    }
+  });
+
+  it('lifetime equals the sum of reclaimDividendMin across all task_events after a sequence', async () => {
+    const db = freshDb();
+    const store = useCalibrationStore.getState();
+
+    const inputs = [
+      { estimateMin: 15, actualMin: 32, suggestedHonestMin: 30, status: 'completed' as LogStatus, source: 'timed' as LogSource, adaptSpeed: 'balanced' as AdaptSpeed },
+      { estimateMin: 20, actualMin: 25, suggestedHonestMin: 22, status: 'completed' as LogStatus, source: 'timed' as LogSource, adaptSpeed: 'balanced' as AdaptSpeed },
+      { estimateMin: 10, actualMin: 40, suggestedHonestMin: 20, status: 'abandoned' as LogStatus, source: 'timed' as LogSource, adaptSpeed: 'balanced' as AdaptSpeed },
+      { estimateMin: 30, actualMin: 60, suggestedHonestMin: 55, status: 'completed' as LogStatus, source: 'retro' as LogSource, adaptSpeed: 'reactive' as AdaptSpeed },
+      { estimateMin: 5,  actualMin: 10, suggestedHonestMin: 9,  status: 'completed' as LogStatus, source: 'timed' as LogSource, adaptSpeed: 'balanced' as AdaptSpeed },
+    ];
+
+    for (let i = 0; i < inputs.length; i++) {
+      await store.applyLog({ category: 'cleaning', ...inputs[i]!, nowMs: T0 + i });
+    }
+
+    const companion = await db.getCompanion();
+    const events = await makeTaskEventsRepo(db).listByCategory('cleaning', 50);
+    const sumDividends = events.reduce((acc, e) => acc + e.reclaimDividendMin, 0);
+
+    expect(companion.reclaimedMinutesLifetime).toBe(sumDividends);
+  });
+
+  it('retro log with suggestedHonestMin:null falls back to honestNumber(guess, M_before) and still deposits reclaim', async () => {
+    // cleaning prior = 2.0 → honestNumber(15, 2.0) = round5(30) = 30.
+    // actual=40: reclaimDividend(guess=15, actual=40, honestFallback=30)
+    //   = max(0, |40-15| - |40-30|) = max(0, 25 - 10) = 15.
+    // So even with no suggested honest (retro path), deposit > 0 via fallback.
+    const db = freshDb();
+    const res = await useCalibrationStore.getState().applyLog({
+      category: 'cleaning',
+      estimateMin: 15,
+      actualMin: 40,
+      suggestedHonestMin: null,
+      status: 'completed',
+      source: 'retro',
+      adaptSpeed: 'balanced',
+      nowMs: T0,
+    });
+
+    expect(res.counted).toBe(true);
+    // Engine fell back to honestNumber(15, 2.0)=30 → deposit = max(0, 25-10) = 15.
+    expect(res.reclaimDeltaMin).toBe(15);
+
+    const companion = await db.getCompanion();
+    expect(companion.reclaimedMinutesLifetime).toBe(15);
+  });
+});
+
+describe('calibrationStore — loadReclaimSummary', () => {
+  function trackCategories(ids: string[]): void {
+    useCategoriesStore.setState({
+      categories: ids.map((id) => ({ id, name: id, adaptSpeed: 'balanced' as AdaptSpeed })),
+    });
+  }
+
+  it('returns lifetime, byCategory (desc), biggestArea, and honestLogCount', async () => {
+    const db = freshDb();
+    trackCategories(['cleaning', 'admin', 'errands']);
+
+    // cleaning: 2 deposits (10 + 20 = 30), 3 trained logs
+    await db.upsertCategoryStat({
+      categoryId: 'cleaning',
+      n: 3,
+      logEwma: 0.4,
+      mEffective: 1.6,
+      sharpness: 40,
+      priorMult: priorFor('cleaning'),
+      adaptSpeed: 'balanced',
+      updatedAt: T0,
+      reclaimedMinutes: 30,
+    });
+    // admin: bigger reclaim (50), 5 trained logs → biggest area
+    await db.upsertCategoryStat({
+      categoryId: 'admin',
+      n: 5,
+      logEwma: 0.3,
+      mEffective: 1.4,
+      sharpness: 70,
+      priorMult: priorFor('admin'),
+      adaptSpeed: 'balanced',
+      updatedAt: T0,
+      reclaimedMinutes: 50,
+    });
+    // errands: no reclaim, no logs
+    await db.upsertCategoryStat({
+      categoryId: 'errands',
+      n: 0,
+      logEwma: 0,
+      mEffective: priorFor('errands'),
+      sharpness: 0,
+      priorMult: priorFor('errands'),
+      adaptSpeed: 'balanced',
+      updatedAt: T0,
+      reclaimedMinutes: 0,
+    });
+    // lifetime companion total banked independently of per-category.
+    await db.addReclaim(80);
+
+    const summary = await useCalibrationStore.getState().loadReclaimSummary();
+
+    expect(summary.lifetimeMin).toBe(80);
+
+    // sorted desc by reclaimedMinutes: admin (50) → cleaning (30) → errands (0)
+    expect(summary.byCategory.map((c) => c.categoryId)).toEqual(['admin', 'cleaning', 'errands']);
+    expect(summary.byCategory[0]?.reclaimedMinutes).toBe(50);
+
+    // biggest area = the max-reclaim category.
+    expect(summary.biggestArea?.categoryId).toBe('admin');
+    expect(summary.biggestArea?.reclaimedMinutes).toBe(50);
+
+    // honestLogCount = sum of trained logs (n) across tracked categories.
+    expect(summary.honestLogCount).toBe(8);
+  });
+
+  it('biggestArea is null when every category has zero reclaim', async () => {
+    freshDb();
+    trackCategories(['cleaning', 'admin']);
+    // No deposits, cold stats (repo seeds n=0, reclaimedMinutes=0).
+
+    const summary = await useCalibrationStore.getState().loadReclaimSummary();
+
+    expect(summary.lifetimeMin).toBe(0);
+    expect(summary.biggestArea).toBeNull();
+    expect(summary.honestLogCount).toBe(0);
+    expect(summary.byCategory.every((c) => c.reclaimedMinutes === 0)).toBe(true);
+  });
+});
+
+describe('calibrationStore — loadTodayReclaimMin (Task B.5)', () => {
+  // A fixed "now" at midday so we can place events earlier today and yesterday
+  // without straddling a real local-midnight boundary.
+  const NOON = new Date(2026, 5, 12, 12, 0, 0, 0).getTime();
+  const earlierToday = new Date(2026, 5, 12, 8, 30, 0, 0).getTime();
+  const yesterday = new Date(2026, 5, 11, 23, 30, 0, 0).getTime();
+
+  it('sums today\'s completed deposits and excludes yesterday', async () => {
+    const db = freshDb();
+
+    await db.insertTaskEvent(
+      seedEvent({ id: 't1', createdAt: earlierToday, reclaimDividendMin: 20, status: 'completed' }),
+    );
+    await db.insertTaskEvent(
+      seedEvent({ id: 't2', createdAt: NOON - 1000, reclaimDividendMin: 15, status: 'completed' }),
+    );
+    // Yesterday's deposit must NOT count toward today.
+    await db.insertTaskEvent(
+      seedEvent({ id: 'y1', createdAt: yesterday, reclaimDividendMin: 99, status: 'completed' }),
+    );
+
+    const total = await useCalibrationStore.getState().loadTodayReclaimMin(NOON);
+    expect(total).toBe(35);
+  });
+
+  it('ignores non-completed events even when dated today', async () => {
+    const db = freshDb();
+    await db.insertTaskEvent(
+      seedEvent({ id: 't1', createdAt: earlierToday, reclaimDividendMin: 10, status: 'completed' }),
+    );
+    // Abandoned today → carries a dividend field but is not a counted deposit.
+    await db.insertTaskEvent(
+      seedEvent({
+        id: 'a1',
+        createdAt: earlierToday,
+        reclaimDividendMin: 50,
+        status: 'abandoned',
+        actualMin: null,
+      }),
+    );
+
+    const total = await useCalibrationStore.getState().loadTodayReclaimMin(NOON);
+    expect(total).toBe(10);
+  });
+
+  it('returns 0 when nothing was banked today', async () => {
+    const db = freshDb();
+    await db.insertTaskEvent(
+      seedEvent({ id: 'y1', createdAt: yesterday, reclaimDividendMin: 40, status: 'completed' }),
+    );
+    const total = await useCalibrationStore.getState().loadTodayReclaimMin(NOON);
+    expect(total).toBe(0);
+  });
+});
+
+describe('calibrationStore — setReason is capture-only (Task B.5 invariant)', () => {
+  it('tagging a reason never changes mEffective or sharpness', async () => {
+    const db = freshDb();
+
+    // Apply a counted log so there's a real stat + a real event to tag.
+    const res = await useCalibrationStore.getState().applyLog({
+      category: 'cleaning',
+      estimateMin: 15,
+      actualMin: 40,
+      status: 'completed',
+      source: 'timed',
+      adaptSpeed: 'balanced',
+      nowMs: T0,
+    });
+
+    const before = useCalibrationStore.getState().statsByCategory.cleaning;
+    const persistedBefore = await makeCategoryStatsRepo(db).get('cleaning');
+    expect(before).toBeDefined();
+
+    // Capture a reason against the just-logged event.
+    await useCalibrationStore.getState().setReason(res.eventId, 'interrupted', 'manual');
+
+    const after = useCalibrationStore.getState().statsByCategory.cleaning;
+    const persistedAfter = await makeCategoryStatsRepo(db).get('cleaning');
+
+    // The model is byte-for-byte unchanged — the reason is a pure side channel.
+    expect(after?.mEffective).toBe(before?.mEffective);
+    expect(after?.sharpness).toBe(before?.sharpness);
+    expect(after?.n).toBe(before?.n);
+    expect(persistedAfter.mEffective).toBe(persistedBefore.mEffective);
+    expect(persistedAfter.sharpness).toBe(persistedBefore.sharpness);
+
+    // The reason actually landed in the capture-only store.
+    const tag = await db.getContextTag(res.eventId, 'reason');
+    expect(tag?.value).toBe('interrupted');
   });
 });

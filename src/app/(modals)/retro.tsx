@@ -1,4 +1,4 @@
-import { View, Text, TextInput, ScrollView, type ViewStyle, type TextStyle } from 'react-native';
+import { View, Text, TextInput, ScrollView, type TextStyle } from 'react-native';
 import { Screen } from '@/src/components/Screen';
 import { AppButton } from '@/src/components/AppButton';
 import { useTheme } from '@/src/theme/useTheme';
@@ -27,11 +27,11 @@ export default function Retro() {
     textAlign: 'center',
   };
 
-  const input: ViewStyle & TextStyle = {
+  const input: TextStyle = {
     ...(type.body as unknown as TextStyle),
     color: t.colors.ink,
     backgroundColor: t.colors.surface,
-    borderWidth: 1.5,
+    borderWidth: t.borderWidth.thin,
     borderColor: t.colors.hairline,
     borderRadius: t.radii.md,
     paddingHorizontal: t.space[4],

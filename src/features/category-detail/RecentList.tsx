@@ -59,12 +59,12 @@ function RecentRow({ row }: { row: RecentLog }) {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    marginBottom: 4,
+    marginBottom: t.space[1],
   };
   const label: TextStyle = { ...(type.bodySm as unknown as TextStyle), color: t.colors.ink };
   const ratio: TextStyle = {
     fontFamily: 'Inter-Bold',
-    fontSize: 14,
+    fontSize: t.fontSize.bodySm,
     color: ratioColor,
     fontVariant: ['tabular-nums'],
   };

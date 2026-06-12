@@ -51,6 +51,8 @@ export function useRetro(): UseRetroResult {
       categories.find((c) => c.id === category)?.adaptSpeed ?? 'balanced';
     const trimmedLabel = label.trim() || null;
 
+    // No honest number was surfaced to the user in the retro flow → pass null so
+    // the engine falls back to honestNumber(guess, M_before) for the reclaim anchor.
     const result = await applyLog({
       category,
       estimateMin: guessMin,
@@ -59,6 +61,7 @@ export function useRetro(): UseRetroResult {
       source: 'retro',
       adaptSpeed,
       label: trimmedLabel,
+      suggestedHonestMin: null,
     });
 
     useRewardStore.getState().setReward({

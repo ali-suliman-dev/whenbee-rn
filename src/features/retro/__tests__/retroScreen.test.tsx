@@ -11,12 +11,15 @@ jest.mock('expo-router', () => ({
 }));
 
 const okResult: LogResult = {
+  eventId: 'evt-test',
   counted: true,
   multiplier: 2,
   sharpness: 50,
   tierBefore: 'Setting',
   tierAfter: 'Setting',
   leveledUp: false,
+  reclaimDeltaMin: 0,
+  reclaimLifetimeMin: 0,
 };
 
 beforeEach(() => {
@@ -53,6 +56,9 @@ describe('Retro screen', () => {
     expect(arg.category).toBe('cleaning');
     expect(arg.estimateMin).toBe(15); // the guess (ratio = actual / guess)
     expect(arg.actualMin).toBe(30);
+    // Retro has no honest number surfaced to the user → null triggers the
+    // engine fallback: honestNumber(guess, M_before).
+    expect(arg.suggestedHonestMin).toBeNull();
 
     // Reward hand-off populated with the retro source + navigation.
     expect(useRewardStore.getState().result).toEqual(okResult);

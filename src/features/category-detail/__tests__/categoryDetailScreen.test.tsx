@@ -25,6 +25,8 @@ function event(over: Partial<TaskEventRow>): TaskEventRow {
     startedAt: null,
     endedAt: null,
     createdAt: T0,
+    suggestedHonestMin: null,
+    reclaimDividendMin: 0,
     ...over,
   };
 }
@@ -40,6 +42,7 @@ async function seed(opts: { withInsight: boolean }): Promise<Database> {
     priorMult: 2.0,
     adaptSpeed: 'balanced',
     updatedAt: T0,
+    reclaimedMinutes: 0,
   });
   if (opts.withInsight) {
     const actuals = [60, 15, 90, 12, 30, 30, 30, 30];

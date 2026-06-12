@@ -1,6 +1,7 @@
 import { clampRatio } from './ratio';
 import { alphaFor, updateEwma } from './ewma';
-import { blendWithPrior } from './multiplier';
+import { blendWithPrior, honestNumber } from './multiplier';
+import { reclaimDividendMinutes } from './reclaim';
 import { sharpnessFromWindow } from './sharpness';
 import type { AdaptSpeed, CategoryStats, LogSource, LogStatus } from '../domain/types';
 
@@ -17,10 +18,12 @@ export interface ApplyLogInput {
   source: LogSource;
   adaptSpeed: AdaptSpeed;
   prior: number;
-  category: RollingStat & { sharpness: number };
+  category: RollingStat & { sharpness: number; reclaimedMinutes: number };
   recurring: RollingStat | null;
   /** last SHARPNESS_WINDOW clamped ratios for this category, newest last, BEFORE this log */
   recentClampedRatios: number[];
+  /** honest number shown to the user at plan-time; null falls back to honestNumber(estimate, M_before) */
+  suggestedHonestMin: number | null;
 }
 
 export interface ApplyLogResult {
@@ -29,6 +32,7 @@ export interface ApplyLogResult {
   category: CategoryStats;
   recurring: RollingStat | null;
   sharpnessDelta: number;
+  reclaimDeltaMin: number; // minutes saved vs naive guess; 0 when not counted
 }
 
 /**
@@ -53,6 +57,7 @@ export function applyLog(input: ApplyLogInput): ApplyLogResult {
       category: { ...input.category, categoryId: '' } as CategoryStats,
       recurring: input.recurring,
       sharpnessDelta: 0,
+      reclaimDeltaMin: 0,
     };
   }
 
@@ -73,11 +78,18 @@ export function applyLog(input: ApplyLogInput): ApplyLogResult {
   const rawSharpness = sharpnessFromWindow(window);
   const sharpness = Math.max(input.category.sharpness, rawSharpness); // never decreases
 
+  // Use the honest number shown at plan-time; fall back to what the engine would have
+  // shown using M_before (pre-log multiplier), since that's what the user saw.
+  const honestShownMin =
+    input.suggestedHonestMin ?? honestNumber(input.estimateMin, input.category.mEffective);
+  const reclaimDeltaMin = reclaimDividendMinutes(input.estimateMin, input.actualMin, honestShownMin);
+
   return {
     ratioClamped,
     counted: true,
-    category: { categoryId: '', n: catN, logEwma: catEwma, mEffective: catM, sharpness },
+    category: { categoryId: '', n: catN, logEwma: catEwma, mEffective: catM, sharpness, reclaimedMinutes: input.category.reclaimedMinutes },
     recurring,
     sharpnessDelta: sharpness - input.category.sharpness,
+    reclaimDeltaMin,
   };
 }

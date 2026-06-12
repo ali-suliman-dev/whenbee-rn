@@ -3,13 +3,22 @@ import Today from '@/src/app/(tabs)/index';
 import { useCalibrationStore } from '@/src/stores/calibrationStore';
 import { useTasksStore } from '@/src/stores/tasksStore';
 
-jest.mock('expo-router', () => ({ router: { push: jest.fn() } }));
+jest.mock('expo-router', () => ({
+  router: { push: jest.fn() },
+  // useFocusEffect runs its effect immediately in tests (no navigation focus here).
+  useFocusEffect: (cb: () => void | (() => void)) => cb(),
+}));
 
 const T0 = 1_700_000_000_000;
 
 beforeEach(() => {
   useTasksStore.setState({ tasks: [] });
-  useCalibrationStore.setState({ logs: 0, statsByCategory: {}, hydrate: async () => {} });
+  useCalibrationStore.setState({
+    logs: 0,
+    statsByCategory: {},
+    hydrate: async () => {},
+    loadTodayReclaimMin: async () => 0,
+  });
 });
 
 describe('Today screen', () => {

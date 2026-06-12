@@ -10,7 +10,7 @@ import Animated, {
   Easing,
 } from 'react-native-reanimated';
 import Svg, { Rect } from 'react-native-svg';
-import * as Haptics from 'expo-haptics';
+import { haptics } from '@/src/lib/haptics';
 import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { useTheme } from '@/src/theme/useTheme';
 import { AppText } from './AppText';
@@ -71,7 +71,7 @@ export function Chip({
   }
 
   function handlePressIn() {
-    pressOpacity.set(reducedMotion ? 0.6 : withTiming(0.6, { duration: t.motion.fast, easing: EASE }));
+    pressOpacity.set(reducedMotion ? t.opacity.pressed : withTiming(t.opacity.pressed, { duration: t.motion.fast, easing: EASE }));
   }
   function handlePressOut() {
     pressOpacity.set(reducedMotion ? 1 : withTiming(1, { duration: t.motion.fast, easing: EASE }));
@@ -85,9 +85,8 @@ export function Chip({
     wasSelected.current = selected;
 
     if (!justSelected) return;
-    // services/* is off-limits to src/components (ESLint boundary), so we tap
-    // expo-haptics directly — the same pattern AppButton uses.
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
+    // haptics lives in lib/ (boundary-safe for src/components) — same as AppButton.
+    haptics.light();
     // Ping the ripple outward (restart from 0).
     if (!reducedMotion) {
       pulse.set(0);
@@ -102,7 +101,7 @@ export function Chip({
   const bx = PAD + inset;
   const rw = Math.max(0, box.w - STROKE);
   const rh = Math.max(0, box.h - STROKE);
-  const rr = Math.min(t.radii.pill, rh / 2);
+  const rr = Math.min(t.radii.full, rh / 2);
 
   // Ripple ring — expands outward from the chip edge while fading to nothing.
   const rippleProps = useAnimatedProps(() => {
@@ -123,27 +122,27 @@ export function Chip({
   const pressStyle = useAnimatedStyle(() => ({ opacity: pressOpacity.get() }));
   // Tint is instant — plain style, no animated interpolation.
   const tint: ViewStyle = {
-    backgroundColor: selected ? t.colors.primaryTint : t.colors.surface,
+    backgroundColor: selected ? t.colors.primarySoft : t.colors.surface,
   };
 
   const container: ViewStyle = {
     flexDirection: 'row',
     alignItems: 'center',
     gap: t.space[1],
-    borderRadius: t.radii.pill,
+    borderRadius: t.radii.full,
     borderCurve: 'continuous',
     paddingHorizontal: t.space[4],
     paddingVertical: t.space[2],
     ...(isAdd
       ? {
           backgroundColor: 'transparent',
-          borderWidth: 1.5,
+          borderWidth: t.borderWidth.thin,
           borderColor: t.colors.hairline,
           borderStyle: 'dashed' as ViewStyle['borderStyle'],
         }
       : {
           // Resting hairline always present; the indigo border is the SVG overlay.
-          borderWidth: 1,
+          borderWidth: t.borderWidth.hairline,
           borderColor: t.colors.hairline,
         }),
   };

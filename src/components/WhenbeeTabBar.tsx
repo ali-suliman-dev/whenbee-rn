@@ -5,10 +5,9 @@ import Animated, {
   useAnimatedStyle,
   withTiming,
   useReducedMotion,
-  Easing,
 } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import * as Haptics from 'expo-haptics';
+import { haptics } from '@/src/lib/haptics';
 import type { BottomTabBarProps } from '@react-navigation/bottom-tabs';
 import { useTheme } from '@/src/theme/useTheme';
 import { TabIcon, type TabIconName } from './TabIcon';
@@ -25,9 +24,7 @@ import { TabIcon, type TabIconName } from './TabIcon';
 // ease-out, no overshoot, no size pop. All reduced-motion guarded.
 // ──────────────────────────────────────────────────────────────────────────────
 
-const EASE = Easing.bezier(0.4, 0, 0.2, 1);
 const INDICATOR_W = 26;
-const PRESS_DIM = 0.55;
 
 // Custom glyph per route — drawn by TabIcon.
 const ICONS: Record<string, TabIconName> = {
@@ -51,8 +48,8 @@ export function WhenbeeTabBar({ state, descriptors, navigation }: BottomTabBarPr
   useEffect(() => {
     if (tabW <= 0) return;
     const x = state.index * tabW + (tabW - INDICATOR_W) / 2;
-    indicatorX.set(reducedMotion ? x : withTiming(x, { duration: t.motion.base, easing: EASE }));
-  }, [state.index, tabW, reducedMotion, indicatorX, t.motion.base]);
+    indicatorX.set(reducedMotion ? x : withTiming(x, { duration: t.motion.base, easing: t.motion.easing.standard }));
+  }, [state.index, tabW, reducedMotion, indicatorX, t.motion.base, t.motion.easing.standard]);
 
   const indicatorStyle = useAnimatedStyle(() => ({
     transform: [{ translateX: indicatorX.get() }],
@@ -66,7 +63,7 @@ export function WhenbeeTabBar({ state, descriptors, navigation }: BottomTabBarPr
   const bar: ViewStyle = {
     flexDirection: 'row',
     backgroundColor: t.colors.surface,
-    borderTopWidth: 1,
+    borderTopWidth: t.borderWidth.hairline,
     borderTopColor: t.colors.hairline,
     paddingTop: 8,
     paddingBottom: insets.bottom,
@@ -79,7 +76,7 @@ export function WhenbeeTabBar({ state, descriptors, navigation }: BottomTabBarPr
     left: 0,
     width: INDICATOR_W,
     height: 3,
-    borderRadius: t.radii.pill,
+    borderRadius: t.radii.full,
     backgroundColor: t.colors.primary,
   };
 
@@ -95,7 +92,7 @@ export function WhenbeeTabBar({ state, descriptors, navigation }: BottomTabBarPr
           typeof options.title === 'string' ? options.title : route.name;
 
         function onPress() {
-          Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
+          haptics.light();
           const event = navigation.emit({ type: 'tabPress', target: route.key, canPreventDefault: true });
           if (!focused && !event.defaultPrevented) navigation.navigate(route.name);
         }
@@ -132,19 +129,17 @@ function TabItem({
   const pressOpacity = useSharedValue(1);
 
   // Calming draw-on: a slow sine-eased reveal of the indigo glyph (TabIcon reads
-  // focusProgress to slide each stroke into view).
+  // focusProgress to slide each stroke into view). Only the *draw on* animates —
+  // blur snaps straight back to the resting glyph (no reverse un-draw).
   useEffect(() => {
     focusProgress.set(
-      reducedMotion
+      !focused || reducedMotion
         ? focused
           ? 1
           : 0
-        : withTiming(focused ? 1 : 0, {
-            duration: t.motion.draw,
-            easing: Easing.inOut(Easing.sin),
-          }),
+        : withTiming(1, { duration: t.motion.draw, easing: t.motion.easing.calm }),
     );
-  }, [focused, reducedMotion, focusProgress, t.motion.draw]);
+  }, [focused, reducedMotion, focusProgress, t.motion.draw, t.motion.easing.calm]);
 
   const pressStyle = useAnimatedStyle(() => ({ opacity: pressOpacity.get() }));
   const labelStyle = useAnimatedStyle(() => ({
@@ -152,14 +147,14 @@ function TabItem({
   }));
 
   function handlePressIn() {
-    pressOpacity.set(reducedMotion ? PRESS_DIM : withTiming(PRESS_DIM, { duration: t.motion.fast, easing: EASE }));
+    pressOpacity.set(reducedMotion ? t.opacity.pressed : withTiming(t.opacity.pressed, { duration: t.motion.fast, easing: t.motion.easing.standard }));
   }
   function handlePressOut() {
-    pressOpacity.set(reducedMotion ? 1 : withTiming(1, { duration: t.motion.fast, easing: EASE }));
+    pressOpacity.set(reducedMotion ? 1 : withTiming(1, { duration: t.motion.fast, easing: t.motion.easing.standard }));
   }
 
-  const item: ViewStyle = { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 3 };
-  const text: TextStyle = { fontSize: 11, fontWeight: '500' };
+  const item: ViewStyle = { flex: 1, alignItems: 'center', justifyContent: 'center', gap: t.space[1] };
+  const text: TextStyle = { fontSize: t.fontSize.xs, fontWeight: t.fontWeight.medium as TextStyle['fontWeight'] };
 
   return (
     <Pressable

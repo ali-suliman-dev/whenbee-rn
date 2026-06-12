@@ -8,6 +8,8 @@ import { type } from '@/src/theme/typography';
 import { useReward } from '@/src/features/reward/useReward';
 import { RewardBee } from '@/src/features/reward/RewardBee';
 import { HoneyBar } from '@/src/features/reward/HoneyBar';
+import { ReclaimDeposit } from '@/src/features/reward/ReclaimDeposit';
+import { ReasonChips } from '@/src/features/reward/ReasonChips';
 
 // ──────────────────────────────────────────────────────────────────────────────
 // Reward (Screen 4) — the dopamine payoff: logging IS the reward. Calm, flat
@@ -75,7 +77,7 @@ export default function Reward() {
   };
   const honeyPctText: TextStyle = {
     ...(type.multiplier as unknown as TextStyle),
-    color: t.colors.primary,
+    color: t.colors.amberText,
   };
   const numberRow: ViewStyle = { alignItems: 'center', gap: t.space[1] };
 
@@ -91,7 +93,7 @@ export default function Reward() {
           <Text style={headlineText}>{r.headline}</Text>
 
           <View style={numberRow}>
-            <HonestNumber size="xl" tone="indigo" value={String(r.actualMin)} unit="min" />
+            <HonestNumber size="xl" tone="ink" value={String(r.actualMin)} unit="min" />
             <Text style={subText}>you guessed {r.guessMin} — now we both know</Text>
           </View>
         </View>
@@ -106,12 +108,34 @@ export default function Reward() {
           <Text style={subText}>
             {r.categoryLabel} now reads {r.multiplier.toFixed(1)}× · multiplier updated quietly.
           </Text>
+
+          {/* Tangible payoff: the minutes this log just banked. Only when >= 1m —
+              never a "+0m". Staggered to land after the honey fill. */}
+          {r.reclaimDeltaMin >= 1 ? (
+            <ReclaimDeposit
+              reclaimDeltaMin={r.reclaimDeltaMin}
+              reclaimFrom={r.reclaimFrom}
+              reclaimTo={r.reclaimTo}
+              delayMs={t.motion.reveal}
+            />
+          ) : null}
+
+          {/* Capture-only: an optional "where'd the time go?" row, only when the run
+              diverged enough to be worth a why. Never blocks the two exits, never
+              touches the multiplier/honey/Reclaim — pure side-channel data. */}
+          {r.reasonDirection && r.eventId ? (
+            <ReasonChips
+              eventId={r.eventId}
+              direction={r.reasonDirection}
+              category={r.category}
+            />
+          ) : null}
         </View>
 
         {/* Ritual + CTAs */}
         <View style={{ gap: t.space[4], paddingBottom: t.space[4] }}>
           <Text style={ritualText}>{r.ritualLine}</Text>
-          <AppButton label="See my Whenbee" variant="indigo" fullWidth onPress={r.onSeeWhenbee} />
+          <AppButton label="See my Reclaim" variant="indigo" fullWidth onPress={r.onSeeWhenbee} />
           <AppButton label="Back to today" variant="ghost" fullWidth onPress={r.onBackToToday} />
         </View>
       </View>

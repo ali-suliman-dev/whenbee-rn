@@ -13,6 +13,8 @@ function makeEvent(overrides: Partial<TaskEventRow> = {}): TaskEventRow {
     startedAt: null,
     endedAt: null,
     createdAt: 1000,
+    suggestedHonestMin: null,
+    reclaimDividendMin: 0,
     ...overrides,
   };
 }
@@ -89,6 +91,7 @@ describe('memoryDatabase — category stats', () => {
       priorMult: 2.0,
       adaptSpeed: 'reactive',
       updatedAt: 12345,
+      reclaimedMinutes: 0,
     };
     await db.upsertCategoryStat(row);
     expect(await db.getCategoryStat('cleaning')).toEqual(row);

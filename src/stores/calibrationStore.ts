@@ -4,6 +4,8 @@ import {
   makeCategoryStatsRepo,
   makeTaskEventsRepo,
   makeRecurringRepo,
+  makeCompanionRepo,
+  makeContextTagRepo,
   type Database,
 } from '@/src/db';
 import {
@@ -48,15 +50,22 @@ export interface ApplyLogParams {
   recurringKey?: string | null;
   label?: string | null;
   nowMs?: number;
+  suggestedHonestMin?: number | null;
 }
 
 export interface LogResult {
+  /** The inserted task-event id (`makeId(createdAt)`) — lets the Reward screen tag
+   *  a capture-only reason against this exact row without re-querying. */
+  eventId: string;
   counted: boolean;
   multiplier: number;
   sharpness: number;
   tierBefore: Tier;
   tierAfter: Tier;
   leveledUp: boolean;
+  reclaimDeltaMin: number;
+  /** Lifetime reclaim total AFTER this log's deposit (unchanged when nothing banked). */
+  reclaimLifetimeMin: number;
 }
 
 /** A recent est-vs-actual receipt row for the category-detail screen (newest first). */
@@ -85,6 +94,25 @@ export interface CategoryDetail {
   recent: RecentLog[];
 }
 
+/** One tracked category's lifetime reclaim, for the hub's "biggest area" list. */
+export interface ReclaimByCategory {
+  categoryId: string;
+  name: string;
+  reclaimedMinutes: number;
+}
+
+/** Read-only snapshot of reclaim/companion state for the Whenbee hub. */
+export interface ReclaimSummary {
+  /** companion.reclaimedMinutesLifetime — the all-time banked total. */
+  lifetimeMin: number;
+  /** Per-category reclaim, sorted by minutes descending. */
+  byCategory: ReclaimByCategory[];
+  /** The category with the most reclaim, or null when every category is at 0. */
+  biggestArea: ReclaimByCategory | null;
+  /** Total trained (counted) logs across tracked categories — the provenance N. */
+  honestLogCount: number;
+}
+
 /** Display name for a seed category; title-cases a custom slug otherwise. */
 function detailCategoryName(id: string): string {
   const seed = CATEGORY_NAMES[id];
@@ -104,6 +132,15 @@ interface CalibrationState {
   hydrate: () => Promise<void>;
   applyLog: (input: ApplyLogParams) => Promise<LogResult>;
   loadCategoryDetail: (categoryId: string) => Promise<CategoryDetail>;
+  loadReclaimSummary: () => Promise<ReclaimSummary>;
+  /**
+   * CAPTURE-ONLY. Attach a free-form context tag (a reason) to a logged event.
+   * Pure side-channel analytics: it NEVER trains the model, touches the
+   * multiplier/honey, or banks reclaim. Safe to call (or skip) after a log.
+   */
+  setReason: (eventId: string, value: string, source: string) => Promise<void>;
+  /** Sum of reclaimDividendMin over today's (local-day) completed events. */
+  loadTodayReclaimMin: (nowMs?: number) => Promise<number>;
   resetCategory: (categoryId: string) => Promise<void>;
 }
 
@@ -119,6 +156,17 @@ async function resolveDb(get: () => CalibrationState, set: (p: Partial<Calibrati
 function makeId(createdAt: number): string {
   return `${createdAt}-${Math.random().toString(36).slice(2)}`;
 }
+
+/** Epoch-ms for local midnight of the day containing `nowMs` (device timezone). */
+function startOfLocalDay(nowMs: number): number {
+  const d = new Date(nowMs);
+  d.setHours(0, 0, 0, 0);
+  return d.getTime();
+}
+
+/** How far back the today-reclaim scan reads raw events. A day rarely exceeds
+ *  a handful of logs; this comfortably covers any realistic single day. */
+const TODAY_RECLAIM_SCAN_LIMIT = 200;
 
 export const useCalibrationStore = create<CalibrationState>((set, get) => ({
   logs: 0,
@@ -186,15 +234,18 @@ export const useCalibrationStore = create<CalibrationState>((set, get) => ({
         logEwma: prev.logEwma,
         mEffective: prev.mEffective,
         sharpness: prev.sharpness,
+        reclaimedMinutes: prev.reclaimedMinutes,
       },
       recurring,
       recentClampedRatios,
+      suggestedHonestMin: input.suggestedHonestMin ?? null,
     });
 
     // 6. Persist the raw event (always — abandoned logs are self-awareness data).
     const createdAt = nowMs;
+    const eventId = makeId(createdAt);
     await taskEventsRepo.insert({
-      id: makeId(createdAt),
+      id: eventId,
       category: input.category,
       label: input.label ?? null,
       estimateMin: input.estimateMin,
@@ -204,9 +255,16 @@ export const useCalibrationStore = create<CalibrationState>((set, get) => ({
       startedAt: null,
       endedAt: nowMs,
       createdAt,
+      suggestedHonestMin: input.suggestedHonestMin ?? null,
+      reclaimDividendMin: result.reclaimDeltaMin,
     });
 
     // 7. Persist updated stats only when the log trained the model.
+    const companionRepo = makeCompanionRepo(db);
+    // Lifetime total AFTER this log's deposit. For an uncounted/zero-deposit log
+    // it's the unchanged current total — read once below and overwritten when we
+    // actually bank, so the Reward count-up always lands on the live number.
+    let reclaimLifetimeMin = (await companionRepo.get()).reclaimedMinutesLifetime;
     if (result.counted) {
       await categoryStatsRepo.upsert({
         categoryId: input.category,
@@ -217,7 +275,13 @@ export const useCalibrationStore = create<CalibrationState>((set, get) => ({
         priorMult: prev.priorMult,
         adaptSpeed: input.adaptSpeed,
         updatedAt: nowMs,
+        reclaimedMinutes: prev.reclaimedMinutes,
       });
+      if (result.reclaimDeltaMin > 0) {
+        await companionRepo.deposit(result.reclaimDeltaMin);
+        await companionRepo.depositToCategory(input.category, result.reclaimDeltaMin);
+        reclaimLifetimeMin = (await companionRepo.get()).reclaimedMinutesLifetime;
+      }
       if (recurringKey && result.recurring) {
         await recurringRepo.upsert({
           key: recurringKey,
@@ -262,18 +326,28 @@ export const useCalibrationStore = create<CalibrationState>((set, get) => ({
         counted: result.counted,
       });
       if (leveledUp) analytics.capture('cell_capped', { tier: tierAfter });
+      if (result.reclaimDeltaMin >= 1) {
+        analytics.capture('reclaim_deposit', {
+          minutes: result.reclaimDeltaMin,
+          category: input.category,
+          source: input.source,
+        });
+      }
     } catch {
       // services are safe; this is belt-and-suspenders
     }
 
     // 10. Result for the UI.
     return {
+      eventId,
       counted: result.counted,
       multiplier: result.category.mEffective,
       sharpness: result.category.sharpness,
       tierBefore,
       tierAfter,
       leveledUp,
+      reclaimDeltaMin: result.reclaimDeltaMin,
+      reclaimLifetimeMin,
     };
   },
 
@@ -343,6 +417,67 @@ export const useCalibrationStore = create<CalibrationState>((set, get) => ({
     };
   },
 
+  loadReclaimSummary: async () => {
+    const db = await resolveDb(get, set);
+    const companionRepo = makeCompanionRepo(db);
+    const categoryStatsRepo = makeCategoryStatsRepo(db);
+
+    const companion = await companionRepo.get();
+    const tracked = useCategoriesStore.getState().categories;
+
+    const stats = await Promise.all(
+      tracked.map(async (cat) => {
+        const stat = await categoryStatsRepo.get(cat.id);
+        return { cat, stat };
+      }),
+    );
+
+    // Sorted desc by reclaimed minutes; the most-reclaimed category is the lead.
+    const byCategory: ReclaimByCategory[] = stats
+      .map(({ cat, stat }) => ({
+        categoryId: cat.id,
+        name: detailCategoryName(cat.id),
+        reclaimedMinutes: stat.reclaimedMinutes,
+      }))
+      .sort((a, b) => b.reclaimedMinutes - a.reclaimedMinutes);
+
+    const top = byCategory[0];
+    const biggestArea = top && top.reclaimedMinutes > 0 ? top : null;
+
+    const honestLogCount = stats.reduce((sum, { stat }) => sum + stat.n, 0);
+
+    return {
+      lifetimeMin: companion.reclaimedMinutesLifetime,
+      byCategory,
+      biggestArea,
+      honestLogCount,
+    };
+  },
+
+  setReason: async (eventId, value, source) => {
+    const db = await resolveDb(get, set);
+    // Capture-only side channel — writes a context tag and nothing else. No stat
+    // read, no applyLog, no reclaim: the model never sees this.
+    await makeContextTagRepo(db).setReason({
+      eventId,
+      key: 'reason',
+      value,
+      source,
+      createdAt: Date.now(),
+    });
+  },
+
+  loadTodayReclaimMin: async (nowMs) => {
+    const db = await resolveDb(get, set);
+    const taskEventsRepo = makeTaskEventsRepo(db);
+    const dayStart = startOfLocalDay(nowMs ?? Date.now());
+
+    const recent = await taskEventsRepo.listRecent(TODAY_RECLAIM_SCAN_LIMIT);
+    return recent
+      .filter((e) => e.status === 'completed' && e.createdAt >= dayStart)
+      .reduce((sum, e) => sum + e.reclaimDividendMin, 0);
+  },
+
   resetCategory: async (categoryId) => {
     const db = await resolveDb(get, set);
     const categoryStatsRepo = makeCategoryStatsRepo(db);
@@ -365,6 +500,7 @@ export const useCalibrationStore = create<CalibrationState>((set, get) => ({
       priorMult: prior,
       adaptSpeed,
       updatedAt: now,
+      reclaimedMinutes: 0,
     });
 
     // Patch the cache so dependent screens reflect the fresh prior immediately.

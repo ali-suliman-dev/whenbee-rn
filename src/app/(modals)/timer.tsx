@@ -50,16 +50,20 @@ export default function Timer() {
     category?: string;
     estimateMin?: string;
     guessMin?: string;
+    suggestedHonestMin?: string;
   }>();
 
   const estimateMin = num(params.estimateMin, 15);
   // guessMin drives calibration; fall back to the honest estimate if absent.
   const guessMin = num(params.guessMin, estimateMin);
+  // suggestedHonestMin = the honest number the user SAW; defaults to estimateMin
+  // (which IS the honest number from Today/Add-Task when not passed separately).
+  const suggestedHonestMin = num(params.suggestedHonestMin, estimateMin);
   const label = str(params.label, 'Focus session');
   const category = str(params.category, 'getting_ready');
   const taskId = Array.isArray(params.taskId) ? params.taskId[0] : params.taskId;
 
-  const timer = useTimer({ taskId, label, category, estimateMin, guessMin });
+  const timer = useTimer({ taskId, label, category, estimateMin, guessMin, suggestedHonestMin });
 
   // Pulsing indigo live dot (static under reduced motion).
   const pulse = useSharedValue(reducedMotion ? 1 : 0.4);
@@ -67,13 +71,13 @@ export default function Timer() {
     if (reducedMotion) return;
     pulse.value = withRepeat(
       withSequence(
-        withTiming(1, { duration: 700 }),
-        withTiming(0.4, { duration: 700 }),
+        withTiming(1, { duration: t.motion.pulse }),
+        withTiming(0.4, { duration: t.motion.pulse }),
       ),
       -1,
       false,
     );
-  }, [reducedMotion, pulse]);
+  }, [reducedMotion, pulse, t.motion.pulse]);
   const dotStyle = useAnimatedStyle(() => ({ opacity: pulse.value }));
 
   function confirmAbandon() {
@@ -97,9 +101,9 @@ export default function Timer() {
   const closeBtn: ViewStyle = {
     width: 44,
     height: 44,
-    borderRadius: t.radii.pill,
+    borderRadius: t.radii.full,
     backgroundColor: t.colors.surface,
-    borderWidth: 2,
+    borderWidth: t.borderWidth.thick,
     borderColor: t.colors.hairline,
     alignItems: 'center',
     justifyContent: 'center',
@@ -108,7 +112,7 @@ export default function Timer() {
   const liveDot: ViewStyle = {
     width: 8,
     height: 8,
-    borderRadius: 4,
+    borderRadius: t.radii.full,
     backgroundColor: t.colors.primary,
   };
   const eyebrowText: TextStyle = { ...(type.eyebrow as TextStyle), color: t.colors.inkSoft };

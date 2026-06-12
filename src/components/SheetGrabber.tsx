@@ -16,7 +16,7 @@ export function SheetGrabber() {
   const handle: ViewStyle = {
     width: HANDLE_W,
     height: HANDLE_H,
-    borderRadius: t.radii.pill,
+    borderRadius: t.radii.full,
     backgroundColor: t.colors.inkSoft,
     opacity: 0.35,
   };

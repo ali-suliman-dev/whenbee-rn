@@ -14,6 +14,7 @@ export interface CategoryStatRow {
   priorMult: number;
   adaptSpeed: AdaptSpeed;
   updatedAt: number;
+  reclaimedMinutes: number;
 }
 
 /** A single raw log row (system of record). */
@@ -28,6 +29,8 @@ export interface TaskEventRow {
   startedAt: number | null;
   endedAt: number | null;
   createdAt: number;
+  suggestedHonestMin: number | null;
+  reclaimDividendMin: number;
 }
 
 /** Per recurring-task rolling stats (keyed by `${categoryId}:${normalizedLabel}`). */
@@ -38,4 +41,18 @@ export interface RecurringStatRow {
   logEwma: number;
   mEffective: number;
   updatedAt: number;
+}
+
+/** Single-row companion aggregate (the Reclaim bank). */
+export interface CompanionRow {
+  reclaimedMinutesLifetime: number;
+}
+
+/** A context tag attached to a task event (capture-only; never read by the model). */
+export interface ContextTagRow {
+  eventId: string;
+  key: string;
+  value: string;
+  source: string;
+  createdAt: number;
 }

@@ -17,8 +17,6 @@ import { useTheme } from '@/src/theme/useTheme';
 // that still delivers the "you can see the honey ripen" beat.
 // ──────────────────────────────────────────────────────────────────────────────
 
-const FILL_DURATION = 900;
-
 export function HoneyBar({ pct }: { pct: number }) {
   const t = useTheme();
   const reducedMotion = useReducedMotion();
@@ -31,20 +29,20 @@ export function HoneyBar({ pct }: { pct: number }) {
       progress.value = clamped;
       return;
     }
-    progress.value = withTiming(clamped, { duration: FILL_DURATION });
-  }, [clamped, reducedMotion, progress]);
+    progress.value = withTiming(clamped, { duration: t.motion.honeyFill });
+  }, [clamped, reducedMotion, progress, t.motion.honeyFill]);
 
   const fillStyle = useAnimatedStyle(() => ({ width: `${progress.value}%` }));
 
   const track: ViewStyle = {
-    height: 12,
-    borderRadius: t.radii.pill,
-    backgroundColor: t.colors.accentTint,
+    height: t.space[3],
+    borderRadius: t.radii.full,
+    backgroundColor: t.colors.accentSoft,
     overflow: 'hidden',
   };
   const fill: ViewStyle = {
     height: '100%',
-    borderRadius: t.radii.pill,
+    borderRadius: t.radii.full,
     backgroundColor: t.colors.accent,
   };
 

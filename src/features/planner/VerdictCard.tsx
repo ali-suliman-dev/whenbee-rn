@@ -27,13 +27,13 @@ export function VerdictCard({
   const t = useTheme();
 
   const amberCard = {
-    backgroundColor: t.colors.accentTint,
+    backgroundColor: t.colors.accentSoft,
     borderColor: t.colors.accentEdge,
   };
 
   if (verdict.kind === 'fits') {
     return (
-      <Card style={{ backgroundColor: t.colors.primaryTint, borderColor: t.colors.primary }}>
+      <Card style={{ backgroundColor: t.colors.primarySoft, borderColor: t.colors.primary }}>
         <AppText variant="body" style={{ color: t.colors.ink }}>
           This fits. Start on time and you&apos;ll finish by {formatClock(deadline)}.
         </AppText>

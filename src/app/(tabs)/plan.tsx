@@ -207,7 +207,7 @@ function LabelField({ value, onChange }: { value: string; onChange: (v: string) 
       placeholder="e.g. Make breakfast"
       placeholderTextColor={t.colors.inkSoft}
       style={{
-        borderWidth: 1,
+        borderWidth: t.borderWidth.hairline,
         borderColor: t.colors.hairline,
         borderRadius: t.radii.md,
         paddingHorizontal: t.space[3],
@@ -264,7 +264,7 @@ function ReprojectSheet({
   const t = useTheme();
   return (
     <Modal visible={diff !== null} transparent animationType="slide" onRequestClose={onCancel}>
-      <View style={{ flex: 1, justifyContent: 'flex-end', backgroundColor: 'rgba(0,0,0,0.35)' }}>
+      <View style={{ flex: 1, justifyContent: 'flex-end', backgroundColor: t.colors.scrim }}>
         <View
           style={{
             backgroundColor: t.colors.bg,
@@ -278,13 +278,13 @@ function ReprojectSheet({
           {diff && (
             <View style={{ gap: t.space[4] }}>
               <View style={{ flexDirection: 'row', gap: t.space[6] }}>
-                <View style={{ gap: 2 }}>
+                <View style={{ gap: t.space[0.5] }}>
                   <AppText variant="caption">Was starting</AppText>
                   <AppText variant="body" style={{ fontVariant: ['tabular-nums'] }}>
                     {formatClock(diff.oldStartBy)}
                   </AppText>
                 </View>
-                <View style={{ gap: 2 }}>
+                <View style={{ gap: t.space[0.5] }}>
                   <AppText variant="caption">Now starts</AppText>
                   <AppText variant="body" style={{ color: t.colors.amberText, fontVariant: ['tabular-nums'] }}>
                     {diff.newResult.verdict.kind === 'push-deadline'
@@ -322,7 +322,7 @@ function VerdictCardLite({ verdict, deadline }: { verdict: ReprojectDiff['newRes
   else msg = `Won't fit by ${formatClock(deadline)} — finish by ${formatClock(verdict.feasibleDeadline)} or cut tasks.`;
   const tone = verdict.kind === 'fits' ? t.colors.ink : t.colors.amberText;
   return (
-    <Card style={verdict.kind === 'fits' ? undefined : { backgroundColor: t.colors.accentTint, borderColor: t.colors.accentEdge }}>
+    <Card style={verdict.kind === 'fits' ? undefined : { backgroundColor: t.colors.accentSoft, borderColor: t.colors.accentEdge }}>
       <AppText variant="body" style={{ color: tone }}>
         {msg}
       </AppText>
