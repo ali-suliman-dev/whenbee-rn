@@ -12,3 +12,10 @@ jest.mock('expo-sqlite/kv-store', () => {
 });
 
 jest.mock('expo-haptics', () => ({ impactAsync: jest.fn(() => Promise.resolve()), ImpactFeedbackStyle: { Light: 'light' }, notificationAsync: jest.fn(() => Promise.resolve()), NotificationFeedbackType: { Success: 'success', Error: 'error' } }));
+
+// Patch react-native-reanimated mock: add useReducedMotion (not included by default)
+jest.mock('react-native-reanimated', () => {
+  const Reanimated = require('react-native-reanimated/mock');
+  Reanimated.useReducedMotion = () => false;
+  return Reanimated;
+});
