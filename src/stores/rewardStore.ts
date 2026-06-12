@@ -20,6 +20,11 @@ interface RewardState {
   label: string | null;
   /** How the log was captured — drives the reward headline (retro → "Caught up"). */
   source: LogSource;
+  /**
+   * The full applyLog outcome. Carries `reclaimDeltaMin` (minutes just banked) and
+   * `reclaimLifetimeMin` (the post-deposit lifetime total) through to the Reward
+   * screen's deposit beat — no separate plumbing needed; they ride on the result.
+   */
   result: LogResult | null;
   setReward: (p: {
     actualMin: number;

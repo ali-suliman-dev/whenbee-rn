@@ -60,6 +60,8 @@ export interface LogResult {
   tierAfter: Tier;
   leveledUp: boolean;
   reclaimDeltaMin: number;
+  /** Lifetime reclaim total AFTER this log's deposit (unchanged when nothing banked). */
+  reclaimLifetimeMin: number;
 }
 
 /** A recent est-vs-actual receipt row for the category-detail screen (newest first). */
@@ -234,6 +236,11 @@ export const useCalibrationStore = create<CalibrationState>((set, get) => ({
     });
 
     // 7. Persist updated stats only when the log trained the model.
+    const companionRepo = makeCompanionRepo(db);
+    // Lifetime total AFTER this log's deposit. For an uncounted/zero-deposit log
+    // it's the unchanged current total — read once below and overwritten when we
+    // actually bank, so the Reward count-up always lands on the live number.
+    let reclaimLifetimeMin = (await companionRepo.get()).reclaimedMinutesLifetime;
     if (result.counted) {
       await categoryStatsRepo.upsert({
         categoryId: input.category,
@@ -247,9 +254,9 @@ export const useCalibrationStore = create<CalibrationState>((set, get) => ({
         reclaimedMinutes: prev.reclaimedMinutes,
       });
       if (result.reclaimDeltaMin > 0) {
-        const companionRepo = makeCompanionRepo(db);
         await companionRepo.deposit(result.reclaimDeltaMin);
         await companionRepo.depositToCategory(input.category, result.reclaimDeltaMin);
+        reclaimLifetimeMin = (await companionRepo.get()).reclaimedMinutesLifetime;
       }
       if (recurringKey && result.recurring) {
         await recurringRepo.upsert({
@@ -315,6 +322,7 @@ export const useCalibrationStore = create<CalibrationState>((set, get) => ({
       tierAfter,
       leveledUp,
       reclaimDeltaMin: result.reclaimDeltaMin,
+      reclaimLifetimeMin,
     };
   },
 

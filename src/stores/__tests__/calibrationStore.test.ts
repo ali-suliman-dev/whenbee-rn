@@ -297,6 +297,8 @@ describe('calibrationStore — reclaim deposit (Task A.4)', () => {
     // delta = max(0, |actual - estimate| - |actual - honest|)
     // = max(0, |32-15| - |32-30|) = max(0, 17 - 2) = 15
     expect(res.reclaimDeltaMin).toBe(15);
+    // Companion lifetime total AFTER this deposit (0 + 15).
+    expect(res.reclaimLifetimeMin).toBe(15);
 
     // lifetime banked
     const companion = await db.getCompanion();
@@ -321,6 +323,8 @@ describe('calibrationStore — reclaim deposit (Task A.4)', () => {
     });
 
     expect(res.reclaimDeltaMin).toBe(0);
+    // Not counted → lifetime total is the unchanged current value (0).
+    expect(res.reclaimLifetimeMin).toBe(0);
     const companion = await db.getCompanion();
     expect(companion.reclaimedMinutesLifetime).toBe(0);
   });
@@ -340,6 +344,8 @@ describe('calibrationStore — reclaim deposit (Task A.4)', () => {
     });
 
     expect(res.reclaimDeltaMin).toBe(0);
+    // Counted but zero deposit → lifetime total unchanged (still 0).
+    expect(res.reclaimLifetimeMin).toBe(0);
     const companion = await db.getCompanion();
     expect(companion.reclaimedMinutesLifetime).toBe(0);
   });

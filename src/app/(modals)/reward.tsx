@@ -8,6 +8,7 @@ import { type } from '@/src/theme/typography';
 import { useReward } from '@/src/features/reward/useReward';
 import { RewardBee } from '@/src/features/reward/RewardBee';
 import { HoneyBar } from '@/src/features/reward/HoneyBar';
+import { ReclaimDeposit } from '@/src/features/reward/ReclaimDeposit';
 
 // ──────────────────────────────────────────────────────────────────────────────
 // Reward (Screen 4) — the dopamine payoff: logging IS the reward. Calm, flat
@@ -106,12 +107,23 @@ export default function Reward() {
           <Text style={subText}>
             {r.categoryLabel} now reads {r.multiplier.toFixed(1)}× · multiplier updated quietly.
           </Text>
+
+          {/* Tangible payoff: the minutes this log just banked. Only when >= 1m —
+              never a "+0m". Staggered to land after the honey fill. */}
+          {r.reclaimDeltaMin >= 1 ? (
+            <ReclaimDeposit
+              reclaimDeltaMin={r.reclaimDeltaMin}
+              reclaimFrom={r.reclaimFrom}
+              reclaimTo={r.reclaimTo}
+              delayMs={t.motion.reveal}
+            />
+          ) : null}
         </View>
 
         {/* Ritual + CTAs */}
         <View style={{ gap: t.space[4], paddingBottom: t.space[4] }}>
           <Text style={ritualText}>{r.ritualLine}</Text>
-          <AppButton label="See my Whenbee" variant="indigo" fullWidth onPress={r.onSeeWhenbee} />
+          <AppButton label="See my Reclaim" variant="indigo" fullWidth onPress={r.onSeeWhenbee} />
           <AppButton label="Back to today" variant="ghost" fullWidth onPress={r.onBackToToday} />
         </View>
       </View>
