@@ -132,7 +132,7 @@ export function Chip({
     borderRadius: t.radii.full,
     borderCurve: 'continuous',
     paddingHorizontal: t.space[4],
-    paddingVertical: t.space[2],
+    paddingVertical: t.space[2.5],
     ...(isAdd
       ? {
           backgroundColor: 'transparent',

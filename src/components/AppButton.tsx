@@ -14,27 +14,29 @@ import type { ReactNode } from 'react';
 // ──────────────────────────────────────────────────────────────────────────────
 // Tactile Pill Button — Flat Tactical UI
 //
-// A pill sitting on a solid colored bottom "edge" (full-width, same radius — reads
-// as one physical button, not a detached line). On press the pill drops DOWN onto
-// the edge and the edge compresses, then springs back — a real push. Same look as
-// the Today + FAB.
-//
 // Variants
 //   indigo  — primary action (bg: primary, label: onIndigo, edge: primaryEdge)
 //   amber   — reward / scarce action (bg: accent, label: onAmber, edge: accentEdge)
-//   ghost   — secondary / destructive (bg: surface, label: ink, edge: hairline)
+//   ghost   — secondary / destructive (flat surface + hairline border, NO edge)
 //
-// Backward-compat: existing call sites used variant="primary"|"secondary"|"ghost".
-// "primary" maps → "indigo", "secondary" maps → "ghost" so old code keeps working.
+// Depth: FILLED variants (indigo/amber) sit on a solid colored bottom edge and
+// drop onto it on press — a real physical push. GHOST is flat: a hairline border
+// and a subtle scale(0.97) on press. The coin-edge on a ghost read as a stray
+// detached underline, so it's gone.
+//
+// Sizes (size prop) drive the pill height from size.control — 44pt HIG floor.
+//
+// Backward-compat: "primary" → "indigo", "secondary" → "ghost".
 // ──────────────────────────────────────────────────────────────────────────────
 
 type NewVariant = 'indigo' | 'amber' | 'ghost';
 type LegacyVariant = 'primary' | 'secondary';
 type Variant = NewVariant | LegacyVariant;
+type Size = 'sm' | 'md' | 'lg';
 
-const PILL_H = 52; // pill height
-const EDGE = 6; // how far the darker edge peeks below the pill (the 3D depth)
-const DROP = EDGE - 1; // how far the pill drops on press (compresses onto the edge)
+const EDGE = 6; // how far the darker edge peeks below a FILLED pill (the 3D depth)
+const DROP = EDGE - 1; // how far a filled pill drops on press (compresses onto the edge)
+const GHOST_PRESS_SCALE = 0.97; // ghost has no edge — a subtle squeeze carries the press
 
 function resolveVariant(v: Variant): NewVariant {
   if (v === 'primary') return 'indigo';
@@ -46,6 +48,7 @@ export function AppButton({
   label,
   onPress,
   variant = 'indigo',
+  size = 'md',
   disabled = false,
   fullWidth = false,
   icon,
@@ -53,6 +56,7 @@ export function AppButton({
   label: string;
   onPress: () => void;
   variant?: Variant;
+  size?: Size;
   disabled?: boolean;
   fullWidth?: boolean;
   icon?: ReactNode;
@@ -61,6 +65,9 @@ export function AppButton({
   const reducedMotion = useReducedMotion();
 
   const resolved = resolveVariant(variant);
+  const isGhost = resolved === 'ghost';
+  const PILL_H = t.size.control[size];
+  const labelSize = size === 'sm' ? t.fontSize.base : t.fontSize.md;
 
   const bg: Record<NewVariant, string> = {
     indigo: t.colors.primary,
@@ -75,35 +82,40 @@ export function AppButton({
   const edge: Record<NewVariant, string> = {
     indigo: t.colors.primaryEdge,
     amber: t.colors.accentEdge,
-    ghost: t.colors.hairline,
+    ghost: 'transparent',
   };
 
-  // The pill drops onto its edge on press, then springs back.
+  // Filled pills drop onto the edge; ghost squeezes. One shared value per path.
   const pressY = useSharedValue(0);
+  const pressScale = useSharedValue(1);
 
   const pillStyle = useAnimatedStyle(() => ({
-    transform: [{ translateY: pressY.get() }],
+    transform: [{ translateY: pressY.get() }, { scale: pressScale.get() }],
   }));
 
   function handlePressIn() {
     if (reducedMotion) return;
-    pressY.set(withTiming(DROP, { duration: t.motion.press }));
+    if (isGhost) pressScale.set(withSpring(GHOST_PRESS_SCALE, t.motion.spring));
+    else pressY.set(withTiming(DROP, { duration: t.motion.press }));
   }
 
   function handlePressOut() {
     if (reducedMotion) return;
-    pressY.set(withSpring(0, t.motion.spring));
+    if (isGhost) pressScale.set(withSpring(1, t.motion.spring));
+    else pressY.set(withSpring(0, t.motion.spring));
   }
 
   const wrapper: ViewStyle = {
     alignSelf: fullWidth ? 'stretch' : 'flex-start',
     opacity: disabled ? t.opacity.disabled : 1,
-    // Reserve the depth so the edge doesn't overlap siblings.
-    paddingBottom: EDGE,
+    // Reserve the depth so a filled pill's edge doesn't overlap siblings. Ghost
+    // is flat, so it claims no extra bottom space (keeps it aligned with a filled
+    // sibling: the filled pill's reserved EDGE matches the ghost border thickness).
+    paddingBottom: isGhost ? 0 : EDGE,
   };
 
-  // A full-height darker layer sitting EDGE px below the pill — only its bottom
-  // sliver shows, reading as one solid 3D edge (not a detached line).
+  // Solid colored depth edge (filled variants only). Its bottom sliver reads as
+  // one 3D edge, not a detached line.
   const edgeBase: ViewStyle = {
     position: 'absolute',
     left: 0,
@@ -125,6 +137,10 @@ export function AppButton({
     flexDirection: 'row',
     gap: t.space[2],
     paddingHorizontal: t.space[5],
+    // Ghost reads as a flat outlined control — hairline border, no depth.
+    ...(isGhost
+      ? { borderWidth: t.borderWidth.hairline, borderColor: t.colors.border }
+      : null),
   };
 
   return (
@@ -139,15 +155,15 @@ export function AppButton({
       onPressOut={handlePressOut}
       style={wrapper}
     >
-      {/* Solid colored depth edge behind the pill */}
-      <View style={edgeBase} />
+      {/* Solid colored depth edge behind FILLED pills only */}
+      {isGhost ? null : <View style={edgeBase} />}
 
       {/* Pill surface */}
       <Animated.View style={[pillContainer, pillStyle]}>
         {icon ?? null}
         <AppText
           style={{
-            fontSize: t.fontSize.md,
+            fontSize: labelSize,
             fontWeight: t.fontWeight.bold as TextStyle['fontWeight'],
             color: fg[resolved],
           }}
