@@ -17,6 +17,8 @@ interface OnboardingState {
   togglePick: (cat: PickedCategory) => void;
   /** Marks onboarding done (sets the boot-gate flag). */
   complete: () => void;
+  /** Flips the hydration gate once persisted state has been read. */
+  setHydrated: () => void;
   /** Test/reset helper — clears selection + flag. */
   reset: () => void;
 }
@@ -37,6 +39,7 @@ export const useOnboardingStore = create<OnboardingState>()(
           };
         }),
       complete: () => set({ completed: true }),
+      setHydrated: () => set({ hydrated: true }),
       reset: () => set({ completed: false, picked: [] }),
     }),
     {
@@ -44,7 +47,9 @@ export const useOnboardingStore = create<OnboardingState>()(
       storage: createJSONStorage(() => zustandKv),
       // Only the boot-gate flag + picks need to survive a relaunch.
       partialize: (s) => ({ completed: s.completed, picked: s.picked }),
-      onRehydrateStorage: () => () => useOnboardingStore.setState({ hydrated: true }),
+      // Storage is synchronous, so this runs during create() — call the action
+      // via the captured state, never the still-uninitialized store const (TDZ).
+      onRehydrateStorage: (state) => () => state.setHydrated(),
     },
   ),
 );
