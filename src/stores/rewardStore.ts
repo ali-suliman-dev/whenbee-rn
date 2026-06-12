@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import type { LogResult } from './calibrationStore';
+import type { LogSource } from '@/src/domain/types';
 
 // ──────────────────────────────────────────────────────────────────────────────
 // rewardStore — transient hand-off from Timer/Retro → Reward screen.
@@ -17,6 +18,8 @@ interface RewardState {
   guessMin: number;
   category: string;
   label: string | null;
+  /** How the log was captured — drives the reward headline (retro → "Caught up"). */
+  source: LogSource;
   result: LogResult | null;
   setReward: (p: {
     actualMin: number;
@@ -24,6 +27,8 @@ interface RewardState {
     category: string;
     label: string | null;
     result: LogResult;
+    /** Defaults to 'timed' when omitted (keeps the Timer call site terse). */
+    source?: LogSource;
   }) => void;
   clear: () => void;
 }
@@ -33,11 +38,12 @@ const CLEARED = {
   guessMin: 0,
   category: '',
   label: null,
+  source: 'timed' as LogSource,
   result: null,
 } as const;
 
 export const useRewardStore = create<RewardState>((set) => ({
   ...CLEARED,
-  setReward: (p) => set({ ...p }),
+  setReward: (p) => set({ ...p, source: p.source ?? 'timed' }),
   clear: () => set({ ...CLEARED }),
 }));

@@ -1,18 +1,120 @@
-import { View } from 'react-native';
-import { router } from 'expo-router';
+import { View, Text, type ViewStyle, type TextStyle } from 'react-native';
 import { Screen } from '@/src/components/Screen';
 import { AppText } from '@/src/components/AppText';
 import { AppButton } from '@/src/components/AppButton';
+import { HonestNumber } from '@/src/components/HonestNumber';
+import { useTheme } from '@/src/theme/useTheme';
+import { type } from '@/src/theme/typography';
+import { useReward } from '@/src/features/reward/useReward';
+import { RewardBee } from '@/src/features/reward/RewardBee';
+import { HoneyBar } from '@/src/features/reward/HoneyBar';
+
+// ──────────────────────────────────────────────────────────────────────────────
+// Reward (Screen 4) — the dopamine payoff: logging IS the reward. Calm, flat
+// reveal (full confetti/bloom choreography is a LATER phase). Reads the
+// ephemeral rewardStore hand-off via useReward; clears it on leave.
+//
+// THE ONE primary action: See my Whenbee (ghost secondary: Back to today).
+// Deep-linked with no log → a graceful "nothing to celebrate yet" fallback.
+// ──────────────────────────────────────────────────────────────────────────────
 
 export default function Reward() {
+  const t = useTheme();
+  const r = useReward();
+
+  const center: ViewStyle = {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    gap: t.space[5],
+  };
+  const headlineText: TextStyle = {
+    ...(type.title as unknown as TextStyle),
+    color: t.colors.ink,
+    textAlign: 'center',
+  };
+  const subText: TextStyle = {
+    ...(type.caption as unknown as TextStyle),
+    color: t.colors.inkSoft,
+    textAlign: 'center',
+  };
+  const capEyebrow: TextStyle = {
+    ...(type.eyebrow as unknown as TextStyle),
+    color: t.colors.accent,
+    textAlign: 'center',
+  };
+  const ritualText: TextStyle = {
+    ...(type.bodySm as unknown as TextStyle),
+    color: t.colors.inkSoft,
+    textAlign: 'center',
+  };
+
+  if (!r.hasReward) {
+    return (
+      <Screen>
+        <View style={center}>
+          <AppText style={headlineText}>Nothing to celebrate yet</AppText>
+          <Text style={subText}>Log something and the honey will ripen here.</Text>
+        </View>
+        <View style={{ paddingBottom: t.space[4] }}>
+          <AppButton label="Back to today" variant="ghost" fullWidth onPress={r.onBackToToday} />
+        </View>
+      </Screen>
+    );
+  }
+
+  // ── Honey row pieces ──
+  const honeyHeaderRow: ViewStyle = {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  };
+  const honeyLabel: TextStyle = {
+    ...(type.eyebrow as unknown as TextStyle),
+    color: t.colors.inkSoft,
+  };
+  const honeyPctText: TextStyle = {
+    ...(type.multiplier as unknown as TextStyle),
+    color: t.colors.primary,
+  };
+  const numberRow: ViewStyle = { alignItems: 'center', gap: t.space[1] };
+
   return (
     <Screen>
-      <View style={{ flex: 1, justifyContent: 'center', gap: 12 }}>
-        <AppText variant="display">Reward</AppText>
-        <AppText variant="body">Task completion celebration lives here.</AppText>
+      <View style={{ flex: 1, justifyContent: 'space-between', paddingTop: t.space[4] }}>
+        {/* Hero + numbers */}
+        <View style={{ alignItems: 'center', gap: t.space[5], paddingTop: t.space[2] }}>
+          {r.capEyebrow ? <Text style={capEyebrow}>{r.capEyebrow}</Text> : null}
+
+          <RewardBee sealed={r.sealed} />
+
+          <Text style={headlineText}>{r.headline}</Text>
+
+          <View style={numberRow}>
+            <HonestNumber size="xl" tone="indigo" value={String(r.actualMin)} unit="min" />
+            <Text style={subText}>you guessed {r.guessMin} — now we both know</Text>
+          </View>
+        </View>
+
+        {/* Honey row */}
+        <View style={{ gap: t.space[2] }}>
+          <View style={honeyHeaderRow}>
+            <Text style={honeyLabel}>HONEY</Text>
+            <Text style={honeyPctText}>{r.honeyPct}%</Text>
+          </View>
+          <HoneyBar pct={r.honeyPct} />
+          <Text style={subText}>
+            {r.categoryLabel} now reads {r.multiplier.toFixed(1)}× · multiplier updated quietly.
+          </Text>
+        </View>
+
+        {/* Ritual + CTAs */}
+        <View style={{ gap: t.space[4], paddingBottom: t.space[4] }}>
+          <Text style={ritualText}>{r.ritualLine}</Text>
+          <AppButton label="See my Whenbee" variant="indigo" fullWidth onPress={r.onSeeWhenbee} />
+          <AppButton label="Back to today" variant="ghost" fullWidth onPress={r.onBackToToday} />
+        </View>
       </View>
-      <AppButton label="Close" variant="secondary" onPress={() => router.dismiss()} />
-      <View style={{ height: 16 }} />
     </Screen>
   );
 }
