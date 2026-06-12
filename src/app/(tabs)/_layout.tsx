@@ -1,7 +1,7 @@
 import { Tabs } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '@/src/theme/useTheme';
+import { AnimatedTabIcon, TabBarButton } from '@/src/components/TabBarButton';
 
 export default function TabsLayout() {
   const t = useTheme();
@@ -11,6 +11,7 @@ export default function TabsLayout() {
       screenOptions={{
         tabBarActiveTintColor: t.colors.primary,
         tabBarInactiveTintColor: t.colors.inkSoft,
+        tabBarButton: (props) => <TabBarButton {...props} />,
         tabBarStyle: {
           backgroundColor: t.colors.surface,
           borderTopWidth: 1,
@@ -33,28 +34,36 @@ export default function TabsLayout() {
         name="index"
         options={{
           title: 'Today',
-          tabBarIcon: ({ color, size }) => <Ionicons name="home-outline" size={size} color={color} />,
+          tabBarIcon: ({ size, focused }) => (
+            <AnimatedTabIcon name="home" size={size} focused={focused} />
+          ),
         }}
       />
       <Tabs.Screen
         name="plan"
         options={{
           title: 'Plan',
-          tabBarIcon: ({ color, size }) => <Ionicons name="calendar-outline" size={size} color={color} />,
+          tabBarIcon: ({ size, focused }) => (
+            <AnimatedTabIcon name="calendar" size={size} focused={focused} />
+          ),
         }}
       />
       <Tabs.Screen
         name="whenbee"
         options={{
           title: 'Whenbee',
-          tabBarIcon: ({ color, size }) => <Ionicons name="bug-outline" size={size} color={color} />,
+          tabBarIcon: ({ size, focused }) => (
+            <AnimatedTabIcon name="bug" size={size} focused={focused} />
+          ),
         }}
       />
       <Tabs.Screen
         name="patterns"
         options={{
           title: 'Patterns',
-          tabBarIcon: ({ color, size }) => <Ionicons name="pulse-outline" size={size} color={color} />,
+          tabBarIcon: ({ size, focused }) => (
+            <AnimatedTabIcon name="pulse" size={size} focused={focused} />
+          ),
         }}
       />
     </Tabs>
