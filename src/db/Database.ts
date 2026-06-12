@@ -2,7 +2,7 @@
 // a concrete adapter. Two adapters implement it: an in-memory Map-backed one
 // (tests + fallback) and the real expo-sqlite one (device runtime).
 
-import type { CategoryStatRow, RecurringStatRow, TaskEventRow } from './types';
+import type { CategoryStatRow, CompanionRow, ContextTagRow, RecurringStatRow, TaskEventRow } from './types';
 
 export interface Database {
   getCategoryStat(categoryId: string): Promise<CategoryStatRow | null>;
@@ -18,4 +18,12 @@ export interface Database {
 
   getRecurringStat(key: string): Promise<RecurringStatRow | null>;
   upsertRecurringStat(row: RecurringStatRow): Promise<void>;
+
+  getCompanion(): Promise<CompanionRow>;
+  /** Monotonic increment — adds deltaMin to reclaimedMinutesLifetime; never decrements. */
+  addReclaim(deltaMin: number): Promise<void>;
+  /** Monotonic increment — adds deltaMin to category_stats.reclaimedMinutes for the given category. */
+  addCategoryReclaim(categoryId: string, deltaMin: number): Promise<void>;
+  /** Capture-only; never read by the calibration model. */
+  insertContextTag(row: ContextTagRow): Promise<void>;
 }

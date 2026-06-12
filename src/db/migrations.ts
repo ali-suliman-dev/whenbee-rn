@@ -41,4 +41,26 @@ export const MIGRATIONS: string[] = [
     updated_at INTEGER NOT NULL
   );
   `,
+
+  // 0002 — Reclaim bank + reason capture (additive, monotonic).
+  `
+  ALTER TABLE category_stats ADD COLUMN reclaimed_minutes REAL NOT NULL DEFAULT 0;
+  ALTER TABLE task_events ADD COLUMN suggested_honest_min REAL;
+  ALTER TABLE task_events ADD COLUMN reclaim_dividend_min REAL NOT NULL DEFAULT 0;
+
+  CREATE TABLE IF NOT EXISTS companion (
+    id INTEGER PRIMARY KEY CHECK (id = 1),
+    reclaimed_minutes_lifetime REAL NOT NULL DEFAULT 0
+  );
+  INSERT OR IGNORE INTO companion (id, reclaimed_minutes_lifetime) VALUES (1, 0);
+
+  CREATE TABLE IF NOT EXISTS log_tags (
+    event_id TEXT NOT NULL,
+    key TEXT NOT NULL,
+    value TEXT NOT NULL,
+    source TEXT NOT NULL,
+    created_at INTEGER NOT NULL,
+    PRIMARY KEY (event_id, key)
+  );
+  `,
 ];

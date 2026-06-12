@@ -18,7 +18,7 @@ export interface ApplyLogInput {
   source: LogSource;
   adaptSpeed: AdaptSpeed;
   prior: number;
-  category: RollingStat & { sharpness: number };
+  category: RollingStat & { sharpness: number; reclaimedMinutes: number };
   recurring: RollingStat | null;
   /** last SHARPNESS_WINDOW clamped ratios for this category, newest last, BEFORE this log */
   recentClampedRatios: number[];
@@ -87,7 +87,7 @@ export function applyLog(input: ApplyLogInput): ApplyLogResult {
   return {
     ratioClamped,
     counted: true,
-    category: { categoryId: '', n: catN, logEwma: catEwma, mEffective: catM, sharpness },
+    category: { categoryId: '', n: catN, logEwma: catEwma, mEffective: catM, sharpness, reclaimedMinutes: input.category.reclaimedMinutes },
     recurring,
     sharpnessDelta: sharpness - input.category.sharpness,
     reclaimDeltaMin,

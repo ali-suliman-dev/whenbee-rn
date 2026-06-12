@@ -23,6 +23,7 @@ function seedRow(categoryId: string): CategoryStatRow {
     priorMult: prior,
     adaptSpeed: 'balanced',
     updatedAt: 0,
+    reclaimedMinutes: 0,
   };
 }
 

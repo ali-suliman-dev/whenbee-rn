@@ -29,6 +29,8 @@ function seedEvent(over: Partial<TaskEventRow>): TaskEventRow {
     startedAt: null,
     endedAt: null,
     createdAt: T0,
+    suggestedHonestMin: null,
+    reclaimDividendMin: 0,
     ...over,
   };
 }
@@ -179,6 +181,7 @@ describe('calibrationStore — loadCategoryDetail', () => {
       priorMult: priorFor('cleaning'),
       adaptSpeed: 'balanced',
       updatedAt: T0,
+      reclaimedMinutes: 0,
     });
 
     // 8 completed events whose ln(ratio) variance SHRINKS over time:
@@ -244,6 +247,7 @@ describe('calibrationStore — resetCategory', () => {
       priorMult: priorFor('cleaning'),
       adaptSpeed: 'reactive',
       updatedAt: T0,
+      reclaimedMinutes: 0,
     });
     await db.insertTaskEvent(seedEvent({ id: 'r1', createdAt: T0 }));
     await db.insertTaskEvent(seedEvent({ id: 'r2', createdAt: T0 + 1 }));

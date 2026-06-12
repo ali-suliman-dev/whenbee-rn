@@ -186,6 +186,7 @@ export const useCalibrationStore = create<CalibrationState>((set, get) => ({
         logEwma: prev.logEwma,
         mEffective: prev.mEffective,
         sharpness: prev.sharpness,
+        reclaimedMinutes: prev.reclaimedMinutes,
       },
       recurring,
       recentClampedRatios,
@@ -207,6 +208,8 @@ export const useCalibrationStore = create<CalibrationState>((set, get) => ({
       startedAt: null,
       endedAt: nowMs,
       createdAt,
+      suggestedHonestMin: null,
+      reclaimDividendMin: 0,
     });
 
     // 7. Persist updated stats only when the log trained the model.
@@ -220,6 +223,7 @@ export const useCalibrationStore = create<CalibrationState>((set, get) => ({
         priorMult: prev.priorMult,
         adaptSpeed: input.adaptSpeed,
         updatedAt: nowMs,
+        reclaimedMinutes: prev.reclaimedMinutes,
       });
       if (recurringKey && result.recurring) {
         await recurringRepo.upsert({
@@ -368,6 +372,7 @@ export const useCalibrationStore = create<CalibrationState>((set, get) => ({
       priorMult: prior,
       adaptSpeed,
       updatedAt: now,
+      reclaimedMinutes: 0,
     });
 
     // Patch the cache so dependent screens reflect the fresh prior immediately.

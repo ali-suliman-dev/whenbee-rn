@@ -11,7 +11,7 @@ import * as SQLite from 'expo-sqlite';
 import { runMigrations } from './client';
 import type { Database } from './Database';
 import type { AdaptSpeed, LogSource, LogStatus } from '@/src/domain/types';
-import type { CategoryStatRow, RecurringStatRow, TaskEventRow } from './types';
+import type { CategoryStatRow, CompanionRow, ContextTagRow, RecurringStatRow, TaskEventRow } from './types';
 
 interface TaskEventDbRow {
   id: string;
@@ -24,6 +24,8 @@ interface TaskEventDbRow {
   started_at: number | null;
   ended_at: number | null;
   created_at: number;
+  suggested_honest_min: number | null;
+  reclaim_dividend_min: number;
 }
 
 interface CategoryStatDbRow {
@@ -35,6 +37,11 @@ interface CategoryStatDbRow {
   prior_mult: number;
   adapt_speed: string;
   updated_at: number;
+  reclaimed_minutes: number;
+}
+
+interface CompanionDbRow {
+  reclaimed_minutes_lifetime: number;
 }
 
 interface RecurringStatDbRow {
@@ -58,6 +65,8 @@ function mapTaskEvent(r: TaskEventDbRow): TaskEventRow {
     startedAt: r.started_at,
     endedAt: r.ended_at,
     createdAt: r.created_at,
+    suggestedHonestMin: r.suggested_honest_min,
+    reclaimDividendMin: r.reclaim_dividend_min,
   };
 }
 
@@ -71,6 +80,7 @@ function mapCategoryStat(r: CategoryStatDbRow): CategoryStatRow {
     priorMult: r.prior_mult,
     adaptSpeed: r.adapt_speed as AdaptSpeed,
     updatedAt: r.updated_at,
+    reclaimedMinutes: r.reclaimed_minutes,
   };
 }
 
@@ -101,8 +111,8 @@ export async function createSqliteDatabase(name = 'whenbee.db'): Promise<Databas
     async upsertCategoryStat(row: CategoryStatRow): Promise<void> {
       await db.runAsync(
         `INSERT INTO category_stats
-           (category_id, ewma_logr, n, m_effective, sharpness, prior_mult, adapt_speed, updated_at)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+           (category_id, ewma_logr, n, m_effective, sharpness, prior_mult, adapt_speed, updated_at, reclaimed_minutes)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
          ON CONFLICT(category_id) DO UPDATE SET
            ewma_logr = excluded.ewma_logr,
            n = excluded.n,
@@ -110,7 +120,8 @@ export async function createSqliteDatabase(name = 'whenbee.db'): Promise<Databas
            sharpness = excluded.sharpness,
            prior_mult = excluded.prior_mult,
            adapt_speed = excluded.adapt_speed,
-           updated_at = excluded.updated_at`,
+           updated_at = excluded.updated_at,
+           reclaimed_minutes = excluded.reclaimed_minutes`,
         row.categoryId,
         row.logEwma,
         row.n,
@@ -118,15 +129,17 @@ export async function createSqliteDatabase(name = 'whenbee.db'): Promise<Databas
         row.sharpness,
         row.priorMult,
         row.adaptSpeed,
-        row.updatedAt
+        row.updatedAt,
+        row.reclaimedMinutes
       );
     },
 
     async insertTaskEvent(row: TaskEventRow): Promise<void> {
       await db.runAsync(
         `INSERT INTO task_events
-           (id, category, label, estimate_min, actual_min, status, source, started_at, ended_at, created_at)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+           (id, category, label, estimate_min, actual_min, status, source,
+            started_at, ended_at, created_at, suggested_honest_min, reclaim_dividend_min)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
         row.id,
         row.category,
         row.label,
@@ -136,7 +149,9 @@ export async function createSqliteDatabase(name = 'whenbee.db'): Promise<Databas
         row.source,
         row.startedAt,
         row.endedAt,
-        row.createdAt
+        row.createdAt,
+        row.suggestedHonestMin,
+        row.reclaimDividendMin
       );
     },
 
@@ -186,6 +201,40 @@ export async function createSqliteDatabase(name = 'whenbee.db'): Promise<Databas
         row.n,
         row.mEffective,
         row.updatedAt
+      );
+    },
+
+    async getCompanion(): Promise<CompanionRow> {
+      const row = await db.getFirstAsync<CompanionDbRow>(
+        'SELECT reclaimed_minutes_lifetime FROM companion WHERE id = 1'
+      );
+      return { reclaimedMinutesLifetime: row?.reclaimed_minutes_lifetime ?? 0 };
+    },
+
+    async addReclaim(deltaMin: number): Promise<void> {
+      await db.runAsync(
+        'UPDATE companion SET reclaimed_minutes_lifetime = reclaimed_minutes_lifetime + ? WHERE id = 1',
+        deltaMin
+      );
+    },
+
+    async addCategoryReclaim(categoryId: string, deltaMin: number): Promise<void> {
+      await db.runAsync(
+        'UPDATE category_stats SET reclaimed_minutes = reclaimed_minutes + ? WHERE category_id = ?',
+        deltaMin,
+        categoryId
+      );
+    },
+
+    async insertContextTag(row: ContextTagRow): Promise<void> {
+      await db.runAsync(
+        `INSERT OR REPLACE INTO log_tags (event_id, key, value, source, created_at)
+         VALUES (?, ?, ?, ?, ?)`,
+        row.eventId,
+        row.key,
+        row.value,
+        row.source,
+        row.createdAt
       );
     },
   };

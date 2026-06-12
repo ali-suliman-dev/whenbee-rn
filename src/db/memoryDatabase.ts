@@ -3,12 +3,14 @@
 // fully synchronous; the async signatures satisfy the port contract.
 
 import type { Database } from './Database';
-import type { CategoryStatRow, RecurringStatRow, TaskEventRow } from './types';
+import type { CategoryStatRow, CompanionRow, ContextTagRow, RecurringStatRow, TaskEventRow } from './types';
 
 export function createMemoryDatabase(): Database {
   const categoryStats = new Map<string, CategoryStatRow>();
   const recurringStats = new Map<string, RecurringStatRow>();
   const events = new Map<string, TaskEventRow>();
+  const contextTags = new Map<string, ContextTagRow>();
+  const companion: CompanionRow = { reclaimedMinutesLifetime: 0 };
 
   /** Newest first by createdAt, sliced to `limit`. */
   function sortedEvents(rows: TaskEventRow[], limit: number): TaskEventRow[] {
@@ -44,6 +46,24 @@ export function createMemoryDatabase(): Database {
     },
     async upsertRecurringStat(row: RecurringStatRow): Promise<void> {
       recurringStats.set(row.key, { ...row });
+    },
+
+    async getCompanion(): Promise<CompanionRow> {
+      return { ...companion };
+    },
+    async addReclaim(deltaMin: number): Promise<void> {
+      companion.reclaimedMinutesLifetime += deltaMin;
+    },
+    async addCategoryReclaim(categoryId: string, deltaMin: number): Promise<void> {
+      const existing = categoryStats.get(categoryId);
+      if (existing === undefined) return;
+      categoryStats.set(categoryId, {
+        ...existing,
+        reclaimedMinutes: existing.reclaimedMinutes + deltaMin,
+      });
+    },
+    async insertContextTag(row: ContextTagRow): Promise<void> {
+      contextTags.set(`${row.eventId}:${row.key}`, { ...row });
     },
   };
 }

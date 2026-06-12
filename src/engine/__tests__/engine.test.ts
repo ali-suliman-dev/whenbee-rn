@@ -102,7 +102,7 @@ describe('applyLog monotonic sharpness', () => {
       source: 'timed',
       adaptSpeed: 'balanced',
       prior: 2.0,
-      category: { n: 8, logEwma: Math.log(2), mEffective: 2.0, sharpness: 90 },
+      category: { n: 8, logEwma: Math.log(2), mEffective: 2.0, sharpness: 90, reclaimedMinutes: 0 },
       recurring: null,
       recentClampedRatios: [1, 1, 1, 1, 1, 1, 6],
       suggestedHonestMin: null,
@@ -119,7 +119,7 @@ describe('applyLog monotonic sharpness', () => {
       source: 'timed',
       adaptSpeed: 'balanced',
       prior: 2.0,
-      category: { n: 3, logEwma: 0.1, mEffective: 1.8, sharpness: 50 },
+      category: { n: 3, logEwma: 0.1, mEffective: 1.8, sharpness: 50, reclaimedMinutes: 0 },
       recurring: null,
       recentClampedRatios: [1, 1, 1],
       suggestedHonestMin: null,
@@ -134,7 +134,7 @@ describe('applyLog monotonic sharpness', () => {
       source: 'timed',
       adaptSpeed: 'balanced',
       prior: 2.0,
-      category: { n: 4, logEwma: Math.log(2), mEffective: 2.0, sharpness: 60 },
+      category: { n: 4, logEwma: Math.log(2), mEffective: 2.0, sharpness: 60, reclaimedMinutes: 0 },
       recurring: { n: 2, logEwma: Math.log(2), mEffective: 2.0 },
       recentClampedRatios: [2, 2, 2, 2],
       suggestedHonestMin: null,
@@ -148,7 +148,7 @@ describe('applyLog monotonic sharpness', () => {
     const res = applyLog({
       estimateMin: 15, actualMin: 32, status: 'completed', source: 'timed',
       adaptSpeed: 'balanced', prior: 1.8,
-      category: { n: 0, logEwma: 0, mEffective: 1.8, sharpness: 0 },
+      category: { n: 0, logEwma: 0, mEffective: 1.8, sharpness: 0, reclaimedMinutes: 0 },
       recurring: null, recentClampedRatios: [], suggestedHonestMin: 30,
     });
     expect(res.reclaimDeltaMin).toBe(15); // |32-15| - |32-30| = 17 - 2
@@ -157,7 +157,7 @@ describe('applyLog monotonic sharpness', () => {
     const res = applyLog({
       estimateMin: 15, actualMin: 5, status: 'abandoned', source: 'timed',
       adaptSpeed: 'balanced', prior: 1.8,
-      category: { n: 3, logEwma: 0.4, mEffective: 1.6, sharpness: 50 },
+      category: { n: 3, logEwma: 0.4, mEffective: 1.6, sharpness: 50, reclaimedMinutes: 0 },
       recurring: null, recentClampedRatios: [], suggestedHonestMin: 24,
     });
     expect(res.reclaimDeltaMin).toBe(0);
@@ -168,7 +168,7 @@ describe('applyLog monotonic sharpness', () => {
     const res = applyLog({
       estimateMin: 15, actualMin: 40, status: 'completed', source: 'retro',
       adaptSpeed: 'balanced', prior: 1.8,
-      category: { n: 5, logEwma: 0.6, mEffective: 1.8, sharpness: 40 },
+      category: { n: 5, logEwma: 0.6, mEffective: 1.8, sharpness: 40, reclaimedMinutes: 0 },
       recurring: null, recentClampedRatios: [], suggestedHonestMin: null,
     });
     expect(res.reclaimDeltaMin).toBe(10);

@@ -24,7 +24,16 @@ export interface CategoryStats {
   logEwma: number;
   mEffective: number;
   sharpness: number;
+  reclaimedMinutes: number;
 }
+
+/** Single-row monotonic companion aggregates (the Reclaim bank lives here). */
+export interface Companion {
+  reclaimedMinutesLifetime: number; // += deposit per counted log; never decremented
+}
+
+/** Capture-only reason slug for a reclaim or context event. */
+export type ContextReason = string;
 
 /** The honest-number suggestion resolved for a decision moment. */
 export interface CalibrationSummary {
@@ -62,6 +71,8 @@ export interface TaskEvent {
   startedAt: number | null;
   endedAt: number | null;
   createdAt: number;
+  suggestedHonestMin: number | null;
+  reclaimDividendMin: number;
 }
 
 // ── Reverse Start-By planner ────────────────────────────────────────────────

@@ -17,7 +17,7 @@ describe('domain types', () => {
     const speed: AdaptSpeed = 'balanced';
     const source: LogSource = 'timed';
     const status: LogStatus = 'completed';
-    const stats: CategoryStats = { categoryId: 'cleaning', n: 8, logEwma: 0.2, mEffective: 1.9, sharpness: 78 };
+    const stats: CategoryStats = { categoryId: 'cleaning', n: 8, logEwma: 0.2, mEffective: 1.9, sharpness: 78, reclaimedMinutes: 0 };
     const summary: CalibrationSummary = {
       multiplier: 1.9, honestMinutes: 30, guessMinutes: 15, basis: 'personal', label: 'based on your last 8 times', sampleSize: 8,
     };
@@ -26,6 +26,7 @@ describe('domain types', () => {
     const event: TaskEvent = {
       id: 'a', category: 'cleaning', label: null, estimateMin: 15, actualMin: 30,
       status: 'completed', source: 'timed', startedAt: 1, endedAt: 2, createdAt: 3,
+      suggestedHonestMin: null, reclaimDividendMin: 0,
     };
 
     expect([tier, speed, source, status]).toHaveLength(4);

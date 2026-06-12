@@ -32,6 +32,7 @@ describe('categoryStatsRepo', () => {
       priorMult: 2.0,
       adaptSpeed: 'reactive',
       updatedAt: 5000,
+      reclaimedMinutes: 0,
     };
     await repo.upsert(row);
     expect(await repo.get('cleaning')).toEqual(row);
@@ -67,6 +68,7 @@ describe('categoryStatsRepo', () => {
       priorMult: 2,
       adaptSpeed: 'balanced',
       updatedAt: 1,
+      reclaimedMinutes: 0,
     });
     expect(spy).toHaveBeenCalledTimes(1);
   });
@@ -85,6 +87,8 @@ describe('taskEventsRepo', () => {
       startedAt: null,
       endedAt: null,
       createdAt: 1,
+      suggestedHonestMin: null,
+      reclaimDividendMin: 0,
       ...overrides,
     };
   }
