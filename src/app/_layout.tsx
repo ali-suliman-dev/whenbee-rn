@@ -1,10 +1,12 @@
 import '../global.css';
 import { useEffect } from 'react';
+import { Appearance } from 'react-native';
 import { Stack } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import { useFonts } from 'expo-font';
 import { AppProviders } from '@/src/providers/AppProviders';
 import { useTheme } from '@/src/theme/useTheme';
+import { useSettingsStore } from '@/src/stores/settingsStore';
 
 SplashScreen.preventAutoHideAsync();
 
@@ -13,6 +15,19 @@ SplashScreen.preventAutoHideAsync();
 // is enabled stack-wide so every pushed screen is dismissible by gesture.
 function RootNavigator() {
   const t = useTheme();
+
+  // Keep the NATIVE appearance trait in sync with the in-app preference. Theming
+  // is otherwise JS-only (tokens), so native views — the SwiftUI guess wheel, and
+  // the OS scheme that `useColorScheme()` reads for "system" — would drift from
+  // what the app draws: on a light-mode device a dark-themed app rendered the
+  // wheel's numbers near-black on the dark sheet (invisible), and "system" never
+  // re-followed the OS. setColorScheme forces the override; null hands it back to
+  // the OS so "system" tracks it live.
+  const colorPref = useSettingsStore((s) => s.colorMode);
+  useEffect(() => {
+    Appearance.setColorScheme(colorPref === 'system' ? null : colorPref);
+  }, [colorPref]);
+
   return (
     <Stack
       screenOptions={{

@@ -17,11 +17,12 @@ import { useToday } from '@/src/features/today/useToday';
 import { FocusCard } from '@/src/features/today/FocusCard';
 import { HoneycombStripPlaceholder } from '@/src/features/today/HoneycombStripPlaceholder';
 
-// Live date label, e.g. "Sat · 9:41". OK to read the clock here (per spec).
+// Date label, e.g. "Fri · Jun 12" — the day + date, no clock (the time added
+// nothing here and ticked distractingly).
 function dateLabel(now: Date): string {
   const day = now.toLocaleDateString('en-US', { weekday: 'short' });
-  const time = now.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: false });
-  return `${day} · ${time}`;
+  const date = now.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+  return `${day} · ${date}`;
 }
 
 export default function Today() {
