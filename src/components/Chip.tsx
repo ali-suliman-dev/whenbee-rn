@@ -4,7 +4,8 @@ import Animated, {
   useAnimatedStyle,
   useAnimatedProps,
   withTiming,
-  interpolateColor,
+  interpolate,
+  Extrapolation,
   useReducedMotion,
   Easing,
 } from 'react-native-reanimated';
@@ -23,18 +24,21 @@ import { AppText } from './AppText';
 //   add      — dashed "+ New" affordance (static, never selectable)
 //
 // Micro-interaction (Premium archetype — no size change, no overshoot)
-//   selection — the indigo border *strokes itself in* (SVG stroke-dashoffset)
-//               while the tint fill cross-fades; a light haptic fires once on
-//               the false → true transition.
+//   selection — the indigo border + tint appear *instantly* (static, no draw);
+//               only a one-shot ripple ring pings outward (radial, ease-out) so
+//               the pick visibly lands. A light haptic fires once on false → true.
 //   press     — a subtle opacity dim, never a scale.
-// All motion is reduced-motion guarded; the selected state still appears, just
-// instantly (border at full, no draw).
+// The ripple is reduced-motion guarded; the selected border + tint are already
+// instant, so they read identically with motion reduced (just no ripple).
 // ──────────────────────────────────────────────────────────────────────────────
 
 const AnimatedRect = Animated.createAnimatedComponent(Rect);
 
-// Indigo selection stroke — drawn on top of the resting hairline.
+// Indigo selection stroke — static, sits on top of the resting hairline.
 const STROKE = 1.5;
+// Slack around the chip so the ripple ring can expand past the edge un-clipped.
+const PAD = 8;
+const RIPPLE_SPREAD = 7;
 const EASE = Easing.out(Easing.cubic);
 
 export function Chip({
@@ -55,9 +59,9 @@ export function Chip({
 
   const isAdd = variant === 'add';
 
-  // 0 ↔ 1 drives both the border draw and the tint cross-fade.
-  const selectProgress = useSharedValue(selected ? 1 : 0);
   const pressOpacity = useSharedValue(1);
+  // One-shot 0 → 1 fired on each fresh selection — drives the ripple ping.
+  const pulse = useSharedValue(0);
 
   // Measured chip box — until it lands we render no SVG overlay.
   const [box, setBox] = useState({ w: 0, h: 0 });
@@ -73,48 +77,54 @@ export function Chip({
     pressOpacity.set(reducedMotion ? 1 : withTiming(1, { duration: t.motion.fast, easing: EASE }));
   }
 
-  // Drive the draw on the selected change; haptic only on false → true (never mount).
+  // Ping the ripple + haptic only on false → true (never on mount).
   const wasSelected = useRef(selected);
   useEffect(() => {
     if (isAdd) return;
     const justSelected = selected && !wasSelected.current;
     wasSelected.current = selected;
 
-    selectProgress.set(
-      reducedMotion
-        ? selected
-          ? 1
-          : 0
-        : withTiming(selected ? 1 : 0, { duration: t.motion.slow, easing: EASE }),
-    );
-
     if (!justSelected) return;
     // services/* is off-limits to src/components (ESLint boundary), so we tap
     // expo-haptics directly — the same pattern AppButton uses.
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
-  }, [selected, isAdd, reducedMotion, selectProgress, t.motion.slow]);
+    // Ping the ripple outward (restart from 0).
+    if (!reducedMotion) {
+      pulse.set(0);
+      pulse.set(withTiming(1, { duration: t.motion.slow, easing: EASE }));
+    }
+  }, [selected, isAdd, reducedMotion, pulse, t.motion.slow]);
 
-  // Geometry for the rounded-rect border draw, inset by half the stroke so it
-  // never clips against the SVG bounds.
+  // Geometry for the static rounded-rect border + the ripple. The SVG is padded by
+  // PAD on every side so the ripple can grow past the chip edge; the border sits at
+  // PAD + half the stroke so it lands exactly on the chip outline.
   const inset = STROKE / 2;
+  const bx = PAD + inset;
   const rw = Math.max(0, box.w - STROKE);
   const rh = Math.max(0, box.h - STROKE);
   const rr = Math.min(t.radii.pill, rh / 2);
-  const perimeter =
-    2 * (Math.max(0, rw - 2 * rr) + Math.max(0, rh - 2 * rr)) + 2 * Math.PI * rr;
 
-  const borderProps = useAnimatedProps(() => ({
-    strokeDashoffset: perimeter * (1 - selectProgress.get()),
-  }));
+  // Ripple ring — expands outward from the chip edge while fading to nothing.
+  const rippleProps = useAnimatedProps(() => {
+    const p = pulse.get();
+    const spread = p * RIPPLE_SPREAD;
+    return {
+      x: bx - spread,
+      y: bx - spread,
+      width: rw + spread * 2,
+      height: rh + spread * 2,
+      rx: rr + spread,
+      ry: rr + spread,
+      // Ping: invisible at rest, jumps bright, fades to nothing as it expands.
+      opacity: interpolate(p, [0, 0.12, 1], [0, 0.6, 0], Extrapolation.CLAMP),
+    };
+  });
 
   const pressStyle = useAnimatedStyle(() => ({ opacity: pressOpacity.get() }));
-  const tintStyle = useAnimatedStyle(() => ({
-    backgroundColor: interpolateColor(
-      selectProgress.get(),
-      [0, 1],
-      [t.colors.surface, t.colors.primaryTint],
-    ),
-  }));
+  // Tint is instant — plain style, no animated interpolation.
+  const tint: ViewStyle = {
+    backgroundColor: selected ? t.colors.primaryTint : t.colors.surface,
+  };
 
   const container: ViewStyle = {
     flexDirection: 'row',
@@ -144,7 +154,8 @@ export function Chip({
     fontSize: t.fontSize.sm,
   };
 
-  const overlay: ViewStyle = { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 };
+  // Overlay is inset by -PAD so the padded SVG centres over the chip.
+  const overlay: ViewStyle = { position: 'absolute', top: -PAD, left: -PAD };
 
   const showBorder = !isAdd && box.w > 0 && box.h > 0;
 
@@ -161,25 +172,35 @@ export function Chip({
       hitSlop={6}
     >
       <Animated.View style={pressStyle} onLayout={handleLayout}>
-        <Animated.View style={[container, isAdd ? null : tintStyle]}>
+        <Animated.View style={[container, isAdd ? null : tint]}>
           {icon ? <View>{icon}</View> : null}
           <AppText style={labelStyle}>{label}</AppText>
         </Animated.View>
         {showBorder ? (
-          <Svg style={overlay} width={box.w} height={box.h} pointerEvents="none">
-            <AnimatedRect
-              x={inset}
-              y={inset}
-              width={rw}
-              height={rh}
-              rx={rr}
-              ry={rr}
-              fill="none"
-              stroke={t.colors.primary}
-              strokeWidth={STROKE}
-              strokeDasharray={perimeter}
-              animatedProps={borderProps}
-            />
+          <Svg style={overlay} width={box.w + PAD * 2} height={box.h + PAD * 2} pointerEvents="none">
+            {/* Ripple ping — under the border, dropped under reduced motion. */}
+            {!reducedMotion ? (
+              <AnimatedRect
+                fill="none"
+                stroke={t.colors.primary}
+                strokeWidth={2}
+                animatedProps={rippleProps}
+              />
+            ) : null}
+            {/* Selection border — static indigo outline, only while selected. */}
+            {selected ? (
+              <Rect
+                x={bx}
+                y={bx}
+                width={rw}
+                height={rh}
+                rx={rr}
+                ry={rr}
+                fill="none"
+                stroke={t.colors.primary}
+                strokeWidth={STROKE}
+              />
+            ) : null}
           </Svg>
         ) : null}
       </Animated.View>

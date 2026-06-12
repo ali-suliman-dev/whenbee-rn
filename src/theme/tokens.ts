@@ -13,7 +13,7 @@ export const tokens = {
     sm: { offset: 3, opacity: 1, radius: 0 },
     md: { offset: 6, opacity: 1, radius: 0 },
   },
-  motion: { fast: 120, base: 220, slow: 360, press: 110, reveal: 600, sheet: 340, bar: 700, float: 3800 },
+  motion: { fast: 120, base: 220, slow: 360, press: 110, reveal: 600, draw: 950, sheet: 340, bar: 700, float: 3800 },
   colors: {
     light: {
       // ── template keys (kept for backward compat) ──
