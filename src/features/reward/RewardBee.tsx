@@ -8,6 +8,7 @@ import Animated, {
 } from 'react-native-reanimated';
 import { useTheme } from '@/src/theme/useTheme';
 import { AppText } from '@/src/components/AppText';
+import { BeeMascot } from '@/src/components/BeeMascot';
 
 // ──────────────────────────────────────────────────────────────────────────────
 // RewardBee — the big Whenbee + cell placeholder for the Reward moment with a
@@ -52,15 +53,6 @@ export function RewardBee({ sealed = false }: { sealed?: boolean }) {
     justifyContent: 'center',
   };
 
-  // A small inner "honey" dome — flat stand-in for the bee/cell.
-  const dome: ViewStyle = {
-    width: 64,
-    height: 64,
-    borderRadius: t.radii.full,
-    backgroundColor: sealed ? t.colors.onAmber : t.colors.accent,
-    opacity: sealed ? 0.18 : 1,
-  };
-
   const pill: ViewStyle = {
     backgroundColor: t.colors.primarySoft,
     borderRadius: t.radii.full,
@@ -79,7 +71,7 @@ export function RewardBee({ sealed = false }: { sealed?: boolean }) {
         <AppText style={pillText}>+1 nectar</AppText>
       </Animated.View>
       <Animated.View style={[cell, cellStyle]} accessibilityLabel="Your Whenbee cell ripening">
-        <View style={dome} />
+        <BeeMascot size={88} />
       </Animated.View>
     </View>
   );
