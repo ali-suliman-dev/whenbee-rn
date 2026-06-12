@@ -20,6 +20,18 @@ jest.mock('expo-sqlite', () => ({
   openDatabaseAsync: jest.fn(() => Promise.reject(new Error('sqlite unavailable in tests'))),
 }));
 
+// @expo/vector-icons pulls expo-font → expo-asset (not installed) at import time.
+// Stub the icon set as a lightweight host component so screens using icons render
+// in tests without the native asset pipeline.
+jest.mock('@expo/vector-icons', () => {
+  const make = (name) => {
+    const Icon = () => null;
+    Icon.displayName = name;
+    return Icon;
+  };
+  return new Proxy({}, { get: (_t, key) => make(String(key)) });
+});
+
 // Patch react-native-reanimated mock: add useReducedMotion (not included by default)
 jest.mock('react-native-reanimated', () => {
   const Reanimated = require('react-native-reanimated/mock');
