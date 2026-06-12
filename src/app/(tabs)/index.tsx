@@ -7,6 +7,7 @@ import Animated, {
   useReducedMotion,
 } from 'react-native-reanimated';
 import { router } from 'expo-router';
+import * as Haptics from 'expo-haptics';
 import { Ionicons } from '@expo/vector-icons';
 import { Screen } from '@/src/components/Screen';
 import { ScreenHeader } from '@/src/components/ScreenHeader';
@@ -81,7 +82,8 @@ export default function Today() {
     justifyContent: 'center',
   };
 
-  // FAB presses down onto its edge on tap, then springs back.
+  // FAB presses straight down onto its edge on tap (a clean 3D drop), then
+  // springs back. No scale, no spin — the depth shift carries the feedback.
   const reducedMotion = useReducedMotion();
   const fabY = useSharedValue(0);
   const fabAnim = useAnimatedStyle(() => ({ transform: [{ translateY: fabY.get() }] }));
@@ -157,7 +159,10 @@ export default function Today() {
         </ScrollView>
 
         <Pressable
-          onPress={() => router.push('/(modals)/add-task')}
+          onPress={() => {
+            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
+            router.push('/(modals)/add-task');
+          }}
           onPressIn={fabPressIn}
           onPressOut={fabPressOut}
           accessibilityRole="button"
