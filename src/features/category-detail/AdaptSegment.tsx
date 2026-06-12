@@ -48,16 +48,9 @@ export function AdaptSegment({ value, onChange }: AdaptSegmentProps) {
       alignItems: 'center',
       justifyContent: 'center',
       borderRadius: t.radii.pill,
+      borderCurve: 'continuous',
       backgroundColor: selected ? t.colors.surface : 'transparent',
-      ...(selected
-        ? {
-            shadowColor: t.colors.hairline,
-            shadowOffset: { width: 0, height: 1 },
-            shadowOpacity: 1,
-            shadowRadius: 0,
-            elevation: 1,
-          }
-        : {}),
+      ...(selected ? { boxShadow: `0px 1px 4px ${t.colors.shadowSoft}` } : {}),
     };
   }
 

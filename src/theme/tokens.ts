@@ -1,7 +1,9 @@
 // The ONE place to change the look of the app. space/radii/fontSize are RN points (numbers).
 export const tokens = {
   space: { 0: 0, 1: 4, 2: 8, 3: 12, 4: 16, 5: 20, 6: 24, 8: 32, 10: 40, 12: 48, 16: 64 },
-  radii: { none: 0, sm: 10, md: 14, card: 16, lg: 20, xl: 22, '2xl': 26, sheet: 30, pill: 9999 },
+  // Tighter, less-rounded surfaces (cards cap at 12). `pill` stays fully round
+  // for true pill controls (chips, primary buttons).
+  radii: { none: 0, sm: 8, md: 10, card: 12, lg: 12, xl: 14, '2xl': 16, sheet: 18, pill: 10 },
   fontSize: { xs: 11, sm: 13, base: 15, md: 17, lg: 20, xl: 24, '2xl': 30, '3xl': 38 },
   fontWeight: { regular: '400', medium: '500', semibold: '600', bold: '700' },
   fontFamily: { ui: 'System', mono: 'Menlo' },
@@ -30,6 +32,7 @@ export const tokens = {
       ink: '#20233A',
       inkSoft: '#5C5F73',
       hairline: '#E6E2D9',
+      shadowSoft: 'rgba(32,35,58,0.12)',
       primaryEdge: '#463B9E',
       primaryTint: '#E4E0FA',
       accentEdge: '#C68A30',
@@ -58,6 +61,7 @@ export const tokens = {
       ink: '#F4F1EA',
       inkSoft: 'rgba(244,241,234,0.62)',
       hairline: 'rgba(255,255,255,0.12)',
+      shadowSoft: 'rgba(0,0,0,0.45)',
       primaryEdge: '#6B5BE6',
       primaryTint: 'rgba(107,91,230,0.25)',
       accentEdge: '#C68A30',

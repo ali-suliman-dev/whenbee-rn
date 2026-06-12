@@ -34,6 +34,7 @@ export function Chip({
     alignItems: 'center',
     gap: t.space[1],
     borderRadius: t.radii.pill,
+    borderCurve: 'continuous',
     paddingHorizontal: t.space[4],
     paddingVertical: t.space[2],
     ...(isAdd
@@ -62,15 +63,20 @@ export function Chip({
     fontSize: t.fontSize.sm,
   };
 
+  // NativeWind's interop + React Compiler drop styles applied directly to a
+  // Pressable, so the visual lives on an inner View (matching PromiseChip / Card /
+  // AppButton). Pressable stays a bare touch wrapper.
   return (
     <Pressable
       onPress={onPress}
       accessibilityRole="button"
       accessibilityState={{ selected }}
-      style={({ pressed }) => [container, pressed ? { opacity: 0.75 } : null]}
+      hitSlop={6}
     >
-      {icon ? <View>{icon}</View> : null}
-      <AppText style={labelStyle}>{label}</AppText>
+      <View style={container}>
+        {icon ? <View>{icon}</View> : null}
+        <AppText style={labelStyle}>{label}</AppText>
+      </View>
     </Pressable>
   );
 }

@@ -6,7 +6,7 @@ export function Screen({ children }: { children: ReactNode }) {
   const t = useTheme();
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: t.colors.bg }} edges={['top', 'left', 'right']}>
-      <View style={{ flex: 1, paddingHorizontal: t.space[4] }}>{children}</View>
+      <View style={{ flex: 1, paddingHorizontal: t.space[5] }}>{children}</View>
     </SafeAreaView>
   );
 }

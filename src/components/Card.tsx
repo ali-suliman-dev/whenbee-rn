@@ -6,8 +6,8 @@ import type { tokens } from '@/src/theme/tokens';
 // Card — Flat Tactical UI
 //
 // Flat surface with two elevation modes:
-//   raised=false (default): 2px hairline border, no shadow
-//   raised=true:  solid offset shadow (offset:6, radius:0, color:hairline) — never both
+//   raised=false (default): 1px hairline border, no shadow
+//   raised=true:  soft box-shadow (CSS string, cross-platform) — never both
 //
 // NOTE: Do not nest a Card inside a Card. The surface/shadow stack produces
 // redundant elevation signals and the inner card's border fights the outer card's
@@ -31,23 +31,17 @@ export function Card({
 
   const base: ViewStyle = {
     borderRadius: t.radii[radius],
+    borderCurve: 'continuous',
     backgroundColor: t.colors.surface,
     padding: t.space[4],
   };
 
+  // CSS box-shadow renders consistently on iOS + Android. The previous
+  // shadowOffset/shadowRadius:0/elevation combo produced a hard offset "line"
+  // rather than soft elevation; a low-opacity blur reads as a lifted surface.
   const elevation: ViewStyle = raised
-    ? {
-        // Solid offset shadow — cross-platform via shadowColor + elevation on Android
-        shadowColor: t.colors.hairline,
-        shadowOffset: { width: t.shadow.md.offset, height: t.shadow.md.offset },
-        shadowOpacity: t.shadow.md.opacity,
-        shadowRadius: t.shadow.md.radius,
-        elevation: t.shadow.md.offset, // Android fallback
-      }
-    : {
-        borderWidth: 2,
-        borderColor: t.colors.hairline,
-      };
+    ? { boxShadow: `0px 4px 16px ${t.colors.shadowSoft}` }
+    : { borderWidth: 1, borderColor: t.colors.hairline };
 
   return (
     <View style={[base, elevation, style]} {...rest}>

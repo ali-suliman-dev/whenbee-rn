@@ -130,12 +130,15 @@ export function TierTrail({ nodes }: { nodes: TrailNode[] }) {
                 <NodeIcon state={node.state} t={t} />
               </View>
               <AppText
+                numberOfLines={1}
+                adjustsFontSizeToFit
                 style={{
-                  fontSize: t.fontSize.xs,
+                  fontSize: 10,
+                  lineHeight: 13,
                   color:
                     node.state === 'lock' ? t.colors.inkSoft : t.colors.ink,
                   textAlign: 'center',
-                  maxWidth: 56,
+                  width: 60,
                 }}
               >
                 {node.label}

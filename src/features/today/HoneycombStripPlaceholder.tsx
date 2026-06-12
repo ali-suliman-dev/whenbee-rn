@@ -94,7 +94,7 @@ export function HoneycombStripPlaceholder({ onPress }: { onPress: () => void }) 
       onPress={onPress}
       accessibilityRole="button"
       accessibilityLabel={`Your honeycomb — ${pct}% honey, tier ${tier}, ${logs} logs`}
-      style={({ pressed }) => [card, pressed ? { opacity: 0.85 } : null]}
+      style={card}
     >
       <View style={hexBadge}>
         <Ionicons name="apps-outline" size={20} color={t.colors.accent} />
