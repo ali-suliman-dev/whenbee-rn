@@ -97,5 +97,15 @@ These skills are **required**, not optional. Before writing or changing code in 
 | Building or changing **React Native components, screens, hooks, navigation, native integrations** | `react-native-expert` |
 | Optimizing RN **performance, re-renders, lists, bundle, startup** | `vercel-react-native-skills` |
 | Making **architecture/structure** decisions — new layers, stores, data flow, module boundaries, folder layout | `react-native-architecture` |
+| Making **any design decision** — spacing, sizing, fonts/typography, layout, color, visual hierarchy, creating or styling **any** UI element | `ui-design:react-native-design` |
+| Creating, editing, or adding **any animation or transition** — Reanimated worklets, gestures, micro-interactions, screen/page transitions, loading/state motion | `creating-reanimated-animations`, `motion-design` |
+| Writing or editing **any user-facing copy** — strings, labels, button text, headings, onboarding/paywall/empty-state text, microcopy, errors, notifications | `conversion-psychology`, `humanizer` |
 
 Process skills come first: for new features run `superpowers:brainstorming` before implementing; for bugs run `superpowers:systematic-debugging` before proposing a fix. Then the implementation skills above.
+
+### Design, motion & copy — HARD RULE
+
+- **`ui-design:react-native-design` is mandatory for every design-related change.** No spacing value, font size, element, or layout gets chosen by eye or guessed — invoke the skill first and let it drive the decision so spacing rhythm, type scale, and alignment are deliberate.
+- **Every spacing/size/font/color value MUST come from a theme token in `src/theme/tokens.ts`** via `useTheme()`. Never inline a raw number or hex. If the value you need doesn't exist as a token, **add it to `tokens.ts`** (it'll be reused) and consume the token — do not hardcode a one-off.
+- **`creating-reanimated-animations` + `motion-design` are mandatory before writing or touching any animation.** Invoke both whenever motion is created, edited, or added — timing, easing, and choreography come from the skills, not arbitrary durations. (Honor the project invariants: no guilt motion; honey/sharpness stays monotonic.)
+- **`conversion-psychology` + `humanizer` are mandatory for every piece of user-facing copy.** Any string a user reads — labels, buttons, headings, onboarding/paywall/empty-state, microcopy, errors, notifications — gets shaped by `conversion-psychology` (persuasion, clarity, motivation) and passed through `humanizer` (strip AI-slop tells). No raw, generic, AI-sounding text ships. (Honor the project invariant: no guilt/shame language — never violate it for the sake of conversion.)
