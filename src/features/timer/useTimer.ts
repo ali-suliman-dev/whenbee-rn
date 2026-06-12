@@ -19,6 +19,10 @@ import {
   scheduleTimerDone,
   cancelTimerDone,
 } from '@/src/services/timerNotifications';
+import {
+  startFinishTimeActivity,
+  endFinishTimeActivity,
+} from '@/src/services/liveActivity';
 import type { AdaptSpeed } from '@/src/domain/types';
 
 // ──────────────────────────────────────────────────────────────────────────────
@@ -112,11 +116,17 @@ export function useTimer(params: TimerParams): UseTimerResult {
   // to an existing session keeps the notification already scheduled at its start.
   useEffect(() => {
     if (!startedFresh.current) return;
+    // Lock-Screen / Dynamic Island finish-time ring counts down to the HONEST
+    // finish (the number the user saw), not the raw guess. No-op in Expo Go.
+    startFinishTimeActivity({
+      taskLabel: label,
+      finishEpoch: Math.round(projectedFinish(startedAt, suggestedHonestMin) / 1000),
+    });
     void (async () => {
       const granted = await ensureNotificationPermission();
       if (granted) await scheduleTimerDone({ label, startedAt, estimateMin });
     })();
-  }, [label, startedAt, estimateMin]);
+  }, [label, startedAt, estimateMin, suggestedHonestMin]);
 
   const estimateSec = Math.max(0, Math.round(estimateMin * 60));
 
@@ -155,6 +165,7 @@ export function useTimer(params: TimerParams): UseTimerResult {
   const onStopAndLog = useCallback(async () => {
     const { actualMin } = stop(Date.now());
     void cancelTimerDone();
+    endFinishTimeActivity();
 
     const adaptSpeed: AdaptSpeed =
       useCategoriesStore.getState().categories.find((c) => c.id === category)?.adaptSpeed ??
@@ -191,6 +202,7 @@ export function useTimer(params: TimerParams): UseTimerResult {
   const onAbandon = useCallback(async () => {
     cancel();
     void cancelTimerDone();
+    endFinishTimeActivity();
     const adaptSpeed: AdaptSpeed =
       useCategoriesStore.getState().categories.find((c) => c.id === category)?.adaptSpeed ??
       'balanced';

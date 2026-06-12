@@ -10,7 +10,13 @@
     "newArchEnabled": true,
     "ios": {
       "bundleIdentifier": "com.whenbee.app",
-      "supportsTablet": true
+      "supportsTablet": true,
+      "infoPlist": {
+        "NSSupportsLiveActivities": true
+      },
+      "entitlements": {
+        "com.apple.security.application-groups": ["group.com.whenbee.app"]
+      }
     },
     "android": {
       "package": "com.whenbee.app",
@@ -41,7 +47,14 @@
       "expo-font",
       "expo-secure-store",
       "expo-web-browser",
-      ["@sentry/react-native/expo", { "organization": "your-org", "project": "whenbee" }]
+      [
+        "@sentry/react-native/expo",
+        {
+          "organization": "your-org",
+          "project": "whenbee"
+        }
+      ],
+      "@bacons/apple-targets"
     ],
     "experiments": {
       "typedRoutes": true,

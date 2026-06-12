@@ -1,6 +1,6 @@
 # Development guide
 
-How to set up, run, build, and ship Whenbee. For folder layout see [ARCHITECTURE.md](ARCHITECTURE.md); for styling see [THEMING.md](THEMING.md); for commit/PR rules see [CONTRIBUTING.md](CONTRIBUTING.md).
+How to set up, run, build, and ship Whenbee. For folder layout see [ARCHITECTURE.md](ARCHITECTURE.md); for styling see [THEMING.md](THEMING.md); for commit/PR rules see [CONTRIBUTING.md](CONTRIBUTING.md). For the Home-screen widget + Live Activity (scaffolded; needs a physical device to validate) see [NATIVE-PRESENCE.md](NATIVE-PRESENCE.md).
 
 ## 1. Prerequisites
 

@@ -4,6 +4,8 @@ import { useCalibrationStore } from '@/src/stores/calibrationStore';
 import { useTasksStore, type TodayTask } from '@/src/stores/tasksStore';
 import { resolveSuggestion, priorFor, CATEGORY_NAMES } from '@/src/engine';
 import { analytics } from '@/src/services/analytics';
+import { formatClock, projectedFinish } from '@/src/lib/time';
+import { publishWidgetSnapshot, clearWidgetSnapshot } from '@/src/services/liveActivity';
 import type { CalibrationSummary } from '@/src/domain/types';
 
 // ──────────────────────────────────────────────────────────────────────────────
@@ -92,6 +94,25 @@ export function useToday(): UseTodayResult {
       suggested_min: suggestedMin,
     });
   }, [focus, suggestedMin]);
+
+  // Publish the next-task snapshot to the Home-screen widget. The honest finish
+  // is "now + honest minutes" — the time the focus task would honestly wrap if
+  // started now (the same number Today shows). No-op in Expo Go / tests.
+  const honestMin = summary?.honestMinutes ?? null;
+  useEffect(() => {
+    if (!focus || honestMin === null) {
+      clearWidgetSnapshot();
+      return;
+    }
+    const now = Date.now();
+    publishWidgetSnapshot({
+      nextTaskLabel: focus.label,
+      category: categoryName(focus.category),
+      honestFinishClock: formatClock(projectedFinish(now, honestMin)),
+      startDeepLink: `whenbee://timer?taskId=${focus.id}`,
+      updatedAtEpoch: Math.round(now / 1000),
+    });
+  }, [focus, honestMin]);
 
   return { focus, summary, categoryName, todayReclaimMin };
 }
