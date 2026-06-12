@@ -4,14 +4,14 @@ import { Screen } from '@/src/components/Screen';
 import { AppText } from '@/src/components/AppText';
 import { AppButton } from '@/src/components/AppButton';
 
-export default function ExampleSheet() {
+export default function Reward() {
   return (
     <Screen>
       <View style={{ flex: 1, justifyContent: 'center', gap: 12 }}>
-        <AppText variant="title">Form sheet</AppText>
-        <AppText variant="body">A native formSheet modal example.</AppText>
+        <AppText variant="display">Reward</AppText>
+        <AppText variant="body">Task completion celebration lives here.</AppText>
       </View>
-      <AppButton label="Close" variant="secondary" onPress={() => router.back()} />
+      <AppButton label="Close" variant="secondary" onPress={() => router.dismiss()} />
       <View style={{ height: 16 }} />
     </Screen>
   );

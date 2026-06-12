@@ -9,8 +9,18 @@ export default function TabsLayout() {
     <Tabs
       screenOptions={{
         tabBarActiveTintColor: t.colors.primary,
-        tabBarInactiveTintColor: t.colors.textMuted,
-        tabBarStyle: { backgroundColor: t.colors.surface, borderTopColor: t.colors.border },
+        tabBarInactiveTintColor: t.colors.inkSoft,
+        tabBarStyle: {
+          backgroundColor: t.colors.surface,
+          borderTopWidth: 2,
+          borderTopColor: t.colors.hairline,
+          height: 60,
+          paddingBottom: 0,
+          elevation: 0,
+          shadowOpacity: 0,
+        },
+        tabBarItemStyle: { paddingVertical: 6 },
+        tabBarLabelStyle: { fontSize: 11, fontWeight: '500' },
         headerStyle: { backgroundColor: t.colors.bg },
         headerTintColor: t.colors.text,
         headerRight: () => (
@@ -20,10 +30,34 @@ export default function TabsLayout() {
         ),
       }}
     >
-      <Tabs.Screen name="index" options={{ title: 'Home', tabBarIcon: ({ color, size }) => <Ionicons name="home-outline" size={size} color={color} /> }} />
-      <Tabs.Screen name="explore" options={{ title: 'Explore', tabBarIcon: ({ color, size }) => <Ionicons name="compass-outline" size={size} color={color} /> }} />
-      <Tabs.Screen name="activity" options={{ title: 'Activity', tabBarIcon: ({ color, size }) => <Ionicons name="pulse-outline" size={size} color={color} /> }} />
-      <Tabs.Screen name="profile" options={{ title: 'Profile', tabBarIcon: ({ color, size }) => <Ionicons name="person-outline" size={size} color={color} /> }} />
+      <Tabs.Screen
+        name="index"
+        options={{
+          title: 'Today',
+          tabBarIcon: ({ color, size }) => <Ionicons name="home-outline" size={size} color={color} />,
+        }}
+      />
+      <Tabs.Screen
+        name="plan"
+        options={{
+          title: 'Plan',
+          tabBarIcon: ({ color, size }) => <Ionicons name="calendar-outline" size={size} color={color} />,
+        }}
+      />
+      <Tabs.Screen
+        name="whenbee"
+        options={{
+          title: 'Whenbee',
+          tabBarIcon: ({ color, size }) => <Ionicons name="bug-outline" size={size} color={color} />,
+        }}
+      />
+      <Tabs.Screen
+        name="patterns"
+        options={{
+          title: 'Patterns',
+          tabBarIcon: ({ color, size }) => <Ionicons name="pulse-outline" size={size} color={color} />,
+        }}
+      />
     </Tabs>
   );
 }
