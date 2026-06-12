@@ -13,6 +13,13 @@ jest.mock('expo-sqlite/kv-store', () => {
 
 jest.mock('expo-haptics', () => ({ impactAsync: jest.fn(() => Promise.resolve()), ImpactFeedbackStyle: { Light: 'light' }, notificationAsync: jest.fn(() => Promise.resolve()), NotificationFeedbackType: { Success: 'success', Error: 'error' } }));
 
+// useSafeAreaInsets throws without a <SafeAreaProvider>; screens call it directly,
+// so return zero insets in tests (the rest of the package stays real).
+jest.mock('react-native-safe-area-context', () => ({
+  ...jest.requireActual('react-native-safe-area-context'),
+  useSafeAreaInsets: () => ({ top: 0, bottom: 0, left: 0, right: 0 }),
+}));
+
 // expo-sqlite pulls expo-asset (not installed) through its hooks; stub it so the
 // db barrel is importable in tests. Stores inject createMemoryDatabase(), so the
 // real sqlite adapter (openDatabaseAsync) is never exercised under jest.
