@@ -1,4 +1,5 @@
 import { View } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import { Screen } from '@/src/components/Screen';
 import { AppText } from '@/src/components/AppText';
@@ -21,6 +22,7 @@ const MASTERY_TRAIL = [
 
 export default function Ready() {
   const t = useTheme();
+  const insets = useSafeAreaInsets();
   const { complete } = useOnboarding();
 
   function openMyDay() {
@@ -31,7 +33,7 @@ export default function Ready() {
   return (
     <Screen>
       <StepProgress current={2} />
-      <View style={{ flex: 1, justifyContent: 'center', gap: t.space[4] }}>
+      <View style={{ flex: 1, gap: t.space[4], paddingTop: t.space[3] }}>
         <AppText
           style={{
             fontSize: t.fontSize.xl,
@@ -73,7 +75,7 @@ export default function Ready() {
       </View>
 
       <AppButton label="Open my day →" fullWidth onPress={openMyDay} />
-      <View style={{ height: t.space[4] }} />
+      <View style={{ height: insets.bottom }} />
     </Screen>
   );
 }

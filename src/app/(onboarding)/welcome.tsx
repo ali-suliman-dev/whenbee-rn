@@ -1,4 +1,5 @@
 import { View } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import { Screen } from '@/src/components/Screen';
 import { AppText } from '@/src/components/AppText';
@@ -10,10 +11,11 @@ import { BrandLockup } from '@/src/features/onboarding/BrandLockup';
 
 export default function Welcome() {
   const t = useTheme();
+  const insets = useSafeAreaInsets();
   return (
     <Screen>
       <StepProgress current={0} />
-      <View style={{ flex: 1, justifyContent: 'center', gap: t.space[4] }}>
+      <View style={{ flex: 1, gap: t.space[4], paddingTop: t.space[3] }}>
         <BrandLockup />
         <AppText
           style={{
@@ -53,7 +55,7 @@ export default function Welcome() {
         fullWidth
         onPress={() => router.push('/(onboarding)/categories')}
       />
-      <View style={{ height: t.space[4] }} />
+      <View style={{ height: insets.bottom }} />
     </Screen>
   );
 }

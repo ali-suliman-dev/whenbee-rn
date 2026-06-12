@@ -1,5 +1,6 @@
 import { useState } from 'react';
-import { View, TextInput, type ViewStyle } from 'react-native';
+import { View, TextInput, Pressable, Keyboard, type ViewStyle } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import { Screen } from '@/src/components/Screen';
 import { AppText } from '@/src/components/AppText';
@@ -16,6 +17,7 @@ import {
 
 export default function Categories() {
   const t = useTheme();
+  const insets = useSafeAreaInsets();
   const { picked, isPicked, togglePick } = useOnboarding();
   const [adding, setAdding] = useState(false);
   const [draft, setDraft] = useState('');
@@ -51,7 +53,12 @@ export default function Categories() {
   return (
     <Screen>
       <StepProgress current={1} />
-      <View style={{ flex: 1, gap: t.space[4], paddingTop: t.space[2] }}>
+      {/* Tapping anywhere outside the inline "+ New" input dismisses the keyboard. */}
+      <Pressable
+        accessible={false}
+        onPress={Keyboard.dismiss}
+        style={{ flex: 1, gap: t.space[4], paddingTop: t.space[2] }}
+      >
         <AppText
           style={{
             fontSize: t.fontSize.xl,
@@ -110,7 +117,7 @@ export default function Categories() {
             <Chip label="+ New" variant="add" onPress={() => setAdding(true)} />
           )}
         </View>
-      </View>
+      </Pressable>
 
       <AppButton
         label="Continue →"
@@ -118,7 +125,7 @@ export default function Categories() {
         disabled={!canContinue}
         onPress={() => router.push('/(onboarding)/ready')}
       />
-      <View style={{ height: t.space[4] }} />
+      <View style={{ height: insets.bottom }} />
     </Screen>
   );
 }
