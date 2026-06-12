@@ -1,8 +1,9 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { useFocusEffect } from 'expo-router';
 import { useCalibrationStore } from '@/src/stores/calibrationStore';
 import { useTasksStore, type TodayTask } from '@/src/stores/tasksStore';
 import { resolveSuggestion, priorFor, CATEGORY_NAMES } from '@/src/engine';
+import { analytics } from '@/src/services/analytics';
 import type { CalibrationSummary } from '@/src/domain/types';
 
 // ──────────────────────────────────────────────────────────────────────────────
@@ -75,6 +76,22 @@ export function useToday(): UseTodayResult {
       recurring: null,
     });
   }
+
+  // honest_suggestion_shown: fire once per surfacing (category+guess), not per
+  // render. The ref de-dupes the value the user is currently looking at.
+  const lastShownRef = useRef<string | null>(null);
+  const suggestedMin = summary?.honestMinutes ?? null;
+  useEffect(() => {
+    if (!focus || suggestedMin === null) return;
+    const key = `${focus.category}|${focus.guessMin}|${suggestedMin}`;
+    if (lastShownRef.current === key) return;
+    lastShownRef.current = key;
+    analytics.capture('honest_suggestion_shown', {
+      category: focus.category,
+      guess_min: focus.guessMin,
+      suggested_min: suggestedMin,
+    });
+  }, [focus, suggestedMin]);
 
   return { focus, summary, categoryName, todayReclaimMin };
 }

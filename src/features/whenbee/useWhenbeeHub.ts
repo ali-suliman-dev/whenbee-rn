@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useCalibrationStore } from '@/src/stores/calibrationStore';
 import { useCategoriesStore } from '@/src/stores/categoriesStore';
 import { tierFor, CATEGORY_NAMES } from '@/src/engine';
+import { analytics } from '@/src/services/analytics';
 import type { HoneycombCell } from '@/src/components/honeycomb/Honeycomb';
 import type { Tier } from '@/src/domain/types';
 
@@ -80,6 +81,8 @@ export function useWhenbeeHub(): WhenbeeHubVM {
         biggestArea: summary.biggestArea,
         honestLogCount: summary.honestLogCount,
       });
+      // reclaim_total_view: the hub's Reclaim card is now showing a real total.
+      analytics.capture('reclaim_total_view', { lifetime_minutes: summary.lifetimeMin });
     });
     return () => {
       active = false;

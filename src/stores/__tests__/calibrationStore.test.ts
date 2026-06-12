@@ -8,7 +8,32 @@ import {
   type TaskEventRow,
 } from '@/src/db';
 import { priorFor } from '@/src/engine';
+import { kv } from '@/src/lib/kv';
+import { analytics } from '@/src/services/analytics';
 import type { LogStatus, LogSource, AdaptSpeed } from '@/src/domain/types';
+
+// Spy on the module-level analytics sink so funnel-event call sites can be
+// asserted. The store imports the singleton `analytics`, so spying on its
+// `capture` intercepts every fire without touching the real (no-op) sink.
+jest.spyOn(analytics, 'capture').mockImplementation(() => {});
+const captureMock = analytics.capture as jest.Mock;
+
+/** Drop the kv flags that gate fire-once funnel events between tests (the kv
+ *  mock persists its Map across tests in a file). */
+function clearFunnelFlags(categories: string[] = ['cleaning']): void {
+  kv.delete('whenbee.firstLogFired');
+  for (const c of categories) kv.delete(`whenbee.ahaFired.${c}`);
+}
+
+/** Props of the most recent capture call for `event`, or undefined if none. */
+function lastCapture(event: string): Record<string, unknown> | undefined {
+  const calls = captureMock.mock.calls.filter((c) => c[0] === event);
+  return calls.length > 0 ? (calls[calls.length - 1]?.[1] as Record<string, unknown>) : undefined;
+}
+
+function captureCount(event: string): number {
+  return captureMock.mock.calls.filter((c) => c[0] === event).length;
+}
 
 const T0 = 1_000_000_000_000;
 
@@ -615,5 +640,134 @@ describe('calibrationStore — setReason is capture-only (Task B.5 invariant)', 
     // The reason actually landed in the capture-only store.
     const tag = await db.getContextTag(res.eventId, 'reason');
     expect(tag?.value).toBe('interrupted');
+  });
+});
+
+describe('calibrationStore — funnel analytics (Task C.1)', () => {
+  beforeEach(() => {
+    captureMock.mockClear();
+    clearFunnelFlags(['cleaning', 'admin']);
+  });
+
+  it('fires first_log exactly once across two counted logs', async () => {
+    freshDb();
+    const store = useCalibrationStore.getState();
+
+    await store.applyLog({
+      category: 'cleaning',
+      estimateMin: 15,
+      actualMin: 30,
+      status: 'completed',
+      source: 'timed',
+      adaptSpeed: 'balanced',
+      nowMs: T0,
+    });
+    expect(captureCount('first_log')).toBe(1);
+
+    await store.applyLog({
+      category: 'cleaning',
+      estimateMin: 15,
+      actualMin: 25,
+      status: 'completed',
+      source: 'timed',
+      adaptSpeed: 'balanced',
+      nowMs: T0 + 1,
+    });
+    // The second counted log must NOT re-fire first_log.
+    expect(captureCount('first_log')).toBe(1);
+  });
+
+  it('does not fire first_log for an uncounted (abandoned) log', async () => {
+    freshDb();
+    await useCalibrationStore.getState().applyLog({
+      category: 'cleaning',
+      estimateMin: 15,
+      actualMin: 0,
+      status: 'abandoned',
+      source: 'timed',
+      adaptSpeed: 'balanced',
+      nowMs: T0,
+    });
+    expect(captureCount('first_log')).toBe(0);
+  });
+
+  it('fires honey_ripened on every counted log with a before/after/delta', async () => {
+    freshDb();
+    await useCalibrationStore.getState().applyLog({
+      category: 'cleaning',
+      estimateMin: 15,
+      actualMin: 30,
+      status: 'completed',
+      source: 'timed',
+      adaptSpeed: 'balanced',
+      nowMs: T0,
+    });
+    const props = lastCapture('honey_ripened');
+    expect(props).toBeDefined();
+    expect(props).toHaveProperty('sharpness_before');
+    expect(props).toHaveProperty('sharpness_after');
+    expect(props?.delta).toBe(
+      (props?.sharpness_after as number) - (props?.sharpness_before as number),
+    );
+  });
+
+  it('fires aha_shown once when an insight first surfaces on the write path', async () => {
+    freshDb();
+    const store = useCalibrationStore.getState();
+
+    // Build toward a qualifying insight: n≥5, |M−1|≥0.4, variance shrinking.
+    // Early scattered actuals then a tight tail (all 2.0×) → stabilizing.
+    const actuals = [90, 6, 75, 9, 30, 30, 30, 30];
+    for (let i = 0; i < actuals.length; i++) {
+      await store.applyLog({
+        category: 'cleaning',
+        estimateMin: 15,
+        actualMin: actuals[i]!,
+        status: 'completed',
+        source: 'timed',
+        adaptSpeed: 'balanced',
+        nowMs: T0 + i,
+      });
+    }
+
+    // The discovery surfaced exactly once, carrying category + multiplier + n.
+    expect(captureCount('aha_shown')).toBe(1);
+    const props = lastCapture('aha_shown');
+    expect(props?.category).toBe('cleaning');
+    expect(typeof props?.multiplier).toBe('number');
+    expect(typeof props?.n).toBe('number');
+
+    // A further qualifying log must NOT re-fire it (latched per category).
+    await store.applyLog({
+      category: 'cleaning',
+      estimateMin: 15,
+      actualMin: 30,
+      status: 'completed',
+      source: 'timed',
+      adaptSpeed: 'balanced',
+      nowMs: T0 + 100,
+    });
+    expect(captureCount('aha_shown')).toBe(1);
+  });
+
+  it('fires task_logged with the typed funnel props', async () => {
+    freshDb();
+    await useCalibrationStore.getState().applyLog({
+      category: 'cleaning',
+      estimateMin: 15,
+      actualMin: 30,
+      status: 'completed',
+      source: 'timed',
+      adaptSpeed: 'balanced',
+      nowMs: T0,
+    });
+    const props = lastCapture('task_logged');
+    expect(props?.category).toBe('cleaning');
+    expect(props?.guess_min).toBe(15);
+    expect(props?.actual_min).toBe(30);
+    expect(props?.entry_type).toBe('timed');
+    expect(props).toHaveProperty('ratio');
+    expect(props).toHaveProperty('sharpness_after');
+    expect(props).toHaveProperty('tier_after');
   });
 });

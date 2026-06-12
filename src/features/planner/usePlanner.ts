@@ -1,8 +1,21 @@
-import { useMemo } from 'react';
+import { useCallback, useMemo } from 'react';
 import { planBackward, resolveSuggestion, priorFor, CATEGORY_NAMES } from '@/src/engine';
 import { useCalibrationStore } from '@/src/stores/calibrationStore';
+import { analytics } from '@/src/services/analytics';
 import { usePlanStore, type PlanDraftTask, type ActivePlan } from '@/src/stores/planStore';
-import type { PlanResult, PlanTaskInput } from '@/src/domain/types';
+import type { PlanResult, PlanTaskInput, PlanVerdict } from '@/src/domain/types';
+
+/** Whether the plan fits as-is. Anything but a clean `fits` is "over". */
+function verdictStatus(verdict: PlanVerdict): 'fits' | 'over' {
+  return verdict.kind === 'fits' ? 'fits' : 'over';
+}
+
+/** Minutes a verdict would free by cutting (0 when nothing needs cutting). */
+function verdictFreedMin(verdict: PlanVerdict): number {
+  if (verdict.kind === 'cut-one' || verdict.kind === 'multi-cut') return verdict.savedMin;
+  if (verdict.kind === 'push-deadline') return verdict.overshootMin;
+  return 0;
+}
 
 // ──────────────────────────────────────────────────────────────────────────────
 // usePlanner — composes the plan store + the pure backward-pass engine.
@@ -52,7 +65,7 @@ export function usePlanner(args: UsePlannerArgs = {}) {
   const updateTaskDuration = usePlanStore((s) => s.updateTaskDuration);
   const removeTask = usePlanStore((s) => s.removeTask);
   const reorderTasks = usePlanStore((s) => s.reorderTasks);
-  const saveActive = usePlanStore((s) => s.saveActive);
+  const saveActiveRaw = usePlanStore((s) => s.saveActive);
   const clearActive = usePlanStore((s) => s.clearActive);
 
   /** The learned honest duration for a fresh task in `category` (round5(guess×M)). */
@@ -98,13 +111,37 @@ export function usePlanner(args: UsePlannerArgs = {}) {
    * next render recomputes `result` and the plan should now fit.
    */
   function cut(ids: string[]): void {
+    // Capture the freed minutes from the CURRENT verdict before the cut mutates
+    // the draft (the next result is what the cut produced, not what it freed).
+    const freedMin = result ? verdictFreedMin(result.verdict) : 0;
     for (const id of ids) removeTask(id);
+    analytics.capture('plan_cut_one', {
+      n_tasks: draft.tasks.length - ids.length,
+      status: 'fits',
+      freed_min: freedMin,
+    });
   }
 
   /** Apply a "push-deadline" verdict: move the finish to the feasible time. */
   function pushDeadline(feasibleDeadline: number): void {
     setDeadline(feasibleDeadline);
   }
+
+  /** Freeze the current draft into the active plan and record that a plan was
+   *  built (the §2 funnel event). `freed_min` is 0 at build time — nothing has
+   *  been cut yet; status reflects whether the built plan fits. */
+  const saveActive = useCallback(
+    (nowMs?: number) => {
+      saveActiveRaw(nowMs);
+      if (!result) return;
+      analytics.capture('plan_built', {
+        n_tasks: draft.tasks.length,
+        status: verdictStatus(result.verdict),
+        freed_min: 0,
+      });
+    },
+    [saveActiveRaw, result, draft.tasks.length],
+  );
 
   /**
    * Re-project the active plan against `now` WITHOUT applying it. Returns the
@@ -124,6 +161,11 @@ export function usePlanner(args: UsePlannerArgs = {}) {
       tasks: activePlan.tasks,
       bufferMin: activePlan.bufferMin,
       nowMs: now,
+    });
+    analytics.capture('plan_reprojected', {
+      n_tasks: activePlan.tasks.length,
+      status: verdictStatus(newResult.verdict),
+      freed_min: verdictFreedMin(newResult.verdict),
     });
     return {
       oldStartBy: oldResult.startBy,

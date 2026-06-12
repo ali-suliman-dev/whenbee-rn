@@ -31,7 +31,31 @@ import type {
 } from '@/src/domain/types';
 import { haptics } from '@/src/services/haptics';
 import { analytics } from '@/src/services/analytics';
+import { kv } from '@/src/lib/kv';
+import { secondsSinceInstall } from '@/src/lib/install';
 import { useCategoriesStore } from './categoriesStore';
+
+// kv flags that gate fire-once funnel events (first counted log; first aha per
+// category). Reading/writing kv is synchronous and Expo Go-safe.
+const FIRST_LOG_FLAG = 'whenbee.firstLogFired';
+const AHA_FLAG_PREFIX = 'whenbee.ahaFired.';
+
+/** True the first time it's called process-/install-wide; sets the flag and
+ *  returns false thereafter, so `first_log` fires exactly once ever. */
+function claimFirstLog(): boolean {
+  if (kv.getString(FIRST_LOG_FLAG) !== null) return false;
+  kv.set(FIRST_LOG_FLAG, '1');
+  return true;
+}
+
+/** True the first time an aha surfaces for `categoryId`; latches per category so
+ *  `aha_shown` fires once at the moment the insight first qualifies. */
+function claimAha(categoryId: string): boolean {
+  const key = `${AHA_FLAG_PREFIX}${categoryId}`;
+  if (kv.getString(key) !== null) return false;
+  kv.set(key, '1');
+  return true;
+}
 
 interface CachedStat {
   mEffective: number;
@@ -319,13 +343,63 @@ export const useCalibrationStore = create<CalibrationState>((set, get) => ({
     // 9. Side-effects — fire-and-forget; never block or throw into the caller.
     try {
       if (result.counted) haptics.success();
+      const ratio = clampRatio(input.estimateMin, input.actualMin);
+      const entryType = input.source === 'timed' ? 'timed' : 'retro';
       analytics.capture('task_logged', {
         category: input.category,
+        guess_min: input.estimateMin,
+        actual_min: input.actualMin,
+        ratio,
+        entry_type: entryType,
+        sharpness_after: result.category.sharpness,
+        tier_after: tierAfter,
+        // Kept for back-compat with existing dashboards/tests.
         status: input.status,
         source: input.source,
         counted: result.counted,
       });
-      if (leveledUp) analytics.capture('cell_capped', { tier: tierAfter });
+
+      // first_log: the user's first counted log, ever (kv-gated). Timed against
+      // the kv install stamp so it's a real activation-latency read.
+      if (result.counted && claimFirstLog()) {
+        analytics.capture('first_log', { time_since_install_sec: secondsSinceInstall(nowMs) });
+      }
+
+      // honey_ripened: every counted log moves sharpness; report the step.
+      if (result.counted) {
+        analytics.capture('honey_ripened', {
+          sharpness_before: prev.sharpness,
+          sharpness_after: result.category.sharpness,
+          delta: result.category.sharpness - prev.sharpness,
+        });
+      }
+
+      // tier_up: a tier index increase (monotonic — never goes backward).
+      if (leveledUp) {
+        analytics.capture('tier_up', { from_tier: tierBefore, to_tier: tierAfter });
+        analytics.capture('cell_capped', { tier: tierAfter });
+      }
+
+      // aha_shown: fire once per category at the moment the discovery first
+      // qualifies on the write path (the canonical surfacing point). Build the
+      // ordered log-ratios from the pre-log window plus this counted log.
+      if (result.counted) {
+        const orderedLogRatios = [...recentClampedRatios, ratio].map((r) => Math.log(r));
+        const insight = detectInsight({
+          categoryId: input.category,
+          n: result.category.n,
+          mEffective: result.category.mEffective,
+          orderedLogRatios,
+        });
+        if (insight && claimAha(input.category)) {
+          analytics.capture('aha_shown', {
+            category: input.category,
+            multiplier: insight.multiplier,
+            n: result.category.n,
+          });
+        }
+      }
+
       if (result.reclaimDeltaMin >= 1) {
         analytics.capture('reclaim_deposit', {
           minutes: result.reclaimDeltaMin,

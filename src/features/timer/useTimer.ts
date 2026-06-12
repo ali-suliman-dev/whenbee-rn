@@ -13,6 +13,7 @@ import { useCategoriesStore } from '@/src/stores/categoriesStore';
 import { useTasksStore } from '@/src/stores/tasksStore';
 import { useRewardStore } from '@/src/stores/rewardStore';
 import { projectedFinish, formatClock } from '@/src/lib/time';
+import { analytics } from '@/src/services/analytics';
 import {
   ensureNotificationPermission,
   scheduleTimerDone,
@@ -98,6 +99,9 @@ export function useTimer(params: TimerParams): UseTimerResult {
     if (!(s.isRunning && sameTask)) {
       start({ label, category, estimateMin, guessMin, taskId: taskId ?? null, suggestedHonestMin });
       startedFresh.current = true;
+      // task_started: the timer opened a fresh session. `guess_min` is the user's
+      // raw guess (drives calibration), not the honest ring target.
+      analytics.capture('task_started', { category, guess_min: guessMin, source: 'today' });
     }
     started.current = true;
   }

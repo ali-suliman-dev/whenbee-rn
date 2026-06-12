@@ -1,9 +1,10 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { router } from 'expo-router';
 import { useCalibrationStore } from '@/src/stores/calibrationStore';
 import { useTasksStore } from '@/src/stores/tasksStore';
 import { resolveSuggestion, priorFor } from '@/src/engine';
 import { usePickerCategories, type PickerCategory } from '@/src/features/shared/CategoryChips';
+import { analytics } from '@/src/services/analytics';
 import type { CalibrationSummary } from '@/src/domain/types';
 
 // ──────────────────────────────────────────────────────────────────────────────
@@ -60,6 +61,22 @@ export function useAddTask(): UseAddTaskResult {
       : { mEffective: priorFor(category), n: 0 };
     return resolveSuggestion({ guessMinutes: guessMin, category: cat, recurring: null });
   }, [category, guessMin, statsByCategory]);
+
+  // honest_suggestion_shown: fire once per surfacing (category+guess), not per
+  // keystroke. De-duped by the value the user is currently looking at.
+  const lastShownRef = useRef<string | null>(null);
+  const suggestedMin = suggestion?.honestMinutes ?? null;
+  useEffect(() => {
+    if (category === null || suggestedMin === null) return;
+    const key = `${category}|${guessMin}|${suggestedMin}`;
+    if (lastShownRef.current === key) return;
+    lastShownRef.current = key;
+    analytics.capture('honest_suggestion_shown', {
+      category,
+      guess_min: guessMin,
+      suggested_min: suggestedMin,
+    });
+  }, [category, guessMin, suggestedMin]);
 
   const canSubmit = title.trim().length > 0 && category !== null;
 

@@ -157,6 +157,7 @@ export default function Today() {
 
           {focus && summary ? (
             <FocusCard
+              category={focus.category}
               categoryLabel={categoryName(focus.category)}
               taskTitle={focus.label}
               summary={summary}

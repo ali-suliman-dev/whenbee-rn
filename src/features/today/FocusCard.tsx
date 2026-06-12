@@ -22,13 +22,15 @@ import type { CalibrationSummary } from '@/src/domain/types';
 // ──────────────────────────────────────────────────────────────────────────────
 
 interface FocusCardProps {
+  /** Category slug (e.g. "getting-ready") — for analytics + the nudge event. */
+  category: string;
   categoryLabel: string;
   taskTitle: string;
   summary: CalibrationSummary;
   onStart: () => void;
 }
 
-export function FocusCard({ categoryLabel, taskTitle, summary, onStart }: FocusCardProps) {
+export function FocusCard({ category, categoryLabel, taskTitle, summary, onStart }: FocusCardProps) {
   const t = useTheme();
 
   // The nudge earns its scarce amber spot only with personal evidence AND when
@@ -77,7 +79,14 @@ export function FocusCard({ categoryLabel, taskTitle, summary, onStart }: FocusC
 
       <Text style={provenance}>{summary.label} · learned on-device</Text>
 
-      {showNudge ? <OptimismNudge honestMin={summary.honestMinutes} /> : null}
+      {showNudge ? (
+        <OptimismNudge
+          honestMin={summary.honestMinutes}
+          category={category}
+          guessMin={summary.guessMinutes}
+          multiplier={summary.multiplier}
+        />
+      ) : null}
 
       <AppButton label="Start →" variant="indigo" fullWidth onPress={onStart} />
     </Card>

@@ -1,5 +1,7 @@
 import { useOnboardingStore, type PickedCategory } from '@/src/stores/onboardingStore';
 import { useCategoriesStore } from '@/src/stores/categoriesStore';
+import { CATEGORY_NAMES } from '@/src/engine';
+import { analytics } from '@/src/services/analytics';
 
 /**
  * Onboarding feature hook. Owns the cross-store wiring for the 3-step flow so the
@@ -23,6 +25,12 @@ export function useOnboarding() {
   function complete() {
     setCategories(picked.map((p) => ({ id: p.id, name: p.name, adaptSpeed: 'balanced' })));
     markComplete();
+    // A picked id that isn't a seed slug is a custom category the user typed.
+    const customAdded = picked.some((p) => !(p.id in CATEGORY_NAMES));
+    analytics.capture('onboarding_completed', {
+      categories_picked: picked.length,
+      custom_category_added: customAdded,
+    });
   }
 
   return { completed, hydrated, picked, togglePick, isPicked, complete };
