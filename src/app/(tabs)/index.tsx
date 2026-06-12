@@ -101,6 +101,7 @@ export default function Today() {
                       label: focus.label,
                       category: focus.category,
                       estimateMin: summary.honestMinutes,
+                      guessMin: focus.guessMin,
                     },
                   })
                 }
