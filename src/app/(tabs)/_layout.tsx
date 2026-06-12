@@ -1,10 +1,11 @@
-import { Tabs, router } from 'expo-router';
-import { Pressable } from 'react-native';
+import { Tabs } from 'expo-router';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '@/src/theme/useTheme';
 
 export default function TabsLayout() {
   const t = useTheme();
+  const insets = useSafeAreaInsets();
   return (
     <Tabs
       screenOptions={{
@@ -12,22 +13,20 @@ export default function TabsLayout() {
         tabBarInactiveTintColor: t.colors.inkSoft,
         tabBarStyle: {
           backgroundColor: t.colors.surface,
-          borderTopWidth: 2,
+          borderTopWidth: 1,
           borderTopColor: t.colors.hairline,
-          height: 60,
-          paddingBottom: 0,
+          // Reserve the home-indicator inset so labels never sit under it.
+          height: 56 + insets.bottom,
+          paddingBottom: insets.bottom,
+          paddingTop: 6,
           elevation: 0,
           shadowOpacity: 0,
         },
-        tabBarItemStyle: { paddingVertical: 6 },
+        tabBarItemStyle: { paddingVertical: 4 },
         tabBarLabelStyle: { fontSize: 11, fontWeight: '500' },
-        headerStyle: { backgroundColor: t.colors.bg },
-        headerTintColor: t.colors.text,
-        headerRight: () => (
-          <Pressable onPress={() => router.push('/settings')} style={{ paddingHorizontal: 16 }}>
-            <Ionicons name="settings-outline" size={22} color={t.colors.text} />
-          </Pressable>
-        ),
+        // No native header — each screen renders the shared left-aligned
+        // ScreenHeader instead (one nav style, title hard-left, no duplicate).
+        headerShown: false,
       }}
     >
       <Tabs.Screen

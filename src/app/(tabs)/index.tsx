@@ -1,7 +1,15 @@
 import { View, Text, Pressable, ScrollView, type ViewStyle, type TextStyle } from 'react-native';
+import Animated, {
+  useSharedValue,
+  useAnimatedStyle,
+  withTiming,
+  withSpring,
+  useReducedMotion,
+} from 'react-native-reanimated';
 import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { Screen } from '@/src/components/Screen';
+import { ScreenHeader } from '@/src/components/ScreenHeader';
 import { useTheme } from '@/src/theme/useTheme';
 import { type } from '@/src/theme/typography';
 import { useToday } from '@/src/features/today/useToday';
@@ -19,15 +27,6 @@ export default function Today() {
   const t = useTheme();
   const { focus, summary, categoryName } = useToday();
 
-  const brandRow: ViewStyle = {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingTop: t.space[2],
-  };
-  const screenTitle: TextStyle = { ...(type.title as unknown as TextStyle), color: t.colors.ink };
-  const dateText: TextStyle = { ...(type.caption as unknown as TextStyle), color: t.colors.inkSoft };
-
   const leadLine: TextStyle = {
     ...(type.body as unknown as TextStyle),
     color: t.colors.inkSoft,
@@ -37,13 +36,13 @@ export default function Today() {
   const logChip: ViewStyle = {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'center',
     gap: t.space[2],
-    alignSelf: 'center',
+    alignSelf: 'stretch',
     backgroundColor: t.colors.surface,
-    borderWidth: 1.5,
+    borderWidth: 1,
     borderColor: t.colors.hairline,
-    borderRadius: t.radii.pill,
+    borderRadius: t.radii.card,
+    borderCurve: 'continuous',
     paddingHorizontal: t.space[4],
     paddingVertical: t.space[3],
   };
@@ -55,23 +54,45 @@ export default function Today() {
     textAlign: 'center',
   };
 
-  const fab: ViewStyle = {
+  const FAB_SIZE = 56;
+  const FAB_EDGE = 5;
+  const fabPosition: ViewStyle = {
     position: 'absolute',
     right: t.space[5],
     bottom: t.space[6],
-    width: 56,
-    height: 56,
-    borderRadius: 28,
+    paddingBottom: FAB_EDGE,
+  };
+  // Solid depth edge behind the front circle — the visible 3D "coin" edge.
+  const fabEdge: ViewStyle = {
+    position: 'absolute',
+    left: 0,
+    bottom: 0,
+    width: FAB_SIZE,
+    height: FAB_SIZE,
+    borderRadius: FAB_SIZE / 2,
+    backgroundColor: t.colors.primaryEdge,
+  };
+  const fabCircle: ViewStyle = {
+    width: FAB_SIZE,
+    height: FAB_SIZE,
+    borderRadius: FAB_SIZE / 2,
     backgroundColor: t.colors.primary,
     alignItems: 'center',
     justifyContent: 'center',
-    // flat offset edge (no blur) — physical tactile shadow
-    shadowColor: t.colors.primaryEdge,
-    shadowOffset: { width: 0, height: t.shadow.md.offset },
-    shadowOpacity: t.shadow.md.opacity,
-    shadowRadius: t.shadow.md.radius,
-    elevation: t.shadow.md.offset,
   };
+
+  // FAB presses down onto its edge on tap, then springs back.
+  const reducedMotion = useReducedMotion();
+  const fabY = useSharedValue(0);
+  const fabAnim = useAnimatedStyle(() => ({ transform: [{ translateY: fabY.get() }] }));
+  function fabPressIn() {
+    if (reducedMotion) return;
+    fabY.set(withTiming(FAB_EDGE - 1, { duration: t.motion.press }));
+  }
+  function fabPressOut() {
+    if (reducedMotion) return;
+    fabY.set(withSpring(0, { damping: 13, stiffness: 340 }));
+  }
 
   return (
     <Screen>
@@ -80,10 +101,20 @@ export default function Today() {
           contentContainerStyle={{ gap: t.space[5], paddingBottom: t.space[16] }}
           showsVerticalScrollIndicator={false}
         >
-          <View style={brandRow}>
-            <Text style={screenTitle}>Today</Text>
-            <Text style={dateText}>{dateLabel(new Date())}</Text>
-          </View>
+          <ScreenHeader
+            title="Today"
+            subtitle={dateLabel(new Date())}
+            right={
+              <Pressable
+                onPress={() => router.push('/settings')}
+                accessibilityRole="button"
+                accessibilityLabel="Settings"
+                hitSlop={8}
+              >
+                <Ionicons name="settings-outline" size={22} color={t.colors.inkSoft} />
+              </Pressable>
+            }
+          />
 
           <HoneycombStripPlaceholder onPress={() => router.push('/(tabs)/whenbee')} />
 
@@ -118,7 +149,7 @@ export default function Today() {
             onPress={() => router.push('/(modals)/retro')}
             accessibilityRole="button"
             accessibilityLabel="Finished something? Log it and ripen your honey"
-            style={({ pressed }) => [logChip, pressed ? { opacity: 0.8 } : null]}
+            style={logChip}
           >
             <Ionicons name="time-outline" size={18} color={t.colors.primary} />
             <Text style={logChipText}>Finished something? Log it &amp; ripen your honey</Text>
@@ -127,11 +158,16 @@ export default function Today() {
 
         <Pressable
           onPress={() => router.push('/(modals)/add-task')}
+          onPressIn={fabPressIn}
+          onPressOut={fabPressOut}
           accessibilityRole="button"
           accessibilityLabel="Add a task"
-          style={({ pressed }) => [fab, pressed ? { opacity: 0.9 } : null]}
+          style={fabPosition}
         >
-          <Ionicons name="add" size={30} color={t.colors.onIndigo} />
+          <View style={fabEdge} />
+          <Animated.View style={[fabCircle, fabAnim]}>
+            <Ionicons name="add" size={30} color={t.colors.onIndigo} />
+          </Animated.View>
         </Pressable>
       </View>
     </Screen>

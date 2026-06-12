@@ -4,8 +4,41 @@ import { Stack } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import { useFonts } from 'expo-font';
 import { AppProviders } from '@/src/providers/AppProviders';
+import { useTheme } from '@/src/theme/useTheme';
 
 SplashScreen.preventAutoHideAsync();
+
+// Navigator lives in its own component so it can read the theme and apply it to
+// the (otherwise native-default white) Settings header in dark mode. Swipe-back
+// is enabled stack-wide so every pushed screen is dismissible by gesture.
+function RootNavigator() {
+  const t = useTheme();
+  return (
+    <Stack
+      screenOptions={{
+        headerShown: false,
+        gestureEnabled: true,
+        fullScreenGestureEnabled: true,
+      }}
+    >
+      <Stack.Screen name="(onboarding)" />
+      <Stack.Screen name="(tabs)" />
+      <Stack.Screen name="category/[category]" />
+      <Stack.Screen
+        name="settings"
+        options={{
+          headerShown: true,
+          title: 'Settings',
+          headerStyle: { backgroundColor: t.colors.bg },
+          headerTitleStyle: { color: t.colors.ink },
+          headerTintColor: t.colors.primary,
+          headerShadowVisible: false,
+        }}
+      />
+      <Stack.Screen name="(modals)" options={{ presentation: 'modal' }} />
+    </Stack>
+  );
+}
 
 export default function RootLayout() {
   const [fontsLoaded, fontError] = useFonts({
@@ -31,13 +64,7 @@ export default function RootLayout() {
 
   return (
     <AppProviders>
-      <Stack screenOptions={{ headerShown: false }}>
-        <Stack.Screen name="(onboarding)" />
-        <Stack.Screen name="(tabs)" />
-        <Stack.Screen name="category/[category]" />
-        <Stack.Screen name="settings" options={{ headerShown: true, title: 'Settings' }} />
-        <Stack.Screen name="(modals)" options={{ presentation: 'modal' }} />
-      </Stack>
+      <RootNavigator />
     </AppProviders>
   );
 }

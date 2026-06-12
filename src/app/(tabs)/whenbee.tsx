@@ -3,6 +3,7 @@ import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { Screen } from '@/src/components/Screen';
 import { AppText } from '@/src/components/AppText';
+import { ScreenHeader } from '@/src/components/ScreenHeader';
 import { useTheme } from '@/src/theme/useTheme';
 import { type } from '@/src/theme/typography';
 import { useCategoriesStore } from '@/src/stores/categoriesStore';
@@ -45,10 +46,10 @@ export default function Whenbee() {
         contentContainerStyle={{ gap: t.space[4], paddingTop: t.space[4], paddingBottom: t.space[12] }}
         showsVerticalScrollIndicator={false}
       >
-        <View style={{ gap: t.space[2] }}>
-          <AppText variant="display">Whenbee</AppText>
-          <AppText variant="body">Your honeycomb and the patterns behind it.</AppText>
-        </View>
+        <ScreenHeader
+          title="Whenbee"
+          subtitle="Your honeycomb and the patterns behind it."
+        />
 
         {categories.length > 0 ? (
           <View style={{ gap: t.space[3] }}>
@@ -110,7 +111,7 @@ function CategoryRow({
       onPress={onPress}
       accessibilityRole="button"
       accessibilityLabel={`${name} insights`}
-      style={({ pressed }) => [row, pressed ? { opacity: 0.85 } : null]}
+      style={row}
     >
       <Text style={nameText}>{name}</Text>
       {multiplier !== undefined ? <Text style={multText}>{multiplier.toFixed(1)}×</Text> : null}
