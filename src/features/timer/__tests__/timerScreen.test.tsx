@@ -28,6 +28,7 @@ const okResult: LogResult = {
   tierBefore: 'Setting',
   tierAfter: 'Ripening',
   leveledUp: true,
+  reclaimDeltaMin: 0,
 };
 
 let alertSpy: jest.SpyInstance;

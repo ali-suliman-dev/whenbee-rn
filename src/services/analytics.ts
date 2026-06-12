@@ -6,7 +6,8 @@ export type AppEvent =
   | 'purchase'
   | 'screen_view'
   | 'task_logged'
-  | 'cell_capped';
+  | 'cell_capped'
+  | 'reclaim_deposit';
 interface MinimalClient { capture: (event: string, props?: Record<string, unknown>) => void; }
 export function createAnalytics(client: MinimalClient | null) {
   return { capture(event: AppEvent, props?: Record<string, unknown>) { client?.capture(event, props); } };

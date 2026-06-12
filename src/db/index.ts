@@ -12,3 +12,5 @@ export { makeTaskEventsRepo } from './repositories/taskEventsRepo';
 export type { TaskEventsRepo } from './repositories/taskEventsRepo';
 export { makeRecurringRepo } from './repositories/recurringRepo';
 export type { RecurringRepo } from './repositories/recurringRepo';
+export { makeCompanionRepo } from './repositories/companionRepo';
+export { makeContextTagRepo } from './repositories/contextTagRepo';

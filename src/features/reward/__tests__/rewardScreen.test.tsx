@@ -20,6 +20,7 @@ const baseResult: LogResult = {
   tierBefore: 'Setting',
   tierAfter: 'Ripening',
   leveledUp: false,
+  reclaimDeltaMin: 0,
 };
 
 beforeEach(() => {

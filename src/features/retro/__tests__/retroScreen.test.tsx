@@ -17,6 +17,7 @@ const okResult: LogResult = {
   tierBefore: 'Setting',
   tierAfter: 'Setting',
   leveledUp: false,
+  reclaimDeltaMin: 0,
 };
 
 beforeEach(() => {

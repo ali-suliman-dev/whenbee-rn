@@ -4,6 +4,7 @@ import {
   makeCategoryStatsRepo,
   makeTaskEventsRepo,
   makeRecurringRepo,
+  makeCompanionRepo,
   type Database,
 } from '@/src/db';
 import {
@@ -48,6 +49,7 @@ export interface ApplyLogParams {
   recurringKey?: string | null;
   label?: string | null;
   nowMs?: number;
+  suggestedHonestMin?: number | null;
 }
 
 export interface LogResult {
@@ -57,6 +59,7 @@ export interface LogResult {
   tierBefore: Tier;
   tierAfter: Tier;
   leveledUp: boolean;
+  reclaimDeltaMin: number;
 }
 
 /** A recent est-vs-actual receipt row for the category-detail screen (newest first). */
@@ -190,9 +193,7 @@ export const useCalibrationStore = create<CalibrationState>((set, get) => ({
       },
       recurring,
       recentClampedRatios,
-      // Task A.4 will pass the actual honest number shown in the UI; null triggers the
-      // engine fallback (honestNumber(estimate, M_before)) until then.
-      suggestedHonestMin: null,
+      suggestedHonestMin: input.suggestedHonestMin ?? null,
     });
 
     // 6. Persist the raw event (always — abandoned logs are self-awareness data).
@@ -208,8 +209,8 @@ export const useCalibrationStore = create<CalibrationState>((set, get) => ({
       startedAt: null,
       endedAt: nowMs,
       createdAt,
-      suggestedHonestMin: null,
-      reclaimDividendMin: 0,
+      suggestedHonestMin: input.suggestedHonestMin ?? null,
+      reclaimDividendMin: result.reclaimDeltaMin,
     });
 
     // 7. Persist updated stats only when the log trained the model.
@@ -225,6 +226,11 @@ export const useCalibrationStore = create<CalibrationState>((set, get) => ({
         updatedAt: nowMs,
         reclaimedMinutes: prev.reclaimedMinutes,
       });
+      if (result.reclaimDeltaMin > 0) {
+        const companionRepo = makeCompanionRepo(db);
+        await companionRepo.deposit(result.reclaimDeltaMin);
+        await companionRepo.depositToCategory(input.category, result.reclaimDeltaMin);
+      }
       if (recurringKey && result.recurring) {
         await recurringRepo.upsert({
           key: recurringKey,
@@ -269,6 +275,13 @@ export const useCalibrationStore = create<CalibrationState>((set, get) => ({
         counted: result.counted,
       });
       if (leveledUp) analytics.capture('cell_capped', { tier: tierAfter });
+      if (result.reclaimDeltaMin >= 1) {
+        analytics.capture('reclaim_deposit', {
+          minutes: result.reclaimDeltaMin,
+          category: input.category,
+          source: input.source,
+        });
+      }
     } catch {
       // services are safe; this is belt-and-suspenders
     }
@@ -281,6 +294,7 @@ export const useCalibrationStore = create<CalibrationState>((set, get) => ({
       tierBefore,
       tierAfter,
       leveledUp,
+      reclaimDeltaMin: result.reclaimDeltaMin,
     };
   },
 

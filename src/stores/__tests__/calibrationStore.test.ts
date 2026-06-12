@@ -7,6 +7,7 @@ import {
   type TaskEventRow,
 } from '@/src/db';
 import { priorFor } from '@/src/engine';
+import type { LogStatus, LogSource, AdaptSpeed } from '@/src/domain/types';
 
 const T0 = 1_000_000_000_000;
 
@@ -275,5 +276,139 @@ describe('calibrationStore — resetCategory', () => {
     expect(cached?.n).toBe(0);
     expect(cached?.mEffective).toBeCloseTo(priorFor('cleaning'), 5);
     expect(cached?.tier).toBe('Raw');
+  });
+});
+
+describe('calibrationStore — reclaim deposit (Task A.4)', () => {
+  it('a counted log with suggestedHonestMin returns correct reclaimDeltaMin and banks lifetime + category', async () => {
+    const db = freshDb();
+    const res = await useCalibrationStore.getState().applyLog({
+      category: 'cleaning',
+      estimateMin: 15,
+      actualMin: 32,
+      suggestedHonestMin: 30,
+      status: 'completed',
+      source: 'timed',
+      adaptSpeed: 'balanced',
+      nowMs: T0,
+    });
+
+    // delta = max(0, |actual - estimate| - |actual - honest|)
+    // = max(0, |32-15| - |32-30|) = max(0, 17 - 2) = 15
+    expect(res.reclaimDeltaMin).toBe(15);
+
+    // lifetime banked
+    const companion = await db.getCompanion();
+    expect(companion.reclaimedMinutesLifetime).toBe(15);
+
+    // category reclaimedMinutes incremented (starts at 0, +15 = 15)
+    const stat = await makeCategoryStatsRepo(db).get('cleaning');
+    expect(stat.reclaimedMinutes).toBe(15);
+  });
+
+  it('an abandoned log returns reclaimDeltaMin: 0 and does not change the lifetime', async () => {
+    const db = freshDb();
+    const res = await useCalibrationStore.getState().applyLog({
+      category: 'cleaning',
+      estimateMin: 15,
+      actualMin: 32,
+      suggestedHonestMin: 30,
+      status: 'abandoned',
+      source: 'timed',
+      adaptSpeed: 'balanced',
+      nowMs: T0,
+    });
+
+    expect(res.reclaimDeltaMin).toBe(0);
+    const companion = await db.getCompanion();
+    expect(companion.reclaimedMinutesLifetime).toBe(0);
+  });
+
+  it('a log whose reclaimDeltaMin computes to 0 does not change the lifetime total', async () => {
+    const db = freshDb();
+    // estimate === suggestedHonestMin → delta is 0 (no improvement over naive)
+    const res = await useCalibrationStore.getState().applyLog({
+      category: 'cleaning',
+      estimateMin: 15,
+      actualMin: 30,
+      suggestedHonestMin: 15, // same as estimate → no reclaim
+      status: 'completed',
+      source: 'timed',
+      adaptSpeed: 'balanced',
+      nowMs: T0,
+    });
+
+    expect(res.reclaimDeltaMin).toBe(0);
+    const companion = await db.getCompanion();
+    expect(companion.reclaimedMinutesLifetime).toBe(0);
+  });
+
+  it('lifetime is non-decreasing at every step across a mixed sequence', async () => {
+    const db = freshDb();
+    const store = useCalibrationStore.getState();
+
+    interface Step {
+      estimateMin: number;
+      actualMin: number;
+      suggestedHonestMin: number;
+      status: LogStatus;
+      source: LogSource;
+      adaptSpeed: AdaptSpeed;
+    }
+
+    const steps: Step[] = [
+      { estimateMin: 15, actualMin: 32, suggestedHonestMin: 30, status: 'completed', source: 'timed', adaptSpeed: 'balanced' },
+      { estimateMin: 20, actualMin: 25, suggestedHonestMin: 22, status: 'completed', source: 'timed', adaptSpeed: 'balanced' },
+      { estimateMin: 10, actualMin: 40, suggestedHonestMin: 20, status: 'abandoned', source: 'timed', adaptSpeed: 'balanced' },
+      { estimateMin: 30, actualMin: 60, suggestedHonestMin: 55, status: 'completed', source: 'retro', adaptSpeed: 'reactive' },
+      { estimateMin: 5,  actualMin: 10, suggestedHonestMin: 9,  status: 'completed', source: 'timed', adaptSpeed: 'balanced' },
+      { estimateMin: 45, actualMin: 50, suggestedHonestMin: 48, status: 'completed', source: 'timed', adaptSpeed: 'balanced' },
+      { estimateMin: 60, actualMin: 60, suggestedHonestMin: 60, status: 'completed', source: 'retro', adaptSpeed: 'steady' },
+      { estimateMin: 15, actualMin: 18, suggestedHonestMin: 16, status: 'abandoned', source: 'timed', adaptSpeed: 'balanced' },
+      { estimateMin: 20, actualMin: 45, suggestedHonestMin: 40, status: 'completed', source: 'timed', adaptSpeed: 'balanced' },
+      { estimateMin: 10, actualMin: 11, suggestedHonestMin: 10, status: 'completed', source: 'timed', adaptSpeed: 'balanced' },
+      { estimateMin: 25, actualMin: 35, suggestedHonestMin: 30, status: 'completed', source: 'timed', adaptSpeed: 'reactive' },
+      { estimateMin: 15, actualMin: 50, suggestedHonestMin: 45, status: 'completed', source: 'timed', adaptSpeed: 'balanced' },
+      { estimateMin: 30, actualMin: 30, suggestedHonestMin: 30, status: 'completed', source: 'retro', adaptSpeed: 'balanced' },
+      { estimateMin: 10, actualMin: 20, suggestedHonestMin: 18, status: 'abandoned', source: 'timed', adaptSpeed: 'balanced' },
+      { estimateMin: 60, actualMin: 90, suggestedHonestMin: 85, status: 'completed', source: 'timed', adaptSpeed: 'balanced' },
+      { estimateMin: 5,  actualMin: 8,  suggestedHonestMin: 7,  status: 'completed', source: 'timed', adaptSpeed: 'balanced' },
+      { estimateMin: 20, actualMin: 22, suggestedHonestMin: 20, status: 'completed', source: 'retro', adaptSpeed: 'balanced' },
+      { estimateMin: 45, actualMin: 90, suggestedHonestMin: 80, status: 'completed', source: 'timed', adaptSpeed: 'reactive' },
+      { estimateMin: 30, actualMin: 35, suggestedHonestMin: 32, status: 'abandoned', source: 'timed', adaptSpeed: 'balanced' },
+      { estimateMin: 15, actualMin: 28, suggestedHonestMin: 25, status: 'completed', source: 'timed', adaptSpeed: 'balanced' },
+    ];
+
+    let prevLifetime = 0;
+    for (let i = 0; i < steps.length; i++) {
+      const step = steps[i]!;
+      await store.applyLog({ category: 'cleaning', ...step, nowMs: T0 + i });
+      const companion = await db.getCompanion();
+      expect(companion.reclaimedMinutesLifetime).toBeGreaterThanOrEqual(prevLifetime);
+      prevLifetime = companion.reclaimedMinutesLifetime;
+    }
+  });
+
+  it('lifetime equals the sum of reclaimDividendMin across all task_events after a sequence', async () => {
+    const db = freshDb();
+    const store = useCalibrationStore.getState();
+
+    const inputs = [
+      { estimateMin: 15, actualMin: 32, suggestedHonestMin: 30, status: 'completed' as LogStatus, source: 'timed' as LogSource, adaptSpeed: 'balanced' as AdaptSpeed },
+      { estimateMin: 20, actualMin: 25, suggestedHonestMin: 22, status: 'completed' as LogStatus, source: 'timed' as LogSource, adaptSpeed: 'balanced' as AdaptSpeed },
+      { estimateMin: 10, actualMin: 40, suggestedHonestMin: 20, status: 'abandoned' as LogStatus, source: 'timed' as LogSource, adaptSpeed: 'balanced' as AdaptSpeed },
+      { estimateMin: 30, actualMin: 60, suggestedHonestMin: 55, status: 'completed' as LogStatus, source: 'retro' as LogSource, adaptSpeed: 'reactive' as AdaptSpeed },
+      { estimateMin: 5,  actualMin: 10, suggestedHonestMin: 9,  status: 'completed' as LogStatus, source: 'timed' as LogSource, adaptSpeed: 'balanced' as AdaptSpeed },
+    ];
+
+    for (let i = 0; i < inputs.length; i++) {
+      await store.applyLog({ category: 'cleaning', ...inputs[i]!, nowMs: T0 + i });
+    }
+
+    const companion = await db.getCompanion();
+    const events = await makeTaskEventsRepo(db).listByCategory('cleaning', 50);
+    const sumDividends = events.reduce((acc, e) => acc + e.reclaimDividendMin, 0);
+
+    expect(companion.reclaimedMinutesLifetime).toBe(sumDividends);
   });
 });
