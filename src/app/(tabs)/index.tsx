@@ -15,6 +15,7 @@ import { useTheme } from '@/src/theme/useTheme';
 import { type } from '@/src/theme/typography';
 import { useToday } from '@/src/features/today/useToday';
 import { FocusCard } from '@/src/features/today/FocusCard';
+import { ReclaimTodayLine } from '@/src/features/today/ReclaimTodayLine';
 import { HoneycombStrip } from '@/src/components/honeycomb/HoneycombStrip';
 import type { HoneycombCell } from '@/src/components/honeycomb/Honeycomb';
 import { useCategoriesStore } from '@/src/stores/categoriesStore';
@@ -30,7 +31,7 @@ function dateLabel(now: Date): string {
 
 export default function Today() {
   const t = useTheme();
-  const { focus, summary, categoryName } = useToday();
+  const { focus, summary, categoryName, todayReclaimMin } = useToday();
 
   // Build the honey strip from the tracked categories + their cached stats. One
   // hex per tracked category; sharpness/tier come straight from the calibration
@@ -140,11 +141,14 @@ export default function Today() {
             }
           />
 
-          <HoneycombStrip
-            cells={honeyCells}
-            logs={logs}
-            onPress={() => router.push('/(tabs)/whenbee')}
-          />
+          <View style={{ gap: t.space[2] }}>
+            <HoneycombStrip
+              cells={honeyCells}
+              logs={logs}
+              onPress={() => router.push('/(tabs)/whenbee')}
+            />
+            <ReclaimTodayLine minutes={todayReclaimMin} />
+          </View>
 
           {focus && summary ? (
             <FocusCard

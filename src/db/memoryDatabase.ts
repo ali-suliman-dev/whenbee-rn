@@ -65,5 +65,8 @@ export function createMemoryDatabase(): Database {
     async insertContextTag(row: ContextTagRow): Promise<void> {
       contextTags.set(`${row.eventId}:${row.key}`, { ...row });
     },
+    async getContextTag(eventId: string, key: string): Promise<ContextTagRow | null> {
+      return contextTags.get(`${eventId}:${key}`) ?? null;
+    },
   };
 }

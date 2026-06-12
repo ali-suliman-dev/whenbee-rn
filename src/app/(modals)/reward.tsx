@@ -9,6 +9,7 @@ import { useReward } from '@/src/features/reward/useReward';
 import { RewardBee } from '@/src/features/reward/RewardBee';
 import { HoneyBar } from '@/src/features/reward/HoneyBar';
 import { ReclaimDeposit } from '@/src/features/reward/ReclaimDeposit';
+import { ReasonChips } from '@/src/features/reward/ReasonChips';
 
 // ──────────────────────────────────────────────────────────────────────────────
 // Reward (Screen 4) — the dopamine payoff: logging IS the reward. Calm, flat
@@ -116,6 +117,17 @@ export default function Reward() {
               reclaimFrom={r.reclaimFrom}
               reclaimTo={r.reclaimTo}
               delayMs={t.motion.reveal}
+            />
+          ) : null}
+
+          {/* Capture-only: an optional "where'd the time go?" row, only when the run
+              diverged enough to be worth a why. Never blocks the two exits, never
+              touches the multiplier/honey/Reclaim — pure side-channel data. */}
+          {r.reasonDirection && r.eventId ? (
+            <ReasonChips
+              eventId={r.eventId}
+              direction={r.reasonDirection}
+              category={r.category}
             />
           ) : null}
         </View>

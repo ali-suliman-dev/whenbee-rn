@@ -1,7 +1,7 @@
 // Public barrel for the data layer. Stores/services import from here.
 
 export type { Database } from './Database';
-export type { CategoryStatRow, RecurringStatRow, TaskEventRow } from './types';
+export type { CategoryStatRow, ContextTagRow, RecurringStatRow, TaskEventRow } from './types';
 export { createMemoryDatabase } from './memoryDatabase';
 export { createSqliteDatabase } from './sqliteDatabase';
 export { getDatabase, runMigrations, __resetDatabaseForTests } from './client';

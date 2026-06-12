@@ -5,6 +5,7 @@ import {
   makeTaskEventsRepo,
   makeRecurringRepo,
   makeCompanionRepo,
+  makeContextTagRepo,
   type Database,
 } from '@/src/db';
 import {
@@ -53,6 +54,9 @@ export interface ApplyLogParams {
 }
 
 export interface LogResult {
+  /** The inserted task-event id (`makeId(createdAt)`) — lets the Reward screen tag
+   *  a capture-only reason against this exact row without re-querying. */
+  eventId: string;
   counted: boolean;
   multiplier: number;
   sharpness: number;
@@ -129,6 +133,14 @@ interface CalibrationState {
   applyLog: (input: ApplyLogParams) => Promise<LogResult>;
   loadCategoryDetail: (categoryId: string) => Promise<CategoryDetail>;
   loadReclaimSummary: () => Promise<ReclaimSummary>;
+  /**
+   * CAPTURE-ONLY. Attach a free-form context tag (a reason) to a logged event.
+   * Pure side-channel analytics: it NEVER trains the model, touches the
+   * multiplier/honey, or banks reclaim. Safe to call (or skip) after a log.
+   */
+  setReason: (eventId: string, value: string, source: string) => Promise<void>;
+  /** Sum of reclaimDividendMin over today's (local-day) completed events. */
+  loadTodayReclaimMin: (nowMs?: number) => Promise<number>;
   resetCategory: (categoryId: string) => Promise<void>;
 }
 
@@ -144,6 +156,17 @@ async function resolveDb(get: () => CalibrationState, set: (p: Partial<Calibrati
 function makeId(createdAt: number): string {
   return `${createdAt}-${Math.random().toString(36).slice(2)}`;
 }
+
+/** Epoch-ms for local midnight of the day containing `nowMs` (device timezone). */
+function startOfLocalDay(nowMs: number): number {
+  const d = new Date(nowMs);
+  d.setHours(0, 0, 0, 0);
+  return d.getTime();
+}
+
+/** How far back the today-reclaim scan reads raw events. A day rarely exceeds
+ *  a handful of logs; this comfortably covers any realistic single day. */
+const TODAY_RECLAIM_SCAN_LIMIT = 200;
 
 export const useCalibrationStore = create<CalibrationState>((set, get) => ({
   logs: 0,
@@ -220,8 +243,9 @@ export const useCalibrationStore = create<CalibrationState>((set, get) => ({
 
     // 6. Persist the raw event (always — abandoned logs are self-awareness data).
     const createdAt = nowMs;
+    const eventId = makeId(createdAt);
     await taskEventsRepo.insert({
-      id: makeId(createdAt),
+      id: eventId,
       category: input.category,
       label: input.label ?? null,
       estimateMin: input.estimateMin,
@@ -315,6 +339,7 @@ export const useCalibrationStore = create<CalibrationState>((set, get) => ({
 
     // 10. Result for the UI.
     return {
+      eventId,
       counted: result.counted,
       multiplier: result.category.mEffective,
       sharpness: result.category.sharpness,
@@ -427,6 +452,30 @@ export const useCalibrationStore = create<CalibrationState>((set, get) => ({
       biggestArea,
       honestLogCount,
     };
+  },
+
+  setReason: async (eventId, value, source) => {
+    const db = await resolveDb(get, set);
+    // Capture-only side channel — writes a context tag and nothing else. No stat
+    // read, no applyLog, no reclaim: the model never sees this.
+    await makeContextTagRepo(db).setReason({
+      eventId,
+      key: 'reason',
+      value,
+      source,
+      createdAt: Date.now(),
+    });
+  },
+
+  loadTodayReclaimMin: async (nowMs) => {
+    const db = await resolveDb(get, set);
+    const taskEventsRepo = makeTaskEventsRepo(db);
+    const dayStart = startOfLocalDay(nowMs ?? Date.now());
+
+    const recent = await taskEventsRepo.listRecent(TODAY_RECLAIM_SCAN_LIMIT);
+    return recent
+      .filter((e) => e.status === 'completed' && e.createdAt >= dayStart)
+      .reduce((sum, e) => sum + e.reclaimDividendMin, 0);
   },
 
   resetCategory: async (categoryId) => {

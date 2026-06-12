@@ -3,18 +3,26 @@ import { useToday } from '../useToday';
 import { useCalibrationStore } from '@/src/stores/calibrationStore';
 import { useTasksStore } from '@/src/stores/tasksStore';
 
+// useFocusEffect runs its effect immediately in tests (no real navigation focus).
+jest.mock('expo-router', () => ({
+  useFocusEffect: (cb: () => void | (() => void)) => cb(),
+}));
+
 const T0 = 1_700_000_000_000;
 
-/** Replace hydrate with a no-op so the hook's mount effect doesn't clobber the
- *  cache we seed by hand (hydrate would re-read an empty db). */
-function stubHydrate() {
-  useCalibrationStore.setState({ hydrate: async () => {} });
+/** Replace the db-touching store actions with no-ops so the hook's mount/focus
+ *  effects don't clobber the cache we seed by hand or hit the database. */
+function stubStoreEffects() {
+  useCalibrationStore.setState({
+    hydrate: async () => {},
+    loadTodayReclaimMin: async () => 0,
+  });
 }
 
 beforeEach(() => {
   useTasksStore.setState({ tasks: [] });
   useCalibrationStore.setState({ logs: 0, statsByCategory: {} });
-  stubHydrate();
+  stubStoreEffects();
 });
 
 describe('useToday', () => {

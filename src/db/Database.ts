@@ -26,4 +26,7 @@ export interface Database {
   addCategoryReclaim(categoryId: string, deltaMin: number): Promise<void>;
   /** Capture-only; never read by the calibration model. */
   insertContextTag(row: ContextTagRow): Promise<void>;
+  /** Read a single capture-only tag (e.g. for the future "what steals time" read).
+   *  NEVER consulted on the calibration path. */
+  getContextTag(eventId: string, key: string): Promise<ContextTagRow | null>;
 }

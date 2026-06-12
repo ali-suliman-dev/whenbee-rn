@@ -237,5 +237,27 @@ export async function createSqliteDatabase(name = 'whenbee.db'): Promise<Databas
         row.createdAt
       );
     },
+    async getContextTag(eventId: string, key: string): Promise<ContextTagRow | null> {
+      const row = await db.getFirstAsync<{
+        event_id: string;
+        key: string;
+        value: string;
+        source: string;
+        created_at: number;
+      }>(
+        `SELECT event_id, key, value, source, created_at FROM log_tags
+         WHERE event_id = ? AND key = ?`,
+        eventId,
+        key
+      );
+      if (!row) return null;
+      return {
+        eventId: row.event_id,
+        key: row.key,
+        value: row.value,
+        source: row.source,
+        createdAt: row.created_at,
+      };
+    },
   };
 }

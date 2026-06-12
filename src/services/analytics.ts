@@ -7,7 +7,10 @@ export type AppEvent =
   | 'screen_view'
   | 'task_logged'
   | 'cell_capped'
-  | 'reclaim_deposit';
+  | 'reclaim_deposit'
+  | 'overrun_reason_shown'
+  | 'overrun_reason_tagged'
+  | 'overrun_reason_skipped';
 interface MinimalClient { capture: (event: string, props?: Record<string, unknown>) => void; }
 export function createAnalytics(client: MinimalClient | null) {
   return { capture(event: AppEvent, props?: Record<string, unknown>) { client?.capture(event, props); } };

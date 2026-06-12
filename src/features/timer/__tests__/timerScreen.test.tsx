@@ -22,6 +22,7 @@ jest.mock('expo-router', () => ({
 }));
 
 const okResult: LogResult = {
+  eventId: 'evt-test',
   counted: true,
   multiplier: 2,
   sharpness: 50,

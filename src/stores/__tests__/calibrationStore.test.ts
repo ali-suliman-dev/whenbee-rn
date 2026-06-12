@@ -524,3 +524,96 @@ describe('calibrationStore — loadReclaimSummary', () => {
     expect(summary.byCategory.every((c) => c.reclaimedMinutes === 0)).toBe(true);
   });
 });
+
+describe('calibrationStore — loadTodayReclaimMin (Task B.5)', () => {
+  // A fixed "now" at midday so we can place events earlier today and yesterday
+  // without straddling a real local-midnight boundary.
+  const NOON = new Date(2026, 5, 12, 12, 0, 0, 0).getTime();
+  const earlierToday = new Date(2026, 5, 12, 8, 30, 0, 0).getTime();
+  const yesterday = new Date(2026, 5, 11, 23, 30, 0, 0).getTime();
+
+  it('sums today\'s completed deposits and excludes yesterday', async () => {
+    const db = freshDb();
+
+    await db.insertTaskEvent(
+      seedEvent({ id: 't1', createdAt: earlierToday, reclaimDividendMin: 20, status: 'completed' }),
+    );
+    await db.insertTaskEvent(
+      seedEvent({ id: 't2', createdAt: NOON - 1000, reclaimDividendMin: 15, status: 'completed' }),
+    );
+    // Yesterday's deposit must NOT count toward today.
+    await db.insertTaskEvent(
+      seedEvent({ id: 'y1', createdAt: yesterday, reclaimDividendMin: 99, status: 'completed' }),
+    );
+
+    const total = await useCalibrationStore.getState().loadTodayReclaimMin(NOON);
+    expect(total).toBe(35);
+  });
+
+  it('ignores non-completed events even when dated today', async () => {
+    const db = freshDb();
+    await db.insertTaskEvent(
+      seedEvent({ id: 't1', createdAt: earlierToday, reclaimDividendMin: 10, status: 'completed' }),
+    );
+    // Abandoned today → carries a dividend field but is not a counted deposit.
+    await db.insertTaskEvent(
+      seedEvent({
+        id: 'a1',
+        createdAt: earlierToday,
+        reclaimDividendMin: 50,
+        status: 'abandoned',
+        actualMin: null,
+      }),
+    );
+
+    const total = await useCalibrationStore.getState().loadTodayReclaimMin(NOON);
+    expect(total).toBe(10);
+  });
+
+  it('returns 0 when nothing was banked today', async () => {
+    const db = freshDb();
+    await db.insertTaskEvent(
+      seedEvent({ id: 'y1', createdAt: yesterday, reclaimDividendMin: 40, status: 'completed' }),
+    );
+    const total = await useCalibrationStore.getState().loadTodayReclaimMin(NOON);
+    expect(total).toBe(0);
+  });
+});
+
+describe('calibrationStore — setReason is capture-only (Task B.5 invariant)', () => {
+  it('tagging a reason never changes mEffective or sharpness', async () => {
+    const db = freshDb();
+
+    // Apply a counted log so there's a real stat + a real event to tag.
+    const res = await useCalibrationStore.getState().applyLog({
+      category: 'cleaning',
+      estimateMin: 15,
+      actualMin: 40,
+      status: 'completed',
+      source: 'timed',
+      adaptSpeed: 'balanced',
+      nowMs: T0,
+    });
+
+    const before = useCalibrationStore.getState().statsByCategory.cleaning;
+    const persistedBefore = await makeCategoryStatsRepo(db).get('cleaning');
+    expect(before).toBeDefined();
+
+    // Capture a reason against the just-logged event.
+    await useCalibrationStore.getState().setReason(res.eventId, 'interrupted', 'manual');
+
+    const after = useCalibrationStore.getState().statsByCategory.cleaning;
+    const persistedAfter = await makeCategoryStatsRepo(db).get('cleaning');
+
+    // The model is byte-for-byte unchanged — the reason is a pure side channel.
+    expect(after?.mEffective).toBe(before?.mEffective);
+    expect(after?.sharpness).toBe(before?.sharpness);
+    expect(after?.n).toBe(before?.n);
+    expect(persistedAfter.mEffective).toBe(persistedBefore.mEffective);
+    expect(persistedAfter.sharpness).toBe(persistedBefore.sharpness);
+
+    // The reason actually landed in the capture-only store.
+    const tag = await db.getContextTag(res.eventId, 'reason');
+    expect(tag?.value).toBe('interrupted');
+  });
+});

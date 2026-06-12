@@ -15,6 +15,7 @@ jest.mock('expo-router', () => ({
 }));
 
 const baseResult: LogResult = {
+  eventId: 'evt-test',
   counted: true,
   multiplier: 2.2,
   sharpness: 64,
@@ -142,5 +143,50 @@ describe('Reward screen', () => {
     } finally {
       spy.mockRestore();
     }
+  });
+
+  it('shows the over-run reason row when the run ran well past the guess', () => {
+    // 32 vs 15 → ratio ~2.1, past the 0.25 gate → over-run chips.
+    useRewardStore.getState().setReward({
+      actualMin: 32,
+      guessMin: 15,
+      category: 'cleaning',
+      label: null,
+      result: baseResult,
+    });
+    render(<Reward />);
+    expect(screen.getByText('Where did the time go?')).toBeOnTheScreen();
+    expect(screen.getByText('Got interrupted')).toBeOnTheScreen();
+    // The two exits are still present — the row never blocks them.
+    expect(screen.getByText('See my Reclaim')).toBeOnTheScreen();
+    expect(screen.getByText('Back to today')).toBeOnTheScreen();
+  });
+
+  it('shows the under-run reason row when the run came in well under the guess', () => {
+    // 8 vs 30 → ratio ~0.27, past the gate on the under side → under-run chips.
+    useRewardStore.getState().setReward({
+      actualMin: 8,
+      guessMin: 30,
+      category: 'email',
+      label: null,
+      result: baseResult,
+    });
+    render(<Reward />);
+    expect(screen.getByText('What made it quick?')).toBeOnTheScreen();
+    expect(screen.getByText('In the zone')).toBeOnTheScreen();
+  });
+
+  it('hides the reason row when the run landed close to the guess', () => {
+    // 16 vs 15 → ratio ~1.07, inside the gate → no chips.
+    useRewardStore.getState().setReward({
+      actualMin: 16,
+      guessMin: 15,
+      category: 'email',
+      label: null,
+      result: baseResult,
+    });
+    render(<Reward />);
+    expect(screen.queryByText('Where did the time go?')).toBeNull();
+    expect(screen.queryByText('What made it quick?')).toBeNull();
   });
 });

@@ -1,4 +1,5 @@
-import { useEffect } from 'react';
+import { useCallback, useEffect, useState } from 'react';
+import { useFocusEffect } from 'expo-router';
 import { useCalibrationStore } from '@/src/stores/calibrationStore';
 import { useTasksStore, type TodayTask } from '@/src/stores/tasksStore';
 import { resolveSuggestion, priorFor, CATEGORY_NAMES } from '@/src/engine';
@@ -17,6 +18,8 @@ interface UseTodayResult {
   focus: TodayTask | null;
   summary: CalibrationSummary | null;
   categoryName: (id: string) => string;
+  /** Minutes Today has handed back so far (local-day reclaim). 0 → the line hides. */
+  todayReclaimMin: number;
 }
 
 /** Title-case a custom-category slug (e.g. "deep_work" → "Deep Work"). */
@@ -35,12 +38,29 @@ function categoryName(id: string): string {
 export function useToday(): UseTodayResult {
   const hydrate = useCalibrationStore((s) => s.hydrate);
   const statsByCategory = useCalibrationStore((s) => s.statsByCategory);
+  const loadTodayReclaimMin = useCalibrationStore((s) => s.loadTodayReclaimMin);
   const focus = useTasksStore((s) => s.tasks[0] ?? null);
+
+  const [todayReclaimMin, setTodayReclaimMin] = useState(0);
 
   // Warm the per-category stats cache on mount (instant once hydrated).
   useEffect(() => {
     void hydrate();
   }, [hydrate]);
+
+  // Re-read the day's reclaim every time Today regains focus, so a fresh deposit
+  // from the Reward flow shows the moment the user lands back here.
+  useFocusEffect(
+    useCallback(() => {
+      let active = true;
+      void loadTodayReclaimMin().then((min) => {
+        if (active) setTodayReclaimMin(min);
+      });
+      return () => {
+        active = false;
+      };
+    }, [loadTodayReclaimMin]),
+  );
 
   let summary: CalibrationSummary | null = null;
   if (focus) {
@@ -56,5 +76,5 @@ export function useToday(): UseTodayResult {
     });
   }
 
-  return { focus, summary, categoryName };
+  return { focus, summary, categoryName, todayReclaimMin };
 }
