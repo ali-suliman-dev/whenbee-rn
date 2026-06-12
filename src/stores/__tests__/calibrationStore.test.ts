@@ -1,4 +1,5 @@
 import { useCalibrationStore } from '../calibrationStore';
+import { useCategoriesStore } from '../categoriesStore';
 import {
   createMemoryDatabase,
   makeCategoryStatsRepo,
@@ -435,5 +436,85 @@ describe('calibrationStore — reclaim deposit (Task A.4)', () => {
 
     const companion = await db.getCompanion();
     expect(companion.reclaimedMinutesLifetime).toBe(15);
+  });
+});
+
+describe('calibrationStore — loadReclaimSummary', () => {
+  function trackCategories(ids: string[]): void {
+    useCategoriesStore.setState({
+      categories: ids.map((id) => ({ id, name: id, adaptSpeed: 'balanced' as AdaptSpeed })),
+    });
+  }
+
+  it('returns lifetime, byCategory (desc), biggestArea, and honestLogCount', async () => {
+    const db = freshDb();
+    trackCategories(['cleaning', 'admin', 'errands']);
+
+    // cleaning: 2 deposits (10 + 20 = 30), 3 trained logs
+    await db.upsertCategoryStat({
+      categoryId: 'cleaning',
+      n: 3,
+      logEwma: 0.4,
+      mEffective: 1.6,
+      sharpness: 40,
+      priorMult: priorFor('cleaning'),
+      adaptSpeed: 'balanced',
+      updatedAt: T0,
+      reclaimedMinutes: 30,
+    });
+    // admin: bigger reclaim (50), 5 trained logs → biggest area
+    await db.upsertCategoryStat({
+      categoryId: 'admin',
+      n: 5,
+      logEwma: 0.3,
+      mEffective: 1.4,
+      sharpness: 70,
+      priorMult: priorFor('admin'),
+      adaptSpeed: 'balanced',
+      updatedAt: T0,
+      reclaimedMinutes: 50,
+    });
+    // errands: no reclaim, no logs
+    await db.upsertCategoryStat({
+      categoryId: 'errands',
+      n: 0,
+      logEwma: 0,
+      mEffective: priorFor('errands'),
+      sharpness: 0,
+      priorMult: priorFor('errands'),
+      adaptSpeed: 'balanced',
+      updatedAt: T0,
+      reclaimedMinutes: 0,
+    });
+    // lifetime companion total banked independently of per-category.
+    await db.addReclaim(80);
+
+    const summary = await useCalibrationStore.getState().loadReclaimSummary();
+
+    expect(summary.lifetimeMin).toBe(80);
+
+    // sorted desc by reclaimedMinutes: admin (50) → cleaning (30) → errands (0)
+    expect(summary.byCategory.map((c) => c.categoryId)).toEqual(['admin', 'cleaning', 'errands']);
+    expect(summary.byCategory[0]?.reclaimedMinutes).toBe(50);
+
+    // biggest area = the max-reclaim category.
+    expect(summary.biggestArea?.categoryId).toBe('admin');
+    expect(summary.biggestArea?.reclaimedMinutes).toBe(50);
+
+    // honestLogCount = sum of trained logs (n) across tracked categories.
+    expect(summary.honestLogCount).toBe(8);
+  });
+
+  it('biggestArea is null when every category has zero reclaim', async () => {
+    freshDb();
+    trackCategories(['cleaning', 'admin']);
+    // No deposits, cold stats (repo seeds n=0, reclaimedMinutes=0).
+
+    const summary = await useCalibrationStore.getState().loadReclaimSummary();
+
+    expect(summary.lifetimeMin).toBe(0);
+    expect(summary.biggestArea).toBeNull();
+    expect(summary.honestLogCount).toBe(0);
+    expect(summary.byCategory.every((c) => c.reclaimedMinutes === 0)).toBe(true);
   });
 });

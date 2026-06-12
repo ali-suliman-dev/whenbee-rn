@@ -88,6 +88,25 @@ export interface CategoryDetail {
   recent: RecentLog[];
 }
 
+/** One tracked category's lifetime reclaim, for the hub's "biggest area" list. */
+export interface ReclaimByCategory {
+  categoryId: string;
+  name: string;
+  reclaimedMinutes: number;
+}
+
+/** Read-only snapshot of reclaim/companion state for the Whenbee hub. */
+export interface ReclaimSummary {
+  /** companion.reclaimedMinutesLifetime — the all-time banked total. */
+  lifetimeMin: number;
+  /** Per-category reclaim, sorted by minutes descending. */
+  byCategory: ReclaimByCategory[];
+  /** The category with the most reclaim, or null when every category is at 0. */
+  biggestArea: ReclaimByCategory | null;
+  /** Total trained (counted) logs across tracked categories — the provenance N. */
+  honestLogCount: number;
+}
+
 /** Display name for a seed category; title-cases a custom slug otherwise. */
 function detailCategoryName(id: string): string {
   const seed = CATEGORY_NAMES[id];
@@ -107,6 +126,7 @@ interface CalibrationState {
   hydrate: () => Promise<void>;
   applyLog: (input: ApplyLogParams) => Promise<LogResult>;
   loadCategoryDetail: (categoryId: string) => Promise<CategoryDetail>;
+  loadReclaimSummary: () => Promise<ReclaimSummary>;
   resetCategory: (categoryId: string) => Promise<void>;
 }
 
@@ -361,6 +381,43 @@ export const useCalibrationStore = create<CalibrationState>((set, get) => ({
       insight,
       trend,
       recent,
+    };
+  },
+
+  loadReclaimSummary: async () => {
+    const db = await resolveDb(get, set);
+    const companionRepo = makeCompanionRepo(db);
+    const categoryStatsRepo = makeCategoryStatsRepo(db);
+
+    const companion = await companionRepo.get();
+    const tracked = useCategoriesStore.getState().categories;
+
+    const stats = await Promise.all(
+      tracked.map(async (cat) => {
+        const stat = await categoryStatsRepo.get(cat.id);
+        return { cat, stat };
+      }),
+    );
+
+    // Sorted desc by reclaimed minutes; the most-reclaimed category is the lead.
+    const byCategory: ReclaimByCategory[] = stats
+      .map(({ cat, stat }) => ({
+        categoryId: cat.id,
+        name: detailCategoryName(cat.id),
+        reclaimedMinutes: stat.reclaimedMinutes,
+      }))
+      .sort((a, b) => b.reclaimedMinutes - a.reclaimedMinutes);
+
+    const top = byCategory[0];
+    const biggestArea = top && top.reclaimedMinutes > 0 ? top : null;
+
+    const honestLogCount = stats.reduce((sum, { stat }) => sum + stat.n, 0);
+
+    return {
+      lifetimeMin: companion.reclaimedMinutesLifetime,
+      byCategory,
+      biggestArea,
+      honestLogCount,
     };
   },
 
