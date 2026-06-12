@@ -42,7 +42,7 @@ export function TaskRow({
     height: HIT,
     alignItems: 'center',
     justifyContent: 'center',
-    opacity: disabled ? 0.3 : 1,
+    opacity: disabled ? t.opacity.disabled : 1,
   });
 
   return (
@@ -52,7 +52,7 @@ export function TaskRow({
         alignItems: 'center',
         gap: t.space[2],
         paddingVertical: t.space[2],
-        borderBottomWidth: 1,
+        borderBottomWidth: t.borderWidth.hairline,
         borderBottomColor: t.colors.hairline,
       }}
     >
@@ -79,7 +79,7 @@ export function TaskRow({
       </View>
 
       {/* Label + category */}
-      <View style={{ flex: 1, gap: 2 }}>
+      <View style={{ flex: 1, gap: t.space[0.5] }}>
         <AppText variant="body" numberOfLines={1} style={{ fontWeight: t.fontWeight.semibold }}>
           {label}
         </AppText>

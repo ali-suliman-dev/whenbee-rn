@@ -41,11 +41,11 @@ export default function Categories() {
   const inputChip: ViewStyle = {
     flexDirection: 'row',
     alignItems: 'center',
-    borderRadius: t.radii.pill,
+    borderRadius: t.radii.full,
     paddingHorizontal: t.space[4],
     paddingVertical: t.space[2],
-    backgroundColor: t.colors.primaryTint,
-    borderWidth: 1.5,
+    backgroundColor: t.colors.primarySoft,
+    borderWidth: t.borderWidth.thin,
     borderColor: t.colors.primary,
     minWidth: 120,
   };

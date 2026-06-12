@@ -67,13 +67,13 @@ export default function Timer() {
     if (reducedMotion) return;
     pulse.value = withRepeat(
       withSequence(
-        withTiming(1, { duration: 700 }),
-        withTiming(0.4, { duration: 700 }),
+        withTiming(1, { duration: t.motion.pulse }),
+        withTiming(0.4, { duration: t.motion.pulse }),
       ),
       -1,
       false,
     );
-  }, [reducedMotion, pulse]);
+  }, [reducedMotion, pulse, t.motion.pulse]);
   const dotStyle = useAnimatedStyle(() => ({ opacity: pulse.value }));
 
   function confirmAbandon() {
@@ -97,9 +97,9 @@ export default function Timer() {
   const closeBtn: ViewStyle = {
     width: 44,
     height: 44,
-    borderRadius: t.radii.pill,
+    borderRadius: t.radii.full,
     backgroundColor: t.colors.surface,
-    borderWidth: 2,
+    borderWidth: t.borderWidth.thick,
     borderColor: t.colors.hairline,
     alignItems: 'center',
     justifyContent: 'center',
@@ -108,7 +108,7 @@ export default function Timer() {
   const liveDot: ViewStyle = {
     width: 8,
     height: 8,
-    borderRadius: 4,
+    borderRadius: t.radii.full,
     backgroundColor: t.colors.primary,
   };
   const eyebrowText: TextStyle = { ...(type.eyebrow as TextStyle), color: t.colors.inkSoft };

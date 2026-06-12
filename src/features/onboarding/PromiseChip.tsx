@@ -20,8 +20,8 @@ export function PromiseChip({
     flexDirection: 'row',
     alignItems: 'center',
     gap: t.space[2],
-    backgroundColor: t.colors.primaryTint,
-    borderRadius: t.radii.lg,
+    backgroundColor: t.colors.primarySoft,
+    borderRadius: t.radii.card,
     paddingHorizontal: t.space[4],
     paddingVertical: t.space[3],
   };

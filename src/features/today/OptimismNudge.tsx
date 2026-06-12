@@ -19,8 +19,8 @@ export function OptimismNudge({ honestMin }: { honestMin: number }) {
     alignItems: 'center',
     gap: t.space[2],
     alignSelf: 'flex-start',
-    backgroundColor: t.colors.accentTint,
-    borderRadius: t.radii.pill,
+    backgroundColor: t.colors.accentSoft,
+    borderRadius: t.radii.full,
     paddingHorizontal: t.space[3],
     paddingVertical: t.space[2],
   };

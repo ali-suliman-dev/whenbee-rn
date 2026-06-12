@@ -7,7 +7,7 @@ import Animated, {
   useReducedMotion,
 } from 'react-native-reanimated';
 import { router } from 'expo-router';
-import * as Haptics from 'expo-haptics';
+import { haptics } from '@/src/lib/haptics';
 import { Ionicons } from '@expo/vector-icons';
 import { Screen } from '@/src/components/Screen';
 import { ScreenHeader } from '@/src/components/ScreenHeader';
@@ -28,19 +28,13 @@ export default function Today() {
   const t = useTheme();
   const { focus, summary, categoryName } = useToday();
 
-  const leadLine: TextStyle = {
-    ...(type.body as unknown as TextStyle),
-    color: t.colors.inkSoft,
-    textAlign: 'center',
-  };
-
   const logChip: ViewStyle = {
     flexDirection: 'row',
     alignItems: 'center',
     gap: t.space[2],
     alignSelf: 'stretch',
     backgroundColor: t.colors.surface,
-    borderWidth: 1,
+    borderWidth: t.borderWidth.hairline,
     borderColor: t.colors.hairline,
     borderRadius: t.radii.card,
     borderCurve: 'continuous',
@@ -63,7 +57,8 @@ export default function Today() {
     bottom: t.space[6],
     paddingBottom: FAB_EDGE,
   };
-  // Solid depth edge behind the front circle — the visible 3D "coin" edge.
+  // Low-emphasis FAB: a neutral raised "coin" with an indigo + glyph, so only the
+  // Start button holds the single indigo FILL on the screen. Same 3D coin press.
   const fabEdge: ViewStyle = {
     position: 'absolute',
     left: 0,
@@ -71,13 +66,15 @@ export default function Today() {
     width: FAB_SIZE,
     height: FAB_SIZE,
     borderRadius: FAB_SIZE / 2,
-    backgroundColor: t.colors.primaryEdge,
+    backgroundColor: t.colors.border,
   };
   const fabCircle: ViewStyle = {
     width: FAB_SIZE,
     height: FAB_SIZE,
     borderRadius: FAB_SIZE / 2,
-    backgroundColor: t.colors.primary,
+    backgroundColor: t.colors.surfaceRaised,
+    borderWidth: t.borderWidth.hairline,
+    borderColor: t.colors.hairline,
     alignItems: 'center',
     justifyContent: 'center',
   };
@@ -93,14 +90,19 @@ export default function Today() {
   }
   function fabPressOut() {
     if (reducedMotion) return;
-    fabY.set(withSpring(0, { damping: 13, stiffness: 340 }));
+    fabY.set(withSpring(0, t.motion.spring));
   }
 
   return (
     <Screen>
       <View style={{ flex: 1 }}>
         <ScrollView
-          contentContainerStyle={{ gap: t.space[5], paddingBottom: t.space[16] }}
+          contentContainerStyle={{
+            flexGrow: 1,
+            gap: t.space[5],
+            // Reserve the FAB's footprint so the bottom-pinned log chip never sits under it.
+            paddingBottom: FAB_SIZE + t.space[8],
+          }}
           showsVerticalScrollIndicator={false}
         >
           <ScreenHeader
@@ -121,31 +123,32 @@ export default function Today() {
           <HoneycombStripPlaceholder onPress={() => router.push('/(tabs)/whenbee')} />
 
           {focus && summary ? (
-            <>
-              <FocusCard
-                categoryLabel={categoryName(focus.category)}
-                taskTitle={focus.label}
-                summary={summary}
-                onStart={() =>
-                  router.push({
-                    pathname: '/(modals)/timer',
-                    params: {
-                      taskId: focus.id,
-                      label: focus.label,
-                      category: focus.category,
-                      estimateMin: summary.honestMinutes,
-                      guessMin: focus.guessMin,
-                    },
-                  })
-                }
-              />
-              <Text style={leadLine}>Just the one thing in front of you.</Text>
-            </>
+            <FocusCard
+              categoryLabel={categoryName(focus.category)}
+              taskTitle={focus.label}
+              summary={summary}
+              onStart={() =>
+                router.push({
+                  pathname: '/(modals)/timer',
+                  params: {
+                    taskId: focus.id,
+                    label: focus.label,
+                    category: focus.category,
+                    estimateMin: summary.honestMinutes,
+                    guessMin: focus.guessMin,
+                  },
+                })
+              }
+            />
           ) : (
             <Text style={emptyCopy}>
               Nothing tracked yet today — tap + when you start something.
             </Text>
           )}
+
+          {/* Flexible spacer anchors the secondary log action to the bottom when
+              content is short (kills the dead lower void), scrolls when it isn't. */}
+          <View style={{ flex: 1 }} />
 
           <Pressable
             onPress={() => router.push('/(modals)/retro')}
@@ -153,14 +156,14 @@ export default function Today() {
             accessibilityLabel="Finished something? Log it and ripen your honey"
             style={logChip}
           >
-            <Ionicons name="time-outline" size={18} color={t.colors.primary} />
+            <Ionicons name="time-outline" size={18} color={t.colors.inkSoft} />
             <Text style={logChipText}>Finished something? Log it &amp; ripen your honey</Text>
           </Pressable>
         </ScrollView>
 
         <Pressable
           onPress={() => {
-            Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
+            haptics.light();
             router.push('/(modals)/add-task');
           }}
           onPressIn={fabPressIn}
@@ -171,7 +174,7 @@ export default function Today() {
         >
           <View style={fabEdge} />
           <Animated.View style={[fabCircle, fabAnim]}>
-            <Ionicons name="add" size={30} color={t.colors.onIndigo} />
+            <Ionicons name="add" size={30} color={t.colors.primary} />
           </Animated.View>
         </Pressable>
       </View>

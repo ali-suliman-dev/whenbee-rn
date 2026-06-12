@@ -44,9 +44,9 @@ export function RewardBee({ sealed = false }: { sealed?: boolean }) {
   const cell: ViewStyle = {
     width: 132,
     height: 132,
-    borderRadius: t.radii['2xl'],
-    backgroundColor: sealed ? t.colors.accent : t.colors.accentTint,
-    borderWidth: 2,
+    borderRadius: t.radii.card,
+    backgroundColor: sealed ? t.colors.accent : t.colors.accentSoft,
+    borderWidth: t.borderWidth.thick,
     borderColor: sealed ? t.colors.accentEdge : t.colors.accent,
     alignItems: 'center',
     justifyContent: 'center',
@@ -56,14 +56,14 @@ export function RewardBee({ sealed = false }: { sealed?: boolean }) {
   const dome: ViewStyle = {
     width: 64,
     height: 64,
-    borderRadius: t.radii.pill,
+    borderRadius: t.radii.full,
     backgroundColor: sealed ? t.colors.onAmber : t.colors.accent,
     opacity: sealed ? 0.18 : 1,
   };
 
   const pill: ViewStyle = {
-    backgroundColor: t.colors.primaryTint,
-    borderRadius: t.radii.pill,
+    backgroundColor: t.colors.primarySoft,
+    borderRadius: t.radii.full,
     paddingHorizontal: t.space[3],
     paddingVertical: t.space[1],
   };

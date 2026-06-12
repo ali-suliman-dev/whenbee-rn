@@ -8,8 +8,10 @@ import { OptimismNudge } from './OptimismNudge';
 import type { CalibrationSummary } from '@/src/domain/types';
 
 // ──────────────────────────────────────────────────────────────────────────────
-// FocusCard — the Today centerpiece. The honest number at the moment of
-// commitment, with one primary action (Start). Raised, indigo-accented.
+// FocusCard — the Today centerpiece. The honest number (neutral `ink` — data is
+// authoritative, not decorative) at the moment of commitment, with one primary
+// action (Start, the screen's single indigo fill). Focal tone: raised surface +
+// soft shadow + one restrained indigo top edge.
 //
 //   ● NEXT · GETTING READY        (tag row)
 //   Leave for work                (task title)
@@ -37,10 +39,12 @@ export function FocusCard({ categoryLabel, taskTitle, summary, onStart }: FocusC
   const dot: ViewStyle = {
     width: 7,
     height: 7,
-    borderRadius: 4,
+    borderRadius: t.radii.full,
     backgroundColor: t.colors.primary,
   };
-  const eyebrow: TextStyle = { ...(type.eyebrow as unknown as TextStyle), color: t.colors.primary };
+  // Label is a quiet context cue, not an accent — indigo is reserved for the dot
+  // (the single "live" marker) + the Start action.
+  const eyebrow: TextStyle = { ...(type.eyebrow as unknown as TextStyle), color: t.colors.inkSoft };
 
   const title: TextStyle = { ...(type.subtitle as unknown as TextStyle), color: t.colors.ink };
 
@@ -58,15 +62,7 @@ export function FocusCard({ categoryLabel, taskTitle, summary, onStart }: FocusC
   const provenance: TextStyle = { ...(type.caption as unknown as TextStyle), color: t.colors.inkSoft };
 
   return (
-    <Card
-      raised
-      radius="2xl"
-      style={{
-        gap: t.space[3],
-        borderTopWidth: 3,
-        borderTopColor: t.colors.primary,
-      }}
-    >
+    <Card tone="focal" style={{ gap: t.space[3] }}>
       <View style={tagRow}>
         <View style={dot} />
         <Text style={eyebrow}>NEXT · {categoryLabel.toUpperCase()}</Text>
@@ -75,7 +71,7 @@ export function FocusCard({ categoryLabel, taskTitle, summary, onStart }: FocusC
       <Text style={title}>{taskTitle}</Text>
 
       <View style={numberRow}>
-        <HonestNumber size="xl" tone="indigo" value={`~${summary.honestMinutes}`} unit="min" />
+        <HonestNumber size="xl" tone="ink" value={`~${summary.honestMinutes}`} unit="min" />
         <Text style={guessNote}>you guessed {summary.guessMinutes}</Text>
       </View>
 

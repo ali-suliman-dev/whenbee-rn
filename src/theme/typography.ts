@@ -1,22 +1,30 @@
+import { tokens } from './tokens';
+
 /**
  * Whenbee typography role scale.
  *
  * Text roles → Plus Jakarta Sans (Jakarta-*)
  * Numeric roles → Inter tabular (Inter-*)
+ *
+ * Sizes are derived from `tokens.fontSize` (the single numeric scale) so the type
+ * ramp is editable in one place — this layer only assigns role → family / size /
+ * line-height / tracking.
  */
+const fs = tokens.fontSize;
+
 export const type = {
-  display:   { fontFamily: 'Jakarta-ExtraBold', fontSize: 30, lineHeight: 33, letterSpacing: -0.75 },
-  title:     { fontFamily: 'Jakarta-ExtraBold', fontSize: 26, lineHeight: 31, letterSpacing: -0.6 },
-  subtitle:  { fontFamily: 'Jakarta-Bold',      fontSize: 22, lineHeight: 27, letterSpacing: -0.2 },
-  heading:   { fontFamily: 'Jakarta-Bold',      fontSize: 17, lineHeight: 22 },
-  bodyLg:    { fontFamily: 'Jakarta-Bold',      fontSize: 16, lineHeight: 22 },
-  body:      { fontFamily: 'Jakarta-Regular',   fontSize: 15, lineHeight: 23 },
-  bodySm:    { fontFamily: 'Jakarta-Medium',    fontSize: 14, lineHeight: 20 },
-  caption:   { fontFamily: 'Jakarta-Medium',    fontSize: 12.5, lineHeight: 18 },
-  micro:     { fontFamily: 'Jakarta-Regular',   fontSize: 11.5, lineHeight: 16 },
-  eyebrow:   { fontFamily: 'Jakarta-Bold',      fontSize: 11, lineHeight: 14, letterSpacing: 2, textTransform: 'uppercase' as const },
-  timerNumeral:   { fontFamily: 'Inter-SemiBold', fontSize: 78, lineHeight: 78, letterSpacing: -2.3, fontVariant: ['tabular-nums'] as const },
-  honestNumberXl: { fontFamily: 'Inter-Bold',     fontSize: 40, lineHeight: 42, letterSpacing: -1.0,  fontVariant: ['tabular-nums'] as const },
-  bigNumber:      { fontFamily: 'Inter-Bold',     fontSize: 30, lineHeight: 32, letterSpacing: -0.6,  fontVariant: ['tabular-nums'] as const },
-  multiplier:     { fontFamily: 'Inter-Bold',     fontSize: 22, lineHeight: 24, letterSpacing: -0.4,  fontVariant: ['tabular-nums'] as const },
+  display:   { fontFamily: 'Jakarta-ExtraBold', fontSize: fs['2xl'],    lineHeight: 33, letterSpacing: -0.75 },
+  title:     { fontFamily: 'Jakarta-ExtraBold', fontSize: fs.title,     lineHeight: 31, letterSpacing: -0.6 },
+  subtitle:  { fontFamily: 'Jakarta-Bold',      fontSize: fs.subtitle,  lineHeight: 27, letterSpacing: -0.2 },
+  heading:   { fontFamily: 'Jakarta-Bold',      fontSize: fs.md,        lineHeight: 22 },
+  bodyLg:    { fontFamily: 'Jakarta-Bold',      fontSize: fs.bodyLg,    lineHeight: 22 },
+  body:      { fontFamily: 'Jakarta-Regular',   fontSize: fs.base,      lineHeight: 23 },
+  bodySm:    { fontFamily: 'Jakarta-Medium',    fontSize: fs.bodySm,    lineHeight: 20 },
+  caption:   { fontFamily: 'Jakarta-Medium',    fontSize: fs.caption,   lineHeight: 18 },
+  micro:     { fontFamily: 'Jakarta-Regular',   fontSize: fs.micro,     lineHeight: 16 },
+  eyebrow:   { fontFamily: 'Jakarta-Bold',      fontSize: fs.xs,        lineHeight: 14, letterSpacing: 2, textTransform: 'uppercase' as const },
+  timerNumeral:   { fontFamily: 'Inter-SemiBold', fontSize: fs.timer,    lineHeight: 78, letterSpacing: -2.3, fontVariant: ['tabular-nums'] as const },
+  honestNumberXl: { fontFamily: 'Inter-Bold',     fontSize: fs.honest,   lineHeight: 42, letterSpacing: -1.0,  fontVariant: ['tabular-nums'] as const },
+  bigNumber:      { fontFamily: 'Inter-Bold',     fontSize: fs['2xl'],   lineHeight: 32, letterSpacing: -0.6,  fontVariant: ['tabular-nums'] as const },
+  multiplier:     { fontFamily: 'Inter-Bold',     fontSize: fs.subtitle, lineHeight: 24, letterSpacing: -0.4,  fontVariant: ['tabular-nums'] as const },
 } as const;

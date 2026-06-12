@@ -1,7 +1,11 @@
 import { tokens } from '../tokens';
 describe('design tokens', () => {
-  it('exposes a numeric spacing scale that only grows', () => {
-    const values = Object.values(tokens.space);
+  it('exposes a numeric spacing scale that only grows by key', () => {
+    // Keys include fractional micro-steps (0.5, 1.5), so order by numeric key —
+    // JS object order would float non-integer keys to the end.
+    const values = Object.entries(tokens.space)
+      .sort(([a], [b]) => Number(a) - Number(b))
+      .map(([, v]) => v);
     for (let i = 1; i < values.length; i++) expect(values[i]).toBeGreaterThan(values[i - 1]!);
   });
   it('exposes light and dark color sets with identical keys', () => {

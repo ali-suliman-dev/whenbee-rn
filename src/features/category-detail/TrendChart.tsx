@@ -36,10 +36,10 @@ export function TrendChart({ trend }: TrendChartProps) {
     justifyContent: 'space-between',
   };
   const pill: ViewStyle = {
-    backgroundColor: t.colors.paper,
-    borderRadius: t.radii.pill,
+    backgroundColor: t.colors.surfaceSunken,
+    borderRadius: t.radii.full,
     paddingHorizontal: t.space[2],
-    paddingVertical: 2,
+    paddingVertical: t.space[0.5],
   };
   const pillText: TextStyle = { ...(type.micro as unknown as TextStyle), color: t.colors.inkSoft };
   const caption: TextStyle = { ...(type.caption as unknown as TextStyle), color: t.colors.inkSoft };
@@ -56,7 +56,7 @@ export function TrendChart({ trend }: TrendChartProps) {
       height: CHART_H,
       alignItems: 'center',
       justifyContent: 'center',
-      backgroundColor: t.colors.paper,
+      backgroundColor: t.colors.surfaceSunken,
       borderRadius: t.radii.md,
     };
     body = (

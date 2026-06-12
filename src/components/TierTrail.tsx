@@ -37,12 +37,12 @@ function NodeIcon({ state, t }: { state: NodeState; t: ReturnType<typeof useThem
       : state === 'now'
         ? {
             backgroundColor: 'transparent',
-            borderWidth: 2.5,
+            borderWidth: t.borderWidth.thick,
             borderColor: t.colors.primary,
           }
         : {
             backgroundColor: 'transparent',
-            borderWidth: 1.5,
+            borderWidth: t.borderWidth.thin,
             borderColor: t.colors.hairline,
           }),
   };
@@ -53,7 +53,7 @@ function NodeIcon({ state, t }: { state: NodeState; t: ReturnType<typeof useThem
         <AppText
           style={{
             color: t.colors.onIndigo,
-            fontSize: 14,
+            fontSize: t.fontSize.bodySm,
             fontWeight: '700' as '700',
             lineHeight: 16,
           }}
@@ -66,7 +66,7 @@ function NodeIcon({ state, t }: { state: NodeState; t: ReturnType<typeof useThem
           style={{
             width: 8,
             height: 8,
-            borderRadius: 4,
+            borderRadius: t.radii.full,
             backgroundColor: t.colors.primary,
           }}
         />
@@ -75,7 +75,7 @@ function NodeIcon({ state, t }: { state: NodeState; t: ReturnType<typeof useThem
         <AppText
           style={{
             color: t.colors.hairline,
-            fontSize: 13,
+            fontSize: t.fontSize.sm,
             lineHeight: 14,
           }}
         >
@@ -122,7 +122,7 @@ export function TierTrail({ nodes }: { nodes: TrailNode[] }) {
             accessibilityRole="listitem"
           >
             {/* Node column */}
-            <View style={{ alignItems: 'center', gap: 4 }}>
+            <View style={{ alignItems: 'center', gap: t.space[1] }}>
               <View
                 accessible
                 accessibilityLabel={`${node.label}: ${node.state === 'done' ? 'completed' : node.state === 'now' ? 'in progress' : 'locked'}`}

@@ -75,7 +75,7 @@ export default function Reward() {
   };
   const honeyPctText: TextStyle = {
     ...(type.multiplier as unknown as TextStyle),
-    color: t.colors.primary,
+    color: t.colors.amberText,
   };
   const numberRow: ViewStyle = { alignItems: 'center', gap: t.space[1] };
 
@@ -91,7 +91,7 @@ export default function Reward() {
           <Text style={headlineText}>{r.headline}</Text>
 
           <View style={numberRow}>
-            <HonestNumber size="xl" tone="indigo" value={String(r.actualMin)} unit="min" />
+            <HonestNumber size="xl" tone="ink" value={String(r.actualMin)} unit="min" />
             <Text style={subText}>you guessed {r.guessMin} — now we both know</Text>
           </View>
         </View>

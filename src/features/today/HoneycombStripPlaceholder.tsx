@@ -1,5 +1,5 @@
 import { Pressable, View, Text, type ViewStyle, type TextStyle } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
+import Svg, { Polygon } from 'react-native-svg';
 import { useCalibrationStore } from '@/src/stores/calibrationStore';
 import { useTheme } from '@/src/theme/useTheme';
 import { type } from '@/src/theme/typography';
@@ -51,41 +51,45 @@ export function HoneycombStripPlaceholder({ onPress }: { onPress: () => void }) 
 
   const { pct, tier, nextTier, logsToNext } = aggregate(stats, logs);
 
+  // Quieter than the FocusCard: a HUD, not the hero. Thin hairline, card radius.
   const card: ViewStyle = {
     flexDirection: 'row',
     alignItems: 'center',
     gap: t.space[3],
     backgroundColor: t.colors.surface,
-    borderWidth: 2,
+    borderWidth: t.borderWidth.thin,
     borderColor: t.colors.hairline,
-    borderRadius: t.radii.xl,
+    borderRadius: t.radii.card,
     padding: t.space[3],
   };
   const hexBadge: ViewStyle = {
     width: 40,
     height: 40,
     borderRadius: t.radii.md,
-    backgroundColor: t.colors.accentTint,
+    backgroundColor: t.colors.accentSoft,
     alignItems: 'center',
     justifyContent: 'center',
   };
   const headingRow: ViewStyle = { flexDirection: 'row', alignItems: 'center', gap: t.space[2] };
   const heading: TextStyle = { ...(type.heading as unknown as TextStyle), color: t.colors.ink };
+  // Tier = honey ripeness → amber semantics (the one legitimate amber up top),
+  // not indigo. Pills stop being indigo-filled.
   const pill: ViewStyle = {
-    backgroundColor: t.colors.primaryTint,
-    borderRadius: t.radii.pill,
+    backgroundColor: t.colors.accentSoft,
+    borderRadius: t.radii.full,
     paddingHorizontal: t.space[2],
-    paddingVertical: 2,
+    paddingVertical: t.space[0.5],
   };
   const pillText: TextStyle = {
     ...(type.micro as unknown as TextStyle),
-    color: t.colors.primary,
+    color: t.colors.amberText,
     fontWeight: t.fontWeight.semibold as TextStyle['fontWeight'],
   };
   const subline: TextStyle = { ...(type.caption as unknown as TextStyle), color: t.colors.inkSoft };
+  // Neutral, authoritative — the only color is the amber progress arrow.
   const nextLine: TextStyle = {
     ...(type.caption as unknown as TextStyle),
-    color: t.colors.primary,
+    color: t.colors.ink,
     fontWeight: t.fontWeight.semibold as TextStyle['fontWeight'],
   };
 
@@ -97,9 +101,12 @@ export function HoneycombStripPlaceholder({ onPress }: { onPress: () => void }) 
       style={card}
     >
       <View style={hexBadge}>
-        <Ionicons name="apps-outline" size={20} color={t.colors.accent} />
+        {/* Real honeycomb cell — a flat-top hexagon in amber, not a dot grid. */}
+        <Svg width={20} height={20} viewBox="0 0 24 24">
+          <Polygon points="6,2.5 18,2.5 22.5,12 18,21.5 6,21.5 1.5,12" fill={t.colors.accent} />
+        </Svg>
       </View>
-      <View style={{ flex: 1, gap: 3 }}>
+      <View style={{ flex: 1, gap: t.space[0.5] }}>
         <View style={headingRow}>
           <Text style={heading}>Your honeycomb</Text>
           <View style={pill}>
@@ -111,7 +118,7 @@ export function HoneycombStripPlaceholder({ onPress }: { onPress: () => void }) 
         </Text>
         {nextTier ? (
           <Text style={nextLine}>
-            {logsToNext} logs to {nextTier} →
+            {logsToNext} logs to {nextTier} <Text style={{ color: t.colors.amberText }}>→</Text>
           </Text>
         ) : null}
       </View>

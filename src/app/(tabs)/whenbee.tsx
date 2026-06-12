@@ -43,7 +43,7 @@ export default function Whenbee() {
   return (
     <Screen>
       <ScrollView
-        contentContainerStyle={{ gap: t.space[4], paddingTop: t.space[4], paddingBottom: t.space[12] }}
+        contentContainerStyle={{ gap: t.space[5], paddingTop: t.space[4], paddingBottom: t.space[12] }}
         showsVerticalScrollIndicator={false}
       >
         <ScreenHeader
@@ -92,16 +92,16 @@ function CategoryRow({
     gap: t.space[3],
     minHeight: 56,
     backgroundColor: t.colors.surface,
-    borderWidth: 1,
+    borderWidth: t.borderWidth.hairline,
     borderColor: t.colors.hairline,
-    borderRadius: t.radii.lg,
+    borderRadius: t.radii.card,
     paddingHorizontal: t.space[4],
     paddingVertical: t.space[3],
   };
   const nameText: TextStyle = { ...(type.bodyLg as unknown as TextStyle), color: t.colors.ink, flex: 1 };
   const multText: TextStyle = {
     fontFamily: 'Inter-Bold',
-    fontSize: 17,
+    fontSize: t.fontSize.md,
     color: t.colors.primary,
     fontVariant: ['tabular-nums'],
   };

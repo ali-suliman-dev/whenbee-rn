@@ -28,12 +28,20 @@ export function AhaCard({ insight, categoryName, n }: AhaCardProps) {
   const [dismissed, setDismissed] = useState(false);
   if (dismissed) return null;
 
+  // Light mode: a deliberate dark "night" callout on cream (light text).
+  // Dark mode: a normal raised card — a near-black block would vanish on the deep
+  // bg — keeping the indigo accent + ink text.
+  const isDark = t.mode === 'dark';
+  const fg = isDark ? t.colors.ink : t.colors.paper;
+  const fgSoft = isDark ? t.colors.inkSoft : t.colors.paper;
   const card: ViewStyle = {
-    backgroundColor: t.colors.night,
-    borderRadius: t.radii['2xl'],
+    backgroundColor: isDark ? t.colors.surfaceRaised : t.colors.night,
+    borderRadius: t.radii.card,
     padding: t.space[4],
     gap: t.space[2],
-    borderLeftWidth: 3,
+    borderWidth: isDark ? t.borderWidth.hairline : 0,
+    borderColor: t.colors.hairline,
+    borderLeftWidth: t.borderWidth.thick,
     borderLeftColor: t.colors.primary,
   };
   const headerRow: ViewStyle = {
@@ -43,14 +51,13 @@ export function AhaCard({ insight, categoryName, n }: AhaCardProps) {
   };
   const eyebrowRow: ViewStyle = { flexDirection: 'row', alignItems: 'center', gap: t.space[2] };
   const eyebrow: TextStyle = { ...(type.eyebrow as unknown as TextStyle), color: t.colors.accent };
-  // Headline number is indigo on the dark surface; we lighten the accent to read.
   const headline: TextStyle = {
     ...(type.heading as unknown as TextStyle),
-    color: t.colors.onIndigo,
+    color: fg,
   };
   const body: TextStyle = {
     ...(type.bodySm as unknown as TextStyle),
-    color: t.colors.inkSoft,
+    color: fgSoft,
   };
   const dismiss: ViewStyle = {
     width: 44,
@@ -73,7 +80,7 @@ export function AhaCard({ insight, categoryName, n }: AhaCardProps) {
           hitSlop={8}
           style={dismiss}
         >
-          <Ionicons name="close" size={18} color={t.colors.inkSoft} />
+          <Ionicons name="close" size={18} color={fgSoft} />
         </Pressable>
       </View>
 
