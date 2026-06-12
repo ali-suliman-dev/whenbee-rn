@@ -41,6 +41,26 @@ describe('memoryDatabase — task events', () => {
     expect(limited.map((r) => r.id)).toEqual(['b', 'c']);
   });
 
+  it('deleteEventsByCategory removes only the target category, leaving others intact', async () => {
+    const db = createMemoryDatabase();
+    await db.insertTaskEvent(makeEvent({ id: 'a', category: 'cleaning', createdAt: 1 }));
+    await db.insertTaskEvent(makeEvent({ id: 'b', category: 'cleaning', createdAt: 2 }));
+    await db.insertTaskEvent(makeEvent({ id: 'c', category: 'admin', createdAt: 3 }));
+
+    await db.deleteEventsByCategory('cleaning');
+
+    expect(await db.listEventsByCategory('cleaning', 30)).toHaveLength(0);
+    const admin = await db.listEventsByCategory('admin', 30);
+    expect(admin.map((r) => r.id)).toEqual(['c']);
+  });
+
+  it('deleteEventsByCategory on an empty/unknown category is a no-op', async () => {
+    const db = createMemoryDatabase();
+    await db.insertTaskEvent(makeEvent({ id: 'a', category: 'cleaning', createdAt: 1 }));
+    await db.deleteEventsByCategory('errands');
+    expect(await db.listEventsByCategory('cleaning', 30)).toHaveLength(1);
+  });
+
   it('listRecentEvents returns all categories newest first, respects limit', async () => {
     const db = createMemoryDatabase();
     await db.insertTaskEvent(makeEvent({ id: 'a', category: 'cleaning', createdAt: 1 }));

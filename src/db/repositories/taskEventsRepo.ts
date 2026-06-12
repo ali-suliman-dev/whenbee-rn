@@ -7,6 +7,7 @@ export interface TaskEventsRepo {
   insert(row: TaskEventRow): Promise<void>;
   listByCategory(categoryId: string, limit?: number): Promise<TaskEventRow[]>;
   listRecent(limit?: number): Promise<TaskEventRow[]>;
+  deleteByCategory(categoryId: string): Promise<void>;
 }
 
 export function makeTaskEventsRepo(db: Database): TaskEventsRepo {
@@ -19,6 +20,9 @@ export function makeTaskEventsRepo(db: Database): TaskEventsRepo {
     },
     async listRecent(limit = 50): Promise<TaskEventRow[]> {
       return db.listRecentEvents(limit);
+    },
+    async deleteByCategory(categoryId: string): Promise<void> {
+      await db.deleteEventsByCategory(categoryId);
     },
   };
 }

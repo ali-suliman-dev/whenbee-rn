@@ -11,6 +11,8 @@ export interface Database {
   insertTaskEvent(row: TaskEventRow): Promise<void>;
   /** Newest first. */
   listEventsByCategory(categoryId: string, limit: number): Promise<TaskEventRow[]>;
+  /** Wipe every event for a category — the "reset this category's learning" path. */
+  deleteEventsByCategory(categoryId: string): Promise<void>;
   /** Newest first, across all categories. */
   listRecentEvents(limit: number): Promise<TaskEventRow[]>;
 

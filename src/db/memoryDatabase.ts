@@ -30,6 +30,11 @@ export function createMemoryDatabase(): Database {
       const matching = [...events.values()].filter((e) => e.category === categoryId);
       return sortedEvents(matching, limit);
     },
+    async deleteEventsByCategory(categoryId: string): Promise<void> {
+      for (const [id, row] of events) {
+        if (row.category === categoryId) events.delete(id);
+      }
+    },
     async listRecentEvents(limit: number): Promise<TaskEventRow[]> {
       return sortedEvents([...events.values()], limit);
     },
