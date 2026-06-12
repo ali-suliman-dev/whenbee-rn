@@ -11,4 +11,14 @@ describe('design tokens', () => {
     for (const key of ['bg', 'surface', 'text', 'textMuted', 'primary', 'border'] as const)
       expect(tokens.colors.light[key]).toMatch(/^#|rgb/);
   });
+  it('uses the Flat Tactical warm-paper + indigo palette', () => {
+    expect(tokens.colors.light.bg).toBe('#F4F1EA');
+    expect(tokens.colors.light.primary).toBe('#6B5BE6');
+    expect(tokens.colors.light.accent).toBe('#EEAE4D');
+    expect(tokens.colors.light.success).toBe('#33B07C');
+  });
+  it('exposes the indigoDeep/amberDeep tactile edge colors', () => {
+    expect(tokens.colors.light.primaryEdge).toBe('#463B9E');
+    expect(tokens.colors.light.accentEdge).toBe('#C68A30');
+  });
 });
