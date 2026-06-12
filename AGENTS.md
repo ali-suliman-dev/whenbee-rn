@@ -11,6 +11,7 @@ This project runs on **Expo SDK 54**. Always read the SDK 54 docs at https://doc
 - **RevenueCat purchases:** never assume `react-native-purchases` works in Expo Go. It is guarded by `src/lib/isExpoGo.ts`. Always check that guard before writing any purchase code.
 - **Colors and spacing:** never hardcode values. Use `src/theme/tokens.ts` via `useTheme()`. That file is the single source of truth for the visual design.
 - **Layer import rule:** `src/app/**` and `src/components/**` must not import from `src/services/*` or `src/db/*` directly. Route through a store, provider, or feature hook. ESLint enforces this.
+- **App icon:** `app.json` must NOT set `ios.icon` to a `.icon` (Icon Composer) file — it needs Xcode 26+ and fails the build (`actool` error 65) on older Xcode. Use the PNG `icon`. `ios/`/`android/` are gitignored (prebuild/CNG) — regenerate with `npx expo prebuild --clean`, never hand-edit.
 - **Commits:** use Conventional Commits. No AI/co-author attribution — see the HARD RULE at the top.
 
 ## Further reading

@@ -33,6 +33,16 @@ Run lint + typecheck + test before every commit — CI runs the same set on ever
 
 **Full how-to — env setup, Expo Go vs. dev builds, EAS build/submit profiles, troubleshooting — is in [docs/DEVELOPMENT.md](docs/DEVELOPMENT.md).** Use `npx expo install <pkg>` (not `npm install`) for Expo/RN deps, then `npx expo-doctor` (expect 18/18).
 
+## Known gotchas (scaffold defaults that bite)
+
+- **Dev build only — Expo Go cannot run this app.** Native modules (`react-native-purchases`, `@sentry`, `@expo/ui`, `expo-glass-effect`, `expo-dev-client`) make Expo Go spin forever. Use `npm run ios`.
+- **`reactCompiler` + nativewind `jsxImportSource` drop function-form styles on `Pressable`.** `style={({ pressed }) => …}` silently renders nothing. Put visual style on an inner `View`; keep `Pressable` a bare touch wrapper (see `AppButton`/`Chip`). Read/write reanimated shared values with `.get()/.set()`, never `.value`.
+- **No CSS `boxShadow`** on RN 0.81 / Fabric — it renders as a hard line, not a soft shadow. For depth use a View-based edge (see `AppButton`'s coin edge) or `Platform.select` shadow.
+- **Footers/tab bar must add `useSafeAreaInsets().bottom`** — `Screen` only insets top/left/right, so anything pinned to the bottom otherwise sits under the home indicator.
+- **Zustand persist + sync kv (`zustandKv`) rehydrates during `create()`.** Set hydration flags via the captured `state` in `onRehydrateStorage`, never the store const (TDZ → flag never flips → infinite boot spinner). See `onboardingStore`.
+- **Fonts live in `src/assets/fonts/`**, not root `assets/`. `@/*` resolves both `./` and `./src/*` — check both roots before assuming a file is missing.
+- **Verify UI on the sim:** there's no CLI tap. Reset onboarding by deleting `Documents/SQLite/ExpoSQLiteStorage` + `whenbee.db` in the app data container (`xcrun simctl get_app_container booted com.whenbee.app data`), then `xcrun simctl launch booted com.whenbee.app`; capture with `xcrun simctl io booted screenshot`.
+
 ## Architecture big picture
 
 Detailed layout is in [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) and [docs/THEMING.md](docs/THEMING.md). The non-obvious cross-file structure:
