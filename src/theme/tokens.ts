@@ -33,7 +33,11 @@ export const tokens = {
   //   full true pills, FAB, dots, the tab indicator
   radii: { none: 0, sm: 8, md: 12, card: 16, sheet: 20, full: 999 },
 
-  borderWidth: { hairline: 1, thin: 1.5, thick: 2 },
+  // `card` is the ONE knob for every card's edge — change it once to restyle (or
+  // set 0 to remove) all card borders app-wide. hairline/thin/thick stay for
+  // dividers, inputs and accent edges, so tuning cards never disturbs them.
+  // borderWidth: { hairline: 1, thin: 1.5, thick: 2, card: 1 },
+  borderWidth: { hairline: 0, thin: 1, thick: 2, card: 0 },
 
   // Replaces scattered 0.3 / 0.4 / 0.6 opacities.
   opacity: { disabled: 0.4, pressed: 0.6 },
@@ -41,9 +45,9 @@ export const tokens = {
   // The numeric type scale — typography.ts (the role layer) derives every role
   // size from these, so the whole scale is editable in one place.
   fontSize: {
-    xs: 11, sm: 13, base: 15, md: 17, lg: 20, xl: 24, '2xl': 30, '3xl': 38,
+    xs: 10, sm: 12, base: 14, md: 16, lg: 20, xl: 24, '2xl': 30, '3xl': 38,
     // finer steps the role scale needs
-    micro: 11.5, caption: 12.5, bodySm: 14, bodyLg: 16, subtitle: 22, title: 26, honest: 40, timer: 78,
+    micro: 10, caption: 12, bodySm: 14, bodyLg: 16, subtitle: 22, title: 26, honest: 40, timerClock: 64, timer: 78,
   },
   fontWeight: { regular: '400', medium: '500', semibold: '600', bold: '700' },
   fontFamily: { ui: 'System', mono: 'Menlo' },
@@ -59,11 +63,20 @@ export const tokens = {
   // flats) per surface. Height derives as width × √3/2 in the component, so the
   // hexes stay regular. strip = the Today HUD; hub = the Whenbee grid; detail =
   // the category screen. The wax-cap rim width also lives here.
-  honeycomb: { strip: 22, hub: 56, detail: 80, capRim: 1.5 },
+  // `stripMax` caps how many combs the Today HUD shows before a "+N" overflow tail
+  // (the row is bounded so the vertical card never grows / clips with many combs).
+  honeycomb: { strip: 22, hub: 56, detail: 80, capRim: 1.5, stripMax: 6 },
+
+  // Progress-bar geometry (honey-fill track). `track` = bar height in RN points;
+  // the fill reuses `radii.full` + `colors.accent`, the track `colors.surfaceSunken`.
+  progress: { track: 6 },
 
   motion: {
     fast: 120, base: 220, slow: 360, press: 110, reveal: 600, draw: 950, sheet: 340,
     pulse: 700, toast: 300, honeyFill: 900, float: 3800,
+    // drift = one full revolution of the RayBurst sunburst. Slow enough to stay
+    // calm, fast enough to read as clearly moving (a wedge passes ~every 0.8s).
+    drift: 14000,
     // Shared physics — deduped from AppButton + FAB.
     spring: { damping: 13, stiffness: 340 },
     // Named curves — declared once, not re-typed per file.
@@ -73,7 +86,8 @@ export const tokens = {
   colors: {
     light: {
       // ── 3-step surface ladder (figure/ground: each step lifts clearly) ──
-      bg: '#F4F1EA', // cream (page ground — the 60%)
+      // bg: '#F4F1EA', // cream (page ground — the 60%)
+      bg: '#F4F2FC', // cream (page ground — the 60%)
       surface: '#FFFFFF', // card — lifts off the cream
       surfaceRaised: '#FFFFFF', // focal card (pair with soft shadow)
       surfaceSunken: '#ECE8DE', // wells / inset tracks
@@ -92,6 +106,9 @@ export const tokens = {
       accent: '#EEAE4D',
       accentEdge: '#C68A30',
       accentSoft: '#FBEFD6', // low-emphasis amber fill
+      // RayBurst sunburst wedge fill. A deeper periwinkle than primarySoft so the
+      // rays actually read on cream (primarySoft was near-invisible on the page bg).
+      rayFill: '#BFB2F0',
       amberText: '#8A5A12', // AA amber-on-light text
       success: '#33B07C',
       successSoft: '#E2F4EA',
@@ -136,6 +153,8 @@ export const tokens = {
       accent: '#EEAE4D',
       accentEdge: '#C68A30',
       accentSoft: 'rgba(238,174,77,0.18)',
+      // RayBurst wedge fill — indigo lifted just off the deep bg (the #8 look).
+      rayFill: 'rgba(130,117,240,0.30)',
       amberText: '#EEAE4D',
       success: '#33B07C',
       successSoft: 'rgba(51,176,124,0.18)',
@@ -158,6 +177,23 @@ export const tokens = {
       primaryText: '#14151D',
       paper: '#F4F1EA',
     },
+  },
+
+  // Bee-burst illustration geometry (RayBurst / CoinBadge / BeeBurst). Kept here so
+  // no component inlines a raw px / opacity. `ray.opacity`/`opacityAlt` are the two
+  // alternating sunburst-wedge fill opacities (applied to `colors.primarySoft`);
+  // `countHero`/`countSoft` set wedge density per intensity. Float/bob/lift are the
+  // gentle ambient travel distances; coinEdge is the button-edge depth (cf. AppButton).
+  burst: {
+    // ONE sunburst look everywhere (reward, paywall, hub) — the two alternating
+    // wedge fill opacities applied to `colors.primarySoft`, at a single density.
+    ray: { count: 18, opacity: 0.85, opacityAlt: 0.4 },
+    stage: 240, // ray-burst stage edge (square)
+    bee: 120, // mascot size inside a hero burst
+    beeFloat: 5, // ± vertical bee drift (calm ambient)
+    coinBob: 3, // ± coin bob
+    coinLift: 10, // coin mount-pop lift
+    coinEdge: 4, // coin button-edge depth (cf. AppButton)
   },
 
   // ── brand illustration palette ──────────────────────────────────────────────
