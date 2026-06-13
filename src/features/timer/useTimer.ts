@@ -95,27 +95,40 @@ export function useTimer(params: TimerParams): UseTimerResult {
   // the active-timer bar, or restored at boot), attach to its existing startedAt —
   // calling start() again would reset the clock and lose elapsed time. Only start a
   // fresh session when none is running for this task.
-  const started = useRef(false);
+  //
+  // Resolve startedAt SYNCHRONOUSLY (render needs it for the frame callback +
+  // clocks) but DO NOT write the store mid-render: a store write here updates the
+  // ActiveTimerBar mounted under this modal, which React forbids during render
+  // ("Cannot update a component while rendering a different component"). The fresh
+  // session is committed to the store in the effect below, after commit.
   const startedFresh = useRef(false);
-  if (!started.current) {
+  const startedAtRef = useRef<number | null>(null);
+  if (startedAtRef.current === null) {
     const s = useTimerStore.getState();
     const sameTask = taskId ? s.taskId === taskId : s.taskLabel === label;
-    if (!(s.isRunning && sameTask)) {
-      start({ label, category, estimateMin, guessMin, taskId: taskId ?? null, suggestedHonestMin });
+    if (s.isRunning && sameTask && s.startedAt !== null) {
+      startedAtRef.current = s.startedAt; // attach to the running session
+    } else {
+      startedAtRef.current = Date.now(); // fresh session — store write deferred below
       startedFresh.current = true;
-      // task_started: the timer opened a fresh session. `guess_min` is the user's
-      // raw guess (drives calibration), not the honest ring target.
-      analytics.capture('task_started', { category, guess_min: guessMin, source: 'today' });
     }
-    started.current = true;
   }
-  const startedAt = useTimerStore.getState().startedAt ?? Date.now();
+  const startedAt = startedAtRef.current;
 
-  // On a FRESH start only, schedule the local "estimate is up" ping (so the timer
-  // works backgrounded/closed) and ask permission gently the first time. Attaching
-  // to an existing session keeps the notification already scheduled at its start.
+  // Commit a FRESH session AFTER render (never during it). Also schedules the local
+  // "estimate is up" ping (so the timer works backgrounded/closed), the Lock-Screen
+  // finish ring, and asks notification permission gently the first time. Attaching
+  // to an existing session is a no-op here — its store row, notification, and Live
+  // Activity already exist.
   useEffect(() => {
     if (!startedFresh.current) return;
+    start(
+      { label, category, estimateMin, guessMin, taskId: taskId ?? null, suggestedHonestMin },
+      startedAt,
+    );
+    // task_started: the timer opened a fresh session. `guess_min` is the user's raw
+    // guess (drives calibration), not the honest ring target.
+    analytics.capture('task_started', { category, guess_min: guessMin, source: 'today' });
     // Lock-Screen / Dynamic Island finish-time ring counts down to the HONEST
     // finish (the number the user saw), not the raw guess. No-op in Expo Go.
     startFinishTimeActivity({
@@ -126,7 +139,10 @@ export function useTimer(params: TimerParams): UseTimerResult {
       const granted = await ensureNotificationPermission();
       if (granted) await scheduleTimerDone({ label, startedAt, estimateMin });
     })();
-  }, [label, startedAt, estimateMin, suggestedHonestMin]);
+    // Runs exactly once for a fresh session; route params are stable for the
+    // component's lifetime, so an empty dep list is correct here.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const estimateSec = Math.max(0, Math.round(estimateMin * 60));
 

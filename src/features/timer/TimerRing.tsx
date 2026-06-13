@@ -59,8 +59,15 @@ export function TimerRing({
     return f > 1 ? 1 : f;
   }, [estimateSec]);
 
-  // Whole elapsed minutes for the center numeral.
-  const minutes = useDerivedValue(() => Math.floor(elapsedSec.value / 60), []);
+  // m:ss clock for the center numeral — ticks every second so time visibly moves.
+  // Formatted on the UI thread (worklet) and written straight to the native text,
+  // so there is still zero per-second React re-render.
+  const clock = useDerivedValue(() => {
+    const total = elapsedSec.value;
+    const m = Math.floor(total / 60);
+    const s = total % 60;
+    return `${m}:${s < 10 ? '0' : ''}${s}`;
+  }, []);
 
   const progressProps = useAnimatedProps(() => ({
     strokeDashoffset: CIRCUMFERENCE * (1 - fraction.value),
@@ -98,22 +105,16 @@ export function TimerRing({
   };
 
   const numeralStyle: TextStyle = {
-    ...(type.timerNumeral as unknown as TextStyle),
+    ...(type.timerClock as unknown as TextStyle),
     color: t.colors.ink,
     textAlign: 'center',
     // AnimatedNumeral colour flips to amber on overrun internally.
   };
 
-  const unitStyle: TextStyle = {
-    ...(type.eyebrow as TextStyle),
-    color: t.colors.inkSoft,
-    marginTop: 2,
-  };
-
   const guessStyle: TextStyle = {
     ...(type.caption as TextStyle),
     color: t.colors.inkSoft,
-    marginTop: 6,
+    marginTop: t.space[1],
   };
 
   return (
@@ -168,14 +169,14 @@ export function TimerRing({
       {/* Center label — numeral driven by the shared value, no setState. */}
       <View style={center} pointerEvents="none">
         <AnimatedNumeral
-          minutes={minutes}
+          text={clock}
           overProgress={overProgress}
           style={numeralStyle}
           amberColor={amber}
           inkColor={t.colors.ink}
+          defaultText="0:00"
         />
-        <Animated.Text style={unitStyle}>MINUTES</Animated.Text>
-        <Animated.Text style={guessStyle}>you guessed {guessMin}</Animated.Text>
+        <Animated.Text style={guessStyle}>you guessed {guessMin}m</Animated.Text>
       </View>
     </View>
   );

@@ -117,7 +117,7 @@ describe('Live Timer screen', () => {
   it('renders the task name and the "you guessed" sub', () => {
     render(<Timer />);
     expect(screen.getByText('Leave for work')).toBeOnTheScreen();
-    expect(screen.getByText('you guessed 15')).toBeOnTheScreen();
+    expect(screen.getByText('you guessed 15m')).toBeOnTheScreen();
   });
 
   it('Stop & log: applyLog completed/timed with the GUESS (not honest), hands off, navigates to reward', async () => {
