@@ -17,6 +17,13 @@ export function formatClock(epochMs: number): string {
   return `${hour12}:${minutes.toString().padStart(2, '0')}`;
 }
 
+/** Local 12-hour clock with meridiem: "9:42am", "5:00pm", "12:00pm" (noon). */
+export function formatClockMeridiem(epochMs: number): string {
+  const d = new Date(epochMs);
+  const meridiem = d.getHours() < 12 ? 'am' : 'pm';
+  return `${formatClock(epochMs)}${meridiem}`;
+}
+
 /** "mm:ss" with a 2-digit second; minutes are not capped (e.g. "61:01"). */
 export function formatMmSs(totalSeconds: number): string {
   const whole = Math.max(0, Math.floor(totalSeconds));

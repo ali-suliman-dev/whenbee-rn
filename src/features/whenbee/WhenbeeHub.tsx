@@ -9,6 +9,7 @@ import { useTheme } from '@/src/theme/useTheme';
 import { type } from '@/src/theme/typography';
 import { useCategoriesStore } from '@/src/stores/categoriesStore';
 import { useCalibrationStore } from '@/src/stores/calibrationStore';
+import { useEntitlement } from '@/src/features/paywall/useEntitlement';
 import { CATEGORY_NAMES } from '@/src/engine';
 import { RayBurst } from '@/src/components/bee/RayBurst';
 import { useWhenbeeHub } from './useWhenbeeHub';
@@ -50,6 +51,7 @@ export function WhenbeeHub() {
   const vm = useWhenbeeHub();
   const categories = useCategoriesStore((s) => s.categories);
   const stats = useCalibrationStore((s) => s.statsByCategory);
+  const isPro = useEntitlement((s) => s.isPro);
 
   // Reclaim doesn't push on deposit — re-pull the async totals on tab focus.
   const { refresh } = vm;
@@ -63,7 +65,13 @@ export function WhenbeeHub() {
     router.push({ pathname: '/category/[category]', params: { category: id } });
   }
 
-  function openPaywall() {
+  // Pro users go straight to the writeable Honest-Day screen; everyone else hits
+  // the paywall (same CTA, branched on entitlement).
+  function openDayHonest() {
+    if (isPro) {
+      router.push('/(modals)/honest-day');
+      return;
+    }
     router.push({ pathname: '/(modals)/paywall', params: { trigger: 'make_day_honest' } });
   }
 
@@ -118,7 +126,7 @@ export function WhenbeeHub() {
       )}
 
       {/* 6 — Pro CTA */}
-      <AppButton label="Make my whole day honest" variant="amber" fullWidth onPress={openPaywall} />
+      <AppButton label="Make my whole day honest" variant="amber" fullWidth onPress={openDayHonest} />
     </View>
   );
 }

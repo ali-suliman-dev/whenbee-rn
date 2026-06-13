@@ -8,6 +8,7 @@ export default function ModalsLayout() {
       <Stack.Screen name="retro" options={{ presentation: 'formSheet', headerShown: false }} />
       <Stack.Screen name="add-task" options={{ presentation: 'formSheet', headerShown: false }} />
       <Stack.Screen name="paywall" options={{ presentation: 'formSheet', headerShown: false }} />
+      <Stack.Screen name="honest-day" options={{ presentation: 'formSheet', headerShown: false }} />
     </Stack>
   );
 }

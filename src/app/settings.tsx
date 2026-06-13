@@ -20,6 +20,10 @@ export default function Settings() {
     router.push({ pathname: '/(modals)/paywall', params: { trigger: 'settings_upgrade' } });
   }
 
+  function openHonestDay() {
+    router.push('/(modals)/honest-day');
+  }
+
   const upgradeRow: ViewStyle = {
     flexDirection: 'row',
     alignItems: 'center',
@@ -39,24 +43,28 @@ export default function Settings() {
   return (
     <Screen>
       <View style={{ gap: t.space[6], paddingTop: t.space[4] }}>
-        {!isPro ? (
-          <View style={{ gap: t.space[3] }}>
-            <AppText variant="label">Whenbee Pro</AppText>
-            <Pressable
-              onPress={openPaywall}
-              accessibilityRole="button"
-              accessibilityLabel="Go Pro and make your whole day honest"
-              style={upgradeRow}
-            >
-              <Ionicons name="time-outline" size={t.iconSize.md} color={t.colors.accent} />
-              <View style={{ flex: 1, gap: t.space[0.5] }}>
-                <Text style={upgradeTitle}>Make my whole day honest</Text>
-                <Text style={upgradeNote}>Auto-pad your calendar with your real buffers.</Text>
-              </View>
-              <Ionicons name="chevron-forward" size={t.iconSize.sm} color={t.colors.inkSoft} />
-            </Pressable>
-          </View>
-        ) : null}
+        <View style={{ gap: t.space[3] }}>
+          <AppText variant="label">Whenbee Pro</AppText>
+          <Pressable
+            onPress={isPro ? openHonestDay : openPaywall}
+            accessibilityRole="button"
+            accessibilityLabel={
+              isPro ? 'Make my whole day honest' : 'Go Pro and make your whole day honest'
+            }
+            style={upgradeRow}
+          >
+            <Ionicons name="time-outline" size={t.iconSize.md} color={t.colors.accent} />
+            <View style={{ flex: 1, gap: t.space[0.5] }}>
+              <Text style={upgradeTitle}>Make my whole day honest</Text>
+              <Text style={upgradeNote}>
+                {isPro
+                  ? "Map your real buffers onto today's calendar."
+                  : 'Auto-pad your calendar with your real buffers.'}
+              </Text>
+            </View>
+            <Ionicons name="chevron-forward" size={t.iconSize.sm} color={t.colors.inkSoft} />
+          </Pressable>
+        </View>
 
         <View style={{ gap: t.space[3] }}>
           <AppText variant="label">Appearance</AppText>
