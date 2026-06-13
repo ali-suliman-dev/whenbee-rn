@@ -59,7 +59,7 @@ export default function Today() {
     // margin lifts it just clear of the content above (the row gap does the rest).
     marginTop: t.space[2],
     backgroundColor: t.colors.surface,
-    borderWidth: t.borderWidth.hairline,
+    borderWidth: t.borderWidth.card,
     borderColor: t.colors.hairline,
     borderRadius: t.radii.card,
     borderCurve: 'continuous',
@@ -144,8 +144,6 @@ export default function Today() {
             }
           />
 
-          <ActiveTimerBar />
-
           <View style={{ gap: t.space[2] }}>
             <HoneycombStrip
               cells={honeyCells}
@@ -154,6 +152,10 @@ export default function Today() {
             />
             <ReclaimTodayLine minutes={todayReclaimMin} />
           </View>
+
+          {/* Sits directly above the Next/Focus card — a running session lives next
+              to the thing you'd start next, not stranded under the header. */}
+          <ActiveTimerBar />
 
           {focus && summary ? (
             <FocusCard
