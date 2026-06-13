@@ -5,7 +5,7 @@ import type { RadiusKey } from '@/src/theme/tokens';
 // ──────────────────────────────────────────────────────────────────────────────
 // Card — Flat Tactical UI
 //
-// One radius (`card`), one border width (`borderWidth.hairline`), three tones:
+// One radius (`card`), one border width (`borderWidth.card` — the global knob), three tones:
 //   flat   (default) — surface + 1px hairline border, no shadow. The workhorse.
 //   raised           — surfaceRaised + soft shadow, no border. Lifted content.
 //   focal            — raised + a single restrained indigo top edge. The screen's
@@ -47,7 +47,7 @@ export function Card({
   // renders as a "line", not soft depth). Flat tone uses a hairline edge instead.
   const elevation: ViewStyle =
     resolved === 'flat'
-      ? { borderWidth: t.borderWidth.hairline, borderColor: t.colors.hairline }
+      ? { borderWidth: t.borderWidth.card, borderColor: t.colors.hairline }
       : { boxShadow: `0px 4px 16px ${t.colors.shadowSoft}` };
 
   // Focal: one restrained accent — a thin indigo top edge, not a 3px slab.

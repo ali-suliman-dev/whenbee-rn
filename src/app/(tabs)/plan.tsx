@@ -150,10 +150,10 @@ export default function Plan() {
               {/* Balanced pair — identical structure, equal flex, shared baseline. */}
               <View style={{ flexDirection: 'row', gap: t.space[3] }}>
                 <View style={{ flex: 1 }}>
-                  <AppButton label="Add" variant="indigo" size="md" fullWidth onPress={commitNewTask} />
+                  <AppButton label="Add" variant="indigo" size="sm" fullWidth onPress={commitNewTask} />
                 </View>
                 <View style={{ flex: 1 }}>
-                  <AppButton label="Cancel" variant="ghost" size="md" fullWidth onPress={() => setAdding(false)} />
+                  <AppButton label="Cancel" variant="ghost" size="sm" fullWidth onPress={() => setAdding(false)} />
                 </View>
               </View>
             </Card>
