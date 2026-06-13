@@ -64,7 +64,7 @@ export function WhenbeeHub() {
   }
 
   function openPaywall() {
-    router.push('/(modals)/paywall');
+    router.push({ pathname: '/(modals)/paywall', params: { trigger: 'make_day_honest' } });
   }
 
   const heroZone: ViewStyle = { alignItems: 'center', gap: t.space[4] };
