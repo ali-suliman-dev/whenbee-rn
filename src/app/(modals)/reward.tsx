@@ -44,6 +44,7 @@ export default function Reward() {
     ...(type.eyebrow as unknown as TextStyle),
     color: t.colors.accent,
     textAlign: 'center',
+    zIndex: 1, // above the sunburst so the rays never cover it
   };
   const ritualText: TextStyle = {
     ...(type.bodySm as unknown as TextStyle),

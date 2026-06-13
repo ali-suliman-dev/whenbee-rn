@@ -5,6 +5,7 @@ import { AppText } from '@/src/components/AppText';
 import { AppButton } from '@/src/components/AppButton';
 import { SheetGrabber } from '@/src/components/SheetGrabber';
 import { Card } from '@/src/components/Card';
+import { BeeBurst } from '@/src/components/bee/BeeBurst';
 import { useTheme } from '@/src/theme/useTheme';
 import { type } from '@/src/theme/typography';
 import { isExpoGo } from '@/src/lib/isExpoGo';
@@ -30,7 +31,14 @@ export default function Paywall() {
         contentContainerStyle={{ gap: t.space[5], paddingTop: t.space[3], paddingBottom: t.space[6] }}
         showsVerticalScrollIndicator={false}
       >
-        <SheetGrabber />
+        {/* Grabber above the sunburst (zIndex) so the rotating rays never cover it. */}
+        <View style={{ zIndex: 2 }}>
+          <SheetGrabber />
+        </View>
+
+        <View style={{ alignItems: 'center' }}>
+          <BeeBurst variant="upgrade" />
+        </View>
 
         <View style={{ gap: t.space[1] }}>
           <Text style={heading}>Go Pro</Text>

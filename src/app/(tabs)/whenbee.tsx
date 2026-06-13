@@ -1,4 +1,4 @@
-import { ScrollView } from 'react-native';
+import { ScrollView, View } from 'react-native';
 import { Screen } from '@/src/components/Screen';
 import { ScreenHeader } from '@/src/components/ScreenHeader';
 import { useTheme } from '@/src/theme/useTheme';
@@ -19,7 +19,11 @@ export default function Whenbee() {
         contentContainerStyle={{ gap: t.space[5], paddingTop: t.space[4], paddingBottom: t.space[12] }}
         showsVerticalScrollIndicator={false}
       >
-        <ScreenHeader title="Whenbee" subtitle="Your honeycomb and the patterns behind it." />
+        {/* Header sits ABOVE the hero sunburst (zIndex) so rotating rays never
+            cover the title/subtitle — the illustration is the backmost layer. */}
+        <View style={{ zIndex: 2 }}>
+          <ScreenHeader title="Whenbee" subtitle="Your honeycomb and the patterns behind it." />
+        </View>
         <WhenbeeHub />
       </ScrollView>
     </Screen>

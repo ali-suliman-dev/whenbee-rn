@@ -1,78 +1,12 @@
-import { useEffect } from 'react';
-import { View, type ViewStyle, type TextStyle } from 'react-native';
-import Animated, {
-  useSharedValue,
-  useAnimatedStyle,
-  withTiming,
-  useReducedMotion,
-} from 'react-native-reanimated';
-import { useTheme } from '@/src/theme/useTheme';
-import { AppText } from '@/src/components/AppText';
-import { BeeMascot } from '@/src/components/BeeMascot';
+import { BeeBurst } from '@/src/components/bee/BeeBurst';
 
 // ──────────────────────────────────────────────────────────────────────────────
-// RewardBee — the big Whenbee + cell placeholder for the Reward moment with a
-// floating "+1 nectar" pill (DESIGN §2.6 .rewardbee/.dp). The hero pops in
-// (scale .4→1) on a normal log; on a cap/seal it gets a calmer settle. The full
-// procedural Whenbee/honeycomb SVG choreography is a LATER phase — this is the
-// structural stand-in: a rounded honey-amber cell with the nectar pill above.
-// Reduce-motion → no pop, final state immediately.
+// RewardBee — the Reward-moment hero. Now a thin wrapper over the reusable
+// BeeBurst illustration (sunburst + floating Whenbee + coin token), replacing the
+// old boxed honey-cell stand-in. A normal honest log shows the "+1 nectar" coin; a
+// cap/seal (tier ripened) swaps to the ▲ upgrade coin to mark the level-up.
 // ──────────────────────────────────────────────────────────────────────────────
 
 export function RewardBee({ sealed = false }: { sealed?: boolean }) {
-  const t = useTheme();
-  const reducedMotion = useReducedMotion();
-
-  const scale = useSharedValue(reducedMotion ? 1 : 0.4);
-  const pillOpacity = useSharedValue(reducedMotion ? 1 : 0);
-  const pillLift = useSharedValue(reducedMotion ? 0 : 8);
-
-  useEffect(() => {
-    if (reducedMotion) return;
-    scale.value = withTiming(1, { duration: t.motion.reveal });
-    pillOpacity.value = withTiming(1, { duration: t.motion.base });
-    pillLift.value = withTiming(0, { duration: t.motion.reveal });
-  }, [reducedMotion, scale, pillOpacity, pillLift, t.motion.reveal, t.motion.base]);
-
-  const cellStyle = useAnimatedStyle(() => ({ transform: [{ scale: scale.value }] }));
-  const pillStyle = useAnimatedStyle(() => ({
-    opacity: pillOpacity.value,
-    transform: [{ translateY: pillLift.value }],
-  }));
-
-  const stage: ViewStyle = { alignItems: 'center', gap: t.space[3] };
-
-  const cell: ViewStyle = {
-    width: 132,
-    height: 132,
-    borderRadius: t.radii.card,
-    backgroundColor: sealed ? t.colors.accent : t.colors.accentSoft,
-    borderWidth: t.borderWidth.thick,
-    borderColor: sealed ? t.colors.accentEdge : t.colors.accent,
-    alignItems: 'center',
-    justifyContent: 'center',
-  };
-
-  const pill: ViewStyle = {
-    backgroundColor: t.colors.primarySoft,
-    borderRadius: t.radii.full,
-    paddingHorizontal: t.space[3],
-    paddingVertical: t.space[1],
-  };
-  const pillText: TextStyle = {
-    fontSize: t.fontSize.sm,
-    fontWeight: t.fontWeight.bold as TextStyle['fontWeight'],
-    color: t.colors.primary,
-  };
-
-  return (
-    <View style={stage}>
-      <Animated.View style={[pill, pillStyle]}>
-        <AppText style={pillText}>+1 nectar</AppText>
-      </Animated.View>
-      <Animated.View style={[cell, cellStyle]} accessibilityLabel="Your Whenbee cell ripening">
-        <BeeMascot size={88} />
-      </Animated.View>
-    </View>
-  );
+  return <BeeBurst variant={sealed ? 'upgrade' : 'reward'} />;
 }

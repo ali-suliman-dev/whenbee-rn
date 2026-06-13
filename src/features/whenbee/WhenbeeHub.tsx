@@ -10,6 +10,7 @@ import { type } from '@/src/theme/typography';
 import { useCategoriesStore } from '@/src/stores/categoriesStore';
 import { useCalibrationStore } from '@/src/stores/calibrationStore';
 import { CATEGORY_NAMES } from '@/src/engine';
+import { RayBurst } from '@/src/components/bee/RayBurst';
 import { useWhenbeeHub } from './useWhenbeeHub';
 import { WhenbeeAvatar } from './WhenbeeAvatar';
 import { TierTrailHub } from './TierTrailHub';
@@ -67,13 +68,22 @@ export function WhenbeeHub() {
   }
 
   const heroZone: ViewStyle = { alignItems: 'center', gap: t.space[4] };
+  const avatarBurst: ViewStyle = {
+    width: t.burst.stage,
+    height: t.burst.stage,
+    alignItems: 'center',
+    justifyContent: 'center',
+  };
   const sectionLabel: TextStyle = { ...(type.eyebrow as unknown as TextStyle), color: t.colors.inkSoft };
 
   return (
     <View style={{ gap: t.space[5] }}>
-      {/* 1 — Companion + honeycomb */}
+      {/* 1 — Companion + honeycomb (soft sunburst pattern behind the avatar) */}
       <View style={heroZone}>
-        <WhenbeeAvatar tier={vm.tier} />
+        <View style={avatarBurst}>
+          <RayBurst size={t.burst.stage} />
+          <WhenbeeAvatar tier={vm.tier} />
+        </View>
         {vm.cells.length > 0 ? <Honeycomb size="hub" cells={vm.cells} /> : null}
       </View>
 
@@ -129,7 +139,7 @@ function CategoryRow({
     gap: t.space[3],
     minHeight: 56,
     backgroundColor: t.colors.surface,
-    borderWidth: t.borderWidth.hairline,
+    borderWidth: t.borderWidth.card,
     borderColor: t.colors.hairline,
     borderRadius: t.radii.card,
     paddingHorizontal: t.space[4],
