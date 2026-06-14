@@ -31,6 +31,13 @@ describe('formatClock', () => {
     expect(formatClock(at(0, 0))).toBe('12:00');
     expect(formatClock(at(12, 30))).toBe('12:30');
   });
+
+  it('formats 24h with a leading-zero hour when hour12 is false', () => {
+    expect(formatClock(at(16, 46), false)).toBe('16:46');
+    expect(formatClock(at(4, 46), false)).toBe('04:46');
+    expect(formatClock(at(0, 0), false)).toBe('00:00');
+    expect(formatClock(at(23, 59), false)).toBe('23:59');
+  });
 });
 
 describe('formatMmSs', () => {

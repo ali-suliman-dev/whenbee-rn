@@ -13,6 +13,16 @@ import { useCategoriesStore } from '@/src/stores/categoriesStore';
 import { useTasksStore } from '@/src/stores/tasksStore';
 import { useRewardStore } from '@/src/stores/rewardStore';
 import { projectedFinish, formatClock } from '@/src/lib/time';
+import { analytics } from '@/src/services/analytics';
+import {
+  ensureNotificationPermission,
+  scheduleTimerDone,
+  cancelTimerDone,
+} from '@/src/services/timerNotifications';
+import {
+  startFinishTimeActivity,
+  endFinishTimeActivity,
+} from '@/src/services/liveActivity';
 import type { AdaptSpeed } from '@/src/domain/types';
 
 // ──────────────────────────────────────────────────────────────────────────────
@@ -56,8 +66,6 @@ export interface UseTimerResult {
   elapsedSec: SharedValue<number>;
   /** 1 while over the honest estimate, else 0 — drives every amber flip. */
   overProgress: SharedValue<number>;
-  /** Latches to 1 exactly once when elapsed first crosses the estimate. */
-  milestoneLatch: SharedValue<number>;
   estimateSec: number;
   startedAt: number;
   /** "Started 9:14" clock. */
@@ -81,21 +89,64 @@ export function useTimer(params: TimerParams): UseTimerResult {
   const cancel = useTimerStore((s) => s.cancel);
   const applyLog = useCalibrationStore((s) => s.applyLog);
 
-  // Start the timer exactly once on mount. We read startedAt straight from the
-  // store afterwards so the UI-thread driver and the persisted log agree.
-  const started = useRef(false);
-  if (!started.current) {
-    start({ label, category, estimateMin });
-    started.current = true;
+  // ATTACH vs RESTART: if a session is already running for THIS task (reopened from
+  // the active-timer bar, or restored at boot), attach to its existing startedAt —
+  // calling start() again would reset the clock and lose elapsed time. Only start a
+  // fresh session when none is running for this task.
+  //
+  // Resolve startedAt SYNCHRONOUSLY (render needs it for the frame callback +
+  // clocks) but DO NOT write the store mid-render: a store write here updates the
+  // ActiveTimerBar mounted under this modal, which React forbids during render
+  // ("Cannot update a component while rendering a different component"). The fresh
+  // session is committed to the store in the effect below, after commit.
+  const startedFresh = useRef(false);
+  const startedAtRef = useRef<number | null>(null);
+  if (startedAtRef.current === null) {
+    const s = useTimerStore.getState();
+    const sameTask = taskId ? s.taskId === taskId : s.taskLabel === label;
+    if (s.isRunning && sameTask && s.startedAt !== null) {
+      startedAtRef.current = s.startedAt; // attach to the running session
+    } else {
+      startedAtRef.current = Date.now(); // fresh session — store write deferred below
+      startedFresh.current = true;
+    }
   }
-  const startedAt = useTimerStore.getState().startedAt ?? Date.now();
+  const startedAt = startedAtRef.current;
+
+  // Commit a FRESH session AFTER render (never during it). Also schedules the local
+  // "estimate is up" ping (so the timer works backgrounded/closed), the Lock-Screen
+  // finish ring, and asks notification permission gently the first time. Attaching
+  // to an existing session is a no-op here — its store row, notification, and Live
+  // Activity already exist.
+  useEffect(() => {
+    if (!startedFresh.current) return;
+    start(
+      { label, category, estimateMin, guessMin, taskId: taskId ?? null, suggestedHonestMin },
+      startedAt,
+    );
+    // task_started: the timer opened a fresh session. `guess_min` is the user's raw
+    // guess (drives calibration), not the honest ring target.
+    analytics.capture('task_started', { category, guess_min: guessMin, source: 'today' });
+    // Lock-Screen / Dynamic Island finish-time ring counts down to the HONEST
+    // finish (the number the user saw), not the raw guess. No-op in Expo Go.
+    startFinishTimeActivity({
+      taskLabel: label,
+      finishEpoch: Math.round(projectedFinish(startedAt, suggestedHonestMin) / 1000),
+    });
+    void (async () => {
+      const granted = await ensureNotificationPermission();
+      if (granted) await scheduleTimerDone({ label, startedAt, estimateMin });
+    })();
+    // Runs exactly once for a fresh session; route params are stable for the
+    // component's lifetime, so an empty dep list is correct here.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const estimateSec = Math.max(0, Math.round(estimateMin * 60));
 
   // ── UI-thread elapsed driver ────────────────────────────────────────────────
   const elapsedSec = useSharedValue(0);
   const overProgress = useSharedValue(0);
-  const milestoneLatch = useSharedValue(0);
 
   useFrameCallback(() => {
     'worklet';
@@ -105,15 +156,12 @@ export function useTimer(params: TimerParams): UseTimerResult {
     const next = Math.max(0, Math.floor((Date.now() - startedAt) / 1000));
     if (next !== elapsedSec.value) {
       elapsedSec.value = next;
-      const over = next >= estimateSec ? 1 : 0;
-      overProgress.value = over;
-      if (over === 1 && milestoneLatch.value === 0) {
-        milestoneLatch.value = 1; // single amber ripple, fired once at the guess
-      }
+      overProgress.value = next >= estimateSec ? 1 : 0;
     }
   }, true);
 
-  // Derived clock anchors (computed in JS once — they don't tick).
+  // Derived clock anchors (computed in JS once — they don't tick). Format follows
+  // the system 24h toggle via the app-wide default set at boot (see lib/time).
   const startedClock = useMemo(() => formatClock(startedAt), [startedAt]);
   const finishClock = useMemo(
     () => formatClock(projectedFinish(startedAt, estimateMin)),
@@ -126,6 +174,8 @@ export function useTimer(params: TimerParams): UseTimerResult {
 
   const onStopAndLog = useCallback(async () => {
     const { actualMin } = stop(Date.now());
+    void cancelTimerDone();
+    endFinishTimeActivity();
 
     const adaptSpeed: AdaptSpeed =
       useCategoriesStore.getState().categories.find((c) => c.id === category)?.adaptSpeed ??
@@ -154,13 +204,17 @@ export function useTimer(params: TimerParams): UseTimerResult {
       result,
     });
 
-    if (taskId) useTasksStore.getState().removeTask(taskId);
+    // Keep the task on Today — flip it to done (checked off) so the day shows
+    // progress instead of the row vanishing. actualMin powers the "took N" receipt.
+    if (taskId) useTasksStore.getState().completeTask(taskId, { actualMin });
 
     router.replace('/(modals)/reward');
   }, [stop, applyLog, category, guessMin, label, taskId, suggestedHonestMin]);
 
   const onAbandon = useCallback(async () => {
     cancel();
+    void cancelTimerDone();
+    endFinishTimeActivity();
     const adaptSpeed: AdaptSpeed =
       useCategoriesStore.getState().categories.find((c) => c.id === category)?.adaptSpeed ??
       'balanced';
@@ -177,18 +231,14 @@ export function useTimer(params: TimerParams): UseTimerResult {
     router.dismiss();
   }, [cancel, applyLog, category, guessMin, label]);
 
-  // Defensive: if the screen unmounts without a stop (hardware back), clear the
-  // running timer so we don't leave a phantom active session persisted.
-  useEffect(() => {
-    return () => {
-      if (useTimerStore.getState().isRunning) cancel();
-    };
-  }, [cancel]);
+  // NOTE: no destroy-on-dismiss. Closing the sheet MINIMIZES the timer — a running
+  // session is cleared ONLY by an explicit Stop (onStopAndLog) or Abandon
+  // (onAbandon), never by unmount. The persisted snapshot + ActiveTimerBar let the
+  // user reopen it; the local notification still fires when the estimate elapses.
 
   return {
     elapsedSec,
     overProgress,
-    milestoneLatch,
     estimateSec,
     startedAt,
     startedClock,

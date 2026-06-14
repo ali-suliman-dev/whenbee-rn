@@ -14,8 +14,18 @@ import { Easing } from 'react-native-reanimated';
 // ──────────────────────────────────────────────────────────────────────────────
 
 export const tokens = {
-  // 4-based rhythm + two sub-8 micro steps (kills inline gap: 2/3/6).
-  space: { 0: 0, 0.5: 2, 1: 4, 1.5: 6, 2: 8, 3: 12, 4: 16, 5: 20, 6: 24, 8: 32, 10: 40, 12: 48, 16: 64 },
+  // 4-based rhythm + sub-8 micro steps (kills inline gap: 2/3/6). 2.5:10 is the
+  // half-step the chip vertical padding needs to clear the 44pt target.
+  space: { 0: 0, 0.5: 2, 1: 4, 1.5: 6, 2: 8, 2.5: 10, 3: 12, 4: 16, 5: 20, 6: 24, 8: 32, 10: 40, 12: 48, 16: 64 },
+
+  // Control-height system — HIG-compliant touch targets (44pt floor). Buttons and
+  // tappable controls size from here, so nothing is ad-hoc under the 44pt minimum.
+  // `coin` = the FocusCard play affordance — a touch smaller than a full md control
+  // so the disc reads as an accent, not a button competing with the card.
+  size: { control: { sm: 36, md: 44, lg: 52 }, coin: 40 },
+
+  // Icon sizing scale — replaces inline 12/16/18/20/22/24/30 across the app.
+  iconSize: { xs: 12, sm: 16, md: 20, lg: 24, xl: 32 },
 
   // One honest radius set with clear semantics — every CARD uses `card`.
   //   sm   tags / small chips
@@ -25,17 +35,25 @@ export const tokens = {
   //   full true pills, FAB, dots, the tab indicator
   radii: { none: 0, sm: 8, md: 12, card: 16, sheet: 20, full: 999 },
 
-  borderWidth: { hairline: 1, thin: 1.5, thick: 2 },
+  // `card` is the ONE knob for every card's edge — change it once to restyle (or
+  // set 0 to remove) all card borders app-wide. hairline/thin/thick stay for
+  // dividers, inputs and accent edges, so tuning cards never disturbs them.
+  // borderWidth: { hairline: 1, thin: 1.5, thick: 2, card: 1 },
+  borderWidth: { hairline: 0, thin: 0, thick: 2, card: 0 },
 
   // Replaces scattered 0.3 / 0.4 / 0.6 opacities.
   opacity: { disabled: 0.4, pressed: 0.6 },
 
+  // Tactile scale feedback for tappable controls (chips, segments).
+  //   pressIn — finger-down dip; the control yields to the touch (only while held).
+  scale: { pressIn: 0.96 },
+
   // The numeric type scale — typography.ts (the role layer) derives every role
   // size from these, so the whole scale is editable in one place.
   fontSize: {
-    xs: 11, sm: 13, base: 15, md: 17, lg: 20, xl: 24, '2xl': 30, '3xl': 38,
+    '2xs': 8, xs: 10, sm: 12, base: 14, md: 16, lg: 20, xl: 24, '2xl': 30, '3xl': 38,
     // finer steps the role scale needs
-    micro: 11.5, caption: 12.5, bodySm: 14, bodyLg: 16, subtitle: 22, title: 26, honest: 40, timer: 78,
+    micro: 10, caption: 12, bodySm: 14, bodyLg: 16, subtitle: 22, title: 26, honest: 40, timerClock: 64, timer: 78,
   },
   fontWeight: { regular: '400', medium: '500', semibold: '600', bold: '700' },
   fontFamily: { ui: 'System', mono: 'Menlo' },
@@ -51,11 +69,27 @@ export const tokens = {
   // flats) per surface. Height derives as width × √3/2 in the component, so the
   // hexes stay regular. strip = the Today HUD; hub = the Whenbee grid; detail =
   // the category screen. The wax-cap rim width also lives here.
-  honeycomb: { strip: 22, hub: 56, detail: 80, capRim: 1.5 },
+  // `stripMax` caps how many combs the Today HUD shows before a "+N" overflow tail
+  // (the row is bounded so the vertical card never grows / clips with many combs).
+  // `pip` = the small SOLID hexagon used by the Today tier-progress meter (one pip
+  // per log in the current tier band) — distinct from the honey-FILL `strip` cell.
+  honeycomb: { strip: 22, hub: 56, detail: 80, pip: 15, capRim: 1.5, stripMax: 6 },
+
+  // Progress-bar geometry (honey-fill track). `track` = bar height in RN points;
+  // the fill reuses `radii.full` + `colors.accent`, the track `colors.surfaceSunken`.
+  // gap* = the Today guess→plan calibration line (FocusCard / RunningFocusCard):
+  //   gapTrack = bar height; tickW/tickH = the live elapsed marker riding the bar.
+  progress: { track: 6, gapTrack: 8, tickW: 3, tickH: 16 },
 
   motion: {
     fast: 120, base: 220, slow: 360, press: 110, reveal: 600, draw: 950, sheet: 340,
     pulse: 700, toast: 300, honeyFill: 900, float: 3800,
+    // stagger = per-item delay in a left→right cascade (honeycomb pip reveal). Keep
+    // the whole cascade < ~500ms so it reads lively, not slow (motion-design budget).
+    stagger: 40,
+    // drift = one full revolution of the RayBurst sunburst. Slow enough to stay
+    // calm, fast enough to read as clearly moving (a wedge passes ~every 0.8s).
+    drift: 14000,
     // Shared physics — deduped from AppButton + FAB.
     spring: { damping: 13, stiffness: 340 },
     // Named curves — declared once, not re-typed per file.
@@ -65,7 +99,8 @@ export const tokens = {
   colors: {
     light: {
       // ── 3-step surface ladder (figure/ground: each step lifts clearly) ──
-      bg: '#F4F1EA', // cream (page ground — the 60%)
+      // bg: '#F4F1EA', // cream (page ground — the 60%)
+      bg: '#F4F2FC', // cream (page ground — the 60%)
       surface: '#FFFFFF', // card — lifts off the cream
       surfaceRaised: '#FFFFFF', // focal card (pair with soft shadow)
       surfaceSunken: '#ECE8DE', // wells / inset tracks
@@ -84,6 +119,10 @@ export const tokens = {
       accent: '#EEAE4D',
       accentEdge: '#C68A30',
       accentSoft: '#FBEFD6', // low-emphasis amber fill
+      accentCoin: 'rgba(238,174,77,0.32)', // tint disc that still reads on accentSoft
+      // RayBurst sunburst wedge fill. A deeper periwinkle than primarySoft so the
+      // rays actually read on cream (primarySoft was near-invisible on the page bg).
+      rayFill: '#BFB2F0',
       amberText: '#8A5A12', // AA amber-on-light text
       success: '#33B07C',
       successSoft: '#E2F4EA',
@@ -128,6 +167,9 @@ export const tokens = {
       accent: '#EEAE4D',
       accentEdge: '#C68A30',
       accentSoft: 'rgba(238,174,77,0.18)',
+      accentCoin: 'rgba(238,174,77,0.28)', // tint disc that still reads on accentSoft
+      // RayBurst wedge fill — indigo lifted just off the deep bg (the #8 look).
+      rayFill: 'rgba(130,117,240,0.30)',
       amberText: '#EEAE4D',
       success: '#33B07C',
       successSoft: 'rgba(51,176,124,0.18)',
@@ -149,6 +191,43 @@ export const tokens = {
       textMuted: '#ADA9B5',
       primaryText: '#14151D',
       paper: '#F4F1EA',
+    },
+  },
+
+  // Bee-burst illustration geometry (RayBurst / CoinBadge / BeeBurst). Kept here so
+  // no component inlines a raw px / opacity. `ray.opacity`/`opacityAlt` are the two
+  // alternating sunburst-wedge fill opacities (applied to `colors.primarySoft`);
+  // `countHero`/`countSoft` set wedge density per intensity. Float/bob/lift are the
+  // gentle ambient travel distances; coinEdge is the button-edge depth (cf. AppButton).
+  burst: {
+    // ONE sunburst look everywhere (reward, paywall, hub) — the two alternating
+    // wedge fill opacities applied to `colors.primarySoft`, at a single density.
+    ray: { count: 18, opacity: 0.85, opacityAlt: 0.4 },
+    stage: 240, // ray-burst stage edge (square)
+    bee: 168, // mascot size inside a hero burst (fits the 240 stage → no layout push)
+    beeFloat: 5, // ± vertical bee drift (calm ambient)
+    coinBob: 3, // ± coin bob
+    coinLift: 10, // coin mount-pop lift
+    coinEdge: 4, // coin button-edge depth (cf. AppButton)
+  },
+
+  // ── brand illustration palette ──────────────────────────────────────────────
+  // Fixed art colors for the Whenbee mascot (BeeMascot). Brand art does NOT recolor
+  // by mode — a mascot reads as the SAME bee in light and dark, the way a logo does.
+  // Indigo body ≈ primary, amber stripes ≈ accent family, dark ink ≈ ink, but the
+  // exact illustration shades (highlights/shadows/wing cream) live here so they are
+  // token-sourced without polluting the semantic UI ramp.
+  brand: {
+    bee: {
+      body: '#5F4EE4', // indigo body (≈ primary)
+      bodyHi: '#6F60E7', // top highlight
+      bodyLo: '#4F3CE2', // bottom shade
+      stripe: '#F6B442', // amber band / head (≈ accent)
+      stripeLo: '#EA980B', // head shadow (≈ accentEdge)
+      wing: '#FCE7C5', // pale wing cream
+      ink: '#262D40', // eyes / smile / stinger (≈ ink)
+      antenna: '#191E2B', // antenna stalks + tips
+      antennaHi: '#474B55', // antenna tip highlight
     },
   },
 } as const;

@@ -24,7 +24,8 @@ export const type = {
   micro:     { fontFamily: 'Jakarta-Regular',   fontSize: fs.micro,     lineHeight: 16 },
   eyebrow:   { fontFamily: 'Jakarta-Bold',      fontSize: fs.xs,        lineHeight: 14, letterSpacing: 2, textTransform: 'uppercase' as const },
   timerNumeral:   { fontFamily: 'Inter-SemiBold', fontSize: fs.timer,    lineHeight: 78, letterSpacing: -2.3, fontVariant: ['tabular-nums'] as const },
+  timerClock:     { fontFamily: 'Inter-SemiBold', fontSize: fs.timerClock, lineHeight: 70, letterSpacing: -1.5, fontVariant: ['tabular-nums'] as const },
   honestNumberXl: { fontFamily: 'Inter-Bold',     fontSize: fs.honest,   lineHeight: 42, letterSpacing: -1.0,  fontVariant: ['tabular-nums'] as const },
-  bigNumber:      { fontFamily: 'Inter-Bold',     fontSize: fs['2xl'],   lineHeight: 32, letterSpacing: -0.6,  fontVariant: ['tabular-nums'] as const },
+  bigNumber:      { fontFamily: 'Inter-Bold',     fontSize: fs.lg,       lineHeight: 24, letterSpacing: -0.4,  fontVariant: ['tabular-nums'] as const },
   multiplier:     { fontFamily: 'Inter-Bold',     fontSize: fs.subtitle, lineHeight: 24, letterSpacing: -0.4,  fontVariant: ['tabular-nums'] as const },
 } as const;

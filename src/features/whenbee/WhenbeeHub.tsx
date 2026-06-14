@@ -9,7 +9,9 @@ import { useTheme } from '@/src/theme/useTheme';
 import { type } from '@/src/theme/typography';
 import { useCategoriesStore } from '@/src/stores/categoriesStore';
 import { useCalibrationStore } from '@/src/stores/calibrationStore';
+import { useEntitlement } from '@/src/features/paywall/useEntitlement';
 import { CATEGORY_NAMES } from '@/src/engine';
+import { RayBurst } from '@/src/components/bee/RayBurst';
 import { useWhenbeeHub } from './useWhenbeeHub';
 import { WhenbeeAvatar } from './WhenbeeAvatar';
 import { TierTrailHub } from './TierTrailHub';
@@ -49,6 +51,7 @@ export function WhenbeeHub() {
   const vm = useWhenbeeHub();
   const categories = useCategoriesStore((s) => s.categories);
   const stats = useCalibrationStore((s) => s.statsByCategory);
+  const isPro = useEntitlement((s) => s.isPro);
 
   // Reclaim doesn't push on deposit — re-pull the async totals on tab focus.
   const { refresh } = vm;
@@ -62,18 +65,33 @@ export function WhenbeeHub() {
     router.push({ pathname: '/category/[category]', params: { category: id } });
   }
 
-  function openPaywall() {
-    router.push('/(modals)/paywall');
+  // Pro users go straight to the writeable Honest-Day screen; everyone else hits
+  // the paywall (same CTA, branched on entitlement).
+  function openDayHonest() {
+    if (isPro) {
+      router.push('/(modals)/honest-day');
+      return;
+    }
+    router.push({ pathname: '/(modals)/paywall', params: { trigger: 'make_day_honest' } });
   }
 
   const heroZone: ViewStyle = { alignItems: 'center', gap: t.space[4] };
+  const avatarBurst: ViewStyle = {
+    width: t.burst.stage,
+    height: t.burst.stage,
+    alignItems: 'center',
+    justifyContent: 'center',
+  };
   const sectionLabel: TextStyle = { ...(type.eyebrow as unknown as TextStyle), color: t.colors.inkSoft };
 
   return (
     <View style={{ gap: t.space[5] }}>
-      {/* 1 — Companion + honeycomb */}
+      {/* 1 — Companion + honeycomb (soft sunburst pattern behind the avatar) */}
       <View style={heroZone}>
-        <WhenbeeAvatar tier={vm.tier} />
+        <View style={avatarBurst}>
+          <RayBurst size={t.burst.stage} />
+          <WhenbeeAvatar tier={vm.tier} />
+        </View>
         {vm.cells.length > 0 ? <Honeycomb size="hub" cells={vm.cells} /> : null}
       </View>
 
@@ -108,7 +126,7 @@ export function WhenbeeHub() {
       )}
 
       {/* 6 — Pro CTA */}
-      <AppButton label="Make my whole day honest" variant="amber" fullWidth onPress={openPaywall} />
+      <AppButton label="Make my whole day honest" variant="amber" fullWidth onPress={openDayHonest} />
     </View>
   );
 }
@@ -129,7 +147,7 @@ function CategoryRow({
     gap: t.space[3],
     minHeight: 56,
     backgroundColor: t.colors.surface,
-    borderWidth: t.borderWidth.hairline,
+    borderWidth: t.borderWidth.card,
     borderColor: t.colors.hairline,
     borderRadius: t.radii.card,
     paddingHorizontal: t.space[4],

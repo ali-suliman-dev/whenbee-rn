@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Inter:wght@600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#14151D; --surface:#1F2130; --raised:#292B3C; --sunken:#13141B; --focal:#23253A;
+    --ink:#F5F2EC; --inkSoft:#A6A2AE; --inkFaint:rgba(245,242,236,0.34);
+    --primary:#8275F0; --primaryEdge:#5648b0; --primarySoft:rgba(130,117,240,0.22); --primaryGlow:rgba(130,117,240,0.16);
+    --accent:#EEAE4D; --accentText:#EEAE4D; --accentGlow:rgba(238,174,77,0.14);
+    --success:#33B07C; --hairline:rgba(255,255,255,0.07);
+    --jak:'Plus Jakarta Sans',-apple-system,system-ui,sans-serif;
+    --num:'Inter',-apple-system,system-ui,sans-serif;
+  }
+  *{box-sizing:border-box;margin:0;padding:0;-webkit-font-smoothing:antialiased;}
+  body{background:#070709;font-family:var(--jak);color:var(--ink);padding:40px;display:flex;gap:38px;align-items:flex-start;justify-content:center;}
+  .col{display:flex;flex-direction:column;align-items:center;gap:14px;}
+  .cap{font-size:13px;font-weight:700;color:#fff;}
+  .sub{font-size:10.5px;color:#777;max-width:330px;text-align:center;line-height:1.5;}
+  .tn{font-family:var(--num);font-variant-numeric:tabular-nums;font-feature-settings:"tnum" 1;}
+
+  .phone{width:344px;height:748px;border-radius:44px;border:10px solid #25252c;overflow:hidden;position:relative;
+    box-shadow:0 28px 70px rgba(0,0,0,.6);display:flex;flex-direction:column;
+    background:radial-gradient(120% 55% at 80% -3%,var(--primaryGlow),transparent 46%),
+               radial-gradient(110% 46% at 10% 1%,var(--accentGlow),transparent 42%),var(--bg);}
+  .pad{padding:0 22px;display:flex;flex-direction:column;flex:1;}
+  .status{height:44px;display:flex;align-items:flex-end;justify-content:space-between;padding:0 8px 2px;font-size:13px;font-weight:600;}
+
+  /* header */
+  .head{display:flex;align-items:flex-start;justify-content:space-between;margin-top:12px;}
+  .h1{font-size:30px;font-weight:800;letter-spacing:-.7px;line-height:1;}
+  .date{font-size:11.5px;color:var(--inkSoft);margin-top:7px;font-weight:500;}
+  .gear{color:var(--inkFaint);font-size:18px;}
+
+  /* honeycomb strip */
+  .combstrip{display:flex;align-items:center;gap:7px;margin-top:16px;}
+  .hex{width:19px;height:21px;clip-path:polygon(50% 0,100% 25%,100% 75%,50% 100%,0 75%,0 25%);}
+  .hx5{background:var(--accent);}
+  .hx4{background:#caa258;}
+  .hx3{background:#7e6f3e;}
+  .hx2{background:#4a4634;}
+  .hx1{background:rgba(255,255,255,0.10);}
+  .combtxt{margin-left:6px;font-size:11px;color:var(--inkSoft);}
+  .combtxt b{color:var(--accent);font-weight:700;}
+  .combchev{margin-left:auto;color:var(--inkFaint);font-size:14px;}
+
+  /* eyebrow + dot */
+  .eyebrow{font-size:10px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:var(--inkSoft);display:flex;align-items:center;gap:7px;}
+  .pdot{width:6px;height:6px;border-radius:99px;background:var(--primary);}
+
+  /* coin + pill */
+  .coin{width:46px;height:46px;border-radius:99px;background:var(--primary);display:flex;align-items:center;justify-content:center;flex-shrink:0;box-shadow:0 3px 0 var(--primaryEdge);}
+  .coin.sm{width:34px;height:34px;box-shadow:0 2px 0 var(--primaryEdge);}
+  .tri{width:0;height:0;border-left:13px solid #14151D;border-top:8px solid transparent;border-bottom:8px solid transparent;margin-left:3px;}
+  .coin.sm .tri{border-left:9px solid #14151D;border-top:6px solid transparent;border-bottom:6px solid transparent;}
+  .pill{height:52px;border-radius:15px;background:linear-gradient(180deg,#8b7ef4,#7b6def);box-shadow:0 4px 0 var(--primaryEdge),0 12px 22px var(--primaryGlow);display:flex;align-items:center;justify-content:center;gap:9px;}
+  .pill .tri{margin-left:0}.pill span{font-size:15.5px;font-weight:700;color:#14151D;}
+
+  /* honest number */
+  .hn{font-family:var(--num);font-weight:700;color:var(--ink);font-variant-numeric:tabular-nums;letter-spacing:-1px;}
+  .hn em{font-style:normal;font-weight:600;color:var(--inkSoft);}
+
+  /* gap line: indigo (guess) -> amber (extra) */
+  .gap{height:9px;border-radius:99px;background:var(--sunken);display:flex;overflow:hidden;}
+  .gap .g{background:var(--primary);}
+  .gap .x{background:var(--accent);}
+  .gaprow{display:flex;justify-content:space-between;align-items:center;margin-top:9px;}
+  .gguess{font-size:11.5px;color:var(--primary);font-weight:600;font-family:var(--num);}
+  .gextra{font-size:11.5px;color:var(--accentText);font-weight:700;font-family:var(--num);}
+
+  /* card */
+  .card{background:var(--focal);border-radius:22px;padding:18px;border-top:1px solid rgba(130,117,240,0.22);}
+
+  /* up-next rows */
+  .sec{font-size:10px;font-weight:700;letter-spacing:1.8px;text-transform:uppercase;color:var(--inkFaint);margin:0 2px 2px;}
+  .row{display:flex;align-items:center;gap:13px;padding:12px 2px;}
+  .rt{flex:1;min-width:0;}
+  .rtt{font-size:15.5px;font-weight:600;}
+  .rcat{font-size:9.5px;font-weight:700;letter-spacing:1.2px;text-transform:uppercase;color:var(--inkFaint);margin-top:3px;}
+  .rnum{font-family:var(--num);font-size:15.5px;font-weight:700;}
+  .rnum em{font-style:normal;font-size:11px;color:var(--inkSoft);font-weight:600;}
+  .rsep{height:1px;background:var(--hairline);}
+
+  /* done line */
+  .done{display:flex;align-items:center;gap:9px;margin-top:16px;padding:5px 2px;}
+  .gdot{width:6px;height:6px;border-radius:99px;background:var(--success);opacity:.7;}
+  .donetxt{font-size:12px;color:var(--inkFaint);font-family:var(--num);}.donetxt b{color:var(--inkSoft);font-weight:700;}
+  .donemore{margin-left:auto;font-size:11.5px;color:var(--inkFaint);}
+
+  .grow{flex:1;}
+  .fab{position:absolute;right:22px;bottom:96px;width:50px;height:50px;border-radius:99px;background:var(--raised);border:1px solid var(--hairline);display:flex;align-items:center;justify-content:center;font-size:25px;color:var(--primary);box-shadow:0 5px 13px rgba(0,0,0,.4);}
+  .tabbar{height:74px;background:rgba(18,19,25,.62);border-top:1px solid var(--hairline);display:flex;backdrop-filter:blur(18px);}
+  .tab{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;font-size:9.5px;color:var(--inkFaint);font-weight:600;}
+  .tab.on{color:var(--primary);}.tab i{font-size:15px;font-style:normal;}
+</style>
+</head>
+<body>
+
+<!-- ============ ALT A · Tall focus ============ -->
+<div class="col">
+  <div class="cap">A · Tall focus</div>
+  <div class="sub">Your FocusCard un-cramped: vertical. Honest number centered + big, GapLine full width below it. Same parts, room to breathe.</div>
+  <div class="phone"><div class="pad">
+    <div class="status"><span class="tn">12:05</span><span>•••  ◢  ▮</span></div>
+    <div class="head"><div><div class="h1">Today</div><div class="date">Sun · Jun 14</div></div><div class="gear">⚙</div></div>
+    <div class="combstrip"><div class="hex hx5"></div><div class="hex hx4"></div><div class="hex hx3"></div><div class="hex hx2"></div><div class="hex hx1"></div><div class="combtxt"><b>4 logs</b> to Thickening</div><div class="combchev">›</div></div>
+
+    <div class="card" style="margin-top:20px;text-align:center;">
+      <div class="eyebrow" style="justify-content:center;"><div class="pdot"></div>NEXT · OUT THE DOOR</div>
+      <div style="font-size:19px;font-weight:700;margin-top:10px;">Test 2</div>
+      <div class="hn" style="font-size:64px;line-height:.9;margin-top:8px;">~10<em style="font-size:20px;"> min</em></div>
+      <div class="gap" style="margin-top:18px;"><div class="g" style="width:48%"></div><div style="width:2px"></div><div class="x" style="width:50%"></div></div>
+      <div class="gaprow"><div class="gguess">guessed 5 min</div><div class="gextra">+5 min</div></div>
+      <div class="pill" style="margin-top:18px;"><div class="tri"></div><span>Start</span></div>
+    </div>
+
+    <div style="height:22px"></div>
+    <div class="sec">Up next</div>
+    <div class="row"><div class="rt"><div class="rtt">Test</div><div class="rcat">Cleaning</div></div><div class="rnum tn">15<em> min</em></div></div>
+    <div class="rsep"></div>
+    <div class="row"><div class="rt"><div class="rtt">Errands</div><div class="rcat">Out the door</div></div><div class="rnum tn">20<em> min</em></div></div>
+    <div class="done"><div class="gdot"></div><div class="donetxt"><b>2 finished</b> today · 38 min</div><div class="donemore">View ›</div></div>
+    <div class="grow"></div>
+  </div>
+    <div class="fab">+</div>
+    <div class="tabbar"><div class="tab on"><i>⌂</i>Today</div><div class="tab"><i>▦</i>Plan</div><div class="tab"><i>✷</i>Whenbee</div><div class="tab"><i>⌁</i>Patterns</div></div>
+  </div>
+</div>
+
+<!-- ============ ALT B · Agenda card ============ -->
+<div class="col">
+  <div class="cap">B · Agenda in one card</div>
+  <div class="sub">Focus + up-next live inside one focal surface as a mini list. The whole day is a single object; honest numbers right-aligned. Fewer floating boxes.</div>
+  <div class="phone"><div class="pad">
+    <div class="status"><span class="tn">12:05</span><span>•••  ◢  ▮</span></div>
+    <div class="head"><div><div class="h1">Today</div><div class="date">Sun · Jun 14</div></div><div class="gear">⚙</div></div>
+    <div class="combstrip"><div class="hex hx5"></div><div class="hex hx4"></div><div class="hex hx3"></div><div class="hex hx2"></div><div class="hex hx1"></div><div class="combtxt"><b>4 logs</b> to Thickening</div><div class="combchev">›</div></div>
+
+    <div class="card" style="margin-top:20px;padding:18px 18px 8px;">
+      <div style="display:flex;align-items:center;gap:13px;">
+        <div class="coin"><div class="tri"></div></div>
+        <div style="flex:1">
+          <div class="eyebrow"><div class="pdot"></div>NEXT · OUT THE DOOR</div>
+          <div style="font-size:18px;font-weight:700;margin-top:5px;">Test 2</div>
+        </div>
+        <div class="hn" style="font-size:30px;">~10<em style="font-size:14px;"> min</em></div>
+      </div>
+      <div class="gap" style="margin-top:14px;"><div class="g" style="width:48%"></div><div style="width:2px"></div><div class="x" style="width:50%"></div></div>
+      <div class="gaprow" style="margin-bottom:6px;"><div class="gguess">guessed 5 min</div><div class="gextra">+5 min</div></div>
+      <div class="rsep" style="margin:8px -18px 0;"></div>
+      <div class="row"><div class="coin sm" style="background:var(--primarySoft);box-shadow:none;"><div class="tri" style="border-left-color:var(--primary)"></div></div><div class="rt"><div class="rtt">Test</div><div class="rcat">Cleaning</div></div><div class="rnum tn" style="color:var(--inkSoft)">15<em> min</em></div></div>
+      <div class="rsep" style="margin:0 -18px;"></div>
+      <div class="row"><div class="coin sm" style="background:var(--primarySoft);box-shadow:none;"><div class="tri" style="border-left-color:var(--primary)"></div></div><div class="rt"><div class="rtt">Errands</div><div class="rcat">Out the door</div></div><div class="rnum tn" style="color:var(--inkSoft)">20<em> min</em></div></div>
+    </div>
+
+    <div class="done"><div class="gdot"></div><div class="donetxt"><b>2 finished</b> today · 38 min</div><div class="donemore">View ›</div></div>
+    <div class="grow"></div>
+  </div>
+    <div class="fab">+</div>
+    <div class="tabbar"><div class="tab on"><i>⌂</i>Today</div><div class="tab"><i>▦</i>Plan</div><div class="tab"><i>✷</i>Whenbee</div><div class="tab"><i>⌁</i>Patterns</div></div>
+  </div>
+</div>
+
+<!-- ============ ALT C · Number-forward ============ -->
+<div class="col">
+  <div class="cap">C · Number-forward</div>
+  <div class="sub">No focus box at all. The honest number is page-level hero; GapLine becomes its calibration underline. Most editorial, still pure app idioms.</div>
+  <div class="phone"><div class="pad">
+    <div class="status"><span class="tn">12:05</span><span>•••  ◢  ▮</span></div>
+    <div class="head"><div class="h1">Today</div><div class="gear">⚙</div></div>
+    <div class="combstrip"><div class="hex hx5"></div><div class="hex hx4"></div><div class="hex hx3"></div><div class="hex hx2"></div><div class="hex hx1"></div><div class="combtxt"><b>4 logs</b> to Thickening</div><div class="combchev">›</div></div>
+
+    <div style="margin-top:36px;">
+      <div class="eyebrow"><div class="pdot"></div>NEXT · OUT THE DOOR</div>
+      <div style="font-size:21px;font-weight:700;margin-top:9px;">Test 2</div>
+      <div class="hn" style="font-size:80px;line-height:.84;margin-top:12px;">~10<em style="font-size:22px;"> min</em></div>
+      <div class="gap" style="margin-top:20px;width:78%;"><div class="g" style="width:48%"></div><div style="width:2px"></div><div class="x" style="width:50%"></div></div>
+      <div class="gaprow" style="width:78%;"><div class="gguess">guessed 5 min</div><div class="gextra">+5 min</div></div>
+      <div class="pill" style="margin-top:24px;"><div class="tri"></div><span>Start</span></div>
+    </div>
+
+    <div style="height:8px"></div><div class="rsep" style="margin:24px 0 4px;"></div>
+    <div class="sec" style="margin-top:14px;">Up next</div>
+    <div class="row"><div class="rt"><div class="rtt">Test</div><div class="rcat">Cleaning</div></div><div class="rnum tn">15<em> min</em></div></div>
+    <div class="rsep"></div>
+    <div class="row"><div class="rt"><div class="rtt">Errands</div><div class="rcat">Out the door</div></div><div class="rnum tn">20<em> min</em></div></div>
+    <div class="done"><div class="gdot"></div><div class="donetxt"><b>2 finished</b> today · 38 min</div><div class="donemore">View ›</div></div>
+    <div class="grow"></div>
+  </div>
+    <div class="fab">+</div>
+    <div class="tabbar"><div class="tab on"><i>⌂</i>Today</div><div class="tab"><i>▦</i>Plan</div><div class="tab"><i>✷</i>Whenbee</div><div class="tab"><i>⌁</i>Patterns</div></div>
+  </div>
+</div>
+
+</body>
+</html>

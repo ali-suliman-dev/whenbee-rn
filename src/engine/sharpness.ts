@@ -34,3 +34,33 @@ export function logsToNextTier(sharpness: number): number {
   const need = nextThreshold - sharpness;
   return Math.max(1, Math.ceil(need / SHARPNESS_PER_LOG));
 }
+
+export interface TierBandProgress {
+  /** Whole logs the current tier band spans — the pip count. 0 once Honest. */
+  total: number;
+  /** Logs already earned inside this band (`total − remaining`). */
+  done: number;
+  /** Logs still needed to cross into the next tier (== `logsToNextTier`). */
+  remaining: number;
+}
+
+/**
+ * Discrete progress through the CURRENT tier band, for the honeycomb pip meter.
+ * The band is [threshold(tier), threshold(next)); its width in logs is
+ * ceil(span / SHARPNESS_PER_LOG). Because `logsToNextTier` floors at 1, the band
+ * never reads fully done while you're still inside it (honest goal gradient — the
+ * last pip only lights once you've actually crossed into the next tier). Once
+ * Honest there is no band ahead → all zero (caller renders a full, capped comb).
+ */
+export function tierBandProgress(sharpness: number): TierBandProgress {
+  const tier = tierFor(sharpness);
+  const idx = TIERS.indexOf(tier);
+  if (idx >= TIERS.length - 1) return { total: 0, done: 0, remaining: 0 };
+  const start = TIER_THRESHOLDS[idx];
+  const end = TIER_THRESHOLDS[idx + 1];
+  if (start === undefined || end === undefined) return { total: 0, done: 0, remaining: 0 };
+  const total = Math.max(1, Math.ceil((end - start) / SHARPNESS_PER_LOG));
+  const remaining = logsToNextTier(sharpness);
+  const done = Math.max(0, Math.min(total, total - remaining));
+  return { total, done, remaining };
+}

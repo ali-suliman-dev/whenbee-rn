@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useCallback, useState } from 'react';
 import { View, type TextStyle, type ViewStyle } from 'react-native';
 import {
   useDerivedValue,
@@ -50,15 +50,23 @@ export function FinishTime({
     return { isOver, minuteBucket };
   }, [estimateSec, startedAt]);
 
+  // Format on the JS thread — `formatClock` uses `new Date()` and is NOT a
+  // worklet, so it must never be called inside the UI-thread reaction below
+  // (doing so aborts the app under the New Architecture). We ship the raw minute
+  // bucket across the boundary and format here.
+  const applyFinish = useCallback((isOver: boolean, minuteBucket: number) => {
+    setOver(isOver);
+    setReprojectClock(formatClock(minuteBucket * 60000));
+  }, []);
+
   useAnimatedReaction(
     () => view.value,
     (curr, prev) => {
       if (!prev || curr.isOver !== prev.isOver || curr.minuteBucket !== prev.minuteBucket) {
-        runOnJS(setOver)(curr.isOver);
-        runOnJS(setReprojectClock)(formatClock(curr.minuteBucket * 60000));
+        runOnJS(applyFinish)(curr.isOver, curr.minuteBucket);
       }
     },
-    [],
+    [applyFinish],
   );
 
   const row: ViewStyle = {

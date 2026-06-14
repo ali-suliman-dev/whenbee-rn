@@ -34,7 +34,7 @@ beforeEach(() => {
 });
 
 describe('Reward screen', () => {
-  it('renders the actual number, the "you guessed" sub, and the honey pct', () => {
+  it('renders the actual number, the delta chip, and the honey pct', () => {
     useRewardStore.getState().setReward({
       actualMin: 28,
       guessMin: 15,
@@ -46,12 +46,11 @@ describe('Reward screen', () => {
     render(<Reward />);
 
     expect(screen.getByText('28')).toBeOnTheScreen();
-    expect(screen.getByText('you guessed 15 — now we both know')).toBeOnTheScreen();
+    // The gray "you guessed…" sentence is now a glanceable delta chip.
+    expect(screen.getByText('13 min over your guess')).toBeOnTheScreen();
     expect(screen.getByText('64%')).toBeOnTheScreen();
-    // Multiplier sub reads the category display name + multiplier.
-    expect(
-      screen.getByText('Getting ready now reads 2.2× · multiplier updated quietly.'),
-    ).toBeOnTheScreen();
+    // Multiplier sub reads the category display name + multiplier (jargon trimmed).
+    expect(screen.getByText('Getting ready now reads 2.2×')).toBeOnTheScreen();
   });
 
   it('renders a deterministic timed headline from the rotating set', () => {

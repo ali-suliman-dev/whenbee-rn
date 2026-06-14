@@ -8,13 +8,30 @@
 // over your guess is data, not failure.
 // ──────────────────────────────────────────────────────────────────────────────
 
-/** Local 12-hour clock: "9:42", "1:07", "12:00" (midnight/noon → 12). */
-export function formatClock(epochMs: number): string {
+// App-wide clock format. Defaults to 12h (so tests stay deterministic); the app
+// sets it once at boot from the device's "24-Hour Time" toggle via
+// `setClockHour12(!prefers24Hour())` (see `lib/clockPrefs`). A single knob means
+// every `formatClock` caller follows the system without threading a flag through.
+let hour12Default = true;
+export function setClockHour12(value: boolean): void {
+  hour12Default = value;
+}
+
+/** Local clock. 12h: "9:42", "1:07", "12:00". 24h: "09:42", "16:46", "00:00". */
+export function formatClock(epochMs: number, hour12 = hour12Default): string {
   const d = new Date(epochMs);
   const hours24 = d.getHours();
-  const hour12 = hours24 % 12 === 0 ? 12 : hours24 % 12;
-  const minutes = d.getMinutes();
-  return `${hour12}:${minutes.toString().padStart(2, '0')}`;
+  const minutes = d.getMinutes().toString().padStart(2, '0');
+  if (!hour12) return `${hours24.toString().padStart(2, '0')}:${minutes}`;
+  const h12 = hours24 % 12 === 0 ? 12 : hours24 % 12;
+  return `${h12}:${minutes}`;
+}
+
+/** Local 12-hour clock with meridiem: "9:42am", "5:00pm", "12:00pm" (noon). */
+export function formatClockMeridiem(epochMs: number): string {
+  const d = new Date(epochMs);
+  const meridiem = d.getHours() < 12 ? 'am' : 'pm';
+  return `${formatClock(epochMs)}${meridiem}`;
 }
 
 /** "mm:ss" with a 2-digit second; minutes are not capped (e.g. "61:01"). */

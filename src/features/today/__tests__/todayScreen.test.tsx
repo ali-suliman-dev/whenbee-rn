@@ -29,7 +29,7 @@ describe('Today screen', () => {
     ).toBeOnTheScreen();
   });
 
-  it('renders the focus card honest number + provenance for a focus task', () => {
+  it('renders the focus card plan total + guess→plan gap for a focus task', () => {
     useCalibrationStore.setState({
       statsByCategory: {
         getting_ready: { mEffective: 2.0, n: 8, sharpness: 70, tier: 'Ripening' },
@@ -41,10 +41,12 @@ describe('Today screen', () => {
 
     render(<Today />);
 
-    // Task title + honest number (round_to_5(15 × 2.0) = 30) + provenance.
+    // Task title + plan total (round_to_5(15 × 2.0) = 30) + the guess→plan gap line
+    // labels (guess 15, +15 the learned extra).
     expect(screen.getByText('Leave for work')).toBeOnTheScreen();
     expect(screen.getByText('~30')).toBeOnTheScreen();
-    expect(screen.getByText('based on your last 8 times · learned on-device')).toBeOnTheScreen();
+    expect(screen.getByText('guessed 15 min')).toBeOnTheScreen();
+    expect(screen.getByText('+15 min')).toBeOnTheScreen();
     // The empty copy must NOT show when a task is present.
     expect(
       screen.queryByText('Nothing tracked yet today — tap + when you start something.'),

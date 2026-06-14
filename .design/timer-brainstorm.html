@@ -1,0 +1,389 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Whenbee · Timer redesign brainstorm</title>
+<style>
+  :root{
+    --bg:#14151D; --surface:#1F2130; --raised:#292B3C; --sunken:#15161F;
+    --hairline:rgba(255,255,255,0.08); --border:rgba(255,255,255,0.14);
+    --ink:#F4F1EA; --inkSoft:#ADA9B5; --inkFaint:rgba(244,241,234,0.40);
+    --primary:#8275F0; --primaryEdge:#6B5BE6; --primarySoft:rgba(130,117,240,0.22);
+    --accent:#EEAE4D; --amberText:#EEAE4D; --accentSoft:rgba(238,174,77,0.18);
+    --onIndigo:#14151D; --success:#33B07C;
+    --r-card:16px; --r-sheet:20px; --r-full:999px;
+  }
+  *{box-sizing:border-box; margin:0; padding:0;}
+  html,body{background:#0c0d12; color:var(--ink);
+    font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text","Segoe UI",Roboto,sans-serif;
+    -webkit-font-smoothing:antialiased;}
+  .page{padding:56px 40px 80px;}
+  .lede{max-width:1180px; margin:0 auto 44px;}
+  .lede h1{font-size:26px; font-weight:700; letter-spacing:-0.02em;}
+  .lede p{margin-top:10px; color:var(--inkSoft); font-size:15px; line-height:1.55; max-width:760px;}
+  .grid{display:grid; grid-template-columns:repeat(3,320px); gap:64px 48px; justify-content:center;}
+  .cell{display:flex; flex-direction:column; align-items:center;}
+  .cap{margin-top:20px; width:320px;}
+  .cap .tag{display:inline-block; font-size:11px; font-weight:700; letter-spacing:0.12em;
+    text-transform:uppercase; color:var(--primary); margin-bottom:6px;}
+  .cap h3{font-size:16px; font-weight:600; letter-spacing:-0.01em;}
+  .cap p{margin-top:6px; color:var(--inkSoft); font-size:12.5px; line-height:1.5;}
+
+  /* ---- phone frame ---- */
+  .phone{width:320px; height:680px; border-radius:46px; background:var(--bg);
+    border:1px solid rgba(255,255,255,0.10);
+    box-shadow:0 0 0 10px #04050a, 0 30px 60px rgba(0,0,0,0.55);
+    position:relative; overflow:hidden;}
+  .notch{position:absolute; top:11px; left:50%; transform:translateX(-50%);
+    width:108px; height:28px; background:#04050a; border-radius:16px; z-index:5;}
+  .screen{position:absolute; inset:0; padding:54px 22px 26px; display:flex; flex-direction:column;}
+
+  /* shared header */
+  .top{display:flex; align-items:center; justify-content:space-between;}
+  .chev{width:36px; height:36px; border-radius:var(--r-full); background:var(--surface);
+    border:1px solid var(--hairline); display:flex; align-items:center; justify-content:center;
+    color:var(--ink); font-size:15px;}
+  .eyebrow{display:flex; align-items:center; gap:8px; font-size:11px; font-weight:700;
+    letter-spacing:0.14em; text-transform:uppercase; color:var(--inkSoft);}
+  .dot{width:8px; height:8px; border-radius:var(--r-full); background:var(--primary);}
+  .dot.amber{background:var(--accent);}
+  .spacer36{width:36px; height:36px;}
+
+  /* controls */
+  .controls{display:flex; gap:12px; align-items:center; justify-content:center; margin-top:auto;}
+  .btn{height:52px; border-radius:14px; display:flex; align-items:center; justify-content:center;
+    font-size:16px; font-weight:600;}
+  .btn.ghost{flex:1; color:var(--ink); background:transparent;}
+  .btn.indigo{flex:1.4; background:var(--primary); color:var(--onIndigo);
+    box-shadow:0 4px 0 var(--primaryEdge);}
+  .btn.wide{flex:1;}
+
+  .num{font-variant-numeric:tabular-nums; letter-spacing:-0.02em;}
+  .center{flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center;}
+
+  /* ===== V1 refined ring ===== */
+  .clock{font-size:62px; font-weight:600; line-height:1;}
+  .v1 .meta{margin-top:14px; display:flex; flex-direction:column; align-items:center; gap:3px;}
+  .reframe{display:flex; align-items:baseline; gap:7px; font-size:13.5px; color:var(--inkSoft);}
+  .reframe b{color:var(--ink); font-weight:600;}
+  .reframe .arrow{color:var(--primary); font-weight:700;}
+  .taskblock{margin-top:22px; display:flex; flex-direction:column; align-items:center; gap:8px;}
+  .task{font-size:19px; font-weight:600;}
+  .pace{font-size:13px; color:var(--inkSoft);}
+  .pace.amber{color:var(--amberText);}
+  .finish{display:flex; gap:8px; font-size:12px; color:var(--inkFaint); margin-top:2px;}
+  .finish .num{color:var(--inkSoft);}
+
+  /* ===== V2 calibration bar ===== */
+  .v2 .clock{font-size:72px;}
+  .v2 .task{margin-top:6px; font-size:16px; color:var(--inkSoft); font-weight:500;}
+  .track{position:relative; width:240px; height:8px; border-radius:var(--r-full);
+    background:var(--sunken); margin-top:40px;}
+  .fill{position:absolute; left:0; top:0; bottom:0; border-radius:var(--r-full);
+    background:var(--primary);}
+  .guessmark{position:absolute; top:-6px; width:2px; height:20px; background:var(--inkFaint);}
+  .guesslab{position:absolute; top:-30px; transform:translateX(-50%); font-size:10.5px;
+    letter-spacing:0.04em; color:var(--inkSoft); white-space:nowrap;}
+  .nowhead{position:absolute; top:50%; width:16px; height:16px; border-radius:var(--r-full);
+    background:var(--primary); transform:translate(-50%,-50%); border:3px solid var(--bg);
+    box-shadow:0 0 0 1px var(--primary);}
+  .endlab{position:absolute; top:18px; right:0; font-size:10.5px; color:var(--inkSoft);}
+  .startlab{position:absolute; top:18px; left:0; font-size:10.5px; color:var(--inkFaint);}
+  .v2 .pacepill{margin-top:54px; padding:8px 14px; border-radius:var(--r-full);
+    background:var(--primarySoft); color:var(--ink); font-size:12.5px;}
+
+  /* ===== V3 bottom arc ===== */
+  .v3 .screen{padding-bottom:0;}
+  .v3 .top{z-index:3;}
+  .v3 .stage{flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center;
+    padding-top:30px;}
+  .v3 .clock{font-size:78px; font-weight:600;}
+  .v3 .reframe{margin-top:10px; font-size:14px;}
+  .v3 .arcwrap{position:absolute; left:0; right:0; bottom:0; height:280px;}
+  .v3 .arclabels{position:absolute; bottom:104px; left:0; right:0; display:flex;
+    justify-content:space-between; padding:0 30px; font-size:11px; color:var(--inkSoft);}
+  .v3 .controls{position:absolute; left:22px; right:22px; bottom:30px;}
+
+  /* ===== V4 focus halo ===== */
+  .v4 .halo{position:relative; width:240px; height:240px; display:flex; align-items:center; justify-content:center;}
+  .v4 .ring-soft{position:absolute; border-radius:var(--r-full);}
+  .v4 .r1{inset:0; background:radial-gradient(circle, var(--primarySoft) 0%, transparent 68%);}
+  .v4 .r2{inset:34px; border:1px solid rgba(130,117,240,0.30);}
+  .v4 .r3{inset:62px; border:1px solid rgba(130,117,240,0.16);}
+  .v4 .clock{font-size:60px; font-weight:500; z-index:2;}
+  .v4 .reframe{position:relative; z-index:2; margin-top:8px; font-size:13px;}
+  .v4 .task{margin-top:34px; font-size:18px; font-weight:600;}
+  .v4 .pace{margin-top:8px; font-size:13px; color:var(--inkSoft);}
+
+  /* ===== V5 receipt card ===== */
+  .v5 .clock{font-size:66px; font-weight:600;}
+  .v5 .task{margin-top:4px; font-size:15px; color:var(--inkSoft); font-weight:500;}
+  .card{margin-top:30px; width:100%; background:var(--surface); border:1px solid var(--hairline);
+    border-radius:var(--r-card); padding:6px 16px;}
+  .row{display:flex; align-items:center; justify-content:space-between; padding:13px 0;}
+  .row + .row{border-top:1px solid var(--hairline);}
+  .row .k{font-size:13px; color:var(--inkSoft);}
+  .row .v{font-size:14.5px; font-weight:600;}
+  .row .v.amber{color:var(--amberText);}
+  .row .v.indigo{color:var(--primary);}
+  .v5 .pacebar{margin-top:14px; width:100%; height:8px; border-radius:var(--r-full);
+    background:var(--sunken); position:relative; overflow:hidden;}
+  .v5 .pacebar i{position:absolute; left:0; top:0; bottom:0; border-radius:var(--r-full); background:var(--primary);}
+
+  /* ===== V6 ring + reframe hero ===== */
+  .v6 .clock{font-size:30px; font-weight:600; color:var(--inkSoft);}
+  .v6 .heroframe{display:flex; align-items:baseline; gap:10px; margin-top:2px;}
+  .v6 .gnum{font-size:34px; font-weight:600; color:var(--inkFaint);}
+  .v6 .gnum s{text-decoration:none;}
+  .v6 .to{font-size:22px; color:var(--primary); font-weight:700;}
+  .v6 .hnum{font-size:48px; font-weight:700; color:var(--ink);}
+  .v6 .hlab{font-size:11px; letter-spacing:0.12em; text-transform:uppercase; color:var(--inkSoft); margin-top:10px;}
+  .v6 .task{margin-top:20px; font-size:18px; font-weight:600;}
+  .v6 .pace{margin-top:8px; font-size:13px; color:var(--inkSoft);}
+
+  svg{display:block;}
+</style>
+</head>
+<body>
+<div class="page">
+  <div class="lede">
+    <h1>Whenbee · Live Timer — six directions</h1>
+    <p>All dark-mode, exact tokens. Same moment in every frame: <b>5:44 elapsed, guessed 5m, honest target ~10m, still on pace.</b>
+    The through-line each one chases: pull the buried calibration story up into the design, kill the dead space, and group the four floating text blocks into one readable unit. No guilt — amber, never red.</p>
+  </div>
+
+  <div class="grid">
+
+    <!-- ============ V1 Refined Ring ============ -->
+    <div class="cell">
+      <div class="phone"><div class="notch"></div>
+        <div class="screen v1">
+          <div class="top">
+            <div class="chev">⌄</div>
+            <div class="eyebrow"><span class="dot"></span>Timing now</div>
+            <div class="spacer36"></div>
+          </div>
+          <div class="center">
+            <div style="position:relative; width:236px; height:236px; display:flex; align-items:center; justify-content:center;">
+              <svg width="236" height="236" viewBox="0 0 236 236">
+                <circle cx="118" cy="118" r="105" fill="none" stroke="rgba(255,255,255,0.07)" stroke-width="14"/>
+                <circle cx="118" cy="118" r="105" fill="none" stroke="var(--primary)" stroke-width="14"
+                  stroke-linecap="round" stroke-dasharray="659.7" stroke-dashoffset="281.6"
+                  transform="rotate(-90 118 118)"/>
+                <!-- guess tick at 5/10 = 50% = 6 o'clock -->
+                <line x1="118" y1="6" x2="118" y2="20" stroke="var(--inkFaint)" stroke-width="2"
+                  transform="rotate(180 118 118)"/>
+              </svg>
+              <div style="position:absolute; text-align:center;">
+                <div class="clock num">5:44</div>
+              </div>
+            </div>
+            <div class="meta">
+              <div class="reframe"><b>guessed&nbsp;5m</b><span class="arrow">→</span>honest&nbsp;<b style="color:var(--primary)">~10m</b></div>
+            </div>
+            <div class="taskblock">
+              <div class="task">Test 2</div>
+              <div class="pace">On track — you’ve got time</div>
+              <div class="finish"><span>Started <span class="num">17:08</span></span><span>·</span><span>done <span class="num">~17:18</span></span></div>
+            </div>
+          </div>
+          <div class="controls">
+            <div class="btn ghost">Abandon</div>
+            <div class="btn indigo">Stop &amp; log</div>
+          </div>
+        </div>
+      </div>
+      <div class="cap">
+        <span class="tag">V1 · Refined ring</span>
+        <h3>The current screen, fixed</h3>
+        <p>Tightens the same composition: ring centered, guess→honest reframe sits right under the number, the task + pace + finish collapse into one grouped block. A faint tick on the ring marks where your 5m guess fell.</p>
+      </div>
+    </div>
+
+    <!-- ============ V2 Calibration bar ============ -->
+    <div class="cell">
+      <div class="phone"><div class="notch"></div>
+        <div class="screen v2">
+          <div class="top">
+            <div class="chev">⌄</div>
+            <div class="eyebrow"><span class="dot"></span>Timing now</div>
+            <div class="spacer36"></div>
+          </div>
+          <div class="center">
+            <div class="clock num">5:44</div>
+            <div class="task">Test 2</div>
+            <div class="track">
+              <div class="fill" style="width:57%"></div>
+              <div class="guessmark" style="left:50%"></div>
+              <div class="guesslab" style="left:50%">your guess · 5m</div>
+              <div class="nowhead" style="left:57%"></div>
+              <div class="startlab"><span class="num">17:08</span></div>
+              <div class="endlab">honest ~10m · <span class="num">17:18</span></div>
+            </div>
+            <div class="pacepill">On track — breathe, you’ve got time</div>
+          </div>
+          <div class="controls">
+            <div class="btn ghost">Abandon</div>
+            <div class="btn indigo">Stop &amp; log</div>
+          </div>
+        </div>
+      </div>
+      <div class="cap">
+        <span class="tag">V2 · Calibration bar</span>
+        <h3>No ring — a learning timeline</h3>
+        <p>Drops the circle for a slim track from start to the honest finish. Your guess is a labeled tick; the live head moves past it. The one frame that literally <i>shows</i> the calibration lesson: you’re past 5m and still inside honest.</p>
+      </div>
+    </div>
+
+    <!-- ============ V3 Bottom arc ============ -->
+    <div class="cell">
+      <div class="phone"><div class="notch"></div>
+        <div class="screen v3">
+          <div class="top">
+            <div class="chev">⌄</div>
+            <div class="eyebrow"><span class="dot"></span>Timing now</div>
+            <div class="spacer36"></div>
+          </div>
+          <div class="stage">
+            <div class="clock num">5:44</div>
+            <div class="reframe"><b>Test 2</b></div>
+            <div class="reframe" style="margin-top:6px"><span style="color:var(--inkSoft)">guessed 5m · honest ~10m</span></div>
+          </div>
+          <div class="arcwrap">
+            <svg width="320" height="280" viewBox="0 0 320 280">
+              <!-- arc track: big radius circle, only top portion visible -->
+              <path d="M 28 270 A 132 132 0 0 1 292 270" fill="none" stroke="rgba(255,255,255,0.07)" stroke-width="14" stroke-linecap="round"/>
+              <path d="M 28 270 A 132 132 0 0 1 292 270" fill="none" stroke="var(--primary)" stroke-width="14" stroke-linecap="round"
+                stroke-dasharray="414.7" stroke-dashoffset="178.3"/>
+              <!-- guess tick at 50% along arc (top, 12 o'clock) -->
+              <circle cx="160" cy="138" r="4" fill="var(--inkFaint)"/>
+            </svg>
+            <div class="arclabels"><span><span class="num">17:08</span></span><span>guess 5m</span><span>~<span class="num">17:18</span></span></div>
+          </div>
+          <div class="controls">
+            <div class="btn ghost wide">Abandon</div>
+            <div class="btn indigo">Stop &amp; log</div>
+          </div>
+        </div>
+      </div>
+      <div class="cap">
+        <span class="tag">V3 · Bottom arc</span>
+        <h3>Gauge anchored to the floor</h3>
+        <p>Time floats big up top; a wide 180° arc hugs the bottom edge so the screen finally feels grounded instead of mid-air. Guess + honest are ticks along the arc. Reads like a speedometer at a glance.</p>
+      </div>
+    </div>
+
+    <!-- ============ V4 Focus halo ============ -->
+    <div class="cell">
+      <div class="phone"><div class="notch"></div>
+        <div class="screen v4">
+          <div class="top">
+            <div class="chev">⌄</div>
+            <div class="eyebrow"><span class="dot"></span>Timing now</div>
+            <div class="spacer36"></div>
+          </div>
+          <div class="center">
+            <div class="halo">
+              <div class="ring-soft r1"></div>
+              <div class="ring-soft r2"></div>
+              <div class="ring-soft r3"></div>
+              <div style="text-align:center; z-index:2;">
+                <div class="clock num">5:44</div>
+                <div class="reframe">guessed 5m · honest ~10m</div>
+              </div>
+            </div>
+            <div class="task">Test 2</div>
+            <div class="pace">On track — you’ve got time</div>
+          </div>
+          <div class="controls">
+            <div class="btn ghost">Abandon</div>
+            <div class="btn indigo">Stop &amp; log</div>
+          </div>
+        </div>
+      </div>
+      <div class="cap">
+        <span class="tag">V4 · Focus halo</span>
+        <h3>Calm, no hard edge</h3>
+        <p>No progress bar to stare at — a soft breathing halo that gently pulses with each minute. Maximally on-brand for “no guilt, calm focus.” Progress is felt (halo brightness), not measured. The Zen / Forest lane.</p>
+      </div>
+    </div>
+
+    <!-- ============ V5 Receipt card ============ -->
+    <div class="cell">
+      <div class="phone"><div class="notch"></div>
+        <div class="screen v5">
+          <div class="top">
+            <div class="chev">⌄</div>
+            <div class="eyebrow"><span class="dot"></span>Timing now</div>
+            <div class="spacer36"></div>
+          </div>
+          <div class="center" style="justify-content:flex-start; padding-top:18px;">
+            <div class="clock num">5:44</div>
+            <div class="task">Test 2</div>
+            <div class="card">
+              <div class="row"><span class="k">Your guess</span><span class="v num">5m</span></div>
+              <div class="row"><span class="k">Honest target</span><span class="v indigo num">~10m</span></div>
+              <div class="row"><span class="k">Finishing around</span><span class="v num">17:18</span></div>
+            </div>
+            <div class="pacebar"><i style="width:57%"></i></div>
+            <div class="pace" style="margin-top:12px; color:var(--inkSoft); font-size:13px;">On track — you’ve got time</div>
+          </div>
+          <div class="controls">
+            <div class="btn ghost">Abandon</div>
+            <div class="btn indigo">Stop &amp; log</div>
+          </div>
+        </div>
+      </div>
+      <div class="cap">
+        <span class="tag">V5 · Receipt</span>
+        <h3>Data-forward</h3>
+        <p>For users who want the numbers plain: guess, honest, finish as a clean three-row card under the clock. Most legible, least “timer-y.” Risk: colder, more dashboard than focus tool — but unbeatable for glance-clarity.</p>
+      </div>
+    </div>
+
+    <!-- ============ V6 Reframe hero ============ -->
+    <div class="cell">
+      <div class="phone"><div class="notch"></div>
+        <div class="screen v6">
+          <div class="top">
+            <div class="chev">⌄</div>
+            <div class="eyebrow"><span class="dot"></span>Timing now</div>
+            <div class="spacer36"></div>
+          </div>
+          <div class="center">
+            <div style="position:relative; width:248px; height:248px; display:flex; align-items:center; justify-content:center;">
+              <svg width="248" height="248" viewBox="0 0 248 248">
+                <circle cx="124" cy="124" r="110" fill="none" stroke="rgba(255,255,255,0.07)" stroke-width="12"/>
+                <circle cx="124" cy="124" r="110" fill="none" stroke="var(--primary)" stroke-width="12"
+                  stroke-linecap="round" stroke-dasharray="691.2" stroke-dashoffset="295.1"
+                  transform="rotate(-90 124 124)"/>
+              </svg>
+              <div style="position:absolute; text-align:center;">
+                <div class="clock num">5:44</div>
+                <div class="heroframe" style="justify-content:center;">
+                  <span class="gnum num">5</span><span class="to">→</span><span class="hnum num">10<span style="font-size:18px;font-weight:600;color:var(--inkSoft)">m</span></span>
+                </div>
+                <div class="hlab">guess → honest</div>
+              </div>
+            </div>
+            <div class="task">Test 2</div>
+            <div class="pace">On track — you’ve got time</div>
+          </div>
+          <div class="controls">
+            <div class="btn ghost">Abandon</div>
+            <div class="btn indigo">Stop &amp; log</div>
+          </div>
+        </div>
+      </div>
+      <div class="cap">
+        <span class="tag">V6 · Reframe hero</span>
+        <h3>The lesson is the centerpiece</h3>
+        <p>Keeps the ring but flips the hierarchy inside it: the elapsed clock goes quiet, the <b>5 → 10</b> guess-to-honest jump becomes the biggest thing on screen. Most opinionated — sells the wedge hardest, every single session.</p>
+      </div>
+    </div>
+
+  </div>
+</div>
+</body>
+</html>

@@ -6,12 +6,14 @@ import { useTheme } from '@/src/theme/useTheme';
 import { type } from '@/src/theme/typography';
 
 // ──────────────────────────────────────────────────────────────────────────────
-// HonestCard — the honest number for a 15-min guess in this category.
+// HonestCard — the hero of the category screen: the one number that matters,
+// with its ripeness + learning progress folded in so the top is a single, clear
+// focal block (most-important-first).
 //
-//   🔍 Your honest number for {category}
-//   ~28 min          (huge indigo, round_to_5(15 × M))
-//   runs 2.0×        (the multiplier, quiet)
-//   {provenance}     ("based on your last N times" / "based on typical patterns")
+//   [Raw]  1 log · 10 to Setting          (tier badge + progress, amber = honey)
+//   🔍 Your honest number
+//   ~28 min   runs 2.0×                   (huge indigo + quiet multiplier)
+//   based on typical patterns · learned on-device
 // ──────────────────────────────────────────────────────────────────────────────
 
 interface HonestCardProps {
@@ -19,10 +21,38 @@ interface HonestCardProps {
   honestMinutes: number;
   multiplier: number;
   provenance: string;
+  /** Ripeness tier (e.g. "Raw"). When present, renders the tier+progress header. */
+  tier?: string;
+  n?: number;
+  logsToNext?: number;
+  nextTier?: string | null;
 }
 
-export function HonestCard({ categoryName, honestMinutes, multiplier, provenance }: HonestCardProps) {
+export function HonestCard({
+  categoryName,
+  honestMinutes,
+  multiplier,
+  provenance,
+  tier,
+  n,
+  logsToNext,
+  nextTier,
+}: HonestCardProps) {
   const t = useTheme();
+
+  const tierRow: ViewStyle = { flexDirection: 'row', alignItems: 'center', gap: t.space[2] };
+  const pill: ViewStyle = {
+    backgroundColor: t.colors.accentSoft,
+    borderRadius: t.radii.full,
+    paddingHorizontal: t.space[3],
+    paddingVertical: t.space[0.5],
+  };
+  const pillText: TextStyle = {
+    ...(type.caption as unknown as TextStyle),
+    color: t.colors.amberText,
+    fontFamily: 'Jakarta-Bold',
+  };
+  const tierMeta: TextStyle = { ...(type.caption as unknown as TextStyle), color: t.colors.inkSoft, flex: 1 };
 
   const eyebrowRow: ViewStyle = { flexDirection: 'row', alignItems: 'center', gap: t.space[2] };
   const eyebrow: TextStyle = { ...(type.eyebrow as unknown as TextStyle), color: t.colors.primary };
@@ -43,7 +73,19 @@ export function HonestCard({ categoryName, honestMinutes, multiplier, provenance
   };
 
   return (
-    <Card style={{ gap: t.space[3] }}>
+    <Card tone="focal" style={{ gap: t.space[3] }}>
+      {tier ? (
+        <View style={tierRow}>
+          <View style={pill}>
+            <Text style={pillText}>{tier}</Text>
+          </View>
+          <Text style={tierMeta}>
+            {n} {n === 1 ? 'log' : 'logs'}
+            {nextTier ? ` · ${logsToNext} to ${nextTier}` : ''}
+          </Text>
+        </View>
+      ) : null}
+
       <View style={eyebrowRow}>
         <Ionicons name="search-outline" size={16} color={t.colors.primary} />
         <Text style={eyebrow}>YOUR HONEST NUMBER FOR {categoryName.toUpperCase()}</Text>

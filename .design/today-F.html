@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Inter:wght@500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#14151D; --raised:#292B3C; --sunken:#13141B; --focal:#23253A; --surface:#1F2130;
+    --ink:#F5F2EC; --inkSoft:#A6A2AE; --inkFaint:rgba(245,242,236,0.34);
+    --primary:#8275F0; --primaryEdge:#5648b0; --primarySoft:rgba(130,117,240,0.20); --primaryGlow:rgba(130,117,240,0.16);
+    --accent:#EEAE4D; --accentGlow:rgba(238,174,77,0.14);
+    --success:#33B07C; --successDim:#2c7d5d; --hairline:rgba(255,255,255,0.08);
+    --jak:'Plus Jakarta Sans',-apple-system,system-ui,sans-serif;
+    --num:'Inter',-apple-system,system-ui,sans-serif;
+  }
+  *{box-sizing:border-box;margin:0;padding:0;-webkit-font-smoothing:antialiased;}
+  body{background:#070709;font-family:var(--jak);color:var(--ink);padding:46px;display:flex;gap:48px;align-items:flex-start;justify-content:center;}
+  .col{display:flex;flex-direction:column;align-items:center;gap:14px;}
+  .cap{font-size:14px;font-weight:700;color:#fff;}
+  .sub{font-size:12px;color:#777;max-width:360px;text-align:center;line-height:1.5;}
+
+  .f10{font-size:10px;font-weight:700;letter-spacing:2px;text-transform:uppercase;}
+  .f12{font-size:12px;font-weight:500;}
+  .f14{font-size:14px;font-weight:600;}
+  .f16{font-size:16px;font-weight:700;letter-spacing:-.2px;}
+  .f20{font-size:20px;font-weight:800;letter-spacing:-.5px;}
+  .num{font-family:var(--num);font-variant-numeric:tabular-nums;font-feature-settings:"tnum" 1;}
+  .soft{color:var(--inkSoft);}.faint{color:var(--inkFaint);}.amber{color:var(--accent);}.indigo{color:var(--primary);}.green{color:var(--success);}
+
+  .phone{width:360px;height:760px;border-radius:46px;border:10px solid #25252c;overflow:hidden;position:relative;
+    box-shadow:0 28px 70px rgba(0,0,0,.6);display:flex;flex-direction:column;
+    background:radial-gradient(120% 55% at 80% -3%,var(--primaryGlow),transparent 46%),
+               radial-gradient(110% 46% at 10% 1%,var(--accentGlow),transparent 42%),var(--bg);}
+  .pad{padding:0 22px;display:flex;flex-direction:column;flex:1;}
+  .status{height:44px;display:flex;align-items:flex-end;justify-content:space-between;padding:0 8px 2px;font-size:12px;font-weight:600;}
+  .head{display:flex;align-items:flex-start;justify-content:space-between;margin-top:12px;}
+  .gear{color:var(--inkFaint);font-size:18px;}
+  .comb{display:flex;align-items:center;gap:7px;margin-top:16px;}
+  .chex{width:18px;height:20px;clip-path:polygon(50% 0,100% 25%,100% 75%,50% 100%,0 75%,0 25%);}
+  .hx5{background:var(--accent);}.hx4{background:#caa258;}.hx3{background:#7e6f3e;}.hx2{background:#4a4634;}.hx1{background:rgba(255,255,255,0.10);}
+  .comb .chev{margin-left:auto;color:var(--inkFaint);font-size:14px;}
+  .pdot{width:6px;height:6px;border-radius:99px;background:var(--primary);}
+  .eyebrow{display:flex;align-items:center;gap:8px;color:var(--inkSoft);}
+
+  /* ===== continuous comb-spine ===== */
+  .spine{position:relative;margin-top:22px;}
+  .spine::before{content:'';position:absolute;left:12px;top:8px;bottom:14px;width:2px;border-radius:2px;
+    background:linear-gradient(180deg,var(--success) 0 15%, var(--hairline) 15% 100%);}
+  .snode{display:flex;align-items:center;gap:12px;}
+  .snode + .snode{margin-top:15px;}
+  .nowWrap{align-items:flex-start;}
+  /* marker column — keeps every hex centered on the continuous line */
+  .mkcol{width:26px;flex-shrink:0;display:flex;justify-content:center;position:relative;z-index:1;}
+  .nowWrap .mkcol{padding-top:15px;}
+  .mk{clip-path:polygon(50% 0,100% 25%,100% 75%,50% 100%,0 75%,0 25%);display:flex;align-items:center;justify-content:center;}
+  .mk.done{width:16px;height:18px;background:var(--success);}
+  .mk.next{width:15px;height:17px;background:var(--primarySoft);}
+  .mk.now{width:24px;height:27px;background:var(--primary);box-shadow:0 2px 0 var(--primaryEdge);}
+  .mk .tri{width:0;height:0;border-left:8px solid #14151D;border-top:5px solid transparent;border-bottom:5px solid transparent;margin-left:2px;}
+  .mk .ck{font-size:9px;color:#0f3f2c;font-weight:800;}
+  /* node bodies */
+  .doneRow,.nextRow{display:flex;align-items:center;gap:10px;flex:1;}
+  .doneRow .t,.nextRow .t{flex:1}
+  .nextRow .rcat{margin-top:3px;color:var(--inkFaint);}
+
+  /* ===== refined NOW card — smaller, airy ===== */
+  .card{flex:1;background:var(--focal);border-radius:20px;padding:22px 22px 24px;border-top:1px solid rgba(130,117,240,0.22);}
+  .topRow{display:flex;align-items:baseline;justify-content:space-between;margin-top:14px;}
+  .hn{font-family:var(--num);font-weight:800;color:var(--ink);font-variant-numeric:tabular-nums;letter-spacing:-.5px;}
+  .gap{height:6px;border-radius:99px;background:var(--sunken);display:flex;overflow:hidden;margin-top:18px;}
+  .gap .g{background:var(--primary);}.gap .x{background:var(--accent);}
+  .gaprow{display:flex;justify-content:space-between;align-items:center;margin-top:10px;}
+  /* Start: compact, centered, lots of air around it */
+  .startWrap{display:flex;justify-content:center;margin-top:24px;}
+  .start{display:inline-flex;align-items:center;gap:9px;height:46px;padding:0 34px;border-radius:14px;
+    background:linear-gradient(180deg,#8b7ef4,#7b6def);box-shadow:0 4px 0 var(--primaryEdge),0 10px 20px var(--primaryGlow);}
+  .start .tri{width:0;height:0;border-left:11px solid #14151D;border-top:7px solid transparent;border-bottom:7px solid transparent;}
+  .start .lab{font-size:14px;font-weight:700;color:#14151D;letter-spacing:.2px;}
+
+  .pcaption{margin:14px 0 0 30px;color:var(--inkFaint);}
+  .grow{flex:1;}
+  .fab{position:absolute;right:22px;bottom:96px;width:50px;height:50px;border-radius:99px;background:var(--raised);border:1px solid var(--hairline);display:flex;align-items:center;justify-content:center;font-size:24px;color:var(--primary);box-shadow:0 5px 13px rgba(0,0,0,.4);}
+  .tabbar{height:74px;background:rgba(18,19,25,.62);border-top:1px solid var(--hairline);display:flex;backdrop-filter:blur(18px);}
+  .tab{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;font-size:10px;font-weight:600;color:var(--inkFaint);}
+  .tab.on{color:var(--primary);}.tab i{font-size:15px;font-style:normal;}
+</style>
+</head>
+<body>
+
+<div class="col">
+  <div class="cap">F · Bee-path — refined</div>
+  <div class="sub">Smaller connected comb-spine (done stones green), and a slimmed NOW card: tighter type, real breathing room, Start as a compact centered pill.</div>
+  <div class="phone"><div class="pad">
+    <div class="status"><span class="num">12:05</span><span>•••  ◢  ▮</span></div>
+    <div class="head"><div><div class="f20">Today</div><div class="f12 soft" style="margin-top:7px;">Sun · Jun 14</div></div><div class="gear">⚙</div></div>
+    <div class="comb"><div class="chex hx5"></div><div class="chex hx4"></div><div class="chex hx3"></div><div class="chex hx2"></div><div class="chex hx1"></div><div class="f12 soft" style="margin-left:6px;"><b class="amber" style="font-weight:700">4 logs</b> to Thickening</div><div class="chev">›</div></div>
+
+    <div class="spine">
+      <!-- done (green stone) -->
+      <div class="snode"><div class="mkcol"><div class="mk done"><div class="ck">✓</div></div></div>
+        <div class="doneRow"><div class="t f12 soft">Test · Cleaning</div><div class="f12 num faint">19 min</div></div>
+      </div>
+      <!-- done (green stone) -->
+      <div class="snode"><div class="mkcol"><div class="mk done"><div class="ck">✓</div></div></div>
+        <div class="doneRow"><div class="t f12 soft">Test · Cleaning</div><div class="f12 num faint">19 min</div></div>
+      </div>
+
+      <!-- NOW (big indigo stone + refined card) -->
+      <div class="snode nowWrap"><div class="mkcol"><div class="mk now"><div class="tri"></div></div></div>
+        <div class="card">
+          <div class="f10 eyebrow"><div class="pdot"></div>NOW · OUT THE DOOR</div>
+          <div class="topRow"><div class="f16">Test 2</div><div class="hn" style="font-size:20px;">~10<span class="f12 soft" style="font-weight:600"> min</span></div></div>
+          <div class="gap"><div class="g" style="width:48%"></div><div style="width:2px"></div><div class="x" style="width:50%"></div></div>
+          <div class="gaprow"><span class="f12 num indigo">guessed 5 min</span><span class="f12 num amber" style="font-weight:700">+5 min</span></div>
+          <div class="startWrap"><div class="start"><div class="tri"></div><span class="lab">Start</span></div></div>
+        </div>
+      </div>
+
+      <!-- next (soft stones) -->
+      <div class="snode"><div class="mkcol"><div class="mk next"></div></div>
+        <div class="nextRow"><div class="t"><div class="f14">Test</div><div class="f10 rcat">Cleaning</div></div><div class="f14 num soft">15<span class="f10" style="letter-spacing:0;font-weight:600"> MIN</span></div></div>
+      </div>
+      <div class="snode"><div class="mkcol"><div class="mk next"></div></div>
+        <div class="nextRow"><div class="t"><div class="f14">Errands</div><div class="f10 rcat">Out the door</div></div><div class="f14 num soft">20<span class="f10" style="letter-spacing:0;font-weight:600"> MIN</span></div></div>
+      </div>
+    </div>
+
+    <div class="pcaption f10" style="letter-spacing:1.5px">SUGGESTED ROUTE · TAP ANY TO START</div>
+    <div class="grow"></div>
+  </div>
+    <div class="fab">+</div>
+    <div class="tabbar"><div class="tab on"><i>⌂</i>Today</div><div class="tab"><i>▦</i>Plan</div><div class="tab"><i>✷</i>Whenbee</div><div class="tab"><i>⌁</i>Patterns</div></div>
+  </div>
+</div>
+
+</body>
+</html>

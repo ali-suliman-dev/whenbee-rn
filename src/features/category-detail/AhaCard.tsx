@@ -3,6 +3,7 @@ import { View, Text, Pressable, type ViewStyle, type TextStyle } from 'react-nat
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '@/src/theme/useTheme';
 import { type } from '@/src/theme/typography';
+import { CoinBadge } from '@/src/components/bee/CoinBadge';
 import type { Insight } from '@/src/domain/types';
 
 // ──────────────────────────────────────────────────────────────────────────────
@@ -39,7 +40,7 @@ export function AhaCard({ insight, categoryName, n }: AhaCardProps) {
     borderRadius: t.radii.card,
     padding: t.space[4],
     gap: t.space[2],
-    borderWidth: isDark ? t.borderWidth.hairline : 0,
+    borderWidth: isDark ? t.borderWidth.card : 0,
     borderColor: t.colors.hairline,
     borderLeftWidth: t.borderWidth.thick,
     borderLeftColor: t.colors.primary,
@@ -49,8 +50,6 @@ export function AhaCard({ insight, categoryName, n }: AhaCardProps) {
     alignItems: 'center',
     justifyContent: 'space-between',
   };
-  const eyebrowRow: ViewStyle = { flexDirection: 'row', alignItems: 'center', gap: t.space[2] };
-  const eyebrow: TextStyle = { ...(type.eyebrow as unknown as TextStyle), color: t.colors.accent };
   const headline: TextStyle = {
     ...(type.heading as unknown as TextStyle),
     color: fg,
@@ -69,10 +68,7 @@ export function AhaCard({ insight, categoryName, n }: AhaCardProps) {
   return (
     <View style={card}>
       <View style={headerRow}>
-        <View style={eyebrowRow}>
-          <Ionicons name="sparkles-outline" size={14} color={t.colors.accent} />
-          <Text style={eyebrow}>EYE-OPENING DISCOVERY</Text>
-        </View>
+        <CoinBadge tone="indigo" label="aha" />
         <Pressable
           onPress={() => setDismissed(true)}
           accessibilityRole="button"

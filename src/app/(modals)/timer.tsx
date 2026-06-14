@@ -1,6 +1,7 @@
 import { useEffect } from 'react';
 import { View, Pressable, Alert, type ViewStyle, type TextStyle } from 'react-native';
-import { useLocalSearchParams } from 'expo-router';
+import { router, useLocalSearchParams } from 'expo-router';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import Animated, {
   useSharedValue,
@@ -25,6 +26,11 @@ import { FinishTime } from '@/src/features/timer/FinishTime';
 // overrun as data (amber, never red). All ticking comes from useTimer's shared
 // values; the screen never holds a per-second interval. THE ONE action: Stop & log.
 //
+// Layout: ring + guess→honest reframe + task/finish are the centered middle; the
+// pace pill and the controls (✕ Abandon disc · Stop & log) are pinned to the
+// bottom. The honest number is amber — it's the optimistic real target (honey
+// semantic), and on overrun the whole frame warms to amber together.
+//
 // Route params: taskId?, label, category, estimateMin (honest suggestion the ring
 // fills toward) and OPTIONAL guessMin (the original guess that drives calibration;
 // falls back to estimateMin if Today/Add-Task didn't pass it).
@@ -43,6 +49,7 @@ function str(v: string | string[] | undefined, fallback: string): string {
 
 export default function Timer() {
   const t = useTheme();
+  const insets = useSafeAreaInsets();
   const reducedMotion = useReducedMotion();
   const params = useLocalSearchParams<{
     taskId?: string;
@@ -91,6 +98,16 @@ export default function Timer() {
     );
   }
 
+  // ✕ MINIMIZES: close the sheet but keep the timer running. The ActiveTimerBar on
+  // Today/Plan reopens the same session. A close control that destroyed the timer
+  // would break the mental model — Abandon (with confirm) is the explicit teardown.
+  function minimize() {
+    router.dismiss();
+  }
+
+  const guessRounded = Math.round(guessMin);
+  const honestRounded = Math.round(estimateMin);
+
   // ── styles ──
   const topRow: ViewStyle = {
     flexDirection: 'row',
@@ -99,50 +116,71 @@ export default function Timer() {
     paddingTop: t.space[2],
   };
   const closeBtn: ViewStyle = {
-    width: 44,
-    height: 44,
+    width: t.size.control.sm,
+    height: t.size.control.sm,
     borderRadius: t.radii.full,
     backgroundColor: t.colors.surface,
-    borderWidth: t.borderWidth.thick,
-    borderColor: t.colors.hairline,
+    borderWidth: t.borderWidth.hairline,
+    borderColor: t.colors.border,
     alignItems: 'center',
     justifyContent: 'center',
   };
   const eyebrowRow: ViewStyle = { flexDirection: 'row', alignItems: 'center', gap: t.space[2] };
   const liveDot: ViewStyle = {
-    width: 8,
-    height: 8,
+    width: t.space[2],
+    height: t.space[2],
     borderRadius: t.radii.full,
     backgroundColor: t.colors.primary,
   };
   const eyebrowText: TextStyle = { ...(type.eyebrow as TextStyle), color: t.colors.inkSoft };
+
+  // guess → honest reframe (honest number in amber — the optimistic real target).
+  const reframeRow: ViewStyle = {
+    flexDirection: 'row',
+    alignItems: 'baseline',
+    gap: t.space[1.5],
+    marginTop: t.space[4],
+  };
+  const reframeStrong: TextStyle = { ...(type.bodySm as TextStyle), color: t.colors.ink };
+  const reframeSoft: TextStyle = { ...(type.bodySm as TextStyle), color: t.colors.inkSoft };
+  const reframeHonest: TextStyle = { ...(type.bodySm as TextStyle), color: t.colors.accent };
+
+  const taskBlock: ViewStyle = { alignItems: 'center', gap: t.space[2], marginTop: t.space[6] };
   const taskName: TextStyle = {
     ...(type.subtitle as TextStyle),
     color: t.colors.ink,
     textAlign: 'center',
   };
-  const controlsRow: ViewStyle = {
-    flexDirection: 'row',
-    gap: t.space[3],
+
+  const abandonBtn: ViewStyle = {
+    width: t.size.control.lg,
+    height: t.size.control.lg,
+    borderRadius: t.radii.full,
+    backgroundColor: t.colors.surface,
+    borderWidth: t.borderWidth.hairline,
+    borderColor: t.colors.border,
     alignItems: 'center',
     justifyContent: 'center',
-    paddingBottom: t.space[4],
   };
-  const spacer44: ViewStyle = { width: 44, height: 44 };
+  const controlsRow: ViewStyle = {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: t.space[3],
+  };
 
   return (
     <Screen>
       <View style={{ flex: 1, justifyContent: 'space-between' }}>
-        {/* Top row: ✕ · eyebrow · spacer */}
+        {/* Top row: ✕ minimize · eyebrow · spacer */}
         <View style={topRow}>
           <Pressable
-            onPress={confirmAbandon}
+            onPress={minimize}
             accessibilityRole="button"
-            accessibilityLabel="Abandon this task"
+            accessibilityLabel="Minimize timer"
             style={closeBtn}
             hitSlop={8}
           >
-            <Ionicons name="close" size={22} color={t.colors.ink} />
+            <Ionicons name="chevron-down" size={t.iconSize.md} color={t.colors.ink} />
           </Pressable>
 
           <View style={eyebrowRow}>
@@ -150,40 +188,65 @@ export default function Timer() {
             <AppText style={eyebrowText}>Timing now</AppText>
           </View>
 
-          <View style={spacer44} />
+          <View style={{ width: t.size.control.sm, height: t.size.control.sm }} />
         </View>
 
-        {/* Ring stage + anchors */}
-        <View style={{ gap: t.space[5], alignItems: 'center' }}>
+        {/* Middle: ring · reframe · task/finish */}
+        <View style={{ alignItems: 'center' }}>
           <TimerRing
             elapsedSec={timer.elapsedSec}
             overProgress={timer.overProgress}
-            milestoneLatch={timer.milestoneLatch}
             estimateSec={timer.estimateSec}
             guessMin={timer.guessMin}
           />
 
-          <AppText style={taskName}>{label}</AppText>
+          <View style={reframeRow}>
+            <AppText style={reframeStrong}>guessed {guessRounded}m</AppText>
+            <AppText style={reframeSoft}>→</AppText>
+            <AppText style={reframeSoft}>honest</AppText>
+            <AppText style={reframeHonest}>~{honestRounded}m</AppText>
+          </View>
 
-          <PaceLabel elapsedSec={timer.elapsedSec} estimateSec={timer.estimateSec} />
-
-          <FinishTime
-            elapsedSec={timer.elapsedSec}
-            estimateSec={timer.estimateSec}
-            startedAt={timer.startedAt}
-            startedClock={timer.startedClock}
-            finishClock={timer.finishClock}
-          />
+          <View style={taskBlock}>
+            <AppText style={taskName}>{label}</AppText>
+            <FinishTime
+              elapsedSec={timer.elapsedSec}
+              estimateSec={timer.estimateSec}
+              startedAt={timer.startedAt}
+              startedClock={timer.startedClock}
+              finishClock={timer.finishClock}
+            />
+          </View>
         </View>
 
-        {/* Controls: Cancel (ghost) · Stop & log (indigo primary) */}
-        <View style={controlsRow}>
-          <AppButton label="Cancel" variant="ghost" onPress={confirmAbandon} />
-          <AppButton
-            label="Stop & log"
-            variant="indigo"
-            onPress={() => void timer.onStopAndLog()}
-          />
+        {/* Bottom: pace pill · controls (✕ Abandon disc · Stop & log).
+            Screen only insets top/left/right, so the footer adds the home-indicator
+            inset itself — otherwise the buttons sit under it and can't be pressed. */}
+        <View style={{ gap: t.space[4], paddingBottom: insets.bottom + t.space[2] }}>
+          <PaceLabel elapsedSec={timer.elapsedSec} estimateSec={timer.estimateSec} />
+
+          <View style={controlsRow}>
+            <Pressable
+              onPress={confirmAbandon}
+              accessibilityRole="button"
+              accessibilityLabel="Abandon task"
+              style={abandonBtn}
+              hitSlop={8}
+            >
+              <Ionicons name="close" size={t.iconSize.md} color={t.colors.inkSoft} />
+            </Pressable>
+
+            <View style={{ flex: 1 }}>
+              <AppButton
+                label="Stop & log"
+                variant="indigo"
+                size="lg"
+                fullWidth
+                onPress={() => void timer.onStopAndLog()}
+                icon={<Ionicons name="stop" size={t.iconSize.sm} color={t.colors.onIndigo} />}
+              />
+            </View>
+          </View>
         </View>
       </View>
     </Screen>

@@ -7,7 +7,7 @@ import { useTheme } from '@/src/theme/useTheme';
 // are minutes; the label reads "Nm" up to 45 then "1h" for 60. Single-select.
 // ──────────────────────────────────────────────────────────────────────────────
 
-export const ROUGH_TIMES = [5, 10, 15, 30, 45, 60] as const;
+export const ROUGH_TIMES = [5, 10, 15, 30, 45] as const;
 
 function timeLabel(min: number): string {
   return min >= 60 ? `${Math.round(min / 60)}h` : `${min}m`;

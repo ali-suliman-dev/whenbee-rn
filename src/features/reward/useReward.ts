@@ -20,11 +20,20 @@ import type { LogResult } from '@/src/stores/calibrationStore';
  *  reason chips show. Only set when the over/under is meaningful (gated). */
 export type RunDirection = 'over' | 'under';
 
+/** Over / under / equal vs the guess — drives the hero delta chip. Unlike
+ *  RunDirection this is ungated (every log gets a delta line) and includes the
+ *  spot-on case. Curiosity, never blame. */
+export type DeltaDirection = 'over' | 'under' | 'equal';
+
 export interface RewardView {
   hasReward: boolean;
   headline: string;
   actualMin: number;
   guessMin: number;
+  /** Absolute minutes between the run and the guess (always >= 0). */
+  deltaMin: number;
+  /** Which side of the guess the run landed on (or 'equal' for spot-on). */
+  deltaDirection: DeltaDirection;
   category: string;
   categoryLabel: string;
   honeyPct: number;
@@ -101,6 +110,8 @@ export function useReward(): RewardView {
       headline: '',
       actualMin: 0,
       guessMin: 0,
+      deltaMin: 0,
+      deltaDirection: 'equal',
       category: '',
       categoryLabel: '',
       honeyPct: 0,
@@ -130,11 +141,19 @@ export function useReward(): RewardView {
   const reclaimTo = result.reclaimLifetimeMin;
   const reclaimFrom = reclaimTo - reclaimDeltaMin;
 
+  // Hero delta vs the guess — a glanceable "5 min over" beats the old gray
+  // sentence. Ungated and neutral: every log gets one, spot-on included.
+  const deltaMin = Math.abs(actualMin - guessMin);
+  const deltaDirection: DeltaDirection =
+    actualMin > guessMin ? 'over' : actualMin < guessMin ? 'under' : 'equal';
+
   return {
     hasReward: true,
     headline,
     actualMin,
     guessMin,
+    deltaMin,
+    deltaDirection,
     category,
     categoryLabel: categoryName(category),
     honeyPct: result.sharpness,

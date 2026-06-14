@@ -1,0 +1,81 @@
+- generic [ref=e2]:
+  - generic [ref=e3]:
+    - heading "Live Timer · button treatments" [level=1] [ref=e4]
+    - paragraph [ref=e5]:
+      - text: Pace pill set to 12px. “Stop & log” is the one real action — most of these demote “Abandon” so it stops competing for weight. All amber/indigo from tokens; coin-edge = the View-based shadow you already use on
+      - code [ref=e6]: AppButton
+      - text: .
+  - generic [ref=e7]:
+    - generic [ref=e8]:
+      - generic [ref=e9]:
+        - generic [ref=e11]: On track — you’ve got time
+        - generic [ref=e12]:
+          - generic [ref=e13]:
+            - img [ref=e14]
+            - text: Stop & log
+          - generic [ref=e16]: Abandon
+      - generic [ref=e18]:
+        - generic [ref=e19]: Option 1 · recommended
+        - heading "One action, quiet exit" [level=3] [ref=e20]
+        - paragraph [ref=e21]: Full-width primary owns the bottom; Abandon shrinks to a centered text link beneath. Cleanest expression of “THE one action.” A stop-glyph gives the button a verb.
+    - generic [ref=e22]:
+      - generic [ref=e23]:
+        - generic [ref=e25]: On track — you’ve got time
+        - generic [ref=e26]:
+          - generic "Abandon" [ref=e27]:
+            - img [ref=e28]
+          - generic [ref=e30]:
+            - img [ref=e31]
+            - text: Stop & log
+      - generic [ref=e34]:
+        - generic [ref=e35]: Option 2
+        - heading "Icon-only secondary" [level=3] [ref=e36]
+        - paragraph [ref=e37]: "Abandon becomes a small ✕ disc; the primary takes the rest of the row. Strong hierarchy, compact. Risk: an unlabeled ✕ can read as “close” — pair with the confirm sheet."
+    - generic [ref=e38]:
+      - generic [ref=e39]:
+        - generic [ref=e41]: On track — you’ve got time
+        - generic [ref=e42]:
+          - generic [ref=e43]:
+            - img [ref=e44]
+            - text: Stop & log
+          - generic [ref=e46]: Abandon
+      - generic [ref=e48]:
+        - generic [ref=e49]: Option 3
+        - heading "Stacked" [level=3] [ref=e50]
+        - paragraph [ref=e51]: Primary on top, outlined Abandon below at a shorter height. Big tap targets, dead-obvious order. Costs more vertical space — fine since we freed room by moving the pace line down.
+    - generic [ref=e52]:
+      - generic [ref=e53]:
+        - generic [ref=e55]: On track — you’ve got time
+        - generic [ref=e56]:
+          - generic [ref=e59]:
+            - img [ref=e60]
+            - text: Hold to stop & log
+          - generic [ref=e62]: Abandon
+      - generic [ref=e64]:
+        - generic [ref=e65]: Option 4 · signature
+        - heading "Hold to stop" [level=3] [ref=e66]
+        - paragraph [ref=e67]: Press-and-hold sweeps an indigo fill across (clip-path, ~700ms) then logs — no accidental stops mid-focus, and it’s a memorable signature moment. Release early = snaps back. Most delightful, most build effort.
+    - generic [ref=e68]:
+      - generic [ref=e69]:
+        - generic [ref=e71]: On track — you’ve got time
+        - generic [ref=e72]:
+          - generic [ref=e73]: Abandon
+          - generic [ref=e74]:
+            - img [ref=e75]
+            - text: Stop & log
+      - generic [ref=e78]:
+        - generic [ref=e79]: Option 5
+        - heading "Refined two-up (closest to now)" [level=3] [ref=e80]
+        - paragraph [ref=e81]: Keeps the side-by-side you have, but Abandon loses its box — plain muted text — and the primary widens. Smallest change from current; just rebalanced weight.
+    - generic [ref=e82]:
+      - generic [ref=e83]:
+        - generic [ref=e85]: On track — you’ve got time
+        - generic [ref=e86]:
+          - generic [ref=e87]:
+            - img [ref=e88]
+            - text: Stop & log
+          - generic [ref=e90]: Abandon task
+      - generic [ref=e92]:
+        - generic [ref=e93]: Option 6
+        - heading "Floating pill" [level=3] [ref=e94]
+        - paragraph [ref=e95]: Same one-action idea but the primary is a fully-rounded pill — softer, more “focus app” than “form.” Abandon sits faint below. A warmer cousin of Option 1.

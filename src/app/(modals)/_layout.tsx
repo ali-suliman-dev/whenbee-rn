@@ -5,9 +5,10 @@ export default function ModalsLayout() {
     <Stack screenOptions={{ headerShown: true }}>
       <Stack.Screen name="timer" options={{ presentation: 'fullScreenModal', title: 'Timer', headerShown: false }} />
       <Stack.Screen name="reward" options={{ presentation: 'fullScreenModal', title: 'Reward', headerShown: false }} />
-      <Stack.Screen name="retro" options={{ presentation: 'formSheet', title: 'Retro' }} />
+      <Stack.Screen name="retro" options={{ presentation: 'formSheet', headerShown: false }} />
       <Stack.Screen name="add-task" options={{ presentation: 'formSheet', headerShown: false }} />
-      <Stack.Screen name="paywall" options={{ presentation: 'modal', title: 'Go Pro' }} />
+      <Stack.Screen name="paywall" options={{ presentation: 'formSheet', headerShown: false }} />
+      <Stack.Screen name="honest-day" options={{ presentation: 'formSheet', headerShown: false }} />
     </Stack>
   );
 }

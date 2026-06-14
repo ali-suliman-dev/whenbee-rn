@@ -86,29 +86,39 @@ export function TrendChart({ trend }: TrendChartProps) {
     const last = xy[xy.length - 1];
 
     body = (
-      <Svg width="100%" height={CHART_H} viewBox={`0 0 ${W} ${CHART_H}`} preserveAspectRatio="none">
-        {/* dashed 1× target line (only when in range) */}
-        {1 >= min && 1 <= max && (
-          <Line
-            x1={PAD}
-            y1={targetY}
-            x2={W - PAD}
-            y2={targetY}
-            stroke={t.colors.hairline}
-            strokeWidth={1}
-            strokeDasharray="3 3"
+      // The visible caption below is the text alternative; the chart is a visual
+      // restatement, so hide the SVG from the a11y tree to avoid a noisy, unreadable
+      // node and a duplicate announcement.
+      <View accessibilityElementsHidden importantForAccessibility="no-hide-descendants">
+        <Svg
+          width="100%"
+          height={CHART_H}
+          viewBox={`0 0 ${W} ${CHART_H}`}
+          preserveAspectRatio="none"
+        >
+          {/* dashed 1× target line (only when in range) */}
+          {1 >= min && 1 <= max && (
+            <Line
+              x1={PAD}
+              y1={targetY}
+              x2={W - PAD}
+              y2={targetY}
+              stroke={t.colors.hairline}
+              strokeWidth={1}
+              strokeDasharray="3 3"
+            />
+          )}
+          <Polyline
+            points={polyline}
+            fill="none"
+            stroke={t.colors.primary}
+            strokeWidth={2}
+            strokeLinejoin="round"
+            strokeLinecap="round"
           />
-        )}
-        <Polyline
-          points={polyline}
-          fill="none"
-          stroke={t.colors.primary}
-          strokeWidth={2}
-          strokeLinejoin="round"
-          strokeLinecap="round"
-        />
-        {last && <Circle cx={last.x} cy={last.y} r={3} fill={t.colors.primary} />}
-      </Svg>
+          {last && <Circle cx={last.x} cy={last.y} r={3} fill={t.colors.primary} />}
+        </Svg>
+      </View>
     );
   }
 

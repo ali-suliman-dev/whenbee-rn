@@ -1,7 +1,7 @@
 import { clampRatio } from '../ratio';
 import { updateEwma, alphaFor } from '../ewma';
 import { blendWithPrior, honestNumber, resolveSuggestion } from '../multiplier';
-import { sharpnessFromWindow, tierFor, logsToNextTier } from '../sharpness';
+import { sharpnessFromWindow, tierFor, logsToNextTier, tierBandProgress } from '../sharpness';
 import { detectInsight } from '../insight';
 import { buildTrendSeries } from '../trend';
 import { applyLog } from '../update';
@@ -89,6 +89,28 @@ describe('sharpness + tiers', () => {
   it('estimates logs to the next tier', () => {
     expect(logsToNextTier(78)).toBe(1); // (82-78)/4 = 1
     expect(logsToNextTier(95)).toBe(0); // already Honest
+  });
+  describe('tierBandProgress', () => {
+    it('spans the current band in whole logs, never fully filled while inside it', () => {
+      // Ripening band [64,82] → ceil(18/4) = 5 pips.
+      const at67 = tierBandProgress(67);
+      expect(at67.total).toBe(5);
+      expect(at67.remaining).toBe(logsToNextTier(67)); // 4
+      expect(at67.done).toBe(1); // total - remaining
+    });
+    it('starts a freshly-entered band at zero done', () => {
+      const fresh = tierBandProgress(64); // just crossed into Ripening
+      expect(fresh.done).toBe(0);
+      expect(fresh.done + fresh.remaining).toBe(fresh.total);
+    });
+    it('keeps at least one log to go anywhere inside the band (goal gradient)', () => {
+      const nearTop = tierBandProgress(81); // one shy of Thickening
+      expect(nearTop.remaining).toBeGreaterThanOrEqual(1);
+      expect(nearTop.done).toBeLessThan(nearTop.total);
+    });
+    it('reports an empty band once Honest (no tier ahead)', () => {
+      expect(tierBandProgress(95)).toEqual({ total: 0, done: 0, remaining: 0 });
+    });
   });
 });
 

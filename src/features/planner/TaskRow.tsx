@@ -63,6 +63,7 @@ export function TaskRow({
           accessibilityLabel="Move task up"
           disabled={isFirst}
           onPress={onMoveUp}
+          hitSlop={{ top: HIT / 4, bottom: HIT / 4 }}
           style={{ ...iconBtn(isFirst), height: HIT / 2 }}
         >
           <Ionicons name="chevron-up" size={18} color={t.colors.inkSoft} />
@@ -72,6 +73,7 @@ export function TaskRow({
           accessibilityLabel="Move task down"
           disabled={isLast}
           onPress={onMoveDown}
+          hitSlop={{ top: HIT / 4, bottom: HIT / 4 }}
           style={{ ...iconBtn(isLast), height: HIT / 2 }}
         >
           <Ionicons name="chevron-down" size={18} color={t.colors.inkSoft} />

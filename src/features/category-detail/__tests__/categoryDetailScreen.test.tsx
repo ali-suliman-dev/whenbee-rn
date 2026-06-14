@@ -76,7 +76,7 @@ describe('CategoryDetailScreen', () => {
   it('shows the AhaCard only when an insight is present', async () => {
     await seed({ withInsight: true });
     render(<CategoryDetailScreen />);
-    expect(await screen.findByText('EYE-OPENING DISCOVERY')).toBeOnTheScreen();
+    expect(await screen.findByText('aha')).toBeOnTheScreen();
   });
 
   it('hides the AhaCard when no insight qualifies', async () => {
@@ -84,7 +84,7 @@ describe('CategoryDetailScreen', () => {
     render(<CategoryDetailScreen />);
     // wait for content to load (the honest number for the prior 2.0 → ~30)
     await screen.findByText('Tune how I learn');
-    expect(screen.queryByText('EYE-OPENING DISCOVERY')).toBeNull();
+    expect(screen.queryByText('aha')).toBeNull();
   });
 
   it('tapping a learning mode calls setAdaptSpeed', async () => {

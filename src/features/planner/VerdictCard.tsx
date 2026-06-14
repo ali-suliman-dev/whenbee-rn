@@ -1,4 +1,4 @@
-import { View } from 'react-native';
+import { View, type ViewStyle } from 'react-native';
 import { useTheme } from '@/src/theme/useTheme';
 import { AppText } from '@/src/components/AppText';
 import { AppButton } from '@/src/components/AppButton';
@@ -7,9 +7,14 @@ import { formatClock } from '@/src/lib/time';
 import type { PlanVerdict } from '@/src/domain/types';
 
 // ──────────────────────────────────────────────────────────────────────────────
-// VerdictCard — the deterministic "cut one" verdict, framed kind + amber, NEVER
-// red. `fits` is a calm indigo confirm; the over cases (`cut-one`/`multi-cut`/
-// `push-deadline`) wear an amber tint with no-guilt wording and a single action.
+// VerdictCard — the deterministic plan verdict.
+//
+//   fits      → a quiet positive: low-emphasis indigo fill, ink text, no action.
+//   over cases (cut-one / multi-cut / push-deadline) → a CALM neutral heads-up:
+//               sunken surface + hairline border + ink/inkSoft text (never amber,
+//               never red — amber is reserved for honey/reward, and there's no
+//               guilt here), with a single ghost action.
+//
 // Action wiring (cut / push) is owned by the screen via callbacks.
 // ──────────────────────────────────────────────────────────────────────────────
 
@@ -26,16 +31,17 @@ export function VerdictCard({
 }) {
   const t = useTheme();
 
-  const amberCard = {
-    backgroundColor: t.colors.accentSoft,
-    borderColor: t.colors.accentEdge,
+  // Calm neutral "heads-up" — no amber, no red.
+  const noticeCard: ViewStyle = {
+    backgroundColor: t.colors.surfaceSunken,
+    borderColor: t.colors.border,
   };
 
   if (verdict.kind === 'fits') {
     return (
       <Card style={{ backgroundColor: t.colors.primarySoft, borderColor: t.colors.primary }}>
         <AppText variant="body" style={{ color: t.colors.ink }}>
-          This fits. Start on time and you&apos;ll finish by {formatClock(deadline)}.
+          This fits. Start on time and you&apos;ll land by {formatClock(deadline)}.
         </AppText>
       </Card>
     );
@@ -43,15 +49,19 @@ export function VerdictCard({
 
   if (verdict.kind === 'cut-one') {
     return (
-      <Card style={amberCard}>
+      <Card style={noticeCard}>
         <View style={{ gap: t.space[3] }}>
-          <AppText variant="body" style={{ color: t.colors.amberText }}>
-            Cut <AppText style={{ fontWeight: t.fontWeight.bold, color: t.colors.amberText }}>{verdict.cut.label}</AppText> to start on
-            time — that buys back {verdict.savedMin}m.
+          <AppText variant="body" style={{ color: t.colors.ink }}>
+            Drop{' '}
+            <AppText style={{ fontWeight: t.fontWeight.bold, color: t.colors.ink }}>
+              {verdict.cut.label}
+            </AppText>{' '}
+            and you start on time — that&apos;s {verdict.savedMin}m back.
           </AppText>
           <AppButton
             label={`Cut ${verdict.cut.label}`}
-            variant="amber"
+            variant="ghost"
+            size="md"
             onPress={() => onCut([verdict.cut.id])}
           />
         </View>
@@ -62,15 +72,15 @@ export function VerdictCard({
   if (verdict.kind === 'multi-cut') {
     const names = verdict.cuts.map((c) => c.label).join(', ');
     return (
-      <Card style={amberCard}>
+      <Card style={noticeCard}>
         <View style={{ gap: t.space[3] }}>
-          <AppText variant="body" style={{ color: t.colors.amberText }}>
-            A few more than today has room for. Cutting {names} starts you on time and saves{' '}
-            {verdict.savedMin}m.
+          <AppText variant="body" style={{ color: t.colors.ink }}>
+            A bit more than today holds. Drop {names} to start on time — saves {verdict.savedMin}m.
           </AppText>
           <AppButton
             label="Cut these"
-            variant="amber"
+            variant="ghost"
+            size="md"
             onPress={() => onCut(verdict.cuts.map((c) => c.id))}
           />
         </View>
@@ -80,15 +90,16 @@ export function VerdictCard({
 
   // push-deadline
   return (
-    <Card style={amberCard}>
+    <Card style={noticeCard}>
       <View style={{ gap: t.space[3] }}>
-        <AppText variant="body" style={{ color: t.colors.amberText }}>
-          Won&apos;t fit by {formatClock(deadline)} — finish by{' '}
-          {formatClock(verdict.feasibleDeadline)} or cut tasks. (About {verdict.overshootMin}m over.)
+        <AppText variant="body" style={{ color: t.colors.ink }}>
+          About {verdict.overshootMin}m over. Push the finish to {formatClock(verdict.feasibleDeadline)},
+          or drop a task.
         </AppText>
         <AppButton
           label={`Push finish to ${formatClock(verdict.feasibleDeadline)}`}
-          variant="amber"
+          variant="ghost"
+          size="md"
           onPress={() => onPush(verdict.feasibleDeadline)}
         />
       </View>

@@ -11,16 +11,16 @@ import { useTheme } from '@/src/theme/useTheme';
 import { type } from '@/src/theme/typography';
 
 // ──────────────────────────────────────────────────────────────────────────────
-// PaceLabel — the no-guilt pace line under the ring.
+// PaceLabel — the no-guilt pace pill pinned above the controls.
 //
-//   under  → "On track · breathe, you've got time"
-//   ≤3 min → "Closing in on your guess… that's fine"
-//   over   → amber "+N over your guess — that's ok, now we know"
+//   under  → "On track — you've got time"          (soft-indigo pill)
+//   ≤3 min → "Closing in on your guess… that's fine" (soft-indigo pill)
+//   over   → "+N over your guess — that's ok, now we know" (soft-amber pill)
 //
 // It reads elapsedSec on the UI thread but only sets React state when the *phase*
 // (or the over-amount) actually changes — NOT every second. So the second-by-
 // second tick never triggers a layout pass; copy only re-renders on a meaningful
-// threshold crossing. Amber on overrun, never red.
+// threshold crossing. The pill warms to amber on overrun, never red.
 // ──────────────────────────────────────────────────────────────────────────────
 
 type Phase = 'under' | 'closing' | 'over';
@@ -59,18 +59,26 @@ export function PaceLabel({
     [],
   );
 
-  const wrap: ViewStyle = { alignItems: 'center', minHeight: 24, justifyContent: 'center' };
+  const isOver = phase === 'over';
+
+  const wrap: ViewStyle = {
+    alignSelf: 'center',
+    paddingHorizontal: t.space[4],
+    paddingVertical: t.space[2.5],
+    borderRadius: t.radii.full,
+    backgroundColor: isOver ? t.colors.accentSoft : t.colors.primarySoft,
+  };
 
   const baseStyle: TextStyle = {
-    ...(type.bodySm as TextStyle),
+    ...(type.caption as TextStyle),
     textAlign: 'center',
-    color: phase === 'over' ? t.colors.amberText : t.colors.inkSoft,
+    color: isOver ? t.colors.amberText : t.colors.ink,
   };
 
   let copy: string;
-  if (phase === 'over') copy = `+${overMin} over your guess — that's ok, now we know`;
+  if (isOver) copy = `+${overMin} over your guess — that's ok, now we know`;
   else if (phase === 'closing') copy = 'Closing in on your guess… that’s fine';
-  else copy = 'On track · breathe, you’ve got time';
+  else copy = 'On track — you’ve got time';
 
   return (
     <View style={wrap} accessibilityLiveRegion="polite">

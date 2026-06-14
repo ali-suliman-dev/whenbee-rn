@@ -6,37 +6,39 @@ import Animated, {
 } from 'react-native-reanimated';
 
 // ──────────────────────────────────────────────────────────────────────────────
-// AnimatedNumeral — renders a shared-value integer WITHOUT React state.
+// AnimatedNumeral — renders a shared-value string WITHOUT React state.
 //
 // The canonical RN/Reanimated trick: an AnimatedTextInput whose `text` prop is
-// driven by useAnimatedProps. The worklet writes the formatted number straight to
-// the native view each time the shared value bumps a minute, so the big timer
-// numeral updates on the UI thread with zero per-second re-render. The colour
-// flips to amber on overrun via an animated style (also UI-thread). Read-only +
-// non-editable so it behaves as a label.
+// driven by useAnimatedProps. The worklet writes the pre-formatted string straight
+// to the native view each tick, so the big timer clock (m:ss) updates on the UI
+// thread with zero per-second re-render. The colour flips to amber on overrun via
+// an animated style (also UI-thread). Read-only + non-editable so it's a label.
 // ──────────────────────────────────────────────────────────────────────────────
 
 Animated.addWhitelistedNativeProps({ text: true });
 const AnimatedTextInput = Animated.createAnimatedComponent(TextInput);
 
 export function AnimatedNumeral({
-  minutes,
+  text,
   overProgress,
   style,
   amberColor,
   inkColor,
+  defaultText = '0',
 }: {
-  minutes: SharedValue<number>;
+  /** Pre-formatted display string (e.g. "0:07"), updated on the UI thread. */
+  text: SharedValue<string>;
   overProgress: SharedValue<number>;
   style: TextStyle;
   amberColor: string;
   inkColor: string;
+  defaultText?: string;
 }) {
   // `text` is a native-only prop on AnimatedTextInput (not in TextInputProps),
   // so it's whitelisted above and the worklet return is cast to the prop type.
   const animatedProps = useAnimatedProps(
     () =>
-      ({ text: String(minutes.value) } as unknown as Partial<
+      ({ text: text.value } as unknown as Partial<
         import('react-native').TextInputProps
       >),
   );
@@ -52,7 +54,7 @@ export function AnimatedNumeral({
       accessibilityElementsHidden
       importantForAccessibility="no-hide-descendants"
       underlineColorAndroid="transparent"
-      defaultValue="0"
+      defaultValue={defaultText}
       style={[style, { padding: 0 }, colorStyle]}
       animatedProps={animatedProps}
     />

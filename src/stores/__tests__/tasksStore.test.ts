@@ -1,4 +1,4 @@
-import { useTasksStore } from '../tasksStore';
+import { useTasksStore, selectFocus } from '../tasksStore';
 
 const T0 = 1_700_000_000_000;
 
@@ -49,5 +49,42 @@ describe('tasksStore', () => {
     useTasksStore.getState().addTask({ label: 'x', category: 'cleaning', guessMin: 5, nowMs: T0 });
     useTasksStore.getState().clear();
     expect(useTasksStore.getState().tasks).toEqual([]);
+  });
+
+  it('addTask seeds status queued with null completion fields', () => {
+    const task = useTasksStore
+      .getState()
+      .addTask({ label: 'x', category: 'cleaning', guessMin: 5, nowMs: T0 });
+    expect(task.status).toBe('queued');
+    expect(task.completedAt).toBeNull();
+    expect(task.actualMin).toBeNull();
+  });
+
+  it('completeTask flips status to done and stamps completedAt + actualMin', () => {
+    const task = useTasksStore
+      .getState()
+      .addTask({ label: 'x', category: 'cleaning', guessMin: 5, nowMs: T0 });
+    useTasksStore.getState().completeTask(task.id, { nowMs: T0 + 500, actualMin: 7 });
+
+    const done = useTasksStore.getState().tasks[0];
+    expect(done?.status).toBe('done');
+    expect(done?.completedAt).toBe(T0 + 500);
+    expect(done?.actualMin).toBe(7);
+  });
+
+  it('selectFocus skips done tasks and returns the oldest queued one', () => {
+    const first = useTasksStore
+      .getState()
+      .addTask({ label: 'First', category: 'cleaning', guessMin: 10, nowMs: T0 });
+    const second = useTasksStore
+      .getState()
+      .addTask({ label: 'Second', category: 'admin', guessMin: 20, nowMs: T0 + 1 });
+
+    expect(selectFocus(useTasksStore.getState().tasks)?.id).toBe(first.id);
+
+    useTasksStore.getState().completeTask(first.id, { nowMs: T0 + 2 });
+    // done task stays in the list, but focus advances to the next queued one.
+    expect(useTasksStore.getState().tasks).toHaveLength(2);
+    expect(selectFocus(useTasksStore.getState().tasks)?.id).toBe(second.id);
   });
 });

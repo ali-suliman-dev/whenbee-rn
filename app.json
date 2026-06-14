@@ -10,7 +10,15 @@
     "newArchEnabled": true,
     "ios": {
       "bundleIdentifier": "com.whenbee.app",
-      "supportsTablet": true
+      "supportsTablet": true,
+      "infoPlist": {
+        "NSSupportsLiveActivities": true
+      },
+      "entitlements": {
+        "com.apple.security.application-groups": [
+          "group.com.whenbee.app"
+        ]
+      }
     },
     "android": {
       "package": "com.whenbee.app",
@@ -41,7 +49,21 @@
       "expo-font",
       "expo-secure-store",
       "expo-web-browser",
-      ["@sentry/react-native/expo", { "organization": "your-org", "project": "whenbee" }]
+      [
+        "expo-calendar",
+        {
+          "calendarPermission": "Whenbee reads today's events so it can show your honest day, and only writes back the times you confirm."
+        }
+      ],
+      [
+        "@sentry/react-native/expo",
+        {
+          "organization": "your-org",
+          "project": "whenbee"
+        }
+      ],
+      "@bacons/apple-targets",
+      "expo-localization"
     ],
     "experiments": {
       "typedRoutes": true,

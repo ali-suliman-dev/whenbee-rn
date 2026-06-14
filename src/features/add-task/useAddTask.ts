@@ -1,9 +1,12 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { router } from 'expo-router';
 import { useCalibrationStore } from '@/src/stores/calibrationStore';
+import { useCategoriesStore } from '@/src/stores/categoriesStore';
 import { useTasksStore } from '@/src/stores/tasksStore';
 import { resolveSuggestion, priorFor } from '@/src/engine';
 import { usePickerCategories, type PickerCategory } from '@/src/features/shared/CategoryChips';
+import { guessCategory } from '@/src/features/shared/categoryGuess';
+import { analytics } from '@/src/services/analytics';
 import type { CalibrationSummary } from '@/src/domain/types';
 
 // ──────────────────────────────────────────────────────────────────────────────
@@ -23,6 +26,13 @@ export interface UseAddTaskResult {
   setTitle: (s: string) => void;
   category: string | null;
   setCategory: (id: string) => void;
+  /** Category id auto-guessed from the title while it's still the active pick
+   *  (null once the user manually overrides). Drives the ✦ marker + hint. */
+  guessedCategory: string | null;
+  /** Per-category usage counts for the frequency-sorted picker row. */
+  usage: Record<string, number>;
+  /** Create a custom category from free text and select it. Returns its id. */
+  addCategory: (name: string) => string;
   guessMin: number;
   setGuessMin: (m: number) => void;
   /** Live honest suggestion for the current category + guess (null until a category is picked). */
@@ -40,11 +50,39 @@ export function useAddTask(): UseAddTaskResult {
   const hydrate = useCalibrationStore((s) => s.hydrate);
   const statsByCategory = useCalibrationStore((s) => s.statsByCategory);
   const addTask = useTasksStore((s) => s.addTask);
+  const addCategoryToStore = useCategoriesStore((s) => s.addCategory);
   const categories = usePickerCategories();
 
-  const [title, setTitle] = useState('');
-  const [category, setCategory] = useState<string | null>(null);
+  const [title, setTitleState] = useState('');
+  const [category, setCategoryState] = useState<string | null>(null);
+  const [guessedCategory, setGuessedCategory] = useState<string | null>(null);
   const [guessMin, setGuessMin] = useState<number>(DEFAULT_GUESS);
+  // Flips once the user taps a chip — from then on we stop auto-guessing so a
+  // manual pick is never silently overwritten as they keep editing the title.
+  const manualRef = useRef(false);
+
+  // Typing the title re-guesses the category until the user picks one by hand.
+  const setTitle = (s: string) => {
+    setTitleState(s);
+    if (manualRef.current) return;
+    const g = guessCategory(s);
+    setGuessedCategory(g);
+    setCategoryState(g);
+  };
+
+  // Any manual pick wins and clears the ✦ guess marker.
+  const setCategory = (id: string) => {
+    manualRef.current = true;
+    setGuessedCategory(null);
+    setCategoryState(id);
+  };
+
+  // Usage counts (n per category) drive the frequency sort of the picker row.
+  const usage = useMemo<Record<string, number>>(() => {
+    const u: Record<string, number> = {};
+    for (const [id, s] of Object.entries(statsByCategory)) u[id] = s.n;
+    return u;
+  }, [statsByCategory]);
 
   // Warm the per-category stats cache so the suggestion reflects learned data.
   useEffect(() => {
@@ -60,6 +98,28 @@ export function useAddTask(): UseAddTaskResult {
       : { mEffective: priorFor(category), n: 0 };
     return resolveSuggestion({ guessMinutes: guessMin, category: cat, recurring: null });
   }, [category, guessMin, statsByCategory]);
+
+  // honest_suggestion_shown: fire once per surfacing (category+guess), not per
+  // keystroke. De-duped by the value the user is currently looking at.
+  const lastShownRef = useRef<string | null>(null);
+  const suggestedMin = suggestion?.honestMinutes ?? null;
+  useEffect(() => {
+    if (category === null || suggestedMin === null) return;
+    const key = `${category}|${guessMin}|${suggestedMin}`;
+    if (lastShownRef.current === key) return;
+    lastShownRef.current = key;
+    analytics.capture('honest_suggestion_shown', {
+      category,
+      guess_min: guessMin,
+      suggested_min: suggestedMin,
+    });
+  }, [category, guessMin, suggestedMin]);
+
+  const addCategory = (name: string): string => {
+    const id = addCategoryToStore(name);
+    setCategory(id); // marks manual + clears the guess marker
+    return id;
+  };
 
   const canSubmit = title.trim().length > 0 && category !== null;
 
@@ -94,6 +154,9 @@ export function useAddTask(): UseAddTaskResult {
     setTitle,
     category,
     setCategory,
+    guessedCategory,
+    usage,
+    addCategory,
     guessMin,
     setGuessMin,
     suggestion,

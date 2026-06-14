@@ -1,8 +1,11 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { useFocusEffect } from 'expo-router';
 import { useCalibrationStore } from '@/src/stores/calibrationStore';
-import { useTasksStore, type TodayTask } from '@/src/stores/tasksStore';
+import { useTasksStore, selectFocus, type TodayTask } from '@/src/stores/tasksStore';
 import { resolveSuggestion, priorFor, CATEGORY_NAMES } from '@/src/engine';
+import { analytics } from '@/src/services/analytics';
+import { formatClock, projectedFinish } from '@/src/lib/time';
+import { publishWidgetSnapshot, clearWidgetSnapshot } from '@/src/services/liveActivity';
 import type { CalibrationSummary } from '@/src/domain/types';
 
 // ──────────────────────────────────────────────────────────────────────────────
@@ -14,9 +17,30 @@ import type { CalibrationSummary } from '@/src/domain/types';
 // personal evidence it reads "based on your last N times".
 // ──────────────────────────────────────────────────────────────────────────────
 
+/** A single Today list row (up-next or done), pre-resolved for the UI. */
+export interface TodayRow {
+  id: string;
+  label: string;
+  category: string;
+  categoryLabel: string;
+  /** The user's original guess (minutes) — threaded to the timer for ratio calc. */
+  guessMin: number;
+  /** Learned honest estimate in minutes (the number we plan against). */
+  honestMin: number;
+  done: boolean;
+  /** Actual minutes once finished (null while queued / if not timed). */
+  actualMin: number | null;
+}
+
 interface UseTodayResult {
   focus: TodayTask | null;
   summary: CalibrationSummary | null;
+  /** Queued tasks AFTER the focus (the up-next rows). */
+  upNext: TodayRow[];
+  /** Tasks finished today, kept checked-off (most-recent first). */
+  done: TodayRow[];
+  /** Total tasks on the day (queued + done) — drives the empty state. */
+  totalCount: number;
   categoryName: (id: string) => string;
   /** Minutes Today has handed back so far (local-day reclaim). 0 → the line hides. */
   todayReclaimMin: number;
@@ -39,7 +63,7 @@ export function useToday(): UseTodayResult {
   const hydrate = useCalibrationStore((s) => s.hydrate);
   const statsByCategory = useCalibrationStore((s) => s.statsByCategory);
   const loadTodayReclaimMin = useCalibrationStore((s) => s.loadTodayReclaimMin);
-  const focus = useTasksStore((s) => s.tasks[0] ?? null);
+  const tasks = useTasksStore((s) => s.tasks);
 
   const [todayReclaimMin, setTodayReclaimMin] = useState(0);
 
@@ -62,19 +86,74 @@ export function useToday(): UseTodayResult {
     }, [loadTodayReclaimMin]),
   );
 
-  let summary: CalibrationSummary | null = null;
-  if (focus) {
-    const cached = statsByCategory[focus.category];
+  // Resolve a task's honest suggestion from its category's learned bias (or the
+  // population prior for a cold category). Shared by the focus card + list rows.
+  const honestFor = (task: TodayTask): CalibrationSummary => {
+    const cached = statsByCategory[task.category];
     const category = cached
       ? { mEffective: cached.mEffective, n: cached.n }
-      : { mEffective: priorFor(focus.category), n: 0 };
+      : { mEffective: priorFor(task.category), n: 0 };
+    return resolveSuggestion({ guessMinutes: task.guessMin, category, recurring: null });
+  };
 
-    summary = resolveSuggestion({
-      guessMinutes: focus.guessMin,
-      category,
-      recurring: null,
+  const toRow = (task: TodayTask): TodayRow => ({
+    id: task.id,
+    label: task.label,
+    category: task.category,
+    categoryLabel: categoryName(task.category),
+    guessMin: task.guessMin,
+    honestMin: honestFor(task).honestMinutes,
+    done: task.status === 'done',
+    actualMin: task.actualMin,
+  });
+
+  // Focus = oldest queued task. up-next = the remaining queued ones; done stays
+  // checked-off (most-recent first) so the day reads as progress, not a vanish.
+  const focus = selectFocus(tasks);
+  const upNext = tasks
+    .filter((task) => task.status === 'queued' && task.id !== focus?.id)
+    .map(toRow);
+  const done = tasks
+    .filter((task) => task.status === 'done')
+    .reverse()
+    .map(toRow);
+
+  const summary: CalibrationSummary | null = focus ? honestFor(focus) : null;
+
+  // honest_suggestion_shown: fire once per surfacing (category+guess), not per
+  // render. The ref de-dupes the value the user is currently looking at.
+  const lastShownRef = useRef<string | null>(null);
+  const suggestedMin = summary?.honestMinutes ?? null;
+  useEffect(() => {
+    if (!focus || suggestedMin === null) return;
+    const key = `${focus.category}|${focus.guessMin}|${suggestedMin}`;
+    if (lastShownRef.current === key) return;
+    lastShownRef.current = key;
+    analytics.capture('honest_suggestion_shown', {
+      category: focus.category,
+      guess_min: focus.guessMin,
+      suggested_min: suggestedMin,
     });
-  }
+  }, [focus, suggestedMin]);
 
-  return { focus, summary, categoryName, todayReclaimMin };
+  // Publish the next-task snapshot to the Home-screen widget. The honest finish
+  // is "now + honest minutes" — the time the focus task would honestly wrap if
+  // started now (the same number Today shows). No-op in Expo Go / tests.
+  const honestMin = summary?.honestMinutes ?? null;
+  useEffect(() => {
+    if (!focus || honestMin === null) {
+      clearWidgetSnapshot();
+      return;
+    }
+    const now = Date.now();
+    publishWidgetSnapshot({
+      nextTaskLabel: focus.label,
+      category: categoryName(focus.category),
+      honestFinishClock: formatClock(projectedFinish(now, honestMin)),
+      startDeepLink: `whenbee://timer?taskId=${focus.id}`,
+      updatedAtEpoch: Math.round(now / 1000),
+    });
+  }, [focus, honestMin]);
+
+  return { focus, summary, upNext, done, totalCount: tasks.length, categoryName, todayReclaimMin };
 }
