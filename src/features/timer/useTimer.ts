@@ -66,8 +66,6 @@ export interface UseTimerResult {
   elapsedSec: SharedValue<number>;
   /** 1 while over the honest estimate, else 0 — drives every amber flip. */
   overProgress: SharedValue<number>;
-  /** Latches to 1 exactly once when elapsed first crosses the estimate. */
-  milestoneLatch: SharedValue<number>;
   estimateSec: number;
   startedAt: number;
   /** "Started 9:14" clock. */
@@ -149,7 +147,6 @@ export function useTimer(params: TimerParams): UseTimerResult {
   // ── UI-thread elapsed driver ────────────────────────────────────────────────
   const elapsedSec = useSharedValue(0);
   const overProgress = useSharedValue(0);
-  const milestoneLatch = useSharedValue(0);
 
   useFrameCallback(() => {
     'worklet';
@@ -159,15 +156,12 @@ export function useTimer(params: TimerParams): UseTimerResult {
     const next = Math.max(0, Math.floor((Date.now() - startedAt) / 1000));
     if (next !== elapsedSec.value) {
       elapsedSec.value = next;
-      const over = next >= estimateSec ? 1 : 0;
-      overProgress.value = over;
-      if (over === 1 && milestoneLatch.value === 0) {
-        milestoneLatch.value = 1; // single amber ripple, fired once at the guess
-      }
+      overProgress.value = next >= estimateSec ? 1 : 0;
     }
   }, true);
 
-  // Derived clock anchors (computed in JS once — they don't tick).
+  // Derived clock anchors (computed in JS once — they don't tick). Format follows
+  // the system 24h toggle via the app-wide default set at boot (see lib/time).
   const startedClock = useMemo(() => formatClock(startedAt), [startedAt]);
   const finishClock = useMemo(
     () => formatClock(projectedFinish(startedAt, estimateMin)),
@@ -210,7 +204,9 @@ export function useTimer(params: TimerParams): UseTimerResult {
       result,
     });
 
-    if (taskId) useTasksStore.getState().removeTask(taskId);
+    // Keep the task on Today — flip it to done (checked off) so the day shows
+    // progress instead of the row vanishing. actualMin powers the "took N" receipt.
+    if (taskId) useTasksStore.getState().completeTask(taskId, { actualMin });
 
     router.replace('/(modals)/reward');
   }, [stop, applyLog, category, guessMin, label, taskId, suggestedHonestMin]);
@@ -243,7 +239,6 @@ export function useTimer(params: TimerParams): UseTimerResult {
   return {
     elapsedSec,
     overProgress,
-    milestoneLatch,
     estimateSec,
     startedAt,
     startedClock,

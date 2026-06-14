@@ -114,10 +114,11 @@ describe('Live Timer screen', () => {
     expect(applyLog).not.toHaveBeenCalled();
   });
 
-  it('renders the task name and the "you guessed" sub', () => {
+  it('renders the task name and the guess→honest reframe (honest = amber number)', () => {
     render(<Timer />);
     expect(screen.getByText('Leave for work')).toBeOnTheScreen();
-    expect(screen.getByText('you guessed 15m')).toBeOnTheScreen();
+    expect(screen.getByText('guessed 15m')).toBeOnTheScreen();
+    expect(screen.getByText('~28m')).toBeOnTheScreen();
   });
 
   it('Stop & log: applyLog completed/timed with the GUESS (not honest), hands off, navigates to reward', async () => {
@@ -181,8 +182,8 @@ describe('Live Timer screen', () => {
     render(<Timer />);
     const applyLog = useCalibrationStore.getState().applyLog as jest.Mock;
 
-    // Cancel opens the confirm Alert; fire its destructive "Abandon" button.
-    fireEvent.press(screen.getByText('Cancel'));
+    // The ✕ disc opens the confirm Alert; fire its destructive "Abandon" button.
+    fireEvent.press(screen.getByLabelText('Abandon task'));
     const buttons = alertSpy.mock.calls.at(-1)?.[2] as
       | { text: string; onPress?: () => void }[]
       | undefined;

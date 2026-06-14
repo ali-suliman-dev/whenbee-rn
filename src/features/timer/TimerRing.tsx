@@ -1,9 +1,8 @@
 import { View, type TextStyle, type ViewStyle } from 'react-native';
-import Svg, { Circle, G } from 'react-native-svg';
+import Svg, { Circle, Line } from 'react-native-svg';
 import Animated, {
   useAnimatedProps,
   useDerivedValue,
-  useReducedMotion,
   type SharedValue,
 } from 'react-native-reanimated';
 import { useTheme } from '@/src/theme/useTheme';
@@ -11,19 +10,17 @@ import { type } from '@/src/theme/typography';
 import { AnimatedNumeral } from './AnimatedNumeral';
 
 const AnimatedCircle = Animated.createAnimatedComponent(Circle);
-const AnimatedG = Animated.createAnimatedComponent(G);
 
 // ──────────────────────────────────────────────────────────────────────────────
 // TimerRing — the 258px focus ring stage.
 //
-// Everything animated reads `elapsedSec` / `overProgress` / `milestoneLatch`
-// shared values on the UI thread (driven by useTimer's frame callback):
-//   • progress ring  — strokeDashoffset fills toward the estimate; flips amber on overrun
-//   • pace dot       — an orbiting dot, rotation = elapsed/estimate; amber on overrun
-//   • milestone ring — a single amber ripple latched on at the guess
-//   • center numeral — minutes, bumps each minute (AnimatedNumeral, no setState)
-// Reduced motion: the pace dot + ripple are dropped; the ring/colour/number
-// still update (they're driven by the same shared value, just no orbit/ripple).
+// The animated layer reads `elapsedSec` / `overProgress` shared values on the UI
+// thread (driven by useTimer's frame callback):
+//   • progress ring  — strokeDashoffset fills toward the honest estimate; amber on overrun
+//   • center numeral — m:ss, driven by the shared value (AnimatedNumeral, no setState)
+// A single STATIC faint tick marks where the user's GUESS falls on the ring (so
+// the gap between "what I guessed" and "the honest target the ring fills toward"
+// is visible). No orbiting dot — it read as a notch in the track.
 // ──────────────────────────────────────────────────────────────────────────────
 
 const SIZE = 258;
@@ -32,23 +29,19 @@ const R = (SIZE - STROKE) / 2;
 const CX = SIZE / 2;
 const CY = SIZE / 2;
 const CIRCUMFERENCE = 2 * Math.PI * R;
-const DOT_R = 7;
 
 export function TimerRing({
   elapsedSec,
   overProgress,
-  milestoneLatch,
   estimateSec,
   guessMin,
 }: {
   elapsedSec: SharedValue<number>;
   overProgress: SharedValue<number>;
-  milestoneLatch: SharedValue<number>;
   estimateSec: number;
   guessMin: number;
 }) {
   const t = useTheme();
-  const reducedMotion = useReducedMotion();
   const indigo = t.colors.primary;
   const amber = t.colors.accent;
 
@@ -74,21 +67,19 @@ export function TimerRing({
     stroke: overProgress.value === 1 ? amber : indigo,
   }));
 
-  // Pace dot orbits from 12 o'clock; rotation in degrees = fraction * 360.
-  const dotGroupProps = useAnimatedProps(() => ({
-    // SVG rotate(deg, cx, cy)
-    transform: `rotate(${fraction.value * 360} ${CX} ${CY})`,
-  }));
-
-  const dotProps = useAnimatedProps(() => ({
-    fill: overProgress.value === 1 ? amber : indigo,
-  }));
-
-  // Milestone ripple — a faint amber ring that appears once latched at the guess.
-  const milestoneProps = useAnimatedProps(() => ({
-    opacity: milestoneLatch.value === 1 ? 0.5 : 0,
-    r: R + 10,
-  }));
+  // Static guess tick — where the original guess sits relative to the honest target
+  // the ring fills toward. Angle measured clockwise from 12 o'clock. Hidden when the
+  // guess equals the target (frac→1) or is unknown (no useful position to mark).
+  const guessFrac =
+    estimateSec > 0 ? Math.min(1, Math.max(0, (guessMin * 60) / estimateSec)) : 0;
+  const showTick = guessFrac > 0.02 && guessFrac < 0.98;
+  const ang = guessFrac * 2 * Math.PI;
+  const rIn = R - STROKE / 2 - 1;
+  const rOut = R + STROKE / 2 + 1;
+  const tx1 = CX + rIn * Math.sin(ang);
+  const ty1 = CY - rIn * Math.cos(ang);
+  const tx2 = CX + rOut * Math.sin(ang);
+  const ty2 = CY - rOut * Math.cos(ang);
 
   const stage: ViewStyle = {
     width: SIZE,
@@ -111,12 +102,6 @@ export function TimerRing({
     // AnimatedNumeral colour flips to amber on overrun internally.
   };
 
-  const guessStyle: TextStyle = {
-    ...(type.caption as TextStyle),
-    color: t.colors.inkSoft,
-    marginTop: t.space[1],
-  };
-
   return (
     <View style={stage}>
       <Svg width={SIZE} height={SIZE}>
@@ -129,18 +114,6 @@ export function TimerRing({
           strokeWidth={STROKE}
           fill="none"
         />
-
-        {/* Milestone ripple — drawn under the progress ring, amber, latched */}
-        {!reducedMotion && (
-          <AnimatedCircle
-            cx={CX}
-            cy={CY}
-            stroke={amber}
-            strokeWidth={2}
-            fill="none"
-            animatedProps={milestoneProps}
-          />
-        )}
 
         {/* Progress ring — fills toward the estimate; amber on overrun.
             Rotated -90° so it starts at 12 o'clock. */}
@@ -158,11 +131,9 @@ export function TimerRing({
           animatedProps={progressProps}
         />
 
-        {/* Orbiting pace dot (dropped under reduced motion). */}
-        {!reducedMotion && (
-          <AnimatedG animatedProps={dotGroupProps}>
-            <AnimatedCircle cx={CX} cy={CY - R} r={DOT_R} animatedProps={dotProps} />
-          </AnimatedG>
+        {/* Static guess tick across the stroke band. */}
+        {showTick && (
+          <Line x1={tx1} y1={ty1} x2={tx2} y2={ty2} stroke={t.colors.inkFaint} strokeWidth={2} />
         )}
       </Svg>
 
@@ -176,7 +147,6 @@ export function TimerRing({
           inkColor={t.colors.ink}
           defaultText="0:00"
         />
-        <Animated.Text style={guessStyle}>you guessed {guessMin}m</Animated.Text>
       </View>
     </View>
   );
