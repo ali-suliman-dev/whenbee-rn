@@ -6,7 +6,7 @@ import { useTheme } from '@/src/theme/useTheme';
 import { type } from '@/src/theme/typography';
 import { useRetro } from '@/src/features/retro/useRetro';
 import { CategoryChips } from '@/src/features/shared/CategoryChips';
-import { TimeChips } from '@/src/features/shared/TimeChips';
+import { TimeField } from '@/src/features/shared/TimeField';
 
 // ──────────────────────────────────────────────────────────────────────────────
 // Retro entry (Screen 5, formSheet) — forgiving catch-up logging for a task
@@ -28,16 +28,20 @@ export default function Retro() {
     textAlign: 'center',
   };
 
+  // No lineHeight on the TextInput — an explicit lineHeight clips descenders
+  // (g/y/p) at the box bottom on iOS. Natural metrics leave the room.
   const input: TextStyle = {
-    ...(type.body as unknown as TextStyle),
+    fontFamily: 'Jakarta-Regular',
+    fontSize: t.fontSize.base,
     color: t.colors.ink,
     backgroundColor: t.colors.surface,
     borderWidth: t.borderWidth.thin,
     borderColor: t.colors.hairline,
     borderRadius: t.radii.md,
+    borderCurve: 'continuous',
     paddingHorizontal: t.space[4],
     paddingVertical: t.space[3],
-    minHeight: 48,
+    minHeight: t.size.control.md,
   };
 
   return (
@@ -72,12 +76,12 @@ export default function Retro() {
 
         <View style={{ gap: t.space[2] }}>
           <Text style={fieldLabel}>YOUR GUESS</Text>
-          <TimeChips value={r.guessMin} onChange={r.setGuessMin} />
+          <TimeField value={r.guessMin} onChange={r.setGuessMin} />
         </View>
 
         <View style={{ gap: t.space[2] }}>
           <Text style={fieldLabel}>WHAT IT REALLY TOOK</Text>
-          <TimeChips value={r.actualMin} onChange={r.setActualMin} />
+          <TimeField value={r.actualMin} onChange={r.setActualMin} />
         </View>
 
         <View style={{ gap: t.space[3], paddingTop: t.space[2] }}>

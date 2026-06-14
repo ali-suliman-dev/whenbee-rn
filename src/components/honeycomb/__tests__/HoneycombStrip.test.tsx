@@ -10,23 +10,29 @@ function cell(id: string, sharpness: number, tier: HoneycombCell['tier']): Honey
 }
 
 describe('HoneycombStrip', () => {
-  it('renders the title, the LEAD tier pill, and the next-tier line', () => {
+  it('shows the next-tier line driven by the LEAD (most-ripened) category', () => {
     render(
       <HoneycombStrip
-        cells={[cell('a', 20, 'Setting'), cell('b', 78, 'Ripening')]}
+        cells={[cell('a', 20, 'Setting'), cell('b', 67, 'Ripening')]}
         logs={5}
         onPress={noop}
       />,
     );
 
-    expect(screen.getByText('Your honeycomb')).toBeOnTheScreen();
-    // Lead = most-ripened (78 → Ripening) drives the pill, not the 20-sharpness cell.
-    expect(screen.getByText('Ripening')).toBeOnTheScreen();
-    // …and the next tier after Ripening is Thickening.
+    // Lead = most-ripened (67 → Ripening); the next tier after it is Thickening.
     expect(screen.getByText(/to Thickening/)).toBeOnTheScreen();
+    // Ripening band [64,82] = 5 logs → 5 pips, of which exactly one is filled at 67.
+    expect(screen.getAllByTestId('honey-pip-full')).toHaveLength(1);
+    expect(screen.getAllByTestId(/^honey-pip-(full|next|empty)$/)).toHaveLength(5);
   });
 
-  it('aggregates on the most-ripened cell regardless of cell order', () => {
+  it('emphasises the remaining-logs count', () => {
+    render(<HoneycombStrip cells={[cell('a', 67, 'Ripening')]} logs={2} onPress={noop} />);
+    // logsToNextTier(67) = ceil((82-67)/4) = 4.
+    expect(screen.getByText(/^4 logs$/)).toBeOnTheScreen();
+  });
+
+  it('caps with a full comb and no next-tier line once Honest', () => {
     render(
       <HoneycombStrip
         cells={[cell('hi', 95, 'Honest'), cell('lo', 10, 'Raw')]}
@@ -35,31 +41,11 @@ describe('HoneycombStrip', () => {
       />,
     );
 
-    // Honest is the top tier → pill reads Honest and there is no next-tier line.
-    expect(screen.getByText('Honest')).toBeOnTheScreen();
+    expect(screen.getByText('Fully ripened')).toBeOnTheScreen();
     expect(screen.queryByText(/logs? to /)).toBeNull();
-  });
-
-  it('caps visible combs at honeycomb.stripMax and shows a "+N" overflow tail', () => {
-    const cells = Array.from({ length: 9 }, (_, i) => cell(`c${i}`, 50, 'Setting'));
-    render(<HoneycombStrip cells={cells} logs={9} onPress={noop} />);
-
-    // Exactly stripMax (6) cells render; the rest collapse into "+3".
-    for (let i = 0; i < 6; i++) {
-      expect(screen.getByTestId(`honeycomb-cell-c${i}`)).toBeOnTheScreen();
-    }
-    expect(screen.queryByTestId('honeycomb-cell-c6')).toBeNull();
-    expect(screen.getByText('+3')).toBeOnTheScreen();
-  });
-
-  it('shows no "+N" tail when cells fit within the cap', () => {
-    const cells = Array.from({ length: 4 }, (_, i) => cell(`c${i}`, 50, 'Setting'));
-    render(<HoneycombStrip cells={cells} logs={4} onPress={noop} />);
-
-    for (let i = 0; i < 4; i++) {
-      expect(screen.getByTestId(`honeycomb-cell-c${i}`)).toBeOnTheScreen();
-    }
-    expect(screen.queryByText(/^\+\d+$/)).toBeNull();
+    // A satisfied full row — every pip lit, none empty.
+    expect(screen.queryAllByTestId('honey-pip-empty')).toHaveLength(0);
+    expect(screen.getAllByTestId('honey-pip-full').length).toBeGreaterThan(0);
   });
 
   it('renders without animation under reduced motion', () => {
@@ -68,7 +54,7 @@ describe('HoneycombStrip', () => {
     expect(() =>
       render(<HoneycombStrip cells={[cell('a', 67, 'Ripening')]} logs={2} onPress={noop} />),
     ).not.toThrow();
-    expect(screen.getByText('Your honeycomb')).toBeOnTheScreen();
+    expect(screen.getByText(/to Thickening/)).toBeOnTheScreen();
 
     spy.mockRestore();
   });

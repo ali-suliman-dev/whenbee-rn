@@ -1,15 +1,15 @@
-import { Pressable, View, type ViewStyle, type TextStyle } from 'react-native';
-import Animated, {
-  useSharedValue,
-  useAnimatedStyle,
-  withTiming,
-  withSpring,
-  useReducedMotion,
-} from 'react-native-reanimated';
 import { haptics } from '@/src/lib/haptics';
 import { useTheme } from '@/src/theme/useTheme';
-import { AppText } from './AppText';
 import type { ReactNode } from 'react';
+import { Pressable, View, type TextStyle, type ViewStyle } from 'react-native';
+import Animated, {
+  useAnimatedStyle,
+  useReducedMotion,
+  useSharedValue,
+  withSpring,
+  withTiming,
+} from 'react-native-reanimated';
+import { AppText } from './AppText';
 
 // ──────────────────────────────────────────────────────────────────────────────
 // Tactile Pill Button — Flat Tactical UI
@@ -122,14 +122,14 @@ export function AppButton({
     right: 0,
     bottom: 0,
     height: PILL_H,
-    borderRadius: t.radii.full,
+    borderRadius: t.radii.md,
     borderCurve: 'continuous',
     backgroundColor: edge[resolved],
   };
 
   const pillContainer: ViewStyle = {
     height: PILL_H,
-    borderRadius: t.radii.full,
+    borderRadius: t.radii.md,
     borderCurve: 'continuous',
     backgroundColor: bg[resolved],
     alignItems: 'center',
@@ -138,9 +138,7 @@ export function AppButton({
     gap: t.space[2],
     paddingHorizontal: t.space[5],
     // Ghost reads as a flat outlined control — hairline border, no depth.
-    ...(isGhost
-      ? { borderWidth: t.borderWidth.hairline, borderColor: t.colors.border }
-      : null),
+    ...(isGhost ? { borderWidth: t.borderWidth.hairline, borderColor: t.colors.border } : null),
   };
 
   return (

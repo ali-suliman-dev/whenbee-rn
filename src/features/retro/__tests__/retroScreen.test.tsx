@@ -40,10 +40,11 @@ describe('Retro screen', () => {
     const applyLog = useCalibrationStore.getState().applyLog as jest.Mock;
 
     fireEvent.press(screen.getByText('Cleaning'));
-    // Both the guess and actual rows render the same chip labels; the guess row
-    // renders first, the actual row second.
-    fireEvent.press(screen.getAllByText('15m')[0]); // guess
-    fireEvent.press(screen.getAllByText('30m')[1]); // actual
+    // Both the guess and actual rows render the same chip labels (and the wheel
+    // renders the same minute text), so target the chips by their button role —
+    // wheel items aren't buttons. Guess row renders first, actual row second.
+    fireEvent.press(screen.getAllByRole('button', { name: '15m' })[0]); // guess
+    fireEvent.press(screen.getAllByRole('button', { name: '30m' })[1]); // actual
 
     fireEvent.press(screen.getByText('Save & ripen'));
     await Promise.resolve();
@@ -72,7 +73,7 @@ describe('Retro screen', () => {
 
     // Only a category + guess, no actual → button disabled, applyLog never runs.
     fireEvent.press(screen.getByText('Cleaning'));
-    fireEvent.press(screen.getAllByText('15m')[0]);
+    fireEvent.press(screen.getAllByRole('button', { name: '15m' })[0]);
     fireEvent.press(screen.getByText('Save & ripen'));
     await Promise.resolve();
 

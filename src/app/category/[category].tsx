@@ -3,6 +3,7 @@ import { View, Text, Pressable, ScrollView, type ViewStyle, type TextStyle } fro
 import { router, useLocalSearchParams } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { Screen } from '@/src/components/Screen';
+import { Card } from '@/src/components/Card';
 import { Toast } from '@/src/components/Toast';
 import { useTheme } from '@/src/theme/useTheme';
 import { type } from '@/src/theme/typography';
@@ -77,33 +78,37 @@ export default function CategoryDetailScreen() {
             contentContainerStyle={{ gap: t.space[5], paddingTop: t.space[4], paddingBottom: t.space[16] }}
             showsVerticalScrollIndicator={false}
           >
-            {/* Tier pill + logs progress line */}
-            <View style={styles(t).tierRow}>
-              <View style={styles(t).pill}>
-                <Text style={styles(t).pillText}>{detail.tier}</Text>
-              </View>
-              <Text style={styles(t).tierMeta}>
-                {detail.n} {detail.n === 1 ? 'log' : 'logs'}
-                {nextTier ? ` · ${detail.logsToNext} to ${nextTier}` : ''}
-              </Text>
-            </View>
-
+            {/* 1 — Hero: the honest number, with ripeness + progress folded in. */}
             <HonestCard
               categoryName={detail.categoryName}
               honestMinutes={detail.summary.honestMinutes}
               multiplier={detail.mEffective}
               provenance={detail.summary.label}
+              tier={detail.tier}
+              n={detail.n}
+              logsToNext={detail.logsToNext}
+              nextTier={nextTier}
             />
 
+            {/* 2 — The aha insight (when there's one worth surfacing). */}
             {detail.insight ? (
               <AhaCard insight={detail.insight} categoryName={detail.categoryName} n={detail.n} />
             ) : null}
 
-            <AdaptSegment value={adaptSpeed} onChange={handleSetAdapt} />
+            {/* 3 — Recent receipts: the evidence behind the number. */}
+            <Card>
+              <RecentList recent={detail.recent} />
+            </Card>
 
-            <TrendChart trend={detail.trend} />
+            {/* 4 — Trend over time. */}
+            <Card>
+              <TrendChart trend={detail.trend} />
+            </Card>
 
-            <RecentList recent={detail.recent} />
+            {/* 5 — The control: how fast it learns. */}
+            <Card>
+              <AdaptSegment value={adaptSpeed} onChange={handleSetAdapt} />
+            </Card>
 
             {/* Quiet reset */}
             <View style={styles(t).resetBlock}>

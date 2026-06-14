@@ -23,13 +23,15 @@ import { AppText } from './AppText';
 //   selected — active state (primaryTint fill, indigo border drawn in, ink text)
 //   add      — dashed "+ New" affordance (static, never selectable)
 //
-// Micro-interaction (Premium archetype — no size change, no overshoot)
-//   selection — the indigo border + tint appear *instantly* (static, no draw);
-//               only a one-shot ripple ring pings outward (radial, ease-out) so
-//               the pick visibly lands. A light haptic fires once on false → true.
-//   press     — a subtle opacity dim, never a scale.
-// The ripple is reduced-motion guarded; the selected border + tint are already
-// instant, so they read identically with motion reduced (just no ripple).
+// Micro-interaction (tactile pick — emil/motion: press must feel responsive)
+//   press     — finger-down dips scale to `pressIn` + dims opacity, springs back
+//               on release. The control yields to the touch *while pressed* — no
+//               flourish lingers after release.
+//   selection — on false → true the indigo border + tint land instantly, a ripple
+//               ring pings outward once, and the native selection-tick haptic
+//               fires. (No post-release scale pop — selection must not bounce.)
+// All motion is reduced-motion guarded; with motion reduced the border + tint are
+// already instant, so the pick still reads (just no ripple).
 // ──────────────────────────────────────────────────────────────────────────────
 
 const AnimatedRect = Animated.createAnimatedComponent(Rect);
@@ -37,8 +39,9 @@ const AnimatedRect = Animated.createAnimatedComponent(Rect);
 // Indigo selection stroke — static, sits on top of the resting hairline.
 const STROKE = 1.5;
 // Slack around the chip so the ripple ring can expand past the edge un-clipped.
-const PAD = 8;
-const RIPPLE_SPREAD = 7;
+const PAD = 16;
+const RIPPLE_SPREAD = 13;
+const RIPPLE_STROKE = 2.5;
 const EASE = Easing.out(Easing.cubic);
 
 export function Chip({
@@ -60,6 +63,8 @@ export function Chip({
   const isAdd = variant === 'add';
 
   const pressOpacity = useSharedValue(1);
+  // Press-down dip — active only while the finger is down, springs back on release.
+  const pressScale = useSharedValue(1);
   // One-shot 0 → 1 fired on each fresh selection — drives the ripple ping.
   const pulse = useSharedValue(0);
 
@@ -71,10 +76,20 @@ export function Chip({
   }
 
   function handlePressIn() {
-    pressOpacity.set(reducedMotion ? t.opacity.pressed : withTiming(t.opacity.pressed, { duration: t.motion.fast, easing: EASE }));
+    if (reducedMotion) {
+      pressOpacity.set(t.opacity.pressed);
+      return;
+    }
+    pressOpacity.set(withTiming(t.opacity.pressed, { duration: t.motion.fast, easing: EASE }));
+    pressScale.set(withTiming(t.scale.pressIn, { duration: t.motion.press, easing: EASE }));
   }
   function handlePressOut() {
-    pressOpacity.set(reducedMotion ? 1 : withTiming(1, { duration: t.motion.fast, easing: EASE }));
+    if (reducedMotion) {
+      pressOpacity.set(1);
+      return;
+    }
+    pressOpacity.set(withTiming(1, { duration: t.motion.fast, easing: EASE }));
+    pressScale.set(withTiming(1, { duration: t.motion.fast, easing: EASE }));
   }
 
   // Ping the ripple + haptic only on false → true (never on mount).
@@ -86,8 +101,10 @@ export function Chip({
 
     if (!justSelected) return;
     // haptics lives in lib/ (boundary-safe for src/components) — same as AppButton.
-    haptics.light();
-    // Ping the ripple outward (restart from 0).
+    // selection-tick: the native picker texture for landing a single-select pick.
+    haptics.selection();
+    // Ping the ripple outward once (restart from rest). No scale pop — selection
+    // must not bounce after release.
     if (!reducedMotion) {
       pulse.set(0);
       pulse.set(withTiming(1, { duration: t.motion.slow, easing: EASE }));
@@ -115,11 +132,14 @@ export function Chip({
       rx: rr + spread,
       ry: rr + spread,
       // Ping: invisible at rest, jumps bright, fades to nothing as it expands.
-      opacity: interpolate(p, [0, 0.12, 1], [0, 0.6, 0], Extrapolation.CLAMP),
+      opacity: interpolate(p, [0, 0.1, 1], [0, 0.9, 0], Extrapolation.CLAMP),
     };
   });
 
-  const pressStyle = useAnimatedStyle(() => ({ opacity: pressOpacity.get() }));
+  const pressStyle = useAnimatedStyle(() => ({
+    opacity: pressOpacity.get(),
+    transform: [{ scale: pressScale.get() }],
+  }));
   // Tint is instant — plain style, no animated interpolation.
   const tint: ViewStyle = {
     backgroundColor: selected ? t.colors.primarySoft : t.colors.surface,
@@ -182,7 +202,7 @@ export function Chip({
               <AnimatedRect
                 fill="none"
                 stroke={t.colors.primary}
-                strokeWidth={2}
+                strokeWidth={RIPPLE_STROKE}
                 animatedProps={rippleProps}
               />
             ) : null}

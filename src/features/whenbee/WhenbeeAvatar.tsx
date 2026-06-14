@@ -14,8 +14,6 @@ import type { Tier } from '@/src/domain/types';
 // renders beneath, same as before.
 // ──────────────────────────────────────────────────────────────────────────────
 
-const SIZE = 88;
-
 /** Maps a tier to a BeeMascot variant. Today every tier is the default artwork. */
 function variantForTier(_tier: Tier): BeeVariant {
   return 'default';
@@ -27,9 +25,12 @@ export function WhenbeeAvatar({ tier, name }: { tier: Tier; name?: string }) {
   const wrap: ViewStyle = { alignItems: 'center', gap: t.space[2] };
   const nameStyle: TextStyle = { ...(type.bodyLg as unknown as TextStyle), color: t.colors.ink };
 
+  // Bee size is the `burst.bee` token. It sits centered inside the fixed-size
+  // burst stage, so enlarging it (up to the stage) makes the bee bigger WITHOUT
+  // pushing the surrounding hero content apart.
   return (
     <View style={wrap}>
-      <BeeMascot size={SIZE} variant={variantForTier(tier)} />
+      <BeeMascot size={t.burst.bee} variant={variantForTier(tier)} />
       {name ? <AppText style={nameStyle}>{name}</AppText> : null}
     </View>
   );

@@ -1,53 +1,90 @@
 import { useEffect } from 'react';
 import { Pressable, View, Text, type ViewStyle, type TextStyle } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
+import Svg, { Polygon } from 'react-native-svg';
 import Animated, {
   Easing,
   useAnimatedStyle,
   useReducedMotion,
   useSharedValue,
+  withDelay,
   withSpring,
   withTiming,
 } from 'react-native-reanimated';
 import { useTheme } from '@/src/theme/useTheme';
 import { type } from '@/src/theme/typography';
-import { TIERS, logsToNextTier } from '@/src/engine';
-import type { Tier } from '@/src/domain/types';
-import { Honeycomb, type HoneycombCell } from './Honeycomb';
+import { TIERS, tierBandProgress } from '@/src/engine';
+import type { HoneycombCell } from './Honeycomb';
 
 // ──────────────────────────────────────────────────────────────────────────────
-// HoneycombStrip — the persistent gamification HUD on Today (real, not placeholder).
+// HoneycombStrip — the persistent gamification HUD on Today.
 //
-// Tappable Card → Whenbee hub. A VERTICAL stack so the comb row and the readout
-// never compete for width (the old side-by-side layout let an unbounded comb row
-// squeeze the text out of bounds past 3 combs):
+// A single COMPACT row — a tier-progress comb, not a tall stat card:
 //
-//   Your honeycomb                 [tier pill]   ← header (title yields, pill fixed)
-//   ⬡ ⬡ ⬡ ⬡ ⬡  +3                              ← bounded comb row + "+N" tail
-//   ▓▓▓▓▓▓▓░░░░░  67%                            ← honey progress bar → sharpness%
-//   4 logs to Thickening →                       ← next-tier line (only when one exists)
+//   ⬡ ⬡ ⬡ ⬡ ⬡   4 logs to Thickening                         ›
 //
-// The pill / bar / next-line read the LEAD (most-ripened) category — that's the
-// tier the user is chasing. Amber is the sanctioned honey accent here (ripeness).
+// The pips are the CURRENT tier band rendered one-hex-per-log (honest: the count
+// comes from `tierBandProgress`, and the band never reads fully done while you're
+// still inside it). Filled pips are amber honey, the next pip a darker wax edge,
+// the rest faint — a left→right ripeness ramp. The line emphasises the small
+// "logs to go" number (goal gradient) and the chevron invites the tap into the
+// hub, where the full per-category comb lives. Aggregates on the LEAD (most-
+// ripened) category — that's the tier the user is chasing. Amber is the sanctioned
+// honey accent here. No guilt, ever: a pip can only ever light, never drain.
 // ──────────────────────────────────────────────────────────────────────────────
 
-interface AggregateHoney {
-  pct: number;
-  tier: Tier;
-  nextTier: Tier | null;
-  logsToNext: number;
+/** Regular flat-top hexagon: height = width × √3/2. */
+const HEX_RATIO = Math.sqrt(3) / 2;
+/** Pips shown for the capped (Honest) comb — a quietly satisfied full row. */
+const CAP_PIPS = 5;
+
+/** Flat-top hexagon polygon points inside a `w`×`h` box (h = w × √3/2). */
+function pipPoints(w: number, h: number): string {
+  const q = w / 4;
+  return `${q},0 ${w - q},0 ${w},${h / 2} ${w - q},${h} ${q},${h} 0,${h / 2}`;
 }
 
-/** Lead = the most-ripened category; it drives the pill + bar + next-tier line. */
-function aggregate(cells: HoneycombCell[]): AggregateHoney {
-  const lead = cells.reduce<HoneycombCell | null>(
-    (best, c) => (best === null || c.sharpness > best.sharpness ? c : best),
-    null,
+type PipRole = 'full' | 'next' | 'empty';
+
+/** One solid honey hexagon, settling up in a left→right cascade on mount. */
+function Pip({ role, index, animate }: { role: PipRole; index: number; animate: boolean }) {
+  const t = useTheme();
+  const w = t.honeycomb.pip;
+  const h = w * HEX_RATIO;
+  const fill =
+    role === 'full'
+      ? t.colors.accent
+      : role === 'next'
+        ? t.colors.accentEdge
+        : t.colors.accentSoft;
+
+  // Honey-settle reveal — ease-out, no overshoot (monotonic). Reduced motion → static.
+  const enter = useSharedValue(animate ? 0 : 1);
+  useEffect(() => {
+    if (!animate) {
+      enter.set(1);
+      return;
+    }
+    enter.set(
+      withDelay(
+        index * t.motion.stagger,
+        withTiming(1, { duration: t.motion.base, easing: Easing.out(Easing.cubic) }),
+      ),
+    );
+  }, [animate, index, enter, t.motion.stagger, t.motion.base]);
+
+  const style = useAnimatedStyle(() => ({
+    opacity: enter.get(),
+    transform: [{ scale: 0.9 + enter.get() * 0.1 }, { translateY: (1 - enter.get()) * 3 }],
+  }));
+
+  return (
+    <Animated.View testID={`honey-pip-${role}`} style={style}>
+      <Svg width={w} height={h} viewBox={`0 0 ${w} ${h}`}>
+        <Polygon points={pipPoints(w, h)} fill={fill} />
+      </Svg>
+    </Animated.View>
   );
-  const sharpness = lead?.sharpness ?? 0;
-  const tier = lead?.tier ?? 'Raw';
-  const tierIdx = TIERS.indexOf(tier);
-  const nextTier = tierIdx >= 0 && tierIdx < TIERS.length - 1 ? TIERS[tierIdx + 1]! : null;
-  return { pct: Math.round(sharpness), tier, nextTier, logsToNext: logsToNextTier(sharpness) };
 }
 
 interface HoneycombStripProps {
@@ -59,93 +96,60 @@ interface HoneycombStripProps {
 export function HoneycombStrip({ cells, logs, onPress }: HoneycombStripProps) {
   const t = useTheme();
   const reducedMotion = useReducedMotion();
-  const { pct, tier, nextTier, logsToNext } = aggregate(cells);
 
-  // Bounded comb row — stable order (no sort) so combs never jump between logs.
-  const max = t.honeycomb.stripMax;
-  const shown = cells.slice(0, max);
-  const extra = cells.length - shown.length;
+  // Lead = the most-ripened category; it drives the band + next-tier line.
+  const lead = cells.reduce<HoneycombCell | null>(
+    (best, c) => (best === null || c.sharpness > best.sharpness ? c : best),
+    null,
+  );
+  const sharpness = lead?.sharpness ?? 0;
+  const tier = lead?.tier ?? 'Raw';
+  const tierIdx = TIERS.indexOf(tier);
+  const nextTier = tierIdx >= 0 && tierIdx < TIERS.length - 1 ? TIERS[tierIdx + 1]! : null;
+  const band = tierBandProgress(sharpness);
+  const remaining = band.remaining;
 
-  // Press feedback — visual + animated style live on an inner Animated.View; the
+  const pips: PipRole[] = nextTier
+    ? Array.from({ length: band.total }, (_, i) =>
+        i < band.done ? 'full' : i === band.done ? 'next' : 'empty',
+      )
+    : Array.from({ length: CAP_PIPS }, () => 'full');
+
+  // Press feedback — visual + animated style on an inner Animated.View; the
   // Pressable stays a bare touch wrapper (function-form style on Pressable renders
   // nothing under reactCompiler + nativewind). Mirrors AppButton / FAB physics.
   const scale = useSharedValue(1);
   const pressStyle = useAnimatedStyle(() => ({ transform: [{ scale: scale.get() }] }));
 
-  // Honey-settle reveal — the bar fills to `pct` with the same calm ease-out the
-  // Honeycomb cells use for their bottom-up honey rise. Reduced motion → final width.
-  const fill = useSharedValue(reducedMotion ? pct : 0);
-  useEffect(() => {
-    if (reducedMotion) {
-      fill.set(pct);
-      return;
-    }
-    fill.set(withTiming(pct, { duration: t.motion.reveal, easing: Easing.out(Easing.cubic) }));
-  }, [pct, reducedMotion, fill, t.motion.reveal]);
-  const fillStyle = useAnimatedStyle(() => ({ width: `${fill.get()}%` }));
-
   const card: ViewStyle = {
-    flexDirection: 'column',
+    flexDirection: 'row',
+    alignItems: 'center',
     gap: t.space[3],
     backgroundColor: t.colors.surface,
     borderWidth: t.borderWidth.thin,
     borderColor: t.colors.hairline,
     borderRadius: t.radii.card,
     borderCurve: 'continuous',
-    padding: t.space[4],
+    paddingVertical: t.space[3],
+    paddingHorizontal: t.space[4],
   };
-  const header: ViewStyle = {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    gap: t.space[2],
-  };
-  const heading: TextStyle = {
-    ...(type.heading as unknown as TextStyle),
-    color: t.colors.ink,
-    flexShrink: 1,
-  };
-  const pill: ViewStyle = {
-    flexShrink: 0,
-    backgroundColor: t.colors.accentSoft,
-    borderRadius: t.radii.full,
-    paddingHorizontal: t.space[2],
-    paddingVertical: t.space[0.5],
-  };
-  const pillText: TextStyle = {
-    ...(type.micro as unknown as TextStyle),
+  const pipRow: ViewStyle = { flexDirection: 'row', alignItems: 'center', gap: t.space[1] };
+  const line: TextStyle = { flex: 1 };
+  const countText: TextStyle = {
+    ...(type.caption as unknown as TextStyle),
     color: t.colors.amberText,
     fontWeight: t.fontWeight.semibold as TextStyle['fontWeight'],
   };
-  const combRow: ViewStyle = { flexDirection: 'row', alignItems: 'center', gap: t.space[2] };
-  const barRow: ViewStyle = { flexDirection: 'row', alignItems: 'center', gap: t.space[2] };
-  const track: ViewStyle = {
-    flex: 1,
-    height: t.progress.track,
-    borderRadius: t.radii.full,
-    backgroundColor: t.colors.surfaceSunken,
-    overflow: 'hidden',
-  };
-  const barFill: ViewStyle = {
-    height: '100%',
-    backgroundColor: t.colors.accent,
-    borderRadius: t.radii.full,
-  };
-  const pctText: TextStyle = { ...(type.caption as unknown as TextStyle), color: t.colors.inkSoft };
-  const overflowText: TextStyle = {
-    ...(type.caption as unknown as TextStyle),
-    color: t.colors.inkSoft,
-  };
-  const nextLine: TextStyle = {
+  const restText: TextStyle = { ...(type.caption as unknown as TextStyle), color: t.colors.inkSoft };
+  const cappedText: TextStyle = {
     ...(type.caption as unknown as TextStyle),
     color: t.colors.ink,
-    fontWeight: t.fontWeight.semibold as TextStyle['fontWeight'],
+    fontWeight: t.fontWeight.medium as TextStyle['fontWeight'],
   };
-  const nextTail: TextStyle = {
-    ...(type.caption as unknown as TextStyle),
-    color: t.colors.inkSoft,
-    fontWeight: t.fontWeight.regular as TextStyle['fontWeight'],
-  };
+
+  const a11y = nextTier
+    ? `Your honeycomb — tier ${tier}, ${remaining} ${remaining === 1 ? 'log' : 'logs'} to ${nextTier}, ${logs} ${logs === 1 ? 'log' : 'logs'} logged`
+    : `Your honeycomb — tier ${tier}, fully ripened, ${logs} ${logs === 1 ? 'log' : 'logs'} logged`;
 
   return (
     <Pressable
@@ -157,42 +161,29 @@ export function HoneycombStrip({ cells, logs, onPress }: HoneycombStripProps) {
         if (!reducedMotion) scale.set(withSpring(1, t.motion.spring));
       }}
       accessibilityRole="button"
-      accessibilityLabel={`Your honeycomb — ${pct}% honey, tier ${tier}, ${logs} ${logs === 1 ? 'log' : 'logs'}`}
+      accessibilityLabel={a11y}
     >
       <Animated.View style={[card, pressStyle]}>
-        <View style={header}>
-          <Text style={heading} numberOfLines={1}>
-            Your honeycomb
-          </Text>
-          <View style={pill}>
-            <Text style={pillText}>{tier}</Text>
-          </View>
+        <View style={pipRow}>
+          {pips.map((role, i) => (
+            <Pip key={`pip-${i}`} role={role} index={i} animate={!reducedMotion} />
+          ))}
         </View>
 
-        {shown.length > 0 ? (
-          <View style={combRow}>
-            <Honeycomb size="strip" cells={shown} />
-            {extra > 0 ? <Text style={overflowText}>+{extra}</Text> : null}
-          </View>
-        ) : null}
+        <Text style={line} numberOfLines={1}>
+          {nextTier ? (
+            <>
+              <Text style={countText}>
+                {remaining} {remaining === 1 ? 'log' : 'logs'}
+              </Text>
+              <Text style={restText}> to {nextTier}</Text>
+            </>
+          ) : (
+            <Text style={cappedText}>Fully ripened</Text>
+          )}
+        </Text>
 
-        <View style={barRow}>
-          <View style={track}>
-            <Animated.View style={[barFill, fillStyle]} />
-          </View>
-          <Text style={pctText}>{pct}%</Text>
-        </View>
-
-        {nextTier ? (
-          <Text style={nextLine}>
-            {logsToNext} {logsToNext === 1 ? 'log' : 'logs'} to {nextTier}{' '}
-            <Text style={{ color: t.colors.amberText }}>→</Text>
-            <Text style={nextTail}>
-              {'  ·  '}
-              {logs} {logs === 1 ? 'log' : 'logs'}
-            </Text>
-          </Text>
-        ) : null}
+        <Ionicons name="chevron-forward" size={t.iconSize.sm} color={t.colors.inkFaint} />
       </Animated.View>
     </Pressable>
   );

@@ -33,9 +33,12 @@ export function HonestNumber({
   unit,
   size = 'big',
   tone = 'ink',
+  unitSize,
 }: {
   value: string;
   unit?: string;
+  /** Override the unit suffix size (defaults to ~0.6× the number). */
+  unitSize?: number;
   size?: Size;
   tone?: Tone;
 }) {
@@ -52,7 +55,7 @@ export function HonestNumber({
   const row: ViewStyle = {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: t.space[0.5],
+    gap: t.space[1],
   };
 
   // Cast needed: `fontVariant` in our const type is readonly tuple, but TextStyle expects mutable
@@ -61,8 +64,9 @@ export function HonestNumber({
     color: toneColor[tone],
   };
 
-  // Unit is ~0.6em relative to the number's fontSize, muted
-  const unitFontSize = Math.round(scale.fontSize * 0.6);
+  // Unit is ~0.6em relative to the number's fontSize, muted — unless the caller
+  // pins an explicit size (e.g. a quieter, fixed "min" beside a smaller hero).
+  const unitFontSize = unitSize ?? Math.round(scale.fontSize * 0.6);
   const unitStyle: TextStyle = {
     fontSize: unitFontSize,
     lineHeight: unitFontSize * 1.3,
