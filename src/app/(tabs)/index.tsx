@@ -11,16 +11,18 @@ import { haptics } from '@/src/lib/haptics';
 import { Ionicons } from '@expo/vector-icons';
 import { Screen } from '@/src/components/Screen';
 import { ScreenHeader } from '@/src/components/ScreenHeader';
-import { ActiveTimerBar } from '@/src/components/ActiveTimerBar';
 import { useTheme } from '@/src/theme/useTheme';
 import { type } from '@/src/theme/typography';
-import { useToday } from '@/src/features/today/useToday';
+import { useToday, type TodayRow } from '@/src/features/today/useToday';
 import { FocusCard } from '@/src/features/today/FocusCard';
+import { RunningFocusCard } from '@/src/features/today/RunningFocusCard';
+import { TaskRow } from '@/src/features/today/TaskRow';
 import { ReclaimTodayLine } from '@/src/features/today/ReclaimTodayLine';
 import { HoneycombStrip } from '@/src/components/honeycomb/HoneycombStrip';
 import type { HoneycombCell } from '@/src/components/honeycomb/Honeycomb';
 import { useCategoriesStore } from '@/src/stores/categoriesStore';
 import { useCalibrationStore } from '@/src/stores/calibrationStore';
+import { useTimerStore } from '@/src/stores/timerStore';
 
 // Date label, e.g. "Fri · Jun 12" — the day + date, no clock (the time added
 // nothing here and ticked distractingly).
@@ -32,7 +34,22 @@ function dateLabel(now: Date): string {
 
 export default function Today() {
   const t = useTheme();
-  const { focus, summary, categoryName, todayReclaimMin } = useToday();
+  const { focus, summary, upNext, done, totalCount, categoryName, todayReclaimMin } = useToday();
+  const isTimerRunning = useTimerStore((s) => s.isRunning);
+
+  // Open the timer for any queued list row (mirrors the FocusCard Start params).
+  function startRow(row: TodayRow) {
+    router.push({
+      pathname: '/(modals)/timer',
+      params: {
+        taskId: row.id,
+        label: row.label,
+        category: row.category,
+        estimateMin: row.honestMin,
+        guessMin: row.guessMin,
+      },
+    });
+  }
 
   // Build the honey strip from the tracked categories + their cached stats. One
   // hex per tracked category; sharpness/tier come straight from the calibration
@@ -72,6 +89,11 @@ export default function Today() {
     ...(type.body as unknown as TextStyle),
     color: t.colors.inkSoft,
     textAlign: 'center',
+  };
+  const sectionLabel: TextStyle = {
+    ...(type.eyebrow as unknown as TextStyle),
+    color: t.colors.inkSoft,
+    marginTop: t.space[1],
   };
 
   const FAB_SIZE = 56;
@@ -144,7 +166,9 @@ export default function Today() {
             }
           />
 
-          <View style={{ gap: t.space[2] }}>
+          {/* The honey HUD hugs the header (tighten the inherited list gap) but
+              sits clearly apart from the focus card below it. */}
+          <View style={{ gap: t.space[2], marginTop: -t.space[2], marginBottom: t.space[3] }}>
             <HoneycombStrip
               cells={honeyCells}
               logs={logs}
@@ -153,11 +177,12 @@ export default function Today() {
             <ReclaimTodayLine minutes={todayReclaimMin} />
           </View>
 
-          {/* Sits directly above the Next/Focus card — a running session lives next
-              to the thing you'd start next, not stranded under the header. */}
-          <ActiveTimerBar />
-
-          {focus && summary ? (
+          {/* A live session takes the focus slot itself (the same footprint as the
+              Next card, so nothing jumps), carrying its guess→plan context + the
+              live elapsed. Otherwise the Next card invites the next start. */}
+          {isTimerRunning ? (
+            <RunningFocusCard categoryName={categoryName} />
+          ) : focus && summary ? (
             <FocusCard
               category={focus.category}
               categoryLabel={categoryName(focus.category)}
@@ -176,11 +201,42 @@ export default function Today() {
                 })
               }
             />
-          ) : (
+          ) : totalCount === 0 ? (
             <Text style={emptyCopy}>
               Nothing tracked yet today — tap + when you start something.
             </Text>
-          )}
+          ) : null}
+
+          {upNext.length > 0 ? (
+            <View style={{ gap: t.space[2] }}>
+              <Text style={sectionLabel}>UP NEXT</Text>
+              {upNext.map((row) => (
+                <TaskRow
+                  key={row.id}
+                  title={row.label}
+                  categoryLabel={row.categoryLabel}
+                  honestMin={row.honestMin}
+                  onPress={() => startRow(row)}
+                />
+              ))}
+            </View>
+          ) : null}
+
+          {done.length > 0 ? (
+            <View style={{ gap: t.space[2] }}>
+              <Text style={sectionLabel}>DONE TODAY</Text>
+              {done.map((row) => (
+                <TaskRow
+                  key={row.id}
+                  title={row.label}
+                  categoryLabel={row.categoryLabel}
+                  honestMin={row.honestMin}
+                  actualMin={row.actualMin}
+                  done
+                />
+              ))}
+            </View>
+          ) : null}
 
           <Pressable
             onPress={() => router.push('/(modals)/retro')}

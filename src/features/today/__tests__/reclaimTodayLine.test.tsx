@@ -9,6 +9,10 @@ describe('ReclaimTodayLine', () => {
 
   it('renders the BINDING copy with the minute total when there is reclaim', () => {
     render(<ReclaimTodayLine minutes={35} />);
-    expect(screen.getByText('+35m reclaimed today')).toBeOnTheScreen();
+    // Copy is split across styled spans (bold number + label) — assert both parts
+    // and the combined accessibility label.
+    expect(screen.getByText('+35m')).toBeOnTheScreen();
+    expect(screen.getByText('reclaimed today')).toBeOnTheScreen();
+    expect(screen.getByLabelText('35 minutes reclaimed today')).toBeOnTheScreen();
   });
 });
