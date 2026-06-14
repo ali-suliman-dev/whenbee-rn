@@ -11,7 +11,7 @@ jest.mock('expo-sqlite/kv-store', () => {
   } };
 });
 
-jest.mock('expo-haptics', () => ({ impactAsync: jest.fn(() => Promise.resolve()), ImpactFeedbackStyle: { Light: 'light' }, notificationAsync: jest.fn(() => Promise.resolve()), NotificationFeedbackType: { Success: 'success', Error: 'error' } }));
+jest.mock('expo-haptics', () => ({ impactAsync: jest.fn(() => Promise.resolve()), selectionAsync: jest.fn(() => Promise.resolve()), ImpactFeedbackStyle: { Light: 'light' }, notificationAsync: jest.fn(() => Promise.resolve()), NotificationFeedbackType: { Success: 'success', Error: 'error' } }));
 
 // useSafeAreaInsets throws without a <SafeAreaProvider>; screens call it directly,
 // so return zero insets in tests (the rest of the package stays real).
