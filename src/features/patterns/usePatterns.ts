@@ -1,0 +1,358 @@
+import { useCallback, useEffect, useState } from 'react';
+import {
+  clampRatio,
+  PERSONAL_MIN_LOGS,
+  honestNumber,
+} from '@/src/engine';
+import { useCalibrationStore, type PatternsData, type PatternLog } from '@/src/stores/calibrationStore';
+
+// ──────────────────────────────────────────────────────────────────────────────
+// usePatterns — the free self-insight surface (read-only over the engine).
+//
+// Everything here is a PURE function over the cross-category snapshot the
+// calibration store hands back (`PatternsData`). Each derivation answers one card
+// and returns `null` when the data hasn't earned that card yet — the screen hides
+// it. No db access here (the store owns that, per the layer rule); no guilt, no
+// streaks, no red. The hook is a thin loader that runs the pure derivations.
+//
+// Min-sample gates (sensible, documented — tune in one place):
+//   ARCHETYPE_MIN_LOGS / ARCHETYPE_MIN_CATEGORIES — need a real spread to type you
+//   EXPERIMENT_MIN_PER_ARM — timed vs retro, both arms must clear this
+//   COMPARE_MIN_LOGS / COMPARE_HALF — split early vs recent, each half ≥ COMPARE_HALF
+//   SURPRISE_WINDOW_MS — "this week" lookback for the biggest surprise
+//   DRIFT_MIN_GAP — how far a category's M must move (early→recent) to be "drift"
+// ──────────────────────────────────────────────────────────────────────────────
+
+export const ARCHETYPE_MIN_LOGS = 12;
+export const ARCHETYPE_MIN_CATEGORIES = 2;
+export const EXPERIMENT_MIN_PER_ARM = 3;
+export const COMPARE_HALF = 3;
+export const COMPARE_MIN_LOGS = COMPARE_HALF * 2; // 6 — split into two halves
+export const SURPRISE_WINDOW_MS = 7 * 24 * 60 * 60 * 1000;
+export const DRIFT_MIN_GAP = 0.4;
+
+// ── card view-models ────────────────────────────────────────────────────────
+
+export interface ArchetypeCard {
+  /** Short, flattering-but-honest name (e.g. "The Sprint Optimist"). */
+  title: string;
+  /** One plain sentence describing the pattern, no diagnosis. */
+  blurb: string;
+  /** Average personal multiplier across categories, for the supporting line. */
+  averageMultiplier: number;
+}
+
+export interface PlanExperimentCard {
+  /** True when running the timer (a plan) beat winging it on accuracy. */
+  planWins: boolean;
+  /** Mean absolute miss while timed (0 = perfect). Lower is sharper. */
+  timedError: number;
+  /** Mean absolute miss while logged after the fact. */
+  retroError: number;
+  /** Counts behind each arm, for an honest "based on N" line. */
+  timedCount: number;
+  retroCount: number;
+}
+
+export interface YouVsPastCard {
+  /** Sharpness-style accuracy (0–100) over the earliest half of logs. */
+  earlyAccuracy: number;
+  /** Accuracy over the most recent half. */
+  recentAccuracy: number;
+  /** recent − early (can be 0; never framed as loss). */
+  delta: number;
+}
+
+export interface BiggestSurpriseCard {
+  categoryId: string;
+  categoryName: string;
+  estimateMin: number;
+  actualMin: number;
+  /** clamped ratio actual/estimate. */
+  ratio: number;
+}
+
+export interface PredictionCard {
+  categoryId: string;
+  categoryName: string;
+  /** Honest minutes for a typical 15-min guess in this category. */
+  honestForFifteen: number;
+  multiplier: number;
+  sampleSize: number;
+}
+
+export interface DriftAlertCard {
+  categoryId: string;
+  categoryName: string;
+  /** Multiplier over the earliest half. */
+  earlyMultiplier: number;
+  /** Multiplier over the recent half. */
+  recentMultiplier: number;
+  /** True when recent > early (running longer lately), else faster. */
+  slowerLately: boolean;
+}
+
+export interface CalibrationMapRow {
+  categoryId: string;
+  categoryName: string;
+  /** Typical guess anchor (15) and the honest number it resolves to. */
+  guessMin: number;
+  honestMin: number;
+  multiplier: number;
+  sampleSize: number;
+}
+
+export interface PatternsView {
+  /** True when no completed log exists anywhere — render the calm empty state. */
+  empty: boolean;
+  archetype: ArchetypeCard | null;
+  planExperiment: PlanExperimentCard | null;
+  youVsPast: YouVsPastCard | null;
+  biggestSurprise: BiggestSurpriseCard | null;
+  prediction: PredictionCard | null;
+  driftAlert: DriftAlertCard | null;
+  calibrationMap: CalibrationMapRow[];
+}
+
+// ── shared helpers ────────────────────────────────────────────────────────────
+
+/** completed logs only (oldest → newest), the analyzable set. */
+function completedLogs(logs: PatternLog[]): PatternLog[] {
+  return logs
+    .filter((l) => l.status === 'completed' && l.actualMin !== null)
+    .slice()
+    .sort((a, b) => a.createdAt - b.createdAt);
+}
+
+/** Accuracy over a set of clamped ratios — same shape as engine sharpness
+ *  (100·(1 − mean(|1 − estimate/actual|))), so the number reads consistently. */
+function accuracyFromRatios(ratios: number[]): number {
+  if (ratios.length === 0) return 0;
+  const meanError =
+    ratios.reduce((sum, r) => sum + Math.min(1, Math.abs(1 - 1 / r)), 0) / ratios.length;
+  return Math.round(100 * (1 - meanError));
+}
+
+/** Geometric-mean multiplier from clamped ratios (matches the EWMA's log-space). */
+function multiplierFromRatios(ratios: number[]): number {
+  if (ratios.length === 0) return 1;
+  const meanLog = ratios.reduce((sum, r) => sum + Math.log(r), 0) / ratios.length;
+  return Math.exp(meanLog);
+}
+
+function ratiosOf(logs: PatternLog[]): number[] {
+  return logs.map((l) => clampRatio(l.estimateMin, l.actualMin as number));
+}
+
+// ── pure derivations (each unit-tested) ───────────────────────────────────────
+
+/**
+ * One shareable time-personality from the per-category multiplier spread.
+ * Deterministic: the average personal M places you on a calm ladder, never a
+ * diagnosis. Needs a real history across categories before it speaks.
+ */
+export function deriveArchetype(data: PatternsData): ArchetypeCard | null {
+  const personal = data.categories.filter((c) => c.n >= PERSONAL_MIN_LOGS);
+  const totalLogs = personal.reduce((sum, c) => sum + c.n, 0);
+  if (personal.length < ARCHETYPE_MIN_CATEGORIES || totalLogs < ARCHETYPE_MIN_LOGS) return null;
+
+  const avg = personal.reduce((sum, c) => sum + c.mEffective, 0) / personal.length;
+
+  // Flattering-but-honest ladder. Wording stays curious and kind — a self-portrait,
+  // not a label. Every rung frames the optimism warmly.
+  let title: string;
+  let blurb: string;
+  if (avg < 1.3) {
+    title = 'The Steady Reader';
+    blurb = 'Your guesses land close to reality. Quietly rare.';
+  } else if (avg < 1.8) {
+    title = 'The Gentle Optimist';
+    blurb = 'You lean hopeful, then mostly catch up. A little padding does it.';
+  } else if (avg < 2.6) {
+    title = 'The Sprint Optimist';
+    blurb = 'Your mind moves fast; the doing takes a touch longer. Now you know by how much.';
+  } else {
+    title = 'The Dreamer';
+    blurb = 'Big plans, generous timelines. Your honest numbers keep them grounded.';
+  }
+
+  return { title, blurb, averageMultiplier: avg };
+}
+
+/**
+ * With-a-plan vs winging-it. The honest proxy available today: a `timed` log means
+ * you ran the one-tap timer (committed in the moment); a `retro` log was filled in
+ * after the fact (winged it). We compare accuracy across the two. If winging it is
+ * sharper, we SAY so — no spin. Both arms must clear the min-sample gate.
+ */
+export function derivePlanExperiment(data: PatternsData): PlanExperimentCard | null {
+  const logs = completedLogs(data.logs);
+  const timed = logs.filter((l) => l.source === 'timed');
+  const retro = logs.filter((l) => l.source === 'retro');
+  if (timed.length < EXPERIMENT_MIN_PER_ARM || retro.length < EXPERIMENT_MIN_PER_ARM) return null;
+
+  const timedError = 1 - accuracyFromRatios(ratiosOf(timed)) / 100;
+  const retroError = 1 - accuracyFromRatios(ratiosOf(retro)) / 100;
+
+  return {
+    planWins: timedError <= retroError,
+    timedError,
+    retroError,
+    timedCount: timed.length,
+    retroCount: retro.length,
+  };
+}
+
+/** Recent calibration vs the earliest logs — growth, framed kindly (never loss). */
+export function deriveYouVsPast(data: PatternsData): YouVsPastCard | null {
+  const logs = completedLogs(data.logs);
+  if (logs.length < COMPARE_MIN_LOGS) return null;
+
+  const half = Math.floor(logs.length / 2);
+  const early = logs.slice(0, half);
+  const recent = logs.slice(logs.length - half);
+  const earlyAccuracy = accuracyFromRatios(ratiosOf(early));
+  const recentAccuracy = accuracyFromRatios(ratiosOf(recent));
+
+  return { earlyAccuracy, recentAccuracy, delta: recentAccuracy - earlyAccuracy };
+}
+
+/** The single log with the largest |ratio − 1| within the lookback window. */
+export function deriveBiggestSurprise(data: PatternsData, nowMs: number): BiggestSurpriseCard | null {
+  const cutoff = nowMs - SURPRISE_WINDOW_MS;
+  const recent = completedLogs(data.logs).filter((l) => l.createdAt >= cutoff);
+  if (recent.length === 0) return null;
+
+  let best: PatternLog | null = null;
+  let bestGap = -1;
+  for (const log of recent) {
+    const ratio = clampRatio(log.estimateMin, log.actualMin as number);
+    const gap = Math.abs(ratio - 1);
+    if (gap > bestGap) {
+      bestGap = gap;
+      best = log;
+    }
+  }
+  if (best === null) return null;
+
+  const ratio = clampRatio(best.estimateMin, best.actualMin as number);
+  return {
+    categoryId: best.category,
+    categoryName: data.nameOf(best.category),
+    estimateMin: best.estimateMin,
+    actualMin: best.actualMin as number,
+    ratio,
+  };
+}
+
+/**
+ * "X usually runs ~Nm." Pick the personal category with the most evidence and
+ * surface its honest number for a typical 15-min guess.
+ */
+export function derivePrediction(data: PatternsData): PredictionCard | null {
+  const personal = data.categories
+    .filter((c) => c.n >= PERSONAL_MIN_LOGS)
+    .slice()
+    .sort((a, b) => b.n - a.n);
+  const top = personal[0];
+  if (!top) return null;
+
+  return {
+    categoryId: top.categoryId,
+    categoryName: data.nameOf(top.categoryId),
+    honestForFifteen: honestNumber(15, top.mEffective),
+    multiplier: top.mEffective,
+    sampleSize: top.n,
+  };
+}
+
+/**
+ * "What changed?" — the category whose multiplier moved most between its earliest
+ * and most recent half, when that move clears DRIFT_MIN_GAP. Neutral framing: it
+ * reports a shift in pace, never a verdict.
+ */
+export function deriveDriftAlert(data: PatternsData): DriftAlertCard | null {
+  let best: DriftAlertCard | null = null;
+  let bestGap = DRIFT_MIN_GAP;
+
+  for (const cat of data.categories) {
+    const logs = completedLogs(data.logs.filter((l) => l.category === cat.categoryId));
+    if (logs.length < COMPARE_MIN_LOGS) continue;
+
+    const half = Math.floor(logs.length / 2);
+    const early = logs.slice(0, half);
+    const recent = logs.slice(logs.length - half);
+    const earlyMultiplier = multiplierFromRatios(ratiosOf(early));
+    const recentMultiplier = multiplierFromRatios(ratiosOf(recent));
+    const gap = Math.abs(recentMultiplier - earlyMultiplier);
+    if (gap > bestGap) {
+      bestGap = gap;
+      best = {
+        categoryId: cat.categoryId,
+        categoryName: data.nameOf(cat.categoryId),
+        earlyMultiplier,
+        recentMultiplier,
+        slowerLately: recentMultiplier > earlyMultiplier,
+      };
+    }
+  }
+
+  return best;
+}
+
+/** Per-category honest-vs-guess overview (every category with any completed log). */
+export function deriveCalibrationMap(data: PatternsData): CalibrationMapRow[] {
+  return data.categories
+    .filter((c) => c.n > 0)
+    .slice()
+    .sort((a, b) => b.n - a.n)
+    .map((c) => ({
+      categoryId: c.categoryId,
+      categoryName: data.nameOf(c.categoryId),
+      guessMin: 15,
+      honestMin: honestNumber(15, c.mEffective),
+      multiplier: c.mEffective,
+      sampleSize: c.n,
+    }));
+}
+
+/** Run every derivation over one snapshot — the whole tab's view-model. */
+export function derivePatterns(data: PatternsData, nowMs: number): PatternsView {
+  const anyCompleted = completedLogs(data.logs).length > 0;
+  return {
+    empty: !anyCompleted,
+    archetype: deriveArchetype(data),
+    planExperiment: derivePlanExperiment(data),
+    youVsPast: deriveYouVsPast(data),
+    biggestSurprise: deriveBiggestSurprise(data, nowMs),
+    prediction: derivePrediction(data),
+    driftAlert: deriveDriftAlert(data),
+    calibrationMap: deriveCalibrationMap(data),
+  };
+}
+
+// ── the hook ──────────────────────────────────────────────────────────────────
+
+interface UsePatternsResult {
+  view: PatternsView | null;
+  loading: boolean;
+}
+
+/** Loads the cross-category snapshot through the store, then derives the view. */
+export function usePatterns(nowMs: number = Date.now()): UsePatternsResult {
+  const loadPatternsData = useCalibrationStore((s) => s.loadPatternsData);
+  const [view, setView] = useState<PatternsView | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  const refresh = useCallback(async () => {
+    const data = await loadPatternsData();
+    setView(derivePatterns(data, nowMs));
+    setLoading(false);
+  }, [loadPatternsData, nowMs]);
+
+  useEffect(() => {
+    void refresh();
+  }, [refresh]);
+
+  return { view, loading };
+}

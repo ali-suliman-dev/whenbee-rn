@@ -118,6 +118,35 @@ export interface CategoryDetail {
   recent: RecentLog[];
 }
 
+/** One completed/raw log row exposed to the Patterns surface (read-only). */
+export interface PatternLog {
+  category: string;
+  estimateMin: number;
+  actualMin: number | null;
+  status: LogStatus;
+  source: LogSource;
+  createdAt: number;
+}
+
+/** One category's rolling stats exposed to the Patterns surface. */
+export interface PatternCategoryStat {
+  categoryId: string;
+  n: number;
+  mEffective: number;
+  sharpness: number;
+}
+
+/**
+ * The cross-category snapshot the Patterns tab derives from. Assembled in ONE
+ * read so the db stays in the store layer (features never touch src/db). Carries a
+ * `nameOf` resolver so derivations can label categories without importing priors.
+ */
+export interface PatternsData {
+  categories: PatternCategoryStat[];
+  logs: PatternLog[];
+  nameOf: (categoryId: string) => string;
+}
+
 /** One tracked category's lifetime reclaim, for the hub's "biggest area" list. */
 export interface ReclaimByCategory {
   categoryId: string;
@@ -157,6 +186,8 @@ interface CalibrationState {
   applyLog: (input: ApplyLogParams) => Promise<LogResult>;
   loadCategoryDetail: (categoryId: string) => Promise<CategoryDetail>;
   loadReclaimSummary: () => Promise<ReclaimSummary>;
+  /** Cross-category snapshot for the read-only Patterns self-insight surface. */
+  loadPatternsData: () => Promise<PatternsData>;
   /**
    * CAPTURE-ONLY. Attach a free-form context tag (a reason) to a logged event.
    * Pure side-channel analytics: it NEVER trains the model, touches the
@@ -191,6 +222,10 @@ function startOfLocalDay(nowMs: number): number {
 /** How far back the today-reclaim scan reads raw events. A day rarely exceeds
  *  a handful of logs; this comfortably covers any realistic single day. */
 const TODAY_RECLAIM_SCAN_LIMIT = 200;
+
+/** How many recent events the Patterns surface scans. Generous (the "this week"
+ *  surprise + early/recent splits want history) but bounded so the read stays cheap. */
+const PATTERNS_SCAN_LIMIT = 500;
 
 export const useCalibrationStore = create<CalibrationState>((set, get) => ({
   logs: 0,
@@ -526,6 +561,39 @@ export const useCalibrationStore = create<CalibrationState>((set, get) => ({
       biggestArea,
       honestLogCount,
     };
+  },
+
+  loadPatternsData: async () => {
+    const db = await resolveDb(get, set);
+    const categoryStatsRepo = makeCategoryStatsRepo(db);
+    const taskEventsRepo = makeTaskEventsRepo(db);
+    const tracked = useCategoriesStore.getState().categories;
+
+    const categories: PatternCategoryStat[] = await Promise.all(
+      tracked.map(async (cat) => {
+        const stat = await categoryStatsRepo.get(cat.id);
+        return {
+          categoryId: cat.id,
+          n: stat.n,
+          mEffective: stat.mEffective,
+          sharpness: stat.sharpness,
+        };
+      }),
+    );
+
+    // One recent window across every category — the Patterns derivations only need
+    // est/actual/source/createdAt per log, never the full row.
+    const rows = await taskEventsRepo.listRecent(PATTERNS_SCAN_LIMIT);
+    const logs: PatternLog[] = rows.map((e) => ({
+      category: e.category,
+      estimateMin: e.estimateMin,
+      actualMin: e.actualMin,
+      status: e.status,
+      source: e.source,
+      createdAt: e.createdAt,
+    }));
+
+    return { categories, logs, nameOf: detailCategoryName };
   },
 
   setReason: async (eventId, value, source) => {
