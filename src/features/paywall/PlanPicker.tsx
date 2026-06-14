@@ -83,7 +83,10 @@ export function PlanPicker({
   const savings = savingsLabel(yearly, monthly);
 
   const titleStyle: TextStyle = { ...(type.bodyLg as unknown as TextStyle), color: t.colors.ink };
-  const noteStyle: TextStyle = { ...(type.caption as unknown as TextStyle), color: t.colors.inkSoft };
+  const noteStyle: TextStyle = {
+    ...(type.caption as unknown as TextStyle),
+    color: t.colors.inkSoft,
+  };
   const priceStyle: TextStyle = {
     fontFamily: 'Inter-Bold',
     fontSize: t.fontSize.lg,
@@ -129,8 +132,9 @@ export function PlanPicker({
               haptics.light();
               onSelect(pkg);
             }}
-            accessibilityRole="button"
-            accessibilityState={{ selected }}
+            accessibilityRole="radio"
+            accessibilityState={{ selected, checked: selected }}
+            accessibilityLabel={`${TITLE[pkg.duration]}, ${NOTE[pkg.duration]}, ${pkg.priceString}`}
             style={row}
           >
             <View style={{ flex: 1, gap: t.space[0.5] }}>

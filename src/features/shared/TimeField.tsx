@@ -172,7 +172,23 @@ export function TimeField({
     <View style={{ gap: t.space[3] }}>
       <TimeChips value={value} onChange={onChange} />
 
-      <View style={container}>
+      <View
+        style={container}
+        accessibilityRole="adjustable"
+        accessibilityLabel="Duration in minutes"
+        accessibilityValue={{
+          min: MIN,
+          max: MAX,
+          now: value ?? DEFAULT_START,
+          text: fmt(value ?? DEFAULT_START),
+        }}
+        accessibilityActions={[{ name: 'increment' }, { name: 'decrement' }]}
+        onAccessibilityAction={(e) => {
+          const current = value ?? DEFAULT_START;
+          if (e.nativeEvent.actionName === 'increment') onChange(Math.min(MAX, current + 1));
+          else if (e.nativeEvent.actionName === 'decrement') onChange(Math.max(MIN, current - 1));
+        }}
+      >
         <View style={highlight} pointerEvents="none" />
         <GestureDetector gesture={pan}>
           <Animated.View style={[{ paddingVertical: pad }, listStyle]}>

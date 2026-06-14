@@ -28,7 +28,8 @@ export default function CategoryDetailScreen() {
   const t = useTheme();
   const { category } = useLocalSearchParams<{ category: string }>();
   const categoryId = category ?? '';
-  const { detail, loading, adaptSpeed, setAdaptSpeed, resetCategory } = useCategoryDetail(categoryId);
+  const { detail, loading, adaptSpeed, setAdaptSpeed, resetCategory } =
+    useCategoryDetail(categoryId);
 
   const [confirming, setConfirming] = useState(false);
   const [toast, setToast] = useState<string | null>(null);
@@ -75,7 +76,11 @@ export default function CategoryDetailScreen() {
 
         {detail && !loading ? (
           <ScrollView
-            contentContainerStyle={{ gap: t.space[5], paddingTop: t.space[4], paddingBottom: t.space[16] }}
+            contentContainerStyle={{
+              gap: t.space[5],
+              paddingTop: t.space[4],
+              paddingBottom: t.space[16],
+            }}
             showsVerticalScrollIndicator={false}
           >
             {/* 1 — Hero: the honest number, with ripeness + progress folded in. */}
@@ -121,6 +126,7 @@ export default function CategoryDetailScreen() {
                     <Pressable
                       onPress={() => setConfirming(false)}
                       accessibilityRole="button"
+                      accessibilityLabel="Keep this category's learning"
                       style={styles(t).resetCancel}
                     >
                       <Text style={styles(t).resetCancelText}>Keep it</Text>
@@ -199,7 +205,10 @@ function styles(t: ReturnType<typeof useTheme>) {
       gap: t.space[2],
       minHeight: 44,
     } as ViewStyle,
-    resetLinkText: { ...(type.bodySm as unknown as TextStyle), color: t.colors.inkSoft } as TextStyle,
+    resetLinkText: {
+      ...(type.bodySm as unknown as TextStyle),
+      color: t.colors.inkSoft,
+    } as TextStyle,
     resetConfirmCopy: {
       ...(type.bodySm as unknown as TextStyle),
       color: t.colors.ink,
@@ -224,7 +233,10 @@ function styles(t: ReturnType<typeof useTheme>) {
       alignItems: 'center',
       justifyContent: 'center',
     } as ViewStyle,
-    resetConfirmText: { ...(type.bodySm as unknown as TextStyle), color: t.colors.onIndigo } as TextStyle,
+    resetConfirmText: {
+      ...(type.bodySm as unknown as TextStyle),
+      color: t.colors.onIndigo,
+    } as TextStyle,
     loading: { flex: 1, alignItems: 'center', justifyContent: 'center' } as ViewStyle,
     loadingText: { ...(type.body as unknown as TextStyle), color: t.colors.inkSoft } as TextStyle,
   };

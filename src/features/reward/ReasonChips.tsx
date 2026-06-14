@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { View, type ViewStyle, type TextStyle } from 'react-native';
-import Animated, { FadeIn, FadeInDown } from 'react-native-reanimated';
+import Animated, { FadeIn, FadeInDown, useReducedMotion } from 'react-native-reanimated';
 import { Chip } from '@/src/components/Chip';
 import { useTheme } from '@/src/theme/useTheme';
 import { type } from '@/src/theme/typography';
@@ -64,6 +64,7 @@ export function ReasonChips({
   category: string;
 }) {
   const t = useTheme();
+  const reducedMotion = useReducedMotion();
   const setReason = useCalibrationStore((s) => s.setReason);
 
   const header = direction === 'over' ? OVER_HEADER : UNDER_HEADER;
@@ -115,7 +116,7 @@ export function ReasonChips({
     <View style={wrap}>
       <Animated.Text
         key={headerText}
-        entering={FadeIn.duration(t.motion.base)}
+        entering={reducedMotion ? undefined : FadeIn.duration(t.motion.base)}
         style={prompt}
       >
         {headerText}
@@ -124,11 +125,15 @@ export function ReasonChips({
         {options.map((opt, i) => (
           <Animated.View
             key={opt.value}
-            entering={FadeInDown.duration(t.motion.base)
-              .delay(t.motion.draw + i * ENTER_STAGGER)
-              .springify()
-              .damping(t.motion.spring.damping)
-              .stiffness(t.motion.spring.stiffness)}
+            entering={
+              reducedMotion
+                ? undefined
+                : FadeInDown.duration(t.motion.base)
+                    .delay(t.motion.draw + i * ENTER_STAGGER)
+                    .springify()
+                    .damping(t.motion.spring.damping)
+                    .stiffness(t.motion.spring.stiffness)
+            }
           >
             <Chip
               label={opt.label}
