@@ -7,6 +7,9 @@ import { Platform } from 'react-native';
 const run = (fn: () => Promise<void>) => { if (Platform.OS !== 'web') fn().catch(() => {}); };
 
 export const haptics = {
+  // The native picker "tick" — the right texture for landing a single-select pick
+  // (chips/segments). Crisper + lighter than impact.light, safe to fire often.
+  selection: () => run(() => Haptics.selectionAsync()),
   light: () => run(() => Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light)),
   medium: () => run(() => Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium)),
   success: () => run(() => Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success)),

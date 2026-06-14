@@ -20,7 +20,9 @@ export const tokens = {
 
   // Control-height system — HIG-compliant touch targets (44pt floor). Buttons and
   // tappable controls size from here, so nothing is ad-hoc under the 44pt minimum.
-  size: { control: { sm: 44, md: 52, lg: 56 } },
+  // `coin` = the FocusCard play affordance — a touch smaller than a full md control
+  // so the disc reads as an accent, not a button competing with the card.
+  size: { control: { sm: 36, md: 44, lg: 52 }, coin: 40 },
 
   // Icon sizing scale — replaces inline 12/16/18/20/22/24/30 across the app.
   iconSize: { xs: 12, sm: 16, md: 20, lg: 24, xl: 32 },
@@ -37,15 +39,19 @@ export const tokens = {
   // set 0 to remove) all card borders app-wide. hairline/thin/thick stay for
   // dividers, inputs and accent edges, so tuning cards never disturbs them.
   // borderWidth: { hairline: 1, thin: 1.5, thick: 2, card: 1 },
-  borderWidth: { hairline: 0, thin: 1, thick: 2, card: 0 },
+  borderWidth: { hairline: 0, thin: 0, thick: 2, card: 0 },
 
   // Replaces scattered 0.3 / 0.4 / 0.6 opacities.
   opacity: { disabled: 0.4, pressed: 0.6 },
 
+  // Tactile scale feedback for tappable controls (chips, segments).
+  //   pressIn — finger-down dip; the control yields to the touch (only while held).
+  scale: { pressIn: 0.96 },
+
   // The numeric type scale — typography.ts (the role layer) derives every role
   // size from these, so the whole scale is editable in one place.
   fontSize: {
-    xs: 10, sm: 12, base: 14, md: 16, lg: 20, xl: 24, '2xl': 30, '3xl': 38,
+    '2xs': 8, xs: 10, sm: 12, base: 14, md: 16, lg: 20, xl: 24, '2xl': 30, '3xl': 38,
     // finer steps the role scale needs
     micro: 10, caption: 12, bodySm: 14, bodyLg: 16, subtitle: 22, title: 26, honest: 40, timerClock: 64, timer: 78,
   },
@@ -65,15 +71,22 @@ export const tokens = {
   // the category screen. The wax-cap rim width also lives here.
   // `stripMax` caps how many combs the Today HUD shows before a "+N" overflow tail
   // (the row is bounded so the vertical card never grows / clips with many combs).
-  honeycomb: { strip: 22, hub: 56, detail: 80, capRim: 1.5, stripMax: 6 },
+  // `pip` = the small SOLID hexagon used by the Today tier-progress meter (one pip
+  // per log in the current tier band) — distinct from the honey-FILL `strip` cell.
+  honeycomb: { strip: 22, hub: 56, detail: 80, pip: 15, capRim: 1.5, stripMax: 6 },
 
   // Progress-bar geometry (honey-fill track). `track` = bar height in RN points;
   // the fill reuses `radii.full` + `colors.accent`, the track `colors.surfaceSunken`.
-  progress: { track: 6 },
+  // gap* = the Today guess→plan calibration line (FocusCard / RunningFocusCard):
+  //   gapTrack = bar height; tickW/tickH = the live elapsed marker riding the bar.
+  progress: { track: 6, gapTrack: 8, tickW: 3, tickH: 16 },
 
   motion: {
     fast: 120, base: 220, slow: 360, press: 110, reveal: 600, draw: 950, sheet: 340,
     pulse: 700, toast: 300, honeyFill: 900, float: 3800,
+    // stagger = per-item delay in a left→right cascade (honeycomb pip reveal). Keep
+    // the whole cascade < ~500ms so it reads lively, not slow (motion-design budget).
+    stagger: 40,
     // drift = one full revolution of the RayBurst sunburst. Slow enough to stay
     // calm, fast enough to read as clearly moving (a wedge passes ~every 0.8s).
     drift: 14000,
@@ -106,6 +119,7 @@ export const tokens = {
       accent: '#EEAE4D',
       accentEdge: '#C68A30',
       accentSoft: '#FBEFD6', // low-emphasis amber fill
+      accentCoin: 'rgba(238,174,77,0.32)', // tint disc that still reads on accentSoft
       // RayBurst sunburst wedge fill. A deeper periwinkle than primarySoft so the
       // rays actually read on cream (primarySoft was near-invisible on the page bg).
       rayFill: '#BFB2F0',
@@ -153,6 +167,7 @@ export const tokens = {
       accent: '#EEAE4D',
       accentEdge: '#C68A30',
       accentSoft: 'rgba(238,174,77,0.18)',
+      accentCoin: 'rgba(238,174,77,0.28)', // tint disc that still reads on accentSoft
       // RayBurst wedge fill — indigo lifted just off the deep bg (the #8 look).
       rayFill: 'rgba(130,117,240,0.30)',
       amberText: '#EEAE4D',
@@ -189,7 +204,7 @@ export const tokens = {
     // wedge fill opacities applied to `colors.primarySoft`, at a single density.
     ray: { count: 18, opacity: 0.85, opacityAlt: 0.4 },
     stage: 240, // ray-burst stage edge (square)
-    bee: 120, // mascot size inside a hero burst
+    bee: 168, // mascot size inside a hero burst (fits the 240 stage → no layout push)
     beeFloat: 5, // ± vertical bee drift (calm ambient)
     coinBob: 3, // ± coin bob
     coinLift: 10, // coin mount-pop lift
