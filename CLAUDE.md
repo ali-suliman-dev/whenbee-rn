@@ -74,6 +74,15 @@ UI (src/app, src/components, src/features)
 
 **Path aliases:** `@/*` resolves to both `./` and `./src/*` (tsconfig + babel-plugin-module-resolver). `import/no-unresolved` is off because Metro resolves the alias.
 
+## Deferred / fast-follow (build later — not in the shipped MVP)
+
+These are intentionally **not built yet**. Build when prioritized; keep them off the on-device core loop.
+
+- **Feedback board (highest of these):** anonymous-default feature-request + vote board. Needs a backend not yet wired into the app — add `@supabase/supabase-js`, env keys (project URL + anon key), a `src/services/feedback.ts` guarded so a network failure never touches the loop, a Settings entry, and the `feature_requests`/`feature_votes` tables + **RLS** in the user's Supabase project. It is a **separate data class** — never task/calibration data. (Was Phase F.1; deferred by the founder.)
+- **Discoveries gallery:** banking aha/insight cards into a growing collection (`build-plan-final/03b §7`). The aha *card* already ships (category-detail); only the gallery surface + `discoveries` table defer.
+- **Native `WhenbeePresence` Swift module:** the widget/Live Activity targets are scaffolded (`docs/NATIVE-PRESENCE.md`) but the App-Group-write + ActivityKit module is linked on the device build; the JS bridge is a guarded no-op until then.
+- **Pro correlations + context tags** (the second paywall): the over/under reason *capture* ships (capture-only, model-isolated); only the correlation *read* + reason-aware honest number defer.
+
 ## TypeScript strictness
 
 `strict`, `noUncheckedIndexedAccess`, and `noImplicitOverride` are all on. Indexed access returns `T | undefined` — handle the undefined case; do not silence with `!` unless provably safe.
