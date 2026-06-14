@@ -1,10 +1,12 @@
 import { useEffect, useRef, useState } from 'react';
-import { View, Text, type ViewStyle, type TextStyle } from 'react-native';
+import { View, type ViewStyle, type TextStyle } from 'react-native';
+import Animated, { FadeIn, FadeInDown } from 'react-native-reanimated';
 import { Chip } from '@/src/components/Chip';
 import { useTheme } from '@/src/theme/useTheme';
 import { type } from '@/src/theme/typography';
 import { useCalibrationStore } from '@/src/stores/calibrationStore';
 import { analytics } from '@/src/services/analytics';
+import { ReasonGlyph, type ReasonGlyphKind } from './ReasonGlyph';
 import type { RunDirection } from './useReward';
 
 // ──────────────────────────────────────────────────────────────────────────────
@@ -25,22 +27,32 @@ interface ReasonOption {
   value: string;
   /** What the user reads. */
   label: string;
+  /** A refined leading illustration — turns a gray pill into something fun to tap. */
+  glyph: ReasonGlyphKind;
 }
 
 const OVER_HEADER = 'Where did the time go?';
 const UNDER_HEADER = 'What made it quick?';
+// Warm, honest closure after a tap — no overclaim (the tag is side-channel data),
+// no blame. Just acknowledges the note landed.
+const CONFIRM_HEADER = 'Good to know.';
 
 // Neutral, kind framings. Over-run owns the "took longer" reasons; under-run the
-// "went faster" ones. No "you got distracted / you failed" — only curiosity.
+// "went faster" ones. No "you got distracted / you failed" — only curiosity. A
+// leading illustration makes each one scannable and inviting to press.
 const OVER_OPTIONS: readonly ReasonOption[] = [
-  { value: 'interrupted', label: 'Got interrupted' },
-  { value: 'underestimated', label: 'Bigger than it looked' },
-  { value: 'context_switch', label: 'Pulled away' },
+  { value: 'interrupted', label: 'Got interrupted', glyph: 'interrupted' },
+  { value: 'underestimated', label: 'Bigger than it looked', glyph: 'bigger' },
+  { value: 'context_switch', label: 'Pulled away', glyph: 'pulled' },
 ];
 const UNDER_OPTIONS: readonly ReasonOption[] = [
-  { value: 'focused', label: 'In the zone' },
-  { value: 'overestimated', label: 'Smaller than it looked' },
+  { value: 'focused', label: 'In the zone', glyph: 'zone' },
+  { value: 'overestimated', label: 'Smaller than it looked', glyph: 'smaller' },
 ];
+
+// Chips land after the payoff card's reveal (t.motion.draw), then ping in
+// one-by-one with this per-chip stagger.
+const ENTER_STAGGER = 70;
 
 export function ReasonChips({
   eventId,
@@ -84,10 +96,10 @@ export function ReasonChips({
     });
   }
 
-  const wrap: ViewStyle = { gap: t.space[2], alignItems: 'center' };
+  const wrap: ViewStyle = { gap: t.space[3], alignItems: 'center' };
   const prompt: TextStyle = {
-    ...(type.caption as unknown as TextStyle),
-    color: t.colors.inkSoft,
+    ...(type.bodySm as unknown as TextStyle),
+    color: selected ? t.colors.accent : t.colors.inkSoft,
     textAlign: 'center',
   };
   const chipRow: ViewStyle = {
@@ -96,18 +108,35 @@ export function ReasonChips({
     justifyContent: 'center',
     gap: t.space[2],
   };
+  // Header swaps to a warm confirm once a reason is tagged — closure on the tap.
+  const headerText = selected ? CONFIRM_HEADER : header;
 
   return (
     <View style={wrap}>
-      <Text style={prompt}>{header}</Text>
+      <Animated.Text
+        key={headerText}
+        entering={FadeIn.duration(t.motion.base)}
+        style={prompt}
+      >
+        {headerText}
+      </Animated.Text>
       <View style={chipRow}>
-        {options.map((opt) => (
-          <Chip
+        {options.map((opt, i) => (
+          <Animated.View
             key={opt.value}
-            label={opt.label}
-            selected={selected === opt.value}
-            onPress={() => handleSelect(opt.value)}
-          />
+            entering={FadeInDown.duration(t.motion.base)
+              .delay(t.motion.draw + i * ENTER_STAGGER)
+              .springify()
+              .damping(t.motion.spring.damping)
+              .stiffness(t.motion.spring.stiffness)}
+          >
+            <Chip
+              label={opt.label}
+              icon={<ReasonGlyph kind={opt.glyph} active={selected === opt.value} />}
+              selected={selected === opt.value}
+              onPress={() => handleSelect(opt.value)}
+            />
+          </Animated.View>
         ))}
       </View>
     </View>
