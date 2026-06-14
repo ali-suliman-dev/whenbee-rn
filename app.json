@@ -15,7 +15,9 @@
         "NSSupportsLiveActivities": true
       },
       "entitlements": {
-        "com.apple.security.application-groups": ["group.com.whenbee.app"]
+        "com.apple.security.application-groups": [
+          "group.com.whenbee.app"
+        ]
       }
     },
     "android": {
@@ -60,7 +62,8 @@
           "project": "whenbee"
         }
       ],
-      "@bacons/apple-targets"
+      "@bacons/apple-targets",
+      "expo-localization"
     ],
     "experiments": {
       "typedRoutes": true,

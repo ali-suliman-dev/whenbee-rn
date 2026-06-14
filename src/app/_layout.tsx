@@ -8,6 +8,12 @@ import { AppProviders } from '@/src/providers/AppProviders';
 import { useTheme } from '@/src/theme/useTheme';
 import { useSettingsStore } from '@/src/stores/settingsStore';
 import { useTimerStore } from '@/src/stores/timerStore';
+import { setClockHour12 } from '@/src/lib/time';
+import { prefers24Hour } from '@/src/lib/clockPrefs';
+
+// Match every clock readout (Started/Done, planner, calendar) to the device's
+// "24-Hour Time" toggle. Read once at module load — it's a synchronous native const.
+setClockHour12(!prefers24Hour());
 
 SplashScreen.preventAutoHideAsync();
 
