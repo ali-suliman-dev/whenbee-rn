@@ -1,0 +1,80 @@
+- generic [active] [ref=e1]:
+  - heading "NEXT card + Running session — visual alternatives" [level=1] [ref=e2]
+  - paragraph [ref=e3]: "Same data, real tokens (dark mode). Lane A = the “NEXT” focus card before start. Lane B = what shows instead of NEXT once the timer is running — the slim pill grows up to carry the same context (honest target, your guess, the delta) plus the only thing that’s new: live time. No guilt, amber not red, indigo reserved for the live dot + the one primary action."
+  - generic [ref=e4]: Lane A · the “NEXT” card (before start)
+  - generic [ref=e5]:
+    - text: Fixing the floaty
+    - code [ref=e6]: ↑5m
+    - text: chip and the loose stack — honest number stays the hero, the guess becomes a quiet anchor it beats.
+  - generic [ref=e7]:
+    - generic [ref=e8]:
+      - generic [ref=e9]:
+        - generic [ref=e10]: NEXT · OUT THE DOOR
+        - generic [ref=e12]: Test 2
+        - generic [ref=e13]:
+          - generic [ref=e14]: ~10 min
+          - generic [ref=e15]: ↑ 5m vs your guess
+        - generic [ref=e17]: You guessed 5 min · learned on-device
+        - generic [ref=e18]: Start →
+      - generic [ref=e19]: A1 · Tighten current. Delta chip docks to the number and earns words (“vs your guess”). Provenance folds to one faint line. Fewer elements, one gap rhythm.
+    - generic [ref=e20]:
+      - generic [ref=e21]:
+        - generic [ref=e22]: NEXT · OUT THE DOOR
+        - generic [ref=e24]: Test 2
+        - generic [ref=e26]: ~10 min
+        - generic [ref=e28]:
+          - generic [ref=e30]: your guess 5
+          - generic [ref=e32]: honest 10
+        - generic [ref=e33]: based on your last 8 times · on-device
+        - generic [ref=e34]: Start →
+      - generic [ref=e35]: "A2 · Draw the calibration. A tiny track shows the gap between your guess and the honest number — the wedge of the whole app, made visible without a sentence. (microinteractions: signature moment.)"
+    - generic [ref=e36]:
+      - generic [ref=e37]:
+        - generic [ref=e38]: NEXT · OUT THE DOOR
+        - generic [ref=e40]: Test 2
+        - generic [ref=e41]:
+          - generic [ref=e42]:
+            - generic [ref=e43]: Honest
+            - generic [ref=e44]: ~10m
+          - generic [ref=e45]:
+            - generic [ref=e46]: You guessed
+            - generic [ref=e47]: 5m
+        - generic [ref=e48]: learned on-device
+        - generic [ref=e49]: Start →
+      - generic [ref=e50]: A3 · Split-stat. Two quiet columns share one baseline (CLAUDE.md sibling-column rule). Honest dominates by size; the guess sits beside it, no chip needed.
+  - generic [ref=e51]: Lane B · the running session (replaces NEXT)
+  - generic [ref=e52]: The pill from Image 1 grows into the NEXT slot and absorbs Image 2’s info. New data = live elapsed only; everything else it already knows (target 10m, guess 5m).
+  - generic [ref=e53]:
+    - generic [ref=e54]:
+      - generic [ref=e56]:
+        - generic [ref=e58]: Test 2
+        - generic [ref=e59]: 2:19 / ~10:00
+        - generic [ref=e60]: ›
+      - generic [ref=e64]: B1 · Pill+ (smallest step). Keep the slim pill; add elapsed/target and a 3px progress hairline with an amber tick where your guess (5m) sits. Pulsing dot = “live”. One-line, minimal risk.
+    - generic [ref=e65]:
+      - generic [ref=e66]:
+        - generic [ref=e67]: NOW · OUT THE DOOR
+        - generic [ref=e69]:
+          - generic [ref=e70]: Test 2
+          - generic [ref=e71]: running
+        - generic [ref=e72]:
+          - generic [ref=e73]: 2:19
+          - generic [ref=e74]: of ~10 min
+        - generic [ref=e79]: your guess
+        - generic [ref=e80]: ~7 min left · honest finish 9:18
+        - generic [ref=e81]:
+          - generic [ref=e82]: Open
+          - generic [ref=e83]: Done
+      - generic [ref=e84]: B2 · Live focus card. Same footprint as NEXT, so the screen doesn’t jump. Elapsed is the hero (mono), target/guess/remaining all present, finish clock answers “when am I done”. Open + Done inline.
+    - generic [ref=e85]:
+      - generic [ref=e86]:
+        - img [ref=e87]
+        - generic [ref=e91]:
+          - generic [ref=e92]: NOW
+          - generic [ref=e94]: Test 2
+          - generic [ref=e95]: 2:19 of ~10 min · 7 left
+          - generic [ref=e96]: guess 5m · finish 9:18
+        - generic [ref=e97]:
+          - generic [ref=e98]: ✓
+          - generic [ref=e99]: done
+      - generic [ref=e100]: B3 · Ring + receipt. Circular progress (fills toward the honest target, amber tick = your guess) makes “how far in” glanceable. Compact horizontal layout, tap card to open, ✓ to finish.

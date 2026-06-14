@@ -1,0 +1,50 @@
+- generic [ref=e2]:
+  - heading "A (pinned) + simplified takes" [level=1] [ref=e3]
+  - generic [ref=e4]:
+    - generic [ref=e5]:
+      - generic [ref=e6]: A0
+      - text: · full
+      - generic [ref=e7]: pinned ref
+    - generic [ref=e8]:
+      - img [ref=e10]
+      - generic [ref=e13]:
+        - generic [ref=e14]: Honestly
+        - generic [ref=e15]: ~10min
+      - generic [ref=e16]:
+        - generic [ref=e17]: +5m
+        - generic [ref=e18]: vs your guess
+    - generic [ref=e19]: "The reference. 5 elements: coin · label · number · delta-num · delta-sub. Two mismatched columns (value block vs delta block)."
+  - generic [ref=e20]:
+    - generic [ref=e21]:
+      - generic [ref=e22]: A1
+      - text: · trimmed
+      - generic [ref=e23]: recommend
+    - generic [ref=e24]:
+      - img [ref=e26]
+      - generic [ref=e29]:
+        - generic [ref=e30]: ~10min
+        - generic [ref=e31]: Honestly — +5m over your guess
+    - generic [ref=e32]: One left-aligned block, no second column to misalign. Number is unmistakably the hero; the delta survives as a quiet sub-line. Title-first, label folded into the sub. Cleanest read.
+  - generic [ref=e33]:
+    - generic [ref=e34]:
+      - generic [ref=e35]: A2
+      - text: · minimal — one line
+    - generic [ref=e36]:
+      - img [ref=e38]
+      - generic [ref=e41]:
+        - text: Honestly
+        - generic [ref=e42]: ~10m
+      - generic [ref=e43]: +5m vs guess
+    - generic [ref=e44]: Shortest, calmest, least vertical space. Reads like a sentence. Good if the screen is tight and you want the banner to whisper, not announce.
+  - generic [ref=e45]:
+    - generic [ref=e46]:
+      - generic [ref=e47]: D
+      - text: · confidence bar — unchanged
+    - generic [ref=e48]:
+      - generic [ref=e49]:
+        - generic [ref=e50]: Honestly
+        - generic [ref=e51]: ~10min
+      - generic [ref=e54]:
+        - generic [ref=e55]: your guess 5m
+        - generic [ref=e56]: typical ~10m
+    - generic [ref=e57]: Left as-is per your call. Spatial take — where honest sits vs the guess, on the honey-track motif.

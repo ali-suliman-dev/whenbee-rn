@@ -1,0 +1,103 @@
+- generic [active] [ref=e1]:
+  - generic [ref=e2]:
+    - heading "The problem · everything is indigo" [level=1] [ref=e3]
+    - generic [ref=e4]:
+      - generic [ref=e5]: Add-task today — current
+      - generic [ref=e6]: Category
+      - generic [ref=e7]:
+        - generic [ref=e8]: Cleaning
+        - generic [ref=e9]: Out the door
+        - generic [ref=e10]: Admin
+      - generic [ref=e11]: Your guess
+      - generic [ref=e12]:
+        - generic [ref=e13]: 5m
+        - generic [ref=e14]: 10m
+        - generic [ref=e15]: 15m
+        - generic [ref=e16]: 30m
+      - generic [ref=e17]:
+        - img [ref=e18]
+        - generic [ref=e21]: honest ~10 min · based on typical patterns
+      - generic [ref=e22]: Add & start timer
+      - generic [ref=e23]: Add to today
+      - generic [ref=e24]: 3 indigo fills fighting for the eye — chip, guess, banner, button. The honest number (the app's whole point) is buried mid-sentence at body size, and "based on typical patterns" is filler that eats half the pill.
+  - generic [ref=e25]:
+    - heading "Options · honest estimate" [level=1] [ref=e26]
+    - generic [ref=e27]:
+      - generic [ref=e28]:
+        - generic [ref=e29]: A
+        - text: · Honey insight
+        - generic [ref=e30]: pick
+      - generic [ref=e31]:
+        - img [ref=e33]
+        - generic [ref=e36]:
+          - generic [ref=e37]: Honestly
+          - generic [ref=e38]: ~10min
+        - generic [ref=e39]:
+          - generic [ref=e40]: +5m
+          - generic [ref=e41]: vs your guess
+      - generic [ref=e42]: Amber = the app's honey/ripen accent. Gives the insight its own identity so it stops fighting the indigo CTA. Number is the hero; the +5m delta makes the optimism-bias visible — the calibration payoff, shown not told.
+    - generic [ref=e43]:
+      - generic [ref=e44]:
+        - generic [ref=e45]: B
+        - text: · Quiet ledger
+      - generic [ref=e46]:
+        - generic [ref=e47]:
+          - text: Honest estimate
+          - generic [ref=e48]: learns your pace
+        - generic [ref=e49]: ~10min
+      - generic [ref=e50]: "Most restrained (emil/premium): no fill at all, just a hairline rule. Lets the indigo button be the only filled element on screen. Big right-aligned number carries it."
+    - generic [ref=e51]:
+      - generic [ref=e52]:
+        - generic [ref=e53]: C
+        - text: · Guess → honest
+      - generic [ref=e54]:
+        - generic [ref=e55]:
+          - generic [ref=e56]: You guessed
+          - generic [ref=e57]: 5m
+        - generic [ref=e58]: →
+        - generic [ref=e59]:
+          - generic [ref=e60]: Honestly
+          - generic [ref=e61]: ~10m
+        - generic [ref=e62]: your usual pace here
+      - generic [ref=e63]: "Most on-brand: visualises the bias itself (struck guess → real number). The calibration story in one glance. Strongest \"aha\", slightly busier."
+    - generic [ref=e64]:
+      - generic [ref=e65]:
+        - generic [ref=e66]: D
+        - text: · Confidence bar
+      - generic [ref=e67]:
+        - generic [ref=e68]:
+          - generic [ref=e69]: Honestly
+          - generic [ref=e70]: ~10min
+        - generic [ref=e73]:
+          - generic [ref=e74]: your guess 5m
+          - generic [ref=e75]: typical ~10m
+      - generic [ref=e76]: "Spatial: where the honest number sits relative to the guess. Reuses the honey-fill track language already in the app. Good if you want one consistent \"bar\" motif."
+    - generic [ref=e77]:
+      - generic [ref=e78]:
+        - generic [ref=e79]: E
+        - text: · Fixed pill (stay indigo)
+      - generic [ref=e80]:
+        - img [ref=e82]
+        - generic [ref=e85]:
+          - generic [ref=e86]: ~10 min
+          - generic [ref=e87]: your usual pace · learns as you go
+      - generic [ref=e88]: "Smallest change if you want to keep indigo: just fix the hierarchy — number big, disclaimer demoted to caption, icon in a coin. Still competes with the CTA though."
+  - generic [ref=e89]:
+    - heading "Color usage · the fix" [level=1] [ref=e90]
+    - generic [ref=e91]:
+      - generic [ref=e92]: 60 · 30 · 10 on this screen
+      - generic [ref=e93]:
+        - text: 60% neutral — page bg + surface chips/inputs carry the form.
+        - text: 30% ink — labels, the typed task, the number values.
+        - text: "10% accent, split by role:"
+        - text: • Indigo = the one action you take → the CTA + the current selection state (chips/guess). Exactly one filled indigo destination.
+        - text: • Amber = the honey/ripen payoff → the honest estimate. It's the bee's learned truth, so it earns the true accent.
+        - text: "Splitting action (indigo) from insight (amber) is what kills the \"everything's indigo\" mush and gives the screen a clear focal order: type → pick → see the honest number → act."
+        - text: "Invariant check: amber is reserved for honey/ripen/reward/optimism. The honest estimate is the calibration payoff — fits. If you'd rather keep amber strictly for reward screens, option B (neutral) or E (indigo) stay on the safe side."
+    - generic [ref=e94]:
+      - generic [ref=e95]: Copy · de-slopped
+      - generic [ref=e96]:
+        - text: ✗ "based on typical patterns" — filler, vague.
+        - text: "✓ no data yet: \"learns your pace\" / \"early estimate\""
+        - text: "✓ calibrated: \"your usual pace here\""
+        - text: Lead word "Honestly" does the framing — warm, no guilt, matches the product voice.

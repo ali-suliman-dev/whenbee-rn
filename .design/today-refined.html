@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<style>
+  :root{
+    --bg:#14151D; --surface:#1F2130; --raised:#292B3C; --sunken:#13141B;
+    --ink:#F5F2EC; --inkSoft:#A6A2AE; --inkFaint:rgba(245,242,236,0.34);
+    --primary:#8275F0; --primaryEdge:#5648b0; --primaryGlow:rgba(130,117,240,0.18);
+    --accent:#EEAE4D; --accentDeep:#E09A2E; --accentGlow:rgba(238,174,77,0.16);
+    --success:#33B07C; --hairline:rgba(255,255,255,0.07);
+  }
+  *{box-sizing:border-box;margin:0;padding:0;-webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility;}
+  body{
+    background:#070709;font-family:-apple-system,'SF Pro Display','SF Pro Text',system-ui,sans-serif;
+    color:var(--ink);padding:44px;display:flex;gap:46px;align-items:flex-start;justify-content:center;
+  }
+  .col{display:flex;flex-direction:column;gap:16px;}
+  .cap{font-size:13px;font-weight:650;color:#fff;letter-spacing:.2px;}
+  .cap small{color:#6c6c78;font-weight:500;}
+  .tabnum{font-variant-numeric:tabular-nums;font-feature-settings:"tnum" 1;}
+
+  /* ---------- phone ---------- */
+  .phone{
+    width:352px;height:762px;border-radius:46px;padding:0;
+    border:10px solid #25252c;box-shadow:0 30px 80px rgba(0,0,0,.6);overflow:hidden;position:relative;
+    background:
+      radial-gradient(120% 60% at 78% -4%, var(--primaryGlow) 0%, transparent 46%),
+      radial-gradient(120% 50% at 12% 2%, var(--accentGlow) 0%, transparent 40%),
+      var(--bg);
+    display:flex;flex-direction:column;
+  }
+  .pad{padding:0 24px;display:flex;flex-direction:column;flex:1;}
+  .status{height:46px;display:flex;align-items:flex-end;justify-content:space-between;padding:0 8px 2px;font-size:13px;font-weight:600;color:var(--ink);}
+
+  /* ---------- header ---------- */
+  .head{display:flex;align-items:flex-start;justify-content:space-between;margin-top:14px;}
+  .title{font-size:32px;font-weight:730;letter-spacing:-.8px;line-height:1;}
+  .uline{height:3px;width:58px;border-radius:9px;margin-top:9px;background:linear-gradient(90deg,var(--accent) 0 67%,rgba(255,255,255,0.10) 67% 100%);}
+  .ripe{font-size:11.5px;color:var(--inkSoft);margin-top:9px;letter-spacing:.1px;}
+  .ripe b{color:var(--accent);font-weight:650;}
+  .gear{color:var(--inkFaint);font-size:19px;margin-top:3px;}
+
+  /* ---------- hero (editorial, not a box) ---------- */
+  .hero{margin-top:34px;}
+  .kick{font-size:10.5px;font-weight:700;letter-spacing:2px;color:var(--inkSoft);text-transform:uppercase;}
+  .htitle{font-size:21px;font-weight:680;letter-spacing:-.3px;margin-top:8px;}
+  .numwrap{display:flex;align-items:baseline;gap:14px;margin-top:14px;}
+  .guess{font-size:15px;color:var(--inkFaint);text-decoration:line-through;text-decoration-thickness:1.5px;font-weight:560;}
+  .num{font-size:78px;font-weight:800;letter-spacing:-3.5px;line-height:.82;color:var(--ink);}
+  .num em{font-style:normal;font-size:22px;font-weight:600;letter-spacing:-.3px;color:var(--inkSoft);margin-left:3px;}
+  .delta{display:flex;align-items:center;gap:8px;margin-top:16px;}
+  .delta .pill{font-size:11.5px;font-weight:650;color:var(--accent);background:var(--accentGlow);padding:3px 9px;border-radius:99px;letter-spacing:.1px;}
+  .delta .by{font-size:12.5px;color:var(--inkSoft);}
+  .delta .by b{color:var(--ink);font-weight:650;}
+
+  /* start button — the single indigo fill */
+  .start{margin-top:26px;height:54px;border-radius:16px;background:linear-gradient(180deg,#8b7ef4,#7b6def);
+    box-shadow:0 4px 0 var(--primaryEdge),0 12px 24px var(--primaryGlow);
+    display:flex;align-items:center;justify-content:center;gap:10px;}
+  .start .tri{width:0;height:0;border-left:13px solid #14151D;border-top:8px solid transparent;border-bottom:8px solid transparent;}
+  .start span{font-size:16px;font-weight:700;color:#14151D;letter-spacing:.1px;}
+
+  /* ---------- divider ---------- */
+  .rule{height:1px;background:var(--hairline);margin:30px 0 6px;}
+
+  /* ---------- up next ---------- */
+  .sec{font-size:10.5px;font-weight:700;letter-spacing:1.8px;color:var(--inkFaint);text-transform:uppercase;margin:14px 0 2px;}
+  .row{display:flex;align-items:center;gap:14px;padding:13px 0;}
+  .rmeta{flex:1;min-width:0;}
+  .rtitle{font-size:16px;font-weight:600;letter-spacing:-.1px;}
+  .rcat{font-size:10px;font-weight:650;letter-spacing:1.3px;text-transform:uppercase;color:var(--inkFaint);margin-top:4px;}
+  .rnum{font-size:16px;font-weight:700;color:var(--ink);}
+  .rnum em{font-style:normal;font-size:11.5px;font-weight:600;color:var(--inkSoft);margin-left:2px;}
+  .rsep{height:1px;background:var(--hairline);}
+
+  /* ---------- done (recedes) ---------- */
+  .done{display:flex;align-items:center;gap:10px;margin-top:18px;padding:6px 0;}
+  .done .dot{width:6px;height:6px;border-radius:99px;background:var(--success);opacity:.7;}
+  .done span{font-size:12.5px;color:var(--inkFaint);}
+  .done span b{color:var(--inkSoft);font-weight:650;}
+  .done .more{margin-left:auto;font-size:12px;color:var(--inkFaint);}
+
+  .grow{flex:1;}
+  .fab{position:absolute;right:24px;bottom:100px;width:52px;height:52px;border-radius:99px;
+    background:var(--raised);border:1px solid var(--hairline);display:flex;align-items:center;justify-content:center;
+    font-size:26px;color:var(--primary);box-shadow:0 5px 14px rgba(0,0,0,.4);}
+  .tabbar{height:78px;background:rgba(18,19,25,.6);border-top:1px solid var(--hairline);display:flex;backdrop-filter:blur(20px);}
+  .tab{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:5px;font-size:10px;color:var(--inkFaint);}
+  .tab.on{color:var(--primary);}
+  .tab i{font-size:16px;font-style:normal;}
+
+  /* ---------- detail callouts ---------- */
+  .note{width:330px;background:#0e0e13;border:1px solid #1d1d25;border-radius:18px;padding:20px 22px;}
+  .note h4{font-size:12px;font-weight:700;color:#fff;letter-spacing:.2px;margin-bottom:4px;}
+  .note p{font-size:11.5px;line-height:1.5;color:#8a8a96;}
+  .note p b{color:var(--accent);font-weight:600;}
+  .swatches{display:flex;gap:8px;margin-top:14px;}
+  .sw{flex:1;height:34px;border-radius:8px;display:flex;align-items:flex-end;padding:4px;font-size:8px;color:rgba(255,255,255,.7);font-weight:600;}
+</style>
+</head>
+<body>
+
+<!-- ===================== FULL SCREEN ===================== -->
+<div class="col">
+  <div class="cap">Refined · <small>editorial calm — one number, one action</small></div>
+  <div class="phone">
+    <div class="pad">
+      <div class="status"><span class="tabnum">12:05</span><span>•••  ◢  ▮</span></div>
+
+      <div class="head">
+        <div>
+          <div class="title">Today</div>
+          <div class="uline"></div>
+          <div class="ripe">Honey ripening · <b>4 logs</b> to Thickening</div>
+        </div>
+        <div class="gear">⚙</div>
+      </div>
+
+      <div class="hero">
+        <div class="kick">Out the door</div>
+        <div class="htitle">Test 2</div>
+        <div class="numwrap">
+          <div class="guess tabnum">5</div>
+          <div class="num tabnum">10<em>min</em></div>
+        </div>
+        <div class="delta">
+          <div class="pill tabnum">+5 honest</div>
+          <div class="by tabnum">done by <b>12:15</b></div>
+        </div>
+        <div class="start"><div class="tri"></div><span>Start</span></div>
+      </div>
+
+      <div class="rule"></div>
+      <div class="sec">Up next</div>
+      <div class="row"><div class="rmeta"><div class="rtitle">Test</div><div class="rcat">Cleaning</div></div><div class="rnum tabnum">15<em>min</em></div></div>
+      <div class="rsep"></div>
+      <div class="row"><div class="rmeta"><div class="rtitle">Errands</div><div class="rcat">Out the door</div></div><div class="rnum tabnum">20<em>min</em></div></div>
+
+      <div class="done">
+        <div class="dot"></div>
+        <span class="tabnum"><b>2 finished</b> today · 38 min</span>
+        <span class="more">View ›</span>
+      </div>
+
+      <div class="grow"></div>
+    </div>
+    <div class="fab">+</div>
+    <div class="tabbar">
+      <div class="tab on"><i>⌂</i>Today</div><div class="tab"><i>▦</i>Plan</div><div class="tab"><i>✷</i>Whenbee</div><div class="tab"><i>⌁</i>Patterns</div>
+    </div>
+  </div>
+</div>
+
+<!-- ===================== DETAIL NOTES ===================== -->
+<div class="col">
+  <div class="cap">The craft, up close</div>
+
+  <div class="note">
+    <h4>1 · The honest number is the hero</h4>
+    <p>78px, weight 800, −3.5 tracking, tabular. Your <b>guessed 5</b> sits struck-through beside it — you literally watch optimism get corrected. That strike is the signature moment: the product's whole value, told in two glyphs.</p>
+  </div>
+
+  <div class="note">
+    <h4>2 · No guilt, only grounding</h4>
+    <p>Not "you'd have lost 5 min" (shame). Instead <b>+5 honest</b> and <b>done by 12:15</b> — a concrete finish time kills planning anxiety. Calibration framed as a gift, never a scold.</p>
+  </div>
+
+  <div class="note">
+    <h4>3 · Hierarchy by weight + air, not borders</h4>
+    <p>One indigo fill on screen (Start). Everything else is bare type on a warm-tinted ground, separated by hairlines and whitespace. Up-next rows are quiet. Done shrinks to a 6px dot + one line. The eye lands on the number, every time.</p>
+  </div>
+
+  <div class="note">
+    <h4>4 · Warmth in the dark</h4>
+    <p>Two faint radial glows up top — honey at the title, indigo at the action — so the screen reads warm and crafted, not cold navy soup. Honey accent appears 3 times total: underline, ripen text, the +5 pill.</p>
+    <div class="swatches">
+      <div class="sw" style="background:#14151D">bg</div>
+      <div class="sw" style="background:#8275F0;color:#14151D">indigo</div>
+      <div class="sw" style="background:#EEAE4D;color:#14151D">honey</div>
+      <div class="sw" style="background:#1F2130">surf</div>
+    </div>
+  </div>
+</div>
+
+</body>
+</html>

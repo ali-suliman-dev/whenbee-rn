@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<style>
+  :root{
+    --bg:#14151D; --surface:#1F2130; --raised:#292B3C; --sunken:#15161F;
+    --ink:#F4F1EA; --inkSoft:#ADA9B5; --inkFaint:rgba(244,241,234,0.40);
+    --primary:#8275F0; --primaryEdge:#6B5BE6; --primarySoft:rgba(130,117,240,0.22);
+    --accent:#EEAE4D; --accentSoft:rgba(238,174,77,0.16); --amberText:#EEAE4D;
+    --success:#33B07C; --hairline:rgba(255,255,255,0.08); --border:rgba(255,255,255,0.14);
+  }
+  *{box-sizing:border-box;margin:0;padding:0;-webkit-font-smoothing:antialiased;}
+  body{
+    background:#0a0a0f;font-family:-apple-system,'SF Pro Text','Inter',system-ui,sans-serif;
+    color:var(--ink);padding:36px;display:flex;gap:40px;align-items:flex-start;justify-content:center;
+  }
+  .col{display:flex;flex-direction:column;align-items:center;gap:14px;}
+  .caption{font-size:14px;font-weight:650;color:#fff;letter-spacing:.2px;}
+  .sub{font-size:11px;color:#777;max-width:320px;text-align:center;line-height:1.45;}
+  .phone{
+    width:340px;height:736px;background:var(--bg);border-radius:42px;padding:16px 18px 0;
+    border:9px solid #2a2a30;box-shadow:0 24px 60px rgba(0,0,0,.55);overflow:hidden;position:relative;
+    display:flex;flex-direction:column;
+  }
+  .status{height:30px;display:flex;align-items:center;justify-content:space-between;padding:0 6px;font-size:12px;color:var(--ink);font-weight:600;}
+  .h1{font-size:34px;font-weight:800;letter-spacing:-.5px;line-height:1;margin-top:8px;}
+  .datebar{display:flex;align-items:center;justify-content:space-between;margin-top:6px;}
+  .date{font-size:12px;color:var(--inkSoft);}
+  .gear{color:var(--inkSoft);font-size:18px;}
+  .eyebrow{font-size:10px;font-weight:700;letter-spacing:1.4px;color:var(--inkSoft);text-transform:uppercase;}
+
+  /* honey slim line */
+  .honeyline{display:flex;align-items:center;gap:10px;margin-top:16px;padding:2px;}
+  .hex{width:16px;height:16px;background:var(--accent);clip-path:polygon(25% 5%,75% 5%,100% 50%,75% 95%,25% 95%,0% 50%);}
+  .track{flex:1;height:5px;background:var(--sunken);border-radius:99px;overflow:hidden;}
+  .fill{height:100%;width:67%;background:var(--accent);border-radius:99px;}
+  .pct{font-size:12px;color:var(--inkSoft);font-variant-numeric:tabular-nums;}
+  .chev{color:var(--inkFaint);font-size:14px;}
+  .honeyfull{display:flex;align-items:center;gap:8px;margin-top:16px;font-size:12.5px;color:var(--inkSoft);}
+
+  /* hero focus card */
+  .hero{margin-top:18px;background:var(--surface);border-radius:22px;padding:18px;border:1px solid var(--hairline);}
+  .heroTop{display:flex;align-items:center;gap:14px;}
+  .play{width:44px;height:44px;border-radius:99px;background:var(--primary);display:flex;align-items:center;justify-content:center;flex-shrink:0;box-shadow:0 3px 0 var(--primaryEdge);}
+  .play.lg{width:54px;height:54px;}
+  .playtri{width:0;height:0;border-left:14px solid #14151D;border-top:9px solid transparent;border-bottom:9px solid transparent;margin-left:3px;}
+  .heroTitle{font-size:19px;font-weight:700;}
+  .heroNum{font-size:30px;font-weight:800;letter-spacing:-.5px;margin-top:2px;}
+  .heroNum small{font-size:15px;font-weight:600;color:var(--inkSoft);}
+  .heroMeta{font-size:12.5px;color:var(--inkSoft);margin-top:4px;}
+  .heroMeta b{color:var(--amberText);font-weight:700;}
+
+  /* section + rows */
+  .sec{font-size:10.5px;font-weight:700;letter-spacing:1.3px;color:var(--inkSoft);text-transform:uppercase;margin:22px 4px 4px;}
+  .row{display:flex;align-items:center;gap:12px;padding:11px 4px;border-bottom:1px solid var(--hairline);}
+  .row:last-child{border-bottom:none;}
+  .rowTitle{font-size:15px;font-weight:600;flex:1;}
+  .rowCat{font-size:11px;color:var(--inkFaint);font-weight:500;}
+  .rowNum{font-size:14px;font-weight:700;color:var(--ink);font-variant-numeric:tabular-nums;}
+  .rowNum small{font-size:11px;color:var(--inkSoft);font-weight:600;}
+  .rgo{color:var(--inkFaint);font-size:15px;}
+
+  /* done collapsed */
+  .donebar{display:flex;align-items:center;gap:10px;margin-top:18px;padding:12px 14px;background:var(--surface);border-radius:14px;border:1px solid var(--hairline);}
+  .check{width:18px;height:18px;border-radius:99px;background:rgba(51,176,124,.18);color:var(--success);display:flex;align-items:center;justify-content:center;font-size:11px;}
+  .doneText{flex:1;font-size:13px;color:var(--inkSoft);}
+  .doneText b{color:var(--ink);font-weight:700;}
+
+  /* timeline */
+  .tl{margin-top:18px;position:relative;padding-left:8px;}
+  .node{display:flex;gap:14px;position:relative;padding-bottom:4px;}
+  .rail{display:flex;flex-direction:column;align-items:center;width:18px;flex-shrink:0;}
+  .dot{width:13px;height:13px;border-radius:99px;border:2px solid var(--inkFaint);background:var(--bg);margin-top:4px;}
+  .dot.now{background:var(--primary);border-color:var(--primary);width:15px;height:15px;}
+  .dot.done{background:var(--success);border-color:var(--success);opacity:.6;}
+  .line{flex:1;width:2px;background:var(--hairline);margin:3px 0;}
+  .ndBody{flex:1;padding-bottom:16px;}
+  .ndHead{display:flex;align-items:center;gap:10px;}
+  .ndTitle{font-size:16px;font-weight:700;flex:1;}
+  .ndTitle.q{font-weight:600;font-size:15px;color:var(--ink);}
+  .ndTitle.dn{color:var(--inkSoft);font-weight:500;font-size:14px;}
+  .ndNum{font-size:14px;font-weight:700;font-variant-numeric:tabular-nums;}
+  .ndNum small{font-size:11px;color:var(--inkSoft);}
+  .ndMeta{font-size:12px;color:var(--inkSoft);margin-top:3px;}
+  .ndMeta b{color:var(--amberText);}
+  .miniplay{width:30px;height:30px;border-radius:99px;background:var(--primary);display:flex;align-items:center;justify-content:center;box-shadow:0 2px 0 var(--primaryEdge);}
+  .miniplay .playtri{border-left:9px solid #14151D;border-top:6px solid transparent;border-bottom:6px solid transparent;}
+
+  /* focus-mode */
+  .fmLabel{text-align:center;font-size:11px;font-weight:700;letter-spacing:1.2px;color:var(--inkSoft);text-transform:uppercase;margin-top:42px;}
+  .fmCard{margin:14px 4px 0;background:var(--surface);border-radius:24px;padding:30px 22px;border:1px solid var(--hairline);display:flex;flex-direction:column;align-items:center;gap:10px;text-align:center;}
+  .fmTitle{font-size:21px;font-weight:700;}
+  .fmNum{font-size:40px;font-weight:800;letter-spacing:-1px;}
+  .fmNum small{font-size:18px;font-weight:600;color:var(--inkSoft);}
+  .fmMeta{font-size:13px;color:var(--inkSoft);}
+  .fmMeta b{color:var(--amberText);}
+  .more{text-align:center;font-size:13px;color:var(--inkSoft);margin-top:34px;font-weight:600;}
+  .more span{color:var(--inkFaint);}
+
+  /* fab + tabbar */
+  .fab{position:absolute;right:22px;bottom:96px;width:54px;height:54px;border-radius:99px;background:var(--raised);border:1px solid var(--hairline);display:flex;align-items:center;justify-content:center;font-size:28px;color:var(--primary);box-shadow:0 4px 0 var(--border);}
+  .tabbar{position:absolute;left:0;right:0;bottom:0;height:72px;background:rgba(20,21,29,.92);border-top:1px solid var(--hairline);display:flex;}
+  .tab{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;font-size:10px;color:var(--inkSoft);}
+  .tab.on{color:var(--primary);}
+  .tab i{font-size:17px;font-style:normal;}
+  .grow{flex:1;}
+</style>
+</head>
+<body>
+
+<!-- ============ A: One hero, rest quiet ============ -->
+<div class="col">
+  <div class="caption">A · One hero, rest quiet</div>
+  <div class="sub">Fix hierarchy only. Honey→slim line. Focus = single hero. Borderless rows. Done collapsed.</div>
+  <div class="phone">
+    <div class="status"><span>12:05</span><span>●●● ▮▮</span></div>
+    <div class="datebar"><div><div class="h1">Today</div><div class="date" style="margin-top:6px">Sun · Jun 14</div></div><div class="gear">⚙</div></div>
+
+    <div class="honeyline"><div class="hex"></div><div class="track"><div class="fill"></div></div><div class="pct">67%</div><div class="chev">›</div></div>
+
+    <div class="hero">
+      <div class="heroTop">
+        <div class="play"><div class="playtri"></div></div>
+        <div style="flex:1">
+          <div class="heroTitle">Test 2</div>
+          <div class="heroNum">~10<small> min</small></div>
+        </div>
+      </div>
+      <div class="heroMeta">guessed 5 min → honest <b>10 min</b></div>
+    </div>
+
+    <div class="sec">Up next</div>
+    <div class="row"><div class="rowTitle">Test</div><div class="rowNum">~15<small> min</small></div><div class="rgo">›</div></div>
+    <div class="row"><div class="rowTitle">Errands</div><div class="rowNum">~20<small> min</small></div><div class="rgo">›</div></div>
+
+    <div class="donebar"><div class="check">✓</div><div class="doneText"><b>2 done</b> · 38 min reclaimed</div><div class="chev">⌄</div></div>
+
+    <div class="grow"></div>
+    <div class="fab">+</div>
+    <div class="tabbar">
+      <div class="tab on"><i>⌂</i>Today</div><div class="tab"><i>▦</i>Plan</div><div class="tab"><i>✺</i>Whenbee</div><div class="tab"><i>⌁</i>Patterns</div>
+    </div>
+  </div>
+</div>
+
+<!-- ============ B: Timeline agenda ============ -->
+<div class="col">
+  <div class="caption">B · Timeline agenda</div>
+  <div class="sub">One vertical rail: now→next→later→done. No cards. Focus = open top node. Honey = header chip.</div>
+  <div class="phone">
+    <div class="status"><span>12:05</span><span>●●● ▮▮</span></div>
+    <div class="datebar"><div class="h1">Today</div><div class="gear">⚙</div></div>
+    <div class="honeyfull"><div class="hex"></div>Ripening · 67% to Thickening</div>
+
+    <div class="tl">
+      <div class="node">
+        <div class="rail"><div class="dot now"></div><div class="line"></div></div>
+        <div class="ndBody">
+          <div class="ndHead"><div class="ndTitle">Test 2</div><div class="ndNum">~10<small> min</small></div><div class="miniplay"><div class="playtri"></div></div></div>
+          <div class="ndMeta">guessed 5 → honest <b>10 min</b></div>
+        </div>
+      </div>
+      <div class="node">
+        <div class="rail"><div class="dot"></div><div class="line"></div></div>
+        <div class="ndBody"><div class="ndHead"><div class="ndTitle q">Test</div><div class="ndNum">~15<small> min</small></div></div><div class="ndMeta">Getting ready</div></div>
+      </div>
+      <div class="node">
+        <div class="rail"><div class="dot"></div><div class="line"></div></div>
+        <div class="ndBody"><div class="ndHead"><div class="ndTitle q">Errands</div><div class="ndNum">~20<small> min</small></div></div></div>
+      </div>
+      <div class="node">
+        <div class="rail"><div class="dot done"></div><div class="line"></div></div>
+        <div class="ndBody"><div class="ndHead"><div class="ndTitle dn">Test · Cleaning</div><div class="ndNum" style="color:var(--inkSoft)">19<small> min</small></div></div></div>
+      </div>
+      <div class="node">
+        <div class="rail"><div class="dot done"></div></div>
+        <div class="ndBody"><div class="ndHead"><div class="ndTitle dn">Test · Cleaning</div><div class="ndNum" style="color:var(--inkSoft)">19<small> min</small></div></div></div>
+      </div>
+    </div>
+
+    <div class="grow"></div>
+    <div class="fab">+</div>
+    <div class="tabbar">
+      <div class="tab on"><i>⌂</i>Today</div><div class="tab"><i>▦</i>Plan</div><div class="tab"><i>✺</i>Whenbee</div><div class="tab"><i>⌁</i>Patterns</div>
+    </div>
+  </div>
+</div>
+
+<!-- ============ C: Focus mode ============ -->
+<div class="col">
+  <div class="caption">C · Focus mode</div>
+  <div class="sub">Only the next action, big + centered. Rest collapsed behind a count. Max calm, hides the list.</div>
+  <div class="phone">
+    <div class="status"><span>12:05</span><span>●●● ▮▮</span></div>
+    <div class="datebar"><div class="h1">Today</div><div class="gear">⚙</div></div>
+    <div class="honeyline"><div class="hex"></div><div class="track"><div class="fill"></div></div><div class="pct">67%</div></div>
+
+    <div class="fmLabel">Next out the door</div>
+    <div class="fmCard">
+      <div class="play lg"><div class="playtri"></div></div>
+      <div class="fmTitle">Test 2</div>
+      <div class="fmNum">~10<small> min</small></div>
+      <div class="fmMeta">guessed 5 min → honest <b>10 min</b></div>
+    </div>
+
+    <div class="more">⌄ 3 more today <span>· 2 done · 38 min</span></div>
+
+    <div class="grow"></div>
+    <div class="fab">+</div>
+    <div class="tabbar">
+      <div class="tab on"><i>⌂</i>Today</div><div class="tab"><i>▦</i>Plan</div><div class="tab"><i>✺</i>Whenbee</div><div class="tab"><i>⌁</i>Patterns</div>
+    </div>
+  </div>
+</div>
+
+</body>
+</html>
