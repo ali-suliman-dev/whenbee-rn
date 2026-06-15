@@ -98,6 +98,16 @@ export interface Insight {
   headline: string;
 }
 
+/** A banked aha — one distinct, never-expiring discovery card. Append-only. */
+export interface Discovery {
+  id: string;
+  categoryId: string;
+  multiplier: number;
+  honestForFifteen: number;
+  headline: string;
+  discoveredAt: number;
+}
+
 /** Rolling-multiplier series for the category-detail trend chart. */
 export interface TrendSeries {
   points: { loggedAt: number; multiplier: number }[];

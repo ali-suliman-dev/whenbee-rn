@@ -7,6 +7,7 @@ export { blendWithPrior, honestNumber, recurringHasEnoughData, resolveSuggestion
 export { sharpnessFromWindow, tierFor, logsToNextTier, tierBandProgress } from './sharpness';
 export type { TierBandProgress } from './sharpness';
 export { detectInsight } from './insight';
+export { shouldBankDiscovery } from './discovery';
 export { buildTrendSeries } from './trend';
 export { applyLog } from './update';
 export type { ApplyLogInput, ApplyLogResult } from './update';
