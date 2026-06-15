@@ -6,6 +6,7 @@ import {
   makeRecurringRepo,
   makeCompanionRepo,
   makeContextTagRepo,
+  makeDiscoveriesRepo,
   type Database,
 } from '@/src/db';
 import {
@@ -17,6 +18,7 @@ import {
   priorFor,
   resolveSuggestion,
   detectInsight,
+  shouldBankDiscovery,
   buildTrendSeries,
   keeperReached,
   driftHealthFromRecent,
@@ -36,6 +38,7 @@ import type {
   Tier,
   CalibrationConfidence,
   CalibrationSummary,
+  Discovery,
   HonestRange,
   Insight,
   ReasonInsight,
@@ -237,6 +240,8 @@ export interface ReclaimSummary {
   honestLogCount: number;
   /** The companion's 6-stage presence, derived from the monotonic fuel row. */
   companion: CompanionPresence;
+  /** Lifetime count of banked distinct discoveries (monotonic). */
+  discoveryCount: number;
 }
 
 /** Display name for a seed category; title-cases a custom slug otherwise. */
@@ -267,6 +272,8 @@ interface CalibrationState {
   applyLog: (input: ApplyLogParams) => Promise<LogResult>;
   loadCategoryDetail: (categoryId: string) => Promise<CategoryDetail>;
   loadReclaimSummary: () => Promise<ReclaimSummary>;
+  /** The banked distinct-discovery gallery, newest-first, plus the live count. */
+  loadDiscoveries: () => Promise<{ discoveries: Discovery[]; discoveryCount: number }>;
   /** Cross-category snapshot for the read-only Patterns self-insight surface. */
   loadPatternsData: () => Promise<PatternsData>;
   /** READ-ONLY. Reason correlations for the Pro "what steals your time" surface.
@@ -518,10 +525,43 @@ export const useCalibrationStore = create<CalibrationState>((set, get) => ({
     const tierAfter = tierFor(result.category.sharpness);
     const leveledUp = result.counted && tierAfter !== tierBefore;
 
+    // 8b. Banked discovery — compute the insight ONCE on the write path. Banking
+    //     is real state (not analytics), so it runs BEFORE the fire-and-forget try
+    //     below: a persistence failure must surface, not be silently swallowed.
+    //     Only a counted log can produce a qualifying insight.
+    const ratio = clampRatio(input.estimateMin, input.actualMin);
+    const insight = result.counted
+      ? detectInsight({
+          categoryId: input.category,
+          n: result.category.n,
+          mEffective: result.category.mEffective,
+          // Ordered ln-ratios: the pre-log window plus this counted log.
+          orderedLogRatios: [...recentClampedRatios, ratio].map((r) => Math.log(r)),
+        })
+      : null;
+    if (insight) {
+      const discoveriesRepo = makeDiscoveriesRepo(db);
+      const last = await discoveriesRepo.lastForCategory(insight.categoryId);
+      if (
+        shouldBankDiscovery({
+          candidateMultiplier: insight.multiplier,
+          lastBankedMultiplier: last?.multiplier ?? null,
+        })
+      ) {
+        await discoveriesRepo.bank({
+          id: makeId(nowMs),
+          categoryId: insight.categoryId,
+          multiplier: insight.multiplier,
+          honestForFifteen: insight.honestForFifteen,
+          headline: insight.headline,
+          discoveredAt: nowMs,
+        });
+      }
+    }
+
     // 9. Side-effects — fire-and-forget; never block or throw into the caller.
     try {
       if (result.counted) haptics.success();
-      const ratio = clampRatio(input.estimateMin, input.actualMin);
       const entryType = input.source === 'timed' ? 'timed' : 'retro';
       analytics.capture('task_logged', {
         category: input.category,
@@ -559,23 +599,24 @@ export const useCalibrationStore = create<CalibrationState>((set, get) => ({
       }
 
       // aha_shown: fire once per category at the moment the discovery first
-      // qualifies on the write path (the canonical surfacing point). Build the
-      // ordered log-ratios from the pre-log window plus this counted log.
-      if (result.counted) {
-        const orderedLogRatios = [...recentClampedRatios, ratio].map((r) => Math.log(r));
-        const insight = detectInsight({
-          categoryId: input.category,
+      // qualifies on the write path (the canonical surfacing point). Reuses the
+      // `insight` computed above (8b) so it isn't detected twice.
+      if (insight && claimAha(input.category)) {
+        analytics.capture('aha_shown', {
+          category: input.category,
+          multiplier: insight.multiplier,
           n: result.category.n,
-          mEffective: result.category.mEffective,
-          orderedLogRatios,
         });
-        if (insight && claimAha(input.category)) {
-          analytics.capture('aha_shown', {
-            category: input.category,
-            multiplier: insight.multiplier,
-            n: result.category.n,
-          });
-        }
+      }
+
+      // discovery_unlocked: a banking-intent marker for every qualifying insight.
+      // Analytics-only here (may be swallowed) — the bank WRITE already happened
+      // above in 8b, outside this try, so it can never be lost.
+      if (insight) {
+        analytics.capture('discovery_unlocked', {
+          categoryId: insight.categoryId,
+          multiplier: insight.multiplier,
+        });
       }
 
       if (result.reclaimDeltaMin >= 1) {
@@ -729,7 +770,25 @@ export const useCalibrationStore = create<CalibrationState>((set, get) => ({
       biggestArea,
       honestLogCount,
       companion: presence,
+      discoveryCount: companion.discoveryCount,
     };
+  },
+
+  loadDiscoveries: async () => {
+    const db = await resolveDb(get, set);
+    // Newest-first card list (capped) plus the monotonic lifetime count. Map the
+    // db rows to the domain Discovery shape so the hub never sees a db DTO.
+    const rows = await makeDiscoveriesRepo(db).list(50);
+    const discoveryCount = (await makeCompanionRepo(db).get()).discoveryCount;
+    const discoveries: Discovery[] = rows.map((r) => ({
+      id: r.id,
+      categoryId: r.categoryId,
+      multiplier: r.multiplier,
+      honestForFifteen: r.honestForFifteen,
+      headline: r.headline,
+      discoveredAt: r.discoveredAt,
+    }));
+    return { discoveries, discoveryCount };
   },
 
   loadPatternsData: async () => {

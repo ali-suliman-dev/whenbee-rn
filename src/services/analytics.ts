@@ -50,6 +50,7 @@ export interface AppEventProps {
   tier_up: { from_tier: TierName; to_tier: TierName };
   cell_capped: { tier: TierName };
   aha_shown: { category: string; multiplier: number; n: number };
+  discovery_unlocked: { categoryId: string; multiplier: number };
 
   // ── Reclaim ──────────────────────────────────────────────────────────────────
   reclaim_deposit: { minutes: number; category: string; source: string };
