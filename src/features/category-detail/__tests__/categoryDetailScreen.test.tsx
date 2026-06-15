@@ -9,6 +9,7 @@ const setAdaptSpeed = jest.fn();
 jest.mock('expo-router', () => ({
   router: { back: jest.fn(), push: jest.fn() },
   useLocalSearchParams: () => ({ category: 'cleaning' }),
+  useFocusEffect: (cb: () => void) => cb(),
 }));
 
 const T0 = 1_700_000_000_000;

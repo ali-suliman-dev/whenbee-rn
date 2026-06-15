@@ -2,6 +2,12 @@ import { render, screen, waitFor } from '@testing-library/react-native';
 import Patterns from '@/src/app/(tabs)/patterns';
 import { useCalibrationStore, type PatternsData } from '@/src/stores/calibrationStore';
 
+// Mock expo-router: useFocusEffect runs the callback once (mirrors an immediate
+// focus) so usePatterns' on-focus refresh path is exercised without navigation.
+jest.mock('expo-router', () => ({
+  useFocusEffect: (cb: () => void) => cb(),
+}));
+
 // ──────────────────────────────────────────────────────────────────────────────
 // Screen test: seeded data → cards render; empty data → the calm empty state (no
 // card, no scold).

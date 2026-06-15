@@ -1,4 +1,5 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useState } from 'react';
+import { useFocusEffect } from 'expo-router';
 import { useCalibrationStore, type CategoryDetail } from '@/src/stores/calibrationStore';
 import { useCategoriesStore } from '@/src/stores/categoriesStore';
 import type { AdaptSpeed } from '@/src/domain/types';
@@ -38,9 +39,13 @@ export function useCategoryDetail(categoryId: string): UseCategoryDetailResult {
     setLoading(false);
   }, [categoryId, loadCategoryDetail]);
 
-  useEffect(() => {
-    void refresh();
-  }, [refresh]);
+  // Refresh on focus — returning here after logging a task for this category
+  // (timer/retro elsewhere) must re-read the snapshot, not show the mount-time one.
+  useFocusEffect(
+    useCallback(() => {
+      void refresh();
+    }, [refresh]),
+  );
 
   const setAdaptSpeed = useCallback(
     (speed: AdaptSpeed) => {

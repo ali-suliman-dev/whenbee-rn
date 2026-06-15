@@ -1,4 +1,5 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useRef, useState } from 'react';
+import { useFocusEffect } from 'expo-router';
 import {
   clampRatio,
   PERSONAL_MIN_LOGS,
@@ -343,16 +344,24 @@ export function usePatterns(nowMs: number = Date.now()): UsePatternsResult {
   const loadPatternsData = useCalibrationStore((s) => s.loadPatternsData);
   const [view, setView] = useState<PatternsView | null>(null);
   const [loading, setLoading] = useState(true);
+  // Freeze "now" at first render. The default `Date.now()` is recomputed every
+  // render; threading it through the refresh/effect deps would re-query the DB on
+  // every render (a self-perpetuating refetch loop). A ref pins it once.
+  const nowRef = useRef(nowMs);
 
   const refresh = useCallback(async () => {
     const data = await loadPatternsData();
-    setView(derivePatterns(data, nowMs));
+    setView(derivePatterns(data, nowRef.current));
     setLoading(false);
-  }, [loadPatternsData, nowMs]);
+  }, [loadPatternsData]);
 
-  useEffect(() => {
-    void refresh();
-  }, [refresh]);
+  // Re-derive on tab focus — a log in another tab won't push to this hook, so the
+  // insight cards are recomputed every time the user enters Patterns.
+  useFocusEffect(
+    useCallback(() => {
+      void refresh();
+    }, [refresh]),
+  );
 
   return { view, loading };
 }
