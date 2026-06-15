@@ -33,6 +33,23 @@ describe('honestRangeFor', () => {
     expect(noisy.highMinutes - noisy.lowMinutes).toBeGreaterThan(tight.highMinutes - tight.lowMinutes);
   });
 });
+describe('honestRangeFor — brackets honest for all sizes (regression)', () => {
+  it('keeps low ≤ honest ≤ high on the 5-grid for honest 5..120, tight and noisy', () => {
+    const tight = [1.9, 2.0, 2.0, 2.1];
+    const noisy = [1.0, 3.0, 1.1, 2.9];
+    for (let honest = 5; honest <= 120; honest += 1) {
+      for (const ratios of [tight, noisy]) {
+        const r = honestRangeFor({ honestMinutes: honest, clampedRatios: ratios });
+        expect(r.lowMinutes % 5).toBe(0);
+        expect(r.highMinutes % 5).toBe(0);
+        expect(r.lowMinutes).toBeGreaterThanOrEqual(5);
+        expect(r.lowMinutes).toBeLessThanOrEqual(honest);
+        expect(honest).toBeLessThanOrEqual(r.highMinutes);
+        expect(r.lowMinutes).toBeLessThanOrEqual(r.highMinutes);
+      }
+    }
+  });
+});
 describe('reservePriceVisible', () => {
   it('offers the founder reserve only before any category is honest', () => {
     expect(reservePriceVisible('raw')).toBe(true);

@@ -36,15 +36,19 @@ interface RangeInput {
   clampedRatios: number[];
 }
 
-function round5(min: number): number {
-  return Math.max(5, Math.round(min / 5) * 5);
+function floor5(min: number): number {
+  return Math.max(5, Math.floor(min / 5) * 5);
+}
+
+function ceil5(min: number): number {
+  return Math.max(5, Math.ceil(min / 5) * 5);
 }
 
 export function honestRangeFor({ honestMinutes, clampedRatios }: RangeInput): HonestRange {
   const cv = coefficientOfVariation(clampedRatios);
   const halfWidth = Math.min(RANGE_MAX_HALF_WIDTH, Math.max(RANGE_MIN_HALF_WIDTH, cv));
-  const low = round5(Math.min(honestMinutes, honestMinutes * (1 - halfWidth)));
-  const high = round5(Math.max(honestMinutes, honestMinutes * (1 + halfWidth)));
+  const low = Math.min(floor5(honestMinutes), floor5(honestMinutes * (1 - halfWidth)));
+  const high = Math.max(ceil5(honestMinutes), ceil5(honestMinutes * (1 + halfWidth)));
   return { lowMinutes: low, highMinutes: high };
 }
 
