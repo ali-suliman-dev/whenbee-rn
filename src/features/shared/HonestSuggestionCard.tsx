@@ -2,6 +2,7 @@ import { View, type TextStyle, type ViewStyle } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { AppText } from '@/src/components/AppText';
 import { useTheme } from '@/src/theme/useTheme';
+import type { CalibrationConfidence, HonestRange } from '@/src/domain/types';
 
 // ──────────────────────────────────────────────────────────────────────────────
 // HonestSuggestionCard — the live calibration payoff (Add Task / live banners).
@@ -20,12 +21,21 @@ import { useTheme } from '@/src/theme/useTheme';
 export function HonestSuggestionCard({
   honestMinutes,
   guessMinutes,
+  confidence,
+  range,
 }: {
   honestMinutes: number;
   guessMinutes: number;
+  /** OPTIONAL. When omitted (live-guess banners), the tight line renders as before. */
+  confidence?: CalibrationConfidence;
+  /** OPTIONAL band. Shown only with a non-honest confidence; else degrade to tight. */
+  range?: HonestRange | null;
 }) {
   const t = useTheme();
   const delta = honestMinutes - guessMinutes;
+  // Only show the band when the caller supplied both a learning confidence and a
+  // range. Live-guess hooks pass neither, so the banner keeps its current shape.
+  const showRange = confidence !== undefined && confidence !== 'honest' && range != null;
 
   const card: ViewStyle = {
     flexDirection: 'row',
@@ -72,30 +82,43 @@ export function HonestSuggestionCard({
     color: t.colors.accent,
   };
   const moreMuted: TextStyle = { fontSize: t.fontSize.sm, color: t.colors.inkSoft };
+  const learningSuffix: TextStyle = { fontSize: t.fontSize.sm, color: t.colors.inkSoft };
+
+  const a11yLabel = showRange && range
+    ? `Honest range ${range.lowMinutes} to ${range.highMinutes} minutes, still learning`
+    : delta > 0
+      ? `Honest estimate about ${honestMinutes} minutes, ${delta} more than your guess`
+      : `Honest estimate about ${honestMinutes} minutes`;
 
   return (
-    <View
-      style={card}
-      accessibilityLabel={
-        delta > 0
-          ? `Honest estimate about ${honestMinutes} minutes, ${delta} more than your guess`
-          : `Honest estimate about ${honestMinutes} minutes`
-      }
-    >
+    <View style={card} accessibilityLabel={a11yLabel}>
       <View style={coin}>
         <Ionicons name="trending-up" size={t.iconSize.sm} color={t.colors.accent} />
       </View>
       <View style={line}>
         <AppText style={lead}>Honestly</AppText>
-        <AppText style={num}>~{honestMinutes}</AppText>
-        <AppText style={unit}>m</AppText>
-        {delta > 0 ? (
+        {showRange && range ? (
           <>
+            <AppText style={num}>
+              {range.lowMinutes}–{range.highMinutes}
+            </AppText>
+            <AppText style={unit}>m</AppText>
             <AppText style={dot}>·</AppText>
-            <AppText style={more}>+{delta}m</AppText>
-            <AppText style={moreMuted}> more</AppText>
+            <AppText style={learningSuffix}>still learning</AppText>
           </>
-        ) : null}
+        ) : (
+          <>
+            <AppText style={num}>~{honestMinutes}</AppText>
+            <AppText style={unit}>m</AppText>
+            {delta > 0 ? (
+              <>
+                <AppText style={dot}>·</AppText>
+                <AppText style={more}>+{delta}m</AppText>
+                <AppText style={moreMuted}> more</AppText>
+              </>
+            ) : null}
+          </>
+        )}
       </View>
     </View>
   );
