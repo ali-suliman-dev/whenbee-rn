@@ -35,7 +35,7 @@ import { PlanPicker } from './PlanPicker';
 
 const APPLE_MANAGE_SUBS_URL = 'https://apps.apple.com/account/subscriptions';
 
-type Trigger = 'make_day_honest' | 'settings_upgrade';
+type Trigger = 'make_day_honest' | 'settings_upgrade' | 'steals_your_time';
 
 /** Earned-readiness framing for the lead heading. */
 type Readiness = 'pre' | 'honest';
@@ -57,7 +57,7 @@ const BENEFITS = [
 ] as const;
 
 function isTrigger(v: unknown): v is Trigger {
-  return v === 'make_day_honest' || v === 'settings_upgrade';
+  return v === 'make_day_honest' || v === 'settings_upgrade' || v === 'steals_your_time';
 }
 
 /** Map a package to its analytics plan name. */

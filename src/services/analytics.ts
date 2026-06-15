@@ -82,7 +82,10 @@ export interface AppEventProps {
   widget_engaged: { surface: 'home' | 'lock' | 'live_activity' };
 
   // ── Monetization ─────────────────────────────────────────────────────────────
-  paywall_view: { trigger: 'make_day_honest' | 'settings_upgrade'; readiness?: 'pre' | 'honest' };
+  paywall_view: {
+    trigger: 'make_day_honest' | 'settings_upgrade' | 'steals_your_time';
+    readiness?: 'pre' | 'honest';
+  };
   founder_reserve: { result: 'reserved' };
   plan_selected: { plan: 'yearly' | 'lifetime' | 'monthly' };
   trial_started: { plan: string; price: number; result: string };
