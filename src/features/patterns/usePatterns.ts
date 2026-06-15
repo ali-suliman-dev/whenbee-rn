@@ -4,7 +4,9 @@ import {
   clampRatio,
   PERSONAL_MIN_LOGS,
   honestNumber,
+  confidenceFor,
 } from '@/src/engine';
+import type { CalibrationConfidence } from '@/src/domain/types';
 import { useCalibrationStore, type PatternsData, type PatternLog } from '@/src/stores/calibrationStore';
 
 // ──────────────────────────────────────────────────────────────────────────────
@@ -101,6 +103,10 @@ export interface CalibrationMapRow {
   honestMin: number;
   multiplier: number;
   sampleSize: number;
+  /** Earned-readiness (raw→setting→honest) for this category — drives the dial.
+   *  Derived from sample size + spread of THIS category's clamped ratios; SEPARATE
+   *  from the monotonic honey tier, so it can move either way. */
+  confidence: CalibrationConfidence;
 }
 
 export interface PatternsView {
@@ -307,14 +313,22 @@ export function deriveCalibrationMap(data: PatternsData): CalibrationMapRow[] {
     .filter((c) => c.n > 0)
     .slice()
     .sort((a, b) => b.n - a.n)
-    .map((c) => ({
-      categoryId: c.categoryId,
-      categoryName: data.nameOf(c.categoryId),
-      guessMin: 15,
-      honestMin: honestNumber(15, c.mEffective),
-      multiplier: c.mEffective,
-      sampleSize: c.n,
-    }));
+    .map((c) => {
+      // Confidence reads THIS category's completed-log spread, not the aggregate —
+      // same clamped ratios the engine trains on (actualMin present & > 0).
+      const clampedRatios = ratiosOf(
+        completedLogs(data.logs.filter((l) => l.category === c.categoryId && (l.actualMin ?? 0) > 0)),
+      );
+      return {
+        categoryId: c.categoryId,
+        categoryName: data.nameOf(c.categoryId),
+        guessMin: 15,
+        honestMin: honestNumber(15, c.mEffective),
+        multiplier: c.mEffective,
+        sampleSize: c.n,
+        confidence: confidenceFor({ n: c.n, clampedRatios }),
+      };
+    });
 }
 
 /** Run every derivation over one snapshot — the whole tab's view-model. */

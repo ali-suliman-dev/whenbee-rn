@@ -62,4 +62,58 @@ describe('Patterns screen', () => {
     // The empty state must NOT show when cards are present.
     expect(screen.queryByText('Your patterns are on the way')).toBeNull();
   });
+
+  it('shows the readiness dial filled to honest for a settled category', async () => {
+    setPatternsData({
+      nameOf: (id) => (id === 'admin' ? 'Admin & email' : id),
+      categories: [{ categoryId: 'admin', n: 8, mEffective: 2.0, sharpness: 60 }],
+      // Tight 2× cluster, n≥6 → confidence 'honest' → all 3 pips lit.
+      logs: Array.from({ length: 8 }, (_, i) => ({
+        category: 'admin',
+        estimateMin: 10,
+        actualMin: 20,
+        status: 'completed' as const,
+        source: 'timed' as const,
+        createdAt: NOW - (8 - i) * DAY,
+      })),
+    });
+
+    render(<Patterns />);
+
+    await waitFor(() => {
+      expect(screen.getByText('YOUR HONEST MAP')).toBeOnTheScreen();
+    });
+    // Dial exposes its filled-step count via the progressbar label (honest = 3 of 3).
+    expect(screen.getByLabelText('Readiness: 3 of 3')).toBeOnTheScreen();
+    // Warm, no-guilt framing line (single honest area).
+    expect(screen.getByText('One area reads honest now. The rest are catching up.')).toBeOnTheScreen();
+  });
+
+  it('shows a partially-filled dial for a raw category', async () => {
+    setPatternsData({
+      nameOf: (id) => id,
+      categories: [{ categoryId: 'admin', n: 1, mEffective: 2.0, sharpness: 20 }],
+      logs: [
+        {
+          category: 'admin',
+          estimateMin: 10,
+          actualMin: 20,
+          status: 'completed' as const,
+          source: 'timed' as const,
+          createdAt: NOW - DAY,
+        },
+      ],
+    });
+
+    render(<Patterns />);
+
+    await waitFor(() => {
+      expect(screen.getByText('YOUR HONEST MAP')).toBeOnTheScreen();
+    });
+    // raw → only the first pip lit (1 of 3).
+    expect(screen.getByLabelText('Readiness: 1 of 3')).toBeOnTheScreen();
+    expect(
+      screen.getByText('Your areas are still settling. A few more logs and the numbers sharpen.'),
+    ).toBeOnTheScreen();
+  });
 });
