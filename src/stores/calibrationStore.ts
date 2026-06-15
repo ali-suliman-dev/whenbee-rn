@@ -18,6 +18,9 @@ import {
   resolveSuggestion,
   detectInsight,
   buildTrendSeries,
+  keeperReached,
+  driftHealthFromRecent,
+  TIERS,
   CATEGORY_NAMES,
 } from '@/src/engine';
 import type {
@@ -249,6 +252,11 @@ export const useCalibrationStore = create<CalibrationState>((set, get) => ({
       };
     }
     set({ statsByCategory: next });
+
+    // Seed the companion's per-install presence seed exactly once. Date.now is
+    // allowed here (store layer) — the engine stays clock-free. setSeed is a
+    // no-op when a seed already exists, so this is safe on every hydrate.
+    await makeCompanionRepo(db).ensureSeed(() => (Date.now() % 1_000_000) + 1);
   },
 
   applyLog: async (input) => {
@@ -350,6 +358,36 @@ export const useCalibrationStore = create<CalibrationState>((set, get) => ({
           mEffective: result.recurring.mEffective,
           updatedAt: nowMs,
         });
+      }
+
+      // --- Companion fuel: only a counted log feeds the three-layer growth model.
+      // Layer 1 (lifetime nectar): +1 per counted log, monotonic by construction.
+      await companionRepo.bumpNectar();
+
+      // Layer 2 (max tier): monotonic — raiseTier keeps the running max, never
+      // regresses. Index the post-update sharpness into the canonical tier ladder.
+      const tierIdxAfter = TIERS.indexOf(tierFor(result.category.sharpness));
+      if (tierIdxAfter >= 0) await companionRepo.raiseTier(tierIdxAfter);
+
+      // Layer 3 (drift health, positive-only): score the recent clamped-ratio
+      // window INCLUDING this log. 'curious' nudges a re-check; never a penalty.
+      const driftRatios = [...recentClampedRatios, clampRatio(input.estimateMin, input.actualMin)];
+      await companionRepo.setDrift(driftHealthFromRecent(driftRatios));
+
+      // Keeper (set-once): every tracked category at the top 'Honest' tier. Use the
+      // just-updated sharpness for the current category and stored sharpness for the
+      // rest, so the milestone lands the moment the final cell caps.
+      const tracked = useCategoriesStore.getState().categories;
+      let cappedCellCount = 0;
+      for (const cat of tracked) {
+        const sharpness =
+          cat.id === input.category
+            ? result.category.sharpness
+            : (await categoryStatsRepo.get(cat.id)).sharpness;
+        if (tierFor(sharpness) === 'Honest') cappedCellCount += 1;
+      }
+      if (keeperReached({ cappedCellCount, trackedCount: tracked.length })) {
+        await companionRepo.setKeeper();
       }
     }
 
