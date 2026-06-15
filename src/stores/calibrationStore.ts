@@ -24,6 +24,7 @@ import {
   capabilityFor,
   confidenceFor,
   honestRangeFor,
+  correlateReasons,
   TIERS,
   CATEGORY_NAMES,
 } from '@/src/engine';
@@ -37,6 +38,8 @@ import type {
   CalibrationSummary,
   HonestRange,
   Insight,
+  ReasonInsight,
+  ReasonSample,
   TrendSeries,
 } from '@/src/domain/types';
 import { haptics } from '@/src/services/haptics';
@@ -266,6 +269,9 @@ interface CalibrationState {
   loadReclaimSummary: () => Promise<ReclaimSummary>;
   /** Cross-category snapshot for the read-only Patterns self-insight surface. */
   loadPatternsData: () => Promise<PatternsData>;
+  /** READ-ONLY. Reason correlations for the Pro "what steals your time" surface.
+   *  Never trains the model; safe to skip. */
+  loadReasonInsights: () => Promise<ReasonInsight[]>;
   /**
    * CAPTURE-ONLY. Attach a free-form context tag (a reason) to a logged event.
    * Pure side-channel analytics: it NEVER trains the model, touches the
@@ -304,6 +310,10 @@ const TODAY_RECLAIM_SCAN_LIMIT = 200;
 /** How many recent events the Patterns surface scans. Generous (the "this week"
  *  surprise + early/recent splits want history) but bounded so the read stays cheap. */
 const PATTERNS_SCAN_LIMIT = 500;
+
+/** How many recent reason⋈event rows the Pro correlation read scans. Bounded so the
+ *  read stays cheap; well above any realistic tagged-over-run history. */
+const REASON_SCAN_LIMIT = 500;
 
 export const useCalibrationStore = create<CalibrationState>((set, get) => ({
   logs: 0,
@@ -753,6 +763,34 @@ export const useCalibrationStore = create<CalibrationState>((set, get) => ({
     }));
 
     return { categories, logs, nameOf: detailCategoryName };
+  },
+
+  loadReasonInsights: async () => {
+    const db = await resolveDb(get, set);
+    // Read-only reason⋈event join. This never trains the model — it only powers the
+    // Pro "what steals your time" surface, and a network/read failure here can't
+    // touch the core loop.
+    const rows = await makeContextTagRepo(db).listReasonEvents(REASON_SCAN_LIMIT);
+
+    // The engine stays clock-free, so the STORE derives local hour/weekday from each
+    // event's createdAt. Drop rows with no usable est/actual (abandoned or malformed).
+    const samples: ReasonSample[] = rows
+      .filter((r) => r.actualMin !== null && r.actualMin > 0 && r.estimateMin > 0)
+      .map((r) => {
+        const d = new Date(r.createdAt);
+        return {
+          category: r.category,
+          reason: r.reason,
+          direction: (r.actualMin as number) > r.estimateMin ? 'over' : 'under',
+          hour: d.getHours(),
+          weekday: d.getDay(),
+        };
+      });
+
+    return correlateReasons(samples).map((c) => ({
+      ...c,
+      categoryName: detailCategoryName(c.categoryId),
+    }));
   },
 
   setReason: async (eventId, value, source) => {
