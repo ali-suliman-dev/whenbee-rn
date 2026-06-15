@@ -25,6 +25,17 @@ describe('analytics', () => {
     expect(capture).toHaveBeenCalledWith('first_log', { time_since_install_sec: 42 });
   });
 
+  it('forwards a typed plan_shared event for on-device share', () => {
+    const capture = jest.fn();
+    const a = createAnalytics({ capture });
+    a.capture('plan_shared', { surface: 'plan', is_pro: false, result: 'shared' });
+    expect(capture).toHaveBeenCalledWith('plan_shared', {
+      surface: 'plan',
+      is_pro: false,
+      result: 'shared',
+    });
+  });
+
   it('never throws into the caller even when the sink throws', () => {
     setAnalyticsSink({
       capture: () => {

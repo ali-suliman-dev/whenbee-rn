@@ -93,6 +93,9 @@ export interface AppEventProps {
   purchase: { plan: string; price: number; result: string };
   restore_purchases: { plan?: string; price?: number; result: string };
 
+  // ── On-device share ──────────────────────────────────────────────────────────
+  plan_shared: { surface: 'plan' | 'archetype'; is_pro: boolean; result: 'shared' | 'gated' | 'error' };
+
   // ── Calendar / reminders ─────────────────────────────────────────────────────
   calendar_padded: { events_count: number; day_end_shift_min: number };
   reminder_enabled: Record<string, never>;
