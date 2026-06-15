@@ -22,7 +22,10 @@ export const tokens = {
   // tappable controls size from here, so nothing is ad-hoc under the 44pt minimum.
   // `coin` = the FocusCard play affordance — a touch smaller than a full md control
   // so the disc reads as an accent, not a button competing with the card.
-  size: { control: { sm: 36, md: 44, lg: 52 }, coin: 40 },
+  // `shareCard` = fixed width of the off-screen ShareableCard captured to an image.
+  // `timelineCol` = the tabular start–end time column width in the plan timeline
+  // (one literal, reused by PlanTimeline + ShareableCard so the columns line up).
+  size: { control: { sm: 36, md: 44, lg: 52 }, coin: 40, shareCard: 340, timelineCol: 110 },
 
   // Icon sizing scale — replaces inline 12/16/18/20/22/24/30 across the app.
   iconSize: { xs: 12, sm: 16, md: 20, lg: 24, xl: 32 },
@@ -39,7 +42,10 @@ export const tokens = {
   // set 0 to remove) all card borders app-wide. hairline/thin/thick stay for
   // dividers, inputs and accent edges, so tuning cards never disturbs them.
   // borderWidth: { hairline: 1, thin: 1.5, thick: 2, card: 1 },
-  borderWidth: { hairline: 0, thin: 0, thick: 2, card: 0 },
+  // `share` = the ShareableCard's defined 1px edge. It is kept OFF the global card
+  // knob on purpose: a shared image needs a visible edge against any background,
+  // even when in-app cards run borderless.
+  borderWidth: { hairline: 0, thin: 0, thick: 2, card: 0, share: 1 },
 
   // Replaces scattered 0.3 / 0.4 / 0.6 opacities.
   opacity: { disabled: 0.4, pressed: 0.6 },
@@ -123,6 +129,11 @@ export const tokens = {
       // RayBurst sunburst wedge fill. A deeper periwinkle than primarySoft so the
       // rays actually read on cream (primarySoft was near-invisible on the page bg).
       rayFill: '#BFB2F0',
+      // Companion drift-health tint (amber/indigo only — never red). settled reuses
+      // the amber accent (the calm, honey "all good"); curious reuses the indigo hero
+      // (a gentle "worth a re-check" nudge, never a sad/wilt signal).
+      driftSettled: '#EEAE4D', // = accent (amber)
+      driftCurious: '#6B5BE6', // = primary (indigo)
       amberText: '#8A5A12', // AA amber-on-light text
       success: '#33B07C',
       successSoft: '#E2F4EA',
@@ -170,6 +181,10 @@ export const tokens = {
       accentCoin: 'rgba(238,174,77,0.28)', // tint disc that still reads on accentSoft
       // RayBurst wedge fill — indigo lifted just off the deep bg (the #8 look).
       rayFill: 'rgba(130,117,240,0.30)',
+      // Companion drift-health tint (amber/indigo only — never red). Matches the
+      // dark-mode accent / primary so the bee reads as the same companion in dark.
+      driftSettled: '#EEAE4D', // = accent (amber)
+      driftCurious: '#8275F0', // = primary (indigo, dark variant)
       amberText: '#EEAE4D',
       success: '#33B07C',
       successSoft: 'rgba(51,176,124,0.18)',
@@ -209,6 +224,21 @@ export const tokens = {
     coinBob: 3, // ± coin bob
     coinLift: 10, // coin mount-pop lift
     coinEdge: 4, // coin button-edge depth (cf. AppButton)
+  },
+
+  // Companion presence — the 6-stage Whenbee growth (Part 2 Group E). Both scales
+  // are indexed by stage 1..6 (array index = stage - 1). They are pure geometry, so
+  // they live mode-independent here (like `burst`); the per-stage DRIFT TINT colors
+  // live in colors.light/dark below (settled = amber family, curious = indigo accent
+  // — amber/indigo only, NEVER red). The bee only ever climbs: each stage adds glow
+  // and float, none subtracts (monotonic by construction).
+  companion: {
+    // Ambient float-lift amplitude (± px) per stage — the calm vertical drift grows
+    // with presence: a barely-there breath at Raw, a confident hover at Keeper.
+    floatLift: [2, 3, 5, 7, 9, 11],
+    // Soft glow radius (px) per stage. Stages 1–2 have none (a young bee is plain);
+    // it blooms from Ripening on so the felt warmth tracks the comb sealing.
+    glow: [0, 0, 6, 12, 18, 24],
   },
 
   // ── brand illustration palette ──────────────────────────────────────────────

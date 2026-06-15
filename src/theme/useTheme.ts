@@ -5,7 +5,8 @@ export function resolveTheme(mode: ColorMode) {
     borderWidth: tokens.borderWidth, opacity: tokens.opacity, scale: tokens.scale, size: tokens.size, iconSize: tokens.iconSize,
     fontSize: tokens.fontSize, fontWeight: tokens.fontWeight, fontFamily: tokens.fontFamily,
     lineHeight: tokens.lineHeight, shadow: tokens.shadow, motion: tokens.motion,
-    honeycomb: tokens.honeycomb, brand: tokens.brand, burst: tokens.burst, progress: tokens.progress };
+    honeycomb: tokens.honeycomb, brand: tokens.brand, burst: tokens.burst, progress: tokens.progress,
+    companion: tokens.companion };
 }
 export type Theme = ReturnType<typeof resolveTheme>;
 export function useTheme(): Theme { return resolveTheme(useColorMode()); }

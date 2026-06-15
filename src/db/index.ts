@@ -1,7 +1,7 @@
 // Public barrel for the data layer. Stores/services import from here.
 
 export type { Database } from './Database';
-export type { CategoryStatRow, ContextTagRow, RecurringStatRow, TaskEventRow } from './types';
+export type { CategoryStatRow, ContextTagRow, DiscoveryRow, RecurringStatRow, TaskEventRow } from './types';
 export { createMemoryDatabase } from './memoryDatabase';
 export { createSqliteDatabase } from './sqliteDatabase';
 export { getDatabase, runMigrations, __resetDatabaseForTests } from './client';
@@ -14,3 +14,5 @@ export { makeRecurringRepo } from './repositories/recurringRepo';
 export type { RecurringRepo } from './repositories/recurringRepo';
 export { makeCompanionRepo } from './repositories/companionRepo';
 export { makeContextTagRepo } from './repositories/contextTagRepo';
+export { makeDiscoveriesRepo } from './repositories/discoveriesRepo';
+export type { DiscoveriesRepo } from './repositories/discoveriesRepo';

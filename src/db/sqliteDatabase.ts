@@ -11,7 +11,7 @@ import * as SQLite from 'expo-sqlite';
 import { runMigrations } from './client';
 import type { Database } from './Database';
 import type { AdaptSpeed, LogSource, LogStatus } from '@/src/domain/types';
-import type { CategoryStatRow, CompanionRow, ContextTagRow, RecurringStatRow, TaskEventRow } from './types';
+import type { CategoryStatRow, CompanionRow, ContextTagRow, DiscoveryRow, ReasonEventRow, RecurringStatRow, TaskEventRow } from './types';
 
 interface TaskEventDbRow {
   id: string;
@@ -42,6 +42,21 @@ interface CategoryStatDbRow {
 
 interface CompanionDbRow {
   reclaimed_minutes_lifetime: number;
+  lifetime_data_points: number;
+  max_tier: number;
+  keeper: number;
+  seed: number;
+  drift_health: string;
+  discovery_count: number;
+}
+
+interface DiscoveryDbRow {
+  id: string;
+  category_id: string;
+  multiplier: number;
+  honest_for_fifteen: number;
+  headline: string;
+  discovered_at: number;
 }
 
 interface RecurringStatDbRow {
@@ -81,6 +96,17 @@ function mapCategoryStat(r: CategoryStatDbRow): CategoryStatRow {
     adaptSpeed: r.adapt_speed as AdaptSpeed,
     updatedAt: r.updated_at,
     reclaimedMinutes: r.reclaimed_minutes,
+  };
+}
+
+function mapDiscovery(r: DiscoveryDbRow): DiscoveryRow {
+  return {
+    id: r.id,
+    categoryId: r.category_id,
+    multiplier: r.multiplier,
+    honestForFifteen: r.honest_for_fifteen,
+    headline: r.headline,
+    discoveredAt: r.discovered_at,
   };
 }
 
@@ -206,15 +232,52 @@ export async function createSqliteDatabase(name = 'whenbee.db'): Promise<Databas
 
     async getCompanion(): Promise<CompanionRow> {
       const row = await db.getFirstAsync<CompanionDbRow>(
-        'SELECT reclaimed_minutes_lifetime FROM companion WHERE id = 1'
+        `SELECT reclaimed_minutes_lifetime, lifetime_data_points, max_tier, keeper, seed, drift_health, discovery_count
+         FROM companion WHERE id = 1`
       );
-      return { reclaimedMinutesLifetime: row?.reclaimed_minutes_lifetime ?? 0 };
+      return {
+        reclaimedMinutesLifetime: row?.reclaimed_minutes_lifetime ?? 0,
+        lifetimeDataPoints: row?.lifetime_data_points ?? 0,
+        maxTier: row?.max_tier ?? 0,
+        keeper: row?.keeper === 1,
+        seed: row?.seed ?? 0,
+        driftHealth: row?.drift_health === 'curious' ? 'curious' : 'settled',
+        discoveryCount: row?.discovery_count ?? 0,
+      };
     },
 
     async addReclaim(deltaMin: number): Promise<void> {
       await db.runAsync(
         'UPDATE companion SET reclaimed_minutes_lifetime = reclaimed_minutes_lifetime + ? WHERE id = 1',
         deltaMin
+      );
+    },
+
+    async bumpLifetimeNectar(): Promise<void> {
+      await db.runAsync(
+        'UPDATE companion SET lifetime_data_points = lifetime_data_points + 1 WHERE id = 1'
+      );
+    },
+
+    async raiseMaxTier(next: number): Promise<void> {
+      await db.runAsync(
+        'UPDATE companion SET max_tier = MAX(max_tier, ?) WHERE id = 1',
+        Math.trunc(next)
+      );
+    },
+
+    async setKeeper(): Promise<void> {
+      await db.runAsync('UPDATE companion SET keeper = 1 WHERE id = 1');
+    },
+
+    async setDriftHealth(value: 'settled' | 'curious'): Promise<void> {
+      await db.runAsync('UPDATE companion SET drift_health = ? WHERE id = 1', value);
+    },
+
+    async setSeed(seed: number): Promise<void> {
+      await db.runAsync(
+        'UPDATE companion SET seed = ? WHERE id = 1 AND seed = 0',
+        Math.trunc(seed)
       );
     },
 
@@ -258,6 +321,66 @@ export async function createSqliteDatabase(name = 'whenbee.db'): Promise<Databas
         source: row.source,
         createdAt: row.created_at,
       };
+    },
+    async listReasonEvents(limit: number): Promise<ReasonEventRow[]> {
+      const rows = await db.getAllAsync<{
+        event_id: string;
+        category: string;
+        reason: string;
+        estimate_min: number;
+        actual_min: number | null;
+        created_at: number;
+      }>(
+        `SELECT t.event_id AS event_id, e.category AS category, t.value AS reason,
+                e.estimate_min AS estimate_min, e.actual_min AS actual_min, e.created_at AS created_at
+         FROM log_tags t
+         JOIN task_events e ON e.id = t.event_id
+         WHERE t.key = 'reason'
+         ORDER BY e.created_at DESC
+         LIMIT ?`,
+        limit
+      );
+      return rows.map((r) => ({
+        eventId: r.event_id,
+        category: r.category,
+        reason: r.reason,
+        estimateMin: r.estimate_min,
+        actualMin: r.actual_min,
+        createdAt: r.created_at,
+      }));
+    },
+
+    async insertDiscovery(row: DiscoveryRow): Promise<void> {
+      await db.runAsync(
+        `INSERT INTO discoveries
+           (id, category_id, multiplier, honest_for_fifteen, headline, discovered_at)
+         VALUES (?, ?, ?, ?, ?, ?)`,
+        row.id,
+        row.categoryId,
+        row.multiplier,
+        row.honestForFifteen,
+        row.headline,
+        row.discoveredAt
+      );
+    },
+    async listDiscoveries(limit: number): Promise<DiscoveryRow[]> {
+      const rows = await db.getAllAsync<DiscoveryDbRow>(
+        'SELECT * FROM discoveries ORDER BY discovered_at DESC LIMIT ?',
+        limit
+      );
+      return rows.map(mapDiscovery);
+    },
+    async getLastDiscoveryForCategory(categoryId: string): Promise<DiscoveryRow | null> {
+      const row = await db.getFirstAsync<DiscoveryDbRow>(
+        'SELECT * FROM discoveries WHERE category_id = ? ORDER BY discovered_at DESC LIMIT 1',
+        categoryId
+      );
+      return row ? mapDiscovery(row) : null;
+    },
+    async incrementDiscoveryCount(): Promise<void> {
+      await db.runAsync(
+        'UPDATE companion SET discovery_count = discovery_count + 1 WHERE id = 1'
+      );
     },
   };
 }

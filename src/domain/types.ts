@@ -30,10 +30,53 @@ export interface CategoryStats {
 /** Single-row monotonic companion aggregates (the Reclaim bank lives here). */
 export interface Companion {
   reclaimedMinutesLifetime: number; // += deposit per counted log; never decremented
+  lifetimeDataPoints: number; // Layer 1 fuel — total counted logs; only ever bumped up
+  maxTier: number; // Layer 2 fuel — high-water sharpness tier; max(prev, next)
+  keeper: boolean; // Layer 3 fuel — latches true once earned; never cleared
+  seed: number; // procedural seed for the companion's appearance; set once, then frozen
+  driftHealth?: 'settled' | 'curious'; // positive-only drift register (never a guilt signal)
+  discoveryCount: number; // banked aha cards — append-only, only ever rises
 }
 
 /** Capture-only reason slug for a reclaim or context event. */
 export type ContextReason = string;
+
+/** One captured over/under reason tag, normalized for the correlation engine. */
+export interface ReasonSample {
+  category: Category;
+  reason: ContextReason;
+  direction: 'over' | 'under';
+  hour: number; // local 0–23
+  weekday: number; // local 0–6 (0 = Sunday)
+}
+
+/** A deterministic per-category dominant-cause correlation (over-runs only). */
+export interface ReasonCorrelation {
+  categoryId: string;
+  reason: ContextReason;
+  share: number;
+  sampleCount: number;
+  totalOver: number;
+  timeSkew: 'afternoon' | 'morning' | null;
+  weekdaySkew: number | null;
+}
+
+/** A correlation enriched with the display name for the insight surface. */
+export interface ReasonInsight extends ReasonCorrelation {
+  categoryName: string;
+}
+
+/**
+ * Earned-Readiness axis, SEPARATE from the monotonic honey `Tier`.
+ * Derived from sample size + coefficient of variation of clamped ratios.
+ */
+export type CalibrationConfidence = 'raw' | 'setting' | 'honest';
+
+/** A honest-number band (low/high in minutes) for a noisy-vs-settled category. */
+export interface HonestRange {
+  lowMinutes: number;
+  highMinutes: number;
+}
 
 /** The honest-number suggestion resolved for a decision moment. */
 export interface CalibrationSummary {
@@ -43,6 +86,9 @@ export interface CalibrationSummary {
   basis: 'personal' | 'prior';
   label: string;
   sampleSize: number;
+  // Optional until Step 6 wires clampedRatios through the store/resolveSuggestion.
+  confidence?: CalibrationConfidence;
+  range?: HonestRange | null;
 }
 
 /** A surfaced aha/discovery card. */
@@ -51,6 +97,16 @@ export interface Insight {
   multiplier: number;
   honestForFifteen: number;
   headline: string;
+}
+
+/** A banked aha — one distinct, never-expiring discovery card. Append-only. */
+export interface Discovery {
+  id: string;
+  categoryId: string;
+  multiplier: number;
+  honestForFifteen: number;
+  headline: string;
+  discoveredAt: number;
 }
 
 /** Rolling-multiplier series for the category-detail trend chart. */

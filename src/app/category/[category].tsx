@@ -9,6 +9,7 @@ import { useTheme } from '@/src/theme/useTheme';
 import { type } from '@/src/theme/typography';
 import { useCategoryDetail } from '@/src/features/category-detail/useCategoryDetail';
 import { HonestCard } from '@/src/features/category-detail/HonestCard';
+import { GraduationMoment } from '@/src/features/category-detail/GraduationMoment';
 import { AhaCard } from '@/src/features/category-detail/AhaCard';
 import { AdaptSegment } from '@/src/features/category-detail/AdaptSegment';
 import { TrendChart } from '@/src/features/category-detail/TrendChart';
@@ -28,8 +29,16 @@ export default function CategoryDetailScreen() {
   const t = useTheme();
   const { category } = useLocalSearchParams<{ category: string }>();
   const categoryId = category ?? '';
-  const { detail, loading, adaptSpeed, setAdaptSpeed, resetCategory } =
-    useCategoryDetail(categoryId);
+  const {
+    detail,
+    loading,
+    adaptSpeed,
+    setAdaptSpeed,
+    resetCategory,
+    justGraduated,
+    clearJustGraduated,
+    reasonNote,
+  } = useCategoryDetail(categoryId);
 
   const [confirming, setConfirming] = useState(false);
   const [toast, setToast] = useState<string | null>(null);
@@ -93,6 +102,9 @@ export default function CategoryDetailScreen() {
               n={detail.n}
               logsToNext={detail.logsToNext}
               nextTier={nextTier}
+              confidence={detail.confidence}
+              range={detail.summary.range}
+              reasonNote={reasonNote}
             />
 
             {/* 2 — The aha insight (when there's one worth surfacing). */}
@@ -161,6 +173,13 @@ export default function CategoryDetailScreen() {
         )}
 
         <Toast message={toast ?? ''} visible={toast !== null} />
+
+        {justGraduated && detail ? (
+          <GraduationMoment
+            honestMinutes={detail.summary.honestMinutes}
+            onDone={clearJustGraduated}
+          />
+        ) : null}
       </View>
     </Screen>
   );

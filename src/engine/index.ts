@@ -7,8 +7,15 @@ export { blendWithPrior, honestNumber, recurringHasEnoughData, resolveSuggestion
 export { sharpnessFromWindow, tierFor, logsToNextTier, tierBandProgress } from './sharpness';
 export type { TierBandProgress } from './sharpness';
 export { detectInsight } from './insight';
+export { shouldBankDiscovery } from './discovery';
 export { buildTrendSeries } from './trend';
 export { applyLog } from './update';
 export type { ApplyLogInput, ApplyLogResult } from './update';
 export { planBackward, DEFAULT_BUFFER_MIN } from './planner';
 export { reclaimDividendMinutes, formatReclaim } from './reclaim';
+export { correlateReasons, reasonNoteFor, reasonPhrase } from './reasons';
+export { confidenceFor, honestRangeFor, reservePriceVisible } from './confidence';
+export {
+  companionStageFor, capabilityFor, keeperReached, driftHealthFromRecent, COMPANION_KEEPER_QUOTA,
+} from './companion';
+export type { CompanionStage, CompanionCapability, DriftHealth } from './companion';

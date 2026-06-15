@@ -10,9 +10,10 @@ describe('MIGRATIONS', () => {
     }
   });
 
-  it('every entry contains a CREATE TABLE statement', () => {
+  it('every entry contains a schema statement (CREATE TABLE or ALTER TABLE)', () => {
+    // Additive migrations (e.g. 0003) are pure ALTER TABLE and create no table.
     for (const m of MIGRATIONS) {
-      expect(m).toContain('CREATE TABLE');
+      expect(m).toMatch(/CREATE TABLE|ALTER TABLE/);
     }
   });
 
@@ -134,4 +135,82 @@ describe('memoryDatabase — companion / reclaim bank', () => {
     // Smoke-test only: the method resolves cleanly.
     await expect(db.getCompanion()).resolves.toBeDefined();
   });
+});
+
+describe('MIGRATIONS 0003 — companion fuel fields (additive, monotonic)', () => {
+  const migration0003 = MIGRATIONS[2]; // index 2 == 0003
+  it('migration 0003 exists and is a string', () => {
+    expect(typeof migration0003).toBe('string');
+  });
+  it('adds the fuel columns + seed to companion', () => {
+    expect(migration0003).toContain('ALTER TABLE companion ADD COLUMN lifetime_data_points');
+    expect(migration0003).toContain('ALTER TABLE companion ADD COLUMN max_tier');
+    expect(migration0003).toContain('ALTER TABLE companion ADD COLUMN keeper');
+    expect(migration0003).toContain('ALTER TABLE companion ADD COLUMN seed');
+    expect(migration0003).toContain('ALTER TABLE companion ADD COLUMN drift_health');
+  });
+  it('defaults keep existing rows valid', () => {
+    expect(migration0003).toContain('DEFAULT 0');
+  });
+});
+
+describe('memoryDatabase — companion fuel layers', () => {
+  it('getCompanion exposes the new fields with safe defaults', async () => {
+    const db = createMemoryDatabase();
+    const row = await db.getCompanion();
+    expect(row.lifetimeDataPoints).toBe(0);
+    expect(row.maxTier).toBe(0);
+    expect(row.keeper).toBe(false);
+    expect(typeof row.seed).toBe('number');
+    expect(row.driftHealth).toBe('settled');
+  });
+  it('bumpLifetimeNectar increments Layer 1 monotonically', async () => {
+    const db = createMemoryDatabase();
+    await db.bumpLifetimeNectar();
+    await db.bumpLifetimeNectar();
+    expect((await db.getCompanion()).lifetimeDataPoints).toBe(2);
+  });
+  it('raiseMaxTier is monotonic — max(prev, next)', async () => {
+    const db = createMemoryDatabase();
+    await db.raiseMaxTier(3);
+    expect((await db.getCompanion()).maxTier).toBe(3);
+    await db.raiseMaxTier(1);
+    expect((await db.getCompanion()).maxTier).toBe(3);
+  });
+  it('setKeeper latches true and never clears', async () => {
+    const db = createMemoryDatabase();
+    await db.setKeeper();
+    expect((await db.getCompanion()).keeper).toBe(true);
+    await db.setKeeper();
+    expect((await db.getCompanion()).keeper).toBe(true);
+  });
+  it('setDriftHealth stores the positive-only register', async () => {
+    const db = createMemoryDatabase();
+    await db.setDriftHealth('curious');
+    expect((await db.getCompanion()).driftHealth).toBe('curious');
+  });
+  it('setSeed only writes when no seed is set', async () => {
+    const db = createMemoryDatabase();
+    const original = (await db.getCompanion()).seed;
+    await db.setSeed(original + 999);
+    expect((await db.getCompanion()).seed).toBe(original);
+  });
+});
+
+describe('MIGRATIONS 0004 — discoveries gallery', () => {
+  const migration0004 = MIGRATIONS[3]; // index 3 == 0004
+  it('exists and is a string', () => { expect(typeof migration0004).toBe('string'); });
+  it('creates the discoveries table (IF NOT EXISTS)', () => { expect(migration0004).toContain('CREATE TABLE IF NOT EXISTS discoveries'); });
+  it('carries category, multiplier, headline, discovered_at', () => {
+    expect(migration0004).toContain('category_id');
+    expect(migration0004).toContain('multiplier');
+    expect(migration0004).toContain('honest_for_fifteen');
+    expect(migration0004).toContain('headline');
+    expect(migration0004).toContain('discovered_at');
+  });
+  it('indexes newest-first + by category', () => {
+    expect(migration0004).toContain('idx_discoveries_discovered_at');
+    expect(migration0004).toContain('idx_discoveries_category');
+  });
+  it('adds companion.discovery_count', () => { expect(migration0004).toContain('ALTER TABLE companion ADD COLUMN discovery_count'); });
 });

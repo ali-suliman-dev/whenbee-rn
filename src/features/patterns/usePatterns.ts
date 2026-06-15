@@ -1,9 +1,12 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useRef, useState } from 'react';
+import { useFocusEffect } from 'expo-router';
 import {
   clampRatio,
   PERSONAL_MIN_LOGS,
   honestNumber,
+  confidenceFor,
 } from '@/src/engine';
+import type { CalibrationConfidence } from '@/src/domain/types';
 import { useCalibrationStore, type PatternsData, type PatternLog } from '@/src/stores/calibrationStore';
 
 // ──────────────────────────────────────────────────────────────────────────────
@@ -100,6 +103,10 @@ export interface CalibrationMapRow {
   honestMin: number;
   multiplier: number;
   sampleSize: number;
+  /** Earned-readiness (raw→setting→honest) for this category — drives the dial.
+   *  Derived from sample size + spread of THIS category's clamped ratios; SEPARATE
+   *  from the monotonic honey tier, so it can move either way. */
+  confidence: CalibrationConfidence;
 }
 
 export interface PatternsView {
@@ -306,14 +313,22 @@ export function deriveCalibrationMap(data: PatternsData): CalibrationMapRow[] {
     .filter((c) => c.n > 0)
     .slice()
     .sort((a, b) => b.n - a.n)
-    .map((c) => ({
-      categoryId: c.categoryId,
-      categoryName: data.nameOf(c.categoryId),
-      guessMin: 15,
-      honestMin: honestNumber(15, c.mEffective),
-      multiplier: c.mEffective,
-      sampleSize: c.n,
-    }));
+    .map((c) => {
+      // Confidence reads THIS category's completed-log spread, not the aggregate —
+      // same clamped ratios the engine trains on (actualMin present & > 0).
+      const clampedRatios = ratiosOf(
+        completedLogs(data.logs.filter((l) => l.category === c.categoryId && (l.actualMin ?? 0) > 0)),
+      );
+      return {
+        categoryId: c.categoryId,
+        categoryName: data.nameOf(c.categoryId),
+        guessMin: 15,
+        honestMin: honestNumber(15, c.mEffective),
+        multiplier: c.mEffective,
+        sampleSize: c.n,
+        confidence: confidenceFor({ n: c.n, clampedRatios }),
+      };
+    });
 }
 
 /** Run every derivation over one snapshot — the whole tab's view-model. */
@@ -343,16 +358,24 @@ export function usePatterns(nowMs: number = Date.now()): UsePatternsResult {
   const loadPatternsData = useCalibrationStore((s) => s.loadPatternsData);
   const [view, setView] = useState<PatternsView | null>(null);
   const [loading, setLoading] = useState(true);
+  // Freeze "now" at first render. The default `Date.now()` is recomputed every
+  // render; threading it through the refresh/effect deps would re-query the DB on
+  // every render (a self-perpetuating refetch loop). A ref pins it once.
+  const nowRef = useRef(nowMs);
 
   const refresh = useCallback(async () => {
     const data = await loadPatternsData();
-    setView(derivePatterns(data, nowMs));
+    setView(derivePatterns(data, nowRef.current));
     setLoading(false);
-  }, [loadPatternsData, nowMs]);
+  }, [loadPatternsData]);
 
-  useEffect(() => {
-    void refresh();
-  }, [refresh]);
+  // Re-derive on tab focus — a log in another tab won't push to this hook, so the
+  // insight cards are recomputed every time the user enters Patterns.
+  useFocusEffect(
+    useCallback(() => {
+      void refresh();
+    }, [refresh]),
+  );
 
   return { view, loading };
 }

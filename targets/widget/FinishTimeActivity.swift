@@ -16,7 +16,10 @@ import WidgetKit
 import SwiftUI
 
 /// Shared attributes for the running-timer Live Activity.
-/// MUST stay in sync with the `attributes` JS writes in liveActivity.ts.
+/// MUST stay in sync with the `attributes` JS writes in liveActivity.ts AND with
+/// the main-app copy in modules/whenbee-presence/ios/FinishTimeAttributes.swift —
+/// `Activity<FinishTimeAttributes>` only matches across the app + widget targets
+/// when both copies are byte-identical in shape.
 struct FinishTimeAttributes: ActivityAttributes {
     /// Mutable per-update state. Kept minimal: the countdown is driven by the
     /// immutable `finishDate` via `Text(timerInterval:)`, so the only thing we

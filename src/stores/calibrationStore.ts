@@ -6,6 +6,7 @@ import {
   makeRecurringRepo,
   makeCompanionRepo,
   makeContextTagRepo,
+  makeDiscoveriesRepo,
   type Database,
 } from '@/src/db';
 import {
@@ -17,16 +18,31 @@ import {
   priorFor,
   resolveSuggestion,
   detectInsight,
+  shouldBankDiscovery,
   buildTrendSeries,
+  keeperReached,
+  driftHealthFromRecent,
+  companionStageFor,
+  capabilityFor,
+  confidenceFor,
+  honestRangeFor,
+  correlateReasons,
+  TIERS,
   CATEGORY_NAMES,
 } from '@/src/engine';
+import type { CompanionStage, CompanionCapability, DriftHealth } from '@/src/engine';
 import type {
   AdaptSpeed,
   LogSource,
   LogStatus,
   Tier,
+  CalibrationConfidence,
   CalibrationSummary,
+  Discovery,
+  HonestRange,
   Insight,
+  ReasonInsight,
+  ReasonSample,
   TrendSeries,
 } from '@/src/domain/types';
 import { haptics } from '@/src/services/haptics';
@@ -39,6 +55,44 @@ import { useCategoriesStore } from './categoriesStore';
 // category). Reading/writing kv is synchronous and Expo Go-safe.
 const FIRST_LOG_FLAG = 'whenbee.firstLogFired';
 const AHA_FLAG_PREFIX = 'whenbee.ahaFired.';
+
+// Per-category graduation ledger: the set of category ids that have already
+// reached 'honest' confidence and fired their graduation moment (Step 9 reads
+// this to fire exactly once each). Persisted as a JSON string[] under one key.
+const GRADUATED_KEY = 'calibration.graduatedCategories';
+
+/** Read the persisted graduation ledger as a Set. Tolerates a missing/corrupt
+ *  value by returning an empty set — a bad read never blocks the loop. */
+function readGraduated(): Set<string> {
+  const raw = kv.getString(GRADUATED_KEY);
+  if (raw === null) return new Set();
+  try {
+    const parsed = JSON.parse(raw) as unknown;
+    return Array.isArray(parsed)
+      ? new Set(parsed.filter((id): id is string => typeof id === 'string'))
+      : new Set();
+  } catch {
+    return new Set();
+  }
+}
+
+/** Persist the graduation ledger as a stable JSON array (sorted for determinism). */
+function writeGraduated(ids: Set<string>): void {
+  kv.set(GRADUATED_KEY, JSON.stringify([...ids].sort()));
+}
+
+/** Build a category's confidence + (non-honest) honest range from its completed
+ *  logs. `n` is the trained sample size; `honestMinutes` is the summary's honest
+ *  number. Shared by loadCategoryDetail and any other category-facing summary. */
+function confidenceAndRange(
+  n: number,
+  honestMinutes: number,
+  clampedRatios: number[],
+): { confidence: CalibrationConfidence; range: HonestRange | null } {
+  const confidence = confidenceFor({ n, clampedRatios });
+  const range = confidence === 'honest' ? null : honestRangeFor({ honestMinutes, clampedRatios });
+  return { confidence, range };
+}
 
 /** True the first time it's called process-/install-wide; sets the flag and
  *  returns false thereafter, so `first_log` fires exactly once ever. */
@@ -107,6 +161,9 @@ export interface CategoryDetail {
   mEffective: number;
   sharpness: number;
   tier: Tier;
+  /** Earned-Readiness axis (raw→setting→honest), SEPARATE from the honey `tier`.
+   *  Derived from sample size + spread of clamped ratios; may move either way. */
+  confidence: CalibrationConfidence;
   logsToNext: number;
   /** resolveSuggestion at a 15-min guess (the canonical "honest number" demo). */
   summary: CalibrationSummary;
@@ -154,6 +211,23 @@ export interface ReclaimByCategory {
   reclaimedMinutes: number;
 }
 
+/** The companion's presence block — its 6-stage growth, derived purely from the
+ *  monotonic companion fuel (maxTier + keeper). Read-only; the engine owns the math. */
+export interface CompanionPresence {
+  /** 1..6 — derived from companionStageFor (Raw→Keeper). Only ever climbs. */
+  stage: CompanionStage;
+  /** What this stage unlocks — the engine's capability copy for the stage. */
+  capability: CompanionCapability;
+  /** True once every tracked category caps at Honest (set-once milestone). */
+  keeper: boolean;
+  /** Lifetime counted-log count (Layer-1 nectar) — the provenance behind the bee. */
+  lifetimeNectar: number;
+  /** Positive-only drift register: 'settled' (calm) or 'curious' (worth a re-check). */
+  driftHealth: DriftHealth;
+  /** Per-install procedural seed — drives the deterministic stripe recolor. */
+  seed: number;
+}
+
 /** Read-only snapshot of reclaim/companion state for the Whenbee hub. */
 export interface ReclaimSummary {
   /** companion.reclaimedMinutesLifetime — the all-time banked total. */
@@ -164,6 +238,10 @@ export interface ReclaimSummary {
   biggestArea: ReclaimByCategory | null;
   /** Total trained (counted) logs across tracked categories — the provenance N. */
   honestLogCount: number;
+  /** The companion's 6-stage presence, derived from the monotonic fuel row. */
+  companion: CompanionPresence;
+  /** Lifetime count of banked distinct discoveries (monotonic). */
+  discoveryCount: number;
 }
 
 /** Display name for a seed category; title-cases a custom slug otherwise. */
@@ -180,14 +258,27 @@ function detailCategoryName(id: string): string {
 interface CalibrationState {
   logs: number;
   statsByCategory: Record<string, CachedStat>;
+  /** Category ids that have reached 'honest' confidence and already fired their
+   *  graduation moment. Mirrors the kv ledger; Step 9 reads it to fire once each. */
+  graduatedCategories: Set<string>;
   db: Database | null;
   setDatabase: (db: Database) => void;
   hydrate: () => Promise<void>;
+  /** True when `categoryId` has already graduated (read from the in-memory mirror). */
+  isGraduated: (categoryId: string) => boolean;
+  /** Latch `categoryId` as graduated. Idempotent — re-marking is a no-op and the
+   *  ledger never loses entries. Persists through kv. */
+  markGraduated: (categoryId: string) => void;
   applyLog: (input: ApplyLogParams) => Promise<LogResult>;
   loadCategoryDetail: (categoryId: string) => Promise<CategoryDetail>;
   loadReclaimSummary: () => Promise<ReclaimSummary>;
+  /** The banked distinct-discovery gallery, newest-first, plus the live count. */
+  loadDiscoveries: () => Promise<{ discoveries: Discovery[]; discoveryCount: number }>;
   /** Cross-category snapshot for the read-only Patterns self-insight surface. */
   loadPatternsData: () => Promise<PatternsData>;
+  /** READ-ONLY. Reason correlations for the Pro "what steals your time" surface.
+   *  Never trains the model; safe to skip. */
+  loadReasonInsights: () => Promise<ReasonInsight[]>;
   /**
    * CAPTURE-ONLY. Attach a free-form context tag (a reason) to a logged event.
    * Pure side-channel analytics: it NEVER trains the model, touches the
@@ -227,14 +318,38 @@ const TODAY_RECLAIM_SCAN_LIMIT = 200;
  *  surprise + early/recent splits want history) but bounded so the read stays cheap. */
 const PATTERNS_SCAN_LIMIT = 500;
 
+/** How many recent reason⋈event rows the Pro correlation read scans. Bounded so the
+ *  read stays cheap; well above any realistic tagged-over-run history. */
+const REASON_SCAN_LIMIT = 500;
+
 export const useCalibrationStore = create<CalibrationState>((set, get) => ({
   logs: 0,
   statsByCategory: {},
+  graduatedCategories: new Set(),
   db: null,
 
   setDatabase: (db) => set({ db }),
 
+  isGraduated: (categoryId) => get().graduatedCategories.has(categoryId),
+
+  markGraduated: (categoryId) => {
+    // Read the persisted ledger fresh so concurrent writers can't clobber each
+    // other; mark is idempotent and the set only ever grows.
+    const ledger = readGraduated();
+    if (ledger.has(categoryId)) {
+      // Already graduated — keep the in-memory mirror in sync but skip the write.
+      set({ graduatedCategories: ledger });
+      return;
+    }
+    ledger.add(categoryId);
+    writeGraduated(ledger);
+    set({ graduatedCategories: ledger });
+  },
+
   hydrate: async () => {
+    // Rehydrate the graduation ledger from kv first (synchronous, Expo Go-safe).
+    set({ graduatedCategories: readGraduated() });
+
     const db = await resolveDb(get, set);
     const statsRepo = makeCategoryStatsRepo(db);
     const tracked = useCategoriesStore.getState().categories;
@@ -249,6 +364,11 @@ export const useCalibrationStore = create<CalibrationState>((set, get) => ({
       };
     }
     set({ statsByCategory: next });
+
+    // Seed the companion's per-install presence seed exactly once. Date.now is
+    // allowed here (store layer) — the engine stays clock-free. setSeed is a
+    // no-op when a seed already exists, so this is safe on every hydrate.
+    await makeCompanionRepo(db).ensureSeed(() => (Date.now() % 1_000_000) + 1);
   },
 
   applyLog: async (input) => {
@@ -351,6 +471,36 @@ export const useCalibrationStore = create<CalibrationState>((set, get) => ({
           updatedAt: nowMs,
         });
       }
+
+      // --- Companion fuel: only a counted log feeds the three-layer growth model.
+      // Layer 1 (lifetime nectar): +1 per counted log, monotonic by construction.
+      await companionRepo.bumpNectar();
+
+      // Layer 2 (max tier): monotonic — raiseTier keeps the running max, never
+      // regresses. Index the post-update sharpness into the canonical tier ladder.
+      const tierIdxAfter = TIERS.indexOf(tierFor(result.category.sharpness));
+      if (tierIdxAfter >= 0) await companionRepo.raiseTier(tierIdxAfter);
+
+      // Layer 3 (drift health, positive-only): score the recent clamped-ratio
+      // window INCLUDING this log. 'curious' nudges a re-check; never a penalty.
+      const driftRatios = [...recentClampedRatios, clampRatio(input.estimateMin, input.actualMin)];
+      await companionRepo.setDrift(driftHealthFromRecent(driftRatios));
+
+      // Keeper (set-once): every tracked category at the top 'Honest' tier. Use the
+      // just-updated sharpness for the current category and stored sharpness for the
+      // rest, so the milestone lands the moment the final cell caps.
+      const tracked = useCategoriesStore.getState().categories;
+      let cappedCellCount = 0;
+      for (const cat of tracked) {
+        const sharpness =
+          cat.id === input.category
+            ? result.category.sharpness
+            : (await categoryStatsRepo.get(cat.id)).sharpness;
+        if (tierFor(sharpness) === 'Honest') cappedCellCount += 1;
+      }
+      if (keeperReached({ cappedCellCount, trackedCount: tracked.length })) {
+        await companionRepo.setKeeper();
+      }
     }
 
     // 8. Patch the cache (O(1)). Count every stored log; only refresh stats when counted.
@@ -375,10 +525,43 @@ export const useCalibrationStore = create<CalibrationState>((set, get) => ({
     const tierAfter = tierFor(result.category.sharpness);
     const leveledUp = result.counted && tierAfter !== tierBefore;
 
+    // 8b. Banked discovery — compute the insight ONCE on the write path. Banking
+    //     is real state (not analytics), so it runs BEFORE the fire-and-forget try
+    //     below: a persistence failure must surface, not be silently swallowed.
+    //     Only a counted log can produce a qualifying insight.
+    const ratio = clampRatio(input.estimateMin, input.actualMin);
+    const insight = result.counted
+      ? detectInsight({
+          categoryId: input.category,
+          n: result.category.n,
+          mEffective: result.category.mEffective,
+          // Ordered ln-ratios: the pre-log window plus this counted log.
+          orderedLogRatios: [...recentClampedRatios, ratio].map((r) => Math.log(r)),
+        })
+      : null;
+    if (insight) {
+      const discoveriesRepo = makeDiscoveriesRepo(db);
+      const last = await discoveriesRepo.lastForCategory(insight.categoryId);
+      if (
+        shouldBankDiscovery({
+          candidateMultiplier: insight.multiplier,
+          lastBankedMultiplier: last?.multiplier ?? null,
+        })
+      ) {
+        await discoveriesRepo.bank({
+          id: makeId(nowMs),
+          categoryId: insight.categoryId,
+          multiplier: insight.multiplier,
+          honestForFifteen: insight.honestForFifteen,
+          headline: insight.headline,
+          discoveredAt: nowMs,
+        });
+      }
+    }
+
     // 9. Side-effects — fire-and-forget; never block or throw into the caller.
     try {
       if (result.counted) haptics.success();
-      const ratio = clampRatio(input.estimateMin, input.actualMin);
       const entryType = input.source === 'timed' ? 'timed' : 'retro';
       analytics.capture('task_logged', {
         category: input.category,
@@ -416,23 +599,24 @@ export const useCalibrationStore = create<CalibrationState>((set, get) => ({
       }
 
       // aha_shown: fire once per category at the moment the discovery first
-      // qualifies on the write path (the canonical surfacing point). Build the
-      // ordered log-ratios from the pre-log window plus this counted log.
-      if (result.counted) {
-        const orderedLogRatios = [...recentClampedRatios, ratio].map((r) => Math.log(r));
-        const insight = detectInsight({
-          categoryId: input.category,
+      // qualifies on the write path (the canonical surfacing point). Reuses the
+      // `insight` computed above (8b) so it isn't detected twice.
+      if (insight && claimAha(input.category)) {
+        analytics.capture('aha_shown', {
+          category: input.category,
+          multiplier: insight.multiplier,
           n: result.category.n,
-          mEffective: result.category.mEffective,
-          orderedLogRatios,
         });
-        if (insight && claimAha(input.category)) {
-          analytics.capture('aha_shown', {
-            category: input.category,
-            multiplier: insight.multiplier,
-            n: result.category.n,
-          });
-        }
+      }
+
+      // discovery_unlocked: a banking-intent marker for every qualifying insight.
+      // Analytics-only here (may be swallowed) — the bank WRITE already happened
+      // above in 8b, outside this try, so it can never be lost.
+      if (insight) {
+        analytics.capture('discovery_unlocked', {
+          categoryId: insight.categoryId,
+          multiplier: insight.multiplier,
+        });
       }
 
       if (result.reclaimDeltaMin >= 1) {
@@ -487,11 +671,22 @@ export const useCalibrationStore = create<CalibrationState>((set, get) => ({
       });
     }
 
-    const summary = resolveSuggestion({
+    const baseSummary = resolveSuggestion({
       guessMinutes: 15,
       category: { mEffective: stat.mEffective, n: stat.n },
       recurring: null,
     });
+
+    // Earned-Readiness: derive confidence + (non-honest) honest range from the
+    // category's completed clamped ratios, then attach both to the summary so any
+    // honest-number surface can show the band / reserve-price hint.
+    const clampedRatios = steps.map((s) => s.clampedRatio);
+    const { confidence, range } = confidenceAndRange(
+      stat.n,
+      baseSummary.honestMinutes,
+      clampedRatios,
+    );
+    const summary: CalibrationSummary = { ...baseSummary, confidence, range };
 
     const insight = detectInsight({
       categoryId,
@@ -518,6 +713,7 @@ export const useCalibrationStore = create<CalibrationState>((set, get) => ({
       mEffective: stat.mEffective,
       sharpness: stat.sharpness,
       tier: tierFor(stat.sharpness),
+      confidence,
       logsToNext: logsToNextTier(stat.sharpness),
       summary,
       insight,
@@ -555,12 +751,44 @@ export const useCalibrationStore = create<CalibrationState>((set, get) => ({
 
     const honestLogCount = stats.reduce((sum, { stat }) => sum + stat.n, 0);
 
+    // Companion presence — derive the stage purely from the monotonic fuel row, then
+    // hang the engine's capability copy off it. driftHealth defaults to 'settled' so a
+    // cold row (pre-first-log) reads as calm, never anxious.
+    const stage = companionStageFor({ maxTier: companion.maxTier, keeper: companion.keeper });
+    const presence: CompanionPresence = {
+      stage,
+      capability: capabilityFor(stage),
+      keeper: companion.keeper,
+      lifetimeNectar: companion.lifetimeDataPoints,
+      driftHealth: companion.driftHealth ?? 'settled',
+      seed: companion.seed,
+    };
+
     return {
       lifetimeMin: companion.reclaimedMinutesLifetime,
       byCategory,
       biggestArea,
       honestLogCount,
+      companion: presence,
+      discoveryCount: companion.discoveryCount,
     };
+  },
+
+  loadDiscoveries: async () => {
+    const db = await resolveDb(get, set);
+    // Newest-first card list (capped) plus the monotonic lifetime count. Map the
+    // db rows to the domain Discovery shape so the hub never sees a db DTO.
+    const rows = await makeDiscoveriesRepo(db).list(50);
+    const discoveryCount = (await makeCompanionRepo(db).get()).discoveryCount;
+    const discoveries: Discovery[] = rows.map((r) => ({
+      id: r.id,
+      categoryId: r.categoryId,
+      multiplier: r.multiplier,
+      honestForFifteen: r.honestForFifteen,
+      headline: r.headline,
+      discoveredAt: r.discoveredAt,
+    }));
+    return { discoveries, discoveryCount };
   },
 
   loadPatternsData: async () => {
@@ -594,6 +822,34 @@ export const useCalibrationStore = create<CalibrationState>((set, get) => ({
     }));
 
     return { categories, logs, nameOf: detailCategoryName };
+  },
+
+  loadReasonInsights: async () => {
+    const db = await resolveDb(get, set);
+    // Read-only reason⋈event join. This never trains the model — it only powers the
+    // Pro "what steals your time" surface, and a network/read failure here can't
+    // touch the core loop.
+    const rows = await makeContextTagRepo(db).listReasonEvents(REASON_SCAN_LIMIT);
+
+    // The engine stays clock-free, so the STORE derives local hour/weekday from each
+    // event's createdAt. Drop rows with no usable est/actual (abandoned or malformed).
+    const samples: ReasonSample[] = rows
+      .filter((r) => r.actualMin !== null && r.actualMin > 0 && r.estimateMin > 0)
+      .map((r) => {
+        const d = new Date(r.createdAt);
+        return {
+          category: r.category,
+          reason: r.reason,
+          direction: (r.actualMin as number) > r.estimateMin ? 'over' : 'under',
+          hour: d.getHours(),
+          weekday: d.getDay(),
+        };
+      });
+
+    return correlateReasons(samples).map((c) => ({
+      ...c,
+      categoryName: detailCategoryName(c.categoryId),
+    }));
   },
 
   setReason: async (eventId, value, source) => {

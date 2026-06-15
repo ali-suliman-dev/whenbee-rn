@@ -33,3 +33,18 @@ export const TREND_STABILIZING_DROP = 0.2;
 
 /** Sub-1-minute deposits are stored but never rendered (no "+0m"). */
 export const RECLAIM_MIN_DISPLAY = 1;
+
+// ── Reason correlations ("what steals your time", Pro) ───────────────────────
+export const REASON_MIN_OVER_SAMPLES = 4; // gate: need ≥4 over-runs in a category
+export const REASON_DOMINANCE_SHARE = 0.5; // a cause must be a strict majority
+export const REASON_TIME_SHARE = 0.6; // ≥60% in one half-day → a time skew
+export const REASON_AFTERNOON_HOUR = 16; // hour ≥16 counts as afternoon
+export const REASON_WEEKDAY_SHARE = 0.5; // ≥50% on one weekday → a weekday skew
+export const REASON_NOTE_MIN_SHARE = 0.6; // B15 note needs a clearer majority
+
+// ── Calibration Confidence (Earned-Readiness, Phase 4.5) ─────────────────────
+export const CONFIDENCE_SETTING_MIN_LOGS = 3;
+export const CONFIDENCE_HONEST_MIN_LOGS = 6;
+export const CONFIDENCE_HONEST_MAX_CV = 0.35;
+export const RANGE_MIN_HALF_WIDTH = 0.18;
+export const RANGE_MAX_HALF_WIDTH = 0.5;

@@ -230,6 +230,51 @@ describe('deriveCalibrationMap', () => {
     expect(rows[0]!.honestMin).toBe(25); // round5(15 × 1.5 = 22.5)
     expect(rows[1]!.honestMin).toBe(30); // round5(15 × 2.0)
   });
+
+  it('reads raw for a thin category (one log, no spread to settle)', () => {
+    const data = makeData({
+      categories: [stat({ categoryId: 'admin', n: 1 })],
+      logs: [log({ category: 'admin', estimateMin: 10, actualMin: 20 })],
+    });
+    expect(deriveCalibrationMap(data)[0]!.confidence).toBe('raw');
+  });
+
+  it('reads honest for a settled cluster (≥6 tight logs)', () => {
+    const data = makeData({
+      categories: [stat({ categoryId: 'admin', n: 6 })],
+      // Tight cluster around 2× → low CV → honest.
+      logs: Array.from({ length: 6 }, () => log({ category: 'admin', estimateMin: 10, actualMin: 20 })),
+    });
+    expect(deriveCalibrationMap(data)[0]!.confidence).toBe('honest');
+  });
+
+  it('derives confidence from THIS category\'s clamped ratios, not the aggregate', () => {
+    // admin: enough logs but a wide spread → setting (not honest), even at n≥6.
+    const data = makeData({
+      categories: [stat({ categoryId: 'admin', n: 6 })],
+      logs: [
+        log({ category: 'admin', estimateMin: 10, actualMin: 10 }),
+        log({ category: 'admin', estimateMin: 10, actualMin: 40 }),
+        log({ category: 'admin', estimateMin: 10, actualMin: 12 }),
+        log({ category: 'admin', estimateMin: 10, actualMin: 38 }),
+        log({ category: 'admin', estimateMin: 10, actualMin: 11 }),
+        log({ category: 'admin', estimateMin: 10, actualMin: 40 }),
+      ],
+    });
+    expect(deriveCalibrationMap(data)[0]!.confidence).toBe('setting');
+  });
+
+  it('ignores logs without an actual when computing confidence', () => {
+    const data = makeData({
+      categories: [stat({ categoryId: 'admin', n: 1 })],
+      logs: [
+        log({ category: 'admin', estimateMin: 10, actualMin: 20 }),
+        log({ category: 'admin', status: 'abandoned', actualMin: null }),
+      ],
+    });
+    // Only one usable ratio → below the setting minimum → raw.
+    expect(deriveCalibrationMap(data)[0]!.confidence).toBe('raw');
+  });
 });
 
 describe('derivePatterns', () => {

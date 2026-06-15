@@ -1,6 +1,8 @@
 import { render, screen } from '@testing-library/react-native';
 import { WhenbeeHub } from '@/src/features/whenbee/WhenbeeHub';
 import { useWhenbeeHub, type WhenbeeHubVM } from '@/src/features/whenbee/useWhenbeeHub';
+import { capabilityFor } from '@/src/engine';
+import type { CompanionPresence } from '@/src/stores/calibrationStore';
 
 // Mock expo-router: router.push is a spy; useFocusEffect runs the callback once
 // (mirrors an immediate focus) so the on-focus refresh path is exercised.
@@ -17,6 +19,15 @@ jest.mock('@/src/features/whenbee/useWhenbeeHub', () => ({
 
 const mockHook = useWhenbeeHub as jest.MockedFunction<typeof useWhenbeeHub>;
 
+const COMPANION_FIXTURE: CompanionPresence = {
+  stage: 1,
+  capability: capabilityFor(1),
+  keeper: false,
+  lifetimeNectar: 0,
+  driftHealth: 'settled',
+  seed: 1,
+};
+
 function vm(overrides: Partial<WhenbeeHubVM> = {}): WhenbeeHubVM {
   return {
     reclaimLifetimeMin: 0,
@@ -25,7 +36,10 @@ function vm(overrides: Partial<WhenbeeHubVM> = {}): WhenbeeHubVM {
     honestLogCount: 0,
     blindSpot: null,
     tier: 'Raw',
+    companion: COMPANION_FIXTURE,
     cells: [],
+    discoveries: [],
+    discoveryCount: 0,
     refresh: jest.fn(),
     ...overrides,
   };

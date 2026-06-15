@@ -11,6 +11,11 @@ import { PredictionCard } from '@/src/features/patterns/PredictionCard';
 import { DriftAlert } from '@/src/features/patterns/DriftAlert';
 import { CalibrationMap } from '@/src/features/patterns/CalibrationMap';
 import { PatternsEmpty } from '@/src/features/patterns/PatternsEmpty';
+import { useReasonInsights } from '@/src/features/patterns/useReasonInsights';
+import { ProGate } from '@/src/features/paywall/ProGate';
+import { StealsYourTime } from '@/src/features/patterns/StealsYourTime';
+import { StealsYourTimeWeekly } from '@/src/features/patterns/StealsYourTimeWeekly';
+import { StealsYourTimeLocked } from '@/src/features/patterns/StealsYourTimeLocked';
 
 // ──────────────────────────────────────────────────────────────────────────────
 // Patterns — the free, read-only self-insight surface. Every card is a pure
@@ -23,6 +28,7 @@ import { PatternsEmpty } from '@/src/features/patterns/PatternsEmpty';
 export default function Patterns() {
   const t = useTheme();
   const { view } = usePatterns();
+  const { insights } = useReasonInsights();
 
   const showEmpty = view !== null && view.empty;
   // Plan-experiment is special: when there's enough overall data but the timed/retro
@@ -50,6 +56,10 @@ export default function Patterns() {
             {view.biggestSurprise ? <BiggestSurprise card={view.biggestSurprise} /> : null}
             {view.prediction ? <PredictionCard card={view.prediction} /> : null}
             {view.driftAlert ? <DriftAlert card={view.driftAlert} /> : null}
+            <ProGate fallback={insights.length > 0 ? <StealsYourTimeLocked /> : null}>
+              <StealsYourTime insights={insights} />
+              <StealsYourTimeWeekly insights={insights} />
+            </ProGate>
             {view.calibrationMap.length > 0 ? <CalibrationMap rows={view.calibrationMap} /> : null}
           </>
         ) : null}

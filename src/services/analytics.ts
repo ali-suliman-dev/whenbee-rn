@@ -50,6 +50,7 @@ export interface AppEventProps {
   tier_up: { from_tier: TierName; to_tier: TierName };
   cell_capped: { tier: TierName };
   aha_shown: { category: string; multiplier: number; n: number };
+  discovery_unlocked: { categoryId: string; multiplier: number };
 
   // ── Reclaim ──────────────────────────────────────────────────────────────────
   reclaim_deposit: { minutes: number; category: string; source: string };
@@ -82,11 +83,18 @@ export interface AppEventProps {
   widget_engaged: { surface: 'home' | 'lock' | 'live_activity' };
 
   // ── Monetization ─────────────────────────────────────────────────────────────
-  paywall_view: { trigger: 'make_day_honest' | 'settings_upgrade' };
+  paywall_view: {
+    trigger: 'make_day_honest' | 'settings_upgrade' | 'steals_your_time';
+    readiness?: 'pre' | 'honest';
+  };
+  founder_reserve: { result: 'reserved' };
   plan_selected: { plan: 'yearly' | 'lifetime' | 'monthly' };
   trial_started: { plan: string; price: number; result: string };
   purchase: { plan: string; price: number; result: string };
   restore_purchases: { plan?: string; price?: number; result: string };
+
+  // ── On-device share ──────────────────────────────────────────────────────────
+  plan_shared: { surface: 'plan' | 'archetype'; is_pro: boolean; result: 'shared' | 'gated' | 'error' };
 
   // ── Calendar / reminders ─────────────────────────────────────────────────────
   calendar_padded: { events_count: number; day_end_shift_min: number };

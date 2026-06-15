@@ -21,7 +21,7 @@ export function PlanTimeline({ items }: { items: PlanTimelineItem[] }) {
             variant="label"
             style={{
               fontVariant: ['tabular-nums'],
-              minWidth: 110,
+              minWidth: t.size.timelineCol,
               color: t.colors.primary,
               fontWeight: t.fontWeight.semibold,
             }}
