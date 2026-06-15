@@ -17,7 +17,12 @@ const NOW = 1_700_000_000_000;
 const DAY = 24 * 60 * 60 * 1000;
 
 function setPatternsData(data: PatternsData) {
-  useCalibrationStore.setState({ loadPatternsData: async () => data });
+  // Stub both reads the screen kicks off on mount: the Patterns projection and the
+  // Pro "what steals your time" insights (default empty → no Pro card, no sqlite).
+  useCalibrationStore.setState({
+    loadPatternsData: async () => data,
+    loadReasonInsights: async () => [],
+  });
 }
 
 describe('Patterns screen', () => {
