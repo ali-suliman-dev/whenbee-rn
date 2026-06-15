@@ -11,5 +11,6 @@ export function makeCompanionRepo(db: Database) {
     setKeeper: () => db.setKeeper(),
     setDrift: (value: 'settled' | 'curious') => db.setDriftHealth(value),
     ensureSeed: (generate: () => number) => db.setSeed(generate()),
+    incrementDiscoveryCount: () => db.incrementDiscoveryCount(),
   };
 }

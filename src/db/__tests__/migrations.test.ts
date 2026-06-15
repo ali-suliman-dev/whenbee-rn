@@ -196,3 +196,21 @@ describe('memoryDatabase — companion fuel layers', () => {
     expect((await db.getCompanion()).seed).toBe(original);
   });
 });
+
+describe('MIGRATIONS 0004 — discoveries gallery', () => {
+  const migration0004 = MIGRATIONS[3]; // index 3 == 0004
+  it('exists and is a string', () => { expect(typeof migration0004).toBe('string'); });
+  it('creates the discoveries table (IF NOT EXISTS)', () => { expect(migration0004).toContain('CREATE TABLE IF NOT EXISTS discoveries'); });
+  it('carries category, multiplier, headline, discovered_at', () => {
+    expect(migration0004).toContain('category_id');
+    expect(migration0004).toContain('multiplier');
+    expect(migration0004).toContain('honest_for_fifteen');
+    expect(migration0004).toContain('headline');
+    expect(migration0004).toContain('discovered_at');
+  });
+  it('indexes newest-first + by category', () => {
+    expect(migration0004).toContain('idx_discoveries_discovered_at');
+    expect(migration0004).toContain('idx_discoveries_category');
+  });
+  it('adds companion.discovery_count', () => { expect(migration0004).toContain('ALTER TABLE companion ADD COLUMN discovery_count'); });
+});

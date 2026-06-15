@@ -35,6 +35,7 @@ export interface Companion {
   keeper: boolean; // Layer 3 fuel — latches true once earned; never cleared
   seed: number; // procedural seed for the companion's appearance; set once, then frozen
   driftHealth?: 'settled' | 'curious'; // positive-only drift register (never a guilt signal)
+  discoveryCount: number; // banked aha cards — append-only, only ever rises
 }
 
 /** Capture-only reason slug for a reclaim or context event. */

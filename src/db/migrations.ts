@@ -72,4 +72,19 @@ export const MIGRATIONS: string[] = [
   ALTER TABLE companion ADD COLUMN seed INTEGER NOT NULL DEFAULT 0;
   ALTER TABLE companion ADD COLUMN drift_health TEXT NOT NULL DEFAULT 'settled';
   `,
+
+  // 0004 — Discoveries gallery (append-only) + monotonic discoveryCount.
+  `
+  CREATE TABLE IF NOT EXISTS discoveries (
+    id TEXT PRIMARY KEY,
+    category_id TEXT NOT NULL,
+    multiplier REAL NOT NULL,
+    honest_for_fifteen REAL NOT NULL,
+    headline TEXT NOT NULL,
+    discovered_at INTEGER NOT NULL
+  );
+  CREATE INDEX IF NOT EXISTS idx_discoveries_discovered_at ON discoveries (discovered_at);
+  CREATE INDEX IF NOT EXISTS idx_discoveries_category ON discoveries (category_id, discovered_at);
+  ALTER TABLE companion ADD COLUMN discovery_count INTEGER NOT NULL DEFAULT 0;
+  `,
 ];

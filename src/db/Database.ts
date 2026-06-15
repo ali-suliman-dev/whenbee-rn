@@ -2,7 +2,7 @@
 // a concrete adapter. Two adapters implement it: an in-memory Map-backed one
 // (tests + fallback) and the real expo-sqlite one (device runtime).
 
-import type { CategoryStatRow, CompanionRow, ContextTagRow, ReasonEventRow, RecurringStatRow, TaskEventRow } from './types';
+import type { CategoryStatRow, CompanionRow, ContextTagRow, DiscoveryRow, ReasonEventRow, RecurringStatRow, TaskEventRow } from './types';
 
 export interface Database {
   getCategoryStat(categoryId: string): Promise<CategoryStatRow | null>;
@@ -42,4 +42,13 @@ export interface Database {
   /** All reason tags joined to their events, newest first, capped at `limit`.
    *  READ-ONLY: powers the Pro reason-correlation read; never the model. */
   listReasonEvents(limit: number): Promise<ReasonEventRow[]>;
+
+  /** Append-only — banks one discovery card; rows are never updated or deleted. */
+  insertDiscovery(row: DiscoveryRow): Promise<void>;
+  /** Banked discoveries, newest first, capped at `limit`. */
+  listDiscoveries(limit: number): Promise<DiscoveryRow[]>;
+  /** The newest banked discovery for a category, or null if none. */
+  getLastDiscoveryForCategory(categoryId: string): Promise<DiscoveryRow | null>;
+  /** Monotonic increment — bumps companion.discoveryCount by one; never decrements. */
+  incrementDiscoveryCount(): Promise<void>;
 }

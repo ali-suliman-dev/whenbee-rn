@@ -51,6 +51,17 @@ export interface CompanionRow {
   keeper: boolean;
   seed: number;
   driftHealth: 'settled' | 'curious';
+  discoveryCount: number;
+}
+
+/** A banked aha — one append-only discovery card row. */
+export interface DiscoveryRow {
+  id: string;
+  categoryId: string;
+  multiplier: number;
+  honestForFifteen: number;
+  headline: string;
+  discoveredAt: number;
 }
 
 /** A context tag attached to a task event (capture-only; never read by the model). */

@@ -11,7 +11,7 @@ import * as SQLite from 'expo-sqlite';
 import { runMigrations } from './client';
 import type { Database } from './Database';
 import type { AdaptSpeed, LogSource, LogStatus } from '@/src/domain/types';
-import type { CategoryStatRow, CompanionRow, ContextTagRow, ReasonEventRow, RecurringStatRow, TaskEventRow } from './types';
+import type { CategoryStatRow, CompanionRow, ContextTagRow, DiscoveryRow, ReasonEventRow, RecurringStatRow, TaskEventRow } from './types';
 
 interface TaskEventDbRow {
   id: string;
@@ -47,6 +47,16 @@ interface CompanionDbRow {
   keeper: number;
   seed: number;
   drift_health: string;
+  discovery_count: number;
+}
+
+interface DiscoveryDbRow {
+  id: string;
+  category_id: string;
+  multiplier: number;
+  honest_for_fifteen: number;
+  headline: string;
+  discovered_at: number;
 }
 
 interface RecurringStatDbRow {
@@ -86,6 +96,17 @@ function mapCategoryStat(r: CategoryStatDbRow): CategoryStatRow {
     adaptSpeed: r.adapt_speed as AdaptSpeed,
     updatedAt: r.updated_at,
     reclaimedMinutes: r.reclaimed_minutes,
+  };
+}
+
+function mapDiscovery(r: DiscoveryDbRow): DiscoveryRow {
+  return {
+    id: r.id,
+    categoryId: r.category_id,
+    multiplier: r.multiplier,
+    honestForFifteen: r.honest_for_fifteen,
+    headline: r.headline,
+    discoveredAt: r.discovered_at,
   };
 }
 
@@ -211,7 +232,7 @@ export async function createSqliteDatabase(name = 'whenbee.db'): Promise<Databas
 
     async getCompanion(): Promise<CompanionRow> {
       const row = await db.getFirstAsync<CompanionDbRow>(
-        `SELECT reclaimed_minutes_lifetime, lifetime_data_points, max_tier, keeper, seed, drift_health
+        `SELECT reclaimed_minutes_lifetime, lifetime_data_points, max_tier, keeper, seed, drift_health, discovery_count
          FROM companion WHERE id = 1`
       );
       return {
@@ -221,6 +242,7 @@ export async function createSqliteDatabase(name = 'whenbee.db'): Promise<Databas
         keeper: row?.keeper === 1,
         seed: row?.seed ?? 0,
         driftHealth: row?.drift_health === 'curious' ? 'curious' : 'settled',
+        discoveryCount: row?.discovery_count ?? 0,
       };
     },
 
@@ -326,6 +348,39 @@ export async function createSqliteDatabase(name = 'whenbee.db'): Promise<Databas
         actualMin: r.actual_min,
         createdAt: r.created_at,
       }));
+    },
+
+    async insertDiscovery(row: DiscoveryRow): Promise<void> {
+      await db.runAsync(
+        `INSERT INTO discoveries
+           (id, category_id, multiplier, honest_for_fifteen, headline, discovered_at)
+         VALUES (?, ?, ?, ?, ?, ?)`,
+        row.id,
+        row.categoryId,
+        row.multiplier,
+        row.honestForFifteen,
+        row.headline,
+        row.discoveredAt
+      );
+    },
+    async listDiscoveries(limit: number): Promise<DiscoveryRow[]> {
+      const rows = await db.getAllAsync<DiscoveryDbRow>(
+        'SELECT * FROM discoveries ORDER BY discovered_at DESC LIMIT ?',
+        limit
+      );
+      return rows.map(mapDiscovery);
+    },
+    async getLastDiscoveryForCategory(categoryId: string): Promise<DiscoveryRow | null> {
+      const row = await db.getFirstAsync<DiscoveryDbRow>(
+        'SELECT * FROM discoveries WHERE category_id = ? ORDER BY discovered_at DESC LIMIT 1',
+        categoryId
+      );
+      return row ? mapDiscovery(row) : null;
+    },
+    async incrementDiscoveryCount(): Promise<void> {
+      await db.runAsync(
+        'UPDATE companion SET discovery_count = discovery_count + 1 WHERE id = 1'
+      );
     },
   };
 }

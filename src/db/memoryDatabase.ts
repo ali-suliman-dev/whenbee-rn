@@ -3,13 +3,14 @@
 // fully synchronous; the async signatures satisfy the port contract.
 
 import type { Database } from './Database';
-import type { CategoryStatRow, CompanionRow, ContextTagRow, ReasonEventRow, RecurringStatRow, TaskEventRow } from './types';
+import type { CategoryStatRow, CompanionRow, ContextTagRow, DiscoveryRow, ReasonEventRow, RecurringStatRow, TaskEventRow } from './types';
 
 export function createMemoryDatabase(): Database {
   const categoryStats = new Map<string, CategoryStatRow>();
   const recurringStats = new Map<string, RecurringStatRow>();
   const events = new Map<string, TaskEventRow>();
   const contextTags = new Map<string, ContextTagRow>();
+  const discoveries = new Map<string, DiscoveryRow>();
   const companion: CompanionRow = {
     reclaimedMinutesLifetime: 0,
     lifetimeDataPoints: 0,
@@ -17,6 +18,7 @@ export function createMemoryDatabase(): Database {
     keeper: false,
     seed: 1,
     driftHealth: 'settled',
+    discoveryCount: 0,
   };
 
   /** Newest first by createdAt, sliced to `limit`. */
@@ -106,6 +108,24 @@ export function createMemoryDatabase(): Database {
         });
       }
       return rows.sort((a, b) => b.createdAt - a.createdAt).slice(0, limit);
+    },
+
+    async insertDiscovery(row: DiscoveryRow): Promise<void> {
+      discoveries.set(row.id, { ...row });
+    },
+    async listDiscoveries(limit: number): Promise<DiscoveryRow[]> {
+      return [...discoveries.values()]
+        .sort((a, b) => b.discoveredAt - a.discoveredAt)
+        .slice(0, limit);
+    },
+    async getLastDiscoveryForCategory(categoryId: string): Promise<DiscoveryRow | null> {
+      const matching = [...discoveries.values()]
+        .filter((d) => d.categoryId === categoryId)
+        .sort((a, b) => b.discoveredAt - a.discoveredAt);
+      return matching[0] ?? null;
+    },
+    async incrementDiscoveryCount(): Promise<void> {
+      companion.discoveryCount += 1;
     },
   };
 }
