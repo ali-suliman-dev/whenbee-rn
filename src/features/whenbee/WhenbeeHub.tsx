@@ -16,6 +16,7 @@ import { useWhenbeeHub } from './useWhenbeeHub';
 import { WhenbeeAvatar } from './WhenbeeAvatar';
 import { TierTrailHub } from './TierTrailHub';
 import { ReclaimHeroCard } from './ReclaimHeroCard';
+import { DiscoveriesPreviewCard } from './DiscoveriesPreviewCard';
 import { BlindSpotCard } from './BlindSpotCard';
 
 // ──────────────────────────────────────────────────────────────────────────────
@@ -110,7 +111,12 @@ export function WhenbeeHub() {
         biggestArea={vm.biggestArea}
       />
 
-      {/* 4 — Blind-spot nudge (kind, conditional) */}
+      {/* 4 — Discoveries teaser (banked aha cards — shown once any exist) */}
+      {vm.discoveryCount > 0 ? (
+        <DiscoveriesPreviewCard discoveries={vm.discoveries} discoveryCount={vm.discoveryCount} />
+      ) : null}
+
+      {/* 5 — Blind-spot nudge (kind, conditional) */}
       {vm.blindSpot ? <BlindSpotCard blindSpot={vm.blindSpot} /> : null}
 
       {/* 5 — Per-category drill-down */}

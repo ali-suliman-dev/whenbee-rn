@@ -38,6 +38,8 @@ function vm(overrides: Partial<WhenbeeHubVM> = {}): WhenbeeHubVM {
     tier: 'Raw',
     companion: COMPANION_FIXTURE,
     cells: [],
+    discoveries: [],
+    discoveryCount: 0,
     refresh: jest.fn(),
     ...overrides,
   };

@@ -5,7 +5,7 @@ import { useCategoriesStore } from '@/src/stores/categoriesStore';
 import { tierFor, capabilityFor, CATEGORY_NAMES } from '@/src/engine';
 import { analytics } from '@/src/services/analytics';
 import type { HoneycombCell } from '@/src/components/honeycomb/Honeycomb';
-import type { Tier } from '@/src/domain/types';
+import type { Tier, Discovery } from '@/src/domain/types';
 
 // ──────────────────────────────────────────────────────────────────────────────
 // useWhenbeeHub — the read-model for the Whenbee hub screen (UI lands in B.3).
@@ -37,6 +37,10 @@ export interface WhenbeeHubVM {
   companion: CompanionPresence;
   /** One cell per tracked category, ready for <Honeycomb size="hub" />. */
   cells: HoneycombCell[];
+  /** Banked aha cards, newest first — the teaser into the Discoveries gallery. */
+  discoveries: Discovery[];
+  /** Lifetime discovery count (monotonic — only ever rises). */
+  discoveryCount: number;
   /** Re-pull the async reclaim totals (call on screen focus — deposits don't push). */
   refresh: () => void;
 }
@@ -74,12 +78,19 @@ const EMPTY_RECLAIM: Pick<
   companion: EMPTY_COMPANION,
 };
 
+const EMPTY_DISCOVERIES: Pick<WhenbeeHubVM, 'discoveries' | 'discoveryCount'> = {
+  discoveries: [],
+  discoveryCount: 0,
+};
+
 export function useWhenbeeHub(): WhenbeeHubVM {
   const loadReclaimSummary = useCalibrationStore((s) => s.loadReclaimSummary);
+  const loadDiscoveries = useCalibrationStore((s) => s.loadDiscoveries);
   const statsByCategory = useCalibrationStore((s) => s.statsByCategory);
   const categories = useCategoriesStore((s) => s.categories);
 
   const [reclaim, setReclaim] = useState(EMPTY_RECLAIM);
+  const [discoveries, setDiscoveries] = useState(EMPTY_DISCOVERIES);
   // A bump counter the screen ticks on focus to re-pull the async totals — a
   // deposit during the live loop updates the bank but does NOT push to this hook.
   const [focusTick, setFocusTick] = useState(0);
@@ -100,10 +111,16 @@ export function useWhenbeeHub(): WhenbeeHubVM {
       // reclaim_total_view: the hub's Reclaim card is now showing a real total.
       analytics.capture('reclaim_total_view', { lifetime_minutes: summary.lifetimeMin });
     });
+    // Banked discoveries ride the same async path — refreshed on focus so a card
+    // banked during the live loop appears the next time the hub is entered.
+    void loadDiscoveries().then((result) => {
+      if (!active) return;
+      setDiscoveries({ discoveries: result.discoveries, discoveryCount: result.discoveryCount });
+    });
     return () => {
       active = false;
     };
-  }, [loadReclaimSummary, categories, focusTick]);
+  }, [loadReclaimSummary, loadDiscoveries, categories, focusTick]);
 
   // Cells + lead tier + blind spot derive synchronously from the calibration cache.
   const cells = useMemo<HoneycombCell[]>(
@@ -141,6 +158,7 @@ export function useWhenbeeHub(): WhenbeeHubVM {
 
   return {
     ...reclaim,
+    ...discoveries,
     blindSpot,
     tier,
     cells,
