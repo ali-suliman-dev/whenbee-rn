@@ -22,7 +22,10 @@ export const tokens = {
   // tappable controls size from here, so nothing is ad-hoc under the 44pt minimum.
   // `coin` = the FocusCard play affordance — a touch smaller than a full md control
   // so the disc reads as an accent, not a button competing with the card.
-  size: { control: { sm: 36, md: 44, lg: 52 }, coin: 40 },
+  // `shareCard` = fixed width of the off-screen ShareableCard captured to an image.
+  // `timelineCol` = the tabular start–end time column width in the plan timeline
+  // (one literal, reused by PlanTimeline + ShareableCard so the columns line up).
+  size: { control: { sm: 36, md: 44, lg: 52 }, coin: 40, shareCard: 340, timelineCol: 110 },
 
   // Icon sizing scale — replaces inline 12/16/18/20/22/24/30 across the app.
   iconSize: { xs: 12, sm: 16, md: 20, lg: 24, xl: 32 },
@@ -39,7 +42,10 @@ export const tokens = {
   // set 0 to remove) all card borders app-wide. hairline/thin/thick stay for
   // dividers, inputs and accent edges, so tuning cards never disturbs them.
   // borderWidth: { hairline: 1, thin: 1.5, thick: 2, card: 1 },
-  borderWidth: { hairline: 0, thin: 0, thick: 2, card: 0 },
+  // `share` = the ShareableCard's defined 1px edge. It is kept OFF the global card
+  // knob on purpose: a shared image needs a visible edge against any background,
+  // even when in-app cards run borderless.
+  borderWidth: { hairline: 0, thin: 0, thick: 2, card: 0, share: 1 },
 
   // Replaces scattered 0.3 / 0.4 / 0.6 opacities.
   opacity: { disabled: 0.4, pressed: 0.6 },
