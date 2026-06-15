@@ -12,3 +12,7 @@ export { applyLog } from './update';
 export type { ApplyLogInput, ApplyLogResult } from './update';
 export { planBackward, DEFAULT_BUFFER_MIN } from './planner';
 export { reclaimDividendMinutes, formatReclaim } from './reclaim';
+export {
+  companionStageFor, capabilityFor, keeperReached, driftHealthFromRecent, COMPANION_KEEPER_QUOTA,
+} from './companion';
+export type { CompanionStage, CompanionCapability, DriftHealth } from './companion';
