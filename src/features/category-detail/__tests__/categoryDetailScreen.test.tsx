@@ -3,6 +3,7 @@ import CategoryDetailScreen from '@/src/app/category/[category]';
 import { useCalibrationStore } from '@/src/stores/calibrationStore';
 import { useCategoriesStore } from '@/src/stores/categoriesStore';
 import { createMemoryDatabase, type Database, type TaskEventRow } from '@/src/db';
+import { kv } from '@/src/lib/kv';
 
 const setAdaptSpeed = jest.fn();
 
@@ -58,6 +59,8 @@ async function seed(opts: { withInsight: boolean }): Promise<Database> {
 
 beforeEach(() => {
   setAdaptSpeed.mockClear();
+  kv.delete('calibration.graduatedCategories');
+  useCalibrationStore.setState({ graduatedCategories: new Set() });
   useCategoriesStore.setState({
     categories: [{ id: 'cleaning', name: 'Cleaning', adaptSpeed: 'balanced' }],
     setAdaptSpeed,
@@ -65,13 +68,41 @@ beforeEach(() => {
 });
 
 describe('CategoryDetailScreen', () => {
-  it('renders the honest number and provenance', async () => {
+  it('renders the honest band while still learning (high-variance data → setting)', async () => {
     await seed({ withInsight: true });
     render(<CategoryDetailScreen />);
 
-    // round_to_5(15 × 1.9) = 30 → "~30"
+    // n=8 but the spread of clamped ratios (CV ≈ 0.38 > 0.35) keeps confidence at
+    // 'setting', so the hero shows the band + a learning line, not the tight ~30.
+    expect(await screen.findByText(/Getting clearer/)).toBeOnTheScreen();
+    expect(screen.queryByText('~30')).toBeNull();
+  });
+
+  it('renders the tight honest number once the category graduates', async () => {
+    // Settled data: 8 identical runs → CV 0, n ≥ 6 → honest confidence.
+    const db = createMemoryDatabase();
+    await db.upsertCategoryStat({
+      categoryId: 'cleaning',
+      n: 8,
+      logEwma: 0.6,
+      mEffective: 2.0,
+      sharpness: 90,
+      priorMult: 2.0,
+      adaptSpeed: 'balanced',
+      updatedAt: T0,
+      reclaimedMinutes: 0,
+    });
+    for (let i = 0; i < 8; i++) {
+      await db.insertTaskEvent(event({ id: `s${i}`, estimateMin: 15, actualMin: 30, createdAt: T0 + i }));
+    }
+    useCalibrationStore.setState({ logs: 0, statsByCategory: {}, graduatedCategories: new Set() });
+    useCalibrationStore.getState().setDatabase(db);
+
+    render(<CategoryDetailScreen />);
+
+    // round_to_5(15 × 2.0) = 30 → "~30", with the runs multiplier line.
     expect(await screen.findByText('~30')).toBeOnTheScreen();
-    expect(screen.getByText('runs 1.9×')).toBeOnTheScreen();
+    expect(screen.getByText('runs 2.0×')).toBeOnTheScreen();
   });
 
   it('shows the AhaCard only when an insight is present', async () => {

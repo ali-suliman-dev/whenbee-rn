@@ -18,11 +18,18 @@ interface UseCategoryDetailResult {
   adaptSpeed: AdaptSpeed;
   setAdaptSpeed: (speed: AdaptSpeed) => void;
   resetCategory: () => Promise<void>;
+  /** True for the single render after this category first reaches 'honest'
+   *  confidence and hasn't graduated before. Drives the one-time GraduationMoment. */
+  justGraduated: boolean;
+  /** Dismiss the graduation moment — the screen calls this from onDone. */
+  clearJustGraduated: () => void;
 }
 
 export function useCategoryDetail(categoryId: string): UseCategoryDetailResult {
   const loadCategoryDetail = useCalibrationStore((s) => s.loadCategoryDetail);
   const resetCategoryAction = useCalibrationStore((s) => s.resetCategory);
+  const isGraduated = useCalibrationStore((s) => s.isGraduated);
+  const markGraduated = useCalibrationStore((s) => s.markGraduated);
   const setAdaptSpeedAction = useCategoriesStore((s) => s.setAdaptSpeed);
 
   // The chosen learning mode lives in the categories store; default Balanced.
@@ -32,12 +39,22 @@ export function useCategoryDetail(categoryId: string): UseCategoryDetailResult {
 
   const [detail, setDetail] = useState<CategoryDetail | null>(null);
   const [loading, setLoading] = useState(true);
+  const [justGraduated, setJustGraduated] = useState(false);
 
   const refresh = useCallback(async () => {
     const next = await loadCategoryDetail(categoryId);
     setDetail(next);
     setLoading(false);
-  }, [categoryId, loadCategoryDetail]);
+
+    // Graduation: the first time this category reads 'honest' and isn't already
+    // in the kv ledger, latch the moment and mark it (idempotent → fires once ever).
+    if (next.confidence === 'honest' && !isGraduated(categoryId)) {
+      markGraduated(categoryId);
+      setJustGraduated(true);
+    }
+  }, [categoryId, loadCategoryDetail, isGraduated, markGraduated]);
+
+  const clearJustGraduated = useCallback(() => setJustGraduated(false), []);
 
   // Refresh on focus — returning here after logging a task for this category
   // (timer/retro elsewhere) must re-read the snapshot, not show the mount-time one.
@@ -60,5 +77,13 @@ export function useCategoryDetail(categoryId: string): UseCategoryDetailResult {
     await refresh();
   }, [categoryId, resetCategoryAction, refresh]);
 
-  return { detail, loading, adaptSpeed, setAdaptSpeed, resetCategory };
+  return {
+    detail,
+    loading,
+    adaptSpeed,
+    setAdaptSpeed,
+    resetCategory,
+    justGraduated,
+    clearJustGraduated,
+  };
 }
