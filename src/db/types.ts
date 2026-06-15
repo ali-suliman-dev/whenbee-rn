@@ -61,3 +61,13 @@ export interface ContextTagRow {
   source: string;
   createdAt: number;
 }
+
+/** A reason tag joined to its task event (read-only; powers the Pro reason-correlation read). */
+export interface ReasonEventRow {
+  eventId: string;
+  category: string;
+  reason: string;
+  estimateMin: number;
+  actualMin: number | null;
+  createdAt: number;
+}

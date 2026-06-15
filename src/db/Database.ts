@@ -2,7 +2,7 @@
 // a concrete adapter. Two adapters implement it: an in-memory Map-backed one
 // (tests + fallback) and the real expo-sqlite one (device runtime).
 
-import type { CategoryStatRow, CompanionRow, ContextTagRow, RecurringStatRow, TaskEventRow } from './types';
+import type { CategoryStatRow, CompanionRow, ContextTagRow, ReasonEventRow, RecurringStatRow, TaskEventRow } from './types';
 
 export interface Database {
   getCategoryStat(categoryId: string): Promise<CategoryStatRow | null>;
@@ -39,4 +39,7 @@ export interface Database {
   /** Read a single capture-only tag (e.g. for the future "what steals time" read).
    *  NEVER consulted on the calibration path. */
   getContextTag(eventId: string, key: string): Promise<ContextTagRow | null>;
+  /** All reason tags joined to their events, newest first, capped at `limit`.
+   *  READ-ONLY: powers the Pro reason-correlation read; never the model. */
+  listReasonEvents(limit: number): Promise<ReasonEventRow[]>;
 }

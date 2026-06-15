@@ -11,7 +11,7 @@ import * as SQLite from 'expo-sqlite';
 import { runMigrations } from './client';
 import type { Database } from './Database';
 import type { AdaptSpeed, LogSource, LogStatus } from '@/src/domain/types';
-import type { CategoryStatRow, CompanionRow, ContextTagRow, RecurringStatRow, TaskEventRow } from './types';
+import type { CategoryStatRow, CompanionRow, ContextTagRow, ReasonEventRow, RecurringStatRow, TaskEventRow } from './types';
 
 interface TaskEventDbRow {
   id: string;
@@ -299,6 +299,33 @@ export async function createSqliteDatabase(name = 'whenbee.db'): Promise<Databas
         source: row.source,
         createdAt: row.created_at,
       };
+    },
+    async listReasonEvents(limit: number): Promise<ReasonEventRow[]> {
+      const rows = await db.getAllAsync<{
+        event_id: string;
+        category: string;
+        reason: string;
+        estimate_min: number;
+        actual_min: number | null;
+        created_at: number;
+      }>(
+        `SELECT t.event_id AS event_id, e.category AS category, t.value AS reason,
+                e.estimate_min AS estimate_min, e.actual_min AS actual_min, e.created_at AS created_at
+         FROM log_tags t
+         JOIN task_events e ON e.id = t.event_id
+         WHERE t.key = 'reason'
+         ORDER BY e.created_at DESC
+         LIMIT ?`,
+        limit
+      );
+      return rows.map((r) => ({
+        eventId: r.event_id,
+        category: r.category,
+        reason: r.reason,
+        estimateMin: r.estimate_min,
+        actualMin: r.actual_min,
+        createdAt: r.created_at,
+      }));
     },
   };
 }

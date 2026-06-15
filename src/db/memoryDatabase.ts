@@ -3,7 +3,7 @@
 // fully synchronous; the async signatures satisfy the port contract.
 
 import type { Database } from './Database';
-import type { CategoryStatRow, CompanionRow, ContextTagRow, RecurringStatRow, TaskEventRow } from './types';
+import type { CategoryStatRow, CompanionRow, ContextTagRow, ReasonEventRow, RecurringStatRow, TaskEventRow } from './types';
 
 export function createMemoryDatabase(): Database {
   const categoryStats = new Map<string, CategoryStatRow>();
@@ -89,6 +89,23 @@ export function createMemoryDatabase(): Database {
     },
     async getContextTag(eventId: string, key: string): Promise<ContextTagRow | null> {
       return contextTags.get(`${eventId}:${key}`) ?? null;
+    },
+    async listReasonEvents(limit: number): Promise<ReasonEventRow[]> {
+      const rows: ReasonEventRow[] = [];
+      for (const tag of contextTags.values()) {
+        if (tag.key !== 'reason') continue;
+        const event = events.get(tag.eventId);
+        if (event === undefined) continue; // orphan tag — its event was wiped
+        rows.push({
+          eventId: event.id,
+          category: event.category,
+          reason: tag.value,
+          estimateMin: event.estimateMin,
+          actualMin: event.actualMin,
+          createdAt: event.createdAt,
+        });
+      }
+      return rows.sort((a, b) => b.createdAt - a.createdAt).slice(0, limit);
     },
   };
 }
