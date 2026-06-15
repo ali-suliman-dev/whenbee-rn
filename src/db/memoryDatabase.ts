@@ -10,7 +10,14 @@ export function createMemoryDatabase(): Database {
   const recurringStats = new Map<string, RecurringStatRow>();
   const events = new Map<string, TaskEventRow>();
   const contextTags = new Map<string, ContextTagRow>();
-  const companion: CompanionRow = { reclaimedMinutesLifetime: 0 };
+  const companion: CompanionRow = {
+    reclaimedMinutesLifetime: 0,
+    lifetimeDataPoints: 0,
+    maxTier: 0,
+    keeper: false,
+    seed: 1,
+    driftHealth: 'settled',
+  };
 
   /** Newest first by createdAt, sliced to `limit`. */
   function sortedEvents(rows: TaskEventRow[], limit: number): TaskEventRow[] {
@@ -53,6 +60,21 @@ export function createMemoryDatabase(): Database {
     },
     async addReclaim(deltaMin: number): Promise<void> {
       companion.reclaimedMinutesLifetime += deltaMin;
+    },
+    async bumpLifetimeNectar(): Promise<void> {
+      companion.lifetimeDataPoints += 1;
+    },
+    async raiseMaxTier(next: number): Promise<void> {
+      companion.maxTier = Math.max(companion.maxTier, Math.trunc(next));
+    },
+    async setKeeper(): Promise<void> {
+      companion.keeper = true;
+    },
+    async setDriftHealth(value: 'settled' | 'curious'): Promise<void> {
+      companion.driftHealth = value;
+    },
+    async setSeed(seed: number): Promise<void> {
+      if (companion.seed === 0) companion.seed = seed;
     },
     async addCategoryReclaim(categoryId: string, deltaMin: number): Promise<void> {
       const existing = categoryStats.get(categoryId);

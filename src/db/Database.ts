@@ -22,6 +22,16 @@ export interface Database {
   getCompanion(): Promise<CompanionRow>;
   /** Monotonic increment — adds deltaMin to reclaimedMinutesLifetime; never decrements. */
   addReclaim(deltaMin: number): Promise<void>;
+  /** Layer 1 fuel — bumps lifetimeDataPoints by one; only ever goes up. */
+  bumpLifetimeNectar(): Promise<void>;
+  /** Layer 2 fuel — raises maxTier to max(prev, next); never lowers it. */
+  raiseMaxTier(next: number): Promise<void>;
+  /** Layer 3 fuel — latches keeper to true; never clears it. */
+  setKeeper(): Promise<void>;
+  /** Stores the positive-only drift register (never a guilt signal). */
+  setDriftHealth(value: 'settled' | 'curious'): Promise<void>;
+  /** Sets the procedural appearance seed once; ignored if a seed is already set. */
+  setSeed(seed: number): Promise<void>;
   /** Monotonic increment — adds deltaMin to category_stats.reclaimedMinutes for the given category. */
   addCategoryReclaim(categoryId: string, deltaMin: number): Promise<void>;
   /** Capture-only; never read by the calibration model. */

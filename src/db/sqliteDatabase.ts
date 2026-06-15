@@ -42,6 +42,11 @@ interface CategoryStatDbRow {
 
 interface CompanionDbRow {
   reclaimed_minutes_lifetime: number;
+  lifetime_data_points: number;
+  max_tier: number;
+  keeper: number;
+  seed: number;
+  drift_health: string;
 }
 
 interface RecurringStatDbRow {
@@ -206,15 +211,51 @@ export async function createSqliteDatabase(name = 'whenbee.db'): Promise<Databas
 
     async getCompanion(): Promise<CompanionRow> {
       const row = await db.getFirstAsync<CompanionDbRow>(
-        'SELECT reclaimed_minutes_lifetime FROM companion WHERE id = 1'
+        `SELECT reclaimed_minutes_lifetime, lifetime_data_points, max_tier, keeper, seed, drift_health
+         FROM companion WHERE id = 1`
       );
-      return { reclaimedMinutesLifetime: row?.reclaimed_minutes_lifetime ?? 0 };
+      return {
+        reclaimedMinutesLifetime: row?.reclaimed_minutes_lifetime ?? 0,
+        lifetimeDataPoints: row?.lifetime_data_points ?? 0,
+        maxTier: row?.max_tier ?? 0,
+        keeper: row?.keeper === 1,
+        seed: row?.seed ?? 0,
+        driftHealth: row?.drift_health === 'curious' ? 'curious' : 'settled',
+      };
     },
 
     async addReclaim(deltaMin: number): Promise<void> {
       await db.runAsync(
         'UPDATE companion SET reclaimed_minutes_lifetime = reclaimed_minutes_lifetime + ? WHERE id = 1',
         deltaMin
+      );
+    },
+
+    async bumpLifetimeNectar(): Promise<void> {
+      await db.runAsync(
+        'UPDATE companion SET lifetime_data_points = lifetime_data_points + 1 WHERE id = 1'
+      );
+    },
+
+    async raiseMaxTier(next: number): Promise<void> {
+      await db.runAsync(
+        'UPDATE companion SET max_tier = MAX(max_tier, ?) WHERE id = 1',
+        Math.trunc(next)
+      );
+    },
+
+    async setKeeper(): Promise<void> {
+      await db.runAsync('UPDATE companion SET keeper = 1 WHERE id = 1');
+    },
+
+    async setDriftHealth(value: 'settled' | 'curious'): Promise<void> {
+      await db.runAsync('UPDATE companion SET drift_health = ? WHERE id = 1', value);
+    },
+
+    async setSeed(seed: number): Promise<void> {
+      await db.runAsync(
+        'UPDATE companion SET seed = ? WHERE id = 1 AND seed = 0',
+        Math.trunc(seed)
       );
     },
 

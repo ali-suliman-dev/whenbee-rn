@@ -30,6 +30,11 @@ export interface CategoryStats {
 /** Single-row monotonic companion aggregates (the Reclaim bank lives here). */
 export interface Companion {
   reclaimedMinutesLifetime: number; // += deposit per counted log; never decremented
+  lifetimeDataPoints: number; // Layer 1 fuel — total counted logs; only ever bumped up
+  maxTier: number; // Layer 2 fuel — high-water sharpness tier; max(prev, next)
+  keeper: boolean; // Layer 3 fuel — latches true once earned; never cleared
+  seed: number; // procedural seed for the companion's appearance; set once, then frozen
+  driftHealth?: 'settled' | 'curious'; // positive-only drift register (never a guilt signal)
 }
 
 /** Capture-only reason slug for a reclaim or context event. */

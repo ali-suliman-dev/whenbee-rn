@@ -46,6 +46,11 @@ export interface RecurringStatRow {
 /** Single-row companion aggregate (the Reclaim bank). */
 export interface CompanionRow {
   reclaimedMinutesLifetime: number;
+  lifetimeDataPoints: number;
+  maxTier: number;
+  keeper: boolean;
+  seed: number;
+  driftHealth: 'settled' | 'curious';
 }
 
 /** A context tag attached to a task event (capture-only; never read by the model). */

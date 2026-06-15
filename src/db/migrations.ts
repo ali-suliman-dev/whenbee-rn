@@ -63,4 +63,13 @@ export const MIGRATIONS: string[] = [
     PRIMARY KEY (event_id, key)
   );
   `,
+
+  // 0003 — companion 3-layer fuel + procedural seed (additive, monotonic).
+  `
+  ALTER TABLE companion ADD COLUMN lifetime_data_points INTEGER NOT NULL DEFAULT 0;
+  ALTER TABLE companion ADD COLUMN max_tier INTEGER NOT NULL DEFAULT 0;
+  ALTER TABLE companion ADD COLUMN keeper INTEGER NOT NULL DEFAULT 0;
+  ALTER TABLE companion ADD COLUMN seed INTEGER NOT NULL DEFAULT 0;
+  ALTER TABLE companion ADD COLUMN drift_health TEXT NOT NULL DEFAULT 'settled';
+  `,
 ];
