@@ -90,13 +90,18 @@ export function WhenbeeHub() {
       <View style={heroZone}>
         <View style={avatarBurst}>
           <RayBurst size={t.burst.stage} />
-          <WhenbeeAvatar tier={vm.tier} />
+          <WhenbeeAvatar
+            stage={vm.companion.stage}
+            capability={vm.companion.capability}
+            seed={vm.companion.seed}
+            driftHealth={vm.companion.driftHealth}
+          />
         </View>
         {vm.cells.length > 0 ? <Honeycomb size="hub" cells={vm.cells} /> : null}
       </View>
 
       {/* 2 — Tier trail */}
-      <TierTrailHub tier={vm.tier} />
+      <TierTrailHub stage={vm.companion.stage} />
 
       {/* 3 — Reclaim hero (the focal payoff) */}
       <ReclaimHeroCard

@@ -1,7 +1,8 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useCalibrationStore } from '@/src/stores/calibrationStore';
+import type { CompanionPresence } from '@/src/stores/calibrationStore';
 import { useCategoriesStore } from '@/src/stores/categoriesStore';
-import { tierFor, CATEGORY_NAMES } from '@/src/engine';
+import { tierFor, capabilityFor, CATEGORY_NAMES } from '@/src/engine';
 import { analytics } from '@/src/services/analytics';
 import type { HoneycombCell } from '@/src/components/honeycomb/Honeycomb';
 import type { Tier } from '@/src/domain/types';
@@ -32,6 +33,8 @@ export interface WhenbeeHubVM {
   blindSpot: BlindSpot | null;
   /** Lead tier — tierFor of the most-ripened cell (matches HoneycombStrip). */
   tier: Tier;
+  /** The companion's 6-stage presence (stage, capability copy, seed, drift, nectar). */
+  companion: CompanionPresence;
   /** One cell per tracked category, ready for <Honeycomb size="hub" />. */
   cells: HoneycombCell[];
   /** Re-pull the async reclaim totals (call on screen focus — deposits don't push). */
@@ -49,14 +52,26 @@ function categoryName(id: string): string {
     .join(' ');
 }
 
+/** Pre-load companion default — a stage-1 Raw bee, calm and ungated, so the hero
+ *  renders coherently before the async summary resolves (no flash of empty bee). */
+const EMPTY_COMPANION: CompanionPresence = {
+  stage: 1,
+  capability: capabilityFor(1),
+  keeper: false,
+  lifetimeNectar: 0,
+  driftHealth: 'settled',
+  seed: 1,
+};
+
 const EMPTY_RECLAIM: Pick<
   WhenbeeHubVM,
-  'reclaimLifetimeMin' | 'reclaimByCategory' | 'biggestArea' | 'honestLogCount'
+  'reclaimLifetimeMin' | 'reclaimByCategory' | 'biggestArea' | 'honestLogCount' | 'companion'
 > = {
   reclaimLifetimeMin: 0,
   reclaimByCategory: [],
   biggestArea: null,
   honestLogCount: 0,
+  companion: EMPTY_COMPANION,
 };
 
 export function useWhenbeeHub(): WhenbeeHubVM {
@@ -80,6 +95,7 @@ export function useWhenbeeHub(): WhenbeeHubVM {
         reclaimByCategory: summary.byCategory,
         biggestArea: summary.biggestArea,
         honestLogCount: summary.honestLogCount,
+        companion: summary.companion,
       });
       // reclaim_total_view: the hub's Reclaim card is now showing a real total.
       analytics.capture('reclaim_total_view', { lifetime_minutes: summary.lifetimeMin });

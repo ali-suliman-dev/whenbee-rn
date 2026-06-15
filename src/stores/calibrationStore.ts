@@ -20,9 +20,12 @@ import {
   buildTrendSeries,
   keeperReached,
   driftHealthFromRecent,
+  companionStageFor,
+  capabilityFor,
   TIERS,
   CATEGORY_NAMES,
 } from '@/src/engine';
+import type { CompanionStage, CompanionCapability, DriftHealth } from '@/src/engine';
 import type {
   AdaptSpeed,
   LogSource,
@@ -157,6 +160,23 @@ export interface ReclaimByCategory {
   reclaimedMinutes: number;
 }
 
+/** The companion's presence block — its 6-stage growth, derived purely from the
+ *  monotonic companion fuel (maxTier + keeper). Read-only; the engine owns the math. */
+export interface CompanionPresence {
+  /** 1..6 — derived from companionStageFor (Raw→Keeper). Only ever climbs. */
+  stage: CompanionStage;
+  /** What this stage unlocks — the engine's capability copy for the stage. */
+  capability: CompanionCapability;
+  /** True once every tracked category caps at Honest (set-once milestone). */
+  keeper: boolean;
+  /** Lifetime counted-log count (Layer-1 nectar) — the provenance behind the bee. */
+  lifetimeNectar: number;
+  /** Positive-only drift register: 'settled' (calm) or 'curious' (worth a re-check). */
+  driftHealth: DriftHealth;
+  /** Per-install procedural seed — drives the deterministic stripe recolor. */
+  seed: number;
+}
+
 /** Read-only snapshot of reclaim/companion state for the Whenbee hub. */
 export interface ReclaimSummary {
   /** companion.reclaimedMinutesLifetime — the all-time banked total. */
@@ -167,6 +187,8 @@ export interface ReclaimSummary {
   biggestArea: ReclaimByCategory | null;
   /** Total trained (counted) logs across tracked categories — the provenance N. */
   honestLogCount: number;
+  /** The companion's 6-stage presence, derived from the monotonic fuel row. */
+  companion: CompanionPresence;
 }
 
 /** Display name for a seed category; title-cases a custom slug otherwise. */
@@ -593,11 +615,25 @@ export const useCalibrationStore = create<CalibrationState>((set, get) => ({
 
     const honestLogCount = stats.reduce((sum, { stat }) => sum + stat.n, 0);
 
+    // Companion presence — derive the stage purely from the monotonic fuel row, then
+    // hang the engine's capability copy off it. driftHealth defaults to 'settled' so a
+    // cold row (pre-first-log) reads as calm, never anxious.
+    const stage = companionStageFor({ maxTier: companion.maxTier, keeper: companion.keeper });
+    const presence: CompanionPresence = {
+      stage,
+      capability: capabilityFor(stage),
+      keeper: companion.keeper,
+      lifetimeNectar: companion.lifetimeDataPoints,
+      driftHealth: companion.driftHealth ?? 'settled',
+      seed: companion.seed,
+    };
+
     return {
       lifetimeMin: companion.reclaimedMinutesLifetime,
       byCategory,
       biggestArea,
       honestLogCount,
+      companion: presence,
     };
   },
 

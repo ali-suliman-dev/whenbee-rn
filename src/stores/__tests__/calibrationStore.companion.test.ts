@@ -68,6 +68,47 @@ describe('applyLog — fuel Layer 2 (maxTier) is monotonic', () => {
   });
 });
 
+describe('loadReclaimSummary — companion presence block', () => {
+  it('populates the companion block from the fuel row (cold install → stage 1, settled)', async () => {
+    freshStore();
+    const summary = await useCalibrationStore.getState().loadReclaimSummary();
+    expect(summary.companion.stage).toBe(1);
+    expect(summary.companion.capability.tier).toBe('Raw');
+    expect(summary.companion.keeper).toBe(false);
+    expect(summary.companion.lifetimeNectar).toBe(0);
+    expect(summary.companion.driftHealth).toBe('settled');
+    expect(typeof summary.companion.seed).toBe('number');
+  });
+
+  it('reflects climbing presence after counted logs (stage advances, nectar banks)', async () => {
+    const db = freshStore();
+    await makeCategoryStatsRepo(db).upsert({
+      categoryId: 'cleaning',
+      n: 8,
+      logEwma: 0,
+      mEffective: 1.0,
+      sharpness: 90,
+      priorMult: 2.0,
+      adaptSpeed: 'balanced',
+      updatedAt: 1,
+      reclaimedMinutes: 0,
+    });
+    await useCalibrationStore.getState().applyLog({
+      category: 'cleaning',
+      estimateMin: 10,
+      actualMin: 10,
+      status: 'completed',
+      source: 'timed',
+      adaptSpeed: 'balanced',
+      nowMs: 2000,
+    });
+    const summary = await useCalibrationStore.getState().loadReclaimSummary();
+    expect(summary.companion.stage).toBeGreaterThan(1);
+    expect(summary.companion.lifetimeNectar).toBe(1);
+    expect(summary.companion.capability.label.length).toBeGreaterThan(0);
+  });
+});
+
 describe('applyLog — fuel Layer 3 is positive-only', () => {
   it('records a drift-health register on a counted log', async () => {
     const db = freshStore();

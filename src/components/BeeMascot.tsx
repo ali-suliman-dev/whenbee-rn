@@ -1,4 +1,4 @@
-import Svg, { Path, Rect } from 'react-native-svg';
+import Svg, { Path, Rect, Circle, Defs, RadialGradient, Stop } from 'react-native-svg';
 import { useTheme } from '@/src/theme/useTheme';
 
 // ──────────────────────────────────────────────────────────────────────────────
@@ -6,30 +6,92 @@ import { useTheme } from '@/src/theme/useTheme';
 // website-2.0/assets/bee.svg (source kept at src/assets/illustrations/bee.svg).
 // Same approach as WhenbeeAvatar's SVG — no svg-transformer dependency.
 //
-// One STATIC artwork at every tier: progression is told by the honeycomb + tier
-// trail, not the bee. The `variant` prop is the extension seam — future tier or
-// seasonal artworks slot in here without touching call sites (the user has more
-// art coming). Today every variant renders the default bee.
+// ONE base artwork at every stage (no per-variant asset). The 6-stage companion
+// "expression" is layered ON the base, driven by two inputs:
+//   • stage 1..6 → a soft amber GLOW halo whose radius grows with presence
+//     (companion.glow token; stages 1–2 have none — a young bee is plain).
+//   • seed       → a deterministic stripe recolor WITHIN the amber family (a gentle
+//     hue shift, never red), so two installs read as the SAME bee with its own warmth.
 //
 // Colors are token-sourced from `brand.bee` (fixed, mode-independent — a mascot
-// reads as the same bee in light and dark, like a logo).
+// reads as the same bee in light and dark, like a logo). The glow halo uses the
+// drift tint so a 'curious' bee warms toward indigo without any sad/wilt state.
 // ──────────────────────────────────────────────────────────────────────────────
 
-export type BeeVariant = 'default';
+export type BeeVariant =
+  | 'stage-1'
+  | 'stage-2'
+  | 'stage-3'
+  | 'stage-4'
+  | 'stage-5'
+  | 'stage-6'
+  | 'default';
+
+/** Parse the 1..6 stage out of a `stage-N` variant; `default` → 1 (plainest bee). */
+function stageOf(variant: BeeVariant): number {
+  if (variant === 'default') return 1;
+  const n = Number(variant.slice('stage-'.length));
+  return Number.isFinite(n) ? Math.max(1, Math.min(6, n)) : 1;
+}
+
+// Amber band the stripe hue is allowed to roam (HSL hue degrees). The base brand
+// stripe (#F6B442) sits ~38°; we let the seed nudge ±10° so it stays unmistakably
+// amber/honey and never slips toward red (<20°) or yellow-green (>55°).
+const STRIPE_HUE_BASE = 38;
+const STRIPE_HUE_SWING = 10;
+const STRIPE_SAT = 0.91;
+const STRIPE_LIGHT = 0.61;
+const STRIPE_LIGHT_LO = 0.48; // head-shadow stripe (matches brand.stripeLo darkness)
+
+/** Deterministic [0,1) from an integer seed — a cheap fract(sin) hash, pure. */
+function seededUnit(seed: number): number {
+  const x = Math.sin(seed * 12.9898) * 43758.5453;
+  return x - Math.floor(x);
+}
+
+/** HSL → #rrggbb. h in degrees, s/l in [0,1]. Pure, no deps. */
+function hslHex(h: number, s: number, l: number): string {
+  const c = (1 - Math.abs(2 * l - 1)) * s;
+  const hp = h / 60;
+  const x = c * (1 - Math.abs((hp % 2) - 1));
+  let r = 0;
+  let g = 0;
+  let b = 0;
+  if (hp < 1) [r, g, b] = [c, x, 0];
+  else if (hp < 2) [r, g, b] = [x, c, 0];
+  else if (hp < 3) [r, g, b] = [0, c, x];
+  else if (hp < 4) [r, g, b] = [0, x, c];
+  else if (hp < 5) [r, g, b] = [x, 0, c];
+  else [r, g, b] = [c, 0, x];
+  const m = l - c / 2;
+  const to = (v: number) =>
+    Math.round((v + m) * 255)
+      .toString(16)
+      .padStart(2, '0');
+  return `#${to(r)}${to(g)}${to(b)}`;
+}
 
 export function BeeMascot({
   size = 88,
   variant = 'default',
+  seed = 1,
 }: {
   size?: number;
   variant?: BeeVariant;
+  /** Per-install seed → deterministic stripe warmth (amber family only). */
+  seed?: number;
 }) {
   const t = useTheme();
   const c = t.brand.bee;
 
-  // Switch on variant so future artworks slot in here. `variant` is read so the
-  // prop is wired end-to-end today even though there's a single artwork.
-  void variant;
+  const stage = stageOf(variant);
+  // noUncheckedIndexedAccess: glow array may be undefined-at-index — fall back to 0.
+  const glowRadius = t.companion.glow[stage - 1] ?? 0;
+
+  // Seed → hue within the amber band → the two stripe tints (band + head-shadow).
+  const hue = STRIPE_HUE_BASE + (seededUnit(seed) * 2 - 1) * STRIPE_HUE_SWING;
+  const stripe = hslHex(hue, STRIPE_SAT, STRIPE_LIGHT);
+  const stripeLo = hslHex(hue, STRIPE_SAT, STRIPE_LIGHT_LO);
 
   return (
     <Svg
@@ -39,6 +101,22 @@ export function BeeMascot({
       accessibilityRole="image"
       accessibilityLabel="Your Whenbee companion"
     >
+      {/* Stage glow halo (behind everything). Radius scales with presence; absent at
+          stages 1–2 so a young bee reads plain. Amber-only — never a red signal. */}
+      {glowRadius > 0 ? (
+        <>
+          <Defs>
+            <RadialGradient id="beeGlow" cx="50%" cy="50%" r="50%">
+              <Stop offset="0%" stopColor={stripe} stopOpacity={0.5} />
+              <Stop offset="100%" stopColor={stripe} stopOpacity={0} />
+            </RadialGradient>
+          </Defs>
+          {/* Map the token px radius onto the 2400 viewBox: a base 1100 + token growth,
+              so the halo blooms outward as the companion climbs. */}
+          <Circle cx={1200} cy={1200} r={1100 + glowRadius * 40} fill="url(#beeGlow)" />
+        </>
+      ) : null}
+
       {/* Stinger (behind the body) */}
       <Rect x={1100} y={1700} width={200} height={200} rx={80} fill={c.ink} />
 
@@ -84,18 +162,18 @@ export function BeeMascot({
         fill={c.bodyLo}
       />
 
-      {/* Amber stripes */}
-      <Path d="M1710 1340C1710 1374.23 1706.63 1407.66 1700.2 1440H699.802C693.373 1407.66 690 1374.23 690 1340V1300H1710V1340Z" fill={c.stripe} />
-      <Path d="M1669.29 1540C1647.27 1591.59 1617 1638.81 1580.13 1680H819.863C782.995 1638.81 752.725 1591.59 730.711 1540H1669.29Z" fill={c.stripe} />
+      {/* Amber stripes — seed-recolored within the amber family */}
+      <Path d="M1710 1340C1710 1374.23 1706.63 1407.66 1700.2 1440H699.802C693.373 1407.66 690 1374.23 690 1340V1300H1710V1340Z" fill={stripe} />
+      <Path d="M1669.29 1540C1647.27 1591.59 1617 1638.81 1580.13 1680H819.863C782.995 1638.81 752.725 1591.59 730.711 1540H1669.29Z" fill={stripe} />
 
       {/* Head band + shadow */}
       <Path
         d="M1350 697C1484.72 697 1594.55 803.565 1599.8 937H1600V980C1600 1101.5 1501.5 1200 1380 1200H1020C898.497 1200 800 1101.5 800 980V937H800.197C805.446 803.565 915.278 697 1050 697C1106.28 697 1158.22 715.598 1200 746.982C1241.78 715.598 1293.72 697 1350 697Z"
-        fill={c.stripe}
+        fill={stripe}
       />
       <Path
         d="M1599.25 927.505C1599.49 930.654 1599.68 933.819 1599.8 937H1600V980C1600 1101.5 1501.5 1200 1380 1200H1020C898.497 1200 800 1101.5 800 980V937H800.197C800.322 933.819 800.506 930.654 800.749 927.505C810.7 1056.46 918.493 1158 1050 1158H1350C1481.51 1158 1589.3 1056.46 1599.25 927.505Z"
-        fill={c.stripeLo}
+        fill={stripeLo}
       />
 
       {/* Eyes + smile */}
