@@ -22,6 +22,8 @@ import {
   driftHealthFromRecent,
   companionStageFor,
   capabilityFor,
+  confidenceFor,
+  honestRangeFor,
   TIERS,
   CATEGORY_NAMES,
 } from '@/src/engine';
@@ -31,7 +33,9 @@ import type {
   LogSource,
   LogStatus,
   Tier,
+  CalibrationConfidence,
   CalibrationSummary,
+  HonestRange,
   Insight,
   TrendSeries,
 } from '@/src/domain/types';
@@ -45,6 +49,44 @@ import { useCategoriesStore } from './categoriesStore';
 // category). Reading/writing kv is synchronous and Expo Go-safe.
 const FIRST_LOG_FLAG = 'whenbee.firstLogFired';
 const AHA_FLAG_PREFIX = 'whenbee.ahaFired.';
+
+// Per-category graduation ledger: the set of category ids that have already
+// reached 'honest' confidence and fired their graduation moment (Step 9 reads
+// this to fire exactly once each). Persisted as a JSON string[] under one key.
+const GRADUATED_KEY = 'calibration.graduatedCategories';
+
+/** Read the persisted graduation ledger as a Set. Tolerates a missing/corrupt
+ *  value by returning an empty set — a bad read never blocks the loop. */
+function readGraduated(): Set<string> {
+  const raw = kv.getString(GRADUATED_KEY);
+  if (raw === null) return new Set();
+  try {
+    const parsed = JSON.parse(raw) as unknown;
+    return Array.isArray(parsed)
+      ? new Set(parsed.filter((id): id is string => typeof id === 'string'))
+      : new Set();
+  } catch {
+    return new Set();
+  }
+}
+
+/** Persist the graduation ledger as a stable JSON array (sorted for determinism). */
+function writeGraduated(ids: Set<string>): void {
+  kv.set(GRADUATED_KEY, JSON.stringify([...ids].sort()));
+}
+
+/** Build a category's confidence + (non-honest) honest range from its completed
+ *  logs. `n` is the trained sample size; `honestMinutes` is the summary's honest
+ *  number. Shared by loadCategoryDetail and any other category-facing summary. */
+function confidenceAndRange(
+  n: number,
+  honestMinutes: number,
+  clampedRatios: number[],
+): { confidence: CalibrationConfidence; range: HonestRange | null } {
+  const confidence = confidenceFor({ n, clampedRatios });
+  const range = confidence === 'honest' ? null : honestRangeFor({ honestMinutes, clampedRatios });
+  return { confidence, range };
+}
 
 /** True the first time it's called process-/install-wide; sets the flag and
  *  returns false thereafter, so `first_log` fires exactly once ever. */
@@ -113,6 +155,9 @@ export interface CategoryDetail {
   mEffective: number;
   sharpness: number;
   tier: Tier;
+  /** Earned-Readiness axis (raw→setting→honest), SEPARATE from the honey `tier`.
+   *  Derived from sample size + spread of clamped ratios; may move either way. */
+  confidence: CalibrationConfidence;
   logsToNext: number;
   /** resolveSuggestion at a 15-min guess (the canonical "honest number" demo). */
   summary: CalibrationSummary;
@@ -205,9 +250,17 @@ function detailCategoryName(id: string): string {
 interface CalibrationState {
   logs: number;
   statsByCategory: Record<string, CachedStat>;
+  /** Category ids that have reached 'honest' confidence and already fired their
+   *  graduation moment. Mirrors the kv ledger; Step 9 reads it to fire once each. */
+  graduatedCategories: Set<string>;
   db: Database | null;
   setDatabase: (db: Database) => void;
   hydrate: () => Promise<void>;
+  /** True when `categoryId` has already graduated (read from the in-memory mirror). */
+  isGraduated: (categoryId: string) => boolean;
+  /** Latch `categoryId` as graduated. Idempotent — re-marking is a no-op and the
+   *  ledger never loses entries. Persists through kv. */
+  markGraduated: (categoryId: string) => void;
   applyLog: (input: ApplyLogParams) => Promise<LogResult>;
   loadCategoryDetail: (categoryId: string) => Promise<CategoryDetail>;
   loadReclaimSummary: () => Promise<ReclaimSummary>;
@@ -255,11 +308,31 @@ const PATTERNS_SCAN_LIMIT = 500;
 export const useCalibrationStore = create<CalibrationState>((set, get) => ({
   logs: 0,
   statsByCategory: {},
+  graduatedCategories: new Set(),
   db: null,
 
   setDatabase: (db) => set({ db }),
 
+  isGraduated: (categoryId) => get().graduatedCategories.has(categoryId),
+
+  markGraduated: (categoryId) => {
+    // Read the persisted ledger fresh so concurrent writers can't clobber each
+    // other; mark is idempotent and the set only ever grows.
+    const ledger = readGraduated();
+    if (ledger.has(categoryId)) {
+      // Already graduated — keep the in-memory mirror in sync but skip the write.
+      set({ graduatedCategories: ledger });
+      return;
+    }
+    ledger.add(categoryId);
+    writeGraduated(ledger);
+    set({ graduatedCategories: ledger });
+  },
+
   hydrate: async () => {
+    // Rehydrate the graduation ledger from kv first (synchronous, Expo Go-safe).
+    set({ graduatedCategories: readGraduated() });
+
     const db = await resolveDb(get, set);
     const statsRepo = makeCategoryStatsRepo(db);
     const tracked = useCategoriesStore.getState().categories;
@@ -547,11 +620,22 @@ export const useCalibrationStore = create<CalibrationState>((set, get) => ({
       });
     }
 
-    const summary = resolveSuggestion({
+    const baseSummary = resolveSuggestion({
       guessMinutes: 15,
       category: { mEffective: stat.mEffective, n: stat.n },
       recurring: null,
     });
+
+    // Earned-Readiness: derive confidence + (non-honest) honest range from the
+    // category's completed clamped ratios, then attach both to the summary so any
+    // honest-number surface can show the band / reserve-price hint.
+    const clampedRatios = steps.map((s) => s.clampedRatio);
+    const { confidence, range } = confidenceAndRange(
+      stat.n,
+      baseSummary.honestMinutes,
+      clampedRatios,
+    );
+    const summary: CalibrationSummary = { ...baseSummary, confidence, range };
 
     const insight = detectInsight({
       categoryId,
@@ -578,6 +662,7 @@ export const useCalibrationStore = create<CalibrationState>((set, get) => ({
       mEffective: stat.mEffective,
       sharpness: stat.sharpness,
       tier: tierFor(stat.sharpness),
+      confidence,
       logsToNext: logsToNextTier(stat.sharpness),
       summary,
       insight,
