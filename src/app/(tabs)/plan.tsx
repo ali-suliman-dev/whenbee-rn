@@ -16,7 +16,9 @@ import { BufferChips } from '@/src/features/planner/BufferChips';
 import { TaskRow } from '@/src/features/planner/TaskRow';
 import { PlanTimeline } from '@/src/features/planner/PlanTimeline';
 import { VerdictCard } from '@/src/features/planner/VerdictCard';
-import type { PlanVerdict } from '@/src/domain/types';
+import { ShareableCard, type ShareCardData } from '@/src/components/ShareableCard';
+import { useShareCard } from '@/src/features/share/useShareCard';
+import type { PlanResult, PlanVerdict } from '@/src/domain/types';
 import type { TextStyle } from 'react-native';
 
 const CATEGORY_IDS = Object.keys(CATEGORY_NAMES);
@@ -47,6 +49,8 @@ export default function Plan() {
     saveActive,
     reproject,
   } = planner;
+
+  const planShare = useShareCard('plan');
 
   const [adding, setAdding] = useState(false);
   const [newLabel, setNewLabel] = useState('');
@@ -189,8 +193,9 @@ export default function Plan() {
               onPush={pushDeadline}
             />
 
-            <View style={{ flexDirection: 'row', gap: t.space[3] }}>
+            <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: t.space[3] }}>
               <AppButton label="Save plan" variant="ghost" size="md" onPress={onSave} />
+              <AppButton label="Share this plan" variant="ghost" size="md" onPress={planShare.onShare} />
               {saved && active && (
                 <AppButton label="I'm behind / re-project" variant="ghost" size="md" onPress={openReproject} />
               )}
@@ -203,6 +208,14 @@ export default function Plan() {
           </View>
         )}
       </ScrollView>
+
+      {/* Off-screen capture card — rendered for react-native-view-shot only, never
+          visible (positioned off-canvas, no touch). Mounts only with a real result. */}
+      {showResult && result && draft.deadline !== null && (
+        <View style={{ position: 'absolute', left: -9999, top: 0 }} pointerEvents="none">
+          <ShareableCard ref={planShare.ref} data={planShareData(result, draft.deadline)} />
+        </View>
+      )}
 
       {/* Re-project diff + confirm sheet — never silently reshuffles */}
       <ReprojectSheet
@@ -236,6 +249,23 @@ function LabelField({ value, onChange }: { value: string; onChange: (v: string) 
       }}
     />
   );
+}
+
+/**
+ * Map a finished plan to the off-screen share card. Mirrors StartByHero's verdict
+ * logic so the shared image leads with the same focal time the user sees: a feasible
+ * finish for "push-deadline", otherwise the honest start-by.
+ */
+function planShareData(result: PlanResult, deadline: number): ShareCardData {
+  const { verdict } = result;
+  const isPush = verdict.kind === 'push-deadline';
+  return {
+    kind: 'plan',
+    focalClock: isPush ? verdict.feasibleDeadline : result.startBy,
+    eyebrow: isPush ? 'FINISH BY' : 'START BY',
+    deadlineClock: deadline,
+    timeline: result.timeline,
+  };
 }
 
 /**
