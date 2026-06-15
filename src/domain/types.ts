@@ -40,6 +40,31 @@ export interface Companion {
 /** Capture-only reason slug for a reclaim or context event. */
 export type ContextReason = string;
 
+/** One captured over/under reason tag, normalized for the correlation engine. */
+export interface ReasonSample {
+  category: Category;
+  reason: ContextReason;
+  direction: 'over' | 'under';
+  hour: number; // local 0–23
+  weekday: number; // local 0–6 (0 = Sunday)
+}
+
+/** A deterministic per-category dominant-cause correlation (over-runs only). */
+export interface ReasonCorrelation {
+  categoryId: string;
+  reason: ContextReason;
+  share: number;
+  sampleCount: number;
+  totalOver: number;
+  timeSkew: 'afternoon' | 'morning' | null;
+  weekdaySkew: number | null;
+}
+
+/** A correlation enriched with the display name for the insight surface. */
+export interface ReasonInsight extends ReasonCorrelation {
+  categoryName: string;
+}
+
 /**
  * Earned-Readiness axis, SEPARATE from the monotonic honey `Tier`.
  * Derived from sample size + coefficient of variation of clamped ratios.
