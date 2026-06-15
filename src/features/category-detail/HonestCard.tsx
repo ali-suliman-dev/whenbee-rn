@@ -31,6 +31,9 @@ interface HonestCardProps {
   confidence?: CalibrationConfidence;
   /** The honest band shown while still learning. Null once honest (a point). */
   range?: HonestRange | null;
+  /** Pro-only, display-only B15 note naming the dominant over-run cause. Never
+   *  affects the honest number or multiplier — purely a quiet second provenance line. */
+  reasonNote?: string;
 }
 
 // While the model is still learning, the honest number is a band, not a point.
@@ -51,6 +54,7 @@ export function HonestCard({
   nextTier,
   confidence,
   range,
+  reasonNote,
 }: HonestCardProps) {
   const t = useTheme();
   // Show the band only while learning AND we actually have a range to show;
@@ -69,7 +73,11 @@ export function HonestCard({
     color: t.colors.amberText,
     fontFamily: 'Jakarta-Bold',
   };
-  const tierMeta: TextStyle = { ...(type.caption as unknown as TextStyle), color: t.colors.inkSoft, flex: 1 };
+  const tierMeta: TextStyle = {
+    ...(type.caption as unknown as TextStyle),
+    color: t.colors.inkSoft,
+    flex: 1,
+  };
 
   const eyebrowRow: ViewStyle = { flexDirection: 'row', alignItems: 'center', gap: t.space[2] };
   const eyebrow: TextStyle = { ...(type.eyebrow as unknown as TextStyle), color: t.colors.primary };
@@ -86,6 +94,12 @@ export function HonestCard({
   };
   const provenanceText: TextStyle = {
     ...(type.caption as unknown as TextStyle),
+    color: t.colors.inkSoft,
+  };
+  // B15 reason note — a quiet, optional second provenance line. Display-only:
+  // it sits below the number and never participates in computing it.
+  const reasonNoteText: TextStyle = {
+    ...(type.bodySm as unknown as TextStyle),
     color: t.colors.inkSoft,
   };
   // The learning line (under a band) and the honest affirmation (under a point).
@@ -149,6 +163,7 @@ export function HonestCard({
       )}
 
       <Text style={provenanceText}>{provenance} · learned on-device</Text>
+      {reasonNote ? <Text style={reasonNoteText}>{reasonNote}</Text> : null}
     </Card>
   );
 }

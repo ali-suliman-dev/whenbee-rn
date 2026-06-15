@@ -23,6 +23,7 @@ export function HonestSuggestionCard({
   guessMinutes,
   confidence,
   range,
+  reasonNote,
 }: {
   honestMinutes: number;
   guessMinutes: number;
@@ -30,6 +31,9 @@ export function HonestSuggestionCard({
   confidence?: CalibrationConfidence;
   /** OPTIONAL band. Shown only with a non-honest confidence; else degrade to tight. */
   range?: HonestRange | null;
+  /** OPTIONAL Pro-only B15 note. Display-only — a quiet second line under the
+   *  honest line; never changes the honest number or delta. */
+  reasonNote?: string;
 }) {
   const t = useTheme();
   const delta = honestMinutes - guessMinutes;
@@ -58,7 +62,10 @@ export function HonestSuggestionCard({
     backgroundColor: t.colors.accentCoin,
   };
 
+  // Content column: the honest line, then the optional quiet B15 note beneath it.
+  const content: ViewStyle = { flex: 1, gap: t.space[0.5] };
   const line: ViewStyle = { flexDirection: 'row', alignItems: 'center', gap: t.space[1] };
+  const noteText: TextStyle = { fontSize: t.fontSize.sm, color: t.colors.inkSoft };
   const lead: TextStyle = {
     fontSize: t.fontSize.sm, // 12 — uniform line; hierarchy via weight + colour
     fontWeight: t.fontWeight.semibold as TextStyle['fontWeight'],
@@ -75,7 +82,11 @@ export function HonestSuggestionCard({
     fontWeight: t.fontWeight.medium as TextStyle['fontWeight'],
     color: t.colors.inkSoft,
   };
-  const dot: TextStyle = { fontSize: t.fontSize.sm, color: t.colors.inkFaint, marginHorizontal: t.space[1] };
+  const dot: TextStyle = {
+    fontSize: t.fontSize.sm,
+    color: t.colors.inkFaint,
+    marginHorizontal: t.space[1],
+  };
   const more: TextStyle = {
     fontSize: t.fontSize.sm, // 12
     fontWeight: t.fontWeight.semibold as TextStyle['fontWeight'],
@@ -84,41 +95,45 @@ export function HonestSuggestionCard({
   const moreMuted: TextStyle = { fontSize: t.fontSize.sm, color: t.colors.inkSoft };
   const learningSuffix: TextStyle = { fontSize: t.fontSize.sm, color: t.colors.inkSoft };
 
-  const a11yLabel = showRange && range
-    ? `Honest range ${range.lowMinutes} to ${range.highMinutes} minutes, still learning`
-    : delta > 0
-      ? `Honest estimate about ${honestMinutes} minutes, ${delta} more than your guess`
-      : `Honest estimate about ${honestMinutes} minutes`;
+  const a11yLabel =
+    showRange && range
+      ? `Honest range ${range.lowMinutes} to ${range.highMinutes} minutes, still learning`
+      : delta > 0
+        ? `Honest estimate about ${honestMinutes} minutes, ${delta} more than your guess`
+        : `Honest estimate about ${honestMinutes} minutes`;
 
   return (
     <View style={card} accessibilityLabel={a11yLabel}>
       <View style={coin}>
         <Ionicons name="trending-up" size={t.iconSize.sm} color={t.colors.accent} />
       </View>
-      <View style={line}>
-        <AppText style={lead}>Honestly</AppText>
-        {showRange && range ? (
-          <>
-            <AppText style={num}>
-              {range.lowMinutes}–{range.highMinutes}
-            </AppText>
-            <AppText style={unit}>m</AppText>
-            <AppText style={dot}>·</AppText>
-            <AppText style={learningSuffix}>still learning</AppText>
-          </>
-        ) : (
-          <>
-            <AppText style={num}>~{honestMinutes}</AppText>
-            <AppText style={unit}>m</AppText>
-            {delta > 0 ? (
-              <>
-                <AppText style={dot}>·</AppText>
-                <AppText style={more}>+{delta}m</AppText>
-                <AppText style={moreMuted}> more</AppText>
-              </>
-            ) : null}
-          </>
-        )}
+      <View style={content}>
+        <View style={line}>
+          <AppText style={lead}>Honestly</AppText>
+          {showRange && range ? (
+            <>
+              <AppText style={num}>
+                {range.lowMinutes}–{range.highMinutes}
+              </AppText>
+              <AppText style={unit}>m</AppText>
+              <AppText style={dot}>·</AppText>
+              <AppText style={learningSuffix}>still learning</AppText>
+            </>
+          ) : (
+            <>
+              <AppText style={num}>~{honestMinutes}</AppText>
+              <AppText style={unit}>m</AppText>
+              {delta > 0 ? (
+                <>
+                  <AppText style={dot}>·</AppText>
+                  <AppText style={more}>+{delta}m</AppText>
+                  <AppText style={moreMuted}> more</AppText>
+                </>
+              ) : null}
+            </>
+          )}
+        </View>
+        {reasonNote ? <AppText style={noteText}>{reasonNote}</AppText> : null}
       </View>
     </View>
   );

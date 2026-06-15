@@ -2,6 +2,8 @@ import { useCallback, useState } from 'react';
 import { useFocusEffect } from 'expo-router';
 import { useCalibrationStore, type CategoryDetail } from '@/src/stores/calibrationStore';
 import { useCategoriesStore } from '@/src/stores/categoriesStore';
+import { useEntitlement } from '@/src/features/paywall/useEntitlement';
+import { REASON_NOTE_MIN_SHARE, reasonPhrase } from '@/src/engine';
 import type { AdaptSpeed } from '@/src/domain/types';
 
 // ──────────────────────────────────────────────────────────────────────────────
@@ -23,6 +25,10 @@ interface UseCategoryDetailResult {
   justGraduated: boolean;
   /** Dismiss the graduation moment — the screen calls this from onDone. */
   clearJustGraduated: () => void;
+  /** Pro-only, display-only B15 note naming the dominant over-run cause for this
+   *  category, when one clearly dominates. `undefined` for non-Pro, no dominant
+   *  cause, or before the async read lands. NEVER affects the honest number. */
+  reasonNote?: string;
 }
 
 export function useCategoryDetail(categoryId: string): UseCategoryDetailResult {
@@ -30,7 +36,9 @@ export function useCategoryDetail(categoryId: string): UseCategoryDetailResult {
   const resetCategoryAction = useCalibrationStore((s) => s.resetCategory);
   const isGraduated = useCalibrationStore((s) => s.isGraduated);
   const markGraduated = useCalibrationStore((s) => s.markGraduated);
+  const loadReasonInsights = useCalibrationStore((s) => s.loadReasonInsights);
   const setAdaptSpeedAction = useCategoriesStore((s) => s.setAdaptSpeed);
+  const isPro = useEntitlement((s) => s.isPro);
 
   // The chosen learning mode lives in the categories store; default Balanced.
   const adaptSpeed = useCategoriesStore(
@@ -40,6 +48,7 @@ export function useCategoryDetail(categoryId: string): UseCategoryDetailResult {
   const [detail, setDetail] = useState<CategoryDetail | null>(null);
   const [loading, setLoading] = useState(true);
   const [justGraduated, setJustGraduated] = useState(false);
+  const [reasonNote, setReasonNote] = useState<string | undefined>(undefined);
 
   const refresh = useCallback(async () => {
     const next = await loadCategoryDetail(categoryId);
@@ -52,7 +61,23 @@ export function useCategoryDetail(categoryId: string): UseCategoryDetailResult {
       markGraduated(categoryId);
       setJustGraduated(true);
     }
-  }, [categoryId, loadCategoryDetail, isGraduated, markGraduated]);
+
+    // B15 reason note — Pro-only, display-only, and OFF the critical path: the
+    // detail render above never waits on this. We resolve it after, so the note
+    // simply appears once ready. A dominant cause (share ≥ threshold) yields a
+    // quiet provenance line; anything else clears it. It NEVER feeds the number.
+    if (!isPro) {
+      setReasonNote(undefined);
+      return;
+    }
+    const insights = await loadReasonInsights();
+    const dominant = insights.find(
+      (i) => i.categoryId === categoryId && i.share >= REASON_NOTE_MIN_SHARE,
+    );
+    setReasonNote(
+      dominant ? `Most overruns here trace back to ${reasonPhrase(dominant.reason)}.` : undefined,
+    );
+  }, [categoryId, loadCategoryDetail, isGraduated, markGraduated, isPro, loadReasonInsights]);
 
   const clearJustGraduated = useCallback(() => setJustGraduated(false), []);
 
@@ -85,5 +110,6 @@ export function useCategoryDetail(categoryId: string): UseCategoryDetailResult {
     resetCategory,
     justGraduated,
     clearJustGraduated,
+    reasonNote,
   };
 }

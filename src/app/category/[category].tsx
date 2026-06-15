@@ -29,8 +29,16 @@ export default function CategoryDetailScreen() {
   const t = useTheme();
   const { category } = useLocalSearchParams<{ category: string }>();
   const categoryId = category ?? '';
-  const { detail, loading, adaptSpeed, setAdaptSpeed, resetCategory, justGraduated, clearJustGraduated } =
-    useCategoryDetail(categoryId);
+  const {
+    detail,
+    loading,
+    adaptSpeed,
+    setAdaptSpeed,
+    resetCategory,
+    justGraduated,
+    clearJustGraduated,
+    reasonNote,
+  } = useCategoryDetail(categoryId);
 
   const [confirming, setConfirming] = useState(false);
   const [toast, setToast] = useState<string | null>(null);
@@ -96,6 +104,7 @@ export default function CategoryDetailScreen() {
               nextTier={nextTier}
               confidence={detail.confidence}
               range={detail.summary.range}
+              reasonNote={reasonNote}
             />
 
             {/* 2 — The aha insight (when there's one worth surfacing). */}
