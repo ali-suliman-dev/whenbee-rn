@@ -40,6 +40,18 @@ export interface Companion {
 /** Capture-only reason slug for a reclaim or context event. */
 export type ContextReason = string;
 
+/**
+ * Earned-Readiness axis, SEPARATE from the monotonic honey `Tier`.
+ * Derived from sample size + coefficient of variation of clamped ratios.
+ */
+export type CalibrationConfidence = 'raw' | 'setting' | 'honest';
+
+/** A honest-number band (low/high in minutes) for a noisy-vs-settled category. */
+export interface HonestRange {
+  lowMinutes: number;
+  highMinutes: number;
+}
+
 /** The honest-number suggestion resolved for a decision moment. */
 export interface CalibrationSummary {
   multiplier: number;
@@ -48,6 +60,9 @@ export interface CalibrationSummary {
   basis: 'personal' | 'prior';
   label: string;
   sampleSize: number;
+  // Optional until Step 6 wires clampedRatios through the store/resolveSuggestion.
+  confidence?: CalibrationConfidence;
+  range?: HonestRange | null;
 }
 
 /** A surfaced aha/discovery card. */

@@ -33,3 +33,10 @@ export const TREND_STABILIZING_DROP = 0.2;
 
 /** Sub-1-minute deposits are stored but never rendered (no "+0m"). */
 export const RECLAIM_MIN_DISPLAY = 1;
+
+// ── Calibration Confidence (Earned-Readiness, Phase 4.5) ─────────────────────
+export const CONFIDENCE_SETTING_MIN_LOGS = 3;
+export const CONFIDENCE_HONEST_MIN_LOGS = 6;
+export const CONFIDENCE_HONEST_MAX_CV = 0.35;
+export const RANGE_MIN_HALF_WIDTH = 0.18;
+export const RANGE_MAX_HALF_WIDTH = 0.5;
