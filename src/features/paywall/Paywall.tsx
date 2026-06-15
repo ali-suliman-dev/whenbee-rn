@@ -13,7 +13,9 @@ import { analytics } from '@/src/services/analytics';
 import type { Package } from '@/src/services/purchases';
 import { useEntitlement } from './useEntitlement';
 import { useOfferings } from './useOfferings';
+import { useFounderReserve } from './useFounderReserve';
 import { BeforeAfterHero } from './BeforeAfterHero';
+import { FounderReserveCard } from './FounderReserveCard';
 import { PlanPicker } from './PlanPicker';
 
 // ──────────────────────────────────────────────────────────────────────────────
@@ -35,6 +37,18 @@ const APPLE_MANAGE_SUBS_URL = 'https://apps.apple.com/account/subscriptions';
 
 type Trigger = 'make_day_honest' | 'settings_upgrade';
 
+/** Earned-readiness framing for the lead heading. */
+type Readiness = 'pre' | 'honest';
+
+/**
+ * The earned ("post-honest") heading + subhead. Shown only once a user's numbers
+ * have settled into honest — it names what they've already earned, rather than
+ * pitching a problem they haven't solved yet.
+ */
+const HONEST_HEADING = 'Your numbers are real now.';
+const HONEST_SUBHEAD =
+  'You did the logging — Whenbee knows how your days actually run. Let it carry those real numbers into your calendar.';
+
 const BENEFITS = [
   { icon: 'time-outline', text: 'Every calendar event padded with your real buffers, automatically.' },
   { icon: 'trending-up', text: 'See how much your day can actually hold — before you overbook it.' },
@@ -53,21 +67,36 @@ function planName(pkg: Package): 'yearly' | 'lifetime' | 'monthly' {
   return 'monthly';
 }
 
-export function Paywall({ trigger }: { trigger?: string }) {
+/**
+ * Find the founder package in the live offering, identified by "founder" in its
+ * RevenueCat package id or its store product id (e.g. `wb_pro_founder`). The
+ * offering author wires this package; if it isn't present the caller simply does
+ * not render the reservation card (graceful absence — never a hardcoded price).
+ */
+function findFounderPackage(packages: readonly Package[]): Package | null {
+  const hit = packages.find(
+    (p) => p.id.toLowerCase().includes('founder') || p.productId.toLowerCase().includes('founder'),
+  );
+  return hit ?? null;
+}
+
+export function Paywall({ trigger, readiness = 'pre' }: { trigger?: string; readiness?: Readiness }) {
   const t = useTheme();
   const purchase = useEntitlement((s) => s.purchase);
   const restore = useEntitlement((s) => s.restore);
   const { status, offering } = useOfferings();
+  const { reserved, reserve } = useFounderReserve();
 
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const resolvedTrigger: Trigger = isTrigger(trigger) ? trigger : 'make_day_honest';
+  const isHonest = readiness === 'honest';
 
-  // Fire paywall_view exactly once on mount, with the resolved trigger.
+  // Fire paywall_view exactly once on mount, with the resolved trigger + readiness.
   useEffect(() => {
-    analytics.capture('paywall_view', { trigger: resolvedTrigger });
+    analytics.capture('paywall_view', { trigger: resolvedTrigger, readiness });
     // Intentionally mount-only: a re-render must not re-fire the funnel event.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -80,6 +109,12 @@ export function Paywall({ trigger }: { trigger?: string }) {
   }, [status, offering, selectedId]);
 
   const selected = offering?.packages.find((p) => p.id === selectedId) ?? null;
+
+  // Founder-price reservation: offered ONLY before the user's numbers are honest,
+  // and only when the live offering actually carries a founder package. Suppressed
+  // once honest (they should just buy at this price) and absent if not configured.
+  const founderPkg = offering ? findFounderPackage(offering.packages) : null;
+  const showFounderReserve = !isHonest && founderPkg != null;
 
   function handleSelect(pkg: Package) {
     setSelectedId(pkg.id);
@@ -161,9 +196,13 @@ export function Paywall({ trigger }: { trigger?: string }) {
         </View>
 
         <View style={{ gap: t.space[2] }}>
-          <Text style={heading}>Stop planning a day that was never going to fit.</Text>
+          <Text style={heading}>
+            {isHonest ? HONEST_HEADING : 'Stop planning a day that was never going to fit.'}
+          </Text>
           <Text style={sub}>
-            Whenbee already knows your real numbers. Let it quietly rebuild your calendar to match.
+            {isHonest
+              ? HONEST_SUBHEAD
+              : 'Whenbee already knows your real numbers. Let it quietly rebuild your calendar to match.'}
           </Text>
         </View>
 
@@ -195,6 +234,14 @@ export function Paywall({ trigger }: { trigger?: string }) {
           </Text>
         ) : (
           <>
+            {showFounderReserve && founderPkg ? (
+              <FounderReserveCard
+                priceString={founderPkg.priceString}
+                reserved={reserved}
+                onReserve={reserve}
+              />
+            ) : null}
+
             <PlanPicker offering={offering} selectedId={selectedId} onSelect={handleSelect} />
 
             {error ? <Text style={errorText}>{error}</Text> : null}

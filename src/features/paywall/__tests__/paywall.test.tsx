@@ -27,6 +27,13 @@ const useEntitlementMock = (selector: (s: unknown) => unknown) =>
 useEntitlementMock.getState = () => ({ isPro: mockProRef.isPro });
 jest.mock('../useEntitlement', () => ({ useEntitlement: useEntitlementMock }));
 
+// founder reserve: stub the kv hook so the paywall doesn't touch real storage.
+const mockReserve = jest.fn();
+const mockReservedRef = { reserved: false };
+jest.mock('../useFounderReserve', () => ({
+  useFounderReserve: () => ({ reserved: mockReservedRef.reserved, reserve: mockReserve }),
+}));
+
 // Imports follow the jest.mock() factories above so the mocks register first.
 /* eslint-disable import/first */
 import { Paywall } from '../Paywall';
@@ -37,7 +44,10 @@ const YEARLY: Package = { id: 'rc_annual', duration: 'yearly', priceString: 'PRI
 const LIFETIME: Package = { id: 'rc_lifetime', duration: 'lifetime', priceString: 'PRICE_LIFETIME_99', productId: 'wb_pro_lifetime' };
 const MONTHLY: Package = { id: 'rc_monthly', duration: 'monthly', priceString: 'PRICE_MONTHLY_05', productId: 'wb_pro_monthly' };
 
+const FOUNDER: Package = { id: 'rc_founder', duration: 'lifetime', priceString: 'PRICE_FOUNDER_49', productId: 'wb_pro_founder' };
+
 const OFFERING: Offering = { id: 'default', packages: [MONTHLY, YEARLY, LIFETIME] };
+const OFFERING_WITH_FOUNDER: Offering = { id: 'default', packages: [MONTHLY, YEARLY, LIFETIME, FOUNDER] };
 
 function deferred<T>() {
   let resolve!: (v: T) => void;
@@ -50,6 +60,7 @@ function deferred<T>() {
 beforeEach(() => {
   jest.clearAllMocks();
   mockProRef.isPro = false;
+  mockReservedRef.reserved = false;
 });
 
 describe('Paywall', () => {
@@ -81,7 +92,7 @@ describe('Paywall', () => {
 
     const views = mockCapture.mock.calls.filter((c) => c[0] === 'paywall_view');
     expect(views).toHaveLength(1);
-    expect(views[0][1]).toEqual({ trigger: 'settings_upgrade' });
+    expect(views[0][1]).toEqual({ trigger: 'settings_upgrade', readiness: 'pre' });
   });
 
   it('tapping a plan selects it and reports plan_selected', async () => {
@@ -130,5 +141,77 @@ describe('Paywall', () => {
     mockGetOfferings.mockRejectedValue(new Error('network down'));
     render(<Paywall trigger="make_day_honest" />);
     await waitFor(() => expect(screen.getByText(/Plans are not available right now/)).toBeTruthy());
+  });
+
+  // ── Readiness headline (Step 13) ──────────────────────────────────────────────
+  it('shows the default heading when readiness is pre (or omitted)', async () => {
+    mockGetOfferings.mockResolvedValue(OFFERING);
+    render(<Paywall trigger="make_day_honest" />);
+    await waitFor(() => expect(screen.getByText('PRICE_YEARLY_42')).toBeTruthy());
+
+    expect(screen.getByText('Stop planning a day that was never going to fit.')).toBeTruthy();
+    expect(screen.queryByText('Your numbers are real now.')).toBeNull();
+  });
+
+  it('shows the earned heading when readiness is honest', async () => {
+    mockGetOfferings.mockResolvedValue(OFFERING);
+    render(<Paywall trigger="make_day_honest" readiness="honest" />);
+    await waitFor(() => expect(screen.getByText('PRICE_YEARLY_42')).toBeTruthy());
+
+    expect(screen.getByText('Your numbers are real now.')).toBeTruthy();
+    expect(screen.queryByText('Stop planning a day that was never going to fit.')).toBeNull();
+  });
+
+  it('passes readiness through to the paywall_view event', async () => {
+    mockGetOfferings.mockResolvedValue(OFFERING);
+    render(<Paywall trigger="settings_upgrade" readiness="honest" />);
+    await waitFor(() => expect(screen.getByText('PRICE_YEARLY_42')).toBeTruthy());
+
+    const views = mockCapture.mock.calls.filter((c) => c[0] === 'paywall_view');
+    expect(views).toHaveLength(1);
+    expect(views[0][1]).toEqual({ trigger: 'settings_upgrade', readiness: 'honest' });
+  });
+
+  // ── Founder reservation card (Steps 15–16) ────────────────────────────────────
+  it('renders the founder reserve card with the offering price when a founder package exists and not honest', async () => {
+    mockGetOfferings.mockResolvedValue(OFFERING_WITH_FOUNDER);
+    render(<Paywall trigger="make_day_honest" readiness="pre" />);
+
+    await waitFor(() => expect(screen.getByText('Lock the founder price — PRICE_FOUNDER_49')).toBeTruthy());
+    expect(screen.getByText('Lock founder price')).toBeTruthy();
+  });
+
+  it('fires founder_reserve via the hook when the lock button is tapped', async () => {
+    mockGetOfferings.mockResolvedValue(OFFERING_WITH_FOUNDER);
+    render(<Paywall trigger="make_day_honest" readiness="pre" />);
+    await waitFor(() => expect(screen.getByText('Lock founder price')).toBeTruthy());
+
+    fireEvent.press(screen.getByText('Lock founder price'));
+    expect(mockReserve).toHaveBeenCalledTimes(1);
+  });
+
+  it('shows the locked-in state once reserved', async () => {
+    mockReservedRef.reserved = true;
+    mockGetOfferings.mockResolvedValue(OFFERING_WITH_FOUNDER);
+    render(<Paywall trigger="make_day_honest" readiness="pre" />);
+
+    await waitFor(() => expect(screen.getByText('Founder price locked in')).toBeTruthy());
+  });
+
+  it('suppresses the founder reserve card once numbers are honest', async () => {
+    mockGetOfferings.mockResolvedValue(OFFERING_WITH_FOUNDER);
+    render(<Paywall trigger="make_day_honest" readiness="honest" />);
+    await waitFor(() => expect(screen.getByText('PRICE_YEARLY_42')).toBeTruthy());
+
+    expect(screen.queryByText(/Lock the founder price/)).toBeNull();
+  });
+
+  it('does not render the founder reserve card when no founder package is present', async () => {
+    mockGetOfferings.mockResolvedValue(OFFERING);
+    render(<Paywall trigger="make_day_honest" readiness="pre" />);
+    await waitFor(() => expect(screen.getByText('PRICE_YEARLY_42')).toBeTruthy());
+
+    expect(screen.queryByText(/Lock the founder price/)).toBeNull();
+    expect(screen.queryByText('Lock founder price')).toBeNull();
   });
 });
