@@ -75,7 +75,7 @@ export function DiscoveriesPreviewCard({
 
         <View style={footerRow}>
           <Text style={footerText}>See all {discoveryCount} you&apos;ve learned</Text>
-          <Ionicons name="chevron-forward" size={16} color={t.colors.primary} />
+          <Ionicons name="chevron-forward" size={t.iconSize.sm} color={t.colors.primary} />
         </View>
       </Card>
     </Pressable>
