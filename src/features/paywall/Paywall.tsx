@@ -53,7 +53,7 @@ const BENEFITS = [
   { icon: 'time-outline', text: 'Every calendar event padded with your real buffers, automatically.' },
   { icon: 'trending-up', text: 'See how much your day can actually hold — before you overbook it.' },
   { icon: 'refresh-outline', text: 'Recurring tasks remember their honest length, so you set them once.' },
-  { icon: 'arrow-forward', text: 'Share an honest plan with a partner or coach in a tap.' },
+  { icon: 'arrow-forward', text: 'Send your honest plan or time profile to a coach or partner in one tap. The image is made on your phone and never leaves it without you.' },
 ] as const;
 
 function isTrigger(v: unknown): v is Trigger {
