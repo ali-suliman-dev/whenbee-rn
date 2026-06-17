@@ -1,28 +1,16 @@
-import { View, type ViewStyle } from 'react-native';
+import { View } from 'react-native';
 import { useTheme } from '@/src/theme/useTheme';
 import { AppText } from '@/src/components/AppText';
+import { BeeMascot } from '@/src/components/BeeMascot';
 
 /**
- * Logo tile + "Whenbee" wordmark. A flat indigo rounded tile with an amber
- * honey-drop glyph (identity amber is exempt from the chrome-scarcity rule).
+ * Logo lockup: the brand bee + "Whenbee" wordmark.
  */
 export function BrandLockup() {
   const t = useTheme();
-
-  const tile: ViewStyle = {
-    width: 40,
-    height: 40,
-    borderRadius: t.radii.md,
-    backgroundColor: t.colors.primary,
-    alignItems: 'center',
-    justifyContent: 'center',
-  };
-
   return (
     <View style={{ flexDirection: 'row', alignItems: 'center', gap: t.space[2] }}>
-      <View style={tile} accessibilityRole="image" accessibilityLabel="Whenbee logo">
-        <AppText style={{ fontSize: t.fontSize.lg, color: t.colors.accent }}>🍯</AppText>
-      </View>
+      <BeeMascot size={t.space[10]} />
       <AppText
         style={{
           fontSize: t.fontSize.lg,
