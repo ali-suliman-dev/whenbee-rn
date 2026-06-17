@@ -93,7 +93,7 @@ export function TodayHud({ cells, stage, seed, onPress }: TodayHudProps) {
         if (!reduced) scale.set(withSpring(1, t.motion.spring));
       }}
       accessibilityRole="button"
-      accessibilityLabel={`Whenbee — honey tier ${tier}. Tap to open your honeycomb.`}
+      accessibilityLabel={`Whenbee, honey tier ${tier}. Tap to open your honeycomb.`}
     >
       <Animated.View style={[card, pressStyle]}>
         <BeeMascot size={t.companion.hudBee} variant={variant} seed={seed} animated />
