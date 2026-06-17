@@ -213,14 +213,14 @@ export default function Reward() {
           ) : null}
         </View>
 
-        {/* Zone 4 — the optional tail: where'd the time go? Grouped so chip rows
-            read as one optional-tags block, not two stacked forms. Pure
-            side-channel data — never blocks the exit, never touches the model. */}
-        {r.eventId ? (
+        {/* Zone 4 — the optional tail: an over/under reason tag. Kept in a group
+            wrapper so a future second tag row (energy, on the mechanisms branch)
+            slots in as one optional-tags block. Gated on the reason itself so it
+            never leaves an empty spacer when the run landed close to the guess.
+            Pure side-channel data — never blocks the exit, never touches the model. */}
+        {r.reasonDirection && r.eventId ? (
           <View style={{ gap: t.space[3] }}>
-            {r.reasonDirection ? (
-              <ReasonChips eventId={r.eventId} direction={r.reasonDirection} category={r.category} />
-            ) : null}
+            <ReasonChips eventId={r.eventId} direction={r.reasonDirection} category={r.category} />
           </View>
         ) : null}
 
