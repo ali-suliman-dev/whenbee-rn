@@ -1,7 +1,7 @@
 import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
 import { zustandKv } from '@/src/lib/kv';
-import { DEFAULT_BUFFER_MIN } from '@/src/engine';
+import { DEFAULT_BUFFER_MIN, DEFAULT_BREATHER_MIN } from '@/src/engine';
 
 // ──────────────────────────────────────────────────────────────────────────────
 // Plan store — the reverse Start-By day planner's draft + one active plan.
@@ -14,16 +14,27 @@ import { DEFAULT_BUFFER_MIN } from '@/src/engine';
 // store never silently reshuffles.
 // ──────────────────────────────────────────────────────────────────────────────
 
+export type PlanTaskStatus = 'upcoming' | 'running' | 'done';
+
 export interface PlanDraftTask {
   id: string;
   label: string;
   category: string;
   durationMin: number;
+  /** Frozen honest estimate (minutes) at the moment the task was added. */
+  suggestedHonestMin: number;
+  /** Run-phase lifecycle status. Starts as 'upcoming'. */
+  status: PlanTaskStatus;
+  /** Wall-clock ms when the task was marked done. */
+  completedAt?: number;
+  /** Actual elapsed minutes, recorded when completeTask is called. */
+  actualMin?: number;
 }
 
 export interface ActivePlan {
   deadline: number;
   bufferMin: number;
+  breatherMin: number;
   tasks: PlanDraftTask[];
   createdAt: number;
 }
@@ -31,6 +42,7 @@ export interface ActivePlan {
 interface PlanDraft {
   deadline: number | null;
   bufferMin: number;
+  breatherMin: number;
   tasks: PlanDraftTask[];
 }
 
@@ -39,12 +51,17 @@ interface PlanState {
   active: ActivePlan | null;
   setDeadline: (ms: number) => void;
   setBuffer: (min: number) => void;
-  addTask: (t: Omit<PlanDraftTask, 'id'>) => PlanDraftTask;
+  setBreather: (min: number) => void;
+  addTask: (t: Omit<PlanDraftTask, 'id' | 'status' | 'suggestedHonestMin'>) => PlanDraftTask;
   updateTaskDuration: (id: string, min: number) => void;
   removeTask: (id: string) => void;
   reorderTasks: (ids: string[]) => void;
   saveActive: (nowMs?: number) => void;
   clearActive: () => void;
+  /** Set a task to 'running'; all others remain at their current status. */
+  startTask: (id: string) => void;
+  /** Mark a task done with the actual elapsed minutes. */
+  completeTask: (id: string, actualMin: number) => void;
   /** Drop the active plan and the working draft (full + progress data-reset path). */
   reset: () => void;
 }
@@ -54,7 +71,12 @@ function makeId(): string {
   return `${Date.now()}-${Math.random().toString(36).slice(2)}`;
 }
 
-const emptyDraft: PlanDraft = { deadline: null, bufferMin: DEFAULT_BUFFER_MIN, tasks: [] };
+const emptyDraft: PlanDraft = {
+  deadline: null,
+  bufferMin: DEFAULT_BUFFER_MIN,
+  breatherMin: DEFAULT_BREATHER_MIN,
+  tasks: [],
+};
 
 export const usePlanStore = create<PlanState>()(
   persist(
@@ -67,8 +89,18 @@ export const usePlanStore = create<PlanState>()(
       setBuffer: (min) =>
         set((s) => ({ draft: { ...s.draft, bufferMin: Math.max(0, min) } })),
 
+      setBreather: (min) =>
+        set((s) => ({ draft: { ...s.draft, breatherMin: Math.max(0, min) } })),
+
       addTask: ({ label, category, durationMin }) => {
-        const task: PlanDraftTask = { id: makeId(), label, category, durationMin };
+        const task: PlanDraftTask = {
+          id: makeId(),
+          label,
+          category,
+          durationMin,
+          suggestedHonestMin: durationMin,
+          status: 'upcoming',
+        };
         set((s) => ({ draft: { ...s.draft, tasks: [...s.draft.tasks, task] } }));
         return task;
       },
@@ -90,8 +122,28 @@ export const usePlanStore = create<PlanState>()(
 
       // Reorder to match the given id order; ids not present are dropped, and any
       // current task missing from `ids` is appended (defensive, keeps tasks safe).
+      // If an active plan exists and a running task would change index, the reorder
+      // is rejected and the state is returned unchanged.
       reorderTasks: (ids) =>
         set((s) => {
+          // Run-phase reorder guard: operate on active tasks if available.
+          if (s.active !== null) {
+            const activeTasks = s.active.tasks;
+            const runningIndex = activeTasks.findIndex((t) => t.status === 'running');
+            if (runningIndex !== -1) {
+              const runningId = activeTasks[runningIndex]?.id;
+              const newIndex = ids.indexOf(runningId ?? '');
+              // Reject if the running task would move to a different slot.
+              if (newIndex !== runningIndex) return s;
+            }
+            // Apply the reorder to active tasks.
+            const byId = new Map(activeTasks.map((t) => [t.id, t]));
+            const ordered = ids.map((id) => byId.get(id)).filter((t): t is PlanDraftTask => !!t);
+            const seen = new Set(ids);
+            const leftovers = activeTasks.filter((t) => !seen.has(t.id));
+            return { active: { ...s.active, tasks: [...ordered, ...leftovers] } };
+          }
+          // Draft-phase reorder (no running tasks can exist before saveActive).
           const byId = new Map(s.draft.tasks.map((t) => [t.id, t]));
           const ordered = ids.map((id) => byId.get(id)).filter((t): t is PlanDraftTask => !!t);
           const seen = new Set(ids);
@@ -106,6 +158,7 @@ export const usePlanStore = create<PlanState>()(
         const active: ActivePlan = {
           deadline: draft.deadline,
           bufferMin: draft.bufferMin,
+          breatherMin: draft.breatherMin,
           tasks: draft.tasks.map((t) => ({ ...t })),
           createdAt: nowMs ?? Date.now(),
         };
@@ -113,6 +166,39 @@ export const usePlanStore = create<PlanState>()(
       },
 
       clearActive: () => set({ active: null }),
+
+      startTask: (id) =>
+        set((s) => {
+          if (s.active === null) return s;
+          return {
+            active: {
+              ...s.active,
+              tasks: s.active.tasks.map((t) =>
+                t.id === id ? { ...t, status: 'running' as PlanTaskStatus } : t,
+              ),
+            },
+          };
+        }),
+
+      completeTask: (id, actualMin) =>
+        set((s) => {
+          if (s.active === null) return s;
+          return {
+            active: {
+              ...s.active,
+              tasks: s.active.tasks.map((t) =>
+                t.id === id
+                  ? {
+                      ...t,
+                      status: 'done' as PlanTaskStatus,
+                      completedAt: Date.now(),
+                      actualMin,
+                    }
+                  : t,
+              ),
+            },
+          };
+        }),
 
       reset: () => set({ draft: emptyDraft, active: null }),
     }),

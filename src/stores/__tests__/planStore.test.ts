@@ -1,12 +1,12 @@
 import { usePlanStore } from '../planStore';
 import { kv } from '@/src/lib/kv';
-import { DEFAULT_BUFFER_MIN } from '@/src/engine';
+import { DEFAULT_BUFFER_MIN, DEFAULT_BREATHER_MIN } from '@/src/engine';
 
 const T0 = 1_700_000_000_000;
 
 function resetDraft() {
   usePlanStore.setState({
-    draft: { deadline: null, bufferMin: DEFAULT_BUFFER_MIN, tasks: [] },
+    draft: { deadline: null, bufferMin: DEFAULT_BUFFER_MIN, breatherMin: DEFAULT_BREATHER_MIN, tasks: [] },
     active: null,
   });
 }
@@ -110,5 +110,34 @@ describe('planStore', () => {
     expect(parsed.state.active.deadline).toBe(T0);
     // draft is session-only — never serialized
     expect(parsed.state.draft).toBeUndefined();
+  });
+
+  // ── Task 4: breather, run state, reorder guard ─────────────────────────────
+
+  it('setBreather stores between-task breather minutes on the draft', () => {
+    usePlanStore.getState().setBreather(10);
+    expect(usePlanStore.getState().draft.breatherMin).toBe(10);
+  });
+
+  it('reorderTasks refuses to move the running task', () => {
+    const s = usePlanStore.getState();
+    const a = s.addTask({ label: 'A', category: 'x', durationMin: 20 });
+    const b = s.addTask({ label: 'B', category: 'x', durationMin: 20 });
+    usePlanStore.getState().setDeadline(T0);
+    usePlanStore.getState().saveActive();      // freeze → active
+    usePlanStore.getState().startTask(a.id);  // a is running
+    usePlanStore.getState().reorderTasks([b.id, a.id]); // attempt to move a out of slot 0
+    expect(usePlanStore.getState().active!.tasks[0]!.id).toBe(a.id); // unchanged
+  });
+
+  it('completeTask marks done with actual minutes', () => {
+    const s = usePlanStore.getState();
+    const a = s.addTask({ label: 'A', category: 'x', durationMin: 20 });
+    usePlanStore.getState().setDeadline(T0);
+    usePlanStore.getState().saveActive();
+    usePlanStore.getState().completeTask(a.id, 24);
+    const t = usePlanStore.getState().active!.tasks[0]!;
+    expect(t.status).toBe('done');
+    expect(t.actualMin).toBe(24);
   });
 });
