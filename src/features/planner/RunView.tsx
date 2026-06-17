@@ -6,6 +6,7 @@ import {
   type TextStyle,
   type ViewStyle,
 } from 'react-native';
+import { router } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import ReorderableList, {
   reorderItems,
@@ -15,6 +16,7 @@ import { useTheme } from '@/src/theme/useTheme';
 import { AppText } from '@/src/components/AppText';
 import { formatClock } from '@/src/lib/time';
 import { planBackward } from '@/src/engine';
+import { usePlanStore } from '@/src/stores/planStore';
 import { PlanRail } from './PlanRail';
 import { PlanTaskCard, type PlanTaskCardProps } from './PlanTaskCard';
 import { CutCard } from './CutCard';
@@ -220,8 +222,8 @@ export function RunView({
   planner,
   nowMs = Date.now(),
   abandonSlot,
-  onStart,
-  onOpenTimer,
+  onStart: onStartProp,
+  onOpenTimer: onOpenTimerProp,
   onAddTask,
 }: RunViewProps) {
   const t = useTheme();
@@ -238,6 +240,63 @@ export function RunView({
     dismissCut,
     pushDeadline,
   } = planner;
+
+  // ── Timer navigation handlers (Task 12) ──────────────────────────────────
+  // Built-in handlers wire the ▶ / "Open timer" actions to the timer route.
+  // Prop overrides let the parent inject alternative behaviour (e.g. tests).
+
+  const handleStart = useCallback(
+    (taskId: string) => {
+      if (onStartProp) {
+        onStartProp(taskId);
+        return;
+      }
+      const planActive = usePlanStore.getState().active;
+      if (planActive === null) return;
+      const task = planActive.tasks.find((t) => t.id === taskId);
+      if (!task) return;
+      usePlanStore.getState().startTask(taskId);
+      router.push({
+        pathname: '/(modals)/timer',
+        params: {
+          taskId: task.id,
+          label: task.label,
+          category: task.category,
+          estimateMin: String(task.durationMin),
+          guessMin: String(task.durationMin),
+          suggestedHonestMin: String(task.suggestedHonestMin),
+        },
+      });
+    },
+    [onStartProp],
+  );
+
+  const handleOpenTimer = useCallback(
+    (taskId: string) => {
+      if (onOpenTimerProp) {
+        onOpenTimerProp(taskId);
+        return;
+      }
+      const planActive = usePlanStore.getState().active;
+      if (planActive === null) return;
+      const task = planActive.tasks.find((t) => t.id === taskId);
+      if (!task) return;
+      // startTask is idempotent when the task is already 'running'; safe to call here.
+      usePlanStore.getState().startTask(taskId);
+      router.push({
+        pathname: '/(modals)/timer',
+        params: {
+          taskId: task.id,
+          label: task.label,
+          category: task.category,
+          estimateMin: String(task.durationMin),
+          guessMin: String(task.durationMin),
+          suggestedHonestMin: String(task.suggestedHonestMin),
+        },
+      });
+    },
+    [onOpenTimerProp],
+  );
 
   // ── Build a full re-projected timeline so we can show accurate start times ──
   const timeline = useMemo(() => {
@@ -314,7 +373,7 @@ export function RunView({
           startAt: timeEntry?.startAt,
           endAt: timeEntry?.endAt,
           runStatus: 'upcoming',
-          onStart,
+          onStart: handleStart,
         },
         railTimeLabel:
           timeEntry !== undefined ? formatClock(timeEntry.startAt) : '',
@@ -323,7 +382,7 @@ export function RunView({
       });
     }
     return rows;
-  }, [active, runGroups.next, timelineByTaskId, categoryName, onStart]);
+  }, [active, runGroups.next, timelineByTaskId, categoryName, handleStart]);
 
   // ── Total row count for first/last flags ────────────────────────────────────
   const doneCount = runGroups.done.length;
@@ -524,7 +583,7 @@ export function RunView({
                     endAt: timeEntry?.endAt,
                     runStatus: 'running',
                     progress: computedProgress,
-                    onOpenTimer,
+                    onOpenTimer: handleOpenTimer,
                   },
                   railTimeLabel: '',
                   isFirst: rowIndex === 0,
