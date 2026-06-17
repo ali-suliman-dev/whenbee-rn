@@ -1,10 +1,12 @@
 import { useCallback, useState, type ReactNode } from 'react';
-import { View, Text, Pressable, Switch, type ViewStyle, type TextStyle } from 'react-native';
+import { View, Text, Pressable, Switch, ScrollView, type ViewStyle, type TextStyle } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { Screen } from '@/src/components/Screen';
 import { AppText } from '@/src/components/AppText';
 import { Chip } from '@/src/components/Chip';
+import { AppearanceGlyph } from '@/src/components/icons/AppearanceGlyph';
 import { Toast, AUTO_HIDE_MS } from '@/src/components/Toast';
 import { useTheme } from '@/src/theme/useTheme';
 import { type } from '@/src/theme/typography';
@@ -103,7 +105,10 @@ function SettingRow({
 
 export default function Settings() {
   const t = useTheme();
+  const insets = useSafeAreaInsets();
   const { colorMode, setColorMode } = useSettingsStore();
+  const dailyRitualEnabled = useSettingsStore((s) => s.dailyRitualEnabled);
+  const setDailyRitualEnabled = useSettingsStore((s) => s.setDailyRitualEnabled);
   const isPro = useEntitlement((s) => s.isPro);
   const categoryCount = useCategoriesStore((s) => s.categories.length);
   const { restoring, manageSubscription, restorePurchases } = useAccountActions();
@@ -138,8 +143,15 @@ export default function Settings() {
   }
 
   return (
-    <Screen>
-      <View style={{ gap: t.space[6], paddingTop: t.space[4] }}>
+    <Screen edges={['left', 'right']}>
+      <ScrollView
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={{
+          gap: t.space[6],
+          paddingTop: t.space[4],
+          paddingBottom: insets.bottom + t.space[6],
+        }}
+      >
         <View style={{ gap: t.space[3] }}>
           <AppText variant="label">Whenbee Pro</AppText>
           <SettingRow
@@ -186,6 +198,12 @@ export default function Settings() {
             onPress={() => router.push('/categories')}
           />
           <SettingRow
+            icon="happy-outline"
+            title="Name your Whenbee"
+            note="Give your companion a name."
+            onPress={() => router.push('/(modals)/companion')}
+          />
+          <SettingRow
             icon="notifications-outline"
             title="Time-up reminders"
             note="One nudge when your honest estimate is up."
@@ -195,6 +213,19 @@ export default function Settings() {
                 onValueChange={handleToggleReminders}
                 trackColor={{ true: t.colors.primary, false: t.colors.hairline }}
                 accessibilityLabel="Time-up reminders"
+              />
+            }
+          />
+          <SettingRow
+            icon="sparkles-outline"
+            title="Daily check-in"
+            note="Puts a line on Today that nudges you to log one thing, then checks off once you do. Skip a day and nothing breaks."
+            trailing={
+              <Switch
+                value={dailyRitualEnabled}
+                onValueChange={setDailyRitualEnabled}
+                trackColor={{ true: t.colors.primary, false: t.colors.hairline }}
+                accessibilityLabel="Daily check-in"
               />
             }
           />
@@ -210,11 +241,17 @@ export default function Settings() {
           <AppText variant="label">Appearance</AppText>
           <View style={{ flexDirection: 'row', gap: t.space[2] }}>
             {modes.map((m) => (
-              <Chip key={m} label={m} selected={colorMode === m} onPress={() => setColorMode(m)} />
+              <Chip
+                key={m}
+                label={m}
+                icon={<AppearanceGlyph kind={m} selected={colorMode === m} size={t.iconSize.md} />}
+                selected={colorMode === m}
+                onPress={() => setColorMode(m)}
+              />
             ))}
           </View>
         </View>
-      </View>
+      </ScrollView>
       <Toast message={toastMsg} visible={toastVisible} />
     </Screen>
   );

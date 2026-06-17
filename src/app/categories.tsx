@@ -134,7 +134,7 @@ export default function Categories() {
   };
 
   return (
-    <Screen>
+    <Screen edges={['left', 'right']}>
       <ScrollView
         keyboardShouldPersistTaps="handled"
         contentContainerStyle={{ gap: t.space[3], paddingTop: t.space[4], paddingBottom: insets.bottom + t.space[6] }}
