@@ -44,7 +44,7 @@ export default function Plan() {
     updateTaskDuration,
     removeTask,
     reorderTasks,
-    cut,
+    cutTasks,
     pushDeadline,
     saveActive,
     reproject,
@@ -189,7 +189,7 @@ export default function Plan() {
             <VerdictCard
               verdict={result.verdict}
               deadline={draft.deadline}
-              onCut={cut}
+              onCut={cutTasks}
               onPush={pushDeadline}
             />
 
