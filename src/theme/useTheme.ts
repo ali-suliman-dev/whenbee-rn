@@ -6,7 +6,7 @@ export function resolveTheme(mode: ColorMode) {
     fontSize: tokens.fontSize, fontWeight: tokens.fontWeight, fontFamily: tokens.fontFamily,
     lineHeight: tokens.lineHeight, shadow: tokens.shadow, motion: tokens.motion,
     honeycomb: tokens.honeycomb, brand: tokens.brand, burst: tokens.burst, progress: tokens.progress,
-    companion: tokens.companion };
+    companion: tokens.companion, ring: tokens.ring, seal: tokens.seal, mote: tokens.mote };
 }
 export type Theme = ReturnType<typeof resolveTheme>;
 export function useTheme(): Theme { return resolveTheme(useColorMode()); }
