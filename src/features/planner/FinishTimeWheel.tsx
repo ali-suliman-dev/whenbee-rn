@@ -1,4 +1,4 @@
-import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { View, Text, type TextStyle, type ViewStyle } from 'react-native';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import Animated, {
@@ -7,15 +7,13 @@ import Animated, {
   useDerivedValue,
   useAnimatedReaction,
   withSpring,
-  interpolate,
-  Extrapolation,
   runOnJS,
   useReducedMotion,
-  type SharedValue,
 } from 'react-native-reanimated';
 import { haptics } from '@/src/lib/haptics';
 import { useTheme } from '@/src/theme/useTheme';
 import { Chip } from '@/src/components/Chip';
+import { clampWheelIndex, WheelRow } from './wheelShared';
 
 // ──────────────────────────────────────────────────────────────────────────────
 // FinishTimeWheel — two-column HH : MM pan-wheel for picking a deadline time.
@@ -65,10 +63,6 @@ const MINUTES = minutesData();
 const HOUR_COUNT = HOURS.length; // 24
 const MIN_COUNT = MINUTES.length; // 12
 
-function clamp(n: number, max: number): number {
-  return Math.min(max - 1, Math.max(0, n));
-}
-
 /** Epoch ms for hour:minute on today's calendar day. */
 function todayAt(hour: number, minute: number): number {
   const d = new Date();
@@ -84,59 +78,13 @@ function decompose(ms: number): { hour: number; minute: number } {
 }
 
 function hourIndex(hour: number): number {
-  return clamp(hour, HOUR_COUNT);
+  return clampWheelIndex(hour, HOUR_COUNT);
 }
 
 function minuteIndex(minute: number): number {
   const idx = MINUTES.findIndex((m) => m.value === minute);
-  return idx >= 0 ? idx : clamp(Math.round(minute / MINUTE_STEP), MIN_COUNT);
+  return idx >= 0 ? idx : clampWheelIndex(Math.round(minute / MINUTE_STEP), MIN_COUNT);
 }
-
-// ── inner wheel sub-component (shared by both columns) ───────────────────────
-
-const WheelRow = memo(function WheelRow({
-  index,
-  label,
-  itemHeight,
-  translateY,
-  isSelected,
-  inkColor,
-  inkFaintColor,
-  fontSize,
-}: {
-  index: number;
-  label: string;
-  itemHeight: number;
-  translateY: SharedValue<number>;
-  isSelected: boolean;
-  inkColor: string;
-  inkFaintColor: string;
-  fontSize: number;
-}) {
-  const animStyle = useAnimatedStyle(() => {
-    const centre = -translateY.get() / itemHeight;
-    const dist = Math.abs(centre - index);
-    return {
-      opacity: interpolate(dist, [0, 1, 2], [1, 0.45, 0.16], Extrapolation.CLAMP),
-      transform: [{ scale: interpolate(dist, [0, 1], [1, 0.84], Extrapolation.CLAMP) }],
-    };
-  });
-
-  const textStyle: TextStyle = {
-    fontFamily: isSelected ? 'Inter-Bold' : 'Inter-SemiBold',
-    fontSize,
-    color: isSelected ? inkColor : inkFaintColor,
-    fontVariant: ['tabular-nums'],
-  };
-
-  return (
-    <Animated.View
-      style={[{ height: itemHeight, alignItems: 'center', justifyContent: 'center' }, animStyle]}
-    >
-      <Text style={textStyle}>{label}</Text>
-    </Animated.View>
-  );
-});
 
 // ── column wheel (hours or minutes) ──────────────────────────────────────────
 
@@ -195,7 +143,7 @@ function ColumnWheel({
   }, [selectedIndex, itemHeight, reducedMotion, spring]);
 
   const liveIndex = useDerivedValue(() =>
-    Math.round(clamp(-translateY.get() / itemHeight, count)),
+    Math.round(clampWheelIndex(-translateY.get() / itemHeight, count)),
   );
   useAnimatedReaction(
     () => liveIndex.get(),
@@ -216,7 +164,7 @@ function ColumnWheel({
         })
         .onEnd((e) => {
           const projected = translateY.get() + e.velocityY * FLING_PROJECTION;
-          const idx = clamp(Math.round(-projected / itemHeight), count);
+          const idx = clampWheelIndex(Math.round(-projected / itemHeight), count);
           translateY.set(withSpring(-idx * itemHeight, spring));
           runOnJS(commitIdx)(idx);
         }),
@@ -242,9 +190,9 @@ function ColumnWheel({
       accessibilityActions={[{ name: 'increment' }, { name: 'decrement' }]}
       onAccessibilityAction={(e) => {
         if (e.nativeEvent.actionName === 'increment')
-          commitIdx(clamp(committedIndex.current + 1, count));
+          commitIdx(clampWheelIndex(committedIndex.current + 1, count));
         else if (e.nativeEvent.actionName === 'decrement')
-          commitIdx(clamp(committedIndex.current - 1, count));
+          commitIdx(clampWheelIndex(committedIndex.current - 1, count));
       }}
     >
       <GestureDetector gesture={pan}>

@@ -1,5 +1,5 @@
-import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { View, Text, type TextStyle, type ViewStyle } from 'react-native';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { View, type ViewStyle } from 'react-native';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import Animated, {
   useSharedValue,
@@ -7,14 +7,12 @@ import Animated, {
   useDerivedValue,
   useAnimatedReaction,
   withSpring,
-  interpolate,
-  Extrapolation,
   runOnJS,
   useReducedMotion,
-  type SharedValue,
 } from 'react-native-reanimated';
 import { haptics } from '@/src/lib/haptics';
 import { useTheme } from '@/src/theme/useTheme';
+import { clampWheelIndex, WheelRow } from './wheelShared';
 
 // ──────────────────────────────────────────────────────────────────────────────
 // DurationWheel — slim vertical pan-wheel for picking minutes.
@@ -56,56 +54,6 @@ function buildData(step: number): WheelItem[] {
   return items;
 }
 
-function clampIndex(n: number, count: number): number {
-  return Math.min(count - 1, Math.max(0, n));
-}
-
-// ── sub-component: one row of the wheel ─────────────────────────────────────
-
-const WheelRow = memo(function WheelRow({
-  index,
-  label,
-  itemHeight,
-  translateY,
-  isSelected,
-  inkColor,
-  inkFaintColor,
-  fontSize,
-}: {
-  index: number;
-  label: string;
-  itemHeight: number;
-  translateY: SharedValue<number>;
-  isSelected: boolean;
-  inkColor: string;
-  inkFaintColor: string;
-  fontSize: number;
-}) {
-  const animStyle = useAnimatedStyle(() => {
-    const centre = -translateY.get() / itemHeight;
-    const dist = Math.abs(centre - index);
-    return {
-      opacity: interpolate(dist, [0, 1, 2], [1, 0.45, 0.16], Extrapolation.CLAMP),
-      transform: [{ scale: interpolate(dist, [0, 1], [1, 0.84], Extrapolation.CLAMP) }],
-    };
-  });
-
-  const textStyle: TextStyle = {
-    fontFamily: isSelected ? 'Inter-Bold' : 'Inter-SemiBold',
-    fontSize,
-    color: isSelected ? inkColor : inkFaintColor,
-    fontVariant: ['tabular-nums'],
-  };
-
-  return (
-    <Animated.View
-      style={[{ height: itemHeight, alignItems: 'center', justifyContent: 'center' }, animStyle]}
-    >
-      <Text style={textStyle}>{label}</Text>
-    </Animated.View>
-  );
-});
-
 // ── main component ────────────────────────────────────────────────────────────
 
 export function DurationWheel({
@@ -130,7 +78,7 @@ export function DurationWheel({
   function indexOfValue(min: number): number {
     const stepped = snapToStep(min, step);
     const idx = data.findIndex((d) => d.value === stepped);
-    return idx >= 0 ? idx : clampIndex(Math.round(min / step) - 1, count);
+    return idx >= 0 ? idx : clampWheelIndex(Math.round(min / step) - 1, count);
   }
 
   const itemHeight = t.size.control.sm; // 36pt — compact rows
@@ -166,8 +114,10 @@ export function DurationWheel({
   }, [valueMin, itemHeight, reducedMotion, spring]);
 
   // Haptic tick on each crossing row.
+  // Fix: pass `count` (not `count - 1`) so clampWheelIndex correctly
+  // allows the last index (count - 1) to be reached.
   const liveIndex = useDerivedValue(() =>
-    Math.round(clampIndex(-translateY.get() / itemHeight, count - 1)),
+    Math.round(clampWheelIndex(-translateY.get() / itemHeight, count)),
   );
   useAnimatedReaction(
     () => liveIndex.get(),
@@ -189,7 +139,8 @@ export function DurationWheel({
         .onEnd((e) => {
           const projected = translateY.get() + e.velocityY * FLING_PROJECTION;
           const rawIdx = Math.round(-projected / itemHeight);
-          const idx = clampIndex(rawIdx, count - 1);
+          // Fix: pass `count` (not `count - 1`) so the last item is reachable.
+          const idx = clampWheelIndex(rawIdx, count);
           translateY.set(withSpring(-idx * itemHeight, spring));
           runOnJS(commitIndex)(idx);
         }),
@@ -234,9 +185,11 @@ export function DurationWheel({
       onAccessibilityAction={(e) => {
         const idx = indexOfValue(valueMin);
         if (e.nativeEvent.actionName === 'increment')
-          commitIndex(clampIndex(idx + 1, count - 1));
+          // Fix: pass `count` (not `count - 1`) so the last item is reachable.
+          commitIndex(clampWheelIndex(idx + 1, count));
         else if (e.nativeEvent.actionName === 'decrement')
-          commitIndex(clampIndex(idx - 1, count - 1));
+          // Fix: pass `count` (not `count - 1`) so decrement stays in range.
+          commitIndex(clampWheelIndex(idx - 1, count));
       }}
     >
       <View style={highlight} pointerEvents="none" />
