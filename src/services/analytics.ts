@@ -101,6 +101,8 @@ export interface AppEventProps {
   calendar_padded: { events_count: number; day_end_shift_min: number };
   reminder_enabled: Record<string, never>;
   reminder_disabled: Record<string, never>;
+  drift_recheck: { action: 'shown' | 'recheck' | 'dismissed' };
+  context_tagged: { key: string; value: string };
 }
 
 export type AppEvent = keyof AppEventProps;

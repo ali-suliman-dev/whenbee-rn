@@ -31,4 +31,12 @@ describe('companionRepo — fuel ops route to monotonic port methods', () => {
     await repo.ensureSeed(() => before + 123);
     expect((await repo.get()).seed).toBe(before);
   });
+  it('starts unnamed; setName sets and trims; blank clears back to null', async () => {
+    const repo = makeCompanionRepo(createMemoryDatabase());
+    expect((await repo.get()).name).toBeNull();
+    await repo.setName('  Buzz  ');
+    expect((await repo.get()).name).toBe('Buzz');
+    await repo.setName('   ');
+    expect((await repo.get()).name).toBeNull();
+  });
 });

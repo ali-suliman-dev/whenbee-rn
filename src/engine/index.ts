@@ -14,6 +14,10 @@ export type { ApplyLogInput, ApplyLogResult } from './update';
 export { planBackward, DEFAULT_BUFFER_MIN } from './planner';
 export { reclaimDividendMinutes, formatReclaim } from './reclaim';
 export { correlateReasons, reasonNoteFor, reasonPhrase } from './reasons';
+export { correlateAccuracy } from './accuracy';
+export type { AccuracySample, AccuracyCorrelation } from './accuracy';
+export { correlateContext } from './context';
+export type { ContextSample, ContextCorrelation } from './context';
 export { confidenceFor, honestRangeFor, reservePriceVisible } from './confidence';
 export {
   companionStageFor, capabilityFor, keeperReached, driftHealthFromRecent, COMPANION_KEEPER_QUOTA,

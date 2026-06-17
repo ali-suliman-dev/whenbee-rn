@@ -11,11 +11,17 @@ import { PredictionCard } from '@/src/features/patterns/PredictionCard';
 import { DriftAlert } from '@/src/features/patterns/DriftAlert';
 import { CalibrationMap } from '@/src/features/patterns/CalibrationMap';
 import { PatternsEmpty } from '@/src/features/patterns/PatternsEmpty';
+import { WeeklyReview } from '@/src/features/patterns/WeeklyReview';
 import { useReasonInsights } from '@/src/features/patterns/useReasonInsights';
 import { ProGate } from '@/src/features/paywall/ProGate';
 import { StealsYourTime } from '@/src/features/patterns/StealsYourTime';
 import { StealsYourTimeWeekly } from '@/src/features/patterns/StealsYourTimeWeekly';
 import { StealsYourTimeLocked } from '@/src/features/patterns/StealsYourTimeLocked';
+import { AccuracyCorrelations } from '@/src/features/patterns/AccuracyCorrelations';
+import { AccuracyCorrelationsLocked } from '@/src/features/patterns/AccuracyCorrelationsLocked';
+import { useContextInsights } from '@/src/features/patterns/useContextInsights';
+import { ContextCorrelations } from '@/src/features/patterns/ContextCorrelations';
+import { ContextCorrelationsLocked } from '@/src/features/patterns/ContextCorrelationsLocked';
 
 // ──────────────────────────────────────────────────────────────────────────────
 // Patterns — the free, read-only self-insight surface. Every card is a pure
@@ -29,6 +35,7 @@ export default function Patterns() {
   const t = useTheme();
   const { view } = usePatterns();
   const { insights } = useReasonInsights();
+  const { insights: contextInsights } = useContextInsights();
 
   const showEmpty = view !== null && view.empty;
   // Plan-experiment is special: when there's enough overall data but the timed/retro
@@ -46,6 +53,7 @@ export default function Patterns() {
 
         {view && !view.empty ? (
           <>
+            <WeeklyReview view={view} />
             {view.archetype ? <Archetype card={view.archetype} /> : null}
             {view.planExperiment ? (
               <PlanExperiment card={view.planExperiment} />
@@ -59,6 +67,18 @@ export default function Patterns() {
             <ProGate fallback={insights.length > 0 ? <StealsYourTimeLocked /> : null}>
               <StealsYourTime insights={insights} />
               <StealsYourTimeWeekly insights={insights} />
+            </ProGate>
+            <ProGate
+              fallback={view.accuracyCorrelations.length > 0 ? <AccuracyCorrelationsLocked /> : null}
+            >
+              {view.accuracyCorrelations.length > 0 ? (
+                <AccuracyCorrelations correlations={view.accuracyCorrelations} />
+              ) : null}
+            </ProGate>
+            <ProGate fallback={contextInsights.length > 0 ? <ContextCorrelationsLocked /> : null}>
+              {contextInsights.length > 0 ? (
+                <ContextCorrelations correlations={contextInsights} />
+              ) : null}
             </ProGate>
             {view.calibrationMap.length > 0 ? <CalibrationMap rows={view.calibrationMap} /> : null}
           </>

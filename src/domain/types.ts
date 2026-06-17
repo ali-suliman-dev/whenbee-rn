@@ -36,6 +36,7 @@ export interface Companion {
   seed: number; // procedural seed for the companion's appearance; set once, then frozen
   driftHealth?: 'settled' | 'curious'; // positive-only drift register (never a guilt signal)
   discoveryCount: number; // banked aha cards — append-only, only ever rises
+  name?: string | null; // optional user-set display name; null/undefined = unnamed
 }
 
 /** Capture-only reason slug for a reclaim or context event. */

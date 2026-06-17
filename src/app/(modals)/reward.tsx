@@ -18,6 +18,7 @@ import { RewardBee } from '@/src/features/reward/RewardBee';
 import { HoneyBar } from '@/src/features/reward/HoneyBar';
 import { ReclaimDeposit } from '@/src/features/reward/ReclaimDeposit';
 import { ReasonChips } from '@/src/features/reward/ReasonChips';
+import { EnergyChips } from '@/src/features/reward/EnergyChips';
 
 // ──────────────────────────────────────────────────────────────────────────────
 // Reward (Screen 4) — the dopamine payoff: logging IS the reward. One read path,
@@ -219,6 +220,10 @@ export default function Reward() {
         {r.reasonDirection && r.eventId ? (
           <ReasonChips eventId={r.eventId} direction={r.reasonDirection} category={r.category} />
         ) : null}
+
+        {/* Optional context tag (S4) — energy this session. Skippable; pure
+            side-channel that feeds the Pro context correlation, never the model. */}
+        {r.eventId ? <EnergyChips eventId={r.eventId} /> : null}
 
         {/* CTA zone — rides the bottom of the flow (not pinned), single primary
             action + a quiet text exit, with a generous bottom margin. */}
