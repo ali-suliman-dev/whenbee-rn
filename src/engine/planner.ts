@@ -5,6 +5,7 @@
 import type {
   PlanResult,
   PlanTaskInput,
+  PlanTaskStatus,
   PlanTimelineItem,
   PlanVerdict,
 } from '../domain/types';
@@ -144,6 +145,35 @@ function totalBreatherMin(taskCount: number, breatherMin: number): number {
   return Math.max(0, taskCount - 1) * breatherMin;
 }
 
+// ── Reproject (incomplete-task diff) ────────────────────────────────────────
+
+/** One task fed to `reproject`. `status` is used only to filter out done tasks. */
+interface ReprojectTask {
+  id: string;
+  /** Human-readable label forwarded to the timeline items. */
+  label?: string;
+  /** Normalized category for display. Not used by the pure planner. */
+  category?: string;
+  durationMin: number;
+  /** Tasks with status 'done' are excluded from the reproject pass. */
+  status?: PlanTaskStatus;
+}
+
+/** Input to `reproject` — mirrors `PlanBackwardInput` with an extended task shape. */
+interface ReprojectInput {
+  deadline: number;
+  nowMs: number;
+  bufferMin?: number;
+  breatherMin?: number;
+  tasks: ReprojectTask[];
+}
+
+/** Result of `reproject`: the `PlanResult` of the remaining tasks plus a fit flag. */
+export interface ReprojectResult extends PlanResult {
+  /** True when the verdict is 'fits' (remaining tasks finish before the deadline). */
+  stillFits: boolean;
+}
+
 /**
  * Backward-pass scheduler. Walks `tasks` in order, placing them to finish exactly
  * at `deadline`, then judges feasibility against `nowMs` and returns a structured
@@ -176,4 +206,26 @@ export function planBackward(input: PlanBackwardInput): PlanResult {
   // not gap items). Breather gaps are a display/pacing concern, not a workload cut.
   const verdict = cutLadder(deadline, nowMs, taskTotalMin, effectives);
   return { startBy, timeline, verdict, totalMin };
+}
+
+/**
+ * Re-runs the backward pass over **incomplete** tasks only (filters out
+ * `status === 'done'`). Returns the same shape as `planBackward` plus a
+ * `stillFits` convenience flag so callers don't have to inspect `verdict.kind`.
+ *
+ * Pure and non-mutating. The `cutLadder` is reused through `planBackward` so
+ * the over-case cut suggestion is still available on the result.
+ */
+export function reproject(input: ReprojectInput): ReprojectResult {
+  const remaining: PlanTaskInput[] = input.tasks
+    .filter((t) => t.status !== 'done')
+    .map((t) => ({
+      id: t.id,
+      label: t.label ?? t.id,
+      category: t.category ?? '',
+      durationMin: t.durationMin,
+    }));
+
+  const result = planBackward({ ...input, tasks: remaining });
+  return { ...result, stillFits: result.verdict.kind === 'fits' };
 }

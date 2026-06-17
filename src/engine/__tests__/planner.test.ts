@@ -1,4 +1,4 @@
-import { planBackward, DEFAULT_BUFFER_MIN } from '../planner';
+import { planBackward, reproject, DEFAULT_BUFFER_MIN } from '../planner';
 import type { PlanTaskInput, PlanVerdict } from '../../domain/types';
 
 const MIN = 60_000;
@@ -293,6 +293,71 @@ describe('breatherMin inserts', () => {
 
     expect(noBreather.startBy - withBreather.startBy).toBe(20 * 60_000);
     expect(withBreather.timeline.filter((i) => i.kind === 'breather')).toHaveLength(2);
+  });
+});
+
+describe('reproject — diff over incomplete tasks', () => {
+  it('reproject skips done tasks and flags fit against the same deadline', () => {
+    const deadline = Date.UTC(2026, 5, 17, 22, 52);
+    const out = reproject({
+      deadline,
+      nowMs: Date.UTC(2026, 5, 17, 22, 0),
+      bufferMin: 0,
+      breatherMin: 0,
+      tasks: [
+        { id: 'a', durationMin: 20, status: 'done' },
+        { id: 'b', durationMin: 30, status: 'upcoming' },
+      ],
+    });
+    // only 'b' (30m) remains; 22:00 + 30m = 22:30 ≤ 22:52 → fits
+    expect(out.stillFits).toBe(true);
+    expect(out.timeline.filter((i) => i.kind === 'task')).toHaveLength(1);
+  });
+
+  it('includes running tasks in the reproject (only done is filtered)', () => {
+    const deadline = Date.UTC(2026, 5, 17, 22, 52);
+    const out = reproject({
+      deadline,
+      nowMs: Date.UTC(2026, 5, 17, 22, 0),
+      bufferMin: 0,
+      breatherMin: 0,
+      tasks: [
+        { id: 'a', durationMin: 10, status: 'done' },
+        { id: 'b', durationMin: 10, status: 'running' },
+        { id: 'c', durationMin: 10, status: 'upcoming' },
+      ],
+    });
+    // 'b' (running) + 'c' (upcoming) = 20min → fits
+    expect(out.stillFits).toBe(true);
+    expect(out.timeline.filter((i) => i.kind === 'task')).toHaveLength(2);
+  });
+
+  it('sets stillFits false when remaining tasks cannot finish by deadline', () => {
+    const deadline = Date.UTC(2026, 5, 17, 22, 52);
+    // nowMs is very close to deadline; 60-min task won't fit
+    const out = reproject({
+      deadline,
+      nowMs: Date.UTC(2026, 5, 17, 22, 50),
+      bufferMin: 0,
+      breatherMin: 0,
+      tasks: [
+        { id: 'done', durationMin: 999, status: 'done' },
+        { id: 'big', durationMin: 60, status: 'upcoming' },
+      ],
+    });
+    expect(out.stillFits).toBe(false);
+  });
+
+  it('treats tasks with no status as upcoming (not filtered)', () => {
+    const deadline = Date.UTC(2026, 5, 17, 23, 0);
+    const out = reproject({
+      deadline,
+      nowMs: Date.UTC(2026, 5, 17, 22, 0),
+      bufferMin: 0,
+      breatherMin: 0,
+      tasks: [{ id: 'x', durationMin: 30 }],
+    });
+    expect(out.timeline.filter((i) => i.kind === 'task')).toHaveLength(1);
   });
 });
 
