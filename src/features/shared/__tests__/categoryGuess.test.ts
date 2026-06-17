@@ -1,4 +1,4 @@
-import { guessCategory, sortPickerCategories, tokenizeStems } from '../categoryGuess';
+import { guessCategory, sortPickerCategories, tokenizeStems, type LearnedMap } from '../categoryGuess';
 import type { PickerCategory } from '../CategoryChips';
 
 describe('guessCategory', () => {
@@ -59,6 +59,56 @@ describe('tokenizeStems', () => {
   it('returns empty for blank or punctuation-only input', () => {
     expect(tokenizeStems('   ')).toEqual([]);
     expect(tokenizeStems('!!! ???')).toEqual([]);
+  });
+});
+
+describe('guessCategory with context', () => {
+  const cat = (id: string, name: string) => ({ id, name, adaptSpeed: 'balanced' as const });
+
+  it('still works built-in only when no context is passed', () => {
+    expect(guessCategory('Reply to that email')).toBe('admin');
+  });
+
+  it('learned association beats the built-in keyword list', () => {
+    // "email" would map to admin built-in, but the user has taught it → errands
+    const learned: LearnedMap = { email: { errands: { count: 3, lastSeq: 9 } } };
+    expect(
+      guessCategory('forward the email', { learned, availableIds: ['admin', 'errands'] }),
+    ).toBe('errands');
+  });
+
+  it('custom category name beats built-in when nothing is learned', () => {
+    const namedCats = [cat('gym', 'Gym'), cat('admin', 'Admin & email')];
+    expect(
+      guessCategory('morning gym session', { namedCats, availableIds: ['gym', 'admin'] }),
+    ).toBe('gym');
+  });
+
+  it('learned beats a custom-name match', () => {
+    const learned: LearnedMap = { gym: { admin: { count: 2, lastSeq: 5 } } };
+    const namedCats = [cat('gym', 'Gym'), cat('admin', 'Admin & email')];
+    expect(
+      guessCategory('gym', { learned, namedCats, availableIds: ['gym', 'admin'] }),
+    ).toBe('admin');
+  });
+
+  it('breaks equal learned counts by most recent (higher lastSeq)', () => {
+    const learned: LearnedMap = {
+      walk: { errands: { count: 2, lastSeq: 4 }, getting_ready: { count: 2, lastSeq: 8 } },
+    };
+    expect(
+      guessCategory('walk', { learned, availableIds: ['errands', 'getting_ready'] }),
+    ).toBe('getting_ready');
+  });
+
+  it('skips a learned id that is no longer available (deleted category)', () => {
+    const learned: LearnedMap = { email: { ghost: { count: 5, lastSeq: 9 } } };
+    // ghost not in availableIds → falls through to built-in → admin
+    expect(guessCategory('email', { learned, availableIds: ['admin'] })).toBe('admin');
+  });
+
+  it('returns null for an all-stopword title', () => {
+    expect(guessCategory('to the')).toBeNull();
   });
 });
 

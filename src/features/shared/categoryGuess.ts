@@ -54,25 +54,84 @@ export function tokenizeStems(title: string): string[] {
     .filter(Boolean);
 }
 
-/** Lowercase word tokens of a title (letters/digits only). */
-function tokenize(title: string): string[] {
-  return title.toLowerCase().split(/[^a-z0-9]+/).filter(Boolean);
+/** Per-stem learned vote: how many times a stem was banked to a category, and
+ *  the highest `seq` (recency) at which it happened. */
+export type LearnedMap = Record<string, Record<string, { count: number; lastSeq: number }>>;
+
+/** Optional signals that make the guess smarter than the built-in keyword list. */
+export interface GuessContext {
+  /** Per-stem → category counts learned from the user's confirmed picks. */
+  learned?: LearnedMap;
+  /** Tracked categories (id + display name) for name-word matching. */
+  namedCats?: readonly { id: string; name: string }[];
+  /** Ids the picker is currently showing; a guess outside this set is dropped. */
+  availableIds?: readonly string[];
 }
 
-/**
- * Best-effort category id guessed from the task title, or null when nothing
- * matches. Scores each seed by keyword hits; highest wins, ties broken by the
- * GUESS_KEYWORDS order. Always returns a SEED id (never a custom category).
- */
-export function guessCategory(title: string): string | null {
-  const words = new Set(tokenize(title));
-  if (words.size === 0) return null;
+/** Built-in keywords, pre-stemmed once so title stems match inflected keywords. */
+const STEMMED_KEYWORDS: readonly (readonly [string, ReadonlySet<string>])[] =
+  GUESS_KEYWORDS.map(([id, kws]) => [id, new Set(kws.map(stem))] as const);
 
+/**
+ * Best-effort category id for a title, or null. Resolves by strict tiers:
+ *   1. learned (the user's own banked picks) — max count, recency tiebreak
+ *   2. custom-name (a tracked category whose NAME contains a title word)
+ *   3. built-in keyword list (legacy behavior)
+ * Only ever returns an id present in `ctx.availableIds` (when provided), so a
+ * guess at a deleted category falls through to the next tier.
+ */
+export function guessCategory(title: string, ctx: GuessContext = {}): string | null {
+  const stems = tokenizeStems(title);
+  if (stems.length === 0) return null;
+  const stemSet = new Set(stems);
+  const avail = ctx.availableIds ? new Set(ctx.availableIds) : null;
+  const ok = (id: string): boolean => avail === null || avail.has(id);
+
+  // Tier 1 — learned.
+  if (ctx.learned) {
+    const tally: Record<string, { count: number; lastSeq: number }> = {};
+    for (const s of stems) {
+      const entry = ctx.learned[s];
+      if (!entry) continue;
+      for (const [id, v] of Object.entries(entry)) {
+        if (!ok(id)) continue;
+        const acc = tally[id] ?? { count: 0, lastSeq: 0 };
+        tally[id] = { count: acc.count + v.count, lastSeq: Math.max(acc.lastSeq, v.lastSeq) };
+      }
+    }
+    let best: { id: string; count: number; lastSeq: number } | null = null;
+    for (const [id, t] of Object.entries(tally)) {
+      if (
+        best === null ||
+        t.count > best.count ||
+        (t.count === best.count && t.lastSeq > best.lastSeq)
+      ) {
+        best = { id, count: t.count, lastSeq: t.lastSeq };
+      }
+    }
+    if (best) return best.id;
+  }
+
+  // Tier 2 — custom (tracked) category name words.
+  if (ctx.namedCats && ctx.namedCats.length > 0) {
+    let best: { id: string; hits: number } | null = null;
+    for (const c of ctx.namedCats) {
+      if (!ok(c.id)) continue;
+      const nameStems = new Set(tokenizeStems(c.name));
+      let hits = 0;
+      for (const s of stemSet) if (nameStems.has(s)) hits += 1;
+      if (hits > 0 && (best === null || hits > best.hits)) best = { id: c.id, hits };
+    }
+    if (best) return best.id;
+  }
+
+  // Tier 3 — built-in keyword list (stemmed).
   let bestId: string | null = null;
   let bestScore = 0;
-  for (const [id, keywords] of GUESS_KEYWORDS) {
+  for (const [id, kwSet] of STEMMED_KEYWORDS) {
+    if (!ok(id)) continue;
     let score = 0;
-    for (const kw of keywords) if (words.has(kw)) score += 1;
+    for (const s of stemSet) if (kwSet.has(s)) score += 1;
     if (score > bestScore) {
       bestScore = score;
       bestId = id;
