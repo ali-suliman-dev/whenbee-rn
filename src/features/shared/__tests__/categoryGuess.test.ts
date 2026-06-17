@@ -1,4 +1,4 @@
-import { guessCategory, sortPickerCategories } from '../categoryGuess';
+import { guessCategory, sortPickerCategories, tokenizeStems } from '../categoryGuess';
 import type { PickerCategory } from '../CategoryChips';
 
 describe('guessCategory', () => {
@@ -37,6 +37,28 @@ describe('guessCategory', () => {
   it('picks the highest-scoring category when multiple keywords appear', () => {
     // "email" (admin) + "reply" (admin) outscore a lone "buy"
     expect(guessCategory('reply to email then buy stamps')).toBe('admin');
+  });
+});
+
+describe('tokenizeStems', () => {
+  it('lowercases, splits, and drops stopwords', () => {
+    expect(tokenizeStems('Reply TO that Email')).toEqual(['reply', 'email']);
+  });
+
+  it('stems common variants to a shared root', () => {
+    expect(tokenizeStems('emailing emails emailed')).toEqual(['email', 'email', 'email']);
+    expect(tokenizeStems('cleaning cleaned')).toEqual(['clean', 'clean']);
+    expect(tokenizeStems('groceries')).toEqual(['grocery']);
+  });
+
+  it('does not over-stem short words', () => {
+    expect(tokenizeStems('is as')).toEqual([]); // both stopwords
+    expect(tokenizeStems('buy gym')).toEqual(['buy', 'gym']); // len<4, untouched
+  });
+
+  it('returns empty for blank or punctuation-only input', () => {
+    expect(tokenizeStems('   ')).toEqual([]);
+    expect(tokenizeStems('!!! ???')).toEqual([]);
   });
 });
 

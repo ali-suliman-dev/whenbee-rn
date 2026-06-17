@@ -19,6 +19,41 @@ const GUESS_KEYWORDS: readonly (readonly [string, readonly string[]])[] = [
   ['getting_ready', ['shower', 'dress', 'dressed', 'ready', 'makeup', 'hair', 'brush', 'teeth', 'getting']],
 ];
 
+/** Filler words that carry no category signal — dropped before matching/banking. */
+const STOPWORDS: ReadonlySet<string> = new Set([
+  'to', 'that', 'the', 'a', 'an', 'of', 'for', 'my', 'this', 'some',
+  'and', 'on', 'in', 'it', 'is', 'as', 'up', 'do',
+]);
+
+/**
+ * Light suffix stemmer — NOT full Porter. Collapses common inflections so
+ * `emailing/emails/emailed → email` and `cleaning/cleaned → clean`, while
+ * leaving short words (`is`, `buy`, `gym`) intact. Only stems when the root
+ * stays ≥ 3 chars so we never strip a word down to noise.
+ */
+function stem(word: string): string {
+  if (word.length < 4) return word;
+  if (word.endsWith('ies') && word.length > 4) return `${word.slice(0, -3)}y`;
+  for (const suffix of ['ing', 'ed', 'es', 's'] as const) {
+    if (word.endsWith(suffix)) {
+      const base = word.slice(0, -suffix.length);
+      if (base.length >= 3) return base;
+    }
+  }
+  return word;
+}
+
+/** Lowercase content stems of a title: split → drop stopwords → stem. */
+export function tokenizeStems(title: string): string[] {
+  return title
+    .toLowerCase()
+    .split(/[^a-z0-9]+/)
+    .filter(Boolean)
+    .filter((w) => !STOPWORDS.has(w))
+    .map(stem)
+    .filter(Boolean);
+}
+
 /** Lowercase word tokens of a title (letters/digits only). */
 function tokenize(title: string): string[] {
   return title.toLowerCase().split(/[^a-z0-9]+/).filter(Boolean);
