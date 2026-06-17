@@ -121,7 +121,7 @@ the `20m` competing with the `35 min` hero. Demote it:
   size drops so the size ladder reads `35 min` > `43%` > reclaim total.
 - Everything else in the component (motion, a11y label, guards) is untouched.
 
-## Copy rewrites (all five — em-dashes / twee out, brand words kept)
+## Copy rewrites (six strings — em-dashes / twee out, brand words kept)
 
 | Location | Now | New |
 |---|---|---|
