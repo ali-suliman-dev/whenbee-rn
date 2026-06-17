@@ -139,7 +139,7 @@ export function AbandonButton({ clearActive }: AbandonButtonProps) {
                 onPress={handleConfirm}
               />
               <AppButton
-                label="Keep going"
+                label="Keep my plan"
                 variant="ghost"
                 size="md"
                 fullWidth

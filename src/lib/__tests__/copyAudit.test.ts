@@ -158,6 +158,10 @@ const DANGER_ALLOW: readonly string[] = [
   'src/components/AppButton.tsx', // the reusable `danger` button variant
   'src/components/ConfirmSheet.tsx', // destructive-action confirmation sheet
   'src/components/DataResetGlyph.tsx', // the erase/reset danger glyph
+  // AbandonButton — the planner's single destructive action (clears today's plan).
+  // Red is justified: this pill is the only deliberate exception to amber-never-red
+  // in the planner feature; everywhere else stays amber/indigo.
+  'src/features/planner/AbandonButton.tsx',
 ];
 
 // Surfaces that must NEVER use a red/danger colour as a state (amber-never-red).
