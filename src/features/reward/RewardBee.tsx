@@ -1,12 +1,19 @@
 import { BeeBurst } from '@/src/components/bee/BeeBurst';
+import { useTheme } from '@/src/theme/useTheme';
 
 // ──────────────────────────────────────────────────────────────────────────────
-// RewardBee — the Reward-moment hero. Now a thin wrapper over the reusable
-// BeeBurst illustration (sunburst + floating Whenbee + coin token), replacing the
-// old boxed honey-cell stand-in. A normal honest log shows the "+1 nectar" coin; a
-// cap/seal (tier ripened) swaps to the ▲ upgrade coin to mark the level-up.
+// RewardBee — the Reward-moment crest. A reward-scoped (smaller) BeeBurst so the
+// bee is a calm intro, not the hero. Normal log shows "+1 nectar"; a seal swaps
+// to the ▲ upgrade coin. Global burst sizes (hub/paywall) are untouched.
 // ──────────────────────────────────────────────────────────────────────────────
 
 export function RewardBee({ sealed = false }: { sealed?: boolean }) {
-  return <BeeBurst variant={sealed ? 'upgrade' : 'reward'} />;
+  const t = useTheme();
+  return (
+    <BeeBurst
+      variant={sealed ? 'upgrade' : 'reward'}
+      stageSize={t.burst.stageReward}
+      beeSize={t.burst.beeReward}
+    />
+  );
 }

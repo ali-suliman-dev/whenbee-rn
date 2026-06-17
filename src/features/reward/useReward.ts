@@ -55,8 +55,8 @@ export interface RewardView {
   onBackToToday: () => void;
 }
 
-const RITUAL_DEFAULT = 'One honest thing a day — no streak to break.';
-const RITUAL_SEAL = "New honest cell — and there's no streak to lose it.";
+const RITUAL_DEFAULT = 'One honest log a day. No streak to keep.';
+const RITUAL_SEAL = 'New honest cell. Nothing to keep up.';
 
 // The reason chips appear only when the run diverged from the guess enough to be
 // worth a why. |ratio − 1| > 0.25 → roughly a quarter over or under. Below that,
@@ -159,7 +159,7 @@ export function useReward(): RewardView {
     honeyPct: result.sharpness,
     multiplier: result.multiplier,
     sealed,
-    capEyebrow: result.leveledUp ? `Honey ripened · this cell's now ${result.tierAfter}` : null,
+    capEyebrow: result.leveledUp ? `${result.tierAfter} cell sealed` : null,
     ritualLine: sealed ? RITUAL_SEAL : RITUAL_DEFAULT,
     reclaimDeltaMin,
     reclaimFrom,

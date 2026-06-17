@@ -37,14 +37,16 @@ const BADGE: Record<BeeBurstVariant, { tone: 'amber' | 'indigo'; label?: string;
 export function BeeBurst({
   variant = 'reward',
   beeSize,
+  stageSize,
 }: {
   variant?: BeeBurstVariant;
   beeSize?: number;
+  stageSize?: number;
 }) {
   const t = useTheme();
   const reducedMotion = useReducedMotion();
 
-  const stage = t.burst.stage;
+  const stage = stageSize ?? t.burst.stage;
   const bee = beeSize ?? t.burst.bee;
   const spec = BADGE[variant];
 
@@ -66,7 +68,13 @@ export function BeeBurst({
     alignItems: 'center',
     justifyContent: 'center',
   };
-  const coinSlot: ViewStyle = { position: 'absolute', top: t.space[10], right: t.space[6] };
+  // Coin rides the bee's upper-right shoulder. Anchored as a fraction of the
+  // stage so it tracks the bee at any stageSize (no float/clip when shrunk).
+  const coinSlot: ViewStyle = {
+    position: 'absolute',
+    top: stage * 0.16,
+    right: stage * 0.1,
+  };
 
   return (
     <View style={stageStyle}>

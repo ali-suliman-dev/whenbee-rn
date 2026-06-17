@@ -91,7 +91,7 @@ export default function Reward() {
   // ── styles (token-driven; one spacing source per axis via the scroll gap) ──
   const scrollContent: ViewStyle = {
     flexGrow: 1,
-    gap: t.space[4],
+    gap: t.space[6], // wide tier — separates the four major zones
     paddingTop: t.space[2],
   };
   const tookEyebrow: TextStyle = {
@@ -129,7 +129,7 @@ export default function Reward() {
     backgroundColor: t.colors.surfaceRaised,
     borderRadius: t.radii.card,
     padding: t.space[4],
-    gap: t.space[2.5],
+    gap: t.space[3], // medium tier — card internals
   };
   const heroBlock: ViewStyle = { alignItems: 'center', gap: t.space[1.5] };
   const ctaBlock: ViewStyle = {
@@ -171,7 +171,7 @@ export default function Reward() {
     <Screen>
       <ScrollView contentContainerStyle={scrollContent} showsVerticalScrollIndicator={false}>
         {/* Zone 1 — emotional hit */}
-        <View style={{ alignItems: 'center', gap: t.space[3] }}>
+        <View style={{ alignItems: 'center', gap: t.space[2] }}>
           {r.capEyebrow ? <Text style={capEyebrow}>{r.capEyebrow}</Text> : null}
           <RewardBee sealed={r.sealed} />
           <Text style={headlineText}>{r.headline}</Text>
@@ -194,7 +194,7 @@ export default function Reward() {
           </View>
           <HoneyBar pct={r.honeyPct} />
           <Text style={subText}>
-            {r.categoryLabel} now reads {r.multiplier.toFixed(1)}×
+            {r.categoryLabel} runs at {r.multiplier.toFixed(1)}×
           </Text>
 
           {/* Tangible payoff: the minutes this log just banked. Only when >= 1m —
@@ -208,17 +208,21 @@ export default function Reward() {
                 delayMs={t.motion.reveal}
               />
               <Text style={subText}>
-                Whenbee was {r.reclaimDeltaMin} min closer than your guess.
+                Your honest number was {r.reclaimDeltaMin} min closer.
               </Text>
             </>
           ) : null}
         </View>
 
-        {/* Zone 4 — the one action: an optional "where'd the time go?" tag. Pure
-            side-channel data — never blocks the exit, never touches the model.
-            Chips stagger in last (handled inside ReasonChips). */}
+        {/* Zone 4 — the optional tail: an over/under reason tag. Kept in a group
+            wrapper so a future second tag row (energy, on the mechanisms branch)
+            slots in as one optional-tags block. Gated on the reason itself so it
+            never leaves an empty spacer when the run landed close to the guess.
+            Pure side-channel data — never blocks the exit, never touches the model. */}
         {r.reasonDirection && r.eventId ? (
-          <ReasonChips eventId={r.eventId} direction={r.reasonDirection} category={r.category} />
+          <View style={{ gap: t.space[3] }}>
+            <ReasonChips eventId={r.eventId} direction={r.reasonDirection} category={r.category} />
+          </View>
         ) : null}
 
         {/* Optional context tag (S4) — energy this session. Skippable; pure

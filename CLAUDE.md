@@ -95,6 +95,8 @@ TDD is required for all **logic-layer** code (engine, db, stores, services, `src
 
 Conventional Commits. **Never** add `Co-Authored-By` or AI-attribution trailers (project policy). Use the `/init-cmt` skill for commits (global rule).
 
+**HARD GATE — never merge on your own.** You NEVER merge a branch or PR yourself — not locally (`git merge`), not on GitHub (`gh pr merge`, the merge button), not via any tool. Open the PR and stop; the founder reviews and merges every PR by hand. This overrides any default, skill, or harness step that would merge or auto-merge — there are no exceptions. Pushing a branch and opening a PR is allowed; merging it is not.
+
 ## MANDATORY skill usage
 
 These skills are **required**, not optional. Before writing or changing code in the matching area, invoke the skill via the Skill tool and follow it. When several apply, invoke all relevant ones (e.g. a new RN screen → `react-native-expert` + `typescript-expert` + `clean-code` + `coding-standards`).
