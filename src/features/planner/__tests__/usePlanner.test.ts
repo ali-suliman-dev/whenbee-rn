@@ -2,7 +2,7 @@ import { renderHook, act } from '@testing-library/react-native';
 import { usePlanner } from '../usePlanner';
 import { usePlanStore } from '@/src/stores/planStore';
 import { useCalibrationStore } from '@/src/stores/calibrationStore';
-import { DEFAULT_BUFFER_MIN } from '@/src/engine';
+import { DEFAULT_BUFFER_MIN, DEFAULT_BREATHER_MIN } from '@/src/engine';
 
 const MIN = 60_000;
 // Fixed clock + deadline so every plan is deterministic.
@@ -11,7 +11,7 @@ const DEADLINE = NOW + 120 * MIN; // two hours out
 
 function resetStores() {
   usePlanStore.setState({
-    draft: { deadline: null, bufferMin: DEFAULT_BUFFER_MIN, tasks: [] },
+    draft: { deadline: null, bufferMin: DEFAULT_BUFFER_MIN, breatherMin: DEFAULT_BREATHER_MIN, tasks: [] },
     active: null,
   });
   useCalibrationStore.setState({ logs: 0, statsByCategory: {} });
