@@ -12,6 +12,7 @@ import { useTheme } from '@/src/theme/useTheme';
 import { type } from '@/src/theme/typography';
 import { useSettingsStore, type ColorModePref } from '@/src/stores/settingsStore';
 import { useCategoriesStore } from '@/src/stores/categoriesStore';
+import { useOnboardingStore } from '@/src/stores/onboardingStore';
 import { useEntitlement } from '@/src/features/paywall/useEntitlement';
 import { useAccountActions, type RestoreOutcome } from '@/src/features/paywall/useAccountActions';
 import { useReminderSetting } from '@/src/features/settings/useReminderSetting';
@@ -113,6 +114,7 @@ export default function Settings() {
   const categoryCount = useCategoriesStore((s) => s.categories.length);
   const { restoring, manageSubscription, restorePurchases } = useAccountActions();
   const { enabled: remindersEnabled, toggle: toggleReminders } = useReminderSetting();
+  const resetOnboarding = useOnboardingStore((s) => s.reset);
 
   const [toastMsg, setToastMsg] = useState('');
   const [toastVisible, setToastVisible] = useState(false);
@@ -140,6 +142,13 @@ export default function Settings() {
   async function handleToggleReminders(next: boolean) {
     const ok = await toggleReminders(next);
     if (next && !ok) showToast(REMINDER_DENIED);
+  }
+
+  // Dev-only: clear the boot-gate flag + picks, then bounce through the root so
+  // Index re-redirects to the welcome flow. Never compiled into release builds.
+  function handleReplayOnboarding() {
+    resetOnboarding();
+    router.replace('/');
   }
 
   return (
@@ -251,6 +260,19 @@ export default function Settings() {
             ))}
           </View>
         </View>
+
+        {__DEV__ ? (
+          <View style={{ gap: t.space[3] }}>
+            <AppText variant="label">Developer</AppText>
+            <SettingRow
+              icon="refresh-circle-outline"
+              tint={t.colors.danger}
+              title="Replay onboarding"
+              note="Clears the boot-gate flag and jumps back to the welcome flow."
+              onPress={handleReplayOnboarding}
+            />
+          </View>
+        ) : null}
       </ScrollView>
       <Toast message={toastMsg} visible={toastVisible} />
     </Screen>
