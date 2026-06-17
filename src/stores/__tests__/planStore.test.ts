@@ -130,6 +130,19 @@ describe('planStore', () => {
     expect(usePlanStore.getState().active!.tasks[0]!.id).toBe(a.id); // unchanged
   });
 
+  it('startTask demotes any previously running task back to upcoming', () => {
+    const s = usePlanStore.getState();
+    const a = s.addTask({ label: 'A', category: 'x', durationMin: 20 });
+    const b = s.addTask({ label: 'B', category: 'x', durationMin: 20 });
+    usePlanStore.getState().setDeadline(T0);
+    usePlanStore.getState().saveActive();
+    usePlanStore.getState().startTask(a.id); // a is running
+    usePlanStore.getState().startTask(b.id); // b takes over
+    const tasks = usePlanStore.getState().active!.tasks;
+    expect(tasks.find((t) => t.id === a.id)?.status).toBe('upcoming');
+    expect(tasks.find((t) => t.id === b.id)?.status).toBe('running');
+  });
+
   it('completeTask marks done with actual minutes', () => {
     const s = usePlanStore.getState();
     const a = s.addTask({ label: 'A', category: 'x', durationMin: 20 });

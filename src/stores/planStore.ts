@@ -2,6 +2,7 @@ import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
 import { zustandKv } from '@/src/lib/kv';
 import { DEFAULT_BUFFER_MIN, DEFAULT_BREATHER_MIN } from '@/src/engine';
+import type { PlanTaskStatus } from '@/src/domain/types';
 
 // ──────────────────────────────────────────────────────────────────────────────
 // Plan store — the reverse Start-By day planner's draft + one active plan.
@@ -14,7 +15,7 @@ import { DEFAULT_BUFFER_MIN, DEFAULT_BREATHER_MIN } from '@/src/engine';
 // store never silently reshuffles.
 // ──────────────────────────────────────────────────────────────────────────────
 
-export type PlanTaskStatus = 'upcoming' | 'running' | 'done';
+export type { PlanTaskStatus } from '@/src/domain/types';
 
 export interface PlanDraftTask {
   id: string;
@@ -132,9 +133,12 @@ export const usePlanStore = create<PlanState>()(
             const runningIndex = activeTasks.findIndex((t) => t.status === 'running');
             if (runningIndex !== -1) {
               const runningId = activeTasks[runningIndex]?.id;
-              const newIndex = ids.indexOf(runningId ?? '');
-              // Reject if the running task would move to a different slot.
-              if (newIndex !== runningIndex) return s;
+              // runningId is defined because runningIndex >= 0, but guard for TS strictness.
+              if (runningId !== undefined) {
+                const newIndex = ids.indexOf(runningId);
+                // Reject if the running task would move to a different slot.
+                if (newIndex !== runningIndex) return s;
+              }
             }
             // Apply the reorder to active tasks.
             const byId = new Map(activeTasks.map((t) => [t.id, t]));
@@ -173,9 +177,12 @@ export const usePlanStore = create<PlanState>()(
           return {
             active: {
               ...s.active,
-              tasks: s.active.tasks.map((t) =>
-                t.id === id ? { ...t, status: 'running' as PlanTaskStatus } : t,
-              ),
+              tasks: s.active.tasks.map((t) => {
+                if (t.id === id) return { ...t, status: 'running' };
+                // Demote any other running task back to upcoming; done stays done.
+                if (t.status === 'running') return { ...t, status: 'upcoming' };
+                return t;
+              }),
             },
           };
         }),
@@ -188,12 +195,7 @@ export const usePlanStore = create<PlanState>()(
               ...s.active,
               tasks: s.active.tasks.map((t) =>
                 t.id === id
-                  ? {
-                      ...t,
-                      status: 'done' as PlanTaskStatus,
-                      completedAt: Date.now(),
-                      actualMin,
-                    }
+                  ? { ...t, status: 'done', completedAt: Date.now(), actualMin }
                   : t,
               ),
             },
