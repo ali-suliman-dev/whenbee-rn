@@ -1,15 +1,33 @@
 import { render, screen } from '@testing-library/react-native';
 import Today from '@/src/app/(tabs)/index';
-import { useCalibrationStore } from '@/src/stores/calibrationStore';
+import { useCalibrationStore, type ReclaimSummary } from '@/src/stores/calibrationStore';
 import { useTasksStore } from '@/src/stores/tasksStore';
 
 jest.mock('expo-router', () => ({
   router: { push: jest.fn() },
-  // useFocusEffect runs its effect immediately in tests (no navigation focus here).
   useFocusEffect: (cb: () => void | (() => void)) => cb(),
 }));
 
 const T0 = 1_700_000_000_000;
+
+function summary(over: Partial<{ lifetimeMin: number; lifetimeNectar: number; stage: number }>): ReclaimSummary {
+  return {
+    lifetimeMin: over.lifetimeMin ?? 0,
+    byCategory: [],
+    biggestArea: null,
+    honestLogCount: 0,
+    discoveryCount: 0,
+    companion: {
+      stage: (over.stage ?? 1) as ReclaimSummary['companion']['stage'],
+      capability: 'finish_time' as unknown as ReclaimSummary['companion']['capability'],
+      keeper: false,
+      lifetimeNectar: over.lifetimeNectar ?? 0,
+      driftHealth: 'settled',
+      seed: 1,
+      name: null,
+    },
+  };
+}
 
 beforeEach(() => {
   useTasksStore.setState({ tasks: [] });
@@ -18,15 +36,23 @@ beforeEach(() => {
     statsByCategory: {},
     hydrate: async () => {},
     loadTodayReclaimMin: async () => 0,
+    loadReclaimSummary: async () => summary({ lifetimeMin: 0, lifetimeNectar: 0 }),
   });
 });
 
 describe('Today screen', () => {
-  it('renders the calm empty-state copy when nothing is tracked', () => {
+  it('shows the first-run empty state when the user has never logged', async () => {
     render(<Today />);
-    expect(
-      screen.getByText('Nothing tracked yet today — tap + when you start something.'),
-    ).toBeOnTheScreen();
+    expect(await screen.findByText('Time your first task')).toBeOnTheScreen();
+  });
+
+  it('shows the daily empty state + lifetime reclaim for a returning user', async () => {
+    useCalibrationStore.setState({
+      loadReclaimSummary: async () => summary({ lifetimeMin: 860, lifetimeNectar: 12, stage: 2 }),
+    });
+    render(<Today />);
+    expect(await screen.findByText("What's on today?")).toBeOnTheScreen();
+    expect(screen.getByText('14h 20m reclaimed so far')).toBeOnTheScreen();
   });
 
   it('renders the focus card plan total + guess→plan gap for a focus task', () => {
@@ -41,15 +67,12 @@ describe('Today screen', () => {
 
     render(<Today />);
 
-    // Task title + plan total (round_to_5(15 × 2.0) = 30) + the guess→plan gap line
-    // labels (guess 15, +15 the learned extra).
     expect(screen.getByText('Leave for work')).toBeOnTheScreen();
     expect(screen.getByText('~30')).toBeOnTheScreen();
     expect(screen.getByText('guessed 15 min')).toBeOnTheScreen();
     expect(screen.getByText('+15 min')).toBeOnTheScreen();
-    // The empty copy must NOT show when a task is present.
-    expect(
-      screen.queryByText('Nothing tracked yet today — tap + when you start something.'),
-    ).toBeNull();
+    // No empty-state copy when a task is present.
+    expect(screen.queryByText('Time your first task')).toBeNull();
+    expect(screen.queryByText("What's on today?")).toBeNull();
   });
 });
