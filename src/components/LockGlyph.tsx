@@ -1,11 +1,11 @@
 import { useEffect } from 'react';
 import { View } from 'react-native';
 import Animated, {
+  Easing,
   useAnimatedStyle,
   useReducedMotion,
   useSharedValue,
-  withSequence,
-  withSpring,
+  withRepeat,
   withTiming,
 } from 'react-native-reanimated';
 import Svg, { Circle, Path, Rect } from 'react-native-svg';
@@ -16,39 +16,41 @@ import { useTheme } from '@/src/theme/useTheme';
 //
 // 24-unit viewBox, 1.6px stroke weight (matches ReasonGlyph's glyph set).
 // Indigo body (primarySoft fill + primary stroke) with an amber (accent) keyhole.
-// On mount the shackle "clicks shut" — a one-shot delight animation, reduced-motion
-// guarded to the still/shut state. No glow.
 //
-// Implementation note: SVG `G` and `Path` animated wrappers don't accept `style`
-// transforms via react-native-reanimated's AnimatedProps on Fabric. Instead the
-// shackle is rendered in its own Svg layer inside an Animated.View so the
-// translateY transform is applied to a plain RN view — identical visual result.
+// Motion is INTERNAL and SMOOTH — the lock body never leaves its place and there
+// is no snap/jump: the shackle eases gently open and shut on a continuous
+// ease-in-out loop (reverse timing → zero discontinuity). Reduced-motion → still.
+//
+// Implementation note: SVG `G`/`Path` don't take style transforms via AnimatedProps
+// on Fabric, so the shackle is its own Svg layer inside an Animated.View and the
+// transform rides the plain RN view.
 // ──────────────────────────────────────────────────────────────────────────────
 
 const BOX = 24;
 const SW = 1.6; // stroke width — matches ReasonGlyph
+const LIFT = 4; // how far the shackle eases up (of the 24-box) — clearly visible
 
 export function LockGlyph({ size = 24 }: { size?: number }) {
   const t = useTheme();
   const reduced = useReducedMotion();
-  const dy = useSharedValue(reduced ? 0 : -3);
 
+  // Shackle eases up then back down, forever — smooth, no snap.
+  const open = useSharedValue(0);
   useEffect(() => {
     if (reduced) {
-      dy.set(0);
+      open.set(0);
       return;
     }
-    dy.set(
-      withSequence(
-        withTiming(0.6, { duration: t.motion.press }),
-        withSpring(0, t.motion.spring),
+    open.set(
+      withRepeat(
+        withTiming(1, { duration: t.motion.honeyFill, easing: Easing.inOut(Easing.sin) }),
+        -1,
+        true,
       ),
     );
-  }, [reduced, dy, t.motion.press, t.motion.spring]);
+  }, [reduced, open, t.motion.honeyFill]);
 
-  const shackle = useAnimatedStyle(() => ({
-    transform: [{ translateY: dy.get() }],
-  }));
+  const shackle = useAnimatedStyle(() => ({ transform: [{ translateY: -LIFT * open.get() }] }));
 
   return (
     <View
@@ -75,19 +77,11 @@ export function LockGlyph({ size = 24 }: { size?: number }) {
           strokeLinejoin="round"
         />
         <Circle cx={12} cy={15} r={1.4} fill={t.colors.accent} />
-        <Rect
-          x={11.3}
-          y={15.4}
-          width={1.4}
-          height={2.7}
-          rx={0.7}
-          fill={t.colors.accent}
-        />
+        <Rect x={11.3} y={15.4} width={1.4} height={2.7} rx={0.7} fill={t.colors.accent} />
       </Svg>
-      {/* Animated layer: shackle clicks shut on mount */}
-      <Animated.View
-        style={[{ position: 'absolute', top: 0, left: 0 }, shackle]}
-      >
+
+      {/* Animated layer: shackle eases open and shut */}
+      <Animated.View style={[{ position: 'absolute', top: 0, left: 0 }, shackle]}>
         <Svg width={size} height={size} viewBox={`0 0 ${BOX} ${BOX}`}>
           <Path
             d="M8 11 V9 a4 4 0 0 1 8 0 V11"

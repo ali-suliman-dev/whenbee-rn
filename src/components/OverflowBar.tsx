@@ -1,6 +1,7 @@
 import { useEffect } from 'react';
 import { View, type TextStyle } from 'react-native';
 import Animated, {
+  FadeIn,
   useAnimatedStyle,
   useReducedMotion,
   useSharedValue,
@@ -91,9 +92,16 @@ export function OverflowBar({
         <AppText variant="caption" style={{ color: t.colors.inkSoft }}>
           you guessed
         </AppText>
-        <AppText variant="label" style={{ color: t.colors.accent }}>
+        <Animated.Text
+          entering={reduced ? undefined : FadeIn.duration(t.motion.base).delay(t.motion.honeyFill)}
+          style={{
+            fontSize: t.fontSize.sm,
+            fontWeight: t.fontWeight.medium as TextStyle['fontWeight'],
+            color: t.colors.accent,
+          }}
+        >
           {`+${honestMin - guessMin} min reality`}
-        </AppText>
+        </Animated.Text>
       </View>
 
       <AppText
