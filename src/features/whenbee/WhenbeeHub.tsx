@@ -95,22 +95,14 @@ export function WhenbeeHub() {
 
   return (
     <View style={{ gap: t.space[5] }}>
-      {/* Header — subtitle is context-aware: prompt first log vs. live summary */}
-      <ScreenHeader
-        title="Whenbee"
-        subtitle={
-          isEmpty
-            ? 'Log a task — your honey starts to set.'
-            : "What you've learned about your time."
-        }
-      />
+      {/* Header — title only; the ring + zones carry the context. */}
+      <ScreenHeader title="Whenbee" />
 
       {/* HERO — honey ring + bee (no glow) + ring badge */}
       <View style={heroZone}>
         <HoneyRing sharpness={vm.leadSharpness} sealed={vm.tier === 'Honest'}>
           <WhenbeeAvatar
             stage={vm.companion.stage}
-            capability={vm.companion.capability}
             seed={vm.companion.seed}
             driftHealth={vm.companion.driftHealth}
             name={vm.companion.name ?? undefined}
@@ -123,7 +115,7 @@ export function WhenbeeHub() {
       {/* RECLAIMED zone */}
       <View style={zoneWrap}>
         <Text style={zoneLabel}>Reclaimed</Text>
-        <Text style={zoneExplain}>time your honest numbers spared you</Text>
+        <Text style={zoneExplain}>time your honest numbers won back</Text>
         <ReclaimHeroCard
           lifetimeMin={vm.reclaimLifetimeMin}
           honestLogCount={vm.honestLogCount}

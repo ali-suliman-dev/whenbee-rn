@@ -13,7 +13,7 @@ import { useTheme } from '@/src/theme/useTheme';
 import { AppText } from '@/src/components/AppText';
 import { BeeMascot } from '@/src/components/BeeMascot';
 import { type } from '@/src/theme/typography';
-import type { CompanionStage, CompanionCapability, DriftHealth } from '@/src/engine';
+import type { CompanionStage, DriftHealth } from '@/src/engine';
 
 // ──────────────────────────────────────────────────────────────────────────────
 // WhenbeeAvatar — the companion, now stage-driven (Part 2 Group E). It renders the
@@ -22,25 +22,22 @@ import type { CompanionStage, CompanionCapability, DriftHealth } from '@/src/eng
 //   • Mount: a Playful spring LIFT whose amplitude scales with stage (a higher hop
 //     for a more-present bee), then a calm sine FLOAT bob at the same per-stage
 //     amplitude (companion.floatLift token). Joy, never urgency.
-//   • driftHealth 'curious' ONLY warms the capability copy toward the indigo drift
-//     tint and adds a tiny rotational wobble — a gentle "worth a re-check" wave,
-//     never a sad/wilt state (positive-only invariant).
+//   • driftHealth 'curious' ONLY adds a tiny rotational wobble — a gentle "worth a
+//     re-check" wave, never a sad/wilt state (positive-only invariant).
 //   • REDUCE-MOTION: collapse to a plain fade-in, no travel (matches CoinBadge).
 //
-// The capability label is warm, non-evaluative microcopy: it names what the bee can
-// do for you now, framed as a gift ("She can…"), never a score or a task.
+// Art + motion only (plus an optional name). No caption line — the ring badge and
+// the labeled zones below carry the words.
 // ──────────────────────────────────────────────────────────────────────────────
 
 export function WhenbeeAvatar({
   stage,
-  capability,
   seed,
   driftHealth = 'settled',
   name,
   glow = true,
 }: {
   stage: CompanionStage;
-  capability: CompanionCapability;
   seed: number;
   driftHealth?: DriftHealth;
   name?: string;
@@ -105,12 +102,6 @@ export function WhenbeeAvatar({
 
   const wrap: ViewStyle = { alignItems: 'center', gap: t.space[2] };
   const nameStyle: TextStyle = { ...(type.bodyLg as unknown as TextStyle), color: t.colors.ink };
-  // Capability copy: muted by default; warms to the indigo drift tint when curious.
-  const capStyle: TextStyle = {
-    ...(type.caption as unknown as TextStyle),
-    color: curious ? t.colors.driftCurious : t.colors.inkSoft,
-    textAlign: 'center',
-  };
 
   return (
     <View style={wrap}>
@@ -118,9 +109,6 @@ export function WhenbeeAvatar({
         <BeeMascot size={t.burst.bee} variant={`stage-${stage}`} seed={seed} glow={glow} />
       </Animated.View>
       {name ? <AppText style={nameStyle}>{name}</AppText> : null}
-      <AppText style={capStyle} accessibilityLabel={`She can now give you ${capability.label}`}>
-        {curious ? 'A quick re-check keeps her sharp' : `She can give you ${capability.label.toLowerCase()}`}
-      </AppText>
     </View>
   );
 }
