@@ -6,10 +6,12 @@ import { AppText } from '@/src/components/AppText';
 import { AppButton } from '@/src/components/AppButton';
 import { Card } from '@/src/components/Card';
 import { HoneyTrail } from '@/src/components/HoneyTrail';
+import { OnboardingBackdrop } from '@/src/components/OnboardingBackdrop';
+import { OnboardingFooterCard } from '@/src/components/OnboardingFooterCard';
+import { ReasonGlyph } from '@/src/features/reward/ReasonGlyph';
 import { useTheme } from '@/src/theme/useTheme';
 import { useOnboarding } from '@/src/features/onboarding/useOnboarding';
 import { StepProgress } from '@/src/features/onboarding/StepProgress';
-import { PromiseChip } from '@/src/features/onboarding/PromiseChip';
 
 // Raw (now) → Honest (goal) look-ahead. Not a setup wall — a goal preview.
 const MASTERY_TRAIL = [
@@ -31,7 +33,7 @@ export default function Ready() {
   }
 
   return (
-    <Screen>
+    <Screen backdrop={<OnboardingBackdrop />}>
       <StepProgress current={2} />
       <View style={{ flex: 1, gap: t.space[4], paddingTop: t.space[3] }}>
         <AppText
@@ -48,13 +50,9 @@ export default function Ready() {
           variant="body"
           style={{ color: t.colors.inkSoft, lineHeight: t.fontSize.base * 1.5 }}
         >
-          From your first guess I&apos;ll suggest honest times. Every task you log
-          thickens your honey — and I&apos;ll never scold you for a gap.
+          From your first guess, I&apos;ll show honest times. Every task you log
+          ripens your comb — I&apos;ll never scold you for a gap.
         </AppText>
-
-        <PromiseChip glyph="check">
-          Empty days are fine. Forgot to time something? One tap to add it later.
-        </PromiseChip>
 
         {/* Mastery preview — Raw (now) → Honest (where you're headed). A look-ahead. */}
         <Card>
@@ -62,7 +60,7 @@ export default function Ready() {
             variant="label"
             style={{ marginBottom: t.space[3], color: t.colors.inkSoft }}
           >
-            Your honeycomb starts raw — here&apos;s where you&apos;re headed
+            Where you&apos;re headed
           </AppText>
           <HoneyTrail nodes={MASTERY_TRAIL} />
           <AppText
@@ -72,6 +70,12 @@ export default function Ready() {
             It only ever ripens. There&apos;s no streak to break.
           </AppText>
         </Card>
+
+        <View style={{ flex: 1 }} />
+
+        <OnboardingFooterCard glyph={<ReasonGlyph kind="pulled" active={false} size={t.iconSize.lg} />}>
+          Empty days are fine. Forgot to time something? Add it in one tap.
+        </OnboardingFooterCard>
       </View>
 
       <AppButton label="Open my day →" fullWidth onPress={openMyDay} />
