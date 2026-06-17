@@ -3,6 +3,7 @@ import { View, Text, type ViewStyle, type TextStyle } from 'react-native';
 import { router, useFocusEffect } from 'expo-router';
 import { AppButton } from '@/src/components/AppButton';
 import { AppText } from '@/src/components/AppText';
+import { ProUpsellCard } from '@/src/components/ProUpsellCard';
 import { ScreenHeader } from '@/src/components/ScreenHeader';
 import { useTheme } from '@/src/theme/useTheme';
 import { type } from '@/src/theme/typography';
@@ -172,12 +173,19 @@ export function WhenbeeHub() {
           <AppButton label="Log your first task" variant="amber" fullWidth onPress={logFirst} />
           <Text style={ctaSub}>Honest-day planning unlocks once your honey sets.</Text>
         </View>
-      ) : (
+      ) : isPro ? (
         <AppButton
           label="Make my whole day honest"
           variant="amber"
           fullWidth
           onPress={openDayHonest}
+        />
+      ) : (
+        <ProUpsellCard
+          title="Make my whole day honest"
+          note="Auto-pad your calendar with your real buffers."
+          onPress={openDayHonest}
+          accessibilityLabel="Go Pro and make your whole day honest"
         />
       )}
     </View>
