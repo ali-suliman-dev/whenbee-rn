@@ -80,7 +80,7 @@ describe('WhenbeeHub', () => {
     render(<WhenbeeHub />);
 
     expect(
-      screen.getByText('Your reclaim starts with your first honest log. No rush.'),
+      screen.getByText('Log a task and the time you win back starts adding up here. No rush.'),
     ).toBeOnTheScreen();
     // No reclaim hero number is rendered in the empty state.
     expect(screen.queryByText('0m')).toBeNull();
