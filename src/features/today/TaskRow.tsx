@@ -64,14 +64,20 @@ export function TaskRow({ title, categoryLabel, honestMin, actualMin, done = fal
     overflow: 'hidden',
     opacity: done ? 0.7 : 1,
   };
-  // Semantic "interactive" edge — thin indigo bar, vertically centered, on queued rows only.
-  const edge: ViewStyle = {
+  // Semantic "interactive" edge — thin indigo bar on queued rows only. A full-height
+  // absolute track (top:0→bottom:0) centers the short bar with flexbox; `top: '50%'`
+  // can't be used because the row height is content-driven (minHeight only), so the
+  // percentage has no definite parent height to resolve against and the bar drops top.
+  const edgeTrack: ViewStyle = {
     position: 'absolute',
     left: 0,
-    top: '50%',
+    top: 0,
+    bottom: 0,
+    justifyContent: 'center',
+  };
+  const edge: ViewStyle = {
     width: t.row.edgeW,
     height: t.row.edgeH,
-    marginTop: -t.row.edgeH / 2,
     backgroundColor: t.colors.primary,
     borderTopRightRadius: t.row.edgeW,
     borderBottomRightRadius: t.row.edgeW,
@@ -106,7 +112,9 @@ export function TaskRow({ title, categoryLabel, honestMin, actualMin, done = fal
           <Ionicons name="checkmark" size={t.iconSize.sm} color={t.colors.success} />
         </View>
       ) : (
-        <View testID="taskrow-edge" style={edge} />
+        <View style={edgeTrack} pointerEvents="none">
+          <View testID="taskrow-edge" style={edge} />
+        </View>
       )}
 
       <View style={{ flex: 1, gap: t.space[0.5] }}>
