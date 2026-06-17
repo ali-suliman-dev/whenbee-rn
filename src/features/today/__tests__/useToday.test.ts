@@ -1,6 +1,6 @@
 import { renderHook } from '@testing-library/react-native';
 import { useToday } from '../useToday';
-import { useCalibrationStore } from '@/src/stores/calibrationStore';
+import { useCalibrationStore, type ReclaimSummary } from '@/src/stores/calibrationStore';
 import { useTasksStore } from '@/src/stores/tasksStore';
 
 // useFocusEffect runs its effect immediately in tests (no real navigation focus).
@@ -10,7 +10,7 @@ jest.mock('expo-router', () => ({
 
 const T0 = 1_700_000_000_000;
 
-const defaultSummary = {
+const defaultSummary: ReclaimSummary = {
   lifetimeMin: 0,
   byCategory: [],
   biggestArea: null,
@@ -18,7 +18,7 @@ const defaultSummary = {
   discoveryCount: 0,
   companion: {
     stage: 1 as const,
-    capability: 'finish_time' as const,
+    capability: 'finish_time' as unknown as ReclaimSummary['companion']['capability'],
     keeper: false,
     lifetimeNectar: 0,
     driftHealth: 'settled' as const,
