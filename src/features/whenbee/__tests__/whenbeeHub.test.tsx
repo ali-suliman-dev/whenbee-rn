@@ -36,6 +36,7 @@ function vm(overrides: Partial<WhenbeeHubVM> = {}): WhenbeeHubVM {
     biggestArea: null,
     honestLogCount: 0,
     blindSpot: null,
+    leadSharpness: 0,
     tier: 'Raw',
     companion: COMPANION_FIXTURE,
     cells: [],
