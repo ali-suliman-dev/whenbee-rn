@@ -1,7 +1,9 @@
 import { useCallback, useMemo } from 'react';
 import { planBackward, resolveSuggestion, priorFor, CATEGORY_NAMES } from '@/src/engine';
 import { useCalibrationStore } from '@/src/stores/calibrationStore';
+import { useSettingsStore } from '@/src/stores/settingsStore';
 import { analytics } from '@/src/services/analytics';
+import { scheduleStartBy, cancelStartBy } from '@/src/services/timerNotifications';
 import { usePlanStore, type PlanDraftTask, type ActivePlan } from '@/src/stores/planStore';
 import type { PlanResult, PlanTaskInput, PlanVerdict } from '@/src/domain/types';
 
@@ -139,9 +141,24 @@ export function usePlanner(args: UsePlannerArgs = {}) {
         status: verdictStatus(result.verdict),
         freed_min: 0,
       });
+      // G17 — schedule the "start by" nudge (opt-in; off unless reminders are on).
+      const first = result.timeline[0];
+      if (useSettingsStore.getState().remindersEnabled && first && draft.deadline !== null) {
+        void scheduleStartBy({
+          startByMs: result.startBy,
+          firstTaskLabel: first.label,
+          deadlineMs: draft.deadline,
+        });
+      }
     },
-    [saveActiveRaw, result, draft.tasks.length],
+    [saveActiveRaw, result, draft.tasks.length, draft.deadline],
   );
+
+  // Clearing the active plan cancels its pending start-by nudge.
+  const clearActivePlan = useCallback(() => {
+    void cancelStartBy();
+    clearActive();
+  }, [clearActive]);
 
   /**
    * Re-project the active plan against `now` WITHOUT applying it. Returns the
@@ -193,7 +210,7 @@ export function usePlanner(args: UsePlannerArgs = {}) {
     pushDeadline,
     // persistence + re-projection
     saveActive,
-    clearActive,
+    clearActive: clearActivePlan,
     reproject,
     // helpers
     categoryName,
