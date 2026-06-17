@@ -36,7 +36,7 @@ export function HoneyRing({
 
   return (
     <View style={wrap}>
-      <View style={svgAbsolute} pointerEvents="none">
+      <View style={svgAbsolute} pointerEvents="none" accessibilityElementsHidden importantForAccessibility="no-hide-descendants">
         <Svg width={S} height={S}>
           <Defs>
             <LinearGradient id="honeyGrad" x1="0" y1="0" x2="1" y2="1">
