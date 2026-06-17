@@ -5,7 +5,7 @@ import { Screen } from '@/src/components/Screen';
 import { AppText } from '@/src/components/AppText';
 import { AppButton } from '@/src/components/AppButton';
 import { Card } from '@/src/components/Card';
-import { TierTrail } from '@/src/components/TierTrail';
+import { HoneyTrail } from '@/src/components/HoneyTrail';
 import { useTheme } from '@/src/theme/useTheme';
 import { useOnboarding } from '@/src/features/onboarding/useOnboarding';
 import { StepProgress } from '@/src/features/onboarding/StepProgress';
@@ -14,10 +14,10 @@ import { PromiseChip } from '@/src/features/onboarding/PromiseChip';
 // Raw (now) → Honest (goal) look-ahead. Not a setup wall — a goal preview.
 const MASTERY_TRAIL = [
   { label: 'Raw', state: 'now' as const },
-  { label: 'Setting', state: 'lock' as const },
-  { label: 'Ripening', state: 'lock' as const },
-  { label: 'Thickening', state: 'lock' as const },
-  { label: 'Honest', state: 'lock' as const },
+  { label: 'Setting', state: 'ahead' as const },
+  { label: 'Ripening', state: 'ahead' as const },
+  { label: 'Thickening', state: 'ahead' as const },
+  { label: 'Honest', state: 'ahead' as const },
 ];
 
 export default function Ready() {
@@ -64,7 +64,7 @@ export default function Ready() {
           >
             Your honeycomb starts raw — here&apos;s where you&apos;re headed
           </AppText>
-          <TierTrail nodes={MASTERY_TRAIL} />
+          <HoneyTrail nodes={MASTERY_TRAIL} />
           <AppText
             variant="caption"
             style={{ marginTop: t.space[3], color: t.colors.inkSoft }}
