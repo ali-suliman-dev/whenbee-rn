@@ -12,7 +12,7 @@ export const TIMED_HEADLINES = [
   'Logged. Nice one.',
   "That's the honest number.",
   'Caught it. Good.',
-  'One more drop of nectar — thanks.',
+  "That's one more, logged.",
 ] as const;
 
 export const RETRO_HEADLINE = 'Caught up. Thank you.';

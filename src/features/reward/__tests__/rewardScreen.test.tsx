@@ -50,7 +50,7 @@ describe('Reward screen', () => {
     expect(screen.getByText('13 min over your guess')).toBeOnTheScreen();
     expect(screen.getByText('64%')).toBeOnTheScreen();
     // Multiplier sub reads the category display name + multiplier (jargon trimmed).
-    expect(screen.getByText('Getting ready now reads 2.2×')).toBeOnTheScreen();
+    expect(screen.getByText('Getting ready runs at 2.2×')).toBeOnTheScreen();
   });
 
   it('renders a deterministic timed headline from the rotating set', () => {
@@ -67,6 +67,20 @@ describe('Reward screen', () => {
     expect(screen.getByText('Logged. Nice one.')).toBeOnTheScreen();
   });
 
+  it('renders the reworded nectar headline at rotation index 3', () => {
+    useCalibrationStore.setState({ logs: 3 });
+    useRewardStore.getState().setReward({
+      actualMin: 10,
+      guessMin: 10,
+      category: 'email',
+      label: null,
+      result: baseResult,
+    });
+    render(<Reward />);
+    // logs % 4 === 3 → fourth headline (the de-twee'd one).
+    expect(screen.getByText("That's one more, logged.")).toBeOnTheScreen();
+  });
+
   it('shows the cap eyebrow + seal ritual when the cell ripens to Honest', () => {
     useRewardStore.getState().setReward({
       actualMin: 12,
@@ -76,9 +90,9 @@ describe('Reward screen', () => {
       result: { ...baseResult, sharpness: 95, tierAfter: 'Honest', leveledUp: true },
     });
     render(<Reward />);
-    expect(screen.getByText("Honey ripened · this cell's now Honest")).toBeOnTheScreen();
+    expect(screen.getByText('Honest cell sealed')).toBeOnTheScreen();
     expect(
-      screen.getByText("New honest cell — and there's no streak to lose it."),
+      screen.getByText('New honest cell. Nothing to keep up.'),
     ).toBeOnTheScreen();
   });
 

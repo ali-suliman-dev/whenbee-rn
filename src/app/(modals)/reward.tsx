@@ -193,7 +193,7 @@ export default function Reward() {
           </View>
           <HoneyBar pct={r.honeyPct} />
           <Text style={subText}>
-            {r.categoryLabel} now reads {r.multiplier.toFixed(1)}×
+            {r.categoryLabel} runs at {r.multiplier.toFixed(1)}×
           </Text>
 
           {/* Tangible payoff: the minutes this log just banked. Only when >= 1m —
@@ -207,7 +207,7 @@ export default function Reward() {
                 delayMs={t.motion.reveal}
               />
               <Text style={subText}>
-                Whenbee was {r.reclaimDeltaMin} min closer than your guess.
+                Your honest number was {r.reclaimDeltaMin} min closer.
               </Text>
             </>
           ) : null}
