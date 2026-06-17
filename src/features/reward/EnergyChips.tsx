@@ -6,6 +6,7 @@ import { useTheme } from '@/src/theme/useTheme';
 import { type } from '@/src/theme/typography';
 import { analytics } from '@/src/services/analytics';
 import { useCalibrationStore } from '@/src/stores/calibrationStore';
+import { EnergyGlyph, type EnergyKind } from './EnergyGlyph';
 
 // ──────────────────────────────────────────────────────────────────────────────
 // EnergyChips (S4) — an optional, one-tap context tag captured after a log: how
@@ -15,7 +16,7 @@ import { useCalibrationStore } from '@/src/stores/calibrationStore';
 // sessions your estimates run further off"). Tag once, then a calm acknowledgment.
 // ──────────────────────────────────────────────────────────────────────────────
 
-const OPTIONS: readonly { value: string; label: string }[] = [
+const OPTIONS: readonly { value: EnergyKind; label: string }[] = [
   { value: 'low', label: 'Low' },
   { value: 'ok', label: 'OK' },
   { value: 'high', label: 'High' },
@@ -32,7 +33,8 @@ export function EnergyChips({ eventId }: { eventId: string }) {
     analytics.capture('context_tagged', { key: 'energy', value });
   }
 
-  const wrap: ViewStyle = { gap: t.space[2], alignItems: 'center' };
+  // marginTop sets this optional section off from the reason row above it.
+  const wrap: ViewStyle = { gap: t.space[2], alignItems: 'center', marginTop: t.space[3] };
   const prompt: TextStyle = {
     ...(type.bodySm as unknown as TextStyle),
     color: selected ? t.colors.accent : t.colors.inkSoft,
@@ -48,6 +50,7 @@ export function EnergyChips({ eventId }: { eventId: string }) {
           <Chip
             key={o.value}
             label={o.label}
+            icon={<EnergyGlyph kind={o.value} active={selected === o.value} />}
             selected={selected === o.value}
             onPress={() => pick(o.value)}
           />

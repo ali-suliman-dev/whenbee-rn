@@ -12,21 +12,30 @@ import { type } from '@/src/theme/typography';
 //   inline  → type.multiplier   (22px Inter-Bold)
 //   md      → type.honestNumberMd (24px Inter-Bold)
 //   big     → type.bigNumber    (30px Inter-Bold)
+//   lg      → type.honestNumberLg (36px Inter-Bold)
 //   xl      → type.honestNumberXl (40px Inter-Bold)
 //
 // Tones:
-//   ink     → t.colors.ink
-//   indigo  → t.colors.primary
-//   amber   → t.colors.accent
+//   ink       → t.colors.ink
+//   indigo    → t.colors.primary
+//   amber     → t.colors.accent     (bright fill amber; pairs with dark surfaces)
+//   amberText → t.colors.amberText  (AA amber-on-light; use for text on light cards)
 // ──────────────────────────────────────────────────────────────────────────────
 
-type Size = 'inline' | 'md' | 'big' | 'xl';
-type Tone = 'ink' | 'indigo' | 'amber';
+type Size = 'inline' | 'big' | 'lg' | 'xl';
+type Tone = 'ink' | 'indigo' | 'amber' | 'amberText';
 
-const sizeScale: Record<Size, typeof type.multiplier | typeof type.honestNumberMd | typeof type.bigNumber | typeof type.honestNumberXl> = {
+const sizeScale: Record<
+  Size,
+  | typeof type.multiplier
+  | typeof type.bigNumber
+  | typeof type.honestNumberLg
+  | typeof type.honestNumberXl
+> = {
   inline: type.multiplier,
   md: type.honestNumberMd,
   big: type.bigNumber,
+  lg: type.honestNumberLg,
   xl: type.honestNumberXl,
 };
 
@@ -50,6 +59,7 @@ export function HonestNumber({
     ink: t.colors.ink,
     indigo: t.colors.primary,
     amber: t.colors.accent,
+    amberText: t.colors.amberText,
   };
 
   const scale = sizeScale[size];
