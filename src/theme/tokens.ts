@@ -90,6 +90,11 @@ export const tokens = {
   //   gapTrack = bar height; tickW/tickH = the live elapsed marker riding the bar.
   progress: { track: 6, gapTrack: 8, tickW: 3, tickH: 16 },
 
+  // Start-By Plan progress rail geometry (RunView). gutter = time/node column
+  // width; node = circle diameter; nowRing = pulse halo radius; breatherNode =
+  // small breather node diameter; connector = spine line width.
+  planRail: { gutter: 46, node: 20, nowRing: 3, breatherNode: 16, connector: 2 },
+
   motion: {
     fast: 120, base: 220, slow: 360, press: 110, reveal: 600, draw: 950, sheet: 340,
     pulse: 700, toast: 300, honeyFill: 900, float: 3800,
