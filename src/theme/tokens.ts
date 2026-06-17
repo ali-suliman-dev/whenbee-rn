@@ -98,7 +98,7 @@ export const tokens = {
   // Start-By Plan progress rail geometry (RunView). gutter = time/node column
   // width; node = circle diameter; nowRing = pulse halo radius; breatherNode =
   // small breather node diameter; connector = spine line width.
-  planRail: { gutter: 46, node: 20, nowRing: 3, breatherNode: 16, connector: 2 },
+  planRail: { gutter: 46, node: 20, nowRing: 3, breatherNode: 16, connector: 2, nowDot: 7 },
 
   motion: {
     fast: 120, base: 220, slow: 360, press: 110, reveal: 600, draw: 950, sheet: 340,

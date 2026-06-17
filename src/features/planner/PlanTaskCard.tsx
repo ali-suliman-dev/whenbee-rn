@@ -606,14 +606,18 @@ function NextRunCard({
         {/* Duration */}
         <AppText style={durationStyle}>{`${durationMin}m`}</AppText>
 
-        {/* Start button — Task 12 wires the actual timer start */}
+        {/* Start button — Task 12 wires the actual timer start.
+            hitSlop enlarges the tap target; the outer Pressable only owns
+            onLongPress for drag so a tap here never triggers a drag. */}
         <Pressable
           onPress={() => onStart?.(id)}
           accessibilityRole="button"
           accessibilityLabel={`Start ${label}`}
-          style={startButtonStyle}
+          hitSlop={8}
         >
-          <AppText style={startIconStyle}>▶</AppText>
+          <View style={startButtonStyle}>
+            <AppText style={startIconStyle}>▶</AppText>
+          </View>
         </Pressable>
       </View>
     </Pressable>

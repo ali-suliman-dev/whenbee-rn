@@ -1,5 +1,7 @@
+import { useEffect } from 'react';
 import { View, type ViewStyle, type TextStyle } from 'react-native';
 import Animated, {
+  cancelAnimation,
   useSharedValue,
   useAnimatedStyle,
   withRepeat,
@@ -44,23 +46,30 @@ export function RailNode({ state }: RailNodeProps) {
   const breatherSize = t.planRail.breatherNode; // 16pt
   const ringExpand = t.planRail.nowRing; // 3pt — how far the ring sits outside the node
 
-  // Start the pulse for `now` state
-  if (state === 'now' && !reducedMotion) {
-    // Runs the first render and re-runs each time state changes to `now`.
-    // Using `cancelAnimation` is not needed here — withRepeat handles its own loop.
-    haloScale.set(
-      withRepeat(
-        withTiming(1.6, {
-          duration: t.motion.halo,
-          easing: Easing.inOut(Easing.sin),
-        }),
-        -1,
-        true, // reverse: scale back down
-      ),
-    );
-  } else if (state !== 'now') {
-    haloScale.set(1);
-  }
+  // Start the pulse for `now` state — keyed on state + reducedMotion so each
+  // change cancels the previous loop before starting a new one. Cleanup cancels
+  // any in-flight animation when the component unmounts.
+  useEffect(() => {
+    if (state === 'now' && !reducedMotion) {
+      cancelAnimation(haloScale);
+      haloScale.set(
+        withRepeat(
+          withTiming(1.6, {
+            duration: t.motion.halo,
+            easing: Easing.inOut(Easing.sin),
+          }),
+          -1,
+          true, // reverse: scale back down
+        ),
+      );
+    } else {
+      cancelAnimation(haloScale);
+      haloScale.set(1);
+    }
+    return () => cancelAnimation(haloScale);
+    // t.motion.halo is stable (tokens object is const) — only state/reducedMotion drive re-runs.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [state, reducedMotion]);
 
   const haloAnimStyle = useAnimatedStyle(() => ({
     transform: [{ scale: haloScale.get() }],
@@ -131,8 +140,8 @@ export function RailNode({ state }: RailNodeProps) {
       zIndex: 1,
     };
     const dotStyle: ViewStyle = {
-      width: 7,
-      height: 7,
+      width: t.planRail.nowDot,
+      height: t.planRail.nowDot,
       borderRadius: t.radii.full,
       backgroundColor: t.colors.onIndigo,
     };

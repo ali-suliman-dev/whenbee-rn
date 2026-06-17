@@ -1,3 +1,4 @@
+import React from 'react';
 import { View, type ViewStyle, type TextStyle } from 'react-native';
 import { useTheme } from '@/src/theme/useTheme';
 import { AppText } from '@/src/components/AppText';
@@ -107,7 +108,7 @@ export function PlanRail({
     backgroundColor: t.colors.primary,
     borderRadius: t.radii.full,
     paddingHorizontal: t.space[2],
-    paddingVertical: 2,
+    paddingVertical: t.space[0.5],
     alignSelf: 'center',
     marginBottom: t.space[1],
   };

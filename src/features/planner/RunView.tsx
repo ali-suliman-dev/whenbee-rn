@@ -1,4 +1,4 @@
-import { useCallback, useMemo } from 'react';
+import { useCallback, useMemo, memo } from 'react';
 import {
   Pressable,
   ScrollView,
@@ -165,7 +165,7 @@ function NowRow({
 // Rendered by ReorderableList; must be wrapped in a View (not just the card) so
 // the rail column is included in the draggable region.
 
-function UpcomingRowItem({ item }: { item: RunRowItem }) {
+const UpcomingRowItem = memo(function UpcomingRowItem({ item }: { item: RunRowItem }) {
   const t = useTheme();
   if (item.kind === 'breather') {
     return (
@@ -195,7 +195,7 @@ function UpcomingRowItem({ item }: { item: RunRowItem }) {
       </View>
     </View>
   );
-}
+});
 
 // ── RunView (main) ────────────────────────────────────────────────────────────
 
@@ -337,8 +337,8 @@ export function RunView({
       // Map the event indices to task-only positions
       const reordered = reorderItems(taskIds, event.from, event.to);
       // Combine with done + now ids to produce full task list order
-      const doneIds = runGroups.done.map((t) => t.id);
-      const nowIds = runGroups.now.map((t) => t.id);
+      const doneIds = runGroups.done.map((task) => task.id);
+      const nowIds = runGroups.now.map((task) => task.id);
       reorderTasks([...doneIds, ...nowIds, ...reordered]);
     },
     [nextRows, runGroups.done, runGroups.now, reorderTasks],
@@ -395,7 +395,6 @@ export function RunView({
   };
 
   const ghostBtnStyle: ViewStyle = {
-    flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
@@ -530,20 +529,24 @@ export function RunView({
       {/* ── Footer ── */}
       <View style={footerStyle}>
         <Pressable
-          style={ghostBtnStyle}
+          style={{ flex: 1 }}
           onPress={handleReplan}
           accessibilityRole="button"
           accessibilityLabel="Re-plan — recalculate your timeline from now"
         >
-          <AppText style={ghostBtnLabelStyle}>⟳  Re-plan</AppText>
+          <View style={ghostBtnStyle}>
+            <AppText style={ghostBtnLabelStyle}>⟳  Re-plan</AppText>
+          </View>
         </Pressable>
         <Pressable
-          style={ghostBtnStyle}
+          style={{ flex: 1 }}
           onPress={onAddTask}
           accessibilityRole="button"
           accessibilityLabel="Add a task to your plan"
         >
-          <AppText style={ghostBtnLabelStyle}>＋  Add task</AppText>
+          <View style={ghostBtnStyle}>
+            <AppText style={ghostBtnLabelStyle}>＋  Add task</AppText>
+          </View>
         </Pressable>
       </View>
     </View>
