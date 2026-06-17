@@ -141,6 +141,30 @@ export function guessCategory(title: string, ctx: GuessContext = {}): string | n
 }
 
 /**
+ * Bank a title → category association at sequence `seq`. For each content stem
+ * in the title, bumps `count` for `catId` and stamps `lastSeq = seq`. Pure:
+ * returns a new map and never mutates the input. No-op (returns the same
+ * reference) when the title has no content stems.
+ */
+export function bankAssociation(
+  map: LearnedMap,
+  title: string,
+  catId: string,
+  seq: number,
+): LearnedMap {
+  const stems = tokenizeStems(title);
+  if (stems.length === 0) return map;
+  const next: LearnedMap = { ...map };
+  for (const s of stems) {
+    const entry = { ...(next[s] ?? {}) };
+    const prev = entry[catId] ?? { count: 0, lastSeq: 0 };
+    entry[catId] = { count: prev.count + 1, lastSeq: seq };
+    next[s] = entry;
+  }
+  return next;
+}
+
+/**
  * Order the picker for display: the guessed category first (if present), then by
  * descending usage count, with the incoming order as a stable tie-break. Pure —
  * never mutates the input array.

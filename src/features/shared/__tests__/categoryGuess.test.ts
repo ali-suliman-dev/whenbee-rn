@@ -1,4 +1,10 @@
-import { guessCategory, sortPickerCategories, tokenizeStems, type LearnedMap } from '../categoryGuess';
+import {
+  guessCategory,
+  sortPickerCategories,
+  tokenizeStems,
+  bankAssociation,
+  type LearnedMap,
+} from '../categoryGuess';
 import type { PickerCategory } from '../CategoryChips';
 
 describe('guessCategory', () => {
@@ -109,6 +115,39 @@ describe('guessCategory with context', () => {
 
   it('returns null for an all-stopword title', () => {
     expect(guessCategory('to the')).toBeNull();
+  });
+});
+
+describe('bankAssociation', () => {
+  it('increments the count for each content stem under the chosen category', () => {
+    const map = bankAssociation({}, 'fold the laundry', 'cleaning', 1);
+    expect(map.fold?.cleaning).toEqual({ count: 1, lastSeq: 1 });
+    expect(map.laundry?.cleaning).toEqual({ count: 1, lastSeq: 1 });
+    expect(map.the).toBeUndefined(); // stopword not banked
+  });
+
+  it('accumulates counts and records the latest seq', () => {
+    let map: LearnedMap = bankAssociation({}, 'gym', 'fitness', 1);
+    map = bankAssociation(map, 'gym', 'fitness', 4);
+    expect(map.gym?.fitness).toEqual({ count: 2, lastSeq: 4 });
+  });
+
+  it('keeps competing categories for the same stem side by side', () => {
+    let map: LearnedMap = bankAssociation({}, 'walk', 'errands', 1);
+    map = bankAssociation(map, 'walk', 'getting_ready', 2);
+    expect(map.walk?.errands).toEqual({ count: 1, lastSeq: 1 });
+    expect(map.walk?.getting_ready).toEqual({ count: 1, lastSeq: 2 });
+  });
+
+  it('does not mutate the input map', () => {
+    const map: LearnedMap = {};
+    bankAssociation(map, 'gym', 'fitness', 1);
+    expect(map).toEqual({});
+  });
+
+  it('is a no-op for an all-stopword title', () => {
+    const map: LearnedMap = { gym: { fitness: { count: 1, lastSeq: 1 } } };
+    expect(bankAssociation(map, 'to the', 'errands', 9)).toBe(map);
   });
 });
 
