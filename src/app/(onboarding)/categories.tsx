@@ -6,6 +6,9 @@ import { Screen } from '@/src/components/Screen';
 import { AppText } from '@/src/components/AppText';
 import { AppButton } from '@/src/components/AppButton';
 import { Chip } from '@/src/components/Chip';
+import { OnboardingBackdrop } from '@/src/components/OnboardingBackdrop';
+import { OnboardingFooterCard } from '@/src/components/OnboardingFooterCard';
+import { BeeMascot } from '@/src/components/BeeMascot';
 import { useTheme } from '@/src/theme/useTheme';
 import { useOnboarding } from '@/src/features/onboarding/useOnboarding';
 import { StepProgress } from '@/src/features/onboarding/StepProgress';
@@ -51,7 +54,7 @@ export default function Categories() {
   };
 
   return (
-    <Screen>
+    <Screen backdrop={<OnboardingBackdrop />}>
       <StepProgress current={1} />
       {/* Tapping anywhere outside the inline "+ New" input dismisses the keyboard. */}
       <Pressable
@@ -67,10 +70,10 @@ export default function Categories() {
             letterSpacing: -0.6,
           }}
         >
-          What kinds of tasks make you late?
+          What makes you run late?
         </AppText>
         <AppText variant="body" style={{ color: t.colors.inkSoft }}>
-          Pick 3–5 — or add your own. These get calibrated first.
+          {"Pick a few, or add your own. These are what I’ll learn first."}
         </AppText>
 
         <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: t.space[2] }}>
@@ -114,9 +117,15 @@ export default function Categories() {
               />
             </View>
           ) : (
-            <Chip label="+ New" variant="add" onPress={() => setAdding(true)} />
+            <Chip label="Add your own" variant="add" onPress={() => setAdding(true)} />
           )}
         </View>
+        <View style={{ flex: 1 }} />
+        {picked.length > 0 ? (
+          <OnboardingFooterCard glyph={<BeeMascot size={t.space[8]} />}>
+            {`${picked.length} picked. One more and I'll have plenty to learn from.`}
+          </OnboardingFooterCard>
+        ) : null}
       </Pressable>
 
       <AppButton
