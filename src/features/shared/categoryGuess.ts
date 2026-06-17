@@ -1,10 +1,13 @@
 // ──────────────────────────────────────────────────────────────────────────────
 // categoryGuess — pure, on-device heuristics for the Add-Task category picker.
-//   • guessCategory(title)  → best-effort seed id from the task text (or null)
-//   • sortPickerCategories  → frequency-sorted, with the guessed pill floated first
+//   • guessCategory(title, ctx?) → best-effort category id, resolved by strict
+//     tiers: learned (the user's own banked picks) > custom-category name match >
+//     built-in keyword list. Returns null when nothing matches.
+//   • bankAssociation(map, …)    → learns a title→category link (used by vocabStore)
+//   • sortPickerCategories       → frequency-sorted, with the guessed pill floated first
 // No network, no clock, no React — honors the "core loop is on-device-only" invariant
-// and stays cheap to unit-test. Guesses only ever land on a SEED id; anything
-// unrecognised returns null so the picker simply shows no pre-selection.
+// and stays cheap to unit-test. A guess can land on a built-in SEED id OR a custom
+// (tracked) id; anything unrecognised returns null so the picker shows no pre-selection.
 // ──────────────────────────────────────────────────────────────────────────────
 
 import type { PickerCategory } from './CategoryChips';
