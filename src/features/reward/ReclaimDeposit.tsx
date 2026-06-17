@@ -115,8 +115,8 @@ export function ReclaimDeposit({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    gap: t.space[3],
-    marginTop: t.space[2],
+    gap: t.space[2],
+    marginTop: t.space[1],
   };
   const chip: ViewStyle = {
     backgroundColor: t.colors.accentSoft,
@@ -129,19 +129,33 @@ export function ReclaimDeposit({
     color: t.colors.amberText,
     fontWeight: t.fontWeight.bold as TextStyle['fontWeight'],
   };
+  // The deposit arrow — quiet connective tissue from the chip to the new total.
+  const arrowText: TextStyle = {
+    ...(type.bodySm as unknown as TextStyle),
+    color: t.colors.inkSoft,
+  };
   const totalStyle: TextStyle = {
     ...(type.bodyLg as unknown as TextStyle),
     color: t.colors.amberText,
     padding: 0,
   };
+  // Muted trailing label — names what the number is without competing with it.
+  const bankedText: TextStyle = {
+    ...(type.caption as unknown as TextStyle),
+    color: t.colors.inkSoft,
+  };
 
   const a11yTotal = formatReclaimWorklet(reclaimTo);
 
   return (
-    <View style={row} accessibilityLabel={`Reclaimed ${reclaimDeltaMin} minutes, ${a11yTotal} banked`}>
-      <Animated.View style={[chip, chipAnim]}>
+    <Animated.View
+      style={[row, chipAnim]}
+      accessibilityLabel={`Reclaimed ${reclaimDeltaMin} minutes, ${a11yTotal} banked`}
+    >
+      <View style={chip}>
         <AppText style={chipText}>+{reclaimDeltaMin}m reclaimed</AppText>
-      </Animated.View>
+      </View>
+      <AppText style={arrowText}>→</AppText>
       <AnimatedTextInput
         editable={false}
         pointerEvents="none"
@@ -152,6 +166,7 @@ export function ReclaimDeposit({
         style={totalStyle}
         animatedProps={totalProps}
       />
-    </View>
+      <AppText style={bankedText}>banked</AppText>
+    </Animated.View>
   );
 }

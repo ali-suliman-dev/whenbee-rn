@@ -59,6 +59,8 @@ export default function Reward() {
 
   const headlineText: TextStyle = {
     ...(type.title as unknown as TextStyle),
+    fontSize: t.fontSize.xl, // 24 — a touch smaller than the global title (26) on this screen
+    lineHeight: 29,
     color: t.colors.ink,
     textAlign: 'center',
   };
@@ -91,7 +93,7 @@ export default function Reward() {
   // ── styles (token-driven; one spacing source per axis via the scroll gap) ──
   const scrollContent: ViewStyle = {
     flexGrow: 1,
-    gap: t.space[6], // wide tier — separates the four major zones
+    gap: t.space[5], // wide tier — separates the four major zones (tightened to fit)
     paddingTop: t.space[2],
   };
   const tookEyebrow: TextStyle = {
@@ -115,13 +117,25 @@ export default function Reward() {
     alignItems: 'center',
     justifyContent: 'space-between',
   };
+  // Left side groups the label + the folded-in multiplier on one cap-aligned row.
+  const honeyLabelRow: ViewStyle = {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: t.space[1.5],
+  };
   const honeyLabel: TextStyle = {
     ...(type.eyebrow as unknown as TextStyle),
     color: t.colors.inkSoft,
   };
-  const honeyPctText: TextStyle = {
-    ...(type.multiplier as unknown as TextStyle),
-    color: t.colors.amberText,
+  // The multiplier, folded out of its own subline into a quiet meta beside HONEY.
+  const honeyMultiplier: TextStyle = {
+    ...(type.caption as unknown as TextStyle),
+    color: t.colors.inkSoft,
+  };
+  // Muted unit suffix — the "×" sits smaller than the number it trails.
+  const honeyMultiplierUnit: TextStyle = {
+    ...(type.micro as unknown as TextStyle),
+    color: t.colors.inkSoft,
   };
   // The payoff card groups honey + multiplier + reclaim into one unit. Borders
   // are 0 globally, so the grouping reads off the white fill on the lavender bg.
@@ -129,7 +143,7 @@ export default function Reward() {
     backgroundColor: t.colors.surfaceRaised,
     borderRadius: t.radii.card,
     padding: t.space[4],
-    gap: t.space[3], // medium tier — card internals
+    gap: t.space[2.5], // medium tier — card internals (tightened with the row collapse)
   };
   const heroBlock: ViewStyle = { alignItems: 'center', gap: t.space[1.5] };
   const ctaBlock: ViewStyle = {
@@ -180,37 +194,44 @@ export default function Reward() {
         {/* Zone 2 — hero stat (the single biggest element) */}
         <Animated.View style={[heroBlock, heroAnim]}>
           <Text style={tookEyebrow}>IT REALLY TOOK</Text>
-          <HonestNumber size="xl" tone="ink" value={String(r.actualMin)} unit="min" />
+          <HonestNumber
+            size="lg"
+            tone="ink"
+            value={String(r.actualMin)}
+            unit="min"
+            unitSize={t.fontSize.lg}
+          />
           <View style={deltaChip}>
             <Text style={deltaChipText}>{deltaLabel}</Text>
           </View>
         </Animated.View>
 
-        {/* Zone 3 — payoff card (honey + multiplier + reclaim as one unit) */}
+        {/* Zone 3 — payoff card (honey + multiplier + reclaim as one unit).
+            Collapsed to three rows: header (HONEY · multiplier + %), the honey
+            bar, and a single reclaim line. The two prose sublines folded into
+            those rows so the card reads at a glance and the tail stays in view. */}
         <View style={payoffCard}>
           <View style={honeyHeaderRow}>
-            <Text style={honeyLabel}>HONEY</Text>
-            <Text style={honeyPctText}>{r.honeyPct}%</Text>
+            <View style={honeyLabelRow}>
+              <Text style={honeyLabel}>HONEY</Text>
+              <Text style={honeyMultiplier}>
+                · {r.multiplier.toFixed(1)}
+                <Text style={honeyMultiplierUnit}>×</Text>
+              </Text>
+            </View>
+            <HonestNumber value={String(r.honeyPct)} unit="%" size="inline" tone="amberText" />
           </View>
           <HoneyBar pct={r.honeyPct} />
-          <Text style={subText}>
-            {r.categoryLabel} runs at {r.multiplier.toFixed(1)}×
-          </Text>
 
           {/* Tangible payoff: the minutes this log just banked. Only when >= 1m —
               never a "+0m". Staggered to land after the honey fill. */}
           {r.reclaimDeltaMin >= 1 ? (
-            <>
-              <ReclaimDeposit
-                reclaimDeltaMin={r.reclaimDeltaMin}
-                reclaimFrom={r.reclaimFrom}
-                reclaimTo={r.reclaimTo}
-                delayMs={t.motion.reveal}
-              />
-              <Text style={subText}>
-                Your honest number was {r.reclaimDeltaMin} min closer.
-              </Text>
-            </>
+            <ReclaimDeposit
+              reclaimDeltaMin={r.reclaimDeltaMin}
+              reclaimFrom={r.reclaimFrom}
+              reclaimTo={r.reclaimTo}
+              delayMs={t.motion.reveal}
+            />
           ) : null}
         </View>
 

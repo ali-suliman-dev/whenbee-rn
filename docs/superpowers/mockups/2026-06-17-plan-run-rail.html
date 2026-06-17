@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Whenbee · Run mode — refined progress rail</title>
+<style>
+  :root{
+    --bg:#14151D; --surface:#1F2130; --raised:#292B3C; --sunken:#15161F;
+    --hairline:rgba(255,255,255,.08); --border:rgba(255,255,255,.14);
+    --ink:#F4F1EA; --inkSoft:#ADA9B5; --inkFaint:rgba(244,241,234,.40);
+    --primary:#8275F0; --primaryEdge:#6B5BE6; --primarySoft:rgba(130,117,240,.22); --onIndigo:#14151D;
+    --accent:#EEAE4D; --success:#33B07C; --successSoft:rgba(51,176,124,.18);
+    --danger:#E06464; --dangerEdge:#B84A4A; --dangerSoft:rgba(224,100,100,.14);
+    --r-sm:8px; --r-md:12px; --r-card:16px; --r-full:999px;
+    --ease-out:cubic-bezier(.23,1,.32,1);
+    --font:-apple-system,BlinkMacSystemFont,"SF Pro Text",system-ui,sans-serif;
+    --mono:ui-monospace,Menlo,"SF Mono",monospace;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{background:#0E0F15;color:var(--ink);font-family:var(--font);-webkit-font-smoothing:antialiased;padding:36px 26px 80px;display:flex;flex-direction:column;align-items:center}
+  h1{font-size:22px;font-weight:700;letter-spacing:-.4px;text-align:center}
+  .sub{color:var(--inkSoft);font-size:13px;max-width:620px;text-align:center;margin:8px 0 28px;line-height:1.55}
+  .stage{display:flex;gap:40px;flex-wrap:wrap;justify-content:center;align-items:flex-start}
+
+  .phone{width:372px;aspect-ratio:372/806;background:var(--bg);border-radius:42px;border:9px solid #000;
+    box-shadow:0 0 0 2px #23242e,0 28px 56px rgba(0,0,0,.5);overflow:hidden;position:relative;display:flex;flex-direction:column}
+  .notch{position:absolute;top:11px;left:50%;transform:translateX(-50%);width:100px;height:24px;background:#000;border-radius:var(--r-full);z-index:5}
+  .statusbar{height:44px;flex:0 0 auto;display:flex;align-items:center;justify-content:space-between;padding:0 26px;font-size:14px;font-weight:600}
+  .statusbar .dots{color:var(--inkSoft);font-size:11px;letter-spacing:1px}
+  .screen{flex:1;overflow:hidden;display:flex;flex-direction:column;padding:0 18px}
+
+  .mono{font-family:var(--mono);font-variant-numeric:tabular-nums}
+  .cat{color:var(--inkSoft);font-size:11.5px}
+  .drag{color:var(--inkFaint);font-size:17px;cursor:grab;letter-spacing:-2px;line-height:1}
+  .start{flex:0 0 auto;border-radius:var(--r-full);background:var(--primarySoft);border:1.5px solid var(--primary);
+    color:var(--primary);display:grid;place-items:center;cursor:pointer;transition:transform 160ms var(--ease-out)}
+  .start:active{transform:scale(.92)}
+
+  /* top bar */
+  .topbar{display:flex;align-items:flex-start;justify-content:space-between;margin-top:6px}
+  .topbar .ttl{font-size:21px;font-weight:700;letter-spacing:-.4px}
+  .topbar .meta{font-size:12px;color:var(--inkSoft);margin-top:3px}
+  .topbar .meta b{color:var(--ink)}
+  .abandon{display:flex;align-items:center;gap:6px;font-size:12px;font-weight:700;color:var(--danger);
+    background:var(--dangerSoft);border:1px solid rgba(224,100,100,.4);border-radius:var(--r-full);padding:8px 13px;cursor:pointer}
+  .abandon i{font-style:normal;font-size:13px}
+
+  /* ── the progress rail (per image #8) ───────────────────────────── */
+  .plan{flex:1;overflow-y:auto;margin-top:16px;padding-right:2px}
+  .row{display:grid;grid-template-columns:58px 1fr;column-gap:12px}
+  .rail{position:relative;display:flex;flex-direction:column;align-items:center}
+  /* the spine segment that runs through this row (drawn behind the node) */
+  .rail::before{content:"";position:absolute;top:0;bottom:0;width:2px;left:50%;transform:translateX(-50%)}
+  .row.done .rail::before{background:repeating-linear-gradient(var(--primary) 0 5px,transparent 5px 10px)}      /* dashed indigo above */
+  .row.now  .rail::before{background:linear-gradient(var(--primary) 0 50%, var(--hairline) 50% 100%)}
+  .row.next .rail::before{background:var(--hairline)}
+  .row:first-child .rail::before{top:26px}        /* line starts at node, not above first */
+  .row:last-child  .rail::before{bottom:auto;height:26px}  /* stop line after last node */
+
+  .time{font-family:var(--mono);font-size:11px;color:var(--inkSoft);margin-bottom:6px;z-index:1;background:var(--bg);padding:1px 0}
+  .row.now .time b, .row.done .time b{color:var(--primary);font-weight:700}
+  .node{width:24px;height:24px;border-radius:var(--r-full);z-index:1;display:grid;place-items:center;
+    background:var(--bg);flex:0 0 auto}
+  .node.done{background:var(--primary);color:#fff;font-size:13px;font-weight:800}
+  .node.now{background:var(--success);box-shadow:0 0 0 4px var(--successSoft)}
+  .node.now::after{content:"";width:9px;height:9px;border-radius:var(--r-full);background:#fff}
+  .node.next{border:2px solid var(--border);background:var(--bg)}
+
+  .card{background:var(--surface);border:1px solid var(--hairline);border-radius:var(--r-card);
+    padding:13px 13px;margin-bottom:14px;display:flex;align-items:center;gap:11px;min-height:64px}
+  .card.now{background:var(--raised);border:1.5px solid var(--success);flex-direction:column;align-items:stretch;gap:10px;padding:14px}
+  .card.done{opacity:.6}
+  .card.done .ttl2{text-decoration:line-through;text-decoration-color:var(--inkFaint)}
+  .ttl2{font-weight:700;font-size:15px}
+  .body{flex:1;min-width:0}
+  .dur{font-family:var(--mono);color:var(--inkSoft);font-size:12.5px;flex:0 0 auto}
+  .nowhead{display:flex;justify-content:space-between;align-items:center}
+  .runtag{font-size:10px;font-weight:800;letter-spacing:1px;color:var(--success);display:flex;align-items:center;gap:5px}
+  .prog{height:6px;background:var(--sunken);border-radius:var(--r-full);overflow:hidden}
+  .prog>i{display:block;height:100%;width:44%;background:var(--success);border-radius:var(--r-full)}
+  .runbtn{display:flex;align-items:center;justify-content:center;gap:7px;background:var(--success);color:#08130d;
+    font-weight:700;font-size:13px;border:none;border-radius:var(--r-md);padding:11px;cursor:pointer}
+  .lock{color:var(--inkFaint);font-size:13px}
+
+  .footer{flex:0 0 auto;display:flex;gap:10px;padding:8px 0 16px}
+  .ghost{flex:1;background:transparent;border:1px solid var(--border);color:var(--ink);border-radius:var(--r-md);
+    padding:12px;font-size:13px;font-weight:600;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:7px;transition:transform 160ms var(--ease-out)}
+  .ghost:active{transform:scale(.97)}
+
+  .caption{max-width:372px;color:var(--inkSoft);font-size:12px;line-height:1.55;margin-top:8px}
+  .caption b{color:var(--ink)}
+  .legend{display:flex;gap:16px;margin-top:18px;flex-wrap:wrap;justify-content:center}
+  .legend div{display:flex;align-items:center;gap:8px;font-size:12px;color:var(--inkSoft)}
+  .swatch{width:18px;height:18px;border-radius:var(--r-full);display:grid;place-items:center;font-size:10px;font-weight:800;color:#fff}
+</style>
+</head>
+<body>
+  <h1>Run mode · refined progress rail</h1>
+  <p class="sub">Decision 1 → <b style="color:var(--ink)">① gutter-only</b>, but the left rail is now a real progress spine (your reference image, our tokens): <b style="color:var(--primary)">done = filled + check</b>, <b style="color:var(--success)">now = green pulse</b>, <b style="color:var(--inkSoft)">upcoming = hollow ring</b>. Cards stay clean. NOW is pinned (🔒, Decision 2).</p>
+
+  <div class="stage">
+    <div class="phone">
+      <div class="notch"></div>
+      <div class="statusbar"><span>21:58</span><span class="dots">●●●● 🔋</span></div>
+      <div class="screen">
+        <div class="topbar">
+          <div><div class="ttl">Today's plan</div><div class="meta">done by <b>22:52</b> · on track ✓</div></div>
+          <button class="abandon"><i>⏻</i>Abandon</button>
+        </div>
+
+        <div class="plan">
+          <!-- DONE -->
+          <div class="row done">
+            <div class="rail"><span class="time"><b>21:42</b></span><span class="node done">✓</span></div>
+            <div class="card done"><div class="body"><div class="ttl2">Wake-up + coffee</div><div class="cat">Getting ready · logged 18m</div></div><span class="dur">✓</span></div>
+          </div>
+          <!-- NOW (pinned) -->
+          <div class="row now">
+            <div class="rail"><span class="time"><b>now</b></span><span class="node now"></span></div>
+            <div class="card now">
+              <div class="nowhead"><span class="runtag">● RUNNING</span><span class="lock">🔒</span></div>
+              <div><div class="ttl2" style="font-size:17px">Test</div><div class="cat" style="margin-top:2px">Getting ready · done ~<b style="color:var(--ink)">22:17</b></div></div>
+              <div class="prog"><i></i></div>
+              <button class="runbtn">⏸ 14:32 elapsed · tap to open</button>
+            </div>
+          </div>
+          <!-- NEXT 1 -->
+          <div class="row next">
+            <div class="rail"><span class="time">22:17</span><span class="node next"></span></div>
+            <div class="card"><span class="drag">⠿</span><div class="body"><div class="ttl2">Test2</div><div class="cat">Getting ready</div></div><span class="dur">35m</span><button class="start" style="width:36px;height:36px;font-size:13px">▶</button></div>
+          </div>
+          <!-- NEXT 2 -->
+          <div class="row next">
+            <div class="rail"><span class="time">22:52</span><span class="node next"></span></div>
+            <div class="card"><span class="drag">⠿</span><div class="body"><div class="ttl2">Reply to emails</div><div class="cat">Email</div></div><span class="dur">20m</span><button class="start" style="width:36px;height:36px;font-size:13px">▶</button></div>
+          </div>
+        </div>
+
+        <div class="footer">
+          <button class="ghost"><i style="font-style:normal">⟳</i> Re-plan</button>
+          <button class="ghost"><i style="font-style:normal">＋</i> Add task</button>
+        </div>
+      </div>
+    </div>
+
+    <div style="max-width:380px">
+      <div class="legend">
+        <div><span class="swatch" style="background:var(--primary)">✓</span> done (logged)</div>
+        <div><span class="swatch" style="background:var(--success);box-shadow:0 0 0 3px var(--successSoft)"></span> now (running)</div>
+        <div><span class="swatch" style="background:var(--bg);border:2px solid var(--border)"></span> upcoming</div>
+      </div>
+      <p class="caption" style="margin-top:22px"><b>What changed from the ugly version:</b><br>
+      • Left column is now a continuous spine, not floating numbers.<br>
+      • <b style="color:var(--primary)">Dashed indigo</b> connector above completed tasks (matches your image); solid faint line for upcoming.<br>
+      • Each node carries its start time, on the spine.<br>
+      • Completed task gets a check + strike-through; the running one pulses green and is pinned (no handle); upcoming are hollow rings with drag handles.</p>
+      <p class="caption" style="margin-top:14px"><b>Loggable:</b> ▶ on an upcoming card / the green bar on NOW both open the <b>real timer</b> — same stop&log path as Today. Finishing fills the node, ripens honey, banks reclaim.</p>
+    </div>
+  </div>
+</body>
+</html>
