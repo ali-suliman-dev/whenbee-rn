@@ -10,6 +10,7 @@ import { type } from '@/src/theme/typography';
 //
 // Sizes:
 //   inline  → type.multiplier   (22px Inter-Bold)
+//   md      → type.honestNumberMd (24px Inter-Bold)
 //   big     → type.bigNumber    (30px Inter-Bold)
 //   xl      → type.honestNumberXl (40px Inter-Bold)
 //
@@ -19,11 +20,12 @@ import { type } from '@/src/theme/typography';
 //   amber   → t.colors.accent
 // ──────────────────────────────────────────────────────────────────────────────
 
-type Size = 'inline' | 'big' | 'xl';
+type Size = 'inline' | 'md' | 'big' | 'xl';
 type Tone = 'ink' | 'indigo' | 'amber';
 
-const sizeScale: Record<Size, typeof type.multiplier | typeof type.bigNumber | typeof type.honestNumberXl> = {
+const sizeScale: Record<Size, typeof type.multiplier | typeof type.honestNumberMd | typeof type.bigNumber | typeof type.honestNumberXl> = {
   inline: type.multiplier,
+  md: type.honestNumberMd,
   big: type.bigNumber,
   xl: type.honestNumberXl,
 };
