@@ -130,7 +130,7 @@ export function ReclaimDeposit({
     fontWeight: t.fontWeight.bold as TextStyle['fontWeight'],
   };
   const totalStyle: TextStyle = {
-    ...(type.bodyLg as unknown as TextStyle),
+    ...(type.multiplier as unknown as TextStyle),
     color: t.colors.amberText,
     padding: 0,
   };
