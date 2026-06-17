@@ -18,11 +18,13 @@ import { FocusCard } from '@/src/features/today/FocusCard';
 import { RunningFocusCard } from '@/src/features/today/RunningFocusCard';
 import { TaskRow } from '@/src/features/today/TaskRow';
 import { ReclaimTodayLine } from '@/src/features/today/ReclaimTodayLine';
+import { DailyRitualLine } from '@/src/features/today/DailyRitualLine';
 import { HoneycombStrip } from '@/src/components/honeycomb/HoneycombStrip';
 import type { HoneycombCell } from '@/src/components/honeycomb/Honeycomb';
 import { useCategoriesStore } from '@/src/stores/categoriesStore';
 import { useCalibrationStore } from '@/src/stores/calibrationStore';
 import { useTimerStore } from '@/src/stores/timerStore';
+import { useSettingsStore } from '@/src/stores/settingsStore';
 
 // Date label, e.g. "Fri · Jun 12" — the day + date, no clock (the time added
 // nothing here and ticked distractingly).
@@ -36,6 +38,7 @@ export default function Today() {
   const t = useTheme();
   const { focus, summary, upNext, done, totalCount, categoryName, todayReclaimMin } = useToday();
   const isTimerRunning = useTimerStore((s) => s.isRunning);
+  const dailyRitualEnabled = useSettingsStore((s) => s.dailyRitualEnabled);
 
   // Open the timer for any queued list row (mirrors the FocusCard Start params).
   function startRow(row: TodayRow) {
@@ -175,6 +178,7 @@ export default function Today() {
               onPress={() => router.push('/(tabs)/whenbee')}
             />
             <ReclaimTodayLine minutes={todayReclaimMin} />
+            {dailyRitualEnabled ? <DailyRitualLine doneToday={done.length > 0} /> : null}
           </View>
 
           {/* A live session takes the focus slot itself (the same footprint as the
