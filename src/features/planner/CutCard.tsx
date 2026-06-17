@@ -32,26 +32,28 @@ export function CutCard({ cut, acceptCut, dismissCut, pushDeadline }: CutCardPro
 
   // ── Derive triage copy from verdict kind ────────────────────────────────────
 
-  // How many minutes over and what can we cut
-  let overMin = 0;
+  // Derive per-verdict fields — only use the field the verdict actually carries.
+  // cut-one/multi-cut carry savedMin (minutes freed by the cut), NOT an overshoot
+  // figure — so we never display a "N over" number for those variants.
   let cutLabel = '';
   let feasibleFinish: number | null = null;
+  // push-deadline is the only variant with a real, correct overshoot number.
+  let overshootMin: number | null = null;
 
   if (verdict.kind === 'cut-one') {
-    overMin = verdict.savedMin;
     cutLabel = verdict.cut.label;
   } else if (verdict.kind === 'multi-cut') {
-    overMin = verdict.savedMin;
     cutLabel = verdict.cuts.map((c) => c.label).join(' + ');
   } else if (verdict.kind === 'push-deadline') {
-    overMin = verdict.overshootMin;
+    overshootMin = verdict.overshootMin;
     feasibleFinish = verdict.feasibleDeadline;
   }
 
-  // Friendly "about Nm over" — round to nearest 5 for calm presentation
-  const roundedOver = Math.max(1, Math.round(overMin / 5) * 5);
+  // Friendly rounded overshoot — only used for push-deadline.
+  const roundedOver =
+    overshootMin !== null ? Math.max(1, Math.round(overshootMin / 5) * 5) : null;
 
-  // The finish time the cut would unlock (from the verdict's startBy)
+  // The finish time the cut would unlock (from the verdict's startBy).
   const fitsBy =
     verdict.kind === 'cut-one' || verdict.kind === 'multi-cut'
       ? verdict.startBy
@@ -100,18 +102,18 @@ export function CutCard({ cut, acceptCut, dismissCut, pushDeadline }: CutCardPro
       {/* ── Situation copy — triage, never verdict ── */}
       {verdict.kind === 'cut-one' || verdict.kind === 'multi-cut' ? (
         <AppText style={situation}>
-          {'About '}
-          <AppText style={[situation, bold]}>{`${roundedOver}m`}</AppText>
-          {' over. Drop '}
+          {"Doesn't all fit. Drop "}
           <AppText style={[situation, bold]}>{cutLabel}</AppText>
           {fitsBy !== null
-            ? ` and everything else fits by ${formatClock(fitsBy)}.`
+            ? ` → done by ${formatClock(fitsBy)} ✓`
             : '.'}
         </AppText>
       ) : (
         <AppText style={situation}>
           {'About '}
-          <AppText style={[situation, bold]}>{`${roundedOver}m`}</AppText>
+          <AppText style={[situation, bold]}>
+            {roundedOver !== null ? `${roundedOver}m` : '—'}
+          </AppText>
           {' over. The earliest everything fits is '}
           <AppText style={[situation, bold]}>
             {feasibleFinish !== null ? formatClock(feasibleFinish) : '—'}

@@ -47,7 +47,7 @@ export function AbandonButton({ clearActive }: AbandonButtonProps) {
   // ── Pill trigger ─────────────────────────────────────────────────────────────
   const pillWrapper: ViewStyle = {
     alignSelf: 'flex-start',
-    paddingBottom: 4, // coin-edge depth reserve
+    paddingBottom: t.burst.coinEdge, // coin-edge depth reserve
   };
 
   const pillEdge: ViewStyle = {
@@ -72,7 +72,7 @@ export function AbandonButton({ clearActive }: AbandonButtonProps) {
   const pillLabel: TextStyle = {
     fontSize: t.fontSize.sm,
     fontWeight: t.fontWeight.semibold as TextStyle['fontWeight'],
-    color: '#FFFFFF',
+    color: t.colors.onIndigo,
   };
 
   // ── Confirm sheet ─────────────────────────────────────────────────────────────
