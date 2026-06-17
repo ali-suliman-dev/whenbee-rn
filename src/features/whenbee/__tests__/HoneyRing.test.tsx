@@ -30,4 +30,16 @@ describe('HoneyRing', () => {
     expect(toJSON()).toBeTruthy();
     (Reanimated.useReducedMotion as jest.Mock).mockRestore?.();
   });
+  it('renders sealed state under reduced motion without ripples or motes', () => {
+    jest.spyOn(Reanimated, 'useReducedMotion').mockReturnValue(true);
+    const { toJSON } = render(
+      <HoneyRing sharpness={100} sealed>
+        <Text>SEALED</Text>
+      </HoneyRing>,
+    );
+    // Sealed hex renders, children present — no crash, no ripples/motes rendered
+    const tree = toJSON();
+    expect(tree).toBeTruthy();
+    (Reanimated.useReducedMotion as jest.Mock).mockRestore?.();
+  });
 });

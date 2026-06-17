@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, useMemo } from 'react';
 import { View, type ViewStyle } from 'react-native';
 import Svg, { Circle, G, Defs, LinearGradient, Stop, Polygon } from 'react-native-svg';
 import Animated, {
@@ -7,11 +7,29 @@ import Animated, {
   useAnimatedStyle,
   withTiming,
   withSequence,
+  withDelay,
   useReducedMotion,
+  type EasingFunctionFactory,
 } from 'react-native-reanimated';
 import { useTheme } from '@/src/theme/useTheme';
 
 const AnimatedCircle = Animated.createAnimatedComponent(Circle);
+
+// ── pure helper: flat-top hexagon vertices within a 0..size box (clockwise) ──
+function hexPoints(size: number): string {
+  const w = size;
+  const h = size * 1.1;
+  return [
+    [w * 0.5, 0],
+    [w, h * 0.25],
+    [w, h * 0.75],
+    [w * 0.5, h],
+    [0, h * 0.75],
+    [0, h * 0.25],
+  ]
+    .map((p) => p.join(','))
+    .join(' ');
+}
 
 // Honey ring around the bee. Track + amber fill arc to `sharpness%` (clamped,
 // with the endowed-sliver floor so Raw is never a cold empty circle). Centered
@@ -23,6 +41,11 @@ const AnimatedCircle = Animated.createAnimatedComponent(Circle);
 // landing point; on landing the stroke "pops" (thicken → restore). Both the
 // head-dot and the stroke pop are skipped under useReducedMotion(). Monotonic:
 // the shared value only ever moves upward (never animates down).
+//
+// Seal ceremony: when `sealed` becomes true (or on first mount already sealed),
+// the hex stamps in (scale 2.2→1, opacity 0→0.95), three thin concentric ripple
+// rings expand staggered, and `mote.count` flat squares flick outward. Under
+// reduced motion: hex just fades in; no ripples, no motes.
 export function HoneyRing({
   sharpness,
   sealed,
@@ -91,6 +114,31 @@ export function HoneyRing({
     };
   });
 
+  // ── Seal hex entrance animation ──────────────────────────────────────────────
+  // On mount (or when sealed flips true): stamp in from scale 2.2→1.
+  // Reduced motion: instant fade-in only (no scale change).
+  const sealScale = useSharedValue(sealed && reduced ? 1 : sealed ? 2.2 : 1);
+  const sealOpacity = useSharedValue(sealed && reduced ? 0.95 : 0);
+
+  useEffect(() => {
+    if (!sealed) return;
+    if (reduced) {
+      sealOpacity.set(0.95);
+      sealScale.set(1);
+      return;
+    }
+    sealOpacity.set(withTiming(0.95, { duration: t.motion.sealSeq * 0.4, easing: t.motion.easing.honey }));
+    sealScale.set(withTiming(1, { duration: t.motion.sealSeq * 0.5, easing: t.motion.easing.honey }));
+  }, [sealed, reduced, sealOpacity, sealScale, t.motion.sealSeq, t.motion.easing.honey]);
+
+  const sealStyle = useAnimatedStyle(() => ({
+    opacity: sealOpacity.get(),
+    transform: [{ scale: sealScale.get() }],
+  }));
+
+  // ── Motes: flat solid squares flick outward (only when sealed && !reduced) ──
+  const moteIndices = useMemo(() => Array.from({ length: t.mote.count }, (_, i) => i), [t.mote.count]);
+
   const wrap: ViewStyle = {
     width: S,
     height: S,
@@ -101,9 +149,12 @@ export function HoneyRing({
   const svgAbsolute: ViewStyle = { position: 'absolute' };
 
   const dotSize = t.ring.headDot;
+  const sealW = t.seal.size;
+  const sealH = t.seal.size * 1.1;
 
   return (
     <View style={wrap}>
+      {/* ── SVG layer: track + fill arc ── */}
       <View style={svgAbsolute} pointerEvents="none" accessibilityElementsHidden importantForAccessibility="no-hide-descendants">
         <Svg width={S} height={S}>
           <Defs>
@@ -133,7 +184,6 @@ export function HoneyRing({
               animatedProps={fillProps}
             />
           </G>
-          {sealed ? <SealHex cx={cx} size={t.seal.size} color={t.colors.accent} /> : null}
         </Svg>
       </View>
       {/* Head-dot: flat solid amber circle riding the arc tip — no glow, no shadow */}
@@ -152,29 +202,135 @@ export function HoneyRing({
           ]}
         />
       ) : null}
+      {/* Ripples: three thin outline rings expanding outward (skipped under reduced motion) */}
+      {sealed && !reduced ? (
+        <>
+          <Ripple delay={0} t={t} />
+          <Ripple delay={t.motion.sealSeq * 0.15} t={t} />
+          <Ripple delay={t.motion.sealSeq * 0.3} t={t} />
+        </>
+      ) : null}
+      {/* Motes: flat solid squares flick outward (skipped under reduced motion) */}
+      {sealed && !reduced
+        ? moteIndices.map((i) => (
+            <Mote
+              key={i}
+              index={i}
+              count={t.mote.count}
+              distance={t.mote.distance}
+              size={t.mote.size}
+              color={t.colors.accent}
+              sealSeq={t.motion.sealSeq}
+              easing={t.motion.easing.honey}
+            />
+          ))
+        : null}
+      {/* Seal hex overlay: Animated.View so it transforms independently of the SVG */}
+      {sealed ? (
+        <Animated.View
+          pointerEvents="none"
+          style={[{ position: 'absolute' }, sealStyle]}
+        >
+          <Svg width={sealW} height={sealH}>
+            <Polygon points={hexPoints(sealW)} fill={t.colors.accent} />
+          </Svg>
+        </Animated.View>
+      ) : null}
       {children}
     </View>
   );
 }
 
-// Flat-top hexagon stamped over the bee centre when the cap is sealed.
-// Rendered as an SVG Polygon — no RN View, no glow, flat-tactical.
-function SealHex({ cx, size, color }: { cx: number; size: number; color: string }) {
-  const w = size;
-  const h = size * 1.1;
-  const x = cx - w / 2;
-  const y = cx - h / 2;
-  // Flat-top hexagon vertices (clockwise from top-left shoulder):
-  const points = [
-    [x + w * 0.5, y],
-    [x + w, y + h * 0.25],
-    [x + w, y + h * 0.75],
-    [x + w * 0.5, y + h],
-    [x, y + h * 0.75],
-    [x, y + h * 0.25],
-  ]
-    .map((p) => p.join(','))
-    .join(' ');
+// ── Ripple sub-component ─────────────────────────────────────────────────────
+// A single thin concentric outline ring that expands from 0.5× to 1.5× the
+// ring diameter and fades to transparent. Stagger via `delay`.
+function Ripple({ delay, t }: { delay: number; t: ReturnType<typeof useTheme> }) {
+  const s = useSharedValue(0.5);
+  const o = useSharedValue(0.5);
 
-  return <Polygon points={points} fill={color} opacity={0.95} />;
+  useEffect(() => {
+    s.set(withDelay(delay, withTiming(1.5, { duration: t.motion.sealSeq, easing: t.motion.easing.honey })));
+    o.set(withDelay(delay, withTiming(0, { duration: t.motion.sealSeq, easing: t.motion.easing.honey })));
+  }, [delay, s, o, t.motion.sealSeq, t.motion.easing.honey]);
+
+  const st = useAnimatedStyle(() => ({
+    opacity: o.get(),
+    transform: [{ scale: s.get() }],
+  }));
+
+  const size = t.ring.size * 0.72;
+  return (
+    <Animated.View
+      pointerEvents="none"
+      style={[
+        {
+          position: 'absolute',
+          width: size,
+          height: size,
+          borderRadius: size / 2,
+          borderWidth: t.borderWidth.thick,
+          borderColor: t.colors.accent,
+        },
+        st,
+      ]}
+    />
+  );
+}
+
+// ── Mote sub-component ───────────────────────────────────────────────────────
+// A single flat solid square that flicks outward along a radial angle.
+// angle = -90 + index × (360 / count) so motes distribute evenly from 12-o'clock.
+// NO glow, NO boxShadow — flat-tactical only.
+function Mote({
+  index,
+  count,
+  distance,
+  size,
+  color,
+  sealSeq,
+  easing,
+}: {
+  index: number;
+  count: number;
+  distance: number;
+  size: number;
+  color: string;
+  sealSeq: number;
+  easing: EasingFunctionFactory | ((t: number) => number);
+}) {
+  const angleDeg = -90 + index * (360 / count);
+  const angleRad = (angleDeg * Math.PI) / 180;
+  const targetX = Math.cos(angleRad) * distance;
+  const targetY = Math.sin(angleRad) * distance;
+
+  const tx = useSharedValue(0);
+  const ty = useSharedValue(0);
+  const o = useSharedValue(0);
+
+  useEffect(() => {
+    const motDelay = 300 + index * 40;
+    tx.set(withDelay(motDelay, withTiming(targetX, { duration: sealSeq * 0.5, easing })));
+    ty.set(withDelay(motDelay, withTiming(targetY, { duration: sealSeq * 0.5, easing })));
+    o.set(withDelay(motDelay, withTiming(1, { duration: sealSeq * 0.2, easing })));
+  }, [index, targetX, targetY, tx, ty, o, sealSeq, easing]);
+
+  const st = useAnimatedStyle(() => ({
+    opacity: o.get(),
+    transform: [{ translateX: tx.get() }, { translateY: ty.get() }],
+  }));
+
+  return (
+    <Animated.View
+      pointerEvents="none"
+      style={[
+        {
+          position: 'absolute',
+          width: size,
+          height: size,
+          backgroundColor: color,
+        },
+        st,
+      ]}
+    />
+  );
 }
