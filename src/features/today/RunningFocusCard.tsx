@@ -116,7 +116,7 @@ export function RunningFocusCard({ categoryName }: RunningFocusCardProps) {
     lineHeight: 12,
   };
 
-  const topline: ViewStyle = { flexDirection: 'row', alignItems: 'center', gap: t.space[3] };
+  const topline: ViewStyle = { flexDirection: 'row', alignItems: 'flex-end', gap: t.space[3] };
   const coin: ViewStyle = {
     width: t.size.coin,
     height: t.size.coin,
@@ -161,7 +161,7 @@ export function RunningFocusCard({ categoryName }: RunningFocusCardProps) {
       accessibilityLabel={`Timing ${taskLabel ?? 'a task'}, ${clockLabel(elapsedSec)} elapsed of about ${honestMin} minutes. Tap to reopen.`}
       style={pressStyle}
     >
-      <Card tone="focal" style={{ gap: t.space[4] }}>
+      <Card tone="raised" style={{ gap: t.space[4] }}>
         <View style={topline}>
           <View style={coin}>
             <Animated.View style={[liveDot, pulseStyle]} />
