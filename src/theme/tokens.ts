@@ -151,6 +151,7 @@ export const tokens = {
       success: '#33B07C',
       successSoft: '#E2F4EA',
       danger: '#D14343',
+      dangerEdge: '#A82F2F', // darker depth edge for a filled danger control
 
       // ── utility ──
       scrim: 'rgba(20,21,29,0.45)', // modal/sheet overlay
@@ -206,6 +207,7 @@ export const tokens = {
       success: '#33B07C',
       successSoft: 'rgba(51,176,124,0.18)',
       danger: '#E06464',
+      dangerEdge: '#B84A4A', // darker depth edge for a filled danger control
 
       // ── utility ──
       scrim: 'rgba(10,11,16,0.60)',

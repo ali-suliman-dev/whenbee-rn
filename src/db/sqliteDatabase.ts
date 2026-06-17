@@ -418,5 +418,27 @@ export async function createSqliteDatabase(name = 'whenbee.db'): Promise<Databas
         'UPDATE companion SET discovery_count = discovery_count + 1 WHERE id = 1'
       );
     },
+
+    async wipeAll(): Promise<void> {
+      await db.withTransactionAsync(async () => {
+        await db.execAsync(
+          `DELETE FROM task_events;
+           DELETE FROM category_stats;
+           DELETE FROM recurring_stats;
+           DELETE FROM log_tags;
+           DELETE FROM discoveries;
+           UPDATE companion SET
+             reclaimed_minutes_lifetime = 0,
+             lifetime_data_points = 0,
+             max_tier = 0,
+             keeper = 0,
+             seed = 0,
+             drift_health = 'settled',
+             discovery_count = 0,
+             name = NULL
+           WHERE id = 1;`
+        );
+      });
+    },
   };
 }

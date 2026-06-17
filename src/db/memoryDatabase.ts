@@ -150,5 +150,21 @@ export function createMemoryDatabase(): Database {
     async incrementDiscoveryCount(): Promise<void> {
       companion.discoveryCount += 1;
     },
+
+    async wipeAll(): Promise<void> {
+      categoryStats.clear();
+      recurringStats.clear();
+      events.clear();
+      contextTags.clear();
+      discoveries.clear();
+      companion.reclaimedMinutesLifetime = 0;
+      companion.lifetimeDataPoints = 0;
+      companion.maxTier = 0;
+      companion.keeper = false;
+      companion.seed = 0;
+      companion.driftHealth = 'settled';
+      companion.discoveryCount = 0;
+      companion.name = null;
+    },
   };
 }

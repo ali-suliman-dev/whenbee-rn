@@ -7,15 +7,17 @@ import { Screen } from '@/src/components/Screen';
 import { AppText } from '@/src/components/AppText';
 import { Chip } from '@/src/components/Chip';
 import { AppearanceGlyph } from '@/src/components/icons/AppearanceGlyph';
+import { DataResetGlyph } from '@/src/components/DataResetGlyph';
+import { ConfirmSheet } from '@/src/components/ConfirmSheet';
 import { Toast, AUTO_HIDE_MS } from '@/src/components/Toast';
 import { useTheme } from '@/src/theme/useTheme';
 import { type } from '@/src/theme/typography';
 import { useSettingsStore, type ColorModePref } from '@/src/stores/settingsStore';
 import { useCategoriesStore } from '@/src/stores/categoriesStore';
-import { useOnboardingStore } from '@/src/stores/onboardingStore';
 import { useEntitlement } from '@/src/features/paywall/useEntitlement';
 import { useAccountActions, type RestoreOutcome } from '@/src/features/paywall/useAccountActions';
 import { useReminderSetting } from '@/src/features/settings/useReminderSetting';
+import { useAccountReset } from '@/src/features/settings/useAccountReset';
 
 const modes: ColorModePref[] = ['system', 'light', 'dark'];
 
@@ -36,6 +38,7 @@ type IconName = keyof typeof Ionicons.glyphMap;
  */
 function SettingRow({
   icon,
+  leading,
   title,
   note,
   onPress,
@@ -44,7 +47,9 @@ function SettingRow({
   trailing,
   accessibilityLabel,
 }: {
-  icon: IconName;
+  icon?: IconName;
+  /** Custom leading visual (e.g. an SVG glyph). Rendered instead of `icon`. */
+  leading?: ReactNode;
   title: string;
   note?: string;
   onPress?: () => void;
@@ -74,7 +79,9 @@ function SettingRow({
 
   const content = (
     <>
-      <Ionicons name={icon} size={t.iconSize.md} color={tint ?? t.colors.inkSoft} />
+      {leading ?? (
+        <Ionicons name={icon as IconName} size={t.iconSize.md} color={tint ?? t.colors.inkSoft} />
+      )}
       <View style={{ flex: 1, gap: t.space[0.5] }}>
         <Text style={titleStyle}>{title}</Text>
         {note ? <Text style={noteStyle}>{note}</Text> : null}
@@ -114,10 +121,11 @@ export default function Settings() {
   const categoryCount = useCategoriesStore((s) => s.categories.length);
   const { restoring, manageSubscription, restorePurchases } = useAccountActions();
   const { enabled: remindersEnabled, toggle: toggleReminders } = useReminderSetting();
-  const resetOnboarding = useOnboardingStore((s) => s.reset);
+  const { resetting, resetProgress, eraseEverything } = useAccountReset();
 
   const [toastMsg, setToastMsg] = useState('');
   const [toastVisible, setToastVisible] = useState(false);
+  const [sheet, setSheet] = useState<null | 'progress' | 'erase'>(null);
 
   const showToast = useCallback((message: string) => {
     setToastMsg(message);
@@ -144,11 +152,15 @@ export default function Settings() {
     if (next && !ok) showToast(REMINDER_DENIED);
   }
 
-  // Dev-only: clear the boot-gate flag + picks, then bounce through the root so
-  // Index re-redirects to the welcome flow. Never compiled into release builds.
-  function handleReplayOnboarding() {
-    resetOnboarding();
-    router.replace('/');
+  async function handleResetProgress() {
+    setSheet(null);
+    await resetProgress();
+    showToast('Reset done. Fresh slate.');
+  }
+
+  async function handleEraseEverything() {
+    setSheet(null);
+    await eraseEverything(); // navigates to onboarding; no toast needed
   }
 
   return (
@@ -180,22 +192,18 @@ export default function Settings() {
         </View>
 
         <View style={{ gap: t.space[3] }}>
-          <AppText variant="label">Account</AppText>
-          {isPro ? (
-            <SettingRow
-              icon="card-outline"
-              title="Manage subscription"
-              note="Change your plan or cancel in the App Store."
-              onPress={manageSubscription}
-            />
-          ) : null}
-          <SettingRow
-            icon="refresh-outline"
-            title="Restore purchases"
-            note="Paid before? Bring your Pro access back."
-            onPress={handleRestore}
-            disabled={restoring}
-          />
+          <AppText variant="label">Appearance</AppText>
+          <View style={{ flexDirection: 'row', gap: t.space[2] }}>
+            {modes.map((m) => (
+              <Chip
+                key={m}
+                label={m}
+                icon={<AppearanceGlyph kind={m} selected={colorMode === m} size={t.iconSize.md} />}
+                selected={colorMode === m}
+                onPress={() => setColorMode(m)}
+              />
+            ))}
+          </View>
         </View>
 
         <View style={{ gap: t.space[3] }}>
@@ -247,33 +255,76 @@ export default function Settings() {
         </View>
 
         <View style={{ gap: t.space[3] }}>
-          <AppText variant="label">Appearance</AppText>
-          <View style={{ flexDirection: 'row', gap: t.space[2] }}>
-            {modes.map((m) => (
-              <Chip
-                key={m}
-                label={m}
-                icon={<AppearanceGlyph kind={m} selected={colorMode === m} size={t.iconSize.md} />}
-                selected={colorMode === m}
-                onPress={() => setColorMode(m)}
-              />
-            ))}
-          </View>
+          <AppText variant="label">Account</AppText>
+          {isPro ? (
+            <SettingRow
+              icon="card-outline"
+              title="Manage subscription"
+              note="Change your plan or cancel in the App Store."
+              onPress={manageSubscription}
+            />
+          ) : null}
+          <SettingRow
+            icon="refresh-outline"
+            title="Restore purchases"
+            note="Paid before? Bring your Pro access back."
+            onPress={handleRestore}
+            disabled={restoring}
+          />
         </View>
 
-        {__DEV__ ? (
-          <View style={{ gap: t.space[3] }}>
-            <AppText variant="label">Developer</AppText>
-            <SettingRow
-              icon="refresh-circle-outline"
-              tint={t.colors.danger}
-              title="Replay onboarding"
-              note="Clears the boot-gate flag and jumps back to the welcome flow."
-              onPress={handleReplayOnboarding}
-            />
-          </View>
-        ) : null}
+        <View style={{ gap: t.space[3] }}>
+          <AppText variant="label" style={{ color: t.colors.danger }}>
+            Danger zone
+          </AppText>
+          <SettingRow
+            leading={<DataResetGlyph kind="progress" size={t.iconSize.md} />}
+            title="Reset progress"
+            note="Forget what it learned, keep your setup."
+            tint={t.colors.accent}
+            onPress={() => setSheet('progress')}
+            disabled={resetting}
+          />
+          <SettingRow
+            leading={<DataResetGlyph kind="erase" size={t.iconSize.md} />}
+            title="Erase everything"
+            note="Wipe the app and start the welcome over."
+            tint={t.colors.danger}
+            onPress={() => setSheet('erase')}
+            disabled={resetting}
+          />
+        </View>
       </ScrollView>
+
+      <ConfirmSheet
+        visible={sheet === 'progress'}
+        tone="caution"
+        glyphKind="progress"
+        title="Reset your progress?"
+        bullets={[
+          'Clears every logged time and what Whenbee learned.',
+          'Keeps your categories, look, and reminders.',
+          'Your Whenbee keeps its name and just starts growing again.',
+        ]}
+        confirmLabel="Reset progress"
+        onConfirm={handleResetProgress}
+        onCancel={() => setSheet(null)}
+      />
+      <ConfirmSheet
+        visible={sheet === 'erase'}
+        tone="danger"
+        glyphKind="erase"
+        title="Erase everything?"
+        bullets={[
+          'Deletes all of it: tasks, learning, categories, settings.',
+          "You'll start from the welcome screen, like a fresh install.",
+          "Pro isn't stored here, so 'Restore purchases' brings it back.",
+        ]}
+        confirmLabel="Erase everything"
+        onConfirm={handleEraseEverything}
+        onCancel={() => setSheet(null)}
+      />
+
       <Toast message={toastMsg} visible={toastVisible} />
     </Screen>
   );

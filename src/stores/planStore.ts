@@ -45,6 +45,8 @@ interface PlanState {
   reorderTasks: (ids: string[]) => void;
   saveActive: (nowMs?: number) => void;
   clearActive: () => void;
+  /** Drop the active plan and the working draft (full + progress data-reset path). */
+  reset: () => void;
 }
 
 /** Collision-resistant id without a uuid dependency (mirrors tasksStore). */
@@ -111,6 +113,8 @@ export const usePlanStore = create<PlanState>()(
       },
 
       clearActive: () => set({ active: null }),
+
+      reset: () => set({ draft: emptyDraft, active: null }),
     }),
     {
       name: 'active-plan',

@@ -3,6 +3,8 @@ export const kv = {
   set: (key: string, value: string) => Storage.setItemSync(key, value),
   getString: (key: string): string | null => Storage.getItemSync(key),
   delete: (key: string) => Storage.removeItemSync(key),
+  getAllKeys: (): string[] => Storage.getAllKeysSync(),
+  clearAll: () => Storage.clearSync(),
 };
 export const zustandKv = {
   getItem: (name: string) => Storage.getItemSync(name),

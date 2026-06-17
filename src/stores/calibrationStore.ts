@@ -302,6 +302,10 @@ interface CalibrationState {
   /** Sum of reclaimDividendMin over today's (local-day) completed events. */
   loadTodayReclaimMin: (nowMs?: number) => Promise<number>;
   resetCategory: (categoryId: string) => Promise<void>;
+  /** Clear in-memory caches after a full/learning data wipe. The db itself is
+   *  cleared by the dataReset service; this just drops the cached mirrors so the
+   *  UI doesn't show stale stats before the next hydrate. */
+  reset: () => void;
 }
 
 async function resolveDb(get: () => CalibrationState, set: (p: Partial<CalibrationState>) => void) {
@@ -954,4 +958,6 @@ export const useCalibrationStore = create<CalibrationState>((set, get) => ({
       },
     }));
   },
+
+  reset: () => set({ logs: 0, statsByCategory: {}, graduatedCategories: new Set() }),
 }));

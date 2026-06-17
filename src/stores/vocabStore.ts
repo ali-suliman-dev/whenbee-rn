@@ -20,6 +20,8 @@ interface VocabState {
   seq: number;
   /** Learn a title → category link. Bumps counts and ticks seq. */
   bank: (title: string, catId: string) => void;
+  /** Forget every learned association (full data-reset path). */
+  reset: () => void;
 }
 
 export const useVocabStore = create<VocabState>()(
@@ -31,6 +33,7 @@ export const useVocabStore = create<VocabState>()(
         const nextSeq = get().seq + 1;
         set({ map: bankAssociation(get().map, title, catId, nextSeq), seq: nextSeq });
       },
+      reset: () => set({ map: {}, seq: 0 }),
     }),
     { name: 'vocab', storage: createJSONStorage(() => zustandKv) },
   ),

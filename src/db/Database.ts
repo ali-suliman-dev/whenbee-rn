@@ -56,4 +56,8 @@ export interface Database {
   getLastDiscoveryForCategory(categoryId: string): Promise<DiscoveryRow | null>;
   /** Monotonic increment — bumps companion.discoveryCount by one; never decrements. */
   incrementDiscoveryCount(): Promise<void>;
+
+  /** Factory reset: clears every table and returns the companion singleton to its
+   *  default row (seed 0 so the next hydrate re-seeds a fresh appearance, name null). */
+  wipeAll(): Promise<void>;
 }
