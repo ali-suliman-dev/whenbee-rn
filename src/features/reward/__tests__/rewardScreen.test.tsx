@@ -48,9 +48,10 @@ describe('Reward screen', () => {
     expect(screen.getByText('28')).toBeOnTheScreen();
     // The gray "you guessed…" sentence is now a glanceable delta chip.
     expect(screen.getByText('13 min over your guess')).toBeOnTheScreen();
-    expect(screen.getByText('64%')).toBeOnTheScreen();
-    // Multiplier sub reads the category display name + multiplier (jargon trimmed).
-    expect(screen.getByText('Getting ready runs at 2.2×')).toBeOnTheScreen();
+    // Honey pct: number + muted unit suffix render as separate nodes now.
+    expect(screen.getByText('64')).toBeOnTheScreen();
+    // Multiplier folded into the HONEY header as a quiet "· 2.2×" meta.
+    expect(screen.getByText('· 2.2×')).toBeOnTheScreen();
   });
 
   it('renders a deterministic timed headline from the rotating set', () => {
