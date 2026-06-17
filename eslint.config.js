@@ -29,5 +29,5 @@ module.exports = [
       ],
     },
   },
-  { ignores: ['dist/*', '.expo/*', 'components/ui/**'] },
+  { ignores: ['dist/*', '.expo/*', 'components/ui/**', '.claude/worktrees/**'] },
 ];

@@ -6,9 +6,13 @@ import { Screen } from '@/src/components/Screen';
 import { AppText } from '@/src/components/AppText';
 import { AppButton } from '@/src/components/AppButton';
 import { Chip } from '@/src/components/Chip';
+import { OnboardingBackdrop } from '@/src/components/OnboardingBackdrop';
+import { OnboardingFooterCard } from '@/src/components/OnboardingFooterCard';
+import { BeeGlyph } from '@/src/components/BeeGlyph';
 import { useTheme } from '@/src/theme/useTheme';
 import { useOnboarding } from '@/src/features/onboarding/useOnboarding';
 import { StepProgress } from '@/src/features/onboarding/StepProgress';
+import { Reveal } from '@/src/features/onboarding/Reveal';
 import {
   ONBOARDING_CATEGORIES,
   slugify,
@@ -23,6 +27,14 @@ export default function Categories() {
   const [draft, setDraft] = useState('');
 
   const canContinue = picked.length >= 1;
+
+  // Count-aware nudge: encourage one or two more early, then affirm once there's
+  // plenty — so "one more" never lingers after the grid is full.
+  function pickedLine(n: number): string {
+    if (n >= 3) return `${n} picked. That's plenty to learn from.`;
+    const more = n === 1 ? 'A couple more' : 'One more';
+    return `${n} picked. ${more} and I'll learn your pace faster.`;
+  }
 
   function commitCustom() {
     const name = draft.trim();
@@ -51,7 +63,7 @@ export default function Categories() {
   };
 
   return (
-    <Screen>
+    <Screen backdrop={<OnboardingBackdrop />}>
       <StepProgress current={1} />
       {/* Tapping anywhere outside the inline "+ New" input dismisses the keyboard. */}
       <Pressable
@@ -59,72 +71,90 @@ export default function Categories() {
         onPress={Keyboard.dismiss}
         style={{ flex: 1, gap: t.space[4], paddingTop: t.space[2] }}
       >
-        <AppText
-          style={{
-            fontSize: t.fontSize.xl,
-            fontWeight: t.fontWeight.bold as '700',
-            color: t.colors.ink,
-            letterSpacing: -0.6,
-          }}
-        >
-          What kinds of tasks make you late?
-        </AppText>
-        <AppText variant="body" style={{ color: t.colors.inkSoft }}>
-          Pick 3–5 — or add your own. These get calibrated first.
-        </AppText>
+        <Reveal index={0}>
+          <AppText
+            style={{
+              fontSize: t.fontSize.xl,
+              fontWeight: t.fontWeight.bold as '700',
+              color: t.colors.ink,
+              letterSpacing: -0.6,
+            }}
+          >
+            What makes you run late?
+          </AppText>
+        </Reveal>
+        <Reveal index={1}>
+          <AppText variant="body" style={{ color: t.colors.inkSoft }}>
+            {"Pick a few, or add your own. These are what I’ll learn first."}
+          </AppText>
+        </Reveal>
 
-        <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: t.space[2] }}>
-          {ONBOARDING_CATEGORIES.map((cat) => (
-            <Chip
-              key={cat.id}
-              label={cat.name}
-              selected={isPicked(cat.id)}
-              onPress={() => togglePick(cat)}
-            />
-          ))}
-
-          {customPicks.map((cat) => (
-            <Chip
-              key={cat.id}
-              label={cat.name}
-              selected
-              onPress={() => togglePick(cat)}
-            />
-          ))}
-
-          {adding ? (
-            <View style={inputChip}>
-              <TextInput
-                autoFocus
-                value={draft}
-                onChangeText={setDraft}
-                onSubmitEditing={commitCustom}
-                onBlur={commitCustom}
-                placeholder="Name it…"
-                placeholderTextColor={t.colors.inkSoft}
-                maxLength={MAX_CUSTOM_NAME}
-                returnKeyType="done"
-                accessibilityLabel="New category name"
-                style={{
-                  flex: 1,
-                  fontSize: t.fontSize.sm,
-                  color: t.colors.ink,
-                  padding: 0,
-                }}
+        <Reveal index={2}>
+          <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: t.space[2] }}>
+            {ONBOARDING_CATEGORIES.map((cat) => (
+              <Chip
+                key={cat.id}
+                label={cat.name}
+                selected={isPicked(cat.id)}
+                onPress={() => togglePick(cat)}
               />
-            </View>
-          ) : (
-            <Chip label="+ New" variant="add" onPress={() => setAdding(true)} />
-          )}
-        </View>
+            ))}
+
+            {customPicks.map((cat) => (
+              <Chip
+                key={cat.id}
+                label={cat.name}
+                selected
+                onPress={() => togglePick(cat)}
+              />
+            ))}
+
+            {adding ? (
+              <View style={inputChip}>
+                <TextInput
+                  autoFocus
+                  value={draft}
+                  onChangeText={setDraft}
+                  onSubmitEditing={commitCustom}
+                  onBlur={commitCustom}
+                  placeholder="Name it…"
+                  placeholderTextColor={t.colors.inkSoft}
+                  maxLength={MAX_CUSTOM_NAME}
+                  returnKeyType="done"
+                  accessibilityLabel="New category name"
+                  style={{
+                    flex: 1,
+                    fontSize: t.fontSize.sm,
+                    color: t.colors.ink,
+                    padding: 0,
+                  }}
+                />
+              </View>
+            ) : (
+              <Chip label="Add your own" variant="add" onPress={() => setAdding(true)} />
+            )}
+          </View>
+        </Reveal>
+        <View style={{ flex: 1 }} />
+        {picked.length > 0 ? (
+          <Reveal>
+            <OnboardingFooterCard
+              glyph={<BeeGlyph size={t.space[8]} animated />}
+            >
+              {pickedLine(picked.length)}
+            </OnboardingFooterCard>
+          </Reveal>
+        ) : null}
       </Pressable>
 
-      <AppButton
-        label="Continue →"
-        fullWidth
-        disabled={!canContinue}
-        onPress={() => router.push('/(onboarding)/ready')}
-      />
+      <Reveal index={3} style={{ paddingTop: t.space[4] }}>
+        <AppButton
+          label="Continue →"
+          fullWidth
+          disabled={!canContinue}
+          onPress={() => router.push('/(onboarding)/ready')}
+        />
+      </Reveal>
       <View style={{ height: insets.bottom }} />
     </Screen>
   );

@@ -52,6 +52,7 @@ export interface CompanionRow {
   seed: number;
   driftHealth: 'settled' | 'curious';
   discoveryCount: number;
+  name: string | null;
 }
 
 /** A banked aha — one append-only discovery card row. */
@@ -78,6 +79,17 @@ export interface ReasonEventRow {
   eventId: string;
   category: string;
   reason: string;
+  estimateMin: number;
+  actualMin: number | null;
+  createdAt: number;
+}
+
+/** A context tag (e.g. energy) joined to its task event (read-only; powers the
+ *  Pro S4 context-correlation read). `value` is the tag value for the queried key. */
+export interface ContextEventRow {
+  eventId: string;
+  category: string;
+  value: string;
   estimateMin: number;
   actualMin: number | null;
   createdAt: number;

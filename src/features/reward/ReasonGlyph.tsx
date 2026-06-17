@@ -1,8 +1,11 @@
 import { useEffect } from 'react';
+import { View } from 'react-native';
 import Animated, {
+  Easing,
   useAnimatedStyle,
   useReducedMotion,
   useSharedValue,
+  withRepeat,
   withSequence,
   withSpring,
   withTiming,
@@ -37,13 +40,39 @@ export function ReasonGlyph({
   kind,
   active,
   size = 22,
+  ambient = false,
 }: {
   kind: ReasonGlyphKind;
   active: boolean;
   size?: number;
+  /** Looped in-place life (currently the 'pulled' exit arrow breathing). */
+  ambient?: boolean;
 }) {
   const t = useTheme();
   const reduced = useReducedMotion();
+
+  // Ambient: the 'pulled' exit arrow glides smoothly out the doorway and back,
+  // forever — a clean "leaving / one-tap exit" motion (ease-in-out, no snap, the
+  // arrow never disappears). It rides its own layer so only the arrow moves.
+  const arrowAmbient = ambient && kind === 'pulled' && !reduced;
+  // The arrow travels from just inside the doorway out to its resting spot, then
+  // back — a clear "stepping out" loop. Kept entirely within the box (it sits at
+  // the right edge already, so it glides LEFT→home, never clipping).
+  const GLIDE = size * 0.2; // shallower tuck — barely dips into the doorway
+  const GLIDE_MS = 1500; // slower, calmer step-out
+  const glide = useSharedValue(1);
+  useEffect(() => {
+    if (!arrowAmbient) {
+      glide.set(1);
+      return;
+    }
+    glide.set(0); // begin tucked at the doorway
+    glide.set(
+      withRepeat(withTiming(1, { duration: GLIDE_MS, easing: Easing.inOut(Easing.sin) }), -1, true),
+    );
+  }, [arrowAmbient, glide]);
+  // glide 0 → arrow tucked at the doorway (translateX −GLIDE); glide 1 → resting.
+  const arrowGlide = useAnimatedStyle(() => ({ transform: [{ translateX: GLIDE * (glide.get() - 1) }] }));
 
   const indigo = t.colors.primary;
   const indigoSoft = t.colors.primarySoft;
@@ -94,7 +123,7 @@ export function ReasonGlyph({
     transform: [{ translateX: tx.get() }, { rotate: `${rot.get()}deg` }, { scale: scale.get() }],
   }));
 
-  return (
+  const glyph = (
     <Animated.View style={anim}>
       <Svg width={size} height={size} viewBox={`0 0 ${BOX} ${BOX}`}>
         {kind === 'interrupted' ? (
@@ -149,14 +178,18 @@ export function ReasonGlyph({
           <>
             <Rect x={5} y={4} width={7.5} height={16} rx={1.4} fill={indigoSoft} stroke={indigo} strokeWidth={SW} />
             <Circle cx={10.3} cy={12} r={0.9} fill={indigo} />
-            <Path
-              d="M14 12 H20 M17 9 L20 12 L17 15"
-              fill="none"
-              stroke={amber}
-              strokeWidth={1.8}
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            />
+            {/* Arrow lives in the static Svg unless it's gliding (then it's an
+                overlay layer below, so only the arrow moves). */}
+            {arrowAmbient ? null : (
+              <Path
+                d="M14 12 H20 M17 9 L20 12 L17 15"
+                fill="none"
+                stroke={amber}
+                strokeWidth={1.8}
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
+            )}
           </>
         ) : null}
 
@@ -171,5 +204,26 @@ export function ReasonGlyph({
         ) : null}
       </Svg>
     </Animated.View>
+  );
+
+  if (!arrowAmbient) return glyph;
+
+  // Gliding exit arrow rides its own layer over the static door.
+  return (
+    <View style={{ width: size, height: size }}>
+      {glyph}
+      <Animated.View style={[{ position: 'absolute', top: 0, left: 0 }, arrowGlide]}>
+        <Svg width={size} height={size} viewBox={`0 0 ${BOX} ${BOX}`}>
+          <Path
+            d="M14 12 H20 M17 9 L20 12 L17 15"
+            fill="none"
+            stroke={amber}
+            strokeWidth={1.8}
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          />
+        </Svg>
+      </Animated.View>
+    </View>
   );
 }

@@ -5,19 +5,22 @@ import { Screen } from '@/src/components/Screen';
 import { AppText } from '@/src/components/AppText';
 import { AppButton } from '@/src/components/AppButton';
 import { Card } from '@/src/components/Card';
-import { TierTrail } from '@/src/components/TierTrail';
+import { HoneyTrail } from '@/src/components/HoneyTrail';
+import { OnboardingBackdrop } from '@/src/components/OnboardingBackdrop';
+import { OnboardingFooterCard } from '@/src/components/OnboardingFooterCard';
+import { ReasonGlyph } from '@/src/features/reward/ReasonGlyph';
 import { useTheme } from '@/src/theme/useTheme';
 import { useOnboarding } from '@/src/features/onboarding/useOnboarding';
 import { StepProgress } from '@/src/features/onboarding/StepProgress';
-import { PromiseChip } from '@/src/features/onboarding/PromiseChip';
+import { Reveal } from '@/src/features/onboarding/Reveal';
 
 // Raw (now) → Honest (goal) look-ahead. Not a setup wall — a goal preview.
 const MASTERY_TRAIL = [
   { label: 'Raw', state: 'now' as const },
-  { label: 'Setting', state: 'lock' as const },
-  { label: 'Ripening', state: 'lock' as const },
-  { label: 'Thickening', state: 'lock' as const },
-  { label: 'Honest', state: 'lock' as const },
+  { label: 'Setting', state: 'ahead' as const },
+  { label: 'Ripening', state: 'ahead' as const },
+  { label: 'Thickening', state: 'ahead' as const },
+  { label: 'Honest', state: 'ahead' as const },
 ];
 
 export default function Ready() {
@@ -31,50 +34,64 @@ export default function Ready() {
   }
 
   return (
-    <Screen>
+    <Screen backdrop={<OnboardingBackdrop />}>
       <StepProgress current={2} />
       <View style={{ flex: 1, gap: t.space[4], paddingTop: t.space[3] }}>
-        <AppText
-          style={{
-            fontSize: t.fontSize.xl,
-            fontWeight: t.fontWeight.bold as '700',
-            color: t.colors.ink,
-            letterSpacing: -0.6,
-          }}
-        >
-          One tap to start. One tap to ripen.
-        </AppText>
-        <AppText
-          variant="body"
-          style={{ color: t.colors.inkSoft, lineHeight: t.fontSize.base * 1.5 }}
-        >
-          From your first guess I&apos;ll suggest honest times. Every task you log
-          thickens your honey — and I&apos;ll never scold you for a gap.
-        </AppText>
-
-        <PromiseChip glyph="check">
-          Empty days are fine. Forgot to time something? One tap to add it later.
-        </PromiseChip>
+        <Reveal index={0}>
+          <AppText
+            style={{
+              fontSize: t.fontSize.xl,
+              fontWeight: t.fontWeight.bold as '700',
+              color: t.colors.ink,
+              letterSpacing: -0.6,
+            }}
+          >
+            One tap to start. One tap to ripen.
+          </AppText>
+        </Reveal>
+        <Reveal index={1}>
+          <AppText
+            variant="body"
+            style={{ color: t.colors.inkSoft, lineHeight: t.fontSize.base * 1.5 }}
+          >
+            From your first guess, I&apos;ll show honest times. Each task you log
+            makes them sharper, and I&apos;ll never scold you for a gap.
+          </AppText>
+        </Reveal>
 
         {/* Mastery preview — Raw (now) → Honest (where you're headed). A look-ahead. */}
-        <Card>
-          <AppText
-            variant="label"
-            style={{ marginBottom: t.space[3], color: t.colors.inkSoft }}
+        <Reveal index={2}>
+          <Card>
+            <AppText
+              variant="label"
+              style={{ marginBottom: t.space[3], color: t.colors.inkSoft }}
+            >
+              Where you&apos;re headed
+            </AppText>
+            <HoneyTrail nodes={MASTERY_TRAIL} lively />
+            <AppText
+              variant="caption"
+              style={{ marginTop: t.space[3], color: t.colors.inkSoft }}
+            >
+              It only ever ripens. There&apos;s no streak to break.
+            </AppText>
+          </Card>
+        </Reveal>
+
+        <View style={{ flex: 1 }} />
+
+        <Reveal index={3}>
+          <OnboardingFooterCard
+            glyph={<ReasonGlyph kind="pulled" active={false} ambient size={t.iconSize.lg} />}
           >
-            Your honeycomb starts raw — here&apos;s where you&apos;re headed
-          </AppText>
-          <TierTrail nodes={MASTERY_TRAIL} />
-          <AppText
-            variant="caption"
-            style={{ marginTop: t.space[3], color: t.colors.inkSoft }}
-          >
-            It only ever ripens. There&apos;s no streak to break.
-          </AppText>
-        </Card>
+            Empty days are fine. Forgot to time something? Add it in one tap.
+          </OnboardingFooterCard>
+        </Reveal>
       </View>
 
-      <AppButton label="Open my day →" fullWidth onPress={openMyDay} />
+      <Reveal index={4} style={{ paddingTop: t.space[4] }}>
+        <AppButton label="Open my day →" fullWidth onPress={openMyDay} />
+      </Reveal>
       <View style={{ height: insets.bottom }} />
     </Screen>
   );

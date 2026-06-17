@@ -38,6 +38,7 @@ struct NextTaskWidgetView: View {
     var entry: NextTaskEntry
 
     private var hasTask: Bool { !entry.snapshot.nextTaskLabel.isEmpty }
+    private var reclaimToday: Int { entry.snapshot.reclaimTodayMin ?? 0 }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 6) {
@@ -70,6 +71,14 @@ struct NextTaskWidgetView: View {
                         .foregroundStyle(.white)
                 }
                 .padding(.top, 2)
+            } else if reclaimToday > 0 {
+                // Evening "got ahead" state — a calm reclaim payoff, never guilt-y.
+                Text("You got ahead of \(reclaimToday)m today")
+                    .font(.headline)
+                    .lineLimit(2)
+                Text("Honest time, learned on-device")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
             } else {
                 // No-task state — quiet, never guilt-y (product invariant).
                 Text("Nothing queued")

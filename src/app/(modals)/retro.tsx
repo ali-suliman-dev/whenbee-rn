@@ -71,7 +71,13 @@ export default function Retro() {
 
         <View style={{ gap: t.space[2] }}>
           <Text style={fieldLabel}>CATEGORY</Text>
-          <CategoryChips categories={r.categories} value={r.category} onChange={r.setCategory} />
+          <CategoryChips
+            categories={r.categories}
+            value={r.category}
+            onChange={r.setCategory}
+            guessedId={r.guessedCategory}
+            usage={r.usage}
+          />
         </View>
 
         <View style={{ gap: t.space[2] }}>

@@ -1,3 +1,12 @@
+import { useEffect } from 'react';
+import { View } from 'react-native';
+import Animated, {
+  useAnimatedStyle,
+  useReducedMotion,
+  useSharedValue,
+  withRepeat,
+  withTiming,
+} from 'react-native-reanimated';
 import Svg, { Path, Rect, Circle, Defs, RadialGradient, Stop } from 'react-native-svg';
 import { useTheme } from '@/src/theme/useTheme';
 
@@ -75,14 +84,18 @@ export function BeeMascot({
   size = 88,
   variant = 'default',
   seed = 1,
+  animated = false,
 }: {
   size?: number;
   variant?: BeeVariant;
   /** Per-install seed → deterministic stripe warmth (amber family only). */
   seed?: number;
+  /** Opt-in in-place wing flutter (onboarding companion). Off everywhere else. */
+  animated?: boolean;
 }) {
   const t = useTheme();
   const c = t.brand.bee;
+  const reduced = useReducedMotion();
 
   const stage = stageOf(variant);
   // noUncheckedIndexedAccess: glow array may be undefined-at-index — fall back to 0.
@@ -93,30 +106,53 @@ export function BeeMascot({
   const stripe = hslHex(hue, STRIPE_SAT, STRIPE_LIGHT);
   const stripeLo = hslHex(hue, STRIPE_SAT, STRIPE_LIGHT_LO);
 
-  return (
-    <Svg
-      width={size}
-      height={size}
-      viewBox="0 0 2400 2400"
-      accessibilityRole="image"
-      accessibilityLabel="Your Whenbee companion"
-    >
-      {/* Stage glow halo (behind everything). Radius scales with presence; absent at
-          stages 1–2 so a young bee reads plain. Amber-only — never a red signal. */}
-      {glowRadius > 0 ? (
-        <>
-          <Defs>
-            <RadialGradient id="beeGlow" cx="50%" cy="50%" r="50%">
-              <Stop offset="0%" stopColor={stripe} stopOpacity={0.5} />
-              <Stop offset="100%" stopColor={stripe} stopOpacity={0} />
-            </RadialGradient>
-          </Defs>
-          {/* Map the token px radius onto the 2400 viewBox: a base 1100 + token growth,
-              so the halo blooms outward as the companion climbs. */}
-          <Circle cx={1200} cy={1200} r={1100 + glowRadius * 40} fill="url(#beeGlow)" />
-        </>
-      ) : null}
+  // Wings buzz in place: a gentle horizontal flutter about the bee's centre. The
+  // loop is the entrance too — it just starts on mount. Reduced-motion → still.
+  const flutter = useSharedValue(0);
+  useEffect(() => {
+    if (!animated || reduced) {
+      flutter.set(0);
+      return;
+    }
+    flutter.set(
+      withRepeat(withTiming(1, { duration: t.motion.pulse, easing: t.motion.easing.calm }), -1, true),
+    );
+  }, [animated, reduced, flutter, t.motion.pulse, t.motion.easing.calm]);
+  const wingStyle = useAnimatedStyle(() => ({
+    transform: [{ scaleX: 1 - 0.12 * flutter.get() }],
+  }));
 
+  const glow =
+    glowRadius > 0 ? (
+      <>
+        <Defs>
+          <RadialGradient id="beeGlow" cx="50%" cy="50%" r="50%">
+            <Stop offset="0%" stopColor={stripe} stopOpacity={0.5} />
+            <Stop offset="100%" stopColor={stripe} stopOpacity={0} />
+          </RadialGradient>
+        </Defs>
+        {/* Map the token px radius onto the 2400 viewBox: a base 1100 + token growth,
+            so the halo blooms outward as the companion climbs. */}
+        <Circle cx={1200} cy={1200} r={1100 + glowRadius * 40} fill="url(#beeGlow)" />
+      </>
+    ) : null;
+
+  const wings = (
+    <>
+      <Path
+        d="M1310 1195.19C1310 1080.48 1388.07 980.481 1499.37 952.658L1799.37 877.658C1957.15 838.212 2110 957.551 2110 1120.19V1279.81C2110 1442.45 1957.15 1561.79 1799.37 1522.34L1499.37 1447.34C1388.07 1419.52 1310 1319.52 1310 1204.81V1195.19Z"
+        fill={c.wing}
+      />
+      <Path
+        d="M290 1120.19C290 957.551 442.847 838.212 600.634 877.658L900.634 952.658C1011.93 980.481 1090 1081.46 1090 1196.18C1090 1309.81 1013.38 1410.11 903.475 1438.96L603.474 1517.71C444.989 1559.32 290 1439.76 290 1275.91V1120.19Z"
+        fill={c.wing}
+      />
+    </>
+  );
+
+  // Everything that sits on TOP of the wings (drawn after them in z-order).
+  const front = (
+    <>
       {/* Stinger (behind the body) */}
       <Rect x={1100} y={1700} width={200} height={200} rx={80} fill={c.ink} />
 
@@ -134,16 +170,6 @@ export function BeeMascot({
       <Path
         d="M1058.41 389.803C1063.75 388.374 1069.23 391.54 1070.66 396.874C1072.09 402.209 1068.92 407.692 1063.59 409.121L1033.59 417.16C1028.25 418.589 1022.77 415.424 1021.34 410.089C1019.91 404.755 1023.08 399.271 1028.41 397.841L1058.41 389.803Z"
         fill={c.antennaHi}
-      />
-
-      {/* Wings (behind the body) */}
-      <Path
-        d="M1310 1195.19C1310 1080.48 1388.07 980.481 1499.37 952.658L1799.37 877.658C1957.15 838.212 2110 957.551 2110 1120.19V1279.81C2110 1442.45 1957.15 1561.79 1799.37 1522.34L1499.37 1447.34C1388.07 1419.52 1310 1319.52 1310 1204.81V1195.19Z"
-        fill={c.wing}
-      />
-      <Path
-        d="M290 1120.19C290 957.551 442.847 838.212 600.634 877.658L900.634 952.658C1011.93 980.481 1090 1081.46 1090 1196.18C1090 1309.81 1013.38 1410.11 903.475 1438.96L603.474 1517.71C444.989 1559.32 290 1439.76 290 1275.91V1120.19Z"
-        fill={c.wing}
       />
 
       {/* Body */}
@@ -183,6 +209,44 @@ export function BeeMascot({
         fill={c.ink}
       />
       <Rect x={995} y={887} width={50} height={100} rx={25} fill={c.ink} />
-    </Svg>
+    </>
+  );
+
+  const a11y = {
+    accessibilityRole: 'image' as const,
+    accessibilityLabel: 'Your Whenbee companion',
+  };
+
+  // Static path (every shared usage): one Svg, original z-order preserved.
+  if (!animated || reduced) {
+    return (
+      <Svg width={size} height={size} viewBox="0 0 2400 2400" {...a11y}>
+        {glow}
+        {wings}
+        {front}
+      </Svg>
+    );
+  }
+
+  // Animated: wings get their own scaled layer (behind), body/face ride on top.
+  return (
+    <View style={{ width: size, height: size }} {...a11y}>
+      <Animated.View
+        style={[{ position: 'absolute', top: 0, left: 0, transformOrigin: 'center' }, wingStyle]}
+      >
+        <Svg width={size} height={size} viewBox="0 0 2400 2400">
+          {glow}
+          {wings}
+        </Svg>
+      </Animated.View>
+      <Svg
+        width={size}
+        height={size}
+        viewBox="0 0 2400 2400"
+        style={{ position: 'absolute', top: 0, left: 0 }}
+      >
+        {front}
+      </Svg>
+    </View>
   );
 }

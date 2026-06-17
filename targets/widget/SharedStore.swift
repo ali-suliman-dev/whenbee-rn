@@ -27,6 +27,10 @@ struct WidgetSnapshot: Codable {
     let honestFinishClock: String
     /// Deep link the one-tap "Start" button opens, e.g. "whenbee://timer?taskId=123".
     let startDeepLink: String
+    /// Minutes reclaimed today (0 = hide). With no next task and this > 0, the widget
+    /// shows a calm evening "you got ahead of Nm today". Optional so a snapshot written
+    /// before this field still decodes.
+    let reclaimTodayMin: Int?
     /// Unix seconds when JS wrote this — lets the widget show a "stale" fallback.
     let updatedAtEpoch: Double
 
@@ -36,6 +40,7 @@ struct WidgetSnapshot: Codable {
             category: "Deep work",
             honestFinishClock: "7:10",
             startDeepLink: "whenbee://timer",
+            reclaimTodayMin: 0,
             updatedAtEpoch: Date().timeIntervalSince1970
         )
     }

@@ -22,6 +22,8 @@ interface CategoriesState {
   /** Stop tracking a category. Past logs and stats are untouched; it just leaves
    *  the tracked list. Refuses to remove the last one (the app needs at least one). */
   removeCategory: (id: string) => void;
+  /** Wipe the tracked list back to empty (full data-reset path). */
+  reset: () => void;
 }
 
 /** Lowercase, underscore-joined slug for a free-text category name. */
@@ -65,6 +67,7 @@ export const useCategoriesStore = create<CategoriesState>()(
             ? state
             : { categories: state.categories.filter((c) => c.id !== id) },
         ),
+      reset: () => set({ categories: [] }),
     }),
     { name: 'categories', storage: createJSONStorage(() => zustandKv) },
   ),

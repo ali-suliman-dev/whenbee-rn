@@ -42,6 +42,11 @@ export const REASON_AFTERNOON_HOUR = 16; // hour ≥16 counts as afternoon
 export const REASON_WEEKDAY_SHARE = 0.5; // ≥50% on one weekday → a weekday skew
 export const REASON_NOTE_MIN_SHARE = 0.6; // B15 note needs a clearer majority
 
+// ── Accuracy correlations (S3 — "when are you sharpest") ─────────────────────
+export const ACCURACY_MIN_BUCKET = 4; // a time/weekday bucket needs ≥4 logs to count
+export const ACCURACY_MIN_GAP = 12; // ≥12 accuracy points between buckets to surface
+export const ACCURACY_MIDDAY_HOUR = 12; // hour <12 = morning, ≥12 = afternoon
+
 // ── Calibration Confidence (Earned-Readiness, Phase 4.5) ─────────────────────
 export const CONFIDENCE_SETTING_MIN_LOGS = 3;
 export const CONFIDENCE_HONEST_MIN_LOGS = 6;

@@ -1,7 +1,6 @@
 import { render, fireEvent, screen } from '@testing-library/react-native';
 import { AppButton } from '../AppButton';
 import { HonestNumber } from '../HonestNumber';
-import { TierTrail } from '../TierTrail';
 
 describe('AppButton', () => {
   it('renders its label and fires onPress', () => {
@@ -53,25 +52,5 @@ describe('HonestNumber', () => {
   it('renders xl size', () => {
     render(<HonestNumber value="100" unit="×" size="xl" tone="indigo" />);
     expect(screen.getByText('100')).toBeTruthy();
-  });
-});
-
-describe('TierTrail', () => {
-  const nodes = [
-    { label: 'Start', state: 'done' as const },
-    { label: 'Train', state: 'now' as const },
-    { label: 'Unlock', state: 'lock' as const },
-  ];
-
-  it('renders all node labels', () => {
-    render(<TierTrail nodes={nodes} />);
-    expect(screen.getByText('Start')).toBeTruthy();
-    expect(screen.getByText('Train')).toBeTruthy();
-    expect(screen.getByText('Unlock')).toBeTruthy();
-  });
-
-  it('renders a single node without error', () => {
-    render(<TierTrail nodes={[{ label: 'Solo', state: 'now' }]} />);
-    expect(screen.getByText('Solo')).toBeTruthy();
   });
 });

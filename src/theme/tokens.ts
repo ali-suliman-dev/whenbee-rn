@@ -50,6 +50,9 @@ export const tokens = {
   // Replaces scattered 0.3 / 0.4 / 0.6 opacities.
   opacity: { disabled: 0.4, pressed: 0.6 },
 
+  // Onboarding aurora glow opacities (mode-independent alphas; colours come from colors.primary/primaryEdge).
+  gradients: { backdropTop: 0.22, backdropCorner: 0.16 },
+
   // Tactile scale feedback for tappable controls (chips, segments).
   //   pressIn — finger-down dip; the control yields to the touch (only while held).
   scale: { pressIn: 0.96 },
@@ -93,6 +96,13 @@ export const tokens = {
     // stagger = per-item delay in a left→right cascade (honeycomb pip reveal). Keep
     // the whole cascade < ~500ms so it reads lively, not slow (motion-design budget).
     stagger: 40,
+    // enterStagger = per-element delay in an onboarding screen's top→bottom reveal
+    // cascade (the Reveal wrapper). Slightly looser than `stagger` so a sparse,
+    // premium screen breathes rather than snapping in all at once.
+    enterStagger: 70,
+    // halo = one calm breath of the "you are here" pulse ring on the current
+    // mastery-trail node. Slow enough to read as a living glow, never a blink.
+    halo: 2200,
     // drift = one full revolution of the RayBurst sunburst. Slow enough to stay
     // calm, fast enough to read as clearly moving (a wedge passes ~every 0.8s).
     drift: 14000,
@@ -122,6 +132,9 @@ export const tokens = {
       primary: '#6B5BE6',
       primaryEdge: '#463B9E',
       primarySoft: '#E4E0FA', // low-emphasis indigo fill
+      // Opaque indigo glyph fill — masks shapes layered behind a line-art body
+      // (e.g. BeeGlyph's wings). Must be OPAQUE so the body hides the overlap.
+      glyphFill: '#E4E0FA',
       accent: '#EEAE4D',
       accentEdge: '#C68A30',
       accentSoft: '#FBEFD6', // low-emphasis amber fill
@@ -138,6 +151,7 @@ export const tokens = {
       success: '#33B07C',
       successSoft: '#E2F4EA',
       danger: '#D14343',
+      dangerEdge: '#A82F2F', // darker depth edge for a filled danger control
 
       // ── utility ──
       scrim: 'rgba(20,21,29,0.45)', // modal/sheet overlay
@@ -175,6 +189,10 @@ export const tokens = {
       primary: '#8275F0',
       primaryEdge: '#6B5BE6',
       primarySoft: 'rgba(130,117,240,0.22)',
+      // Opaque indigo glyph fill — see light-mode note. A touch above the raised
+      // card (#292B3C) so the body reads as a gentle fill yet still masks shapes
+      // drawn behind it (e.g. BeeGlyph's wings).
+      glyphFill: '#3D3F58',
       accent: '#EEAE4D',
       accentEdge: '#C68A30',
       accentSoft: 'rgba(238,174,77,0.18)',
@@ -189,6 +207,7 @@ export const tokens = {
       success: '#33B07C',
       successSoft: 'rgba(51,176,124,0.18)',
       danger: '#E06464',
+      dangerEdge: '#B84A4A', // darker depth edge for a filled danger control
 
       // ── utility ──
       scrim: 'rgba(10,11,16,0.60)',
@@ -239,6 +258,9 @@ export const tokens = {
     // Soft glow radius (px) per stage. Stages 1–2 have none (a young bee is plain);
     // it blooms from Ripening on so the felt warmth tracks the comb sealing.
     glow: [0, 0, 6, 12, 18, 24],
+    // BeeMascot size (px) for the compact Today HUD — smaller than the hub/onboarding
+    // bee so the companion reads as a quiet presence beside the honey bar.
+    hudBee: 36,
   },
 
   // ── brand illustration palette ──────────────────────────────────────────────
