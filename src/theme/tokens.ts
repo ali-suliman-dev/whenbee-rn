@@ -90,6 +90,10 @@ export const tokens = {
   //   gapTrack = bar height; tickW/tickH = the live elapsed marker riding the bar.
   progress: { track: 6, gapTrack: 8, tickW: 3, tickH: 16 },
 
+  // The thin indigo left-edge on actionable Today rows (TaskRow) — a semantic
+  // "interactive" marker (colors.primary), not a category color.
+  row: { edgeW: 3, edgeH: 20 },
+
   motion: {
     fast: 120, base: 220, slow: 360, press: 110, reveal: 600, draw: 950, sheet: 340,
     pulse: 700, toast: 300, honeyFill: 900, float: 3800,
