@@ -2,7 +2,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { useFocusEffect } from 'expo-router';
 import { useCalibrationStore } from '@/src/stores/calibrationStore';
 import { useTasksStore, selectFocus, type TodayTask } from '@/src/stores/tasksStore';
-import { resolveSuggestion, priorFor, CATEGORY_NAMES } from '@/src/engine';
+import { resolveSuggestion, priorFor, CATEGORY_NAMES, type CompanionStage } from '@/src/engine';
 import { analytics } from '@/src/services/analytics';
 import { formatClock, projectedFinish } from '@/src/lib/time';
 import { publishWidgetSnapshot, clearWidgetSnapshot } from '@/src/services/liveActivity';
@@ -44,6 +44,14 @@ interface UseTodayResult {
   categoryName: (id: string) => string;
   /** Minutes Today has handed back so far (local-day reclaim). 0 → the line hides. */
   todayReclaimMin: number;
+  /** The companion's current stage (1..6) — drives the HUD bee. */
+  companionStage: CompanionStage;
+  /** The companion's procedural seed — drives the HUD bee's stripe warmth. */
+  companionSeed: number;
+  /** Lifetime minutes reclaimed — the daily-empty proof line (hidden when < 1). */
+  reclaimLifetimeMin: number;
+  /** True once the user has ever logged — picks first-run vs daily empty copy. */
+  hasEverLogged: boolean;
 }
 
 /** Title-case a custom-category slug (e.g. "deep_work" → "Deep Work"). */
@@ -63,9 +71,14 @@ export function useToday(): UseTodayResult {
   const hydrate = useCalibrationStore((s) => s.hydrate);
   const statsByCategory = useCalibrationStore((s) => s.statsByCategory);
   const loadTodayReclaimMin = useCalibrationStore((s) => s.loadTodayReclaimMin);
+  const loadReclaimSummary = useCalibrationStore((s) => s.loadReclaimSummary);
   const tasks = useTasksStore((s) => s.tasks);
 
   const [todayReclaimMin, setTodayReclaimMin] = useState(0);
+  const [companionStage, setCompanionStage] = useState<CompanionStage>(1);
+  const [companionSeed, setCompanionSeed] = useState(1);
+  const [reclaimLifetimeMin, setReclaimLifetimeMin] = useState(0);
+  const [lifetimeNectar, setLifetimeNectar] = useState(0);
 
   // Warm the per-category stats cache on mount (instant once hydrated).
   useEffect(() => {
@@ -84,6 +97,24 @@ export function useToday(): UseTodayResult {
         active = false;
       };
     }, [loadTodayReclaimMin]),
+  );
+
+  // Companion presence + lifetime reclaim drive the HUD bee and the daily-empty
+  // proof line. Re-read on focus so a fresh deposit / tier-up shows on return.
+  useFocusEffect(
+    useCallback(() => {
+      let active = true;
+      void loadReclaimSummary().then((s) => {
+        if (!active) return;
+        setCompanionStage(s.companion.stage);
+        setCompanionSeed(s.companion.seed);
+        setReclaimLifetimeMin(s.lifetimeMin);
+        setLifetimeNectar(s.companion.lifetimeNectar);
+      });
+      return () => {
+        active = false;
+      };
+    }, [loadReclaimSummary]),
   );
 
   // Resolve a task's honest suggestion from its category's learned bias (or the
@@ -170,5 +201,17 @@ export function useToday(): UseTodayResult {
     });
   }, [focus, honestMin, todayReclaimMin]);
 
-  return { focus, summary, upNext, done, totalCount: tasks.length, categoryName, todayReclaimMin };
+  return {
+    focus,
+    summary,
+    upNext,
+    done,
+    totalCount: tasks.length,
+    categoryName,
+    todayReclaimMin,
+    companionStage,
+    companionSeed,
+    reclaimLifetimeMin,
+    hasEverLogged: lifetimeNectar > 0,
+  };
 }
