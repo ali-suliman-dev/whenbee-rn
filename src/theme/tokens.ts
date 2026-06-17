@@ -220,6 +220,8 @@ export const tokens = {
     ray: { count: 18, opacity: 0.85, opacityAlt: 0.4 },
     stage: 240, // ray-burst stage edge (square)
     bee: 168, // mascot size inside a hero burst (fits the 240 stage → no layout push)
+    stageReward: 190, // reward-modal stage — a calmer crest, not a hero (reward only)
+    beeReward: 120, // reward-modal mascot size inside the 190 stage (reward only)
     beeFloat: 5, // ± vertical bee drift (calm ambient)
     coinBob: 3, // ± coin bob
     coinLift: 10, // coin mount-pop lift
