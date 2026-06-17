@@ -141,19 +141,34 @@ export function useToday(): UseTodayResult {
   // started now (the same number Today shows). No-op in Expo Go / tests.
   const honestMin = summary?.honestMinutes ?? null;
   useEffect(() => {
+    const now = Date.now();
+    const epoch = Math.round(now / 1000);
+    // No next task: show the calm evening "got ahead of Nm" state when there's
+    // reclaim to celebrate, otherwise clear to the quiet empty widget.
     if (!focus || honestMin === null) {
-      clearWidgetSnapshot();
+      if (todayReclaimMin > 0) {
+        publishWidgetSnapshot({
+          nextTaskLabel: '',
+          category: '',
+          honestFinishClock: '',
+          startDeepLink: '',
+          reclaimTodayMin: todayReclaimMin,
+          updatedAtEpoch: epoch,
+        });
+      } else {
+        clearWidgetSnapshot();
+      }
       return;
     }
-    const now = Date.now();
     publishWidgetSnapshot({
       nextTaskLabel: focus.label,
       category: categoryName(focus.category),
       honestFinishClock: formatClock(projectedFinish(now, honestMin)),
       startDeepLink: `whenbee://timer?taskId=${focus.id}`,
-      updatedAtEpoch: Math.round(now / 1000),
+      reclaimTodayMin: todayReclaimMin,
+      updatedAtEpoch: epoch,
     });
-  }, [focus, honestMin]);
+  }, [focus, honestMin, todayReclaimMin]);
 
   return { focus, summary, upNext, done, totalCount: tasks.length, categoryName, todayReclaimMin };
 }
