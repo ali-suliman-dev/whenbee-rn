@@ -106,10 +106,14 @@ export const tokens = {
     // drift = one full revolution of the RayBurst sunburst. Slow enough to stay
     // calm, fast enough to read as clearly moving (a wedge passes ~every 0.8s).
     drift: 14000,
+    // Whenbee-hub ring beats (calm, decelerating). ringFill = entrance/log fill;
+    // capFill = the slower ceremonial cap fill; strokePop = the landing thicken;
+    // sealSeq = the cap seal-stamp + ripples window; ripple = one outline ripple.
+    ringFill: 1600, capFill: 1900, strokePop: 620, sealSeq: 1650, ripple: 720,
     // Shared physics — deduped from AppButton + FAB.
     spring: { damping: 13, stiffness: 340 },
     // Named curves — declared once, not re-typed per file.
-    easing: { standard: Easing.bezier(0.4, 0, 0.2, 1), calm: Easing.inOut(Easing.sin) },
+    easing: { standard: Easing.bezier(0.4, 0, 0.2, 1), calm: Easing.inOut(Easing.sin), honey: Easing.bezier(0.22, 1, 0.36, 1) },
   },
 
   colors: {
@@ -164,6 +168,7 @@ export const tokens = {
       nightSoft: '#2C2E40',
       onIndigo: '#FFFFFF', // text on indigo fill (AA 5.1:1 — warm white only hit 4.37)
       onAmber: '#20233A', // text on amber fill (AA 7.9:1)
+      ringTrack: '#E4DFD3', // sits just off cream
 
       // ── backward-compat aliases (template keys) ──
       text: '#20233A',
@@ -219,6 +224,7 @@ export const tokens = {
       nightSoft: '#2C2E40',
       onIndigo: '#14151D', // dark text on the lighter dark-mode indigo (AA)
       onAmber: '#20233A',
+      ringTrack: 'rgba(255,255,255,0.08)',
 
       // ── backward-compat aliases ──
       text: '#F4F1EA',
@@ -246,6 +252,16 @@ export const tokens = {
     coinLift: 10, // coin mount-pop lift
     coinEdge: 4, // coin button-edge depth (cf. AppButton)
   },
+
+  // Honey ring (Whenbee hub hero). Geometry only — mode-independent like `burst`.
+  // size = SVG square edge; stroke = ring weight; popStroke/capStroke = the
+  // momentary thickening on a fill-landing / cap; endowedPct = the tiny starting
+  // sliver shown at Raw so a fresh ring is never a cold 0.
+  ring: { size: 200, stroke: 9, popStroke: 11, capStroke: 13, endowedPct: 6 },
+  // Wax-seal hex stamped over the bee at the Honest cap (flat-top hexagon WIDTH).
+  seal: { size: 38 },
+  // Flat motes flicked outward on the cap (solid squares — no glow).
+  mote: { size: 5, count: 8, distance: 96 },
 
   // Companion presence — the 6-stage Whenbee growth (Part 2 Group E). Both scales
   // are indexed by stage 1..6 (array index = stage - 1). They are pure geometry, so
