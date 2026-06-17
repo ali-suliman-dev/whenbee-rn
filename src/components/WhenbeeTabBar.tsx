@@ -161,7 +161,8 @@ function TabItem({
       onPress={onPress}
       onPressIn={handlePressIn}
       onPressOut={handlePressOut}
-      accessibilityRole="button"
+      accessibilityRole="tab"
+      accessibilityLabel={label}
       accessibilityState={{ selected: focused }}
       style={{ flex: 1 }}
     >

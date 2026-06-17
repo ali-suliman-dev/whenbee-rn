@@ -133,12 +133,12 @@ export function TierTrail({ nodes }: { nodes: TrailNode[] }) {
                 numberOfLines={1}
                 adjustsFontSizeToFit
                 style={{
-                  fontSize: 10,
-                  lineHeight: 13,
+                  fontSize: t.fontSize.xs,
+                  lineHeight: t.fontSize.xs * t.lineHeight.normal,
                   color:
                     node.state === 'lock' ? t.colors.inkSoft : t.colors.ink,
                   textAlign: 'center',
-                  width: 60,
+                  width: t.size.timelineCol * 0.55,
                 }}
               >
                 {node.label}

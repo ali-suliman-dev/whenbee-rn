@@ -24,7 +24,13 @@ function filledSteps(confidence: CalibrationConfidence): number {
   return 1;
 }
 
-function ConfidenceDial({ confidence }: { confidence: CalibrationConfidence }) {
+function ConfidenceDial({
+  confidence,
+  categoryName,
+}: {
+  confidence: CalibrationConfidence;
+  categoryName: string;
+}) {
   const t = useTheme();
   const lit = filledSteps(confidence);
   const dial: ViewStyle = { flexDirection: 'row', alignItems: 'center', gap: t.space[1] };
@@ -37,7 +43,7 @@ function ConfidenceDial({ confidence }: { confidence: CalibrationConfidence }) {
     <View
       style={dial}
       accessibilityRole="progressbar"
-      accessibilityLabel={`Readiness: ${lit} of 3`}
+      accessibilityLabel={`${categoryName} readiness: ${confidence}, ${lit} of 3`}
     >
       {DIAL_STEPS.map((step, i) => (
         <View
@@ -86,7 +92,7 @@ export function CalibrationMap({ rows }: { rows: CalibrationMapRow[] }) {
               <Text style={name} numberOfLines={1}>
                 {r.categoryName}
               </Text>
-              <ConfidenceDial confidence={r.confidence} />
+              <ConfidenceDial confidence={r.confidence} categoryName={r.categoryName} />
               <Text style={sub}>
                 {r.sampleSize} {r.sampleSize === 1 ? 'log' : 'logs'} · runs {r.multiplier.toFixed(1)}×
               </Text>

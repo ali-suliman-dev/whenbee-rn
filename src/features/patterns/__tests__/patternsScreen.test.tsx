@@ -89,7 +89,7 @@ describe('Patterns screen', () => {
       expect(screen.getByText('YOUR HONEST MAP')).toBeOnTheScreen();
     });
     // Dial exposes its filled-step count via the progressbar label (honest = 3 of 3).
-    expect(screen.getByLabelText('Readiness: 3 of 3')).toBeOnTheScreen();
+    expect(screen.getByLabelText('Admin & email readiness: honest, 3 of 3')).toBeOnTheScreen();
     // Warm, no-guilt framing line (single honest area).
     expect(screen.getByText('One area reads honest now. The rest are catching up.')).toBeOnTheScreen();
   });
@@ -116,7 +116,7 @@ describe('Patterns screen', () => {
       expect(screen.getByText('YOUR HONEST MAP')).toBeOnTheScreen();
     });
     // raw → only the first pip lit (1 of 3).
-    expect(screen.getByLabelText('Readiness: 1 of 3')).toBeOnTheScreen();
+    expect(screen.getByLabelText('admin readiness: raw, 1 of 3')).toBeOnTheScreen();
     expect(
       screen.getByText('Your areas are still settling. A few more logs and the numbers sharpen.'),
     ).toBeOnTheScreen();

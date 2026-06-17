@@ -225,7 +225,12 @@ export default function Reward() {
         <View style={ctaBlock}>
           <Text style={ritualText}>{r.ritualLine}</Text>
           <AppButton label="See my Reclaim" variant="indigo" fullWidth onPress={r.onSeeWhenbee} />
-          <Pressable accessibilityRole="button" onPress={r.onBackToToday} style={quietExit}>
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel="Back to today"
+            onPress={r.onBackToToday}
+            style={quietExit}
+          >
             <AppText style={quietExitText}>Back to today</AppText>
           </Pressable>
         </View>

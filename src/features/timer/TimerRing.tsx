@@ -102,9 +102,15 @@ export function TimerRing({
     // AnimatedNumeral colour flips to amber on overrun internally.
   };
 
+  const targetMin = Math.max(1, Math.round(estimateSec / 60));
+
   return (
-    <View style={stage}>
-      <Svg width={SIZE} height={SIZE}>
+    <View
+      style={stage}
+      accessibilityRole="timer"
+      accessibilityLabel={`Timer running. Honest target about ${targetMin} ${targetMin === 1 ? 'minute' : 'minutes'}. Elapsed time is shown in the center.`}
+    >
+      <Svg width={SIZE} height={SIZE} accessible={false}>
         {/* Track ring (hairline) */}
         <Circle
           cx={CX}
