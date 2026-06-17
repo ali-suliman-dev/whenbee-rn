@@ -11,8 +11,10 @@ import Animated, {
 import { useReorderableDrag } from 'react-native-reorderable-list';
 import { useTheme } from '@/src/theme/useTheme';
 import { AppText } from '@/src/components/AppText';
+import { AppButton } from '@/src/components/AppButton';
 import { DurationWheel } from './DurationWheel';
 import { formatClock } from '@/src/lib/time';
+import type { PlanTaskStatus } from '@/src/domain/types';
 
 // ──────────────────────────────────────────────────────────────────────────────
 // PlanTaskCard — one task row rendered inside the Build or Run list.
@@ -55,6 +57,24 @@ export interface PlanTaskCardProps {
   onDurationChange?: (min: number) => void;
   /** Called when the user deletes this task (build only). */
   onDelete?: (id: string) => void;
+
+  // ── Run-variant props ──────────────────────────────────────────────────────
+  /** Run lifecycle status for the run variant. */
+  runStatus?: PlanTaskStatus;
+  /** Actual minutes logged when status === 'done'. */
+  actualMin?: number;
+  /** Progress 0–1 for the now card's progress bar. */
+  progress?: number;
+  /**
+   * Called when the user taps "Open timer" on the now card.
+   * Task 12 will wire this to the timer screen navigation.
+   */
+  onOpenTimer?: (id: string) => void;
+  /**
+   * Called when the user taps ▶ on an upcoming card.
+   * Task 12 will wire this to start the timer for this task.
+   */
+  onStart?: (id: string) => void;
 }
 
 // ── Delete reveal background ──────────────────────────────────────────────────
@@ -282,6 +302,324 @@ function BuildCard({
   return <View style={{ marginBottom: t.space[2] }}>{cardFace}</View>;
 }
 
+// ── Run: done card ────────────────────────────────────────────────────────────
+
+function DoneRunCard({
+  label,
+  category,
+  actualMin,
+}: {
+  label: string;
+  category: string;
+  actualMin?: number;
+}) {
+  const t = useTheme();
+
+  const cardStyle: ViewStyle = {
+    backgroundColor: t.colors.surface,
+    borderWidth: t.borderWidth.card,
+    borderColor: t.colors.hairline,
+    borderRadius: t.radii.card,
+    borderCurve: 'continuous',
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: t.space[3],
+    paddingVertical: t.space[3],
+    gap: t.space[3],
+    opacity: t.opacity.disabled,
+  };
+
+  const bodyStyle: ViewStyle = {
+    flex: 1,
+    minWidth: 0,
+    gap: t.space[0.5],
+  };
+
+  const titleStyle: TextStyle = {
+    fontSize: t.fontSize.bodySm,
+    fontWeight: t.fontWeight.bold as TextStyle['fontWeight'],
+    color: t.colors.ink,
+    textDecorationLine: 'line-through',
+    textDecorationColor: t.colors.inkFaint,
+  };
+
+  const metaStyle: TextStyle = {
+    fontSize: t.fontSize.xs,
+    color: t.colors.inkSoft,
+  };
+
+  const loggedText =
+    actualMin !== undefined && actualMin > 0 ? `logged ${actualMin}m` : '';
+
+  return (
+    <View style={cardStyle}>
+      <View style={bodyStyle}>
+        <AppText style={titleStyle} numberOfLines={1}>
+          {label}
+        </AppText>
+        <AppText style={metaStyle} numberOfLines={1}>
+          {category}
+          {loggedText.length > 0 ? ` · ${loggedText}` : ''}
+        </AppText>
+      </View>
+    </View>
+  );
+}
+
+// ── Run: now card (pinned, no drag, no swipe) ─────────────────────────────────
+
+function NowRunCard({
+  id,
+  label,
+  category,
+  endAt,
+  progress = 0,
+  onOpenTimer,
+}: {
+  id: string;
+  label: string;
+  category: string;
+  endAt?: number;
+  progress?: number;
+  onOpenTimer?: (id: string) => void;
+}) {
+  const t = useTheme();
+
+  const cardStyle: ViewStyle = {
+    backgroundColor: t.colors.surfaceRaised,
+    borderWidth: t.borderWidth.thick,
+    borderColor: t.colors.primary,
+    borderRadius: t.radii.card,
+    borderCurve: 'continuous',
+    flexDirection: 'column',
+    paddingHorizontal: t.space[3],
+    paddingVertical: t.space[3],
+    gap: t.space[2],
+    // Platform-safe soft elevation (no boxShadow)
+    ...({
+      ios: {
+        shadowColor: t.colors.shadowSoft,
+        shadowOffset: { width: 0, height: t.shadow.sm.offset },
+        shadowOpacity: t.shadow.sm.opacity,
+        shadowRadius: t.shadow.sm.radius,
+      },
+      android: {
+        elevation: 3,
+      },
+    } as ViewStyle),
+  };
+
+  const headStyle: ViewStyle = {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  };
+
+  const runTagStyle: TextStyle = {
+    fontSize: t.fontSize.xs,
+    fontWeight: t.fontWeight.bold as TextStyle['fontWeight'],
+    color: t.colors.primary,
+    letterSpacing: 0.8,
+  };
+
+  const lockStyle: TextStyle = {
+    fontSize: t.fontSize.sm,
+    color: t.colors.inkFaint,
+  };
+
+  const titleStyle: TextStyle = {
+    fontSize: t.fontSize.bodyLg,
+    fontWeight: t.fontWeight.bold as TextStyle['fontWeight'],
+    color: t.colors.ink,
+  };
+
+  const metaStyle: TextStyle = {
+    fontSize: t.fontSize.xs,
+    color: t.colors.inkSoft,
+    marginTop: t.space[0.5],
+  };
+
+  const doneAtText = endAt !== undefined ? `done ~${formatClock(endAt)}` : '';
+
+  const progressTrackStyle: ViewStyle = {
+    height: t.progress.track,
+    backgroundColor: t.colors.surfaceSunken,
+    borderRadius: t.radii.full,
+    overflow: 'hidden',
+  };
+
+  const progressFillStyle: ViewStyle = {
+    height: '100%',
+    width: `${Math.min(100, Math.max(0, progress * 100))}%`,
+    backgroundColor: t.colors.primary,
+    borderRadius: t.radii.full,
+  };
+
+  return (
+    <View style={cardStyle}>
+      {/* Head: running tag + lock */}
+      <View style={headStyle}>
+        <AppText style={runTagStyle}>● RUNNING</AppText>
+        <AppText style={lockStyle}>🔒</AppText>
+      </View>
+
+      {/* Task identity */}
+      <View>
+        <AppText style={titleStyle} numberOfLines={1}>
+          {label}
+        </AppText>
+        <AppText style={metaStyle} numberOfLines={1}>
+          {category}
+          {doneAtText.length > 0 ? ` · ${doneAtText}` : ''}
+        </AppText>
+      </View>
+
+      {/* Progress bar */}
+      <View style={progressTrackStyle}>
+        <View style={progressFillStyle} />
+      </View>
+
+      {/* Open timer button — Task 12 wires the actual navigation */}
+      <AppButton
+        label="Open timer"
+        variant="indigo"
+        size="sm"
+        fullWidth
+        onPress={() => onOpenTimer?.(id)}
+      />
+    </View>
+  );
+}
+
+// ── Run: next (upcoming) card ─────────────────────────────────────────────────
+
+function NextRunCard({
+  id,
+  label,
+  category,
+  durationMin,
+  onStart,
+}: {
+  id: string;
+  label: string;
+  category: string;
+  durationMin: number;
+  onStart?: (id: string) => void;
+}) {
+  const t = useTheme();
+  const drag = useReorderableDrag();
+
+  const cardStyle: ViewStyle = {
+    backgroundColor: t.colors.surface,
+    borderWidth: t.borderWidth.card,
+    borderColor: t.colors.hairline,
+    borderRadius: t.radii.card,
+    borderCurve: 'continuous',
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: t.space[3],
+    paddingVertical: t.space[3],
+    gap: t.space[3],
+    minHeight: t.size.planCardMin,
+  };
+
+  const dragHandleStyle: ViewStyle = {
+    paddingHorizontal: t.space[1],
+    justifyContent: 'center',
+    alignItems: 'center',
+    gap: t.space[1],
+  };
+
+  const gripLineStyle: ViewStyle = {
+    width: t.size.gripW,
+    height: t.space[0.5],
+    backgroundColor: t.colors.inkFaint,
+    borderRadius: t.radii.full,
+  };
+
+  const bodyStyle: ViewStyle = {
+    flex: 1,
+    minWidth: 0,
+    gap: t.space[0.5],
+  };
+
+  const titleStyle: TextStyle = {
+    fontSize: t.fontSize.bodySm,
+    fontWeight: t.fontWeight.bold as TextStyle['fontWeight'],
+    color: t.colors.ink,
+  };
+
+  const categoryStyle: TextStyle = {
+    fontSize: t.fontSize.xs,
+    color: t.colors.inkSoft,
+  };
+
+  const durationStyle: TextStyle = {
+    fontFamily: t.fontFamily.mono,
+    fontSize: t.fontSize.sm,
+    color: t.colors.inkSoft,
+    flexShrink: 0,
+  };
+
+  const startButtonStyle: ViewStyle = {
+    width: t.size.control.md,
+    height: t.size.control.md,
+    borderRadius: t.radii.full,
+    backgroundColor: t.colors.primarySoft,
+    borderWidth: t.borderWidth.thick,
+    borderColor: t.colors.primary,
+    justifyContent: 'center',
+    alignItems: 'center',
+    flexShrink: 0,
+  };
+
+  const startIconStyle: TextStyle = {
+    fontSize: t.fontSize.sm,
+    color: t.colors.primary,
+  };
+
+  return (
+    <Pressable
+      onLongPress={drag}
+      accessibilityRole="button"
+      accessibilityLabel={`${label}, ${durationMin} minutes. Long press to reorder.`}
+      delayLongPress={200}
+    >
+      <View style={cardStyle}>
+        {/* Drag handle */}
+        <View style={dragHandleStyle} accessibilityElementsHidden>
+          <View style={gripLineStyle} />
+          <View style={gripLineStyle} />
+          <View style={gripLineStyle} />
+        </View>
+
+        {/* Task body */}
+        <View style={bodyStyle}>
+          <AppText style={titleStyle} numberOfLines={1}>
+            {label}
+          </AppText>
+          <AppText style={categoryStyle} numberOfLines={1}>
+            {category}
+          </AppText>
+        </View>
+
+        {/* Duration */}
+        <AppText style={durationStyle}>{`${durationMin}m`}</AppText>
+
+        {/* Start button — Task 12 wires the actual timer start */}
+        <Pressable
+          onPress={() => onStart?.(id)}
+          accessibilityRole="button"
+          accessibilityLabel={`Start ${label}`}
+          style={startButtonStyle}
+        >
+          <AppText style={startIconStyle}>▶</AppText>
+        </Pressable>
+      </View>
+    </Pressable>
+  );
+}
+
 // ── Main export ───────────────────────────────────────────────────────────────
 
 export function PlanTaskCard(props: PlanTaskCardProps) {
@@ -290,7 +628,45 @@ export function PlanTaskCard(props: PlanTaskCardProps) {
     return <BuildCard {...rest} />;
   }
 
-  // Run variant — Task 10 will implement this; we return null for now so the
-  // component tree compiles without a missing-return TS error.
-  return null;
+  // Run variant — three sub-states: done | now (running) | next (upcoming)
+  const {
+    id,
+    label,
+    category,
+    durationMin,
+    endAt,
+    runStatus = 'upcoming',
+    actualMin,
+    progress,
+    onOpenTimer,
+    onStart,
+  } = props;
+
+  if (runStatus === 'done') {
+    return <DoneRunCard label={label} category={category} actualMin={actualMin} />;
+  }
+
+  if (runStatus === 'running') {
+    return (
+      <NowRunCard
+        id={id}
+        label={label}
+        category={category}
+        endAt={endAt}
+        progress={progress}
+        onOpenTimer={onOpenTimer}
+      />
+    );
+  }
+
+  // upcoming
+  return (
+    <NextRunCard
+      id={id}
+      label={label}
+      category={category}
+      durationMin={durationMin}
+      onStart={onStart}
+    />
+  );
 }
