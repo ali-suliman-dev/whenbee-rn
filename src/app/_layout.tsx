@@ -57,6 +57,28 @@ function RootNavigator() {
           headerShadowVisible: false,
         }}
       />
+      <Stack.Screen
+        name="categories"
+        options={{
+          headerShown: true,
+          title: 'Categories',
+          headerStyle: { backgroundColor: t.colors.bg },
+          headerTitleStyle: { color: t.colors.ink },
+          headerTintColor: t.colors.primary,
+          headerShadowVisible: false,
+        }}
+      />
+      <Stack.Screen
+        name="privacy"
+        options={{
+          headerShown: true,
+          title: 'Privacy',
+          headerStyle: { backgroundColor: t.colors.bg },
+          headerTitleStyle: { color: t.colors.ink },
+          headerTintColor: t.colors.primary,
+          headerShadowVisible: false,
+        }}
+      />
       <Stack.Screen name="(modals)" options={{ presentation: 'modal' }} />
     </Stack>
   );

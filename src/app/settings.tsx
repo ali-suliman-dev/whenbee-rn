@@ -1,30 +1,58 @@
-import { View, Text, Pressable, type ViewStyle, type TextStyle } from 'react-native';
+import { useCallback, useState, type ReactNode } from 'react';
+import { View, Text, Pressable, Switch, type ViewStyle, type TextStyle } from 'react-native';
 import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { Screen } from '@/src/components/Screen';
 import { AppText } from '@/src/components/AppText';
 import { Chip } from '@/src/components/Chip';
+import { Toast, AUTO_HIDE_MS } from '@/src/components/Toast';
 import { useTheme } from '@/src/theme/useTheme';
 import { type } from '@/src/theme/typography';
 import { useSettingsStore, type ColorModePref } from '@/src/stores/settingsStore';
+import { useCategoriesStore } from '@/src/stores/categoriesStore';
 import { useEntitlement } from '@/src/features/paywall/useEntitlement';
+import { useAccountActions, type RestoreOutcome } from '@/src/features/paywall/useAccountActions';
+import { useReminderSetting } from '@/src/features/settings/useReminderSetting';
 
 const modes: ColorModePref[] = ['system', 'light', 'dark'];
 
-export default function Settings() {
+const RESTORE_MESSAGE: Record<RestoreOutcome, string> = {
+  success: 'Pro restored.',
+  none: 'No earlier purchase found.',
+  error: "Couldn't reach the store — try again.",
+};
+
+const REMINDER_DENIED = 'Allow notifications in iOS Settings to get reminders.';
+
+type IconName = keyof typeof Ionicons.glyphMap;
+
+/**
+ * One Settings row: leading icon, title + optional note, and a trailing control —
+ * a chevron when the row navigates, or any `trailing` node (e.g. a Switch) when it
+ * doesn't. Every row shares this shape so titles and notes line up down the list.
+ */
+function SettingRow({
+  icon,
+  title,
+  note,
+  onPress,
+  tint,
+  disabled,
+  trailing,
+  accessibilityLabel,
+}: {
+  icon: IconName;
+  title: string;
+  note?: string;
+  onPress?: () => void;
+  tint?: string;
+  disabled?: boolean;
+  trailing?: ReactNode;
+  accessibilityLabel?: string;
+}) {
   const t = useTheme();
-  const { colorMode, setColorMode } = useSettingsStore();
-  const isPro = useEntitlement((s) => s.isPro);
 
-  function openPaywall() {
-    router.push({ pathname: '/(modals)/paywall', params: { trigger: 'settings_upgrade' } });
-  }
-
-  function openHonestDay() {
-    router.push('/(modals)/honest-day');
-  }
-
-  const upgradeRow: ViewStyle = {
+  const row: ViewStyle = {
     flexDirection: 'row',
     alignItems: 'center',
     gap: t.space[3],
@@ -36,34 +64,146 @@ export default function Settings() {
     borderCurve: 'continuous',
     paddingHorizontal: t.space[4],
     paddingVertical: t.space[3],
+    opacity: disabled ? 0.5 : 1,
   };
-  const upgradeTitle: TextStyle = { ...(type.bodyLg as unknown as TextStyle), color: t.colors.ink };
-  const upgradeNote: TextStyle = { ...(type.caption as unknown as TextStyle), color: t.colors.inkSoft };
+  const titleStyle: TextStyle = { ...(type.bodyLg as unknown as TextStyle), color: t.colors.ink };
+  const noteStyle: TextStyle = { ...(type.caption as unknown as TextStyle), color: t.colors.inkSoft };
+
+  const content = (
+    <>
+      <Ionicons name={icon} size={t.iconSize.md} color={tint ?? t.colors.inkSoft} />
+      <View style={{ flex: 1, gap: t.space[0.5] }}>
+        <Text style={titleStyle}>{title}</Text>
+        {note ? <Text style={noteStyle}>{note}</Text> : null}
+      </View>
+      {trailing ?? (
+        <Ionicons name="chevron-forward" size={t.iconSize.sm} color={t.colors.inkSoft} />
+      )}
+    </>
+  );
+
+  // No onPress → a static row (the trailing control is the only interactive part).
+  if (!onPress) {
+    return <View style={row}>{content}</View>;
+  }
+
+  return (
+    <Pressable
+      onPress={onPress}
+      disabled={disabled}
+      accessibilityRole="button"
+      accessibilityState={{ disabled: !!disabled }}
+      accessibilityLabel={accessibilityLabel ?? title}
+      style={row}
+    >
+      {content}
+    </Pressable>
+  );
+}
+
+export default function Settings() {
+  const t = useTheme();
+  const { colorMode, setColorMode } = useSettingsStore();
+  const isPro = useEntitlement((s) => s.isPro);
+  const categoryCount = useCategoriesStore((s) => s.categories.length);
+  const { restoring, manageSubscription, restorePurchases } = useAccountActions();
+  const { enabled: remindersEnabled, toggle: toggleReminders } = useReminderSetting();
+
+  const [toastMsg, setToastMsg] = useState('');
+  const [toastVisible, setToastVisible] = useState(false);
+
+  const showToast = useCallback((message: string) => {
+    setToastMsg(message);
+    setToastVisible(true);
+    setTimeout(() => setToastVisible(false), AUTO_HIDE_MS);
+  }, []);
+
+  function openPaywall() {
+    router.push({ pathname: '/(modals)/paywall', params: { trigger: 'settings_upgrade' } });
+  }
+
+  function openHonestDay() {
+    router.push('/(modals)/honest-day');
+  }
+
+  async function handleRestore() {
+    if (restoring) return;
+    const outcome = await restorePurchases();
+    showToast(RESTORE_MESSAGE[outcome]);
+  }
+
+  async function handleToggleReminders(next: boolean) {
+    const ok = await toggleReminders(next);
+    if (next && !ok) showToast(REMINDER_DENIED);
+  }
 
   return (
     <Screen>
       <View style={{ gap: t.space[6], paddingTop: t.space[4] }}>
         <View style={{ gap: t.space[3] }}>
           <AppText variant="label">Whenbee Pro</AppText>
-          <Pressable
+          <SettingRow
+            icon="time-outline"
+            tint={t.colors.accent}
+            title="Make my whole day honest"
+            note={
+              isPro
+                ? "Map your real buffers onto today's calendar."
+                : 'Auto-pad your calendar with your real buffers.'
+            }
             onPress={isPro ? openHonestDay : openPaywall}
-            accessibilityRole="button"
             accessibilityLabel={
               isPro ? 'Make my whole day honest' : 'Go Pro and make your whole day honest'
             }
-            style={upgradeRow}
-          >
-            <Ionicons name="time-outline" size={t.iconSize.md} color={t.colors.accent} />
-            <View style={{ flex: 1, gap: t.space[0.5] }}>
-              <Text style={upgradeTitle}>Make my whole day honest</Text>
-              <Text style={upgradeNote}>
-                {isPro
-                  ? "Map your real buffers onto today's calendar."
-                  : 'Auto-pad your calendar with your real buffers.'}
-              </Text>
-            </View>
-            <Ionicons name="chevron-forward" size={t.iconSize.sm} color={t.colors.inkSoft} />
-          </Pressable>
+          />
+        </View>
+
+        <View style={{ gap: t.space[3] }}>
+          <AppText variant="label">Account</AppText>
+          {isPro ? (
+            <SettingRow
+              icon="card-outline"
+              title="Manage subscription"
+              note="Change your plan or cancel in the App Store."
+              onPress={manageSubscription}
+            />
+          ) : null}
+          <SettingRow
+            icon="refresh-outline"
+            title="Restore purchases"
+            note="Paid before? Bring your Pro access back."
+            onPress={handleRestore}
+            disabled={restoring}
+          />
+        </View>
+
+        <View style={{ gap: t.space[3] }}>
+          <AppText variant="label">General</AppText>
+          <SettingRow
+            icon="albums-outline"
+            title="Categories"
+            note={`${categoryCount} tracked`}
+            onPress={() => router.push('/categories')}
+          />
+          <SettingRow
+            icon="notifications-outline"
+            title="Time-up reminders"
+            note="One nudge when your honest estimate is up."
+            trailing={
+              <Switch
+                value={remindersEnabled}
+                onValueChange={handleToggleReminders}
+                trackColor={{ true: t.colors.primary, false: t.colors.hairline }}
+                accessibilityLabel="Time-up reminders"
+              />
+            }
+          />
+          <SettingRow
+            icon="lock-closed-outline"
+            title="Privacy"
+            note="What stays on your phone."
+            onPress={() => router.push('/privacy')}
+          />
         </View>
 
         <View style={{ gap: t.space[3] }}>
@@ -75,6 +215,7 @@ export default function Settings() {
           </View>
         </View>
       </View>
+      <Toast message={toastMsg} visible={toastVisible} />
     </Screen>
   );
 }

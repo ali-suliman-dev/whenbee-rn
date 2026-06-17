@@ -92,6 +92,7 @@ export interface AppEventProps {
   trial_started: { plan: string; price: number; result: string };
   purchase: { plan: string; price: number; result: string };
   restore_purchases: { plan?: string; price?: number; result: string };
+  manage_subscription: { source: 'settings' | 'paywall' };
 
   // ── On-device share ──────────────────────────────────────────────────────────
   plan_shared: { surface: 'plan' | 'archetype'; is_pro: boolean; result: 'shared' | 'gated' | 'error' };

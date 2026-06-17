@@ -12,6 +12,7 @@ import { useCalibrationStore } from '@/src/stores/calibrationStore';
 import { useCategoriesStore } from '@/src/stores/categoriesStore';
 import { useTasksStore } from '@/src/stores/tasksStore';
 import { useRewardStore } from '@/src/stores/rewardStore';
+import { useSettingsStore } from '@/src/stores/settingsStore';
 import { projectedFinish, formatClock } from '@/src/lib/time';
 import { analytics } from '@/src/services/analytics';
 import {
@@ -133,10 +134,14 @@ export function useTimer(params: TimerParams): UseTimerResult {
       taskLabel: label,
       finishEpoch: Math.round(projectedFinish(startedAt, suggestedHonestMin) / 1000),
     });
-    void (async () => {
-      const granted = await ensureNotificationPermission();
-      if (granted) await scheduleTimerDone({ label, startedAt, estimateMin });
-    })();
+    // Only schedule the "estimate is up" ping when the user has opted into
+    // reminders (off by default). Read non-reactively — this effect runs once.
+    if (useSettingsStore.getState().remindersEnabled) {
+      void (async () => {
+        const granted = await ensureNotificationPermission();
+        if (granted) await scheduleTimerDone({ label, startedAt, estimateMin });
+      })();
+    }
     // Runs exactly once for a fresh session; route params are stable for the
     // component's lifetime, so an empty dep list is correct here.
     // eslint-disable-next-line react-hooks/exhaustive-deps

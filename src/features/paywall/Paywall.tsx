@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { View, Text, ScrollView, Pressable, Linking, type ViewStyle, type TextStyle } from 'react-native';
+import { View, Text, ScrollView, Pressable, type ViewStyle, type TextStyle } from 'react-native';
 import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { Screen } from '@/src/components/Screen';
@@ -17,6 +17,7 @@ import { useFounderReserve } from './useFounderReserve';
 import { BeforeAfterHero } from './BeforeAfterHero';
 import { FounderReserveCard } from './FounderReserveCard';
 import { PlanPicker } from './PlanPicker';
+import { openManageSubscriptions } from './manageSubscription';
 
 // ──────────────────────────────────────────────────────────────────────────────
 // Paywall — Whenbee's single Pro gate. The same flat-card vocabulary as Today:
@@ -32,8 +33,6 @@ import { PlanPicker } from './PlanPicker';
 // once on mount. `plan_selected` fires on each plan tap; trial/purchase/restore
 // outcomes come from the entitlement result.
 // ──────────────────────────────────────────────────────────────────────────────
-
-const APPLE_MANAGE_SUBS_URL = 'https://apps.apple.com/account/subscriptions';
 
 type Trigger = 'make_day_honest' | 'settings_upgrade' | 'steals_your_time';
 
@@ -159,7 +158,8 @@ export function Paywall({ trigger, readiness = 'pre' }: { trigger?: string; read
   }
 
   function handleManage() {
-    void Linking.openURL(APPLE_MANAGE_SUBS_URL).catch(() => {});
+    analytics.capture('manage_subscription', { source: 'paywall' });
+    openManageSubscriptions();
   }
 
   // CTA label tracks the selection: trial verb for subs, one-time verb for lifetime.
@@ -259,10 +259,20 @@ export function Paywall({ trigger, readiness = 'pre' }: { trigger?: string; read
             </Text>
 
             <View style={linkRow}>
-              <Pressable onPress={handleRestore} accessibilityRole="button" disabled={busy}>
+              <Pressable
+                onPress={handleRestore}
+                accessibilityRole="button"
+                accessibilityLabel="Restore purchases"
+                accessibilityState={{ disabled: busy }}
+                disabled={busy}
+              >
                 <Text style={linkText}>Restore</Text>
               </Pressable>
-              <Pressable onPress={handleManage} accessibilityRole="button">
+              <Pressable
+                onPress={handleManage}
+                accessibilityRole="button"
+                accessibilityLabel="Manage your subscription"
+              >
                 <Text style={linkText}>Manage subscription</Text>
               </Pressable>
             </View>
