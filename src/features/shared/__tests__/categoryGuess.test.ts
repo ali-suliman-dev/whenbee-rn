@@ -145,6 +145,17 @@ describe('bankAssociation', () => {
     expect(map).toEqual({});
   });
 
+  it('does not mutate a nested record of a pre-populated map', () => {
+    const original: LearnedMap = { gym: { fitness: { count: 1, lastSeq: 1 } } };
+    const next = bankAssociation(original, 'gym', 'fitness', 5);
+    // original is untouched...
+    expect(original.gym?.fitness).toEqual({ count: 1, lastSeq: 1 });
+    // ...and the returned map has the bumped, freshly-cloned record
+    expect(next.gym?.fitness).toEqual({ count: 2, lastSeq: 5 });
+    expect(next).not.toBe(original);
+    expect(next.gym).not.toBe(original.gym);
+  });
+
   it('is a no-op for an all-stopword title', () => {
     const map: LearnedMap = { gym: { fitness: { count: 1, lastSeq: 1 } } };
     expect(bankAssociation(map, 'to the', 'errands', 9)).toBe(map);
