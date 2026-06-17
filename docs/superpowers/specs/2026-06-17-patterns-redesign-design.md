@@ -46,9 +46,20 @@ The screen renders, in order:
 
 Rules:
 - A **section header renders only if it has at least one visible child** (no empty labels).
-- The **prediction card** (S7) stays off Patterns — it lives on Today/Timer (`03-FEATURES.md` §4.1). Remove it from the Patterns scroll (currently rendered there).
+- The **prediction card** (S7) stays off Patterns — it lives on Today/Timer (`03-FEATURES.md` §4.1). Remove it from the Patterns scroll. See §3.1 for the relocation (already mostly wired; copy-only on the Timer).
 - `WeeklyReview` keeps its place at the top of the scroll **above the hero only when due** (weekly modal cadence unchanged); otherwise not shown. It is not a section.
 - Calibration map: when earned → a normal card under "Your growth"; when forming → a dial under "Still forming". One source, two presentations.
+
+### 3.1 Prediction (S7) relocation — remove from Patterns, reword the Timer
+
+**The sync already exists — do not rebuild it.** The honest number has one source: `resolveSuggestion(...).honestMinutes`, computed in `useToday` for the focus task. Today's `FocusCard` shows it; the Timer receives it as route params (`estimateMin` / `suggestedHonestMin`, persisted in `timerStore`) and already renders the reframe `guessed 15m · honest ~28m` during the run. The Reward screen already shows the finish reveal (`N min over/under your guess` + Reclaim's "closer than your guess"). FocusCard ↔ Timer ↔ Reward parity is guaranteed by construction — the Timer must **never recompute** the honest number.
+
+Therefore the relocation is small and additive:
+1. **Patterns:** delete the `PredictionCard` render + drop `prediction` from `PatternsView`. Nothing visible is lost (Today already carries the decision-moment number).
+2. **Timer:** **copy-only** reword of the existing during-run reframe into the playful S7 framing — `I bet ~28m · 1.9× your guess` — reusing the params already passed (`estimateMin`, `guessMin`). No new pre-start screen, no change to the auto-start/attach flow (`useTimer`). A redundant pre-start "bet" beat is explicitly **rejected** (it would duplicate the during-run reframe and risk the start flow — "no shuffling").
+3. **Reward:** unchanged (finish reveal already present).
+
+Copy passes `humanizer` + `conversion-psychology`; multiplier stays amber; no guilt framing.
 
 ## 4. The hero — `PatternsHero`
 
@@ -130,6 +141,8 @@ All user-facing strings pass `conversion-psychology` (clarity, motivation, antic
 - `usePatterns.ts` — add `forming: FormingProgress[]` + per-Pro readiness to `PatternsView` (pure derivations + tests). Remove `prediction` from the Patterns view (moves off-screen).
 - `PatternsEmpty.tsx` — restyled to a single calm illustrated hero (svg-illustration: a quiet geometric honeycomb/gauge motif, no creature).
 - `Archetype.tsx` — folded into `PatternsHero` (delete or thin to the earned-body render).
+- `PredictionCard.tsx` — deleted from Patterns (S7 relocation, §3.1).
+- `src/app/(modals)/timer.tsx` — **copy-only** reword of the during-run reframe to the S7 "I bet ~Nm · {M}× your guess" framing (§3.1). No logic/flow change; honest number stays the param already passed (no recompute).
 - The Pro locked components (`StealsYourTimeLocked`, `AccuracyCorrelationsLocked`, `ContextCorrelationsLocked`) — replaced by `ProReadinessCard` instances (delete or repoint).
 
 **Reused unchanged**
@@ -161,4 +174,5 @@ All user-facing strings pass `conversion-psychology` (clarity, motivation, antic
 4. `FormingDial` + "Still forming" wiring.
 5. `ProReadinessCard` + Pro earning home.
 6. Rebuild `patterns.tsx` spine; restyle `PatternsEmpty`; re-skin reused card bodies to the gauge motif.
-7. Copy pass (conversion-psychology + humanizer); a11y labels; lint/typecheck/test.
+7. S7 relocation (§3.1): delete `PredictionCard` + drop `prediction` from the view; copy-only Timer reword.
+8. Copy pass (conversion-psychology + humanizer); a11y labels; lint/typecheck/test.
