@@ -209,6 +209,93 @@ describe('planBackward — push-deadline verdict', () => {
   });
 });
 
+describe('breatherMin inserts', () => {
+  const deadline = Date.UTC(2026, 5, 17, 22, 52); // 22:52
+  const nowMs = Date.UTC(2026, 5, 17, 18, 0); // 18:00 — plenty of time
+  const base = {
+    deadline,
+    nowMs,
+    bufferMin: 0,
+    tasks: [
+      { id: 'a', label: 'A', category: 'x', durationMin: 30 },
+      { id: 'b', label: 'B', category: 'x', durationMin: 30 },
+      { id: 'c', label: 'C', category: 'x', durationMin: 30 },
+    ],
+  };
+
+  it('no breathers when breatherMin is 0', () => {
+    const r = planBackward({ ...base, breatherMin: 0 });
+    expect(r.timeline.filter((i) => i.kind === 'breather')).toHaveLength(0);
+    expect(r.timeline.filter((i) => i.kind === 'task')).toHaveLength(3);
+  });
+
+  it('no breathers when breatherMin is absent', () => {
+    const r = planBackward({ ...base });
+    expect(r.timeline.filter((i) => i.kind === 'breather')).toHaveLength(0);
+  });
+
+  it('single task: no breather emitted (N-1 = 0 gaps)', () => {
+    const r = planBackward({
+      deadline,
+      nowMs,
+      bufferMin: 0,
+      breatherMin: 10,
+      tasks: [{ id: 'only', label: 'Only', category: 'x', durationMin: 30 }],
+    });
+    expect(r.timeline.filter((i) => i.kind === 'breather')).toHaveLength(0);
+    expect(r.timeline).toHaveLength(1);
+  });
+
+  it('two tasks with breatherMin=5 → one breather, startBy 5min earlier', () => {
+    const twoTasks = [
+      { id: 'a', label: 'A', category: 'x', durationMin: 30 },
+      { id: 'b', label: 'B', category: 'x', durationMin: 30 },
+    ];
+    const noBreather = planBackward({ deadline, nowMs, bufferMin: 0, tasks: twoTasks });
+    const withBreather = planBackward({ deadline, nowMs, bufferMin: 0, breatherMin: 5, tasks: twoTasks });
+
+    expect(noBreather.startBy - withBreather.startBy).toBe(5 * 60_000);
+    expect(withBreather.timeline.filter((i) => i.kind === 'breather')).toHaveLength(1);
+  });
+
+  it('three tasks with breatherMin=10 → two breather items, startBy 20min earlier', () => {
+    const noBreather = planBackward({ ...base, breatherMin: 0 });
+    const withBreather = planBackward({ ...base, breatherMin: 10 });
+
+    expect(noBreather.startBy - withBreather.startBy).toBe(20 * 60_000);
+    expect(withBreather.timeline.filter((i) => i.kind === 'breather')).toHaveLength(2);
+  });
+
+  it('breather items have correct start/end times sandwiched between tasks', () => {
+    const twoTasks = [
+      { id: 'a', label: 'A', category: 'x', durationMin: 20 },
+      { id: 'b', label: 'B', category: 'x', durationMin: 20 },
+    ];
+    const r = planBackward({ deadline, nowMs, bufferMin: 0, breatherMin: 5, tasks: twoTasks });
+    // timeline should be: task-a, breather, task-b (3 items total)
+    expect(r.timeline).toHaveLength(3);
+    const [taskA, breather, taskB] = r.timeline;
+    expect(taskA!.kind).toBe('task');
+    expect(breather!.kind).toBe('breather');
+    expect(taskB!.kind).toBe('task');
+    // contiguous: taskA ends where breather starts, breather ends where taskB starts
+    expect(breather!.startAt).toBe(taskA!.endAt);
+    expect(taskB!.startAt).toBe(breather!.endAt);
+    // breather spans exactly 5 minutes
+    expect(breather!.endAt - breather!.startAt).toBe(5 * 60_000);
+    // taskB ends exactly at deadline
+    expect(taskB!.endAt).toBe(deadline);
+  });
+
+  it('matches the brief example: 3 tasks × 10min breather → 2 gaps push startBy 20min earlier', () => {
+    const noBreather = planBackward({ ...base, breatherMin: 0 });
+    const withBreather = planBackward({ ...base, breatherMin: 10 });
+
+    expect(noBreather.startBy - withBreather.startBy).toBe(20 * 60_000);
+    expect(withBreather.timeline.filter((i) => i.kind === 'breather')).toHaveLength(2);
+  });
+});
+
 describe('planBackward — purity', () => {
   it('does not mutate the input tasks array or its elements', () => {
     const tasks = [task('a', 30), task('b', 30)];

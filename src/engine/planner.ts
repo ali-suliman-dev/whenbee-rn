@@ -21,6 +21,8 @@ interface PlanBackwardInput {
   tasks: PlanTaskInput[];
   /** per-task buffer chip; default DEFAULT_BUFFER_MIN. */
   bufferMin?: number;
+  /** Gap inserted between consecutive tasks (minutes). 0 = no gap. */
+  breatherMin?: number;
   /** current time, to judge feasibility. Pass explicitly (engine is clock-free). */
   nowMs: number;
 }
@@ -41,15 +43,39 @@ function startByFor(deadline: number, totalMin: number): number {
   return deadline - totalMin * MS_PER_MIN;
 }
 
-/** Place blocks forward from `startBy`, preserving the given order. */
-function buildTimeline(startBy: number, items: readonly EffectiveTask[]): PlanTimelineItem[] {
+/**
+ * Place task blocks forward from `startBy`, inserting a breather gap between
+ * each consecutive pair when `breatherMin > 0`. Returns a mixed timeline of
+ * `'task'` and `'breather'` items in chronological order.
+ *
+ * With N tasks there are N−1 inter-task gaps, so a single task never emits a
+ * breather item.
+ */
+function buildTimeline(
+  startBy: number,
+  items: readonly EffectiveTask[],
+  breatherMin: number,
+): PlanTimelineItem[] {
+  const breatherMs = breatherMin * MS_PER_MIN;
+  const result: PlanTimelineItem[] = [];
   let cursor = startBy;
-  return items.map(({ task, effectiveMin }) => {
+
+  items.forEach(({ task, effectiveMin }, index) => {
+    // Insert a breather before every task except the first.
+    if (index > 0 && breatherMs > 0) {
+      const gapStart = cursor;
+      const gapEnd = cursor + breatherMs;
+      result.push({ id: `breather-${index}`, label: '', startAt: gapStart, endAt: gapEnd, kind: 'breather' as const });
+      cursor = gapEnd;
+    }
+
     const startAt = cursor;
     const endAt = startAt + effectiveMin * MS_PER_MIN;
+    result.push({ id: task.id, label: task.label, startAt, endAt, kind: 'task' as const });
     cursor = endAt;
-    return { id: task.id, label: task.label, startAt, endAt, kind: 'task' as const };
   });
+
+  return result;
 }
 
 /** Minutes the FULL plan overshoots the deadline, given we can't start before now. */
@@ -113,29 +139,41 @@ function smallestEffectiveMin(effectives: readonly EffectiveTask[]): number {
   return Number.isFinite(min) ? min : 0;
 }
 
+/** Total breather gap in minutes for N tasks: (N − 1) × breatherMin. */
+function totalBreatherMin(taskCount: number, breatherMin: number): number {
+  return Math.max(0, taskCount - 1) * breatherMin;
+}
+
 /**
  * Backward-pass scheduler. Walks `tasks` in order, placing them to finish exactly
  * at `deadline`, then judges feasibility against `nowMs` and returns a structured
- * verdict. Pure and order-preserving; inputs are never mutated.
+ * verdict. When `breatherMin > 0`, inserts gap items between tasks and shifts
+ * `startBy` earlier by (N − 1) × breatherMin. Pure and order-preserving; inputs
+ * are never mutated.
  */
 export function planBackward(input: PlanBackwardInput): PlanResult {
   const { deadline, tasks, nowMs } = input;
   const bufferMin = input.bufferMin ?? DEFAULT_BUFFER_MIN;
+  const breatherMin = Math.max(0, input.breatherMin ?? 0);
 
   const effectives: EffectiveTask[] = tasks.map((task) => ({
     task,
     effectiveMin: effectiveBlockMin(task.durationMin, bufferMin),
   }));
-  const totalMin = effectives.reduce((sum, e) => sum + e.effectiveMin, 0);
+  const taskTotalMin = effectives.reduce((sum, e) => sum + e.effectiveMin, 0);
+  const gapTotalMin = totalBreatherMin(tasks.length, breatherMin);
+  const totalMin = taskTotalMin + gapTotalMin;
 
   const startBy = startByFor(deadline, totalMin);
-  const timeline = buildTimeline(startBy, effectives);
+  const timeline = buildTimeline(startBy, effectives, breatherMin);
 
   // Empty plan, or you can still start on time → it fits.
   if (startBy >= nowMs) {
     return { startBy, timeline, verdict: { kind: 'fits', startBy }, totalMin };
   }
 
-  const verdict = cutLadder(deadline, nowMs, totalMin, effectives);
+  // Feasibility is judged on task-only blocks (the cut ladder reasons over tasks,
+  // not gap items). Breather gaps are a display/pacing concern, not a workload cut.
+  const verdict = cutLadder(deadline, nowMs, taskTotalMin, effectives);
   return { startBy, timeline, verdict, totalMin };
 }

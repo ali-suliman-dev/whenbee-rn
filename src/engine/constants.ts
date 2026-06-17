@@ -42,6 +42,12 @@ export const REASON_AFTERNOON_HOUR = 16; // hour ≥16 counts as afternoon
 export const REASON_WEEKDAY_SHARE = 0.5; // ≥50% on one weekday → a weekday skew
 export const REASON_NOTE_MIN_SHARE = 0.6; // B15 note needs a clearer majority
 
+// ── Between-task breather gaps (Start-By planner) ────────────────────────────
+/** Selectable pause durations between tasks. Off / +5 / +10 / +20 minutes. */
+export const BREATHER_CHIPS = [0, 5, 10, 20] as const;
+/** Default gap between tasks: none. */
+export const DEFAULT_BREATHER_MIN = 0;
+
 // ── Accuracy correlations (S3 — "when are you sharpest") ─────────────────────
 export const ACCURACY_MIN_BUCKET = 4; // a time/weekday bucket needs ≥4 logs to count
 export const ACCURACY_MIN_GAP = 12; // ≥12 accuracy points between buckets to surface
