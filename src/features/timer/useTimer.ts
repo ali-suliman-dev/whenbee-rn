@@ -217,11 +217,12 @@ export function useTimer(params: TimerParams): UseTimerResult {
     // If this task is the active plan's running task, mark it done in the plan
     // run-state (pure UI bookkeeping — calibration already happened via applyLog above).
     if (taskId) {
-      const planActive = usePlanStore.getState().active;
+      const planStore = usePlanStore.getState();
+      const planActive = planStore.active;
       if (planActive !== null) {
         const planTask = planActive.tasks.find((t) => t.id === taskId);
         if (planTask?.status === 'running') {
-          usePlanStore.getState().completeTask(taskId, actualMin);
+          planStore.completeTask(taskId, actualMin);
         }
       }
     }

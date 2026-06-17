@@ -153,4 +153,17 @@ describe('planStore', () => {
     expect(t.status).toBe('done');
     expect(t.actualMin).toBe(24);
   });
+
+  it('startTask leaves a done task done (no resurrection)', () => {
+    const s = usePlanStore.getState();
+    const a = s.addTask({ label: 'A', category: 'x', durationMin: 20 });
+    usePlanStore.getState().setDeadline(T0);
+    usePlanStore.getState().saveActive();
+    usePlanStore.getState().completeTask(a.id, 20);
+    // Verify it is done before calling startTask
+    expect(usePlanStore.getState().active!.tasks.find((t) => t.id === a.id)?.status).toBe('done');
+    // Attempt to re-start the completed task — should be a no-op
+    usePlanStore.getState().startTask(a.id);
+    expect(usePlanStore.getState().active!.tasks.find((t) => t.id === a.id)?.status).toBe('done');
+  });
 });

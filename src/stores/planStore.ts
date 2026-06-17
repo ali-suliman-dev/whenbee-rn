@@ -178,7 +178,7 @@ export const usePlanStore = create<PlanState>()(
             active: {
               ...s.active,
               tasks: s.active.tasks.map((t) => {
-                if (t.id === id) return { ...t, status: 'running' };
+                if (t.id === id) return t.status === 'done' ? t : { ...t, status: 'running' };
                 // Demote any other running task back to upcoming; done stays done.
                 if (t.status === 'running') return { ...t, status: 'upcoming' };
                 return t;

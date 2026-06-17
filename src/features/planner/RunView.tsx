@@ -245,6 +245,20 @@ export function RunView({
   // Built-in handlers wire the ▶ / "Open timer" actions to the timer route.
   // Prop overrides let the parent inject alternative behaviour (e.g. tests).
 
+  const pushTimerForTask = useCallback((task: NonNullable<ReturnType<typeof usePlanStore.getState>['active']>['tasks'][number]) => {
+    router.push({
+      pathname: '/(modals)/timer',
+      params: {
+        taskId: task.id,
+        label: task.label,
+        category: task.category,
+        estimateMin: String(task.durationMin),
+        guessMin: String(task.durationMin),
+        suggestedHonestMin: String(task.suggestedHonestMin),
+      },
+    });
+  }, []);
+
   const handleStart = useCallback(
     (taskId: string) => {
       if (onStartProp) {
@@ -256,19 +270,9 @@ export function RunView({
       const task = planActive.tasks.find((t) => t.id === taskId);
       if (!task) return;
       usePlanStore.getState().startTask(taskId);
-      router.push({
-        pathname: '/(modals)/timer',
-        params: {
-          taskId: task.id,
-          label: task.label,
-          category: task.category,
-          estimateMin: String(task.durationMin),
-          guessMin: String(task.durationMin),
-          suggestedHonestMin: String(task.suggestedHonestMin),
-        },
-      });
+      pushTimerForTask(task);
     },
-    [onStartProp],
+    [onStartProp, pushTimerForTask],
   );
 
   const handleOpenTimer = useCallback(
@@ -283,19 +287,9 @@ export function RunView({
       if (!task) return;
       // startTask is idempotent when the task is already 'running'; safe to call here.
       usePlanStore.getState().startTask(taskId);
-      router.push({
-        pathname: '/(modals)/timer',
-        params: {
-          taskId: task.id,
-          label: task.label,
-          category: task.category,
-          estimateMin: String(task.durationMin),
-          guessMin: String(task.durationMin),
-          suggestedHonestMin: String(task.suggestedHonestMin),
-        },
-      });
+      pushTimerForTask(task);
     },
-    [onOpenTimerProp],
+    [onOpenTimerProp, pushTimerForTask],
   );
 
   // ── Build a full re-projected timeline so we can show accurate start times ──
