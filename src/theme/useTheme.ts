@@ -2,7 +2,7 @@ import { tokens } from './tokens';
 import { useColorMode, type ColorMode } from './useColorMode';
 export function resolveTheme(mode: ColorMode) {
   return { mode, colors: tokens.colors[mode], space: tokens.space, radii: tokens.radii,
-    borderWidth: tokens.borderWidth, opacity: tokens.opacity, scale: tokens.scale, size: tokens.size, iconSize: tokens.iconSize,
+    borderWidth: tokens.borderWidth, opacity: tokens.opacity, gradients: tokens.gradients, scale: tokens.scale, size: tokens.size, iconSize: tokens.iconSize,
     fontSize: tokens.fontSize, fontWeight: tokens.fontWeight, fontFamily: tokens.fontFamily,
     lineHeight: tokens.lineHeight, shadow: tokens.shadow, motion: tokens.motion,
     honeycomb: tokens.honeycomb, brand: tokens.brand, burst: tokens.burst, progress: tokens.progress,

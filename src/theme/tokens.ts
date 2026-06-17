@@ -50,6 +50,9 @@ export const tokens = {
   // Replaces scattered 0.3 / 0.4 / 0.6 opacities.
   opacity: { disabled: 0.4, pressed: 0.6 },
 
+  // Onboarding aurora glow opacities (mode-independent alphas; colours come from colors.primary/primaryEdge).
+  gradients: { backdropTop: 0.22, backdropCorner: 0.16 },
+
   // Tactile scale feedback for tappable controls (chips, segments).
   //   pressIn — finger-down dip; the control yields to the touch (only while held).
   scale: { pressIn: 0.96 },
