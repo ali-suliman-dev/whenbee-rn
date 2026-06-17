@@ -84,13 +84,28 @@ struct NextTaskWidgetView: View {
     }
 }
 
+private extension View {
+    /// `containerBackground(_:for:)` is iOS 17+ in app extensions. The widget
+    /// target deploys to 16.2 (Live Activities need 16.1+), so guard it: 17+
+    /// gets the explicit container background, 16 falls back to the system
+    /// default that pre-17 widgets used automatically.
+    @ViewBuilder
+    func widgetBackground() -> some View {
+        if #available(iOS 17.0, *) {
+            containerBackground(.background, for: .widget)
+        } else {
+            self
+        }
+    }
+}
+
 struct NextTaskWidget: Widget {
     let kind = "WhenbeeNextTaskWidget"
 
     var body: some WidgetConfiguration {
         StaticConfiguration(kind: kind, provider: NextTaskProvider()) { entry in
             NextTaskWidgetView(entry: entry)
-                .containerBackground(.background, for: .widget)
+                .widgetBackground()
         }
         .configurationDisplayName("Next task")
         .description("Your next task and its honest finish time.")
