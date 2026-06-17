@@ -25,7 +25,9 @@ export const tokens = {
   // `shareCard` = fixed width of the off-screen ShareableCard captured to an image.
   // `timelineCol` = the tabular start–end time column width in the plan timeline
   // (one literal, reused by PlanTimeline + ShareableCard so the columns line up).
-  size: { control: { sm: 36, md: 44, lg: 52 }, coin: 40, shareCard: 340, timelineCol: 110 },
+  // `planCardMin` = minimum row height for a build PlanTaskCard (≥ 44pt HIG floor).
+  // `gripW` = width of each grip line in the drag handle.
+  size: { control: { sm: 36, md: 44, lg: 52 }, coin: 40, shareCard: 340, timelineCol: 110, planCardMin: 70, gripW: 14 },
 
   // Icon sizing scale — replaces inline 12/16/18/20/22/24/30 across the app.
   iconSize: { xs: 12, sm: 16, md: 20, lg: 24, xl: 32 },
@@ -67,6 +69,9 @@ export const tokens = {
   fontWeight: { regular: '400', medium: '500', semibold: '600', bold: '700' },
   fontFamily: { ui: 'System', mono: 'Menlo' },
   lineHeight: { tight: 1.15, normal: 1.4, relaxed: 1.6 },
+  // Tracking — negative values tighten display headings so they feel intentional
+  // rather than loose. `tight` is the standard display-headline tightening.
+  letterSpacing: { tight: -0.5 },
 
   // Soft elevation for raised/focal cards (CSS box-shadow renders cross-platform).
   shadow: {

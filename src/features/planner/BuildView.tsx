@@ -1,4 +1,4 @@
-import { useCallback, useReducer, useRef, useState } from 'react';
+import { useCallback, useMemo, useReducer, useRef, useState } from 'react';
 import {
   Pressable,
   ScrollView,
@@ -74,7 +74,7 @@ function InlineComposer({
   onCancel,
 }: {
   onConfirm: (label: string, category: string) => void;
-  onCancel: () => void;
+  onCancel?: () => void;
 }) {
   const t = useTheme();
   const [state, dispatch] = useReducer(composerReducer, {
@@ -101,7 +101,7 @@ function InlineComposer({
 
   function handleCancel() {
     dispatch({ type: 'close' });
-    onCancel();
+    onCancel?.();
   }
 
   const addRowStyle: ViewStyle = {
@@ -298,6 +298,7 @@ export function BuildView({ planner, nowMs = Date.now() }: BuildViewProps) {
     setDeadline,
     setBreather,
     addTask,
+    removeTask,
     updateTaskDuration,
     reorderTasks,
     cutTasks,
@@ -309,60 +310,50 @@ export function BuildView({ planner, nowMs = Date.now() }: BuildViewProps) {
   // Deadline mode (leave by / be done by / be at)
   const [deadlineMode, setDeadlineMode] = useState<DeadlineMode>('be done by');
 
-  // Local task list — mirrors draft.tasks and is the source for the list.
-  // We keep a local copy so the reorderable list can be keyed by ID stably.
-  const [localTasks, setLocalTasks] = useState<PlanTaskCardProps[]>(() =>
-    draft.tasks.map((task, i) => ({
-      variant: 'build' as const,
-      id: task.id,
-      label: task.label,
-      category: categoryName(task.category),
-      durationMin: task.durationMin,
-      startAt: result?.timeline[i]?.startAt,
-      endAt: result?.timeline[i]?.endAt,
-    })),
+  // Local reorder index — tracks user drag order as a list of ids.
+  // When the store changes shape (add/remove), we reset to store order.
+  const [reorderIds, setReorderIds] = useState<string[]>(() =>
+    draft.tasks.map((task) => task.id),
   );
 
-  // Sync local list when draft changes from outside (e.g. addTask / removeTask).
-  // This is a one-way sync: local → store only via callbacks.
-  const prevDraftLength = useRef(draft.tasks.length);
-  if (draft.tasks.length !== prevDraftLength.current) {
-    prevDraftLength.current = draft.tasks.length;
-    setLocalTasks(
-      draft.tasks.map((task, i) => ({
-        variant: 'build' as const,
-        id: task.id,
-        label: task.label,
-        category: categoryName(task.category),
-        durationMin: task.durationMin,
-        startAt: result?.timeline[i]?.startAt,
-        endAt: result?.timeline[i]?.endAt,
-      })),
-    );
+  // Reset reorder index when the draft task list changes identity (add/remove).
+  // Using a ref to compare the previous set of ids avoids a render-time setState.
+  const prevDraftIds = useRef(draft.tasks.map((t) => t.id).join(','));
+  const currentDraftIds = draft.tasks.map((t) => t.id).join(',');
+  if (currentDraftIds !== prevDraftIds.current) {
+    prevDraftIds.current = currentDraftIds;
+    // Safe: this branch only runs when draft.tasks truly changed (add/remove).
+    setReorderIds(draft.tasks.map((task) => task.id));
   }
 
-  // When the result changes (deadline or breather update), propagate times.
-  const prevDeadline = useRef(draft.deadline);
-  const prevBreather = useRef(draft.breatherMin);
-  if (draft.deadline !== prevDeadline.current || draft.breatherMin !== prevBreather.current) {
-    prevDeadline.current = draft.deadline;
-    prevBreather.current = draft.breatherMin;
-    setLocalTasks((prev) =>
-      prev.map((task, i) => ({
-        ...task,
-        startAt: result?.timeline[i]?.startAt,
-        endAt: result?.timeline[i]?.endAt,
-      })),
-    );
-  }
+  // Derive the displayed list from reorderIds + draft state + result timeline.
+  // useMemo keeps re-renders cheap — no render-time setState side-effects.
+  const localTasks = useMemo<PlanTaskCardProps[]>(() => {
+    return reorderIds.flatMap((id) => {
+      const draftIdx = draft.tasks.findIndex((t) => t.id === id);
+      const task = draft.tasks[draftIdx];
+      if (!task) return [];
+      return [
+        {
+          variant: 'build' as const,
+          id: task.id,
+          label: task.label,
+          category: categoryName(task.category),
+          durationMin: task.durationMin,
+          startAt: result?.timeline[draftIdx]?.startAt,
+          endAt: result?.timeline[draftIdx]?.endAt,
+        },
+      ];
+    });
+  }, [reorderIds, draft.tasks, result?.timeline, categoryName]);
 
   // ── Reorder ───────────────────────────────────────────────────────────────
 
   const handleReorder = useCallback(
     (event: ReorderableListReorderEvent) => {
-      setLocalTasks((prev) => {
+      setReorderIds((prev) => {
         const next = reorderItems(prev, event.from, event.to);
-        reorderTasks(next.map((t) => t.id));
+        reorderTasks(next);
         return next;
       });
     },
@@ -374,9 +365,18 @@ export function BuildView({ planner, nowMs = Date.now() }: BuildViewProps) {
   const handleAddTask = useCallback(
     (label: string, category: string) => {
       addTask({ label, category });
-      // Draft update → useEffect above re-syncs localTasks on next render.
+      // Draft update → currentDraftIds ref guard re-syncs reorderIds on next render.
     },
     [addTask],
+  );
+
+  // ── Delete task ───────────────────────────────────────────────────────────
+
+  const handleDeleteTask = useCallback(
+    (id: string) => {
+      removeTask(id);
+    },
+    [removeTask],
   );
 
   // ── Render item ───────────────────────────────────────────────────────────
@@ -385,15 +385,11 @@ export function BuildView({ planner, nowMs = Date.now() }: BuildViewProps) {
     ({ item }: { item: PlanTaskCardProps }) => (
       <PlanTaskCard
         {...item}
-        onDurationChange={(min) => {
-          updateTaskDuration(item.id, min);
-          setLocalTasks((prev) =>
-            prev.map((t) => (t.id === item.id ? { ...t, durationMin: min } : t)),
-          );
-        }}
+        onDurationChange={(min) => updateTaskDuration(item.id, min)}
+        onDelete={handleDeleteTask}
       />
     ),
-    [updateTaskDuration],
+    [updateTaskDuration, handleDeleteTask],
   );
 
   const keyExtractor = useCallback((item: PlanTaskCardProps) => item.id, []);
@@ -422,7 +418,7 @@ export function BuildView({ planner, nowMs = Date.now() }: BuildViewProps) {
     fontSize: t.fontSize.subtitle,
     fontWeight: t.fontWeight.bold as TextStyle['fontWeight'],
     color: t.colors.ink,
-    letterSpacing: -0.5,
+    letterSpacing: t.letterSpacing.tight,
     marginTop: t.space[1],
   };
 
@@ -495,7 +491,7 @@ export function BuildView({ planner, nowMs = Date.now() }: BuildViewProps) {
 
       {/* ── Inline add composer ── */}
       <View style={{ paddingHorizontal: t.space[4] }}>
-        <InlineComposer onConfirm={handleAddTask} onCancel={() => {}} />
+        <InlineComposer onConfirm={handleAddTask} />
       </View>
 
       {/* ── Spacer to push verdict + CTA to bottom ── */}
