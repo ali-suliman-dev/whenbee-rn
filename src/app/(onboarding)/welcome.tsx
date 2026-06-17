@@ -4,16 +4,19 @@ import { router } from 'expo-router';
 import { Screen } from '@/src/components/Screen';
 import { AppText } from '@/src/components/AppText';
 import { AppButton } from '@/src/components/AppButton';
+import { OnboardingBackdrop } from '@/src/components/OnboardingBackdrop';
+import { OverflowBar } from '@/src/components/OverflowBar';
+import { OnboardingFooterCard } from '@/src/components/OnboardingFooterCard';
+import { LockGlyph } from '@/src/components/LockGlyph';
 import { useTheme } from '@/src/theme/useTheme';
 import { StepProgress } from '@/src/features/onboarding/StepProgress';
-import { PromiseChip } from '@/src/features/onboarding/PromiseChip';
 import { BrandLockup } from '@/src/features/onboarding/BrandLockup';
 
 export default function Welcome() {
   const t = useTheme();
   const insets = useSafeAreaInsets();
   return (
-    <Screen>
+    <Screen backdrop={<OnboardingBackdrop />}>
       <StepProgress current={0} />
       <View style={{ flex: 1, gap: t.space[4], paddingTop: t.space[3] }}>
         <BrandLockup />
@@ -43,12 +46,19 @@ export default function Welcome() {
           variant="body"
           style={{ color: t.colors.inkSoft, lineHeight: t.fontSize.base * 1.5 }}
         >
-          Whenbee learns how long things really take you — then makes your plans
-          honest. Every log fills your honeycomb.
+          I learn how long things really take you, then show you the honest number — before you plan around a guess.
         </AppText>
-        <PromiseChip glyph="lock">
-          No account, no email. Everything stays on your phone.
-        </PromiseChip>
+
+        <View style={{ flex: 1 }} />
+
+        <AppText variant="label" style={{ color: t.colors.inkSoft }}>
+          How long it really takes
+        </AppText>
+        <OverflowBar guessMin={15} honestMin={24} />
+
+        <OnboardingFooterCard glyph={<LockGlyph />}>
+          No account, no email. Everything stays on this phone.
+        </OnboardingFooterCard>
       </View>
       <AppButton
         label="Get started →"
