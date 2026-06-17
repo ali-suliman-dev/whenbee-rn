@@ -5,7 +5,9 @@ import {
   PERSONAL_MIN_LOGS,
   honestNumber,
   confidenceFor,
+  correlateAccuracy,
 } from '@/src/engine';
+import type { AccuracyCorrelation, AccuracySample } from '@/src/engine';
 import type { CalibrationConfidence } from '@/src/domain/types';
 import { useCalibrationStore, type PatternsData, type PatternLog } from '@/src/stores/calibrationStore';
 
@@ -119,6 +121,8 @@ export interface PatternsView {
   prediction: PredictionCard | null;
   driftAlert: DriftAlertCard | null;
   calibrationMap: CalibrationMapRow[];
+  /** S3 — when you're sharpest (time-of-day / weekday). Pro-gated at the screen. */
+  accuracyCorrelations: AccuracyCorrelation[];
 }
 
 // ── shared helpers ────────────────────────────────────────────────────────────
@@ -331,6 +335,24 @@ export function deriveCalibrationMap(data: PatternsData): CalibrationMapRow[] {
     });
 }
 
+/**
+ * S3 — accuracy by time-of-day and weekday. The pure math lives in the engine
+ * (`correlateAccuracy`); here we only bucket each completed log's local hour +
+ * weekday from its timestamp (the one place a clock is unavoidable), exactly as
+ * the store does for reason samples.
+ */
+export function deriveAccuracyCorrelations(data: PatternsData): AccuracyCorrelation[] {
+  const samples: AccuracySample[] = completedLogs(data.logs).map((l) => {
+    const d = new Date(l.createdAt);
+    return {
+      hour: d.getHours(),
+      weekday: d.getDay(),
+      ratio: clampRatio(l.estimateMin, l.actualMin as number),
+    };
+  });
+  return correlateAccuracy(samples);
+}
+
 /** Run every derivation over one snapshot — the whole tab's view-model. */
 export function derivePatterns(data: PatternsData, nowMs: number): PatternsView {
   const anyCompleted = completedLogs(data.logs).length > 0;
@@ -343,6 +365,7 @@ export function derivePatterns(data: PatternsData, nowMs: number): PatternsView 
     prediction: derivePrediction(data),
     driftAlert: deriveDriftAlert(data),
     calibrationMap: deriveCalibrationMap(data),
+    accuracyCorrelations: deriveAccuracyCorrelations(data),
   };
 }
 

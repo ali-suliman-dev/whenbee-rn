@@ -1,7 +1,7 @@
 import { requireOptionalNativeModule } from 'expo-modules-core';
 import { isExpoGo } from '@/src/lib/isExpoGo';
 import { kv } from '@/src/lib/kv';
-import { projectedFinish } from '@/src/lib/time';
+import { projectedFinish, formatClock } from '@/src/lib/time';
 
 // ──────────────────────────────────────────────────────────────────────────────
 // timerNotifications — a single local "your estimate is up" ping so the timer is
@@ -17,6 +17,7 @@ import { projectedFinish } from '@/src/lib/time';
 // ──────────────────────────────────────────────────────────────────────────────
 
 const NOTIF_ID_KEY = 'whenbee.timerNotifId';
+const STARTBY_ID_KEY = 'whenbee.startByNotifId';
 
 type NotificationsModule = typeof import('expo-notifications');
 
@@ -99,6 +100,51 @@ export async function cancelTimerDone(): Promise<void> {
     if (id) {
       await N.cancelScheduledNotificationAsync(id);
       kv.delete(NOTIF_ID_KEY);
+    }
+  } catch {
+    // best-effort
+  }
+}
+
+/**
+ * G17 — schedule the "start by" nudge for an active Start-By plan: fires at the
+ * plan's start-by time so the user starts getting ready in time to hit the
+ * deadline honestly. Cancels any prior one first; skips silently if start-by is
+ * already past. No-op without the native module.
+ */
+export async function scheduleStartBy(opts: {
+  startByMs: number;
+  firstTaskLabel: string;
+  deadlineMs: number;
+}): Promise<void> {
+  const N = getModule();
+  if (!N) return;
+  try {
+    await cancelStartBy();
+    const secondsFromNow = Math.round((opts.startByMs - Date.now()) / 1000);
+    if (secondsFromNow <= 0) return;
+    const id = await N.scheduleNotificationAsync({
+      content: {
+        title: `Start by ${formatClock(opts.startByMs)}`,
+        body: `Begin ${opts.firstTaskLabel} now to finish by ${formatClock(opts.deadlineMs)}.`,
+      },
+      trigger: { type: N.SchedulableTriggerInputTypes.TIME_INTERVAL, seconds: secondsFromNow },
+    });
+    kv.set(STARTBY_ID_KEY, id);
+  } catch {
+    // best-effort; a failed schedule must never block saving a plan
+  }
+}
+
+/** Cancel the scheduled "start by" notification, if any. */
+export async function cancelStartBy(): Promise<void> {
+  const N = getModule();
+  if (!N) return;
+  try {
+    const id = kv.getString(STARTBY_ID_KEY);
+    if (id) {
+      await N.cancelScheduledNotificationAsync(id);
+      kv.delete(STARTBY_ID_KEY);
     }
   } catch {
     // best-effort

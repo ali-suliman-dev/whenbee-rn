@@ -18,6 +18,7 @@ import { TierTrailHub } from './TierTrailHub';
 import { ReclaimHeroCard } from './ReclaimHeroCard';
 import { DiscoveriesPreviewCard } from './DiscoveriesPreviewCard';
 import { BlindSpotCard } from './BlindSpotCard';
+import { LifeDriftCard } from './LifeDriftCard';
 
 // ──────────────────────────────────────────────────────────────────────────────
 // WhenbeeHub — the companion surface, where honey AND Reclaim grow. Same card
@@ -89,15 +90,22 @@ export function WhenbeeHub() {
     <View style={{ gap: t.space[5] }}>
       {/* 1 — Companion + honeycomb (soft sunburst pattern behind the avatar) */}
       <View style={heroZone}>
-        <View style={avatarBurst}>
+        <Pressable
+          style={avatarBurst}
+          onPress={() => router.push('/(modals)/companion')}
+          accessibilityRole="button"
+          accessibilityLabel={vm.companion.name ? `${vm.companion.name} — rename your Whenbee` : 'Name your Whenbee'}
+          accessibilityHint="Opens a sheet to name your companion"
+        >
           <RayBurst size={t.burst.stage} />
           <WhenbeeAvatar
             stage={vm.companion.stage}
             capability={vm.companion.capability}
             seed={vm.companion.seed}
             driftHealth={vm.companion.driftHealth}
+            name={vm.companion.name ?? undefined}
           />
-        </View>
+        </Pressable>
         {vm.cells.length > 0 ? <Honeycomb size="hub" cells={vm.cells} /> : null}
       </View>
 
@@ -116,7 +124,16 @@ export function WhenbeeHub() {
         <DiscoveriesPreviewCard discoveries={vm.discoveries} discoveryCount={vm.discoveryCount} />
       ) : null}
 
-      {/* 5 — Blind-spot nudge (kind, conditional) */}
+      {/* 5 — Life-drift re-check moment (no-guilt, conditional on 'curious' drift) */}
+      {vm.showDriftRecheck ? (
+        <LifeDriftCard
+          companionName={vm.companion.name}
+          blindSpot={vm.blindSpot}
+          onDismiss={vm.dismissDriftRecheck}
+        />
+      ) : null}
+
+      {/* 6 — Blind-spot nudge (kind, conditional) */}
       {vm.blindSpot ? <BlindSpotCard blindSpot={vm.blindSpot} /> : null}
 
       {/* 5 — Per-category drill-down */}

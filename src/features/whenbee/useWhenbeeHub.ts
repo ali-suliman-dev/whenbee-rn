@@ -4,6 +4,7 @@ import type { CompanionPresence } from '@/src/stores/calibrationStore';
 import { useCategoriesStore } from '@/src/stores/categoriesStore';
 import { tierFor, capabilityFor, CATEGORY_NAMES } from '@/src/engine';
 import { analytics } from '@/src/services/analytics';
+import { kv } from '@/src/lib/kv';
 import type { HoneycombCell } from '@/src/components/honeycomb/Honeycomb';
 import type { Tier, Discovery } from '@/src/domain/types';
 
@@ -43,7 +44,18 @@ export interface WhenbeeHubVM {
   discoveryCount: number;
   /** Re-pull the async reclaim totals (call on screen focus — deposits don't push). */
   refresh: () => void;
+  /** Set (or clear, when blank) the companion's display name, then refresh. */
+  renameCompanion: (name: string | null) => void;
+  /** True when the companion's drift register is 'curious' and the gentle re-check
+   *  card hasn't been dismissed this drift cycle. */
+  showDriftRecheck: boolean;
+  /** Dismiss the drift re-check card for this cycle (re-arms when drift settles). */
+  dismissDriftRecheck: () => void;
 }
+
+/** kv flag: set while the drift re-check card has been dismissed; cleared the
+ *  moment drift returns to 'settled' so a fresh drift can surface the card again. */
+const DRIFT_DISMISS_KEY = 'whenbee.driftRecheckDismissed';
 
 /** Title-case a custom-category slug (e.g. "deep_work" → "Deep Work"). */
 function categoryName(id: string): string {
@@ -65,6 +77,7 @@ const EMPTY_COMPANION: CompanionPresence = {
   lifetimeNectar: 0,
   driftHealth: 'settled',
   seed: 1,
+  name: null,
 };
 
 const EMPTY_RECLAIM: Pick<
@@ -86,6 +99,7 @@ const EMPTY_DISCOVERIES: Pick<WhenbeeHubVM, 'discoveries' | 'discoveryCount'> = 
 export function useWhenbeeHub(): WhenbeeHubVM {
   const loadReclaimSummary = useCalibrationStore((s) => s.loadReclaimSummary);
   const loadDiscoveries = useCalibrationStore((s) => s.loadDiscoveries);
+  const nameCompanion = useCalibrationStore((s) => s.nameCompanion);
   const statsByCategory = useCalibrationStore((s) => s.statsByCategory);
   const categories = useCategoriesStore((s) => s.categories);
 
@@ -95,6 +109,13 @@ export function useWhenbeeHub(): WhenbeeHubVM {
   // deposit during the live loop updates the bank but does NOT push to this hook.
   const [focusTick, setFocusTick] = useState(0);
   const refresh = useCallback(() => setFocusTick((n) => n + 1), []);
+  const renameCompanion = useCallback(
+    (name: string | null) => {
+      void nameCompanion(name).then(refresh);
+    },
+    [nameCompanion, refresh],
+  );
+  const [driftDismissed, setDriftDismissed] = useState(() => kv.getString(DRIFT_DISMISS_KEY) === '1');
 
   // Reclaim totals are an async read; refresh on tracked-set change AND on focus.
   useEffect(() => {
@@ -156,6 +177,27 @@ export function useWhenbeeHub(): WhenbeeHubVM {
     return lowest;
   }, [categories, statsByCategory]);
 
+  // Re-arm the drift card the moment drift settles, so a *new* drift cycle can
+  // surface it again (and we never nag while it's already settled).
+  const driftHealth = reclaim.companion.driftHealth;
+  useEffect(() => {
+    if (driftHealth === 'settled' && kv.getString(DRIFT_DISMISS_KEY) === '1') {
+      kv.delete(DRIFT_DISMISS_KEY);
+      setDriftDismissed(false);
+    }
+  }, [driftHealth]);
+
+  const showDriftRecheck = driftHealth === 'curious' && !driftDismissed;
+  useEffect(() => {
+    if (showDriftRecheck) analytics.capture('drift_recheck', { action: 'shown' });
+  }, [showDriftRecheck]);
+
+  const dismissDriftRecheck = useCallback(() => {
+    kv.set(DRIFT_DISMISS_KEY, '1');
+    setDriftDismissed(true);
+    analytics.capture('drift_recheck', { action: 'dismissed' });
+  }, []);
+
   return {
     ...reclaim,
     ...discoveries,
@@ -163,5 +205,8 @@ export function useWhenbeeHub(): WhenbeeHubVM {
     tier,
     cells,
     refresh,
+    renameCompanion,
+    showDriftRecheck,
+    dismissDriftRecheck,
   };
 }

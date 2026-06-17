@@ -11,7 +11,7 @@ import * as SQLite from 'expo-sqlite';
 import { runMigrations } from './client';
 import type { Database } from './Database';
 import type { AdaptSpeed, LogSource, LogStatus } from '@/src/domain/types';
-import type { CategoryStatRow, CompanionRow, ContextTagRow, DiscoveryRow, ReasonEventRow, RecurringStatRow, TaskEventRow } from './types';
+import type { CategoryStatRow, CompanionRow, ContextEventRow, ContextTagRow, DiscoveryRow, ReasonEventRow, RecurringStatRow, TaskEventRow } from './types';
 
 interface TaskEventDbRow {
   id: string;
@@ -48,6 +48,7 @@ interface CompanionDbRow {
   seed: number;
   drift_health: string;
   discovery_count: number;
+  name: string | null;
 }
 
 interface DiscoveryDbRow {
@@ -232,7 +233,7 @@ export async function createSqliteDatabase(name = 'whenbee.db'): Promise<Databas
 
     async getCompanion(): Promise<CompanionRow> {
       const row = await db.getFirstAsync<CompanionDbRow>(
-        `SELECT reclaimed_minutes_lifetime, lifetime_data_points, max_tier, keeper, seed, drift_health, discovery_count
+        `SELECT reclaimed_minutes_lifetime, lifetime_data_points, max_tier, keeper, seed, drift_health, discovery_count, name
          FROM companion WHERE id = 1`
       );
       return {
@@ -243,6 +244,7 @@ export async function createSqliteDatabase(name = 'whenbee.db'): Promise<Databas
         seed: row?.seed ?? 0,
         driftHealth: row?.drift_health === 'curious' ? 'curious' : 'settled',
         discoveryCount: row?.discovery_count ?? 0,
+        name: row?.name ?? null,
       };
     },
 
@@ -272,6 +274,11 @@ export async function createSqliteDatabase(name = 'whenbee.db'): Promise<Databas
 
     async setDriftHealth(value: 'settled' | 'curious'): Promise<void> {
       await db.runAsync('UPDATE companion SET drift_health = ? WHERE id = 1', value);
+    },
+
+    async setCompanionName(name: string | null): Promise<void> {
+      const trimmed = name?.trim();
+      await db.runAsync('UPDATE companion SET name = ? WHERE id = 1', trimmed ? trimmed : null);
     },
 
     async setSeed(seed: number): Promise<void> {
@@ -350,6 +357,35 @@ export async function createSqliteDatabase(name = 'whenbee.db'): Promise<Databas
       }));
     },
 
+    async listContextEvents(key: string, limit: number): Promise<ContextEventRow[]> {
+      const rows = await db.getAllAsync<{
+        event_id: string;
+        category: string;
+        value: string;
+        estimate_min: number;
+        actual_min: number | null;
+        created_at: number;
+      }>(
+        `SELECT t.event_id AS event_id, e.category AS category, t.value AS value,
+                e.estimate_min AS estimate_min, e.actual_min AS actual_min, e.created_at AS created_at
+         FROM log_tags t
+         JOIN task_events e ON e.id = t.event_id
+         WHERE t.key = ?
+         ORDER BY e.created_at DESC
+         LIMIT ?`,
+        key,
+        limit
+      );
+      return rows.map((r) => ({
+        eventId: r.event_id,
+        category: r.category,
+        value: r.value,
+        estimateMin: r.estimate_min,
+        actualMin: r.actual_min,
+        createdAt: r.created_at,
+      }));
+    },
+
     async insertDiscovery(row: DiscoveryRow): Promise<void> {
       await db.runAsync(
         `INSERT INTO discoveries
@@ -381,6 +417,28 @@ export async function createSqliteDatabase(name = 'whenbee.db'): Promise<Databas
       await db.runAsync(
         'UPDATE companion SET discovery_count = discovery_count + 1 WHERE id = 1'
       );
+    },
+
+    async wipeAll(): Promise<void> {
+      await db.withTransactionAsync(async () => {
+        await db.execAsync(
+          `DELETE FROM task_events;
+           DELETE FROM category_stats;
+           DELETE FROM recurring_stats;
+           DELETE FROM log_tags;
+           DELETE FROM discoveries;
+           UPDATE companion SET
+             reclaimed_minutes_lifetime = 0,
+             lifetime_data_points = 0,
+             max_tier = 0,
+             keeper = 0,
+             seed = 0,
+             drift_health = 'settled',
+             discovery_count = 0,
+             name = NULL
+           WHERE id = 1;`
+        );
+      });
     },
   };
 }

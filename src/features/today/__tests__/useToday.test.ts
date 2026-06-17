@@ -1,6 +1,6 @@
 import { renderHook } from '@testing-library/react-native';
 import { useToday } from '../useToday';
-import { useCalibrationStore } from '@/src/stores/calibrationStore';
+import { useCalibrationStore, type ReclaimSummary } from '@/src/stores/calibrationStore';
 import { useTasksStore } from '@/src/stores/tasksStore';
 
 // useFocusEffect runs its effect immediately in tests (no real navigation focus).
@@ -10,12 +10,30 @@ jest.mock('expo-router', () => ({
 
 const T0 = 1_700_000_000_000;
 
+const defaultSummary: ReclaimSummary = {
+  lifetimeMin: 0,
+  byCategory: [],
+  biggestArea: null,
+  honestLogCount: 0,
+  discoveryCount: 0,
+  companion: {
+    stage: 1 as const,
+    capability: 'finish_time' as unknown as ReclaimSummary['companion']['capability'],
+    keeper: false,
+    lifetimeNectar: 0,
+    driftHealth: 'settled' as const,
+    seed: 1,
+    name: null,
+  },
+};
+
 /** Replace the db-touching store actions with no-ops so the hook's mount/focus
  *  effects don't clobber the cache we seed by hand or hit the database. */
 function stubStoreEffects() {
   useCalibrationStore.setState({
     hydrate: async () => {},
     loadTodayReclaimMin: async () => 0,
+    loadReclaimSummary: async () => defaultSummary,
   });
 }
 

@@ -1,4 +1,6 @@
+import { render } from '@testing-library/react-native';
 import { companionStageFor, capabilityFor } from '@/src/engine';
+import { TierTrailHub } from '../TierTrailHub';
 
 describe('companion stage mapping (unit)', () => {
   it('Keeper node is the 6th trail node', () => {
@@ -12,5 +14,14 @@ describe('companion stage mapping (unit)', () => {
   });
   it('Keeper capability gates nothing new', () => {
     expect(capabilityFor(6).gatesNewFeature).toBe(false);
+  });
+});
+
+describe('TierTrailHub trail mapping', () => {
+  it('stage 3 marks Raw/Setting done, Ripening now, rest ahead', () => {
+    const { getByLabelText } = render(<TierTrailHub stage={3} />);
+    expect(getByLabelText('Raw: done')).toBeTruthy();
+    expect(getByLabelText('Ripening: now')).toBeTruthy();
+    expect(getByLabelText('Keeper: ahead')).toBeTruthy();
   });
 });

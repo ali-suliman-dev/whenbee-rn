@@ -3,7 +3,7 @@
 // fully synchronous; the async signatures satisfy the port contract.
 
 import type { Database } from './Database';
-import type { CategoryStatRow, CompanionRow, ContextTagRow, DiscoveryRow, ReasonEventRow, RecurringStatRow, TaskEventRow } from './types';
+import type { CategoryStatRow, CompanionRow, ContextEventRow, ContextTagRow, DiscoveryRow, ReasonEventRow, RecurringStatRow, TaskEventRow } from './types';
 
 export function createMemoryDatabase(): Database {
   const categoryStats = new Map<string, CategoryStatRow>();
@@ -19,6 +19,7 @@ export function createMemoryDatabase(): Database {
     seed: 1,
     driftHealth: 'settled',
     discoveryCount: 0,
+    name: null,
   };
 
   /** Newest first by createdAt, sliced to `limit`. */
@@ -78,6 +79,10 @@ export function createMemoryDatabase(): Database {
     async setSeed(seed: number): Promise<void> {
       if (companion.seed === 0) companion.seed = seed;
     },
+    async setCompanionName(name: string | null): Promise<void> {
+      const trimmed = name?.trim();
+      companion.name = trimmed ? trimmed : null;
+    },
     async addCategoryReclaim(categoryId: string, deltaMin: number): Promise<void> {
       const existing = categoryStats.get(categoryId);
       if (existing === undefined) return;
@@ -110,6 +115,24 @@ export function createMemoryDatabase(): Database {
       return rows.sort((a, b) => b.createdAt - a.createdAt).slice(0, limit);
     },
 
+    async listContextEvents(key: string, limit: number): Promise<ContextEventRow[]> {
+      const rows: ContextEventRow[] = [];
+      for (const tag of contextTags.values()) {
+        if (tag.key !== key) continue;
+        const event = events.get(tag.eventId);
+        if (event === undefined) continue; // orphan tag — its event was wiped
+        rows.push({
+          eventId: event.id,
+          category: event.category,
+          value: tag.value,
+          estimateMin: event.estimateMin,
+          actualMin: event.actualMin,
+          createdAt: event.createdAt,
+        });
+      }
+      return rows.sort((a, b) => b.createdAt - a.createdAt).slice(0, limit);
+    },
+
     async insertDiscovery(row: DiscoveryRow): Promise<void> {
       discoveries.set(row.id, { ...row });
     },
@@ -126,6 +149,22 @@ export function createMemoryDatabase(): Database {
     },
     async incrementDiscoveryCount(): Promise<void> {
       companion.discoveryCount += 1;
+    },
+
+    async wipeAll(): Promise<void> {
+      categoryStats.clear();
+      recurringStats.clear();
+      events.clear();
+      contextTags.clear();
+      discoveries.clear();
+      companion.reclaimedMinutesLifetime = 0;
+      companion.lifetimeDataPoints = 0;
+      companion.maxTier = 0;
+      companion.keeper = false;
+      companion.seed = 0;
+      companion.driftHealth = 'settled';
+      companion.discoveryCount = 0;
+      companion.name = null;
     },
   };
 }

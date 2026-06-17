@@ -27,10 +27,11 @@ import {
   confidenceFor,
   honestRangeFor,
   correlateReasons,
+  correlateContext,
   TIERS,
   CATEGORY_NAMES,
 } from '@/src/engine';
-import type { CompanionStage, CompanionCapability, DriftHealth } from '@/src/engine';
+import type { CompanionStage, CompanionCapability, DriftHealth, ContextCorrelation } from '@/src/engine';
 import type {
   AdaptSpeed,
   LogSource,
@@ -226,6 +227,8 @@ export interface CompanionPresence {
   driftHealth: DriftHealth;
   /** Per-install procedural seed — drives the deterministic stripe recolor. */
   seed: number;
+  /** Optional user-set display name; null when the companion is still unnamed. */
+  name: string | null;
 }
 
 /** Read-only snapshot of reclaim/companion state for the Whenbee hub. */
@@ -272,6 +275,8 @@ interface CalibrationState {
   applyLog: (input: ApplyLogParams) => Promise<LogResult>;
   loadCategoryDetail: (categoryId: string) => Promise<CategoryDetail>;
   loadReclaimSummary: () => Promise<ReclaimSummary>;
+  /** Set (or clear, when blank) the companion's optional display name. */
+  nameCompanion: (name: string | null) => Promise<void>;
   /** The banked distinct-discovery gallery, newest-first, plus the live count. */
   loadDiscoveries: () => Promise<{ discoveries: Discovery[]; discoveryCount: number }>;
   /** Cross-category snapshot for the read-only Patterns self-insight surface. */
@@ -285,9 +290,22 @@ interface CalibrationState {
    * multiplier/honey, or banks reclaim. Safe to call (or skip) after a log.
    */
   setReason: (eventId: string, value: string, source: string) => Promise<void>;
+  /**
+   * CAPTURE-ONLY (S4). Attach an optional context tag (e.g. key:'energy') to a
+   * logged event. Same side-channel guarantees as setReason: never trains the
+   * model, never touches multiplier/honey/reclaim.
+   */
+  setContext: (eventId: string, key: string, value: string, source: string) => Promise<void>;
+  /** READ-ONLY (S4). Context correlations (e.g. energy × accuracy) for the Pro
+   *  "when you're sharpest" / context surface. Never trains the model. */
+  loadContextInsights: () => Promise<ContextCorrelation[]>;
   /** Sum of reclaimDividendMin over today's (local-day) completed events. */
   loadTodayReclaimMin: (nowMs?: number) => Promise<number>;
   resetCategory: (categoryId: string) => Promise<void>;
+  /** Clear in-memory caches after a full/learning data wipe. The db itself is
+   *  cleared by the dataReset service; this just drops the cached mirrors so the
+   *  UI doesn't show stale stats before the next hydrate. */
+  reset: () => void;
 }
 
 async function resolveDb(get: () => CalibrationState, set: (p: Partial<CalibrationState>) => void) {
@@ -762,6 +780,7 @@ export const useCalibrationStore = create<CalibrationState>((set, get) => ({
       lifetimeNectar: companion.lifetimeDataPoints,
       driftHealth: companion.driftHealth ?? 'settled',
       seed: companion.seed,
+      name: companion.name ?? null,
     };
 
     return {
@@ -772,6 +791,11 @@ export const useCalibrationStore = create<CalibrationState>((set, get) => ({
       companion: presence,
       discoveryCount: companion.discoveryCount,
     };
+  },
+
+  nameCompanion: async (name: string | null) => {
+    const db = await resolveDb(get, set);
+    await makeCompanionRepo(db).setName(name);
   },
 
   loadDiscoveries: async () => {
@@ -865,6 +889,31 @@ export const useCalibrationStore = create<CalibrationState>((set, get) => ({
     });
   },
 
+  setContext: async (eventId, key, value, source) => {
+    const db = await resolveDb(get, set);
+    // Capture-only side channel — writes a context tag and nothing else. No stat
+    // read, no applyLog, no reclaim: the model never sees this.
+    await makeContextTagRepo(db).set({ eventId, key, value, source, createdAt: Date.now() });
+  },
+
+  loadContextInsights: async () => {
+    const db = await resolveDb(get, set);
+    const repo = makeContextTagRepo(db);
+    // One read per supported context dimension. The engine stays clock-free; we
+    // only map each tagged event to { value, clamped ratio }. Read-only.
+    const KEYS = ['energy'] as const;
+    const out: ContextCorrelation[] = [];
+    for (const key of KEYS) {
+      const rows = await repo.listContextEvents(key, 200);
+      const samples = rows
+        .filter((r) => r.actualMin !== null && r.actualMin > 0)
+        .map((r) => ({ value: r.value, ratio: clampRatio(r.estimateMin, r.actualMin as number) }));
+      const corr = correlateContext(key, samples);
+      if (corr) out.push(corr);
+    }
+    return out;
+  },
+
   loadTodayReclaimMin: async (nowMs) => {
     const db = await resolveDb(get, set);
     const taskEventsRepo = makeTaskEventsRepo(db);
@@ -909,4 +958,6 @@ export const useCalibrationStore = create<CalibrationState>((set, get) => ({
       },
     }));
   },
+
+  reset: () => set({ logs: 0, statsByCategory: {}, graduatedCategories: new Set() }),
 }));

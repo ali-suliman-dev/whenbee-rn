@@ -26,6 +26,7 @@ const COMPANION_FIXTURE: CompanionPresence = {
   lifetimeNectar: 0,
   driftHealth: 'settled',
   seed: 1,
+  name: null,
 };
 
 function vm(overrides: Partial<WhenbeeHubVM> = {}): WhenbeeHubVM {
@@ -41,6 +42,9 @@ function vm(overrides: Partial<WhenbeeHubVM> = {}): WhenbeeHubVM {
     discoveries: [],
     discoveryCount: 0,
     refresh: jest.fn(),
+    renameCompanion: jest.fn(),
+    showDriftRecheck: false,
+    dismissDriftRecheck: jest.fn(),
     ...overrides,
   };
 }

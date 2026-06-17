@@ -22,6 +22,7 @@ function setPatternsData(data: PatternsData) {
   useCalibrationStore.setState({
     loadPatternsData: async () => data,
     loadReasonInsights: async () => [],
+    loadContextInsights: async () => [],
   });
 }
 

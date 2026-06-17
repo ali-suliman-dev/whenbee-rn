@@ -51,6 +51,7 @@ function RootNavigator() {
         options={{
           headerShown: true,
           title: 'Settings',
+          headerBackButtonDisplayMode: 'minimal',
           headerStyle: { backgroundColor: t.colors.bg },
           headerTitleStyle: { color: t.colors.ink },
           headerTintColor: t.colors.primary,
@@ -62,6 +63,7 @@ function RootNavigator() {
         options={{
           headerShown: true,
           title: 'Categories',
+          headerBackButtonDisplayMode: 'minimal',
           headerStyle: { backgroundColor: t.colors.bg },
           headerTitleStyle: { color: t.colors.ink },
           headerTintColor: t.colors.primary,
@@ -73,6 +75,7 @@ function RootNavigator() {
         options={{
           headerShown: true,
           title: 'Privacy',
+          headerBackButtonDisplayMode: 'minimal',
           headerStyle: { backgroundColor: t.colors.bg },
           headerTitleStyle: { color: t.colors.ink },
           headerTintColor: t.colors.primary,

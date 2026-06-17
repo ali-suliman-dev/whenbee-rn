@@ -8,6 +8,8 @@ jest.mock('expo-sqlite/kv-store', () => {
     setItemSync: (k, v) => m.set(k, v),
     getItemSync: (k) => (m.has(k) ? m.get(k) : null),
     removeItemSync: (k) => m.delete(k),
+    getAllKeysSync: () => [...m.keys()],
+    clearSync: () => m.clear(),
   } };
 });
 

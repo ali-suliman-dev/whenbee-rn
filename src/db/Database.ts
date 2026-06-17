@@ -2,7 +2,7 @@
 // a concrete adapter. Two adapters implement it: an in-memory Map-backed one
 // (tests + fallback) and the real expo-sqlite one (device runtime).
 
-import type { CategoryStatRow, CompanionRow, ContextTagRow, DiscoveryRow, ReasonEventRow, RecurringStatRow, TaskEventRow } from './types';
+import type { CategoryStatRow, CompanionRow, ContextEventRow, ContextTagRow, DiscoveryRow, ReasonEventRow, RecurringStatRow, TaskEventRow } from './types';
 
 export interface Database {
   getCategoryStat(categoryId: string): Promise<CategoryStatRow | null>;
@@ -32,6 +32,8 @@ export interface Database {
   setDriftHealth(value: 'settled' | 'curious'): Promise<void>;
   /** Sets the procedural appearance seed once; ignored if a seed is already set. */
   setSeed(seed: number): Promise<void>;
+  /** Sets the optional companion display name; empty/blank clears it back to unnamed. */
+  setCompanionName(name: string | null): Promise<void>;
   /** Monotonic increment — adds deltaMin to category_stats.reclaimedMinutes for the given category. */
   addCategoryReclaim(categoryId: string, deltaMin: number): Promise<void>;
   /** Capture-only; never read by the calibration model. */
@@ -42,6 +44,9 @@ export interface Database {
   /** All reason tags joined to their events, newest first, capped at `limit`.
    *  READ-ONLY: powers the Pro reason-correlation read; never the model. */
   listReasonEvents(limit: number): Promise<ReasonEventRow[]>;
+  /** Context tags of one `key` (e.g. 'energy') joined to their events, newest
+   *  first, capped at `limit`. READ-ONLY: powers the Pro S4 read; never the model. */
+  listContextEvents(key: string, limit: number): Promise<ContextEventRow[]>;
 
   /** Append-only — banks one discovery card; rows are never updated or deleted. */
   insertDiscovery(row: DiscoveryRow): Promise<void>;
@@ -51,4 +56,8 @@ export interface Database {
   getLastDiscoveryForCategory(categoryId: string): Promise<DiscoveryRow | null>;
   /** Monotonic increment — bumps companion.discoveryCount by one; never decrements. */
   incrementDiscoveryCount(): Promise<void>;
+
+  /** Factory reset: clears every table and returns the companion singleton to its
+   *  default row (seed 0 so the next hydrate re-seeds a fresh appearance, name null). */
+  wipeAll(): Promise<void>;
 }

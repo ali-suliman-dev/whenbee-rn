@@ -150,6 +150,14 @@ describe('no-guilt copy audit', () => {
 // only (failed purchase / restore). Add a path here ONLY for genuine error UI.
 const DANGER_ALLOW: readonly string[] = [
   'src/features/paywall/Paywall.tsx', // purchase/restore failure message
+  // Settings "Danger zone" — deliberate, user-initiated destructive actions
+  // (Reset progress / Erase everything). Red here is genuine danger semantics,
+  // never a guilt signal on a honey/reward surface (the protected-surface test
+  // below still bars red from those).
+  'src/app/settings.tsx',
+  'src/components/AppButton.tsx', // the reusable `danger` button variant
+  'src/components/ConfirmSheet.tsx', // destructive-action confirmation sheet
+  'src/components/DataResetGlyph.tsx', // the erase/reset danger glyph
 ];
 
 // Surfaces that must NEVER use a red/danger colour as a state (amber-never-red).

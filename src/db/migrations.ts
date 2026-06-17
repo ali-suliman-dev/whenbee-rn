@@ -87,4 +87,9 @@ export const MIGRATIONS: string[] = [
   CREATE INDEX IF NOT EXISTS idx_discoveries_category ON discoveries (category_id, discovered_at);
   ALTER TABLE companion ADD COLUMN discovery_count INTEGER NOT NULL DEFAULT 0;
   `,
+
+  // 0005 — companion display name (optional, user-set; NULL = unnamed).
+  `
+  ALTER TABLE companion ADD COLUMN name TEXT;
+  `,
 ];

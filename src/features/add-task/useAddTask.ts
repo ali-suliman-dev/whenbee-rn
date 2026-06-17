@@ -3,6 +3,7 @@ import { router } from 'expo-router';
 import { useCalibrationStore } from '@/src/stores/calibrationStore';
 import { useCategoriesStore } from '@/src/stores/categoriesStore';
 import { useTasksStore } from '@/src/stores/tasksStore';
+import { useVocabStore } from '@/src/stores/vocabStore';
 import { resolveSuggestion, priorFor } from '@/src/engine';
 import { usePickerCategories, type PickerCategory } from '@/src/features/shared/CategoryChips';
 import { guessCategory } from '@/src/features/shared/categoryGuess';
@@ -52,6 +53,8 @@ export function useAddTask(): UseAddTaskResult {
   const addTask = useTasksStore((s) => s.addTask);
   const addCategoryToStore = useCategoriesStore((s) => s.addCategory);
   const categories = usePickerCategories();
+  const learned = useVocabStore((s) => s.map);
+  const bank = useVocabStore((s) => s.bank);
 
   const [title, setTitleState] = useState('');
   const [category, setCategoryState] = useState<string | null>(null);
@@ -65,7 +68,11 @@ export function useAddTask(): UseAddTaskResult {
   const setTitle = (s: string) => {
     setTitleState(s);
     if (manualRef.current) return;
-    const g = guessCategory(s);
+    const g = guessCategory(s, {
+      learned,
+      namedCats: categories,
+      availableIds: categories.map((c) => c.id),
+    });
     setGuessedCategory(g);
     setCategoryState(g);
   };
@@ -126,12 +133,14 @@ export function useAddTask(): UseAddTaskResult {
   const addToToday = (): boolean => {
     if (!canSubmit || category === null) return false;
     addTask({ label: title.trim(), category, guessMin });
+    bank(title.trim(), category);
     return true;
   };
 
   const onAddAndStart = () => {
     if (!canSubmit || category === null || suggestion === null) return;
     const task = addTask({ label: title.trim(), category, guessMin });
+    bank(title.trim(), category);
     // suggestedHonestMin = the honest number the user SAW in the Add-Task sheet
     // (suggestion.honestMinutes). Passed explicitly so the timer's applyLog banks
     // reclaim against the number actually shown, not a re-derived fallback.

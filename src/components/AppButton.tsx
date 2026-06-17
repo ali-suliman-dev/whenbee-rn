@@ -29,7 +29,7 @@ import { AppText } from './AppText';
 // Backward-compat: "primary" → "indigo", "secondary" → "ghost".
 // ──────────────────────────────────────────────────────────────────────────────
 
-type NewVariant = 'indigo' | 'amber' | 'ghost';
+type NewVariant = 'indigo' | 'amber' | 'ghost' | 'danger';
 type LegacyVariant = 'primary' | 'secondary';
 type Variant = NewVariant | LegacyVariant;
 type Size = 'sm' | 'md' | 'lg';
@@ -73,16 +73,19 @@ export function AppButton({
     indigo: t.colors.primary,
     amber: t.colors.accent,
     ghost: t.colors.surface,
+    danger: t.colors.danger,
   };
   const fg: Record<NewVariant, string> = {
     indigo: t.colors.onIndigo,
     amber: t.colors.onAmber,
     ghost: t.colors.ink,
+    danger: '#FFFFFF',
   };
   const edge: Record<NewVariant, string> = {
     indigo: t.colors.primaryEdge,
     amber: t.colors.accentEdge,
     ghost: 'transparent',
+    danger: t.colors.dangerEdge,
   };
 
   // Filled pills drop onto the edge; ghost squeezes. One shared value per path.
