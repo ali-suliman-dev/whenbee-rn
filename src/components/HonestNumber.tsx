@@ -10,6 +10,7 @@ import { type } from '@/src/theme/typography';
 //
 // Sizes:
 //   inline  → type.multiplier   (22px Inter-Bold)
+//   md      → type.honestNumberMd (24px Inter-Bold)
 //   big     → type.bigNumber    (30px Inter-Bold)
 //   lg      → type.honestNumberLg (36px Inter-Bold)
 //   xl      → type.honestNumberXl (40px Inter-Bold)
@@ -32,6 +33,7 @@ const sizeScale: Record<
   | typeof type.honestNumberXl
 > = {
   inline: type.multiplier,
+  md: type.honestNumberMd,
   big: type.bigNumber,
   lg: type.honestNumberLg,
   xl: type.honestNumberXl,
