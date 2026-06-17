@@ -37,12 +37,17 @@ export function WhenbeeAvatar({
   seed,
   driftHealth = 'settled',
   name,
+  glow = true,
 }: {
   stage: CompanionStage;
   capability: CompanionCapability;
   seed: number;
   driftHealth?: DriftHealth;
   name?: string;
+  /** Forwarded to BeeMascot. When false, the amber/drift glow halo is not rendered.
+   *  Pass glow={false} when the avatar sits inside HoneyRing where the ring arc
+   *  provides the visual focus and a glow halo would add clutter. */
+  glow?: boolean;
 }) {
   const t = useTheme();
   const reducedMotion = useReducedMotion();
@@ -110,7 +115,7 @@ export function WhenbeeAvatar({
   return (
     <View style={wrap}>
       <Animated.View style={beeStyle}>
-        <BeeMascot size={t.burst.bee} variant={`stage-${stage}`} seed={seed} />
+        <BeeMascot size={t.burst.bee} variant={`stage-${stage}`} seed={seed} glow={glow} />
       </Animated.View>
       {name ? <AppText style={nameStyle}>{name}</AppText> : null}
       <AppText style={capStyle} accessibilityLabel={`She can now give you ${capability.label}`}>

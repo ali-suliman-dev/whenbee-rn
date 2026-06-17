@@ -3,6 +3,9 @@ import { WhenbeeHub } from '@/src/features/whenbee/WhenbeeHub';
 import { useWhenbeeHub, type WhenbeeHubVM } from '@/src/features/whenbee/useWhenbeeHub';
 import { capabilityFor } from '@/src/engine';
 import type { CompanionPresence } from '@/src/stores/calibrationStore';
+import { useCategoriesStore } from '@/src/stores/categoriesStore';
+import { useCalibrationStore } from '@/src/stores/calibrationStore';
+import { useEntitlement } from '@/src/features/paywall/useEntitlement';
 
 // Mock expo-router: router.push is a spy; useFocusEffect runs the callback once
 // (mirrors an immediate focus) so the on-focus refresh path is exercised.
@@ -36,6 +39,7 @@ function vm(overrides: Partial<WhenbeeHubVM> = {}): WhenbeeHubVM {
     biggestArea: null,
     honestLogCount: 0,
     blindSpot: null,
+    leadSharpness: 0,
     tier: 'Raw',
     companion: COMPANION_FIXTURE,
     cells: [],
@@ -50,6 +54,12 @@ function vm(overrides: Partial<WhenbeeHubVM> = {}): WhenbeeHubVM {
 }
 
 describe('WhenbeeHub', () => {
+  beforeEach(() => {
+    // Start each test with empty stores — tests that need categories set them explicitly.
+    useCategoriesStore.setState({ categories: [] });
+    useCalibrationStore.setState({ statsByCategory: {} } as Parameters<typeof useCalibrationStore.setState>[0]);
+    useEntitlement.setState({ isPro: false, ready: true });
+  });
   afterEach(() => jest.clearAllMocks());
 
   it('renders the formatted reclaim number + provenance when lifetime > 0', () => {
@@ -96,8 +106,36 @@ describe('WhenbeeHub', () => {
     expect(screen.getByText('Deep Work')).toBeOnTheScreen();
   });
 
-  it('renders the day-honest CTA', () => {
-    mockHook.mockReturnValue(vm());
+  it('renders the ring badge tier, the labeled zones and area rows', () => {
+    // Provide one category so the YOUR AREAS zone renders.
+    useCategoriesStore.setState({
+      categories: [{ id: 'deep_work', name: 'Deep Work', adaptSpeed: 'balanced' }],
+    });
+    mockHook.mockReturnValue(
+      vm({ leadSharpness: 46, reclaimLifetimeMin: 120, honestLogCount: 5, tier: 'Setting' }),
+    );
+
+    render(<WhenbeeHub />);
+
+    // RingBadge: ringCopy(46) → tier "Setting"
+    expect(screen.getByText(/Setting/)).toBeTruthy();
+    // Zone labels
+    expect(screen.getByText('Reclaimed')).toBeTruthy();
+    expect(screen.getByText('Your areas')).toBeTruthy();
+  });
+
+  it('shows the empty CTA when there are no logs', () => {
+    mockHook.mockReturnValue(
+      vm({ leadSharpness: 0, reclaimLifetimeMin: 0, honestLogCount: 0 }),
+    );
+
+    render(<WhenbeeHub />);
+
+    expect(screen.getByText('Log your first task')).toBeTruthy();
+  });
+
+  it('renders the day-honest CTA when there are logs', () => {
+    mockHook.mockReturnValue(vm({ honestLogCount: 5, reclaimLifetimeMin: 60 }));
 
     render(<WhenbeeHub />);
 

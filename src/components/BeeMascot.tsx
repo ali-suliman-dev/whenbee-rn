@@ -85,6 +85,7 @@ export function BeeMascot({
   variant = 'default',
   seed = 1,
   animated = false,
+  glow = true,
 }: {
   size?: number;
   variant?: BeeVariant;
@@ -92,6 +93,8 @@ export function BeeMascot({
   seed?: number;
   /** Opt-in in-place wing flutter (onboarding companion). Off everywhere else. */
   animated?: boolean;
+  /** When false, the amber/drift glow halo is not rendered. Default true. */
+  glow?: boolean;
 }) {
   const t = useTheme();
   const c = t.brand.bee;
@@ -122,8 +125,8 @@ export function BeeMascot({
     transform: [{ scaleX: 1 - 0.12 * flutter.get() }],
   }));
 
-  const glow =
-    glowRadius > 0 ? (
+  const glowHalo =
+    glow && glowRadius > 0 ? (
       <>
         <Defs>
           <RadialGradient id="beeGlow" cx="50%" cy="50%" r="50%">
@@ -221,7 +224,7 @@ export function BeeMascot({
   if (!animated || reduced) {
     return (
       <Svg width={size} height={size} viewBox="0 0 2400 2400" {...a11y}>
-        {glow}
+        {glowHalo}
         {wings}
         {front}
       </Svg>
