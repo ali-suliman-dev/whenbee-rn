@@ -17,6 +17,7 @@ import { formatClock } from '@/src/lib/time';
 import { planBackward } from '@/src/engine';
 import { PlanRail } from './PlanRail';
 import { PlanTaskCard, type PlanTaskCardProps } from './PlanTaskCard';
+import { CutCard } from './CutCard';
 import type { usePlanner } from './usePlanner';
 
 // ──────────────────────────────────────────────────────────────────────────────
@@ -226,7 +227,17 @@ export function RunView({
   const t = useTheme();
   const insets = useSafeAreaInsets();
 
-  const { active, runGroups, reorderTasks, reproject, categoryName } = planner;
+  const {
+    active,
+    runGroups,
+    reorderTasks,
+    reproject,
+    categoryName,
+    cut,
+    acceptCut,
+    dismissCut,
+    pushDeadline,
+  } = planner;
 
   // ── Build a full re-projected timeline so we can show accurate start times ──
   const timeline = useMemo(() => {
@@ -436,6 +447,18 @@ export function RunView({
           {/* ── Abandon slot — Task 11 passes the component here ── */}
           {abandonSlot ?? null}
         </View>
+
+        {/* ── Cut card — amber triage, shown when re-project returns over ── */}
+        {cut !== null && !cut.stillFits ? (
+          <View style={[screenPad, { marginTop: t.space[3] }]}>
+            <CutCard
+              cut={cut}
+              acceptCut={acceptCut}
+              dismissCut={dismissCut}
+              pushDeadline={pushDeadline}
+            />
+          </View>
+        ) : null}
 
         {/* ── Rail list ── */}
         <View style={[screenPad, { marginTop: t.space[3] }]}>
