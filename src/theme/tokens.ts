@@ -257,7 +257,8 @@ export const tokens = {
   // size = SVG square edge; stroke = ring weight; popStroke/capStroke = the
   // momentary thickening on a fill-landing / cap; endowedPct = the tiny starting
   // sliver shown at Raw so a fresh ring is never a cold 0.
-  ring: { size: 200, stroke: 9, popStroke: 11, capStroke: 13, endowedPct: 6 },
+  // headDot = flat amber dot that rides the arc during the fill animation (px).
+  ring: { size: 200, stroke: 9, popStroke: 11, capStroke: 13, endowedPct: 6, headDot: 13 },
   // Wax-seal hex stamped over the bee at the Honest cap (flat-top hexagon WIDTH).
   seal: { size: 38 },
   // Flat motes flicked outward on the cap (solid squares — no glow).
