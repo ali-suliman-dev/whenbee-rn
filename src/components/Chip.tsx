@@ -156,8 +156,8 @@ export function Chip({
     ...(isAdd
       ? {
           backgroundColor: 'transparent',
-          borderWidth: t.borderWidth.thin,
-          borderColor: t.colors.hairline,
+          borderWidth: t.borderWidth.thick,
+          borderColor: t.colors.primary,
           borderStyle: 'dashed' as ViewStyle['borderStyle'],
         }
       : {
@@ -169,7 +169,7 @@ export function Chip({
 
   const labelStyle: TextStyle = {
     fontWeight: t.fontWeight.medium as TextStyle['fontWeight'],
-    color: t.colors.ink,
+    color: isAdd ? t.colors.primary : t.colors.ink,
     fontSize: t.fontSize.sm,
   };
 
