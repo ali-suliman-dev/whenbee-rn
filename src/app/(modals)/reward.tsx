@@ -90,7 +90,7 @@ export default function Reward() {
   // ── styles (token-driven; one spacing source per axis via the scroll gap) ──
   const scrollContent: ViewStyle = {
     flexGrow: 1,
-    gap: t.space[4],
+    gap: t.space[6], // wide tier — separates the four major zones
     paddingTop: t.space[2],
   };
   const tookEyebrow: TextStyle = {
@@ -128,7 +128,7 @@ export default function Reward() {
     backgroundColor: t.colors.surfaceRaised,
     borderRadius: t.radii.card,
     padding: t.space[4],
-    gap: t.space[2.5],
+    gap: t.space[3], // medium tier — card internals
   };
   const heroBlock: ViewStyle = { alignItems: 'center', gap: t.space[1.5] };
   const ctaBlock: ViewStyle = {
@@ -170,7 +170,7 @@ export default function Reward() {
     <Screen>
       <ScrollView contentContainerStyle={scrollContent} showsVerticalScrollIndicator={false}>
         {/* Zone 1 — emotional hit */}
-        <View style={{ alignItems: 'center', gap: t.space[3] }}>
+        <View style={{ alignItems: 'center', gap: t.space[2] }}>
           {r.capEyebrow ? <Text style={capEyebrow}>{r.capEyebrow}</Text> : null}
           <RewardBee sealed={r.sealed} />
           <Text style={headlineText}>{r.headline}</Text>
@@ -213,11 +213,15 @@ export default function Reward() {
           ) : null}
         </View>
 
-        {/* Zone 4 — the one action: an optional "where'd the time go?" tag. Pure
-            side-channel data — never blocks the exit, never touches the model.
-            Chips stagger in last (handled inside ReasonChips). */}
-        {r.reasonDirection && r.eventId ? (
-          <ReasonChips eventId={r.eventId} direction={r.reasonDirection} category={r.category} />
+        {/* Zone 4 — the optional tail: where'd the time go? Grouped so chip rows
+            read as one optional-tags block, not two stacked forms. Pure
+            side-channel data — never blocks the exit, never touches the model. */}
+        {r.eventId ? (
+          <View style={{ gap: t.space[3] }}>
+            {r.reasonDirection ? (
+              <ReasonChips eventId={r.eventId} direction={r.reasonDirection} category={r.category} />
+            ) : null}
+          </View>
         ) : null}
 
         {/* CTA zone — rides the bottom of the flow (not pinned), single primary
