@@ -5,6 +5,7 @@ import Animated, {
   ReduceMotion,
 } from 'react-native-reanimated';
 import { useTheme } from '@/src/theme/useTheme';
+import { tokens } from '@/src/theme/tokens';
 import { usePlanner } from '@/src/features/planner/usePlanner';
 import { BuildView } from '@/src/features/planner/BuildView';
 import { RunView } from '@/src/features/planner/RunView';
@@ -20,8 +21,8 @@ import { AbandonButton } from '@/src/features/planner/AbandonButton';
 
 // Shared entering/exiting presets — duration from tokens (base = 220ms, within
 // the ≤300ms budget). ReduceMotion.System lets Reanimated honour the OS setting.
-const ENTER = FadeIn.duration(220).reduceMotion(ReduceMotion.System);
-const EXIT = FadeOut.duration(220).reduceMotion(ReduceMotion.System);
+const ENTER = FadeIn.duration(tokens.motion.base).reduceMotion(ReduceMotion.System);
+const EXIT = FadeOut.duration(tokens.motion.base).reduceMotion(ReduceMotion.System);
 
 export default function PlanScreen() {
   const t = useTheme();
