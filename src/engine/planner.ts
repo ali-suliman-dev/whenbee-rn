@@ -48,7 +48,7 @@ function buildTimeline(startBy: number, items: readonly EffectiveTask[]): PlanTi
     const startAt = cursor;
     const endAt = startAt + effectiveMin * MS_PER_MIN;
     cursor = endAt;
-    return { id: task.id, label: task.label, startAt, endAt };
+    return { id: task.id, label: task.label, startAt, endAt, kind: 'task' as const };
   });
 }
 
