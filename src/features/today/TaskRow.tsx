@@ -203,7 +203,6 @@ export function TaskRow({
     color: t.colors.inverseText,
     fontSize: t.fontSize.xs,
     fontWeight: t.fontWeight.bold as TextStyle['fontWeight'],
-    letterSpacing: 0.2,
   };
 
   const content = (
