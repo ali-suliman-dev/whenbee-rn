@@ -91,9 +91,11 @@ function composerReducer(state: ComposerState, action: ComposerAction): Composer
 function InlineComposer({
   onConfirm,
   onCancel,
+  onOpen,
 }: {
   onConfirm: (label: string, category: string) => void;
   onCancel?: () => void;
+  onOpen?: () => void;
 }) {
   const t = useTheme();
   const [state, dispatch] = useReducer(composerReducer, {
@@ -110,8 +112,10 @@ function InlineComposer({
   function handleOpen() {
     manualRef.current = false;
     dispatch({ type: 'open' });
-    // Focus after a brief layout pass.
-    setTimeout(() => titleRef.current?.focus(), 50);
+    setTimeout(() => {
+      titleRef.current?.focus();
+      onOpen?.();
+    }, 50);
   }
 
   function handleTitleChange(v: string) {
@@ -325,6 +329,8 @@ export interface BuildViewProps {
 export function BuildView({ planner, nowMs = Date.now() }: BuildViewProps) {
   const t = useTheme();
   const insets = useSafeAreaInsets();
+  const scrollRef = useRef<ScrollView>(null);
+  const composerYRef = useRef(0);
 
   const {
     draft,
@@ -507,6 +513,7 @@ export function BuildView({ planner, nowMs = Date.now() }: BuildViewProps) {
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
     >
     <ScrollView
+      ref={scrollRef}
       style={{ flex: 1 }}
       contentContainerStyle={{ flexGrow: 1 }}
       keyboardShouldPersistTaps="handled"
@@ -563,8 +570,22 @@ export function BuildView({ planner, nowMs = Date.now() }: BuildViewProps) {
       ) : null}
 
       {/* ── Inline add composer ── */}
-      <View style={{ paddingHorizontal: t.space[4] }}>
-        <InlineComposer onConfirm={handleAddTask} />
+      <View
+        style={{ paddingHorizontal: t.space[4] }}
+        onLayout={(e) => {
+          composerYRef.current = e.nativeEvent.layout.y;
+        }}
+      >
+        <InlineComposer
+          onConfirm={handleAddTask}
+          onOpen={() => {
+            // Delay until after keyboard begins animating so the scroll lands
+            // in the right position once the viewport has shrunk.
+            setTimeout(() => {
+              scrollRef.current?.scrollTo({ y: composerYRef.current, animated: true });
+            }, 150);
+          }}
+        />
       </View>
 
       {/* ── Spacer to push verdict + CTA to bottom ── */}
