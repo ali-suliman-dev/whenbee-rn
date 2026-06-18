@@ -75,7 +75,7 @@ function SettingRow({
     paddingVertical: t.space[3],
     opacity: disabled ? 0.5 : 1,
   };
-  const titleStyle: TextStyle = { ...(type.bodyLg as unknown as TextStyle), color: t.colors.ink };
+  const titleStyle: TextStyle = { ...(type.bodySmBold as unknown as TextStyle), color: t.colors.ink };
   const noteStyle: TextStyle = { ...(type.caption as unknown as TextStyle), color: t.colors.inkSoft };
 
   const content = (

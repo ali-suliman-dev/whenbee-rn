@@ -86,7 +86,7 @@ export function TodayHud({
     paddingHorizontal: t.space[4],
   };
   const tierLabel: TextStyle = {
-    ...(type.bodySm as unknown as TextStyle),
+    ...(type.caption as unknown as TextStyle),
     color: t.colors.ink,
     fontWeight: t.fontWeight.semibold as TextStyle['fontWeight'],
   };
@@ -107,7 +107,7 @@ export function TodayHud({
     alignItems: 'center',
     justifyContent: showReclaim && ritualEnabled ? 'space-between' : 'flex-start',
     gap: t.space[3],
-    borderTopWidth: t.borderWidth.thin,
+    borderTopWidth: t.borderWidth.share,
     borderTopColor: t.colors.hairline,
     paddingTop: t.space[2.5],
     marginTop: t.space[3],

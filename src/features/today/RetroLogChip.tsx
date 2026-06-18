@@ -22,7 +22,7 @@ export function RetroLogChip({ label, onPress }: { label: string; onPress: () =>
     paddingHorizontal: t.space[4],
     paddingVertical: t.space[4],
   };
-  const text: TextStyle = { ...(type.bodySm as unknown as TextStyle), color: t.colors.ink, flex: 1 };
+  const text: TextStyle = { ...(type.bodySm as unknown as TextStyle), fontSize: t.fontSize.sm, color: t.colors.ink, flex: 1 };
 
   return (
     <Pressable

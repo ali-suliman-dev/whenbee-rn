@@ -114,10 +114,10 @@ export function RitualSeal({
   const sealInk = t.brand.bee.body;
   const cream = t.brand.bee.wing;
 
-  const row: ViewStyle = { flexDirection: 'row', alignItems: 'center', gap: t.space[2] };
+  const row: ViewStyle = { flexDirection: 'row', alignItems: 'center', gap: t.space[1.5] };
   const label: TextStyle = {
     ...(type.caption as unknown as TextStyle),
-    color: done ? t.colors.amberText : t.colors.inkSoft,
+    color: t.colors.inkSoft,
   };
 
   return (

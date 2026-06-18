@@ -117,20 +117,6 @@ export function RunningFocusCard({ categoryName }: RunningFocusCardProps) {
   };
 
   const topline: ViewStyle = { flexDirection: 'row', alignItems: 'flex-end', gap: t.space[3] };
-  const coin: ViewStyle = {
-    width: t.size.coin,
-    height: t.size.coin,
-    borderRadius: t.radii.full,
-    backgroundColor: t.colors.primary,
-    alignItems: 'center',
-    justifyContent: 'center',
-  };
-  const liveDot: ViewStyle = {
-    width: t.space[2],
-    height: t.space[2],
-    borderRadius: t.radii.full,
-    backgroundColor: t.colors.onIndigo,
-  };
   const eyebrowRow: ViewStyle = { flexDirection: 'row', alignItems: 'center', gap: t.space[2] };
   const dot: ViewStyle = {
     width: t.space[1.5],
@@ -163,9 +149,6 @@ export function RunningFocusCard({ categoryName }: RunningFocusCardProps) {
     >
       <Card tone="raised" style={{ gap: t.space[4] }}>
         <View style={topline}>
-          <View style={coin}>
-            <Animated.View style={[liveDot, pulseStyle]} />
-          </View>
           <View style={{ flex: 1, gap: t.space[1.5] }}>
             <View style={eyebrowRow}>
               <Animated.View style={[dot, pulseStyle]} />
