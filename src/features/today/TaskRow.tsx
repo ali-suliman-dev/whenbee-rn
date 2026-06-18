@@ -192,7 +192,6 @@ export function TaskRow({
     top: 0,
     bottom: 0,
     justifyContent: 'center',
-    pointerEvents: 'none',
   };
   const coachPill: ViewStyle = {
     backgroundColor: t.colors.inverseSurface,
@@ -244,7 +243,7 @@ export function TaskRow({
       )}
 
       {showCoachMark ? (
-        <Animated.View style={[coachWrap, markStyle]}>
+        <Animated.View style={[coachWrap, markStyle]} pointerEvents="none">
           <View style={coachPill}>
             <Text style={coachLabel}>← swipe to remove</Text>
           </View>
