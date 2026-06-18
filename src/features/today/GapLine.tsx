@@ -1,20 +1,22 @@
-import { useEffect, useId } from 'react';
+import { useTheme } from '@/src/theme/useTheme';
+import { useEffect } from 'react';
 import { View, type ViewStyle } from 'react-native';
 import Animated, {
   Easing,
-  useSharedValue,
   useAnimatedStyle,
+  useReducedMotion,
+  useSharedValue,
   withDelay,
   withTiming,
-  useReducedMotion,
 } from 'react-native-reanimated';
-import Svg, { Defs, Pattern, Rect as SvgRect } from 'react-native-svg';
-import { useTheme } from '@/src/theme/useTheme';
+import Svg, { Defs, Line, Pattern, Rect } from 'react-native-svg';
 
 // ──────────────────────────────────────────────────────────────────────────────
 // GapLine — the guess→plan calibration line on Today's focus card.
 //   • indigo segment = the user's guess (hatched, so it yields visual weight to
-//     the solid indigo Start button — one filled indigo per screen rule)
+//     the solid indigo Start button — one filled indigo per screen rule).
+//     Dark mode: diagonal two-tone indigo stripes (primary + primaryEdge).
+//     Light mode: solid primarySoft fill.
 //   • amber  segment = the +minutes it really takes (the learned gap)
 // Full length = the plan (honest) total. The amber reveals on mount (the gap
 // "appearing"), never a scold — amber states a fact. When a session is running,
@@ -49,7 +51,10 @@ export function GapLine({ guessMin, honestMin, elapsedSec }: GapLineProps) {
   // Striped guess fills FIRST (scaleX from the left), then the amber gap fills.
   const guessReveal = useSharedValue(reduced || guessFrac === 0 ? 1 : 0);
   useEffect(() => {
-    if (reduced) { guessReveal.set(1); return; }
+    if (reduced) {
+      guessReveal.set(1);
+      return;
+    }
     guessReveal.set(withTiming(1, { duration: t.motion.base, easing: t.motion.easing.standard }));
   }, [reduced, guessReveal, t.motion]);
   const guessStyle = useAnimatedStyle(() => ({ transform: [{ scaleX: guessReveal.get() }] }));
@@ -63,7 +68,10 @@ export function GapLine({ guessMin, honestMin, elapsedSec }: GapLineProps) {
       return;
     }
     reveal.set(
-      withDelay(t.motion.base + t.motion.fast, withTiming(1, { duration: t.motion.base, easing: t.motion.easing.standard })),
+      withDelay(
+        t.motion.base + t.motion.fast,
+        withTiming(1, { duration: t.motion.base, easing: t.motion.easing.standard }),
+      ),
     );
   }, [reduced, reveal, t.motion]);
   const extraStyle = useAnimatedStyle(() => ({ transform: [{ scaleX: reveal.get() }] }));
@@ -89,7 +97,7 @@ export function GapLine({ guessMin, honestMin, elapsedSec }: GapLineProps) {
   };
   const guessSeg: ViewStyle = {
     width: `${guessFrac * 100}%`,
-    backgroundColor: t.colors.primarySoft,
+    backgroundColor: t.colors.primarySoft2,
     overflow: 'hidden',
     transformOrigin: 'left',
   };
@@ -108,23 +116,20 @@ export function GapLine({ guessMin, honestMin, elapsedSec }: GapLineProps) {
     backgroundColor: t.colors.ink,
   };
 
-  const hatchId = `gapHatch${useId().replace(/:/g, '')}`;
-
-  const { lineW, gapW } = t.progress.gapStripe;
-  const hatchUnit = lineW + gapW;
-
   return (
     <View>
       <View style={track}>
         <Animated.View style={[guessSeg, guessStyle]} testID="gapline-guess">
-          <Svg testID="gapline-guess-hatch" width="100%" height={t.progress.gapTrack} pointerEvents="none">
+          <Svg width="100%" height={t.progress.gapTrack}>
             <Defs>
-              <Pattern id={hatchId} width={hatchUnit} height={t.progress.gapTrack}
-                patternUnits="userSpaceOnUse" patternTransform="rotate(45)">
-                <SvgRect width={lineW} height={t.progress.gapTrack * 2} fill={t.colors.primary} />
+              <Pattern id="gapDiag" patternUnits="userSpaceOnUse" width="16" height="16">
+                <Rect x="0" y="0" width="16" height="16" fill={t.colors.primarySoft2} />
+                {/* Lines extend to y=-8…24 so end caps stay outside the 8px bar */}
+                <Line x1="-16" y1="24" x2="16" y2="-8" stroke={t.colors.primary} strokeWidth="4" />
+                <Line x1="0" y1="24" x2="32" y2="-8" stroke={t.colors.primary} strokeWidth="4" />
               </Pattern>
             </Defs>
-            <SvgRect width="100%" height={t.progress.gapTrack} fill={`url(#${hatchId})`} />
+            <Rect x="0" y="0" width="100%" height="100%" fill="url(#gapDiag)" />
           </Svg>
         </Animated.View>
         <Animated.View style={[extraSeg, extraStyle]} testID="gapline-extra" />
@@ -133,3 +138,5 @@ export function GapLine({ guessMin, honestMin, elapsedSec }: GapLineProps) {
     </View>
   );
 }
+//primarySoft
+//gapStripeHi
