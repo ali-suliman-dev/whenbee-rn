@@ -6,6 +6,7 @@ import Animated, {
   useAnimatedProps,
   useReducedMotion,
   withDelay,
+  withRepeat,
   withTiming,
   interpolate,
 } from 'react-native-reanimated';
@@ -53,6 +54,7 @@ export function RitualSeal({
   const bloom = useSharedValue(0); // one-shot; rests at 0
   const mark = useSharedValue(done ? 1 : 0);
   const spark = useSharedValue(0); // one-shot; rests at 0
+  const restBreath = useSharedValue(0);
   const prevDone = useRef(done);
 
   useEffect(() => {
@@ -61,14 +63,21 @@ export function RitualSeal({
 
     if (!done) {
       border.set(0); honey.set(0); mark.set(0); bloom.set(0); spark.set(0);
+      if (!reduced) {
+        restBreath.set(withRepeat(withTiming(1, { duration: t.motion.halo, easing: e.calm }), -1, true));
+      } else {
+        restBreath.set(0);
+      }
       return;
     }
     if (reduced || !justSealed) {
       // Already sealed on mount, or reduced motion: snap to final, no motion.
       border.set(1); honey.set(1); mark.set(1); bloom.set(0); spark.set(0);
+      restBreath.set(0);
       return;
     }
     // Play the one-shot: border → honey → bloom → ✦ → sparkle.
+    restBreath.set(0);
     border.set(0); border.set(withDelay(m.dBorder, withTiming(1, { duration: m.border, easing: e.standard })));
     honey.set(0);  honey.set(withDelay(m.dHoney, withTiming(1, { duration: m.honey, easing: e.premium })));
     bloom.set(0);  bloom.set(withDelay(m.dBloom, withTiming(1, { duration: m.bloom, easing: e.calm })));
@@ -93,6 +102,7 @@ export function RitualSeal({
     originX: 12,
     originY: 12,
   }));
+  const restProps = useAnimatedProps(() => ({ opacity: interpolate(restBreath.get(), [0, 1], [0.32, 0.46]) }));
   // Each sliver: same shared `spark`, fixed rotation; the inner rect travels out
   // along the rotated axis (y decreasing) while it fades 0→1→0.
   const sparkProps = useAnimatedProps(() => ({
@@ -132,10 +142,10 @@ export function RitualSeal({
 
           {/* faint resting outline (only meaningful when not sealed) */}
           {!done ? (
-            <Path d={HEX} fill="none" stroke={t.colors.primary} strokeWidth={1.5} strokeLinejoin="round" opacity={0.4} />
+            <AnimatedPath d={HEX} fill="none" stroke={t.colors.primary} strokeWidth={1.5} strokeLinejoin="round" animatedProps={restProps} />
           ) : null}
 
-          <Path d={HEX} fill="rgba(130,117,240,0.16)" />
+          <Path d={HEX} fill={t.colors.primarySoft} />
 
           <G clipPath="url(#sealClip)">
             <AnimatedRect x={5} width={14} animatedProps={honeyProps} fill={honeyYellow} />
