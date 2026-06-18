@@ -22,12 +22,13 @@ import { type } from '@/src/theme/typography';
 //   amberText → t.colors.amberText  (AA amber-on-light; use for text on light cards)
 // ──────────────────────────────────────────────────────────────────────────────
 
-type Size = 'inline' | 'big' | 'lg' | 'xl';
+type Size = 'inline' | 'md' | 'big' | 'lg' | 'xl';
 type Tone = 'ink' | 'indigo' | 'amber' | 'amberText';
 
 const sizeScale: Record<
   Size,
   | typeof type.multiplier
+  | typeof type.honestNumberMd
   | typeof type.bigNumber
   | typeof type.honestNumberLg
   | typeof type.honestNumberXl

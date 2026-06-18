@@ -118,6 +118,7 @@ export default function Settings() {
   const dailyRitualEnabled = useSettingsStore((s) => s.dailyRitualEnabled);
   const setDailyRitualEnabled = useSettingsStore((s) => s.setDailyRitualEnabled);
   const isPro = useEntitlement((s) => s.isPro);
+  const setPro = useEntitlement((s) => s.setPro);
   const categoryCount = useCategoriesStore((s) => s.categories.length);
   const { restoring, manageSubscription, restorePurchases } = useAccountActions();
   const { enabled: remindersEnabled, toggle: toggleReminders } = useReminderSetting();
@@ -294,6 +295,25 @@ export default function Settings() {
             disabled={resetting}
           />
         </View>
+
+        {__DEV__ ? (
+          <View style={{ gap: t.space[3] }}>
+            <AppText variant="label">Developer</AppText>
+            <SettingRow
+              icon="construct-outline"
+              title="Unlock Pro (dev)"
+              note="Flip the Pro entitlement to preview gated screens. Dev builds only — never ships."
+              trailing={
+                <Switch
+                  value={isPro}
+                  onValueChange={setPro}
+                  trackColor={{ true: t.colors.primary, false: t.colors.hairline }}
+                  accessibilityLabel="Unlock Pro (dev)"
+                />
+              }
+            />
+          </View>
+        ) : null}
       </ScrollView>
 
       <ConfirmSheet
