@@ -53,7 +53,18 @@ export function FocusCard({ category, categoryLabel, taskTitle, summary, finishC
   };
   const contextRow: ViewStyle = { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' };
   const guessLabel: TextStyle = { ...(type.caption as unknown as TextStyle), color: t.colors.inkSoft };
-  const learned: TextStyle = { color: t.colors.amberText, fontFamily: 'Inter-Bold' as TextStyle['fontFamily'] };
+  const learnedBadge: ViewStyle = {
+    backgroundColor: t.colors.accentSoft,
+    borderRadius: t.radii.full,
+    paddingHorizontal: t.space[2],
+    paddingVertical: t.space[0.5],
+  };
+  const learnedBadgeText: TextStyle = {
+    ...(type.caption as unknown as TextStyle),
+    fontSize: t.fontSize.xs,
+    color: t.colors.amberText,
+    fontFamily: 'Inter-Bold' as TextStyle['fontFamily'],
+  };
   const finishLabel: TextStyle = {
     ...(type.caption as unknown as TextStyle),
     color: t.colors.ink,
@@ -82,15 +93,14 @@ export function FocusCard({ category, categoryLabel, taskTitle, summary, finishC
       <GapLine guessMin={summary.guessMinutes} honestMin={summary.honestMinutes} />
 
       <View style={contextRow}>
-        <Text style={guessLabel}>
-          guessed {summary.guessMinutes}
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: t.space[1.5] }}>
+          <Text style={guessLabel}>guessed {summary.guessMinutes}</Text>
           {delta > 0 ? (
-            <Text>
-              {' · '}
-              <Text style={learned}>+{delta} learned</Text>
-            </Text>
+            <View style={learnedBadge}>
+              <Text style={learnedBadgeText}>+{delta} learned</Text>
+            </View>
           ) : null}
-        </Text>
+        </View>
         <Text style={finishLabel}>done {finishClock}</Text>
       </View>
 
