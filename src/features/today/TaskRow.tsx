@@ -25,7 +25,9 @@ import { type } from '@/src/theme/typography';
 interface TaskRowProps {
   title: string;
   categoryLabel: string;
-  /** Learned honest estimate (minutes). Shown on queued rows. */
+  /** The user's original guess (minutes) — now the hero figure on every row. */
+  guessMin: number;
+  /** Learned honest estimate (minutes). Shown as the quiet "plan ~N" support. */
   honestMin: number;
   /** Actual minutes once finished. Shown on done rows when known. */
   actualMin?: number | null;
@@ -33,7 +35,7 @@ interface TaskRowProps {
   onPress?: () => void;
 }
 
-export function TaskRow({ title, categoryLabel, honestMin, actualMin, done = false, onPress }: TaskRowProps) {
+export function TaskRow({ title, categoryLabel, guessMin, honestMin, actualMin, done = false, onPress }: TaskRowProps) {
   const t = useTheme();
   const reducedMotion = useReducedMotion();
   const opacity = useSharedValue(1);
@@ -96,14 +98,23 @@ export function TaskRow({ title, categoryLabel, honestMin, actualMin, done = fal
     color: done ? t.colors.inkSoft : t.colors.ink,
   };
   const catText: TextStyle = { ...(type.caption as unknown as TextStyle), color: t.colors.inkSoft };
-  const timeWrap: ViewStyle = { alignSelf: 'flex-end', flexDirection: 'row', alignItems: 'baseline', gap: t.space[0.5] };
-  const estNum: TextStyle = {
+  const timeWrap: ViewStyle = { alignSelf: 'flex-end', alignItems: 'flex-end', gap: t.space[0.5] };
+  const lineRow: ViewStyle = { flexDirection: 'row', alignItems: 'baseline', gap: t.space[0.5] };
+  const leadNum: TextStyle = {
     fontFamily: 'Inter-Bold' as TextStyle['fontFamily'],
-    fontSize: t.fontSize.base,
+    fontSize: t.fontSize.lg,
     color: t.colors.ink,
     fontVariant: ['tabular-nums'],
   };
-  const estUnit: TextStyle = { ...(type.caption as unknown as TextStyle), color: t.colors.inkSoft };
+  const tookNum: TextStyle = { ...leadNum, fontSize: t.fontSize.base };
+  const unit: TextStyle = { ...(type.caption as unknown as TextStyle), color: t.colors.inkSoft };
+  const planLabel: TextStyle = { ...(type.caption as unknown as TextStyle), color: t.colors.inkSoft };
+  const planNum: TextStyle = {
+    fontFamily: 'Inter-Bold' as TextStyle['fontFamily'],
+    fontSize: t.fontSize.sm,
+    color: t.colors.amberText,
+    fontVariant: ['tabular-nums'],
+  };
 
   const content = (
     <Animated.View style={[row, pressStyle]}>
@@ -125,17 +136,27 @@ export function TaskRow({ title, categoryLabel, honestMin, actualMin, done = fal
       </View>
 
       {done ? (
-        actualMin != null ? (
-          <View style={timeWrap}>
-            <Text style={estUnit}>took </Text>
-            <Text style={estNum}>{actualMin}</Text>
-            <Text style={estUnit}>min</Text>
-          </View>
-        ) : null
+        <View style={timeWrap}>
+          {actualMin != null ? (
+            <View style={lineRow}>
+              <Text style={unit}>took </Text>
+              <Text style={tookNum}>{actualMin}</Text>
+              <Text style={unit}>min</Text>
+            </View>
+          ) : null}
+          <Text style={planLabel}>guessed {guessMin}</Text>
+        </View>
       ) : (
         <View style={timeWrap}>
-          <Text style={estNum}>~{honestMin}</Text>
-          <Text style={estUnit}>min</Text>
+          <View style={lineRow}>
+            <Text style={leadNum}>{guessMin}</Text>
+            <Text style={unit}>min</Text>
+          </View>
+          <View style={lineRow}>
+            <Text style={planLabel}>plan </Text>
+            <Text style={planNum}>~{honestMin}</Text>
+            <Text style={unit}> min</Text>
+          </View>
         </View>
       )}
     </Animated.View>
@@ -149,7 +170,7 @@ export function TaskRow({ title, categoryLabel, honestMin, actualMin, done = fal
       onPressIn={pressIn}
       onPressOut={pressOut}
       accessibilityRole="button"
-      accessibilityLabel={`${title}, ${categoryLabel}, honest estimate ${honestMin} minutes. Tap to start.`}
+      accessibilityLabel={`${title}, ${categoryLabel}, you guessed ${guessMin} minutes, we plan ${honestMin}. Tap to start.`}
     >
       {content}
     </Pressable>
