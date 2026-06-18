@@ -51,12 +51,12 @@ Plays once on a successful log. Order is **border first, then honey**:
 
 | # | Beat | Property | Duration / delay | Easing |
 |---|---|---|---|---|
-| 1 | Border draws itself closed | `stroke-dashoffset` 100→0 | 660ms @ 40ms | ease-out `(.23,1,.32,1)` |
-| 2 | Honey wells up inside | `scaleY` 0→1 (origin bottom) + surface edge | 580ms @ 700ms | premium `(.4,0,.2,1)` |
-| 3 | Soft warm bloom passes once | radial-gradient `opacity` 0→.5→0, `scale`→1.25 | 900ms @ 980ms | sine `(.37,0,.63,1)` |
-| 4 | `✦` fades in | `opacity` 0→1, `scale` .85→1 | 360ms @ 1200ms | ease-out |
-| 5 | Radial sparkle bursts (8 amber slivers, 360°) | `rotate(a) translateY(−d)` + fade | 620ms @ 1220ms | ease-out |
-| — | Reclaim number banks | `scale` 1→1.1→1 | @ 1200ms | premium |
+| 1 | Border draws itself closed | `stroke-dashoffset` 100→0 | 660ms @ 40ms (ends @700) | ease-out `(.23,1,.32,1)` |
+| 2 | Honey wells up inside — **starts only after the border finishes** | `scaleY` 0→1 (origin bottom) + surface edge | 580ms @ 740ms | premium `(.4,0,.2,1)` |
+| 3 | Soft warm bloom passes once | radial-gradient `opacity` 0→.5→0, `scale`→1.25 | 900ms @ 1020ms | sine `(.37,0,.63,1)` |
+| 4 | `✦` fades in | `opacity` 0→1, `scale` .85→1 | 360ms @ 1240ms | ease-out |
+| 5 | Radial sparkle bursts (8 amber slivers, 360°) | `rotate(a) translateY(−d)` + fade | 620ms @ 1260ms | ease-out |
+| — | Reclaim number banks | `scale` 1→1.1→1 | @ 1240ms | premium |
 
 - **No scale-jump / squash / bounce on the glyph** (explicitly rejected as tacky). Calm and deliberate — this is a once-a-day moment.
 - The sparkle reuses the `EnergyGlyph` "streaks fly off" signature, spread radially (every 45°).
