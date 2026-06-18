@@ -326,13 +326,27 @@ export function BuildView({ planner, nowMs = Date.now() }: BuildViewProps) {
     setReorderIds(draft.tasks.map((task) => task.id));
   }
 
+  // M5: build a Map<id, timeline entry> so mid-reorder renders can't show
+  // mismatched times (timeline[draftIdx] drifts when the visual order differs
+  // from the store order).
+  const timelineByTaskId = useMemo(() => {
+    const map = new Map<string, { startAt: number; endAt: number }>();
+    if (!result) return map;
+    for (const entry of result.timeline) {
+      if (entry.kind === 'task') {
+        map.set(entry.id, { startAt: entry.startAt, endAt: entry.endAt });
+      }
+    }
+    return map;
+  }, [result]);
+
   // Derive the displayed list from reorderIds + draft state + result timeline.
   // useMemo keeps re-renders cheap — no render-time setState side-effects.
   const localTasks = useMemo<PlanTaskCardProps[]>(() => {
     return reorderIds.flatMap((id) => {
-      const draftIdx = draft.tasks.findIndex((t) => t.id === id);
-      const task = draft.tasks[draftIdx];
+      const task = draft.tasks.find((t) => t.id === id);
       if (!task) return [];
+      const timeEntry = timelineByTaskId.get(task.id);
       return [
         {
           variant: 'build' as const,
@@ -340,12 +354,12 @@ export function BuildView({ planner, nowMs = Date.now() }: BuildViewProps) {
           label: task.label,
           category: categoryName(task.category),
           durationMin: task.durationMin,
-          startAt: result?.timeline[draftIdx]?.startAt,
-          endAt: result?.timeline[draftIdx]?.endAt,
+          startAt: timeEntry?.startAt,
+          endAt: timeEntry?.endAt,
         },
       ];
     });
-  }, [reorderIds, draft.tasks, result?.timeline, categoryName]);
+  }, [reorderIds, draft.tasks, timelineByTaskId, categoryName]);
 
   // ── Reorder ───────────────────────────────────────────────────────────────
 
@@ -461,6 +475,7 @@ export function BuildView({ planner, nowMs = Date.now() }: BuildViewProps) {
         <FinishTimeWheel
           valueMs={draft.deadline}
           mode={deadlineMode}
+          nowMs={nowMs}
           onChange={(ms, mode) => {
             setDeadlineMode(mode);
             setDeadline(ms);

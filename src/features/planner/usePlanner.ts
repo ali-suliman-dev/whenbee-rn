@@ -126,10 +126,12 @@ export function usePlanner(args: UsePlannerArgs = {}) {
       deadline: draft.deadline,
       tasks,
       bufferMin: draft.bufferMin,
+      // C2: breatherMin must be passed so build-view feedback reflects breathers.
+      breatherMin: draft.breatherMin,
       nowMs: now,
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [draft.deadline, draft.bufferMin, JSON.stringify(tasks), now]);
+  }, [draft.deadline, draft.bufferMin, draft.breatherMin, JSON.stringify(tasks), now]);
 
   /**
    * Apply a "cut" verdict: remove the named task(s) and let the draft rebuild.

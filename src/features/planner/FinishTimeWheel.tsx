@@ -63,9 +63,9 @@ const MINUTES = minutesData();
 const HOUR_COUNT = HOURS.length; // 24
 const MIN_COUNT = MINUTES.length; // 12
 
-/** Epoch ms for hour:minute on today's calendar day. */
-function todayAt(hour: number, minute: number): number {
-  const d = new Date();
+/** Epoch ms for hour:minute on the calendar day of `baseMs`. */
+function todayAt(hour: number, minute: number, baseMs: number): number {
+  const d = new Date(baseMs);
   d.setHours(hour, minute, 0, 0);
   return d.getTime();
 }
@@ -222,22 +222,26 @@ export function FinishTimeWheel({
   valueMs,
   mode,
   onChange,
+  nowMs,
 }: {
   /** Selected deadline as epoch ms. If null/undefined, defaults to the next whole hour. */
   valueMs: number | null;
   /** Which deadline semantic is active. */
   mode: DeadlineMode;
   onChange: (deadlineMs: number, mode: DeadlineMode) => void;
+  /** I3: injected clock — avoids new Date() calls for deterministic tests + midnight safety. */
+  nowMs?: number;
 }) {
   const t = useTheme();
   const reducedMotion = useReducedMotion();
 
   // Resolve initial hour/minute from valueMs or default to next whole hour.
   const defaultMs = useMemo(() => {
-    const d = new Date();
+    const d = new Date(nowMs ?? Date.now());
     d.setMinutes(0, 0, 0);
     d.setHours(d.getHours() + 1);
     return d.getTime();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const resolved = valueMs ?? defaultMs;
@@ -260,9 +264,10 @@ export function FinishTimeWheel({
     (newHIdx: number, newMIdx: number, newMode: DeadlineMode) => {
       const h = HOURS[newHIdx]?.value ?? 0;
       const m = MINUTES[newMIdx]?.value ?? 0;
-      onChange(todayAt(h, m), newMode);
+      // I3: use injected nowMs so todayAt anchors to the right calendar day.
+      onChange(todayAt(h, m, nowMs ?? Date.now()), newMode);
     },
-    [onChange],
+    [onChange, nowMs],
   );
 
   const handleHourChange = useCallback(

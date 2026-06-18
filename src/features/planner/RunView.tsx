@@ -233,7 +233,7 @@ export function RunView({
     active,
     runGroups,
     reorderTasks,
-    reproject,
+    reprojectForCut,
     categoryName,
     cut,
     acceptCut,
@@ -299,6 +299,9 @@ export function RunView({
       deadline: active.deadline,
       tasks: active.tasks,
       bufferMin: active.bufferMin,
+      // I1: breatherMin must be passed or breather rows are never inserted and
+      // every card's startAt/endAt is off by (taskCount−1) × breatherMin.
+      breatherMin: active.breatherMin,
       nowMs,
     });
     return result.timeline;
@@ -384,22 +387,36 @@ export function RunView({
   const totalRows = doneCount + (hasNow ? 1 : 0) + nextRows.length;
 
   // ── Reorder handler (only next tasks) ──────────────────────────────────────
-  // Extracts the task-only ids (skipping breather entries) and reorders them.
+  // C3: nextRows is a mixed task+breather array. ReorderableList emits from/to
+  // as indices into that mixed array, but reorderItems must operate on a task-only
+  // array. Fix: map the mixed-array from/to positions to task-only positions so
+  // breather rows don't corrupt the reorder when breatherMin > 0.
   const handleReorder = useCallback(
     (event: ReorderableListReorderEvent) => {
-      const taskRowIndices: number[] = [];
+      // Build a mapping: mixed-row index → task-only index (undefined for breathers)
+      const taskIds: string[] = [];
+      const mixedToTaskIndex = new Map<number, number>();
       for (let i = 0; i < nextRows.length; i++) {
-        if (nextRows[i]?.kind === 'task') taskRowIndices.push(i);
+        const row = nextRows[i];
+        if (row?.kind === 'task') {
+          mixedToTaskIndex.set(i, taskIds.length);
+          taskIds.push(row.props.id);
+        }
       }
-      const taskIds = taskRowIndices
-        .map((i) => {
-          const row = nextRows[i];
-          return row?.kind === 'task' ? row.props.id : undefined;
-        })
-        .filter((id): id is string => id !== undefined);
 
-      // Map the event indices to task-only positions
-      const reordered = reorderItems(taskIds, event.from, event.to);
+      // Translate mixed-list from/to to task-only from/to.
+      // If either index lands on a breather row, find the nearest task-row index.
+      const toTaskIdx = (mixedIdx: number): number => {
+        const direct = mixedToTaskIndex.get(mixedIdx);
+        if (direct !== undefined) return direct;
+        // Clamp to valid task range
+        return Math.min(Math.max(0, mixedIdx), taskIds.length - 1);
+      };
+
+      const taskFrom = toTaskIdx(event.from);
+      const taskTo = toTaskIdx(event.to);
+
+      const reordered = reorderItems(taskIds, taskFrom, taskTo);
       // Combine with done + now ids to produce full task list order
       const doneIds = runGroups.done.map((task) => task.id);
       const nowIds = runGroups.now.map((task) => task.id);
@@ -418,9 +435,11 @@ export function RunView({
   }, []);
 
   // ── Re-plan handler ─────────────────────────────────────────────────────────
+  // I2: must call reprojectForCut (which sets the cut state → CutCard shows),
+  // not reproject (which returns a diff object that gets discarded).
   const handleReplan = useCallback(() => {
-    reproject(active);
-  }, [reproject, active]);
+    reprojectForCut(active);
+  }, [reprojectForCut, active]);
 
   // ── Layout tokens ───────────────────────────────────────────────────────────
   const screenPad: ViewStyle = { paddingHorizontal: t.space[4] };
