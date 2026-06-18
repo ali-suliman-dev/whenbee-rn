@@ -47,3 +47,6 @@ example
 .superpowers/
 .playwright-mcp/
 .claude/worktrees/
+
+# Git worktrees
+.worktrees/
