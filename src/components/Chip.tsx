@@ -49,12 +49,16 @@ export function Chip({
   icon,
   selected = false,
   variant = 'default',
+  containerStyle,
+  style,
   onPress,
 }: {
   label: string;
   icon?: ReactNode;
   selected?: boolean;
   variant?: 'default' | 'add';
+  containerStyle?: ViewStyle;
+  style?: ViewStyle;
   onPress: () => void;
 }) {
   const t = useTheme();
@@ -185,6 +189,7 @@ export function Chip({
   // touch wrapper; the press dim + border overlay wrap the whole chip.
   return (
     <Pressable
+      style={style}
       onPress={onPress}
       onPressIn={handlePressIn}
       onPressOut={handlePressOut}
@@ -193,7 +198,7 @@ export function Chip({
       hitSlop={6}
     >
       <Animated.View style={pressStyle} onLayout={handleLayout}>
-        <Animated.View style={[container, isAdd ? null : tint]}>
+        <Animated.View style={[container, isAdd ? null : tint, containerStyle]}>
           {icon ? <View>{icon}</View> : null}
           <AppText style={labelStyle}>{label}</AppText>
         </Animated.View>

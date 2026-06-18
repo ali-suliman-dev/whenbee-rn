@@ -51,7 +51,7 @@ export const tokens = {
   // `share` = the ShareableCard's defined 1px edge. It is kept OFF the global card
   // knob on purpose: a shared image needs a visible edge against any background,
   // even when in-app cards run borderless.
-  borderWidth: { hairline: 0, thin: 0, thick: 2, card: 0, share: 1 },
+  borderWidth: { hairline: 0, thin: 0, thick: 2, card: 0, share: 1, chip: 1 },
 
   // Replaces scattered 0.3 / 0.4 / 0.6 opacities.
   opacity: { disabled: 0.4, pressed: 0.6 },
@@ -111,10 +111,6 @@ export const tokens = {
   // "interactive" marker (colors.primary), not a category color.
   row: { edgeW: 3, edgeH: 20 },
 
-  // The thin indigo left-edge on actionable Today rows (TaskRow) — a semantic
-  // "interactive" marker (colors.primary), not a category color.
-  row: { edgeW: 3, edgeH: 20 },
-
   // Start-By Plan progress rail geometry (RunView). gutter = time/node column
   // width; node = circle diameter; nowRing = pulse halo radius; breatherNode =
   // small breather node diameter; connector = spine line width; dashOn/dashGap =
@@ -169,6 +165,7 @@ export const tokens = {
       surfaceSunken: '#ECE8DE', // wells / inset tracks
       hairline: '#DAD5C9', // 1px internal dividers (reads at 3:1 non-text)
       border: '#CFC9BA', // stronger edge for cards that must read
+      shineOverlay: 'rgba(255,255,255,0.55)', // inner top-edge specular (glass lift)
 
       // ── ink ramp (text) ──
       ink: '#20233A', // primary text (AA on every surface)
@@ -179,6 +176,10 @@ export const tokens = {
       primary: '#6B5BE6',
       primaryEdge: '#463B9E',
       primarySoft: '#E4E0FA', // low-emphasis indigo fill
+      primarySoft2: 'rgba(130,117,240,0.6)',
+      // Guess-segment diagonal stripe pair — softer than the CTA, clearly two-tone.
+      gapStripeHi: '#C8C2F0', // lighter lavender stripe
+      gapStripeLo: '#A89EE4', // medium indigo stripe
       // Opaque indigo glyph fill — masks shapes layered behind a line-art body
       // (e.g. BeeGlyph's wings). Must be OPAQUE so the body hides the overlap.
       glyphFill: '#E4E0FA',
@@ -237,6 +238,7 @@ export const tokens = {
       surfaceSunken: '#15161F',
       hairline: 'rgba(255,255,255,0.08)', // internal dividers only
       border: 'rgba(255,255,255,0.14)', // cards that must read
+      shineOverlay: 'rgba(255,255,255,0.07)', // inner top-edge specular (glass lift)
 
       // ── ink ramp ──
       ink: '#F4F1EA',
@@ -246,7 +248,11 @@ export const tokens = {
       // ── accents ──
       primary: '#8275F0',
       primaryEdge: '#6B5BE6',
+      primarySoft2: 'rgba(130,117,240,0.6)',
       primarySoft: 'rgba(130,117,240,0.22)',
+      // Guess-segment diagonal stripe pair — indigo stripes on near-bg fill.
+      gapStripeHi: '#A898F5', // lighter than CTA primary (#8275F0), clearly visible
+      gapStripeLo: '#15161F', // = surfaceSunken — blends into bg, only Hi pops
       // Opaque indigo glyph fill — see light-mode note. A touch above the raised
       // card (#292B3C) so the body reads as a gentle fill yet still masks shapes
       // drawn behind it (e.g. BeeGlyph's wings).
