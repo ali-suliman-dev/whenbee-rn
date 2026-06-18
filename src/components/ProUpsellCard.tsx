@@ -1,12 +1,16 @@
+import { useEffect } from 'react';
 import { Pressable, View, type ViewStyle, type TextStyle } from 'react-native';
 import Animated, {
   useAnimatedStyle,
   useReducedMotion,
   useSharedValue,
+  withDelay,
+  withRepeat,
+  withSequence,
   withSpring,
   withTiming,
 } from 'react-native-reanimated';
-import Svg, { Circle, Path, Polygon } from 'react-native-svg';
+import Svg, { Circle, Defs, LinearGradient, Path, Polygon, Rect, Stop } from 'react-native-svg';
 import { Ionicons } from '@expo/vector-icons';
 import { AppText } from './AppText';
 import { useTheme } from '@/src/theme/useTheme';
@@ -14,14 +18,10 @@ import { type } from '@/src/theme/typography';
 import { haptics } from '@/src/lib/haptics';
 
 // ──────────────────────────────────────────────────────────────────────────────
-// ProUpsellCard — the single Pro "pass" entry point (Whenbee hub + Settings). A
-// ticket: a gilt amber stub (the honey/reward accent — scarce, carried here, not
-// in the body text) with a honeycomb-clock crest and a perforated seam, joined to
-// a calm surface body with a PRO tag, title and note.
-//
-// It presses like AppButton's filled pill — the face drops onto a solid amber
-// coin-edge (no boxShadow; RN 0.81 renders that as a hard line). Flat Tactical.
-// Amber = honey/reward semantic; indigo stays scarce elsewhere, never the Pro CTA.
+// ProUpsellCard — the single Pro "pass" entry point (Whenbee hub + Settings).
+// Flat card: amber stub + dark body. No ticket chrome (no seam, notches, border).
+// Liveliness via a slow crest breath + periodic diagonal shimmer sweep.
+// Amber = honey/reward semantic; indigo stays scarce, never the Pro CTA.
 // ──────────────────────────────────────────────────────────────────────────────
 
 interface ProUpsellCardProps {
@@ -31,7 +31,7 @@ interface ProUpsellCardProps {
   accessibilityLabel?: string;
 }
 
-/** A honeycomb cell holding a small clock — the "honest time, banked" crest. */
+/** Honeycomb cell + clock crest — "honest time, banked". */
 function HoneyCrest({ size, color }: { size: number; color: string }) {
   return (
     <Svg width={size} height={size} viewBox="0 0 50 54">
@@ -47,36 +47,77 @@ function HoneyCrest({ size, color }: { size: number; color: string }) {
   );
 }
 
+/** Diagonal shimmer stripe — pure SVG gradient, no expo-linear-gradient needed. */
+function ShimmerStripe({ width, height }: { width: number; height: number }) {
+  return (
+    <Svg width={width} height={height} style={{ position: 'absolute', top: 0, left: 0 }}>
+      <Defs>
+        <LinearGradient id="shimmer" x1="0" y1="0" x2="1" y2="0">
+          <Stop offset="0" stopColor="white" stopOpacity={0} />
+          <Stop offset="0.45" stopColor="white" stopOpacity={0.06} />
+          <Stop offset="0.55" stopColor="white" stopOpacity={0.11} />
+          <Stop offset="1" stopColor="white" stopOpacity={0} />
+        </LinearGradient>
+      </Defs>
+      <Rect x={0} y={0} width={width} height={height} fill="url(#shimmer)" />
+    </Svg>
+  );
+}
+
 export function ProUpsellCard({ title, note, onPress, accessibilityLabel }: ProUpsellCardProps) {
   const t = useTheme();
   const reducedMotion = useReducedMotion();
 
-  const EDGE = t.upsell.edge;
-  const DROP = EDGE - 1;
-
-  const pressY = useSharedValue(0);
-  const faceStyle = useAnimatedStyle(() => ({ transform: [{ translateY: pressY.get() }] }));
+  // ── press scale ───────────────────────────────────────────────────────────
+  const pressScale = useSharedValue(1);
+  const scaleStyle = useAnimatedStyle(() => ({ transform: [{ scale: pressScale.get() }] }));
 
   function handlePressIn() {
     if (reducedMotion) return;
-    pressY.set(withTiming(DROP, { duration: t.motion.press }));
+    pressScale.set(withTiming(0.97, { duration: t.motion.press }));
   }
   function handlePressOut() {
     if (reducedMotion) return;
-    pressY.set(withSpring(0, t.motion.spring));
+    pressScale.set(withSpring(1, t.motion.spring));
   }
 
-  const wrapper: ViewStyle = { paddingBottom: EDGE };
-  const edge: ViewStyle = {
-    position: 'absolute',
-    left: 0,
-    right: 0,
-    bottom: 0,
-    top: EDGE,
-    borderRadius: t.radii.card,
-    borderCurve: 'continuous',
-    backgroundColor: t.colors.accentEdge,
-  };
+  // ── crest breath (slow ambient pulse) ────────────────────────────────────
+  const crestScale = useSharedValue(1);
+  const crestStyle = useAnimatedStyle(() => ({ transform: [{ scale: crestScale.get() }] }));
+
+  // ── shimmer sweep (periodic diagonal highlight) ───────────────────────────
+  // Sweeps a gradient stripe across the card every ~5 seconds.
+  const shimmerX = useSharedValue(-320);
+  const shimmerStyle = useAnimatedStyle(() => ({ transform: [{ translateX: shimmerX.get() }, { skewX: '-18deg' }] }));
+
+  useEffect(() => {
+    if (reducedMotion) return;
+
+    crestScale.set(
+      withRepeat(
+        withSequence(
+          withTiming(1.07, { duration: 1800, easing: t.motion.easing.calm }),
+          withTiming(1.0, { duration: 1800, easing: t.motion.easing.calm }),
+        ),
+        -1,
+        false,
+      ),
+    );
+
+    shimmerX.set(
+      withRepeat(
+        withSequence(
+          withTiming(400, { duration: 700, easing: t.motion.easing.out }),
+          withDelay(4500, withTiming(-320, { duration: 0 })),
+        ),
+        -1,
+        false,
+      ),
+    );
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [reducedMotion]);
+
+  // ── styles ────────────────────────────────────────────────────────────────
   const face: ViewStyle = {
     flexDirection: 'row',
     alignItems: 'stretch',
@@ -91,8 +132,15 @@ export function ProUpsellCard({ title, note, onPress, accessibilityLabel }: ProU
     justifyContent: 'center',
     backgroundColor: t.colors.accent,
   };
-  // Perforation: a dashed seam + two background-colored notches that "cut" the
-  // ticket where the stub meets the body.
+  const body: ViewStyle = {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: t.space[3],
+    paddingVertical: t.space[3],
+    paddingHorizontal: t.space[4],
+  };
+  // Perforation seam + notches — the visual split between stub and body.
   const seam: ViewStyle = {
     position: 'absolute',
     left: t.upsell.stub,
@@ -112,21 +160,13 @@ export function ProUpsellCard({ title, note, onPress, accessibilityLabel }: ProU
     borderRadius: t.radii.full,
     backgroundColor: t.colors.bg,
   };
-  const body: ViewStyle = {
-    flex: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: t.space[3],
-    paddingVertical: t.space[3],
-    paddingHorizontal: t.space[4],
-  };
 
   const proTag: TextStyle = {
     ...(type.eyebrow as unknown as TextStyle),
     color: t.colors.amberText,
     marginBottom: t.space[1],
   };
-  const titleStyle: TextStyle = { ...(type.bodyLg as unknown as TextStyle), color: t.colors.ink };
+  const titleStyle: TextStyle = { ...(type.bodySmBold as unknown as TextStyle), color: t.colors.ink };
   const noteStyle: TextStyle = {
     ...(type.caption as unknown as TextStyle),
     color: t.colors.inkSoft,
@@ -135,20 +175,17 @@ export function ProUpsellCard({ title, note, onPress, accessibilityLabel }: ProU
 
   return (
     <Pressable
-      onPress={() => {
-        haptics.light();
-        onPress();
-      }}
+      onPress={() => { haptics.light(); onPress(); }}
       onPressIn={handlePressIn}
       onPressOut={handlePressOut}
       accessibilityRole="button"
       accessibilityLabel={accessibilityLabel ?? title}
-      style={wrapper}
     >
-      <View style={edge} />
-      <Animated.View style={[face, faceStyle]}>
+      <Animated.View style={[face, scaleStyle]}>
         <View style={stub}>
-          <HoneyCrest size={t.upsell.emblem} color={t.colors.onAmber} />
+          <Animated.View style={crestStyle}>
+            <HoneyCrest size={t.upsell.emblem} color={t.colors.onAmber} />
+          </Animated.View>
         </View>
         <View style={body}>
           <View style={{ flex: 1 }}>
@@ -161,6 +198,10 @@ export function ProUpsellCard({ title, note, onPress, accessibilityLabel }: ProU
         <View style={seam} />
         <View style={[notchBase, { top: -t.upsell.notch / 2 }]} />
         <View style={[notchBase, { bottom: -t.upsell.notch / 2 }]} />
+        {/* Shimmer sweep — absolute, full card, clipped by face overflow:hidden */}
+        <Animated.View style={[{ position: 'absolute', top: 0, bottom: 0, width: 120 }, shimmerStyle]} pointerEvents="none">
+          <ShimmerStripe width={120} height={200} />
+        </Animated.View>
       </Animated.View>
     </Pressable>
   );
