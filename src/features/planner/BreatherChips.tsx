@@ -1,11 +1,14 @@
 import { View } from 'react-native';
 import { useTheme } from '@/src/theme/useTheme';
-import { AppText } from '@/src/components/AppText';
 import { Chip } from '@/src/components/Chip';
 
 // ──────────────────────────────────────────────────────────────────────────────
-// BufferChips — per-task auto-buffer (Off/+5/+10/+20, default +5). Tap-select,
-// no typing. The chosen value is added to every task's honest block by the engine.
+// BreatherChips — pure chip row for selecting breather minutes between tasks.
+// Off = back-to-back; +5/+10/+20 = a small pause between each.
+//
+// The section label ("Breather between tasks") is rendered by the parent
+// BuildView via SectionLabel — consistent with how BufferChips composes.
+// Active chip = primarySoft fill + primary border (standard selected style).
 // ──────────────────────────────────────────────────────────────────────────────
 
 const OPTIONS: { label: string; value: number }[] = [
@@ -15,7 +18,7 @@ const OPTIONS: { label: string; value: number }[] = [
   { label: '+20', value: 20 },
 ];
 
-export function BufferChips({
+export function BreatherChips({
   value,
   onChange,
 }: {
@@ -24,18 +27,15 @@ export function BufferChips({
 }) {
   const t = useTheme();
   return (
-    <View style={{ gap: t.space[2] }}>
-      <AppText variant="label">Breather between tasks</AppText>
-      <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: t.space[2] }}>
-        {OPTIONS.map((o) => (
-          <Chip
-            key={o.value}
-            label={o.label}
-            selected={value === o.value}
-            onPress={() => onChange(o.value)}
-          />
-        ))}
-      </View>
+    <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: t.space[2] }}>
+      {OPTIONS.map((o) => (
+        <Chip
+          key={o.value}
+          label={o.label}
+          selected={value === o.value}
+          onPress={() => onChange(o.value)}
+        />
+      ))}
     </View>
   );
 }

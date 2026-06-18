@@ -1,12 +1,12 @@
 import { usePlanStore } from '../planStore';
 import { kv } from '@/src/lib/kv';
-import { DEFAULT_BUFFER_MIN } from '@/src/engine';
+import { DEFAULT_BUFFER_MIN, DEFAULT_BREATHER_MIN } from '@/src/engine';
 
 const T0 = 1_700_000_000_000;
 
 function resetDraft() {
   usePlanStore.setState({
-    draft: { deadline: null, bufferMin: DEFAULT_BUFFER_MIN, tasks: [] },
+    draft: { deadline: null, bufferMin: DEFAULT_BUFFER_MIN, breatherMin: DEFAULT_BREATHER_MIN, tasks: [] },
     active: null,
   });
 }
@@ -110,5 +110,95 @@ describe('planStore', () => {
     expect(parsed.state.active.deadline).toBe(T0);
     // draft is session-only — never serialized
     expect(parsed.state.draft).toBeUndefined();
+  });
+
+  // ── Task 4: breather, run state, reorder guard ─────────────────────────────
+
+  it('setBreather stores between-task breather minutes on the draft', () => {
+    usePlanStore.getState().setBreather(10);
+    expect(usePlanStore.getState().draft.breatherMin).toBe(10);
+  });
+
+  it('reorderTasks refuses to move the running task', () => {
+    const s = usePlanStore.getState();
+    const a = s.addTask({ label: 'A', category: 'x', durationMin: 20 });
+    const b = s.addTask({ label: 'B', category: 'x', durationMin: 20 });
+    usePlanStore.getState().setDeadline(T0);
+    usePlanStore.getState().saveActive();      // freeze → active
+    usePlanStore.getState().startTask(a.id);  // a is running
+    usePlanStore.getState().reorderTasks([b.id, a.id]); // attempt to move a out of slot 0
+    expect(usePlanStore.getState().active!.tasks[0]!.id).toBe(a.id); // unchanged
+  });
+
+  it('startTask demotes any previously running task back to upcoming', () => {
+    const s = usePlanStore.getState();
+    const a = s.addTask({ label: 'A', category: 'x', durationMin: 20 });
+    const b = s.addTask({ label: 'B', category: 'x', durationMin: 20 });
+    usePlanStore.getState().setDeadline(T0);
+    usePlanStore.getState().saveActive();
+    usePlanStore.getState().startTask(a.id); // a is running
+    usePlanStore.getState().startTask(b.id); // b takes over
+    const tasks = usePlanStore.getState().active!.tasks;
+    expect(tasks.find((t) => t.id === a.id)?.status).toBe('upcoming');
+    expect(tasks.find((t) => t.id === b.id)?.status).toBe('running');
+  });
+
+  it('completeTask marks done with actual minutes', () => {
+    const s = usePlanStore.getState();
+    const a = s.addTask({ label: 'A', category: 'x', durationMin: 20 });
+    usePlanStore.getState().setDeadline(T0);
+    usePlanStore.getState().saveActive();
+    usePlanStore.getState().completeTask(a.id, 24);
+    const t = usePlanStore.getState().active!.tasks[0]!;
+    expect(t.status).toBe('done');
+    expect(t.actualMin).toBe(24);
+  });
+
+  it('startTask leaves a done task done (no resurrection)', () => {
+    const s = usePlanStore.getState();
+    const a = s.addTask({ label: 'A', category: 'x', durationMin: 20 });
+    usePlanStore.getState().setDeadline(T0);
+    usePlanStore.getState().saveActive();
+    usePlanStore.getState().completeTask(a.id, 20);
+    // Verify it is done before calling startTask
+    expect(usePlanStore.getState().active!.tasks.find((t) => t.id === a.id)?.status).toBe('done');
+    // Attempt to re-start the completed task — should be a no-op
+    usePlanStore.getState().startTask(a.id);
+    expect(usePlanStore.getState().active!.tasks.find((t) => t.id === a.id)?.status).toBe('done');
+  });
+
+  // ── C1: removeTask must also remove from active.tasks ─────────────────────
+
+  it('removeTask also removes from active.tasks when in run phase (C1)', () => {
+    const s = usePlanStore.getState();
+    const a = s.addTask({ label: 'A', category: 'x', durationMin: 20 });
+    const b = s.addTask({ label: 'B', category: 'x', durationMin: 30 });
+    usePlanStore.getState().setDeadline(T0);
+    usePlanStore.getState().saveActive();
+
+    // Confirm both tasks are in active
+    expect(usePlanStore.getState().active!.tasks.map((t) => t.id)).toEqual([a.id, b.id]);
+
+    // Remove task A while in run phase
+    usePlanStore.getState().removeTask(a.id);
+
+    // active.tasks must no longer contain A
+    const activeIds = usePlanStore.getState().active!.tasks.map((t) => t.id);
+    expect(activeIds).not.toContain(a.id);
+    expect(activeIds).toContain(b.id);
+  });
+
+  // ── I4: completeTask accepts optional completedAt ─────────────────────────
+
+  it('completeTask uses provided completedAt when given (I4)', () => {
+    const s = usePlanStore.getState();
+    const a = s.addTask({ label: 'A', category: 'x', durationMin: 20 });
+    usePlanStore.getState().setDeadline(T0);
+    usePlanStore.getState().saveActive();
+    const fixedAt = T0 + 999_999;
+    usePlanStore.getState().completeTask(a.id, 24, fixedAt);
+    const t = usePlanStore.getState().active!.tasks[0]!;
+    expect(t.completedAt).toBe(fixedAt);
+    expect(t.actualMin).toBe(24);
   });
 });

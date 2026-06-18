@@ -13,6 +13,7 @@ import { useCategoriesStore } from '@/src/stores/categoriesStore';
 import { useTasksStore } from '@/src/stores/tasksStore';
 import { useRewardStore } from '@/src/stores/rewardStore';
 import { useSettingsStore } from '@/src/stores/settingsStore';
+import { usePlanStore } from '@/src/stores/planStore';
 import { projectedFinish, formatClock } from '@/src/lib/time';
 import { analytics } from '@/src/services/analytics';
 import {
@@ -212,6 +213,19 @@ export function useTimer(params: TimerParams): UseTimerResult {
     // Keep the task on Today — flip it to done (checked off) so the day shows
     // progress instead of the row vanishing. actualMin powers the "took N" receipt.
     if (taskId) useTasksStore.getState().completeTask(taskId, { actualMin });
+
+    // If this task is the active plan's running task, mark it done in the plan
+    // run-state (pure UI bookkeeping — calibration already happened via applyLog above).
+    if (taskId) {
+      const planStore = usePlanStore.getState();
+      const planActive = planStore.active;
+      if (planActive !== null) {
+        const planTask = planActive.tasks.find((t) => t.id === taskId);
+        if (planTask?.status === 'running') {
+          planStore.completeTask(taskId, actualMin);
+        }
+      }
+    }
 
     router.replace('/(modals)/reward');
   }, [stop, applyLog, category, guessMin, label, taskId, suggestedHonestMin]);

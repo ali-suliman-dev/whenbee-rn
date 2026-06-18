@@ -136,12 +136,34 @@ export interface TaskEvent {
 // The planner is a PURE, read-only consumer of the engine: a deterministic
 // backward pass from a finish-by deadline plus a "cut one" feasibility verdict.
 
+/** Lifecycle status of a plan task while the plan is being run. */
+export type PlanTaskStatus = 'upcoming' | 'running' | 'done';
+
+/**
+ * Run-mode overlay for a plan task (store/UI concern — not written to the engine).
+ * - `status`: where the task sits in the run lifecycle.
+ * - `completedAt`: epoch ms when the timer logged the task as done.
+ * - `actualMin`: real logged minutes (display only; never fed back to the model here).
+ * - `suggestedHonestMin`: frozen honest suggestion captured at plan-creation time.
+ */
+export interface PlanTaskRunState {
+  status: PlanTaskStatus;
+  completedAt?: number;
+  actualMin?: number;
+  suggestedHonestMin: number;
+}
+
+/** Discriminates between a scheduled task block and a between-task breather gap. */
+export type PlanTimelineKind = 'task' | 'breather';
+
 /** One ordered task fed to the backward pass. `durationMin` is the honest block. */
 export interface PlanTaskInput {
   id: string;
   label: string;
   category: string;
   durationMin: number;
+  /** Optional gap appended after this task before the next block begins (minutes). */
+  breatherMin?: number;
 }
 
 /** A placed block on the rendered timeline (epoch ms). */
@@ -150,6 +172,8 @@ export interface PlanTimelineItem {
   label: string;
   startAt: number;
   endAt: number;
+  /** Whether this block is a scheduled task or a between-task breather gap. */
+  kind: PlanTimelineKind;
 }
 
 /**

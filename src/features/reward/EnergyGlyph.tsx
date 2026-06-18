@@ -300,7 +300,7 @@ export function EnergyGlyph({
         )}
       </Animated.View>
 
-      {/* electric streaks — fly off the battery; direction conveys the energy */}
+      {/* electric sparks — fly off the battery; direction conveys the energy */}
       {cfg.shards.map((_, i) => (
         <Animated.View key={`s${i}`} style={[shardBox, shardStyles[i]]} />
       ))}

@@ -1,5 +1,12 @@
-import { useCallback, useMemo } from 'react';
-import { planBackward, resolveSuggestion, priorFor, CATEGORY_NAMES } from '@/src/engine';
+import { useCallback, useMemo, useState } from 'react';
+import {
+  planBackward,
+  reproject as engineReproject,
+  resolveSuggestion,
+  priorFor,
+  CATEGORY_NAMES,
+} from '@/src/engine';
+import type { ReprojectResult } from '@/src/engine/planner';
 import { useCalibrationStore } from '@/src/stores/calibrationStore';
 import { useSettingsStore } from '@/src/stores/settingsStore';
 import { analytics } from '@/src/services/analytics';
@@ -49,6 +56,13 @@ export interface ReprojectDiff {
   oldTimeline: { id: string; label: string; startAt: number; endAt: number }[];
 }
 
+/** Grouped active-plan tasks by run lifecycle status. */
+export interface RunGroups {
+  done: PlanDraftTask[];
+  now: PlanDraftTask[];
+  next: PlanDraftTask[];
+}
+
 interface UsePlannerArgs {
   /** Inject a fixed clock for deterministic tests; defaults to Date.now(). */
   nowMs?: number;
@@ -63,12 +77,22 @@ export function usePlanner(args: UsePlannerArgs = {}) {
 
   const setDeadline = usePlanStore((s) => s.setDeadline);
   const setBuffer = usePlanStore((s) => s.setBuffer);
+  const setBreatherRaw = usePlanStore((s) => s.setBreather);
   const addTaskRaw = usePlanStore((s) => s.addTask);
   const updateTaskDuration = usePlanStore((s) => s.updateTaskDuration);
   const removeTask = usePlanStore((s) => s.removeTask);
   const reorderTasks = usePlanStore((s) => s.reorderTasks);
   const saveActiveRaw = usePlanStore((s) => s.saveActive);
-  const clearActive = usePlanStore((s) => s.clearActive);
+  const clearActiveRaw = usePlanStore((s) => s.clearActive);
+
+  // ── Phase selector ──────────────────────────────────────────────────────────
+  /** 'run' when an active plan is loaded; 'build' while composing the draft. */
+  const phase: 'build' | 'run' = active !== null ? 'run' : 'build';
+
+  // ── Cut-card state ──────────────────────────────────────────────────────────
+  // Held locally: the pending over-verdict from reprojectForCut, shown as a card
+  // until the user accepts (removes tasks) or dismisses (ignores).
+  const [cut, setCut] = useState<ReprojectResult | null>(null);
 
   /** The learned honest duration for a fresh task in `category` (round5(guess×M)). */
   function suggestedDuration(category: string, guessMinutes = 15): number {
@@ -80,11 +104,11 @@ export function usePlanner(args: UsePlannerArgs = {}) {
   }
 
   /** Add a task with its duration pre-filled from learned data (editable later). */
-  function addTask(input: { label: string; category: string; guessMinutes?: number }): PlanDraftTask {
+  function addTask(input: { label: string; category: string; guessMinutes?: number; durationMin?: number }): PlanDraftTask {
     return addTaskRaw({
       label: input.label,
       category: input.category,
-      durationMin: suggestedDuration(input.category, input.guessMinutes ?? 15),
+      durationMin: input.durationMin ?? suggestedDuration(input.category, input.guessMinutes ?? 15),
     });
   }
 
@@ -102,17 +126,19 @@ export function usePlanner(args: UsePlannerArgs = {}) {
       deadline: draft.deadline,
       tasks,
       bufferMin: draft.bufferMin,
+      // C2: breatherMin must be passed so build-view feedback reflects breathers.
+      breatherMin: draft.breatherMin,
       nowMs: now,
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [draft.deadline, draft.bufferMin, JSON.stringify(tasks), now]);
+  }, [draft.deadline, draft.bufferMin, draft.breatherMin, JSON.stringify(tasks), now]);
 
   /**
    * Apply a "cut" verdict: remove the named task(s) and let the draft rebuild.
-   * `cut-one` passes one id; `multi-cut` passes several. Pure store edits — the
+   * Passes one id for `cut-one`; several for `multi-cut`. Pure store edits — the
    * next render recomputes `result` and the plan should now fit.
    */
-  function cut(ids: string[]): void {
+  function cutTasks(ids: string[]): void {
     // Capture the freed minutes from the CURRENT verdict before the cut mutates
     // the draft (the next result is what the cut produced, not what it freed).
     const freedMin = result ? verdictFreedMin(result.verdict) : 0;
@@ -155,10 +181,30 @@ export function usePlanner(args: UsePlannerArgs = {}) {
   );
 
   // Clearing the active plan cancels its pending start-by nudge.
-  const clearActivePlan = useCallback(() => {
+  const clearActive = useCallback(() => {
     void cancelStartBy();
-    clearActive();
-  }, [clearActive]);
+    clearActiveRaw();
+  }, [clearActiveRaw]);
+
+  /** Delegate to the store's setBreather; nowMs is a hook boundary concern. */
+  function setBreather(min: number): void {
+    setBreatherRaw(min);
+  }
+
+  // ── Run-phase task groups ───────────────────────────────────────────────────
+  /** Tasks from the active plan split by run lifecycle status. */
+  const runGroups: RunGroups = useMemo(() => {
+    if (!active) return { done: [], now: [], next: [] };
+    return active.tasks.reduce<RunGroups>(
+      (groups, task) => {
+        if (task.status === 'done') groups.done.push(task);
+        else if (task.status === 'running') groups.now.push(task);
+        else groups.next.push(task);
+        return groups;
+      },
+      { done: [], now: [], next: [] },
+    );
+  }, [active]);
 
   /**
    * Re-project the active plan against `now` WITHOUT applying it. Returns the
@@ -191,27 +237,83 @@ export function usePlanner(args: UsePlannerArgs = {}) {
     };
   }
 
+  // ── Cut-card: engine reproject → cut state ─────────────────────────────────
+  /**
+   * Run the engine's `reproject` over the active plan's incomplete tasks.
+   * If the result is not `stillFits`, captures the verdict into `cut` state so
+   * the UI can show a cut card. Returns the raw ReprojectResult for callers that
+   * want to inspect it immediately (e.g. tests).
+   *
+   * `nowMs` is supplied at the hook boundary; the engine stays pure.
+   */
+  function reprojectForCut(activePlan: ActivePlan | null = active): ReprojectResult | null {
+    if (!activePlan) return null;
+    const reprojectResult = engineReproject({
+      deadline: activePlan.deadline,
+      tasks: activePlan.tasks,
+      bufferMin: activePlan.bufferMin,
+      breatherMin: activePlan.breatherMin,
+      nowMs: now,
+    });
+    if (!reprojectResult.stillFits) {
+      setCut(reprojectResult);
+    }
+    return reprojectResult;
+  }
+
+  /**
+   * Apply the pending cut: remove the task(s) the verdict named from the active
+   * plan's task list, then clear the cut state. The store's task removal drives
+   * re-render; the plan will rebuild on the next reproject call.
+   */
+  const acceptCut = useCallback(() => {
+    if (!cut) return;
+    const verdict = cut.verdict;
+    if (verdict.kind === 'cut-one') {
+      removeTask(verdict.cut.id);
+    } else if (verdict.kind === 'multi-cut') {
+      for (const c of verdict.cuts) removeTask(c.id);
+    }
+    setCut(null);
+  }, [cut, removeTask]);
+
+  /** Clear the pending cut card without applying any task removals. */
+  function dismissCut(): void {
+    setCut(null);
+  }
+
   return {
+    // phase
+    phase,
     // state
     draft,
     active,
     result,
     now,
+    // run-phase groups
+    runGroups,
+    // cut-card state
+    cut,
     // composition actions
     setDeadline,
     setBuffer,
+    setBreather,
     addTask,
     updateTaskDuration,
     removeTask,
     reorderTasks,
     suggestedDuration,
-    // verdict actions
-    cut,
+    // verdict actions (build phase)
+    cutTasks,
     pushDeadline,
     // persistence + re-projection
     saveActive,
-    clearActive: clearActivePlan,
+    clearActive,
     reproject,
+    // cut-card actions (run phase)
+    reprojectForCut,
+    acceptCut,
+    dismissCut,
     // helpers
     categoryName,
   };
