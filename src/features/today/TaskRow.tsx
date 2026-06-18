@@ -1,3 +1,4 @@
+import { useEffect, useRef } from 'react';
 import { Pressable, View, Text, type ViewStyle, type TextStyle } from 'react-native';
 import Animated, {
   useSharedValue,
@@ -5,9 +6,11 @@ import Animated, {
   withTiming,
   useReducedMotion,
 } from 'react-native-reanimated';
+import ReanimatedSwipeable, { type SwipeableMethods } from 'react-native-gesture-handler/ReanimatedSwipeable';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '@/src/theme/useTheme';
 import { type } from '@/src/theme/typography';
+import { haptics } from '@/src/lib/haptics';
 
 // ──────────────────────────────────────────────────────────────────────────────
 // TaskRow — one Today list task, in two states:
@@ -33,9 +36,26 @@ interface TaskRowProps {
   actualMin?: number | null;
   done?: boolean;
   onPress?: () => void;
+  /** Delete this task (the swipe-revealed Delete tap, or the long-press sheet). */
+  onDelete?: () => void;
+  /** Long-press the row → present the delete sheet (a11y / discoverable path). */
+  onLongPress?: () => void;
+  /** First-run only: briefly reveal then re-hide the swipe once, to teach it. */
+  peekHint?: boolean;
 }
 
-export function TaskRow({ title, categoryLabel, guessMin, honestMin, actualMin, done = false, onPress }: TaskRowProps) {
+export function TaskRow({
+  title,
+  categoryLabel,
+  guessMin,
+  honestMin,
+  actualMin,
+  done = false,
+  onPress,
+  onDelete,
+  onLongPress,
+  peekHint = false,
+}: TaskRowProps) {
   const t = useTheme();
   const reducedMotion = useReducedMotion();
   const opacity = useSharedValue(1);
@@ -49,6 +69,17 @@ export function TaskRow({ title, categoryLabel, guessMin, honestMin, actualMin, 
     if (reducedMotion || done) return;
     opacity.set(withTiming(1, { duration: t.motion.fast }));
   }
+
+  const swipeRef = useRef<SwipeableMethods | null>(null);
+  useEffect(() => {
+    if (!peekHint || reducedMotion || !onDelete) return;
+    const open = setTimeout(() => swipeRef.current?.openRight(), t.motion.fast);
+    const close = setTimeout(() => swipeRef.current?.close(), t.motion.fast + t.motion.reveal);
+    return () => {
+      clearTimeout(open);
+      clearTimeout(close);
+    };
+  }, [peekHint, reducedMotion, onDelete, t.motion]);
 
   const row: ViewStyle = {
     flexDirection: 'row',
@@ -115,6 +146,22 @@ export function TaskRow({ title, categoryLabel, guessMin, honestMin, actualMin, 
     color: t.colors.amberText,
     fontVariant: ['tabular-nums'],
   };
+  const deleteAction: ViewStyle = {
+    backgroundColor: t.colors.danger,
+    borderTopRightRadius: t.radii.card,
+    borderBottomRightRadius: t.radii.card,
+    justifyContent: 'center',
+    alignItems: 'center',
+    width: t.size.control.lg + t.space[5],
+    marginLeft: -t.radii.card,
+    paddingLeft: t.radii.card,
+  };
+  const deleteLabel: TextStyle = {
+    ...(type.caption as unknown as TextStyle),
+    color: t.colors.onDanger,
+    fontWeight: t.fontWeight.semibold as TextStyle['fontWeight'],
+    marginTop: t.space[1],
+  };
 
   const content = (
     <Animated.View style={[row, pressStyle]}>
@@ -162,17 +209,68 @@ export function TaskRow({ title, categoryLabel, guessMin, honestMin, actualMin, 
     </Animated.View>
   );
 
-  if (done || !onPress) return content;
+  function renderRightActions() {
+    return (
+      <Pressable
+        testID="taskrow-delete"
+        onPress={() => {
+          haptics.medium();
+          onDelete?.();
+        }}
+        accessibilityRole="button"
+        accessibilityLabel={`Delete ${title}`}
+        style={deleteAction}
+      >
+        <Ionicons name="trash-outline" size={t.iconSize.md} color={t.colors.onDanger} />
+        <Text style={deleteLabel}>Delete</Text>
+      </Pressable>
+    );
+  }
 
-  return (
+  const interactive = (
     <Pressable
       onPress={onPress}
       onPressIn={pressIn}
       onPressOut={pressOut}
+      onLongPress={onLongPress}
+      delayLongPress={300}
       accessibilityRole="button"
       accessibilityLabel={`${title}, ${categoryLabel}, you guessed ${guessMin} minutes, we plan ${honestMin}. Tap to start.`}
     >
       {content}
     </Pressable>
+  );
+
+  // Done rows aren't startable but are still deletable: a bare long-press wrapper.
+  const body =
+    done || !onPress ? (
+      onLongPress ? (
+        <Pressable
+          onLongPress={onLongPress}
+          delayLongPress={300}
+          accessibilityRole="button"
+          accessibilityLabel={`${title}, ${categoryLabel}`}
+        >
+          {content}
+        </Pressable>
+      ) : (
+        content
+      )
+    ) : (
+      interactive
+    );
+
+  if (!onDelete) return body;
+
+  return (
+    <ReanimatedSwipeable
+      ref={swipeRef}
+      friction={2}
+      rightThreshold={40}
+      overshootRight={false}
+      renderRightActions={renderRightActions}
+    >
+      {body}
+    </ReanimatedSwipeable>
   );
 }

@@ -200,6 +200,8 @@ export const tokens = {
       nightSoft: '#2C2E40',
       onIndigo: '#FFFFFF', // text on indigo fill (AA 5.1:1 — warm white only hit 4.37)
       onAmber: '#20233A', // text on amber fill (AA 7.9:1)
+      // text/icon on a filled danger control (white reads AA on both danger reds)
+      onDanger: '#FFFFFF',
       ringTrack: '#E4DFD3', // sits just off cream
       // Soft-edge backing coin behind the ring bee (WhenbeeAvatar 'soft'). Pure white
       // (= surface / the card white) — it pops off the lavender bg exactly like the
@@ -266,6 +268,8 @@ export const tokens = {
       nightSoft: '#2C2E40',
       onIndigo: '#14151D', // dark text on the lighter dark-mode indigo (AA)
       onAmber: '#20233A',
+      // text/icon on a filled danger control (white reads AA on both danger reds)
+      onDanger: '#FFFFFF',
       ringTrack: 'rgba(255,255,255,0.08)',
       companionCoin: '#292B3C', // = surfaceRaised (a raised lift on the deep bg)
       // Dark HUD coin stays the soft raised coin (no solid/shadow treatment in dark —
