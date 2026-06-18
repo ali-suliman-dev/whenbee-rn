@@ -17,8 +17,6 @@ import { useToday, type TodayRow } from '@/src/features/today/useToday';
 import { FocusCard } from '@/src/features/today/FocusCard';
 import { RunningFocusCard } from '@/src/features/today/RunningFocusCard';
 import { TaskRow } from '@/src/features/today/TaskRow';
-import { ReclaimTodayLine } from '@/src/features/today/ReclaimTodayLine';
-import { DailyRitualLine } from '@/src/features/today/DailyRitualLine';
 import { TodayHud } from '@/src/components/honeycomb/TodayHud';
 import type { HoneycombCell } from '@/src/components/honeycomb/Honeycomb';
 import { TodayEmptyState } from '@/src/features/today/TodayEmptyState';
@@ -162,15 +160,17 @@ export default function Today() {
 
           {/* The honey HUD hugs the header (tighten the inherited list gap) but
               sits clearly apart from the focus card below it. */}
-          <View style={{ gap: t.space[2], marginTop: -t.space[2], marginBottom: t.space[3] }}>
+          <View style={{ marginTop: -t.space[2], marginBottom: t.space[3] }}>
             <TodayHud
               cells={honeyCells}
               stage={companionStage}
               seed={companionSeed}
               onPress={() => router.push('/(tabs)/whenbee')}
+              reclaimMin={todayReclaimMin}
+              ritualEnabled={dailyRitualEnabled}
+              ritualDone={done.length > 0}
+              onLogRitual={() => router.push('/(modals)/retro')}
             />
-            <ReclaimTodayLine minutes={todayReclaimMin} />
-            {dailyRitualEnabled ? <DailyRitualLine doneToday={done.length > 0} /> : null}
           </View>
 
           {/* A live session takes the focus slot itself (the same footprint as the
