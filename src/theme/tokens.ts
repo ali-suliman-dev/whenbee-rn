@@ -97,10 +97,15 @@ export const tokens = {
   //   gapTrack = bar height; tickW/tickH = the live elapsed marker riding the bar.
   progress: { track: 6, gapTrack: 8, tickW: 3, tickH: 16 },
 
+  // The thin indigo left-edge on actionable Today rows (TaskRow) — a semantic
+  // "interactive" marker (colors.primary), not a category color.
+  row: { edgeW: 3, edgeH: 20 },
+
   // Start-By Plan progress rail geometry (RunView). gutter = time/node column
   // width; node = circle diameter; nowRing = pulse halo radius; breatherNode =
-  // small breather node diameter; connector = spine line width.
-  planRail: { gutter: 46, node: 20, nowRing: 3, breatherNode: 16, connector: 2, nowDot: 7 },
+  // small breather node diameter; connector = spine line width; dashOn/dashGap =
+  // dashed-segment rhythm for completed (done) spine links.
+  planRail: { gutter: 46, node: 20, nowRing: 3, breatherNode: 16, connector: 2, nowDot: 7, dashOn: 2, dashGap: 5 },
 
   motion: {
     fast: 120, base: 220, slow: 360, press: 110, reveal: 600, draw: 950, sheet: 340,
