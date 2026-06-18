@@ -99,7 +99,13 @@ export const tokens = {
   // the fill reuses `radii.full` + `colors.accent`, the track `colors.surfaceSunken`.
   // gap* = the Today guess→plan calibration line (FocusCard / RunningFocusCard):
   //   gapTrack = bar height; tickW/tickH = the live elapsed marker riding the bar.
-  progress: { track: 6, gapTrack: 8, tickW: 3, tickH: 16 },
+  progress: {
+    track: 6, gapTrack: 8, tickW: 3, tickH: 16,
+    // gapStripe = the focus-card guess segment's diagonal hatch (indigo lines on
+    // primarySoft). Tones the guess down from a solid indigo block so Start is the
+    // single filled indigo on Today. lineW = stroke width, gapW = clear gap between.
+    gapStripe: { lineW: 2, gapW: 4 },
+  },
 
   // The thin indigo left-edge on actionable Today rows (TaskRow) — a semantic
   // "interactive" marker (colors.primary), not a category color.
