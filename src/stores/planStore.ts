@@ -61,8 +61,9 @@ interface PlanState {
   clearActive: () => void;
   /** Set a task to 'running'; all others remain at their current status. */
   startTask: (id: string) => void;
-  /** Mark a task done with the actual elapsed minutes. */
-  completeTask: (id: string, actualMin: number) => void;
+  /** Mark a task done with the actual elapsed minutes.
+   * @param completedAt - optional wall-clock ms; defaults to Date.now() (I4). */
+  completeTask: (id: string, actualMin: number, completedAt?: number) => void;
   /** Drop the active plan and the working draft (full + progress data-reset path). */
   reset: () => void;
 }
@@ -119,6 +120,11 @@ export const usePlanStore = create<PlanState>()(
       removeTask: (id) =>
         set((s) => ({
           draft: { ...s.draft, tasks: s.draft.tasks.filter((t) => t.id !== id) },
+          // C1: also remove from active.tasks when in run phase so a cut task
+          // doesn't persist in the running plan.
+          ...(s.active !== null
+            ? { active: { ...s.active, tasks: s.active.tasks.filter((t) => t.id !== id) } }
+            : {}),
         })),
 
       // Reorder to match the given id order; ids not present are dropped, and any
@@ -187,7 +193,7 @@ export const usePlanStore = create<PlanState>()(
           };
         }),
 
-      completeTask: (id, actualMin) =>
+      completeTask: (id, actualMin, completedAt) =>
         set((s) => {
           if (s.active === null) return s;
           return {
@@ -195,7 +201,7 @@ export const usePlanStore = create<PlanState>()(
               ...s.active,
               tasks: s.active.tasks.map((t) =>
                 t.id === id
-                  ? { ...t, status: 'done', completedAt: Date.now(), actualMin }
+                  ? { ...t, status: 'done', completedAt: completedAt ?? Date.now(), actualMin }
                   : t,
               ),
             },

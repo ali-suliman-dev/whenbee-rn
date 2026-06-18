@@ -166,4 +166,39 @@ describe('planStore', () => {
     usePlanStore.getState().startTask(a.id);
     expect(usePlanStore.getState().active!.tasks.find((t) => t.id === a.id)?.status).toBe('done');
   });
+
+  // ── C1: removeTask must also remove from active.tasks ─────────────────────
+
+  it('removeTask also removes from active.tasks when in run phase (C1)', () => {
+    const s = usePlanStore.getState();
+    const a = s.addTask({ label: 'A', category: 'x', durationMin: 20 });
+    const b = s.addTask({ label: 'B', category: 'x', durationMin: 30 });
+    usePlanStore.getState().setDeadline(T0);
+    usePlanStore.getState().saveActive();
+
+    // Confirm both tasks are in active
+    expect(usePlanStore.getState().active!.tasks.map((t) => t.id)).toEqual([a.id, b.id]);
+
+    // Remove task A while in run phase
+    usePlanStore.getState().removeTask(a.id);
+
+    // active.tasks must no longer contain A
+    const activeIds = usePlanStore.getState().active!.tasks.map((t) => t.id);
+    expect(activeIds).not.toContain(a.id);
+    expect(activeIds).toContain(b.id);
+  });
+
+  // ── I4: completeTask accepts optional completedAt ─────────────────────────
+
+  it('completeTask uses provided completedAt when given (I4)', () => {
+    const s = usePlanStore.getState();
+    const a = s.addTask({ label: 'A', category: 'x', durationMin: 20 });
+    usePlanStore.getState().setDeadline(T0);
+    usePlanStore.getState().saveActive();
+    const fixedAt = T0 + 999_999;
+    usePlanStore.getState().completeTask(a.id, 24, fixedAt);
+    const t = usePlanStore.getState().active!.tasks[0]!;
+    expect(t.completedAt).toBe(fixedAt);
+    expect(t.actualMin).toBe(24);
+  });
 });
