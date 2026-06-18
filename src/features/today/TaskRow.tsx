@@ -147,7 +147,7 @@ export function TaskRow({
     fontVariant: ['tabular-nums'],
   };
   const deleteAction: ViewStyle = {
-    backgroundColor: t.colors.danger,
+    backgroundColor: t.colors.night,
     borderTopRightRadius: t.radii.card,
     borderBottomRightRadius: t.radii.card,
     justifyContent: 'center',
@@ -158,7 +158,7 @@ export function TaskRow({
   };
   const deleteLabel: TextStyle = {
     ...(type.caption as unknown as TextStyle),
-    color: t.colors.onDanger,
+    color: t.colors.paper,
     fontWeight: t.fontWeight.semibold as TextStyle['fontWeight'],
     marginTop: t.space[1],
   };
@@ -221,7 +221,7 @@ export function TaskRow({
         accessibilityLabel={`Delete ${title}`}
         style={deleteAction}
       >
-        <Ionicons name="trash-outline" size={t.iconSize.md} color={t.colors.onDanger} />
+        <Ionicons name="trash-outline" size={t.iconSize.md} color={t.colors.paper} />
         <Text style={deleteLabel}>Delete</Text>
       </Pressable>
     );
