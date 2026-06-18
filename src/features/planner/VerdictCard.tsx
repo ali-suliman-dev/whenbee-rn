@@ -1,4 +1,3 @@
-import { View } from 'react-native';
 import { useTheme } from '@/src/theme/useTheme';
 import { AppText } from '@/src/components/AppText';
 import { Card } from '@/src/components/Card';
@@ -49,21 +48,13 @@ export function VerdictCard({
   if (verdict.kind === 'cut-one') {
     return (
       <Card style={noticeCard}>
-        <View style={{ gap: t.space[3] }}>
-          <AppText variant="body" style={{ color: t.colors.ink }}>
-            Drop{' '}
-            <AppText style={{ fontWeight: t.fontWeight.bold, color: t.colors.ink }}>
-              {verdict.cut.label}
-            </AppText>{' '}
-            and you start on time — that&apos;s {verdict.savedMin}m back.
-          </AppText>
-          <AppButton
-            label={`Cut ${verdict.cut.label}`}
-            variant="ghost"
-            size="xs"
-            onPress={() => onCut([verdict.cut.id])}
-          />
-        </View>
+        <AppText variant="body" style={{ color: t.colors.ink }}>
+          Drop{' '}
+          <AppText style={{ fontWeight: t.fontWeight.bold, color: t.colors.ink }}>
+            {verdict.cut.label}
+          </AppText>{' '}
+          and you start on time — that&apos;s {verdict.savedMin}m back.
+        </AppText>
       </Card>
     );
   }
@@ -82,18 +73,10 @@ export function VerdictCard({
   // push-deadline
   return (
     <Card style={noticeCard}>
-      <View>
-        <AppText variant="body" style={{ color: t.colors.ink }}>
-          About {verdict.overshootMin}m over. Push the finish to {formatClock(verdict.feasibleDeadline)},
-          or drop a task.
-        </AppText>
-        <AppButton
-          label={`Push finish to ${formatClock(verdict.feasibleDeadline)}`}
-          variant="amber"
-          size="sm"
-          onPress={() => onPush(verdict.feasibleDeadline)}
-        />
-      </View>
+      <AppText variant="body" style={{ color: t.colors.ink }}>
+        About {verdict.overshootMin}m over. Push the finish to{' '}
+        {formatClock(verdict.feasibleDeadline)}, or drop a task.
+      </AppText>
     </Card>
   );
 }
