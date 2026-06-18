@@ -168,7 +168,7 @@ export function TodayHud({
       {showFooter ? (
         <View style={footer}>
           {showReclaim ? (
-            <View style={reclaimRow} accessibilityLabel={`${reclaimMin} minutes reclaimed today`}>
+            <View style={reclaimRow} accessibilityRole="text" accessibilityLabel={`${reclaimMin} minutes reclaimed today`}>
               <Text style={reclaimNum}>+{reclaimMin}m</Text>
               <Text style={reclaimLabel}>reclaimed today</Text>
             </View>

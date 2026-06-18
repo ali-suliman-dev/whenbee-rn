@@ -137,7 +137,7 @@ export const tokens = {
     // Shared physics — deduped from AppButton + FAB.
     spring: { damping: 13, stiffness: 340 },
     // Named curves — declared once, not re-typed per file.
-    easing: { standard: Easing.bezier(0.4, 0, 0.2, 1), calm: Easing.inOut(Easing.sin), honey: Easing.bezier(0.22, 1, 0.36, 1), premium: Easing.bezier(0.4, 0, 0.2, 1) },
+    easing: { standard: Easing.bezier(0.4, 0, 0.2, 1), calm: Easing.inOut(Easing.sin), honey: Easing.bezier(0.22, 1, 0.36, 1), premium: Easing.bezier(0.4, 0, 0.2, 1), out: Easing.bezier(0.23, 1, 0.32, 1) },
   },
 
   colors: {

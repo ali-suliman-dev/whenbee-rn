@@ -78,11 +78,11 @@ export function RitualSeal({
     }
     // Play the one-shot: border → honey → bloom → ✦ → sparkle.
     restBreath.set(0);
-    border.set(0); border.set(withDelay(m.dBorder, withTiming(1, { duration: m.border, easing: e.standard })));
+    border.set(0); border.set(withDelay(m.dBorder, withTiming(1, { duration: m.border, easing: e.out })));
     honey.set(0);  honey.set(withDelay(m.dHoney, withTiming(1, { duration: m.honey, easing: e.premium })));
     bloom.set(0);  bloom.set(withDelay(m.dBloom, withTiming(1, { duration: m.bloom, easing: e.calm })));
-    mark.set(0);   mark.set(withDelay(m.dMark, withTiming(1, { duration: m.mark, easing: e.standard })));
-    spark.set(0);  spark.set(withDelay(m.dSpark, withTiming(1, { duration: m.spark, easing: e.standard })));
+    mark.set(0);   mark.set(withDelay(m.dMark, withTiming(1, { duration: m.mark, easing: e.out })));
+    spark.set(0);  spark.set(withDelay(m.dSpark, withTiming(1, { duration: m.spark, easing: e.out })));
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [done, reduced]);
 
