@@ -71,15 +71,18 @@ export function TaskRow({
   }
 
   const swipeRef = useRef<SwipeableMethods | null>(null);
+  const hasPeeked = useRef(false);
   useEffect(() => {
-    if (!peekHint || reducedMotion || !onDelete) return;
+    if (!peekHint || reducedMotion || !onDelete || hasPeeked.current) return;
+    hasPeeked.current = true;
     const open = setTimeout(() => swipeRef.current?.openRight(), t.motion.fast);
     const close = setTimeout(() => swipeRef.current?.close(), t.motion.fast + t.motion.reveal);
     return () => {
       clearTimeout(open);
       clearTimeout(close);
     };
-  }, [peekHint, reducedMotion, onDelete, t.motion]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [peekHint, reducedMotion, t.motion]);
 
   const row: ViewStyle = {
     flexDirection: 'row',
@@ -139,7 +142,6 @@ export function TaskRow({
   };
   const tookNum: TextStyle = { ...leadNum, fontSize: t.fontSize.base };
   const unit: TextStyle = { ...(type.caption as unknown as TextStyle), color: t.colors.inkSoft };
-  const planLabel: TextStyle = { ...(type.caption as unknown as TextStyle), color: t.colors.inkSoft };
   const planNum: TextStyle = {
     fontFamily: 'Inter-Bold' as TextStyle['fontFamily'],
     fontSize: t.fontSize.sm,
@@ -191,7 +193,7 @@ export function TaskRow({
               <Text style={unit}>min</Text>
             </View>
           ) : null}
-          <Text style={planLabel}>guessed {guessMin}</Text>
+          <Text style={unit}>guessed {guessMin}</Text>
         </View>
       ) : (
         <View style={timeWrap}>
@@ -200,7 +202,7 @@ export function TaskRow({
             <Text style={unit}>min</Text>
           </View>
           <View style={lineRow}>
-            <Text style={planLabel}>plan </Text>
+            <Text style={unit}>plan </Text>
             <Text style={planNum}>~{honestMin}</Text>
             <Text style={unit}> min</Text>
           </View>
