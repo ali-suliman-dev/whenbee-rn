@@ -291,7 +291,7 @@ function TabItem({
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
-type BarProps = BottomTabBarProps & {
+type BarProps = Omit<BottomTabBarProps, 'insets'> & {
   bar: ViewStyle;
   indicator: ViewStyle;
   indicatorStyle: ReturnType<typeof useAnimatedStyle>;
