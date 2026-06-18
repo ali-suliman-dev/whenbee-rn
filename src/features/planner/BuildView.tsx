@@ -8,11 +8,13 @@ import {
   type ViewStyle,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import Animated, { FadeIn, ReduceMotion } from 'react-native-reanimated';
 import ReorderableList, {
   reorderItems,
   type ReorderableListReorderEvent,
 } from 'react-native-reorderable-list';
 import { useTheme } from '@/src/theme/useTheme';
+import { tokens } from '@/src/theme/tokens';
 import { AppText } from '@/src/components/AppText';
 import { AppButton } from '@/src/components/AppButton';
 import { formatClock } from '@/src/lib/time';
@@ -35,12 +37,21 @@ import type { usePlanner } from './usePlanner';
 //
 // Verdict:
 //   fits → a quiet "start by HH:MM · fits ✓" footer line
-//   over → an amber VerdictCard (amber-never-red) with cut/push actions
+//   over → an amber VerdictCard (amber-never-red) carrying the heads-up copy; the
+//          matching cut/push action is an amber button in the footer, beside the
+//          "Build my plan" CTA (appears/disappears with the verdict).
 //
 // Inline add composer expands in place — no modal, no route.
 // ──────────────────────────────────────────────────────────────────────────────
 
 type PlannerHandle = ReturnType<typeof usePlanner>;
+
+// Entering-only fade for the footer over-budget action as it appears beside the
+// CTA. NO `exiting` — a Reanimated exiting animation on a conditionally-unmounted
+// view aborts the app on Fabric (see plan.tsx). It just unmounts on disappear.
+const FOOTER_ACTION_ENTER = FadeIn.duration(tokens.motion.base).reduceMotion(
+  ReduceMotion.System,
+);
 
 // ── Inline add-task composer ──────────────────────────────────────────────────
 
@@ -251,16 +262,13 @@ function FitsFooter({ startBy }: { startBy: number }) {
 function OverVerdict({
   deadline,
   verdict,
-  onCut,
-  onPush,
 }: {
   deadline: number;
   verdict: NonNullable<ReturnType<typeof usePlanner>['result']>['verdict'];
-  onCut: (ids: string[]) => void;
-  onPush: (ms: number) => void;
 }) {
   const t = useTheme();
-  // The amber over-verdict card wraps VerdictCard in an amber surface.
+  // The amber over-verdict card wraps VerdictCard in an amber surface. The action
+  // (cut / push) lives in the footer beside "Build my plan" — this is copy only.
   const amberWrap: ViewStyle = {
     backgroundColor: t.colors.accentSoft,
     borderColor: t.colors.accent,
@@ -271,12 +279,7 @@ function OverVerdict({
   };
   return (
     <View style={amberWrap}>
-      <VerdictCard
-        verdict={verdict}
-        deadline={deadline}
-        onCut={onCut}
-        onPush={onPush}
-      />
+      <VerdictCard verdict={verdict} deadline={deadline} />
     </View>
   );
 }
@@ -437,15 +440,35 @@ export function BuildView({ planner, nowMs = Date.now() }: BuildViewProps) {
   };
 
   const footerStyle: ViewStyle = {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: t.space[2],
     paddingHorizontal: t.space[4],
+    paddingTop: t.space[2],
     paddingBottom: Math.max(insets.bottom, t.space[4]),
-    gap: t.space[3],
   };
 
   const hasTasks = localTasks.length > 0;
   const verdict = result?.verdict;
   const startBy = result?.startBy;
   const fits = verdict?.kind === 'fits';
+
+  // The single over-budget action — an amber button shown in the footer beside
+  // "Build my plan". Null when the plan fits (or no verdict yet) → footer shows
+  // only the primary CTA. Labels stay terse; the heads-up card carries the detail.
+  const footerAction = useMemo<{ label: string; onPress: () => void } | null>(() => {
+    if (!verdict || verdict.kind === 'fits') return null;
+    if (verdict.kind === 'cut-one') {
+      return { label: 'Cut it', onPress: () => cutTasks([verdict.cut.id]) };
+    }
+    if (verdict.kind === 'multi-cut') {
+      return { label: 'Cut these', onPress: () => cutTasks(verdict.cuts.map((c) => c.id)) };
+    }
+    return {
+      label: `Push to ${formatClock(verdict.feasibleDeadline)}`,
+      onPress: () => pushDeadline(verdict.feasibleDeadline),
+    };
+  }, [verdict, cutTasks, pushDeadline]);
 
   return (
     <ScrollView
@@ -518,26 +541,33 @@ export function BuildView({ planner, nowMs = Date.now() }: BuildViewProps) {
           {fits && startBy !== undefined ? (
             <FitsFooter startBy={startBy} />
           ) : !fits ? (
-            <OverVerdict
-              deadline={draft.deadline}
-              verdict={verdict}
-              onCut={cutTasks}
-              onPush={pushDeadline}
-            />
+            <OverVerdict deadline={draft.deadline} verdict={verdict} />
           ) : null}
         </View>
       ) : null}
 
-      {/* ── Footer CTA ── */}
+      {/* ── Footer CTA — amber over-budget action (if any) sits beside Build ── */}
       <View style={footerStyle}>
-        <AppButton
-          label="Build my plan"
-          variant="indigo"
-          size="lg"
-          fullWidth
-          disabled={!hasTasks}
-          onPress={() => saveActive(nowMs)}
-        />
+        {footerAction ? (
+          <Animated.View entering={FOOTER_ACTION_ENTER} style={{ flexShrink: 1 }}>
+            <AppButton
+              label={footerAction.label}
+              variant="amber"
+              size="md"
+              onPress={footerAction.onPress}
+            />
+          </Animated.View>
+        ) : null}
+        <View style={{ flex: 1 }}>
+          <AppButton
+            label="Build my plan"
+            variant="indigo"
+            size="md"
+            fullWidth
+            disabled={!hasTasks}
+            onPress={() => saveActive(nowMs)}
+          />
+        </View>
       </View>
     </ScrollView>
   );

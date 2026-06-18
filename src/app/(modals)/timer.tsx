@@ -240,7 +240,7 @@ export default function Timer() {
               <AppButton
                 label="Stop & log"
                 variant="indigo"
-                size="lg"
+                size="md"
                 fullWidth
                 onPress={() => void timer.onStopAndLog()}
                 icon={<Ionicons name="stop" size={t.iconSize.sm} color={t.colors.onIndigo} />}

@@ -121,18 +121,25 @@ export function RailNode({ state }: RailNodeProps) {
   }
 
   if (state === 'now') {
-    // Halo ring sits behind the filled node — rendered as a scaled Animated.View
-    const haloSize = nodeSize + ringExpand * 2;
+    // Footprint is exactly nodeSize (like every other node) so the gutter can centre
+    // it without drift; the halo is absolute and inset symmetrically so it expands
+    // EQUALLY in all directions instead of overflowing one corner.
+    const core = nodeSize - 2; // filled disc — a touch smaller than the hollow ring
+    const dotSize = t.planRail.nowDot - 1;
+    const haloSize = core + ringExpand * 2;
+    const haloInset = (nodeSize - haloSize) / 2;
     const haloBase: ViewStyle = {
       position: 'absolute',
+      top: haloInset,
+      left: haloInset,
       width: haloSize,
       height: haloSize,
       borderRadius: t.radii.full,
       backgroundColor: t.colors.primarySoft,
     };
     const nodeStyle: ViewStyle = {
-      width: nodeSize,
-      height: nodeSize,
+      width: core,
+      height: core,
       borderRadius: t.radii.full,
       backgroundColor: t.colors.primary,
       justifyContent: 'center',
@@ -140,13 +147,13 @@ export function RailNode({ state }: RailNodeProps) {
       zIndex: 1,
     };
     const dotStyle: ViewStyle = {
-      width: t.planRail.nowDot,
-      height: t.planRail.nowDot,
+      width: dotSize,
+      height: dotSize,
       borderRadius: t.radii.full,
       backgroundColor: t.colors.onIndigo,
     };
     return (
-      <View style={{ width: haloSize, height: haloSize, justifyContent: 'center', alignItems: 'center' }}>
+      <View style={{ width: nodeSize, height: nodeSize, justifyContent: 'center', alignItems: 'center' }}>
         <Animated.View style={[haloBase, reducedMotion ? undefined : haloAnimStyle]} />
         <View style={nodeStyle}>
           <View style={dotStyle} />

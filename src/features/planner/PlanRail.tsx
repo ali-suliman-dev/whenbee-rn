@@ -1,5 +1,6 @@
 import React from 'react';
 import { View, type ViewStyle, type TextStyle } from 'react-native';
+import Svg, { Line } from 'react-native-svg';
 import { useTheme } from '@/src/theme/useTheme';
 import { AppText } from '@/src/components/AppText';
 import { RailNode, type RailNodeState } from './RailNode';
@@ -30,6 +31,13 @@ export interface PlanRailProps {
   isFirst?: boolean;
   /** True when this is the last row in the list (spine ends at node center). */
   isLast?: boolean;
+  /**
+   * State of the row directly ABOVE this one. A connector segment is owned by its
+   * upper node, so the top half is coloured by `prevState` (and the bottom half by
+   * `state`). This makes each segment a single uniform colour that runs right into
+   * the next circle — e.g. the now→next link stays fully purple to the ring.
+   */
+  prevState?: RailNodeState;
 }
 
 export function PlanRail({
@@ -38,6 +46,7 @@ export function PlanRail({
   showNowPill,
   isFirst,
   isLast,
+  prevState,
 }: PlanRailProps) {
   const t = useTheme();
   const gutterWidth = t.planRail.gutter; // 46pt
@@ -71,46 +80,77 @@ export function PlanRail({
     };
   }
 
-  function spineColor(): string {
-    if (state === 'done') return t.colors.success;
-    if (state === 'now') return t.colors.primary;
+  function segColor(s: RailNodeState): string {
+    if (s === 'done') return t.colors.success;
+    if (s === 'now') return t.colors.primary;
     return t.colors.hairline;
   }
 
-  // Done uses a dashed border effect; we simulate dashes with a dashed borderStyle.
-  // RN supports 'dashed' on border — but only on borderTopWidth / borderBottomWidth
-  // on a View when horizontal. For a vertical dashed line, we use a View with
-  // borderLeftWidth and borderStyle:'dashed', which RN supports on iOS/Android.
+  // RN's single-side dashed border (borderLeftWidth + borderStyle:'dashed' on a
+  // 0-width View) silently renders NOTHING on Fabric — so the old approach drew an
+  // invisible spine and the nodes floated unconnected. We draw the connector with
+  // react-native-svg instead: a vertical <Line> that fills the half's height, with
+  // strokeDasharray for completed (done) links and a solid stroke otherwise. SVG
+  // sizes off the container's resolved height, so it works at any card height.
   function spineView(position: 'top' | 'bottom'): React.ReactNode {
     const segStyle = spineSegmentStyle(position);
-    const color = spineColor();
+    if (segStyle.display === 'none') return null;
+    // Top half belongs to the link from the node ABOVE → colour by prevState.
+    const segState = position === 'top' ? (prevState ?? state) : state;
+    const color = segColor(segState);
+    const dashed = segState === 'done';
 
-    if (state === 'done') {
-      // Dashed vertical line using borderLeft trick
-      const dashStyle: ViewStyle = {
-        ...segStyle,
-        borderLeftWidth: connectorWidth,
-        borderLeftColor: color,
-        borderStyle: 'dashed',
-        width: 0,
-        left: gutterWidth / 2,
-        backgroundColor: undefined,
-      };
-      return <View style={dashStyle} />;
-    }
+    // Overlap the seam at the 50% midpoint by a hair so the top/bottom halves read
+    // as one continuous line through the node centre with no visible break.
+    const containerStyle: ViewStyle = {
+      ...segStyle,
+      ...(position === 'top'
+        ? { bottom: '50%', marginBottom: -connectorWidth }
+        : { top: '50%', marginTop: -connectorWidth }),
+    };
 
-    return <View style={[segStyle, { backgroundColor: color }]} />;
+    return (
+      <View style={containerStyle} pointerEvents="none">
+        <Svg width="100%" height="100%">
+          <Line
+            x1="50%"
+            y1="0"
+            x2="50%"
+            y2="100%"
+            stroke={color}
+            strokeWidth={connectorWidth}
+            strokeLinecap="round"
+            strokeDasharray={
+              dashed
+                ? `${t.planRail.dashOn} ${t.planRail.dashGap}`
+                : undefined
+            }
+          />
+        </Svg>
+      </View>
+    );
   }
 
   // ── Label above node ────────────────────────────────────────────────────────
+
+  // Label sits ABOVE the node but is absolutely positioned, so it never shoves the
+  // node off the row's vertical centre — that off-centre node is what used to leave
+  // the spine floating, detached from the dot. `bottom: '50%'` anchors the label's
+  // base at the node centre; marginBottom lifts it to clear the node's top edge.
+  const labelWrap: ViewStyle = {
+    position: 'absolute',
+    bottom: '50%',
+    left: 0,
+    right: 0,
+    alignItems: 'center',
+    marginBottom: activeNodeSize / 2 + t.space[1],
+  };
 
   const nowPillStyle: ViewStyle = {
     backgroundColor: t.colors.primary,
     borderRadius: t.radii.full,
     paddingHorizontal: t.space[2],
     paddingVertical: t.space[0.5],
-    alignSelf: 'center',
-    marginBottom: t.space[1],
   };
 
   const nowPillTextStyle: TextStyle = {
@@ -124,40 +164,59 @@ export function PlanRail({
     fontFamily: t.fontFamily.mono,
     fontSize: t.fontSize.xs,
     color: state === 'done' ? t.colors.success : t.colors.inkSoft,
-    marginBottom: t.space[1],
     textAlign: 'center',
   };
 
   // ── Container ───────────────────────────────────────────────────────────────
+  // The gutter stretches to the FULL row height (alignSelf:'stretch'); the node and
+  // both spine halves are ABSOLUTELY positioned against that height — none of them is
+  // a flow child, so nothing can collapse the gutter or pull the node off-axis. The
+  // node centres at vertical 50% (= the card's centre, since the card column pads
+  // symmetrically) and at horizontal gutterWidth/2 — the exact x the spine sits on.
+  // Rows carry no bottom margin, so each row's bottom half butts the next row's top
+  // half: one unbroken line that runs straight into every circle. Holds for any card
+  // height (the tall now card included) because the geometry never depends on it.
 
   const gutterContainer: ViewStyle = {
     width: gutterWidth,
+    alignSelf: 'stretch',
     position: 'relative',
-    flexDirection: 'column',
-    alignItems: 'center',
+  };
+
+  const nodeWrap: ViewStyle = {
+    position: 'absolute',
+    top: '50%',
+    left: gutterWidth / 2,
+    width: activeNodeSize,
+    height: activeNodeSize,
+    transform: [
+      { translateX: -activeNodeSize / 2 },
+      { translateY: -activeNodeSize / 2 },
+    ],
+    zIndex: 1,
   };
 
   return (
     <View style={gutterContainer}>
-      {/* Top spine segment */}
+      {/* Spine segments — painted first; node + label sit on top */}
       {spineView('top')}
+      {spineView('bottom')}
 
-      {/* Label — now pill or mono time */}
-      {showNowPill ? (
-        <View style={nowPillStyle}>
-          <AppText style={nowPillTextStyle}>now</AppText>
-        </View>
-      ) : timeLabel !== undefined ? (
-        <AppText style={timeLabelStyle}>{timeLabel}</AppText>
-      ) : null}
-
-      {/* Node — centered in gutter */}
-      <View style={{ width: activeNodeSize, height: activeNodeSize, zIndex: 1 }}>
-        <RailNode state={state} />
+      {/* Label — now pill or mono time, floated above the node (out of flow) */}
+      <View style={labelWrap} pointerEvents="none">
+        {showNowPill ? (
+          <View style={nowPillStyle}>
+            <AppText style={nowPillTextStyle}>now</AppText>
+          </View>
+        ) : timeLabel !== undefined ? (
+          <AppText style={timeLabelStyle}>{timeLabel}</AppText>
+        ) : null}
       </View>
 
-      {/* Bottom spine segment */}
-      {spineView('bottom')}
+      {/* Node — absolutely centred on the row's vertical + horizontal axis */}
+      <View style={nodeWrap}>
+        <RailNode state={state} />
+      </View>
     </View>
   );
 }

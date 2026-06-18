@@ -66,12 +66,19 @@ export function AppButton({
 
   const resolved = resolveVariant(variant);
   const isGhost = resolved === 'ghost';
-  const PILL_H = t.size.control[size];
-  // xs: 12pt label · sm: 14pt · md/lg: 16pt
-  const labelSize =
-    size === 'xs' ? t.fontSize.sm : size === 'sm' ? t.fontSize.base : t.fontSize.md;
-  // Tighter side padding on the compact xs pill so it doesn't read oversized.
-  const padX = size === 'xs' ? t.space[4] : t.space[5];
+  // One coherent size scale — height, label font, and side padding all step up
+  // together, so a bigger button is bigger in every axis (not just taller).
+  //   xs  32h · 12pt · 12padX     sm  36h · 14pt · 16padX
+  //   md  44h · 16pt · 20padX     lg  52h · 20pt · 24padX
+  const SIZE: Record<Size, { h: number; font: number; padX: number }> = {
+    xs: { h: t.size.control.xs, font: t.fontSize.sm, padX: t.space[3] },
+    sm: { h: t.size.control.sm, font: t.fontSize.base, padX: t.space[4] },
+    md: { h: t.size.control.md, font: t.fontSize.md, padX: t.space[5] },
+    lg: { h: t.size.control.lg, font: t.fontSize.lg, padX: t.space[6] },
+  };
+  const PILL_H = SIZE[size].h;
+  const labelSize = SIZE[size].font;
+  const padX = SIZE[size].padX;
 
   const bg: Record<NewVariant, string> = {
     indigo: t.colors.primary,
