@@ -72,7 +72,9 @@ In `tokens.motion`, add a `seal` group (durations + per-beat delays, ms) near th
     // Wax-seal ritual choreography (RitualSeal). Calm, no overshoot: the border
     // draws closed FIRST, then honey wells up, a soft bloom passes, the ✦ fades
     // in, and an amber sparkle bursts radially. Durations + start delays (ms).
-    seal: { border: 660, honey: 580, bloom: 900, mark: 360, spark: 620, dBorder: 40, dHoney: 700, dBloom: 980, dMark: 1200, dSpark: 1220 },
+    // Honey starts only AFTER the border finishes: border ends at dBorder+border
+    // = 40+660 = 700ms, so dHoney = 740 leaves a 40ms beat before honey wells up.
+    seal: { border: 660, honey: 580, bloom: 900, mark: 360, spark: 620, dBorder: 40, dHoney: 740, dBloom: 1020, dMark: 1240, dSpark: 1260 },
 ```
 
 - [ ] **Step 4: Typecheck**
