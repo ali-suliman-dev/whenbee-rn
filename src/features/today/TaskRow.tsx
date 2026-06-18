@@ -46,6 +46,10 @@ interface TaskRowProps {
   peekHint?: boolean;
   /** When true, slide the row left off-screen then call onDelete (teaches swipe direction). */
   isExiting?: boolean;
+  /** Show "← swipe to remove" coach overlay (first done row, first session). */
+  showCoachMark?: boolean;
+  /** Called when the swipeable begins opening — parent dismisses the coach mark. */
+  onCoachMarkDismiss?: () => void;
 }
 
 export function TaskRow({
@@ -60,6 +64,8 @@ export function TaskRow({
   onLongPress,
   peekHint = false,
   isExiting = false,
+  showCoachMark = false,
+  onCoachMarkDismiss,
 }: TaskRowProps) {
   const t = useTheme();
   const reducedMotion = useReducedMotion();
@@ -69,6 +75,9 @@ export function TaskRow({
 
   const exitX = useSharedValue(0);
   const exitStyle = useAnimatedStyle(() => ({ transform: [{ translateX: exitX.get() }] }));
+
+  const markOpacity = useSharedValue(0);
+  const markStyle = useAnimatedStyle(() => ({ opacity: markOpacity.get() }));
 
   function pressIn() {
     if (reducedMotion || done) return;
@@ -96,6 +105,15 @@ export function TaskRow({
   // exitX and triggerOnDelete are stable refs; screenWidth only changes on rotation
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isExiting]);
+
+  useEffect(() => {
+    if (showCoachMark) {
+      markOpacity.set(withTiming(1, { duration: t.motion.base }));
+    } else {
+      markOpacity.set(0);
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [showCoachMark]);
 
   const swipeRef = useRef<SwipeableMethods | null>(null);
   const hasPeeked = useRef(false);
@@ -168,6 +186,26 @@ export function TaskRow({
     fontWeight: t.fontWeight.bold as TextStyle['fontWeight'],
     marginTop: t.space[0.5],
   };
+  const coachWrap: ViewStyle = {
+    position: 'absolute',
+    right: t.space[3],
+    top: 0,
+    bottom: 0,
+    justifyContent: 'center',
+    pointerEvents: 'none',
+  };
+  const coachPill: ViewStyle = {
+    backgroundColor: t.colors.inverseSurface,
+    borderRadius: t.radii.full,
+    paddingHorizontal: t.space[2],
+    paddingVertical: t.space[0.5],
+  };
+  const coachLabel: TextStyle = {
+    color: t.colors.inverseText,
+    fontSize: t.fontSize.xs,
+    fontWeight: t.fontWeight.bold as TextStyle['fontWeight'],
+    letterSpacing: 0.2,
+  };
 
   const content = (
     <Animated.View style={[row, pressStyle, exitStyle]}>
@@ -204,6 +242,14 @@ export function TaskRow({
           <Text style={unit}>guessed {guessMin}</Text>
         </View>
       )}
+
+      {showCoachMark ? (
+        <Animated.View style={[coachWrap, markStyle]}>
+          <View style={coachPill}>
+            <Text style={coachLabel}>← swipe to remove</Text>
+          </View>
+        </Animated.View>
+      ) : null}
     </Animated.View>
   );
 
@@ -267,6 +313,7 @@ export function TaskRow({
       rightThreshold={40}
       overshootRight={false}
       renderRightActions={renderRightActions}
+      onSwipeableWillOpen={() => onCoachMarkDismiss?.()}
     >
       {body}
     </ReanimatedSwipeable>
