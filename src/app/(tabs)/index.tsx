@@ -1,4 +1,4 @@
-import { View, Text, Pressable, ScrollView, type ViewStyle, type TextStyle } from 'react-native';
+import { View, Text, Pressable, ScrollView, ActionSheetIOS, type ViewStyle, type TextStyle } from 'react-native';
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
@@ -6,6 +6,7 @@ import Animated, {
   withSpring,
   useReducedMotion,
 } from 'react-native-reanimated';
+import { useState, useEffect } from 'react';
 import { router } from 'expo-router';
 import { haptics } from '@/src/lib/haptics';
 import { Ionicons } from '@expo/vector-icons';
@@ -28,6 +29,8 @@ import { useCalibrationStore } from '@/src/stores/calibrationStore';
 import { useTimerStore } from '@/src/stores/timerStore';
 import { useSettingsStore } from '@/src/stores/settingsStore';
 import { projectedFinish, formatClockMeridiem } from '@/src/lib/time';
+import { useTasksStore } from '@/src/stores/tasksStore';
+import { kv } from '@/src/lib/kv';
 
 // Date label, e.g. "Fri · Jun 12" — the day + date, no clock (the time added
 // nothing here and ticked distractingly).
@@ -54,6 +57,26 @@ export default function Today() {
   } = useToday();
   const isTimerRunning = useTimerStore((s) => s.isRunning);
   const dailyRitualEnabled = useSettingsStore((s) => s.dailyRitualEnabled);
+  const removeTask = useTasksStore((s) => s.removeTask);
+
+  // First-run peek: teach the hidden swipe once, then never again.
+  const [peekFirstRow] = useState(() => kv.getString('today.seenSwipeHint') == null);
+  useEffect(() => {
+    if (peekFirstRow) kv.set('today.seenSwipeHint', '1');
+  }, [peekFirstRow]);
+
+  function deleteTask(id: string) {
+    haptics.medium();
+    removeTask(id);
+  }
+  function promptDelete(id: string, label: string) {
+    ActionSheetIOS.showActionSheetWithOptions(
+      { title: label, options: ['Delete', 'Cancel'], destructiveButtonIndex: 0, cancelButtonIndex: 1 },
+      (i) => {
+        if (i === 0) deleteTask(id);
+      },
+    );
+  }
 
   // Open the timer for any queued list row (mirrors the FocusCard Start params).
   function startRow(row: TodayRow) {
@@ -179,25 +202,32 @@ export default function Today() {
           {isTimerRunning ? (
             <RunningFocusCard categoryName={categoryName} />
           ) : focus && summary ? (
-            <FocusCard
-              category={focus.category}
-              categoryLabel={categoryName(focus.category)}
-              taskTitle={focus.label}
-              summary={summary}
-              finishClock={formatClockMeridiem(projectedFinish(Date.now(), summary.honestMinutes))}
-              onStart={() =>
-                router.push({
-                  pathname: '/(modals)/timer',
-                  params: {
-                    taskId: focus.id,
-                    label: focus.label,
-                    category: focus.category,
-                    estimateMin: summary.honestMinutes,
-                    guessMin: focus.guessMin,
-                  },
-                })
-              }
-            />
+            <Pressable
+              onLongPress={() => promptDelete(focus.id, focus.label)}
+              delayLongPress={300}
+              accessibilityRole="button"
+              accessibilityLabel={`${focus.label}. Long-press to delete.`}
+            >
+              <FocusCard
+                category={focus.category}
+                categoryLabel={categoryName(focus.category)}
+                taskTitle={focus.label}
+                summary={summary}
+                finishClock={formatClockMeridiem(projectedFinish(Date.now(), summary.honestMinutes))}
+                onStart={() =>
+                  router.push({
+                    pathname: '/(modals)/timer',
+                    params: {
+                      taskId: focus.id,
+                      label: focus.label,
+                      category: focus.category,
+                      estimateMin: summary.honestMinutes,
+                      guessMin: focus.guessMin,
+                    },
+                  })
+                }
+              />
+            </Pressable>
           ) : totalCount === 0 ? (
             <TodayEmptyState
               variant={hasEverLogged ? 'daily' : 'first-run'}
@@ -213,13 +243,17 @@ export default function Today() {
           {upNext.length > 0 ? (
             <View style={{ gap: t.space[2] }}>
               <Text style={sectionLabel}>UP NEXT</Text>
-              {upNext.map((row) => (
+              {upNext.map((row, idx) => (
                 <TaskRow
                   key={row.id}
                   title={row.label}
                   categoryLabel={row.categoryLabel}
+                  guessMin={row.guessMin}
                   honestMin={row.honestMin}
                   onPress={() => startRow(row)}
+                  onDelete={() => deleteTask(row.id)}
+                  onLongPress={() => promptDelete(row.id, row.label)}
+                  peekHint={peekFirstRow && idx === 0}
                 />
               ))}
             </View>
@@ -233,9 +267,12 @@ export default function Today() {
                   key={row.id}
                   title={row.label}
                   categoryLabel={row.categoryLabel}
+                  guessMin={row.guessMin}
                   honestMin={row.honestMin}
                   actualMin={row.actualMin}
                   done
+                  onDelete={() => deleteTask(row.id)}
+                  onLongPress={() => promptDelete(row.id, row.label)}
                 />
               ))}
             </View>
