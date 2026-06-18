@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { View, type ViewStyle, type TextStyle } from 'react-native';
+import Animated, { FadeInDown, useReducedMotion } from 'react-native-reanimated';
 import { AppText } from '@/src/components/AppText';
 import { Chip } from '@/src/components/Chip';
 import { useTheme } from '@/src/theme/useTheme';
@@ -7,6 +8,8 @@ import { type } from '@/src/theme/typography';
 import { analytics } from '@/src/services/analytics';
 import { useCalibrationStore } from '@/src/stores/calibrationStore';
 import { EnergyGlyph, type EnergyKind } from './EnergyGlyph';
+
+const ENTER_STAGGER = 70;
 
 // ──────────────────────────────────────────────────────────────────────────────
 // EnergyChips (S4) — an optional, one-tap context tag captured after a log: how
@@ -24,6 +27,7 @@ const OPTIONS: readonly { value: EnergyKind; label: string }[] = [
 
 export function EnergyChips({ eventId }: { eventId: string }) {
   const t = useTheme();
+  const reducedMotion = useReducedMotion();
   const setContext = useCalibrationStore((s) => s.setContext);
   const [selected, setSelected] = useState<string | null>(null);
 
@@ -33,27 +37,47 @@ export function EnergyChips({ eventId }: { eventId: string }) {
     analytics.capture('context_tagged', { key: 'energy', value });
   }
 
-  // marginTop sets this optional section off from the reason row above it.
-  const wrap: ViewStyle = { gap: t.space[2], alignItems: 'center', marginTop: t.space[3] };
+  const wrap: ViewStyle = { gap: t.space[2] };
   const prompt: TextStyle = {
-    ...(type.bodySm as unknown as TextStyle),
-    color: selected ? t.colors.accent : t.colors.inkSoft,
-    textAlign: 'center',
+    ...(type.caption as unknown as TextStyle),
+    color: t.colors.inkSoft,
   };
-  const row: ViewStyle = { flexDirection: 'row', gap: t.space[2] };
+  const row: ViewStyle = { flexDirection: 'row', gap: t.space[2], width: '100%' };
+  const chipContainer: ViewStyle = {
+    backgroundColor: t.colors.surfaceSunken,
+    paddingHorizontal: t.space[3],
+    paddingVertical: t.space[1.5],
+    flex: 1,
+    justifyContent: 'center',
+  };
 
   return (
     <View style={wrap}>
       <AppText style={prompt}>{selected ? 'Noted.' : 'Energy this session? (optional)'}</AppText>
       <View style={row}>
-        {OPTIONS.map((o) => (
-          <Chip
+        {OPTIONS.map((o, i) => (
+          <Animated.View
             key={o.value}
+            style={{ flex: 1 }}
+            entering={
+              reducedMotion
+                ? undefined
+                : FadeInDown.duration(t.motion.base)
+                    .delay(i * ENTER_STAGGER)
+                    .springify()
+                    .damping(t.motion.spring.damping)
+                    .stiffness(t.motion.spring.stiffness)
+            }
+          >
+          <Chip
             label={o.label}
             icon={<EnergyGlyph kind={o.value} active={selected === o.value} />}
             selected={selected === o.value}
+            style={{ flex: 1 }}
+            containerStyle={chipContainer}
             onPress={() => pick(o.value)}
           />
+          </Animated.View>
         ))}
       </View>
     </View>

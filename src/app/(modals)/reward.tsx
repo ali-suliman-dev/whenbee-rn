@@ -146,6 +146,16 @@ export default function Reward() {
     gap: t.space[2.5], // medium tier — card internals (tightened with the row collapse)
   };
   const heroBlock: ViewStyle = { alignItems: 'center', gap: t.space[1.5] };
+  const questionsCard: ViewStyle = {
+    backgroundColor: t.colors.surfaceRaised,
+    borderRadius: t.radii.card,
+    padding: t.space[4],
+    gap: t.space[3],
+  };
+  const questionsDivider: ViewStyle = {
+    height: 1,
+    backgroundColor: t.colors.hairline,
+  };
   const ctaBlock: ViewStyle = {
     // Not pinned: rides the bottom of the scroll flow. marginTop pushes it down
     // when content is short, collapses when it overflows — so nothing hides
@@ -235,20 +245,20 @@ export default function Reward() {
           ) : null}
         </View>
 
-        {/* Zone 4 — the optional tail: an over/under reason tag. Kept in a group
-            wrapper so a future second tag row (energy, on the mechanisms branch)
-            slots in as one optional-tags block. Gated on the reason itself so it
-            never leaves an empty spacer when the run landed close to the guess.
-            Pure side-channel data — never blocks the exit, never touches the model. */}
-        {r.reasonDirection && r.eventId ? (
-          <View style={{ gap: t.space[3] }}>
-            <ReasonChips eventId={r.eventId} direction={r.reasonDirection} category={r.category} />
+        {/* Zone 4 — optional tags card: reason + energy grouped in one surface so
+            they read as a single "quick questions" section, not two orphan rows.
+            Card only renders when at least one tag section is active. */}
+        {r.eventId ? (
+          <View style={questionsCard}>
+            {r.reasonDirection ? (
+              <>
+                <ReasonChips eventId={r.eventId} direction={r.reasonDirection} category={r.category} />
+                <View style={questionsDivider} />
+              </>
+            ) : null}
+            <EnergyChips eventId={r.eventId} />
           </View>
         ) : null}
-
-        {/* Optional context tag (S4) — energy this session. Skippable; pure
-            side-channel that feeds the Pro context correlation, never the model. */}
-        {r.eventId ? <EnergyChips eventId={r.eventId} /> : null}
 
         {/* CTA zone — rides the bottom of the flow (not pinned), single primary
             action + a quiet text exit, with a generous bottom margin. */}

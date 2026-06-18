@@ -41,13 +41,13 @@ const CONFIRM_HEADER = 'Good to know.';
 // "went faster" ones. No "you got distracted / you failed" — only curiosity. A
 // leading illustration makes each one scannable and inviting to press.
 const OVER_OPTIONS: readonly ReasonOption[] = [
-  { value: 'interrupted', label: 'Got interrupted', glyph: 'interrupted' },
-  { value: 'underestimated', label: 'Bigger than it looked', glyph: 'bigger' },
-  { value: 'context_switch', label: 'Pulled away', glyph: 'pulled' },
+  { value: 'interrupted', label: 'Paused', glyph: 'interrupted' },
+  { value: 'underestimated', label: 'Grew', glyph: 'bigger' },
+  { value: 'context_switch', label: 'Pulled', glyph: 'pulled' },
 ];
 const UNDER_OPTIONS: readonly ReasonOption[] = [
-  { value: 'focused', label: 'In the zone', glyph: 'zone' },
-  { value: 'overestimated', label: 'Smaller than it looked', glyph: 'smaller' },
+  { value: 'focused', label: 'Flow', glyph: 'zone' },
+  { value: 'overestimated', label: 'Fast', glyph: 'smaller' },
 ];
 
 // Chips land after the payoff card's reveal (t.motion.draw), then ping in
@@ -97,17 +97,23 @@ export function ReasonChips({
     });
   }
 
-  const wrap: ViewStyle = { gap: t.space[3], alignItems: 'center' };
+  const wrap: ViewStyle = { gap: t.space[2.5] };
   const prompt: TextStyle = {
     ...(type.bodySm as unknown as TextStyle),
     color: selected ? t.colors.accent : t.colors.inkSoft,
-    textAlign: 'center',
   };
   const chipRow: ViewStyle = {
     flexDirection: 'row',
-    flexWrap: 'wrap',
-    justifyContent: 'center',
     gap: t.space[2],
+    width: '100%',
+  };
+  // Darker, compact pill — no border, sunken bg reads against reward surface.
+  const chipContainer: ViewStyle = {
+    backgroundColor: t.colors.surfaceSunken,
+    paddingHorizontal: t.space[3],
+    paddingVertical: t.space[1.5],
+    flex: 1,
+    justifyContent: 'center',
   };
   // Header swaps to a warm confirm once a reason is tagged — closure on the tap.
   const headerText = selected ? CONFIRM_HEADER : header;
@@ -125,6 +131,7 @@ export function ReasonChips({
         {options.map((opt, i) => (
           <Animated.View
             key={opt.value}
+            style={{ flex: 1 }}
             entering={
               reducedMotion
                 ? undefined
@@ -139,6 +146,8 @@ export function ReasonChips({
               label={opt.label}
               icon={<ReasonGlyph kind={opt.glyph} active={selected === opt.value} />}
               selected={selected === opt.value}
+              style={{ flex: 1 }}
+              containerStyle={chipContainer}
               onPress={() => handleSelect(opt.value)}
             />
           </Animated.View>
