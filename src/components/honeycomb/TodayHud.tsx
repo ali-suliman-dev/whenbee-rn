@@ -9,23 +9,24 @@ import Animated, {
 import { Ionicons } from '@expo/vector-icons';
 import { BeeMascot, type BeeVariant } from '@/src/components/BeeMascot';
 import { BeeCoin } from '@/src/components/BeeCoin';
+import { RitualSeal } from '@/src/features/today/RitualSeal';
 import { useTheme } from '@/src/theme/useTheme';
 import { type } from '@/src/theme/typography';
 import { tierBandProgress, type CompanionStage } from '@/src/engine';
 import type { HoneycombCell } from './Honeycomb';
 
 // ──────────────────────────────────────────────────────────────────────────────
-// TodayHud — the persistent companion + honey HUD on Today (replaces the
-// HoneycombStrip on this screen). One row:
+// TodayHud — ledger card on Today. Top Pressable = honey HUD routing to the hub;
+// optional hairline footer = inline reclaim stat (left) + RitualSeal (right).
 //
 //   (Whenbee)  Setting                                          ›
 //              ▓▓▓▓▓▓▓░░░░░░░░  (honey bar toward the next tier)
+//   ─────────────────────────────────────────────
+//   +10m  reclaimed today          Log one honest thing  ⬡
 //
-// The bee is the living presence (its stage drives glow/float inside BeeMascot);
-// the honey bar fills amber toward the next tier using the existing band progress.
-// No "N logs to go" counter — the tier word + fill carry it, calm not chore-like.
-// The whole card taps into the Whenbee hub, where the full per-category comb lives.
-// Amber here is the sanctioned honey identity; it only ever fills, never drains.
+// Footer renders only when reclaimMin > 0 or ritualEnabled. Reclaim sub-row
+// hides when reclaimMin is 0. Amber here is the sanctioned honey identity;
+// it only ever fills, never drains.
 // ──────────────────────────────────────────────────────────────────────────────
 
 interface TodayHudProps {
@@ -33,9 +34,26 @@ interface TodayHudProps {
   stage: CompanionStage;
   seed: number;
   onPress: () => void;
+  /** Minutes reclaimed today; the footer stat hides when <= 0. */
+  reclaimMin?: number;
+  /** Whether the opt-in daily ritual is on (renders the seal). */
+  ritualEnabled?: boolean;
+  /** Whether something has been logged today (seal plays/holds sealed). */
+  ritualDone?: boolean;
+  /** Open the log flow from the ritual tap. */
+  onLogRitual?: () => void;
 }
 
-export function TodayHud({ cells, stage, seed, onPress }: TodayHudProps) {
+export function TodayHud({
+  cells,
+  stage,
+  seed,
+  onPress,
+  reclaimMin = 0,
+  ritualEnabled = false,
+  ritualDone = false,
+  onLogRitual,
+}: TodayHudProps) {
   const t = useTheme();
   const reduced = useReducedMotion();
 
@@ -54,10 +72,11 @@ export function TodayHud({ cells, stage, seed, onPress }: TodayHudProps) {
   const scale = useSharedValue(1);
   const pressStyle = useAnimatedStyle(() => ({ transform: [{ scale: scale.get() }] }));
 
+  const showReclaim = reclaimMin > 0;
+  const showFooter = showReclaim || ritualEnabled;
+
+  // Card is now a column container — top row + optional footer stack vertically.
   const card: ViewStyle = {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: t.space[3],
     backgroundColor: t.colors.surface,
     borderWidth: t.borderWidth.thin,
     borderColor: t.colors.hairline,
@@ -83,20 +102,40 @@ export function TodayHud({ cells, stage, seed, onPress }: TodayHudProps) {
     backgroundColor: t.colors.accent,
     borderRadius: t.radii.full,
   };
+  const footer: ViewStyle = {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: showReclaim && ritualEnabled ? 'space-between' : 'flex-start',
+    gap: t.space[3],
+    borderTopWidth: t.borderWidth.thin,
+    borderTopColor: t.colors.hairline,
+    paddingTop: t.space[2.5],
+    marginTop: t.space[3],
+  };
+  const reclaimRow: ViewStyle = { flexDirection: 'row', alignItems: 'center', gap: t.space[1.5] };
+  const reclaimNum: TextStyle = {
+    fontFamily: 'Inter-Bold',
+    fontSize: t.fontSize.bodySm,
+    color: t.colors.amberText,
+    fontVariant: ['tabular-nums'],
+  };
+  const reclaimLabel: TextStyle = { ...(type.caption as unknown as TextStyle), color: t.colors.inkSoft };
 
   return (
-    <Pressable
-      onPress={onPress}
-      onPressIn={() => {
-        if (!reduced) scale.set(withTiming(0.98, { duration: t.motion.press }));
-      }}
-      onPressOut={() => {
-        if (!reduced) scale.set(withSpring(1, t.motion.spring));
-      }}
-      accessibilityRole="button"
-      accessibilityLabel={`Whenbee, honey tier ${tier}. Tap to open your honeycomb.`}
-    >
-      <Animated.View style={[card, pressStyle]}>
+    <Animated.View style={[card, pressStyle]}>
+      {/* Top pressable — routes to the Whenbee hub */}
+      <Pressable
+        onPress={onPress}
+        onPressIn={() => {
+          if (!reduced) scale.set(withTiming(0.98, { duration: t.motion.press }));
+        }}
+        onPressOut={() => {
+          if (!reduced) scale.set(withSpring(1, t.motion.spring));
+        }}
+        accessibilityRole="button"
+        accessibilityLabel={`Whenbee, honey tier ${tier}. Tap to open your honeycomb.`}
+        style={{ flexDirection: 'row', alignItems: 'center', gap: t.space[3] }}
+      >
         {/* Coin lifts the bee off the card. Light: a solid periwinkle medallion with a
             soft shadow (white would melt into the white card). Dark: the soft raised coin. */}
         <View
@@ -123,7 +162,22 @@ export function TodayHud({ cells, stage, seed, onPress }: TodayHudProps) {
           </View>
         </View>
         <Ionicons name="chevron-forward" size={t.iconSize.sm} color={t.colors.inkFaint} />
-      </Animated.View>
-    </Pressable>
+      </Pressable>
+
+      {/* Optional hairline footer: reclaim stat (left) + RitualSeal (right) */}
+      {showFooter ? (
+        <View style={footer}>
+          {showReclaim ? (
+            <View style={reclaimRow} accessibilityLabel={`${reclaimMin} minutes reclaimed today`}>
+              <Text style={reclaimNum}>+{reclaimMin}m</Text>
+              <Text style={reclaimLabel}>reclaimed today</Text>
+            </View>
+          ) : null}
+          {ritualEnabled ? (
+            <RitualSeal done={ritualDone} onLog={onLogRitual ?? (() => {})} />
+          ) : null}
+        </View>
+      ) : null}
+    </Animated.View>
   );
 }
