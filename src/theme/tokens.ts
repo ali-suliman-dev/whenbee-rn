@@ -330,6 +330,13 @@ export const tokens = {
     poolOpacity: 0.16,
   },
 
+  // Pro upsell "pass" card geometry (ProUpsellCard) + paywall Reclaim hero. Kept
+  // here so the card inlines no raw px. `stub` = the gilt left-stub width; `edge` =
+  // the tactile coin-edge depth (cf. AppButton's filled-pill edge); `notch` = the
+  // ticket perforation notch diameter; `emblem` = the honeycomb glyph size in the
+  // stub; `comb` = the Reclaim-hero honeycomb motif size.
+  upsell: { stub: 88, edge: 6, notch: 14, emblem: 40, comb: 60 },
+
   // ── brand illustration palette ──────────────────────────────────────────────
   // Fixed art colors for the Whenbee mascot (BeeMascot). Brand art does NOT recolor
   // by mode — a mascot reads as the SAME bee in light and dark, the way a logo does.

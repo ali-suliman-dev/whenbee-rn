@@ -15,6 +15,7 @@ import { useEntitlement } from './useEntitlement';
 import { useOfferings } from './useOfferings';
 import { useFounderReserve } from './useFounderReserve';
 import { BeforeAfterHero } from './BeforeAfterHero';
+import { ReclaimEndowment } from './ReclaimEndowment';
 import { FounderReserveCard } from './FounderReserveCard';
 import { PlanPicker } from './PlanPicker';
 import { openManageSubscriptions } from './manageSubscription';
@@ -179,6 +180,15 @@ export function Paywall({ trigger, readiness = 'pre' }: { trigger?: string; read
   const benefitRow: ViewStyle = { flexDirection: 'row', alignItems: 'center', gap: t.space[3] };
   const proofRow: ViewStyle = { flexDirection: 'row', alignItems: 'center', gap: t.space[2] };
   const linkRow: ViewStyle = { flexDirection: 'row', justifyContent: 'center', gap: t.space[6] };
+  // The free-tier reassurance (prototype): the real no-card, no-renewal trial.
+  const freeStrip: ViewStyle = {
+    backgroundColor: t.colors.primarySoft,
+    borderRadius: t.radii.card,
+    borderCurve: 'continuous',
+    padding: t.space[3],
+  };
+  const freeStripText: TextStyle = { ...(type.bodySm as unknown as TextStyle), color: t.colors.ink };
+  const freeStripStrong: TextStyle = { fontFamily: 'Jakarta-Bold' };
 
   return (
     <Screen>
@@ -205,6 +215,10 @@ export function Paywall({ trigger, readiness = 'pre' }: { trigger?: string; read
               : 'Whenbee already knows your real numbers. Let it quietly rebuild your calendar to match.'}
           </Text>
         </View>
+
+        {/* The earned number leads: what the user's own calibration already saved
+            them. Hidden for a brand-new user (no fabricated total). */}
+        <ReclaimEndowment />
 
         {/* The single clearest reason to pay. */}
         <BeforeAfterHero />
@@ -275,6 +289,14 @@ export function Paywall({ trigger, readiness = 'pre' }: { trigger?: string; read
               >
                 <Text style={linkText}>Manage subscription</Text>
               </Pressable>
+            </View>
+
+            {/* The free tier is the real no-card, no-renewal trial — say so plainly. */}
+            <View style={freeStrip}>
+              <Text style={freeStripText}>
+                Not ready to decide? <Text style={freeStripStrong}>The free tier stays fully useful.</Text> No
+                card, no renewal. That is your real trial.
+              </Text>
             </View>
           </>
         )}

@@ -69,8 +69,14 @@ function walk(dir: string): string[] {
 function codeLines(source: string): { line: string; n: number }[] {
   return source.split('\n').map((raw, i) => {
     const trimmed = raw.trimStart();
-    // Whole-line `//` comment or a block-comment body/continuation line.
-    if (trimmed.startsWith('//') || trimmed.startsWith('*') || trimmed.startsWith('/*')) {
+    // Whole-line `//` comment, a block-comment body/continuation line, or a
+    // single-line JSX comment (`{/* … */}`) — prose in any comment never triggers.
+    if (
+      trimmed.startsWith('//') ||
+      trimmed.startsWith('*') ||
+      trimmed.startsWith('/*') ||
+      trimmed.startsWith('{/*')
+    ) {
       return { line: '', n: i + 1 };
     }
     // Strip an inline `// …` trailer (good enough: our strings never contain `//`).
