@@ -1,5 +1,7 @@
 import { useCallback, useMemo, useReducer, useRef, useState } from 'react';
 import {
+  KeyboardAvoidingView,
+  Platform,
   Pressable,
   ScrollView,
   TextInput,
@@ -19,6 +21,8 @@ import { AppText } from '@/src/components/AppText';
 import { AppButton } from '@/src/components/AppButton';
 import { formatClock } from '@/src/lib/time';
 import { CategoryChips, usePickerCategories } from '@/src/features/shared/CategoryChips';
+import { guessCategory } from '@/src/features/shared/categoryGuess';
+import { useVocabStore } from '@/src/stores/vocabStore';
 import type { DeadlineMode } from './FinishTimeWheel';
 import { FinishTimeWheel } from './FinishTimeWheel';
 import { BreatherChips } from './BreatherChips';
@@ -59,24 +63,28 @@ interface ComposerState {
   open: boolean;
   title: string;
   category: string | null;
+  guessedCategory: string | null;
 }
 
 type ComposerAction =
   | { type: 'open' }
   | { type: 'close' }
   | { type: 'setTitle'; value: string }
+  | { type: 'setTitleAndGuess'; value: string; guess: string | null }
   | { type: 'setCategory'; id: string };
 
 function composerReducer(state: ComposerState, action: ComposerAction): ComposerState {
   switch (action.type) {
     case 'open':
-      return { open: true, title: '', category: null };
+      return { open: true, title: '', category: null, guessedCategory: null };
     case 'close':
-      return { open: false, title: '', category: null };
+      return { open: false, title: '', category: null, guessedCategory: null };
     case 'setTitle':
       return { ...state, title: action.value };
+    case 'setTitleAndGuess':
+      return { ...state, title: action.value, category: action.guess, guessedCategory: action.guess };
     case 'setCategory':
-      return { ...state, category: action.id };
+      return { ...state, category: action.id, guessedCategory: null };
   }
 }
 
@@ -92,14 +100,36 @@ function InlineComposer({
     open: false,
     title: '',
     category: null,
+    guessedCategory: null,
   });
   const categories = usePickerCategories();
+  const learned = useVocabStore((s) => s.map);
   const titleRef = useRef<TextInput>(null);
+  const manualRef = useRef(false);
 
   function handleOpen() {
+    manualRef.current = false;
     dispatch({ type: 'open' });
     // Focus after a brief layout pass.
     setTimeout(() => titleRef.current?.focus(), 50);
+  }
+
+  function handleTitleChange(v: string) {
+    if (manualRef.current) {
+      dispatch({ type: 'setTitle', value: v });
+    } else {
+      const guess = guessCategory(v, {
+        learned,
+        namedCats: categories,
+        availableIds: categories.map((c) => c.id),
+      });
+      dispatch({ type: 'setTitleAndGuess', value: v, guess });
+    }
+  }
+
+  function handleCategoryChange(id: string) {
+    manualRef.current = true;
+    dispatch({ type: 'setCategory', id });
   }
 
   function handleConfirm() {
@@ -183,7 +213,7 @@ function InlineComposer({
         placeholder="Task name"
         placeholderTextColor={t.colors.inkFaint}
         value={state.title}
-        onChangeText={(v) => dispatch({ type: 'setTitle', value: v })}
+        onChangeText={handleTitleChange}
         onSubmitEditing={handleConfirm}
         returnKeyType="done"
         autoCorrect
@@ -192,7 +222,8 @@ function InlineComposer({
       <CategoryChips
         categories={categories}
         value={state.category}
-        onChange={(id) => dispatch({ type: 'setCategory', id })}
+        onChange={handleCategoryChange}
+        guessedId={state.guessedCategory}
       />
       <View style={composerActionsStyle}>
         <AppButton
@@ -471,6 +502,10 @@ export function BuildView({ planner, nowMs = Date.now() }: BuildViewProps) {
   }, [verdict, cutTasks, pushDeadline]);
 
   return (
+    <KeyboardAvoidingView
+      style={{ flex: 1 }}
+      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+    >
     <ScrollView
       style={{ flex: 1 }}
       contentContainerStyle={{ flexGrow: 1 }}
@@ -570,5 +605,6 @@ export function BuildView({ planner, nowMs = Date.now() }: BuildViewProps) {
         </View>
       </View>
     </ScrollView>
+    </KeyboardAvoidingView>
   );
 }
