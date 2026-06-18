@@ -28,7 +28,12 @@ const ENTER = FadeIn.duration(tokens.motion.base).reduceMotion(ReduceMotion.Syst
 export default function PlanScreen() {
   const t = useTheme();
   const planner = usePlanner();
-  const { phase, clearActive } = planner;
+  const { phase, clearActive, runGroups } = planner;
+  const allDone =
+    phase === 'run' &&
+    runGroups.done.length > 0 &&
+    runGroups.now.length === 0 &&
+    runGroups.next.length === 0;
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: t.colors.bg }} edges={['top', 'left', 'right']}>
@@ -36,7 +41,7 @@ export default function PlanScreen() {
         <Animated.View key="run" style={{ flex: 1 }} entering={ENTER}>
           <RunView
             planner={planner}
-            abandonSlot={<AbandonButton clearActive={clearActive} />}
+            abandonSlot={<AbandonButton clearActive={clearActive} allDone={allDone} />}
           />
         </Animated.View>
       ) : (

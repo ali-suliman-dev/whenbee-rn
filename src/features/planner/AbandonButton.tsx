@@ -21,15 +21,22 @@ type PlannerHandle = ReturnType<typeof usePlanner>;
 
 interface AbandonButtonProps {
   clearActive: PlannerHandle['clearActive'];
+  /** True when every task in the plan is done — shows a neutral "New plan" button instead of destructive Abandon. */
+  allDone?: boolean;
 }
 
-export function AbandonButton({ clearActive }: AbandonButtonProps) {
+export function AbandonButton({ clearActive, allDone = false }: AbandonButtonProps) {
   const t = useTheme();
   const insets = useSafeAreaInsets();
   const [confirming, setConfirming] = useState(false);
 
   function handleOpen() {
     haptics.light();
+    if (allDone) {
+      // All tasks done — no destructive confirm needed, clear immediately.
+      clearActive();
+      return;
+    }
     setConfirming(true);
   }
 
@@ -47,7 +54,7 @@ export function AbandonButton({ clearActive }: AbandonButtonProps) {
   // ── Pill trigger ─────────────────────────────────────────────────────────────
   const pillWrapper: ViewStyle = {
     alignSelf: 'flex-start',
-    paddingBottom: t.burst.coinEdge, // coin-edge depth reserve
+    paddingBottom: allDone ? 0 : t.burst.coinEdge,
   };
 
   const pillEdge: ViewStyle = {
@@ -63,7 +70,9 @@ export function AbandonButton({ clearActive }: AbandonButtonProps) {
   const pillSurface: ViewStyle = {
     height: t.size.control.sm,
     borderRadius: t.radii.full,
-    backgroundColor: t.colors.danger,
+    backgroundColor: allDone ? t.colors.surface : t.colors.danger,
+    borderWidth: allDone ? t.borderWidth.share : 0,
+    borderColor: allDone ? t.colors.hairline : undefined,
     alignItems: 'center',
     justifyContent: 'center',
     paddingHorizontal: t.space[3],
@@ -72,7 +81,7 @@ export function AbandonButton({ clearActive }: AbandonButtonProps) {
   const pillLabel: TextStyle = {
     fontSize: t.fontSize.sm,
     fontWeight: t.fontWeight.semibold as TextStyle['fontWeight'],
-    color: t.colors.onIndigo,
+    color: allDone ? t.colors.inkSoft : t.colors.onIndigo,
   };
 
   // ── Confirm sheet ─────────────────────────────────────────────────────────────
@@ -108,9 +117,9 @@ export function AbandonButton({ clearActive }: AbandonButtonProps) {
         accessibilityLabel="Abandon this plan"
         style={pillWrapper}
       >
-        <View style={pillEdge} />
+        {!allDone ? <View style={pillEdge} /> : null}
         <View style={pillSurface}>
-          <AppText style={pillLabel}>Abandon</AppText>
+          <AppText style={pillLabel}>{allDone ? 'New plan' : 'Abandon'}</AppText>
         </View>
       </Pressable>
 
