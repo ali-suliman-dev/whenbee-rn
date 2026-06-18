@@ -28,5 +28,6 @@ export const type = {
   honestNumberLg: { fontFamily: 'Inter-Bold',     fontSize: fs.honestLg, lineHeight: 38, letterSpacing: -0.9,  fontVariant: ['tabular-nums'] as const },
   honestNumberXl: { fontFamily: 'Inter-Bold',     fontSize: fs.honest,   lineHeight: 42, letterSpacing: -1.0,  fontVariant: ['tabular-nums'] as const },
   bigNumber:      { fontFamily: 'Inter-Bold',     fontSize: fs.lg,       lineHeight: 24, letterSpacing: -0.4,  fontVariant: ['tabular-nums'] as const },
+  honestNumberMd: { fontFamily: 'Inter-Bold',     fontSize: fs.xl,       lineHeight: 28, letterSpacing: -0.5,  fontVariant: ['tabular-nums'] as const },
   multiplier:     { fontFamily: 'Inter-Bold',     fontSize: fs.subtitle, lineHeight: 24, letterSpacing: -0.4,  fontVariant: ['tabular-nums'] as const },
 } as const;

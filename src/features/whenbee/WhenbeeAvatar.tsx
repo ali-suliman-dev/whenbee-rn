@@ -9,11 +9,69 @@ import Animated, {
   withSpring,
   useReducedMotion,
 } from 'react-native-reanimated';
+import Svg, { Circle, Defs, RadialGradient, Stop } from 'react-native-svg';
 import { useTheme } from '@/src/theme/useTheme';
 import { AppText } from '@/src/components/AppText';
 import { BeeMascot } from '@/src/components/BeeMascot';
+import { BeeCoin } from '@/src/components/BeeCoin';
 import { type } from '@/src/theme/typography';
-import type { CompanionStage, CompanionCapability, DriftHealth } from '@/src/engine';
+import type { CompanionStage, DriftHealth } from '@/src/engine';
+
+// Backdrop styles behind the ring bee. 'soft' = a neutral coin whose rim fades out
+// (no glow, no hard edge — the chosen look, shared with the Today HUD via BeeCoin).
+// 'disc' = a hard-edged flat coin; 'pool' = a soft amber bloom. The last two are
+// kept as alternates.
+type Backdrop = 'none' | 'soft' | 'disc' | 'pool';
+
+// Flat backing disc: a solid raised coin with a clean hairline edge. No bloom, no
+// shadow — figure/ground via a real surface (flat-tactical, the no-glow option).
+function FlatDisc({
+  size,
+  bg,
+  border,
+  borderColor,
+  radius,
+}: {
+  size: number;
+  bg: string;
+  border: number;
+  borderColor: string;
+  radius: number;
+}) {
+  return (
+    <View
+      pointerEvents="none"
+      style={{
+        position: 'absolute',
+        width: size,
+        height: size,
+        borderRadius: radius,
+        backgroundColor: bg,
+        borderWidth: border,
+        borderColor,
+      }}
+    />
+  );
+}
+
+// Soft honey-pool backdrop: a radial amber bloom that lifts the indigo bee off the
+// dark ring interior (figure/ground) and fades to nothing before the ring arc. Flat,
+// no border — a pool of warmth, not a second ring.
+function HoneyPool({ size, color, opacity }: { size: number; color: string; opacity: number }) {
+  const r = size / 2;
+  return (
+    <Svg width={size} height={size} style={{ position: 'absolute' }} pointerEvents="none">
+      <Defs>
+        <RadialGradient id="beePool" cx="50%" cy="50%" r="50%">
+          <Stop offset="0%" stopColor={color} stopOpacity={opacity} />
+          <Stop offset="62%" stopColor={color} stopOpacity={opacity * 0.5} />
+          <Stop offset="100%" stopColor={color} stopOpacity={0} />
+        </RadialGradient>
+      </Defs>
+      <Circle cx={r} cy={r} r={r} fill="url(#beePool)" />
+    </Svg>
+  );
+}
 
 // ──────────────────────────────────────────────────────────────────────────────
 // WhenbeeAvatar — the companion, now stage-driven (Part 2 Group E). It renders the
@@ -22,27 +80,40 @@ import type { CompanionStage, CompanionCapability, DriftHealth } from '@/src/eng
 //   • Mount: a Playful spring LIFT whose amplitude scales with stage (a higher hop
 //     for a more-present bee), then a calm sine FLOAT bob at the same per-stage
 //     amplitude (companion.floatLift token). Joy, never urgency.
-//   • driftHealth 'curious' ONLY warms the capability copy toward the indigo drift
-//     tint and adds a tiny rotational wobble — a gentle "worth a re-check" wave,
-//     never a sad/wilt state (positive-only invariant).
+//   • driftHealth 'curious' ONLY adds a tiny rotational wobble — a gentle "worth a
+//     re-check" wave, never a sad/wilt state (positive-only invariant).
 //   • REDUCE-MOTION: collapse to a plain fade-in, no travel (matches CoinBadge).
 //
-// The capability label is warm, non-evaluative microcopy: it names what the bee can
-// do for you now, framed as a gift ("She can…"), never a score or a task.
+// Art + motion only (plus an optional name). No caption line — the ring badge and
+// the labeled zones below carry the words.
 // ──────────────────────────────────────────────────────────────────────────────
 
 export function WhenbeeAvatar({
   stage,
-  capability,
   seed,
   driftHealth = 'settled',
   name,
+  glow = true,
+  size,
+  animated = false,
+  backdrop = 'none',
 }: {
   stage: CompanionStage;
-  capability: CompanionCapability;
   seed: number;
   driftHealth?: DriftHealth;
   name?: string;
+  /** Forwarded to BeeMascot. When false, the amber/drift glow halo is not rendered.
+   *  Pass glow={false} when the avatar sits inside HoneyRing where the ring arc
+   *  provides the visual focus and a glow halo would add clutter. */
+  glow?: boolean;
+  /** Bee art size (px). Defaults to the hero burst size; the hub ring passes the
+   *  smaller `companion.ringBee` so the ring breathes around it. */
+  size?: number;
+  /** Forward the looping wing-flutter / blink / glance micro-life to BeeMascot. */
+  animated?: boolean;
+  /** Backing behind the bee (hub ring only). 'disc' = flat coin (no glow, default
+   *  choice); 'pool' = soft amber bloom; 'none' = nothing. */
+  backdrop?: Backdrop;
 }) {
   const t = useTheme();
   const reducedMotion = useReducedMotion();
@@ -98,24 +169,72 @@ export function WhenbeeAvatar({
     };
   });
 
-  const wrap: ViewStyle = { alignItems: 'center', gap: t.space[2] };
+  const beeSize = size ?? t.burst.bee;
+  const backdropSize =
+    backdrop === 'soft'
+      ? t.companion.softSize
+      : backdrop === 'pool'
+        ? t.companion.poolSize
+        : backdrop === 'disc'
+          ? t.companion.discSize
+          : 0;
+  const boxSize = Math.max(beeSize, backdropSize);
+
+  // In the ring (backdrop set), the bee box is the ONLY flow child so HoneyRing keeps
+  // the bee centred; the name is overlaid absolutely at the bottom of the box so it
+  // can't push the bee off-centre. Outside the ring (naming modal) the name flows
+  // beneath the bee with the usual gap.
+  const inRing = backdrop !== 'none';
+  const wrap: ViewStyle = inRing ? { alignItems: 'center' } : { alignItems: 'center', gap: t.space[2] };
+  const beeBox: ViewStyle = {
+    width: boxSize,
+    height: boxSize,
+    alignItems: 'center',
+    justifyContent: 'center',
+  };
   const nameStyle: TextStyle = { ...(type.bodyLg as unknown as TextStyle), color: t.colors.ink };
-  // Capability copy: muted by default; warms to the indigo drift tint when curious.
-  const capStyle: TextStyle = {
-    ...(type.caption as unknown as TextStyle),
-    color: curious ? t.colors.driftCurious : t.colors.inkSoft,
+  const nameOverlay: TextStyle = {
+    position: 'absolute',
+    bottom: t.space[0],
+    left: 0,
+    right: 0,
     textAlign: 'center',
   };
 
   return (
     <View style={wrap}>
-      <Animated.View style={beeStyle}>
-        <BeeMascot size={t.burst.bee} variant={`stage-${stage}`} seed={seed} />
-      </Animated.View>
-      {name ? <AppText style={nameStyle}>{name}</AppText> : null}
-      <AppText style={capStyle} accessibilityLabel={`She can now give you ${capability.label}`}>
-        {curious ? 'A quick re-check keeps her sharp' : `She can give you ${capability.label.toLowerCase()}`}
-      </AppText>
+      <View style={beeBox}>
+        {backdrop === 'soft' ? (
+          <BeeCoin size={t.companion.softSize} color={t.colors.companionCoin} />
+        ) : null}
+        {backdrop === 'disc' ? (
+          <FlatDisc
+            size={t.companion.discSize}
+            bg={t.colors.surfaceRaised}
+            border={t.companion.discBorder}
+            borderColor={t.colors.border}
+            radius={t.radii.full}
+          />
+        ) : null}
+        {backdrop === 'pool' ? (
+          <HoneyPool
+            size={t.companion.poolSize}
+            color={t.colors.accent}
+            opacity={t.companion.poolOpacity}
+          />
+        ) : null}
+        <Animated.View style={beeStyle}>
+          <BeeMascot
+            size={beeSize}
+            variant={`stage-${stage}`}
+            seed={seed}
+            glow={glow}
+            animated={animated}
+          />
+        </Animated.View>
+        {inRing && name ? <AppText style={[nameStyle, nameOverlay]}>{name}</AppText> : null}
+      </View>
+      {!inRing && name ? <AppText style={nameStyle}>{name}</AppText> : null}
     </View>
   );
 }

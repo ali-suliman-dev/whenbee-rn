@@ -7,6 +7,7 @@ import { analytics } from '@/src/services/analytics';
 import { kv } from '@/src/lib/kv';
 import type { HoneycombCell } from '@/src/components/honeycomb/Honeycomb';
 import type { Tier, Discovery } from '@/src/domain/types';
+import { leadSharpnessOf } from './leadSharpness';
 
 // ──────────────────────────────────────────────────────────────────────────────
 // useWhenbeeHub — the read-model for the Whenbee hub screen (UI lands in B.3).
@@ -32,6 +33,8 @@ export interface WhenbeeHubVM {
   biggestArea: { categoryId: string; name: string; reclaimedMinutes: number } | null;
   honestLogCount: number;
   blindSpot: BlindSpot | null;
+  /** Overall hub sharpness — the most-ripened category's sharpness (0 if none). */
+  leadSharpness: number;
   /** Lead tier — tierFor of the most-ripened cell (matches HoneycombStrip). */
   tier: Tier;
   /** The companion's 6-stage presence (stage, capability copy, seed, drift, nectar). */
@@ -159,10 +162,8 @@ export function useWhenbeeHub(): WhenbeeHubVM {
   );
 
   // Lead = the most-ripened cell; its sharpness sets the tier the user is chasing.
-  const tier = useMemo<Tier>(() => {
-    const maxSharpness = cells.reduce((max, c) => Math.max(max, c.sharpness), 0);
-    return tierFor(maxSharpness);
-  }, [cells]);
+  const leadSharpness = useMemo<number>(() => leadSharpnessOf(cells), [cells]);
+  const tier = useMemo<Tier>(() => tierFor(leadSharpness), [leadSharpness]);
 
   // Blind spot = lowest-sharpness tracked category that has at least one log.
   const blindSpot = useMemo<BlindSpot | null>(() => {
@@ -202,6 +203,7 @@ export function useWhenbeeHub(): WhenbeeHubVM {
     ...reclaim,
     ...discoveries,
     blindSpot,
+    leadSharpness,
     tier,
     cells,
     refresh,

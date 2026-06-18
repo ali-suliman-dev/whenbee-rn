@@ -5,6 +5,7 @@ import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { Screen } from '@/src/components/Screen';
 import { AppText } from '@/src/components/AppText';
+import { ProUpsellCard } from '@/src/components/ProUpsellCard';
 import { Chip } from '@/src/components/Chip';
 import { AppearanceGlyph } from '@/src/components/icons/AppearanceGlyph';
 import { DataResetGlyph } from '@/src/components/DataResetGlyph';
@@ -118,6 +119,7 @@ export default function Settings() {
   const dailyRitualEnabled = useSettingsStore((s) => s.dailyRitualEnabled);
   const setDailyRitualEnabled = useSettingsStore((s) => s.setDailyRitualEnabled);
   const isPro = useEntitlement((s) => s.isPro);
+  const setPro = useEntitlement((s) => s.setPro);
   const categoryCount = useCategoriesStore((s) => s.categories.length);
   const { restoring, manageSubscription, restorePurchases } = useAccountActions();
   const { enabled: remindersEnabled, toggle: toggleReminders } = useReminderSetting();
@@ -175,20 +177,23 @@ export default function Settings() {
       >
         <View style={{ gap: t.space[3] }}>
           <AppText variant="label">Whenbee Pro</AppText>
-          <SettingRow
-            icon="time-outline"
-            tint={t.colors.accent}
-            title="Make my whole day honest"
-            note={
-              isPro
-                ? "Map your real buffers onto today's calendar."
-                : 'Auto-pad your calendar with your real buffers.'
-            }
-            onPress={isPro ? openHonestDay : openPaywall}
-            accessibilityLabel={
-              isPro ? 'Make my whole day honest' : 'Go Pro and make your whole day honest'
-            }
-          />
+          {isPro ? (
+            <SettingRow
+              icon="time-outline"
+              tint={t.colors.accent}
+              title="Make my whole day honest"
+              note="Map your real buffers onto today's calendar."
+              onPress={openHonestDay}
+              accessibilityLabel="Make my whole day honest"
+            />
+          ) : (
+            <ProUpsellCard
+              title="Make my whole day honest"
+              note="Auto-pad your calendar with your real buffers."
+              onPress={openPaywall}
+              accessibilityLabel="Go Pro and make your whole day honest"
+            />
+          )}
         </View>
 
         <View style={{ gap: t.space[3] }}>
@@ -294,6 +299,25 @@ export default function Settings() {
             disabled={resetting}
           />
         </View>
+
+        {__DEV__ ? (
+          <View style={{ gap: t.space[3] }}>
+            <AppText variant="label">Developer</AppText>
+            <SettingRow
+              icon="construct-outline"
+              title="Unlock Pro (dev)"
+              note="Flip the Pro entitlement to preview gated screens. Dev builds only — never ships."
+              trailing={
+                <Switch
+                  value={isPro}
+                  onValueChange={setPro}
+                  trackColor={{ true: t.colors.primary, false: t.colors.hairline }}
+                  accessibilityLabel="Unlock Pro (dev)"
+                />
+              }
+            />
+          </View>
+        ) : null}
       </ScrollView>
 
       <ConfirmSheet

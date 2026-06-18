@@ -1,14 +1,31 @@
 import { useEffect } from 'react';
-import { View } from 'react-native';
 import Animated, {
+  useAnimatedProps,
   useAnimatedStyle,
   useReducedMotion,
   useSharedValue,
+  withDelay,
   withRepeat,
+  withSequence,
   withTiming,
 } from 'react-native-reanimated';
 import Svg, { Path, Rect, Circle, Defs, RadialGradient, Stop } from 'react-native-svg';
 import { useTheme } from '@/src/theme/useTheme';
+
+const AnimatedRect = Animated.createAnimatedComponent(Rect);
+
+// ── Companion micro-life geometry (viewBox units, art-internal like the paths) ──
+// The two eyes are 50×100 ink rects centred on y≈937. Blink collapses each to a
+// thin slit about that centre; a slow glance slides both a shared amount sideways.
+const EYE_OPEN = 100; // open eye height
+const EYE_SLIT = 8; // closed eye height (a calm slit, never fully gone)
+const EYE_MID_Y = 937; // vertical centre the slit collapses toward
+const LOOK_SHIFT = 70; // ± eye glance travel (viewBox units — the pupils lead the look)
+const WING_FOLD = 0.05; // ± wing scaleX flutter (small + slow = a calm settle, not a buzz)
+// Body follows the glance: a small lean (fraction of render size) + a gentle tilt the
+// same way, so the WHOLE bee reads as turning to look left/right — not just its eyes.
+const BODY_LEAN = 0.035; // ± horizontal lean as a fraction of size (≈5px at 140)
+const BODY_TILT = 2; // ± degrees of turn toward the look direction
 
 // ──────────────────────────────────────────────────────────────────────────────
 // BeeMascot — the brand Whenbee, a hand-authored react-native-svg translation of
@@ -85,6 +102,7 @@ export function BeeMascot({
   variant = 'default',
   seed = 1,
   animated = false,
+  glow = true,
 }: {
   size?: number;
   variant?: BeeVariant;
@@ -92,6 +110,8 @@ export function BeeMascot({
   seed?: number;
   /** Opt-in in-place wing flutter (onboarding companion). Off everywhere else. */
   animated?: boolean;
+  /** When false, the amber/drift glow halo is not rendered. Default true. */
+  glow?: boolean;
 }) {
   const t = useTheme();
   const c = t.brand.bee;
@@ -106,24 +126,76 @@ export function BeeMascot({
   const stripe = hslHex(hue, STRIPE_SAT, STRIPE_LIGHT);
   const stripeLo = hslHex(hue, STRIPE_SAT, STRIPE_LIGHT_LO);
 
-  // Wings buzz in place: a gentle horizontal flutter about the bee's centre. The
-  // loop is the entrance too — it just starts on mount. Reduced-motion → still.
+  // ── Three calm, looping layers of life (premium, never busy) ──────────────────
+  //   • flutter — wings buzz in place: small + fast = an insect hum, not a bird flap
+  //   • blink   — a single eyelid close/open every few seconds (long calm rest between)
+  //   • look    — eyes glance slowly right, dwell, glance left, dwell, recentre
+  // All start on mount and loop forever; reduced-motion holds every layer still.
   const flutter = useSharedValue(0);
+  const blink = useSharedValue(0);
+  const look = useSharedValue(0);
+
+  const m = t.motion;
   useEffect(() => {
     if (!animated || reduced) {
       flutter.set(0);
+      blink.set(0);
+      look.set(0);
       return;
     }
-    flutter.set(
-      withRepeat(withTiming(1, { duration: t.motion.pulse, easing: t.motion.easing.calm }), -1, true),
+    // Wings: continuous soft buzz (decelerating sine each fold → no mechanical snap).
+    flutter.set(withRepeat(withTiming(1, { duration: m.beeWingBuzz, easing: m.easing.calm }), -1, true));
+    // Blink: quick close → open, then a long calm hold before the next one.
+    blink.set(
+      withRepeat(
+        withSequence(
+          withTiming(1, { duration: m.beeBlink, easing: m.easing.calm }),
+          withTiming(0, { duration: m.beeBlink, easing: m.easing.calm }),
+          withDelay(m.beeBlinkGap, withTiming(0, { duration: 0 })),
+        ),
+        -1,
+      ),
     );
-  }, [animated, reduced, flutter, t.motion.pulse, t.motion.easing.calm]);
+    // Glance: dwell centre → ease right → dwell → ease left → dwell → recentre.
+    look.set(
+      withRepeat(
+        withSequence(
+          withDelay(m.beeLookHold, withTiming(1, { duration: m.beeLook, easing: m.easing.calm })),
+          withDelay(m.beeLookHold, withTiming(-1, { duration: m.beeLook, easing: m.easing.calm })),
+          withDelay(m.beeLookHold, withTiming(0, { duration: m.beeLook, easing: m.easing.calm })),
+        ),
+        -1,
+      ),
+    );
+  }, [animated, reduced, flutter, blink, look, m]);
+
   const wingStyle = useAnimatedStyle(() => ({
-    transform: [{ scaleX: 1 - 0.12 * flutter.get() }],
+    transform: [{ scaleX: 1 - WING_FOLD * flutter.get() }],
   }));
 
-  const glow =
-    glowRadius > 0 ? (
+  // Each eye: height collapses to a slit toward EYE_MID_Y (blink), x slides with the
+  // glance. Kept as two calls (not a loop/helper) to honour the rules of hooks; both
+  // ink rects move together so it reads as one pair of eyes blinking and glancing.
+  const leftEyeProps = useAnimatedProps(() => {
+    const height = EYE_OPEN - blink.get() * (EYE_OPEN - EYE_SLIT);
+    return { x: 995 + look.get() * LOOK_SHIFT, y: EYE_MID_Y - height / 2, height };
+  });
+  const rightEyeProps = useAnimatedProps(() => {
+    const height = EYE_OPEN - blink.get() * (EYE_OPEN - EYE_SLIT);
+    return { x: 1355 + look.get() * LOOK_SHIFT, y: EYE_MID_Y - height / 2, height };
+  });
+
+  // Body-lean: the whole bee leans + tilts toward the glance, so a left/right look
+  // reads as a turn of the body, not just the eyes sliding. Secondary to the eyes.
+  const bodyLeanStyle = useAnimatedStyle(() => ({
+    transform: [
+      { translateX: look.get() * BODY_LEAN * size },
+      { rotate: `${look.get() * BODY_TILT}deg` },
+    ],
+  }));
+
+  const glowHalo =
+    glow && glowRadius > 0 ? (
       <>
         <Defs>
           <RadialGradient id="beeGlow" cx="50%" cy="50%" r="50%">
@@ -202,13 +274,25 @@ export function BeeMascot({
         fill={stripeLo}
       />
 
-      {/* Eyes + smile */}
-      <Rect x={1355} y={887} width={50} height={100} rx={25} fill={c.ink} />
+      {/* Smile (eyes are drawn separately so they can blink/glance — see below) */}
       <Path
         d="M1245.64 1084.39C1253.16 1083.14 1260 1088.94 1260 1096.55C1260 1102.58 1255.64 1107.73 1249.7 1108.72L1241.5 1110.08C1214.02 1114.66 1185.98 1114.66 1158.5 1110.08L1150.3 1108.72C1144.36 1107.73 1140 1102.58 1140 1096.55C1140 1088.94 1146.84 1083.14 1154.36 1084.39L1162.99 1085.83C1187.5 1089.92 1212.5 1089.92 1237.01 1085.83L1245.64 1084.39Z"
         fill={c.ink}
       />
+    </>
+  );
+
+  // Eyes — static pair (shared/reduced usage) vs. animated pair (hub micro-life).
+  const staticEyes = (
+    <>
+      <Rect x={1355} y={887} width={50} height={100} rx={25} fill={c.ink} />
       <Rect x={995} y={887} width={50} height={100} rx={25} fill={c.ink} />
+    </>
+  );
+  const animatedEyes = (
+    <>
+      <AnimatedRect width={50} rx={25} fill={c.ink} animatedProps={rightEyeProps} />
+      <AnimatedRect width={50} rx={25} fill={c.ink} animatedProps={leftEyeProps} />
     </>
   );
 
@@ -221,21 +305,24 @@ export function BeeMascot({
   if (!animated || reduced) {
     return (
       <Svg width={size} height={size} viewBox="0 0 2400 2400" {...a11y}>
-        {glow}
+        {glowHalo}
         {wings}
         {front}
+        {staticEyes}
       </Svg>
     );
   }
 
-  // Animated: wings get their own scaled layer (behind), body/face ride on top.
+  // Animated: the whole bee leans with the glance (bodyLeanStyle); inside, wings get
+  // their own flutter layer (behind), body/face ride on top, and the eyes (top-most)
+  // blink + glance on their own animated props.
   return (
-    <View style={{ width: size, height: size }} {...a11y}>
+    <Animated.View style={[{ width: size, height: size }, bodyLeanStyle]} {...a11y}>
       <Animated.View
         style={[{ position: 'absolute', top: 0, left: 0, transformOrigin: 'center' }, wingStyle]}
       >
         <Svg width={size} height={size} viewBox="0 0 2400 2400">
-          {glow}
+          {glowHalo}
           {wings}
         </Svg>
       </Animated.View>
@@ -246,7 +333,8 @@ export function BeeMascot({
         style={{ position: 'absolute', top: 0, left: 0 }}
       >
         {front}
+        {animatedEyes}
       </Svg>
-    </View>
+    </Animated.View>
   );
 }

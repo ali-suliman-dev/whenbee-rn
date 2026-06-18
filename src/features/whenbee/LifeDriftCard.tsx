@@ -14,8 +14,8 @@ import type { BlindSpot } from './useWhenbeeHub';
 // season, sleep). A few fresh logs and the numbers re-sync. One soft CTA into a
 // category to re-check, plus a quiet "Not now" that dismisses for this cycle.
 //
-//   YOUR NUMBERS MAY HAVE DRIFTED
-//   Life shifts — and {name} keeps up with a few fresh logs.
+//   LIFE CHANGES, SO DOES YOUR TIMING
+//   When your days shift, {name} catches back up with a few fresh logs.
 //   [ Re-check {area} → ]   Not now
 // ──────────────────────────────────────────────────────────────────────────────
 
@@ -51,10 +51,10 @@ export function LifeDriftCard({
 
   return (
     <Card style={{ gap: t.space[2] }}>
-      <Text style={eyebrow}>YOUR NUMBERS MAY HAVE DRIFTED</Text>
+      <Text style={eyebrow}>LIFE CHANGES, SO DOES YOUR TIMING</Text>
       <Text style={body}>
-        Life shifts — a new routine, a season, less sleep. A few fresh logs and {who} re-syncs to the
-        real you.
+        When your days shift, how long things take shifts with them. Log a few and {who} catches
+        back up to you.
       </Text>
       <View style={row}>
         <Pressable

@@ -1,41 +1,42 @@
 import { useCallback } from 'react';
-import { View, Text, Pressable, type ViewStyle, type TextStyle } from 'react-native';
+import { View, Text, type ViewStyle, type TextStyle } from 'react-native';
 import { router, useFocusEffect } from 'expo-router';
-import { Ionicons } from '@expo/vector-icons';
 import { AppButton } from '@/src/components/AppButton';
 import { AppText } from '@/src/components/AppText';
-import { Honeycomb } from '@/src/components/honeycomb/Honeycomb';
+import { ProUpsellCard } from '@/src/components/ProUpsellCard';
+import { ScreenHeader } from '@/src/components/ScreenHeader';
 import { useTheme } from '@/src/theme/useTheme';
 import { type } from '@/src/theme/typography';
 import { useCategoriesStore } from '@/src/stores/categoriesStore';
 import { useCalibrationStore } from '@/src/stores/calibrationStore';
 import { useEntitlement } from '@/src/features/paywall/useEntitlement';
 import { CATEGORY_NAMES } from '@/src/engine';
-import { RayBurst } from '@/src/components/bee/RayBurst';
 import { useWhenbeeHub } from './useWhenbeeHub';
 import { WhenbeeAvatar } from './WhenbeeAvatar';
-import { TierTrailHub } from './TierTrailHub';
+import { HoneyRing } from './HoneyRing';
+import { RingBadge } from './RingBadge';
+import { AreaRow } from './AreaRow';
 import { ReclaimHeroCard } from './ReclaimHeroCard';
 import { DiscoveriesPreviewCard } from './DiscoveriesPreviewCard';
 import { BlindSpotCard } from './BlindSpotCard';
 import { LifeDriftCard } from './LifeDriftCard';
 
 // ──────────────────────────────────────────────────────────────────────────────
-// WhenbeeHub — the companion surface, where honey AND Reclaim grow. Same card
-// vocabulary and restraint as Today: one focal card (the Reclaim hero), amber as
-// the Reclaim/identity accent, indigo kept scarce (the drill-down chevrons + the
-// blind-spot arrow), never red.
+// WhenbeeHub — ring hero + labeled zones (Reclaimed, Discoveries, Your Areas).
 //
-// Vertical order, hero → detail:
-//   1. Avatar + hub honeycomb        (the felt "this is mine, and it's ripening")
-//   2. Tier trail                    (the journey, Raw → Honest)
-//   3. Reclaim hero card             (the payoff — the focal element)
-//   4. Blind-spot nudge              (kind next step, when present)
-//   5. Per-category rows             (drill into each category's Tune screen)
-//   6. "Make my whole day honest"    (the Pro CTA → paywall)
+// Vertical order:
+//   1. ScreenHeader (title + context-aware subtitle)
+//   2. HERO: HoneyRing wrapping WhenbeeAvatar + RingBadge below
+//   3. RECLAIMED zone: label + explain + ReclaimHeroCard
+//   4. DISCOVERIES zone: label + explain + DiscoveriesPreviewCard (when any exist)
+//   5. Conditional gentle cards: LifeDriftCard, BlindSpotCard
+//   6. YOUR AREAS zone: label + explain + one AreaRow per category
+//   7. CTA: empty → "Log your first task"; populated → "Make my whole day honest"
 //
-// Reclaim is an async read that does NOT push on every deposit, so we re-pull it
-// on focus (useFocusEffect) — the bank is fresh every time the tab is entered.
+// No RayBurst, no TierTrailHub, no Honeycomb grid.
+// Bee: no glow halo (glow={false}); a soft-edge neutral coin backs it off the ring
+// interior (backdrop="soft" — fades at the rim, no edge line), and it runs the calm
+// micro-life (soft wing flutter, slow blink, glance whose body-lean conveys direction).
 // ──────────────────────────────────────────────────────────────────────────────
 
 function categoryLabel(id: string): string {
@@ -63,12 +64,12 @@ export function WhenbeeHub() {
     }, [refresh]),
   );
 
+  const isEmpty = vm.honestLogCount === 0;
+
   function openCategory(id: string) {
     router.push({ pathname: '/category/[category]', params: { category: id } });
   }
 
-  // Pro users go straight to the writeable Honest-Day screen; everyone else hits
-  // the paywall (same CTA, branched on entitlement).
   function openDayHonest() {
     if (isPro) {
       router.push('/(modals)/honest-day');
@@ -77,54 +78,70 @@ export function WhenbeeHub() {
     router.push({ pathname: '/(modals)/paywall', params: { trigger: 'make_day_honest' } });
   }
 
-  const heroZone: ViewStyle = { alignItems: 'center', gap: t.space[4] };
-  const avatarBurst: ViewStyle = {
-    width: t.burst.stage,
-    height: t.burst.stage,
-    alignItems: 'center',
-    justifyContent: 'center',
+  function logFirst() {
+    router.push('/(modals)/add-task');
+  }
+
+  const heroZone: ViewStyle = { alignItems: 'center', gap: t.space[3] };
+  const zoneWrap: ViewStyle = { gap: t.space[2] };
+  const zoneLabel: TextStyle = { ...(type.eyebrow as unknown as TextStyle), color: t.colors.inkSoft };
+  const zoneExplain: TextStyle = {
+    ...(type.micro as unknown as TextStyle),
+    color: t.colors.inkFaint,
   };
-  const sectionLabel: TextStyle = { ...(type.eyebrow as unknown as TextStyle), color: t.colors.inkSoft };
+  const ctaSub: TextStyle = {
+    ...(type.caption as unknown as TextStyle),
+    color: t.colors.inkFaint,
+    textAlign: 'center',
+    marginTop: t.space[2],
+  };
 
   return (
     <View style={{ gap: t.space[5] }}>
-      {/* 1 — Companion + honeycomb (soft sunburst pattern behind the avatar) */}
+      {/* Header — title only; the ring + zones carry the context. */}
+      <ScreenHeader title="Whenbee" />
+
+      {/* HERO — honey ring + bee (no glow) + ring badge */}
       <View style={heroZone}>
-        <Pressable
-          style={avatarBurst}
-          onPress={() => router.push('/(modals)/companion')}
-          accessibilityRole="button"
-          accessibilityLabel={vm.companion.name ? `${vm.companion.name} — rename your Whenbee` : 'Name your Whenbee'}
-          accessibilityHint="Opens a sheet to name your companion"
-        >
-          <RayBurst size={t.burst.stage} />
+        <HoneyRing sharpness={vm.leadSharpness} sealed={vm.tier === 'Honest'}>
           <WhenbeeAvatar
             stage={vm.companion.stage}
-            capability={vm.companion.capability}
             seed={vm.companion.seed}
             driftHealth={vm.companion.driftHealth}
             name={vm.companion.name ?? undefined}
+            glow={false}
+            size={t.companion.ringBee}
+            backdrop="soft"
+            animated
           />
-        </Pressable>
-        {vm.cells.length > 0 ? <Honeycomb size="hub" cells={vm.cells} /> : null}
+        </HoneyRing>
+        <RingBadge sharpness={vm.leadSharpness} />
       </View>
 
-      {/* 2 — Tier trail */}
-      <TierTrailHub stage={vm.companion.stage} />
+      {/* RECLAIMED zone */}
+      <View style={zoneWrap}>
+        <Text style={zoneLabel}>Reclaimed</Text>
+        <Text style={zoneExplain}>time your honest numbers won back</Text>
+        <ReclaimHeroCard
+          lifetimeMin={vm.reclaimLifetimeMin}
+          honestLogCount={vm.honestLogCount}
+          biggestArea={vm.biggestArea}
+        />
+      </View>
 
-      {/* 3 — Reclaim hero (the focal payoff) */}
-      <ReclaimHeroCard
-        lifetimeMin={vm.reclaimLifetimeMin}
-        honestLogCount={vm.honestLogCount}
-        biggestArea={vm.biggestArea}
-      />
-
-      {/* 4 — Discoveries teaser (banked aha cards — shown once any exist) */}
+      {/* DISCOVERIES zone — shown once any aha card has been banked */}
       {vm.discoveryCount > 0 ? (
-        <DiscoveriesPreviewCard discoveries={vm.discoveries} discoveryCount={vm.discoveryCount} />
+        <View style={zoneWrap}>
+          <Text style={zoneLabel}>Discoveries</Text>
+          <Text style={zoneExplain}>surprising truths about how long things take</Text>
+          <DiscoveriesPreviewCard
+            discoveries={vm.discoveries}
+            discoveryCount={vm.discoveryCount}
+          />
+        </View>
       ) : null}
 
-      {/* 5 — Life-drift re-check moment (no-guilt, conditional on 'curious' drift) */}
+      {/* Conditional gentle cards (no-guilt, never punitive) */}
       {vm.showDriftRecheck ? (
         <LifeDriftCard
           companionName={vm.companion.name}
@@ -132,68 +149,50 @@ export function WhenbeeHub() {
           onDismiss={vm.dismissDriftRecheck}
         />
       ) : null}
-
-      {/* 6 — Blind-spot nudge (kind, conditional) */}
       {vm.blindSpot ? <BlindSpotCard blindSpot={vm.blindSpot} /> : null}
 
-      {/* 5 — Per-category drill-down */}
+      {/* YOUR AREAS zone */}
       {categories.length > 0 ? (
-        <View style={{ gap: t.space[3] }}>
-          <Text style={sectionLabel}>IN THE BACKGROUND</Text>
-          {categories.map((cat) => (
-            <CategoryRow
-              key={cat.id}
-              name={categoryLabel(cat.id)}
-              multiplier={stats[cat.id]?.mEffective}
-              onPress={() => openCategory(cat.id)}
-            />
-          ))}
+        <View style={zoneWrap}>
+          <Text style={zoneLabel}>Your areas</Text>
+          <Text style={zoneExplain}>fill = how honest your guesses are · tap to tune</Text>
+          <View style={{ gap: t.space[2] }}>
+            {categories.map((cat) => (
+              <AreaRow
+                key={cat.id}
+                name={categoryLabel(cat.id)}
+                multiplier={stats[cat.id]?.mEffective}
+                sharpness={stats[cat.id]?.sharpness ?? 0}
+                onPress={() => openCategory(cat.id)}
+              />
+            ))}
+          </View>
         </View>
       ) : (
-        <AppText variant="caption">Track a few tasks and your categories will appear here.</AppText>
+        <AppText variant="caption">Track a few tasks and your areas will appear here.</AppText>
       )}
 
-      {/* 6 — Pro CTA */}
-      <AppButton label="Make my whole day honest" variant="amber" fullWidth onPress={openDayHonest} />
+      {/* CTA — first-log prompt or day-honest shortcut */}
+      {isEmpty ? (
+        <View>
+          <AppButton label="Log your first task" variant="amber" fullWidth onPress={logFirst} />
+          <Text style={ctaSub}>Honest-day planning unlocks once your honey sets.</Text>
+        </View>
+      ) : isPro ? (
+        <AppButton
+          label="Make my whole day honest"
+          variant="amber"
+          fullWidth
+          onPress={openDayHonest}
+        />
+      ) : (
+        <ProUpsellCard
+          title="Make my whole day honest"
+          note="Auto-pad your calendar with your real buffers."
+          onPress={openDayHonest}
+          accessibilityLabel="Go Pro and make your whole day honest"
+        />
+      )}
     </View>
-  );
-}
-
-function CategoryRow({
-  name,
-  multiplier,
-  onPress,
-}: {
-  name: string;
-  multiplier: number | undefined;
-  onPress: () => void;
-}) {
-  const t = useTheme();
-  const row: ViewStyle = {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: t.space[3],
-    minHeight: 56,
-    backgroundColor: t.colors.surface,
-    borderWidth: t.borderWidth.card,
-    borderColor: t.colors.hairline,
-    borderRadius: t.radii.card,
-    paddingHorizontal: t.space[4],
-    paddingVertical: t.space[3],
-  };
-  const nameText: TextStyle = { ...(type.bodyLg as unknown as TextStyle), color: t.colors.ink, flex: 1 };
-  const multText: TextStyle = {
-    fontFamily: 'Inter-Bold',
-    fontSize: t.fontSize.md,
-    color: t.colors.primary,
-    fontVariant: ['tabular-nums'],
-  };
-
-  return (
-    <Pressable onPress={onPress} accessibilityRole="button" accessibilityLabel={`${name} insights`} style={row}>
-      <Text style={nameText}>{name}</Text>
-      {multiplier !== undefined ? <Text style={multText}>{multiplier.toFixed(1)}×</Text> : null}
-      <Ionicons name="chevron-forward" size={18} color={t.colors.inkSoft} />
-    </Pressable>
   );
 }

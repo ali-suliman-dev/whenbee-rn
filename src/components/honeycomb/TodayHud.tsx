@@ -8,6 +8,7 @@ import Animated, {
 } from 'react-native-reanimated';
 import { Ionicons } from '@expo/vector-icons';
 import { BeeMascot, type BeeVariant } from '@/src/components/BeeMascot';
+import { BeeCoin } from '@/src/components/BeeCoin';
 import { useTheme } from '@/src/theme/useTheme';
 import { type } from '@/src/theme/typography';
 import { tierBandProgress, type CompanionStage } from '@/src/engine';
@@ -96,7 +97,25 @@ export function TodayHud({ cells, stage, seed, onPress }: TodayHudProps) {
       accessibilityLabel={`Whenbee, honey tier ${tier}. Tap to open your honeycomb.`}
     >
       <Animated.View style={[card, pressStyle]}>
-        <BeeMascot size={t.companion.hudBee} variant={variant} seed={seed} animated />
+        {/* Coin lifts the bee off the card. Light: a solid periwinkle medallion with a
+            soft shadow (white would melt into the white card). Dark: the soft raised coin. */}
+        <View
+          style={{
+            width: t.companion.hudCoin,
+            height: t.companion.hudCoin,
+            alignItems: 'center',
+            justifyContent: 'center',
+          }}
+        >
+          <BeeCoin
+            size={t.companion.hudCoin}
+            color={t.colors.companionCoinHud}
+            core={t.companion.hudCoinCore}
+            solid={t.mode === 'light'}
+            shadowColor={t.mode === 'light' ? t.colors.companionCoinShadow : undefined}
+          />
+          <BeeMascot size={t.companion.hudBee} variant={variant} seed={seed} animated />
+        </View>
         <View style={{ flex: 1, gap: t.space[1.5] }}>
           <Text style={tierLabel}>{tier}</Text>
           <View style={track}>

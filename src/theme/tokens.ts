@@ -118,10 +118,20 @@ export const tokens = {
     // drift = one full revolution of the RayBurst sunburst. Slow enough to stay
     // calm, fast enough to read as clearly moving (a wedge passes ~every 0.8s).
     drift: 14000,
+    // Whenbee-hub ring beats (calm, decelerating). ringFill = entrance/log fill;
+    // capFill = the slower ceremonial cap fill; strokePop = the landing thicken;
+    // sealSeq = the cap seal-stamp + ripples window; ripple = one outline ripple.
+    ringFill: 1600, capFill: 1900, strokePop: 620, sealSeq: 1650, ripple: 720,
+    // Whenbee companion micro-life — the bee's calm, premium "alive" loop on the hub.
+    // beeWingBuzz = one fold of the calm wing flutter (slow + small — a soft settle,
+    // not a buzz); beeBlink = a single eyelid close/open; beeBlinkGap = the long calm
+    // rest between blinks; beeLook = one slow eye glance; beeLookHold = the dwell at
+    // each glance (longer = calmer). All tuned slow so the bee reads serene, not busy.
+    beeWingBuzz: 720, beeBlink: 130, beeBlinkGap: 5200, beeLook: 1400, beeLookHold: 2200,
     // Shared physics — deduped from AppButton + FAB.
     spring: { damping: 13, stiffness: 340 },
     // Named curves — declared once, not re-typed per file.
-    easing: { standard: Easing.bezier(0.4, 0, 0.2, 1), calm: Easing.inOut(Easing.sin) },
+    easing: { standard: Easing.bezier(0.4, 0, 0.2, 1), calm: Easing.inOut(Easing.sin), honey: Easing.bezier(0.22, 1, 0.36, 1) },
   },
 
   colors: {
@@ -176,6 +186,17 @@ export const tokens = {
       nightSoft: '#2C2E40',
       onIndigo: '#FFFFFF', // text on indigo fill (AA 5.1:1 — warm white only hit 4.37)
       onAmber: '#20233A', // text on amber fill (AA 7.9:1)
+      ringTrack: '#E4DFD3', // sits just off cream
+      // Soft-edge backing coin behind the ring bee (WhenbeeAvatar 'soft'). Pure white
+      // (= surface / the card white) — it pops off the lavender bg exactly like the
+      // cards do, giving the bee a clean, bright backing. Dark mode steps UP instead.
+      companionCoin: '#FFFFFF', // = surface (the card white, reads cleanly on the bg)
+      // HUD-row coin: a solid periwinkle medallion (NOT white — white melts into the
+      // card here). A step down from primarySoft so the indigo bee body still pops
+      // against it. Lifted off the card by companionCoinShadow. Hub ring keeps the
+      // softer companionCoin above.
+      companionCoinHud: '#C7BCEE',
+      companionCoinShadow: '#20233A', // = ink; the HUD coin's soft contact-shadow base
 
       // ── backward-compat aliases (template keys) ──
       text: '#20233A',
@@ -231,6 +252,12 @@ export const tokens = {
       nightSoft: '#2C2E40',
       onIndigo: '#14151D', // dark text on the lighter dark-mode indigo (AA)
       onAmber: '#20233A',
+      ringTrack: 'rgba(255,255,255,0.08)',
+      companionCoin: '#292B3C', // = surfaceRaised (a raised lift on the deep bg)
+      // Dark HUD coin stays the soft raised coin (no solid/shadow treatment in dark —
+      // it reads fine on the deep card). Mirrors companionCoin so dark is unchanged.
+      companionCoinHud: '#292B3C',
+      companionCoinShadow: 'transparent', // unused in dark (shadow doesn't read dark-on-dark)
 
       // ── backward-compat aliases ──
       text: '#F4F1EA',
@@ -259,6 +286,17 @@ export const tokens = {
     coinEdge: 4, // coin button-edge depth (cf. AppButton)
   },
 
+  // Honey ring (Whenbee hub hero). Geometry only — mode-independent like `burst`.
+  // size = SVG square edge; stroke = ring weight; popStroke/capStroke = the
+  // momentary thickening on a fill-landing / cap; endowedPct = the tiny starting
+  // sliver shown at Raw so a fresh ring is never a cold 0.
+  // headDot = flat amber dot that rides the arc during the fill animation (px).
+  ring: { size: 200, stroke: 9, popStroke: 11, capStroke: 13, endowedPct: 6, headDot: 13 },
+  // Wax-seal hex stamped over the bee at the Honest cap (flat-top hexagon WIDTH).
+  seal: { size: 38 },
+  // Flat motes flicked outward on the cap (solid squares — no glow).
+  mote: { size: 5, count: 8, distance: 96 },
+
   // Companion presence — the 6-stage Whenbee growth (Part 2 Group E). Both scales
   // are indexed by stage 1..6 (array index = stage - 1). They are pure geometry, so
   // they live mode-independent here (like `burst`); the per-stage DRIFT TINT colors
@@ -275,7 +313,37 @@ export const tokens = {
     // BeeMascot size (px) for the compact Today HUD — smaller than the hub/onboarding
     // bee so the companion reads as a quiet presence beside the honey bar.
     hudBee: 36,
+    // Soft-coin backing for the HUD bee. Ringless (no honey ring to frame it), so it
+    // needs a HIGH core — a sharp solid disc with only a thin feathered rim — or it
+    // reads as a glow at this small size. hudCoinCore = the solid-hold fraction.
+    hudCoin: 46,
+    hudCoinCore: 0.86,
+    // BeeMascot size (px) when it sits INSIDE the HoneyRing on the hub — a touch
+    // smaller than the 168 hero so the ring breathes around it and the honey pool
+    // (below) reads as a backing halo rather than being crowded to the rim.
+    ringBee: 140,
+    // Soft-edge backing disc behind the ring bee (the chosen no-glow option) — a
+    // neutral raised coin (colors.surfaceRaised) at full tone in the centre that fades
+    // to nothing at the rim: lifts the indigo bee off the dark ring interior with no
+    // hard edge line and no amber bloom.
+    softSize: 170,
+    // Flat hard-edged disc (alt option) — solid raised coin + 1px hairline edge.
+    discSize: 156,
+    discBorder: 1,
+    // Soft "honey pool" backdrop disc (the glow option, kept as a fallback) — a radial
+    // bloom that lifts the bee without a hard edge. poolSize = disc box edge (px);
+    // poolOpacity = centre alpha of the amber bloom (colors.accent), fading to 0 at the
+    // rim so it never collides with the ring arc.
+    poolSize: 176,
+    poolOpacity: 0.16,
   },
+
+  // Pro upsell "pass" card geometry (ProUpsellCard) + paywall Reclaim hero. Kept
+  // here so the card inlines no raw px. `stub` = the gilt left-stub width; `edge` =
+  // the tactile coin-edge depth (cf. AppButton's filled-pill edge); `notch` = the
+  // ticket perforation notch diameter; `emblem` = the honeycomb glyph size in the
+  // stub; `comb` = the Reclaim-hero honeycomb motif size.
+  upsell: { stub: 88, edge: 6, notch: 14, emblem: 40, comb: 60 },
 
   // ── brand illustration palette ──────────────────────────────────────────────
   // Fixed art colors for the Whenbee mascot (BeeMascot). Brand art does NOT recolor

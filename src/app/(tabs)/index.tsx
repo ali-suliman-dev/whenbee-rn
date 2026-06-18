@@ -27,6 +27,7 @@ import { useCategoriesStore } from '@/src/stores/categoriesStore';
 import { useCalibrationStore } from '@/src/stores/calibrationStore';
 import { useTimerStore } from '@/src/stores/timerStore';
 import { useSettingsStore } from '@/src/stores/settingsStore';
+import { projectedFinish, formatClockMeridiem } from '@/src/lib/time';
 
 // Date label, e.g. "Fri · Jun 12" — the day + date, no clock (the time added
 // nothing here and ticked distractingly).
@@ -183,6 +184,7 @@ export default function Today() {
               categoryLabel={categoryName(focus.category)}
               taskTitle={focus.label}
               summary={summary}
+              finishClock={formatClockMeridiem(projectedFinish(Date.now(), summary.honestMinutes))}
               onStart={() =>
                 router.push({
                   pathname: '/(modals)/timer',

@@ -7,7 +7,7 @@ import { AppButton } from '@/src/components/AppButton';
 import { WhenbeeAvatar } from '@/src/features/whenbee/WhenbeeAvatar';
 import { useTheme } from '@/src/theme/useTheme';
 import { type } from '@/src/theme/typography';
-import { capabilityFor, type CompanionStage } from '@/src/engine';
+import { type CompanionStage } from '@/src/engine';
 import { useCalibrationStore } from '@/src/stores/calibrationStore';
 
 const NAME_MAX = 20;
@@ -72,7 +72,6 @@ export default function CompanionRoute() {
       <View style={{ gap: t.space[6], paddingTop: t.space[6] }}>
         <WhenbeeAvatar
           stage={stage}
-          capability={capabilityFor(stage)}
           seed={seed}
           driftHealth={drift}
           name={draft.trim() || undefined}

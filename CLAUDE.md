@@ -74,14 +74,18 @@ UI (src/app, src/components, src/features)
 
 **Path aliases:** `@/*` resolves to both `./` and `./src/*` (tsconfig + babel-plugin-module-resolver). `import/no-unresolved` is off because Metro resolves the alias.
 
-## Deferred / fast-follow (build later — not in the shipped MVP)
+## Project status — this is a code-complete v1, NOT an MVP
 
-These are intentionally **not built yet**. Build when prioritized; keep them off the on-device core loop.
+Whenbee is **not an MVP**. Nearly the entire final build plan is implemented in `src/`: the full calibration engine, the Honeycomb + Whenbee companion (6 stages, capability unlocks, drift-health), the Reclaim Bank, the **Discoveries gallery**, the Start-By planner, Honest-Day calendar padding, the Patterns self-insight tab **including the Pro correlations** (steals-your-time, accuracy, context), RevenueCat monetization, onboarding, settings, PostHog + Sentry. Treat this as a near-shippable product — the remaining work is finishing, device verification, and launch, not feature-building. **Full picture: [docs/product/](docs/product/) (start at `README.md` → `00-STATUS.md` → `02-GAP-ANALYSIS.md`).**
 
-- **Feedback board (highest of these):** anonymous-default feature-request + vote board. Needs a backend not yet wired into the app — add `@supabase/supabase-js`, env keys (project URL + anon key), a `src/services/feedback.ts` guarded so a network failure never touches the loop, a Settings entry, and the `feature_requests`/`feature_votes` tables + **RLS** in the user's Supabase project. It is a **separate data class** — never task/calibration data. (Was Phase F.1; deferred by the founder.)
-- **Discoveries gallery:** banking aha/insight cards into a growing collection (`build-plan-final/03b §7`). The aha *card* already ships (category-detail); only the gallery surface + `discoveries` table defer.
-- **Native `WhenbeePresence` Swift module:** the widget/Live Activity targets are scaffolded (`docs/NATIVE-PRESENCE.md`) but the App-Group-write + ActivityKit module is linked on the device build; the JS bridge is a guarded no-op until then.
-- **Pro correlations + context tags** (the second paywall): the over/under reason *capture* ships (capture-only, model-isolated); only the correlation *read* + reason-aware honest number defer.
+### Genuinely not built yet (future / post-launch)
+
+Keep these off the on-device core loop. The first three are the real pre-launch gaps; the rest are gated on hitting **D7 ≥ 25%**.
+
+- **Feedback board:** anonymous-default feature-request + vote board. Needs `@supabase/supabase-js`, env keys, a guarded `src/services/feedback.ts`, a Settings entry, and `feature_requests`/`feature_votes` tables + **RLS**. A **separate data class** — never task/calibration data. Build before TestFlight.
+- **Native `WhenbeePresence` Swift module:** widget/Live Activity targets are scaffolded (`docs/NATIVE-PRESENCE.md`); the App-Group-write + ActivityKit module links on the device build. The JS bridge (`services/liveActivity.ts`) is a guarded no-op until then. The static widget is "never cut"; the Live Activity may fast-follow.
+- **Timer pause/resume UI:** `timerStore.ts` supports it; the timer screen has no control yet (`useTimer.ts`).
+- **Partner layer, LLM features, cloud sync / Android / Watch, spendable Reclaim, coach PDF, tip jar:** all post-launch / future. See `docs/product/01-FEATURE-CATALOG.md`.
 
 ## TypeScript strictness
 

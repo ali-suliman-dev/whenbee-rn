@@ -62,7 +62,10 @@ export function ReclaimHeroCard({ lifetimeMin, honestLogCount, biggestArea }: Re
     fontVariant: ['tabular-nums'],
   };
 
-  const empty = lifetimeMin === 0;
+  // Reclaim is DERIVED from honest logs — it cannot exist without them. Gate the
+  // empty state on the log count too, so a stale companion bank (minutes that
+  // survived a stats reset) can never show "Xm from 0 honest logs".
+  const empty = lifetimeMin === 0 || honestLogCount === 0;
 
   return (
     <Card tone="focal" style={{ gap: t.space[3] }}>
@@ -72,7 +75,7 @@ export function ReclaimHeroCard({ lifetimeMin, honestLogCount, biggestArea }: Re
       </View>
 
       {empty ? (
-        <Text style={emptyLine}>Your reclaim starts with your first honest log. No rush.</Text>
+        <Text style={emptyLine}>Log a task and the time you win back starts adding up here. No rush.</Text>
       ) : (
         <>
           <HonestNumber size="xl" tone="ink" value={formatReclaim(lifetimeMin)} />

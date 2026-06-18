@@ -10,12 +10,16 @@ import { useTheme } from '@/src/theme/useTheme';
 import { type } from '@/src/theme/typography';
 
 // ──────────────────────────────────────────────────────────────────────────────
-// TaskRow — a single task on Today's list, in two states:
-//   • queued — tappable; leading indigo "play" badge, title + category sub-line,
-//              the honest estimate (~N min), chevron. Tapping starts the timer.
-//   • done   — non-interactive; leading success check, dimmed title, the actual
-//              minutes it took (the receipt). Kept on the day as visible progress.
-// Flat surface + hairline (no shadow). Title-first; category is the quiet cue.
+// TaskRow — one Today list task, in two states:
+//   • queued — pressable; a thin indigo left edge marks it "startable" (semantic,
+//              not a category color). Title + category, the honest estimate pinned
+//              to the row's bottom edge in ink. No play badge, no chevron — the
+//              FocusCard owns the single filled-indigo "start" affordance.
+//   • done   — non-interactive; leading success check, muted title (NO strikethrough
+//              — the check + dimming say "done"; a strike would read as a scold),
+//              "took N min" receipt. Kept on the day as visible progress.
+// Flat surface + hairline. The estimate is ink (not muted) so it reads clearly at
+// the same size as the body — clarity from contrast, not from a bigger number.
 // ──────────────────────────────────────────────────────────────────────────────
 
 interface TaskRowProps {
@@ -56,43 +60,62 @@ export function TaskRow({ title, categoryLabel, honestMin, actualMin, done = fal
     paddingHorizontal: t.space[4],
     paddingVertical: t.space[3],
     minHeight: t.size.control.lg,
+    position: 'relative',
+    overflow: 'hidden',
     opacity: done ? 0.7 : 1,
   };
+  // Semantic "interactive" edge — thin indigo bar on queued rows only. A full-height
+  // absolute track (top:0→bottom:0) centers the short bar with flexbox; `top: '50%'`
+  // can't be used because the row height is content-driven (minHeight only), so the
+  // percentage has no definite parent height to resolve against and the bar drops top.
+  const edgeTrack: ViewStyle = {
+    position: 'absolute',
+    left: 0,
+    top: 0,
+    bottom: 0,
+    justifyContent: 'center',
+  };
+  const edge: ViewStyle = {
+    width: t.row.edgeW,
+    height: t.row.edgeH,
+    backgroundColor: t.colors.primary,
+    borderTopRightRadius: t.row.edgeW,
+    borderBottomRightRadius: t.row.edgeW,
+  };
   const badge: ViewStyle = {
-    width: 32,
-    height: 32,
+    width: t.space[8],
+    height: t.space[8],
     borderRadius: t.radii.full,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: done ? t.colors.successSoft : t.colors.primarySoft,
+    backgroundColor: t.colors.successSoft,
   };
   const titleText: TextStyle = {
     ...(type.bodyLg as unknown as TextStyle),
     fontSize: t.fontSize.base,
-    color: t.colors.ink,
-    textDecorationLine: done ? 'line-through' : 'none',
+    color: done ? t.colors.inkSoft : t.colors.ink,
   };
   const catText: TextStyle = { ...(type.caption as unknown as TextStyle), color: t.colors.inkSoft };
+  const timeWrap: ViewStyle = { alignSelf: 'flex-end', flexDirection: 'row', alignItems: 'baseline', gap: t.space[0.5] };
   const estNum: TextStyle = {
-    fontFamily: 'Inter-Bold',
-    fontSize: t.fontSize.md,
-    color: done ? t.colors.inkSoft : t.colors.ink,
+    fontFamily: 'Inter-Bold' as TextStyle['fontFamily'],
+    fontSize: t.fontSize.base,
+    color: t.colors.ink,
     fontVariant: ['tabular-nums'],
   };
   const estUnit: TextStyle = { ...(type.caption as unknown as TextStyle), color: t.colors.inkSoft };
 
-  const rightValue =
-    done && actualMin != null ? `${actualMin}` : done ? null : `~${honestMin}`;
-
   const content = (
     <Animated.View style={[row, pressStyle]}>
-      <View style={badge}>
-        <Ionicons
-          name={done ? 'checkmark' : 'play'}
-          size={t.iconSize.sm}
-          color={done ? t.colors.success : t.colors.primary}
-        />
-      </View>
+      {done ? (
+        <View style={badge}>
+          <Ionicons name="checkmark" size={t.iconSize.sm} color={t.colors.success} />
+        </View>
+      ) : (
+        <View style={edgeTrack} pointerEvents="none">
+          <View testID="taskrow-edge" style={edge} />
+        </View>
+      )}
 
       <View style={{ flex: 1, gap: t.space[0.5] }}>
         <Text style={titleText} numberOfLines={1}>
@@ -101,16 +124,20 @@ export function TaskRow({ title, categoryLabel, honestMin, actualMin, done = fal
         <Text style={catText}>{categoryLabel}</Text>
       </View>
 
-      {rightValue ? (
-        <View style={{ flexDirection: 'row', alignItems: 'baseline', gap: 2 }}>
-          <Text style={estNum}>{rightValue}</Text>
+      {done ? (
+        actualMin != null ? (
+          <View style={timeWrap}>
+            <Text style={estUnit}>took </Text>
+            <Text style={estNum}>{actualMin}</Text>
+            <Text style={estUnit}>min</Text>
+          </View>
+        ) : null
+      ) : (
+        <View style={timeWrap}>
+          <Text style={estNum}>~{honestMin}</Text>
           <Text style={estUnit}>min</Text>
         </View>
-      ) : null}
-
-      {!done ? (
-        <Ionicons name="chevron-forward" size={t.iconSize.sm} color={t.colors.inkSoft} />
-      ) : null}
+      )}
     </Animated.View>
   );
 
