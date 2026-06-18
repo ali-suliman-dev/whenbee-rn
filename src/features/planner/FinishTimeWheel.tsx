@@ -13,7 +13,7 @@ import Animated, {
 import { haptics } from '@/src/lib/haptics';
 import { useTheme } from '@/src/theme/useTheme';
 import { Chip } from '@/src/components/Chip';
-import { clampWheelIndex, WheelRow } from './wheelShared';
+import { clampWheelIndex, WheelRow, WHEEL_SIDE_PEEK } from './wheelShared';
 
 // ──────────────────────────────────────────────────────────────────────────────
 // FinishTimeWheel — two-column HH : MM pan-wheel for picking a deadline time.
@@ -33,7 +33,6 @@ import { clampWheelIndex, WheelRow } from './wheelShared';
 // ──────────────────────────────────────────────────────────────────────────────
 
 const MINUTE_STEP = 5;
-const VISIBLE_ITEMS = 3;
 const FLING_PROJECTION = 0.1;
 
 // ── mode chip labels ──────────────────────────────────────────────────────────
@@ -118,8 +117,9 @@ function ColumnWheel({
   reducedMotion: boolean;
 }) {
   const count = data.length;
-  const pad = ((VISIBLE_ITEMS - 1) / 2) * itemHeight;
-  const wheelHeight = itemHeight * VISIBLE_ITEMS;
+  // Centre row + a half-row peek each side (scroll cue) — compact, not 3 full rows.
+  const pad = itemHeight * WHEEL_SIDE_PEEK;
+  const wheelHeight = itemHeight * (1 + 2 * WHEEL_SIDE_PEEK);
 
   const translateY = useSharedValue(-selectedIndex * itemHeight);
   const startY = useSharedValue(0);
@@ -294,9 +294,10 @@ export function FinishTimeWheel({
     [emitChange, hIdx, mIdx],
   );
 
-  const itemHeight = t.size.control.sm; // 36pt — matches DurationWheel
-  const wheelHeight = itemHeight * VISIBLE_ITEMS;
-  const pad = ((VISIBLE_ITEMS - 1) / 2) * itemHeight;
+  const itemHeight = t.size.wheelRow; // 32pt — tight rows, matches DurationWheel
+  // Centre row + a half-row peek each side (scroll cue) — compact, not 3 full rows.
+  const wheelHeight = itemHeight * (1 + 2 * WHEEL_SIDE_PEEK);
+  const pad = itemHeight * WHEEL_SIDE_PEEK;
 
   // Shared highlight pill covers both columns — positioned to span the two wheels.
   const highlight: ViewStyle = {

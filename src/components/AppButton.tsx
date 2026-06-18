@@ -32,7 +32,7 @@ import { AppText } from './AppText';
 type NewVariant = 'indigo' | 'amber' | 'ghost' | 'danger';
 type LegacyVariant = 'primary' | 'secondary';
 type Variant = NewVariant | LegacyVariant;
-type Size = 'sm' | 'md' | 'lg';
+type Size = 'xs' | 'sm' | 'md' | 'lg';
 
 const EDGE = 6; // how far the darker edge peeks below a FILLED pill (the 3D depth)
 const DROP = EDGE - 1; // how far a filled pill drops on press (compresses onto the edge)
@@ -66,8 +66,19 @@ export function AppButton({
 
   const resolved = resolveVariant(variant);
   const isGhost = resolved === 'ghost';
-  const PILL_H = t.size.control[size];
-  const labelSize = size === 'sm' ? t.fontSize.base : t.fontSize.md;
+  // One coherent size scale — height, label font, and side padding all step up
+  // together, so a bigger button is bigger in every axis (not just taller).
+  //   xs  32h · 12pt · 12padX     sm  36h · 14pt · 16padX
+  //   md  44h · 16pt · 20padX     lg  52h · 20pt · 24padX
+  const SIZE: Record<Size, { h: number; font: number; padX: number }> = {
+    xs: { h: t.size.control.xs, font: t.fontSize.sm, padX: t.space[3] },
+    sm: { h: t.size.control.sm, font: t.fontSize.base, padX: t.space[4] },
+    md: { h: t.size.control.md, font: t.fontSize.md, padX: t.space[5] },
+    lg: { h: t.size.control.lg, font: t.fontSize.lg, padX: t.space[6] },
+  };
+  const PILL_H = SIZE[size].h;
+  const labelSize = SIZE[size].font;
+  const padX = SIZE[size].padX;
 
   const bg: Record<NewVariant, string> = {
     indigo: t.colors.primary,
@@ -139,7 +150,7 @@ export function AppButton({
     justifyContent: 'center',
     flexDirection: 'row',
     gap: t.space[2],
-    paddingHorizontal: t.space[5],
+    paddingHorizontal: padX,
     // Ghost reads as a flat outlined control — hairline border, no depth.
     ...(isGhost ? { borderWidth: t.borderWidth.hairline, borderColor: t.colors.border } : null),
   };

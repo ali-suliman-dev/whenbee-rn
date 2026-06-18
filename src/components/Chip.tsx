@@ -140,9 +140,11 @@ export function Chip({
     opacity: pressOpacity.get(),
     transform: [{ scale: pressScale.get() }],
   }));
-  // Tint is instant — plain style, no animated interpolation.
+  // Tint is instant — plain style, no animated interpolation. Unselected chips
+  // get a subtly raised fill (the resting hairline is 0px in this theme) so each
+  // pill reads as a distinct boundary against the page ground.
   const tint: ViewStyle = {
-    backgroundColor: selected ? t.colors.primarySoft : t.colors.surface,
+    backgroundColor: selected ? t.colors.primarySoft : t.colors.surfaceRaised,
   };
 
   const container: ViewStyle = {

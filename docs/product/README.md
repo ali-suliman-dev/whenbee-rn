@@ -15,6 +15,7 @@ This folder is the single source of truth for **what Whenbee is, what's built, w
 | [04-RESEARCH-INSIGHTS.md](04-RESEARCH-INSIGHTS.md) | The 10x / game-changing ideas, net-new recommendations, and the open founder decisions the research surfaced. |
 | [05-ROADMAP-TO-LAUNCH.md](05-ROADMAP-TO-LAUNCH.md) | The path from code-complete to real users, with the retention gate that governs everything. |
 | [06-BRAND-VOICE.md](06-BRAND-VOICE.md) | The voice rules and ban-list every user-facing string must pass. |
+| [07-PRO-VALUE-IDEAS.md](07-PRO-VALUE-IDEAS.md) | Research-backed Pro features people will actually pay for (3 live research passes), and a recommended Pro definition that stands without calendar write-back. |
 
 ## The product in one paragraph
 

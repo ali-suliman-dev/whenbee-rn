@@ -12,13 +12,14 @@ import Animated, {
 } from 'react-native-reanimated';
 import { haptics } from '@/src/lib/haptics';
 import { useTheme } from '@/src/theme/useTheme';
-import { clampWheelIndex, WheelRow } from './wheelShared';
+import { clampWheelIndex, WheelRow, WHEEL_SIDE_PEEK } from './wheelShared';
 
 // ──────────────────────────────────────────────────────────────────────────────
 // DurationWheel — slim vertical pan-wheel for picking minutes.
 //
-// 3 visible rows. The centre row sits in a `surfaceSunken` pill (`radii.full`).
-// Neighbours render at `inkFaint` opacity. Step defaults to 5 minutes.
+// Centre row in a `surfaceSunken` pill (`radii.full`), with a half-row peek of
+// the faded neighbour each side (WHEEL_SIDE_PEEK) as the scroll cue — compact,
+// not three full rows. Neighbours render at `inkFaint` opacity. Step = 5 minutes.
 //
 // Physics are identical to TimeField: a Reanimated Pan gesture (NOT a
 // ScrollView) so it plays nicely inside any parent scroll. Velocity fling-
@@ -26,7 +27,6 @@ import { clampWheelIndex, WheelRow } from './wheelShared';
 // on each row crossing.
 // ──────────────────────────────────────────────────────────────────────────────
 
-const VISIBLE_ITEMS = 3; // odd → one row is dead-centre
 const FLING_PROJECTION = 0.1;
 const DEFAULT_VALUE_MIN = 10;
 
@@ -81,9 +81,10 @@ export function DurationWheel({
     return idx >= 0 ? idx : clampWheelIndex(Math.round(min / step) - 1, count);
   }
 
-  const itemHeight = t.size.control.sm; // 36pt — compact rows
-  const wheelHeight = itemHeight * VISIBLE_ITEMS;
-  const pad = ((VISIBLE_ITEMS - 1) / 2) * itemHeight;
+  const itemHeight = t.size.wheelRow; // 32pt — tight rows, neighbours sit close
+  // Centre row + a half-row peek each side (scroll cue) — compact, not 3 full rows.
+  const pad = itemHeight * WHEEL_SIDE_PEEK;
+  const wheelHeight = itemHeight * (1 + 2 * WHEEL_SIDE_PEEK);
   const spring = t.motion.spring;
 
   const initialIndex = indexOfValue(valueMin);
@@ -152,16 +153,18 @@ export function DurationWheel({
   }));
 
   const container: ViewStyle = {
+    width: t.size.wheelCol,
     height: wheelHeight,
     overflow: 'hidden',
   };
 
-  // Centre highlight pill — `surfaceSunken` background, full-radius pill.
+  // Centre highlight pill — `surfaceSunken` fill, full-radius. Spans the whole
+  // column width (wider than tall) so it reads as a pill, not a circle.
   const highlight: ViewStyle = {
     position: 'absolute',
     top: pad,
-    left: t.space[2],
-    right: t.space[2],
+    left: 0,
+    right: 0,
     height: itemHeight,
     backgroundColor: t.colors.surfaceSunken,
     borderRadius: t.radii.full,
