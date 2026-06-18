@@ -32,7 +32,7 @@ import { AppText } from './AppText';
 type NewVariant = 'indigo' | 'amber' | 'ghost' | 'danger';
 type LegacyVariant = 'primary' | 'secondary';
 type Variant = NewVariant | LegacyVariant;
-type Size = 'sm' | 'md' | 'lg';
+type Size = 'xs' | 'sm' | 'md' | 'lg';
 
 const EDGE = 6; // how far the darker edge peeks below a FILLED pill (the 3D depth)
 const DROP = EDGE - 1; // how far a filled pill drops on press (compresses onto the edge)
@@ -67,7 +67,11 @@ export function AppButton({
   const resolved = resolveVariant(variant);
   const isGhost = resolved === 'ghost';
   const PILL_H = t.size.control[size];
-  const labelSize = size === 'sm' ? t.fontSize.base : t.fontSize.md;
+  // xs: 12pt label · sm: 14pt · md/lg: 16pt
+  const labelSize =
+    size === 'xs' ? t.fontSize.sm : size === 'sm' ? t.fontSize.base : t.fontSize.md;
+  // Tighter side padding on the compact xs pill so it doesn't read oversized.
+  const padX = size === 'xs' ? t.space[4] : t.space[5];
 
   const bg: Record<NewVariant, string> = {
     indigo: t.colors.primary,
@@ -139,7 +143,7 @@ export function AppButton({
     justifyContent: 'center',
     flexDirection: 'row',
     gap: t.space[2],
-    paddingHorizontal: t.space[5],
+    paddingHorizontal: padX,
     // Ghost reads as a flat outlined control — hairline border, no depth.
     ...(isGhost ? { borderWidth: t.borderWidth.hairline, borderColor: t.colors.border } : null),
   };

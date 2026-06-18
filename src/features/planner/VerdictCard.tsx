@@ -11,9 +11,11 @@ import type { PlanVerdict } from '@/src/domain/types';
 //
 //   fits      → a quiet positive: low-emphasis indigo fill, ink text, no action.
 //   over cases (cut-one / multi-cut / push-deadline) → a CALM neutral heads-up:
-//               sunken surface + hairline border + ink/inkSoft text (never amber,
-//               never red — amber is reserved for honey/reward, and there's no
-//               guilt here), with a single ghost action.
+//               sunken surface + hairline border + ink/inkSoft text (never red —
+//               red is reserved for Abandon; there's no guilt here). Cut actions
+//               stay ghost; the push-deadline CTA is amber — the one recommended,
+//               tappable action gets the coin-edge so it reads as pressable. Amber
+//               here is an action accent, not a reward or a shame cue.
 //
 // Action wiring (cut / push) is owned by the screen via callbacks.
 // ──────────────────────────────────────────────────────────────────────────────
@@ -61,7 +63,7 @@ export function VerdictCard({
           <AppButton
             label={`Cut ${verdict.cut.label}`}
             variant="ghost"
-            size="md"
+            size="xs"
             onPress={() => onCut([verdict.cut.id])}
           />
         </View>
@@ -98,8 +100,8 @@ export function VerdictCard({
         </AppText>
         <AppButton
           label={`Push finish to ${formatClock(verdict.feasibleDeadline)}`}
-          variant="ghost"
-          size="md"
+          variant="amber"
+          size="sm"
           onPress={() => onPush(verdict.feasibleDeadline)}
         />
       </View>

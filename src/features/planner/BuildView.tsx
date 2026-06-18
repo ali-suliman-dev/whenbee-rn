@@ -187,11 +187,11 @@ function InlineComposer({
         <AppButton
           label="Add"
           variant="indigo"
-          size="sm"
+          size="xs"
           disabled={state.title.trim().length === 0}
           onPress={handleConfirm}
         />
-        <AppButton label="Cancel" variant="ghost" size="sm" onPress={handleCancel} />
+        <AppButton label="Cancel" variant="ghost" size="xs" onPress={handleCancel} />
       </View>
     </View>
   );

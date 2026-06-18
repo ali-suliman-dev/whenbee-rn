@@ -179,7 +179,7 @@ function BuildCard({
     flexDirection: 'row',
     alignItems: 'center',
     paddingHorizontal: t.space[3],
-    paddingVertical: t.space[3],
+    paddingVertical: t.space[0],
     gap: t.space[3],
     minHeight: t.size.planCardMin,
   };
