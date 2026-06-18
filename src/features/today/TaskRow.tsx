@@ -28,9 +28,9 @@ import { haptics } from '@/src/lib/haptics';
 interface TaskRowProps {
   title: string;
   categoryLabel: string;
-  /** The user's original guess (minutes) — now the hero figure on every row. */
+  /** The user's original guess (minutes). Shown as the quiet "guessed N" support. */
   guessMin: number;
-  /** Learned honest estimate (minutes). Shown as the quiet "plan ~N" support. */
+  /** Learned honest estimate (minutes) — the hero figure on every queued row. */
   honestMin: number;
   /** Actual minutes once finished. Shown on done rows when known. */
   actualMin?: number | null;
@@ -100,24 +100,6 @@ export function TaskRow({
     overflow: 'hidden',
     opacity: done ? 0.7 : 1,
   };
-  // Semantic "interactive" edge — thin indigo bar on queued rows only. A full-height
-  // absolute track (top:0→bottom:0) centers the short bar with flexbox; `top: '50%'`
-  // can't be used because the row height is content-driven (minHeight only), so the
-  // percentage has no definite parent height to resolve against and the bar drops top.
-  const edgeTrack: ViewStyle = {
-    position: 'absolute',
-    left: 0,
-    top: 0,
-    bottom: 0,
-    justifyContent: 'center',
-  };
-  const edge: ViewStyle = {
-    width: t.row.edgeW,
-    height: t.row.edgeH,
-    backgroundColor: t.colors.primary,
-    borderTopRightRadius: t.row.edgeW,
-    borderBottomRightRadius: t.row.edgeW,
-  };
   const badge: ViewStyle = {
     width: t.space[8],
     height: t.space[8],
@@ -128,41 +110,36 @@ export function TaskRow({
   };
   const titleText: TextStyle = {
     ...(type.bodyLg as unknown as TextStyle),
-    fontSize: t.fontSize.base,
+    fontSize: t.fontSize.sm,
     color: done ? t.colors.inkSoft : t.colors.ink,
   };
-  const catText: TextStyle = { ...(type.caption as unknown as TextStyle), color: t.colors.inkSoft };
+  const catText: TextStyle = { ...(type.caption as unknown as TextStyle), fontSize: t.fontSize.xs, color: t.colors.inkSoft };
   const timeWrap: ViewStyle = { alignSelf: 'flex-end', alignItems: 'flex-end', gap: t.space[0.5] };
   const lineRow: ViewStyle = { flexDirection: 'row', alignItems: 'baseline', gap: t.space[0.5] };
   const leadNum: TextStyle = {
     fontFamily: 'Inter-Bold' as TextStyle['fontFamily'],
-    fontSize: t.fontSize.lg,
+    fontSize: t.fontSize.md,
     color: t.colors.ink,
     fontVariant: ['tabular-nums'],
   };
-  const tookNum: TextStyle = { ...leadNum, fontSize: t.fontSize.base };
-  const unit: TextStyle = { ...(type.caption as unknown as TextStyle), color: t.colors.inkSoft };
-  const planNum: TextStyle = {
-    fontFamily: 'Inter-Bold' as TextStyle['fontFamily'],
-    fontSize: t.fontSize.sm,
-    color: t.colors.amberText,
-    fontVariant: ['tabular-nums'],
-  };
+  const tookNum: TextStyle = { ...leadNum, fontSize: t.fontSize.sm };
+  const unit: TextStyle = { ...(type.caption as unknown as TextStyle), fontSize: t.fontSize.xs, color: t.colors.inkSoft };
   const deleteAction: ViewStyle = {
-    backgroundColor: t.colors.night,
+    backgroundColor: t.colors.danger,
     borderTopRightRadius: t.radii.card,
     borderBottomRightRadius: t.radii.card,
     justifyContent: 'center',
     alignItems: 'center',
-    width: t.size.control.lg + t.space[5],
+    width: t.size.control.lg + t.space[5] + t.space[4],
     marginLeft: -t.radii.card,
     paddingLeft: t.radii.card,
   };
   const deleteLabel: TextStyle = {
     ...(type.caption as unknown as TextStyle),
+    fontSize: t.fontSize.xs,
     color: t.colors.paper,
-    fontWeight: t.fontWeight.semibold as TextStyle['fontWeight'],
-    marginTop: t.space[1],
+    fontWeight: t.fontWeight.bold as TextStyle['fontWeight'],
+    marginTop: t.space[0.5],
   };
 
   const content = (
@@ -171,11 +148,7 @@ export function TaskRow({
         <View style={badge}>
           <Ionicons name="checkmark" size={t.iconSize.sm} color={t.colors.success} />
         </View>
-      ) : (
-        <View style={edgeTrack} pointerEvents="none">
-          <View testID="taskrow-edge" style={edge} />
-        </View>
-      )}
+      ) : null}
 
       <View style={{ flex: 1, gap: t.space[0.5] }}>
         <Text style={titleText} numberOfLines={1}>
@@ -198,14 +171,10 @@ export function TaskRow({
       ) : (
         <View style={timeWrap}>
           <View style={lineRow}>
-            <Text style={leadNum}>{guessMin}</Text>
-            <Text style={unit}>min</Text>
-          </View>
-          <View style={lineRow}>
-            <Text style={unit}>plan </Text>
-            <Text style={planNum}>~{honestMin}</Text>
+            <Text style={leadNum}>~{honestMin}</Text>
             <Text style={unit}> min</Text>
           </View>
+          <Text style={unit}>guessed {guessMin}</Text>
         </View>
       )}
     </Animated.View>
@@ -223,8 +192,8 @@ export function TaskRow({
         accessibilityLabel={`Delete ${title}`}
         style={deleteAction}
       >
-        <Ionicons name="trash-outline" size={t.iconSize.md} color={t.colors.paper} />
-        <Text style={deleteLabel}>Delete</Text>
+        <Ionicons name="trash-outline" size={t.iconSize.xs} color={t.colors.paper} />
+        <Text style={deleteLabel}>Remove</Text>
       </Pressable>
     );
   }
@@ -237,7 +206,7 @@ export function TaskRow({
       onLongPress={onLongPress}
       delayLongPress={300}
       accessibilityRole="button"
-      accessibilityLabel={`${title}, ${categoryLabel}, you guessed ${guessMin} minutes, we plan ${honestMin}. Tap to start.`}
+      accessibilityLabel={`${title}, ${categoryLabel}, plan for ${honestMin} minutes, you guessed ${guessMin}. Tap to start.`}
     >
       {content}
     </Pressable>
