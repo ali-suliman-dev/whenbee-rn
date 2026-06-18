@@ -3,7 +3,7 @@ import { persist, createJSONStorage } from 'zustand/middleware';
 import { zustandKv } from '@/src/lib/kv';
 
 // ──────────────────────────────────────────────────────────────────────────────
-// Tasks store — ephemeral "today" list (the MVP has no tasks DB table).
+// Tasks store — ephemeral "today" list (there is no tasks DB table; it's in-memory + kv).
 //
 // The Today screen renders this kv-persisted, FIFO list with explicit states:
 //   • queued — not yet done; the OLDEST queued task is the focus (the Next card).

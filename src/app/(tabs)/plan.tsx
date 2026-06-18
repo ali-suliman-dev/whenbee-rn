@@ -24,7 +24,7 @@ import type { TextStyle } from 'react-native';
 const CATEGORY_IDS = Object.keys(CATEGORY_NAMES);
 
 // ──────────────────────────────────────────────────────────────────────────────
-// Plan — the reverse Start-By day planner (free in the MVP; no paywall here).
+// Plan — the reverse Start-By day planner (always free; no paywall here).
 // One clear job per block: a finish time, breathing room, the tasks, then a single
 // "Build my plan" that reveals ONE consolidated result — the Start-By time as the
 // focal answer, the timeline, and a single calm verdict. No amber here: amber is
