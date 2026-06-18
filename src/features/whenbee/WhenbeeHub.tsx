@@ -33,7 +33,9 @@ import { LifeDriftCard } from './LifeDriftCard';
 //   7. CTA: empty → "Log your first task"; populated → "Make my whole day honest"
 //
 // No RayBurst, no TierTrailHub, no Honeycomb grid.
-// No glow on the bee (glow={false} passthrough).
+// Bee: no glow halo (glow={false}); a soft-edge neutral coin backs it off the ring
+// interior (backdrop="soft" — fades at the rim, no edge line), and it runs the calm
+// micro-life (soft wing flutter, slow blink, glance whose body-lean conveys direction).
 // ──────────────────────────────────────────────────────────────────────────────
 
 function categoryLabel(id: string): string {
@@ -107,6 +109,9 @@ export function WhenbeeHub() {
             driftHealth={vm.companion.driftHealth}
             name={vm.companion.name ?? undefined}
             glow={false}
+            size={t.companion.ringBee}
+            backdrop="soft"
+            animated
           />
         </HoneyRing>
         <RingBadge sharpness={vm.leadSharpness} />

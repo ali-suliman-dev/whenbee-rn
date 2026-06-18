@@ -114,6 +114,12 @@ export const tokens = {
     // capFill = the slower ceremonial cap fill; strokePop = the landing thicken;
     // sealSeq = the cap seal-stamp + ripples window; ripple = one outline ripple.
     ringFill: 1600, capFill: 1900, strokePop: 620, sealSeq: 1650, ripple: 720,
+    // Whenbee companion micro-life — the bee's calm, premium "alive" loop on the hub.
+    // beeWingBuzz = one fold of the calm wing flutter (slow + small — a soft settle,
+    // not a buzz); beeBlink = a single eyelid close/open; beeBlinkGap = the long calm
+    // rest between blinks; beeLook = one slow eye glance; beeLookHold = the dwell at
+    // each glance (longer = calmer). All tuned slow so the bee reads serene, not busy.
+    beeWingBuzz: 720, beeBlink: 130, beeBlinkGap: 5200, beeLook: 1400, beeLookHold: 2200,
     // Shared physics — deduped from AppButton + FAB.
     spring: { damping: 13, stiffness: 340 },
     // Named curves — declared once, not re-typed per file.
@@ -173,6 +179,16 @@ export const tokens = {
       onIndigo: '#FFFFFF', // text on indigo fill (AA 5.1:1 — warm white only hit 4.37)
       onAmber: '#20233A', // text on amber fill (AA 7.9:1)
       ringTrack: '#E4DFD3', // sits just off cream
+      // Soft-edge backing coin behind the ring bee (WhenbeeAvatar 'soft'). Pure white
+      // (= surface / the card white) — it pops off the lavender bg exactly like the
+      // cards do, giving the bee a clean, bright backing. Dark mode steps UP instead.
+      companionCoin: '#FFFFFF', // = surface (the card white, reads cleanly on the bg)
+      // HUD-row coin: a solid periwinkle medallion (NOT white — white melts into the
+      // card here). A step down from primarySoft so the indigo bee body still pops
+      // against it. Lifted off the card by companionCoinShadow. Hub ring keeps the
+      // softer companionCoin above.
+      companionCoinHud: '#C7BCEE',
+      companionCoinShadow: '#20233A', // = ink; the HUD coin's soft contact-shadow base
 
       // ── backward-compat aliases (template keys) ──
       text: '#20233A',
@@ -229,6 +245,11 @@ export const tokens = {
       onIndigo: '#14151D', // dark text on the lighter dark-mode indigo (AA)
       onAmber: '#20233A',
       ringTrack: 'rgba(255,255,255,0.08)',
+      companionCoin: '#292B3C', // = surfaceRaised (a raised lift on the deep bg)
+      // Dark HUD coin stays the soft raised coin (no solid/shadow treatment in dark —
+      // it reads fine on the deep card). Mirrors companionCoin so dark is unchanged.
+      companionCoinHud: '#292B3C',
+      companionCoinShadow: 'transparent', // unused in dark (shadow doesn't read dark-on-dark)
 
       // ── backward-compat aliases ──
       text: '#F4F1EA',
@@ -284,6 +305,29 @@ export const tokens = {
     // BeeMascot size (px) for the compact Today HUD — smaller than the hub/onboarding
     // bee so the companion reads as a quiet presence beside the honey bar.
     hudBee: 36,
+    // Soft-coin backing for the HUD bee. Ringless (no honey ring to frame it), so it
+    // needs a HIGH core — a sharp solid disc with only a thin feathered rim — or it
+    // reads as a glow at this small size. hudCoinCore = the solid-hold fraction.
+    hudCoin: 46,
+    hudCoinCore: 0.86,
+    // BeeMascot size (px) when it sits INSIDE the HoneyRing on the hub — a touch
+    // smaller than the 168 hero so the ring breathes around it and the honey pool
+    // (below) reads as a backing halo rather than being crowded to the rim.
+    ringBee: 140,
+    // Soft-edge backing disc behind the ring bee (the chosen no-glow option) — a
+    // neutral raised coin (colors.surfaceRaised) at full tone in the centre that fades
+    // to nothing at the rim: lifts the indigo bee off the dark ring interior with no
+    // hard edge line and no amber bloom.
+    softSize: 170,
+    // Flat hard-edged disc (alt option) — solid raised coin + 1px hairline edge.
+    discSize: 156,
+    discBorder: 1,
+    // Soft "honey pool" backdrop disc (the glow option, kept as a fallback) — a radial
+    // bloom that lifts the bee without a hard edge. poolSize = disc box edge (px);
+    // poolOpacity = centre alpha of the amber bloom (colors.accent), fading to 0 at the
+    // rim so it never collides with the ring arc.
+    poolSize: 176,
+    poolOpacity: 0.16,
   },
 
   // ── brand illustration palette ──────────────────────────────────────────────
