@@ -1,6 +1,5 @@
 import { useCallback, useMemo, memo } from 'react';
 import {
-  Pressable,
   ScrollView,
   View,
   type TextStyle,
@@ -14,10 +13,12 @@ import ReorderableList, {
 } from 'react-native-reorderable-list';
 import { useTheme } from '@/src/theme/useTheme';
 import { AppText } from '@/src/components/AppText';
+import { AppButton } from '@/src/components/AppButton';
 import { formatClock } from '@/src/lib/time';
 import { planBackward } from '@/src/engine';
 import { usePlanStore } from '@/src/stores/planStore';
 import { PlanRail } from './PlanRail';
+import type { RailNodeState } from './RailNode';
 import { PlanTaskCard, type PlanTaskCardProps } from './PlanTaskCard';
 import { CutCard } from './CutCard';
 import type { usePlanner } from './usePlanner';
@@ -46,6 +47,17 @@ import type { usePlanner } from './usePlanner';
 
 type PlannerHandle = ReturnType<typeof usePlanner>;
 
+// Shared row geometry. The inter-card gap lives as symmetric padding INSIDE the
+// card column (not as a row marginBottom), so the rail gutter — which stretches to
+// the full row height — runs unbroken from one row into the next, and the node
+// stays centred on the card. Change the rhythm here once for every row type.
+function useRunRowStyles() {
+  const t = useTheme();
+  const row: ViewStyle = { flexDirection: 'row', columnGap: t.space[2] };
+  const cardCol: ViewStyle = { flex: 1, minWidth: 0, paddingVertical: t.space[1.5] };
+  return { row, cardCol };
+}
+
 // ── Row item shapes ───────────────────────────────────────────────────────────
 
 interface TaskRowItem {
@@ -54,6 +66,8 @@ interface TaskRowItem {
   railTimeLabel: string;
   isFirst: boolean;
   isLast: boolean;
+  /** State of the row above — colours the incoming connector (see PlanRail). */
+  prevState?: RailNodeState;
 }
 
 interface BreatherRowItem {
@@ -64,6 +78,7 @@ interface BreatherRowItem {
   endAt: number;
   isFirst: boolean;
   isLast: boolean;
+  prevState?: RailNodeState;
 }
 
 type RunRowItem = TaskRowItem | BreatherRowItem;
@@ -75,23 +90,24 @@ function BreatherRow({
   endAt,
   isFirst,
   isLast,
+  prevState,
 }: {
   durationMin: number;
   endAt: number;
   isFirst: boolean;
   isLast: boolean;
+  prevState?: RailNodeState;
 }) {
   const t = useTheme();
   const rowStyle: ViewStyle = {
     flexDirection: 'row',
     columnGap: t.space[2],
-    alignItems: 'center',
-    marginBottom: t.space[2],
   };
   const labelStyle: TextStyle = {
     fontSize: t.fontSize.xs,
     color: t.colors.inkSoft,
     fontFamily: t.fontFamily.mono,
+    paddingVertical: t.space[1.5],
   };
   return (
     <View style={rowStyle}>
@@ -100,6 +116,7 @@ function BreatherRow({
         timeLabel={formatClock(endAt)}
         isFirst={isFirst}
         isLast={isLast}
+        prevState={prevState}
       />
       <AppText style={labelStyle}>
         {`☕ ${durationMin}m · back at ~${formatClock(endAt)}`}
@@ -115,21 +132,17 @@ function DoneRow({
 }: {
   item: TaskRowItem;
 }) {
-  const t = useTheme();
-  const rowStyle: ViewStyle = {
-    flexDirection: 'row',
-    columnGap: t.space[2],
-    marginBottom: t.space[2],
-  };
+  const { row, cardCol } = useRunRowStyles();
   return (
-    <View style={rowStyle}>
+    <View style={row}>
       <PlanRail
         state="done"
         timeLabel={item.railTimeLabel}
         isFirst={item.isFirst}
         isLast={item.isLast}
+        prevState={item.prevState}
       />
-      <View style={{ flex: 1 }}>
+      <View style={cardCol}>
         <PlanTaskCard {...item.props} />
       </View>
     </View>
@@ -143,21 +156,17 @@ function NowRow({
 }: {
   item: TaskRowItem;
 }) {
-  const t = useTheme();
-  const rowStyle: ViewStyle = {
-    flexDirection: 'row',
-    columnGap: t.space[2],
-    marginBottom: t.space[2],
-  };
+  const { row, cardCol } = useRunRowStyles();
   return (
-    <View style={rowStyle}>
+    <View style={row}>
       <PlanRail
         state="now"
         showNowPill
         isFirst={item.isFirst}
         isLast={item.isLast}
+        prevState={item.prevState}
       />
-      <View style={{ flex: 1 }}>
+      <View style={cardCol}>
         <PlanTaskCard {...item.props} />
       </View>
     </View>
@@ -169,7 +178,7 @@ function NowRow({
 // the rail column is included in the draggable region.
 
 const UpcomingRowItem = memo(function UpcomingRowItem({ item }: { item: RunRowItem }) {
-  const t = useTheme();
+  const { row, cardCol } = useRunRowStyles();
   if (item.kind === 'breather') {
     return (
       <BreatherRow
@@ -177,23 +186,20 @@ const UpcomingRowItem = memo(function UpcomingRowItem({ item }: { item: RunRowIt
         endAt={item.endAt}
         isFirst={item.isFirst}
         isLast={item.isLast}
+        prevState={item.prevState}
       />
     );
   }
-  const rowStyle: ViewStyle = {
-    flexDirection: 'row',
-    columnGap: t.space[2],
-    marginBottom: t.space[2],
-  };
   return (
-    <View style={rowStyle}>
+    <View style={row}>
       <PlanRail
         state="next"
         timeLabel={item.railTimeLabel}
         isFirst={item.isFirst}
         isLast={item.isLast}
+        prevState={item.prevState}
       />
-      <View style={{ flex: 1 }}>
+      <View style={cardCol}>
         <PlanTaskCard {...item.props} />
       </View>
     </View>
@@ -378,8 +384,35 @@ export function RunView({
         isLast: false,
       });
     }
+
+    // First/last flags clip the rail spine to the node centre at the ends of the
+    // whole list. The list always ENDS on an upcoming row, so the final entry here
+    // owns isLast — without it the last card keeps drawing a spine into empty space.
+    // It owns isFirst only when nothing (done/now) sits above it.
+    const last = rows[rows.length - 1];
+    if (last) last.isLast = true;
+    const first = rows[0];
+    if (first && runGroups.done.length === 0 && runGroups.now.length === 0) {
+      first.isFirst = true;
+    }
+
+    // Colour each incoming connector by the node above it. The first upcoming row's
+    // link comes from the now/done section; every later row's from its predecessor
+    // (a task reads as 'next', a breather as 'breather').
+    const above: RailNodeState | undefined =
+      runGroups.now.length > 0 ? 'now' : runGroups.done.length > 0 ? 'done' : undefined;
+    for (let i = 0; i < rows.length; i++) {
+      const r = rows[i];
+      if (!r) continue;
+      if (i === 0) {
+        r.prevState = above;
+      } else {
+        const prev = rows[i - 1];
+        r.prevState = prev?.kind === 'breather' ? 'breather' : 'next';
+      }
+    }
     return rows;
-  }, [active, runGroups.next, timelineByTaskId, categoryName, handleStart]);
+  }, [active, runGroups.next, runGroups.done.length, runGroups.now.length, timelineByTaskId, categoryName, handleStart]);
 
   // ── Total row count for first/last flags ────────────────────────────────────
   const doneCount = runGroups.done.length;
@@ -477,21 +510,9 @@ export function RunView({
     paddingBottom: Math.max(insets.bottom, t.space[4]),
   };
 
-  const ghostBtnStyle: ViewStyle = {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: t.space[2],
-    borderWidth: t.borderWidth.thick,
-    borderColor: t.colors.border,
-    borderRadius: t.radii.md,
-    paddingVertical: t.space[3],
-  };
-
-  const ghostBtnLabelStyle: TextStyle = {
-    fontSize: t.fontSize.sm,
-    fontWeight: t.fontWeight.semibold as TextStyle['fontWeight'],
-    color: t.colors.ink,
+  const footerIconStyle: TextStyle = {
+    fontSize: t.fontSize.md,
+    color: t.colors.inkSoft,
   };
 
   if (!active) return null;
@@ -563,6 +584,8 @@ export function RunView({
                       : '',
                   isFirst: rowIndex === 0,
                   isLast,
+                  // Done rows always follow other done rows (done is the top section).
+                  prevState: rowIndex === 0 ? undefined : 'done',
                 }}
               />
             );
@@ -601,6 +624,8 @@ export function RunView({
                   railTimeLabel: '',
                   isFirst: rowIndex === 0,
                   isLast,
+                  // The now row's incoming link comes from the done section above it.
+                  prevState: doneCount > 0 ? 'done' : undefined,
                 }}
               />
             );
@@ -621,28 +646,28 @@ export function RunView({
         <View style={{ flex: 1 }} />
       </ScrollView>
 
-      {/* ── Footer ── */}
+      {/* ── Footer — two ghost AppButtons (built-in press feedback + haptics) ── */}
       <View style={footerStyle}>
-        <Pressable
-          style={{ flex: 1 }}
-          onPress={handleReplan}
-          accessibilityRole="button"
-          accessibilityLabel="Re-plan — recalculate your timeline from now"
-        >
-          <View style={ghostBtnStyle}>
-            <AppText style={ghostBtnLabelStyle}>⟳  Re-plan</AppText>
-          </View>
-        </Pressable>
-        <Pressable
-          style={{ flex: 1 }}
-          onPress={onAddTask}
-          accessibilityRole="button"
-          accessibilityLabel="Add a task to your plan"
-        >
-          <View style={ghostBtnStyle}>
-            <AppText style={ghostBtnLabelStyle}>＋  Add task</AppText>
-          </View>
-        </Pressable>
+        <View style={{ flex: 1 }}>
+          <AppButton
+            variant="ghost"
+            size="md"
+            fullWidth
+            label="Re-plan"
+            icon={<AppText style={footerIconStyle}>⟳</AppText>}
+            onPress={handleReplan}
+          />
+        </View>
+        <View style={{ flex: 1 }}>
+          <AppButton
+            variant="ghost"
+            size="md"
+            fullWidth
+            label="Add task"
+            icon={<AppText style={footerIconStyle}>＋</AppText>}
+            onPress={() => onAddTask?.()}
+          />
+        </View>
       </View>
     </View>
   );

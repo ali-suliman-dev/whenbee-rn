@@ -27,7 +27,11 @@ export const tokens = {
   // (one literal, reused by PlanTimeline + ShareableCard so the columns line up).
   // `planCardMin` = minimum row height for a build PlanTaskCard (≥ 44pt HIG floor).
   // `gripW` = width of each grip line in the drag handle.
-  size: { control: { sm: 36, md: 44, lg: 52 }, coin: 40, shareCard: 340, timelineCol: 110, planCardMin: 70, gripW: 14 },
+  // `wheelCol` = width of the DurationWheel selector pill/column — wider than tall
+  // so the centre highlight reads as a pill (not a circle) and fits "1h 35m".
+  // `wheelRow` = inline wheel row height (Duration + FinishTime) — tighter than
+  // control.sm so the faded neighbour numbers sit close to the selected pill.
+  size: { control: { xs: 32, sm: 36, md: 44, lg: 52 }, coin: 40, wheelCol: 72, wheelRow: 32, shareCard: 340, timelineCol: 110, planCardMin: 70, gripW: 14 },
 
   // Icon sizing scale — replaces inline 12/16/18/20/22/24/30 across the app.
   iconSize: { xs: 12, sm: 16, md: 20, lg: 24, xl: 32 },
@@ -97,10 +101,15 @@ export const tokens = {
   //   gapTrack = bar height; tickW/tickH = the live elapsed marker riding the bar.
   progress: { track: 6, gapTrack: 8, tickW: 3, tickH: 16 },
 
+  // The thin indigo left-edge on actionable Today rows (TaskRow) — a semantic
+  // "interactive" marker (colors.primary), not a category color.
+  row: { edgeW: 3, edgeH: 20 },
+
   // Start-By Plan progress rail geometry (RunView). gutter = time/node column
   // width; node = circle diameter; nowRing = pulse halo radius; breatherNode =
-  // small breather node diameter; connector = spine line width.
-  planRail: { gutter: 46, node: 20, nowRing: 3, breatherNode: 16, connector: 2, nowDot: 7 },
+  // small breather node diameter; connector = spine line width; dashOn/dashGap =
+  // dashed-segment rhythm for completed (done) spine links.
+  planRail: { gutter: 46, node: 20, nowRing: 3, breatherNode: 16, connector: 2, nowDot: 7, dashOn: 2, dashGap: 5 },
 
   motion: {
     fast: 120, base: 220, slow: 360, press: 110, reveal: 600, draw: 950, sheet: 340,

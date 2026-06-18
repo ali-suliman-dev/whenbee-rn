@@ -28,6 +28,18 @@ export const WHEEL_OPACITY = [1, 0.45, 0.16] as const;
 /** Scale levels for centre (dist=0) and adjacent (dist=1) rows. */
 export const WHEEL_SCALE = [1, 0.84] as const;
 
+/**
+ * Fraction of a row that peeks above and below the centre band — the scroll cue.
+ *
+ * The wheel window is `(1 + 2 * peek)` rows tall: one full centre row plus a
+ * partial slice of each neighbour. 0.5 = a half-row peek each side — enough of
+ * the faded neighbour shows to read as "more above/below" (scrollable) while
+ * keeping the wheel compact. Both wheels consume this so they stay in lockstep.
+ *
+ * This is a drum-picker feel constant, not a design token (cf. WHEEL_OPACITY).
+ */
+export const WHEEL_SIDE_PEEK = 0.5;
+
 // ── clamping helper ───────────────────────────────────────────────────────────
 
 /**
@@ -42,6 +54,12 @@ export const WHEEL_SCALE = [1, 0.84] as const;
  *   clampWheelIndex(-1,  36) // → 0
  */
 export function clampWheelIndex(n: number, count: number): number {
+  'worklet';
+  // Marked a worklet because it is called from UI-thread contexts (useDerivedValue,
+  // pan gesture handlers, useAnimatedStyle). Without this directive, Reanimated
+  // aborts the app: "Tried to synchronously call a non-worklet function on the UI
+  // thread." A worklet called from the JS thread (hourIndex/minuteIndex) just runs
+  // normally, so both call sites are safe.
   return Math.min(count - 1, Math.max(0, n));
 }
 

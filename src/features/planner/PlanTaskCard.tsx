@@ -179,7 +179,7 @@ function BuildCard({
     flexDirection: 'row',
     alignItems: 'center',
     paddingHorizontal: t.space[3],
-    paddingVertical: t.space[3],
+    paddingVertical: t.space[0],
     gap: t.space[3],
     minHeight: t.size.planCardMin,
   };
@@ -561,21 +561,23 @@ function NextRunCard({
     flexShrink: 0,
   };
 
+  // Quiet soft disc — no border (the old thick ring read as a hollow target with a
+  // tiny arrow). primarySoft fill keeps it a calm accent, not a second filled-indigo
+  // element competing with the now card's "Open timer" (one filled indigo per screen).
   const startButtonStyle: ViewStyle = {
-    width: t.size.control.md,
-    height: t.size.control.md,
+    width: t.size.coin,
+    height: t.size.coin,
     borderRadius: t.radii.full,
     backgroundColor: t.colors.primarySoft,
-    borderWidth: t.borderWidth.thick,
-    borderColor: t.colors.primary,
     justifyContent: 'center',
     alignItems: 'center',
     flexShrink: 0,
   };
 
   const startIconStyle: TextStyle = {
-    fontSize: t.fontSize.sm,
+    fontSize: t.fontSize.md,
     color: t.colors.primary,
+    marginLeft: t.space[0.5], // optical-centre the ▶ triangle in the disc
   };
 
   return (
