@@ -56,6 +56,7 @@ export default function Today() {
 
   // First-run peek: teach the hidden swipe once, then never again.
   const [peekFirstRow] = useState(() => kv.getString('today.seenSwipeHint') == null);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
   useEffect(() => {
     if (peekFirstRow) kv.set('today.seenSwipeHint', '1');
   }, [peekFirstRow]);
@@ -63,12 +64,13 @@ export default function Today() {
   function deleteTask(id: string) {
     haptics.medium();
     removeTask(id);
+    setDeletingId(null);
   }
   function promptDelete(id: string, label: string) {
     ActionSheetIOS.showActionSheetWithOptions(
-      { title: label, options: ['Delete', 'Cancel'], destructiveButtonIndex: 0, cancelButtonIndex: 1 },
+      { title: label, options: ['Remove', 'Cancel'], destructiveButtonIndex: 0, cancelButtonIndex: 1 },
       (i) => {
-        if (i === 0) deleteTask(id);
+        if (i === 0) setDeletingId(id);
       },
     );
   }
@@ -228,6 +230,7 @@ export default function Today() {
                   onDelete={() => deleteTask(row.id)}
                   onLongPress={() => promptDelete(row.id, row.label)}
                   peekHint={peekFirstRow && idx === 0}
+                  isExiting={deletingId === row.id}
                 />
               ))}
             </View>
@@ -247,6 +250,7 @@ export default function Today() {
                   done
                   onDelete={() => deleteTask(row.id)}
                   onLongPress={() => promptDelete(row.id, row.label)}
+                  isExiting={deletingId === row.id}
                 />
               ))}
             </View>

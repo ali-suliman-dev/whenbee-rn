@@ -1,10 +1,12 @@
-import { useEffect, useRef } from 'react';
-import { Pressable, View, Text, type ViewStyle, type TextStyle } from 'react-native';
+import { useEffect, useRef, useCallback } from 'react';
+import { Pressable, View, Text, useWindowDimensions, type ViewStyle, type TextStyle } from 'react-native';
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
   withTiming,
   useReducedMotion,
+  Easing,
+  runOnJS,
 } from 'react-native-reanimated';
 import ReanimatedSwipeable, { type SwipeableMethods } from 'react-native-gesture-handler/ReanimatedSwipeable';
 import { Ionicons } from '@expo/vector-icons';
@@ -42,6 +44,8 @@ interface TaskRowProps {
   onLongPress?: () => void;
   /** First-run only: briefly reveal then re-hide the swipe once, to teach it. */
   peekHint?: boolean;
+  /** When true, slide the row left off-screen then call onDelete (teaches swipe direction). */
+  isExiting?: boolean;
 }
 
 export function TaskRow({
@@ -55,11 +59,16 @@ export function TaskRow({
   onDelete,
   onLongPress,
   peekHint = false,
+  isExiting = false,
 }: TaskRowProps) {
   const t = useTheme();
   const reducedMotion = useReducedMotion();
+  const { width: screenWidth } = useWindowDimensions();
   const opacity = useSharedValue(1);
   const pressStyle = useAnimatedStyle(() => ({ opacity: opacity.get() }));
+
+  const exitX = useSharedValue(0);
+  const exitStyle = useAnimatedStyle(() => ({ transform: [{ translateX: exitX.get() }] }));
 
   function pressIn() {
     if (reducedMotion || done) return;
@@ -69,6 +78,24 @@ export function TaskRow({
     if (reducedMotion || done) return;
     opacity.set(withTiming(1, { duration: t.motion.fast }));
   }
+
+  const triggerOnDelete = useCallback(() => { onDelete?.(); }, [onDelete]);
+
+  useEffect(() => {
+    if (!isExiting) return;
+    exitX.set(
+      withTiming(
+        -screenWidth,
+        { duration: t.motion.base, easing: Easing.in(Easing.ease) },
+        (finished) => {
+          'worklet';
+          if (finished) runOnJS(triggerOnDelete)();
+        },
+      ),
+    );
+  // exitX and triggerOnDelete are stable refs; screenWidth only changes on rotation
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isExiting]);
 
   const swipeRef = useRef<SwipeableMethods | null>(null);
   const hasPeeked = useRef(false);
@@ -143,7 +170,7 @@ export function TaskRow({
   };
 
   const content = (
-    <Animated.View style={[row, pressStyle]}>
+    <Animated.View style={[row, pressStyle, exitStyle]}>
       {done ? (
         <View style={badge}>
           <Ionicons name="checkmark" size={t.iconSize.sm} color={t.colors.success} />
