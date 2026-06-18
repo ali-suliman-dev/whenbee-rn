@@ -1,7 +1,10 @@
 import { render, screen } from '@testing-library/react-native';
+import { ActionSheetIOS } from 'react-native';
 import Today from '@/src/app/(tabs)/index';
 import { useCalibrationStore, type ReclaimSummary } from '@/src/stores/calibrationStore';
 import { useTasksStore } from '@/src/stores/tasksStore';
+
+jest.spyOn(ActionSheetIOS, 'showActionSheetWithOptions').mockImplementation(() => {});
 
 jest.mock('expo-router', () => ({
   router: { push: jest.fn() },
@@ -74,5 +77,26 @@ describe('Today screen', () => {
     // No empty-state copy when a task is present.
     expect(screen.queryByText('Time your first task')).toBeNull();
     expect(screen.queryByText("What's on today?")).toBeNull();
+  });
+
+  it('shows the guess as the lead figure and the plan support on up-next rows', async () => {
+    useCalibrationStore.setState({
+      statsByCategory: {
+        getting_ready: { mEffective: 2.0, n: 8, sharpness: 70, tier: 'Ripening' },
+      },
+    });
+    // First task becomes the focus card; second is an up-next row with guessMin 25.
+    useTasksStore
+      .getState()
+      .addTask({ label: 'Leave for work', category: 'getting_ready', guessMin: 15, nowMs: T0 });
+    useTasksStore
+      .getState()
+      .addTask({ label: 'Pack bag', category: 'getting_ready', guessMin: 25, nowMs: T0 + 1 });
+
+    render(<Today />);
+
+    // The up-next row should render "25" as the hero figure and "plan " as support.
+    expect(await screen.findByText('25')).toBeOnTheScreen();
+    expect(screen.getByText('plan ')).toBeOnTheScreen();
   });
 });

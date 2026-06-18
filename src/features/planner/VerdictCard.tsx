@@ -10,8 +10,11 @@ import type { PlanVerdict } from '@/src/domain/types';
 //
 //   fits      → a quiet positive: low-emphasis indigo fill, ink text.
 //   over cases (cut-one / multi-cut / push-deadline) → a CALM neutral heads-up:
-//               sunken surface + hairline border + ink text (never red — red is
-//               reserved for Abandon; there's no guilt here).
+//               sunken surface + hairline border + ink/inkSoft text (never red —
+//               red is reserved for Abandon; there's no guilt here). Cut actions
+//               stay ghost; the push-deadline CTA is amber — the one recommended,
+//               tappable action gets the coin-edge so it reads as pressable. Amber
+//               here is an action accent, not a reward or a shame cue.
 //
 // The card carries the *explanation* only. The matching action (cut / push) is an
 // amber button that lives in BuildView's footer beside "Build my plan", so the
@@ -46,13 +49,21 @@ export function VerdictCard({
   if (verdict.kind === 'cut-one') {
     return (
       <Card style={noticeCard}>
-        <AppText variant="body" style={{ color: t.colors.ink }}>
-          Drop{' '}
-          <AppText style={{ fontWeight: t.fontWeight.bold, color: t.colors.ink }}>
-            {verdict.cut.label}
-          </AppText>{' '}
-          and you start on time — that&apos;s {verdict.savedMin}m back.
-        </AppText>
+        <View style={{ gap: t.space[3] }}>
+          <AppText variant="body" style={{ color: t.colors.ink }}>
+            Drop{' '}
+            <AppText style={{ fontWeight: t.fontWeight.bold, color: t.colors.ink }}>
+              {verdict.cut.label}
+            </AppText>{' '}
+            and you start on time — that&apos;s {verdict.savedMin}m back.
+          </AppText>
+          <AppButton
+            label={`Cut ${verdict.cut.label}`}
+            variant="ghost"
+            size="xs"
+            onPress={() => onCut([verdict.cut.id])}
+          />
+        </View>
       </Card>
     );
   }
@@ -76,6 +87,12 @@ export function VerdictCard({
           About {verdict.overshootMin}m over. Push the finish to {formatClock(verdict.feasibleDeadline)},
           or drop a task.
         </AppText>
+        <AppButton
+          label={`Push finish to ${formatClock(verdict.feasibleDeadline)}`}
+          variant="amber"
+          size="sm"
+          onPress={() => onPush(verdict.feasibleDeadline)}
+        />
       </View>
     </Card>
   );
