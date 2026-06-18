@@ -117,7 +117,7 @@ export function PlanRail({
     fontSize: t.fontSize.xs,
     fontWeight: t.fontWeight.bold as TextStyle['fontWeight'],
     color: t.colors.onIndigo,
-    letterSpacing: 0.2,
+    letterSpacing: t.letterSpacing.normal,
   };
 
   const timeLabelStyle: TextStyle = {

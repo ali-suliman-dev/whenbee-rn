@@ -419,7 +419,7 @@ function NowRunCard({
     fontSize: t.fontSize.xs,
     fontWeight: t.fontWeight.bold as TextStyle['fontWeight'],
     color: t.colors.primary,
-    letterSpacing: 0.8,
+    letterSpacing: t.letterSpacing.wide,
   };
 
   const lockStyle: TextStyle = {

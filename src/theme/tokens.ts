@@ -71,7 +71,9 @@ export const tokens = {
   lineHeight: { tight: 1.15, normal: 1.4, relaxed: 1.6 },
   // Tracking — negative values tighten display headings so they feel intentional
   // rather than loose. `tight` is the standard display-headline tightening.
-  letterSpacing: { tight: -0.5 },
+  // M4: normal/wide added for plan-screen labels (PlanTaskCard "RUNNING" tag,
+  // PlanRail now-pill text). tight stays for display headings.
+  letterSpacing: { tight: -0.5, normal: 0.2, wide: 0.8 },
 
   // Soft elevation for raised/focal cards (CSS box-shadow renders cross-platform).
   shadow: {
