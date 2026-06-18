@@ -37,6 +37,8 @@ interface TasksState {
   completeTask: (id: string, opts?: { nowMs?: number; actualMin?: number }) => void;
   removeTask: (id: string) => void;
   clear: () => void;
+  /** Move a queued task to the front of the queue so it becomes the focus task. */
+  promoteToFocus: (id: string) => void;
 }
 
 /** The focus task = the oldest task still queued (skips done). */
@@ -87,6 +89,19 @@ export const useTasksStore = create<TasksState>()(
 
       removeTask: (id) =>
         set((state) => ({ tasks: state.tasks.filter((t) => t.id !== id) })),
+
+      promoteToFocus: (id) =>
+        set((state) => {
+          const focusIdx = state.tasks.findIndex((t) => t.status === 'queued');
+          const taskIdx = state.tasks.findIndex((t) => t.id === id);
+          if (taskIdx < 0 || taskIdx === focusIdx) return state;
+          const next = [...state.tasks];
+          // splice return is TodayTask | undefined under noUncheckedIndexedAccess;
+          // taskIdx >= 0 guard above makes this safe.
+          const task = next.splice(taskIdx, 1)[0] as TodayTask;
+          next.splice(Math.max(0, focusIdx), 0, task);
+          return { tasks: next };
+        }),
 
       clear: () => set({ tasks: [] }),
     }),

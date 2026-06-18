@@ -1,11 +1,4 @@
-import { View, Text, Pressable, ScrollView, ActionSheetIOS, type ViewStyle, type TextStyle } from 'react-native';
-import Animated, {
-  useSharedValue,
-  useAnimatedStyle,
-  withTiming,
-  withSpring,
-  useReducedMotion,
-} from 'react-native-reanimated';
+import { View, Text, Pressable, ScrollView, ActionSheetIOS, type TextStyle } from 'react-native';
 import { useState, useEffect } from 'react';
 import { router } from 'expo-router';
 import { haptics } from '@/src/lib/haptics';
@@ -22,6 +15,7 @@ import { TodayHud } from '@/src/components/honeycomb/TodayHud';
 import type { HoneycombCell } from '@/src/components/honeycomb/Honeycomb';
 import { TodayEmptyState } from '@/src/features/today/TodayEmptyState';
 import { RetroLogChip } from '@/src/features/today/RetroLogChip';
+import { SwitchTaskSheet } from '@/src/features/today/SwitchTaskSheet';
 import { useCategoriesStore } from '@/src/stores/categoriesStore';
 import { useCalibrationStore } from '@/src/stores/calibrationStore';
 import { useTimerStore } from '@/src/stores/timerStore';
@@ -54,8 +48,11 @@ export default function Today() {
     hasEverLogged,
   } = useToday();
   const isTimerRunning = useTimerStore((s) => s.isRunning);
+  const runningTaskLabel = useTimerStore((s) => s.taskLabel);
+  const [pendingRow, setPendingRow] = useState<TodayRow | null>(null);
   const dailyRitualEnabled = useSettingsStore((s) => s.dailyRitualEnabled);
   const removeTask = useTasksStore((s) => s.removeTask);
+  const promoteToFocus = useTasksStore((s) => s.promoteToFocus);
 
   // First-run peek: teach the hidden swipe once, then never again.
   const [peekFirstRow] = useState(() => kv.getString('today.seenSwipeHint') == null);
@@ -76,8 +73,7 @@ export default function Today() {
     );
   }
 
-  // Open the timer for any queued list row (mirrors the FocusCard Start params).
-  function startRow(row: TodayRow) {
+  function navigateToTimer(row: TodayRow) {
     router.push({
       pathname: '/(modals)/timer',
       params: {
@@ -88,6 +84,29 @@ export default function Today() {
         guessMin: row.guessMin,
       },
     });
+  }
+
+  function startRow(row: TodayRow) {
+    if (isTimerRunning) {
+      haptics.light();
+      setPendingRow(row);
+    } else {
+      navigateToTimer(row);
+    }
+  }
+
+  function confirmSwitch() {
+    if (pendingRow === null) return;
+    haptics.medium();
+    const row = pendingRow;
+    setPendingRow(null);
+    promoteToFocus(row.id);
+    navigateToTimer(row);
+  }
+
+  function cancelSwitch() {
+    haptics.light();
+    setPendingRow(null);
   }
 
   // Build the honey strip from the tracked categories + their cached stats. One
@@ -111,58 +130,13 @@ export default function Today() {
     marginTop: t.space[1],
   };
 
-  const FAB_SIZE = 56;
-  const FAB_EDGE = 5;
-  const fabPosition: ViewStyle = {
-    position: 'absolute',
-    right: t.space[5],
-    bottom: t.space[6],
-    paddingBottom: FAB_EDGE,
-  };
-  // Low-emphasis FAB: a neutral raised "coin" with an indigo + glyph, so only the
-  // Start button holds the single indigo FILL on the screen. Same 3D coin press.
-  const fabEdge: ViewStyle = {
-    position: 'absolute',
-    left: 0,
-    bottom: 0,
-    width: FAB_SIZE,
-    height: FAB_SIZE,
-    borderRadius: FAB_SIZE / 2,
-    backgroundColor: t.colors.border,
-  };
-  const fabCircle: ViewStyle = {
-    width: FAB_SIZE,
-    height: FAB_SIZE,
-    borderRadius: FAB_SIZE / 2,
-    backgroundColor: t.colors.surfaceRaised,
-    borderWidth: t.borderWidth.hairline,
-    borderColor: t.colors.hairline,
-    alignItems: 'center',
-    justifyContent: 'center',
-  };
-
-  // FAB presses straight down onto its edge on tap (a clean 3D drop), then
-  // springs back. No scale, no spin — the depth shift carries the feedback.
-  const reducedMotion = useReducedMotion();
-  const fabY = useSharedValue(0);
-  const fabAnim = useAnimatedStyle(() => ({ transform: [{ translateY: fabY.get() }] }));
-  function fabPressIn() {
-    if (reducedMotion) return;
-    fabY.set(withTiming(FAB_EDGE - 1, { duration: t.motion.press }));
-  }
-  function fabPressOut() {
-    if (reducedMotion) return;
-    fabY.set(withSpring(0, t.motion.spring));
-  }
-
   return (
     <Screen>
       <View style={{ flex: 1 }}>
         <ScrollView
           contentContainerStyle={{
             gap: t.space[5],
-            // Reserve the FAB's footprint so the log chip never sits under it.
-            paddingBottom: FAB_SIZE + t.space[8],
+            paddingBottom: t.space[8],
           }}
           showsVerticalScrollIndicator={false}
         >
@@ -280,29 +254,21 @@ export default function Today() {
 
           {totalCount === 0 && !isTimerRunning ? null : (
             <RetroLogChip
-              label="Finished something? Log it — it ripens your honey"
+              label="Finished? Log it. Ripens your honey."
               onPress={() => router.push('/(modals)/retro')}
             />
           )}
         </ScrollView>
 
-        <Pressable
-          onPress={() => {
-            haptics.light();
-            router.push('/(modals)/add-task');
-          }}
-          onPressIn={fabPressIn}
-          onPressOut={fabPressOut}
-          accessibilityRole="button"
-          accessibilityLabel="Add a task"
-          style={fabPosition}
-        >
-          <View style={fabEdge} />
-          <Animated.View style={[fabCircle, fabAnim]}>
-            <Ionicons name="add" size={30} color={t.colors.primary} />
-          </Animated.View>
-        </Pressable>
       </View>
+
+      <SwitchTaskSheet
+        visible={pendingRow !== null}
+        leavingLabel={runningTaskLabel ?? 'current task'}
+        startingLabel={pendingRow?.label ?? ''}
+        onConfirm={confirmSwitch}
+        onCancel={cancelSwitch}
+      />
     </Screen>
   );
 }
