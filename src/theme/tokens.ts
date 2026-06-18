@@ -128,10 +128,16 @@ export const tokens = {
     // rest between blinks; beeLook = one slow eye glance; beeLookHold = the dwell at
     // each glance (longer = calmer). All tuned slow so the bee reads serene, not busy.
     beeWingBuzz: 720, beeBlink: 130, beeBlinkGap: 5200, beeLook: 1400, beeLookHold: 2200,
+    // Wax-seal ritual choreography (RitualSeal). Calm, no overshoot: the border
+    // draws closed FIRST, then honey wells up, a soft bloom passes, the ✦ fades
+    // in, and an amber sparkle bursts radially. Durations + start delays (ms).
+    // Honey starts only AFTER the border finishes: border ends at dBorder+border
+    // = 40+660 = 700ms, so dHoney = 740 leaves a 40ms beat before honey wells up.
+    seal: { border: 660, honey: 580, bloom: 900, mark: 360, spark: 620, dBorder: 40, dHoney: 740, dBloom: 1020, dMark: 1240, dSpark: 1260 },
     // Shared physics — deduped from AppButton + FAB.
     spring: { damping: 13, stiffness: 340 },
     // Named curves — declared once, not re-typed per file.
-    easing: { standard: Easing.bezier(0.4, 0, 0.2, 1), calm: Easing.inOut(Easing.sin), honey: Easing.bezier(0.22, 1, 0.36, 1) },
+    easing: { standard: Easing.bezier(0.4, 0, 0.2, 1), calm: Easing.inOut(Easing.sin), honey: Easing.bezier(0.22, 1, 0.36, 1), premium: Easing.bezier(0.4, 0, 0.2, 1) },
   },
 
   colors: {
@@ -352,6 +358,7 @@ export const tokens = {
   // exact illustration shades (highlights/shadows/wing cream) live here so they are
   // token-sourced without polluting the semantic UI ramp.
   brand: {
+    honeyFill: '#F5C03F', // lit yellow honey — the sealed-cell fill (brighter than accent, distinct from the indigo body)
     bee: {
       body: '#5F4EE4', // indigo body (≈ primary)
       bodyHi: '#6F60E7', // top highlight
