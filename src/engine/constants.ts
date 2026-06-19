@@ -59,3 +59,11 @@ export const CONFIDENCE_HONEST_MIN_LOGS = 6;
 export const CONFIDENCE_HONEST_MAX_CV = 0.35;
 export const RANGE_MIN_HALF_WIDTH = 0.18;
 export const RANGE_MAX_HALF_WIDTH = 0.5;
+
+// ── Regularized affine calibration (replaces the single-scalar multiplier) ───
+/** Ridge shrink pulling the fixed-cost intercept toward 0 (higher = stays
+ *  multiplicative longer). */
+export const RIDGE_INTERCEPT_LAMBDA = 0.5;
+/** Ridge anchor pulling the slope toward the prior multiplier (plays the role
+ *  the old BLEND_PSEUDO_COUNT k=4 played). */
+export const RIDGE_SLOPE_LAMBDA = 0.5;
