@@ -15,7 +15,6 @@ import { useEntitlement } from './useEntitlement';
 import { useOfferings } from './useOfferings';
 import { useFounderReserve } from './useFounderReserve';
 import { BeforeAfterHero } from './BeforeAfterHero';
-import { ReclaimEndowment } from './ReclaimEndowment';
 import { FounderReserveCard } from './FounderReserveCard';
 import { PlanPicker } from './PlanPicker';
 import { openManageSubscriptions } from './manageSubscription';
@@ -215,10 +214,6 @@ export function Paywall({ trigger, readiness = 'pre' }: { trigger?: string; read
               : 'Whenbee already knows your real numbers. Let it quietly rebuild your calendar to match.'}
           </Text>
         </View>
-
-        {/* The earned number leads: what the user's own calibration already saved
-            them. Hidden for a brand-new user (no fabricated total). */}
-        <ReclaimEndowment />
 
         {/* The single clearest reason to pay. */}
         <BeforeAfterHero />

@@ -32,7 +32,6 @@ const defaultSummary: ReclaimSummary = {
 function stubStoreEffects() {
   useCalibrationStore.setState({
     hydrate: async () => {},
-    loadTodayReclaimMin: async () => 0,
     loadReclaimSummary: async () => defaultSummary,
   });
 }

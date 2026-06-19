@@ -299,8 +299,6 @@ interface CalibrationState {
   /** READ-ONLY (S4). Context correlations (e.g. energy × accuracy) for the Pro
    *  "when you're sharpest" / context surface. Never trains the model. */
   loadContextInsights: () => Promise<ContextCorrelation[]>;
-  /** Sum of reclaimDividendMin over today's (local-day) completed events. */
-  loadTodayReclaimMin: (nowMs?: number) => Promise<number>;
   resetCategory: (categoryId: string) => Promise<void>;
   /** Clear in-memory caches after a full/learning data wipe. The db itself is
    *  cleared by the dataReset service; this just drops the cached mirrors so the
@@ -320,17 +318,6 @@ async function resolveDb(get: () => CalibrationState, set: (p: Partial<Calibrati
 function makeId(createdAt: number): string {
   return `${createdAt}-${Math.random().toString(36).slice(2)}`;
 }
-
-/** Epoch-ms for local midnight of the day containing `nowMs` (device timezone). */
-function startOfLocalDay(nowMs: number): number {
-  const d = new Date(nowMs);
-  d.setHours(0, 0, 0, 0);
-  return d.getTime();
-}
-
-/** How far back the today-reclaim scan reads raw events. A day rarely exceeds
- *  a handful of logs; this comfortably covers any realistic single day. */
-const TODAY_RECLAIM_SCAN_LIMIT = 200;
 
 /** How many recent events the Patterns surface scans. Generous (the "this week"
  *  surprise + early/recent splits want history) but bounded so the read stays cheap. */
@@ -912,17 +899,6 @@ export const useCalibrationStore = create<CalibrationState>((set, get) => ({
       if (corr) out.push(corr);
     }
     return out;
-  },
-
-  loadTodayReclaimMin: async (nowMs) => {
-    const db = await resolveDb(get, set);
-    const taskEventsRepo = makeTaskEventsRepo(db);
-    const dayStart = startOfLocalDay(nowMs ?? Date.now());
-
-    const recent = await taskEventsRepo.listRecent(TODAY_RECLAIM_SCAN_LIMIT);
-    return recent
-      .filter((e) => e.status === 'completed' && e.createdAt >= dayStart)
-      .reduce((sum, e) => sum + e.reclaimDividendMin, 0);
   },
 
   resetCategory: async (categoryId) => {

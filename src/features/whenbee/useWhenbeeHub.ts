@@ -12,8 +12,9 @@ import { leadSharpnessOf } from './leadSharpness';
 // ──────────────────────────────────────────────────────────────────────────────
 // useWhenbeeHub — the read-model for the Whenbee hub screen (UI lands in B.3).
 //
-// Composes store reads ONLY (never src/db, per the layer rule): the reclaim
-// totals come from calibrationStore.loadReclaimSummary(); the live honey cells +
+// Composes store reads ONLY (never src/db, per the layer rule): the companion
+// presence + honest-log count come from calibrationStore.loadReclaimSummary();
+// the banked discoveries come from loadDiscoveries(); the live honey cells +
 // lead tier + "blind spot" derive from the calibration cache + tracked list.
 //
 // Framing note: the blind spot is the tracked category with the LOWEST sharpness
@@ -28,9 +29,6 @@ export interface BlindSpot {
 }
 
 export interface WhenbeeHubVM {
-  reclaimLifetimeMin: number;
-  reclaimByCategory: { categoryId: string; name: string; reclaimedMinutes: number }[];
-  biggestArea: { categoryId: string; name: string; reclaimedMinutes: number } | null;
   honestLogCount: number;
   blindSpot: BlindSpot | null;
   /** Overall hub sharpness — the most-ripened category's sharpness (0 if none). */
@@ -45,7 +43,7 @@ export interface WhenbeeHubVM {
   discoveries: Discovery[];
   /** Lifetime discovery count (monotonic — only ever rises). */
   discoveryCount: number;
-  /** Re-pull the async reclaim totals (call on screen focus — deposits don't push). */
+  /** Re-pull the async summary (call on screen focus — deposits don't push). */
   refresh: () => void;
   /** Set (or clear, when blank) the companion's display name, then refresh. */
   renameCompanion: (name: string | null) => void;
@@ -83,13 +81,7 @@ const EMPTY_COMPANION: CompanionPresence = {
   name: null,
 };
 
-const EMPTY_RECLAIM: Pick<
-  WhenbeeHubVM,
-  'reclaimLifetimeMin' | 'reclaimByCategory' | 'biggestArea' | 'honestLogCount' | 'companion'
-> = {
-  reclaimLifetimeMin: 0,
-  reclaimByCategory: [],
-  biggestArea: null,
+const EMPTY_RECLAIM: Pick<WhenbeeHubVM, 'honestLogCount' | 'companion'> = {
   honestLogCount: 0,
   companion: EMPTY_COMPANION,
 };
@@ -120,20 +112,16 @@ export function useWhenbeeHub(): WhenbeeHubVM {
   );
   const [driftDismissed, setDriftDismissed] = useState(() => kv.getString(DRIFT_DISMISS_KEY) === '1');
 
-  // Reclaim totals are an async read; refresh on tracked-set change AND on focus.
+  // Companion presence + honest-log count are an async read; refresh on
+  // tracked-set change AND on focus.
   useEffect(() => {
     let active = true;
     void loadReclaimSummary().then((summary) => {
       if (!active) return;
       setReclaim({
-        reclaimLifetimeMin: summary.lifetimeMin,
-        reclaimByCategory: summary.byCategory,
-        biggestArea: summary.biggestArea,
         honestLogCount: summary.honestLogCount,
         companion: summary.companion,
       });
-      // reclaim_total_view: the hub's Reclaim card is now showing a real total.
-      analytics.capture('reclaim_total_view', { lifetime_minutes: summary.lifetimeMin });
     });
     // Banked discoveries ride the same async path — refreshed on focus so a card
     // banked during the live loop appears the next time the hub is entered.

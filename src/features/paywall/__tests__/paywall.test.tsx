@@ -27,10 +27,8 @@ const useEntitlementMock = (selector: (s: unknown) => unknown) =>
 useEntitlementMock.getState = () => ({ isPro: mockProRef.isPro });
 jest.mock('../useEntitlement', () => ({ useEntitlement: useEntitlementMock }));
 
-// calibration store: the ReclaimEndowment header reads loadReclaimSummary. Stub it
-// to an empty bank so the header stays hidden and the paywall never touches the db.
-// The function reference must be STABLE across renders (as Zustand actions are), or
-// the endowment's effect (keyed on it) would re-run every render.
+// calibration store: stub loadReclaimSummary so the paywall never touches the db,
+// even though no current paywall surface reads it.
 const mockLoadReclaimSummary = () =>
   Promise.resolve({ lifetimeMin: 0, byCategory: [], biggestArea: null, honestLogCount: 0 });
 jest.mock('@/src/stores/calibrationStore', () => ({

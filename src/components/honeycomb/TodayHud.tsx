@@ -17,16 +17,15 @@ import type { HoneycombCell } from './Honeycomb';
 
 // ──────────────────────────────────────────────────────────────────────────────
 // TodayHud — ledger card on Today. Top Pressable = honey HUD routing to the hub;
-// optional hairline footer = inline reclaim stat (left) + RitualSeal (right).
+// optional hairline footer = RitualSeal (right).
 //
 //   (Whenbee)  Setting                                          ›
 //              ▓▓▓▓▓▓▓░░░░░░░░  (honey bar toward the next tier)
 //   ─────────────────────────────────────────────
-//   +10m  reclaimed today          Log one honest thing  ⬡
+//                              Log one honest thing  ⬡
 //
-// Footer renders only when reclaimMin > 0 or ritualEnabled. Reclaim sub-row
-// hides when reclaimMin is 0. Amber here is the sanctioned honey identity;
-// it only ever fills, never drains.
+// Footer renders only when ritualEnabled. Amber here is the sanctioned honey
+// identity; it only ever fills, never drains.
 // ──────────────────────────────────────────────────────────────────────────────
 
 interface TodayHudProps {
@@ -34,8 +33,6 @@ interface TodayHudProps {
   stage: CompanionStage;
   seed: number;
   onPress: () => void;
-  /** Minutes reclaimed today; the footer stat hides when <= 0. */
-  reclaimMin?: number;
   /** Whether the opt-in daily ritual is on (renders the seal). */
   ritualEnabled?: boolean;
   /** Whether something has been logged today (seal plays/holds sealed). */
@@ -49,7 +46,6 @@ export function TodayHud({
   stage,
   seed,
   onPress,
-  reclaimMin = 0,
   ritualEnabled = false,
   ritualDone = false,
   onLogRitual,
@@ -72,8 +68,7 @@ export function TodayHud({
   const scale = useSharedValue(1);
   const pressStyle = useAnimatedStyle(() => ({ transform: [{ scale: scale.get() }] }));
 
-  const showReclaim = reclaimMin > 0;
-  const showFooter = showReclaim || ritualEnabled;
+  const showFooter = ritualEnabled;
 
   // Card is now a column container — top row + optional footer stack vertically.
   const card: ViewStyle = {
@@ -105,21 +100,13 @@ export function TodayHud({
   const footer: ViewStyle = {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: showReclaim && ritualEnabled ? 'space-between' : 'flex-start',
+    justifyContent: 'flex-start',
     gap: t.space[3],
     borderTopWidth: t.borderWidth.share,
     borderTopColor: t.colors.hairline,
     paddingTop: t.space[2.5],
     marginTop: t.space[3],
   };
-  const reclaimRow: ViewStyle = { flexDirection: 'row', alignItems: 'center', gap: t.space[1.5] };
-  const reclaimNum: TextStyle = {
-    fontFamily: 'Inter-Bold',
-    fontSize: t.fontSize.bodySm,
-    color: t.colors.amberText,
-    fontVariant: ['tabular-nums'],
-  };
-  const reclaimLabel: TextStyle = { ...(type.caption as unknown as TextStyle), color: t.colors.inkSoft };
 
   return (
     <Animated.View style={[card, pressStyle]}>
@@ -164,15 +151,9 @@ export function TodayHud({
         <Ionicons name="chevron-forward" size={t.iconSize.sm} color={t.colors.inkFaint} />
       </Pressable>
 
-      {/* Optional hairline footer: reclaim stat (left) + RitualSeal (right) */}
+      {/* Optional hairline footer: RitualSeal */}
       {showFooter ? (
         <View style={footer}>
-          {showReclaim ? (
-            <View style={reclaimRow} accessibilityRole="text" accessibilityLabel={`${reclaimMin} minutes reclaimed today`}>
-              <Text style={reclaimNum}>+{reclaimMin}m</Text>
-              <Text style={reclaimLabel}>reclaimed today</Text>
-            </View>
-          ) : null}
           {ritualEnabled ? (
             <RitualSeal done={ritualDone} onLog={onLogRitual ?? (() => {})} />
           ) : null}

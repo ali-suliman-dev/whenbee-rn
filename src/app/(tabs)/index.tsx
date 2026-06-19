@@ -41,7 +41,6 @@ export default function Today() {
     done,
     totalCount,
     categoryName,
-    todayReclaimMin,
     companionStage,
     companionSeed,
     reclaimLifetimeMin,
@@ -184,7 +183,6 @@ export default function Today() {
               stage={companionStage}
               seed={companionSeed}
               onPress={() => router.push('/(tabs)/whenbee')}
-              reclaimMin={todayReclaimMin}
               ritualEnabled={dailyRitualEnabled}
               ritualDone={done.length > 0}
               onLogRitual={() => router.push('/(modals)/retro')}
