@@ -111,16 +111,23 @@ These skills are **required**, not optional. Before writing or changing code in 
 | Writing/editing any **TypeScript** — types, generics, engine/domain contracts | `typescript-expert` |
 | Building or changing **React Native components, screens, hooks, navigation, native integrations** | `react-native-expert` |
 | Optimizing RN **performance, re-renders, lists, bundle, startup** | `vercel-react-native-skills` |
-| Making **architecture/structure** decisions — new layers, stores, data flow, module boundaries, folder layout | `react-native-architecture` |
-| Making **any design decision** — spacing, sizing, fonts/typography, layout, color, visual hierarchy, creating or styling **any** UI element | `ui-design:react-native-design` |
+| Making **architecture/structure** decisions — new layers, stores, data flow, module boundaries, folder layout | `react-native-architecture`, `software-architecture` |
+| Making **any design decision** — spacing, sizing, fonts/typography, layout, color, visual hierarchy, creating or styling **any** UI element | `ui-design:react-native-design`, `ui-design:visual-design-foundations`, `emil-design-eng` |
+| Designing for **iOS-native look & feel** — platform conventions, nav patterns, system components, haptics, safe-area/notch behavior | `ui-design:mobile-ios-design` |
+| Designing **interaction & UX** — gestures, taps, focus/pressed/disabled states, feedback, flows, usability, accessibility | `ui-design:interaction-design`, `ux-principles` |
 | Creating, editing, or adding **any animation or transition** — Reanimated worklets, gestures, micro-interactions, screen/page transitions, loading/state motion | `creating-reanimated-animations`, `motion-design` |
+| Creating or animating **SVG / vector graphics** — icons, paths, illustrations, animated vector assets | `svg-animations` |
+| Working on **retention/engagement** — onboarding, activation, habit/streak-free loops, churn reduction, re-engagement, notification cadence | `retention-optimization` |
 | Writing or editing **any user-facing copy** — strings, labels, button text, headings, onboarding/paywall/empty-state text, microcopy, errors, notifications | `conversion-psychology`, `humanizer` |
 
 Process skills come first: for new features run `superpowers:brainstorming` before implementing; for bugs run `superpowers:systematic-debugging` before proposing a fix. Then the implementation skills above.
 
 ### Design, motion & copy — HARD RULE
 
-- **`ui-design:react-native-design` is mandatory for every design-related change.** No spacing value, font size, element, or layout gets chosen by eye or guessed — invoke the skill first and let it drive the decision so spacing rhythm, type scale, and alignment are deliberate.
+- **The design skill set is mandatory for every design-related change** — `ui-design:react-native-design` + `ui-design:visual-design-foundations` + `emil-design-eng` for any visual/layout work, plus `ui-design:mobile-ios-design` for iOS-native fit and `ui-design:interaction-design` + `ux-principles` for any interaction/flow/state. No spacing value, font size, element, or layout gets chosen by eye or guessed — invoke the relevant skills first and let them drive the decision so spacing rhythm, type scale, alignment, and interaction states are deliberate.
+- **`svg-animations` is mandatory before creating or animating any SVG/vector asset** — icons, paths, illustrations. Don't hand-roll vector motion.
+- **`retention-optimization` is mandatory for any retention/engagement work** — onboarding, activation, re-engagement, notification cadence, loop design. (Honor the project invariants: no guilt, no streaks, no shame mechanics — never trade them for engagement.)
+- **`software-architecture` is mandatory (with `react-native-architecture`) for any structural decision** — new layers, stores, module boundaries, data flow, folder layout.
 - **Every spacing/size/font/color value MUST come from a theme token in `src/theme/tokens.ts`** via `useTheme()`. Never inline a raw number or hex. If the value you need doesn't exist as a token, **add it to `tokens.ts`** (it'll be reused) and consume the token — do not hardcode a one-off.
 - **`creating-reanimated-animations` + `motion-design` are mandatory before writing or touching any animation.** Invoke both whenever motion is created, edited, or added — timing, easing, and choreography come from the skills, not arbitrary durations. (Honor the project invariants: no guilt motion; honey/sharpness stays monotonic.)
 - **`conversion-psychology` + `humanizer` are mandatory for every piece of user-facing copy.** Any string a user reads — labels, buttons, headings, onboarding/paywall/empty-state, microcopy, errors, notifications — gets shaped by `conversion-psychology` (persuasion, clarity, motivation) and passed through `humanizer` (strip AI-slop tells). No raw, generic, AI-sounding text ships. (Honor the project invariant: no guilt/shame language — never violate it for the sake of conversion.)

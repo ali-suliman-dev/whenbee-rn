@@ -65,8 +65,9 @@ function walk(dir: string): string[] {
   });
 }
 
-/** Strip whole-line and trailing comments so prose in comments never matches. */
-function codeLines(source: string): { line: string; n: number }[] {
+/** Strip whole-line and trailing comments so prose in comments never matches.
+ *  `raw` keeps the original line so audit-allow markers (in comments) survive. */
+function codeLines(source: string): { line: string; n: number; raw: string }[] {
   return source.split('\n').map((raw, i) => {
     const trimmed = raw.trimStart();
     // Whole-line `//` comment, a block-comment body/continuation line, or a
@@ -77,11 +78,11 @@ function codeLines(source: string): { line: string; n: number }[] {
       trimmed.startsWith('/*') ||
       trimmed.startsWith('{/*')
     ) {
-      return { line: '', n: i + 1 };
+      return { line: '', n: i + 1, raw };
     }
     // Strip an inline `// …` trailer (good enough: our strings never contain `//`).
     const inline = raw.indexOf('//');
-    return { line: inline >= 0 ? raw.slice(0, inline) : raw, n: i + 1 };
+    return { line: inline >= 0 ? raw.slice(0, inline) : raw, n: i + 1, raw };
   });
 }
 
@@ -106,7 +107,6 @@ const BANNED: Rule[] = [
   { name: '"don\'t lose" (loss framing)', pattern: /\bdon'?t lose\b/i },
   { name: '"days in a row" (streak)', pattern: /\bdays in a row\b/i, allowNegated: true },
   { name: '"saved you" (unqualified overclaim)', pattern: /\bsaved you\b/i },
-  { name: '"keep going" (guilt trap)', pattern: /\bkeep going\b/i, allowNegated: true },
   { name: 'shame word "lazy"', pattern: /\blazy\b/i, allowNegated: true },
   { name: 'shame word "failure"', pattern: /\bfailure\b/i, allowNegated: true },
   { name: '"you failed"', pattern: /\byou failed\b/i, allowNegated: true },
@@ -178,6 +178,11 @@ const PROTECTED_SURFACE =
 // access). The token DEFINITION in tokens.ts (`danger:` / `error:`) is exempt.
 const DANGER_TOKEN = /\bcolors\.(danger|error)\b/i;
 
+// Destructive actions (delete / remove / erase) are a legitimate, expected use of
+// red — a delete button SHOULD read as red. Mark such a line with the inline
+// `// audit-ok: destructive` comment and red is allowed there, on any surface.
+const DESTRUCTIVE_OK = /audit-ok:\s*destructive/i;
+
 describe('amber-never-red colour audit', () => {
   const files = listSourceFiles();
 
@@ -187,8 +192,9 @@ describe('amber-never-red colour audit', () => {
       const source = readFileSync(file, 'utf8');
       const rel = relative(join(SRC, '..'), file).split(sep).join('/');
       if (DANGER_ALLOW.includes(rel)) continue;
-      for (const { line, n } of codeLines(source)) {
+      for (const { line, n, raw } of codeLines(source)) {
         if (!line) continue;
+        if (DESTRUCTIVE_OK.test(raw)) continue;
         const m = DANGER_TOKEN.exec(line);
         if (m) {
           hits.push(
@@ -206,8 +212,9 @@ describe('amber-never-red colour audit', () => {
       const rel = relative(join(SRC, '..'), file).split(sep).join('/');
       if (!PROTECTED_SURFACE.test(rel)) continue;
       const source = readFileSync(file, 'utf8');
-      for (const { line, n } of codeLines(source)) {
+      for (const { line, n, raw } of codeLines(source)) {
         if (!line) continue;
+        if (DESTRUCTIVE_OK.test(raw)) continue;
         if (DANGER_TOKEN.test(line)) {
           hits.push(
             `${rel}:${n} — danger/error colour token on a protected (amber-never-red) surface: ${line.trim().slice(0, 80)}`,

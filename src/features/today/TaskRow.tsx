@@ -125,7 +125,7 @@ export function TaskRow({
   const tookNum: TextStyle = { ...leadNum, fontSize: t.fontSize.sm };
   const unit: TextStyle = { ...(type.caption as unknown as TextStyle), fontSize: t.fontSize.xs, color: t.colors.inkSoft };
   const deleteAction: ViewStyle = {
-    backgroundColor: t.colors.danger,
+    backgroundColor: t.colors.danger, // audit-ok: destructive — a delete action reads as red
     borderTopRightRadius: t.radii.card,
     borderBottomRightRadius: t.radii.card,
     justifyContent: 'center',
