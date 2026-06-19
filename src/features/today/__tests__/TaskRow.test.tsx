@@ -14,15 +14,13 @@ jest.mock('react-native-gesture-handler/ReanimatedSwipeable', () => {
 });
 
 describe('TaskRow', () => {
-  it('queued: leads with the guess, supports with "plan ~N", fires onPress', () => {
+  it('queued: leads with the honest estimate, supports with the guess, fires onPress', () => {
     const onPress = jest.fn();
     render(
       <TaskRow title="Buy groceries" categoryLabel="Errands" guessMin={15} honestMin={25} onPress={onPress} />,
     );
-    expect(screen.getByText('15')).toBeOnTheScreen();
-    expect(screen.getByText('plan ')).toBeOnTheScreen();
     expect(screen.getByText('~25')).toBeOnTheScreen();
-    expect(screen.getByTestId('taskrow-edge')).toBeOnTheScreen();
+    expect(screen.getByText('guessed 15')).toBeOnTheScreen();
     fireEvent.press(screen.getByText('Buy groceries'));
     expect(onPress).toHaveBeenCalledTimes(1);
   });
