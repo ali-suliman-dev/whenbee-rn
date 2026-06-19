@@ -199,6 +199,7 @@ export default function AddTask() {
           <HonestSuggestionCard
             honestMinutes={a.suggestion.honestMinutes}
             guessMinutes={a.suggestion.guessMinutes}
+            preEstimate={a.preEstimate}
           />
         ) : null}
 

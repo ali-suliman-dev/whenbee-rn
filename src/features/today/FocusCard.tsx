@@ -24,10 +24,12 @@ interface FocusCardProps {
   summary: CalibrationSummary;
   /** Projected finish clock, e.g. "4:11pm" (computed by the screen from now + honest). */
   finishClock: string;
+  /** True when the honest number is a prior-only estimate (no personal data yet). */
+  preEstimate?: boolean;
   onStart: () => void;
 }
 
-export function FocusCard({ category, categoryLabel, taskTitle, summary, finishClock, onStart }: FocusCardProps) {
+export function FocusCard({ category, categoryLabel, taskTitle, summary, finishClock, preEstimate, onStart }: FocusCardProps) {
   const t = useTheme();
 
   const delta = summary.honestMinutes - summary.guessMinutes;
@@ -71,6 +73,10 @@ export function FocusCard({ category, categoryLabel, taskTitle, summary, finishC
     fontFamily: 'Inter-Bold' as TextStyle['fontFamily'],
     fontVariant: ['tabular-nums'],
   };
+  const preEstimateNote: TextStyle = {
+    ...(type.caption as unknown as TextStyle),
+    color: t.colors.inkSoft,
+  };
 
   return (
     <Card tone="raised" style={{ gap: t.space[4] }}>
@@ -91,6 +97,10 @@ export function FocusCard({ category, categoryLabel, taskTitle, summary, finishC
       </View>
 
       <GapLine guessMin={summary.guessMinutes} honestMin={summary.honestMinutes} />
+
+      {preEstimate ? (
+        <Text style={preEstimateNote}>Starting estimate · sharpens as you log</Text>
+      ) : null}
 
       <View style={contextRow}>
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: t.space[1.5] }}>
