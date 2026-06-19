@@ -15,6 +15,12 @@ export interface CategoryStatRow {
   adaptSpeed: AdaptSpeed;
   updatedAt: number;
   reclaimedMinutes: number;
+  /** Affine sufficient statistics (recency-weighted). */
+  sw: number;
+  swx: number;
+  swy: number;
+  swxx: number;
+  swxy: number;
 }
 
 /** A single raw log row (system of record). */

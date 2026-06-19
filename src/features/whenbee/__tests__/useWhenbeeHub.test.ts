@@ -49,6 +49,7 @@ describe('useWhenbeeHub', () => {
       adaptSpeed: 'balanced',
       updatedAt: T0,
       reclaimedMinutes: 50,
+    sw: 0, swx: 0, swy: 0, swxx: 0, swxy: 0,
     });
     // admin: less reclaim (20), LOWEST sharpness with logs → blind spot.
     await db.upsertCategoryStat({
@@ -61,6 +62,7 @@ describe('useWhenbeeHub', () => {
       adaptSpeed: 'balanced',
       updatedAt: T0,
       reclaimedMinutes: 20,
+    sw: 0, swx: 0, swy: 0, swxx: 0, swxy: 0,
     });
     // errands: lower sharpness than admin BUT n=0 → does not qualify as blind spot.
     await db.upsertCategoryStat({
@@ -73,6 +75,7 @@ describe('useWhenbeeHub', () => {
       adaptSpeed: 'balanced',
       updatedAt: T0,
       reclaimedMinutes: 0,
+    sw: 0, swx: 0, swy: 0, swxx: 0, swxy: 0,
     });
     await db.addReclaim(70);
 

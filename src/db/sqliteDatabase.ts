@@ -38,6 +38,11 @@ interface CategoryStatDbRow {
   adapt_speed: string;
   updated_at: number;
   reclaimed_minutes: number;
+  sw: number;
+  swx: number;
+  swy: number;
+  swxx: number;
+  swxy: number;
 }
 
 interface CompanionDbRow {
@@ -97,6 +102,11 @@ function mapCategoryStat(r: CategoryStatDbRow): CategoryStatRow {
     adaptSpeed: r.adapt_speed as AdaptSpeed,
     updatedAt: r.updated_at,
     reclaimedMinutes: r.reclaimed_minutes,
+    sw: r.sw,
+    swx: r.swx,
+    swy: r.swy,
+    swxx: r.swxx,
+    swxy: r.swxy,
   };
 }
 
@@ -138,8 +148,8 @@ export async function createSqliteDatabase(name = 'whenbee.db'): Promise<Databas
     async upsertCategoryStat(row: CategoryStatRow): Promise<void> {
       await db.runAsync(
         `INSERT INTO category_stats
-           (category_id, ewma_logr, n, m_effective, sharpness, prior_mult, adapt_speed, updated_at, reclaimed_minutes)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+           (category_id, ewma_logr, n, m_effective, sharpness, prior_mult, adapt_speed, updated_at, reclaimed_minutes, sw, swx, swy, swxx, swxy)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
          ON CONFLICT(category_id) DO UPDATE SET
            ewma_logr = excluded.ewma_logr,
            n = excluded.n,
@@ -148,7 +158,12 @@ export async function createSqliteDatabase(name = 'whenbee.db'): Promise<Databas
            prior_mult = excluded.prior_mult,
            adapt_speed = excluded.adapt_speed,
            updated_at = excluded.updated_at,
-           reclaimed_minutes = excluded.reclaimed_minutes`,
+           reclaimed_minutes = excluded.reclaimed_minutes,
+           sw = excluded.sw,
+           swx = excluded.swx,
+           swy = excluded.swy,
+           swxx = excluded.swxx,
+           swxy = excluded.swxy`,
         row.categoryId,
         row.logEwma,
         row.n,
@@ -157,7 +172,12 @@ export async function createSqliteDatabase(name = 'whenbee.db'): Promise<Databas
         row.priorMult,
         row.adaptSpeed,
         row.updatedAt,
-        row.reclaimedMinutes
+        row.reclaimedMinutes,
+        row.sw,
+        row.swx,
+        row.swy,
+        row.swxx,
+        row.swxy
       );
     },
 

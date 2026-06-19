@@ -45,6 +45,7 @@ async function seed(opts: { withInsight: boolean }): Promise<Database> {
     adaptSpeed: 'balanced',
     updatedAt: T0,
     reclaimedMinutes: 0,
+  sw: 0, swx: 0, swy: 0, swxx: 0, swxy: 0,
   });
   if (opts.withInsight) {
     const actuals = [60, 15, 90, 12, 30, 30, 30, 30];
@@ -91,6 +92,7 @@ describe('CategoryDetailScreen', () => {
       adaptSpeed: 'balanced',
       updatedAt: T0,
       reclaimedMinutes: 0,
+    sw: 0, swx: 0, swy: 0, swxx: 0, swxy: 0,
     });
     for (let i = 0; i < 8; i++) {
       await db.insertTaskEvent(event({ id: `s${i}`, estimateMin: 15, actualMin: 30, createdAt: T0 + i }));

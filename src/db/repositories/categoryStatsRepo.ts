@@ -24,6 +24,11 @@ function seedRow(categoryId: string): CategoryStatRow {
     adaptSpeed: 'balanced',
     updatedAt: 0,
     reclaimedMinutes: 0,
+    sw: 0,
+    swx: 0,
+    swy: 0,
+    swxx: 0,
+    swxy: 0,
   };
 }
 

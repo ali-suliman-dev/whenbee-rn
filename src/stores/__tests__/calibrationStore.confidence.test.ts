@@ -72,6 +72,11 @@ async function seedCompletedLogs(
     adaptSpeed: existing.adaptSpeed,
     updatedAt: T0,
     reclaimedMinutes: existing.reclaimedMinutes,
+    sw: existing.sw,
+    swx: existing.swx,
+    swy: existing.swy,
+    swxx: existing.swxx,
+    swxy: existing.swxy,
   });
 }
 

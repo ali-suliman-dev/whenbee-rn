@@ -54,6 +54,7 @@ describe('applyLog — fuel Layer 2 (maxTier) is monotonic', () => {
       adaptSpeed: 'balanced',
       updatedAt: 1,
       reclaimedMinutes: 0,
+    sw: 0, swx: 0, swy: 0, swxx: 0, swxy: 0,
     });
     await useCalibrationStore.getState().applyLog({
       category: 'cleaning',
@@ -92,6 +93,7 @@ describe('loadReclaimSummary — companion presence block', () => {
       adaptSpeed: 'balanced',
       updatedAt: 1,
       reclaimedMinutes: 0,
+    sw: 0, swx: 0, swy: 0, swxx: 0, swxy: 0,
     });
     await useCalibrationStore.getState().applyLog({
       category: 'cleaning',

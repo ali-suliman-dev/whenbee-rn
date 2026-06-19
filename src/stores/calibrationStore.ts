@@ -460,6 +460,11 @@ export const useCalibrationStore = create<CalibrationState>((set, get) => ({
         adaptSpeed: input.adaptSpeed,
         updatedAt: nowMs,
         reclaimedMinutes: prev.reclaimedMinutes,
+        sw: prev.sw,
+        swx: prev.swx,
+        swy: prev.swy,
+        swxx: prev.swxx,
+        swxy: prev.swxy,
       });
       if (result.reclaimDeltaMin > 0) {
         await companionRepo.deposit(result.reclaimDeltaMin);
@@ -924,6 +929,11 @@ export const useCalibrationStore = create<CalibrationState>((set, get) => ({
       adaptSpeed,
       updatedAt: now,
       reclaimedMinutes: 0,
+      sw: 0,
+      swx: 0,
+      swy: 0,
+      swxx: 0,
+      swxy: 0,
     });
 
     // Patch the cache so dependent screens reflect the fresh prior immediately.

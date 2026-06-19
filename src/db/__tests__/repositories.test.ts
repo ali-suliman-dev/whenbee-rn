@@ -33,6 +33,11 @@ describe('categoryStatsRepo', () => {
       adaptSpeed: 'reactive',
       updatedAt: 5000,
       reclaimedMinutes: 0,
+      sw: 0,
+      swx: 0,
+      swy: 0,
+      swxx: 0,
+      swxy: 0,
     };
     await repo.upsert(row);
     expect(await repo.get('cleaning')).toEqual(row);
@@ -69,6 +74,11 @@ describe('categoryStatsRepo', () => {
       adaptSpeed: 'balanced',
       updatedAt: 1,
       reclaimedMinutes: 0,
+      sw: 0,
+      swx: 0,
+      swy: 0,
+      swxx: 0,
+      swxy: 0,
     });
     expect(spy).toHaveBeenCalledTimes(1);
   });

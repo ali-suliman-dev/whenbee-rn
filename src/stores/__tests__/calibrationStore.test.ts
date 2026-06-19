@@ -209,6 +209,7 @@ describe('calibrationStore — loadCategoryDetail', () => {
       adaptSpeed: 'balanced',
       updatedAt: T0,
       reclaimedMinutes: 0,
+    sw: 0, swx: 0, swy: 0, swxx: 0, swxy: 0,
     });
 
     // 8 completed events whose ln(ratio) variance SHRINKS over time:
@@ -275,6 +276,7 @@ describe('calibrationStore — resetCategory', () => {
       adaptSpeed: 'reactive',
       updatedAt: T0,
       reclaimedMinutes: 0,
+    sw: 0, swx: 0, swy: 0, swxx: 0, swxy: 0,
     });
     await db.insertTaskEvent(seedEvent({ id: 'r1', createdAt: T0 }));
     await db.insertTaskEvent(seedEvent({ id: 'r2', createdAt: T0 + 1 }));
@@ -492,6 +494,7 @@ describe('calibrationStore — loadReclaimSummary', () => {
       adaptSpeed: 'balanced',
       updatedAt: T0,
       reclaimedMinutes: 30,
+    sw: 0, swx: 0, swy: 0, swxx: 0, swxy: 0,
     });
     // admin: bigger reclaim (50), 5 trained logs → biggest area
     await db.upsertCategoryStat({
@@ -504,6 +507,7 @@ describe('calibrationStore — loadReclaimSummary', () => {
       adaptSpeed: 'balanced',
       updatedAt: T0,
       reclaimedMinutes: 50,
+    sw: 0, swx: 0, swy: 0, swxx: 0, swxy: 0,
     });
     // errands: no reclaim, no logs
     await db.upsertCategoryStat({
@@ -516,6 +520,7 @@ describe('calibrationStore — loadReclaimSummary', () => {
       adaptSpeed: 'balanced',
       updatedAt: T0,
       reclaimedMinutes: 0,
+    sw: 0, swx: 0, swy: 0, swxx: 0, swxy: 0,
     });
     // lifetime companion total banked independently of per-category.
     await db.addReclaim(80);
