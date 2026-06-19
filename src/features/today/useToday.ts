@@ -50,6 +50,8 @@ interface UseTodayResult {
   reclaimLifetimeMin: number;
   /** True once the user has ever logged — picks first-run vs daily empty copy. */
   hasEverLogged: boolean;
+  /** True when the focus task's honest number is based on the population prior (cold, n < 3). */
+  focusPreEstimate: boolean;
 }
 
 /** Title-case a custom-category slug (e.g. "deep_work" → "Deep Work"). */
@@ -104,8 +106,8 @@ export function useToday(): UseTodayResult {
   const honestFor = (task: TodayTask): CalibrationSummary => {
     const cached = statsByCategory[task.category];
     const category = cached
-      ? { mEffective: cached.mEffective, n: cached.n }
-      : { mEffective: priorFor(task.category), n: 0 };
+      ? { fit: cached.fit, n: cached.n }
+      : { fit: { a: 0, b: priorFor(task.category) }, n: 0 };
     return resolveSuggestion({ guessMinutes: task.guessMin, category, recurring: null });
   };
 
@@ -182,5 +184,6 @@ export function useToday(): UseTodayResult {
     companionSeed,
     reclaimLifetimeMin,
     hasEverLogged: lifetimeNectar > 0,
+    focusPreEstimate: summary?.basis === 'prior',
   };
 }

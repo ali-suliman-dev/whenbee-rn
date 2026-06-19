@@ -60,7 +60,7 @@ describe('Today screen', () => {
   it('renders the focus card plan total + guess→plan gap for a focus task', () => {
     useCalibrationStore.setState({
       statsByCategory: {
-        getting_ready: { mEffective: 2.0, n: 8, sharpness: 70, tier: 'Ripening' },
+        getting_ready: { mEffective: 2.0, n: 8, sharpness: 70, tier: 'Ripening', fit: { a: 0, b: 2.0 } },
       },
     });
     useTasksStore
@@ -81,7 +81,7 @@ describe('Today screen', () => {
   it('leads up-next rows with the honest estimate and supports with the guess', async () => {
     useCalibrationStore.setState({
       statsByCategory: {
-        getting_ready: { mEffective: 2.0, n: 8, sharpness: 70, tier: 'Ripening' },
+        getting_ready: { mEffective: 2.0, n: 8, sharpness: 70, tier: 'Ripening', fit: { a: 0, b: 2.0 } },
       },
     });
     // First task becomes the focus card; second is an up-next row with guessMin 25.

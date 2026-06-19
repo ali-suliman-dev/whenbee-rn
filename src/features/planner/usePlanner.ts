@@ -98,8 +98,8 @@ export function usePlanner(args: UsePlannerArgs = {}) {
   function suggestedDuration(category: string, guessMinutes = 15): number {
     const cached = statsByCategory[category];
     const cat = cached
-      ? { mEffective: cached.mEffective, n: cached.n }
-      : { mEffective: priorFor(category), n: 0 };
+      ? { fit: cached.fit, n: cached.n }
+      : { fit: { a: 0, b: priorFor(category) }, n: 0 };
     return resolveSuggestion({ guessMinutes, category: cat, recurring: null }).honestMinutes;
   }
 

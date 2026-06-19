@@ -64,7 +64,7 @@ describe('useToday', () => {
   it('uses personal stats (basis "personal") and rounds honest to 5 when n>=3', () => {
     useCalibrationStore.setState({
       statsByCategory: {
-        cleaning: { mEffective: 2.0, n: 3, sharpness: 50, tier: 'Setting' },
+        cleaning: { mEffective: 2.0, n: 3, sharpness: 50, tier: 'Setting', fit: { a: 0, b: 2.0 } },
       },
     });
     useTasksStore
@@ -76,6 +76,30 @@ describe('useToday', () => {
     expect(result.current.summary?.honestMinutes).toBe(30);
     expect(result.current.summary?.basis).toBe('personal');
     expect(result.current.summary?.label).toBe('based on your last 3 times');
+  });
+
+  it('focusPreEstimate is true for a cold category (n=0)', () => {
+    // No cached stat → prior fallback → focusPreEstimate = true.
+    useTasksStore
+      .getState()
+      .addTask({ label: 'Cold task', category: 'cleaning', guessMin: 15, nowMs: T0 });
+
+    const { result } = renderHook(() => useToday());
+    expect(result.current.focusPreEstimate).toBe(true);
+  });
+
+  it('focusPreEstimate is false when the category has n>=3 personal logs', () => {
+    useCalibrationStore.setState({
+      statsByCategory: {
+        cleaning: { mEffective: 2.0, n: 3, sharpness: 50, tier: 'Setting', fit: { a: 0, b: 2.0 } },
+      },
+    });
+    useTasksStore
+      .getState()
+      .addTask({ label: 'Personal task', category: 'cleaning', guessMin: 15, nowMs: T0 });
+
+    const { result } = renderHook(() => useToday());
+    expect(result.current.focusPreEstimate).toBe(false);
   });
 
   it('title-cases custom category slugs', () => {

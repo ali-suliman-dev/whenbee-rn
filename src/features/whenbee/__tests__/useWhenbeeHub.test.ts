@@ -82,9 +82,9 @@ describe('useWhenbeeHub', () => {
     // Cells are derived from the calibration cache (warm it like the app boot does).
     useCalibrationStore.setState({
       statsByCategory: {
-        cleaning: { mEffective: 1.6, n: 6, sharpness: 70, tier: 'Ripening' },
-        admin: { mEffective: 1.3, n: 2, sharpness: 15, tier: 'Setting' },
-        errands: { mEffective: priorFor('errands'), n: 0, sharpness: 5, tier: 'Raw' },
+        cleaning: { mEffective: 1.6, n: 6, sharpness: 70, tier: 'Ripening', fit: { a: 0, b: 1.6 } },
+        admin: { mEffective: 1.3, n: 2, sharpness: 15, tier: 'Setting', fit: { a: 0, b: 1.3 } },
+        errands: { mEffective: priorFor('errands'), n: 0, sharpness: 5, tier: 'Raw', fit: { a: 0, b: priorFor('errands') } },
       },
     });
 
@@ -120,7 +120,7 @@ describe('useWhenbeeHub', () => {
     trackCategories(['cleaning']);
     // cold stat: n=0.
     useCalibrationStore.setState({
-      statsByCategory: { cleaning: { mEffective: 2.0, n: 0, sharpness: 0, tier: 'Raw' } },
+      statsByCategory: { cleaning: { mEffective: 2.0, n: 0, sharpness: 0, tier: 'Raw', fit: { a: 0, b: 2.0 } } },
     });
 
     const { result } = renderHook(() => useWhenbeeHub());

@@ -46,8 +46,8 @@ beforeEach(() => {
   useEntitlement.setState({ isPro: true, ready: true });
   useCalibrationStore.setState({
     statsByCategory: {
-      writing: { mEffective: 2, n: 8, sharpness: 50, tier: 'Setting' },
-      calls: { mEffective: 1, n: 8, sharpness: 50, tier: 'Setting' },
+      writing: { mEffective: 2, n: 8, sharpness: 50, tier: 'Setting', fit: { a: 0, b: 2 } },
+      calls: { mEffective: 1, n: 8, sharpness: 50, tier: 'Setting', fit: { a: 0, b: 1 } },
     },
   });
 });

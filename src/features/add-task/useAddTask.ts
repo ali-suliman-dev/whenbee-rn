@@ -38,6 +38,8 @@ export interface UseAddTaskResult {
   setGuessMin: (m: number) => void;
   /** Live honest suggestion for the current category + guess (null until a category is picked). */
   suggestion: CalibrationSummary | null;
+  /** True when the suggestion is based on the population prior (cold category, n < 3). */
+  preEstimate: boolean;
   canSubmit: boolean;
   onAddAndStart: () => void;
   /** Queues the task without navigating; returns true on success so the screen
@@ -101,8 +103,8 @@ export function useAddTask(): UseAddTaskResult {
     if (category === null) return null;
     const cached = statsByCategory[category];
     const cat = cached
-      ? { mEffective: cached.mEffective, n: cached.n }
-      : { mEffective: priorFor(category), n: 0 };
+      ? { fit: cached.fit, n: cached.n }
+      : { fit: { a: 0, b: priorFor(category) }, n: 0 };
     return resolveSuggestion({ guessMinutes: guessMin, category: cat, recurring: null });
   }, [category, guessMin, statsByCategory]);
 
@@ -169,6 +171,7 @@ export function useAddTask(): UseAddTaskResult {
     guessMin,
     setGuessMin,
     suggestion,
+    preEstimate: suggestion?.basis === 'prior',
     canSubmit,
     onAddAndStart,
     addToToday,
