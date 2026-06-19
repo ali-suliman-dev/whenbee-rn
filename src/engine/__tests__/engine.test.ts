@@ -5,7 +5,7 @@ import { sharpnessFromWindow, tierFor, logsToNextTier, tierBandProgress } from '
 import { detectInsight } from '../insight';
 import { buildTrendSeries } from '../trend';
 import { applyLog } from '../update';
-import { emptyAffineStats, solveAffine } from '../affine';
+import { emptyAffineStats, solveAffine, affineHonestExact } from '../affine';
 import { priorFor, GLOBAL_PRIOR, CATEGORY_PRIORS } from '../priors';
 
 describe('clampRatio', () => {
@@ -204,7 +204,7 @@ describe('applyLog monotonic sharpness', () => {
 describe('applyLog affine adaptation', () => {
   const base = {
     status: 'completed' as const,
-    source: 'live' as const,
+    source: 'timed' as const,
     adaptSpeed: 'balanced' as const,
     prior: 1.8,
     recurring: null,
@@ -226,6 +226,9 @@ describe('applyLog affine adaptation', () => {
       n = res.category.n;
     }
     const fit = solveAffine(stats, 1.8);
+    const honestAt15 = affineHonestExact(fit, 15);
+    expect(honestAt15).toBeLessThan(27); // moved below the cold prior (1.8×15=27) toward the observed 1.2× pace
+    expect(honestAt15).toBeGreaterThan(15);
     expect(fit.b).toBeLessThan(1.55); // pulled down from 1.8 toward 1.2 (ridge prior holds it back)
     expect(fit.b).toBeGreaterThan(1.15);
   });
