@@ -24,6 +24,7 @@ export function HonestSuggestionCard({
   confidence,
   range,
   reasonNote,
+  preEstimate,
 }: {
   honestMinutes: number;
   guessMinutes: number;
@@ -34,6 +35,8 @@ export function HonestSuggestionCard({
   /** OPTIONAL Pro-only B15 note. Display-only — a quiet second line under the
    *  honest line; never changes the honest number or delta. */
   reasonNote?: string;
+  /** OPTIONAL. When true and no reasonNote, shows the pre-estimate label. */
+  preEstimate?: boolean;
 }) {
   const t = useTheme();
   const delta = honestMinutes - guessMinutes;
@@ -95,12 +98,19 @@ export function HonestSuggestionCard({
   const moreMuted: TextStyle = { fontSize: t.fontSize.sm, color: t.colors.inkSoft };
   const learningSuffix: TextStyle = { fontSize: t.fontSize.sm, color: t.colors.inkSoft };
 
-  const a11yLabel =
-    showRange && range
-      ? `Honest range ${range.lowMinutes} to ${range.highMinutes} minutes, still learning`
-      : delta > 0
+  const a11yLabel = (() => {
+    if (showRange && range) {
+      return `Honest range ${range.lowMinutes} to ${range.highMinutes} minutes, still learning`;
+    }
+    const base =
+      delta > 0
         ? `Honest estimate about ${honestMinutes} minutes, ${delta} more than your guess`
         : `Honest estimate about ${honestMinutes} minutes`;
+    if (preEstimate && !showRange) {
+      return `${base}, starting estimate, sharpens as you log`;
+    }
+    return base;
+  })();
 
   return (
     <View style={card} accessibilityLabel={a11yLabel}>
@@ -133,7 +143,11 @@ export function HonestSuggestionCard({
             </>
           )}
         </View>
-        {reasonNote ? <AppText style={noteText}>{reasonNote}</AppText> : null}
+        {reasonNote ? (
+          <AppText style={noteText}>{reasonNote}</AppText>
+        ) : preEstimate ? (
+          <AppText style={noteText}>Starting estimate · sharpens as you log</AppText>
+        ) : null}
       </View>
     </View>
   );
