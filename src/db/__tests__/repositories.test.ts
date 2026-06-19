@@ -20,9 +20,11 @@ describe('categoryStatsRepo', () => {
     expect(row.updatedAt).toBe(0);
   });
 
-  it('returns the upserted row after upsert', async () => {
+  it('returns the upserted row after upsert (with real affine sums)', async () => {
     const db = createMemoryDatabase();
     const repo = makeCategoryStatsRepo(db);
+    // Use a row with real affine sums so withAffineSeed does not trigger.
+    // (Legacy rows with n>0 and sw===0 get lazily seeded; this row has sw>0.)
     const row: CategoryStatRow = {
       categoryId: 'cleaning',
       n: 5,
@@ -33,11 +35,11 @@ describe('categoryStatsRepo', () => {
       adaptSpeed: 'reactive',
       updatedAt: 5000,
       reclaimedMinutes: 0,
-      sw: 0,
-      swx: 0,
-      swy: 0,
-      swxx: 0,
-      swxy: 0,
+      sw: 3,
+      swx: 45,
+      swy: 81,
+      swxx: 675,
+      swxy: 1215,
     };
     await repo.upsert(row);
     expect(await repo.get('cleaning')).toEqual(row);

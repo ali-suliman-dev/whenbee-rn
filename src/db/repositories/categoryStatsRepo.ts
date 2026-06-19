@@ -4,6 +4,7 @@
 // first suggestion is already smart and downstream code never branches on null.
 
 import { priorFor } from '@/src/engine/priors';
+import { emptyAffineStats, seedAffineFromMultiplier } from '@/src/engine';
 import type { Database } from '../Database';
 import type { CategoryStatRow } from '../types';
 
@@ -24,19 +25,31 @@ function seedRow(categoryId: string): CategoryStatRow {
     adaptSpeed: 'balanced',
     updatedAt: 0,
     reclaimedMinutes: 0,
-    sw: 0,
-    swx: 0,
-    swy: 0,
-    swxx: 0,
-    swxy: 0,
+    ...emptyAffineStats(),
   };
+}
+
+/**
+ * Legacy rows (n>0) predate the affine columns — their sums are zero.
+ * Seed them from the stored scalar so the honest number is identical
+ * right after migration. The anchor MUST match the value used when solving
+ * (priorMult), per the seedAffineFromMultiplier contract.
+ */
+function withAffineSeed(row: CategoryStatRow): CategoryStatRow {
+  if (row.n > 0 && row.sw === 0 && row.swxx === 0) {
+    return {
+      ...row,
+      ...seedAffineFromMultiplier(row.mEffective, Math.min(row.n, 8), row.priorMult),
+    };
+  }
+  return row;
 }
 
 export function makeCategoryStatsRepo(db: Database): CategoryStatsRepo {
   return {
     async get(categoryId: string): Promise<CategoryStatRow> {
       const row = await db.getCategoryStat(categoryId);
-      return row ?? seedRow(categoryId);
+      return row ? withAffineSeed(row) : seedRow(categoryId);
     },
     async upsert(row: CategoryStatRow): Promise<void> {
       await db.upsertCategoryStat(row);
