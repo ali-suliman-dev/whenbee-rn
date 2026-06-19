@@ -139,6 +139,14 @@ export function EnergyGlyph({
   const cfg = CFG[kind];
   const k = size / BOX;
 
+  // Light theme washes the bright amber + pale indigo out against the near-white
+  // chip, so the streaks and cells barely read. Deepen them: sparks + lit cells go
+  // to the darker amber (accentEdge) and the battery body takes a stronger fill
+  // (primarySoft2). Dark mode keeps the brighter palette — it reads fine there.
+  const isLight = t.mode === 'light';
+  const amber = isLight ? t.colors.accentEdge : t.colors.accent;
+  const bodyFill = isLight ? t.colors.primarySoft2 : t.colors.primarySoft;
+
   // One progress per moving part. Rest values keep the battery shown CHARGED with
   // no streaks (bars=1 visible; body/jump/nub/surge identity; shards hidden).
   const bar0 = useSharedValue(1);
@@ -258,12 +266,12 @@ export function EnergyGlyph({
     ...fill(3, 8, 16, 8, 2.2),
     borderWidth: Math.max(1.3, 1.6 * k),
     borderColor: t.colors.primary,
-    backgroundColor: t.colors.primarySoft,
+    backgroundColor: bodyFill,
   };
   const nubBox: ViewStyle = { ...fill(19.4, 10.4, 1.8, 3.2, 0.8), backgroundColor: t.colors.primary };
   const seg = (i: number, lit: boolean): ViewStyle => ({
     ...fill(SEG_X[i] ?? 0, 10, 3, 4, 0.9),
-    backgroundColor: lit ? t.colors.accent : t.colors.primarySoft,
+    backgroundColor: lit ? amber : t.colors.primarySoft,
     transformOrigin: 'bottom',
   });
   const shardBox: ViewStyle = {
@@ -273,7 +281,7 @@ export function EnergyGlyph({
     width: 0.7 * k,
     height: 2.8 * k,
     borderRadius: 0.35 * k,
-    backgroundColor: t.colors.accent,
+    backgroundColor: amber,
   };
 
   return (

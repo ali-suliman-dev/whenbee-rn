@@ -43,8 +43,10 @@ export function EnergyChips({ eventId }: { eventId: string }) {
     color: t.colors.inkSoft,
   };
   const row: ViewStyle = { flexDirection: 'row', gap: t.space[2], width: '100%' };
+  // Light indigo pill in light mode (the deepened glyph reads against it); the
+  // plain surface well in dark mode reads fine already.
   const chipContainer: ViewStyle = {
-    backgroundColor: t.colors.surfaceSunken,
+    backgroundColor: t.mode === 'light' ? t.colors.primaryWash : t.colors.surface,
     paddingHorizontal: t.space[3],
     paddingVertical: t.space[1.5],
     flex: 1,

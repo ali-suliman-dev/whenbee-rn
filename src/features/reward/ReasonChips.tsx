@@ -107,9 +107,10 @@ export function ReasonChips({
     gap: t.space[2],
     width: '100%',
   };
-  // Darker, compact pill — no border, sunken bg reads against reward surface.
+  // Light indigo pill in light mode so the leading glyph reads against it; the
+  // plain surface well in dark mode reads fine already.
   const chipContainer: ViewStyle = {
-    backgroundColor: t.colors.surfaceSunken,
+    backgroundColor: t.mode === 'light' ? t.colors.primaryWash : t.colors.surface,
     paddingHorizontal: t.space[3],
     paddingVertical: t.space[1.5],
     flex: 1,
