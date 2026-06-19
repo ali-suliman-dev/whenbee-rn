@@ -96,6 +96,42 @@ describe('calibrationStore', () => {
     expect(persisted.n).toBe(1);
   });
 
+  it('exposes a cold affine fit anchored at the category prior, then adapts down as actuals beat the guess', async () => {
+    const db = freshDb();
+    useCategoriesStore.setState({
+      categories: [{ id: 'admin', name: 'admin', adaptSpeed: 'balanced' as AdaptSpeed }],
+    });
+    await useCalibrationStore.getState().hydrate();
+
+    // Cold: the cached fit's slope equals the category prior (empty stats →
+    // solveAffine returns { a: 0, b: anchor } and the cold anchor is the prior).
+    const coldFit = useCalibrationStore.getState().statsByCategory.admin?.fit;
+    expect(coldFit?.b).toBeCloseTo(priorFor('admin'), 5);
+
+    // A run of fast actuals (15 → 18 is barely over, well under the admin prior's
+    // implied honest number) pulls the slope below the cold anchor.
+    for (let i = 0; i < 12; i++) {
+      await useCalibrationStore.getState().applyLog({
+        category: 'admin',
+        estimateMin: 15,
+        actualMin: 18,
+        status: 'completed',
+        source: 'timed',
+        adaptSpeed: 'balanced',
+        nowMs: T0 + i,
+      });
+    }
+
+    const afterFit = useCalibrationStore.getState().statsByCategory.admin?.fit;
+    expect(afterFit).toBeDefined();
+    expect((afterFit as { b: number }).b).toBeLessThan(priorFor('admin'));
+
+    // sanity: db carries the trained affine sums.
+    const persisted = await makeCategoryStatsRepo(db).get('admin');
+    expect(persisted.n).toBe(12);
+    expect(persisted.sw).toBeGreaterThan(0);
+  });
+
   it('a sustained over-run pulls the multiplier above the cleaning prior (2.0)', async () => {
     freshDb();
     const store = useCalibrationStore.getState();
@@ -175,7 +211,10 @@ describe('calibrationStore', () => {
     expect(after).toBeGreaterThanOrEqual(before);
   });
 
-  it('persists recurring rolling stats when a recurringKey is given', async () => {
+  // recurring affine deferred — applyLog ignores recurringKey for now (the field
+  // is kept for API stability). A counted log still trains the category, but no
+  // recurring row is written until a caller re-enables the dormant path.
+  it('does not persist a recurring row while the recurring path is deferred', async () => {
     const db = freshDb();
     await useCalibrationStore.getState().applyLog({
       category: 'cleaning',
@@ -188,9 +227,10 @@ describe('calibrationStore', () => {
       nowMs: T0,
     });
     const rec = await db.getRecurringStat('cleaning:dishes');
-    expect(rec).not.toBeNull();
-    expect(rec?.n).toBe(1);
-    expect(rec?.categoryId).toBe('cleaning');
+    expect(rec).toBeNull();
+    // the category itself is still trained.
+    const stat = await makeCategoryStatsRepo(db).get('cleaning');
+    expect(stat.n).toBe(1);
   });
 });
 
@@ -282,7 +322,9 @@ describe('calibrationStore — resetCategory', () => {
     await db.insertTaskEvent(seedEvent({ id: 'r2', createdAt: T0 + 1 }));
     // pre-populate the cache so we can assert the patch.
     useCalibrationStore.setState({
-      statsByCategory: { cleaning: { mEffective: 2.4, n: 5, sharpness: 60, tier: 'Ripening' } },
+      statsByCategory: {
+        cleaning: { mEffective: 2.4, n: 5, sharpness: 60, tier: 'Ripening', fit: { a: 0, b: 2.4 } },
+      },
     });
 
     await useCalibrationStore.getState().resetCategory('cleaning');

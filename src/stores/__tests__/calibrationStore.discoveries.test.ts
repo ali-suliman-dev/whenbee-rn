@@ -79,8 +79,8 @@ describe('applyLog — banking distinct discoveries', () => {
 
   it('re-banks when the multiplier moves at least 0.4 (a new distinct truth)', async () => {
     const db = freshStore();
-    // First bank ≈1.86×; a run of 6.0× (90/15) logs pulls M past 2.4 → second bank.
-    await feed([...STABILIZING_TO_2X, 30, 30, 90]);
+    // First bank ≈2.32×; a run of 6.0× (90/15) logs pulls M past 3.0 → second bank.
+    await feed([...STABILIZING_TO_2X, 90, 90]);
 
     const discoveries = await makeDiscoveriesRepo(db).list();
     expect(discoveries).toHaveLength(2);
@@ -92,7 +92,7 @@ describe('applyLog — banking distinct discoveries', () => {
 
   it('loadDiscoveries returns the cards newest-first with the live count', async () => {
     freshStore();
-    await feed([...STABILIZING_TO_2X, 30, 30, 90]);
+    await feed([...STABILIZING_TO_2X, 90, 90]);
 
     const { discoveries, discoveryCount } = await useCalibrationStore.getState().loadDiscoveries();
     expect(discoveryCount).toBe(2);

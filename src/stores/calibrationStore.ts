@@ -3,7 +3,6 @@ import {
   getDatabase,
   makeCategoryStatsRepo,
   makeTaskEventsRepo,
-  makeRecurringRepo,
   makeCompanionRepo,
   makeContextTagRepo,
   makeDiscoveriesRepo,
@@ -14,9 +13,14 @@ import {
   clampRatio,
   tierFor,
   alphaFor,
+  alphaRegFor,
   logsToNextTier,
   priorFor,
   resolveSuggestion,
+  solveAffine,
+  coldStartAnchor,
+  emptyGlobalBias,
+  updateGlobalBias,
   detectInsight,
   shouldBankDiscovery,
   buildTrendSeries,
@@ -31,7 +35,15 @@ import {
   TIERS,
   CATEGORY_NAMES,
 } from '@/src/engine';
-import type { CompanionStage, CompanionCapability, DriftHealth, ContextCorrelation } from '@/src/engine';
+import type {
+  CompanionStage,
+  CompanionCapability,
+  DriftHealth,
+  ContextCorrelation,
+  AffineFit,
+  AffineStats,
+  GlobalBias,
+} from '@/src/engine';
 import type {
   AdaptSpeed,
   LogSource,
@@ -82,6 +94,42 @@ function writeGraduated(ids: Set<string>): void {
   kv.set(GRADUATED_KEY, JSON.stringify([...ids].sort()));
 }
 
+// Cross-category cold-start bias. A single GlobalBias row (an EWMA of every
+// counted clamped ratio) lets a brand-new category open at the user's typical
+// optimism instead of the cold population prior. Stored as one JSON kv value.
+const GLOBAL_BIAS_KEY = 'calib.global.bias';
+
+/** Read the persisted global bias, tolerating a missing/corrupt value by
+ *  returning the neutral empty bias — a bad read never anchors a category wrong. */
+function readGlobalBias(): GlobalBias {
+  const raw = kv.getString(GLOBAL_BIAS_KEY);
+  if (raw === null) return emptyGlobalBias();
+  try {
+    const parsed = JSON.parse(raw) as GlobalBias;
+    return typeof parsed.lnEwma === 'number' && typeof parsed.n === 'number'
+      ? parsed
+      : emptyGlobalBias();
+  } catch {
+    return emptyGlobalBias();
+  }
+}
+
+/** Persist the global bias as a single JSON kv value. */
+function writeGlobalBias(g: GlobalBias): void {
+  kv.set(GLOBAL_BIAS_KEY, JSON.stringify(g));
+}
+
+/** Pluck the five affine sums off a persisted stat row into an AffineStats. */
+function statsOf(row: {
+  sw: number;
+  swx: number;
+  swy: number;
+  swxx: number;
+  swxy: number;
+}): AffineStats {
+  return { sw: row.sw, swx: row.swx, swy: row.swy, swxx: row.swxx, swxy: row.swxy };
+}
+
 /** Build a category's confidence + (non-honest) honest range from its completed
  *  logs. `n` is the trained sample size; `honestMinutes` is the summary's honest
  *  number. Shared by loadCategoryDetail and any other category-facing summary. */
@@ -117,6 +165,8 @@ interface CachedStat {
   n: number;
   sharpness: number;
   tier: Tier;
+  /** Solved affine fit (a + b·guess) for the category's current sums + anchor. */
+  fit: AffineFit;
 }
 
 export interface ApplyLogParams {
@@ -126,6 +176,8 @@ export interface ApplyLogParams {
   status: LogStatus;
   source: LogSource;
   adaptSpeed: AdaptSpeed;
+  /** recurring affine deferred — dormant until a caller sets recurringKey. Kept
+   *  for API stability; currently unused by applyLog. */
   recurringKey?: string | null;
   label?: string | null;
   nowMs?: number;
@@ -358,14 +410,19 @@ export const useCalibrationStore = create<CalibrationState>((set, get) => ({
     const db = await resolveDb(get, set);
     const statsRepo = makeCategoryStatsRepo(db);
     const tracked = useCategoriesStore.getState().categories;
+    const global = readGlobalBias();
     const next: Record<string, CachedStat> = {};
     for (const cat of tracked) {
       const row = await statsRepo.get(cat.id);
+      // Cold categories (n=0) anchor on the global-nudged prior; trained ones keep
+      // their population prior as the ridge anchor.
+      const anchor = row.n > 0 ? row.priorMult : coldStartAnchor(row.priorMult, global);
       next[cat.id] = {
         mEffective: row.mEffective,
         n: row.n,
         sharpness: row.sharpness,
         tier: tierFor(row.sharpness),
+        fit: solveAffine(statsOf(row), anchor),
       };
     }
     set({ statsByCategory: next });
@@ -380,13 +437,15 @@ export const useCalibrationStore = create<CalibrationState>((set, get) => ({
     const db = await resolveDb(get, set);
     const categoryStatsRepo = makeCategoryStatsRepo(db);
     const taskEventsRepo = makeTaskEventsRepo(db);
-    const recurringRepo = makeRecurringRepo(db);
 
     const nowMs = input.nowMs ?? Date.now();
-    const recurringKey = input.recurringKey ?? null;
 
-    // 2. Seeded category stats (never null).
+    // 2. Seeded category stats (never null) + the cross-category cold-start bias.
     const prev = await categoryStatsRepo.get(input.category);
+    const global = readGlobalBias();
+    // Cold categories anchor on the global-nudged prior; trained ones keep their
+    // population prior as the ridge anchor.
+    const anchor = prev.n > 0 ? prev.priorMult : coldStartAnchor(prev.priorMult, global);
 
     // 3. Recent clamped ratios, oldest → newest (events come newest-first).
     const recentEvents = await taskEventsRepo.listByCategory(input.category, 8);
@@ -395,15 +454,7 @@ export const useCalibrationStore = create<CalibrationState>((set, get) => ({
       .map((e) => clampRatio(e.estimateMin, e.actualMin as number))
       .reverse();
 
-    // 4. Recurring rolling stat, if any. Seed a cold n=0 row (mEffective = the
-    //    category prior) the first time a key is seen so the engine can train it.
-    let recurring: { n: number; logEwma: number; mEffective: number } | null = null;
-    if (recurringKey) {
-      const recurringRow = await recurringRepo.get(recurringKey);
-      recurring = recurringRow
-        ? { n: recurringRow.n, logEwma: recurringRow.logEwma, mEffective: recurringRow.mEffective }
-        : { n: 0, logEwma: 0, mEffective: prev.priorMult };
-    }
+    // recurring affine deferred — dormant until a caller sets recurringKey.
 
     // 5. Pure engine step.
     const result = engineApplyLog({
@@ -414,13 +465,13 @@ export const useCalibrationStore = create<CalibrationState>((set, get) => ({
       adaptSpeed: input.adaptSpeed,
       prior: prev.priorMult,
       category: {
+        stats: statsOf(prev),
         n: prev.n,
-        logEwma: prev.logEwma,
-        mEffective: prev.mEffective,
+        anchor,
         sharpness: prev.sharpness,
         reclaimedMinutes: prev.reclaimedMinutes,
       },
-      recurring,
+      recurring: null,
       recentClampedRatios,
       suggestedHonestMin: input.suggestedHonestMin ?? null,
     });
@@ -453,34 +504,25 @@ export const useCalibrationStore = create<CalibrationState>((set, get) => ({
       await categoryStatsRepo.upsert({
         categoryId: input.category,
         n: result.category.n,
-        logEwma: result.category.logEwma,
+        // logEwma is retired by the affine model; the trained sums carry the fit.
+        logEwma: 0,
         mEffective: result.category.mEffective,
         sharpness: result.category.sharpness,
         priorMult: prev.priorMult,
         adaptSpeed: input.adaptSpeed,
         updatedAt: nowMs,
         reclaimedMinutes: prev.reclaimedMinutes,
-        sw: prev.sw,
-        swx: prev.swx,
-        swy: prev.swy,
-        swxx: prev.swxx,
-        swxy: prev.swxy,
+        ...result.category.stats,
       });
+      // Fold this counted log's clamped ratio into the cross-category bias so the
+      // next cold category opens at the user's typical optimism, not the cold prior.
+      writeGlobalBias(updateGlobalBias(global, result.ratioClamped, alphaRegFor(input.adaptSpeed, 'timed')));
       if (result.reclaimDeltaMin > 0) {
         await companionRepo.deposit(result.reclaimDeltaMin);
         await companionRepo.depositToCategory(input.category, result.reclaimDeltaMin);
         reclaimLifetimeMin = (await companionRepo.get()).reclaimedMinutesLifetime;
       }
-      if (recurringKey && result.recurring) {
-        await recurringRepo.upsert({
-          key: recurringKey,
-          categoryId: input.category,
-          n: result.recurring.n,
-          logEwma: result.recurring.logEwma,
-          mEffective: result.recurring.mEffective,
-          updatedAt: nowMs,
-        });
-      }
+      // recurring affine deferred — dormant until a caller sets recurringKey.
 
       // --- Companion fuel: only a counted log feeds the three-layer growth model.
       // Layer 1 (lifetime nectar): +1 per counted log, monotonic by construction.
@@ -526,6 +568,7 @@ export const useCalibrationStore = create<CalibrationState>((set, get) => ({
             n: result.category.n,
             sharpness: result.category.sharpness,
             tier: tierFor(result.category.sharpness),
+            fit: result.categoryFit,
           },
         },
       };
@@ -683,7 +726,13 @@ export const useCalibrationStore = create<CalibrationState>((set, get) => ({
 
     const baseSummary = resolveSuggestion({
       guessMinutes: 15,
-      category: { mEffective: stat.mEffective, n: stat.n },
+      category: {
+        fit: solveAffine(
+          statsOf(stat),
+          stat.n > 0 ? stat.priorMult : coldStartAnchor(stat.priorMult, readGlobalBias()),
+        ),
+        n: stat.n,
+      },
       recurring: null,
     });
 
@@ -937,13 +986,25 @@ export const useCalibrationStore = create<CalibrationState>((set, get) => ({
     });
 
     // Patch the cache so dependent screens reflect the fresh prior immediately.
+    // Empty sums solved against the prior give a flat fit { a: 0, b: prior }.
     set((state) => ({
       statsByCategory: {
         ...state.statsByCategory,
-        [categoryId]: { mEffective: prior, n: 0, sharpness: 0, tier: tierFor(0) },
+        [categoryId]: {
+          mEffective: prior,
+          n: 0,
+          sharpness: 0,
+          tier: tierFor(0),
+          fit: solveAffine({ sw: 0, swx: 0, swy: 0, swxx: 0, swxy: 0 }, prior),
+        },
       },
     }));
   },
 
-  reset: () => set({ logs: 0, statsByCategory: {}, graduatedCategories: new Set() }),
+  reset: () => {
+    // Factory reset clears the cross-category bias too — a fresh start anchors on
+    // the cold population priors, not the prior install's optimism.
+    kv.delete(GLOBAL_BIAS_KEY);
+    set({ logs: 0, statsByCategory: {}, graduatedCategories: new Set() });
+  },
 }));
