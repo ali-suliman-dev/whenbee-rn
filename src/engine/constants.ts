@@ -59,3 +59,7 @@ export const CONFIDENCE_HONEST_MIN_LOGS = 6;
 export const CONFIDENCE_HONEST_MAX_CV = 0.35;
 export const RANGE_MIN_HALF_WIDTH = 0.18;
 export const RANGE_MAX_HALF_WIDTH = 0.5;
+/** Below this many logs, blend the empirical band toward the prior band (§8.2). */
+export const QUANTILE_MIN_N = 4;
+/** Log-space half-width of the n=0 prior band (≈ ÷1.5…×1.5 spread) (§8.5). */
+export const PRIOR_BAND_HALF_WIDTH = 0.4;

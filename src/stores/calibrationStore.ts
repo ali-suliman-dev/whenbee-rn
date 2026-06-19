@@ -26,8 +26,10 @@ import {
   capabilityFor,
   confidenceFor,
   honestRangeFor,
+  honestNumber,
   correlateReasons,
   correlateContext,
+  SHARPNESS_WINDOW,
   TIERS,
   CATEGORY_NAMES,
 } from '@/src/engine';
@@ -88,10 +90,15 @@ function writeGraduated(ids: Set<string>): void {
 function confidenceAndRange(
   n: number,
   honestMinutes: number,
+  guessMinutes: number,
   clampedRatios: number[],
+  prior: number,
 ): { confidence: CalibrationConfidence; range: HonestRange | null } {
   const confidence = confidenceFor({ n, clampedRatios });
-  const range = confidence === 'honest' ? null : honestRangeFor({ honestMinutes, clampedRatios });
+  const range =
+    confidence === 'honest'
+      ? null
+      : honestRangeFor({ honestMinutes, guessMinutes, clampedRatios, prior });
   return { confidence, range };
 }
 
@@ -117,6 +124,11 @@ interface CachedStat {
   n: number;
   sharpness: number;
   tier: Tier;
+  /** Recent clamped ratios (newest-last) — the band's input. Empty/omitted until
+   *  hydrated with logged data. Lets the live Add-Task suggestion carry a range. */
+  clampedRatios?: number[];
+  /** Category prior multiplier — anchors the low-n band. Omitted in legacy callers. */
+  priorMult?: number;
 }
 
 export interface ApplyLogParams {
@@ -174,6 +186,9 @@ export interface CategoryDetail {
   trend: TrendSeries;
   /** recent est-vs-actual rows, newest first. */
   recent: RecentLog[];
+  /** The first meaningful honest range for this category (frozen at first 'setting').
+   *  The "from" anchor for the narrowing caption; null until the first band. */
+  firstHonestRange: HonestRange | null;
 }
 
 /** One completed/raw log row exposed to the Patterns surface (read-only). */
@@ -357,15 +372,25 @@ export const useCalibrationStore = create<CalibrationState>((set, get) => ({
 
     const db = await resolveDb(get, set);
     const statsRepo = makeCategoryStatsRepo(db);
+    const taskEventsRepo = makeTaskEventsRepo(db);
     const tracked = useCategoriesStore.getState().categories;
     const next: Record<string, CachedStat> = {};
     for (const cat of tracked) {
       const row = await statsRepo.get(cat.id);
+      // Recent clamped-ratio window (oldest → newest) so the live Add-Task
+      // suggestion can carry a honest range without re-reading per keystroke.
+      const recentEvents = await taskEventsRepo.listByCategory(cat.id, SHARPNESS_WINDOW);
+      const clampedRatios = recentEvents
+        .filter((e) => e.status === 'completed' && e.actualMin !== null)
+        .map((e) => clampRatio(e.estimateMin, e.actualMin as number))
+        .reverse();
       next[cat.id] = {
         mEffective: row.mEffective,
         n: row.n,
         sharpness: row.sharpness,
         tier: tierFor(row.sharpness),
+        clampedRatios,
+        priorMult: row.priorMult,
       };
     }
     set({ statsByCategory: next });
@@ -443,6 +468,13 @@ export const useCalibrationStore = create<CalibrationState>((set, get) => ({
       reclaimDividendMin: result.reclaimDeltaMin,
     });
 
+    // The rolling clamped-ratio window AFTER this log (oldest → newest), reused for
+    // the firstHonestRange capture and the live cache so the next Add-Task band is
+    // already current.
+    const windowAfterCache = [...recentClampedRatios, clampRatio(input.estimateMin, input.actualMin)].slice(
+      -SHARPNESS_WINDOW,
+    );
+
     // 7. Persist updated stats only when the log trained the model.
     const companionRepo = makeCompanionRepo(db);
     // Lifetime total AFTER this log's deposit. For an uncounted/zero-deposit log
@@ -450,6 +482,22 @@ export const useCalibrationStore = create<CalibrationState>((set, get) => ({
     // actually bank, so the Reward count-up always lands on the live number.
     let reclaimLifetimeMin = (await companionRepo.get()).reclaimedMinutesLifetime;
     if (result.counted) {
+      // Capture firstHonestRange once — the first time this category's confidence
+      // reaches a meaningful band ('setting' or beyond). Frozen thereafter; it is
+      // the "from" anchor for the category-detail narrowing caption (§7). Cheap,
+      // on-device, off the critical render path.
+      const windowAfter = windowAfterCache;
+      const confidenceAfter = confidenceFor({ n: result.category.n, clampedRatios: windowAfter });
+      const firstHonestRange =
+        prev.firstHonestRange == null && confidenceAfter !== 'raw'
+          ? honestRangeFor({
+              honestMinutes: honestNumber(input.estimateMin, result.category.mEffective),
+              guessMinutes: input.estimateMin,
+              clampedRatios: windowAfter,
+              prior: prev.priorMult,
+            })
+          : (prev.firstHonestRange ?? null);
+
       await categoryStatsRepo.upsert({
         categoryId: input.category,
         n: result.category.n,
@@ -460,6 +508,7 @@ export const useCalibrationStore = create<CalibrationState>((set, get) => ({
         adaptSpeed: input.adaptSpeed,
         updatedAt: nowMs,
         reclaimedMinutes: prev.reclaimedMinutes,
+        firstHonestRange,
       });
       if (result.reclaimDeltaMin > 0) {
         await companionRepo.deposit(result.reclaimDeltaMin);
@@ -521,6 +570,8 @@ export const useCalibrationStore = create<CalibrationState>((set, get) => ({
             n: result.category.n,
             sharpness: result.category.sharpness,
             tier: tierFor(result.category.sharpness),
+            clampedRatios: windowAfterCache,
+            priorMult: prev.priorMult,
           },
         },
       };
@@ -689,7 +740,9 @@ export const useCalibrationStore = create<CalibrationState>((set, get) => ({
     const { confidence, range } = confidenceAndRange(
       stat.n,
       baseSummary.honestMinutes,
+      baseSummary.guessMinutes,
       clampedRatios,
+      stat.priorMult,
     );
     const summary: CalibrationSummary = { ...baseSummary, confidence, range };
 
@@ -724,6 +777,7 @@ export const useCalibrationStore = create<CalibrationState>((set, get) => ({
       insight,
       trend,
       recent,
+      firstHonestRange: stat.firstHonestRange ?? null,
     };
   },
 
@@ -924,13 +978,21 @@ export const useCalibrationStore = create<CalibrationState>((set, get) => ({
       adaptSpeed,
       updatedAt: now,
       reclaimedMinutes: 0,
+      firstHonestRange: null,
     });
 
     // Patch the cache so dependent screens reflect the fresh prior immediately.
     set((state) => ({
       statsByCategory: {
         ...state.statsByCategory,
-        [categoryId]: { mEffective: prior, n: 0, sharpness: 0, tier: tierFor(0) },
+        [categoryId]: {
+          mEffective: prior,
+          n: 0,
+          sharpness: 0,
+          tier: tierFor(0),
+          clampedRatios: [],
+          priorMult: prior,
+        },
       },
     }));
   },

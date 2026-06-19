@@ -29,6 +29,8 @@ interface UseCategoryDetailResult {
    *  category, when one clearly dominates. `undefined` for non-Pro, no dominant
    *  cause, or before the async read lands. NEVER affects the honest number. */
   reasonNote?: string;
+  /** Pro entitlement — gates the honest-band strip on the category screen. */
+  isPro: boolean;
 }
 
 export function useCategoryDetail(categoryId: string): UseCategoryDetailResult {
@@ -111,5 +113,6 @@ export function useCategoryDetail(categoryId: string): UseCategoryDetailResult {
     justGraduated,
     clearJustGraduated,
     reasonNote,
+    isPro,
   };
 }

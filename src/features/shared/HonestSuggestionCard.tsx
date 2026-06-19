@@ -1,7 +1,12 @@
-import { View, type TextStyle, type ViewStyle } from 'react-native';
+import { useEffect, useRef } from 'react';
+import { View, Pressable, type TextStyle, type ViewStyle } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { router } from 'expo-router';
 import { AppText } from '@/src/components/AppText';
+import { HonestBand } from '@/src/components/HonestBand';
+import { useEntitlement } from '@/src/features/paywall/useEntitlement';
 import { useTheme } from '@/src/theme/useTheme';
+import { analytics } from '@/src/services/analytics';
 import type { CalibrationConfidence, HonestRange } from '@/src/domain/types';
 
 // ──────────────────────────────────────────────────────────────────────────────
@@ -12,10 +17,10 @@ import type { CalibrationConfidence, HonestRange } from '@/src/domain/types';
 // own. That split is what stops the screen reading as an indigo mush and gives it
 // a clean focal order: type → pick → see the honest number → act.
 //
-// One simple line: [honey disc] "Honestly ~10m · +5m more". Type is held to a
-// single 12 (sm) step — the number reads as the hero through weight + colour,
-// not size. The delta is shown only when honest > guess (the
-// optimism-bias case). No border (the app runs flat, fills carry hierarchy).
+// Free users see the single honest POINT number (the core loop is never fogged).
+// Pro unlocks the RANGE the task tends to land in, drawn as a slim band that
+// narrows as the model learns them. Free users see a quiet locked-bracket
+// affordance that shows the SHAPE of the range without revealing their numbers.
 // ──────────────────────────────────────────────────────────────────────────────
 
 export function HonestSuggestionCard({
@@ -36,10 +41,39 @@ export function HonestSuggestionCard({
   reasonNote?: string;
 }) {
   const t = useTheme();
+  const isPro = useEntitlement((s) => s.isPro);
   const delta = honestMinutes - guessMinutes;
-  // Only show the band when the caller supplied both a learning confidence and a
-  // range. Live-guess hooks pass neither, so the banner keeps its current shape.
-  const showRange = confidence !== undefined && confidence !== 'honest' && range != null;
+
+  // A learning surface (Add Task / live banner) passes a confidence; bare live-guess
+  // banners pass neither confidence nor range and keep their original shape.
+  const isLearningSurface = confidence !== undefined && range != null;
+  const hasBand = isLearningSurface && confidence !== 'honest';
+  // The drawn band track is Pro-only and shown once past the raw state (raw shows a
+  // "roughly" caption instead of a track, per the spec's states table).
+  const showProBand = hasBand && isPro && confidence !== 'raw';
+  const showRoughly = hasBand && isPro && confidence === 'raw';
+
+  // Fire honest_range_shown once per distinct band the user looks at (debounced so
+  // guess-dialing doesn't spam). Fire-and-forget; never throws into the loop.
+  const lastShownRef = useRef<string | null>(null);
+  useEffect(() => {
+    if (!hasBand || range == null || confidence === undefined) return;
+    const width = range.highMinutes - range.lowMinutes;
+    const key = `${confidence}|${range.lowMinutes}|${range.highMinutes}|${isPro}`;
+    if (lastShownRef.current === key) return;
+    lastShownRef.current = key;
+    analytics.capture('honest_range_shown', {
+      surface: 'add_task',
+      confidence,
+      width_min: Math.round(width / 5) * 5,
+      is_pro: isPro,
+    });
+  }, [hasBand, range, confidence, isPro]);
+
+  const openPaywall = () => {
+    analytics.capture('honest_range_locked_tap', { surface: 'add_task' });
+    router.push({ pathname: '/(modals)/paywall', params: { trigger: 'honest_range' } });
+  };
 
   const card: ViewStyle = {
     flexDirection: 'row',
@@ -51,8 +85,6 @@ export function HonestSuggestionCard({
     paddingHorizontal: t.space[2],
     paddingVertical: t.space[2],
   };
-
-  // Soft honey disc — a faint amber tint, the arrow drawn in solid amber on top.
   const coin: ViewStyle = {
     width: t.space[8],
     height: t.space[8],
@@ -61,43 +93,44 @@ export function HonestSuggestionCard({
     justifyContent: 'center',
     backgroundColor: t.colors.accentCoin,
   };
-
-  // Content column: the honest line, then the optional quiet B15 note beneath it.
   const content: ViewStyle = { flex: 1, gap: t.space[0.5] };
   const line: ViewStyle = { flexDirection: 'row', alignItems: 'center', gap: t.space[1] };
   const noteText: TextStyle = { fontSize: t.fontSize.sm, color: t.colors.inkSoft };
   const lead: TextStyle = {
-    fontSize: t.fontSize.sm, // 12 — uniform line; hierarchy via weight + colour
+    fontSize: t.fontSize.sm,
     fontWeight: t.fontWeight.semibold as TextStyle['fontWeight'],
     color: t.colors.inkSoft,
     marginRight: t.space[1],
   };
   const num: TextStyle = {
-    fontSize: t.fontSize.sm, // 12 — hero via weight + colour, not size
+    fontSize: t.fontSize.sm,
     fontWeight: t.fontWeight.bold as TextStyle['fontWeight'],
     color: t.colors.accent,
   };
   const unit: TextStyle = {
-    fontSize: t.fontSize.sm, // 12
+    fontSize: t.fontSize.sm,
     fontWeight: t.fontWeight.medium as TextStyle['fontWeight'],
     color: t.colors.inkSoft,
   };
-  const dot: TextStyle = {
-    fontSize: t.fontSize.sm,
-    color: t.colors.inkFaint,
-    marginHorizontal: t.space[1],
-  };
+  const dot: TextStyle = { fontSize: t.fontSize.sm, color: t.colors.inkFaint, marginHorizontal: t.space[1] };
   const more: TextStyle = {
-    fontSize: t.fontSize.sm, // 12
+    fontSize: t.fontSize.sm,
     fontWeight: t.fontWeight.semibold as TextStyle['fontWeight'],
     color: t.colors.accent,
   };
   const moreMuted: TextStyle = { fontSize: t.fontSize.sm, color: t.colors.inkSoft };
   const learningSuffix: TextStyle = { fontSize: t.fontSize.sm, color: t.colors.inkSoft };
+  const roughly: TextStyle = { fontSize: t.fontSize.sm, color: t.colors.inkSoft };
+  // The locked bracket affordance — a faint bracket glyph + "Range" micro label.
+  // It communicates "there's a range here" without drawing the user's numbers.
+  const lockRow: ViewStyle = { flexDirection: 'row', alignItems: 'center', gap: t.space[0.5], marginLeft: t.space[1] };
+  const lockLabel: TextStyle = { fontSize: t.fontSize.xs, color: t.colors.inkFaint };
+  const bandRow: ViewStyle = { marginTop: t.space[1], paddingHorizontal: t.space[2] };
 
-  const a11yLabel =
-    showRange && range
-      ? `Honest range ${range.lowMinutes} to ${range.highMinutes} minutes, still learning`
+  const a11yLabel = showProBand && range
+    ? `Honest range ${range.lowMinutes} to ${range.highMinutes} minutes${confidence === 'setting' ? ', still learning' : ''}.`
+    : showRoughly && range
+      ? `Still learning. Roughly ${range.lowMinutes} to ${range.highMinutes} minutes.`
       : delta > 0
         ? `Honest estimate about ${honestMinutes} minutes, ${delta} more than your guess`
         : `Honest estimate about ${honestMinutes} minutes`;
@@ -110,15 +143,23 @@ export function HonestSuggestionCard({
       <View style={content}>
         <View style={line}>
           <AppText style={lead}>Honestly</AppText>
-          {showRange && range ? (
+          {showProBand && range ? (
             <>
               <AppText style={num}>
                 {range.lowMinutes}–{range.highMinutes}
               </AppText>
               <AppText style={unit}>m</AppText>
-              <AppText style={dot}>·</AppText>
-              <AppText style={learningSuffix}>still learning</AppText>
+              {confidence === 'setting' ? (
+                <>
+                  <AppText style={dot}>·</AppText>
+                  <AppText style={learningSuffix}>still learning</AppText>
+                </>
+              ) : null}
             </>
+          ) : showRoughly && range ? (
+            <AppText style={roughly}>
+              Still learning — roughly {range.lowMinutes}–{range.highMinutes}m
+            </AppText>
           ) : (
             <>
               <AppText style={num}>~{honestMinutes}</AppText>
@@ -130,9 +171,32 @@ export function HonestSuggestionCard({
                   <AppText style={moreMuted}> more</AppText>
                 </>
               ) : null}
+              {/* Free, learning surface: the locked-bracket teaser (no real numbers). */}
+              {hasBand && !isPro ? (
+                <Pressable
+                  onPress={openPaywall}
+                  accessibilityRole="button"
+                  accessibilityLabel="Unlock the honest range with Pro."
+                >
+                  <View style={lockRow}>
+                    <Ionicons name="code-outline" size={t.iconSize.xs} color={t.colors.inkFaint} />
+                    <AppText style={lockLabel}>Range</AppText>
+                  </View>
+                </Pressable>
+              ) : null}
             </>
           )}
         </View>
+        {showProBand && range ? (
+          <View style={bandRow}>
+            <HonestBand
+              range={range}
+              point={honestMinutes}
+              confidence={confidence ?? 'setting'}
+              height={t.progress.track}
+            />
+          </View>
+        ) : null}
         {reasonNote ? <AppText style={noteText}>{reasonNote}</AppText> : null}
       </View>
     </View>

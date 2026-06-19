@@ -17,6 +17,10 @@
 /** Sharpness tier index/name as the engine reports it. */
 type TierName = string;
 
+/** Earned-Readiness confidence enum, mirrored locally so analytics stays
+ *  dependency-free (cf. `TierName`). Matches `CalibrationConfidence`. */
+type HonestRangeConfidence = 'raw' | 'setting' | 'honest';
+
 /** Where a guess/timer/log originated. */
 type EventSource = 'today' | 'fab' | 'addtask' | 'timed' | 'retro';
 
@@ -82,9 +86,19 @@ export interface AppEventProps {
   widget_added: { surface: 'home' | 'lock' | 'live_activity' };
   widget_engaged: { surface: 'home' | 'lock' | 'live_activity' };
 
+  // ── Confidence band (honest range) ────────────────────────────────────────────
+  honest_range_shown: {
+    surface: 'add_task' | 'category_detail' | 'timer';
+    confidence: HonestRangeConfidence; // 'raw' | 'setting' | 'honest'
+    width_min: number; // high − low, bucketed to nearest 5
+    is_pro: boolean;
+  };
+  honest_range_locked_tap: { surface: 'add_task' | 'category_detail' };
+  honest_range_narrowed: { was_width_min: number; now_width_min: number };
+
   // ── Monetization ─────────────────────────────────────────────────────────────
   paywall_view: {
-    trigger: 'make_day_honest' | 'settings_upgrade' | 'steals_your_time';
+    trigger: 'make_day_honest' | 'settings_upgrade' | 'steals_your_time' | 'honest_range';
     readiness?: 'pre' | 'honest';
   };
   founder_reserve: { result: 'reserved' };

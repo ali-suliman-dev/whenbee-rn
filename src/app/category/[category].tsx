@@ -38,6 +38,7 @@ export default function CategoryDetailScreen() {
     justGraduated,
     clearJustGraduated,
     reasonNote,
+    isPro,
   } = useCategoryDetail(categoryId);
 
   const [confirming, setConfirming] = useState(false);
@@ -105,6 +106,8 @@ export default function CategoryDetailScreen() {
               confidence={detail.confidence}
               range={detail.summary.range}
               reasonNote={reasonNote}
+              isPro={isPro}
+              firstHonestRange={detail.firstHonestRange}
             />
 
             {/* 2 — The aha insight (when there's one worth surfacing). */}
