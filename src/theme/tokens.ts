@@ -252,9 +252,11 @@ export const tokens = {
       // ── accents ──
       primary: '#8275F0',
       primaryEdge: '#6B5BE6',
-      primarySoft2: 'rgba(130,117,240,0.6)',
+      // Ordered to mirror the light set's primary* keys (parity test: light/dark
+      // share identical key order). Values are unchanged.
       primarySoft: 'rgba(130,117,240,0.22)',
       primaryWash: 'rgba(130,117,240,0.10)', // faintest indigo tint (dark parity; unused in dark chips)
+      primarySoft2: 'rgba(130,117,240,0.6)',
       // Guess-segment diagonal stripe pair — indigo stripes on near-bg fill.
       gapStripeHi: '#A898F5', // lighter than CTA primary (#8275F0), clearly visible
       gapStripeLo: '#15161F', // = surfaceSunken — blends into bg, only Hi pops
