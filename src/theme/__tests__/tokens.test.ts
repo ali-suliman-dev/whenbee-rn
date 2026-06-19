@@ -9,7 +9,10 @@ describe('design tokens', () => {
     for (let i = 1; i < values.length; i++) expect(values[i]).toBeGreaterThan(values[i - 1]!);
   });
   it('exposes light and dark color sets with identical keys', () => {
-    expect(Object.keys(tokens.colors.light)).toEqual(Object.keys(tokens.colors.dark));
+    // Order-independent: light and dark must expose the SAME keys, in any order.
+    expect([...Object.keys(tokens.colors.light)].sort()).toEqual(
+      [...Object.keys(tokens.colors.dark)].sort(),
+    );
   });
   it('defines the core semantic colors', () => {
     for (const key of ['bg', 'surface', 'text', 'textMuted', 'primary', 'border'] as const)

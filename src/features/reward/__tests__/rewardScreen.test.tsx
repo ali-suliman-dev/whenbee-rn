@@ -170,7 +170,7 @@ describe('Reward screen', () => {
     });
     render(<Reward />);
     expect(screen.getByText('Where did the time go?')).toBeOnTheScreen();
-    expect(screen.getByText('Got interrupted')).toBeOnTheScreen();
+    expect(screen.getByText('Paused')).toBeOnTheScreen();
     // The two exits are still present — the row never blocks them.
     expect(screen.getByText('See my Reclaim')).toBeOnTheScreen();
     expect(screen.getByText('Back to today')).toBeOnTheScreen();
@@ -187,7 +187,7 @@ describe('Reward screen', () => {
     });
     render(<Reward />);
     expect(screen.getByText('What made it quick?')).toBeOnTheScreen();
-    expect(screen.getByText('In the zone')).toBeOnTheScreen();
+    expect(screen.getByText('Flow')).toBeOnTheScreen();
   });
 
   it('hides the reason row when the run landed close to the guess', () => {

@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, type ComponentProps } from 'react';
 import { Pressable, View, type LayoutChangeEvent, type TextStyle, type ViewStyle } from 'react-native';
 import Animated, {
   useSharedValue,
@@ -150,7 +150,10 @@ function CentreElevatedBar({
     // overflow: 'visible' lets the button escape the bar's top edge.
     <View style={[bar, { overflow: 'visible' }]} onLayout={onLayout}>
       {tabW > 0 && (
-        <Animated.View style={[indicator, indicatorStyle]} pointerEvents="none" />
+        <Animated.View
+          style={[indicator, indicatorStyle] as ComponentProps<typeof Animated.View>['style']}
+          pointerEvents="none"
+        />
       )}
 
       {leftRoutes.map((route, i) => (
@@ -206,7 +209,10 @@ function RightDividerBar({
 
   return (
     <View style={bar} onLayout={onLayout}>
-      {<Animated.View style={[indicator, indicatorStyle]} pointerEvents="none" />}
+      <Animated.View
+        style={[indicator, indicatorStyle] as ComponentProps<typeof Animated.View>['style']}
+        pointerEvents="none"
+      />
 
       {state.routes.map((route, index) => (
         <TabItem
@@ -291,7 +297,9 @@ function TabItem({
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
-type BarProps = Omit<BottomTabBarProps, 'insets'> & {
+// Children read safe-area insets via their own hook, so they only need these
+// three nav props — not the full BottomTabBarProps (which would require `insets`).
+type BarProps = Pick<BottomTabBarProps, 'state' | 'descriptors' | 'navigation'> & {
   bar: ViewStyle;
   indicator: ViewStyle;
   indicatorStyle: ReturnType<typeof useAnimatedStyle>;

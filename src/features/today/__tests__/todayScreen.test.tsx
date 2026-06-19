@@ -79,7 +79,7 @@ describe('Today screen', () => {
     expect(screen.queryByText("What's on today?")).toBeNull();
   });
 
-  it('shows the guess as the lead figure and the plan support on up-next rows', async () => {
+  it('leads up-next rows with the honest estimate and supports with the guess', async () => {
     useCalibrationStore.setState({
       statsByCategory: {
         getting_ready: { mEffective: 2.0, n: 8, sharpness: 70, tier: 'Ripening' },
@@ -95,8 +95,8 @@ describe('Today screen', () => {
 
     render(<Today />);
 
-    // The up-next row should render "25" as the hero figure and "plan " as support.
-    expect(await screen.findByText('25')).toBeOnTheScreen();
-    expect(screen.getByText('plan ')).toBeOnTheScreen();
+    // The up-next row leads with the honest estimate (~50) and supports with the guess.
+    expect(await screen.findByText('~50')).toBeOnTheScreen();
+    expect(screen.getByText('guessed 25')).toBeOnTheScreen();
   });
 });

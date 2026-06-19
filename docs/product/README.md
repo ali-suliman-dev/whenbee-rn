@@ -16,6 +16,7 @@ This folder is the single source of truth for **what Whenbee is, what's built, w
 | [05-ROADMAP-TO-LAUNCH.md](05-ROADMAP-TO-LAUNCH.md) | The path from code-complete to real users, with the retention gate that governs everything. |
 | [06-BRAND-VOICE.md](06-BRAND-VOICE.md) | The voice rules and ban-list every user-facing string must pass. |
 | [07-PRO-VALUE-IDEAS.md](07-PRO-VALUE-IDEAS.md) | Research-backed Pro features people will actually pay for (3 live research passes), and a recommended Pro definition that stands without calendar write-back. |
+| [research/2026-06-19-reclaim-bank-retention-evaluation.md](research/2026-06-19-reclaim-bank-retention-evaluation.md) | Deep-dive: is the Reclaim Bank counter the right retention mechanic? Verdict (keep + reframe, don't delete), the "reclaimed"-word trust risk, and what actually drives stickiness for this app. |
 
 ## The product in one paragraph
 
