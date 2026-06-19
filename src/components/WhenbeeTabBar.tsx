@@ -291,7 +291,7 @@ function TabItem({
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
-type BarProps = BottomTabBarProps & {
+type BarProps = Pick<BottomTabBarProps, 'state' | 'descriptors' | 'navigation'> & {
   bar: ViewStyle;
   indicator: ViewStyle;
   indicatorStyle: ReturnType<typeof useAnimatedStyle>;
