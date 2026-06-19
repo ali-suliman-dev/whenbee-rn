@@ -61,9 +61,8 @@ export const RANGE_MIN_HALF_WIDTH = 0.18;
 export const RANGE_MAX_HALF_WIDTH = 0.5;
 
 // ── Regularized affine calibration (replaces the single-scalar multiplier) ───
-/** Ridge shrink pulling the fixed-cost intercept toward 0 (higher = stays
- *  multiplicative longer). */
-export const RIDGE_INTERCEPT_LAMBDA = 0.5;
-/** Ridge anchor pulling the slope toward the prior multiplier (plays the role
- *  the old BLEND_PSEUDO_COUNT k=4 played). */
-export const RIDGE_SLOPE_LAMBDA = 0.5;
+/** Prior strength as a pseudo-observation count, mirroring the old k=4 blend:
+ *  conservative early, washes out as real logs accumulate. The slope anchor is
+ *  scaled by the canonical guess² inside solveAffine so it lives in the same
+ *  units as the data's slope information. */
+export const AFFINE_PRIOR_PSEUDO = 4;

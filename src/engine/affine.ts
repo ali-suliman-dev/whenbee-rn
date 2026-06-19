@@ -1,8 +1,8 @@
-// Recency-weighted ridge regression of actual ≈ a + b·guess, anchored to a
+// Regularized affine calibration of actual ≈ a + b·guess, anchored to a
 // multiplicative prior. PURE TS — no RN/Expo/clock. The calibration core that
 // replaces the single-scalar multiplier.
 // See docs/superpowers/specs/2026-06-19-affine-calibration-design.md.
-import { GLOBAL_PRIOR, RIDGE_INTERCEPT_LAMBDA, RIDGE_SLOPE_LAMBDA } from './constants';
+import { AFFINE_PRIOR_PSEUDO } from './constants';
 
 /** Recency-weighted sufficient statistics for the affine fit. */
 export interface AffineStats {
@@ -19,15 +19,23 @@ export interface AffineFit {
   b: number;
 }
 
-/** The canonical guess (minutes) used as the representative point everywhere a
- *  single scalar multiplier is still needed (displays, legacy seed). */
+/** Canonical guess (minutes): the representative point for scalar displays, the
+ *  slope-anchor scale, and the legacy seed. */
 export const CANONICAL_GUESS_MIN = 15;
+
+/** Intercept shrink (weight units): pulls a → 0 with the strength of the prior
+ *  pseudo-count, so a fixed cost only appears when varied data earns it. */
+const LAMBDA_A = AFFINE_PRIOR_PSEUDO;
+/** Slope anchor (minutes² units): pulls b → anchor with the strength of the
+ *  prior pseudo-count evaluated at the canonical guess. */
+const LAMBDA_B = AFFINE_PRIOR_PSEUDO * CANONICAL_GUESS_MIN * CANONICAL_GUESS_MIN;
 
 export const emptyAffineStats = (): AffineStats => ({ sw: 0, swx: 0, swy: 0, swxx: 0, swxy: 0 });
 
 /**
  * Decay existing mass by (1 − alpha), then add the new (guess, actual) point at
- * weight 1. `alpha` is the recency rate (alphaFor: adapt_speed, halved for retro).
+ * weight 1. `alpha` is the recency rate chosen by the caller (the store maps it
+ * from adapt_speed; smaller = longer memory).
  */
 export const updateAffineStats = (
   prev: AffineStats,
@@ -46,15 +54,15 @@ export const updateAffineStats = (
 };
 
 /**
- * Closed-form ridge solve. `anchor` is the prior multiplier m0; with empty stats
- * the fit is exactly { a: 0, b: anchor } — cold start equals today's guess×prior.
- * det ≥ λ_a·λ_b > 0 for non-negative stats, so the division is always safe.
+ * Closed-form ridge solve. `anchor` is the prior multiplier m0. With empty stats
+ * the fit is exactly { a: 0, b: anchor }. det ≥ LAMBDA_A·LAMBDA_B > 0 for
+ * non-negative stats, so the division is always safe.
  */
 export const solveAffine = (s: AffineStats, anchor: number): AffineFit => {
-  const A = s.sw + RIDGE_INTERCEPT_LAMBDA;
+  const A = s.sw + LAMBDA_A;
   const B = s.swx;
-  const C = s.swxx + RIDGE_SLOPE_LAMBDA;
-  const P = s.swxy + RIDGE_SLOPE_LAMBDA * anchor;
+  const C = s.swxx + LAMBDA_B;
+  const P = s.swxy + LAMBDA_B * anchor;
   const det = A * C - B * B;
   return {
     a: (C * s.swy - B * P) / det,
@@ -67,20 +75,25 @@ export const solveAffine = (s: AffineStats, anchor: number): AffineFit => {
 export const affineHonestExact = (fit: AffineFit, guess: number): number => fit.a + fit.b * guess;
 
 /**
- * Seed stats that make solveAffine return exactly { a: 0, b: multiplier } for
- * any weight w — used to migrate legacy rows that only stored a scalar. The
- * sufficient stats are set so the ridge normal equations solve to (0, multiplier)
- * when the global prior is used as the anchor.
+ * Seed stats that make solveAffine(seed, anchor) return EXACTLY { a: 0, b: m }
+ * — used to migrate a legacy row that only stored a scalar multiplier so its
+ * honest number is unchanged right after migration. The anchor MUST be the same
+ * value the row will be solved with (its priorMult). Derived from the ridge
+ * normal equations for a single point of weight w at the canonical guess.
  */
-export const seedAffineFromMultiplier = (multiplier: number, weight: number): AffineStats => {
+export const seedAffineFromMultiplier = (
+  multiplier: number,
+  weight: number,
+  anchor: number,
+): AffineStats => {
   const x0 = CANONICAL_GUESS_MIN;
   const w = Math.max(0, weight);
-  const swx = w * x0;
   const swxx = w * x0 * x0;
-  // swy = swx*m satisfies the intercept normal equation (a=0 ⟹ swy = swx*b = swx*m)
-  const swy = swx * multiplier;
-  // swxy must satisfy the slope normal equation:
-  // (swxx + λ_b)*m = swxy + λ_b*anchor → swxy = swxx*m + λ_b*(m - GLOBAL_PRIOR)
-  const swxy = swxx * multiplier + RIDGE_SLOPE_LAMBDA * (multiplier - GLOBAL_PRIOR);
-  return { sw: w, swx, swy, swxx, swxy };
+  return {
+    sw: w,
+    swx: w * x0,
+    swy: w * multiplier * x0,
+    swxx,
+    swxy: swxx * multiplier + LAMBDA_B * (multiplier - anchor),
+  };
 };
