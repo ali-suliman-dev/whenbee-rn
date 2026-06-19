@@ -42,8 +42,6 @@ interface UseTodayResult {
   /** Total tasks on the day (queued + done) — drives the empty state. */
   totalCount: number;
   categoryName: (id: string) => string;
-  /** Minutes Today has handed back so far (local-day reclaim). 0 → the line hides. */
-  todayReclaimMin: number;
   /** The companion's current stage (1..6) — drives the HUD bee. */
   companionStage: CompanionStage;
   /** The companion's procedural seed — drives the HUD bee's stripe warmth. */
@@ -70,11 +68,9 @@ function categoryName(id: string): string {
 export function useToday(): UseTodayResult {
   const hydrate = useCalibrationStore((s) => s.hydrate);
   const statsByCategory = useCalibrationStore((s) => s.statsByCategory);
-  const loadTodayReclaimMin = useCalibrationStore((s) => s.loadTodayReclaimMin);
   const loadReclaimSummary = useCalibrationStore((s) => s.loadReclaimSummary);
   const tasks = useTasksStore((s) => s.tasks);
 
-  const [todayReclaimMin, setTodayReclaimMin] = useState(0);
   const [companionStage, setCompanionStage] = useState<CompanionStage>(1);
   const [companionSeed, setCompanionSeed] = useState(1);
   const [reclaimLifetimeMin, setReclaimLifetimeMin] = useState(0);
@@ -84,20 +80,6 @@ export function useToday(): UseTodayResult {
   useEffect(() => {
     void hydrate();
   }, [hydrate]);
-
-  // Re-read the day's reclaim every time Today regains focus, so a fresh deposit
-  // from the Reward flow shows the moment the user lands back here.
-  useFocusEffect(
-    useCallback(() => {
-      let active = true;
-      void loadTodayReclaimMin().then((min) => {
-        if (active) setTodayReclaimMin(min);
-      });
-      return () => {
-        active = false;
-      };
-    }, [loadTodayReclaimMin]),
-  );
 
   // Companion presence + lifetime reclaim drive the HUD bee and the daily-empty
   // proof line. Re-read on focus so a fresh deposit / tier-up shows on return.
@@ -174,21 +156,9 @@ export function useToday(): UseTodayResult {
   useEffect(() => {
     const now = Date.now();
     const epoch = Math.round(now / 1000);
-    // No next task: show the calm evening "got ahead of Nm" state when there's
-    // reclaim to celebrate, otherwise clear to the quiet empty widget.
+    // No next task: clear to the quiet empty widget.
     if (!focus || honestMin === null) {
-      if (todayReclaimMin > 0) {
-        publishWidgetSnapshot({
-          nextTaskLabel: '',
-          category: '',
-          honestFinishClock: '',
-          startDeepLink: '',
-          reclaimTodayMin: todayReclaimMin,
-          updatedAtEpoch: epoch,
-        });
-      } else {
-        clearWidgetSnapshot();
-      }
+      clearWidgetSnapshot();
       return;
     }
     publishWidgetSnapshot({
@@ -196,10 +166,10 @@ export function useToday(): UseTodayResult {
       category: categoryName(focus.category),
       honestFinishClock: formatClock(projectedFinish(now, honestMin)),
       startDeepLink: `whenbee://timer?taskId=${focus.id}`,
-      reclaimTodayMin: todayReclaimMin,
+      reclaimTodayMin: 0,
       updatedAtEpoch: epoch,
     });
-  }, [focus, honestMin, todayReclaimMin]);
+  }, [focus, honestMin]);
 
   return {
     focus,
@@ -208,7 +178,6 @@ export function useToday(): UseTodayResult {
     done,
     totalCount: tasks.length,
     categoryName,
-    todayReclaimMin,
     companionStage,
     companionSeed,
     reclaimLifetimeMin,

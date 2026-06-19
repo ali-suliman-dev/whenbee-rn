@@ -22,33 +22,29 @@ describe('TodayHud', () => {
     expect(screen.getByText('Raw')).toBeOnTheScreen();
   });
 
-  it('shows the reclaim stat and the ritual invitation in the footer', () => {
+  it('shows the ritual invitation in the footer when the ritual is on', () => {
     render(
       <TodayHud
         cells={cells}
         stage={2}
         seed={1}
         onPress={() => {}}
-        reclaimMin={10}
         ritualEnabled
         ritualDone={false}
         onLogRitual={() => {}}
       />,
     );
-    expect(screen.getByText('+10m')).toBeOnTheScreen();
-    expect(screen.getByText('reclaimed today')).toBeOnTheScreen();
     expect(screen.getByText('Log one honest thing')).toBeOnTheScreen();
   });
 
-  it('hides reclaim at 0 and renders no footer when ritual is off and reclaim is 0', () => {
-    render(<TodayHud cells={cells} stage={2} seed={1} onPress={() => {}} reclaimMin={0} ritualEnabled={false} />);
-    expect(screen.queryByText('reclaimed today')).toBeNull();
+  it('renders no footer when the ritual is off', () => {
+    render(<TodayHud cells={cells} stage={2} seed={1} onPress={() => {}} ritualEnabled={false} />);
     expect(screen.queryByText('Log one honest thing')).toBeNull();
   });
 
   it('tapping the honey top still routes to the hub', () => {
     const onPress = jest.fn();
-    render(<TodayHud cells={cells} stage={2} seed={1} onPress={onPress} reclaimMin={10} ritualEnabled />);
+    render(<TodayHud cells={cells} stage={2} seed={1} onPress={onPress} ritualEnabled />);
     fireEvent.press(screen.getByText('Setting'));
     expect(onPress).toHaveBeenCalledTimes(1);
   });

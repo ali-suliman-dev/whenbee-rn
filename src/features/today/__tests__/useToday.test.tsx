@@ -32,7 +32,6 @@ beforeEach(() => {
   useCalibrationStore.setState({
     statsByCategory: {},
     hydrate: async () => {},
-    loadTodayReclaimMin: async () => 0,
     loadReclaimSummary: async () => summary({ lifetimeMin: 0, lifetimeNectar: 0 }),
   });
 });

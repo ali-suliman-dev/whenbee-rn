@@ -25,18 +25,15 @@ describe('useWhenbeeHub', () => {
     const { result } = renderHook(() => useWhenbeeHub());
 
     await waitFor(() => {
-      expect(result.current.reclaimLifetimeMin).toBe(0);
+      expect(result.current.honestLogCount).toBe(0);
     });
 
-    expect(result.current.biggestArea).toBeNull();
     expect(result.current.blindSpot).toBeNull();
     expect(result.current.cells).toEqual([]);
-    expect(result.current.reclaimByCategory).toEqual([]);
-    expect(result.current.honestLogCount).toBe(0);
     expect(result.current.tier).toBe('Raw');
   });
 
-  it('composes reclaim totals, biggest area, blind spot, and cells', async () => {
+  it('composes honest-log count, blind spot, and cells', async () => {
     const db = createMemoryDatabase();
     useCalibrationStore.getState().setDatabase(db);
     trackCategories(['cleaning', 'admin', 'errands']);
@@ -91,22 +88,8 @@ describe('useWhenbeeHub', () => {
     const { result } = renderHook(() => useWhenbeeHub());
 
     await waitFor(() => {
-      expect(result.current.reclaimLifetimeMin).toBe(70);
+      expect(result.current.honestLogCount).toBe(8);
     });
-
-    // biggest area = max-reclaim category.
-    expect(result.current.biggestArea?.categoryId).toBe('cleaning');
-    expect(result.current.biggestArea?.reclaimedMinutes).toBe(50);
-
-    // reclaimByCategory sorted desc.
-    expect(result.current.reclaimByCategory.map((c) => c.categoryId)).toEqual([
-      'cleaning',
-      'admin',
-      'errands',
-    ]);
-
-    // honestLogCount = sum of n across tracked categories.
-    expect(result.current.honestLogCount).toBe(8);
 
     // blind spot = lowest sharpness WITH n>=1 → admin (15), not errands (5, n=0).
     expect(result.current.blindSpot?.categoryId).toBe('admin');

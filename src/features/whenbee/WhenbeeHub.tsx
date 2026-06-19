@@ -16,22 +16,20 @@ import { WhenbeeAvatar } from './WhenbeeAvatar';
 import { HoneyRing } from './HoneyRing';
 import { RingBadge } from './RingBadge';
 import { AreaRow } from './AreaRow';
-import { ReclaimHeroCard } from './ReclaimHeroCard';
 import { DiscoveriesPreviewCard } from './DiscoveriesPreviewCard';
 import { BlindSpotCard } from './BlindSpotCard';
 import { LifeDriftCard } from './LifeDriftCard';
 
 // ──────────────────────────────────────────────────────────────────────────────
-// WhenbeeHub — ring hero + labeled zones (Reclaimed, Discoveries, Your Areas).
+// WhenbeeHub — ring hero + labeled zones (Discoveries, Your Areas).
 //
 // Vertical order:
 //   1. ScreenHeader (title + context-aware subtitle)
 //   2. HERO: HoneyRing wrapping WhenbeeAvatar + RingBadge below
-//   3. RECLAIMED zone: label + explain + ReclaimHeroCard
-//   4. DISCOVERIES zone: label + explain + DiscoveriesPreviewCard (when any exist)
-//   5. Conditional gentle cards: LifeDriftCard, BlindSpotCard
-//   6. YOUR AREAS zone: label + explain + one AreaRow per category
-//   7. CTA: empty → "Log your first task"; populated → "Make my whole day honest"
+//   3. DISCOVERIES zone: label + explain + DiscoveriesPreviewCard (when any exist)
+//   4. Conditional gentle cards: LifeDriftCard, BlindSpotCard
+//   5. YOUR AREAS zone: label + explain + one AreaRow per category
+//   6. CTA: empty → "Log your first task"; populated → "Make my whole day honest"
 //
 // No RayBurst, no TierTrailHub, no Honeycomb grid.
 // Bee: no glow halo (glow={false}); a soft-edge neutral coin backs it off the ring
@@ -116,17 +114,6 @@ export function WhenbeeHub() {
           />
         </HoneyRing>
         <RingBadge sharpness={vm.leadSharpness} />
-      </View>
-
-      {/* RECLAIMED zone */}
-      <View style={zoneWrap}>
-        <Text style={zoneLabel}>Reclaimed</Text>
-        <Text style={zoneExplain}>time your honest numbers won back</Text>
-        <ReclaimHeroCard
-          lifetimeMin={vm.reclaimLifetimeMin}
-          honestLogCount={vm.honestLogCount}
-          biggestArea={vm.biggestArea}
-        />
       </View>
 
       {/* DISCOVERIES zone — shown once any aha card has been banked */}

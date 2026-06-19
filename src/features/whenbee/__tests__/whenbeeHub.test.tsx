@@ -34,9 +34,6 @@ const COMPANION_FIXTURE: CompanionPresence = {
 
 function vm(overrides: Partial<WhenbeeHubVM> = {}): WhenbeeHubVM {
   return {
-    reclaimLifetimeMin: 0,
-    reclaimByCategory: [],
-    biggestArea: null,
     honestLogCount: 0,
     blindSpot: null,
     leadSharpness: 0,
@@ -62,31 +59,6 @@ describe('WhenbeeHub', () => {
   });
   afterEach(() => jest.clearAllMocks());
 
-  it('renders the formatted reclaim number + provenance when lifetime > 0', () => {
-    mockHook.mockReturnValue(
-      vm({ reclaimLifetimeMin: 860, honestLogCount: 23, tier: 'Ripening' }),
-    );
-
-    render(<WhenbeeHub />);
-
-    // 860 min → "14h 20m"
-    expect(screen.getByText('14h 20m')).toBeOnTheScreen();
-    expect(screen.getByText('from 23 honest logs · learned on-device')).toBeOnTheScreen();
-  });
-
-  it('renders the no-guilt empty copy and NO number when lifetime is 0', () => {
-    mockHook.mockReturnValue(vm({ reclaimLifetimeMin: 0 }));
-
-    render(<WhenbeeHub />);
-
-    expect(
-      screen.getByText('Log a task and the time you win back starts adding up here. No rush.'),
-    ).toBeOnTheScreen();
-    // No reclaim hero number is rendered in the empty state.
-    expect(screen.queryByText('0m')).toBeNull();
-    expect(screen.queryByText(/honest logs · learned on-device/)).toBeNull();
-  });
-
   it('hides the blind-spot card when blindSpot is null', () => {
     mockHook.mockReturnValue(vm({ blindSpot: null }));
 
@@ -111,23 +83,18 @@ describe('WhenbeeHub', () => {
     useCategoriesStore.setState({
       categories: [{ id: 'deep_work', name: 'Deep Work', adaptSpeed: 'balanced' }],
     });
-    mockHook.mockReturnValue(
-      vm({ leadSharpness: 46, reclaimLifetimeMin: 120, honestLogCount: 5, tier: 'Setting' }),
-    );
+    mockHook.mockReturnValue(vm({ leadSharpness: 46, honestLogCount: 5, tier: 'Setting' }));
 
     render(<WhenbeeHub />);
 
     // RingBadge: ringCopy(46) → tier "Setting"
     expect(screen.getByText(/Setting/)).toBeTruthy();
-    // Zone labels
-    expect(screen.getByText('Reclaimed')).toBeTruthy();
+    // Zone label
     expect(screen.getByText('Your areas')).toBeTruthy();
   });
 
   it('shows the empty CTA when there are no logs', () => {
-    mockHook.mockReturnValue(
-      vm({ leadSharpness: 0, reclaimLifetimeMin: 0, honestLogCount: 0 }),
-    );
+    mockHook.mockReturnValue(vm({ leadSharpness: 0, honestLogCount: 0 }));
 
     render(<WhenbeeHub />);
 
@@ -135,7 +102,7 @@ describe('WhenbeeHub', () => {
   });
 
   it('renders the day-honest CTA when there are logs', () => {
-    mockHook.mockReturnValue(vm({ honestLogCount: 5, reclaimLifetimeMin: 60 }));
+    mockHook.mockReturnValue(vm({ honestLogCount: 5 }));
 
     render(<WhenbeeHub />);
 
