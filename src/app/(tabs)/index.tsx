@@ -1,5 +1,5 @@
 import { View, Text, Pressable, ScrollView, ActionSheetIOS, type TextStyle } from 'react-native';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { router } from 'expo-router';
 import { haptics } from '@/src/lib/haptics';
 import { Ionicons } from '@expo/vector-icons';
@@ -56,19 +56,40 @@ export default function Today() {
 
   // First-run peek: teach the hidden swipe once, then never again.
   const [peekFirstRow] = useState(() => kv.getString('today.seenSwipeHint') == null);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [showCoachMark, setShowCoachMark] = useState(
+    () => kv.getString('today.seenCoachMarkV1') == null,
+  );
+
+  const dismissCoachMark = useCallback(() => {
+    setShowCoachMark(false);
+    kv.set('today.seenCoachMarkV1', '1');
+  }, []);
+
   useEffect(() => {
     if (peekFirstRow) kv.set('today.seenSwipeHint', '1');
   }, [peekFirstRow]);
 
+  const hasDone = done.length > 0;
+  useEffect(() => {
+    if (!showCoachMark || !hasDone) return;
+    const timer = setTimeout(dismissCoachMark, 4000);
+    return () => clearTimeout(timer);
+  // dismissCoachMark is stable (useCallback with no deps)
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [showCoachMark, hasDone]);
+
   function deleteTask(id: string) {
     haptics.medium();
+    dismissCoachMark();
     removeTask(id);
+    setDeletingId(null);
   }
   function promptDelete(id: string, label: string) {
     ActionSheetIOS.showActionSheetWithOptions(
-      { title: label, options: ['Delete', 'Cancel'], destructiveButtonIndex: 0, cancelButtonIndex: 1 },
+      { title: label, options: ['Remove', 'Cancel'], destructiveButtonIndex: 0, cancelButtonIndex: 1 },
       (i) => {
-        if (i === 0) deleteTask(id);
+        if (i === 0) setDeletingId(id);
       },
     );
   }
@@ -228,6 +249,7 @@ export default function Today() {
                   onDelete={() => deleteTask(row.id)}
                   onLongPress={() => promptDelete(row.id, row.label)}
                   peekHint={peekFirstRow && idx === 0}
+                  isExiting={deletingId === row.id}
                 />
               ))}
             </View>
@@ -236,7 +258,7 @@ export default function Today() {
           {done.length > 0 ? (
             <View style={{ gap: t.space[2] }}>
               <Text style={sectionLabel}>DONE TODAY</Text>
-              {done.map((row) => (
+              {done.map((row, idx) => (
                 <TaskRow
                   key={row.id}
                   title={row.label}
@@ -247,6 +269,9 @@ export default function Today() {
                   done
                   onDelete={() => deleteTask(row.id)}
                   onLongPress={() => promptDelete(row.id, row.label)}
+                  isExiting={deletingId === row.id}
+                  showCoachMark={showCoachMark && idx === 0}
+                  onCoachMarkDismiss={dismissCoachMark}
                 />
               ))}
             </View>
