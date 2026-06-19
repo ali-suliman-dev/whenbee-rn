@@ -66,3 +66,8 @@ export const RANGE_MAX_HALF_WIDTH = 0.5;
  *  scaled by the canonical guess² inside solveAffine so it lives in the same
  *  units as the data's slope information. */
 export const AFFINE_PRIOR_PSEUDO = 4;
+
+// ── Cold-start global-personal prior (new/thin categories start from YOUR bias) ─
+export const GLOBAL_PRIOR_MIN_LOGS = 4; // below this, use the population prior unchanged
+export const GLOBAL_PRIOR_K = 6; // pseudo-count: personal weight = n/(n+k)
+export const GLOBAL_PRIOR_MAX_WEIGHT = 0.6; // cap so a new category keeps its own identity

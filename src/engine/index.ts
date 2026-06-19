@@ -4,6 +4,7 @@ export { CATEGORY_PRIORS, CATEGORY_NAMES, priorFor } from './priors';
 export { clampRatio } from './ratio';
 export { alphaFor, updateEwma } from './ewma';
 export * from './affine';
+export * from './globalPrior';
 export { blendWithPrior, honestNumber, roundHonest, recurringHasEnoughData, resolveSuggestion } from './multiplier';
 export { sharpnessFromWindow, tierFor, logsToNextTier, tierBandProgress } from './sharpness';
 export type { TierBandProgress } from './sharpness';
