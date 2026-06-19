@@ -5,7 +5,7 @@ import type {
 } from 'react-native-purchases';
 import { isExpoGo } from '@/src/lib/isExpoGo';
 
-/** RevenueCat entitlement identifier that unlocks Pro (Honest-Day calendar). */
+/** RevenueCat entitlement identifier that unlocks the Whenbee Pro bundle. */
 const PRO_ENTITLEMENT_ID = 'pro';
 
 /** Duration tag the paywall uses to label and order packages. */

@@ -8,7 +8,7 @@ export interface CompanionCapability {
     | 'running-finish-time'
     | 'today-done-time'
     | 'start-by-anchor'
-    | 'honest-day-forecast'
+    | 'full-day-forecast'
     | 'drift-recalibration'
     | 'keeper-standing';
   tier: Tier | null;
@@ -28,7 +28,7 @@ const CAPABILITIES: Record<CompanionStage, CompanionCapability> = {
   1: { id: 'running-finish-time', tier: 'Raw', label: 'Live finish-time on your timer', gatesNewFeature: true },
   2: { id: 'today-done-time', tier: 'Setting', label: 'Done-time on Today and Add-Task', gatesNewFeature: true },
   3: { id: 'start-by-anchor', tier: 'Ripening', label: 'Reverse start-by anchor', gatesNewFeature: true },
-  4: { id: 'honest-day-forecast', tier: 'Thickening', label: 'Honest-Day forecast on the widget', gatesNewFeature: true },
+  4: { id: 'full-day-forecast', tier: 'Thickening', label: 'Full-day forecast on the widget', gatesNewFeature: true },
   5: { id: 'drift-recalibration', tier: 'Honest', label: 'Drift re-check when life shifts', gatesNewFeature: true },
   6: { id: 'keeper-standing', tier: null, label: 'Keeper — your comb is sealed', gatesNewFeature: false },
 };

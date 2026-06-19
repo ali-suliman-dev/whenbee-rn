@@ -108,7 +108,7 @@ describe('funnel sequence: first session', () => {
     analytics.capture('aha_shown', { category: 'cooking', multiplier: 1.6, n: 5 });
 
     // Paywall surfaced later:
-    analytics.capture('paywall_view', { trigger: 'make_day_honest' });
+    analytics.capture('paywall_view', { trigger: 'settings_upgrade' });
 
     const order = capturedOrder(capture);
 
@@ -160,10 +160,10 @@ describe('funnel sequence: first session', () => {
   });
 
   it('paywall_view carries a recognised trigger', () => {
-    analytics.capture('paywall_view', { trigger: 'make_day_honest' });
+    analytics.capture('paywall_view', { trigger: 'settings_upgrade' });
 
     const [call] = callsFor(capture, 'paywall_view');
-    expect(['make_day_honest', 'settings_upgrade']).toContain(call?.['trigger']);
+    expect(['settings_upgrade', 'steals_your_time']).toContain(call?.['trigger']);
   });
 });
 

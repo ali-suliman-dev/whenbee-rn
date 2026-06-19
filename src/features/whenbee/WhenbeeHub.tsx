@@ -29,7 +29,7 @@ import { LifeDriftCard } from './LifeDriftCard';
 //   3. DISCOVERIES zone: label + explain + DiscoveriesPreviewCard (when any exist)
 //   4. Conditional gentle cards: LifeDriftCard, BlindSpotCard
 //   5. YOUR AREAS zone: label + explain + one AreaRow per category
-//   6. CTA: empty → "Log your first task"; populated → "Make my whole day honest"
+//   6. CTA: empty → "Log your first task"; populated & not Pro → Pro upsell
 //
 // No RayBurst, no TierTrailHub, no Honeycomb grid.
 // Bee: no glow halo (glow={false}); a soft-edge neutral coin backs it off the ring
@@ -68,12 +68,8 @@ export function WhenbeeHub() {
     router.push({ pathname: '/category/[category]', params: { category: id } });
   }
 
-  function openDayHonest() {
-    if (isPro) {
-      router.push('/(modals)/honest-day');
-      return;
-    }
-    router.push({ pathname: '/(modals)/paywall', params: { trigger: 'make_day_honest' } });
+  function openPaywall() {
+    router.push({ pathname: '/(modals)/paywall', params: { trigger: 'settings_upgrade' } });
   }
 
   function logFirst() {
@@ -159,27 +155,20 @@ export function WhenbeeHub() {
         <AppText variant="caption">Track a few tasks and your areas will appear here.</AppText>
       )}
 
-      {/* CTA — first-log prompt or day-honest shortcut */}
+      {/* CTA — first-log prompt; once logging, a calm Pro upsell for non-Pro users */}
       {isEmpty ? (
         <View>
           <AppButton label="Log your first task" variant="amber" fullWidth onPress={logFirst} />
-          <Text style={ctaSub}>Honest-day planning unlocks once your honey sets.</Text>
+          <Text style={ctaSub}>Your honest numbers grow with every task you log.</Text>
         </View>
-      ) : isPro ? (
-        <AppButton
-          label="Make my whole day honest"
-          variant="amber"
-          fullWidth
-          onPress={openDayHonest}
-        />
-      ) : (
+      ) : !isPro ? (
         <ProUpsellCard
-          title="Make my whole day honest"
-          note="Auto-pad your calendar with your real buffers."
-          onPress={openDayHonest}
-          accessibilityLabel="Go Pro and make your whole day honest"
+          title="Go deeper with Pro"
+          note="Reviews, a shareable report, and a real read on what your day can hold."
+          onPress={openPaywall}
+          accessibilityLabel="See what Whenbee Pro unlocks"
         />
-      )}
+      ) : null}
     </View>
   );
 }

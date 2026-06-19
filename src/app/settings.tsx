@@ -139,10 +139,6 @@ export default function Settings() {
     router.push({ pathname: '/(modals)/paywall', params: { trigger: 'settings_upgrade' } });
   }
 
-  function openHonestDay() {
-    router.push('/(modals)/honest-day');
-  }
-
   async function handleRestore() {
     if (restoring) return;
     const outcome = await restorePurchases();
@@ -179,19 +175,17 @@ export default function Settings() {
           <AppText variant="label">Whenbee Pro</AppText>
           {isPro ? (
             <SettingRow
-              icon="time-outline"
+              icon="checkmark-circle-outline"
               tint={t.colors.accent}
-              title="Make my whole day honest"
-              note="Map your real buffers onto today's calendar."
-              onPress={openHonestDay}
-              accessibilityLabel="Make my whole day honest"
+              title="Pro is active"
+              note="Reviews, the shareable report, and your day-capacity read are on."
             />
           ) : (
             <ProUpsellCard
-              title="Make my whole day honest"
-              note="Auto-pad your calendar with your real buffers."
+              title="Go deeper with Pro"
+              note="Reviews, a shareable report, and a real read on what your day can hold."
               onPress={openPaywall}
-              accessibilityLabel="Go Pro and make your whole day honest"
+              accessibilityLabel="See what Whenbee Pro unlocks"
             />
           )}
         </View>

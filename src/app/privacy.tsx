@@ -22,11 +22,6 @@ const POINTS: { icon: PrivacyGlyphKind; title: string; body: string }[] = [
     title: 'Anonymous crash and usage counts',
     body: 'To find bugs and see which screens get used, Whenbee sends anonymous events — taps and crashes, never your task names, times, or categories.',
   },
-  {
-    icon: 'calendar',
-    title: 'Your calendar, read on request',
-    body: 'Honest-Day reads your calendar only when you open it, and writes a padded block back only after you confirm. Nothing is sent anywhere.',
-  },
 ];
 
 export default function Privacy() {

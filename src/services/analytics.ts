@@ -84,7 +84,7 @@ export interface AppEventProps {
 
   // ── Monetization ─────────────────────────────────────────────────────────────
   paywall_view: {
-    trigger: 'make_day_honest' | 'settings_upgrade' | 'steals_your_time';
+    trigger: 'settings_upgrade' | 'steals_your_time';
     readiness?: 'pre' | 'honest';
   };
   founder_reserve: { result: 'reserved' };
@@ -97,8 +97,7 @@ export interface AppEventProps {
   // ── On-device share ──────────────────────────────────────────────────────────
   plan_shared: { surface: 'plan' | 'archetype'; is_pro: boolean; result: 'shared' | 'gated' | 'error' };
 
-  // ── Calendar / reminders ─────────────────────────────────────────────────────
-  calendar_padded: { events_count: number; day_end_shift_min: number };
+  // ── Reminders ────────────────────────────────────────────────────────────────
   reminder_enabled: Record<string, never>;
   reminder_disabled: Record<string, never>;
   drift_recheck: { action: 'shown' | 'recheck' | 'dismissed' };

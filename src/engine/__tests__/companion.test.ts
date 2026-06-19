@@ -31,7 +31,7 @@ describe('capabilityFor — each stage unlocks a real capability', () => {
     expect(capabilityFor(1).id).toBe('running-finish-time');
     expect(capabilityFor(2).id).toBe('today-done-time');
     expect(capabilityFor(3).id).toBe('start-by-anchor');
-    expect(capabilityFor(4).id).toBe('honest-day-forecast');
+    expect(capabilityFor(4).id).toBe('full-day-forecast');
     expect(capabilityFor(5).id).toBe('drift-recalibration');
   });
   it('Keeper (stage 6) gates nothing new', () => {

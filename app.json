@@ -50,12 +50,6 @@
       "expo-secure-store",
       "expo-web-browser",
       [
-        "expo-calendar",
-        {
-          "calendarPermission": "Whenbee reads today's events so it can show your honest day, and only writes back the times you confirm."
-        }
-      ],
-      [
         "@sentry/react-native/expo",
         {
           "organization": "your-org",

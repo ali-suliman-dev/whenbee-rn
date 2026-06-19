@@ -5,26 +5,28 @@ describe('ProUpsellCard', () => {
   it('renders the title and note', () => {
     render(
       <ProUpsellCard
-        title="Make my whole day honest"
-        note="Auto-pad your calendar with your real buffers."
+        title="Go deeper with Pro"
+        note="Reviews, a shareable report, and a real read on what your day can hold."
         onPress={() => {}}
       />,
     );
-    expect(screen.getByText('Make my whole day honest')).toBeTruthy();
-    expect(screen.getByText('Auto-pad your calendar with your real buffers.')).toBeTruthy();
+    expect(screen.getByText('Go deeper with Pro')).toBeTruthy();
+    expect(
+      screen.getByText('Reviews, a shareable report, and a real read on what your day can hold.'),
+    ).toBeTruthy();
   });
 
   it('calls onPress when tapped', () => {
     const onPress = jest.fn();
     render(
       <ProUpsellCard
-        title="Make my whole day honest"
+        title="Go deeper with Pro"
         note="note"
         onPress={onPress}
-        accessibilityLabel="Go Pro and make your whole day honest"
+        accessibilityLabel="See what Whenbee Pro unlocks"
       />,
     );
-    fireEvent.press(screen.getByLabelText('Go Pro and make your whole day honest'));
+    fireEvent.press(screen.getByLabelText('See what Whenbee Pro unlocks'));
     expect(onPress).toHaveBeenCalledTimes(1);
   });
 });

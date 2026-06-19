@@ -101,11 +101,20 @@ describe('WhenbeeHub', () => {
     expect(screen.getByText('Log your first task')).toBeTruthy();
   });
 
-  it('renders the day-honest CTA when there are logs', () => {
+  it('shows the Pro upsell when there are logs and the user is not Pro', () => {
     mockHook.mockReturnValue(vm({ honestLogCount: 5 }));
 
     render(<WhenbeeHub />);
 
-    expect(screen.getByText('Make my whole day honest')).toBeOnTheScreen();
+    expect(screen.getByText('Go deeper with Pro')).toBeOnTheScreen();
+  });
+
+  it('shows no upsell once logging and already Pro', () => {
+    useEntitlement.setState({ isPro: true, ready: true });
+    mockHook.mockReturnValue(vm({ honestLogCount: 5 }));
+
+    render(<WhenbeeHub />);
+
+    expect(screen.queryByText('Go deeper with Pro')).toBeNull();
   });
 });

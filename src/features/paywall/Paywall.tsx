@@ -14,16 +14,14 @@ import type { Package } from '@/src/services/purchases';
 import { useEntitlement } from './useEntitlement';
 import { useOfferings } from './useOfferings';
 import { useFounderReserve } from './useFounderReserve';
-import { BeforeAfterHero } from './BeforeAfterHero';
 import { FounderReserveCard } from './FounderReserveCard';
 import { PlanPicker } from './PlanPicker';
 import { openManageSubscriptions } from './manageSubscription';
 
 // ──────────────────────────────────────────────────────────────────────────────
 // Paywall — Whenbee's single Pro gate. The same flat-card vocabulary as Today:
-// one focal illustration, the honest-day before/after as the lead reason to pay,
-// four benefit lines, one modest social-proof line, the store-priced plan picker,
-// one CTA, then restore / manage / small print.
+// a heading that names the Pro bundle, four benefit lines, one modest social-proof
+// line, the store-priced plan picker, one CTA, then restore / manage / small print.
 //
 // Prices are ALWAYS read from the live offering's `priceString` (never hardcoded).
 // While offerings load we show a calm spinner-free placeholder; if they fail or
@@ -34,29 +32,29 @@ import { openManageSubscriptions } from './manageSubscription';
 // outcomes come from the entitlement result.
 // ──────────────────────────────────────────────────────────────────────────────
 
-type Trigger = 'make_day_honest' | 'settings_upgrade' | 'steals_your_time';
+type Trigger = 'settings_upgrade' | 'steals_your_time';
 
 /** Earned-readiness framing for the lead heading. */
 type Readiness = 'pre' | 'honest';
 
 /**
  * The earned ("post-honest") heading + subhead. Shown only once a user's numbers
- * have settled into honest — it names what they've already earned, rather than
+ * have settled into honest — it names what they've already built, rather than
  * pitching a problem they haven't solved yet.
  */
 const HONEST_HEADING = 'Your numbers are real now.';
 const HONEST_SUBHEAD =
-  'You did the logging — Whenbee knows how your days actually run. Let it carry those real numbers into your calendar.';
+  'You did the logging, so Whenbee knows how your days actually run. Pro turns that into a weekly read, a shareable report, and a real answer to "will today fit?"';
 
 const BENEFITS = [
-  { icon: 'time-outline', text: 'Every calendar event padded with your real buffers, automatically.' },
-  { icon: 'trending-up', text: 'See how much your day can actually hold — before you overbook it.' },
-  { icon: 'refresh-outline', text: 'Recurring tasks remember their honest length, so you set them once.' },
-  { icon: 'arrow-forward', text: 'Send your honest plan or time profile to a coach or partner in one tap. The image is made on your phone and never leaves it without you.' },
+  { icon: 'document-text-outline', text: 'A clean report of your real durations to share with a coach, clinician, or yourself.' },
+  { icon: 'calendar-outline', text: 'A weekly and monthly review that shows what actually changed.' },
+  { icon: 'pie-chart-outline', text: 'A day-capacity check that tells you if your plan fits before you commit to it.' },
+  { icon: 'pulse-outline', text: 'An honest range, not a single guess, that gets tighter the more you log.' },
 ] as const;
 
 function isTrigger(v: unknown): v is Trigger {
-  return v === 'make_day_honest' || v === 'settings_upgrade' || v === 'steals_your_time';
+  return v === 'settings_upgrade' || v === 'steals_your_time';
 }
 
 /** Map a package to its analytics plan name. */
@@ -90,7 +88,7 @@ export function Paywall({ trigger, readiness = 'pre' }: { trigger?: string; read
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const resolvedTrigger: Trigger = isTrigger(trigger) ? trigger : 'make_day_honest';
+  const resolvedTrigger: Trigger = isTrigger(trigger) ? trigger : 'settings_upgrade';
   const isHonest = readiness === 'honest';
 
   // Fire paywall_view exactly once on mount, with the resolved trigger + readiness.
@@ -206,19 +204,16 @@ export function Paywall({ trigger, readiness = 'pre' }: { trigger?: string; read
 
         <View style={{ gap: t.space[2] }}>
           <Text style={heading}>
-            {isHonest ? HONEST_HEADING : 'Stop planning a day that was never going to fit.'}
+            {isHonest ? HONEST_HEADING : 'See what your real numbers add up to.'}
           </Text>
           <Text style={sub}>
             {isHonest
               ? HONEST_SUBHEAD
-              : 'Whenbee already knows your real numbers. Let it quietly rebuild your calendar to match.'}
+              : 'Whenbee already learns how long things really take you. Pro turns that into a weekly read, a shareable report, and a real answer to "will today fit?"'}
           </Text>
         </View>
 
-        {/* The single clearest reason to pay. */}
-        <BeforeAfterHero />
-
-        {/* Benefits — calendar honesty headline first. */}
+        {/* Benefits — the Pro bundle, four lines. */}
         <View style={{ gap: t.space[3] }}>
           {BENEFITS.map((b) => (
             <View key={b.text} style={benefitRow}>
