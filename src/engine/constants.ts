@@ -17,6 +17,14 @@ export const ALPHA_BY_SPEED: Record<AdaptSpeed, number> = {
 };
 export const RETRO_ALPHA_FACTOR = 0.5; // memory is noisier → half weight
 
+/** Affine regression forgetting factor — DECOUPLED from adapt_speed for a longer
+ *  memory window (~33/20/11 logs). Retro entries use half (RETRO_ALPHA_FACTOR). */
+export const ALPHA_REG_BY_SPEED: Record<AdaptSpeed, number> = {
+  steady: 0.03,
+  balanced: 0.05,
+  reactive: 0.09,
+};
+
 /** Sharpness window + tiers. Thresholds match the prototype (THRESH=[0,40,64,82,93]). */
 export const SHARPNESS_WINDOW = 8; // last N completed logs feed the accuracy number
 export const TIERS: readonly Tier[] = ['Raw', 'Setting', 'Ripening', 'Thickening', 'Honest'];

@@ -38,7 +38,7 @@ describe('seedAffineFromMultiplier', () => {
 });
 
 describe('solveAffine feel', () => {
-  const train = (logs: Array<[number, number]>, alpha = ALPHA) => {
+  const train = (logs: [number, number][], alpha = ALPHA) => {
     let s = emptyAffineStats();
     for (const [g, a] of logs) s = updateAffineStats(s, g, a, alpha);
     return s;
