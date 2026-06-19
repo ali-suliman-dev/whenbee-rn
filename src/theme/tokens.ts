@@ -159,10 +159,13 @@ export const tokens = {
     light: {
       // ── 3-step surface ladder (figure/ground: each step lifts clearly) ──
       // bg: '#F4F1EA', // cream (page ground — the 60%)
+      // bg: '#F1EEFB', // cream (page ground — the 60%)
       bg: '#F4F2FC', // cream (page ground — the 60%)
       surface: '#FFFFFF', // card — lifts off the cream
       surfaceRaised: '#FFFFFF', // focal card (pair with soft shadow)
-      surfaceSunken: '#ECE8DE', // wells / inset tracks
+      surfaceSunken: '#F1EEFB', // wells / inset tracks
+      // surfaceSunken: '#E4DEF7', // wells / inset tracks
+      // surfaceSunken: '#ECE8DE', // wells / inset tracks
       hairline: '#DAD5C9', // 1px internal dividers (reads at 3:1 non-text)
       border: '#CFC9BA', // stronger edge for cards that must read
       shineOverlay: 'rgba(255,255,255,0.55)', // inner top-edge specular (glass lift)
@@ -176,6 +179,7 @@ export const tokens = {
       primary: '#6B5BE6',
       primaryEdge: '#463B9E',
       primarySoft: '#E4E0FA', // low-emphasis indigo fill
+      primaryWash: '#EFEDFC', // faintest indigo tint — lighter than primarySoft, still reads off white
       primarySoft2: 'rgba(130,117,240,0.6)',
       // Guess-segment diagonal stripe pair — softer than the CTA, clearly two-tone.
       gapStripeHi: '#C8C2F0', // lighter lavender stripe
@@ -250,6 +254,7 @@ export const tokens = {
       primaryEdge: '#6B5BE6',
       primarySoft2: 'rgba(130,117,240,0.6)',
       primarySoft: 'rgba(130,117,240,0.22)',
+      primaryWash: 'rgba(130,117,240,0.10)', // faintest indigo tint (dark parity; unused in dark chips)
       // Guess-segment diagonal stripe pair — indigo stripes on near-bg fill.
       gapStripeHi: '#A898F5', // lighter than CTA primary (#8275F0), clearly visible
       gapStripeLo: '#15161F', // = surfaceSunken — blends into bg, only Hi pops
