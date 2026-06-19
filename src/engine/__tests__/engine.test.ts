@@ -54,20 +54,21 @@ describe('honestNumber', () => {
 });
 
 describe('resolveSuggestion fallback', () => {
-  const category = { mEffective: 2.0, n: 9 };
+  const flat = (b: number) => ({ a: 0, b });
+  const category = { fit: flat(2.0), n: 9 };
   it('uses the category when recurring lacks 3 logs', () => {
-    const s = resolveSuggestion({ guessMinutes: 15, category, recurring: { mEffective: 3.0, n: 2 } });
-    expect(s.multiplier).toBe(2.0);
+    const s = resolveSuggestion({ guessMinutes: 15, category, recurring: { fit: flat(3.0), n: 2 } });
+    expect(s.multiplier).toBeCloseTo(2.0, 6);
     expect(s.basis).toBe('personal');
     expect(s.label).toBe('based on your last 9 times');
   });
-  it('uses the recurring multiplier once it has ≥3 logs', () => {
-    const s = resolveSuggestion({ guessMinutes: 15, category, recurring: { mEffective: 3.0, n: 4 } });
-    expect(s.multiplier).toBe(3.0);
+  it('uses the recurring fit once it has ≥3 logs', () => {
+    const s = resolveSuggestion({ guessMinutes: 15, category, recurring: { fit: flat(3.0), n: 4 } });
+    expect(s.multiplier).toBeCloseTo(3.0, 6);
     expect(s.honestMinutes).toBe(45);
   });
   it('labels a cold category as typical patterns', () => {
-    const s = resolveSuggestion({ guessMinutes: 20, category: { mEffective: 2.2, n: 1 }, recurring: null });
+    const s = resolveSuggestion({ guessMinutes: 20, category: { fit: flat(2.2), n: 1 }, recurring: null });
     expect(s.basis).toBe('prior');
     expect(s.label).toBe('based on typical patterns');
   });
