@@ -1,0 +1,343 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Whenbee · Tap-to-record entry ideas</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Inter:wght@500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    /* real Whenbee light tokens */
+    --bg:#F4F2FC; --surface:#FFFFFF; --sunken:#F1EEFB;
+    --hairline:#DAD5C9; --border:#CFC9BA;
+    --ink:#20233A; --muted:#5C5F73; --faint:#9B9DAB;
+    --primary:#6B5BE6; --primaryEdge:#463B9E; --primarySoft:#E4E0FA; --primaryWash:#EFEDFC;
+    --accent:#EEAE4D; --accentEdge:#C68A30; --accentSoft:#FBEFD6;
+    --onIndigo:#FFFFFF; --onAmber:#20233A;
+    --scrim:rgba(20,21,29,0.45);
+    --success:#33B07C; --danger:#D14343;
+    --rCard:16px; --rSheet:20px; --rMd:12px; --rSm:8px;
+    --ui:'Plus Jakarta Sans',system-ui,sans-serif;
+    --num:'Inter',system-ui,sans-serif;
+  }
+  *{box-sizing:border-box;-webkit-font-smoothing:antialiased;}
+  body{margin:0;background:#E9E6F6;font-family:var(--ui);color:var(--ink);padding:40px 28px 80px;}
+  h1.page{font-weight:800;font-size:28px;letter-spacing:-.02em;margin:0 0 6px;}
+  p.sub{color:var(--muted);font-size:14px;margin:0 0 34px;max-width:780px;line-height:1.5;}
+  .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(330px,1fr));gap:48px 40px;max-width:1180px;}
+  .cell{display:flex;flex-direction:column;}
+  .tag{display:inline-flex;align-items:center;gap:6px;font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);margin-bottom:2px;}
+  .tag .n{display:inline-grid;place-items:center;width:20px;height:20px;border-radius:999px;background:var(--ink);color:#fff;font-size:11px;font-family:var(--num);font-weight:700;}
+  .tag.you .n{background:var(--accent);color:var(--onAmber);}
+  .tag.new .n{background:var(--primary);color:#fff;}
+  .cell h2{font-size:17px;font-weight:700;margin:6px 0 3px;letter-spacing:-.01em;}
+  .cell .how{font-size:12.5px;color:var(--muted);line-height:1.45;margin:0 0 16px;min-height:36px;}
+  .pc{display:flex;gap:14px;margin-top:14px;}
+  .pc div{flex:1;font-size:11.5px;line-height:1.4;}
+  .pc .lbl{font-weight:700;font-size:10px;letter-spacing:.05em;text-transform:uppercase;margin-bottom:3px;}
+  .pc .pro .lbl{color:var(--success);} .pc .con .lbl{color:var(--danger);}
+  .pc .body{color:var(--muted);}
+
+  /* phone */
+  .phone{width:330px;height:680px;border-radius:42px;background:#000;padding:11px;
+         box-shadow:0 24px 60px -20px rgba(70,59,158,.45),0 4px 14px rgba(0,0,0,.12);position:relative;}
+  .screen{width:100%;height:100%;border-radius:32px;background:var(--bg);overflow:hidden;position:relative;display:flex;flex-direction:column;}
+  .notch{position:absolute;top:11px;left:50%;transform:translateX(-50%);width:110px;height:26px;background:#000;border-radius:0 0 16px 16px;z-index:40;}
+  .statusbar{height:46px;display:flex;align-items:flex-end;justify-content:space-between;padding:0 22px 6px;font-family:var(--num);font-weight:600;font-size:13px;color:var(--ink);}
+  .statusbar .r{display:flex;gap:6px;align-items:center;}
+  .content{flex:1;overflow:hidden;padding:6px 18px 0;position:relative;}
+  .greet{font-size:13px;color:var(--muted);font-weight:600;}
+  .h-honest{font-family:var(--num);font-weight:700;font-size:13px;}
+
+  /* today honest card */
+  .card{background:var(--surface);border:1px solid var(--border);border-radius:var(--rCard);padding:16px;}
+  .card.focal{box-shadow:0 6px 18px -10px rgba(70,59,158,.30);}
+  .eyebrow{font-size:10px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:var(--faint);}
+  .honest{font-family:var(--num);font-weight:700;font-size:40px;letter-spacing:-.02em;line-height:1;color:var(--ink);}
+  .honest small{font-size:18px;color:var(--muted);font-weight:600;margin-left:2px;}
+  .rowmeta{display:flex;justify-content:space-between;margin-top:10px;font-size:11.5px;color:var(--muted);}
+
+  .tasklbl{font-size:11px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--faint);margin:18px 2px 8px;}
+  .trow{display:flex;align-items:center;gap:12px;background:var(--surface);border:1px solid var(--border);border-radius:var(--rMd);padding:11px 13px;margin-bottom:8px;}
+  .trow .dot{width:9px;height:9px;border-radius:999px;background:var(--accent);}
+  .trow .t{flex:1;font-size:13.5px;font-weight:600;}
+  .trow .est{font-family:var(--num);font-size:12.5px;color:var(--muted);font-weight:600;}
+
+  /* tab bar */
+  .tabbar{height:78px;background:var(--surface);border-top:1px solid var(--hairline);
+          display:flex;align-items:flex-start;justify-content:space-around;padding:12px 18px 0;position:relative;}
+  .tab{display:flex;flex-direction:column;align-items:center;gap:4px;color:var(--faint);font-size:10px;font-weight:600;width:46px;}
+  .tab.active{color:var(--primary);}
+  .tab .ic{width:24px;height:24px;display:grid;place-items:center;}
+  .ic svg{width:23px;height:23px;}
+  .addwrap{position:absolute;left:50%;top:-16px;transform:translateX(-50%);display:flex;flex-direction:column;align-items:center;}
+  .add{width:54px;height:54px;border-radius:14px;background:var(--primary);
+       box-shadow:0 4px 0 var(--primaryEdge),0 8px 16px -4px rgba(70,59,158,.5);
+       display:grid;place-items:center;color:#fff;position:relative;}
+  .add svg{width:26px;height:26px;}
+  .add.press{transform:translateY(3px);box-shadow:0 1px 0 var(--primaryEdge),0 4px 10px -4px rgba(70,59,158,.5);}
+  .add.amber{background:var(--accent);box-shadow:0 4px 0 var(--accentEdge),0 8px 18px -4px rgba(198,138,48,.55);color:var(--onAmber);}
+  .hint{font-size:9.5px;font-weight:700;letter-spacing:.04em;color:var(--muted);margin-top:7px;text-transform:uppercase;opacity:.9;}
+
+  /* scrim overlay */
+  .scrim{position:absolute;inset:0;background:var(--scrim);z-index:20;}
+
+  /* V1 long-press: quick-start pop */
+  .qstart{position:absolute;left:50%;bottom:96px;transform:translateX(-50%);z-index:30;
+          background:var(--surface);border:1px solid var(--border);border-radius:var(--rSheet);
+          padding:16px 18px;width:228px;box-shadow:0 18px 40px -12px rgba(70,59,158,.5);text-align:center;}
+  .qstart .ring{width:54px;height:54px;border-radius:999px;border:3px solid var(--primary);margin:0 auto 10px;display:grid;place-items:center;}
+  .qstart .ring svg{width:26px;height:26px;color:var(--primary);}
+  .qstart .ttl{font-size:14px;font-weight:700;}
+  .qstart .meta{font-size:11.5px;color:var(--muted);margin-top:3px;}
+  .longpressring{position:absolute;width:78px;height:78px;border-radius:18px;border:3px solid var(--accent);left:50%;transform:translateX(-50%);bottom:-20px;z-index:31;opacity:.9;}
+
+  /* V2 drawer with thumb-zone button */
+  .sheet{position:absolute;left:0;right:0;bottom:0;height:78%;background:var(--surface);
+         border-radius:var(--rSheet) var(--rSheet) 0 0;z-index:30;box-shadow:0 -10px 40px -8px rgba(70,59,158,.35);
+         display:flex;flex-direction:column;padding:10px 18px 0;}
+  .grab{width:38px;height:5px;border-radius:999px;background:var(--border);margin:2px auto 12px;}
+  .sheet h3{font-size:22px;font-weight:800;letter-spacing:-.01em;margin:0 0 14px;}
+  .field{margin-bottom:14px;}
+  .field .fl{font-size:11px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;color:var(--faint);margin-bottom:6px;}
+  .input{border:1px solid var(--border);border-radius:var(--rMd);padding:12px 13px;font-size:14px;font-weight:600;display:flex;align-items:center;justify-content:space-between;}
+  .input.focus{border-color:var(--primary);box-shadow:0 0 0 3px var(--primaryWash);}
+  .input .ph{color:var(--ink);}
+  .chips{display:flex;gap:8px;flex-wrap:wrap;}
+  .chip{border:1px solid var(--border);border-radius:999px;padding:7px 13px;font-size:12.5px;font-weight:600;color:var(--muted);}
+  .chip.on{background:var(--primarySoft);border-color:transparent;color:var(--primaryEdge);}
+  .guess{font-family:var(--num);font-weight:700;font-size:22px;}
+  .guess small{font-size:13px;color:var(--muted);font-weight:600;}
+  .thumbzone{position:absolute;left:0;right:0;bottom:0;height:150px;background:linear-gradient(0deg,rgba(107,91,230,.07),transparent);z-index:31;pointer-events:none;}
+  .thumbarc{position:absolute;left:50%;bottom:24px;transform:translateX(-50%);width:300px;height:160px;border:2px dashed rgba(107,91,230,.45);border-radius:50%/60% 60% 0 0;border-bottom:none;z-index:32;}
+  .thumbarc span{position:absolute;top:-9px;left:50%;transform:translateX(-50%);background:var(--primary);color:#fff;font-size:9px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;padding:3px 8px;border-radius:999px;white-space:nowrap;}
+  .pinnedcta{position:absolute;left:18px;right:18px;bottom:26px;z-index:33;}
+  .btnP{background:var(--primary);color:#fff;border-radius:var(--rMd);height:52px;display:flex;align-items:center;justify-content:center;gap:8px;font-size:15px;font-weight:700;box-shadow:0 4px 0 var(--primaryEdge);}
+  .btnG{height:44px;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:600;color:var(--muted);margin-top:8px;}
+
+  /* V3 arc fan */
+  .fan{position:absolute;left:50%;bottom:100px;transform:translateX(-50%);width:240px;height:120px;z-index:30;}
+  .bub{position:absolute;width:62px;height:62px;border-radius:999px;background:var(--surface);border:1px solid var(--border);
+       box-shadow:0 12px 26px -10px rgba(70,59,158,.5);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;}
+  .bub svg{width:22px;height:22px;color:var(--primary);}
+  .bub b{font-size:9px;font-weight:700;color:var(--ink);letter-spacing:.02em;}
+  .bub.l{left:0;bottom:14px;} .bub.c{left:50%;transform:translateX(-50%);bottom:50px;} .bub.r{right:0;bottom:14px;}
+  .bub.c{background:var(--primary);} .bub.c svg{color:#fff;} .bub.c b{color:#fff;}
+
+  /* V4 hold to talk */
+  .wave{position:absolute;left:50%;bottom:104px;transform:translateX(-50%);z-index:30;
+        background:var(--surface);border:1px solid var(--border);border-radius:999px;padding:14px 22px;
+        box-shadow:0 16px 36px -12px rgba(70,59,158,.5);display:flex;flex-direction:column;align-items:center;gap:9px;width:250px;}
+  .bars{display:flex;align-items:center;gap:4px;height:30px;}
+  .bars i{width:4px;border-radius:999px;background:var(--primary);}
+  .wave .said{font-size:12.5px;font-weight:600;color:var(--ink);}
+  .wave .rel{font-size:10px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:var(--muted);}
+  .micbig svg{width:26px;height:26px;}
+
+  /* V5 quick-task chips on today */
+  .qrow{display:flex;gap:9px;overflow:hidden;margin:2px 0 4px;}
+  .qchip{flex:0 0 auto;display:flex;align-items:center;gap:8px;background:var(--surface);border:1px solid var(--border);
+         border-radius:999px;padding:9px 14px 9px 10px;box-shadow:0 2px 6px -3px rgba(70,59,158,.25);}
+  .qchip .pl{width:26px;height:26px;border-radius:999px;background:var(--primarySoft);display:grid;place-items:center;color:var(--primaryEdge);}
+  .qchip .pl svg{width:14px;height:14px;}
+  .qchip .qt{font-size:13px;font-weight:700;}
+  .qchip .qe{font-family:var(--num);font-size:10.5px;color:var(--muted);font-weight:600;}
+  .qchip.amber .pl{background:var(--accentSoft);color:var(--accentEdge);}
+
+  /* V6 capture bar */
+  .capbar{position:absolute;left:14px;right:14px;bottom:90px;z-index:15;
+          background:var(--surface);border:1px solid var(--border);border-radius:999px;height:50px;
+          display:flex;align-items:center;gap:10px;padding:0 8px 0 16px;box-shadow:0 10px 28px -12px rgba(70,59,158,.45);}
+  .capbar .cph{flex:1;font-size:14px;color:var(--faint);font-weight:500;}
+  .capbar .cmic{width:36px;height:36px;border-radius:999px;background:var(--sunken);display:grid;place-items:center;color:var(--muted);}
+  .capbar .cmic svg{width:18px;height:18px;}
+  .capbar .cgo{width:38px;height:38px;border-radius:999px;background:var(--primary);display:grid;place-items:center;color:#fff;box-shadow:0 3px 0 var(--primaryEdge);}
+  .capbar .cgo svg{width:19px;height:19px;}
+
+  .legend{display:flex;gap:18px;margin:0 0 30px;font-size:12px;flex-wrap:wrap;}
+  .legend b{font-weight:700;}
+  .swatch{display:inline-block;width:12px;height:12px;border-radius:3px;vertical-align:-1px;margin-right:5px;}
+</style>
+</head>
+<body>
+  <h1 class="page">Whenbee — making tap-to-record even easier</h1>
+  <p class="sub">Six entry-point variants on the real Today frame, drawn with the actual <code>tokens.ts</code> values (indigo&nbsp;#6B5BE6, amber&nbsp;#EEAE4D, Jakarta&nbsp;Sans, Inter numerals, real radii / coin-edge button). <b>1–2 are your ideas</b>; <b>3–6 are the four new ones.</b> Goal: shrink the distance from intent → recording, keep it in the thumb arc, no new learning curve.</p>
+  <div class="legend">
+    <span><span class="swatch" style="background:#EEAE4D"></span><b>Amber tag</b> = your idea</span>
+    <span><span class="swatch" style="background:#6B5BE6"></span><b>Indigo tag</b> = new suggestion</span>
+  </div>
+
+  <div class="grid" id="grid"></div>
+
+<script>
+/* SVG glyphs */
+const I = {
+  plus:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>',
+  home:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11l9-8 9 8M5 10v10h14V10"/></svg>',
+  chart:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/></svg>',
+  hive:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M7 4h10l3 5-3 5H7L4 9z" transform="scale(0.8) translate(3 2)"/></svg>',
+  gear:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M4.2 4.2l2.1 2.1M17.7 17.7l2.1 2.1M2 12h3M19 12h3M4.2 19.8l2.1-2.1M17.7 6.3l2.1-2.1"/></svg>',
+  mic:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/></svg>',
+  play:'<svg viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>',
+  kbd:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="6" width="20" height="12" rx="2"/><path d="M6 10h.01M10 10h.01M14 10h.01M18 10h.01M7 14h10"/></svg>',
+  arrow:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg>',
+  wifi:'<svg viewBox="0 0 24 24" fill="currentColor"><path d="M1 9l2 2c5-5 13-5 18 0l2-2C16 2 8 2 1 9zm8 8l3 3 3-3c-1.7-1.7-4.3-1.7-6 0zm-4-4l2 2c2.8-2.8 7.2-2.8 10 0l2-2c-3.9-3.9-10.1-3.9-14 0z"/></svg>',
+  batt:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="2" y="7" width="18" height="10" rx="2.5"/><rect x="4" y="9" width="13" height="6" rx="1" fill="currentColor"/><path d="M22 10v4" stroke-linecap="round"/></svg>',
+};
+
+function statusbar(){return `<div class="statusbar"><span>9:41</span><span class="r"><span style="width:17px">${I.wifi}</span><span style="width:22px">${I.batt}</span></span></div>`;}
+
+/* baseline Today content (kept quiet so the entry UI is the hero) */
+function today(opts={}){
+  const dim = opts.dim ? 'opacity:.55;filter:saturate(.9)' : '';
+  return `
+  <div class="content" style="${dim}">
+    <div style="display:flex;justify-content:space-between;align-items:baseline;margin:4px 2px 12px;">
+      <span class="greet">Good morning, Ali</span>
+      <span class="h-honest" style="color:var(--muted)">Fri · 3 left</span>
+    </div>
+    <div class="card focal">
+      <div class="eyebrow">Today will really take</div>
+      <div style="display:flex;align-items:flex-end;justify-content:space-between;margin-top:6px;">
+        <div class="honest">4<small>h</small> 50<small>m</small></div>
+        <div style="text-align:right"><div class="eyebrow" style="color:var(--accentEdge)">Honey</div><div class="h-honest" style="color:var(--accent);font-size:16px">●●●○○</div></div>
+      </div>
+      <div class="rowmeta"><span>You planned 3h 30m</span><span>+1h 20m honest</span></div>
+    </div>
+    ${opts.chips||''}
+    <div class="tasklbl">On deck</div>
+    <div class="trow"><span class="dot"></span><span class="t">Reply to emails</span><span class="est">~35m</span></div>
+    <div class="trow"><span class="dot" style="background:var(--primary)"></span><span class="t">Gym session</span><span class="est">~1h 5m</span></div>
+    <div class="trow"><span class="dot" style="background:var(--success)"></span><span class="t">Write spec</span><span class="est">~2h</span></div>
+  </div>`;
+}
+
+function tabbar(add){
+  return `<div class="tabbar">
+    <div class="tab active"><span class="ic">${I.home}</span>Today</div>
+    <div class="tab"><span class="ic">${I.chart}</span>Patterns</div>
+    <div class="tab"><span class="ic">${I.hive}</span>Hive</div>
+    <div class="tab"><span class="ic">${I.gear}</span>You</div>
+    <div class="addwrap">${add}</div>
+  </div>`;
+}
+
+function phone(inner){return `<div class="phone"><div class="notch"></div><div class="screen">${statusbar()}${inner}</div></div>`;}
+
+/* ---- variants ---- */
+
+// V1 long-press quick start
+const v1 = phone(`
+  ${today({dim:true})}
+  <div class="scrim" style="background:rgba(20,21,29,.30)"></div>
+  <div class="qstart">
+    <div class="ring">${I.play}</div>
+    <div class="ttl">Quick-start a timer</div>
+    <div class="meta">No fields. Name it after.</div>
+  </div>
+  ${tabbar(`<div class="add amber press">${I.plus}</div><div class="longpressring"></div><div class="hint">Hold ▾</div>`)}
+`);
+
+// V2 drawer with thumb-zone pinned CTA
+const v2 = phone(`
+  ${today({dim:true})}
+  <div class="scrim"></div>
+  <div class="sheet">
+    <div class="grab"></div>
+    <h3>New task</h3>
+    <div class="field"><div class="fl">What are you doing?</div><div class="input focus"><span class="ph">Reply to emails</span><span style="color:var(--primary);width:20px">${I.mic}</span></div></div>
+    <div class="field"><div class="fl">Category</div><div class="chips"><span class="chip on">Admin</span><span class="chip">Deep work</span><span class="chip">Health</span></div></div>
+    <div class="field"><div class="fl">Your guess</div><div class="guess">35<small>min</small> &nbsp;·&nbsp; <span style="color:var(--primary)">honest ~50min</span></div></div>
+  </div>
+  <div class="thumbarc"><span>natural thumb reach</span></div>
+  <div class="pinnedcta">
+    <div class="btnP">${I.play} Add &amp; start timer</div>
+    <div class="btnG">Add to today</div>
+  </div>
+  ${tabbar(`<div class="add press">${I.plus}</div>`)}
+`);
+
+// V3 quick-action arc
+const v3 = phone(`
+  ${today({dim:true})}
+  <div class="scrim" style="background:rgba(20,21,29,.28)"></div>
+  <div class="fan">
+    <div class="bub l">${I.mic}<b>Voice</b></div>
+    <div class="bub c">${I.play}<b>Timer</b></div>
+    <div class="bub r">${I.kbd}<b>Type</b></div>
+  </div>
+  ${tabbar(`<div class="add press">${I.plus}</div>`)}
+`);
+
+// V4 hold to talk
+const barH=[14,22,30,18,26,12,24,16,28,20,14,24,18];
+const v4 = phone(`
+  ${today({dim:true})}
+  <div class="scrim" style="background:rgba(20,21,29,.30)"></div>
+  <div class="wave">
+    <div class="bars">${barH.map(h=>`<i style="height:${h}px"></i>`).join('')}</div>
+    <div class="said">“Reply to emails, twenty minutes”</div>
+    <div class="rel">Release to log ●</div>
+  </div>
+  ${tabbar(`<div class="add amber press micbig">${I.mic}</div><div class="hint">Hold to talk</div>`)}
+`);
+
+// V5 quick-task chips
+const chipRow = `<div class="qrow">
+  <div class="qchip"><span class="pl">${I.play}</span><div><div class="qt">Emails</div><div class="qe">~50m honest</div></div></div>
+  <div class="qchip amber"><span class="pl">${I.play}</span><div><div class="qt">Gym</div><div class="qe">~1h 5m</div></div></div>
+  <div class="qchip"><span class="pl">${I.play}</span><div><div class="qt">Standup</div><div class="qe">~18m</div></div></div>
+</div>`;
+const v5 = phone(`
+  ${today({chips:`<div class="tasklbl" style="margin-top:16px">Tap to start again</div>${chipRow}`})}
+  ${tabbar(`<div class="add">${I.plus}</div>`)}
+`);
+
+// V6 always-ready capture bar
+const v6 = phone(`
+  ${today({})}
+  <div class="capbar">
+    <span class="cph">What are you doing?</span>
+    <span class="cmic">${I.mic}</span>
+    <span class="cgo">${I.arrow}</span>
+  </div>
+  ${tabbar(`<div class="add">${I.plus}</div>`)}
+`);
+
+const variants = [
+  {tag:'you',n:1,title:'Long-press the + button',
+   how:'Press-and-hold the center + → skip the drawer, instantly start a timer. Name it after. The amber ring + “Hold ▾” cue hints the gesture.',
+   pro:'Fastest possible. Zero new chrome.', con:'Hidden affordance — needs a one-time teach. Easy to miss.', html:v1},
+  {tag:'you',n:2,title:'Thumb-zone confirm in the drawer',
+   how:'Same drawer, but it opens pre-filled with smart defaults and the big Start button is pinned in the natural thumb arc — one reach, no stretch to the top.',
+   pro:'No new gesture. Cuts the final reach. Familiar.', con:'Still opens the full sheet — not the fastest path.', html:v2},
+  {tag:'new',n:3,title:'Quick-action arc',
+   how:'Tap + → three bubbles fan up into the thumb arc: Voice · Start timer · Type. Makes the “hidden” long-press actions visible, one tap each.',
+   pro:'Discoverable + fast. Picks the path up front.', con:'One extra tap vs a pure gesture. New pattern to learn once.', html:v3},
+  {tag:'new',n:4,title:'Hold-to-talk on the +',
+   how:'Press-and-hold + and just say it (“Reply to emails, 20 min”), release to log. Walkie-talkie. Live waveform sits in the thumb zone while held.',
+   pro:'Truly hands-low + eyes-free. On-device STT already exists.', con:'Voice not always socially OK. Hold gesture needs teaching.', html:v4},
+  {tag:'new',n:5,title:'Quick-task chips on Today',
+   how:'A row of your most-frequent tasks as one-tap chips. Tap → timer starts instantly with the learned honest guess. No drawer at all. Uses existing frequency data.',
+   pro:'Zero-field re-fire for repeat tasks — the 80% case. Visible, no gesture.', con:'Only helps recurring tasks; new tasks still use the +.', html:v5},
+  {tag:'new',n:6,title:'Always-ready capture bar',
+   how:'A persistent slim “What are you doing?” pill docked just above the tab bar, always in thumb reach. Tap field to type, mic to speak, or → to start.',
+   pro:'Always visible, no hunting. Type or talk from one spot.', con:'Costs permanent vertical space on Today. Competes with the +.', html:v6},
+];
+
+document.getElementById('grid').innerHTML = variants.map(v=>`
+  <div class="cell">
+    <span class="tag ${v.tag}"><span class="n">${v.n}</span>${v.tag==='you'?'Your idea':'New'}</span>
+    <h2>${v.title}</h2>
+    <p class="how">${v.how}</p>
+    ${v.html}
+    <div class="pc">
+      <div class="pro"><div class="lbl">Strength</div><div class="body">${v.pro}</div></div>
+      <div class="con"><div class="lbl">Cost</div><div class="body">${v.con}</div></div>
+    </div>
+  </div>`).join('');
+</script>
+</body>
+</html>
