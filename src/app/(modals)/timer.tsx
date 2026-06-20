@@ -118,9 +118,8 @@ export default function Timer() {
   }, [timer, capturedLabel, categories, pickDefaultCategory]);
 
   const handleCaptureSave = useCallback(async () => {
-    // Pass label + category directly as overrides — the store was already cleared by
-    // onFreezeForCapture, so setQuickDetails would be a no-op and the log would
-    // fall back to the quick-start defaults.
+    // Pass label + category directly as overrides — the store is already cleared by
+    // onFreezeForCapture at this point; overrides bypass the cleared state entirely.
     const finalLabel = capturedLabel.trim() || 'Focus session';
     const finalCategory = capturedCategory ?? categories[0]?.id ?? 'admin';
     setShowCaptureSheet(false);

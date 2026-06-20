@@ -5,9 +5,7 @@
  *   1. User taps "Stop" on a quick-start timer → onFreezeForCapture() calls
  *      store.stop() which does `set({ ...CLEARED })` — clearing the session.
  *   2. User picks a category/label in the capture sheet and taps "Save".
- *   3. handleCaptureSave called setQuickDetails(label, category) on the cleared
- *      store. The guard in setQuickDetails fires ("no active session" — startedAt
- *      is null) → setQuickDetails was a NO-OP.
+ *   3. The old code tried to patch the store after it was cleared — a no-op.
  *   4. onStopAndLog() read the store and got the cleared defaults
  *      (category = null → fell back to closure 'getting_ready', label → 'Focus session').
  *   5. applyLog was called with the WRONG category/label → model trained incorrectly.
@@ -59,7 +57,7 @@ describe('quick-start Save path — captured category+label must reach the log',
    * The critical regression: the PRODUCTION sequence is
    *   quickStart → stop (clears store) → user picks values → onStopAndLog(overrides)
    *
-   * Old code: setQuickDetails after stop() was a no-op → log used quick-start defaults.
+   * Old code: a store-patch after stop() was a no-op → log used quick-start defaults.
    * New code: overrides are passed directly → log uses user-chosen values.
    *
    * This test would FAIL before the fix because it verifies the user-chosen
@@ -116,67 +114,4 @@ describe('quick-start Save path — captured category+label must reach the log',
     expect(defaultCatEvents).toHaveLength(0);
   });
 
-  /**
-   * Confirms the root cause: setQuickDetails is a no-op after stop() clears the store.
-   * This is why the old code (handleCaptureSave → setQuickDetails → onStopAndLog())
-   * failed: the store patch never landed, so onStopAndLog read null/defaults.
-   */
-  it('setQuickDetails after stop() is a no-op (root-cause confirmation)', () => {
-    useTimerStore.getState().quickStart(T0);
-    useTimerStore.getState().stop(T0 + 10 * MIN); // clears store
-
-    // Attempt to patch via the old code path — must be a no-op.
-    useTimerStore.getState().setQuickDetails('Send invoices', 'admin');
-    const st = useTimerStore.getState();
-    expect(st.taskLabel).toBeNull();    // not updated
-    expect(st.category).toBeNull();     // not updated
-    expect(st.isRunning).toBe(false);   // store is still cleared
-  });
-
-  /**
-   * Old code path end-to-end: simulates what handleCaptureSave USED to do.
-   * The log would receive the quick-start defaults instead of the user's choices.
-   * Kept to document the old failure mode.
-   */
-  it('old code path: applyLog with store defaults (not overrides) logs wrong category', async () => {
-    const db = freshDb();
-    useTimerStore.getState().quickStart(T0);
-    useTimerStore.getState().stop(T0 + 10 * MIN); // clears store
-
-    // OLD: setQuickDetails is a no-op here
-    useTimerStore.getState().setQuickDetails('Send invoices', 'admin');
-
-    // OLD: onStopAndLog read from store (null → fallback to closure defaults)
-    const storeState = useTimerStore.getState();
-    const resolvedLabel = storeState.taskLabel ?? 'Focus session'; // quick-start default
-    const resolvedCategory = storeState.category ?? 'getting_ready'; // quick-start default
-
-    // Would log 'getting_ready' / 'Focus session' — the BUG.
-    expect(resolvedLabel).toBe('Focus session');
-    expect(resolvedCategory).toBe('getting_ready');
-
-    const adaptSpeed =
-      useCategoriesStore.getState().categories.find((c) => c.id === resolvedCategory)?.adaptSpeed ??
-      'balanced';
-
-    await useCalibrationStore.getState().applyLog({
-      category: resolvedCategory,
-      estimateMin: GUESS_MIN,
-      actualMin: 10,
-      status: 'completed',
-      source: 'timed',
-      adaptSpeed,
-      label: resolvedLabel,
-      nowMs: T0 + 10 * MIN + 5000,
-    });
-
-    // Confirm: wrong category was logged (the bug).
-    const wrongCatEvents = await makeTaskEventsRepo(db).listByCategory('getting_ready');
-    expect(wrongCatEvents).toHaveLength(1);
-    expect(wrongCatEvents[0]?.label).toBe('Focus session'); // wrong label too
-
-    // User's chosen category has nothing logged.
-    const rightCatEvents = await makeTaskEventsRepo(db).listByCategory('admin');
-    expect(rightCatEvents).toHaveLength(0);
-  });
 });

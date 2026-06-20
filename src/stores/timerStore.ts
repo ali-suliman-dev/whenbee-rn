@@ -62,12 +62,6 @@ interface TimerState {
   cancel: () => void;
   /** Rehydrate from kv if a timer was running (background/crash-resume). */
   resumeFromKv: () => void;
-  /**
-   * Patch the label and category on the current session (used by the
-   * post-stop capture sheet on quick-start timers). Safe to call even when
-   * no session is running (no-op). Does NOT clear or restart the timer.
-   */
-  setQuickDetails: (label: string, category: string) => void;
 }
 
 const CLEARED = {
@@ -187,12 +181,6 @@ export const useTimerStore = create<TimerState>((set, get) => ({
   cancel: () => {
     set({ ...CLEARED });
     clearPersisted();
-  },
-
-  setQuickDetails: (label, category) => {
-    const state = get();
-    if (!state.isRunning && state.startedAt === null) return; // no active session
-    set({ taskLabel: label, category });
   },
 
   resumeFromKv: () => {

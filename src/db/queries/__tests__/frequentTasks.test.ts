@@ -1,5 +1,5 @@
 // src/db/queries/__tests__/frequentTasks.test.ts
-import { rankFrequentTasks, type FrequentTask } from '@/src/db/queries/frequentTasks';
+import { rankFrequentTasks } from '@/src/db/queries/frequentTasks';
 import type { TaskEventRow } from '@/src/db';
 
 const DAY = 86_400_000;

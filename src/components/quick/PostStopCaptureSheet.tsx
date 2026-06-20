@@ -144,6 +144,12 @@ export function PostStopCaptureSheet({
     textAlign: 'center',
   };
 
+  const helperStyle: TextStyle = {
+    fontSize: t.fontSize.xs,
+    color: t.colors.inkFaint,
+    textAlign: 'center',
+  };
+
   return (
     <>
       {/* Scrim — non-interactive (tapping it does nothing; user must choose Save or Skip) */}
@@ -163,8 +169,8 @@ export function PostStopCaptureSheet({
 
         {/* Headline */}
         <View>
-          <AppText style={headlineStyle}>What were you working on?</AppText>
-          <AppText style={sublineStyle}>Takes 5 seconds · sharpens your estimates</AppText>
+          <AppText style={headlineStyle}>What did you work on?</AppText>
+          <AppText style={sublineStyle}>Sort it so it sharpens your estimates.</AppText>
         </View>
 
         {/* Name input (optional — user can skip) */}
@@ -175,7 +181,7 @@ export function PostStopCaptureSheet({
             style={inputStyle}
             value={label}
             onChangeText={onLabelChange}
-            placeholder="e.g. Clear inbox"
+            placeholder="Name it (optional)"
             placeholderTextColor={t.colors.inkFaint}
             returnKeyType="done"
             blurOnSubmit
@@ -194,10 +200,13 @@ export function PostStopCaptureSheet({
           />
         </View>
 
+        {/* Helper hint — muted caption above the CTA pair */}
+        <AppText style={helperStyle}>Saving teaches your honest pace.</AppText>
+
         {/* Save CTA */}
         {/* The AppButton label is the a11y text; it already has role="button". */}
         <AppButton
-          label="Save — teaches your real pace"
+          label="Save"
           variant="indigo"
           size="md"
           fullWidth
@@ -208,8 +217,8 @@ export function PostStopCaptureSheet({
         <Pressable
           onPress={onSkip}
           accessibilityRole="button"
-          accessibilityLabel="Skip for now — this run won't train your estimates"
-          hitSlop={8}
+          accessibilityLabel="Skip for now"
+          hitSlop={t.size.hitSlop}
         >
           <View style={{ alignItems: 'center', paddingVertical: t.space[1] }}>
             <AppText style={skipStyle}>Skip for now</AppText>

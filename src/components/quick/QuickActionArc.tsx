@@ -32,7 +32,7 @@ interface BubbleDef {
 
 const BUBBLES: readonly BubbleDef[] = [
   { key: 'voice', icon: 'mic',    label: 'Voice',  isCenter: false },
-  { key: 'timer', icon: 'play',   label: 'Timer',  isCenter: true  },
+  { key: 'timer', icon: 'play',   label: 'Start timer',  isCenter: true  },
   { key: 'type',  icon: 'pencil', label: 'Type',   isCenter: false },
 ] as const;
 
