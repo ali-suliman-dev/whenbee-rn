@@ -1,4 +1,4 @@
-import { Pressable, Text, View, type TextStyle, type ViewStyle } from 'react-native';
+import { Pressable, ScrollView, Text, View, type TextStyle, type ViewStyle } from 'react-native';
 import Animated, {
   FadeInDown,
   useAnimatedStyle,
@@ -138,15 +138,21 @@ export function QuickTaskChips() {
     marginTop: t.space[1],
   };
 
+  const rowContent: ViewStyle = {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: t.quick.rowGap,
+    paddingRight: t.space[4],
+  };
+
   return (
     <View style={{ gap: t.space[2] }}>
       <Text style={sectionLabel}>Tap to start again</Text>
-      <View
-        style={{
-          flexDirection: 'row',
-          flexWrap: 'wrap',
-          gap: t.quick.rowGap,
-        }}
+      <ScrollView
+        horizontal
+        showsHorizontalScrollIndicator={false}
+        keyboardShouldPersistTaps="handled"
+        contentContainerStyle={rowContent}
       >
         {chips.map((chip, index) => (
           <QuickChip
@@ -156,7 +162,7 @@ export function QuickTaskChips() {
             index={index}
           />
         ))}
-      </View>
+      </ScrollView>
     </View>
   );
 }
