@@ -24,6 +24,7 @@ function seedRow(categoryId: string): CategoryStatRow {
     adaptSpeed: 'balanced',
     updatedAt: 0,
     reclaimedMinutes: 0,
+    firstHonestRange: null,
   };
 }
 

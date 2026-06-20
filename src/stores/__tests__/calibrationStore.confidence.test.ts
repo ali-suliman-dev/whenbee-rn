@@ -113,6 +113,49 @@ describe('calibrationStore — confidence + honest range on CategoryDetail', () 
   });
 });
 
+describe('calibrationStore — firstHonestRange capture (narrowing anchor)', () => {
+  beforeEach(() => {
+    kv.delete(GRADUATED_KEY);
+  });
+
+  async function logOnce(db: Database, categoryId: string, estimateMin: number, actualMin: number) {
+    await useCalibrationStore.getState().applyLog({
+      category: categoryId,
+      estimateMin,
+      actualMin,
+      status: 'completed',
+      source: 'timed',
+      adaptSpeed: 'balanced',
+    });
+  }
+
+  it('stays null while still raw (below the setting floor)', async () => {
+    const db = freshStore();
+    const statsRepo = makeCategoryStatsRepo(db);
+    await logOnce(db, 'cleaning', 20, 30); // n=1 → still raw
+    const stat = await statsRepo.get('cleaning');
+    expect(stat.firstHonestRange).toBeNull();
+  });
+
+  it('captures the band the first time confidence reaches setting, then freezes it', async () => {
+    const db = freshStore();
+    const statsRepo = makeCategoryStatsRepo(db);
+    // Three logs → n=3 = setting floor; the third log should capture the anchor.
+    await logOnce(db, 'cleaning', 20, 30);
+    await logOnce(db, 'cleaning', 20, 28);
+    await logOnce(db, 'cleaning', 20, 34);
+
+    const captured = (await statsRepo.get('cleaning')).firstHonestRange;
+    expect(captured).not.toBeNull();
+    expect(captured?.lowMinutes).toBeLessThan(captured?.highMinutes ?? 0);
+
+    // A later log must NOT overwrite the frozen anchor.
+    await logOnce(db, 'cleaning', 20, 20);
+    const after = (await statsRepo.get('cleaning')).firstHonestRange;
+    expect(after).toEqual(captured);
+  });
+});
+
 describe('calibrationStore — graduatedCategories tracking', () => {
   beforeEach(() => {
     kv.delete(GRADUATED_KEY);

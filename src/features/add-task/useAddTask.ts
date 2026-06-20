@@ -96,14 +96,17 @@ export function useAddTask(): UseAddTaskResult {
     void hydrate();
   }, [hydrate]);
 
-  // Live honest suggestion — recomputed on every category/guess change.
+  // Live honest suggestion — recomputed on every category/guess change. The
+  // cached ratio window + prior let the summary carry a honest range (Pro) at the
+  // decision moment without re-reading the db per keystroke.
   const suggestion = useMemo<CalibrationSummary | null>(() => {
     if (category === null) return null;
     const cached = statsByCategory[category];
+    const prior = cached?.priorMult ?? priorFor(category);
     const cat = cached
-      ? { mEffective: cached.mEffective, n: cached.n }
-      : { mEffective: priorFor(category), n: 0 };
-    return resolveSuggestion({ guessMinutes: guessMin, category: cat, recurring: null });
+      ? { mEffective: cached.mEffective, n: cached.n, clampedRatios: cached.clampedRatios ?? [] }
+      : { mEffective: prior, n: 0, clampedRatios: [] };
+    return resolveSuggestion({ guessMinutes: guessMin, category: cat, recurring: null, prior });
   }, [category, guessMin, statsByCategory]);
 
   // honest_suggestion_shown: fire once per surfacing (category+guess), not per
