@@ -21,9 +21,9 @@ interface RewardState {
   /** How the log was captured — drives the reward headline (retro → "Caught up"). */
   source: LogSource;
   /**
-   * The full applyLog outcome. Carries `reclaimDeltaMin` (minutes just banked) and
-   * `reclaimLifetimeMin` (the post-deposit lifetime total) through to the Reward
-   * screen's deposit beat — no separate plumbing needed; they ride on the result.
+   * The full applyLog outcome. Still carries `reclaimDeltaMin` / `reclaimLifetimeMin`
+   * as dormant fields (the reclaim bank keeps accumulating in the DB), but the Reward
+   * screen no longer renders them — reclaim was removed as a user-facing metric.
    */
   result: LogResult | null;
   setReward: (p: {
