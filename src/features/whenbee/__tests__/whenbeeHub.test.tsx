@@ -12,6 +12,10 @@ import { useEntitlement } from '@/src/features/paywall/useEntitlement';
 jest.mock('expo-router', () => ({
   router: { push: jest.fn() },
   useFocusEffect: (cb: () => void) => cb(),
+  useNavigation: () => ({
+    isFocused: () => true,
+    addListener: () => () => {},
+  }),
 }));
 
 // Feed the hub VM fixtures directly — no DB stand-up in the screen test.

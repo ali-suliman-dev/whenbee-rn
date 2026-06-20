@@ -6,7 +6,14 @@ import { render, fireEvent, screen, waitFor, act } from '@testing-library/react-
 // Names are `mock`-prefixed so Babel allows referencing them inside the hoisted
 // jest.mock factories.
 const mockBack = jest.fn();
-jest.mock('expo-router', () => ({ router: { back: () => mockBack() } }));
+jest.mock('expo-router', () => ({
+  router: { back: () => mockBack() },
+  useFocusEffect: (cb: () => void | (() => void)) => cb(),
+  useNavigation: () => ({
+    isFocused: () => true,
+    addListener: () => () => {},
+  }),
+}));
 
 // analytics: assert the funnel events fire with the right props.
 const mockCapture = jest.fn();

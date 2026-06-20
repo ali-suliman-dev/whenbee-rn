@@ -1,6 +1,11 @@
 import { render } from '@testing-library/react-native';
 import { HoneyTrail } from '../HoneyTrail';
 
+// useFocusEffect runs its effect immediately in tests (no real navigation focus).
+jest.mock('expo-router', () => ({
+  useFocusEffect: (cb: () => void | (() => void)) => cb(),
+}));
+
 const nodes = [
   { label: 'Raw', state: 'done' as const },
   { label: 'Setting', state: 'done' as const },

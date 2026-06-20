@@ -9,6 +9,10 @@ jest.spyOn(ActionSheetIOS, 'showActionSheetWithOptions').mockImplementation(() =
 jest.mock('expo-router', () => ({
   router: { push: jest.fn() },
   useFocusEffect: (cb: () => void | (() => void)) => cb(),
+  useNavigation: () => ({
+    isFocused: () => true,
+    addListener: () => () => {},
+  }),
 }));
 
 const T0 = 1_700_000_000_000;
