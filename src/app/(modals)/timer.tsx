@@ -4,6 +4,7 @@ import { router, useLocalSearchParams } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import Animated, {
+  cancelAnimation,
   useSharedValue,
   useAnimatedStyle,
   withRepeat,
@@ -11,6 +12,7 @@ import Animated, {
   withTiming,
   useReducedMotion,
 } from 'react-native-reanimated';
+import { useAmbientMotion } from '@/src/hooks/useAmbientMotion';
 import { Screen } from '@/src/components/Screen';
 import { AppText } from '@/src/components/AppText';
 import { AppButton } from '@/src/components/AppButton';
@@ -138,18 +140,26 @@ export default function Timer() {
 
   // Pulsing indigo live dot (static under reduced motion).
   const pulse = useSharedValue(reducedMotion ? 1 : 0.4);
-  useEffect(() => {
-    if (reducedMotion) return;
-    pulse.value = withRepeat(
-      withSequence(
-        withTiming(1, { duration: t.motion.pulse }),
-        withTiming(0.4, { duration: t.motion.pulse }),
-      ),
-      -1,
-      false,
-    );
-  }, [reducedMotion, pulse, t.motion.pulse]);
-  const dotStyle = useAnimatedStyle(() => ({ opacity: pulse.value }));
+  useAmbientMotion(
+    !reducedMotion,
+    useCallback(() => {
+      pulse.set(
+        withRepeat(
+          withSequence(
+            withTiming(1, { duration: t.motion.pulse }),
+            withTiming(0.4, { duration: t.motion.pulse }),
+          ),
+          -1,
+          false,
+        ),
+      );
+      return () => {
+        cancelAnimation(pulse);
+        pulse.set(1);
+      };
+    }, [pulse, t.motion.pulse]),
+  );
+  const dotStyle = useAnimatedStyle(() => ({ opacity: pulse.get() }));
 
   function confirmAbandon() {
     Alert.alert(

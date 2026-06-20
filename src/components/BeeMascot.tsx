@@ -1,5 +1,6 @@
-import { useEffect } from 'react';
+import { useCallback } from 'react';
 import Animated, {
+  cancelAnimation,
   useAnimatedProps,
   useAnimatedStyle,
   useReducedMotion,
@@ -11,6 +12,7 @@ import Animated, {
 } from 'react-native-reanimated';
 import Svg, { Path, Rect, Circle, Defs, RadialGradient, Stop } from 'react-native-svg';
 import { useTheme } from '@/src/theme/useTheme';
+import { useAmbientMotion } from '@/src/hooks/useAmbientMotion';
 
 const AnimatedRect = Animated.createAnimatedComponent(Rect);
 
@@ -136,38 +138,40 @@ export function BeeMascot({
   const look = useSharedValue(0);
 
   const m = t.motion;
-  useEffect(() => {
-    if (!animated || reduced) {
-      flutter.set(0);
-      blink.set(0);
-      look.set(0);
-      return;
-    }
-    // Wings: continuous soft buzz (decelerating sine each fold → no mechanical snap).
-    flutter.set(withRepeat(withTiming(1, { duration: m.beeWingBuzz, easing: m.easing.calm }), -1, true));
-    // Blink: quick close → open, then a long calm hold before the next one.
-    blink.set(
-      withRepeat(
-        withSequence(
-          withTiming(1, { duration: m.beeBlink, easing: m.easing.calm }),
-          withTiming(0, { duration: m.beeBlink, easing: m.easing.calm }),
-          withDelay(m.beeBlinkGap, withTiming(0, { duration: 0 })),
+  useAmbientMotion(
+    Boolean(animated) && !reduced,
+    useCallback(() => {
+      flutter.set(withRepeat(withTiming(1, { duration: m.beeWingBuzz, easing: m.easing.calm }), -1, true));
+      blink.set(
+        withRepeat(
+          withSequence(
+            withTiming(1, { duration: m.beeBlink, easing: m.easing.calm }),
+            withTiming(0, { duration: m.beeBlink, easing: m.easing.calm }),
+            withDelay(m.beeBlinkGap, withTiming(0, { duration: 0 })),
+          ),
+          -1,
         ),
-        -1,
-      ),
-    );
-    // Glance: dwell centre → ease right → dwell → ease left → dwell → recentre.
-    look.set(
-      withRepeat(
-        withSequence(
-          withDelay(m.beeLookHold, withTiming(1, { duration: m.beeLook, easing: m.easing.calm })),
-          withDelay(m.beeLookHold, withTiming(-1, { duration: m.beeLook, easing: m.easing.calm })),
-          withDelay(m.beeLookHold, withTiming(0, { duration: m.beeLook, easing: m.easing.calm })),
+      );
+      look.set(
+        withRepeat(
+          withSequence(
+            withDelay(m.beeLookHold, withTiming(1, { duration: m.beeLook, easing: m.easing.calm })),
+            withDelay(m.beeLookHold, withTiming(-1, { duration: m.beeLook, easing: m.easing.calm })),
+            withDelay(m.beeLookHold, withTiming(0, { duration: m.beeLook, easing: m.easing.calm })),
+          ),
+          -1,
         ),
-        -1,
-      ),
-    );
-  }, [animated, reduced, flutter, blink, look, m]);
+      );
+      return () => {
+        cancelAnimation(flutter);
+        cancelAnimation(blink);
+        cancelAnimation(look);
+        flutter.set(0);
+        blink.set(0);
+        look.set(0);
+      };
+    }, [flutter, blink, look, m]),
+  );
 
   const wingStyle = useAnimatedStyle(() => ({
     transform: [{ scaleX: 1 - WING_FOLD * flutter.get() }],

@@ -2,7 +2,14 @@ import { render } from '@testing-library/react-native';
 import { router } from 'expo-router';
 import Welcome from '@/src/app/(onboarding)/welcome';
 
-jest.mock('expo-router', () => ({ router: { push: jest.fn() } }));
+jest.mock('expo-router', () => ({
+  router: { push: jest.fn() },
+  useFocusEffect: (cb: () => void | (() => void)) => cb(),
+  useNavigation: () => ({
+    isFocused: () => true,
+    addListener: () => () => {},
+  }),
+}));
 
 const pushMock = router.push as jest.Mock;
 

@@ -1,6 +1,7 @@
-import { useEffect } from 'react';
+import { useCallback } from 'react';
 import { View } from 'react-native';
 import Animated, {
+  cancelAnimation,
   Easing,
   useAnimatedStyle,
   useReducedMotion,
@@ -8,6 +9,7 @@ import Animated, {
   withRepeat,
   withTiming,
 } from 'react-native-reanimated';
+import { useAmbientMotion } from '@/src/hooks/useAmbientMotion';
 import Svg, { Circle, Path, Rect } from 'react-native-svg';
 import { useTheme } from '@/src/theme/useTheme';
 
@@ -36,19 +38,22 @@ export function LockGlyph({ size = 24 }: { size?: number }) {
 
   // Shackle eases up then back down, forever — smooth, no snap.
   const open = useSharedValue(0);
-  useEffect(() => {
-    if (reduced) {
-      open.set(0);
-      return;
-    }
-    open.set(
-      withRepeat(
-        withTiming(1, { duration: t.motion.honeyFill, easing: Easing.inOut(Easing.sin) }),
-        -1,
-        true,
-      ),
-    );
-  }, [reduced, open, t.motion.honeyFill]);
+  useAmbientMotion(
+    !reduced,
+    useCallback(() => {
+      open.set(
+        withRepeat(
+          withTiming(1, { duration: t.motion.honeyFill, easing: Easing.inOut(Easing.sin) }),
+          -1,
+          true,
+        ),
+      );
+      return () => {
+        cancelAnimation(open);
+        open.set(0);
+      };
+    }, [open, t.motion.honeyFill]),
+  );
 
   const shackle = useAnimatedStyle(() => ({ transform: [{ translateY: -LIFT * open.get() }] }));
 

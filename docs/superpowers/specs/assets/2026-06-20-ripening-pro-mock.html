@@ -1,0 +1,246 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<style>
+  :root{
+    --bg:#F4F2FC; --surface:#FFFFFF; --sunken:#F1EEFB; --hairline:#DAD5C9; --border:#CFC9BA;
+    --ink:#20233A; --inkSoft:#5C5F73; --inkFaint:#9B9DAB;
+    --primary:#6B5BE6; --primarySoft:#E4E0FA; --primaryWash:#EFEDFC;
+    --accent:#EEAE4D; --accentEdge:#C68A30; --accentSoft:#FBEFD6; --amberText:#8A5A12; --onAmber:#20233A;
+    --ringTrack:#E4DFD3; --success:#33B07C;
+  }
+  *{box-sizing:border-box; margin:0; padding:0; -webkit-font-smoothing:antialiased;}
+  body{background:#E7E3F6; font-family:-apple-system,"SF Pro Text","Segoe UI",system-ui,sans-serif; color:var(--ink); padding:40px;}
+  .stage{display:flex; gap:48px; justify-content:center; align-items:flex-start;}
+  .col{display:flex; flex-direction:column; align-items:center; gap:14px;}
+  .caption-top{font-size:13px; font-weight:600; color:#4b4668; letter-spacing:.2px;}
+  .phone{width:390px; height:760px; background:var(--bg); border-radius:44px; padding:18px 16px;
+         box-shadow:0 1px 0 rgba(0,0,0,.04); overflow:hidden; position:relative;}
+  .statusbar{display:flex; justify-content:space-between; font-size:13px; font-weight:600; color:var(--ink); padding:6px 10px 14px;}
+  .h-screen{padding:0 4px;}
+  .screen-title{font-size:13px; font-weight:600; color:var(--inkSoft); letter-spacing:.3px; padding:0 4px 12px;}
+
+  /* honey ring (hub hero) */
+  .hero{display:flex; align-items:center; gap:16px; padding:4px 6px 18px;}
+  .ringwrap{width:84px; height:84px; position:relative; flex:none;}
+  .ring-line{font-size:13px; color:var(--inkSoft);}
+  .ring-stage{font-size:18px; font-weight:600; color:var(--ink); letter-spacing:-.2px;}
+  .ring-next{font-size:12.5px; color:var(--inkSoft); margin-top:2px;}
+
+  /* card */
+  .card{background:var(--surface); border-radius:16px; padding:16px; margin-bottom:14px;}
+  .card-head{display:flex; align-items:center; justify-content:space-between; margin-bottom:14px;}
+  .pro-tag{display:flex; align-items:center; gap:7px;}
+  .hex{width:18px; height:18px; display:block;}
+  .pro-word{font-size:11px; font-weight:700; letter-spacing:1.4px; color:var(--amberText); text-transform:uppercase;}
+  .pill{font-size:11px; font-weight:600; letter-spacing:.3px; padding:3px 9px; border-radius:999px;}
+  .pill-ripe{background:var(--accentSoft); color:var(--amberText);}
+  .pill-unlocked{background:var(--accentSoft); color:var(--amberText);}
+
+  .feat-title{font-size:20px; font-weight:600; letter-spacing:-.3px; color:var(--ink);}
+  .feat-sub{font-size:12.5px; color:var(--inkSoft); margin-top:3px; line-height:1.45;}
+
+  /* ripening preview band (faint) */
+  .band-preview{margin:16px 0 6px; height:64px; border-radius:12px; background:var(--sunken);
+                position:relative; overflow:hidden;}
+  .band-preview .blur{position:absolute; inset:0; filter:blur(3px); opacity:.55; display:flex; align-items:center; padding:0 18px;}
+  .band-track{height:8px; width:100%; border-radius:999px; background:#D9D2F2; position:relative;}
+  .band-fillzone{position:absolute; top:-6px; height:20px; border-radius:8px; background:rgba(107,91,230,.18);}
+  .band-dot{position:absolute; top:-4px; width:16px; height:16px; border-radius:999px; background:var(--primary);}
+  .band-lockrow{position:absolute; inset:0; display:flex; align-items:center; justify-content:center; gap:7px;}
+  .lock-txt{font-size:12.5px; font-weight:600; color:var(--inkSoft);}
+
+  /* sharp band (revealed) */
+  .band-sharp{margin:16px 0 8px; height:64px; border-radius:12px; background:var(--primaryWash); position:relative; padding:0 18px; display:flex; align-items:center;}
+  .bs-track{height:8px; width:100%; border-radius:999px; background:#D9D2F2; position:relative;}
+  .bs-range{position:absolute; top:-5px; height:18px; border-radius:7px; background:rgba(107,91,230,.22); left:30%; right:30%;}
+  .bs-dot{position:absolute; top:-4px; left:calc(50% - 8px); width:16px; height:16px; border-radius:999px; background:var(--primary); border:3px solid #fff;}
+  .bs-tick{position:absolute; top:-12px; font-size:11px; font-weight:600; color:var(--primary);}
+
+  /* honey progress */
+  .honey-row{margin-top:14px;}
+  .honey-track{height:12px; border-radius:999px; background:var(--sunken); overflow:hidden;}
+  .honey-fill{height:100%; border-radius:999px; background:linear-gradient(90deg,#F0C074,var(--accent));}
+  .honey-meta{display:flex; justify-content:space-between; align-items:baseline; margin-top:8px;}
+  .honey-pct{font-size:12.5px; font-weight:600; color:var(--ink);}
+  .honey-eta{font-size:12.5px; color:var(--inkSoft);}
+
+  /* per-feature readiness list */
+  .feat-list{margin-top:14px; display:flex; flex-direction:column; gap:11px;}
+  .feat-row{display:flex; align-items:center; gap:10px;}
+  .feat-pip{width:16px; height:16px; border-radius:999px; flex:none; display:flex; align-items:center; justify-content:center;}
+  .pip-ready{background:var(--accent);}
+  .pip-ripe{background:var(--sunken); border:1.5px solid #CDC4EE;}
+  .feat-name{font-size:13.5px; color:var(--ink); flex:1;}
+  .feat-name.muted{color:var(--inkFaint);}
+  .feat-state{font-size:11.5px; font-weight:600; color:var(--amberText);}
+  .feat-state.wait{color:var(--inkFaint);}
+
+  /* gentle footer line */
+  .ripe-foot{margin-top:15px; font-size:12.5px; color:var(--inkSoft); line-height:1.45;}
+  .ripe-foot b{color:var(--ink); font-weight:600;}
+
+  /* CTA coin-edge (amber, NOT indigo) */
+  .cta-wrap{margin-top:16px;}
+  .cta{display:block; width:100%; text-align:center; background:var(--accent); color:var(--onAmber);
+       font-size:15px; font-weight:700; letter-spacing:.2px; padding:14px 18px; border-radius:14px;
+       border-bottom:3px solid var(--accentEdge);}
+  .escape{display:block; text-align:center; margin-top:11px; font-size:12.5px; font-weight:600; color:var(--primary);}
+
+  .reveal-head{font-size:21px; font-weight:700; letter-spacing:-.4px; color:var(--ink);}
+  .reveal-sub{font-size:13px; color:var(--inkSoft); margin-top:4px; line-height:1.45;}
+</style>
+</head>
+<body>
+<div class="stage">
+
+  <!-- ================= STATE A: RIPENING ================= -->
+  <div class="col">
+    <div class="caption-top">A · Early — honey still ripening</div>
+    <div class="phone">
+      <div class="statusbar"><span>9:41</span><span>􀙇 􀛨 􀋦</span></div>
+      <div class="h-screen">
+        <div class="screen-title">Whenbee</div>
+
+        <!-- hero ring ~30% Setting -->
+        <div class="hero">
+          <div class="ringwrap">
+            <svg width="84" height="84" viewBox="0 0 84 84">
+              <circle cx="42" cy="42" r="36" fill="none" stroke="#E4DFD3" stroke-width="7"/>
+              <circle cx="42" cy="42" r="36" fill="none" stroke="#EEAE4D" stroke-width="7"
+                      stroke-linecap="round" stroke-dasharray="226" stroke-dashoffset="158"
+                      transform="rotate(-90 42 42)"/>
+              <polygon points="42,30 52,36 52,48 42,54 32,48 32,36" fill="#EEAE4D"/>
+            </svg>
+          </div>
+          <div>
+            <div class="ring-stage">Setting</div>
+            <div class="ring-line">30% honey · 2 logs</div>
+            <div class="ring-next">~3 logs to Ripening</div>
+          </div>
+        </div>
+
+        <!-- ripening Pro card -->
+        <div class="card">
+          <div class="card-head">
+            <div class="pro-tag">
+              <svg class="hex" viewBox="0 0 24 24"><polygon points="6,2.5 18,2.5 22.5,12 18,21.5 6,21.5 1.5,12" fill="#EEAE4D"/></svg>
+              <span class="pro-word">Pro · ripening</span>
+            </div>
+            <span class="pill pill-ripe">Ripens at Ripening</span>
+          </div>
+
+          <div class="feat-title">Your honest range</div>
+          <div class="feat-sub">The band Whenbee is sure you'll land in — once it knows your timing.</div>
+
+          <!-- faint preview band -->
+          <div class="band-preview">
+            <div class="blur">
+              <div class="band-track">
+                <div class="band-fillzone" style="left:22%; right:22%;"></div>
+                <div class="band-dot" style="left:calc(50% - 8px);"></div>
+              </div>
+            </div>
+            <div class="band-lockrow"><span class="lock-txt">􀎡 Still settling…</span></div>
+          </div>
+
+          <!-- honey progress -->
+          <div class="honey-row">
+            <div class="honey-track"><div class="honey-fill" style="width:30%;"></div></div>
+            <div class="honey-meta"><span class="honey-pct">30% honey</span><span class="honey-eta">~3 more logs</span></div>
+          </div>
+
+          <div class="ripe-foot">Keep logging. Each one sharpens the range — <b>nothing to keep up</b>.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ================= STATE B: REVEAL ================= -->
+  <div class="col">
+    <div class="caption-top">B · Aha — the band just narrowed</div>
+    <div class="phone">
+      <div class="statusbar"><span>9:41</span><span>􀙇 􀛨 􀋦</span></div>
+      <div class="h-screen">
+        <div class="screen-title">Whenbee</div>
+
+        <!-- hero ring ~64% Ripening -->
+        <div class="hero">
+          <div class="ringwrap">
+            <svg width="84" height="84" viewBox="0 0 84 84">
+              <circle cx="42" cy="42" r="36" fill="none" stroke="#E4DFD3" stroke-width="7"/>
+              <circle cx="42" cy="42" r="36" fill="none" stroke="#EEAE4D" stroke-width="7"
+                      stroke-linecap="round" stroke-dasharray="226" stroke-dashoffset="81"
+                      transform="rotate(-90 42 42)"/>
+              <polygon points="42,30 52,36 52,48 42,54 32,48 32,36" fill="#EEAE4D"/>
+            </svg>
+          </div>
+          <div>
+            <div class="ring-stage">Ripening</div>
+            <div class="ring-line">64% honey · 6 logs</div>
+            <div class="ring-next">~5 logs to Thickening</div>
+          </div>
+        </div>
+
+        <!-- revealed Pro card -->
+        <div class="card">
+          <div class="card-head">
+            <div class="pro-tag">
+              <svg class="hex" viewBox="0 0 24 24"><polygon points="6,2.5 18,2.5 22.5,12 18,21.5 6,21.5 1.5,12" fill="#EEAE4D"/></svg>
+              <span class="pro-word">Pro · ready</span>
+            </div>
+            <span class="pill pill-unlocked">Unlocked ✦</span>
+          </div>
+
+          <div class="reveal-head">Whenbee knows you now.</div>
+          <div class="reveal-sub">Your range just tightened. The payoff features have enough to be honest.</div>
+
+          <!-- sharp band -->
+          <div class="band-sharp">
+            <div class="bs-track">
+              <div class="bs-range"></div>
+              <div class="bs-tick" style="left:28%;">25m</div>
+              <div class="bs-tick" style="left:66%;">40m</div>
+              <div class="bs-dot"></div>
+            </div>
+          </div>
+
+          <!-- per-feature readiness -->
+          <div class="feat-list">
+            <div class="feat-row">
+              <div class="feat-pip pip-ready"><svg width="9" height="9" viewBox="0 0 12 12"><path d="M2 6.5 L5 9 L10 3" stroke="#fff" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+              <span class="feat-name">Honest range &amp; confidence band</span>
+              <span class="feat-state">Ready</span>
+            </div>
+            <div class="feat-row">
+              <div class="feat-pip pip-ready"><svg width="9" height="9" viewBox="0 0 12 12"><path d="M2 6.5 L5 9 L10 3" stroke="#fff" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+              <span class="feat-name">What steals your time</span>
+              <span class="feat-state">Ready</span>
+            </div>
+            <div class="feat-row">
+              <div class="feat-pip pip-ripe"></div>
+              <span class="feat-name muted">Day-capacity check</span>
+              <span class="feat-state wait">2 logs away</span>
+            </div>
+            <div class="feat-row">
+              <div class="feat-pip pip-ripe"></div>
+              <span class="feat-name muted">Honest week review</span>
+              <span class="feat-state wait">a week away</span>
+            </div>
+          </div>
+
+          <!-- CTA: amber coin-edge, never indigo -->
+          <div class="cta-wrap">
+            <a class="cta">See what Pro can do</a>
+            <a class="escape">Preview it first</a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+</body>
+</html>

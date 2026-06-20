@@ -3,7 +3,14 @@ import { router } from 'expo-router';
 import Ready from '@/src/app/(onboarding)/ready';
 import { useOnboardingStore } from '@/src/stores/onboardingStore';
 
-jest.mock('expo-router', () => ({ router: { replace: jest.fn() } }));
+jest.mock('expo-router', () => ({
+  router: { replace: jest.fn() },
+  useFocusEffect: (cb: () => void | (() => void)) => cb(),
+  useNavigation: () => ({
+    isFocused: () => true,
+    addListener: () => () => {},
+  }),
+}));
 
 const replaceMock = router.replace as jest.Mock;
 

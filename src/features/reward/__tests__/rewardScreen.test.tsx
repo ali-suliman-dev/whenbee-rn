@@ -12,6 +12,11 @@ jest.mock('expo-router', () => ({
     dismiss: (...a: unknown[]) => mockDismiss(...a),
     push: (...a: unknown[]) => mockPush(...a),
   },
+  useFocusEffect: (cb: () => void | (() => void)) => cb(),
+  useNavigation: () => ({
+    isFocused: () => true,
+    addListener: () => () => {},
+  }),
 }));
 
 const baseResult: LogResult = {

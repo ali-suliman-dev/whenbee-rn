@@ -2,6 +2,11 @@
 import { render, screen, fireEvent } from '@testing-library/react-native';
 import { RitualSeal } from '@/src/features/today/RitualSeal';
 
+// useFocusEffect runs its effect immediately in tests (no real navigation focus).
+jest.mock('expo-router', () => ({
+  useFocusEffect: (cb: () => void | (() => void)) => cb(),
+}));
+
 describe('RitualSeal', () => {
   it('shows the invitation when not done and logs on press', () => {
     const onLog = jest.fn();

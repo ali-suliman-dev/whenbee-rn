@@ -11,6 +11,8 @@ import {
 } from './affine';
 import { reclaimDividendMinutes } from './reclaim';
 import { sharpnessFromWindow } from './sharpness';
+import { honeyMaturity } from './honeyMaturity';
+import { confidenceFor } from './confidence';
 import type { AdaptSpeed, LogSource, LogStatus } from '../domain/types';
 
 interface RollingStat {
@@ -54,7 +56,8 @@ const effectiveMultiplier = (fit: AffineFit): number =>
  *   4. catStats = updateAffineStats(prev, guess, trainedActual, alpha); catN += 1.
  *   5. catFit = solveAffine(catStats, anchor).
  *   6. if recurring: same updateAffineStats+solveAffine against its own anchor.
- *   7. sharpness = max(prev, sharpnessFromWindow(window ++ r))  // monotonic guard.
+ *   7. accuracy = sharpnessFromWindow(window); sealEligible = confidenceFor(...)===ʻhonest';
+ *      sharpness = honeyMaturity({ n, accuracy, prevHoney, sealEligible })  // monotonic guard lives inside honeyMaturity.
  */
 export function applyLog(input: ApplyLogInput): ApplyLogResult {
   const ratioClamped = clampRatio(input.estimateMin, input.actualMin);
@@ -101,9 +104,21 @@ export function applyLog(input: ApplyLogInput): ApplyLogResult {
     recurring = { stats: recStats, n: input.recurring.n + 1, mEffective: effectiveMultiplier(recFit) };
   }
 
+  // Note: confidenceFor reads the full window (CV) while sharpnessFromWindow slices
+  // to the last SHARPNESS_WINDOW (8) — intentional, not a bug.
   const window = [...input.recentClampedRatios, ratioClamped];
-  const rawSharpness = sharpnessFromWindow(window);
-  const sharpness = Math.max(input.category.sharpness, rawSharpness);
+  const accuracy = sharpnessFromWindow(window);
+  // Seal is earned: needs enough low-variance data, not just one accurate log.
+  // sealEligible is NECESSARY BUT NOT SUFFICIENT — honeyMaturity's ramp must also
+  // cross HONEY_SEAL_GATE, so honey does not jump to 93 the instant confidence
+  // reaches 'honest'.
+  const sealEligible = confidenceFor({ n: catN, clampedRatios: window }) === 'honest';
+  const sharpness = honeyMaturity({
+    n: catN,
+    accuracy,
+    prevHoney: input.category.sharpness,
+    sealEligible,
+  });
 
   const honestShownMin =
     input.suggestedHonestMin ?? roundHonest(affineHonestExact(catFit, input.estimateMin));

@@ -1,6 +1,7 @@
-import { useEffect } from 'react';
+import { useCallback, useEffect } from 'react';
 import { View, type ViewStyle, type TextStyle } from 'react-native';
 import Animated, {
+  cancelAnimation,
   useSharedValue,
   useAnimatedStyle,
   withRepeat,
@@ -11,6 +12,7 @@ import Animated, {
 } from 'react-native-reanimated';
 import Svg, { Circle, Defs, RadialGradient, Stop } from 'react-native-svg';
 import { useTheme } from '@/src/theme/useTheme';
+import { useAmbientMotion } from '@/src/hooks/useAmbientMotion';
 import { AppText } from '@/src/components/AppText';
 import { BeeMascot } from '@/src/components/BeeMascot';
 import { BeeCoin } from '@/src/components/BeeCoin';
@@ -131,30 +133,30 @@ export function WhenbeeAvatar({
     if (reducedMotion) return;
     // Mount lift: spring up + fade in (Playful, a touch of overshoot → joy).
     appear.set(withSpring(1, t.motion.spring));
-    // Ambient float: calm sine, ± lift px, phased after the lift lands.
-    bob.set(
-      withDelay(
-        t.motion.reveal,
-        withRepeat(withTiming(1, { duration: t.motion.float, easing: t.motion.easing.calm }), -1, true),
-      ),
-    );
-    // Curious wobble: a slow, tiny rotational sway — a friendly wave, not distress.
-    if (curious) {
-      wobble.set(
-        withRepeat(withTiming(1, { duration: t.motion.float, easing: t.motion.easing.calm }), -1, true),
+  }, [reducedMotion, appear, t.motion.spring]);
+
+  useAmbientMotion(
+    !reducedMotion,
+    useCallback(() => {
+      bob.set(
+        withDelay(
+          t.motion.reveal,
+          withRepeat(withTiming(1, { duration: t.motion.float, easing: t.motion.easing.calm }), -1, true),
+        ),
       );
-    }
-  }, [
-    reducedMotion,
-    curious,
-    appear,
-    bob,
-    wobble,
-    t.motion.spring,
-    t.motion.reveal,
-    t.motion.float,
-    t.motion.easing.calm,
-  ]);
+      if (curious) {
+        wobble.set(
+          withRepeat(withTiming(1, { duration: t.motion.float, easing: t.motion.easing.calm }), -1, true),
+        );
+      }
+      return () => {
+        cancelAnimation(bob);
+        cancelAnimation(wobble);
+        bob.set(0);
+        wobble.set(0);
+      };
+    }, [curious, bob, wobble, t.motion.reveal, t.motion.float, t.motion.easing.calm]),
+  );
 
   const beeStyle = useAnimatedStyle(() => {
     const a = appear.get();

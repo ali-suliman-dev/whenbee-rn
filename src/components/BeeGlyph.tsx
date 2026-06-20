@@ -1,6 +1,7 @@
-import { useEffect } from 'react';
+import { useCallback } from 'react';
 import { View } from 'react-native';
 import Animated, {
+  cancelAnimation,
   Easing,
   useAnimatedStyle,
   useReducedMotion,
@@ -8,6 +9,7 @@ import Animated, {
   withRepeat,
   withTiming,
 } from 'react-native-reanimated';
+import { useAmbientMotion } from '@/src/hooks/useAmbientMotion';
 import Svg, { Ellipse, Path } from 'react-native-svg';
 import { useTheme } from '@/src/theme/useTheme';
 
@@ -51,19 +53,22 @@ export function BeeGlyph({ size = 32, animated = true }: { size?: number; animat
   // Wings flap: a gentle up-and-down bob, forever — smooth, no snap (reverse
   // timing). The loop is the entrance too; it just starts on mount.
   const flap = useSharedValue(0);
-  useEffect(() => {
-    if (!animated || reduced) {
-      flap.set(0);
-      return;
-    }
-    flap.set(
-      withRepeat(
-        withTiming(1, { duration: t.motion.honeyFill, easing: Easing.inOut(Easing.sin) }),
-        -1,
-        true,
-      ),
-    );
-  }, [animated, reduced, flap, t.motion.honeyFill]);
+  useAmbientMotion(
+    Boolean(animated) && !reduced,
+    useCallback(() => {
+      flap.set(
+        withRepeat(
+          withTiming(1, { duration: t.motion.honeyFill, easing: Easing.inOut(Easing.sin) }),
+          -1,
+          true,
+        ),
+      );
+      return () => {
+        cancelAnimation(flap);
+        flap.set(0);
+      };
+    }, [flap, t.motion.honeyFill]),
+  );
   const wingStyle = useAnimatedStyle(() => ({
     transform: [{ translateY: -size * WING_BOB * flap.get() }],
   }));
