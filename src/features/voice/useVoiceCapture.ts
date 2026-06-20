@@ -5,7 +5,7 @@
 
 import { useCallback, useRef, useState } from 'react';
 import type { ParsedTaskDraft } from '@/src/domain/types';
-import { parseSpokenTask } from './parsing/spokenTaskParser';
+import { structureSpokenTask } from '@/src/services/voice/spokenTaskStructurer';
 import {
   requestSpeechPermission,
   startSpeech,
@@ -53,8 +53,9 @@ export const useVoiceCapture = (onDraft: (d: ParsedTaskDraft) => void): VoiceCap
         sessionRef.current = null;
         setPartial('');
         setStatus('idle');
-        const draft = parseSpokenTask(text);
-        if (draft.title.length > 0) onDraft(draft);
+        void structureSpokenTask(text).then((draft) => {
+          if (draft.title.length > 0) onDraft(draft);
+        });
       },
       onError: () => stop(),
       onEnd: () => {

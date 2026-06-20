@@ -1,9 +1,12 @@
 import { act, renderHook } from '@testing-library/react-native';
 import { useVoiceCapture } from '../useVoiceCapture';
 import * as stt from '@/src/services/voice/speechRecognition';
+import { structureSpokenTask } from '@/src/services/voice/spokenTaskStructurer';
 
 jest.mock('@/src/services/voice/speechRecognition');
+jest.mock('@/src/services/voice/spokenTaskStructurer');
 const mockStt = stt as jest.Mocked<typeof stt>;
+const mockStructure = structureSpokenTask as jest.MockedFunction<typeof structureSpokenTask>;
 
 describe('useVoiceCapture', () => {
   beforeEach(() => {
@@ -33,19 +36,19 @@ describe('useVoiceCapture', () => {
     expect(mockStt.startSpeech).not.toHaveBeenCalled();
   });
 
-  it('emits a parsed draft on final transcript and returns to idle', async () => {
+  it('emits a structured draft on final transcript and returns to idle', async () => {
     mockStt.requestSpeechPermission.mockResolvedValue(true);
+    mockStructure.mockResolvedValue({ title: 'Email Sarah', rawTranscript: 'x', source: 'appleLLM' });
     let handlers: stt.SpeechHandlers | undefined;
     mockStt.startSpeech.mockImplementation((h) => { handlers = h; return { stop: jest.fn() }; });
     const onDraft = jest.fn();
     const { result } = renderHook(() => useVoiceCapture(onDraft));
 
     await act(async () => { await result.current.start(); });
-    await act(async () => { handlers!.onFinal('i need to email sarah'); });
+    await act(async () => { await handlers!.onFinal('i need to email sarah'); });
 
-    expect(onDraft).toHaveBeenCalledWith(
-      expect.objectContaining({ title: 'Email sarah', source: 'rules' }),
-    );
+    expect(mockStructure).toHaveBeenCalledWith('i need to email sarah');
+    expect(onDraft).toHaveBeenCalledWith(expect.objectContaining({ title: 'Email Sarah' }));
     expect(result.current.status).toBe('idle');
   });
 
