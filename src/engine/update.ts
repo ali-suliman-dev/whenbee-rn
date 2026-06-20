@@ -11,6 +11,8 @@ import {
 } from './affine';
 import { reclaimDividendMinutes } from './reclaim';
 import { sharpnessFromWindow } from './sharpness';
+import { honeyMaturity } from './honeyMaturity';
+import { confidenceFor } from './confidence';
 import type { AdaptSpeed, LogSource, LogStatus } from '../domain/types';
 
 interface RollingStat {
@@ -102,8 +104,15 @@ export function applyLog(input: ApplyLogInput): ApplyLogResult {
   }
 
   const window = [...input.recentClampedRatios, ratioClamped];
-  const rawSharpness = sharpnessFromWindow(window);
-  const sharpness = Math.max(input.category.sharpness, rawSharpness);
+  const accuracy = sharpnessFromWindow(window);
+  // Seal is earned: needs enough low-variance data, not just one accurate log.
+  const sealEligible = confidenceFor({ n: catN, clampedRatios: window }) === 'honest';
+  const sharpness = honeyMaturity({
+    n: catN,
+    accuracy,
+    prevHoney: input.category.sharpness,
+    sealEligible,
+  });
 
   const honestShownMin =
     input.suggestedHonestMin ?? roundHonest(affineHonestExact(catFit, input.estimateMin));
