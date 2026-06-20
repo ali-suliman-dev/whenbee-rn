@@ -11,7 +11,8 @@ const ACTIVE_TIMER_KEY = 'whenbee.activeTimer';
  */
 interface PersistedTimer {
   taskLabel: string;
-  category: string;
+  /** null for quick-start sessions where category is captured at stop. */
+  category: string | null;
   estimateMin: number;
   startedAt: number;
   pausedAccumMs: number;
@@ -19,10 +20,13 @@ interface PersistedTimer {
   guessMin: number;
   taskId: string | null;
   suggestedHonestMin: number;
+  /** Whether this session was started without a category (quick-start mode). */
+  isQuickStart: boolean;
 }
 
 interface TimerState {
   taskLabel: string | null;
+  /** null for quick-start sessions; non-null for normal starts. */
   category: string | null;
   estimateMin: number;
   startedAt: number | null;
@@ -32,6 +36,8 @@ interface TimerState {
   guessMin: number;
   taskId: string | null;
   suggestedHonestMin: number;
+  /** True when the timer was started without a category (quick-start mode). */
+  isQuickStart: boolean;
   start: (
     task: {
       label: string;
@@ -43,6 +49,11 @@ interface TimerState {
     },
     nowMs?: number,
   ) => void;
+  /**
+   * Start a bare timer with no category. The stop flow captures label + category
+   * while context is fresh. Sets isQuickStart to true.
+   */
+  quickStart: (nowMs?: number) => void;
   pause: (nowMs?: number) => void;
   resume: (nowMs?: number) => void;
   /** Returns ACTIVE minutes (excludes paused spans), min 1. Clears state + kv. */
@@ -64,10 +75,13 @@ const CLEARED = {
   guessMin: 0,
   taskId: null,
   suggestedHonestMin: 0,
+  isQuickStart: false,
 } as const;
 
 function persistRunning(state: TimerState): void {
-  if (state.startedAt === null || state.taskLabel === null || state.category === null) return;
+  // Quick-start sessions have no category; normal sessions require both label and category.
+  if (state.startedAt === null || state.taskLabel === null) return;
+  if (!state.isQuickStart && state.category === null) return;
   const snapshot: PersistedTimer = {
     taskLabel: state.taskLabel,
     category: state.category,
@@ -78,6 +92,7 @@ function persistRunning(state: TimerState): void {
     guessMin: state.guessMin,
     taskId: state.taskId,
     suggestedHonestMin: state.suggestedHonestMin,
+    isQuickStart: state.isQuickStart,
   };
   try {
     kv.set(ACTIVE_TIMER_KEY, JSON.stringify(snapshot));
@@ -110,6 +125,24 @@ export const useTimerStore = create<TimerState>((set, get) => ({
       guessMin: task.guessMin ?? task.estimateMin,
       taskId: task.taskId ?? null,
       suggestedHonestMin: task.suggestedHonestMin ?? task.estimateMin,
+      isQuickStart: false,
+    });
+    persistRunning(get());
+  },
+
+  quickStart: (nowMs = Date.now()) => {
+    set({
+      taskLabel: '',
+      category: null,
+      estimateMin: 0,
+      startedAt: nowMs,
+      pausedAccumMs: 0,
+      pausedAt: null,
+      isRunning: true,
+      guessMin: 0,
+      taskId: null,
+      suggestedHonestMin: 0,
+      isQuickStart: true,
     });
     persistRunning(get());
   },
@@ -167,6 +200,8 @@ export const useTimerStore = create<TimerState>((set, get) => ({
         guessMin: p.guessMin ?? p.estimateMin,
         taskId: p.taskId ?? null,
         suggestedHonestMin: p.suggestedHonestMin ?? p.estimateMin,
+        // Default false for snapshots written before isQuickStart was introduced.
+        isQuickStart: p.isQuickStart ?? false,
       });
     } catch {
       clearPersisted();
