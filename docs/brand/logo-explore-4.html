@@ -1,0 +1,112 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"/>
+<title>Whenbee · premium marks</title>
+<style>
+  :root{--bg:#F4F2FC;--surface:#FFFFFF;--hairline:#DAD5C9;--ink:#20233A;--inkSoft:#5C5F73;--inkFaint:#9B9DAB;--primary:#6B5BE6;}
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text",system-ui,sans-serif;padding:44px 40px 80px}
+  h1{font-size:28px;font-weight:700;letter-spacing:-0.5px;margin:0 0 4px}
+  .sub{color:var(--inkSoft);font-size:13.5px;margin:0 0 26px;max-width:800px;line-height:1.5}
+  .row{display:grid;grid-template-columns:repeat(3,1fr);gap:22px;max-width:1020px}
+  .card{background:var(--surface);border:1px solid var(--hairline);border-radius:18px;padding:22px;display:flex;flex-direction:column;align-items:center;gap:14px}
+  .hero{width:144px;height:144px;border-radius:33px;overflow:hidden;box-shadow:0 8px 22px rgba(70,59,158,0.18)}
+  .chips{display:flex;align-items:center;gap:12px}
+  .chip{width:36px;height:36px;border-radius:8px;overflow:hidden}
+  .chip.sm{width:20px;height:20px;border-radius:5px}
+  .clabel{font-size:13.5px;font-weight:600}
+  .cnote{font-size:11px;color:var(--inkFaint);text-align:center;line-height:1.45;max-width:200px}
+  svg{display:block}
+</style></head>
+<body>
+  <h1>Whenbee · premium marks</h1>
+  <p class="sub">Refined &amp; professional. True Liquid-Glass ground (diagonal indigo gradient · specular highlight · rim light · depth shadow) + a single <b>gold-gradient</b> form. Each tile: <b>color</b> · <b>mono-glass</b> · <b>dark-tint</b> · <b>20px favicon</b>. Safe, timeless, ownable.</p>
+  <div class="row" id="root"></div>
+<script>
+let U=0;
+function defs(mode,id){
+  const bg = mode==="color"
+      ? `<linearGradient id="bg${id}" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#8473F2"/><stop offset="0.55" stop-color="#5E4ED9"/><stop offset="1" stop-color="#3E3490"/></linearGradient>`
+    : mode==="mono"
+      ? `<linearGradient id="bg${id}" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#42455C"/><stop offset="1" stop-color="#232536"/></linearGradient>`
+      : `<linearGradient id="bg${id}" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#1B1C28"/><stop offset="1" stop-color="#0D0E15"/></linearGradient>`;
+  const gold = mode==="mono"
+      ? `<linearGradient id="gold${id}" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#FFFFFF"/><stop offset="1" stop-color="#DADADA"/></linearGradient>`
+      : `<linearGradient id="gold${id}" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#FBD46B"/><stop offset="1" stop-color="#E3A12E"/></linearGradient>`;
+  return `<defs>
+    ${bg}${gold}
+    <radialGradient id="spec${id}" cx="0.3" cy="0.18" r="0.9"><stop offset="0" stop-color="#FFFFFF" stop-opacity="${mode==='dark'?0.12:0.34}"/><stop offset="0.55" stop-color="#FFFFFF" stop-opacity="0"/></radialGradient>
+    <filter id="sh${id}" x="-25%" y="-25%" width="150%" height="150%"><feDropShadow dx="0" dy="1.5" stdDeviation="1.7" flood-color="#140E33" flood-opacity="0.38"/></filter>
+  </defs>`;
+}
+function frame(id){
+  return `<rect x="1" y="1" width="98" height="98" rx="23" fill="url(#bg${id})"/>
+          <rect x="1" y="1" width="98" height="98" rx="23" fill="url(#spec${id})"/>`;
+}
+function rim(){ return `<rect x="1.7" y="1.7" width="96.6" height="96.6" rx="21.6" fill="none" stroke="#FFFFFF" stroke-opacity="0.18" stroke-width="1.2"/>`; }
+
+const G=m=>m==="mono"?"#FFFFFF":null; // accent resolved to url per-id
+const dim=m=>m==="mono"?"rgba(255,255,255,0.52)":(m==="dark"?"rgba(255,255,255,0.8)":"rgba(255,255,255,0.84)");
+const white=m=>m==="mono"?"rgba(255,255,255,0.92)":"rgba(255,255,255,0.92)";
+
+// foreground builders: (acc,d,w,id) ; acc = gold url or white(mono)
+const FG={
+  hourglass:(a,d,w,id)=>`
+    <rect x="29" y="20" width="42" height="5.5" rx="2.75" fill="${d}"/>
+    <rect x="29" y="74.5" width="42" height="5.5" rx="2.75" fill="${d}"/>
+    <path d="M34 27 L66 27 C60 41 54 47 50 49.5 C46 47 40 41 34 27 Z" fill="${w}"/>
+    <path d="M50 50.5 C54 53 60 59 66 73 L34 73 C40 59 46 53 50 50.5 Z" fill="${a}"/>
+    <rect x="48.6" y="46" width="2.8" height="10" rx="1.4" fill="${a}"/>`,
+  honeyCell:(a,d,w,id)=>`
+    <defs><clipPath id="hc${id}"><polygon points="32,20 68,20 86,50 68,80 32,80 14,50"/></clipPath></defs>
+    <g clip-path="url(#hc${id})">
+      <rect x="0" y="51" width="100" height="49" fill="${a}"/>
+      <rect x="0" y="50" width="100" height="3" fill="${w}"/>
+    </g>
+    <polygon points="32,20 68,20 86,50 68,80 32,80 14,50" fill="none" stroke="${d}" stroke-width="5.5" stroke-linejoin="round"/>`,
+  wMono:(a,d,w,id)=>`
+    <path d="M26 31 L38 73 L50 45" fill="none" stroke="${w}" stroke-width="11" stroke-linecap="round" stroke-linejoin="round"/>
+    <path d="M50 45 L62 73 L74 31" fill="none" stroke="${a}" stroke-width="11" stroke-linecap="round" stroke-linejoin="round"/>`,
+  ring:(a,d,w,id)=>`
+    <circle cx="50" cy="50" r="29" fill="none" stroke="${d}" stroke-width="6.5"/>
+    <path d="M29 70.7 A29 29 0 1 1 71 70.7" fill="none" stroke="${a}" stroke-width="8.5" stroke-linecap="round"/>
+    <circle cx="50" cy="50" r="4" fill="${a}"/>`,
+  minBee:(a,d,w,id)=>`
+    <ellipse cx="37" cy="43" rx="11" ry="6.5" transform="rotate(-26 37 43)" fill="${w}"/>
+    <ellipse cx="63" cy="43" rx="11" ry="6.5" transform="rotate(26 63 43)" fill="${w}"/>
+    <rect x="42" y="36" width="16" height="42" rx="8" fill="${a}"/>
+    <defs><clipPath id="mb${id}"><rect x="42" y="36" width="16" height="42" rx="8"/></clipPath></defs>
+    <g clip-path="url(#mb${id})">
+      <rect x="40" y="50" width="20" height="4.5" fill="#463B9E"/>
+      <rect x="40" y="61" width="20" height="4.5" fill="#463B9E"/>
+    </g>
+    <circle cx="45" cy="29" r="2.4" fill="${a}"/><circle cx="55" cy="29" r="2.4" fill="${a}"/>
+    <path d="M47 35 L45 30 M53 35 L55 30" stroke="${d}" stroke-width="2" stroke-linecap="round"/>`,
+  hexGem:(a,d,w,id)=>`
+    <polygon points="32,20 68,20 86,50 68,80 32,80 14,50" fill="none" stroke="${d}" stroke-width="5"/>
+    <polygon points="39,33 61,33 72,50 61,67 39,67 28,50" fill="${a}"/>
+    <polygon points="39,33 61,33 50,41" fill="#FFFFFF" fill-opacity="0.28"/>`,
+};
+
+const ITEMS=[
+  {k:"hourglass", label:"Hourglass", note:"time + the honest number settling. No competitor owns it. Safe + meaningful."},
+  {k:"hexGem",    label:"Honey gem", note:"comb hexagon + honey jewel. Corporate-safe emblem, pure brand."},
+  {k:"wMono",     label:"W monogram", note:"two halves resolve into one W (two→one). Timeless, professional."},
+  {k:"honeyCell", label:"Honey cell", note:"hex filling to an honest level. Calibration as a quiet brand mark."},
+  {k:"ring",      label:"Duration ring", note:"echoes the in-app honey ring. Premium, calm, ‘your time’."},
+  {k:"minBee",    label:"Minimal bee", note:"abstract emblem, no face — keeps the name without the cartoon."},
+];
+
+function icon(k,mode){
+  const id=++U;
+  const acc = mode==="mono" ? "#FFFFFF" : `url(#gold${id})`;
+  return `<svg viewBox="0 0 100 100" width="100%" height="100%">${defs(mode,id)}${frame(id)}<g filter="url(#sh${id})">${FG[k](acc,dim(mode),white(mode),id)}</g>${rim()}</svg>`;
+}
+const root=document.getElementById("root");
+ITEMS.forEach(it=>{
+  const card=document.createElement("div");card.className="card";
+  card.innerHTML=`<div class="hero">${icon(it.k,"color")}</div>
+    <div class="chips"><div class="chip">${icon(it.k,"color")}</div><div class="chip">${icon(it.k,"mono")}</div><div class="chip">${icon(it.k,"dark")}</div><div class="chip sm">${icon(it.k,"color")}</div></div>
+    <div class="clabel">${it.label}</div><div class="cnote">${it.note}</div>`;
+  root.appendChild(card);
+});
+</script></body></html>
