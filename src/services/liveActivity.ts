@@ -61,6 +61,8 @@ export interface LiveActivityAttributes {
   taskLabel: string;
   /** Honest finish as Unix seconds; the ring counts down to this. */
   finishEpoch: number;
+  /** Unix seconds when the timer started; the ring fills from here to finishEpoch. */
+  startEpoch: number;
   /** Whether to start the rich (ring + accents) Live Activity. Decided in JS at
    *  start time from the entitlement; the live countdown digits stay free either way. */
   isProRich: boolean;

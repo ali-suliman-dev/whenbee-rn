@@ -78,7 +78,7 @@ struct NextTaskWidgetView: View {
                 Circle()
                     .fill(Color("WBRingTrack"))
                     .frame(width: 6, height: 6)
-                    .offset(y: -26)
+                    .offset(y: -28)
             }
             Text(entry.snapshot.honestFinishClock)
                 .font(.headline)

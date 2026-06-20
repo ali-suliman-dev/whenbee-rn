@@ -135,6 +135,7 @@ export function useTimer(params: TimerParams): UseTimerResult {
     startFinishTimeActivity({
       taskLabel: label,
       finishEpoch: Math.round(projectedFinish(startedAt, suggestedHonestMin) / 1000),
+      startEpoch: Math.round(startedAt / 1000),
       isProRich: useEntitlement.getState().isPro,
     });
     // Only schedule the "estimate is up" ping when the user has opted into
