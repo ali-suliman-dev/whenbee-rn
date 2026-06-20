@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import { kv } from '@/src/lib/kv';
+import { endFinishTimeActivity } from '@/src/services/liveActivity';
 
 const ACTIVE_TIMER_KEY = 'whenbee.activeTimer';
 
@@ -51,6 +52,13 @@ interface TimerState {
   cancel: () => void;
   /** Rehydrate from kv if a timer was running (background/crash-resume). */
   resumeFromKv: () => void;
+  /**
+   * End an orphaned Live Activity on boot. Call AFTER resumeFromKv: if no timer
+   * was restored, a stale OS-owned Activity (app was killed while timer was running
+   * and the timer had already ended) is cleaned up. Fire-and-forget; no-op in Expo
+   * Go and when no Activity exists.
+   */
+  reconcilePresenceOnBoot: () => void;
 }
 
 const CLEARED = {
@@ -148,6 +156,14 @@ export const useTimerStore = create<TimerState>((set, get) => ({
   cancel: () => {
     set({ ...CLEARED });
     clearPersisted();
+  },
+
+  reconcilePresenceOnBoot: () => {
+    // If no timer was resumed (startedAt is null), any OS-owned Live Activity that
+    // survived a killed app is now orphaned. End it so the Lock Screen is clean.
+    if (get().startedAt === null) {
+      endFinishTimeActivity();
+    }
   },
 
   resumeFromKv: () => {
