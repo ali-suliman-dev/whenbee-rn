@@ -114,6 +114,13 @@ describe('useWhenbeeHub', () => {
     });
   });
 
+  it('exposes pro readiness and honey pct in the VM', () => {
+    const { result } = renderHook(() => useWhenbeeHub());
+    expect(result.current.proReadiness).toBeDefined();
+    expect(typeof result.current.proReadiness.pitchUnlocked).toBe('boolean');
+    expect(typeof result.current.honeyPct).toBe('number');
+  });
+
   it('blind spot is null when no tracked category has a log', async () => {
     const db = createMemoryDatabase();
     useCalibrationStore.getState().setDatabase(db);
