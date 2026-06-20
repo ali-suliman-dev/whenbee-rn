@@ -103,8 +103,18 @@ describe('WhenbeeHub', () => {
     expect(screen.getByText('Log your first task')).toBeTruthy();
   });
 
-  it('renders the day-honest CTA when there are logs', () => {
+  it('renders the RipeningProCard when there are logs and not Pro', () => {
     mockHook.mockReturnValue(vm({ honestLogCount: 5 }));
+
+    render(<WhenbeeHub />);
+
+    // RipeningProCard ripening state headline (pitchUnlocked: false by default)
+    expect(screen.getByText('Your honest range')).toBeOnTheScreen();
+  });
+
+  it('renders the day-honest CTA for Pro users with logs', () => {
+    mockHook.mockReturnValue(vm({ honestLogCount: 5 }));
+    useEntitlement.setState({ isPro: true, ready: true });
 
     render(<WhenbeeHub />);
 
