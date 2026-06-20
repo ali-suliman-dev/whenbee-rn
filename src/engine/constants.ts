@@ -31,6 +31,20 @@ export const TIERS: readonly Tier[] = ['Raw', 'Setting', 'Ripening', 'Thickening
 export const TIER_THRESHOLDS: readonly number[] = [0, 40, 64, 82, 93];
 export const SHARPNESS_PER_LOG = 4; // assumed gain/log when estimating "logs to next tier"
 
+// ── Honey as calibration maturity (replaces pure-accuracy sharpness) ─────────────
+/** Effort-floor asymptote — pure showing-up tops out at Thickening, never seals.
+ *  Equals TIER_THRESHOLDS[3] (Thickening) on purpose. */
+export const HONEY_FLOOR_CAP = 82;
+/** Effort-floor curvature: floor(n) = HONEY_FLOOR_CAP · n/(n+HONEY_FLOOR_K).
+ *  K=2 → floor(1)≈27, floor(2)≈41, floor(3)≈49, approaching 82. */
+export const HONEY_FLOOR_K = 2;
+/** Trust weight on the accuracy term: t(n) = n/(n+HONEY_TRUST_K). Small early so
+ *  one lucky guess can't seal; →1 as data accumulates. Mirrors GLOBAL_PRIOR_K. */
+export const HONEY_TRUST_K = 6;
+/** Honey cannot reach this (the Honest threshold) unless the seal is EARNED
+ *  (high accuracy AND confidence==='honest'). Equals TIER_THRESHOLDS[4]. */
+export const HONEY_SEAL_GATE = 93;
+
 /** Insight (Aha) gates. */
 export const INSIGHT_MIN_LOGS = 5;
 export const INSIGHT_MIN_GAP = 0.4; // |M - 1| ≥ 0.4 is a surprising deviation

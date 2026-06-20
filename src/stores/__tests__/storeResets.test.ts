@@ -3,6 +3,7 @@ import { useSettingsStore } from '@/src/stores/settingsStore';
 import { useVocabStore } from '@/src/stores/vocabStore';
 import { usePlanStore } from '@/src/stores/planStore';
 import { useCalibrationStore } from '@/src/stores/calibrationStore';
+import { kv } from '@/src/lib/kv';
 
 describe('store reset actions', () => {
   it('categoriesStore.reset empties the tracked list', () => {
@@ -47,5 +48,18 @@ describe('store reset actions', () => {
     expect(c.logs).toBe(0);
     expect(c.statsByCategory).toEqual({});
     expect(c.graduatedCategories.size).toBe(0);
+  });
+
+  it('calibrationStore.reset clears the Pro pitch latch so pitchUnlocked is false after reset', () => {
+    // Pre-set the kv latch to simulate a previously earned pitch gate.
+    kv.set('whenbee.proPitchUnlocked', '1');
+    useCalibrationStore.setState({ logs: 0, statsByCategory: {}, graduatedCategories: new Set() });
+
+    useCalibrationStore.getState().reset();
+
+    // After reset, statsByCategory is empty (no qualifying categories) and the kv
+    // flag is gone, so getProReadiness must return pitchUnlocked: false.
+    expect(useCalibrationStore.getState().getProReadiness().pitchUnlocked).toBe(false);
+    expect(kv.getString('whenbee.proPitchUnlocked')).toBeNull();
   });
 });
