@@ -62,8 +62,7 @@ export function RailNode({ state }: RailNodeProps) {
         cancelAnimation(haloScale);
         haloScale.set(1);
       };
-      // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [state, reducedMotion]),
+    }, [haloScale, t.motion.halo]),
   );
 
   const haloAnimStyle = useAnimatedStyle(() => ({
