@@ -63,16 +63,14 @@ export function QuickActionArc({ anchorX, anchorY, onVoice, onTimer, onType }: Q
         if (angleDeg === undefined) return null;
         const angle = toRad(angleDeg);
         const size = bubble.isCenter ? arc.centerSize : arc.bubbleSize;
-        const EDGE = arc.edgeDepth;
         const R = arc.fanRadius;
         const V = arc.verticalOffset;
 
         // Bubble center in screen coords.
         const cx = anchorX + R * Math.cos(angle);
         const cy = anchorY - V + R * Math.sin(angle);
-        // Top-left of the bubble container (includes edge depth below the face).
         const left = cx - size / 2;
-        const top = cy - size / 2 - EDGE;
+        const top = cy - size / 2;
 
         const delay = reducedMotion ? 0 : i * t.motion.enterStagger;
         const enterAnim = reducedMotion
@@ -85,7 +83,6 @@ export function QuickActionArc({ anchorX, anchorY, onVoice, onTimer, onType }: Q
 
         const isFilled = bubble.isCenter;
         const bgColor = isFilled ? t.colors.primary : t.colors.surface;
-        const edgeColor = isFilled ? t.colors.primaryEdge : t.colors.border;
         const iconColor = isFilled ? t.colors.onIndigo : t.colors.ink;
 
         return (
@@ -97,33 +94,18 @@ export function QuickActionArc({ anchorX, anchorY, onVoice, onTimer, onType }: Q
               left,
               top,
               width: size,
-              height: size + EDGE,
+              height: size,
             }}
           >
             <Pressable
               onPress={handlers[bubble.key]}
               accessibilityRole="button"
               accessibilityLabel={bubble.label}
-              style={{ width: size, height: size + EDGE }}
+              style={{ width: size, height: size }}
             >
-              {/* Coin edge — darker slab pinned to bottom */}
+              {/* Flat bubble — no coin edge */}
               <View
                 style={{
-                  position: 'absolute',
-                  bottom: 0,
-                  left: 0,
-                  width: size,
-                  height: size,
-                  borderRadius: t.radii.full,
-                  backgroundColor: edgeColor,
-                }}
-              />
-              {/* Button face */}
-              <View
-                style={{
-                  position: 'absolute',
-                  top: 0,
-                  left: 0,
                   width: size,
                   height: size,
                   borderRadius: t.radii.full,

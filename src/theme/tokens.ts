@@ -391,9 +391,8 @@ export const tokens = {
   // `chipGap` = gap between the icon disc and the text block; `rowGap` = gap
   // between chips in the horizontal row.
   // `arc` = the quick-action arc overlay spawned by the tab-bar + button.
-  //   bubbleSize   = diameter of each circular bubble (coin disc)
+  //   bubbleSize   = diameter of each circular bubble (flat disc)
   //   centerSize   = diameter of the center (Timer) bubble — slightly larger, primary-fill
-  //   edgeDepth    = coin-edge depth below each bubble face (matches burst.coinEdge)
   //   fanRadius    = arc radius: how far each bubble sits from the + button center
   //   verticalOffset = extra upward shift of the arc center above the + button
   //   iconSize     = Ionicons glyph size inside each bubble
@@ -402,7 +401,6 @@ export const tokens = {
     arc: {
       bubbleSize: 52,
       centerSize: 60,
-      edgeDepth: 4,
       fanRadius: 84,
       verticalOffset: 16,
       iconSize: 22,
