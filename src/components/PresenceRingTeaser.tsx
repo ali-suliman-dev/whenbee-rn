@@ -153,7 +153,7 @@ export function PresenceRingTeaser({ onCtaPress }: { onCtaPress: () => void }) {
         <AppButton
           label="Unlock the honest ring"
           onPress={onCtaPress}
-          variant="indigo"
+          variant="amber"
           fullWidth
         />
       </View>
