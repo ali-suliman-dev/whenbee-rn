@@ -93,7 +93,14 @@ export const MIGRATIONS: string[] = [
   ALTER TABLE companion ADD COLUMN name TEXT;
   `,
 
-  // 0006 — affine calibration sufficient statistics (additive). Legacy rows are
+  // 0006 — first honest range per category (the "tightened from" anchor; additive,
+  // captured once and frozen, NULL until the first meaningful band).
+  `
+  ALTER TABLE category_stats ADD COLUMN first_honest_low REAL;
+  ALTER TABLE category_stats ADD COLUMN first_honest_high REAL;
+  `,
+
+  // 0007 — affine calibration sufficient statistics (additive). Legacy rows are
   // lazily seeded from m_effective in the repository (see categoryStatsRepo).
   `
   ALTER TABLE category_stats ADD COLUMN sw REAL NOT NULL DEFAULT 0;

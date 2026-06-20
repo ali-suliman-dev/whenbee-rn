@@ -2,6 +2,8 @@ import { View, Text, type ViewStyle, type TextStyle } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { Card } from '@/src/components/Card';
 import { HonestNumber } from '@/src/components/HonestNumber';
+import { HonestBand } from '@/src/components/HonestBand';
+import { HonestBandLockedTeaser } from '@/src/features/shared/HonestBandLockedTeaser';
 import { useTheme } from '@/src/theme/useTheme';
 import { type } from '@/src/theme/typography';
 import type { CalibrationConfidence, HonestRange } from '@/src/domain/types';
@@ -34,6 +36,21 @@ interface HonestCardProps {
   /** Pro-only, display-only B15 note naming the dominant over-run cause. Never
    *  affects the honest number or multiplier — purely a quiet second provenance line. */
   reasonNote?: string;
+  /** True when the user has the Pro entitlement — gates the honest-band strip. */
+  isPro?: boolean;
+  /** The first meaningful band captured for this category (the "from" anchor for
+   *  the narrowing caption). Null until the first band. */
+  firstHonestRange?: HonestRange | null;
+}
+
+/** The category-detail narrowing caption (§10). Tightening only renders when the
+ *  band actually got narrower; otherwise a neutral, no-guilt nudge. */
+function narrowingCaption(was: HonestRange | null | undefined, now: HonestRange): string {
+  if (was == null) return 'Log a few more and watch this tighten.';
+  const wasWidth = was.highMinutes - was.lowMinutes;
+  const nowWidth = now.highMinutes - now.lowMinutes;
+  if (nowWidth >= wasWidth) return 'Log a few more and watch this tighten.';
+  return `Tightened from ${was.lowMinutes}–${was.highMinutes} to ${now.lowMinutes}–${now.highMinutes} as you logged.`;
 }
 
 // While the model is still learning, the honest number is a band, not a point.
@@ -55,6 +72,8 @@ export function HonestCard({
   confidence,
   range,
   reasonNote,
+  isPro,
+  firstHonestRange,
 }: HonestCardProps) {
   const t = useTheme();
   // Show the band only while learning AND we actually have a range to show;
@@ -113,6 +132,15 @@ export function HonestCard({
     color: t.colors.amberText,
     fontFamily: 'Jakarta-Bold',
   };
+  // Surface B band strip — a taller, labelled band with low/high end labels.
+  const stripRow: ViewStyle = { flexDirection: 'row', alignItems: 'center', gap: t.space[2] };
+  const endLabel: TextStyle = { ...(type.caption as unknown as TextStyle), color: t.colors.inkSoft };
+  const narrowCaption: TextStyle = {
+    ...(type.bodySm as unknown as TextStyle),
+    color: t.colors.inkSoft,
+    marginTop: t.space[2],
+  };
+  const bandStrip: ViewStyle = { flex: 1 };
 
   return (
     <Card tone="focal" style={{ gap: t.space[3] }}>
@@ -161,6 +189,30 @@ export function HonestCard({
           ) : null}
         </>
       )}
+
+      {/* Surface B — the honest-band strip (Pro) or its locked teaser (free).
+          Only while learning; once honest the number is a single point. */}
+      {showRange && range ? (
+        isPro ? (
+          <View>
+            <View style={stripRow}>
+              <Text style={endLabel}>{range.lowMinutes}</Text>
+              <View style={bandStrip}>
+                <HonestBand
+                  range={range}
+                  point={honestMinutes}
+                  confidence={confidence ?? 'setting'}
+                  height={t.progress.gapTrack}
+                />
+              </View>
+              <Text style={endLabel}>{range.highMinutes}</Text>
+            </View>
+            <Text style={narrowCaption}>{narrowingCaption(firstHonestRange, range)}</Text>
+          </View>
+        ) : (
+          <HonestBandLockedTeaser />
+        )
+      ) : null}
 
       <Text style={provenanceText}>{provenance} · learned on-device</Text>
       {reasonNote ? <Text style={reasonNoteText}>{reasonNote}</Text> : null}

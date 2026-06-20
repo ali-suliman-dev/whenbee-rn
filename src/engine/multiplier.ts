@@ -1,5 +1,6 @@
 import { BLEND_PSEUDO_COUNT, PERSONAL_MIN_LOGS, RECURRING_MIN_LOGS } from './constants';
 import { affineHonestExact, type AffineFit } from './affine';
+import { confidenceFor, honestRangeFor } from './confidence';
 import type { CalibrationSummary } from '../domain/types';
 
 /**
@@ -25,15 +26,22 @@ export const roundHonest = (exactMinutes: number): number =>
 /** True when a recurring task has earned its own fit. */
 export const recurringHasEnoughData = (recurringN: number): boolean => recurringN >= RECURRING_MIN_LOGS;
 
+/** A resolution source — the category or a recurring rolling stat. The affine
+ *  `fit` is the point source; `clampedRatios` is its recent window (newest-last),
+ *  which (with a `prior`) lets the resolver also compute confidence + honest range. */
 interface SourceFit {
   fit: AffineFit;
   n: number;
+  /** Recent clamped ratios (newest-last). Omit to skip range/confidence. */
+  clampedRatios?: number[];
 }
 
 interface ResolveInput {
   guessMinutes: number;
   category: SourceFit;
   recurring: SourceFit | null;
+  /** Category prior multiplier. Required to populate the range; omit to skip it. */
+  prior?: number;
 }
 
 /**
@@ -41,8 +49,12 @@ interface ResolveInput {
  * fit; otherwise it inherits the category's fit. `multiplier` is the EFFECTIVE
  * multiplier at this guess (honest/guess) so every existing "×M" display keeps
  * working under the affine model.
+ *
+ * When the chosen source carries its `clampedRatios` window and a `prior` is
+ * supplied, the summary also gets the Earned-Readiness `confidence` and the
+ * honest `range` (P25–P75 band), so any decision-moment surface can show them.
  */
-export const resolveSuggestion = ({ guessMinutes, category, recurring }: ResolveInput): CalibrationSummary => {
+export function resolveSuggestion({ guessMinutes, category, recurring, prior }: ResolveInput): CalibrationSummary {
   const useRecurring = recurring !== null && recurringHasEnoughData(recurring.n);
   const source = useRecurring ? recurring : category;
 
@@ -53,5 +65,23 @@ export const resolveSuggestion = ({ guessMinutes, category, recurring }: Resolve
   const label =
     basis === 'personal' ? `based on your last ${source.n} times` : 'based on typical patterns';
 
-  return { multiplier, honestMinutes, guessMinutes, basis, label, sampleSize: source.n };
-};
+  const summary: CalibrationSummary = {
+    multiplier,
+    honestMinutes,
+    guessMinutes,
+    basis,
+    label,
+    sampleSize: source.n,
+  };
+
+  // Populate the band only when the caller passed the ratio window + prior; the
+  // engine math is cheap and on-device, so it is never gated here (§9 — gating is
+  // a render decision). Callers without the window keep the bare point summary.
+  if (source.clampedRatios !== undefined && prior !== undefined) {
+    const clampedRatios = source.clampedRatios;
+    summary.confidence = confidenceFor({ n: source.n, clampedRatios });
+    summary.range = honestRangeFor({ honestMinutes, guessMinutes, clampedRatios, prior });
+  }
+
+  return summary;
+}

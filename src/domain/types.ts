@@ -25,6 +25,11 @@ export interface CategoryStats {
   mEffective: number;
   sharpness: number;
   reclaimedMinutes: number;
+  /** The honest range captured the first time this category's confidence reached
+   *  'setting' (the first time a band is meaningful). Frozen thereafter — the
+   *  "from" anchor for the category-detail "tightened from X to Y" caption. Null
+   *  until that first meaningful band. */
+  firstHonestRange?: HonestRange | null;
 }
 
 /** Single-row monotonic companion aggregates (the Reclaim bank lives here). */

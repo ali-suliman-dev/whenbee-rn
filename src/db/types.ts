@@ -2,7 +2,7 @@
 // and the rest of the app. SQL columns are snake_case and mapped in the
 // sqlite adapter; everything above the port speaks these shapes.
 
-import type { AdaptSpeed, LogSource, LogStatus } from '@/src/domain/types';
+import type { AdaptSpeed, HonestRange, LogSource, LogStatus } from '@/src/domain/types';
 
 /** Denormalized per-category rolling stats row. */
 export interface CategoryStatRow {
@@ -21,6 +21,9 @@ export interface CategoryStatRow {
   swy: number;
   swxx: number;
   swxy: number;
+  /** First meaningful honest range (frozen at first 'setting'); null until then.
+   *  The "from" anchor for the category-detail narrowing caption (§7). */
+  firstHonestRange?: HonestRange | null;
 }
 
 /** A single raw log row (system of record). */

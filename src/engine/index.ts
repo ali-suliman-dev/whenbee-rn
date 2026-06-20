@@ -21,7 +21,7 @@ export { correlateAccuracy } from './accuracy';
 export type { AccuracySample, AccuracyCorrelation } from './accuracy';
 export { correlateContext } from './context';
 export type { ContextSample, ContextCorrelation } from './context';
-export { confidenceFor, honestRangeFor, reservePriceVisible } from './confidence';
+export { confidenceFor, honestRangeFor, quantile, reservePriceVisible } from './confidence';
 export {
   companionStageFor, capabilityFor, keeperReached, driftHealthFromRecent, COMPANION_KEEPER_QUOTA,
 } from './companion';

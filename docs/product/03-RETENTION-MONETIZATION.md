@@ -6,10 +6,10 @@
 
 ## Part 1 — Monetization (Model B, LOCKED 2026-06-15)
 
-> **The thesis:** Calibration is 100% free — every category, full depth. **Pro gates only the payoff: Honest-Day calendar padding + "what steals your time" correlations + on-device share.** Charge for the payoff, never the sensor.
+> **The thesis:** Calibration is 100% free — every category, full depth. **Pro gates only the payoff bundle** (PDF export, the review ritual, day-capacity check, confidence band, persistent presence, routines, long-range history, focus/hyperfocus tools, goals, correlations + share — full specs in [`specs/`](specs/)). Charge for the payoff, never the sensor. **No calendar feature (dropped 2026-06-19).**
 
 ### Why free calibration
-The make-or-break metric is **D7 ≥ 25% on an unproven audience**. Calibration *is* the retention engine and the proof-of-value, so it must be free — no category cap, no insight-depth gate. Honest-Day is the cleanest single reason to pay. On-device, no backend, no LLM → marginal cost ≈ $0, gross margin ≈ 85%; **pricing is positioning, not cost-recovery.**
+The make-or-break metric is **D7 ≥ 25% on an unproven audience**. Calibration *is* the retention engine and the proof-of-value, so it must be free — no category cap, no insight-depth gate. The Pro bundle (PDF export + capacity check are the buy-triggers; the review ritual is the retention glue) is the reason to pay. On-device, no backend, no LLM in the loop → marginal cost ≈ $0, gross margin ≈ 85%; **pricing is positioning, not cost-recovery.**
 
 ### Pricing — LOCKED
 | Tier | Price | Notes |
@@ -26,7 +26,7 @@ The make-or-break metric is **D7 ≥ 25% on an unproven audience**. Calibration 
 
 ### Free vs Pro
 - **Free:** full logging + retro; Honeycomb/honey/Whenbee hub; honest-number for all categories; full calibration insight per category (aha + trend + recent + tune + reset); Discoveries gallery; the whole Patterns free tier (archetype, plan-vs-wing, you-vs-past, surprise, prediction, drift, calibration map); Start-By planner; recurring memory; the native widget + Live Activity.
-- **Pro (entitlement `pro`):** Honest-Day calendar import + auto-padding + capacity warning; "what steals your time" correlations + reason-aware note; accuracy/context correlations; on-device share (Start-By plan + archetype cards).
+- **Pro (entitlement `pro`):** the payoff bundle — PDF report export, the Honest Week/month review ritual, day-capacity check (in-app), confidence band, persistent presence (widget/Live Activity), routines, long-range history, hyperfocus guardrail, focus-window planner, per-category goals; the existing "what steals your time" / accuracy / context correlations + reason-aware note; on-device share (Start-By plan + archetype cards). Full specs: [`specs/`](specs/).
 
 ### Paywall triggers
 - **Primary:** `make_day_honest` — "Make my whole day honest" CTA.
@@ -34,7 +34,7 @@ The make-or-break metric is **D7 ≥ 25% on an unproven audience**. Calibration 
 - **Tertiary:** `settings_upgrade` — Settings Pro card.
 - **Never:** install, onboarding, first session, during a timer, after a log, or on any calibration insight. **There is no `insight_locked` gate** — that model is retired.
 
-The three-aha map: AHA#1 "it knows me" (day-1 priors) = no paywall; AHA#2 "this is why my days collapse" (multiplier divergence) = **free, banks to Discoveries**; AHA#3 calendar import = the primary paywall.
+The three-aha map: AHA#1 "it knows me" (day-1 priors) = no paywall; AHA#2 "this is why my days collapse" (multiplier divergence) = **free, banks to Discoveries**; AHA#3 "now make it work for me" (the Pro payoff bundle — PDF export, capacity check, review ritual) = the primary paywall.
 
 ### RevenueCat discipline
 Single entitlement `pro` on all three products (`wb_pro_monthly/yearly/lifetime`); gate on the **entitlement**, never the product id. One `default` offering, custom RN paywall (not the dashboard template). `EntitlementProvider` + `useEntitlement()` + `<ProGate>`; components never call `Purchases` directly. **MMKV/cache is a render hint only** — the RC server record (backed by the Apple receipt) is the authority; survives reinstall via `getCustomerInfo()`. Restore + Manage Subscription always visible (Apple-required).
@@ -59,7 +59,7 @@ Trigger → Action → Variable Reward → Investment, all from **one behavior: 
 
 ### Whenbee companion (avatar of mastery, never a pet)
 - **Six stages:** 1–5 map to the five tiers (`companion.maxTier`, monotonic); stage 6 = **Keeper**, a set-once prestige once enough cells reach Honest.
-- **Growth = capability, not cosmetics** — each tier unlocks real planning power (finish-time → `Done ~9:42` → start-by anchor → full Honest-Day forecast → proactive drift recalibration).
+- **Growth = capability, not cosmetics** — each tier unlocks real planning power (finish-time → `Done ~9:42` → start-by anchor → full-day honest forecast → proactive drift recalibration).
 - **3-layer fuel (why guilt is structurally impossible):**
   - **Effort floor** — every log = +1 nectar; never-decreasing. Achievable by anyone, even with wild estimates → never stuck.
   - **Mastery body** — monotonic honey, caps at Honest, never decays.

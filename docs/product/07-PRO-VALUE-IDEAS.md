@@ -49,7 +49,7 @@ Show "this usually takes 40–55 min" with a band that visibly **narrows** as yo
 **1.4 — Day-capacity / over-commitment honest check**
 Sum today's honest numbers vs. the real hours you have, and flag — calmly, amber-not-red — when the day is physically over-packed. The no-guilt inverse of a streak.
 - *Evidence:* the explicit reason ADHD users pay $20/mo for Sunsama: *"Most task managers make you feel behind. Sunsama warns you when you're overcommitted"* ([SaskADHD](https://saskadhd.com/sunsama-review-a-therapists-take-on-the-daily-planner-that-actually-works-with-your-brain/)). Turns per-task accuracy into a daily planning decision.
-- *Why they pay recurringly:* used every planning session; the single most actionable thing the multiplier enables. **This is most of the value of calendar padding without touching anyone's calendar.**
+- *Why they pay recurringly:* used every planning session; the single most actionable thing the multiplier enables. **This replaces calendar padding entirely — same "will my day fit?" payoff, zero calendar access.**
 - *Effort:* Medium (engine sum + UI). · **NEW** (related to the deferred capacity-warning, but as a standalone in-app check)
 
 **1.5 — Persistent presence: lock-screen / Dynamic Island Live Activity + "it exists" widget**
@@ -58,11 +58,8 @@ Keep the running timer + honest finish visible without reopening the app, and a 
 - *Why they pay recurringly:* ambient, used dozens of times a day; the value lapses the moment they stop paying.
 - *Effort:* Med-High — **but the `WhenbeePresence` widget/Live Activity module is already scaffolded** (`docs/NATIVE-PRESENCE.md`). This is the killer consumer reason to finish it. · **REFINEMENT** (finish the scaffolded native presence, gate the rich version)
 
-**1.6 — Read-only calendar import (the privacy-safe answer to the calendar question)**
-Pull today's real calendar events and *overlay* each with its learned honest duration + a day-end projection. **Read-only — never writes back, never modifies anyone's calendar.**
-- *Evidence:* calendar import is the most-begged Pro gate across the planner set (Tiimo *"calendar import missing/broken"*; Structured gates it — [Structured help](https://help.structured.app/en/articles/1897986)). Meets people where they already plan.
-- *Why they pay recurringly:* re-runs every time they plan; embeds Whenbee in the daily workflow (workflow lock-in is the strongest retention driver).
-- *Effort:* Medium (EventKit *read* only). · **REFINEMENT** — this is Honest-Day minus the write-back you're wary of. Keeps the "see my whole real day, honestly" value and demo; kills the modify-your-calendar risk.
+**1.6 — ~~Read-only calendar import~~ — CUT (2026-06-19)**
+*The founder dropped all calendar involvement — no write, no read, no import, no EventKit, no calendar permission. The "see my whole day" value is carried instead by the in-app day-capacity check (1.4) over planned/Plan-tab tasks, plus routines (2.1).*
 
 ### Tier 2 — Strong, evidence-backed, build next
 
@@ -107,7 +104,7 @@ The numbers stay on-device and deterministic; an *optional* LLM turns them into 
 Pulling the highest-confidence, lowest-backlash, most-compounding items into one coherent Pro that **never gates the core loop**:
 
 > **Whenbee Pro = the payoff layer on top of free calibration:**
-> 1. **See your whole real day, honestly** — read-only calendar import + day-capacity check (1.6 + 1.4). *The calendar value, without the write risk.*
+> 1. **See if your day will actually fit** — in-app day-capacity check (1.4) over your planned/Plan-tab tasks. *The calendar payoff, with zero calendar access.*
 > 2. **Honest ranges + presence** — confidence band that narrows (1.3) + persistent lock-screen/widget presence (1.5).
 > 3. **The cadenced mirror** — Honest Week / monthly review (1.2) + long-range history (2.2).
 > 4. **Take it with you** — clinician/coach/self PDF export (1.1).
@@ -115,7 +112,7 @@ Pulling the highest-confidence, lowest-backlash, most-compounding items into one
 
 That bundle hits all five research truths: keeps the loop free, sells what the model *learns about you*, compounds (ritual + moat + narrowing band), brings a second audience (clinician), and respects no-guilt throughout. The existing Pro correlations ("what steals your time", accuracy, context) slot in as part of "the cadenced mirror."
 
-**This makes Pro stand on its own without calendar write-back** — answering the open question in [02-GAP-ANALYSIS](02-GAP-ANALYSIS.md)/[04-RESEARCH-INSIGHTS](04-RESEARCH-INSIGHTS.md). The read-only import keeps the strongest demo; capacity check + routines + ranges carry the value with zero calendar access at all.
+**This makes Pro stand on its own with NO calendar at all** (decision 2026-06-19) — the capacity check + routines + ranges carry the "will my day fit?" value with zero calendar access. Calendar code removal is tracked as B2 in [02-GAP-ANALYSIS](02-GAP-ANALYSIS.md).
 
 ---
 
@@ -130,7 +127,7 @@ That bundle hits all five research truths: keeps the loop free, sells what the m
 
 ## Open decisions / next steps
 
-1. **Calendar stance** (from the prior turn) — the research says **read-only import + in-app day-capacity check** is the sweet spot: keeps the value & demo, drops the write risk. Confirm A (read-only) vs C (drop calendar entirely; capacity check + routines carry it).
+1. **Calendar stance — RESOLVED (2026-06-19): dropped entirely.** No write, no read, no import. Capacity check + routines carry the value. Code removal tracked as B2 in [02-GAP-ANALYSIS](02-GAP-ANALYSIS.md).
 2. **First Pro build order** — recommend **1.1 PDF export + 1.2 review ritual + 1.4 capacity check + 1.3 confidence band** as the opening Pro that's validated, compounding, and largely reuses existing engine output.
 3. **Optional LLM Estimate Coach (2.6)** — decide if/when to add as a separate add-on tier; keep it strictly off the core loop.
 4. Re-validate with your own funnel once live: does the paid cohort actually return for the weekly review? (PostHog — the cadenced-ritual return is the retention signal that matters.)
