@@ -1,6 +1,7 @@
-import { useEffect } from 'react';
+import { useCallback } from 'react';
 import { Pressable, View, type ViewStyle, type TextStyle } from 'react-native';
 import Animated, {
+  cancelAnimation,
   useAnimatedStyle,
   useReducedMotion,
   useSharedValue,
@@ -10,6 +11,7 @@ import Animated, {
   withSpring,
   withTiming,
 } from 'react-native-reanimated';
+import { useAmbientMotion } from '@/src/hooks/useAmbientMotion';
 import Svg, { Circle, Defs, LinearGradient, Path, Polygon, Rect, Stop } from 'react-native-svg';
 import { Ionicons } from '@expo/vector-icons';
 import { AppText } from './AppText';
@@ -90,32 +92,37 @@ export function ProUpsellCard({ title, note, onPress, accessibilityLabel }: ProU
   const shimmerX = useSharedValue(-320);
   const shimmerStyle = useAnimatedStyle(() => ({ transform: [{ translateX: shimmerX.get() }, { skewX: '-18deg' }] }));
 
-  useEffect(() => {
-    if (reducedMotion) return;
-
-    crestScale.set(
-      withRepeat(
-        withSequence(
-          withTiming(1.07, { duration: 1800, easing: t.motion.easing.calm }),
-          withTiming(1.0, { duration: 1800, easing: t.motion.easing.calm }),
+  useAmbientMotion(
+    !reducedMotion,
+    useCallback(() => {
+      crestScale.set(
+        withRepeat(
+          withSequence(
+            withTiming(1.07, { duration: 1800, easing: t.motion.easing.calm }),
+            withTiming(1.0, { duration: 1800, easing: t.motion.easing.calm }),
+          ),
+          -1,
+          false,
         ),
-        -1,
-        false,
-      ),
-    );
-
-    shimmerX.set(
-      withRepeat(
-        withSequence(
-          withTiming(400, { duration: 700, easing: t.motion.easing.out }),
-          withDelay(4500, withTiming(-320, { duration: 0 })),
+      );
+      shimmerX.set(
+        withRepeat(
+          withSequence(
+            withTiming(400, { duration: 700, easing: t.motion.easing.out }),
+            withDelay(4500, withTiming(-320, { duration: 0 })),
+          ),
+          -1,
+          false,
         ),
-        -1,
-        false,
-      ),
-    );
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [reducedMotion]);
+      );
+      return () => {
+        cancelAnimation(crestScale);
+        cancelAnimation(shimmerX);
+        crestScale.set(1);
+        shimmerX.set(-320);
+      };
+    }, [crestScale, shimmerX, t.motion]),
+  );
 
   // ── styles ────────────────────────────────────────────────────────────────
   const face: ViewStyle = {
