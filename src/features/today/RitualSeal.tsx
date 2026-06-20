@@ -1,7 +1,8 @@
 // src/features/today/RitualSeal.tsx
-import { useEffect, useRef } from 'react';
+import { useCallback, useEffect, useRef } from 'react';
 import { Pressable, Text, View, type TextStyle, type ViewStyle } from 'react-native';
 import Animated, {
+  cancelAnimation,
   useSharedValue,
   useAnimatedProps,
   useReducedMotion,
@@ -12,6 +13,7 @@ import Animated, {
 } from 'react-native-reanimated';
 import Svg, { Path, Rect, Circle, G, Defs, ClipPath, RadialGradient, Stop } from 'react-native-svg';
 import { useTheme } from '@/src/theme/useTheme';
+import { useAmbientMotion } from '@/src/hooks/useAmbientMotion';
 import { type } from '@/src/theme/typography';
 
 // ──────────────────────────────────────────────────────────────────────────────
@@ -63,11 +65,6 @@ export function RitualSeal({
 
     if (!done) {
       border.set(0); honey.set(0); mark.set(0); bloom.set(0); spark.set(0);
-      if (!reduced) {
-        restBreath.set(withRepeat(withTiming(1, { duration: t.motion.halo, easing: e.calm }), -1, true));
-      } else {
-        restBreath.set(0);
-      }
       return;
     }
     if (reduced || !justSealed) {
@@ -85,6 +82,18 @@ export function RitualSeal({
     spark.set(0);  spark.set(withDelay(m.dSpark, withTiming(1, { duration: m.spark, easing: e.out })));
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [done, reduced]);
+
+  useAmbientMotion(
+    !done && !reduced,
+    useCallback(() => {
+      restBreath.set(withRepeat(withTiming(1, { duration: t.motion.halo, easing: e.calm }), -1, true));
+      return () => {
+        cancelAnimation(restBreath);
+        restBreath.set(0);
+      };
+      // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [done, reduced]),
+  );
 
   const borderProps = useAnimatedProps(() => ({ strokeDashoffset: HEX_PERIM * (1 - border.get()) }));
   const honeyProps = useAnimatedProps(() => {
