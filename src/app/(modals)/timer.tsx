@@ -24,7 +24,6 @@ import { PostStopCaptureSheet } from '@/src/components/quick/PostStopCaptureShee
 import { guessCategory } from '@/src/features/shared/categoryGuess';
 import { usePickerCategories } from '@/src/features/shared/CategoryChips';
 import { useCalibrationStore } from '@/src/stores/calibrationStore';
-import { useTimerStore } from '@/src/stores/timerStore';
 
 // ──────────────────────────────────────────────────────────────────────────────
 // Live Timer (Screen 3) — calm focus ring; measures actual vs guess, reframes
@@ -86,7 +85,9 @@ export default function Timer() {
   const stats = useCalibrationStore((s) => s.statsByCategory);
 
   // Pre-select most-frequent category (by log count from calibration stats).
-  function pickDefaultCategory(): string | null {
+  // Wrapped in useCallback so handleStopPress can list it in deps without a
+  // stale-closure risk (stats changes → new reference → handleStopPress refreshes).
+  const pickDefaultCategory = useCallback((): string | null => {
     let bestId: string | null = null;
     let bestN = 0;
     for (const [id, stat] of Object.entries(stats)) {
@@ -96,7 +97,7 @@ export default function Timer() {
       }
     }
     return bestId;
-  }
+  }, [stats]);
 
   const [capturedCategory, setCapturedCategory] = useState<string | null>(null);
 
@@ -114,16 +115,16 @@ export default function Timer() {
     } else {
       void timer.onStopAndLog();
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [timer.isQuickStart, timer.onFreezeForCapture, timer.onStopAndLog, capturedLabel, categories, stats]);
+  }, [timer, capturedLabel, categories, pickDefaultCategory]);
 
   const handleCaptureSave = useCallback(async () => {
-    // Write the captured details into the store so onStopAndLog reads them.
+    // Pass label + category directly as overrides — the store was already cleared by
+    // onFreezeForCapture, so setQuickDetails would be a no-op and the log would
+    // fall back to the quick-start defaults.
     const finalLabel = capturedLabel.trim() || 'Focus session';
     const finalCategory = capturedCategory ?? categories[0]?.id ?? 'admin';
-    useTimerStore.getState().setQuickDetails(finalLabel, finalCategory);
     setShowCaptureSheet(false);
-    await timer.onStopAndLog();
+    await timer.onStopAndLog(finalLabel, finalCategory);
   }, [capturedLabel, capturedCategory, categories, timer]);
 
   const handleCaptureSkip = useCallback(async () => {

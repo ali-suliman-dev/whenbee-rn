@@ -89,7 +89,13 @@ export interface UseTimerResult {
    * Only meaningful for quick-start sessions; the normal Stop button never calls it.
    */
   onFreezeForCapture: () => { actualMin: number };
-  onStopAndLog: () => Promise<void>;
+  /**
+   * Stop the timer and write a calibration log. For the quick-start capture-sheet
+   * Save path, pass the user-chosen labelOverride and categoryOverride — the store
+   * was already cleared by onFreezeForCapture so reading it would return the
+   * quick-start defaults. The normal timer Stop path calls this with no args.
+   */
+  onStopAndLog: (labelOverride?: string, categoryOverride?: string) => Promise<void>;
   onAbandon: () => Promise<void>;
 }
 
@@ -197,7 +203,7 @@ export function useTimer(params: TimerParams): UseTimerResult {
   // consumer forgets to read overProgress directly (defensive; no-op cost).
   useDerivedValue(() => overProgress.value, [overProgress]);
 
-  const onStopAndLog = useCallback(async () => {
+  const onStopAndLog = useCallback(async (labelOverride?: string, categoryOverride?: string) => {
     // For quick-start sessions the clock was already frozen by onFreezeForCapture
     // before the capture sheet was shown. Use the pre-computed value; for normal
     // timers frozenActualMinRef is null and we stop the clock right now.
@@ -211,13 +217,13 @@ export function useTimer(params: TimerParams): UseTimerResult {
     void cancelTimerDone();
     endFinishTimeActivity();
 
-    // For quick-start sessions setQuickDetails() will have written the captured
-    // label + category into the store before this callback fires. Read them
-    // non-reactively so the log uses the user-selected values, not the empty
-    // quick-start defaults.
-    const storeState = useTimerStore.getState();
-    const resolvedLabel = storeState.taskLabel ?? label;
-    const resolvedCategory = storeState.category ?? category;
+    // For the quick-start capture-sheet Save path, the caller passes the user-chosen
+    // label + category as explicit overrides — the store was already cleared by
+    // onFreezeForCapture before the sheet was shown, so reading the store would
+    // return the quick-start defaults (empty label, null category). Fall back to the
+    // closure-captured route params for normal (non-quick-start) timer stops.
+    const resolvedLabel = labelOverride ?? label;
+    const resolvedCategory = categoryOverride ?? category;
 
     const adaptSpeed: AdaptSpeed =
       useCategoriesStore.getState().categories.find((c) => c.id === resolvedCategory)?.adaptSpeed ??
@@ -241,8 +247,8 @@ export function useTimer(params: TimerParams): UseTimerResult {
     useRewardStore.getState().setReward({
       actualMin,
       guessMin,
-      category,
-      label,
+      category: resolvedCategory,
+      label: resolvedLabel,
       result,
     });
 
