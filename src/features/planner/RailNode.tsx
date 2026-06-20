@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useCallback } from 'react';
 import { View, type ViewStyle, type TextStyle } from 'react-native';
 import Animated, {
   cancelAnimation,
@@ -9,6 +9,7 @@ import Animated, {
   Easing,
   useReducedMotion,
 } from 'react-native-reanimated';
+import { useAmbientMotion } from '@/src/hooks/useAmbientMotion';
 import { useTheme } from '@/src/theme/useTheme';
 import { AppText } from '@/src/components/AppText';
 
@@ -46,30 +47,24 @@ export function RailNode({ state }: RailNodeProps) {
   const breatherSize = t.planRail.breatherNode; // 16pt
   const ringExpand = t.planRail.nowRing; // 3pt — how far the ring sits outside the node
 
-  // Start the pulse for `now` state — keyed on state + reducedMotion so each
-  // change cancels the previous loop before starting a new one. Cleanup cancels
-  // any in-flight animation when the component unmounts.
-  useEffect(() => {
-    if (state === 'now' && !reducedMotion) {
+  useAmbientMotion(
+    state === 'now' && !reducedMotion,
+    useCallback(() => {
       cancelAnimation(haloScale);
       haloScale.set(
         withRepeat(
-          withTiming(1.6, {
-            duration: t.motion.halo,
-            easing: Easing.inOut(Easing.sin),
-          }),
+          withTiming(1.6, { duration: t.motion.halo, easing: Easing.inOut(Easing.sin) }),
           -1,
-          true, // reverse: scale back down
+          true,
         ),
       );
-    } else {
-      cancelAnimation(haloScale);
-      haloScale.set(1);
-    }
-    return () => cancelAnimation(haloScale);
-    // t.motion.halo is stable (tokens object is const) — only state/reducedMotion drive re-runs.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [state, reducedMotion]);
+      return () => {
+        cancelAnimation(haloScale);
+        haloScale.set(1);
+      };
+      // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [state, reducedMotion]),
+  );
 
   const haloAnimStyle = useAnimatedStyle(() => ({
     transform: [{ scale: haloScale.get() }],
