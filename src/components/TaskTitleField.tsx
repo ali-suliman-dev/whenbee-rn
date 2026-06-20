@@ -53,6 +53,7 @@ export const TaskTitleField = ({
     borderWidth: t.borderWidth.thin,
     borderColor: focused ? t.colors.primary : t.colors.hairline,
     borderRadius: t.radii.md,
+    borderCurve: 'continuous',
     paddingHorizontal: t.space[4],
     minHeight: t.size.control.md,
   };

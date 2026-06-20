@@ -113,6 +113,7 @@ export default function AddTask() {
             value={a.title}
             onChangeText={a.setTitle}
             placeholder="e.g. Reply to that email"
+            returnKeyType="done"
             accessibilityLabel="Task title"
           />
         </View>
