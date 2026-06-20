@@ -135,8 +135,18 @@ export function RunningFocusCard({ categoryName }: RunningFocusCardProps) {
   const clock: TextStyle = { ...(type.bigNumber as unknown as TextStyle), color: t.colors.ink };
 
   const labelsRow: ViewStyle = { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' };
-  const guessLabel: TextStyle = { ...(type.caption as unknown as TextStyle), color: t.colors.primary };
-  const planLabel: TextStyle = { ...(type.caption as unknown as TextStyle), color: t.colors.inkSoft };
+  // Bold the guess/plan anchors. A named font family (Jakarta-Medium from caption)
+  // ignores fontWeight on iOS, so swap the family to the bold cut directly.
+  const guessLabel: TextStyle = {
+    ...(type.caption as unknown as TextStyle),
+    fontFamily: 'Jakarta-Bold',
+    color: t.colors.primary,
+  };
+  const planLabel: TextStyle = {
+    ...(type.caption as unknown as TextStyle),
+    fontFamily: 'Jakarta-Bold',
+    color: t.colors.inkSoft,
+  };
 
   return (
     <AnimatedPressable

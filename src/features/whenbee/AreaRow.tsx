@@ -1,7 +1,7 @@
-import { Pressable, View, Text, type ViewStyle, type TextStyle } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
-import { useTheme } from '@/src/theme/useTheme';
 import { type } from '@/src/theme/typography';
+import { useTheme } from '@/src/theme/useTheme';
+import { Ionicons } from '@expo/vector-icons';
+import { Pressable, Text, View, type TextStyle, type ViewStyle } from 'react-native';
 
 // One merged row per tracked category: name · inline honey bar (sharpness) ·
 // learned multiplier · chevron → the category page. Replaces both the separate
@@ -32,7 +32,12 @@ export function AreaRow({
     paddingHorizontal: t.space[4],
     paddingVertical: t.space[3],
   };
-  const nameText: TextStyle = { ...(type.bodyLg as unknown as TextStyle), color: t.colors.ink, minWidth: 66 };
+  const nameText: TextStyle = {
+    ...(type.bodyLg as unknown as TextStyle),
+    fontSize: t.fontSize.sm,
+    color: t.colors.ink,
+    minWidth: 66,
+  };
   const track: ViewStyle = {
     flex: 1,
     height: t.progress.track,
@@ -40,10 +45,15 @@ export function AreaRow({
     backgroundColor: t.colors.surfaceSunken,
     overflow: 'hidden',
   };
-  const barFill: ViewStyle = { width: `${fill}%`, height: '100%', borderRadius: t.radii.full, backgroundColor: t.colors.accent };
+  const barFill: ViewStyle = {
+    width: `${fill}%`,
+    height: '100%',
+    borderRadius: t.radii.full,
+    backgroundColor: t.colors.accent,
+  };
   const multText: TextStyle = {
     fontFamily: 'Inter-Bold',
-    fontSize: t.fontSize.md,
+    fontSize: t.fontSize.sm,
     color: t.colors.primary,
     fontVariant: ['tabular-nums'],
     minWidth: 34,

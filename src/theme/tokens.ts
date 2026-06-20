@@ -226,6 +226,7 @@ export const tokens = {
       // against it. Lifted off the card by companionCoinShadow. Hub ring keeps the
       // softer companionCoin above.
       companionCoinHud: '#C7BCEE',
+      companionCoinHudTint: '#5A4BD4', // a darker indigo than primary — soft coin backing
       companionCoinShadow: '#20233A', // = ink; the HUD coin's soft contact-shadow base
 
       // ── backward-compat aliases (template keys) ──
@@ -295,6 +296,7 @@ export const tokens = {
       // Dark HUD coin stays the soft raised coin (no solid/shadow treatment in dark —
       // it reads fine on the deep card). Mirrors companionCoin so dark is unchanged.
       companionCoinHud: '#292B3C',
+      companionCoinHudTint: '#3A3358', // dark coin backing — mirrors companionCoinHud tone
       companionCoinShadow: 'transparent', // unused in dark (shadow doesn't read dark-on-dark)
 
       // ── backward-compat aliases ──
@@ -350,7 +352,7 @@ export const tokens = {
     glow: [0, 0, 6, 12, 18, 24],
     // BeeMascot size (px) for the compact Today HUD — smaller than the hub/onboarding
     // bee so the companion reads as a quiet presence beside the honey bar.
-    hudBee: 36,
+    hudBee: 46,
     // Soft-coin backing for the HUD bee. Ringless (no honey ring to frame it), so it
     // needs a HIGH core — a sharp solid disc with only a thin feathered rim — or it
     // reads as a glow at this small size. hudCoinCore = the solid-hold fraction.
