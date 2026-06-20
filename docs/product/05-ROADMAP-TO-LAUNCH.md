@@ -19,7 +19,7 @@ The build phases are behind us. The engine, retention spine, monetization, and P
 
 5. **Dev build on a real iPhone.** Exercise the Expo-Go-guarded paths end to end:
    - RevenueCat: offerings load with live prices, purchase, **restore**, **manage subscription**, founder-reserve.
-   - Honest-Day: calendar read → before/after → **confirmed write** (the one mutation).
+   - The new Pro bundle (PDF export, capacity check, review ritual, etc. — see [`specs/`](specs/)) once built.
    - Notifications: "estimate is up" + Start-By nudge fire.
 6. **Link `WhenbeePresence`** and ship the **static home-screen widget** (the "never cut" surface). Live Activity / Dynamic Island = fast-follow if signing/time bites.
 7. **Device QA pass** against the no-guilt invariants: amber never red, honey never regresses, no network in the core loop.
@@ -31,11 +31,11 @@ The build phases are behind us. The engine, retention spine, monetization, and P
 
 ## Stage D — The GO gate (do not skip)
 
-10. **Demand proof:** ≥50 waitlist emails OR ≥5 unprompted "take my money" reactions, with excitement specifically about the **calendar-honesty** angle. (`VALIDATION-ROADMAP.md`.) If this fails, fix the pitch before launching, not the app.
+10. **Demand proof:** ≥50 waitlist emails OR ≥5 unprompted "take my money" reactions, with excitement specifically about the **honest-number / "it learns how long things really take you"** angle. (`VALIDATION-ROADMAP.md`.) If this fails, fix the pitch before launching, not the app.
 
 ## Stage E — Launch (≈1–2 weeks)
 
-11. **App Store assets:** listing, screenshots (lead with the **Honest-Day before/after**), privacy labels (all on-device — easy), PNG icon (never `.icon`), three IAP SKUs live in App Store Connect + RC.
+11. **App Store assets:** listing, screenshots (lead with the **honest-number reveal + the Pro PDF report / Honest Week**), privacy labels (all on-device — easy), PNG icon (never `.icon`), three IAP SKUs live in App Store Connect + RC.
 12. **Funnel + D7 instrumented and verified live** in PostHog (`install → first_log → aha → tier_up → paywall_view → purchase`).
 13. **GTM:** Reddit-first, earn-don't-spam — beachhead r/ProductivityApps, empathy r/adhdwomen, reach-only r/ADHD; Product Hunt + creator seeding. Lead with the *calibration concept*. (`LAUNCH-AND-POSTING-PLAN.md`.)
 
@@ -57,4 +57,4 @@ The **D7 ≥ 25% gate authorizes everything below.** Until it's met, hold.
 
 ## Net-never-cut list (if time pressure hits)
 
-One-tap logging · day-1 priors · honest-number suggestion · calendar padding · no-guilt tone · the static widget. Everything else can defer before these do.
+One-tap logging · day-1 priors · honest-number suggestion · no-guilt tone · the static widget. Everything else can defer before these do.

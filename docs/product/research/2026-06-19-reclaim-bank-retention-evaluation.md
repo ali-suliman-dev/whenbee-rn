@@ -17,6 +17,8 @@
 
 **So:** reframe the bank to be unimpeachably honest + traceable, seed it non-zero, give it a bounded next-milestone, and treat it as the trophy-shelf, not the engine. Net effort: small. Net risk reduction: large.
 
+> **⚠️ Revision (2026-06-19, after founder review) — see [§9](#9-the-success-paradox--revised-recommendation).** A sharper read changed the recommendation. The "elaborate it" path below (seed + milestone + rings) is **walked back** — it bolts gamification scaffolding onto an app whose entire virtue is *zero friction*, to prop up a counter that is (a) not load-bearing for retention and (b) **self-contradicting**. New lead recommendation: **cut the lifetime hero card; move the "you were closer" payoff to the moment of the log.** §1–§8 remain as the evidence trail; §9 is the current call.
+
 ---
 
 ## 1. What the Reclaim Bank actually is today (code reality)
@@ -197,3 +199,41 @@ The question "is a bank the right object?" — scored against the evidence. Seve
 **Reddit user-voice (skeptical-technical skew noted):** abandonment — r/getdisciplined https://www.reddit.com/r/getdisciplined/comments/1u66dmi/what_makes_you_stop_using_habit_tracker_apps/ , r/Habits https://www.reddit.com/r/Habits/comments/1rigs2y/i_stopped_tracking_my_habits_and_ironically_got/ · stick — r/ProductivityApps https://www.reddit.com/r/ProductivityApps/comments/1s8i4cg/what_are_the_tools_that_actually_help_you_stick/ · time-blindness — r/ADHD https://www.reddit.com/r/ADHD/comments/73d82l/being_really_bad_at_estimating_how_long/ , r/ADHD_Programmers https://www.reddit.com/r/ADHD_Programmers/comments/1ppblu9/ · streak-shame — r/duolingo https://www.reddit.com/r/duolingo/comments/1lbsfe1/ · "time saved" debunk lens — r/nosurf https://www.reddit.com/r/nosurf/comments/1r0hjaq/
 
 *Caveat: Reddit quotes are from search-result snippets (API blocks full-thread scraping); the niche skews skeptical, so treat enthusiasm as hard-won. Competitor ARR/figures are from secondary teardowns, not audited.*
+
+---
+
+## 9. The success paradox & revised recommendation
+
+*This section supersedes the "Do Now / Do Next" elaboration in §4 and §7 as the lead call. §1–§8 stand as the evidence.*
+
+### 9.1 The paradox (the deciding factor)
+
+The deposit formula rewards the *gap between your gut guess and the honest number*:
+
+```
+dividend = |actual − estimate| − |actual − honest|   // how much better honest was than your gut
+```
+
+A deposit is only large when **your gut guess was badly wrong** and the honest number rescued it. Therefore:
+
+- As the user calibrates, their **gut converges toward reality** → the honest number's edge over the gut **shrinks** → **deposits trend to zero.**
+- Because the bank is monotonic, it doesn't fall — it **freezes.** A fully-calibrated veteran stares at a stalled number.
+- **A large bank means the user stayed badly miscalibrated for a long time.** A fast learner earns a *small* bank.
+
+For a tool whose definition of success is *"you internalize your real durations and no longer need us,"* the hero counter **grows fastest for the users it's helping least, and stalls for the users it's helped most.** It is a self-contradicting trophy. This is structural, not a copy problem — no reframing fixes it while it's a persistent lifetime hero number.
+
+### 9.2 Why "elaborate it" is the wrong instinct
+
+The §4 fixes (seed non-zero, next-milestone, weekly ring) are real money-saved-app best practice — but applying them here means **building gamification scaffolding onto an app whose single strongest asset is "demands nothing, one tap, no decisions."** The research is unambiguous that this exact niche (ADHD, skeptical-technical) deletes apps for that scaffolding and debunks derived "time saved" numbers. Spending build + surface area to prop up a non-load-bearing, paradoxical counter optimizes the wrong thing.
+
+### 9.3 Revised recommendation — ranked
+
+1. **Lead: cut the lifetime hero card; keep the payoff at the moment of the log.** The genuine emotional hit — *"you finished 12m closer to real than your gut"* — belongs **right after a task completes**: concrete, traceable, earned, gone in two seconds. No persistent counter to debunk, no paradox (a per-log delta has no monotonic story to contradict), no scaffolding. You keep 100% of the emotion and shed 100% of the liability. The app gets **more** focused. The per-log surface already exists (`ReclaimDeposit.tsx`) — this is mostly *removal* (the hero card + Today line + lifetime persistence as a headline), not new building.
+2. **Acceptable fallback: keep a tiny, honest, secondary line** — reworded to "sharper than your gut," never a hero, no rings/milestones/seeding. Cheap, low-risk, low-reward. Choose this only if there's a reason to retain a lifetime surface (e.g. it tests well as switching-cost proof in §2a's endowment sense).
+3. **Reject: keep "RECLAIMED 1h 55m" as an elaborated hero.** Carries the paradox, the debunk risk, the added friction, and a trust hit on a brand named *honest*.
+
+### 9.4 Where the retention energy goes instead
+
+Unchanged from §6: zero-friction loop → **Watchdog resurrection via the widget** → honest-number-as-external-brain → drift-health corridor. The bank, at most, is a quiet trophy line. Cutting the hero card is a *focusing* move, not a loss.
+
+**One-line answer to "keep it or not":** Keep the *moment* ("you were closer," at log-time). Cut the *monument* (the lifetime hero card). Don't gamify either.

@@ -6,11 +6,17 @@
 
 ## Tier 0 — Blockers (must fix before anything ships)
 
-### B1. Typecheck is red — `HonestNumber` `Size` union missing `'md'`
-- **What:** `src/components/HonestNumber.tsx:25` declares `type Size = 'inline' | 'big' | 'lg' | 'xl'`, but the `sizeScale` record (line 36) defines an `md:` key and `src/features/today/FocusCard.tsx:74` passes `size="md"`. → `tsc` errors TS2353 + TS2322. CI (`npm run typecheck`) is currently failing, which blocks merge per the project gate.
-- **Why:** Nothing else can merge while CI is red. This is the single highest-priority item.
-- **Fix:** Add `'md'` to the `Size` union (one line). Then re-run `npm run typecheck` (must be clean) and `npx eslint src/components/HonestNumber.tsx src/features/today/FocusCard.tsx`.
-- **Effort:** minutes.
+### B1. Typecheck — `HonestNumber` `Size` union missing `'md'` — ✅ FIXED (2026-06-18)
+Added `'md'` to the `Size` union + `honestNumberMd` to the `sizeScale` value type in `src/components/HonestNumber.tsx`. `npm run typecheck` is green again.
+
+### B2. Remove the calendar / Honest-Day feature from code (decision 2026-06-19)
+- **What:** Delete the calendar feature end to end and re-point the paywall to the new Pro bundle. Manifest:
+  - Delete: `src/features/calendar/buildHonestDay.ts` (+ tests), `src/features/calendar/useHonestDay.ts`, `src/services/calendar.ts` (+ tests), `src/app/(modals)/honest-day.tsx`.
+  - Edit: `src/features/whenbee/WhenbeeHub.tsx` (remove `make_day_honest` CTA + honest-day routing), `src/app/settings.tsx` (remove the "Make my whole day honest" row + `openHonestDay`), `src/features/paywall/*` (remove the `make_day_honest` trigger + the calendar before/after `BeforeAfterHero`; replace the paywall hero with the new Pro bundle), `src/services/analytics.ts` (drop calendar/`make_day_honest` events), the `(modals)` route registry.
+  - Remove the `expo-calendar` dependency + `app.json` calendar permission strings; re-run `npx expo prebuild --clean`.
+- **Why:** Founder dropped calendar entirely; leaving dead, permission-bearing code risks App Review questions and confuses future work.
+- **How:** On a branch → PR (per the project's no-self-merge rule). Run lint + typecheck + test after; the paywall must still open against the new Pro bundle.
+- **Effort:** Medium (surgical, ~10 files + paywall reframe).
 
 ---
 
@@ -33,7 +39,7 @@
 - **Effort:** medium — backend + table + RLS + one screen.
 
 ### P4. Real-device verification of everything guarded in Expo Go
-- **What:** RevenueCat purchase + restore + manage-subscription, the paywall (live prices, founder reserve), the Honest-Day calendar **write**, notifications, and the widget/Live Activity all stub or guard in Expo Go. They must be exercised on a dev build on a real device.
+- **What:** RevenueCat purchase + restore + manage-subscription, the paywall (live prices, founder reserve), notifications, and the widget/Live Activity all stub or guard in Expo Go. They must be exercised on a dev build on a real device.
 - **Why:** These are the revenue and core-payoff paths. They cannot be trusted until seen working on-device.
 - **Effort:** medium — a structured device pass with a checklist; use the `/verify` and `/run` flows.
 
@@ -47,10 +53,10 @@
 ## Tier 2 — Launch & validation (turning "shippable" into "shipped to users")
 
 ### L1. The GO gate (do not skip)
-The original `VALIDATION-ROADMAP.md` precondition still holds: **≥50 waitlist emails OR ≥5 unprompted "take my money" reactions**, with the excitement specifically about the **calendar-honesty** angle. Validate demand for the payoff before pouring effort into launch.
+The original `VALIDATION-ROADMAP.md` precondition still holds: **≥50 waitlist emails OR ≥5 unprompted "take my money" reactions**, with the excitement specifically about the **"it learns how long things really take you"** angle. Validate demand for the payoff before pouring effort into launch.
 
 ### L2. App Store readiness
-- App Store Connect listing, screenshots (lead with the **Honest-Day before/after** — the most screen-recordable asset), privacy nutrition labels (easy: all on-device), App Review prep, the three IAP SKUs (`wb_pro_monthly`, `wb_pro_yearly`, `wb_pro_lifetime`) + entitlement `pro` wired in RC.
+- App Store Connect listing, screenshots (lead with the **honest-number reveal + the Pro PDF report / Honest Week**), privacy nutrition labels (easy: all on-device), App Review prep, the three IAP SKUs (`wb_pro_monthly`, `wb_pro_yearly`, `wb_pro_lifetime`) + entitlement `pro` wired in RC.
 - **App icon caveat:** `app.json` must use the PNG `icon`, never a `.icon` Icon Composer file (fails `actool` on older Xcode).
 
 ### L3. Funnel live + retention instrumentation
@@ -61,21 +67,30 @@ Reddit-first, earn-don't-spam: beachhead **r/ProductivityApps**, empathy **r/adh
 
 ---
 
+## Resolved: what Pro actually is (calendar DROPPED entirely)
+
+Research ([07-PRO-VALUE-IDEAS](07-PRO-VALUE-IDEAS.md)) resolved the calendar question, and the founder decision (2026-06-19) is to **drop the calendar / Honest-Day feature entirely — no write, no read, no import.** The new Pro = a payoff bundle that's independently validated as paid value — clinician/coach **PDF export**, a cadenced **weekly/monthly review ritual**, an in-app **day-capacity check** (planned tasks vs available hours — no calendar), a narrowing **confidence band**, persistent **widget/Live Activity presence**, **routines with a learned total**, **long-range history**, a **hyperfocus guardrail**, a **focus-window planner**, and **per-category goals**; the existing Pro correlations fold into the review ritual. **Full specs: [`specs/`](specs/).**
+
+**First Pro build (recommended):** PDF export + review ritual + day-capacity check + confidence band — validated, compounding, mostly reuses existing engine output.
+
+**Calendar code removal is a pending task** — see "Tier 0 / Blockers" below.
+
 ## What is NOT a gap (explicitly out of scope for v1)
 
 - **Partner layer** ("Whenbee for Two") — entire layer is post-launch, gated on hitting D7 ≥ 25%.
-- **Any LLM feature** — AI coach, NL task entry, LLM weekly prose. Never in the time math.
-- **Cloud sync / accounts / Android / Apple Watch.**
+- **Any LLM feature in the core loop** — NL task entry, LLM time math. (An *optional* LLM "Estimate Coach" prose layer over deterministic insight is a possible add-on tier — never in the math.)
+- **Cloud sync / accounts / Android.** (Apple Watch is a candidate Pro add-on, not v1.)
 - **Spendable Reclaim economy, badges, social comparison** — deferred or banned by invariant.
-- **Coach/therapist PDF export, tip jar** — future Pro/support surfaces.
+- **Calendar write-back** — dropped from Pro (read-only import stays). **Tip jar** — future support surface.
 
 ---
 
 ## Summary: the critical path to a real v1
 
-1. **Fix typecheck (B1).** ← do first, unblocks CI.
-2. **Link the static widget + verify RevenueCat/calendar on device (P1, P4).**
-3. **Pause/resume UI + feedback board (P2, P3).**
-4. **Reconcile docs (P5).**
-5. **Hit the GO gate (L1) → App Store assets (L2) → funnel live (L3) → Reddit/PH launch (L4).**
-6. **Watch D7. If ≥25%, greenlight the partner layer and price experiments.**
+1. **Remove the calendar feature from code (B2).** ← on a branch/PR.
+2. **Build the new Pro bundle** (start with PDF export + review ritual + capacity check + confidence band — see [`specs/`](specs/)).
+3. **Link the static widget + verify RevenueCat on device (P1, P4).**
+4. **Pause/resume UI + feedback board (P2, P3).**
+5. **Reconcile docs (P5).**
+6. **Hit the GO gate (L1) → App Store assets (L2) → funnel live (L3) → Reddit/PH launch (L4).**
+7. **Watch D7. If ≥25%, greenlight the partner layer and price experiments.**

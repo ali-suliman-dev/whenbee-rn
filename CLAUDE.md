@@ -6,7 +6,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## What this app is
 
-Whenbee — a near-zero-friction iOS app for "time optimists". The user guesses a task duration, runs a one-tap timer, and the app learns their personal per-category bias (a multiplier), then shows an **honest number** wherever they plan. The wedge is **calibration**; the Pro feature is Honest-Day calendar padding.
+Whenbee — a near-zero-friction iOS app for "time optimists". The user guesses a task duration, runs a one-tap timer, and the app learns their personal per-category bias (a multiplier), then shows an **honest number** wherever they plan. The wedge is **calibration** (free); **Pro is a payoff bundle** — PDF report export, the Honest Week/Month review ritual, day-capacity check, confidence band, persistent presence, routines, long-range history, hyperfocus guardrail, focus-window planner, per-category goals + the existing correlations. **The calendar / Honest-Day feature was dropped 2026-06-19** (no calendar anywhere). Specs: `docs/product/specs/`.
 
 **Product invariants — never violate these:**
 
@@ -76,7 +76,7 @@ UI (src/app, src/components, src/features)
 
 ## Project status — this is a code-complete v1, NOT an MVP
 
-Whenbee is **not an MVP**. Nearly the entire final build plan is implemented in `src/`: the full calibration engine, the Honeycomb + Whenbee companion (6 stages, capability unlocks, drift-health), the Reclaim Bank, the **Discoveries gallery**, the Start-By planner, Honest-Day calendar padding, the Patterns self-insight tab **including the Pro correlations** (steals-your-time, accuracy, context), RevenueCat monetization, onboarding, settings, PostHog + Sentry. Treat this as a near-shippable product — the remaining work is finishing, device verification, and launch, not feature-building. **Full picture: [docs/product/](docs/product/) (start at `README.md` → `00-STATUS.md` → `02-GAP-ANALYSIS.md`).**
+Whenbee is **not an MVP**. Nearly the entire final build plan is implemented in `src/`: the full calibration engine, the Honeycomb + Whenbee companion (6 stages, capability unlocks, drift-health), the Reclaim Bank, the **Discoveries gallery**, the Start-By planner, the Patterns self-insight tab **including the Pro correlations** (steals-your-time, accuracy, context), RevenueCat monetization, onboarding, settings, PostHog + Sentry. The **calendar / Honest-Day feature is dropped** (2026-06-19) — its code is slated for removal (tracked as B2 in `docs/product/02-GAP-ANALYSIS.md`) and the new Pro bundle (`docs/product/specs/`) replaces it. Treat this as a near-shippable product — the remaining work is the new Pro bundle, finishing, device verification, and launch. **Full picture: [docs/product/](docs/product/) (start at `README.md` → `00-STATUS.md` → `02-GAP-ANALYSIS.md`).**
 
 ### Genuinely not built yet (future / post-launch)
 

@@ -1,6 +1,6 @@
 # Whenbee — Product Docs
 
-> **Status: Whenbee is a code-complete v1, not an MVP.** Nearly the entire "final" build plan is implemented in `src/` today — the full calibration engine, the Honeycomb + Whenbee companion (6 stages, capability unlocks, drift-health), the Reclaim Bank, the Discoveries gallery, the Start-By planner, Honest-Day calendar padding, the Patterns self-insight tab (including the Pro correlations), RevenueCat monetization, onboarding, settings, PostHog + Sentry. What remains is finishing-work and launch-prep, not feature-building. Treat this product as a near-shippable app, never as a prototype or MVP.
+> **Status: Whenbee is a code-complete v1, not an MVP.** Nearly the entire "final" build plan is implemented in `src/` today — the full calibration engine, the Honeycomb + Whenbee companion (6 stages, capability unlocks, drift-health), the Reclaim Bank, the Discoveries gallery, the Start-By planner, the Patterns self-insight tab (including the Pro correlations), RevenueCat monetization, onboarding, settings, PostHog + Sentry. What remains is the **new Pro bundle** (see [`specs/`](specs/)), finishing-work, and launch-prep. **The calendar / Honest-Day feature was dropped 2026-06-19** — its code is slated for removal. Treat this product as a near-shippable app, never as a prototype or MVP.
 
 This folder is the single source of truth for **what Whenbee is, what's built, what's left, and how it ships**. It distills the research that lived scattered across `Ideas/04-productivity-adhd/whenbee/` (build-plan-final, market-research-2026, idea/, important-docs/, docs/) into one structure we can actually follow.
 
@@ -15,12 +15,14 @@ This folder is the single source of truth for **what Whenbee is, what's built, w
 | [04-RESEARCH-INSIGHTS.md](04-RESEARCH-INSIGHTS.md) | The 10x / game-changing ideas, net-new recommendations, and the open founder decisions the research surfaced. |
 | [05-ROADMAP-TO-LAUNCH.md](05-ROADMAP-TO-LAUNCH.md) | The path from code-complete to real users, with the retention gate that governs everything. |
 | [06-BRAND-VOICE.md](06-BRAND-VOICE.md) | The voice rules and ban-list every user-facing string must pass. |
-| [07-PRO-VALUE-IDEAS.md](07-PRO-VALUE-IDEAS.md) | Research-backed Pro features people will actually pay for (3 live research passes), and a recommended Pro definition that stands without calendar write-back. |
+| [07-PRO-VALUE-IDEAS.md](07-PRO-VALUE-IDEAS.md) | Research-backed Pro features people will actually pay for (3 live research passes), and the resolved Pro definition (calendar dropped). |
+| [specs/](specs/) | **Build-ready specs** for each new Pro feature (PDF export, review ritual, confidence band, day-capacity, presence, routines, history, hyperfocus guardrail, focus-window, goals). Start at [specs/README.md](specs/README.md). |
 | [research/2026-06-19-reclaim-bank-retention-evaluation.md](research/2026-06-19-reclaim-bank-retention-evaluation.md) | Deep-dive: is the Reclaim Bank counter the right retention mechanic? Verdict (keep + reframe, don't delete), the "reclaimed"-word trust risk, and what actually drives stickiness for this app. |
+| [research/2026-06-20-calendar-honest-day-reintroduction.md](research/2026-06-20-calendar-honest-day-reintroduction.md) | Reintroducing the dropped calendar / Honest-Day feature. Decisive access answer (native EventKit reads Google too — $0, on-device — vs. Google OAuth), competitor mechanics, Reddit demand, market/WTP, and a read-only opt-in reintroduction that keeps every invariant. |
 
 ## The product in one paragraph
 
-Whenbee is a near-zero-friction iOS app for "time optimists" — people (the core audience is ADHD time-blindness) who chronically under-estimate how long things take. You guess a duration, run a one-tap timer, and the app silently learns your **personal per-category bias multiplier**, then shows an **honest number** wherever you plan. Calibration is the wedge; the paid payoff is **Honest-Day calendar padding** (one tap inflates every block so the day is physically possible) plus the **"what steals your time" correlations** and on-device sharing.
+Whenbee is a near-zero-friction iOS app for "time optimists" — people (the core audience is ADHD time-blindness) who chronically under-estimate how long things take. You guess a duration, run a one-tap timer, and the app silently learns your **personal per-category bias multiplier**, then shows an **honest number** wherever you plan. Calibration is the wedge and stays 100% free; the paid payoff is a **bundle of compounding value** — clinician/coach PDF export, a cadenced weekly/monthly review ritual, a day-capacity check, a narrowing confidence band, persistent presence, read-only calendar import, and routines (see [07-PRO-VALUE-IDEAS](07-PRO-VALUE-IDEAS.md)). **Calendar *write-back* is dropped; read-only import stays.**
 
 ## The invariants that never bend
 
@@ -28,7 +30,7 @@ Whenbee is a near-zero-friction iOS app for "time optimists" — people (the cor
 2. **Honey/sharpness is monotonic.** Tier never goes backward (`displayed = max(prev, new)`).
 3. **The core loop is on-device-only.** No network call — and no LLM — in guess → timer → learn.
 4. **Pricing is read from RevenueCat**, never hardcoded. The `pro` entitlement is the only gate authority.
-5. **Calibration is 100% free.** Charge for the payoff (the calendar), never the sensor.
+5. **Calibration is 100% free.** Charge for the payoff layer (export, review ritual, capacity, presence, routines), never the sensor.
 
 ## Source provenance
 

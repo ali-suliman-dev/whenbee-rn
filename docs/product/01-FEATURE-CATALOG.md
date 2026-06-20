@@ -2,7 +2,7 @@
 
 *The complete feature set for the finished product, grouped by area. Each row carries a build state: ✅ built · ◐ partial · ○ not built (deferred/future). "Free/Pro" marks the Model-B gate. This is the full surface — not an MVP cut.*
 
-The free product is the **entire calibration experience**. Pro gates only the payoff: Honest-Day calendar padding, the "what steals your time" correlations, and on-device sharing.
+The free product is the **entire calibration experience**. Pro gates only the payoff bundle (see §D): PDF export, the review ritual, day-capacity check, confidence band, persistent presence, routines, long-range history, the focus/hyperfocus tools, goals, and the existing correlations + on-device sharing. **No calendar feature.**
 
 ---
 
@@ -63,7 +63,7 @@ The free product is the **entire calibration experience**. Pro gates only the pa
 | "Honeycomb sealed ✦" hold state at Honest | ✅ | Free |
 | Gentle daily ritual (opt-in, no streak) | ✅ | Free |
 | Whenbee 6-stage capability-bearing companion (stages 1–5 = tiers, stage 6 = Keeper) | ✅ | Free |
-| Capability unlocks per stage (finish-time → done-time → start-by → honest-day forecast → drift-recal → keeper) | ✅ | Free |
+| Capability unlocks per stage (finish-time → done-time → start-by → full-day forecast → drift-recal → keeper) | ✅ | Free |
 | 3-layer fuel (Effort floor · Mastery body capping at Honest · oscillating Drift-health) | ✅ | Free |
 | Procedural-unique + user-named Whenbee (default ships; naming optional) | ✅ | Free |
 | Earned-reveal personalization after first ripen; cosmetics; life-drift recal UI | ◐/○ | Free | *Drift-recheck card built; deeper personalization/cosmetics future.* |
@@ -76,14 +76,23 @@ The free product is the **entire calibration experience**. Pro gates only the pa
 | **Discoveries gallery** — banking aha cards into a growing collection (dedup by category + M-gap) | ✅ | Free |
 | Spendable Reclaim economy / badges / social comparison | ○ (banned/deferred) | — |
 
-## D. Pro — Honest Day engine
+## D. Pro — the payoff bundle (calendar dropped 2026-06-19)
 
-| Feature | State | Tier |
-|---|---|---|
-| Auto-padded calendar (one tap inflates each block by `M_effective`; day re-flows) | ✅ | **Pro** |
-| Honest-Day before/after side-by-side | ✅ | **Pro** |
-| Realistic day-capacity warning ("this won't fit — cut one") | ✅ | **Pro** |
-| Coach/therapist PDF export | ○ | Pro (future) |
+> The calendar / Honest-Day feature is **removed** from the product (decision 2026-06-19). Pro is now a bundle of compounding, validated payoff value. **Full specs: [`specs/`](specs/).**
+
+| Feature | State | Tier | Spec |
+|---|---|---|---|
+| Clinician/coach/self **PDF report export** | ○ to build | **Pro** | [specs/01](specs/01-pdf-report-export.md) |
+| **Honest Week / month** review ritual (cadenced) | ○ to build | **Pro** | [specs/02](specs/02-review-ritual.md) |
+| **Honest range / confidence band** (narrows over time) | ○ to build | **Pro** | [specs/03](specs/03-confidence-band.md) |
+| **Day-capacity / over-commitment check** (in-app, no calendar) | ○ to build | **Pro** | [specs/04](specs/04-day-capacity-check.md) |
+| **Persistent presence** (widget + Live Activity) | ◐ scaffolded | **Pro** | [specs/05](specs/05-persistent-presence.md) |
+| **Routines** with a learned honest total | ○ to build | **Pro** | [specs/06](specs/06-routines.md) |
+| **Long-range history** & report archive | ○ to build | **Pro** | [specs/07](specs/07-long-range-history.md) |
+| **Hyperfocus guardrail** (soft overrun nudge) | ○ to build | **Pro** | [specs/08](specs/08-hyperfocus-guardrail.md) |
+| **Focus-window planner** (energy/med window) | ○ to build | **Pro** | [specs/09](specs/09-focus-window-planner.md) |
+| **Per-category goals / experiments** | ○ to build | **Pro** | [specs/10](specs/10-per-category-goals.md) |
+| Existing Pro correlations (steals-your-time, accuracy, context) | ✅ | **Pro** | folds into review ritual |
 
 ## D′. Reverse Day Planner — "Start-By Plan"
 
