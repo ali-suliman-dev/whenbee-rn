@@ -114,6 +114,34 @@ describe('useWhenbeeHub', () => {
     });
   });
 
+  it('pitchUnlocked flips true once a category reaches setting confidence (n >= 3), and honeyPct matches the lead sharpness', async () => {
+    const db = createMemoryDatabase();
+    useCalibrationStore.getState().setDatabase(db);
+    trackCategories(['focus']);
+
+    // 3 completed logs drive n=3 → 'setting' confidence → pitchUnlocked latches true.
+    const store = useCalibrationStore.getState();
+    await store.applyLog({ category: 'focus', estimateMin: 20, actualMin: 22, status: 'completed', source: 'timed', adaptSpeed: 'balanced' });
+    await store.applyLog({ category: 'focus', estimateMin: 20, actualMin: 22, status: 'completed', source: 'timed', adaptSpeed: 'balanced' });
+    await store.applyLog({ category: 'focus', estimateMin: 20, actualMin: 22, status: 'completed', source: 'timed', adaptSpeed: 'balanced' });
+
+    // Seed the calibration cache with a known sharpness so honeyPct is deterministic.
+    useCalibrationStore.setState({
+      statsByCategory: {
+        focus: { mEffective: 1.1, n: 3, sharpness: 42, tier: 'Setting', fit: { a: 0, b: 1.1 } },
+      },
+    });
+
+    const { result } = renderHook(() => useWhenbeeHub());
+
+    await waitFor(() => {
+      expect(result.current.proReadiness.pitchUnlocked).toBe(true);
+    });
+
+    // honeyPct must be Math.round(leadSharpness) for the seeded sharpness of 42.
+    expect(result.current.honeyPct).toBe(42);
+  });
+
   it('blind spot is null when no tracked category has a log', async () => {
     const db = createMemoryDatabase();
     useCalibrationStore.getState().setDatabase(db);

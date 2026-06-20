@@ -97,8 +97,14 @@ export interface AppEventProps {
   honest_range_narrowed: { was_width_min: number; now_width_min: number };
 
   // ── Monetization ─────────────────────────────────────────────────────────────
+  // Ripening Pro card impression events (WhenbeeHub, non-Pro path).
+  ripening_pro_shown: { surface: 'whenbee_hub' };
+  pro_reveal_shown: { surface: 'whenbee_hub' };
+  // Ripening Pro card CTA taps.
+  pro_reveal_tap: { surface: 'whenbee_hub' };
+  pro_preview_tap: { surface: 'whenbee_hub' };
   paywall_view: {
-    trigger: 'make_day_honest' | 'settings_upgrade' | 'steals_your_time' | 'honest_range';
+    trigger: 'make_day_honest' | 'settings_upgrade' | 'steals_your_time' | 'honest_range' | 'pro_reveal' | 'pro_preview';
     readiness?: 'pre' | 'honest';
   };
   founder_reserve: { result: 'reserved' };
