@@ -109,7 +109,7 @@ export function RipeningBand({ revealed, lowLabel, highLabel }: RipeningBandProp
     bottom: 0,
     backgroundColor: t.colors.primarySoft,
     borderRadius: t.radii.full,
-    opacity: 0.55,
+    opacity: 0.55, // Mirrors HonestBandLockedTeaser ghost opacity
   };
 
   // Sharp range segment: animated width centred in the track.
@@ -123,13 +123,13 @@ export function RipeningBand({ revealed, lowLabel, highLabel }: RipeningBandProp
     // width is supplied by the animated style
   };
 
-  // Indigo dot with white ring, centred on the track.
+  // Indigo dot with ring (surface-colored), centred on the track.
   const dotOuter: ViewStyle = {
     position: 'absolute',
     width: DOT_SIZE + RING_WIDTH * 2,
     height: DOT_SIZE + RING_WIDTH * 2,
     borderRadius: t.radii.full,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: t.colors.surface,
     alignItems: 'center',
     justifyContent: 'center',
   };
