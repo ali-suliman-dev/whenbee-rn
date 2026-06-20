@@ -1,5 +1,5 @@
 import { useCallback, useState, type ReactNode } from 'react';
-import { View, Text, Pressable, Switch, ScrollView, type ViewStyle, type TextStyle } from 'react-native';
+import { Alert, View, Text, Pressable, Switch, ScrollView, type ViewStyle, type TextStyle } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
@@ -19,6 +19,10 @@ import { useEntitlement } from '@/src/features/paywall/useEntitlement';
 import { useAccountActions, type RestoreOutcome } from '@/src/features/paywall/useAccountActions';
 import { useReminderSetting } from '@/src/features/settings/useReminderSetting';
 import { useAccountReset } from '@/src/features/settings/useAccountReset';
+import { usePresenceSection } from '@/src/features/settings/usePresenceSection';
+import { ProGate } from '@/src/features/paywall/ProGate';
+import { PresenceRingTeaser } from '@/src/components/PresenceRingTeaser';
+import { AppButton } from '@/src/components/AppButton';
 
 const modes: ColorModePref[] = ['system', 'light', 'dark'];
 
@@ -124,6 +128,7 @@ export default function Settings() {
   const { restoring, manageSubscription, restorePurchases } = useAccountActions();
   const { enabled: remindersEnabled, toggle: toggleReminders } = useReminderSetting();
   const { resetting, resetProgress, eraseEverything } = useAccountReset();
+  const { isPresenceAvailable, handlePresenceCta } = usePresenceSection();
 
   const [toastMsg, setToastMsg] = useState('');
   const [toastVisible, setToastVisible] = useState(false);
@@ -158,6 +163,13 @@ export default function Settings() {
     setSheet(null);
     await resetProgress();
     showToast('Reset done. Fresh slate.');
+  }
+
+  function handleWidgetHelp() {
+    Alert.alert(
+      'How to add the widget',
+      'Long-press your Home Screen, tap +, search Whenbee, then choose "Next task".',
+    );
   }
 
   async function handleEraseEverything() {
@@ -257,6 +269,67 @@ export default function Settings() {
             note="What stays on your phone."
             onPress={() => router.push('/privacy')}
           />
+        </View>
+
+        <View style={{ gap: t.space[3] }}>
+          <AppText variant="label">Presence</AppText>
+
+          <View
+            style={{
+              backgroundColor: t.colors.surface,
+              borderRadius: t.radii.card,
+              borderCurve: 'continuous',
+              padding: t.space[4],
+              gap: t.space[3],
+            }}
+          >
+            <AppText
+              style={{
+                ...(type.bodySmBold as unknown as import('react-native').TextStyle),
+                color: t.colors.ink,
+              }}
+            >
+              Keep your task on screen
+            </AppText>
+            <AppText
+              style={{
+                ...(type.bodySm as unknown as import('react-native').TextStyle),
+                color: t.colors.inkSoft,
+              }}
+            >
+              Your next task and its honest finish stay visible, even when Whenbee is closed.
+            </AppText>
+
+            {isPresenceAvailable ? (
+              <AppButton
+                label="How to add the widget"
+                onPress={handleWidgetHelp}
+                variant="ghost"
+              />
+            ) : (
+              <AppText
+                style={{
+                  ...(type.caption as unknown as import('react-native').TextStyle),
+                  color: t.colors.inkSoft,
+                }}
+              >
+                Available on the App Store build.
+              </AppText>
+            )}
+
+            <ProGate
+              fallback={<PresenceRingTeaser onCtaPress={handlePresenceCta} />}
+            >
+              <AppText
+                style={{
+                  ...(type.bodySm as unknown as import('react-native').TextStyle),
+                  color: t.colors.inkSoft,
+                }}
+              >
+                Ring is on. Your honest finish shows on the Lock Screen while the timer runs.
+              </AppText>
+            </ProGate>
+          </View>
         </View>
 
         <View style={{ gap: t.space[3] }}>
