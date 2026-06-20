@@ -2,6 +2,14 @@ import { render, screen, fireEvent } from '@testing-library/react-native';
 import { TodayHud } from '@/src/components/honeycomb/TodayHud';
 import type { HoneycombCell } from '@/src/components/honeycomb/Honeycomb';
 
+jest.mock('expo-router', () => ({
+  useFocusEffect: (cb: () => void | (() => void)) => cb(),
+  useNavigation: () => ({
+    isFocused: () => true,
+    addListener: () => () => {},
+  }),
+}));
+
 const cells: HoneycombCell[] = [
   { categoryId: 'cleaning', label: 'Cleaning', sharpness: 50, tier: 'Setting' },
   { categoryId: 'email', label: 'Email', sharpness: 20, tier: 'Raw' },
