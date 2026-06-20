@@ -18,10 +18,6 @@ public class WhenbeePresenceModule: Module {
         Name("WhenbeePresence")
         Property("isStub") { false }
 
-        // NOTE: The JS bridge derives `isStub` from whether requireOptionalNativeModule
-        // returns nil. No `isStub` property is needed here — the module's mere presence
-        // flips the bridge off the stub path.
-
         // Serialize the snapshot dict to JSON and write to the shared App Group
         // UserDefaults, then reload all widget timelines.
         Function("writeSnapshot") { (snapshot: [String: Any]) in

@@ -24,6 +24,7 @@ import {
 import {
   startFinishTimeActivity,
   endFinishTimeActivity,
+  updateFinishTimeActivity,
 } from '@/src/services/liveActivity';
 import { useEntitlement } from '@/src/features/paywall/useEntitlement';
 import type { AdaptSpeed } from '@/src/domain/types';
@@ -103,6 +104,7 @@ export function useTimer(params: TimerParams): UseTimerResult {
   // ("Cannot update a component while rendering a different component"). The fresh
   // session is committed to the store in the effect below, after commit.
   const startedFresh = useRef(false);
+  const overrunTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const startedAtRef = useRef<number | null>(null);
   if (startedAtRef.current === null) {
     const s = useTimerStore.getState();
@@ -138,6 +140,15 @@ export function useTimer(params: TimerParams): UseTimerResult {
       startEpoch: Math.round(startedAt / 1000),
       isProRich: useEntitlement.getState().isPro,
     });
+    // Schedule the overrun flip for when wall-clock crosses the honest finish.
+    // If the timer somehow starts already past the finish (e.g. a resumed session),
+    // delay is 0 and the flip happens on the next JS turn — still correct.
+    const finishMs = projectedFinish(startedAt, suggestedHonestMin);
+    const delay = Math.max(0, finishMs - Date.now());
+    if (overrunTimerRef.current) clearTimeout(overrunTimerRef.current);
+    overrunTimerRef.current = setTimeout(() => {
+      updateFinishTimeActivity({ isOverrun: true });
+    }, delay);
     // Only schedule the "estimate is up" ping when the user has opted into
     // reminders (off by default). Read non-reactively — this effect runs once.
     if (useSettingsStore.getState().remindersEnabled) {
@@ -181,7 +192,20 @@ export function useTimer(params: TimerParams): UseTimerResult {
   // consumer forgets to read overProgress directly (defensive; no-op cost).
   useDerivedValue(() => overProgress.value, [overProgress]);
 
+  const clearOverrunTimer = useCallback(() => {
+    if (overrunTimerRef.current) {
+      clearTimeout(overrunTimerRef.current);
+      overrunTimerRef.current = null;
+    }
+  }, []);
+
+  // Cancel any pending overrun flip when the component unmounts (minimize/reopen
+  // path). The timer is NOT stopped on unmount — only on explicit stop/abandon —
+  // but if a new sheet instance mounts it will schedule its own flip.
+  useEffect(() => () => clearOverrunTimer(), [clearOverrunTimer]);
+
   const onStopAndLog = useCallback(async () => {
+    clearOverrunTimer();
     const { actualMin } = stop(Date.now());
     void cancelTimerDone();
     endFinishTimeActivity();
@@ -231,9 +255,10 @@ export function useTimer(params: TimerParams): UseTimerResult {
     }
 
     router.replace('/(modals)/reward');
-  }, [stop, applyLog, category, guessMin, label, taskId, suggestedHonestMin]);
+  }, [stop, applyLog, category, guessMin, label, taskId, suggestedHonestMin, clearOverrunTimer]);
 
   const onAbandon = useCallback(async () => {
+    clearOverrunTimer();
     cancel();
     void cancelTimerDone();
     endFinishTimeActivity();
@@ -251,7 +276,7 @@ export function useTimer(params: TimerParams): UseTimerResult {
       label,
     });
     router.dismiss();
-  }, [cancel, applyLog, category, guessMin, label]);
+  }, [cancel, applyLog, category, guessMin, label, clearOverrunTimer]);
 
   // NOTE: no destroy-on-dismiss. Closing the sheet MINIMIZES the timer — a running
   // session is cleared ONLY by an explicit Stop (onStopAndLog) or Abandon
