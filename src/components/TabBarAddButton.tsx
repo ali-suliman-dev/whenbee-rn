@@ -35,9 +35,11 @@ interface Props {
   config: AddButtonConfig;
   /** Right-divider only — width that the button slot occupies (tabs use the rest). */
   slotWidth?: number;
+  /** If provided, called instead of the default route-push. Used to toggle the quick-action arc. */
+  onPress?: () => void;
 }
 
-export function TabBarAddButton({ config }: Props) {
+export function TabBarAddButton({ config, onPress: onPressProp }: Props) {
   const t = useTheme();
   const reducedMotion = useReducedMotion();
 
@@ -69,7 +71,11 @@ export function TabBarAddButton({ config }: Props) {
   }
   function onPress() {
     haptics.light();
-    router.push('/(modals)/add-task');
+    if (onPressProp != null) {
+      onPressProp();
+    } else {
+      router.push('/(modals)/add-task');
+    }
   }
 
   const isElevated = config.placement === 'center-elevated';

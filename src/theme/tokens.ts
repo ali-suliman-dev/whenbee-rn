@@ -390,7 +390,24 @@ export const tokens = {
   // diameter; `chipPadH`/`chipPadV` = chip horizontal/vertical inner padding;
   // `chipGap` = gap between the icon disc and the text block; `rowGap` = gap
   // between chips in the horizontal row.
-  quick: { disc: 28, chipPadH: 12, chipPadV: 10, chipGap: 8, rowGap: 8 },
+  // `arc` = the quick-action arc overlay spawned by the tab-bar + button.
+  //   bubbleSize   = diameter of each circular bubble (coin disc)
+  //   centerSize   = diameter of the center (Timer) bubble — slightly larger, primary-fill
+  //   edgeDepth    = coin-edge depth below each bubble face (matches burst.coinEdge)
+  //   fanRadius    = arc radius: how far each bubble sits from the + button center
+  //   verticalOffset = extra upward shift of the arc center above the + button
+  //   iconSize     = Ionicons glyph size inside each bubble
+  quick: {
+    disc: 28, chipPadH: 12, chipPadV: 10, chipGap: 8, rowGap: 8,
+    arc: {
+      bubbleSize: 52,
+      centerSize: 60,
+      edgeDepth: 4,
+      fanRadius: 84,
+      verticalOffset: 16,
+      iconSize: 22,
+    },
+  },
 
   // ── brand illustration palette ──────────────────────────────────────────────
   // Fixed art colors for the Whenbee mascot (BeeMascot). Brand art does NOT recolor

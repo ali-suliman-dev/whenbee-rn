@@ -1,5 +1,5 @@
-import { useEffect, useState, type ComponentProps } from 'react';
-import { Pressable, View, type LayoutChangeEvent, type TextStyle, type ViewStyle } from 'react-native';
+import { useEffect, useRef, useState, type ComponentProps } from 'react';
+import { Modal, Pressable, View, type LayoutChangeEvent, type TextStyle, type ViewStyle } from 'react-native';
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
@@ -12,6 +12,9 @@ import type { BottomTabBarProps } from '@react-navigation/bottom-tabs';
 import { useTheme } from '@/src/theme/useTheme';
 import { TabIcon, type TabIconName } from './TabIcon';
 import { TabBarAddButton, type AddButtonConfig } from './TabBarAddButton';
+import { QuickActionArc } from './quick/QuickActionArc';
+import { router } from 'expo-router';
+import { useTimerStore } from '@/src/stores/timerStore';
 
 // ─── Add-button config ────────────────────────────────────────────────────────
 //
@@ -61,6 +64,8 @@ export function WhenbeeTabBar({ state, descriptors, navigation }: BottomTabBarPr
 
   const tabCount = state.routes.length;
   const [barW, setBarW] = useState(0);
+  const [arcOpen, setArcOpen] = useState(false);
+  const [btnCenter, setBtnCenter] = useState<{ x: number; y: number } | null>(null);
 
   // Compute effective tab-slot width based on placement.
   const tabW = computeTabW(barW, tabCount, ADD_BTN);
@@ -82,6 +87,24 @@ export function WhenbeeTabBar({ state, descriptors, navigation }: BottomTabBarPr
   function handleLayout(e: LayoutChangeEvent) {
     const w = e.nativeEvent.layout.width;
     if (w !== barW) setBarW(w);
+  }
+
+  function closeArc() { setArcOpen(false); }
+  function toggleArc() { setArcOpen(v => !v); }
+
+  function handleVoice() {
+    closeArc();
+    // Voice auto-start deferred: add-task modal has no trivial voice param yet.
+    router.push('/(modals)/add-task');
+  }
+  function handleTimer() {
+    closeArc();
+    useTimerStore.getState().quickStart();
+    router.push('/(modals)/timer');
+  }
+  function handleType() {
+    closeArc();
+    router.push('/(modals)/add-task');
   }
 
   const bar: ViewStyle = {
@@ -108,16 +131,47 @@ export function WhenbeeTabBar({ state, descriptors, navigation }: BottomTabBarPr
   };
 
   if (ADD_BTN.placement === 'center-elevated') {
-    return <CentreElevatedBar
-      state={state}
-      descriptors={descriptors}
-      navigation={navigation}
-      bar={bar}
-      indicator={indicator}
-      indicatorStyle={indicatorStyle}
-      tabW={tabW}
-      onLayout={handleLayout}
-    />;
+    return (
+      <>
+        <CentreElevatedBar
+          state={state}
+          descriptors={descriptors}
+          navigation={navigation}
+          bar={bar}
+          indicator={indicator}
+          indicatorStyle={indicatorStyle}
+          tabW={tabW}
+          onLayout={handleLayout}
+          onToggleArc={toggleArc}
+          onBtnLayout={setBtnCenter}
+        />
+        <Modal
+          transparent
+          visible={arcOpen}
+          animationType="none"
+          onRequestClose={closeArc}
+          statusBarTranslucent
+        >
+          <View style={{ flex: 1 }} pointerEvents="box-none">
+            <Pressable
+              style={{ flex: 1, backgroundColor: t.colors.scrim }}
+              onPress={closeArc}
+              accessibilityLabel="Dismiss"
+              accessibilityRole="button"
+            />
+          </View>
+          {btnCenter !== null && (
+            <QuickActionArc
+              anchorX={btnCenter.x}
+              anchorY={btnCenter.y}
+              onVoice={handleVoice}
+              onTimer={handleTimer}
+              onType={handleType}
+            />
+          )}
+        </Modal>
+      </>
+    );
   }
 
   return <RightDividerBar
@@ -136,8 +190,10 @@ export function WhenbeeTabBar({ state, descriptors, navigation }: BottomTabBarPr
 function CentreElevatedBar({
   state, descriptors, navigation,
   bar, indicator, indicatorStyle, tabW, onLayout,
-}: BarProps & { tabW: number }) {
+  onToggleArc, onBtnLayout,
+}: BarProps & { tabW: number; onToggleArc: () => void; onBtnLayout: (center: { x: number; y: number }) => void }) {
   const insets = useSafeAreaInsets();
+  const btnRef = useRef<View>(null);
   const leftRoutes = state.routes.slice(0, ADD_BTN.splitAt);
   const rightRoutes = state.routes.slice(ADD_BTN.splitAt);
 
@@ -184,8 +240,17 @@ function CentreElevatedBar({
 
       {/* Button rendered absolutely so it can float above the bar's top edge. */}
       {tabW > 0 && (
-        <View style={{ position: 'absolute', left: btnLeft, bottom: btnBottom }}>
-          <TabBarAddButton config={ADD_BTN} />
+        <View
+          ref={btnRef}
+          style={{ position: 'absolute', left: btnLeft, bottom: btnBottom }}
+          onLayout={() => {
+            // measureInWindow gives true screen coords after layout settles.
+            btnRef.current?.measureInWindow((x, y, width, height) => {
+              onBtnLayout({ x: x + width / 2, y: y + height / 2 });
+            });
+          }}
+        >
+          <TabBarAddButton config={ADD_BTN} onPress={onToggleArc} />
         </View>
       )}
     </View>
