@@ -11,6 +11,7 @@ import { useCategoriesStore } from '@/src/stores/categoriesStore';
 import { useCalibrationStore } from '@/src/stores/calibrationStore';
 import { useEntitlement } from '@/src/features/paywall/useEntitlement';
 import { CATEGORY_NAMES } from '@/src/engine';
+import { useFocusedValue } from '@/src/hooks/useFocusedValue';
 import { useWhenbeeHub } from './useWhenbeeHub';
 import { WhenbeeAvatar } from './WhenbeeAvatar';
 import { HoneyRing } from './HoneyRing';
@@ -64,6 +65,10 @@ export function WhenbeeHub() {
 
   const isEmpty = vm.honestLogCount === 0;
 
+  const shownSharpness = useFocusedValue(vm.leadSharpness);
+  const shownSealed = useFocusedValue(vm.tier === 'Honest');
+  const shownStage = useFocusedValue(vm.companion.stage);
+
   function openCategory(id: string) {
     router.push({ pathname: '/category/[category]', params: { category: id } });
   }
@@ -101,9 +106,9 @@ export function WhenbeeHub() {
 
       {/* HERO — honey ring + bee (no glow) + ring badge */}
       <View style={heroZone}>
-        <HoneyRing sharpness={vm.leadSharpness} sealed={vm.tier === 'Honest'}>
+        <HoneyRing sharpness={shownSharpness} sealed={shownSealed}>
           <WhenbeeAvatar
-            stage={vm.companion.stage}
+            stage={shownStage}
             seed={vm.companion.seed}
             driftHealth={vm.companion.driftHealth}
             name={vm.companion.name ?? undefined}
@@ -113,7 +118,7 @@ export function WhenbeeHub() {
             animated
           />
         </HoneyRing>
-        <RingBadge sharpness={vm.leadSharpness} />
+        <RingBadge sharpness={shownSharpness} />
       </View>
 
       {/* DISCOVERIES zone — shown once any aha card has been banked */}
