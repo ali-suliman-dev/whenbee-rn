@@ -401,9 +401,11 @@ export const tokens = {
     arc: {
       bubbleSize: 52,
       centerSize: 60,
-      fanRadius: 84,
+      fanRadius: 92,
       verticalOffset: 16,
       iconSize: 22,
+      // Side bubbles fan out ±spreadDeg from 270° (straight up). Wider = taller crown on Timer.
+      spreadDeg: 52,
     },
   },
 

@@ -36,8 +36,7 @@ const BUBBLES: readonly BubbleDef[] = [
   { key: 'type',  icon: 'pencil', label: 'Type',   isCenter: false },
 ] as const;
 
-// Three angles fanning upward from the anchor. 270° = straight up.
-const ARC_ANGLES_DEG: readonly [number, number, number] = [235, 270, 305];
+// ARC_ANGLES_DEG is derived from arc.spreadDeg at render time (see component body).
 
 function toRad(deg: number): number {
   return (deg * Math.PI) / 180;
@@ -56,10 +55,17 @@ export function QuickActionArc({ anchorX, anchorY, onVoice, onTimer, onType }: Q
     type: onType,
   };
 
+  // Derive arc angles from token: side bubbles fan ±spreadDeg from 270° (straight up).
+  const arcAnglesDeg: readonly [number, number, number] = [
+    270 - arc.spreadDeg,
+    270,
+    270 + arc.spreadDeg,
+  ];
+
   return (
     <>
       {BUBBLES.map((bubble, i) => {
-        const angleDeg = ARC_ANGLES_DEG[i];
+        const angleDeg = arcAnglesDeg[i];
         if (angleDeg === undefined) return null;
         const angle = toRad(angleDeg);
         const size = bubble.isCenter ? arc.centerSize : arc.bubbleSize;
