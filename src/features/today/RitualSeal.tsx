@@ -91,8 +91,7 @@ export function RitualSeal({
         cancelAnimation(restBreath);
         restBreath.set(0);
       };
-      // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [done, reduced]),
+    }, [restBreath, t.motion.halo, e.calm]),
   );
 
   const borderProps = useAnimatedProps(() => ({ strokeDashoffset: HEX_PERIM * (1 - border.get()) }));
