@@ -1,6 +1,7 @@
-import { useEffect, type ReactNode } from 'react';
+import { useEffect, useCallback, type ReactNode } from 'react';
 import { View, type ViewStyle, type TextStyle } from 'react-native';
 import Animated, {
+  cancelAnimation,
   useSharedValue,
   useAnimatedStyle,
   withRepeat,
@@ -11,6 +12,7 @@ import Animated, {
 } from 'react-native-reanimated';
 import { useTheme } from '@/src/theme/useTheme';
 import { AppText } from '@/src/components/AppText';
+import { useAmbientMotion } from '@/src/hooks/useAmbientMotion';
 
 // ──────────────────────────────────────────────────────────────────────────────
 // CoinBadge — the small floating pill beside the Whenbee, built on AppButton's
@@ -51,18 +53,27 @@ export function CoinBadge({
     if (reducedMotion) return;
     // Pop-in: scale + opacity settle with a touch of overshoot (Playful).
     appear.set(withSpring(1, t.motion.spring));
-    // Ambient bob begins after the pop lands; calm sine, gentle ±coinBob.
-    bob.set(
-      withDelay(
-        t.motion.reveal + delay,
-        withRepeat(
-          withTiming(1, { duration: t.motion.float, easing: t.motion.easing.calm }),
-          -1,
-          true,
+  }, [reducedMotion, appear, t.motion.spring]);
+
+  useAmbientMotion(
+    !reducedMotion,
+    useCallback(() => {
+      bob.set(
+        withDelay(
+          t.motion.reveal + delay,
+          withRepeat(
+            withTiming(1, { duration: t.motion.float, easing: t.motion.easing.calm }),
+            -1,
+            true,
+          ),
         ),
-      ),
-    );
-  }, [reducedMotion, appear, bob, t.motion.spring, t.motion.reveal, t.motion.float, t.motion.easing.calm, delay]);
+      );
+      return () => {
+        cancelAnimation(bob);
+        bob.set(0);
+      };
+    }, [bob, t.motion.reveal, t.motion.float, t.motion.easing.calm, delay]),
+  );
 
   const animStyle = useAnimatedStyle(() => {
     const a = appear.get();

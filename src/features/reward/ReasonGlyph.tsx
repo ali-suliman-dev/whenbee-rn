@@ -1,6 +1,7 @@
-import { useEffect } from 'react';
+import { useEffect, useCallback } from 'react';
 import { View } from 'react-native';
 import Animated, {
+  cancelAnimation,
   Easing,
   useAnimatedStyle,
   useReducedMotion,
@@ -10,6 +11,7 @@ import Animated, {
   withSpring,
   withTiming,
 } from 'react-native-reanimated';
+import { useAmbientMotion } from '@/src/hooks/useAmbientMotion';
 import Svg, { Circle, Path, Rect } from 'react-native-svg';
 import { useTheme } from '@/src/theme/useTheme';
 
@@ -61,16 +63,19 @@ export function ReasonGlyph({
   const GLIDE = size * 0.2; // shallower tuck — barely dips into the doorway
   const GLIDE_MS = 1500; // slower, calmer step-out
   const glide = useSharedValue(1);
-  useEffect(() => {
-    if (!arrowAmbient) {
-      glide.set(1);
-      return;
-    }
-    glide.set(0); // begin tucked at the doorway
-    glide.set(
-      withRepeat(withTiming(1, { duration: GLIDE_MS, easing: Easing.inOut(Easing.sin) }), -1, true),
-    );
-  }, [arrowAmbient, glide]);
+  useAmbientMotion(
+    arrowAmbient,
+    useCallback(() => {
+      glide.set(0); // begin tucked at the doorway
+      glide.set(
+        withRepeat(withTiming(1, { duration: GLIDE_MS, easing: Easing.inOut(Easing.sin) }), -1, true),
+      );
+      return () => {
+        cancelAnimation(glide);
+        glide.set(1);
+      };
+    }, [glide]),
+  );
   // glide 0 → arrow tucked at the doorway (translateX −GLIDE); glide 1 → resting.
   const arrowGlide = useAnimatedStyle(() => ({ transform: [{ translateX: GLIDE * (glide.get() - 1) }] }));
 
