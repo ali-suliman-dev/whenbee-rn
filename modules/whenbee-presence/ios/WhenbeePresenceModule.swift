@@ -16,6 +16,7 @@ public class WhenbeePresenceModule: Module {
 
     public func definition() -> ModuleDefinition {
         Name("WhenbeePresence")
+        Property("isStub") { false }
 
         // NOTE: The JS bridge derives `isStub` from whether requireOptionalNativeModule
         // returns nil. No `isStub` property is needed here — the module's mere presence
