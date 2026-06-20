@@ -25,6 +25,7 @@ import {
   startFinishTimeActivity,
   endFinishTimeActivity,
 } from '@/src/services/liveActivity';
+import { useEntitlement } from '@/src/features/paywall/useEntitlement';
 import type { AdaptSpeed } from '@/src/domain/types';
 
 // ──────────────────────────────────────────────────────────────────────────────
@@ -134,6 +135,7 @@ export function useTimer(params: TimerParams): UseTimerResult {
     startFinishTimeActivity({
       taskLabel: label,
       finishEpoch: Math.round(projectedFinish(startedAt, suggestedHonestMin) / 1000),
+      isProRich: useEntitlement.getState().isPro,
     });
     // Only schedule the "estimate is up" ping when the user has opted into
     // reminders (off by default). Read non-reactively — this effect runs once.

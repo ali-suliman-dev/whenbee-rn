@@ -47,6 +47,12 @@ export interface WidgetSnapshot {
   reclaimTodayMin: number;
   /** Unix seconds when this was written (lets the widget detect a stale snapshot). */
   updatedAtEpoch: number;
+  /** Unix seconds of the honest finish. Lets the widget compute the ring arc
+   *  fraction without per-second updates (arcFraction(updatedAtEpoch, this, now)). */
+  honestFinishEpoch: number;
+  /** Current Pro entitlement at write time. The widget renders the rich arc +
+   *  reclaim line only when true; everything essential renders regardless. */
+  isPro: boolean;
 }
 
 /** Immutable attributes for the running-timer Live Activity (see FinishTimeActivity.swift). */
@@ -55,6 +61,9 @@ export interface LiveActivityAttributes {
   taskLabel: string;
   /** Honest finish as Unix seconds; the ring counts down to this. */
   finishEpoch: number;
+  /** Whether to start the rich (ring + accents) Live Activity. Decided in JS at
+   *  start time from the entitlement; the live countdown digits stay free either way. */
+  isProRich: boolean;
 }
 
 /**
@@ -108,6 +117,8 @@ function getNativePresence(): NativePresenceModule {
 
 // ── Public API (all guarded, all fire-and-forget) ────────────────────────────
 
+let homeWidgetSeen = false;
+
 /**
  * Publish the next-task snapshot to the Home-screen widget. Call on a counted
  * log / task change so the widget shows the user's actual next task. No-op in
@@ -115,7 +126,12 @@ function getNativePresence(): NativePresenceModule {
  */
 export function publishWidgetSnapshot(snapshot: WidgetSnapshot): void {
   try {
-    getNativePresence().writeSnapshot(snapshot);
+    const presence = getNativePresence();
+    presence.writeSnapshot(snapshot);
+    if (!presence.isStub && !homeWidgetSeen) {
+      homeWidgetSeen = true;
+      analytics.capture('widget_added', { surface: 'home' });
+    }
   } catch {
     // best-effort; a widget write must never block the core loop
   }
@@ -162,4 +178,13 @@ export function endFinishTimeActivity(): void {
   } catch {
     // best-effort
   }
+}
+
+/**
+ * Whether a real native presence module is linked (i.e. not the stub). Lets
+ * Settings branch between "How to add the widget" and the "App Store build only"
+ * note. Pure read of the resolved module.
+ */
+export function presenceAvailable(): boolean {
+  return !getNativePresence().isStub;
 }
