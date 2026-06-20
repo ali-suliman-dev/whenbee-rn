@@ -1,4 +1,5 @@
 import { View, Text, type ViewStyle, type TextStyle } from 'react-native';
+import Svg, { Path } from 'react-native-svg';
 import { useTheme } from '@/src/theme/useTheme';
 import { type } from '@/src/theme/typography';
 import type { ProFeatureId } from '@/src/engine';
@@ -24,19 +25,20 @@ interface FeatureReadinessListProps {
   }[];
 }
 
-// White check mark as an SVG path — small inline stroke on a transparent background
+// White check mark — uses react-native-svg (DOM svg/path renders nothing in RN).
 function CheckIcon({ size, color }: { size: number; color: string }) {
   return (
     <View style={{ width: size, height: size, justifyContent: 'center', alignItems: 'center' }}>
-      <svg width={size} height={size} viewBox="0 0 16 16" fill="none">
-        <path
+      <Svg width={size} height={size} viewBox="0 0 16 16">
+        <Path
           d="M3 8.5l3 3 7-8"
           stroke={color}
-          strokeWidth="1.5"
+          strokeWidth={1.5}
+          fill="none"
           strokeLinecap="round"
           strokeLinejoin="round"
         />
-      </svg>
+      </Svg>
     </View>
   );
 }
@@ -60,14 +62,15 @@ export function FeatureReadinessList({ items }: FeatureReadinessListProps) {
     alignItems: 'center',
   };
 
-  // Ripening pip: hollow circle with lavender border
+  // Ripening pip: hollow circle with lavender border.
+  // borderWidth.thin is 0 (borders globally zeroed) — use chip (=1) for a visible ring.
   const ripeningPip: ViewStyle = {
     width: t.iconSize.md,
     height: t.iconSize.md,
     borderRadius: t.radii.full,
     backgroundColor: t.colors.surfaceSunken,
-    borderWidth: t.borderWidth.thin,
-    borderColor: t.colors.primary, // lavender border (soft indigo)
+    borderWidth: t.borderWidth.chip,
+    borderColor: t.colors.primarySoft, // lavender ring
     justifyContent: 'center',
     alignItems: 'center',
   };
@@ -102,11 +105,11 @@ export function FeatureReadinessList({ items }: FeatureReadinessListProps) {
       {items.map((item) => (
         <View key={item.id} style={row}>
           {item.ready ? (
-            <View style={readyPip}>
+            <View style={readyPip} testID="feature-pip-ready">
               <CheckIcon size={t.iconSize.sm} color={t.colors.surface} />
             </View>
           ) : (
-            <View style={ripeningPip} />
+            <View style={ripeningPip} testID="feature-pip-ripening" />
           )}
 
           <Text style={item.ready ? labelReady : labelRipening}>

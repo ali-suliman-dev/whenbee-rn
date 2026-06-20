@@ -41,8 +41,7 @@ export interface RipeningProCardProps {
   onPreview: () => void;
 }
 
-// Vertical travel distance for the reveal entrance (small — calm settle, not a pop).
-const REVEAL_TRANSLATE_Y = 10;
+// REVEAL_TRANSLATE_Y is now read from t.space[2.5] (=10) inside the component.
 
 export function RipeningProCard({
   pitchUnlocked,
@@ -56,12 +55,15 @@ export function RipeningProCard({
   const t = useTheme();
   const reducedMotion = useReducedMotion();
 
+  // Vertical travel for reveal entrance — token t.space[2.5] = 10pt (calm settle, not a pop).
+  const revealTranslateYPx = t.space[2.5];
+
   // ── reveal entrance animation ─────────────────────────────────────────────
   // ENTERING-ONLY: shared values animate in when pitchUnlocked becomes true.
   // No `exiting` — unmount is plain to avoid Fabric SIGABRT.
   // Reduced-motion: skip to final state immediately.
   const revealOpacity = useSharedValue(pitchUnlocked ? 1 : 0);
-  const revealTranslateY = useSharedValue(pitchUnlocked ? 0 : REVEAL_TRANSLATE_Y);
+  const revealTranslateY = useSharedValue(pitchUnlocked ? 0 : revealTranslateYPx);
 
   useEffect(() => {
     if (!pitchUnlocked) return;
@@ -216,9 +218,9 @@ export function RipeningProCard({
             <Text style={subText}>{REVEAL_COPY.sub}</Text>
           </View>
 
-          {/* Ripening band (revealed) — illustrative labels until wired to real data */}
-          {/* TODO: wire real band labels from calibration data (Task 7) */}
-          <RipeningBand revealed lowLabel="25m" highLabel="40m" />
+          {/* Ripening band (revealed) — no fabricated tick labels. */}
+          {/* Real low/high band labels are a follow-up (see plan: real band wiring, out of scope here). */}
+          <RipeningBand revealed />
 
           {/* Feature readiness list */}
           <FeatureReadinessList items={features} />
