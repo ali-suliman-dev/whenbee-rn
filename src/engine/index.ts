@@ -16,6 +16,7 @@ export type { ApplyLogInput, ApplyLogResult } from './update';
 export { planBackward, reproject, DEFAULT_BUFFER_MIN } from './planner';
 export type { ReprojectResult } from './planner';
 export { reclaimDividendMinutes, formatReclaim } from './reclaim';
+export { arcFraction } from './presence';
 export { correlateReasons, reasonNoteFor, reasonPhrase } from './reasons';
 export { correlateAccuracy } from './accuracy';
 export type { AccuracySample, AccuracyCorrelation } from './accuracy';
