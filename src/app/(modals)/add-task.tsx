@@ -110,6 +110,7 @@ export default function AddTask() {
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
       >
         <ScrollView
+          style={{ flex: 1 }}
           contentContainerStyle={{ gap: t.space[5], paddingTop: t.space[3], paddingBottom: t.space[4] }}
           showsVerticalScrollIndicator={false}
         >
