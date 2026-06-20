@@ -1,4 +1,11 @@
+import { useEffect } from 'react';
 import { View, Pressable, Text, type ViewStyle, type TextStyle } from 'react-native';
+import Animated, {
+  useSharedValue,
+  useAnimatedStyle,
+  withTiming,
+  useReducedMotion,
+} from 'react-native-reanimated';
 import { useTheme } from '@/src/theme/useTheme';
 import { type } from '@/src/theme/typography';
 import { HoneyBar } from '@/src/features/reward/HoneyBar';
@@ -34,6 +41,9 @@ export interface RipeningProCardProps {
   onPreview: () => void;
 }
 
+// Vertical travel distance for the reveal entrance (small — calm settle, not a pop).
+const REVEAL_TRANSLATE_Y = 10;
+
 export function RipeningProCard({
   pitchUnlocked,
   honeyPct,
@@ -44,6 +54,31 @@ export function RipeningProCard({
   onPreview,
 }: RipeningProCardProps) {
   const t = useTheme();
+  const reducedMotion = useReducedMotion();
+
+  // ── reveal entrance animation ─────────────────────────────────────────────
+  // ENTERING-ONLY: shared values animate in when pitchUnlocked becomes true.
+  // No `exiting` — unmount is plain to avoid Fabric SIGABRT.
+  // Reduced-motion: skip to final state immediately.
+  const revealOpacity = useSharedValue(pitchUnlocked ? 1 : 0);
+  const revealTranslateY = useSharedValue(pitchUnlocked ? 0 : REVEAL_TRANSLATE_Y);
+
+  useEffect(() => {
+    if (!pitchUnlocked) return;
+    if (reducedMotion) {
+      revealOpacity.set(1);
+      revealTranslateY.set(0);
+      return;
+    }
+    const cfg = { duration: t.motion.reveal, easing: t.motion.easing.honey } as const;
+    revealOpacity.set(withTiming(1, cfg));
+    revealTranslateY.set(withTiming(0, cfg));
+  }, [pitchUnlocked, reducedMotion, t.motion.reveal, t.motion.easing.honey, revealOpacity, revealTranslateY]);
+
+  const revealStyle = useAnimatedStyle(() => ({
+    opacity: revealOpacity.get(),
+    transform: [{ translateY: revealTranslateY.get() }],
+  }));
 
   // ── card shell ────────────────────────────────────────────────────────────
   const card: ViewStyle = {
@@ -172,7 +207,9 @@ export function RipeningProCard({
 
       {pitchUnlocked ? (
         /* ── REVEAL STATE ───────────────────────────────────────────────── */
-        <>
+        /* Animated.View carries the calm entrance: fade + small upward settle.
+           ENTERING only — no `exiting` (Fabric SIGABRT risk on unmount).     */
+        <Animated.View style={[{ gap: t.space[3] }, revealStyle]}>
           {/* Headline + sub */}
           <View style={{ gap: t.space[1] }}>
             <Text style={headlineText}>{REVEAL_COPY.headline}</Text>
@@ -197,7 +234,7 @@ export function RipeningProCard({
           <Pressable onPress={onPreview} accessibilityRole="link">
             <Text style={escapeText}>{REVEAL_COPY.escape}</Text>
           </Pressable>
-        </>
+        </Animated.View>
       ) : (
         /* ── RIPENING STATE ─────────────────────────────────────────────── */
         <>
