@@ -9,19 +9,30 @@
 //   AppleLLMSession.generateStructuredOutput({ structure: StructureSchema, prompt }) → Promise<any>
 //   AppleLLMSession.dispose() → void
 
+import { TurboModuleRegistry } from 'react-native';
 import { isExpoGo } from '@/src/lib/isExpoGo';
-import {
-  AppleLLMSession,
-  isFoundationModelsEnabled,
-} from 'react-native-apple-llm';
 import type { StructureSchema } from 'react-native-apple-llm';
 import type { AiAvailability, LlmStructuredField, OnDeviceLlm } from './onDeviceLlm';
 
+// react-native-apple-llm calls `TurboModuleRegistry.getEnforcing('AppleLLMModule')`
+// at the top of its own module body, so a plain value import throws at *import time*
+// whenever the native binary lacks the module — in Expo Go, or in a dev client built
+// before the package was added. That crash beats every isExpoGo guard below and takes
+// down the whole route graph. Probe with the non-throwing `get(...)` first and only
+// `require` the vendor package once the native module is actually registered, so a
+// missing binary degrades to 'unavailable' / null instead of crashing.
+type AppleLlmApi = typeof import('react-native-apple-llm');
+const vendor: AppleLlmApi | null =
+  !isExpoGo && TurboModuleRegistry.get('AppleLLMModule') != null
+    ? // eslint-disable-next-line @typescript-eslint/no-require-imports
+      (require('react-native-apple-llm') as AppleLlmApi)
+    : null;
+
 const availability = async (): Promise<AiAvailability> => {
-  if (isExpoGo) return 'unavailable';
+  if (!vendor) return 'unavailable';
   try {
     // FoundationModelsAvailability union is identical to AiAvailability; safe cast.
-    return (await isFoundationModelsEnabled()) as AiAvailability;
+    return (await vendor.isFoundationModelsEnabled()) as AiAvailability;
   } catch {
     return 'unavailable';
   }
@@ -37,14 +48,14 @@ async function structure<T extends Record<string, string>>(args: {
   prompt: string;
   schema: { [K in keyof T]: LlmStructuredField };
 }): Promise<T | null> {
-  if ((await availability()) !== 'available') return null;
+  if (!vendor || (await availability()) !== 'available') return null;
 
   // Map our schema (Record<key, LlmStructuredField>) → vendor StructureSchema.
   // LlmStructuredField = { type: 'string'; description: string } is a strict subset of
   // StructureProperty = { type?: ...; description?: string; ... } — fully compatible.
   const vendorStructure: StructureSchema = args.schema as Record<string, LlmStructuredField>;
 
-  const session = new AppleLLMSession();
+  const session = new vendor.AppleLLMSession();
   try {
     await session.configure({ instructions: args.instructions });
     // generateStructuredOutput returns `any`; cast to T at the documented-shape boundary.
