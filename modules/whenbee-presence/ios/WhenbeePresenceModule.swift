@@ -7,81 +7,106 @@ import ActivityKit
 private let kAppGroupId = "group.com.whenbee.app"
 private let kSnapshotKey = "whenbee.widgetSnapshot"
 
-struct WidgetSnapshotRecord: Record {
-    @Field var nextTaskLabel: String = ""
-    @Field var category: String = ""
-    @Field var honestFinishClock: String = ""
-    @Field var startDeepLink: String = ""
-    @Field var updatedAtEpoch: Double = 0
-}
-struct LiveActivityAttributesRecord: Record {
-    @Field var taskLabel: String = ""
-    @Field var finishEpoch: Double = 0
-}
-struct LiveActivityUpdateRecord: Record {
-    @Field var isOverrun: Bool = false
-}
-
 public class WhenbeePresenceModule: Module {
+    // Retained so updateLiveActivity can read the previous isProRich value.
+    #if canImport(ActivityKit)
+    @available(iOS 16.2, *)
+    private static var currentActivity: Activity<FinishTimeAttributes>?
+    #endif
+
     public func definition() -> ModuleDefinition {
         Name("WhenbeePresence")
-        Property("isStub") { false }
 
-        Function("writeSnapshot") { (snapshot: WidgetSnapshotRecord) in
-            guard let defaults = UserDefaults(suiteName: kAppGroupId) else { return }
-            let payload: [String: Any] = [
-                "nextTaskLabel": snapshot.nextTaskLabel,
-                "category": snapshot.category,
-                "honestFinishClock": snapshot.honestFinishClock,
-                "startDeepLink": snapshot.startDeepLink,
-                "updatedAtEpoch": snapshot.updatedAtEpoch,
-            ]
+        // NOTE: The JS bridge derives `isStub` from whether requireOptionalNativeModule
+        // returns nil. No `isStub` property is needed here — the module's mere presence
+        // flips the bridge off the stub path.
+
+        // Serialize the snapshot dict to JSON and write to the shared App Group
+        // UserDefaults, then reload all widget timelines.
+        Function("writeSnapshot") { (snapshot: [String: Any]) in
             guard
-                let data = try? JSONSerialization.data(withJSONObject: payload),
+                let defaults = UserDefaults(suiteName: kAppGroupId),
+                let data = try? JSONSerialization.data(withJSONObject: snapshot),
                 let json = String(data: data, encoding: .utf8)
             else { return }
             defaults.set(json, forKey: kSnapshotKey)
             WidgetCenter.shared.reloadAllTimelines()
         }
+
+        // Remove the snapshot from shared storage and reload all timelines.
         Function("clearSnapshot") {
-            guard let defaults = UserDefaults(suiteName: kAppGroupId) else { return }
-            defaults.removeObject(forKey: kSnapshotKey)
+            UserDefaults(suiteName: kAppGroupId)?.removeObject(forKey: kSnapshotKey)
             WidgetCenter.shared.reloadAllTimelines()
         }
-        Function("startLiveActivity") { (attributes: LiveActivityAttributesRecord) in
-            if #available(iOS 16.2, *) { self.startActivity(attributes) }
+
+        // Start a Live Activity for a running timer session.
+        // Expects: { taskLabel: String, finishEpoch: Double, startEpoch: Double, isProRich?: Bool }
+        Function("startLiveActivity") { (attrs: [String: Any]) in
+            if #available(iOS 16.2, *) {
+                self.startActivity(attrs)
+            }
         }
-        Function("updateLiveActivity") { (state: LiveActivityUpdateRecord) in
-            if #available(iOS 16.2, *) { self.updateActivity(isOverrun: state.isOverrun) }
+
+        // Update the overrun state on the running Live Activity.
+        // Expects: { isOverrun: Bool }
+        Function("updateLiveActivity") { (state: [String: Any]) in
+            if #available(iOS 16.2, *) {
+                self.updateActivity(state)
+            }
         }
+
+        // End and dismiss the Live Activity immediately.
         Function("endLiveActivity") {
-            if #available(iOS 16.2, *) { self.endActivity() }
+            if #available(iOS 16.2, *) {
+                self.endActivity()
+            }
         }
     }
 
     #if canImport(ActivityKit)
     @available(iOS 16.2, *)
-    private func startActivity(_ attributes: LiveActivityAttributesRecord) {
-        for activity in Activity<FinishTimeAttributes>.activities {
-            Task { await activity.end(nil, dismissalPolicy: .immediate) }
+    private func startActivity(_ attrs: [String: Any]) {
+        // Tear down any lingering activities before starting a new one.
+        for existing in Activity<FinishTimeAttributes>.activities {
+            Task { await existing.end(nil, dismissalPolicy: .immediate) }
         }
         guard ActivityAuthorizationInfo().areActivitiesEnabled else { return }
-        let attrs = FinishTimeAttributes(taskLabel: attributes.taskLabel, finishEpoch: attributes.finishEpoch)
-        let initialState = FinishTimeAttributes.ContentState(isOverrun: false)
-        let content = ActivityContent(state: initialState, staleDate: Date(timeIntervalSince1970: attributes.finishEpoch))
-        _ = try? Activity.request(attributes: attrs, content: content, pushType: nil)
+        guard
+            let label = attrs["taskLabel"] as? String,
+            let finish = attrs["finishEpoch"] as? Double,
+            let start = attrs["startEpoch"] as? Double
+        else { return }
+        let isProRich = (attrs["isProRich"] as? Bool) ?? false
+        let attributes = FinishTimeAttributes(taskLabel: label, finishEpoch: finish, startEpoch: start)
+        let initialState = FinishTimeAttributes.ContentState(isOverrun: false, isProRich: isProRich)
+        let content = ActivityContent(state: initialState, staleDate: nil)
+        Task {
+            Self.currentActivity = try? Activity.request(
+                attributes: attributes,
+                content: content,
+                pushType: nil
+            )
+        }
     }
+
     @available(iOS 16.2, *)
-    private func updateActivity(isOverrun: Bool) {
-        let newState = FinishTimeAttributes.ContentState(isOverrun: isOverrun)
-        let content = ActivityContent(state: newState, staleDate: nil)
-        for activity in Activity<FinishTimeAttributes>.activities { Task { await activity.update(content) } }
+    private func updateActivity(_ state: [String: Any]) {
+        let isOverrun = (state["isOverrun"] as? Bool) ?? false
+        Task {
+            guard let activity = Self.currentActivity else { return }
+            // Preserve the isProRich flag set at activity start — it survives updates.
+            let prevRich = activity.content.state.isProRich
+            let newState = FinishTimeAttributes.ContentState(isOverrun: isOverrun, isProRich: prevRich)
+            await activity.update(ActivityContent(state: newState, staleDate: nil))
+        }
     }
+
     @available(iOS 16.2, *)
     private func endActivity() {
-        let finalState = FinishTimeAttributes.ContentState(isOverrun: false)
-        let content = ActivityContent(state: finalState, staleDate: nil)
-        for activity in Activity<FinishTimeAttributes>.activities { Task { await activity.end(content, dismissalPolicy: .immediate) } }
+        Task {
+            await Self.currentActivity?.end(nil, dismissalPolicy: .immediate)
+            Self.currentActivity = nil
+        }
     }
     #endif
 }
