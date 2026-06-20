@@ -55,6 +55,19 @@ jest.mock('expo-speech-recognition', () => ({
   },
 }));
 
+// react-native-apple-llm requires a native module (iOS 26 Foundation Models);
+// stub it so the adapter is importable in tests. Feature hooks mock the service
+// barrel (getOnDeviceLlm) — this just prevents requireNativeModule from
+// throwing at import time.
+jest.mock('react-native-apple-llm', () => ({
+  isFoundationModelsEnabled: jest.fn(() => Promise.resolve('unavailable')),
+  AppleLLMSession: jest.fn().mockImplementation(() => ({
+    configure: jest.fn(() => Promise.resolve(true)),
+    generateStructuredOutput: jest.fn(() => Promise.resolve(null)),
+    dispose: jest.fn(),
+  })),
+}));
+
 // Patch react-native-reanimated mock: the bundled mock omits a few hooks the
 // Live Timer relies on (frame callback + the derived/reaction graph). Stub them
 // so components render in jest; they're UI-thread drivers with no JS effect under
