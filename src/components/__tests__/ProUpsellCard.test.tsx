@@ -1,6 +1,11 @@
 import { render, screen, fireEvent } from '@testing-library/react-native';
 import { ProUpsellCard } from '../ProUpsellCard';
 
+// useFocusEffect runs its effect immediately in tests (no real navigation focus).
+jest.mock('expo-router', () => ({
+  useFocusEffect: (cb: () => void | (() => void)) => cb(),
+}));
+
 describe('ProUpsellCard', () => {
   it('renders the title and note', () => {
     render(
