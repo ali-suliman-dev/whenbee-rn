@@ -23,6 +23,7 @@ import { useSettingsStore } from '@/src/stores/settingsStore';
 import { projectedFinish, formatClockMeridiem } from '@/src/lib/time';
 import { useTasksStore } from '@/src/stores/tasksStore';
 import { kv } from '@/src/lib/kv';
+import { useFocusedValue } from '@/src/hooks/useFocusedValue';
 
 // Date label, e.g. "Fri · Jun 12" — the day + date, no clock (the time added
 // nothing here and ticked distractingly).
@@ -144,6 +145,9 @@ export default function Today() {
     };
   });
 
+  const ritualDone = useFocusedValue(done.length > 0);
+  const shownCells = useFocusedValue(honeyCells);
+
   const sectionLabel: TextStyle = {
     ...(type.eyebrow as unknown as TextStyle),
     color: t.colors.inkSoft,
@@ -179,12 +183,12 @@ export default function Today() {
               sits clearly apart from the focus card below it. */}
           <View style={{ marginTop: -t.space[2], marginBottom: t.space[3] }}>
             <TodayHud
-              cells={honeyCells}
+              cells={shownCells}
               stage={companionStage}
               seed={companionSeed}
               onPress={() => router.push('/(tabs)/whenbee')}
               ritualEnabled={dailyRitualEnabled}
-              ritualDone={done.length > 0}
+              ritualDone={ritualDone}
               onLogRitual={() => router.push('/(modals)/retro')}
             />
           </View>
