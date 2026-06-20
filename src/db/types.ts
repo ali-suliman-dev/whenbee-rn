@@ -15,6 +15,12 @@ export interface CategoryStatRow {
   adaptSpeed: AdaptSpeed;
   updatedAt: number;
   reclaimedMinutes: number;
+  /** Affine sufficient statistics (recency-weighted). */
+  sw: number;
+  swx: number;
+  swy: number;
+  swxx: number;
+  swxy: number;
   /** First meaningful honest range (frozen at first 'setting'); null until then.
    *  The "from" anchor for the category-detail narrowing caption (§7). */
   firstHonestRange?: HonestRange | null;

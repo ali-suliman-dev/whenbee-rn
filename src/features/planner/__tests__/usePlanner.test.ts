@@ -33,7 +33,7 @@ describe('usePlanner — duration pre-fill from learned data', () => {
 
   it('pre-fills from personal stats when the category has enough logs', () => {
     useCalibrationStore.setState({
-      statsByCategory: { admin: { mEffective: 3.0, n: 5, sharpness: 60, tier: 'Ripening' } },
+      statsByCategory: { admin: { mEffective: 3.0, n: 5, sharpness: 60, tier: 'Ripening', fit: { a: 0, b: 3.0 } } },
     });
     const { result } = renderHook(() => usePlanner({ nowMs: NOW }));
     // round5(15 × 3.0) = 45

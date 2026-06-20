@@ -92,6 +92,11 @@ describe('memoryDatabase — category stats', () => {
       adaptSpeed: 'reactive',
       updatedAt: 12345,
       reclaimedMinutes: 0,
+      sw: 0,
+      swx: 0,
+      swy: 0,
+      swxx: 0,
+      swxy: 0,
     };
     await db.upsertCategoryStat(row);
     expect(await db.getCategoryStat('cleaning')).toEqual(row);

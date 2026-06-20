@@ -1,4 +1,4 @@
-import { ALPHA_BY_SPEED, RETRO_ALPHA_FACTOR } from './constants';
+import { ALPHA_BY_SPEED, ALPHA_REG_BY_SPEED, RETRO_ALPHA_FACTOR } from './constants';
 import type { AdaptSpeed, LogSource } from '../domain/types';
 
 /** Effective α: base rate for the category's adapt_speed, halved for retro entries. */
@@ -6,6 +6,12 @@ export function alphaFor(speed: AdaptSpeed, source: LogSource): number {
   const base = ALPHA_BY_SPEED[speed];
   return source === 'retro' ? base * RETRO_ALPHA_FACTOR : base;
 }
+
+/** Effective forgetting factor for the affine regression. Half for retro entries. */
+export const alphaRegFor = (speed: AdaptSpeed, source: LogSource): number => {
+  const base = ALPHA_REG_BY_SPEED[speed];
+  return source === 'retro' ? base * RETRO_ALPHA_FACTOR : base;
+};
 
 /**
  * One incremental EWMA step over ln(ratio).

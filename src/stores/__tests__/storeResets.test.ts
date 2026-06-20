@@ -39,7 +39,7 @@ describe('store reset actions', () => {
   it('calibrationStore.reset clears in-memory caches', () => {
     useCalibrationStore.setState({
       logs: 5,
-      statsByCategory: { a: { mEffective: 1, n: 2, sharpness: 0.1, tier: 'Raw' } },
+      statsByCategory: { a: { mEffective: 1, n: 2, sharpness: 0.1, tier: 'Raw', fit: { a: 0, b: 1 } } },
       graduatedCategories: new Set(['a']),
     });
     useCalibrationStore.getState().reset();

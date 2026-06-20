@@ -54,6 +54,7 @@ async function seedHonest(): Promise<Database> {
     adaptSpeed: 'balanced',
     updatedAt: T0,
     reclaimedMinutes: 0,
+  sw: 0, swx: 0, swy: 0, swxx: 0, swxy: 0,
   });
   // 8 identical est/actual rows → identical clamped ratios → CV 0 → honest.
   for (let i = 0; i < 8; i++) {
@@ -77,6 +78,7 @@ async function seedLearning(): Promise<Database> {
     adaptSpeed: 'balanced',
     updatedAt: T0,
     reclaimedMinutes: 0,
+  sw: 0, swx: 0, swy: 0, swxx: 0, swxy: 0,
   });
   await db.insertTaskEvent(event({ id: 'c0', estimateMin: 15, actualMin: 30, createdAt: T0 }));
   useCalibrationStore.setState({ logs: 0, statsByCategory: {} });

@@ -201,6 +201,7 @@ export default function AddTask() {
             guessMinutes={a.suggestion.guessMinutes}
             confidence={a.suggestion.confidence}
             range={a.suggestion.range}
+            preEstimate={a.preEstimate}
           />
         ) : null}
 

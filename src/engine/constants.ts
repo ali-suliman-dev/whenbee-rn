@@ -17,6 +17,14 @@ export const ALPHA_BY_SPEED: Record<AdaptSpeed, number> = {
 };
 export const RETRO_ALPHA_FACTOR = 0.5; // memory is noisier → half weight
 
+/** Affine regression forgetting factor — DECOUPLED from adapt_speed for a longer
+ *  memory window (~33/20/11 logs). Retro entries use half (RETRO_ALPHA_FACTOR). */
+export const ALPHA_REG_BY_SPEED: Record<AdaptSpeed, number> = {
+  steady: 0.03,
+  balanced: 0.05,
+  reactive: 0.09,
+};
+
 /** Sharpness window + tiers. Thresholds match the prototype (THRESH=[0,40,64,82,93]). */
 export const SHARPNESS_WINDOW = 8; // last N completed logs feed the accuracy number
 export const TIERS: readonly Tier[] = ['Raw', 'Setting', 'Ripening', 'Thickening', 'Honest'];
@@ -63,3 +71,15 @@ export const RANGE_MAX_HALF_WIDTH = 0.5;
 export const QUANTILE_MIN_N = 4;
 /** Log-space half-width of the n=0 prior band (≈ ÷1.5…×1.5 spread) (§8.5). */
 export const PRIOR_BAND_HALF_WIDTH = 0.4;
+
+// ── Regularized affine calibration (replaces the single-scalar multiplier) ───
+/** Prior strength as a pseudo-observation count, mirroring the old k=4 blend:
+ *  conservative early, washes out as real logs accumulate. The slope anchor is
+ *  scaled by the canonical guess² inside solveAffine so it lives in the same
+ *  units as the data's slope information. */
+export const AFFINE_PRIOR_PSEUDO = 4;
+
+// ── Cold-start global-personal prior (new/thin categories start from YOUR bias) ─
+export const GLOBAL_PRIOR_MIN_LOGS = 4; // below this, use the population prior unchanged
+export const GLOBAL_PRIOR_K = 6; // pseudo-count: personal weight = n/(n+k)
+export const GLOBAL_PRIOR_MAX_WEIGHT = 0.6; // cap so a new category keeps its own identity

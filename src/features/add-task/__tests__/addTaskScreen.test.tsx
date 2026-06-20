@@ -24,7 +24,7 @@ beforeEach(() => {
   useCalibrationStore.setState({
     hydrate: async () => {},
     statsByCategory: {
-      getting_ready: { mEffective: 2.0, n: 8, sharpness: 70, tier: 'Ripening' },
+      getting_ready: { mEffective: 2.0, n: 8, sharpness: 70, tier: 'Ripening', fit: { a: 0, b: 2.0 } },
     },
   });
 });

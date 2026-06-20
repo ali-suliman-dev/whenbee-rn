@@ -8,6 +8,35 @@ function setPro(isPro: boolean) {
 
 afterEach(() => setPro(false));
 
+describe('HonestSuggestionCard — pre-estimate label', () => {
+  it('shows the pre-estimate line when preEstimate and no reasonNote', () => {
+    const { queryByText } = render(
+      <HonestSuggestionCard honestMinutes={35} guessMinutes={15} preEstimate />,
+    );
+    expect(queryByText('Starting estimate · sharpens as you log')).toBeTruthy();
+  });
+
+  it('hides it once calibrated (preEstimate false)', () => {
+    const { queryByText } = render(
+      <HonestSuggestionCard honestMinutes={35} guessMinutes={15} preEstimate={false} />,
+    );
+    expect(queryByText('Starting estimate · sharpens as you log')).toBeNull();
+  });
+
+  it('reasonNote takes priority over the pre-estimate line', () => {
+    const { queryByText } = render(
+      <HonestSuggestionCard
+        honestMinutes={35}
+        guessMinutes={15}
+        preEstimate
+        reasonNote="Afternoons run long"
+      />,
+    );
+    expect(queryByText('Starting estimate · sharpens as you log')).toBeNull();
+    expect(queryByText('Afternoons run long')).toBeTruthy();
+  });
+});
+
 describe('HonestSuggestionCard — Pro-gated honest range', () => {
   it('renders the tight line when no confidence/range is provided (live-guess banner)', () => {
     render(<HonestSuggestionCard honestMinutes={25} guessMinutes={15} />);

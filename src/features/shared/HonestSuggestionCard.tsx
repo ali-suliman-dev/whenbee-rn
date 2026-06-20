@@ -29,6 +29,7 @@ export function HonestSuggestionCard({
   confidence,
   range,
   reasonNote,
+  preEstimate,
 }: {
   honestMinutes: number;
   guessMinutes: number;
@@ -39,6 +40,8 @@ export function HonestSuggestionCard({
   /** OPTIONAL Pro-only B15 note. Display-only — a quiet second line under the
    *  honest line; never changes the honest number or delta. */
   reasonNote?: string;
+  /** OPTIONAL. When true and no reasonNote, shows the pre-estimate label. */
+  preEstimate?: boolean;
 }) {
   const t = useTheme();
   const isPro = useEntitlement((s) => s.isPro);
@@ -127,13 +130,22 @@ export function HonestSuggestionCard({
   const lockLabel: TextStyle = { fontSize: t.fontSize.xs, color: t.colors.inkFaint };
   const bandRow: ViewStyle = { marginTop: t.space[1], paddingHorizontal: t.space[2] };
 
-  const a11yLabel = showProBand && range
-    ? `Honest range ${range.lowMinutes} to ${range.highMinutes} minutes${confidence === 'setting' ? ', still learning' : ''}.`
-    : showRoughly && range
-      ? `Still learning. Roughly ${range.lowMinutes} to ${range.highMinutes} minutes.`
-      : delta > 0
+  const a11yLabel = (() => {
+    if (showProBand && range) {
+      return `Honest range ${range.lowMinutes} to ${range.highMinutes} minutes${confidence === 'setting' ? ', still learning' : ''}.`;
+    }
+    if (showRoughly && range) {
+      return `Still learning. Roughly ${range.lowMinutes} to ${range.highMinutes} minutes.`;
+    }
+    const base =
+      delta > 0
         ? `Honest estimate about ${honestMinutes} minutes, ${delta} more than your guess`
         : `Honest estimate about ${honestMinutes} minutes`;
+    if (preEstimate && !hasBand) {
+      return `${base}, starting estimate, sharpens as you log`;
+    }
+    return base;
+  })();
 
   return (
     <View style={card} accessibilityLabel={a11yLabel}>
@@ -197,7 +209,11 @@ export function HonestSuggestionCard({
             />
           </View>
         ) : null}
-        {reasonNote ? <AppText style={noteText}>{reasonNote}</AppText> : null}
+        {reasonNote ? (
+          <AppText style={noteText}>{reasonNote}</AppText>
+        ) : preEstimate ? (
+          <AppText style={noteText}>Starting estimate · sharpens as you log</AppText>
+        ) : null}
       </View>
     </View>
   );

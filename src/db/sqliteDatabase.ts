@@ -40,6 +40,11 @@ interface CategoryStatDbRow {
   reclaimed_minutes: number;
   first_honest_low: number | null;
   first_honest_high: number | null;
+  sw: number;
+  swx: number;
+  swy: number;
+  swxx: number;
+  swxy: number;
 }
 
 interface CompanionDbRow {
@@ -103,6 +108,11 @@ function mapCategoryStat(r: CategoryStatDbRow): CategoryStatRow {
       r.first_honest_low !== null && r.first_honest_high !== null
         ? { lowMinutes: r.first_honest_low, highMinutes: r.first_honest_high }
         : null,
+    sw: r.sw,
+    swx: r.swx,
+    swy: r.swy,
+    swxx: r.swxx,
+    swxy: r.swxy,
   };
 }
 
@@ -144,8 +154,8 @@ export async function createSqliteDatabase(name = 'whenbee.db'): Promise<Databas
     async upsertCategoryStat(row: CategoryStatRow): Promise<void> {
       await db.runAsync(
         `INSERT INTO category_stats
-           (category_id, ewma_logr, n, m_effective, sharpness, prior_mult, adapt_speed, updated_at, reclaimed_minutes, first_honest_low, first_honest_high)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+           (category_id, ewma_logr, n, m_effective, sharpness, prior_mult, adapt_speed, updated_at, reclaimed_minutes, first_honest_low, first_honest_high, sw, swx, swy, swxx, swxy)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
          ON CONFLICT(category_id) DO UPDATE SET
            ewma_logr = excluded.ewma_logr,
            n = excluded.n,
@@ -156,7 +166,12 @@ export async function createSqliteDatabase(name = 'whenbee.db'): Promise<Databas
            updated_at = excluded.updated_at,
            reclaimed_minutes = excluded.reclaimed_minutes,
            first_honest_low = excluded.first_honest_low,
-           first_honest_high = excluded.first_honest_high`,
+           first_honest_high = excluded.first_honest_high,
+           sw = excluded.sw,
+           swx = excluded.swx,
+           swy = excluded.swy,
+           swxx = excluded.swxx,
+           swxy = excluded.swxy`,
         row.categoryId,
         row.logEwma,
         row.n,
@@ -167,7 +182,12 @@ export async function createSqliteDatabase(name = 'whenbee.db'): Promise<Databas
         row.updatedAt,
         row.reclaimedMinutes,
         row.firstHonestRange?.lowMinutes ?? null,
-        row.firstHonestRange?.highMinutes ?? null
+        row.firstHonestRange?.highMinutes ?? null,
+        row.sw,
+        row.swx,
+        row.swy,
+        row.swxx,
+        row.swxy
       );
     },
 

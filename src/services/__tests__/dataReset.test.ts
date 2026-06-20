@@ -9,6 +9,7 @@ async function seedDb() {
   await db.upsertCategoryStat({
     categoryId: 'cooking', n: 5, logEwma: 0.2, mEffective: 1.3, sharpness: 0.4,
     priorMult: 1.2, adaptSpeed: 'balanced', updatedAt: 1000, reclaimedMinutes: 30,
+    sw: 0, swx: 0, swy: 0, swxx: 0, swxy: 0,
   });
   await db.setCompanionName('Bramble');
   return db;

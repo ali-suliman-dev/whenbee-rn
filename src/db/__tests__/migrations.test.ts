@@ -100,6 +100,11 @@ describe('memoryDatabase — companion / reclaim bank', () => {
       adaptSpeed: 'balanced',
       updatedAt: 1,
       reclaimedMinutes: 0,
+      sw: 0,
+      swx: 0,
+      swy: 0,
+      swxx: 0,
+      swxy: 0,
     });
     await db.addCategoryReclaim('cleaning', 8);
     const row = await db.getCategoryStat('cleaning');

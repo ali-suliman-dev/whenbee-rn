@@ -5,6 +5,7 @@ import { sharpnessFromWindow, tierFor, logsToNextTier, tierBandProgress } from '
 import { detectInsight } from '../insight';
 import { buildTrendSeries } from '../trend';
 import { applyLog } from '../update';
+import { emptyAffineStats, solveAffine, affineHonestExact } from '../affine';
 import { priorFor, GLOBAL_PRIOR, CATEGORY_PRIORS } from '../priors';
 
 describe('clampRatio', () => {
@@ -54,20 +55,21 @@ describe('honestNumber', () => {
 });
 
 describe('resolveSuggestion fallback', () => {
-  const category = { mEffective: 2.0, n: 9 };
+  const flat = (b: number) => ({ a: 0, b });
+  const category = { fit: flat(2.0), n: 9 };
   it('uses the category when recurring lacks 3 logs', () => {
-    const s = resolveSuggestion({ guessMinutes: 15, category, recurring: { mEffective: 3.0, n: 2 } });
-    expect(s.multiplier).toBe(2.0);
+    const s = resolveSuggestion({ guessMinutes: 15, category, recurring: { fit: flat(3.0), n: 2 } });
+    expect(s.multiplier).toBeCloseTo(2.0, 6);
     expect(s.basis).toBe('personal');
     expect(s.label).toBe('based on your last 9 times');
   });
-  it('uses the recurring multiplier once it has ≥3 logs', () => {
-    const s = resolveSuggestion({ guessMinutes: 15, category, recurring: { mEffective: 3.0, n: 4 } });
-    expect(s.multiplier).toBe(3.0);
+  it('uses the recurring fit once it has ≥3 logs', () => {
+    const s = resolveSuggestion({ guessMinutes: 15, category, recurring: { fit: flat(3.0), n: 4 } });
+    expect(s.multiplier).toBeCloseTo(3.0, 6);
     expect(s.honestMinutes).toBe(45);
   });
   it('labels a cold category as typical patterns', () => {
-    const s = resolveSuggestion({ guessMinutes: 20, category: { mEffective: 2.2, n: 1 }, recurring: null });
+    const s = resolveSuggestion({ guessMinutes: 20, category: { fit: flat(2.2), n: 1 }, recurring: null });
     expect(s.basis).toBe('prior');
     expect(s.label).toBe('based on typical patterns');
   });
@@ -124,7 +126,7 @@ describe('applyLog monotonic sharpness', () => {
       source: 'timed',
       adaptSpeed: 'balanced',
       prior: 2.0,
-      category: { n: 8, logEwma: Math.log(2), mEffective: 2.0, sharpness: 90, reclaimedMinutes: 0 },
+      category: { stats: emptyAffineStats(), n: 8, anchor: 2.0, sharpness: 90, reclaimedMinutes: 0 },
       recurring: null,
       recentClampedRatios: [1, 1, 1, 1, 1, 1, 6],
       suggestedHonestMin: null,
@@ -141,7 +143,7 @@ describe('applyLog monotonic sharpness', () => {
       source: 'timed',
       adaptSpeed: 'balanced',
       prior: 2.0,
-      category: { n: 3, logEwma: 0.1, mEffective: 1.8, sharpness: 50, reclaimedMinutes: 0 },
+      category: { stats: emptyAffineStats(), n: 3, anchor: 2.0, sharpness: 50, reclaimedMinutes: 0 },
       recurring: null,
       recentClampedRatios: [1, 1, 1],
       suggestedHonestMin: null,
@@ -156,8 +158,8 @@ describe('applyLog monotonic sharpness', () => {
       source: 'timed',
       adaptSpeed: 'balanced',
       prior: 2.0,
-      category: { n: 4, logEwma: Math.log(2), mEffective: 2.0, sharpness: 60, reclaimedMinutes: 0 },
-      recurring: { n: 2, logEwma: Math.log(2), mEffective: 2.0 },
+      category: { stats: emptyAffineStats(), n: 4, anchor: 2.0, sharpness: 60, reclaimedMinutes: 0 },
+      recurring: { stats: emptyAffineStats(), n: 2, anchor: 2.0 },
       recentClampedRatios: [2, 2, 2, 2],
       suggestedHonestMin: null,
     });
@@ -170,7 +172,7 @@ describe('applyLog monotonic sharpness', () => {
     const res = applyLog({
       estimateMin: 15, actualMin: 32, status: 'completed', source: 'timed',
       adaptSpeed: 'balanced', prior: 1.8,
-      category: { n: 0, logEwma: 0, mEffective: 1.8, sharpness: 0, reclaimedMinutes: 0 },
+      category: { stats: emptyAffineStats(), n: 0, anchor: 1.8, sharpness: 0, reclaimedMinutes: 0 },
       recurring: null, recentClampedRatios: [], suggestedHonestMin: 30,
     });
     expect(res.reclaimDeltaMin).toBe(15); // |32-15| - |32-30| = 17 - 2
@@ -179,21 +181,67 @@ describe('applyLog monotonic sharpness', () => {
     const res = applyLog({
       estimateMin: 15, actualMin: 5, status: 'abandoned', source: 'timed',
       adaptSpeed: 'balanced', prior: 1.8,
-      category: { n: 3, logEwma: 0.4, mEffective: 1.6, sharpness: 50, reclaimedMinutes: 0 },
+      category: { stats: emptyAffineStats(), n: 3, anchor: 1.8, sharpness: 50, reclaimedMinutes: 0 },
       recurring: null, recentClampedRatios: [], suggestedHonestMin: 24,
     });
     expect(res.reclaimDeltaMin).toBe(0);
   });
-  it('falls back to honestNumber(estimate, mEffective) when no suggestedHonestMin given', () => {
-    // honestNumber(15, 1.8) = round(15 * 1.8 / 5) * 5 = round(5.4) * 5 = 25
-    // dividend = |40-15| - |40-25| = 25 - 15 = 10
+  it('falls back to roundHonest(affineHonestExact(fit, estimate)) when no suggestedHonestMin given', () => {
+    // After one retro/balanced log (estimate=15, actual=40, ratio=2.67, alphaReg=0.025):
+    // The post-log fit is regularized toward anchor=1.8 but pulled toward ~2.67.
+    // affineHonestExact(catFit, 15) ≈ 30; roundHonest(30) = 30.
+    // dividend = |40-15| - |40-30| = 25 - 10 = 15
     const res = applyLog({
       estimateMin: 15, actualMin: 40, status: 'completed', source: 'retro',
       adaptSpeed: 'balanced', prior: 1.8,
-      category: { n: 5, logEwma: 0.6, mEffective: 1.8, sharpness: 40, reclaimedMinutes: 0 },
+      category: { stats: emptyAffineStats(), n: 5, anchor: 1.8, sharpness: 40, reclaimedMinutes: 0 },
       recurring: null, recentClampedRatios: [], suggestedHonestMin: null,
     });
-    expect(res.reclaimDeltaMin).toBe(10);
+    expect(res.reclaimDeltaMin).toBe(15);
+  });
+});
+
+describe('applyLog affine adaptation', () => {
+  const base = {
+    status: 'completed' as const,
+    source: 'timed' as const,
+    adaptSpeed: 'balanced' as const,
+    prior: 1.8,
+    recurring: null,
+    recentClampedRatios: [],
+    suggestedHonestMin: null,
+  };
+
+  it('moves the fit toward the observed ratio over many logs', () => {
+    let stats = emptyAffineStats();
+    let n = 0;
+    for (let i = 0; i < 30; i++) {
+      const res = applyLog({
+        ...base,
+        estimateMin: 15,
+        actualMin: 18, // ratio 1.2, below the 1.8 prior
+        category: { stats, n, anchor: 1.8, sharpness: 0, reclaimedMinutes: 0 },
+      });
+      stats = res.category.stats;
+      n = res.category.n;
+    }
+    const fit = solveAffine(stats, 1.8);
+    const honestAt15 = affineHonestExact(fit, 15);
+    expect(honestAt15).toBeLessThan(27); // moved below the cold prior (1.8×15=27) toward the observed 1.2× pace
+    expect(honestAt15).toBeGreaterThan(15);
+    expect(fit.b).toBeLessThan(1.55); // pulled down from 1.8 toward 1.2 (ridge prior holds it back)
+    expect(fit.b).toBeGreaterThan(1.15);
+  });
+
+  it('does not train on abandoned logs', () => {
+    const res = applyLog({
+      ...base,
+      status: 'abandoned',
+      estimateMin: 15,
+      actualMin: 60,
+      category: { stats: emptyAffineStats(), n: 0, anchor: 1.8, sharpness: 0, reclaimedMinutes: 0 },
+    });
+    expect(res.counted).toBe(false);
   });
 });
 
