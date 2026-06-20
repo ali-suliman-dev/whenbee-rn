@@ -160,10 +160,11 @@ export function useWhenbeeHub(): WhenbeeHubVM {
   const tier = useMemo<Tier>(() => tierFor(leadSharpness), [leadSharpness]);
   const honeyPct = useMemo<number>(() => Math.round(leadSharpness), [leadSharpness]);
 
-  // Pro-readiness reads fresh store state via get() inside getProReadiness, so the
-  // stable selector reference is the only dep needed — cells already recomputes when
-  // statsByCategory changes and leadSharpness drives honeyPct, keeping the VM coherent.
-  const proReadiness = useMemo(() => getProReadiness(), [getProReadiness]);
+  // Pro-readiness reads via get() inside getProReadiness, but we explicitly include
+  // statsByCategory and focusTick so the memo recomputes whenever calibration data
+  // or focus state changes — ensuring pitchUnlocked flips mid-session as the user logs.
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  const proReadiness = useMemo(() => getProReadiness(), [getProReadiness, statsByCategory, focusTick]);
 
   // Blind spot = lowest-sharpness tracked category that has at least one log.
   const blindSpot = useMemo<BlindSpot | null>(() => {
