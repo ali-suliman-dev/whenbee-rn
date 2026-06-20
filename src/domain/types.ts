@@ -202,3 +202,22 @@ export interface PlanResult {
   verdict: PlanVerdict;
   totalMin: number;
 }
+
+// ── Voice intake ────────────────────────────────────────────────────────────
+
+/** Where a spoken task's structuring came from. */
+export type VoiceStructuringSource = 'appleLLM' | 'rules';
+
+/**
+ * One draft task produced from a voice utterance. Free flow yields exactly one.
+ * The draft carries only a cleaned title + provenance; category + honest estimate
+ * are derived downstream by the field's existing onChangeText cascade (guessCategory
+ * + honest suggestion), so nothing here duplicates the engine.
+ */
+export interface ParsedTaskDraft {
+  /** Cleaned, imperative task title, e.g. "Write email to Frederick". */
+  title: string;
+  /** The raw STT transcript, always kept so the draft stays editable/inspectable. */
+  rawTranscript: string;
+  source: VoiceStructuringSource;
+}

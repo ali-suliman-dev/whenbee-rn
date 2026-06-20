@@ -6,6 +6,7 @@ import { Screen } from '@/src/components/Screen';
 import { AppButton } from '@/src/components/AppButton';
 import { SheetGrabber } from '@/src/components/SheetGrabber';
 import { Toast } from '@/src/components/Toast';
+import { TaskTitleField } from '@/src/components/TaskTitleField';
 import { useTheme } from '@/src/theme/useTheme';
 import { type } from '@/src/theme/typography';
 import { useAddTask } from '@/src/features/add-task/useAddTask';
@@ -26,7 +27,6 @@ export default function AddTask() {
   const toastDismissMs = t.motion.pulse; // let the toast land before the sheet closes
   const a = useAddTask();
   const [toastVisible, setToastVisible] = useState(false);
-  const [titleFocused, setTitleFocused] = useState(false);
   const [addingCategory, setAddingCategory] = useState(false);
   const [newCategory, setNewCategory] = useState('');
   const dismissTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -54,26 +54,12 @@ export default function AddTask() {
   const sub: TextStyle = { ...(type.body as unknown as TextStyle), color: t.colors.inkSoft };
   const fieldLabel: TextStyle = { ...(type.eyebrow as unknown as TextStyle), color: t.colors.inkSoft };
 
-  // Dedicated input text style: fontFamily + size only, NO lineHeight. A lineHeight
-  // on a single-line iOS TextInput clips descenders (g/y/p) at the box bottom — the
-  // platform's natural line metrics leave the descender room.
+  // inputText is kept for the inline new-category TextInput below.
   const inputText: TextStyle = {
     fontFamily: 'Jakarta-Regular',
     fontSize: t.fontSize.base,
     color: t.colors.ink,
   };
-  const inputBox = (focused: boolean): ViewStyle => ({
-    backgroundColor: t.colors.surface,
-    borderWidth: t.borderWidth.thin,
-    borderColor: focused ? t.colors.primary : t.colors.hairline,
-    borderRadius: t.radii.md,
-    borderCurve: 'continuous',
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: t.space[3],
-    paddingHorizontal: t.space[4],
-    minHeight: t.size.control.md,
-  });
 
   // Quiet ✦ hint under the chips when the category was auto-guessed from the title.
   const guessHint: ViewStyle = {
@@ -122,24 +108,14 @@ export default function AddTask() {
 
         <View style={{ gap: t.space[2] }}>
           <Text style={fieldLabel}>TASK</Text>
-          <View style={inputBox(titleFocused)}>
-            <Ionicons
-              name="create-outline"
-              size={t.iconSize.md}
-              color={titleFocused ? t.colors.primary : t.colors.inkSoft}
-            />
-            <TextInput
-              style={[inputText, { flex: 1, paddingVertical: t.space[3] }]}
-              value={a.title}
-              onChangeText={a.setTitle}
-              onFocus={() => setTitleFocused(true)}
-              onBlur={() => setTitleFocused(false)}
-              placeholder="e.g. Reply to that email"
-              placeholderTextColor={t.colors.inkSoft}
-              returnKeyType="done"
-              accessibilityLabel="Task title"
-            />
-          </View>
+          <TaskTitleField
+            variant="boxed"
+            value={a.title}
+            onChangeText={a.setTitle}
+            placeholder="e.g. Reply to that email"
+            returnKeyType="done"
+            accessibilityLabel="Task title"
+          />
         </View>
 
         <View style={{ gap: t.space[2] }}>

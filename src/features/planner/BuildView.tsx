@@ -4,7 +4,6 @@ import {
   Platform,
   Pressable,
   ScrollView,
-  TextInput,
   View,
   type TextStyle,
   type ViewStyle,
@@ -19,6 +18,7 @@ import { useTheme } from '@/src/theme/useTheme';
 import { tokens } from '@/src/theme/tokens';
 import { AppText } from '@/src/components/AppText';
 import { AppButton } from '@/src/components/AppButton';
+import { TaskTitleField } from '@/src/components/TaskTitleField';
 import { formatClock } from '@/src/lib/time';
 import { CategoryChips, usePickerCategories } from '@/src/features/shared/CategoryChips';
 import { guessCategory } from '@/src/features/shared/categoryGuess';
@@ -106,14 +106,13 @@ function InlineComposer({
   });
   const categories = usePickerCategories();
   const learned = useVocabStore((s) => s.map);
-  const titleRef = useRef<TextInput>(null);
   const manualRef = useRef(false);
 
   function handleOpen() {
     manualRef.current = false;
     dispatch({ type: 'open' });
+    // autoFocus on TaskTitleField handles keyboard focus when the composer opens.
     setTimeout(() => {
-      titleRef.current?.focus();
       onOpen?.();
     }, 50);
   }
@@ -184,14 +183,6 @@ function InlineComposer({
     marginTop: t.space[2],
   };
 
-  const inputStyle: TextStyle = {
-    fontSize: t.fontSize.base,
-    color: t.colors.ink,
-    borderBottomWidth: 1,
-    borderBottomColor: t.colors.hairline,
-    paddingVertical: t.space[2],
-  };
-
   const composerActionsStyle: ViewStyle = {
     flexDirection: 'row',
     gap: t.space[2],
@@ -211,17 +202,14 @@ function InlineComposer({
 
   return (
     <View style={composerCardStyle}>
-      <TextInput
-        ref={titleRef}
-        style={inputStyle}
-        placeholder="Task name"
-        placeholderTextColor={t.colors.inkFaint}
+      <TaskTitleField
+        variant="underline"
         value={state.title}
         onChangeText={handleTitleChange}
-        onSubmitEditing={handleConfirm}
+        placeholder="Task name"
+        autoFocus
         returnKeyType="done"
-        autoCorrect
-        autoCapitalize="sentences"
+        onSubmitEditing={handleConfirm}
       />
       <CategoryChips
         categories={categories}

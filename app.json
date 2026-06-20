@@ -63,7 +63,14 @@
         }
       ],
       "@bacons/apple-targets",
-      "expo-localization"
+      "expo-localization",
+      [
+        "expo-speech-recognition",
+        {
+          "microphonePermission": "Whenbee uses the mic so you can speak a task instead of typing.",
+          "speechRecognitionPermission": "Speech is transcribed on your device — it never leaves your phone."
+        }
+      ]
     ],
     "experiments": {
       "typedRoutes": true,
