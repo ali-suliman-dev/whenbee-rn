@@ -38,4 +38,18 @@ describe('honeyMaturity', () => {
     const honey = honeyMaturity({ n: 25, accuracy: 100, prevHoney: 0, sealEligible: true });
     expect(honey).toBeGreaterThanOrEqual(HONEY_SEAL_GATE);
   });
+  it('caps at exactly 92 (HONEY_SEAL_GATE - 1) when not seal-eligible, even at large n + perfect accuracy', () => {
+    // With sealEligible:false the cap is HONEY_SEAL_GATE-1 = 92. A large-n perfect
+    // input saturates the ramp so the result must land exactly on the cap.
+    const honey = honeyMaturity({ n: 100, accuracy: 100, prevHoney: 0, sealEligible: false });
+    expect(honey).toBe(92);
+  });
+  it('sealEligible:true but low n keeps honey below the gate (ramp not yet crossed)', () => {
+    // n=6, accuracy=100, sealEligible=true → raw ≈ 80.75 (floor+trust blend not yet
+    // strong enough to push past 93). Seal eligibility unlocks the ceiling but does
+    // not teleport honey there instantly.
+    const honey = honeyMaturity({ n: 6, accuracy: 100, prevHoney: 0, sealEligible: true });
+    expect(honey).toBe(80.75);
+    expect(honey).toBeLessThan(HONEY_SEAL_GATE);
+  });
 });
