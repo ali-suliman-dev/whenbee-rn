@@ -1,6 +1,6 @@
 # Reclaim — honesty evaluation (should the "banked minutes" framing stay?)
 
-**Date:** 2026-06-20 · **Status:** open decision (raised by the founder) · **Trigger:** reviewing the persistent-presence widget surfaced reclaim as an ambient metric and prompted the question — is "reclaim" honest, and do we need it?
+**Date:** 2026-06-20 · **Status:** DECIDED — **option C (remove reclaim)**, recorded 2026-06-20 · **Trigger:** reviewing the persistent-presence widget surfaced reclaim as an ambient metric and prompted the question — is "reclaim" honest, and do we need it? · **Removal plan:** `docs/product/specs/12-remove-reclaim.md`
 
 ---
 
@@ -40,18 +40,14 @@ So reclaim is **already being walked back** (hub, then widget). The question is 
 
 **C. Remove reclaim entirely.** Cut the Reward chip + the Today proof line; retire the engine/DB bank + analytics (or leave the DB columns dormant). Cost: the Reward modal loses its tangible payoff beat — **needs a replacement** so the reward screen doesn't go hollow.
 
-## Recommendation
+## Decision (recorded 2026-06-20) — **C: remove reclaim**
 
-**Lean C (remove the "banked minutes" framing), but design the Reward payoff replacement first.** The metric is off-thesis and the founder reads it as misleading; honey/sharpness (calibration maturity) already provides a legitimate, honest progress number. Before tearing out the Reward chip, brainstorm what the post-log payoff beat becomes — candidates: the honey/sharpness tick, the honest-vs-actual delta itself ("you guessed 15, it took 32 — now I know"), or the calibration-confidence narrowing. The honest reveal *is* the reward; reclaim was a synthetic one layered on top.
+**Chosen: C.** Remove the reclaim metric from the product.
 
-If full removal is too aggressive for retention, **B is the honest middle** — same underlying signal, truthful language, no "banked time."
+- **Not A** (keep): a dishonest number in an honesty app is the worst option.
+- **Not B** (reframe): the honest reframe of reclaim is "estimation error avoided" — an abstract, cumulative number nobody understands. Reframing a vanity metric into a truthful-but-incomprehensible one is a lateral move, not a fix.
+- **C** wins because the honest reward **already exists** and reclaim was diluting it: (1) the **honest-vs-actual reveal** ("you guessed 15, it took 32 — now I know your 2.1×"), and (2) **honey / sharpness** (calibration maturity, monotonic). Reclaim was a synthetic dopamine layer bolted on top. Removing it leaves **no hole** — it gives those two honest beats the room reclaim was stealing. So C needs **no new invented metric**, just the removal + a light Reward-modal motion pass so the screen doesn't feel thin without the count-up beat.
 
-Either way, **do not keep A** — a dishonest number in an honesty app is the worst option.
+Execution: see `docs/product/specs/12-remove-reclaim.md`.
 
-## Scope / next steps (separate from the widget PR)
-
-1. Decide A / B / C (founder).
-2. If B or C: `superpowers:brainstorming` on the Reward-modal payoff replacement (honor invariants: no guilt, honey monotonic). Then a spec, then an implementation plan.
-3. Implementation touches: `ReclaimDeposit.tsx`, `reward.tsx`, `TodayEmptyState.tsx`, `useReward.ts`, possibly the engine `reclaim.ts` + DB bank + `analytics.ts`. The DB columns can stay dormant (monotonic, additive) even if the UI is removed, to avoid a migration.
-
-> The persistent-presence widget already removed its reclaim surface, so it is unaffected by whichever option is chosen here.
+> The persistent-presence widget already removed its reclaim surface, so it is unaffected by this decision.
