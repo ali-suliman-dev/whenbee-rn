@@ -27,7 +27,7 @@ async function seed() {
       reclaimDividendMin: 0,
     });
   }
-  useCalibrationStore.setState({ logs: 0, statsByCategory: {} });
+  useCalibrationStore.setState({ statsByCategory: {} });
   useCalibrationStore.getState().setDatabase(db);
   return db;
 }
@@ -91,7 +91,7 @@ it('navigates to the timer route after startQuickTask', async () => {
 
 it('returns empty chips when no frequent tasks exist', async () => {
   const db = createMemoryDatabase();
-  useCalibrationStore.setState({ logs: 0, statsByCategory: {} });
+  useCalibrationStore.setState({ statsByCategory: {} });
   useCalibrationStore.getState().setDatabase(db);
   const { result } = renderHook(() => useQuickTasks());
   await waitFor(() => expect(result.current.chips).toBeDefined());

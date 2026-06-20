@@ -30,7 +30,7 @@ export function useQuickTasks(): {
 
     void (async () => {
       const repo = makeTaskEventsRepo(db);
-      const frequent: FrequentTask[] = await repo.listFrequentTasks(5);
+      const frequent: FrequentTask[] = await repo.listFrequentTasks(4);
 
       const mapped: QuickTaskChip[] = frequent.map((t) => {
         const cached = statsByCategory[t.category];
@@ -47,7 +47,7 @@ export function useQuickTasks(): {
         });
 
         return {
-          id: `${t.category}\x00${t.label}`,
+          id: `${t.category}|${t.label}`,
           label: t.label,
           category: t.category,
           honestMin: honestMinutes,
