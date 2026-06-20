@@ -16,7 +16,6 @@ import { type } from '@/src/theme/typography';
 import { useReward } from '@/src/features/reward/useReward';
 import { RewardBee } from '@/src/features/reward/RewardBee';
 import { HoneyBar } from '@/src/features/reward/HoneyBar';
-import { ReclaimDeposit } from '@/src/features/reward/ReclaimDeposit';
 import { ReasonChips } from '@/src/features/reward/ReasonChips';
 import { EnergyChips } from '@/src/features/reward/EnergyChips';
 
@@ -25,12 +24,12 @@ import { EnergyChips } from '@/src/features/reward/EnergyChips';
 // top→bottom: feel it (bee + headline) → see the payoff (hero number + honey) →
 // optionally tag a reason → one clear way out.
 //
-// Four priority zones in a ScrollView (level-up + reclaim + chips can exceed the
-// sheet), CTA pinned to the bottom with the safe-area inset. THE one action is
-// the indigo "See my Reclaim"; "Back to today" is a quiet text exit beneath it.
+// Three priority zones in a ScrollView (level-up + chips can exceed the sheet),
+// CTA pinned to the bottom with the safe-area inset. THE one action navigates
+// to the Whenbee hub; "Back to today" is a quiet text exit beneath it.
 //
-// Motion: a staggered top→bottom reveal (number rises in → honey fills → reclaim
-// deposits → chips fade in last). Reduce-motion renders every final state still.
+// Motion: a staggered top→bottom reveal (number rises in → honey fills as a
+// complete unit → chips fade in last). Reduce-motion renders every final state still.
 // ──────────────────────────────────────────────────────────────────────────────
 
 export default function Reward() {
@@ -137,7 +136,7 @@ export default function Reward() {
     ...(type.micro as unknown as TextStyle),
     color: t.colors.inkSoft,
   };
-  // The payoff card groups honey + multiplier + reclaim into one unit. Borders
+  // The payoff card groups honey + multiplier into one unit. Borders
   // are 0 globally, so the grouping reads off the white fill on the lavender bg.
   const payoffCard: ViewStyle = {
     backgroundColor: t.colors.surfaceRaised,
@@ -216,10 +215,9 @@ export default function Reward() {
           </View>
         </Animated.View>
 
-        {/* Zone 3 — payoff card (honey + multiplier + reclaim as one unit).
-            Collapsed to three rows: header (HONEY · multiplier + %), the honey
-            bar, and a single reclaim line. The two prose sublines folded into
-            those rows so the card reads at a glance and the tail stays in view. */}
+        {/* Zone 3 — payoff card (honey + multiplier as one complete unit).
+            Two rows: header (HONEY · multiplier + %), the honey bar.
+            The payoff lands as a single beat — no dangling delay. */}
         <View style={payoffCard}>
           <View style={honeyHeaderRow}>
             <View style={honeyLabelRow}>
@@ -232,17 +230,6 @@ export default function Reward() {
             <HonestNumber value={String(r.honeyPct)} unit="%" size="inline" tone="amberText" />
           </View>
           <HoneyBar pct={r.honeyPct} />
-
-          {/* Tangible payoff: the minutes this log just banked. Only when >= 1m —
-              never a "+0m". Staggered to land after the honey fill. */}
-          {r.reclaimDeltaMin >= 1 ? (
-            <ReclaimDeposit
-              reclaimDeltaMin={r.reclaimDeltaMin}
-              reclaimFrom={r.reclaimFrom}
-              reclaimTo={r.reclaimTo}
-              delayMs={t.motion.reveal}
-            />
-          ) : null}
         </View>
 
         {/* Zone 4 — optional tags card: reason + energy grouped in one surface so
@@ -264,7 +251,7 @@ export default function Reward() {
             action + a quiet text exit, with a generous bottom margin. */}
         <View style={ctaBlock}>
           <Text style={ritualText}>{r.ritualLine}</Text>
-          <AppButton label="See my Reclaim" variant="indigo" fullWidth onPress={r.onSeeWhenbee} />
+          <AppButton label="See your bee" variant="indigo" fullWidth onPress={r.onSeeWhenbee} />
           <Pressable
             accessibilityRole="button"
             accessibilityLabel="Back to today"
