@@ -98,7 +98,12 @@ export interface AppEventProps {
 
   // ── Monetization ─────────────────────────────────────────────────────────────
   paywall_view: {
-    trigger: 'make_day_honest' | 'settings_upgrade' | 'steals_your_time' | 'honest_range';
+    trigger:
+      | 'make_day_honest'
+      | 'settings_upgrade'
+      | 'steals_your_time'
+      | 'honest_range'
+      | 'persistent_presence';
     readiness?: 'pre' | 'honest';
   };
   founder_reserve: { result: 'reserved' };
