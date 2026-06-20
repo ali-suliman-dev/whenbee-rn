@@ -48,13 +48,14 @@ describe('Today screen', () => {
     expect(await screen.findByText('Time your first task')).toBeOnTheScreen();
   });
 
-  it('shows the daily empty state + lifetime reclaim for a returning user', async () => {
+  it('shows the daily empty state for a returning user', async () => {
     useCalibrationStore.setState({
       loadReclaimSummary: async () => summary({ lifetimeMin: 860, lifetimeNectar: 12, stage: 2 }),
     });
     render(<Today />);
     expect(await screen.findByText("What's on today?")).toBeOnTheScreen();
-    expect(screen.getByText('14h 20m reclaimed so far')).toBeOnTheScreen();
+    // No reclaim proof line — it was removed from the empty state.
+    expect(screen.queryByText(/reclaimed so far/)).toBeNull();
   });
 
   it('renders the focus card plan total + guess→plan gap for a focus task', () => {

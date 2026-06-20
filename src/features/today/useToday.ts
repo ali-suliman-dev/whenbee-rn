@@ -46,8 +46,6 @@ interface UseTodayResult {
   companionStage: CompanionStage;
   /** The companion's procedural seed — drives the HUD bee's stripe warmth. */
   companionSeed: number;
-  /** Lifetime minutes reclaimed — the daily-empty proof line (hidden when < 1). */
-  reclaimLifetimeMin: number;
   /** True once the user has ever logged — picks first-run vs daily empty copy. */
   hasEverLogged: boolean;
   /** True when the focus task's honest number is based on the population prior (cold, n < 3). */
@@ -75,7 +73,6 @@ export function useToday(): UseTodayResult {
 
   const [companionStage, setCompanionStage] = useState<CompanionStage>(1);
   const [companionSeed, setCompanionSeed] = useState(1);
-  const [reclaimLifetimeMin, setReclaimLifetimeMin] = useState(0);
   const [lifetimeNectar, setLifetimeNectar] = useState(0);
 
   // Warm the per-category stats cache on mount (instant once hydrated).
@@ -83,8 +80,7 @@ export function useToday(): UseTodayResult {
     void hydrate();
   }, [hydrate]);
 
-  // Companion presence + lifetime reclaim drive the HUD bee and the daily-empty
-  // proof line. Re-read on focus so a fresh deposit / tier-up shows on return.
+  // Companion presence drives the HUD bee. Re-read on focus so a tier-up shows on return.
   useFocusEffect(
     useCallback(() => {
       let active = true;
@@ -92,7 +88,6 @@ export function useToday(): UseTodayResult {
         if (!active) return;
         setCompanionStage(s.companion.stage);
         setCompanionSeed(s.companion.seed);
-        setReclaimLifetimeMin(s.lifetimeMin);
         setLifetimeNectar(s.companion.lifetimeNectar);
       });
       return () => {
@@ -182,7 +177,6 @@ export function useToday(): UseTodayResult {
     categoryName,
     companionStage,
     companionSeed,
-    reclaimLifetimeMin,
     hasEverLogged: lifetimeNectar > 0,
     focusPreEstimate: summary?.basis === 'prior',
   };
