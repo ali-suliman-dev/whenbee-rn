@@ -11,14 +11,7 @@
     "ios": {
       "bundleIdentifier": "com.whenbee.app",
       "supportsTablet": true,
-      "infoPlist": {
-        "NSSupportsLiveActivities": true
-      },
-      "entitlements": {
-        "com.apple.security.application-groups": [
-          "group.com.whenbee.app"
-        ]
-      }
+      "appleTeamId": "KXJDWZ2PKA"
     },
     "android": {
       "package": "com.whenbee.app",
@@ -62,13 +55,20 @@
           "project": "whenbee"
         }
       ],
-      "@bacons/apple-targets",
       "expo-localization",
       [
         "expo-speech-recognition",
         {
           "microphonePermission": "Whenbee uses the mic so you can speak a task instead of typing.",
           "speechRecognitionPermission": "Speech is transcribed on your device — it never leaves your phone."
+        }
+      ],
+      [
+        "expo-build-properties",
+        {
+          "ios": {
+            "deploymentTarget": "16.4"
+          }
         }
       ]
     ],
