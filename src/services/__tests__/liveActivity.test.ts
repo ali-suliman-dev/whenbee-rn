@@ -32,7 +32,6 @@ const VALID_SNAPSHOT: WidgetSnapshot = {
   category: 'c',
   honestFinishClock: '7:10',
   startDeepLink: 'whenbee://timer',
-  reclaimTodayMin: 0,
   updatedAtEpoch: 1000,
   honestFinishEpoch: 2000,
   isPro: true,

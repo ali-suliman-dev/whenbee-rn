@@ -39,7 +39,6 @@ struct NextTaskWidgetView: View {
     @Environment(\.widgetFamily) var family
 
     private var hasTask: Bool { !entry.snapshot.nextTaskLabel.isEmpty }
-    private var reclaimToday: Int { entry.snapshot.reclaimTodayMin ?? 0 }
     private var isPro: Bool { entry.snapshot.isPro ?? false }
 
     // MARK: – Stale-aware finish line
@@ -108,21 +107,6 @@ struct NextTaskWidgetView: View {
                     .background(Color("WBPrimary"), in: Capsule())
             }
             .padding(.top, 2)
-            // Pro reclaim line below the Start button (medium only, guard in caller)
-            if isPro && reclaimToday > 0 {
-                Text("+\(reclaimToday)m reclaimed today")
-                    .font(.caption)
-                    .foregroundStyle(Color("WBInkSoft"))
-            }
-        } else if reclaimToday > 0 && isPro {
-            // Evening "got ahead" state — gated to Pro (free users see "Nothing queued").
-            Text("You got ahead of \(reclaimToday)m today")
-                .font(.headline)
-                .foregroundStyle(Color("WBInk"))
-                .lineLimit(2)
-            Text("Honest time, learned on-device")
-                .font(.caption)
-                .foregroundStyle(Color("WBInkSoft"))
         } else {
             // No-task state — quiet, never guilt-y (product invariant).
             Text("Nothing queued")

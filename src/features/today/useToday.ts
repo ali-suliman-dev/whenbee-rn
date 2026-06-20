@@ -170,7 +170,6 @@ export function useToday(): UseTodayResult {
       category: categoryName(focus.category),
       honestFinishClock: formatClock(projectedFinish(now, honestMin)),
       startDeepLink: `whenbee://timer?taskId=${focus.id}`,
-      reclaimTodayMin: 0, // out of scope: no per-day reclaim source yet (see plan)
       updatedAtEpoch: epoch,
       honestFinishEpoch,
       // Read non-reactively: a widget write must not re-render Today on entitlement change.

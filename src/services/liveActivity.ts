@@ -42,9 +42,6 @@ export interface WidgetSnapshot {
   honestFinishClock: string;
   /** Deep link the widget's one-tap Start button opens, e.g. "whenbee://timer?taskId=1". */
   startDeepLink: string;
-  /** Minutes reclaimed today (0 = hide). When there's no next task but this is >0,
-   *  the widget shows a calm evening "you got ahead of Nm today" state. */
-  reclaimTodayMin: number;
   /** Unix seconds when this was written (lets the widget detect a stale snapshot). */
   updatedAtEpoch: number;
   /** Unix seconds of the honest finish. Lets the widget compute the ring arc
