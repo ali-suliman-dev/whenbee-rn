@@ -61,6 +61,13 @@ export interface TimerParams {
    * passed from Today or Add-Task.
    */
   suggestedHonestMin?: number;
+  /**
+   * Set to true when the screen was opened via the arc Timer button after calling
+   * quickStart(). The store already has an isRunning quick-start session; the
+   * mount effect must NOT call start() (which would reset isQuickStart to false
+   * and overwrite the bare session with placeholder params).
+   */
+  isQuickNav?: boolean;
 }
 
 export interface UseTimerResult {
@@ -100,7 +107,7 @@ export interface UseTimerResult {
 }
 
 export function useTimer(params: TimerParams): UseTimerResult {
-  const { taskId, label, category, estimateMin, guessMin, suggestedHonestMin = estimateMin } =
+  const { taskId, label, category, estimateMin, guessMin, suggestedHonestMin = estimateMin, isQuickNav = false } =
     params;
   const reducedMotion = useReducedMotion();
 
@@ -131,7 +138,14 @@ export function useTimer(params: TimerParams): UseTimerResult {
   if (startedAtRef.current === null) {
     const s = useTimerStore.getState();
     const sameTask = taskId ? s.taskId === taskId : s.taskLabel === label;
-    if (s.isRunning && sameTask && s.startedAt !== null) {
+    // Quick-nav: the arc Timer button called quickStart() then navigated here
+    // immediately. The store has a running isQuickStart session but sameTask would
+    // be false (store taskLabel='' vs label='Focus session'). Detect this case
+    // explicitly so we ATTACH rather than calling start() (which would set
+    // isQuickStart=false and overwrite the session with placeholder params).
+    const isAttachableQuickStart = isQuickNav && s.isRunning && s.isQuickStart;
+    const canAttach = s.startedAt !== null && (sameTask || isAttachableQuickStart);
+    if (s.isRunning && canAttach && s.startedAt !== null) {
       startedAtRef.current = s.startedAt; // attach to the running session
     } else {
       startedAtRef.current = Date.now(); // fresh session — store write deferred below

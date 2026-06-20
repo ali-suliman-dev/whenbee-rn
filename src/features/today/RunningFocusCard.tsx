@@ -51,6 +51,7 @@ export function RunningFocusCard({ categoryName }: RunningFocusCardProps) {
   const suggestedHonestMin = useTimerStore((s) => s.suggestedHonestMin);
   const estimateMin = useTimerStore((s) => s.estimateMin);
   const taskId = useTimerStore((s) => s.taskId);
+  const isQuickStart = useTimerStore((s) => s.isQuickStart);
 
   const [elapsedSec, setElapsedSec] = useState(0);
 
@@ -99,11 +100,13 @@ export function RunningFocusCard({ categoryName }: RunningFocusCardProps) {
       pathname: '/(modals)/timer',
       params: {
         ...(taskId ? { taskId } : null),
-        label: taskLabel ?? 'Focus session',
+        label: taskLabel || 'Timing now',
         category: category ?? 'getting_ready',
         estimateMin: String(estimateMin),
         guessMin: String(guessMin),
         suggestedHonestMin: String(honestMin),
+        // Preserve quick-start flag so useTimer attaches rather than restarting.
+        ...(isQuickStart ? { quick: '1' } : null),
       },
     });
   }
@@ -165,7 +168,7 @@ export function RunningFocusCard({ categoryName }: RunningFocusCardProps) {
               <Text style={eyebrow}>NOW · {categoryLabel.toUpperCase()}</Text>
             </View>
             <Text style={title} numberOfLines={1}>
-              {taskLabel ?? 'Focus session'}
+              {taskLabel || 'Timing now'}
             </Text>
           </View>
           <View style={rightCol}>

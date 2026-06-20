@@ -100,7 +100,7 @@ export function WhenbeeTabBar({ state, descriptors, navigation }: BottomTabBarPr
   function handleTimer() {
     closeArc();
     useTimerStore.getState().quickStart();
-    router.push('/(modals)/timer');
+    router.push({ pathname: '/(modals)/timer', params: { quick: '1' } });
   }
   function handleType() {
     closeArc();

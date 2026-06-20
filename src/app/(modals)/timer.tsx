@@ -62,6 +62,7 @@ export default function Timer() {
     estimateMin?: string;
     guessMin?: string;
     suggestedHonestMin?: string;
+    quick?: string;
   }>();
 
   const estimateMin = num(params.estimateMin, 15);
@@ -74,7 +75,10 @@ export default function Timer() {
   const category = str(params.category, 'getting_ready');
   const taskId = Array.isArray(params.taskId) ? params.taskId[0] : params.taskId;
 
-  const timer = useTimer({ taskId, label, category, estimateMin, guessMin, suggestedHonestMin });
+  // quick='1' signals that quickStart() was already called before navigation;
+  // the store has an isRunning quick-start session that should not be overwritten.
+  const isQuickNav = params.quick === '1';
+  const timer = useTimer({ taskId, label, category, estimateMin, guessMin, suggestedHonestMin, isQuickNav });
 
   // ── Quick-start capture sheet state ─────────────────────────────────────
   // Shown after the user taps Stop on a quick-start session (no category yet).
