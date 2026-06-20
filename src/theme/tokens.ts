@@ -385,6 +385,13 @@ export const tokens = {
   // stub; `comb` = the Reclaim-hero honeycomb motif size.
   upsell: { stub: 88, edge: 6, notch: 14, emblem: 40, comb: 60 },
 
+  // Quick-task chips row (Today screen). All geometry in one place so the row
+  // is tunable without touching the component. `disc` = the play-button circle
+  // diameter; `chipPadH`/`chipPadV` = chip horizontal/vertical inner padding;
+  // `chipGap` = gap between the icon disc and the text block; `rowGap` = gap
+  // between chips in the horizontal row.
+  quick: { disc: 28, chipPadH: 12, chipPadV: 10, chipGap: 8, rowGap: 8 },
+
   // ── brand illustration palette ──────────────────────────────────────────────
   // Fixed art colors for the Whenbee mascot (BeeMascot). Brand art does NOT recolor
   // by mode — a mascot reads as the SAME bee in light and dark, the way a logo does.

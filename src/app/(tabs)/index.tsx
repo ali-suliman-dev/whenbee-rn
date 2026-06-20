@@ -15,6 +15,7 @@ import { TodayHud } from '@/src/components/honeycomb/TodayHud';
 import type { HoneycombCell } from '@/src/components/honeycomb/Honeycomb';
 import { TodayEmptyState } from '@/src/features/today/TodayEmptyState';
 import { RetroLogChip } from '@/src/features/today/RetroLogChip';
+import { QuickTaskChips } from '@/src/components/quick/QuickTaskChips';
 import { SwitchTaskSheet } from '@/src/features/today/SwitchTaskSheet';
 import { useCategoriesStore } from '@/src/stores/categoriesStore';
 import { useCalibrationStore } from '@/src/stores/calibrationStore';
@@ -193,6 +194,11 @@ export default function Today() {
               onLogRitual={() => router.push('/(modals)/retro')}
             />
           </View>
+
+          {/* Quick-task chips — repeating tasks the user has run before. Only
+              shown when history exists (chips.length > 0 inside the component);
+              slots between the honey HUD and whatever occupies the focus slot. */}
+          <QuickTaskChips />
 
           {/* A live session takes the focus slot itself (the same footprint as the
               Next card, so nothing jumps), carrying its guess→plan context + the
