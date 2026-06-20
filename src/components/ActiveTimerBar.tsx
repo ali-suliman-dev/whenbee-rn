@@ -32,6 +32,7 @@ export function ActiveTimerBar() {
   const guessMin = useTimerStore((s) => s.guessMin);
   const taskId = useTimerStore((s) => s.taskId);
   const suggestedHonestMin = useTimerStore((s) => s.suggestedHonestMin);
+  const isQuickStart = useTimerStore((s) => s.isQuickStart);
 
   const [elapsedSec, setElapsedSec] = useState(0);
 
@@ -78,11 +79,13 @@ export function ActiveTimerBar() {
       pathname: '/(modals)/timer',
       params: {
         ...(taskId ? { taskId } : null),
-        label: taskLabel ?? 'Focus session',
+        label: taskLabel || 'Timing now',
         category: category ?? 'getting_ready',
         estimateMin: String(estimateMin),
         guessMin: String(guessMin),
         suggestedHonestMin: String(suggestedHonestMin),
+        // Preserve quick-start flag so useTimer attaches rather than restarting.
+        ...(isQuickStart ? { quick: '1' } : null),
       },
     });
   }
@@ -96,7 +99,7 @@ export function ActiveTimerBar() {
     >
       <View style={dot} />
       <AppText style={labelStyle} numberOfLines={1}>
-        {taskLabel ?? 'Timing now'}
+        {taskLabel || 'Timing now'}
       </AppText>
       <AppText style={elapsedStyle}>{elapsedLabel(elapsedSec)}</AppText>
       <Ionicons name="chevron-forward" size={t.iconSize.sm} color={t.colors.inkSoft} />

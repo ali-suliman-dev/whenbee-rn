@@ -1,4 +1,4 @@
-import { useCallback } from 'react';
+import { useCallback, useState } from 'react';
 import { View, Pressable, Alert, type ViewStyle, type TextStyle } from 'react-native';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -22,6 +22,10 @@ import { useTimer } from '@/src/features/timer/useTimer';
 import { TimerRing } from '@/src/features/timer/TimerRing';
 import { PaceLabel } from '@/src/features/timer/PaceLabel';
 import { FinishTime } from '@/src/features/timer/FinishTime';
+import { PostStopCaptureSheet } from '@/src/components/quick/PostStopCaptureSheet';
+import { guessCategory } from '@/src/features/shared/categoryGuess';
+import { usePickerCategories } from '@/src/features/shared/CategoryChips';
+import { useCalibrationStore } from '@/src/stores/calibrationStore';
 
 // ──────────────────────────────────────────────────────────────────────────────
 // Live Timer (Screen 3) — calm focus ring; measures actual vs guess, reframes
@@ -60,6 +64,7 @@ export default function Timer() {
     estimateMin?: string;
     guessMin?: string;
     suggestedHonestMin?: string;
+    quick?: string;
   }>();
 
   const estimateMin = num(params.estimateMin, 15);
@@ -72,7 +77,66 @@ export default function Timer() {
   const category = str(params.category, 'getting_ready');
   const taskId = Array.isArray(params.taskId) ? params.taskId[0] : params.taskId;
 
-  const timer = useTimer({ taskId, label, category, estimateMin, guessMin, suggestedHonestMin });
+  // quick='1' signals that quickStart() was already called before navigation;
+  // the store has an isRunning quick-start session that should not be overwritten.
+  const isQuickNav = params.quick === '1';
+  const timer = useTimer({ taskId, label, category, estimateMin, guessMin, suggestedHonestMin, isQuickNav });
+
+  // ── Quick-start capture sheet state ─────────────────────────────────────
+  // Shown after the user taps Stop on a quick-start session (no category yet).
+  // The sheet lets them name + categorise before the log is written.
+  const [showCaptureSheet, setShowCaptureSheet] = useState(false);
+  const [capturedLabel, setCapturedLabel] = useState('');
+  const categories = usePickerCategories();
+  const stats = useCalibrationStore((s) => s.statsByCategory);
+
+  // Pre-select most-frequent category (by log count from calibration stats).
+  // Wrapped in useCallback so handleStopPress can list it in deps without a
+  // stale-closure risk (stats changes → new reference → handleStopPress refreshes).
+  const pickDefaultCategory = useCallback((): string | null => {
+    let bestId: string | null = null;
+    let bestN = 0;
+    for (const [id, stat] of Object.entries(stats)) {
+      if (stat.n > bestN) {
+        bestN = stat.n;
+        bestId = id;
+      }
+    }
+    return bestId;
+  }, [stats]);
+
+  const [capturedCategory, setCapturedCategory] = useState<string | null>(null);
+
+  const handleStopPress = useCallback(() => {
+    if (timer.isQuickStart) {
+      // Freeze the clock immediately so actualMin is anchored to now.
+      timer.onFreezeForCapture();
+      // Seed category from the label if typed; else most-frequent.
+      const availableIds = categories.map((c) => c.id);
+      const guessed = capturedLabel.trim()
+        ? guessCategory(capturedLabel, { availableIds })
+        : null;
+      setCapturedCategory(guessed ?? pickDefaultCategory());
+      setShowCaptureSheet(true);
+    } else {
+      void timer.onStopAndLog();
+    }
+  }, [timer, capturedLabel, categories, pickDefaultCategory]);
+
+  const handleCaptureSave = useCallback(async () => {
+    // Pass label + category directly as overrides — the store is already cleared by
+    // onFreezeForCapture at this point; overrides bypass the cleared state entirely.
+    const finalLabel = capturedLabel.trim() || 'Focus session';
+    const finalCategory = capturedCategory ?? categories[0]?.id ?? 'admin';
+    setShowCaptureSheet(false);
+    await timer.onStopAndLog(finalLabel, finalCategory);
+  }, [capturedLabel, capturedCategory, categories, timer]);
+
+  const handleCaptureSkip = useCallback(async () => {
+    setShowCaptureSheet(false);
+    await timer.onAbandon();
+  }, [timer]);
+  // ──────────────────────────────────────────────────────────────────────────
 
   // Pulsing indigo live dot (static under reduced motion).
   const pulse = useSharedValue(reducedMotion ? 1 : 0.4);
@@ -252,13 +316,26 @@ export default function Timer() {
                 variant="indigo"
                 size="md"
                 fullWidth
-                onPress={() => void timer.onStopAndLog()}
+                onPress={handleStopPress}
                 icon={<Ionicons name="stop" size={t.iconSize.sm} color={t.colors.onIndigo} />}
               />
             </View>
           </View>
         </View>
       </View>
+        {/* Post-stop capture sheet (quick-start sessions only).
+            Mounted/unmounted conditionally — entering-only animation avoids
+            Fabric SIGABRT on exiting prop with conditional unmount. */}
+        {showCaptureSheet ? (
+          <PostStopCaptureSheet
+            label={capturedLabel}
+            onLabelChange={setCapturedLabel}
+            category={capturedCategory}
+            onCategoryChange={setCapturedCategory}
+            onSave={() => void handleCaptureSave()}
+            onSkip={() => void handleCaptureSkip()}
+          />
+        ) : null}
     </Screen>
   );
 }

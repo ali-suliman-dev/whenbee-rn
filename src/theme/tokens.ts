@@ -31,7 +31,10 @@ export const tokens = {
   // so the centre highlight reads as a pill (not a circle) and fits "1h 35m".
   // `wheelRow` = inline wheel row height (Duration + FinishTime) — tighter than
   // control.sm so the faded neighbour numbers sit close to the selected pill.
-  size: { control: { xs: 32, sm: 36, md: 44, lg: 52 }, coin: 40, wheelCol: 72, wheelRow: 32, shareCard: 340, timelineCol: 110, planCardMin: 70, gripW: 14 },
+  // `hitSlop` = extra tap area added via the Pressable hitSlop prop so that small
+  // touch targets (secondary buttons, skip links) comfortably meet the 44pt HIG
+  // floor without visually enlarging the element.
+  size: { control: { xs: 32, sm: 36, md: 44, lg: 52 }, coin: 40, wheelCol: 72, wheelRow: 32, shareCard: 340, timelineCol: 110, planCardMin: 70, gripW: 14, hitSlop: 8 },
 
   // Icon sizing scale — replaces inline 12/16/18/20/22/24/30 across the app.
   iconSize: { xs: 12, sm: 16, md: 20, lg: 24, xl: 32 },
@@ -384,6 +387,30 @@ export const tokens = {
   // ticket perforation notch diameter; `emblem` = the honeycomb glyph size in the
   // stub; `comb` = the Reclaim-hero honeycomb motif size.
   upsell: { stub: 88, edge: 6, notch: 14, emblem: 40, comb: 60 },
+
+  // Quick-task chips row (Today screen). All geometry in one place so the row
+  // is tunable without touching the component. `disc` = the play-button circle
+  // diameter; `chipPadH`/`chipPadV` = chip horizontal/vertical inner padding;
+  // `chipGap` = gap between the icon disc and the text block; `rowGap` = gap
+  // between chips in the horizontal row.
+  // `arc` = the quick-action arc overlay spawned by the tab-bar + button.
+  //   bubbleSize   = diameter of each circular bubble (flat disc)
+  //   centerSize   = diameter of the center (Timer) bubble — slightly larger, primary-fill
+  //   fanRadius    = arc radius: how far each bubble sits from the + button center
+  //   verticalOffset = extra upward shift of the arc center above the + button
+  //   iconSize     = Ionicons glyph size inside each bubble
+  quick: {
+    disc: 28, chipPadH: 12, chipPadV: 10, chipGap: 8, rowGap: 8,
+    arc: {
+      bubbleSize: 52,
+      centerSize: 60,
+      fanRadius: 92,
+      verticalOffset: 16,
+      iconSize: 22,
+      // Side bubbles fan out ±spreadDeg from 270° (straight up). Wider = taller crown on Timer.
+      spreadDeg: 52,
+    },
+  },
 
   // ── brand illustration palette ──────────────────────────────────────────────
   // Fixed art colors for the Whenbee mascot (BeeMascot). Brand art does NOT recolor

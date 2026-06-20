@@ -61,6 +61,13 @@ export interface TimerParams {
    * passed from Today or Add-Task.
    */
   suggestedHonestMin?: number;
+  /**
+   * Set to true when the screen was opened via the arc Timer button after calling
+   * quickStart(). The store already has an isRunning quick-start session; the
+   * mount effect must NOT call start() (which would reset isQuickStart to false
+   * and overwrite the bare session with placeholder params).
+   */
+  isQuickNav?: boolean;
 }
 
 export interface UseTimerResult {
@@ -77,18 +84,37 @@ export interface UseTimerResult {
   label: string;
   guessMin: number;
   reducedMotion: boolean;
-  onStopAndLog: () => Promise<void>;
+  /** True when this session was started without a category (quick-start mode). */
+  isQuickStart: boolean;
+  /**
+   * Freeze the clock (stop + record actualMin) WITHOUT logging a calibration
+   * event. Used by the quick-start capture sheet: call this on Stop tap so the
+   * elapsed time is locked in; the sheet then calls onStopAndLog or onAbandon
+   * once the user chooses Save / Skip.
+   *
+   * Returns { actualMin } so the capture sheet can pass it through if needed.
+   * Only meaningful for quick-start sessions; the normal Stop button never calls it.
+   */
+  onFreezeForCapture: () => { actualMin: number };
+  /**
+   * Stop the timer and write a calibration log. For the quick-start capture-sheet
+   * Save path, pass the user-chosen labelOverride and categoryOverride — the store
+   * was already cleared by onFreezeForCapture so reading it would return the
+   * quick-start defaults. The normal timer Stop path calls this with no args.
+   */
+  onStopAndLog: (labelOverride?: string, categoryOverride?: string) => Promise<void>;
   onAbandon: () => Promise<void>;
 }
 
 export function useTimer(params: TimerParams): UseTimerResult {
-  const { taskId, label, category, estimateMin, guessMin, suggestedHonestMin = estimateMin } =
+  const { taskId, label, category, estimateMin, guessMin, suggestedHonestMin = estimateMin, isQuickNav = false } =
     params;
   const reducedMotion = useReducedMotion();
 
   const start = useTimerStore((s) => s.start);
   const stop = useTimerStore((s) => s.stop);
   const cancel = useTimerStore((s) => s.cancel);
+  const isQuickStart = useTimerStore((s) => s.isQuickStart);
   const applyLog = useCalibrationStore((s) => s.applyLog);
 
   // ATTACH vs RESTART: if a session is already running for THIS task (reopened from
@@ -103,10 +129,23 @@ export function useTimer(params: TimerParams): UseTimerResult {
   // session is committed to the store in the effect below, after commit.
   const startedFresh = useRef(false);
   const startedAtRef = useRef<number | null>(null);
+  /**
+   * Stores the actualMin computed by onFreezeForCapture so onStopAndLog can use
+   * it when it fires after the capture sheet's "Save". null = not yet frozen
+   * (normal flow: onStopAndLog calls stop() itself).
+   */
+  const frozenActualMinRef = useRef<number | null>(null);
   if (startedAtRef.current === null) {
     const s = useTimerStore.getState();
     const sameTask = taskId ? s.taskId === taskId : s.taskLabel === label;
-    if (s.isRunning && sameTask && s.startedAt !== null) {
+    // Quick-nav: the arc Timer button called quickStart() then navigated here
+    // immediately. The store has a running isQuickStart session but sameTask would
+    // be false (store taskLabel='' vs label='Focus session'). Detect this case
+    // explicitly so we ATTACH rather than calling start() (which would set
+    // isQuickStart=false and overwrite the session with placeholder params).
+    const isAttachableQuickStart = isQuickNav && s.isRunning && s.isQuickStart;
+    const canAttach = s.startedAt !== null && (sameTask || isAttachableQuickStart);
+    if (s.isRunning && canAttach && s.startedAt !== null) {
       startedAtRef.current = s.startedAt; // attach to the running session
     } else {
       startedAtRef.current = Date.now(); // fresh session — store write deferred below
@@ -178,13 +217,30 @@ export function useTimer(params: TimerParams): UseTimerResult {
   // consumer forgets to read overProgress directly (defensive; no-op cost).
   useDerivedValue(() => overProgress.value, [overProgress]);
 
-  const onStopAndLog = useCallback(async () => {
-    const { actualMin } = stop(Date.now());
+  const onStopAndLog = useCallback(async (labelOverride?: string, categoryOverride?: string) => {
+    // For quick-start sessions the clock was already frozen by onFreezeForCapture
+    // before the capture sheet was shown. Use the pre-computed value; for normal
+    // timers frozenActualMinRef is null and we stop the clock right now.
+    let actualMin: number;
+    if (frozenActualMinRef.current !== null) {
+      actualMin = frozenActualMinRef.current;
+      frozenActualMinRef.current = null;
+    } else {
+      ({ actualMin } = stop(Date.now()));
+    }
     void cancelTimerDone();
     endFinishTimeActivity();
 
+    // For the quick-start capture-sheet Save path, the caller passes the user-chosen
+    // label + category as explicit overrides — the store was already cleared by
+    // onFreezeForCapture before the sheet was shown, so reading the store would
+    // return the quick-start defaults (empty label, null category). Fall back to the
+    // closure-captured route params for normal (non-quick-start) timer stops.
+    const resolvedLabel = labelOverride ?? label;
+    const resolvedCategory = categoryOverride ?? category;
+
     const adaptSpeed: AdaptSpeed =
-      useCategoriesStore.getState().categories.find((c) => c.id === category)?.adaptSpeed ??
+      useCategoriesStore.getState().categories.find((c) => c.id === resolvedCategory)?.adaptSpeed ??
       'balanced';
 
     // estimateMin here = the user's GUESS (ratio = actual / guess), NOT the
@@ -192,21 +248,21 @@ export function useTimer(params: TimerParams): UseTimerResult {
     // suggestedHonestMin = the honest number the user SAW (defaults to estimateMin
     // which IS the honest number passed from Today / Add-Task).
     const result = await applyLog({
-      category,
+      category: resolvedCategory,
       estimateMin: guessMin,
       actualMin,
       status: 'completed',
       source: 'timed',
       adaptSpeed,
-      label,
+      label: resolvedLabel,
       suggestedHonestMin,
     });
 
     useRewardStore.getState().setReward({
       actualMin,
       guessMin,
-      category,
-      label,
+      category: resolvedCategory,
+      label: resolvedLabel,
       result,
     });
 
@@ -229,6 +285,22 @@ export function useTimer(params: TimerParams): UseTimerResult {
 
     router.replace('/(modals)/reward');
   }, [stop, applyLog, category, guessMin, label, taskId, suggestedHonestMin]);
+
+  /**
+   * Freeze the elapsed time WITHOUT writing a calibration log. Stores the
+   * `actualMin` in a ref so `onStopAndLog` (called after the capture sheet's
+   * Save action) uses the value at the moment the user tapped Stop rather than
+   * the time at which they tapped Save (which may be seconds later).
+   *
+   * Only the quick-start capture sheet calls this; normal timers skip it.
+   */
+  const onFreezeForCapture = useCallback((): { actualMin: number } => {
+    const result = stop(Date.now());
+    frozenActualMinRef.current = result.actualMin;
+    void cancelTimerDone();
+    endFinishTimeActivity();
+    return result;
+  }, [stop]);
 
   const onAbandon = useCallback(async () => {
     cancel();
@@ -265,6 +337,8 @@ export function useTimer(params: TimerParams): UseTimerResult {
     label,
     guessMin,
     reducedMotion,
+    isQuickStart,
+    onFreezeForCapture,
     onStopAndLog,
     onAbandon,
   };

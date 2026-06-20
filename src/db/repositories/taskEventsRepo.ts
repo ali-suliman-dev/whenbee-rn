@@ -2,12 +2,16 @@
 
 import type { Database } from '../Database';
 import type { TaskEventRow } from '../types';
+import { rankFrequentTasks, type FrequentTask } from '../queries/frequentTasks';
+
+export type { FrequentTask };
 
 export interface TaskEventsRepo {
   insert(row: TaskEventRow): Promise<void>;
   listByCategory(categoryId: string, limit?: number): Promise<TaskEventRow[]>;
   listRecent(limit?: number): Promise<TaskEventRow[]>;
   deleteByCategory(categoryId: string): Promise<void>;
+  listFrequentTasks(limit?: number): Promise<FrequentTask[]>;
 }
 
 export function makeTaskEventsRepo(db: Database): TaskEventsRepo {
@@ -23,6 +27,10 @@ export function makeTaskEventsRepo(db: Database): TaskEventsRepo {
     },
     async deleteByCategory(categoryId: string): Promise<void> {
       await db.deleteEventsByCategory(categoryId);
+    },
+    async listFrequentTasks(limit = 4): Promise<FrequentTask[]> {
+      const rows = await db.listRecentEvents(500);
+      return rankFrequentTasks(rows, { now: Date.now(), limit });
     },
   };
 }
