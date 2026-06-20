@@ -5,7 +5,6 @@ import type { ProFeatureId } from '@/src/engine';
 
 const base = {
   honeyPct: 30,
-  tier: 'Setting',
   nextTierName: 'Ripening',
   logsToNext: 3,
   features: [{ id: 'confidence-band' as ProFeatureId, ready: false, waitLabel: 'soon' }],
@@ -19,6 +18,8 @@ it('ripening state shows the settling copy and no CTA', () => {
   );
   // RipeningBand renders the settling label
   expect(getByText(RIPENING_COPY.settling)).toBeTruthy();
+  // Card renders its own footer copy
+  expect(getByText(RIPENING_COPY.footer)).toBeTruthy();
   // No CTA button in ripening state
   expect(queryByText(REVEAL_COPY.cta)).toBeNull();
 });
@@ -30,7 +31,6 @@ it('reveal state shows the headline and fires onSeePro', () => {
       {...base}
       pitchUnlocked
       honeyPct={64}
-      tier="Ripening"
       onSeePro={onSeePro}
     />,
   );
@@ -46,7 +46,6 @@ it('reveal state fires onPreview when escape link is pressed', () => {
       {...base}
       pitchUnlocked
       honeyPct={64}
-      tier="Ripening"
       onPreview={onPreview}
     />,
   );

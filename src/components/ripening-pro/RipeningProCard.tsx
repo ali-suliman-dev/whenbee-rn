@@ -27,7 +27,6 @@ import { RIPENING_COPY, REVEAL_COPY } from './copy';
 export interface RipeningProCardProps {
   pitchUnlocked: boolean;
   honeyPct: number;
-  tier: string;
   nextTierName: string | null;
   logsToNext: number;
   features: { id: ProFeatureId; ready: boolean; waitLabel?: string }[];
