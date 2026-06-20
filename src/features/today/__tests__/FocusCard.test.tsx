@@ -24,12 +24,4 @@ describe('FocusCard', () => {
     fireEvent.press(screen.getByText('Start'));
     expect(onStart).toHaveBeenCalledTimes(1);
   });
-
-  it('renders the pre-estimate line for an uncalibrated focus task', () => {
-    render(
-      <FocusCard category="cleaning" categoryLabel="Cleaning" taskTitle="Clean the kitchen"
-        summary={summary} finishClock="4:11pm" preEstimate onStart={jest.fn()} />,
-    );
-    expect(screen.getByText('Starting estimate · sharpens as you log')).toBeOnTheScreen();
-  });
 });

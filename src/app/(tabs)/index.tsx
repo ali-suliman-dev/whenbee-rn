@@ -45,7 +45,6 @@ export default function Today() {
     companionSeed,
     reclaimLifetimeMin,
     hasEverLogged,
-    focusPreEstimate,
   } = useToday();
   const isTimerRunning = useTimerStore((s) => s.isRunning);
   const runningTaskLabel = useTimerStore((s) => s.taskLabel);
@@ -208,7 +207,6 @@ export default function Today() {
                 taskTitle={focus.label}
                 summary={summary}
                 finishClock={formatClockMeridiem(projectedFinish(Date.now(), summary.honestMinutes))}
-                preEstimate={focusPreEstimate}
                 onStart={() =>
                   router.push({
                     pathname: '/(modals)/timer',
