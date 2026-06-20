@@ -1,12 +1,14 @@
-import { useEffect } from 'react';
+import { useCallback } from 'react';
 import { View, type ViewStyle } from 'react-native';
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
   withRepeat,
   withTiming,
+  cancelAnimation,
   useReducedMotion,
 } from 'react-native-reanimated';
+import { useAmbientMotion } from '@/src/hooks/useAmbientMotion';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '@/src/theme/useTheme';
 import { BeeMascot } from '@/src/components/BeeMascot';
@@ -51,12 +53,18 @@ export function BeeBurst({
   const spec = BADGE[variant];
 
   const float = useSharedValue(0);
-  useEffect(() => {
-    if (reducedMotion) return;
-    float.set(
-      withRepeat(withTiming(1, { duration: t.motion.float, easing: t.motion.easing.calm }), -1, true),
-    );
-  }, [reducedMotion, float, t.motion.float, t.motion.easing.calm]);
+  useAmbientMotion(
+    !reducedMotion,
+    useCallback(() => {
+      float.set(
+        withRepeat(withTiming(1, { duration: t.motion.float, easing: t.motion.easing.calm }), -1, true),
+      );
+      return () => {
+        cancelAnimation(float);
+        float.set(0);
+      };
+    }, [float, t.motion.float, t.motion.easing.calm]),
+  );
 
   const beeStyle = useAnimatedStyle(() => ({
     transform: [{ translateY: -float.get() * t.burst.beeFloat }],
