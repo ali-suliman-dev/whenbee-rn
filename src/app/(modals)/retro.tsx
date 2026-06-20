@@ -1,7 +1,8 @@
-import { View, Text, TextInput, ScrollView, type TextStyle } from 'react-native';
+import { View, Text, ScrollView, type TextStyle } from 'react-native';
 import { Screen } from '@/src/components/Screen';
 import { SheetGrabber } from '@/src/components/SheetGrabber';
 import { AppButton } from '@/src/components/AppButton';
+import { TaskTitleField } from '@/src/components/TaskTitleField';
 import { useTheme } from '@/src/theme/useTheme';
 import { type } from '@/src/theme/typography';
 import { useRetro } from '@/src/features/retro/useRetro';
@@ -28,22 +29,6 @@ export default function Retro() {
     textAlign: 'center',
   };
 
-  // No lineHeight on the TextInput — an explicit lineHeight clips descenders
-  // (g/y/p) at the box bottom on iOS. Natural metrics leave the room.
-  const input: TextStyle = {
-    fontFamily: 'Jakarta-Regular',
-    fontSize: t.fontSize.base,
-    color: t.colors.ink,
-    backgroundColor: t.colors.surface,
-    borderWidth: t.borderWidth.thin,
-    borderColor: t.colors.hairline,
-    borderRadius: t.radii.md,
-    borderCurve: 'continuous',
-    paddingHorizontal: t.space[4],
-    paddingVertical: t.space[3],
-    minHeight: t.size.control.md,
-  };
-
   return (
     <Screen>
       <ScrollView
@@ -59,12 +44,11 @@ export default function Retro() {
 
         <View style={{ gap: t.space[2] }}>
           <Text style={fieldLabel}>WHAT WAS IT?</Text>
-          <TextInput
-            style={input}
+          <TaskTitleField
+            variant="boxed"
             value={r.label}
             onChangeText={r.setLabel}
             placeholder="e.g. Tidied the kitchen"
-            placeholderTextColor={t.colors.inkSoft}
             accessibilityLabel="What was it"
           />
         </View>
