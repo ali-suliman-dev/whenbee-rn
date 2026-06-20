@@ -1,4 +1,12 @@
-import { View, Text, type ViewStyle, type TextStyle } from 'react-native';
+import { useEffect, useCallback } from 'react';
+import { View, Text, useWindowDimensions, type ViewStyle, type TextStyle } from 'react-native';
+import Animated, {
+  useSharedValue,
+  useAnimatedStyle,
+  withTiming,
+  Easing,
+  runOnJS,
+} from 'react-native-reanimated';
 import { Ionicons } from '@expo/vector-icons';
 import { Card } from '@/src/components/Card';
 import { HonestNumber } from '@/src/components/HonestNumber';
@@ -25,10 +33,50 @@ interface FocusCardProps {
   /** Projected finish clock, e.g. "4:11pm" (computed by the screen from now + honest). */
   finishClock: string;
   onStart: () => void;
+  /** Delete this task (the long-press sheet's Remove). */
+  onDelete?: () => void;
+  /** When true, slide the card left off-screen then call onDelete — matches TaskRow's exit. */
+  isExiting?: boolean;
 }
 
-export function FocusCard({ category, categoryLabel, taskTitle, summary, finishClock, onStart }: FocusCardProps) {
+export function FocusCard({
+  category,
+  categoryLabel,
+  taskTitle,
+  summary,
+  finishClock,
+  onStart,
+  onDelete,
+  isExiting = false,
+}: FocusCardProps) {
   const t = useTheme();
+  const { width: screenWidth } = useWindowDimensions();
+
+  // Mirror TaskRow's departure: slide left off-screen, then commit the delete on
+  // finish — so the Next card leaves with the same motion as the Up Next rows
+  // instead of vanishing the instant the store updates.
+  const exitX = useSharedValue(0);
+  const exitStyle = useAnimatedStyle(() => ({ transform: [{ translateX: exitX.get() }] }));
+
+  const triggerOnDelete = useCallback(() => {
+    onDelete?.();
+  }, [onDelete]);
+
+  useEffect(() => {
+    if (!isExiting) return;
+    exitX.set(
+      withTiming(
+        -screenWidth,
+        { duration: t.motion.base, easing: Easing.in(Easing.ease) },
+        (finished) => {
+          'worklet';
+          if (finished) runOnJS(triggerOnDelete)();
+        },
+      ),
+    );
+    // exitX and triggerOnDelete are stable; screenWidth only changes on rotation
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isExiting]);
 
   const delta = summary.honestMinutes - summary.guessMinutes;
   const showNudge = summary.basis === 'personal' && summary.honestMinutes > summary.guessMinutes;
@@ -51,8 +99,15 @@ export function FocusCard({ category, categoryLabel, taskTitle, summary, finishC
     fontSize: t.fontSize.base,
     color: t.colors.ink,
   };
-  const contextRow: ViewStyle = { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' };
-  const guessLabel: TextStyle = { ...(type.caption as unknown as TextStyle), color: t.colors.inkSoft };
+  const contextRow: ViewStyle = {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  };
+  const guessLabel: TextStyle = {
+    ...(type.caption as unknown as TextStyle),
+    color: t.colors.inkSoft,
+  };
   const learnedBadge: ViewStyle = {
     backgroundColor: t.colors.accentSoft,
     borderRadius: t.radii.full,
@@ -72,53 +127,55 @@ export function FocusCard({ category, categoryLabel, taskTitle, summary, finishC
     fontVariant: ['tabular-nums'],
   };
   return (
-    <Card tone="raised" style={{ gap: t.space[4] }}>
-      <View style={header}>
-        <View style={{ flex: 1, gap: t.space[1.5] }}>
-          <Text style={eyebrow}>NEXT · {categoryLabel.toUpperCase()}</Text>
-          <Text style={title} numberOfLines={1}>
-            {taskTitle}
-          </Text>
+    <Animated.View style={exitStyle}>
+      <Card tone="raised" style={{ gap: t.space[4] }}>
+        <View style={header}>
+          <View style={{ flex: 1, gap: t.space[1.5] }}>
+            <Text style={eyebrow}>NEXT · {categoryLabel.toUpperCase()}</Text>
+            <Text style={title} numberOfLines={1}>
+              {taskTitle}
+            </Text>
+          </View>
+          <HonestNumber
+            size="md"
+            tone="ink"
+            value={`~${summary.honestMinutes}`}
+            unit="min"
+            unitSize={t.fontSize.bodySm}
+          />
         </View>
-        <HonestNumber
-          size="md"
-          tone="ink"
-          value={`~${summary.honestMinutes}`}
-          unit="min"
-          unitSize={t.fontSize.bodySm}
-        />
-      </View>
 
-      <GapLine guessMin={summary.guessMinutes} honestMin={summary.honestMinutes} />
+        <GapLine guessMin={summary.guessMinutes} honestMin={summary.honestMinutes} />
 
-      <View style={contextRow}>
-        <View style={{ flexDirection: 'row', alignItems: 'center', gap: t.space[1.5] }}>
-          <Text style={guessLabel}>guessed {summary.guessMinutes}</Text>
-          {delta > 0 ? (
-            <View style={learnedBadge}>
-              <Text style={learnedBadgeText}>+{delta} learned</Text>
-            </View>
-          ) : null}
+        <View style={contextRow}>
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: t.space[1.5] }}>
+            <Text style={guessLabel}>guessed {summary.guessMinutes}</Text>
+            {delta > 0 ? (
+              <View style={learnedBadge}>
+                <Text style={learnedBadgeText}>+{delta} learned</Text>
+              </View>
+            ) : null}
+          </View>
+          <Text style={finishLabel}>done {finishClock}</Text>
         </View>
-        <Text style={finishLabel}>done {finishClock}</Text>
-      </View>
 
-      <AppButton
-        label="Start"
-        variant="indigo"
-        fullWidth
-        icon={<Ionicons name="play" size={t.iconSize.sm} color={t.colors.onIndigo} />}
-        onPress={onStart}
-      />
-
-      {showNudge ? (
-        <OptimismNudge
-          honestMin={summary.honestMinutes}
-          category={category}
-          guessMin={summary.guessMinutes}
-          multiplier={summary.multiplier}
+        <AppButton
+          label="Start"
+          variant="indigo"
+          fullWidth
+          icon={<Ionicons name="play" size={t.iconSize.sm} color={t.colors.onIndigo} />}
+          onPress={onStart}
         />
-      ) : null}
-    </Card>
+
+        {showNudge ? (
+          <OptimismNudge
+            honestMin={summary.honestMinutes}
+            category={category}
+            guessMin={summary.guessMinutes}
+            multiplier={summary.multiplier}
+          />
+        ) : null}
+      </Card>
+    </Animated.View>
   );
 }

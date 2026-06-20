@@ -74,8 +74,8 @@ export default function Today() {
     if (!showCoachMark || !hasDone) return;
     const timer = setTimeout(dismissCoachMark, 4000);
     return () => clearTimeout(timer);
-  // dismissCoachMark is stable (useCallback with no deps)
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // dismissCoachMark is stable (useCallback with no deps)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [showCoachMark, hasDone]);
 
   function deleteTask(id: string) {
@@ -86,7 +86,12 @@ export default function Today() {
   }
   function promptDelete(id: string, label: string) {
     ActionSheetIOS.showActionSheetWithOptions(
-      { title: label, options: ['Remove', 'Cancel'], destructiveButtonIndex: 0, cancelButtonIndex: 1 },
+      {
+        title: label,
+        options: ['Remove', 'Cancel'],
+        destructiveButtonIndex: 0,
+        cancelButtonIndex: 1,
+      },
       (i) => {
         if (i === 0) setDeletingId(id);
       },
@@ -196,6 +201,7 @@ export default function Today() {
             <RunningFocusCard categoryName={categoryName} />
           ) : focus && summary ? (
             <Pressable
+              key={focus.id}
               onLongPress={() => promptDelete(focus.id, focus.label)}
               delayLongPress={300}
               accessibilityRole="button"
@@ -206,7 +212,11 @@ export default function Today() {
                 categoryLabel={categoryName(focus.category)}
                 taskTitle={focus.label}
                 summary={summary}
-                finishClock={formatClockMeridiem(projectedFinish(Date.now(), summary.honestMinutes))}
+                finishClock={formatClockMeridiem(
+                  projectedFinish(Date.now(), summary.honestMinutes),
+                )}
+                onDelete={() => deleteTask(focus.id)}
+                isExiting={deletingId === focus.id}
                 onStart={() =>
                   router.push({
                     pathname: '/(modals)/timer',
@@ -282,7 +292,6 @@ export default function Today() {
             />
           )}
         </ScrollView>
-
       </View>
 
       <SwitchTaskSheet
