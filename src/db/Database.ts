@@ -2,7 +2,7 @@
 // a concrete adapter. Two adapters implement it: an in-memory Map-backed one
 // (tests + fallback) and the real expo-sqlite one (device runtime).
 
-import type { CategoryStatRow, CompanionRow, ContextEventRow, ContextTagRow, DiscoveryRow, ReasonEventRow, RecurringStatRow, TaskEventRow } from './types';
+import type { CategoryStatRow, CompanionRow, ContextEventRow, ContextTagRow, DiscoveryRow, ReasonEventRow, RecurringStatRow, RoutineRow, RoutineStepRow, TaskEventRow } from './types';
 
 export interface Database {
   getCategoryStat(categoryId: string): Promise<CategoryStatRow | null>;
@@ -18,6 +18,23 @@ export interface Database {
 
   getRecurringStat(key: string): Promise<RecurringStatRow | null>;
   upsertRecurringStat(row: RecurringStatRow): Promise<void>;
+
+  // ── Routines (Pro) — saved sequences + their ordered steps ──────────────────
+  /** All routines, newest-updated first. */
+  listRoutines(): Promise<RoutineRow[]>;
+  /** A single routine by id, or null if absent. */
+  getRoutine(id: string): Promise<RoutineRow | null>;
+  /** A routine's steps, ordered by position ascending. */
+  listRoutineSteps(routineId: string): Promise<RoutineStepRow[]>;
+  /** Insert or replace a routine plus its full ordered step set atomically — the
+   *  steps are replaced wholesale (old rows for this routine are removed first). */
+  saveRoutine(routine: RoutineRow, steps: RoutineStepRow[]): Promise<void>;
+  /** Delete a routine and all of its step rows. */
+  deleteRoutine(id: string): Promise<void>;
+  /** Persist a routine's learned transition factor (clamped by the caller). */
+  setRoutineTransitionFactor(id: string, factor: number, updatedAt: number): Promise<void>;
+  /** Monotonic — bumps a routine's completed-full-run count by one. */
+  incrementRoutineRunCount(id: string, updatedAt: number): Promise<void>;
 
   getCompanion(): Promise<CompanionRow>;
   /** Monotonic increment — adds deltaMin to reclaimedMinutesLifetime; never decrements. */

@@ -219,3 +219,67 @@ describe('MIGRATIONS 0004 — discoveries gallery', () => {
   });
   it('adds companion.discovery_count', () => { expect(migration0004).toContain('ALTER TABLE companion ADD COLUMN discovery_count'); });
 });
+
+describe('MIGRATIONS 0008 — routines (Pro)', () => {
+  const migration0008 = MIGRATIONS[7]; // index 7 == 0008
+
+  it('exists and is a string', () => {
+    expect(typeof migration0008).toBe('string');
+  });
+  it('creates the routines + routine_steps tables (IF NOT EXISTS)', () => {
+    expect(migration0008).toContain('CREATE TABLE IF NOT EXISTS routines');
+    expect(migration0008).toContain('CREATE TABLE IF NOT EXISTS routine_steps');
+  });
+  it('routines carries the learned transition_factor + run_count with defaults', () => {
+    expect(migration0008).toContain('transition_factor REAL NOT NULL DEFAULT 1.15');
+    expect(migration0008).toContain('run_count INTEGER NOT NULL DEFAULT 0');
+    expect(migration0008).toContain('done_by_minute_of_day');
+  });
+  it('routine_steps carries order (position) + the per-step guess + category', () => {
+    expect(migration0008).toContain('position INTEGER NOT NULL');
+    expect(migration0008).toContain('guess_min REAL NOT NULL');
+    expect(migration0008).toContain('category TEXT NOT NULL');
+  });
+  it('indexes steps by routine + position', () => {
+    expect(migration0008).toContain('idx_routine_steps_routine');
+  });
+});
+
+describe('memoryDatabase — routines port (round-trip + wipe)', () => {
+  it('saveRoutine / listRoutineSteps round-trips ordered steps', async () => {
+    const db = createMemoryDatabase();
+    await db.saveRoutine(
+      { id: 'r1', name: 'AM', doneByMinuteOfDay: 540, transitionFactor: 1.15, runCount: 0, createdAt: 1, updatedAt: 1 },
+      [
+        { id: 's2', routineId: 'r1', position: 1, label: 'b', category: 'admin', guessMin: 10 },
+        { id: 's1', routineId: 'r1', position: 0, label: 'a', category: 'admin', guessMin: 20 },
+      ],
+    );
+    const steps = await db.listRoutineSteps('r1');
+    expect(steps.map((s) => s.id)).toEqual(['s1', 's2']);
+  });
+
+  it('incrementRoutineRunCount + setRoutineTransitionFactor persist', async () => {
+    const db = createMemoryDatabase();
+    await db.saveRoutine(
+      { id: 'r1', name: 'AM', doneByMinuteOfDay: null, transitionFactor: 1.15, runCount: 0, createdAt: 1, updatedAt: 1 },
+      [],
+    );
+    await db.incrementRoutineRunCount('r1', 2);
+    await db.setRoutineTransitionFactor('r1', 1.4, 3);
+    const row = await db.getRoutine('r1');
+    expect(row?.runCount).toBe(1);
+    expect(row?.transitionFactor).toBeCloseTo(1.4, 6);
+  });
+
+  it('wipeAll clears routines + steps', async () => {
+    const db = createMemoryDatabase();
+    await db.saveRoutine(
+      { id: 'r1', name: 'AM', doneByMinuteOfDay: null, transitionFactor: 1.15, runCount: 0, createdAt: 1, updatedAt: 1 },
+      [{ id: 's1', routineId: 'r1', position: 0, label: 'a', category: 'admin', guessMin: 20 }],
+    );
+    await db.wipeAll();
+    expect(await db.listRoutines()).toEqual([]);
+    expect(await db.listRoutineSteps('r1')).toEqual([]);
+  });
+});

@@ -109,4 +109,29 @@ export const MIGRATIONS: string[] = [
   ALTER TABLE category_stats ADD COLUMN swxx REAL NOT NULL DEFAULT 0;
   ALTER TABLE category_stats ADD COLUMN swxy REAL NOT NULL DEFAULT 0;
   `,
+
+  // 0008 — Routines (Pro): saved multi-step sequences + ordered steps. Per-step
+  // learning reuses recurring_stats (no schema change there); the chain total is
+  // derived at read time from a learned transition_factor stored on the routine.
+  `
+  CREATE TABLE IF NOT EXISTS routines (
+    id TEXT PRIMARY KEY,
+    name TEXT NOT NULL,
+    done_by_minute_of_day INTEGER,
+    transition_factor REAL NOT NULL DEFAULT 1.15,
+    run_count INTEGER NOT NULL DEFAULT 0,
+    created_at INTEGER NOT NULL,
+    updated_at INTEGER NOT NULL
+  );
+  CREATE TABLE IF NOT EXISTS routine_steps (
+    id TEXT PRIMARY KEY,
+    routine_id TEXT NOT NULL,
+    position INTEGER NOT NULL,
+    label TEXT NOT NULL,
+    category TEXT NOT NULL,
+    guess_min REAL NOT NULL
+  );
+  CREATE INDEX IF NOT EXISTS idx_routine_steps_routine
+    ON routine_steps (routine_id, position);
+  `,
 ];
