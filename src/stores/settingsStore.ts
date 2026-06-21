@@ -1,7 +1,8 @@
 import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
 import { zustandKv } from '@/src/lib/kv';
-import { DEFAULT_DAY_END_MIN } from '@/src/engine/constants';
+import { DEFAULT_DAY_END_MIN, DEFAULT_GUARDRAIL } from '@/src/engine/constants';
+import type { GuardrailMultiple } from '@/src/domain/types';
 
 export type ColorModePref = 'system' | 'light' | 'dark';
 
@@ -32,6 +33,10 @@ interface SettingsState {
   windowEndMin: number | null;
   /** Set the focus window atomically so the card never sees a half-set window. */
   setFocusWindow: (startMin: number, endMin: number) => void;
+  /** Hyperfocus guardrail multiple of the honest number, or 'off'. Off by default;
+   *  the gentle check-in is opt-in and Pro-only. Reads the model, trains nothing. */
+  hyperfocusGuard: GuardrailMultiple;
+  setHyperfocusGuard: (v: GuardrailMultiple) => void;
   /** Return every preference to its first-run default (full data-reset path). */
   reset: () => void;
 }
@@ -51,6 +56,8 @@ export const useSettingsStore = create<SettingsState>()(
       windowEndMin: null,
       setFocusWindow: (startMin, endMin) =>
         set({ windowStartMin: clampDayEndMin(startMin), windowEndMin: clampDayEndMin(endMin) }),
+      hyperfocusGuard: DEFAULT_GUARDRAIL,
+      setHyperfocusGuard: (hyperfocusGuard) => set({ hyperfocusGuard }),
       reset: () =>
         set({
           colorMode: 'system',
@@ -59,6 +66,7 @@ export const useSettingsStore = create<SettingsState>()(
           dayEndMin: DEFAULT_DAY_END_MIN,
           windowStartMin: null,
           windowEndMin: null,
+          hyperfocusGuard: DEFAULT_GUARDRAIL,
         }),
     }),
     { name: 'settings', storage: createJSONStorage(() => zustandKv) },
