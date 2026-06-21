@@ -13,6 +13,12 @@ interface SettingsState {
   /** Gentle "one honest thing a day" line on Today. Off by default; no streak, no guilt. */
   dailyRitualEnabled: boolean;
   setDailyRitualEnabled: (v: boolean) => void;
+  /** Optional nickname for greetings/companion lines. No name = greeting only. */
+  displayName?: string;
+  setDisplayName: (name: string | undefined) => void;
+  /** Provisional archetype seed from the onboarding quiz; washes out as data grows. */
+  archetypeSeed?: { m0: number; source: 'quiz'; tookAt: number };
+  setArchetypeSeed: (seed: { m0: number; source: 'quiz'; tookAt: number }) => void;
   /** Return every preference to its first-run default (full data-reset path). */
   reset: () => void;
 }
@@ -26,7 +32,11 @@ export const useSettingsStore = create<SettingsState>()(
       setRemindersEnabled: (remindersEnabled) => set({ remindersEnabled }),
       dailyRitualEnabled: false,
       setDailyRitualEnabled: (dailyRitualEnabled) => set({ dailyRitualEnabled }),
-      reset: () => set({ colorMode: 'system', remindersEnabled: false, dailyRitualEnabled: false }),
+      displayName: undefined,
+      setDisplayName: (displayName) => set({ displayName: displayName?.trim() ? displayName.trim() : undefined }),
+      archetypeSeed: undefined,
+      setArchetypeSeed: (archetypeSeed) => set({ archetypeSeed }),
+      reset: () => set({ colorMode: 'system', remindersEnabled: false, dailyRitualEnabled: false, displayName: undefined, archetypeSeed: undefined }),
     }),
     { name: 'settings', storage: createJSONStorage(() => zustandKv) },
   ),
