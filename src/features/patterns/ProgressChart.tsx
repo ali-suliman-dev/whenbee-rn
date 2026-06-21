@@ -83,6 +83,7 @@ export function ProgressChart({ trend, fallback }: { trend: AccuracyTrend | null
     paddingHorizontal: t.space[2.5], paddingVertical: t.space[1], borderRadius: t.radii.full,
   };
   const pillText: TextStyle = { ...(type.captionBold as unknown as TextStyle), color: up ? t.colors.success : t.colors.inkSoft };
+  const contextLine: TextStyle = { ...(type.caption as unknown as TextStyle), color: t.colors.inkFaint, marginTop: t.space[1] };
   const axis: ViewStyle = { flexDirection: 'row', justifyContent: 'space-between', marginTop: t.space[1] };
   const axisText: TextStyle = { ...(type.micro as unknown as TextStyle), color: t.colors.inkFaint };
 
@@ -91,10 +92,10 @@ export function ProgressChart({ trend, fallback }: { trend: AccuracyTrend | null
       <View style={top}>
         <Text style={eyebrow}>ACCURACY OVER TIME</Text>
         <View style={pill}>
-          <Text style={pillText}>{up ? `+${deltaPts} pts` : 'steady'}</Text>
+          <Text style={pillText}>{up ? `+${deltaPts}% accuracy` : 'steady'}</Text>
         </View>
       </View>
-      <Text style={titleStyle}>You, then vs now</Text>
+      <Text style={titleStyle}>{up ? 'Getting more accurate' : 'Holding steady'}</Text>
 
       <Svg width="100%" height={h} viewBox={`0 0 ${W} ${h}`} preserveAspectRatio="none">
         <Defs>
@@ -116,9 +117,14 @@ export function ProgressChart({ trend, fallback }: { trend: AccuracyTrend | null
         <Circle cx={endX} cy={endY} r={t.chart.dot} fill={t.colors.accent} />
       </Svg>
 
+      {points.length > 2 && (
+        <Text style={contextLine}>
+          {up ? 'Your guesses and actual time are aligning.' : 'Your reads are consistent.'}
+        </Text>
+      )}
       <View style={axis}>
-        <Text style={axisText}>At first · {first}%</Text>
-        <Text style={axisText}>Lately · {last}%</Text>
+        <Text style={axisText}>Early avg · {first}% accurate</Text>
+        <Text style={axisText}>Recently · {last}% accurate</Text>
       </View>
     </View>
   );

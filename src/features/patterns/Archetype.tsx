@@ -1,8 +1,8 @@
-import { View, Text, type ViewStyle, type TextStyle } from 'react-native';
-import Svg, { Polygon, Ellipse, Rect, Circle, RadialGradient, Defs, Stop } from 'react-native-svg';
+import { View, Text, Pressable, type ViewStyle, type TextStyle } from 'react-native';
+import Svg, { Circle, RadialGradient, Defs, Stop } from 'react-native-svg';
+import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '@/src/theme/useTheme';
 import { type } from '@/src/theme/typography';
-import { AppButton } from '@/src/components/AppButton';
 import { ShareableCard } from '@/src/components/ShareableCard';
 import { useShareCard } from '@/src/features/share/useShareCard';
 import type { ArchetypeCard } from './usePatterns';
@@ -13,21 +13,6 @@ import type { ArchetypeCard } from './usePatterns';
 // bee glyph, the large average multiplier, and the share affordance. Identity
 // first — the eye lands here before skimming the sectioned story below.
 // ──────────────────────────────────────────────────────────────────────────────
-
-function BeeGlyph({ size }: { size: number }) {
-  const t = useTheme();
-  // Flat-top hexagon shell + indigo body + amber bands — mirrors the brand bee.
-  return (
-    <Svg width={size} height={size} viewBox="0 0 46 46">
-      <Polygon points="23,4 39,13 39,33 23,42 7,33 7,13" fill={t.colors.primarySoft} stroke={t.colors.primary} strokeWidth={1.5} />
-      <Ellipse cx={23} cy={24} rx={8} ry={9} fill={t.colors.primary} />
-      <Rect x={16} y={20} width={14} height={2.4} rx={1.2} fill={t.colors.accent} />
-      <Rect x={16} y={25} width={14} height={2.4} rx={1.2} fill={t.colors.accent} />
-      <Circle cx={20} cy={17} r={1.4} fill={t.colors.ink} />
-      <Circle cx={26} cy={17} r={1.4} fill={t.colors.ink} />
-    </Svg>
-  );
-}
 
 export function ArchetypeHero({ card }: { card: ArchetypeCard }) {
   const t = useTheme();
@@ -52,7 +37,8 @@ export function ArchetypeHero({ card }: { card: ArchetypeCard }) {
   const mult: TextStyle = { ...(type.honestNumberLg as unknown as TextStyle), color: t.colors.accent };
   const multCaption: TextStyle = { ...(type.caption as unknown as TextStyle), color: t.colors.inkSoft };
   const blurbStyle: TextStyle = { ...(type.body as unknown as TextStyle), color: t.colors.inkSoft, maxWidth: 280 };
-  const glyph: ViewStyle = { position: 'absolute', top: t.space[4], right: t.space[4] };
+  const shareRow: ViewStyle = { flexDirection: 'row', alignItems: 'center', gap: t.space[1], alignSelf: 'flex-start', marginTop: t.space[2] };
+  const shareLabel: TextStyle = { ...(type.caption as unknown as TextStyle), color: t.colors.inkSoft };
 
   return (
     <View style={cardStyle}>
@@ -67,8 +53,6 @@ export function ArchetypeHero({ card }: { card: ArchetypeCard }) {
         <Circle cx={90} cy={90} r={90} fill="url(#heroGlow)" />
       </Svg>
 
-      <View style={glyph} pointerEvents="none"><BeeGlyph size={t.companion.hudBee} /></View>
-
       <View style={eyebrowRow}>
         <Text style={eyebrow}>YOUR TIME PERSONALITY</Text>
       </View>
@@ -78,9 +62,10 @@ export function ArchetypeHero({ card }: { card: ArchetypeCard }) {
         <Text style={multCaption}>your guess, on average</Text>
       </View>
       <Text style={blurbStyle}>{blurb}</Text>
-      <View style={{ alignSelf: 'flex-start', marginTop: t.space[2] }}>
-        <AppButton label="Share my archetype" variant="ghost" size="md" onPress={archetypeShare.onShare} />
-      </View>
+      <Pressable style={shareRow} onPress={archetypeShare.onShare}>
+        <Ionicons name="share-outline" size={13} color={t.colors.inkSoft} />
+        <Text style={shareLabel}>Share my archetype</Text>
+      </Pressable>
 
       {/* Off-screen capture card — react-native-view-shot only; never visible. */}
       <View style={{ position: 'absolute', left: -9999, top: 0 }} pointerEvents="none">

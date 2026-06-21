@@ -232,7 +232,7 @@ function CardBody({
         <AppText style={body}>
           Mark the hours your head works best. I&apos;ll fit the right tasks into them.
         </AppText>
-        <AppButton label="Set your focus window" variant="indigo" fullWidth onPress={onSetWindow} />
+        <AppButton label="Set focus window" variant="ghost" size="sm" onPress={onSetWindow} />
       </View>
     );
   }

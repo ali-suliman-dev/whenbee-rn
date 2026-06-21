@@ -72,12 +72,12 @@ export default function Patterns() {
 
         {view && !view.empty ? (
           <>
-            <WeeklyReview view={view} />
-
             {/* 1 · IDENTITY */}
             {view.archetype ? (
               <Animated.View entering={rise()}><ArchetypeHero card={view.archetype} /></Animated.View>
             ) : null}
+
+            <WeeklyReview view={view} />
 
             {/* 2 · YOUR PROGRESS */}
             {hasProgress ? (
