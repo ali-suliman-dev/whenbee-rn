@@ -124,3 +124,9 @@ export const GUARDRAIL_MIN_THRESHOLD_MIN = 25;
 // No tight-ratio threshold: the verdict is binary (everything fits, or something
 // spills). The window length is whatever the user set; there is no default window.
 // (No tunable constants for v1 — the fit is exact. Kept as a home for future tuning.)
+
+// ── PDF report (Pro) ─────────────────────────────────────────────────────────
+export const REPORT_MIN_LOGS = 6; // window minimum to allow export
+export const REPORT_CATEGORY_MIN_LOGS = 4; // per-row minimum in the bias table
+export const REPORT_SPARK_BUCKETS = 6; // accuracy sparkline buckets
+export const REPORT_MAX_SURPRISES = 5; // biggest-surprises cap
