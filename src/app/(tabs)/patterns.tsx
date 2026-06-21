@@ -49,6 +49,18 @@ export default function Patterns() {
   const hasProgress = view ? view.youVsPast !== null || view.accuracyTrend !== null || view.planExperiment !== null : false;
   const hasChanged = view ? view.driftAlert !== null || view.biggestSurprise !== null : false;
 
+  // For non-Pro users: show exactly ONE locked teaser, chosen by the most
+  // compelling data available. Priority: reason insights → accuracy → context.
+  const lockedTeaser: 'steals' | 'accuracy' | 'context' | null = view
+    ? insights.length > 0
+      ? 'steals'
+      : view.accuracyCorrelations.length > 0
+        ? 'accuracy'
+        : contextInsights.length > 0
+          ? 'context'
+          : null
+    : null;
+
   return (
     <Screen>
       <ScreenHeader title="Patterns" subtitle="What your time keeps telling you." />
@@ -93,16 +105,16 @@ export default function Patterns() {
               </Animated.View>
             ) : null}
 
-            {/* 5 · PRO — one premium teaser (or the unlocked insight) */}
+            {/* 5 · PRO — unlocked insights for Pro users; one teaser for free users */}
             <Animated.View entering={rise()} style={{ gap: t.space[3] }}>
-              <ProGate fallback={insights.length > 0 ? <StealsYourTimeLocked /> : null}>
+              <ProGate fallback={lockedTeaser === 'steals' ? <StealsYourTimeLocked /> : null}>
                 <StealsYourTime insights={insights} />
                 <StealsYourTimeWeekly insights={insights} />
               </ProGate>
-              <ProGate fallback={view.accuracyCorrelations.length > 0 ? <AccuracyCorrelationsLocked /> : null}>
+              <ProGate fallback={lockedTeaser === 'accuracy' ? <AccuracyCorrelationsLocked /> : null}>
                 {view.accuracyCorrelations.length > 0 ? <AccuracyCorrelations correlations={view.accuracyCorrelations} /> : null}
               </ProGate>
-              <ProGate fallback={contextInsights.length > 0 ? <ContextCorrelationsLocked /> : null}>
+              <ProGate fallback={lockedTeaser === 'context' ? <ContextCorrelationsLocked /> : null}>
                 {contextInsights.length > 0 ? <ContextCorrelations correlations={contextInsights} /> : null}
               </ProGate>
             </Animated.View>

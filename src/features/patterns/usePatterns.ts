@@ -124,7 +124,7 @@ export interface PatternsView {
   calibrationMap: CalibrationMapRow[];
   /** S3 — when you're sharpest (time-of-day / weekday). Pro-gated at the screen. */
   accuracyCorrelations: AccuracyCorrelation[];
-  /** Short accuracy series for the progress chart; null below the gate. */
+  /** Short accuracy series for the free progress chart; null below the min-log gate. */
   accuracyTrend: AccuracyTrend | null;
 }
 
