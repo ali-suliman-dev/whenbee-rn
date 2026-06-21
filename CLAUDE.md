@@ -37,6 +37,16 @@ Run lint + typecheck + test before every commit — CI runs the same set on ever
 
 **Full how-to — env setup, Expo Go vs. dev builds, EAS build/submit profiles, troubleshooting — is in [docs/DEVELOPMENT.md](docs/DEVELOPMENT.md).** Use `npx expo install <pkg>` (not `npm install`) for Expo/RN deps, then `npx expo-doctor` (expect 18/18).
 
+## Modal / sheet UI — HARD RULE
+
+**Every modal and sheet MUST use `headerShown: false`.** The native iOS header bar is a white bar that clashes with the dark-themed app on every mode. It is NEVER acceptable. Rules:
+
+- Every `<Stack.Screen>` entry in `src/app/(modals)/_layout.tsx` must have `headerShown: false`. No exceptions.
+- Any new modal route added to `(modals)/` must be explicitly listed in `_layout.tsx` with `headerShown: false` — unlisted screens fall through to the layout default and will show a header.
+- Screens must render their own title using `type.subtitle` + `t.colors.ink` (see `add-task.tsx` for the pattern).
+- Sheets that slide up (non-full-screen) must start with `<SheetGrabber />`.
+- Never set `presentation: 'card'` on a modal that has content — use `formSheet` or `fullScreenModal`.
+
 ## Known gotchas (scaffold defaults that bite)
 
 - **Dev build only — Expo Go cannot run this app.** Native modules (`react-native-purchases`, `@sentry`, `@expo/ui`, `expo-glass-effect`, `expo-dev-client`) make Expo Go spin forever. Use `npm run ios`.
