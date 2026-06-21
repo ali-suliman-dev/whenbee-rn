@@ -11,6 +11,7 @@ import {
 } from '@/src/db';
 import {
   distributeRoutineRun,
+  routineBasis,
   blendWithPrior,
   updateEwma,
   recurringHasEnoughData,
@@ -319,6 +320,10 @@ export const useRoutinesStore = create<RoutinesState>()(
           .sort((a, b) => a.position - b.position)
           .map((step, index) => ({ stepId: step.id, status: index === 0 ? 'running' : 'upcoming' }));
         set({ activeRun: { routineId, startedAt: Date.now(), steps } });
+        analytics.capture('routine_run_started', {
+          step_count: steps.length,
+          basis: routineBasis(loaded.routine.runCount).basis,
+        });
       },
 
       completeStep: (stepId, actualMin) =>
