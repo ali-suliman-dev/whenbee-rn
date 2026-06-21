@@ -103,7 +103,7 @@ export function DiscoveriesPreviewCard({
     <Pressable
       onPress={open}
       accessibilityRole="button"
-      accessibilityLabel={`See all ${discoveryCount} things you&apos;ve learned`}
+      accessibilityLabel={`See all ${discoveryCount} things you've learned`}
     >
       <View style={cardWrap}>
         <View style={eyebrowRow}>
