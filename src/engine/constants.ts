@@ -97,3 +97,7 @@ export const AFFINE_PRIOR_PSEUDO = 4;
 export const GLOBAL_PRIOR_MIN_LOGS = 4; // below this, use the population prior unchanged
 export const GLOBAL_PRIOR_K = 6; // pseudo-count: personal weight = n/(n+k)
 export const GLOBAL_PRIOR_MAX_WEIGHT = 0.6; // cap so a new category keeps its own identity
+
+// ── End-of-day preference ─────────────────────────────────────────────────────
+/** Default end-of-day, minutes after local midnight. 21:00 = a sane "I stop by 9pm". */
+export const DEFAULT_DAY_END_MIN = 21 * 60; // 1260
