@@ -14,19 +14,20 @@ import { AppButton } from '@/src/components/AppButton';
 import { useTheme } from '@/src/theme/useTheme';
 import { type } from '@/src/theme/typography';
 import { GapLine } from './GapLine';
-import { OptimismNudge } from './OptimismNudge';
 import type { CalibrationSummary } from '@/src/domain/types';
 
 // ──────────────────────────────────────────────────────────────────────────────
 // FocusCard — Today's "next task" centerpiece (before start). The honest number is
 // the hero (right, baseline-aligned with the title); the guess→plan gap is the bar;
-// the context line states the learned gap (amber) and the finish projection; one
-// full-width indigo Start button is the single filled-indigo affordance. No play
-// coin, no eyebrow dot, no focal top border — flat surface, calm hierarchy.
+// the context line states the learned gap and the finish projection; one full-width
+// indigo Start button (shallow coin-edge) is the single filled-indigo affordance.
+// ONE amber on the card: the gap bar + the plain `+ N learned` text encode the
+// optimism signal once — no separate nudge pill, no badge box (amber states a fact,
+// never a scold). No play coin, no eyebrow dot, no focal top border — flat surface,
+// calm hierarchy.
 // ──────────────────────────────────────────────────────────────────────────────
 
 interface FocusCardProps {
-  category: string;
   categoryLabel: string;
   taskTitle: string;
   summary: CalibrationSummary;
@@ -40,7 +41,6 @@ interface FocusCardProps {
 }
 
 export function FocusCard({
-  category,
   categoryLabel,
   taskTitle,
   summary,
@@ -79,7 +79,6 @@ export function FocusCard({
   }, [isExiting]);
 
   const delta = summary.honestMinutes - summary.guessMinutes;
-  const showNudge = summary.basis === 'personal' && summary.honestMinutes > summary.guessMinutes;
 
   const eyebrowText: TextStyle = {
     ...(type.eyebrow as unknown as TextStyle),
@@ -108,17 +107,10 @@ export function FocusCard({
     ...(type.caption as unknown as TextStyle),
     color: t.colors.inkSoft,
   };
-  const learnedBadge: ViewStyle = {
-    backgroundColor: t.colors.accentSoft,
-    borderRadius: t.radii.full,
-    paddingHorizontal: t.space[2],
-    paddingVertical: t.space[0.5],
-  };
-  const learnedBadgeText: TextStyle = {
-    ...(type.caption as unknown as TextStyle),
-    fontSize: t.fontSize.xs,
+  // The learned gap is plain amber bold text (no pill box) — the sole optimism cue.
+  const learnedText: TextStyle = {
+    ...(type.captionBold as unknown as TextStyle),
     color: t.colors.amberText,
-    fontFamily: 'Inter-Bold' as TextStyle['fontFamily'],
   };
   const finishLabel: TextStyle = {
     ...(type.caption as unknown as TextStyle),
@@ -148,13 +140,9 @@ export function FocusCard({
         <GapLine guessMin={summary.guessMinutes} honestMin={summary.honestMinutes} />
 
         <View style={contextRow}>
-          <View style={{ flexDirection: 'row', alignItems: 'center', gap: t.space[1.5] }}>
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: t.space[1] }}>
             <Text style={guessLabel}>guessed {summary.guessMinutes}</Text>
-            {delta > 0 ? (
-              <View style={learnedBadge}>
-                <Text style={learnedBadgeText}>+{delta} learned</Text>
-              </View>
-            ) : null}
+            {delta > 0 ? <Text style={learnedText}>+ {delta} learned</Text> : null}
           </View>
           <Text style={finishLabel}>done {finishClock}</Text>
         </View>
@@ -162,19 +150,11 @@ export function FocusCard({
         <AppButton
           label="Start"
           variant="indigo"
+          depth="shallow"
           fullWidth
           icon={<Ionicons name="play" size={t.iconSize.sm} color={t.colors.onIndigo} />}
           onPress={onStart}
         />
-
-        {showNudge ? (
-          <OptimismNudge
-            honestMin={summary.honestMinutes}
-            category={category}
-            guessMin={summary.guessMinutes}
-            multiplier={summary.multiplier}
-          />
-        ) : null}
       </Card>
     </Animated.View>
   );

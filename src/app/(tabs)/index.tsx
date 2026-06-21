@@ -1,5 +1,5 @@
 import { View, Text, Pressable, ScrollView, ActionSheetIOS, type TextStyle } from 'react-native';
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useCallback } from 'react';
 import { router } from 'expo-router';
 import { haptics } from '@/src/lib/haptics';
 import { Ionicons } from '@expo/vector-icons';
@@ -11,6 +11,7 @@ import { useToday, type TodayRow } from '@/src/features/today/useToday';
 import { FocusCard } from '@/src/features/today/FocusCard';
 import { RunningFocusCard } from '@/src/features/today/RunningFocusCard';
 import { TaskRow } from '@/src/features/today/TaskRow';
+import { DoneSection } from '@/src/features/today/DoneSection';
 import { TodayHud } from '@/src/components/honeycomb/TodayHud';
 import type { HoneycombCell } from '@/src/components/honeycomb/Honeycomb';
 import { TodayEmptyState } from '@/src/features/today/TodayEmptyState';
@@ -69,15 +70,8 @@ export default function Today() {
     kv.set('today.seenCoachMarkV1', '1');
   }, []);
 
-  const hasDone = done.length > 0;
-  useEffect(() => {
-    if (!showCoachMark || !hasDone) return;
-    const timer = setTimeout(dismissCoachMark, 4000);
-    return () => clearTimeout(timer);
-    // dismissCoachMark is stable (useCallback with no deps)
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [showCoachMark, hasDone]);
-
+  // The done-list coach-mark auto-dismiss now lives in DoneSection (it only runs
+  // once the list is expanded, so a collapsed list never burns the one-shot).
   function deleteTask(id: string) {
     haptics.medium();
     dismissCoachMark();
@@ -216,7 +210,6 @@ export default function Today() {
               accessibilityLabel={`${focus.label}. Long-press to delete.`}
             >
               <FocusCard
-                category={focus.category}
                 categoryLabel={categoryName(focus.category)}
                 taskTitle={focus.label}
                 summary={summary}
@@ -272,25 +265,14 @@ export default function Today() {
           ) : null}
 
           {done.length > 0 ? (
-            <View style={{ gap: t.space[2] }}>
-              <Text style={sectionLabel}>DONE TODAY</Text>
-              {done.map((row, idx) => (
-                <TaskRow
-                  key={row.id}
-                  title={row.label}
-                  categoryLabel={row.categoryLabel}
-                  guessMin={row.guessMin}
-                  honestMin={row.honestMin}
-                  actualMin={row.actualMin}
-                  done
-                  onDelete={() => deleteTask(row.id)}
-                  onLongPress={() => promptDelete(row.id, row.label)}
-                  isExiting={deletingId === row.id}
-                  showCoachMark={showCoachMark && idx === 0}
-                  onCoachMarkDismiss={dismissCoachMark}
-                />
-              ))}
-            </View>
+            <DoneSection
+              rows={done}
+              deletingId={deletingId}
+              onDelete={deleteTask}
+              onLongPress={promptDelete}
+              showCoachMark={showCoachMark}
+              onCoachMarkDismiss={dismissCoachMark}
+            />
           ) : null}
 
           {totalCount === 0 && !isTimerRunning ? null : (

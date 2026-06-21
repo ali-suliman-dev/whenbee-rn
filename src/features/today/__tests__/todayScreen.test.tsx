@@ -76,7 +76,7 @@ describe('Today screen', () => {
 
     expect(screen.getByText('Leave for work')).toBeOnTheScreen();
     expect(screen.getByText('~30')).toBeOnTheScreen();
-    expect(screen.getByText('+15 learned')).toBeOnTheScreen();
+    expect(screen.getByText('+ 15 learned')).toBeOnTheScreen();
     expect(screen.getByText('Start')).toBeOnTheScreen();
     // No empty-state copy when a task is present.
     expect(screen.queryByText('Time your first task')).toBeNull();
