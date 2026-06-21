@@ -25,6 +25,13 @@ interface SettingsState {
    *  daily. Independent of any per-plan planner deadline. */
   dayEndMin: number;
   setDayEndMin: (minutes: number) => void;
+  /** Focus-window start, minutes after local midnight (0–1439). `null` = unset
+   *  (the invite state). Two local time integers — no health data, never trained. */
+  windowStartMin: number | null;
+  /** Focus-window end, minutes after local midnight (0–1439). `null` = unset. */
+  windowEndMin: number | null;
+  /** Set the focus window atomically so the card never sees a half-set window. */
+  setFocusWindow: (startMin: number, endMin: number) => void;
   /** Return every preference to its first-run default (full data-reset path). */
   reset: () => void;
 }
@@ -40,12 +47,18 @@ export const useSettingsStore = create<SettingsState>()(
       setDailyRitualEnabled: (dailyRitualEnabled) => set({ dailyRitualEnabled }),
       dayEndMin: DEFAULT_DAY_END_MIN,
       setDayEndMin: (minutes) => set({ dayEndMin: clampDayEndMin(minutes) }),
+      windowStartMin: null,
+      windowEndMin: null,
+      setFocusWindow: (startMin, endMin) =>
+        set({ windowStartMin: clampDayEndMin(startMin), windowEndMin: clampDayEndMin(endMin) }),
       reset: () =>
         set({
           colorMode: 'system',
           remindersEnabled: false,
           dailyRitualEnabled: false,
           dayEndMin: DEFAULT_DAY_END_MIN,
+          windowStartMin: null,
+          windowEndMin: null,
         }),
     }),
     { name: 'settings', storage: createJSONStorage(() => zustandKv) },

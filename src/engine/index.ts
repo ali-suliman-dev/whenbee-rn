@@ -35,3 +35,5 @@ export {
   accuracyToErrorBand, errorBandToAccuracy, goalProgress, isGoalMet,
   reconcileGoal, canSetGoal, presetsForAccuracy, recommendedPreset,
 } from './goals';
+export { focusWindowMinutes, fitFocusWindow, promoteIntoWindow } from './focusWindow';
+export type { FocusWindowTask, FocusWindowInput } from './focusWindow';

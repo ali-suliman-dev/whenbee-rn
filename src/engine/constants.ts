@@ -111,3 +111,8 @@ export const GOAL_MIN_LOGS = 5;
 export const GOAL_PRESETS = [40, 25, 15, 10] as const;
 /** A recommended target must be at least this many points tighter than current. */
 export const GOAL_RECOMMEND_STEP = 8;
+
+// ── Focus-window planner (Pro) ────────────────────────────────────────────────
+// No tight-ratio threshold: the verdict is binary (everything fits, or something
+// spills). The window length is whatever the user set; there is no default window.
+// (No tunable constants for v1 — the fit is exact. Kept as a home for future tuning.)

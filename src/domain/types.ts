@@ -240,3 +240,36 @@ export interface ParsedTaskDraft {
   rawTranscript: string;
   source: VoiceStructuringSource;
 }
+
+// ── Focus-window planner (Pro) ────────────────────────────────────────────────
+
+/** The focus-window fit verdict. Amber-never-red by construction. */
+export type FocusWindowVerdict = 'fits' | 'spills';
+
+/** One task placed by the focus-window fit (in-window or spilled). */
+export interface FocusWindowPlacement {
+  id: string;
+  label: string;
+  honestMin: number;
+  /** true = fits inside the window; false = spilled past it. */
+  inWindow: boolean;
+}
+
+/** Pure result of the focus-window fit (minutes; clock/time-of-day supplied by caller). */
+export interface FocusWindowResult {
+  /** Fixed window length = windowEndMin − windowStartMin, floored at 0. */
+  windowMin: number;
+  /** Sum of honestMin of in-window tasks. */
+  packedMin: number;
+  /** In-window placements in priority order. */
+  inWindow: FocusWindowPlacement[];
+  /** Spilled placements in priority order. */
+  spilled: FocusWindowPlacement[];
+  verdict: FocusWindowVerdict;
+  /** inWindow.length */
+  fitCount: number;
+  /** inWindow.length + spilled.length */
+  totalCount: number;
+  /** 'prior' if every task fell back to priors; else 'personal'. */
+  basis: 'personal' | 'prior';
+}
