@@ -22,6 +22,9 @@ import { AdaptSegment } from '@/src/features/category-detail/AdaptSegment';
 import { ProHonestWeekTease } from '@/src/features/category-detail/ProHonestWeekTease';
 import { TrendChart } from '@/src/features/category-detail/TrendChart';
 import { RecentList } from '@/src/features/category-detail/RecentList';
+import { GoalCard } from '@/src/features/category-detail/GoalCard';
+import { GoalLocked } from '@/src/features/category-detail/GoalLocked';
+import { ProGate } from '@/src/features/paywall/ProGate';
 import { TIERS } from '@/src/engine';
 
 // ──────────────────────────────────────────────────────────────────────────────
@@ -131,11 +134,20 @@ export default function CategoryDetailScreen() {
                 split by hairlines (no card chrome) so the hero + Pro card lead. */}
             <View style={styles(t).sections}>
               <RecentList recent={detail.recent} />
-              <View style={styles(t).divider} />
-              <View style={styles(t).trendCard}>
-                <TrendChart trend={detail.trend} />
-              </View>
-              <View style={styles(t).divider} />
+            </Card>
+
+            {/* 4 — Trend over time. */}
+            <Card>
+              <TrendChart trend={detail.trend} />
+            </Card>
+
+            {/* 5 — Pro: a forward goal on this category (Pro live card / locked teaser). */}
+            <ProGate fallback={<GoalLocked categoryId={categoryId} />}>
+              <GoalCard categoryId={categoryId} categoryName={detail.categoryName} />
+            </ProGate>
+
+            {/* 6 — The control: how fast it learns. */}
+            <Card>
               <AdaptSegment value={adaptSpeed} onChange={handleSetAdapt} />
             </View>
 
