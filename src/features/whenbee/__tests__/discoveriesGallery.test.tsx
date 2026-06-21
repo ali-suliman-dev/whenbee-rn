@@ -2,29 +2,55 @@ import { render } from '@testing-library/react-native';
 import { DiscoveriesGallery } from '../DiscoveriesGallery';
 import type { Discovery } from '@/src/domain/types';
 
-const disc = (overrides: Partial<Discovery> = {}): Discovery => ({
-  id: 'd1',
-  categoryId: 'cleaning',
-  multiplier: 1.9,
-  honestForFifteen: 29,
-  headline: '~29m vs your 15m guess · runs 1.9×',
-  discoveredAt: 1,
-  ...overrides,
+function disc(over: Partial<Discovery>): Discovery {
+  return {
+    id: 'd1',
+    categoryId: 'admin',
+    multiplier: 1.6,
+    honestForFifteen: 24,
+    headline: 'ignored',
+    discoveredAt: 1,
+    ...over,
+  };
+}
+
+test('a longer discovery shows category, proof, multiplier and LONGER', () => {
+  const { getByText } = render(<DiscoveriesGallery discoveries={[disc({})]} />);
+  expect(getByText('Admin & email')).toBeTruthy();
+  expect(getByText('You plan 15m · really runs ~24m')).toBeTruthy();
+  expect(getByText('1.6')).toBeTruthy();
+  expect(getByText('LONGER')).toBeTruthy();
 });
 
-describe('DiscoveriesGallery', () => {
-  it('shows the invitational empty state with no discoveries', () => {
-    const { getByText } = render(<DiscoveriesGallery discoveries={[]} />);
-    expect(getByText(/Discoveries show up as Whenbee learns/i)).toBeTruthy();
-  });
+test('a faster discovery shows the only-verb proof and FASTER', () => {
+  const { getByText } = render(
+    <DiscoveriesGallery
+      discoveries={[disc({ id: 'd2', categoryId: 'writing', multiplier: 0.6, honestForFifteen: 9 })]}
+    />,
+  );
+  expect(getByText('You plan 15m · really only ~9m')).toBeTruthy();
+  expect(getByText('FASTER')).toBeTruthy();
+});
 
-  it('renders one card per discovery, newest first', () => {
-    const { getByText } = render(
-      <DiscoveriesGallery
-        discoveries={[disc({ id: 'b', headline: 'runs 2.5×' }), disc({ id: 'a', headline: 'runs 1.9×' })]}
-      />,
-    );
-    expect(getByText('runs 2.5×')).toBeTruthy();
-    expect(getByText('runs 1.9×')).toBeTruthy();
-  });
+test('empty list renders the invitation, not a card', () => {
+  const { getByText } = render(<DiscoveriesGallery discoveries={[]} />);
+  expect(getByText(/Nothing here yet/i)).toBeTruthy();
+});
+
+test('renders discoveries in the order they are passed (newest-first contract)', () => {
+  const first = disc({ id: 'd-first', categoryId: 'admin', honestForFifteen: 24 });
+  const second = disc({ id: 'd-second', categoryId: 'writing', honestForFifteen: 9 });
+  const json = JSON.stringify(
+    render(<DiscoveriesGallery discoveries={[first, second]} />).toJSON(),
+  );
+  const posFirst = json.indexOf('Admin & email');
+  const posSecond = json.indexOf('Writing');
+  expect(posFirst).toBeGreaterThan(-1);
+  expect(posSecond).toBeGreaterThan(-1);
+  expect(posFirst).toBeLessThan(posSecond);
+});
+
+test('card has a composed accessibilityLabel for screen readers (longer discovery)', () => {
+  const { getByLabelText } = render(<DiscoveriesGallery discoveries={[disc({})]} />);
+  expect(getByLabelText(/Admin & email runs 1\.6 times longer/)).toBeTruthy();
 });

@@ -456,6 +456,10 @@ export const tokens = {
   // pill horizontal padding.
   proTeaser: { previewH: 118, barGap: 9, barRadius: 4, scrimOpacity: 0.28, barOpacity: 0.55, pillPadX: 11 },
 
+  // Discovery marker geometry — the honey-hex sign (amber + = runs longer, green
+  // − = runs faster) on each gallery card. One size; consumed via t.discovery.hex.
+  discovery: { hex: 30 },
+
   // ── brand illustration palette ──────────────────────────────────────────────
   // Fixed art colors for the Whenbee mascot (BeeMascot). Brand art does NOT recolor
   // by mode — a mascot reads as the SAME bee in light and dark, the way a logo does.

@@ -1,23 +1,25 @@
 import { Pressable, View, Text, type ViewStyle, type TextStyle } from 'react-native';
 import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
-import { Card } from '@/src/components/Card';
 import { useTheme } from '@/src/theme/useTheme';
 import { type } from '@/src/theme/typography';
 import type { Discovery } from '@/src/domain/types';
+import {
+  discoveryDirection,
+  discoverySentence,
+  multiplierValue,
+  categoryLabel,
+} from './discoveryDisplay';
 
 // ──────────────────────────────────────────────────────────────────────────────
-// DiscoveriesPreviewCard — the hub teaser into the full Discoveries gallery. A
-// quiet flat card under the Reclaim hero: the running count (the thing that only
-// ever grows), the three most recent headlines, and a tap into the gallery.
+// DiscoveriesPreviewCard — the hub teaser into the full gallery. A flat "featured
+// nugget": the newest discovery in focus (its multiplier the hero, amber if it
+// runs longer / green if faster), the running count (only ever grows), and a tap
+// into the gallery. Discoveries are banked self-knowledge, never a score to beat.
 //
-// Framing: discoveries are things you've learned about yourself, banked for good.
-// The count is a record of self-knowledge, never a score to beat.
-//
-// Rendered only when discoveryCount > 0 (the parent gates) — no empty teaser.
+// Flat surface (matches the Your-areas / Pro cards below) — no glow, no border.
+// Rendered only when discoveryCount > 0 (the parent gates).
 // ──────────────────────────────────────────────────────────────────────────────
-
-const PREVIEW_COUNT = 3;
 
 export function DiscoveriesPreviewCard({
   discoveries,
@@ -27,28 +29,75 @@ export function DiscoveriesPreviewCard({
   discoveryCount: number;
 }) {
   const t = useTheme();
-  const preview = discoveries.slice(0, PREVIEW_COUNT);
+  const latest = discoveries[0];
+  if (!latest) return null;
+
+  const direction = discoveryDirection(latest.multiplier);
+  const tint = direction === 'longer' ? t.colors.accent : t.colors.success;
+  const moreCount = discoveryCount - 1;
 
   function open() {
     router.push('/(modals)/discoveries');
   }
 
-  const eyebrow: TextStyle = { ...(type.eyebrow as unknown as TextStyle), color: t.colors.inkSoft };
-  const count: TextStyle = {
-    ...(type.bigNumber as unknown as TextStyle),
-    color: t.colors.ink,
+  const cardWrap: ViewStyle = {
+    backgroundColor: t.colors.surface,
+    borderRadius: t.radii.card,
+    borderCurve: 'continuous',
+    padding: t.space[4],
+  };
+  const eyebrowRow: ViewStyle = {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: t.space[2],
+    marginBottom: t.space[3],
+  };
+  const eyebrowLab: TextStyle = { ...(type.eyebrow as unknown as TextStyle), color: t.colors.inkSoft };
+  const pill: TextStyle = {
+    ...(type.captionBold as unknown as TextStyle),
+    color: t.colors.accent,
+    backgroundColor: t.colors.accentSoft,
+    marginLeft: 'auto',
+    paddingHorizontal: t.space[2.5],
+    paddingVertical: t.space[1],
+    borderRadius: t.radii.full,
+    overflow: 'hidden',
     fontVariant: ['tabular-nums'],
   };
-  const headerRow: ViewStyle = {
+  // Hero number + × rendered as siblings in a baseline row so RNTL can
+  // getByText('2.3') without matching the concatenated "2.3×" form.
+  const heroRow: ViewStyle = {
     flexDirection: 'row',
     alignItems: 'baseline',
-    justifyContent: 'space-between',
+    marginBottom: t.space[1],
   };
-  const line: ViewStyle = { flexDirection: 'row', alignItems: 'center', gap: t.space[2] };
-  const bullet: TextStyle = { ...(type.bodySm as unknown as TextStyle), color: t.colors.primary };
-  const lineText: TextStyle = { ...(type.bodySm as unknown as TextStyle), color: t.colors.inkSoft, flex: 1 };
-  const footerRow: ViewStyle = { flexDirection: 'row', alignItems: 'center', gap: t.space[2] };
-  const footerText: TextStyle = { ...(type.bodySm as unknown as TextStyle), color: t.colors.primary };
+  const heroN: TextStyle = {
+    ...(type.honestNumberMd as unknown as TextStyle),
+    color: tint,
+  };
+  const heroX: TextStyle = {
+    fontSize: t.fontSize.md,
+    color: tint,
+    opacity: t.opacity.pressed,
+  };
+  const cat: TextStyle = { ...(type.bodyLg as unknown as TextStyle), color: t.colors.ink };
+  const sentence: TextStyle = {
+    ...(type.bodySm as unknown as TextStyle),
+    color: t.colors.inkSoft,
+    marginTop: t.space[0.5],
+  };
+  const footer: ViewStyle = {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginTop: t.space[3],
+    paddingTop: t.space[3],
+    borderTopWidth: t.borderWidth.thick,
+    borderTopColor: t.colors.hairline,
+  };
+  const moreTxt: TextStyle = { ...(type.bodySm as unknown as TextStyle), color: t.colors.inkFaint };
+  const seeAll: ViewStyle = { flexDirection: 'row', alignItems: 'center', gap: t.space[1] };
+  const seeTxt: TextStyle = { ...(type.bodySm as unknown as TextStyle), color: t.colors.primary };
 
   return (
     <Pressable
@@ -56,28 +105,28 @@ export function DiscoveriesPreviewCard({
       accessibilityRole="button"
       accessibilityLabel={`See all ${discoveryCount} things you've learned`}
     >
-      <Card style={{ gap: t.space[3] }}>
-        <View style={headerRow}>
-          <Text style={eyebrow}>DISCOVERIES</Text>
-          <Text style={count}>{discoveryCount}</Text>
+      <View style={cardWrap}>
+        <View style={eyebrowRow}>
+          <Text style={eyebrowLab}>LATEST DISCOVERY</Text>
+          <Text style={pill}>{discoveryCount} banked</Text>
         </View>
 
-        <View style={{ gap: t.space[1] }}>
-          {preview.map((d) => (
-            <View key={d.id} style={line}>
-              <Text style={bullet}>▸</Text>
-              <Text style={lineText} numberOfLines={1}>
-                {d.headline}
-              </Text>
-            </View>
-          ))}
+        {/* Sibling-Text hero so RNTL getByText('2.3') works without matching '2.3×' */}
+        <View style={heroRow}>
+          <Text style={heroN}>{multiplierValue(latest.multiplier)}</Text>
+          <Text style={heroX}>×</Text>
         </View>
+        <Text style={cat}>{categoryLabel(latest.categoryId)}</Text>
+        <Text style={sentence}>{discoverySentence(latest.honestForFifteen, direction)}</Text>
 
-        <View style={footerRow}>
-          <Text style={footerText}>See all {discoveryCount} you&apos;ve learned</Text>
-          <Ionicons name="chevron-forward" size={t.iconSize.sm} color={t.colors.primary} />
+        <View style={footer}>
+          {moreCount > 0 ? <Text style={moreTxt}>+{moreCount} more</Text> : <View />}
+          <View style={seeAll}>
+            <Text style={seeTxt}>See all {discoveryCount}</Text>
+            <Ionicons name="chevron-forward" size={t.iconSize.sm} color={t.colors.primary} />
+          </View>
         </View>
-      </Card>
+      </View>
     </Pressable>
   );
 }

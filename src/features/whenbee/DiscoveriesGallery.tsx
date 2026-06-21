@@ -2,57 +2,76 @@ import { memo } from 'react';
 import { View, Text, FlatList, type ViewStyle, type TextStyle, type ListRenderItem } from 'react-native';
 import { useTheme } from '@/src/theme/useTheme';
 import { type } from '@/src/theme/typography';
-import { CATEGORY_NAMES } from '@/src/engine';
 import type { Discovery } from '@/src/domain/types';
+import { DiscoveryHex } from './DiscoveryHex';
+import {
+  discoveryDirection,
+  discoveryProof,
+  multiplierValue,
+  dirLabel,
+  categoryLabel,
+} from './discoveryDisplay';
 
 // ──────────────────────────────────────────────────────────────────────────────
-// DiscoveriesGallery — the full list of banked aha cards (every discovery, newest
-// first). Reuses AhaCard's "night" + indigo-left-border vocabulary so a banked
-// discovery reads as the same object you first met in category-detail.
+// DiscoveriesGallery — the full list of banked discoveries (newest first), as
+// honey cards: a hex sign (amber + = longer, green − = faster), the category and
+// a plain-15m-baseline proof, and the multiplier as the hero on the right.
 //
-// Cards never expire or grey — a discovery is something you learned about
-// yourself, and that stays true. Empty state is an invitation, not a void.
+// Flat surface (matches the hub's Your-areas / Pro cards) — no border, no indigo
+// edge. Cards never expire or grey: a discovery is something you learned and that
+// stays true. Empty state is an invitation, not a void.
 // ──────────────────────────────────────────────────────────────────────────────
-
-/** Seed-name map, else title-case the slug ("deep_work" → "Deep Work"). */
-function categoryLabel(id: string): string {
-  const seed = CATEGORY_NAMES[id];
-  if (seed) return seed;
-  return id
-    .split(/[_\-\s]+/)
-    .filter(Boolean)
-    .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
-    .join(' ');
-}
 
 const DiscoveryCard = memo(function DiscoveryCard({ discovery }: { discovery: Discovery }) {
   const t = useTheme();
-  // Mirrors AhaCard: a dark "night" callout on the cream surface (light mode), or
-  // a normal raised card in dark mode where a near-black block would vanish.
-  const isDark = t.mode === 'dark';
-  const fg = isDark ? t.colors.ink : t.colors.paper;
-  // The eyebrow stays legible on both surfaces; hierarchy comes from its small,
-  // tracked, uppercase scale rather than a low-contrast tint that fails on night.
-  const fgSoft = isDark ? t.colors.inkSoft : t.colors.paper;
+  const direction = discoveryDirection(discovery.multiplier);
+  const tint = direction === 'longer' ? t.colors.accent : t.colors.success;
 
   const card: ViewStyle = {
-    backgroundColor: isDark ? t.colors.surfaceRaised : t.colors.night,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: t.space[3],
+    backgroundColor: t.colors.surface,
     borderRadius: t.radii.card,
     borderCurve: 'continuous',
     padding: t.space[4],
-    gap: t.space[1],
-    borderWidth: isDark ? t.borderWidth.card : 0,
-    borderColor: t.colors.hairline,
-    borderLeftWidth: t.borderWidth.thick,
-    borderLeftColor: t.colors.primary,
   };
-  const eyebrow: TextStyle = { ...(type.eyebrow as unknown as TextStyle), color: fgSoft };
-  const headline: TextStyle = { ...(type.heading as unknown as TextStyle), color: fg };
+  const meta: ViewStyle = { flex: 1, minWidth: 0 };
+  const cat: TextStyle = { ...(type.heading as unknown as TextStyle), color: t.colors.ink };
+  const proof: TextStyle = {
+    ...(type.bodySm as unknown as TextStyle),
+    color: t.colors.inkSoft,
+    marginTop: t.space[0.5],
+  };
+  const mult: TextStyle = {
+    ...(type.honestNumberMd as unknown as TextStyle),
+    color: tint,
+    textAlign: 'right',
+  };
+  const times: TextStyle = { ...mult, fontSize: t.fontSize.md, opacity: t.opacity.pressed };
+  const dir: TextStyle = {
+    ...(type.eyebrow as unknown as TextStyle),
+    color: t.colors.inkFaint,
+    textAlign: 'right',
+    marginTop: t.space[0.5],
+  };
+
+  const a11yLabel = `${categoryLabel(discovery.categoryId)} runs ${multiplierValue(discovery.multiplier)} times ${direction} — ${discoveryProof(discovery.honestForFifteen, direction)}`;
 
   return (
-    <View style={card}>
-      <Text style={eyebrow}>{categoryLabel(discovery.categoryId)}</Text>
-      <Text style={headline}>{discovery.headline}</Text>
+    <View style={card} accessible accessibilityLabel={a11yLabel}>
+      <DiscoveryHex direction={direction} size={t.discovery.hex} />
+      <View style={meta}>
+        <Text style={cat}>{categoryLabel(discovery.categoryId)}</Text>
+        <Text style={proof}>{discoveryProof(discovery.honestForFifteen, direction)}</Text>
+      </View>
+      <View style={{ alignItems: 'flex-end' }}>
+        <View style={{ flexDirection: 'row', alignItems: 'baseline' }}>
+          <Text style={mult}>{multiplierValue(discovery.multiplier)}</Text>
+          <Text style={times}>×</Text>
+        </View>
+        <Text style={dir}>{dirLabel(direction)}</Text>
+      </View>
     </View>
   );
 });

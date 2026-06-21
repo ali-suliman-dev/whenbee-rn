@@ -12,13 +12,14 @@ import { useCalibrationStore } from '@/src/stores/calibrationStore';
 import { useEntitlement } from '@/src/features/paywall/useEntitlement';
 import { useFocusedValue } from '@/src/hooks/useFocusedValue';
 import { analytics } from '@/src/services/analytics';
-import { CATEGORY_NAMES, TIERS, logsToNextTier } from '@/src/engine';
+import { TIERS, logsToNextTier } from '@/src/engine';
 import { useWhenbeeHub } from './useWhenbeeHub';
 import { WhenbeeAvatar } from './WhenbeeAvatar';
 import { HoneyRing } from './HoneyRing';
 import { RingBadge } from './RingBadge';
 import { AreaRow } from './AreaRow';
 import { DiscoveriesPreviewCard } from './DiscoveriesPreviewCard';
+import { categoryLabel } from './discoveryDisplay';
 import { BlindSpotCard } from './BlindSpotCard';
 import { LifeDriftCard } from './LifeDriftCard';
 
@@ -39,15 +40,6 @@ import { LifeDriftCard } from './LifeDriftCard';
 // micro-life (soft wing flutter, slow blink, glance whose body-lean conveys direction).
 // ──────────────────────────────────────────────────────────────────────────────
 
-function categoryLabel(id: string): string {
-  const seed = CATEGORY_NAMES[id];
-  if (seed) return seed;
-  return id
-    .split(/[_\-\s]+/)
-    .filter(Boolean)
-    .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
-    .join(' ');
-}
 
 export function WhenbeeHub() {
   const t = useTheme();
