@@ -167,6 +167,7 @@ function ratiosOf(logs: PatternLog[]): number[] {
 /**
  * Maps a multiplier to a flattering-but-honest archetype card.
  * Wording stays curious and kind — a self-portrait, not a label.
+ * Thresholds and titles MUST stay in sync with `rungFor` in usePersonalize.ts.
  */
 function archetypeFor(avg: number, provisional: boolean): ArchetypeCard {
   let title: string;

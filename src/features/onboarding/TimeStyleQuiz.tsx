@@ -70,7 +70,7 @@ export function TimeStyleQuiz({
 }: {
   onComplete: (a: QuizAnswers) => void;
   onSkip: () => void;
-}): React.JSX.Element {
+}): React.JSX.Element | null {
   const t = useTheme();
   const reducedMotion = useReducedMotion();
 
@@ -126,7 +126,6 @@ export function TimeStyleQuiz({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    marginTop: t.space[2],
   };
 
   const ctaStyle: TextStyle = {
@@ -140,7 +139,7 @@ export function TimeStyleQuiz({
     color: t.colors.inkSoft,
   };
 
-  if (!currentQuestion) return <View />;
+  if (!currentQuestion) return null;
 
   return (
     <View style={wrap}>

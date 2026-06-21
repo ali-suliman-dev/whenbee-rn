@@ -9,7 +9,7 @@ import { greetingFor } from '@/src/engine';
 
 /** Pure density helper. Returns true (use the name) for even day-indices.
  *  Exported for direct unit testing. */
-export function shouldUseName(dayIndex: number): boolean {
+export function shouldUseNameToday(dayIndex: number): boolean {
   return dayIndex % 2 === 0;
 }
 
@@ -19,5 +19,5 @@ export function useGreeting(): string {
   const hour = now.getHours();
   if (!name) return greetingFor(hour);
   const dayIndex = Math.floor(now.getTime() / 86_400_000);
-  return greetingFor(hour, shouldUseName(dayIndex) ? name : undefined);
+  return greetingFor(hour, shouldUseNameToday(dayIndex) ? name : undefined);
 }
