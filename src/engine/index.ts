@@ -33,3 +33,4 @@ export {
 export type { CompanionStage, CompanionCapability, DriftHealth } from './companion';
 export { seedMultiplierFor, provisionalArchetypeMultiplier } from './archetypeSeed';
 export type { QuizAnswers } from './archetypeSeed';
+export { greetingFor } from './greeting';
