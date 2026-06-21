@@ -5,7 +5,7 @@ const perfect = (n: number) => Array(n).fill(1);
 
 describe('buildAccuracySeries', () => {
   it('returns null below the min-log gate', () => {
-    expect(buildAccuracySeries(perfect(5))).toBeNull();
+    expect(buildAccuracySeries(perfect(11))).toBeNull();
   });
 
   it('buckets ordered ratios into an accuracy series', () => {

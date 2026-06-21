@@ -1,10 +1,11 @@
 import { ScrollView } from 'react-native';
 import Animated, { FadeInDown, useReducedMotion } from 'react-native-reanimated';
+import { useRouter } from 'expo-router';
 import { Screen } from '@/src/components/Screen';
 import { ScreenHeader } from '@/src/components/ScreenHeader';
 import { useTheme } from '@/src/theme/useTheme';
 import { usePatterns } from '@/src/features/patterns/usePatterns';
-import { ArchetypeHero } from '@/src/features/patterns/Archetype';
+import { ArchetypeHero, ArchetypePlaceholder } from '@/src/features/patterns/Archetype';
 import { ProgressChart } from '@/src/features/patterns/ProgressChart';
 import { PlanExperiment } from '@/src/features/patterns/PlanExperiment';
 import { BiggestSurprise } from '@/src/features/patterns/BiggestSurprise';
@@ -36,6 +37,7 @@ import { ContextCorrelationsLocked } from '@/src/features/patterns/ContextCorrel
 export default function Patterns() {
   const t = useTheme();
   const reduced = useReducedMotion();
+  const router = useRouter();
   const { view } = usePatterns();
   const { insights } = useReasonInsights();
   const { insights: contextInsights } = useContextInsights();
@@ -75,7 +77,11 @@ export default function Patterns() {
             {/* 1 · IDENTITY */}
             {view.archetype ? (
               <Animated.View entering={rise()}><ArchetypeHero card={view.archetype} /></Animated.View>
-            ) : null}
+            ) : (
+              <Animated.View entering={rise()}>
+                <ArchetypePlaceholder onTakeQuiz={() => router.push('/(modals)/archetype-quiz')} />
+              </Animated.View>
+            )}
 
             <WeeklyReview view={view} />
 
