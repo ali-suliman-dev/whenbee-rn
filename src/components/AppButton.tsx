@@ -45,6 +45,7 @@ export function AppButton({
   onPress,
   variant = 'indigo',
   size = 'md',
+  depth = 'standard',
   disabled = false,
   fullWidth = false,
   icon,
@@ -53,6 +54,8 @@ export function AppButton({
   onPress: () => void;
   variant?: Variant;
   size?: Size;
+  /** Coin-edge depth for FILLED variants. `shallow` = a thinner, calmer edge. */
+  depth?: 'standard' | 'shallow';
   disabled?: boolean;
   fullWidth?: boolean;
   icon?: ReactNode;
@@ -61,8 +64,9 @@ export function AppButton({
   const reducedMotion = useReducedMotion();
 
   // Coin-edge depth (filled) + squeeze (ghost), from tokens — no magic numbers.
-  const EDGE = t.depth.edge; // darker edge peeking below a FILLED pill (the 3D depth)
-  const DROP = t.depth.drop; // how far a filled pill drops onto the edge on press
+  const shallow = depth === 'shallow';
+  const EDGE = shallow ? t.depth.shallowEdge : t.depth.edge; // darker edge peeking below a FILLED pill (the 3D depth)
+  const DROP = shallow ? t.depth.shallowDrop : t.depth.drop; // how far a filled pill drops onto the edge on press
   const GHOST_PRESS_SCALE = t.scale.pressIn; // ghost has no edge — a squeeze carries the press
 
   const resolved = resolveVariant(variant);

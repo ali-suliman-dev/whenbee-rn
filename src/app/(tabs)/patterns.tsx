@@ -74,8 +74,6 @@ export default function Patterns() {
 
         {view && !view.empty ? (
           <>
-            <WeeklyReview view={view} />
-
             {/* 1 · IDENTITY */}
             {view.archetype ? (
               <Animated.View entering={rise()}><ArchetypeHero card={view.archetype} /></Animated.View>
@@ -84,6 +82,8 @@ export default function Patterns() {
                 <ArchetypePlaceholder onTakeQuiz={() => router.push('/(modals)/archetype-quiz')} />
               </Animated.View>
             )}
+
+            <WeeklyReview view={view} />
 
             {/* 2 · YOUR PROGRESS */}
             {hasProgress ? (

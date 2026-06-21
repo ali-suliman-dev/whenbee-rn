@@ -1,9 +1,10 @@
 import { useEffect, useState } from 'react';
 import { View, TextInput, type TextStyle, type ViewStyle } from 'react-native';
-import { Stack, router } from 'expo-router';
+import { router } from 'expo-router';
 import { Screen } from '@/src/components/Screen';
 import { AppText } from '@/src/components/AppText';
 import { AppButton } from '@/src/components/AppButton';
+import { SheetGrabber } from '@/src/components/SheetGrabber';
 import { WhenbeeAvatar } from '@/src/features/whenbee/WhenbeeAvatar';
 import { useTheme } from '@/src/theme/useTheme';
 import { type } from '@/src/theme/typography';
@@ -68,7 +69,7 @@ export default function CompanionRoute() {
 
   return (
     <Screen>
-      <Stack.Screen options={{ title: 'Name your Whenbee' }} />
+      <SheetGrabber />
       <View style={{ gap: t.space[6], paddingTop: t.space[6] }}>
         <WhenbeeAvatar
           stage={stage}

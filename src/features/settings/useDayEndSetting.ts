@@ -6,6 +6,8 @@ import { dayEndEpochFor, formatClockMeridiem, startOfLocalDay } from '@/src/lib/
 export function useDayEndSetting() {
   const dayEndMin = useSettingsStore((s) => s.dayEndMin);
   const setDayEndMin = useSettingsStore((s) => s.setDayEndMin);
+  const dayEndEnabled = useSettingsStore((s) => s.dayEndEnabled);
+  const setDayEndEnabled = useSettingsStore((s) => s.setDayEndEnabled);
   const [editing, setEditing] = useState(false);
 
   const label = useMemo(
@@ -34,5 +36,5 @@ export function useDayEndSetting() {
   const open = useCallback(() => setEditing(true), []);
   const close = useCallback(() => setEditing(false), []);
 
-  return { dayEndMin, label, editing, open, close, save, commit };
+  return { dayEndMin, label, editing, open, close, save, commit, dayEndEnabled, setDayEndEnabled };
 }

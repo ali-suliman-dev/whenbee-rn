@@ -92,7 +92,7 @@ export function ReportBuilder() {
     <Screen edges={['top', 'left', 'right']}>
       <View
         style={{
-          paddingTop: t.space[1],
+          paddingTop: t.space[5],
           paddingBottom: t.space[5],
           flexDirection: 'row',
           alignItems: 'center',

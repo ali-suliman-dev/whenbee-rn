@@ -10,10 +10,8 @@ export default function ModalsLayout() {
       <Stack.Screen name="paywall" options={{ presentation: 'formSheet', headerShown: false }} />
       <Stack.Screen name="honest-day" options={{ presentation: 'formSheet', headerShown: false }} />
       <Stack.Screen name="report" options={{ presentation: 'fullScreenModal', headerShown: false }} />
-      <Stack.Screen
-        name="discoveries"
-        options={{ presentation: 'card', headerShown: true, title: "Things you've learned" }}
-      />
+      <Stack.Screen name="companion" options={{ presentation: 'formSheet', headerShown: false }} />
+      <Stack.Screen name="discoveries" options={{ presentation: 'formSheet', headerShown: false }} />
       <Stack.Screen name="archetype-quiz" options={{ presentation: 'formSheet', headerShown: false }} />
     </Stack>
   );

@@ -145,7 +145,7 @@ export function EnergyGlyph({
   // (primarySoft2). Dark mode keeps the brighter palette — it reads fine there.
   const isLight = t.mode === 'light';
   const amber = isLight ? t.colors.accentEdge : t.colors.accent;
-  const bodyFill = isLight ? t.colors.primarySoft2 : t.colors.primarySoft;
+  const bodyFill = isLight ? t.colors.primaryWash : t.colors.primarySoft;
 
   // One progress per moving part. Rest values keep the battery shown CHARGED with
   // no streaks (bars=1 visible; body/jump/nub/surge identity; shards hidden).

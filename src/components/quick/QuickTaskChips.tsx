@@ -18,10 +18,9 @@ import { useQuickTasks, type QuickTaskChip } from '@/src/features/quick-tasks/us
 // Renders nothing when chips.length === 0 (no label, no empty space).
 // Data comes from useQuickTasks() (Task 2): ≤4 chips, already thresholded.
 //
-// Each chip:
+// Each chip is a SLIM single-line pill — one line, low footprint:
 //   • surface fill + 1px hairline border (chip borderWidth token) + radii.full
-//   • left: small play disc — primarySoft bg + primaryEdge play glyph
-//   • right: title (Jakarta-Bold 14pt) + sub-line "~{honestMin}m honest" (muted)
+//   • inline: tiny play glyph · name (captionBold 12pt) · muted honest time
 //   • Pressable is a bare touch wrapper; visual + press-scale live on inner View
 //   • haptics.light() → startQuickTask(chip)
 //
@@ -58,39 +57,32 @@ function QuickChip({
     transform: [{ scale: pressScale.get() }],
   }));
 
+  // Slim single-line pill — everything sits inline on one row.
   const chipSurface: ViewStyle = {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: t.quick.chipGap,
+    gap: t.space[1.5],
     borderRadius: t.radii.full,
     borderCurve: 'continuous' as ViewStyle['borderCurve'],
     borderWidth: t.borderWidth.chip,
     borderColor: t.colors.hairline,
     backgroundColor: t.colors.surface,
-    paddingHorizontal: t.quick.chipPadH,
-    paddingVertical: t.quick.chipPadV,
+    paddingHorizontal: t.space[3],
+    paddingVertical: t.space[1.5],
     // Flat surface — no boxShadow (hard line on Fabric)
   };
 
-  const discStyle: ViewStyle = {
-    width: t.quick.disc,
-    height: t.quick.disc,
-    borderRadius: t.radii.full,
-    backgroundColor: t.colors.primarySoft,
-    alignItems: 'center',
-    justifyContent: 'center',
-  };
-
   const titleStyle: TextStyle = {
-    ...(type.bodySmBold as unknown as TextStyle),
+    ...(type.captionBold as unknown as TextStyle),
     color: t.colors.ink,
   };
 
-  const estimateStyle: TextStyle = {
-    ...(type.caption as unknown as TextStyle),
+  const timeStyle: TextStyle = {
+    ...(type.captionBold as unknown as TextStyle),
     color: t.colors.inkSoft,
-    marginTop: 1,
   };
+
+  const unitStyle: TextStyle = { fontSize: t.fontSize['2xs'], color: t.colors.inkSoft };
 
   const enterDelay = index * t.motion.stagger;
 
@@ -107,19 +99,14 @@ function QuickChip({
         entering={reducedMotion ? undefined : FadeInDown.duration(t.motion.base).delay(enterDelay)}
       >
         <View style={chipSurface}>
-          <View style={discStyle}>
-            <Ionicons
-              name="play"
-              size={t.iconSize.sm - 2}
-              color={t.colors.primaryEdge}
-            />
-          </View>
-          <View>
-            <Text style={titleStyle} numberOfLines={1}>
-              {chip.label}
-            </Text>
-            <Text style={estimateStyle}>{`~${chip.honestMin}m honest`}</Text>
-          </View>
+          <Ionicons name="play" size={10} color={t.colors.primary} />
+          <Text style={titleStyle} numberOfLines={1}>
+            {chip.label}
+          </Text>
+          <Text style={timeStyle}>
+            {chip.honestMin}
+            <Text style={unitStyle}>m</Text>
+          </Text>
         </View>
       </Animated.View>
     </Pressable>

@@ -14,10 +14,10 @@ export function RetroLogChip({ label, onPress }: { label: string; onPress: () =>
     alignItems: 'center',
     gap: t.space[3],
     alignSelf: 'stretch',
-    // Quiet secondary affordance — sink it to the sunken surface in both modes so
-    // it recedes from the focal white/raised data cards above. Differentiate by
+    // Quiet secondary affordance — standard surface keeps it light and part of the
+    // page rather than recessed below the focal data cards above. Differentiate by
     // fill, not an edge (no border, matching the rest of the cards).
-    backgroundColor: t.colors.surfaceSunken,
+    backgroundColor: t.colors.surface,
     borderWidth: t.borderWidth.card,
     borderColor: t.colors.hairline,
     borderRadius: t.radii.card,

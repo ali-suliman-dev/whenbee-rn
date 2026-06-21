@@ -71,7 +71,10 @@ export const tokens = {
   // far the darker bottom edge peeks below the pill at rest (the 3D thickness);
   // `drop` is how far the pill travels down onto that edge on press. drop < edge
   // leaves a 1pt sliver so the edge never fully disappears under the pill.
-  depth: { edge: 8, drop: 7 },
+  // `shallowEdge`/`shallowDrop` = a thinner coin-edge for buttons that must read
+  // calmer (e.g. the FocusCard Start) without losing the tactile push — opt in via
+  // AppButton's `depth="shallow"`.
+  depth: { edge: 8, drop: 7, shallowEdge: 4, shallowDrop: 3 },
 
   // The numeric type scale — typography.ts (the role layer) derives every role
   // size from these, so the whole scale is editable in one place.

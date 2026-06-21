@@ -1,0 +1,111 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Optimism nudge — placement options</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=Plus+Jakarta+Sans:wght@500;700;800&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#14151D; --surfaceRaised:#292B3C; --surfaceSunken:#15161F;
+    --ink:#F4F1EA; --inkSoft:#ADA9B5; --inkFaint:rgba(244,241,234,0.40);
+    --primary:#8275F0; --primaryEdge:#6B5BE6; --primarySoft2:rgba(130,117,240,0.6);
+    --gapStripeHi:#A898F5; --accent:#EEAE4D; --accentSoft:rgba(238,174,77,0.18);
+    --amberText:#EEAE4D; --onIndigo:#14151D; --r-card:16px; --r-full:999px;
+  }
+  *{box-sizing:border-box; margin:0; padding:0;}
+  body{background:#0c0d12; color:var(--ink); font-family:'Plus Jakarta Sans',sans-serif; padding:40px 28px 64px;}
+  h1{font-size:20px; font-weight:800; letter-spacing:-0.4px; margin-bottom:6px;}
+  .sub{color:var(--inkSoft); font-size:13px; margin-bottom:32px; max-width:760px; line-height:1.5;}
+  .row{display:flex; gap:30px; align-items:flex-start; flex-wrap:wrap;}
+  .col{width:393px;}
+  .tag{font-size:11px; font-weight:700; letter-spacing:1px; text-transform:uppercase; color:var(--primary); margin-bottom:4px;}
+  .note{font-size:12.5px; color:var(--inkSoft); line-height:1.5; margin-bottom:14px; min-height:50px;}
+  .note b{color:var(--ink);}
+
+  .phone{background:var(--bg); border-radius:30px; padding:20px 18px; border:1px solid #20222e;}
+  .eyebrow{font-weight:700; font-size:10px; letter-spacing:1.5px; text-transform:uppercase; color:var(--inkSoft); line-height:12px;}
+  .card{background:var(--surfaceRaised); border-radius:var(--r-card); padding:20px; display:flex; flex-direction:column; gap:16px;}
+  .title{font-weight:700; font-size:15px; color:var(--ink); line-height:22px;}
+  .honest{font-family:'Inter'; font-weight:700; font-variant-numeric:tabular-nums; color:var(--ink); letter-spacing:-0.5px;}
+  .honest .num{font-size:24px;} .honest .unit{font-size:14px; color:var(--inkSoft); margin-left:3px;}
+  .head{display:flex; align-items:flex-end; justify-content:space-between; gap:12px;}
+  .bar{height:8px; border-radius:var(--r-full); background:var(--surfaceSunken); display:flex; overflow:hidden;}
+  .bar .guess{background:repeating-linear-gradient(125deg, var(--gapStripeHi) 0 2px, transparent 2px 6px), var(--primarySoft2);}
+  .bar .extra{background:var(--accent);}
+  .labels{display:flex; align-items:center; justify-content:space-between;}
+  .lbl.guess{color:var(--inkSoft); font-size:12px; font-weight:500;}
+  .learned-text{color:var(--amberText); font-size:12px; font-weight:700;}
+  .finish{font-family:'Inter'; font-weight:700; font-size:12px; color:var(--ink); font-variant-numeric:tabular-nums;}
+  .btn{display:flex; align-items:center; justify-content:center; gap:8px; background:var(--primary); color:var(--onIndigo); border-radius:var(--r-full); font-weight:700; font-size:15px; height:44px; box-shadow:0 4px 0 var(--primaryEdge); margin-bottom:4px;}
+  .btn .tri{width:0;height:0;border-left:9px solid var(--onIndigo); border-top:6px solid transparent; border-bottom:6px solid transparent;}
+
+  /* nudge variants */
+  .nudge-line{font-size:12px; font-weight:500; color:var(--amberText);}
+  .nudge-line .b{font-weight:700;}
+  .nudge-quiet{font-size:12px; color:var(--inkSoft);}
+  .nudge-quiet .amb{color:var(--amberText); font-weight:700;}
+  .divider{height:1px; background:rgba(255,255,255,0.06);}
+</style>
+</head>
+<body>
+  <h1>Optimism nudge — where it lives (on the locked minimal card)</h1>
+  <div class="sub">All four use the chosen minimal card: full labels row kept (<b>guessed 10 · +5 learned · done 1:07am</b>), +5 learned is plain amber bold, CTA shortened. Only the optimism message differs.</div>
+
+  <div class="row">
+
+    <!-- A: folded -->
+    <div class="col">
+      <div class="tag">A · Folded in (no extra line)</div>
+      <div class="note">The amber <b>+5 learned</b> IS the nudge. Nothing else. Quietest, most calm — but the “you under-guess” insight is implicit.</div>
+      <div class="phone"><div class="card">
+        <div class="head"><div style="flex:1; display:flex; flex-direction:column; gap:6px;"><div class="eyebrow">NEXT · ADMIN &amp; EMAIL</div><div class="title">WRITE EMAILS</div></div><div class="honest"><span class="num">~15</span><span class="unit">min</span></div></div>
+        <div class="bar"><div class="guess" style="width:67%"></div><div class="extra" style="width:33%"></div></div>
+        <div class="labels"><span class="lbl guess">guessed 10</span><span class="learned-text">+5 learned</span><span class="finish">done 1:07am</span></div>
+        <div class="btn"><span class="tri"></span> Start</div>
+      </div></div>
+    </div>
+
+    <!-- B: one-liner no pill -->
+    <div class="col">
+      <div class="tag">B · One-liner, no pill (your pick to compare)</div>
+      <div class="note">Drop the box, keep one short amber sentence under the labels row. Clear coaching, still calm — one amber line, not a pill.</div>
+      <div class="phone"><div class="card">
+        <div class="head"><div style="flex:1; display:flex; flex-direction:column; gap:6px;"><div class="eyebrow">NEXT · ADMIN &amp; EMAIL</div><div class="title">WRITE EMAILS</div></div><div class="honest"><span class="num">~15</span><span class="unit">min</span></div></div>
+        <div class="bar"><div class="guess" style="width:67%"></div><div class="extra" style="width:33%"></div></div>
+        <div class="labels"><span class="lbl guess">guessed 10</span><span class="learned-text">+5 learned</span><span class="finish">done 1:07am</span></div>
+        <div class="nudge-line">You under-guess email. <span class="b">Block 15, not 10.</span></div>
+        <div class="btn"><span class="tri"></span> Start</div>
+      </div></div>
+    </div>
+
+    <!-- C: quiet muted line -->
+    <div class="col">
+      <div class="tag">C · Quiet muted line</div>
+      <div class="note">Same placement as B but mostly muted ink, only the number is amber. Reads as a fact, not a warning — least “alarm”, still informative.</div>
+      <div class="phone"><div class="card">
+        <div class="head"><div style="flex:1; display:flex; flex-direction:column; gap:6px;"><div class="eyebrow">NEXT · ADMIN &amp; EMAIL</div><div class="title">WRITE EMAILS</div></div><div class="honest"><span class="num">~15</span><span class="unit">min</span></div></div>
+        <div class="bar"><div class="guess" style="width:67%"></div><div class="extra" style="width:33%"></div></div>
+        <div class="labels"><span class="lbl guess">guessed 10</span><span class="learned-text">+5 learned</span><span class="finish">done 1:07am</span></div>
+        <div class="nudge-quiet">Your emails really take <span class="amb">~15 min</span>.</div>
+        <div class="btn"><span class="tri"></span> Start</div>
+      </div></div>
+    </div>
+
+    <!-- D: appended inline -->
+    <div class="col">
+      <div class="tag">D · Appended to +5 learned</div>
+      <div class="note">No new line at all. The coaching rides the existing amber: <b>+5 learned · block 15</b>. Zero added height, message still present.</div>
+      <div class="phone"><div class="card">
+        <div class="head"><div style="flex:1; display:flex; flex-direction:column; gap:6px;"><div class="eyebrow">NEXT · ADMIN &amp; EMAIL</div><div class="title">WRITE EMAILS</div></div><div class="honest"><span class="num">~15</span><span class="unit">min</span></div></div>
+        <div class="bar"><div class="guess" style="width:67%"></div><div class="extra" style="width:33%"></div></div>
+        <div class="labels"><span class="lbl guess">guessed 10</span><span class="learned-text">+5 learned · block 15</span><span class="finish">done 1:07am</span></div>
+        <div class="btn"><span class="tri"></span> Start</div>
+      </div></div>
+    </div>
+
+  </div>
+</body>
+</html>

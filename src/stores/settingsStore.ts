@@ -43,6 +43,9 @@ interface SettingsState {
    *  the gentle check-in is opt-in and Pro-only. Reads the model, trains nothing. */
   hyperfocusGuard: GuardrailMultiple;
   setHyperfocusGuard: (v: GuardrailMultiple) => void;
+  /** Whether the end-of-day feature is active. On by default. */
+  dayEndEnabled: boolean;
+  setDayEndEnabled: (v: boolean) => void;
   /** Return every preference to its first-run default (full data-reset path). */
   reset: () => void;
 }
@@ -68,6 +71,8 @@ export const useSettingsStore = create<SettingsState>()(
         set({ windowStartMin: clampDayEndMin(startMin), windowEndMin: clampDayEndMin(endMin) }),
       hyperfocusGuard: DEFAULT_GUARDRAIL,
       setHyperfocusGuard: (hyperfocusGuard) => set({ hyperfocusGuard }),
+      dayEndEnabled: true,
+      setDayEndEnabled: (dayEndEnabled) => set({ dayEndEnabled }),
       reset: () =>
         set({
           colorMode: 'system',
@@ -76,6 +81,7 @@ export const useSettingsStore = create<SettingsState>()(
           displayName: undefined,
           archetypeSeed: undefined,
           dayEndMin: DEFAULT_DAY_END_MIN,
+          dayEndEnabled: true,
           windowStartMin: null,
           windowEndMin: null,
           hyperfocusGuard: DEFAULT_GUARDRAIL,

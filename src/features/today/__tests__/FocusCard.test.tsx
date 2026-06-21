@@ -15,11 +15,11 @@ describe('FocusCard', () => {
   it('renders the hero number, gap, finish projection, and Start', () => {
     const onStart = jest.fn();
     render(
-      <FocusCard category="cleaning" categoryLabel="Cleaning" taskTitle="Clean the kitchen"
+      <FocusCard categoryLabel="Cleaning" taskTitle="Clean the kitchen"
         summary={summary} finishClock="4:11pm" onStart={onStart} />,
     );
     expect(screen.getByText('~30')).toBeOnTheScreen();
-    expect(screen.getByText('+15 learned')).toBeOnTheScreen();
+    expect(screen.getByText('+ 15 learned')).toBeOnTheScreen();
     expect(screen.getByText('done 4:11pm')).toBeOnTheScreen();
     fireEvent.press(screen.getByText('Start'));
     expect(onStart).toHaveBeenCalledTimes(1);
