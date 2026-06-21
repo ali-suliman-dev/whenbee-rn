@@ -2,6 +2,7 @@ import { renderHook } from '@testing-library/react-native';
 import { useToday } from '../useToday';
 import { useCalibrationStore, type ReclaimSummary } from '@/src/stores/calibrationStore';
 import { useTasksStore } from '@/src/stores/tasksStore';
+import { useTimerStore } from '@/src/stores/timerStore';
 
 // useFocusEffect runs its effect immediately in tests (no real navigation focus).
 jest.mock('expo-router', () => ({
@@ -39,6 +40,7 @@ function stubStoreEffects() {
 beforeEach(() => {
   useTasksStore.setState({ tasks: [] });
   useCalibrationStore.setState({ logs: 0, statsByCategory: {} });
+  useTimerStore.getState().cancel();
   stubStoreEffects();
 });
 
@@ -100,6 +102,43 @@ describe('useToday', () => {
 
     const { result } = renderHook(() => useToday());
     expect(result.current.focusPreEstimate).toBe(false);
+  });
+
+  describe('while a timer is running', () => {
+    function seedThreeQueued() {
+      const store = useTasksStore.getState();
+      const a = store.addTask({ label: 'TEST', category: 'admin', guessMin: 15, nowMs: T0 });
+      const b = store.addTask({ label: 'TEST 2', category: 'admin', guessMin: 5, nowMs: T0 + 1 });
+      const c = store.addTask({ label: 'TEST 3', category: 'admin', guessMin: 15, nowMs: T0 + 2 });
+      return { a, b, c };
+    }
+
+    it('keeps the running task out of up-next (no duplicate) and never hides the oldest task', () => {
+      const { a, b, c } = seedThreeQueued();
+      // Timer running on the newest task (the "Add & start timer" flow).
+      useTimerStore.setState({ isRunning: true, taskId: c.id, taskLabel: c.label });
+
+      const { result } = renderHook(() => useToday());
+      const upNextIds = result.current.upNext.map((r) => r.id);
+
+      // Running task must NOT appear in up-next…
+      expect(upNextIds).not.toContain(c.id);
+      // …and the previously-focused oldest task must stay visible.
+      expect(upNextIds).toContain(a.id);
+      expect(upNextIds).toContain(b.id);
+      expect(upNextIds).toHaveLength(2);
+    });
+
+    it('hides nothing from up-next for a quick-start (untracked) session', () => {
+      const { a, b, c } = seedThreeQueued();
+      // Quick-start: a live timer with no taskId.
+      useTimerStore.setState({ isRunning: true, taskId: null, taskLabel: '' });
+
+      const { result } = renderHook(() => useToday());
+      const upNextIds = result.current.upNext.map((r) => r.id);
+
+      expect(upNextIds).toEqual([a.id, b.id, c.id]);
+    });
   });
 
   it('title-cases custom category slugs', () => {
