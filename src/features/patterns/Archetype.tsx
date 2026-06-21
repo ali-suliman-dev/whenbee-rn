@@ -90,5 +90,3 @@ export function ArchetypeHero({ card }: { card: ArchetypeCard }) {
   );
 }
 
-// TODO(task10): remove alias once the route imports ArchetypeHero directly.
-export { ArchetypeHero as Archetype };

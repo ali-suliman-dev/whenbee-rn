@@ -60,11 +60,13 @@ describe('Patterns screen', () => {
     render(<Patterns />);
 
     await waitFor(() => {
-      // Archetype qualifies (2 categories, ≥12 logs) and the honest map lists rows.
+      // ArchetypeHero qualifies (2 categories, ≥12 logs) and the honest map lists rows.
       expect(screen.getByText('YOUR TIME PERSONALITY')).toBeOnTheScreen();
     });
     expect(screen.getByText('YOUR HONEST MAP')).toBeOnTheScreen();
     expect(screen.getByText('WHAT TO EXPECT')).toBeOnTheScreen();
+    // Section header from the redesigned sectioned story.
+    expect(screen.getByText('Your progress')).toBeTruthy();
     // The empty state must NOT show when cards are present.
     expect(screen.queryByText('Your patterns are on the way')).toBeNull();
   });

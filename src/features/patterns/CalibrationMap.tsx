@@ -106,5 +106,3 @@ export function HonestMap({ rows }: { rows: CalibrationMapRow[] }) {
   );
 }
 
-// TODO(task10): remove alias once the route imports HonestMap directly.
-export { HonestMap as CalibrationMap };

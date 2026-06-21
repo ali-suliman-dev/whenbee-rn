@@ -37,5 +37,3 @@ export function DriftNote({ card }: { card: DriftAlertCard }) {
   );
 }
 
-// TODO(task10): remove alias once the route imports DriftNote directly.
-export { DriftNote as DriftAlert };
