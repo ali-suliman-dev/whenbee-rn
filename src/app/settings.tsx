@@ -1,5 +1,5 @@
 import { useCallback, useState, type ReactNode } from 'react';
-import { View, Text, Pressable, Switch, ScrollView, type ViewStyle, type TextStyle } from 'react-native';
+import { View, Text, Pressable, Switch, ScrollView, TextInput, type ViewStyle, type TextStyle } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
@@ -116,6 +116,8 @@ export default function Settings() {
   const t = useTheme();
   const insets = useSafeAreaInsets();
   const { colorMode, setColorMode } = useSettingsStore();
+  const displayName = useSettingsStore((s) => s.displayName);
+  const setDisplayName = useSettingsStore((s) => s.setDisplayName);
   const dailyRitualEnabled = useSettingsStore((s) => s.dailyRitualEnabled);
   const setDailyRitualEnabled = useSettingsStore((s) => s.setDailyRitualEnabled);
   const isPro = useEntitlement((s) => s.isPro);
@@ -218,6 +220,44 @@ export default function Settings() {
             title="Categories"
             note={`${categoryCount} tracked`}
             onPress={() => router.push('/categories')}
+          />
+          <View
+            style={{
+              flexDirection: 'row',
+              alignItems: 'center',
+              gap: t.space[3],
+              minHeight: t.size.control.lg,
+              backgroundColor: t.colors.surface,
+              borderWidth: t.borderWidth.hairline,
+              borderColor: t.colors.hairline,
+              borderRadius: t.radii.card,
+              borderCurve: 'continuous',
+              paddingHorizontal: t.space[4],
+              paddingVertical: t.space[3],
+            }}
+          >
+            <Ionicons name="person-outline" size={t.iconSize.md} color={t.colors.inkSoft} />
+            <TextInput
+              accessibilityLabel="Your name"
+              placeholder="Your name"
+              placeholderTextColor={t.colors.inkFaint}
+              value={displayName ?? ''}
+              onChangeText={(text) => setDisplayName(text || undefined)}
+              style={{
+                flex: 1,
+                ...(type.bodySmBold as unknown as TextStyle),
+                color: t.colors.ink,
+              }}
+              returnKeyType="done"
+              autoCorrect={false}
+            />
+          </View>
+          <SettingRow
+            icon="time-outline"
+            title="Re-take time-style quiz"
+            note="Update your time-personality seed."
+            onPress={() => router.push('/(modals)/archetype-quiz')}
+            accessibilityLabel="Re-take time-style quiz"
           />
           <SettingRow
             icon="happy-outline"

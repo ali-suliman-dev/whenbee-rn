@@ -25,6 +25,7 @@ import { projectedFinish, formatClockMeridiem } from '@/src/lib/time';
 import { useTasksStore } from '@/src/stores/tasksStore';
 import { kv } from '@/src/lib/kv';
 import { useFocusedValue } from '@/src/hooks/useFocusedValue';
+import { useGreeting } from '@/src/features/today/useGreeting';
 
 // Date label, e.g. "Fri · Jun 12" — the day + date, no clock (the time added
 // nothing here and ticked distractingly).
@@ -153,6 +154,8 @@ export default function Today() {
   const ritualDone = useFocusedValue(done.length > 0);
   const shownCells = useFocusedValue(honeyCells);
 
+  const greeting = useGreeting();
+
   const sectionLabel: TextStyle = {
     ...(type.eyebrow as unknown as TextStyle),
     color: t.colors.inkSoft,
@@ -169,6 +172,13 @@ export default function Today() {
           }}
           showsVerticalScrollIndicator={false}
         >
+          <Text
+            style={{ ...(type.subtitle as unknown as TextStyle), color: t.colors.ink }}
+            accessibilityRole="header"
+          >
+            {greeting}
+          </Text>
+
           <ScreenHeader
             title="Today"
             subtitle={dateLabel(new Date())}

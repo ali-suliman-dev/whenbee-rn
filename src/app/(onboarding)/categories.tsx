@@ -64,7 +64,7 @@ export default function Categories() {
 
   return (
     <Screen backdrop={<OnboardingBackdrop />}>
-      <StepProgress current={1} />
+      <StepProgress current={1} total={4} />
       {/* Tapping anywhere outside the inline "+ New" input dismisses the keyboard. */}
       <Pressable
         accessible={false}
@@ -152,7 +152,7 @@ export default function Categories() {
           label="Continue →"
           fullWidth
           disabled={!canContinue}
-          onPress={() => router.push('/(onboarding)/ready')}
+          onPress={() => router.push('/(onboarding)/personalize')}
         />
       </Reveal>
       <View style={{ height: insets.bottom }} />
