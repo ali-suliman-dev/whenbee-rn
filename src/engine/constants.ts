@@ -99,7 +99,7 @@ export const GLOBAL_PRIOR_K = 6; // pseudo-count: personal weight = n/(n+k)
 export const GLOBAL_PRIOR_MAX_WEIGHT = 0.6; // cap so a new category keeps its own identity
 
 // ── Accuracy trend series (ProgressChart — "you, then vs now") ────────────────
-export const ACCURACY_TREND_MIN_LOGS = 6; // below this, UI falls back to 2-point
+export const ACCURACY_TREND_MIN_LOGS = 12; // below this, UI falls back to 2-point — each of 6 buckets needs ≥2 logs
 export const ACCURACY_TREND_BUCKETS = 6; // max ordered windows in the series
 
 // ── Archetype quiz seed (provisional time-personality before data) ───────────
