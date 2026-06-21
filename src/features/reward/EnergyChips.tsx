@@ -1,12 +1,12 @@
-import { useState } from 'react';
-import { View, type ViewStyle, type TextStyle } from 'react-native';
-import Animated, { FadeInDown, useReducedMotion } from 'react-native-reanimated';
 import { AppText } from '@/src/components/AppText';
 import { Chip } from '@/src/components/Chip';
-import { useTheme } from '@/src/theme/useTheme';
-import { type } from '@/src/theme/typography';
 import { analytics } from '@/src/services/analytics';
 import { useCalibrationStore } from '@/src/stores/calibrationStore';
+import { type } from '@/src/theme/typography';
+import { useTheme } from '@/src/theme/useTheme';
+import { useState } from 'react';
+import { View, type TextStyle, type ViewStyle } from 'react-native';
+import Animated, { FadeInDown, useReducedMotion } from 'react-native-reanimated';
 import { EnergyGlyph, type EnergyKind } from './EnergyGlyph';
 
 const ENTER_STAGGER = 70;
@@ -46,7 +46,7 @@ export function EnergyChips({ eventId }: { eventId: string }) {
   // Light indigo pill in light mode (the deepened glyph reads against it); the
   // plain surface well in dark mode reads fine already.
   const chipContainer: ViewStyle = {
-    backgroundColor: t.mode === 'light' ? t.colors.primaryWash : t.colors.surface,
+    backgroundColor: t.mode === 'light' ? t.colors.primaryWash : t.colors.surfaceSunken,
     paddingHorizontal: t.space[3],
     paddingVertical: t.space[1.5],
     flex: 1,
@@ -71,14 +71,14 @@ export function EnergyChips({ eventId }: { eventId: string }) {
                     .stiffness(t.motion.spring.stiffness)
             }
           >
-          <Chip
-            label={o.label}
-            icon={<EnergyGlyph kind={o.value} active={selected === o.value} />}
-            selected={selected === o.value}
-            style={{ flex: 1 }}
-            containerStyle={chipContainer}
-            onPress={() => pick(o.value)}
-          />
+            <Chip
+              label={o.label}
+              icon={<EnergyGlyph kind={o.value} active={selected === o.value} />}
+              selected={selected === o.value}
+              style={{ flex: 1 }}
+              containerStyle={chipContainer}
+              onPress={() => pick(o.value)}
+            />
           </Animated.View>
         ))}
       </View>

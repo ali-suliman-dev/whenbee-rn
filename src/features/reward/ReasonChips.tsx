@@ -1,11 +1,11 @@
-import { useEffect, useRef, useState } from 'react';
-import { View, type ViewStyle, type TextStyle } from 'react-native';
-import Animated, { FadeIn, FadeInDown, useReducedMotion } from 'react-native-reanimated';
 import { Chip } from '@/src/components/Chip';
-import { useTheme } from '@/src/theme/useTheme';
-import { type } from '@/src/theme/typography';
-import { useCalibrationStore } from '@/src/stores/calibrationStore';
 import { analytics } from '@/src/services/analytics';
+import { useCalibrationStore } from '@/src/stores/calibrationStore';
+import { type } from '@/src/theme/typography';
+import { useTheme } from '@/src/theme/useTheme';
+import { useEffect, useRef, useState } from 'react';
+import { View, type TextStyle, type ViewStyle } from 'react-native';
+import Animated, { FadeIn, FadeInDown, useReducedMotion } from 'react-native-reanimated';
 import { ReasonGlyph, type ReasonGlyphKind } from './ReasonGlyph';
 import type { RunDirection } from './useReward';
 
@@ -110,7 +110,7 @@ export function ReasonChips({
   // Light indigo pill in light mode so the leading glyph reads against it; the
   // plain surface well in dark mode reads fine already.
   const chipContainer: ViewStyle = {
-    backgroundColor: t.mode === 'light' ? t.colors.primaryWash : t.colors.surface,
+    backgroundColor: t.mode === 'light' ? t.colors.primaryWash : t.colors.surfaceSunken,
     paddingHorizontal: t.space[3],
     paddingVertical: t.space[1.5],
     flex: 1,

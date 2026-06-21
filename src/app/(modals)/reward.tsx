@@ -1,5 +1,16 @@
+import { AppButton } from '@/src/components/AppButton';
+import { AppText } from '@/src/components/AppText';
+import { HonestNumber } from '@/src/components/HonestNumber';
+import { Screen } from '@/src/components/Screen';
+import { EnergyChips } from '@/src/features/reward/EnergyChips';
+import { HoneyBar } from '@/src/features/reward/HoneyBar';
+import { ReasonChips } from '@/src/features/reward/ReasonChips';
+import { RewardBee } from '@/src/features/reward/RewardBee';
+import { useReward } from '@/src/features/reward/useReward';
+import { type } from '@/src/theme/typography';
+import { useTheme } from '@/src/theme/useTheme';
 import { useEffect } from 'react';
-import { View, Text, Pressable, ScrollView, type ViewStyle, type TextStyle } from 'react-native';
+import { Pressable, ScrollView, Text, View, type TextStyle, type ViewStyle } from 'react-native';
 import Animated, {
   useAnimatedStyle,
   useReducedMotion,
@@ -7,17 +18,6 @@ import Animated, {
   withTiming,
 } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { Screen } from '@/src/components/Screen';
-import { AppText } from '@/src/components/AppText';
-import { AppButton } from '@/src/components/AppButton';
-import { HonestNumber } from '@/src/components/HonestNumber';
-import { useTheme } from '@/src/theme/useTheme';
-import { type } from '@/src/theme/typography';
-import { useReward } from '@/src/features/reward/useReward';
-import { RewardBee } from '@/src/features/reward/RewardBee';
-import { HoneyBar } from '@/src/features/reward/HoneyBar';
-import { ReasonChips } from '@/src/features/reward/ReasonChips';
-import { EnergyChips } from '@/src/features/reward/EnergyChips';
 
 // ──────────────────────────────────────────────────────────────────────────────
 // Reward (Screen 4) — the dopamine payoff: logging IS the reward. One read path,
@@ -139,14 +139,14 @@ export default function Reward() {
   // The payoff card groups honey + multiplier into one unit. Borders
   // are 0 globally, so the grouping reads off the white fill on the lavender bg.
   const payoffCard: ViewStyle = {
-    backgroundColor: t.colors.surfaceRaised,
+    backgroundColor: t.colors.surface,
     borderRadius: t.radii.card,
     padding: t.space[4],
     gap: t.space[2.5], // medium tier — card internals (tightened with the row collapse)
   };
   const heroBlock: ViewStyle = { alignItems: 'center', gap: t.space[1.5] };
   const questionsCard: ViewStyle = {
-    backgroundColor: t.colors.surfaceRaised,
+    backgroundColor: t.colors.surface,
     borderRadius: t.radii.card,
     padding: t.space[4],
     gap: t.space[3],
@@ -239,7 +239,11 @@ export default function Reward() {
           <View style={questionsCard}>
             {r.reasonDirection ? (
               <>
-                <ReasonChips eventId={r.eventId} direction={r.reasonDirection} category={r.category} />
+                <ReasonChips
+                  eventId={r.eventId}
+                  direction={r.reasonDirection}
+                  category={r.category}
+                />
                 <View style={questionsDivider} />
               </>
             ) : null}
