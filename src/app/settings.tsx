@@ -277,6 +277,12 @@ export default function Settings() {
             accessibilityLabel={`End of day, currently ${dayEndLabel}. Tap to change.`}
           />
           <SettingRow
+            icon="document-text-outline"
+            title="Export a report"
+            note="A clean PDF of your real time data to keep or share with a coach or doctor."
+            onPress={() => router.push('/(modals)/report')}
+          />
+          <SettingRow
             icon="lock-closed-outline"
             title="Privacy"
             note="What stays on your phone."

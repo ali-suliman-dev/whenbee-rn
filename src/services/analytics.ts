@@ -104,7 +104,7 @@ export interface AppEventProps {
   pro_reveal_tap: { surface: 'whenbee_hub' };
   pro_preview_tap: { surface: 'whenbee_hub' };
   paywall_view: {
-    trigger: 'make_day_honest' | 'settings_upgrade' | 'steals_your_time' | 'honest_range' | 'pro_reveal' | 'pro_preview' | 'goals' | 'focus_window' | 'hyperfocus_guard';
+    trigger: 'make_day_honest' | 'settings_upgrade' | 'steals_your_time' | 'honest_range' | 'pro_reveal' | 'pro_preview' | 'goals' | 'focus_window' | 'hyperfocus_guard' | 'pdf_export';
     readiness?: 'pre' | 'honest';
   };
   founder_reserve: { result: 'reserved' };
@@ -116,6 +116,16 @@ export interface AppEventProps {
 
   // ── On-device share ──────────────────────────────────────────────────────────
   plan_shared: { surface: 'plan' | 'archetype'; is_pro: boolean; result: 'shared' | 'gated' | 'error' };
+
+  // ── PDF report export (Pro) ──────────────────────────────────────────────────
+  report_opened: { is_pro: boolean };
+  report_paywall: { trigger: 'pdf_export' };
+  report_export: {
+    window: '30d' | '90d' | 'all';
+    category_count: number;
+    total_logs: number;
+    result: 'shared' | 'gated' | 'thin' | 'error';
+  };
 
   // ── Calendar / reminders ─────────────────────────────────────────────────────
   calendar_padded: { events_count: number; day_end_shift_min: number };
