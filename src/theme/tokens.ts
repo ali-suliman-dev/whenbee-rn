@@ -182,6 +182,7 @@ export const tokens = {
       // surfaceSunken: '#ECE8DE', // wells / inset tracks
       hairline: '#DAD5C9', // 1px internal dividers (reads at 3:1 non-text)
       border: '#CFC9BA', // stronger edge for cards that must read
+      divider: 'rgba(0,0,0,0.10)', // section separator — a darker recessed line (not a tint)
       shineOverlay: 'rgba(255,255,255,0.55)', // inner top-edge specular (glass lift)
 
       // ── ink ramp (text) ──
@@ -195,6 +196,7 @@ export const tokens = {
       primarySoft: '#E4E0FA', // low-emphasis indigo fill
       primaryWash: '#EFEDFC', // faintest indigo tint — lighter than primarySoft, still reads off white
       primarySoft2: 'rgba(130,117,240,0.6)',
+      primaryChip: 'rgba(107,91,230,0.16)', // CTA indigo at higher opacity than primarySoft (pairs with primary text)
       // Guess-segment diagonal stripe pair — softer than the CTA, clearly two-tone.
       gapStripeHi: '#C8C2F0', // lighter lavender stripe
       gapStripeLo: '#A89EE4', // medium indigo stripe
@@ -257,6 +259,7 @@ export const tokens = {
       surfaceSunken: '#15161F',
       hairline: 'rgba(255,255,255,0.08)', // internal dividers only
       border: 'rgba(255,255,255,0.14)', // cards that must read
+      divider: 'rgba(0,0,0,0.32)', // section separator — a darker recessed line on the deep bg
       shineOverlay: 'rgba(255,255,255,0.07)', // inner top-edge specular (glass lift)
 
       // ── ink ramp ──
@@ -272,6 +275,7 @@ export const tokens = {
       primarySoft: 'rgba(130,117,240,0.22)',
       primaryWash: 'rgba(130,117,240,0.10)', // faintest indigo tint (dark parity; unused in dark chips)
       primarySoft2: 'rgba(130,117,240,0.6)',
+      primaryChip: 'rgba(130,117,240,0.20)', // CTA indigo at higher opacity than primarySoft — a more-filled tinted chip (pairs with primary text)
       // Guess-segment diagonal stripe pair — indigo stripes on near-bg fill.
       gapStripeHi: '#A898F5', // lighter than CTA primary (#8275F0), clearly visible
       gapStripeLo: '#15161F', // = surfaceSunken — blends into bg, only Hi pops
