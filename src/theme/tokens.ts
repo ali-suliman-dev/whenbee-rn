@@ -62,9 +62,16 @@ export const tokens = {
   // Onboarding aurora glow opacities (mode-independent alphas; colours come from colors.primary/primaryEdge).
   gradients: { backdropTop: 0.22, backdropCorner: 0.16 },
 
-  // Tactile scale feedback for tappable controls (chips, segments).
+  // Tactile scale feedback for tappable controls (chips, segments, ghost button).
   //   pressIn — finger-down dip; the control yields to the touch (only while held).
-  scale: { pressIn: 0.96 },
+  //   0.94 deepens the squeeze so the press reads as a real physical push.
+  scale: { pressIn: 0.94 },
+
+  // Coin-edge depth for FILLED pill buttons (AppButton indigo/amber). `edge` is how
+  // far the darker bottom edge peeks below the pill at rest (the 3D thickness);
+  // `drop` is how far the pill travels down onto that edge on press. drop < edge
+  // leaves a 1pt sliver so the edge never fully disappears under the pill.
+  depth: { edge: 8, drop: 7 },
 
   // The numeric type scale — typography.ts (the role layer) derives every role
   // size from these, so the whole scale is editable in one place.
@@ -152,6 +159,10 @@ export const tokens = {
     // Honey starts only AFTER the border finishes: border ends at dBorder+border
     // = 40+660 = 700ms, so dHoney = 740 leaves a 40ms beat before honey wells up.
     seal: { border: 660, honey: 580, bloom: 900, mark: 360, spark: 620, dBorder: 40, dHoney: 740, dBloom: 1020, dMark: 1240, dSpark: 1260 },
+    // Quick-action arc — the three bubbles that fan from behind the + button.
+    // Slow + smooth on the way out (a premium unfurl), a touch quicker tucking
+    // back behind the button. Tune both here, not in the component.
+    arcIn: 1000, arcOut: 840,
     // Shared physics — deduped from AppButton + FAB.
     spring: { damping: 13, stiffness: 340 },
     // Named curves — declared once, not re-typed per file.
@@ -409,6 +420,14 @@ export const tokens = {
       iconSize: 22,
       // Side bubbles fan out ±spreadDeg from 270° (straight up). Wider = taller crown on Timer.
       spreadDeg: 52,
+      // leadFrac = how late (as a fraction of the 0→1 open progress) the side
+      // bubbles start vs the center (Timer). The center leads the expand and is
+      // the last to tuck back behind the + on close — a subtle hero-first cascade.
+      leadFrac: 0.12,
+      // spinDeg = how far each bubble rotates as it travels out (and back in).
+      // Sides mirror each other; reads as a hand of cards fanning open. Large
+      // enough (~¾ turn) that the rotation is obvious, not a subtle nudge.
+      spinDeg: 300,
     },
   },
 
