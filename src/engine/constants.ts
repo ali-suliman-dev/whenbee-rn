@@ -98,6 +98,9 @@ export const GLOBAL_PRIOR_MIN_LOGS = 4; // below this, use the population prior 
 export const GLOBAL_PRIOR_K = 6; // pseudo-count: personal weight = n/(n+k)
 export const GLOBAL_PRIOR_MAX_WEIGHT = 0.6; // cap so a new category keeps its own identity
 
+// ── End-of-day preference ─────────────────────────────────────────────────────
+/** Default end-of-day, minutes after local midnight. 21:00 = a sane "I stop by 9pm". */
+export const DEFAULT_DAY_END_MIN = 21 * 60; // 1260
 // ── Accuracy trend series (ProgressChart — "you, then vs now") ────────────────
 export const ACCURACY_TREND_MIN_LOGS = 6; // below this, UI falls back to 2-point
 export const ACCURACY_TREND_BUCKETS = 6; // max ordered windows in the series
