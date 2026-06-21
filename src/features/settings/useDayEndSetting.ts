@@ -13,16 +13,26 @@ export function useDayEndSetting() {
     [dayEndMin],
   );
 
-  const commit = useCallback(
+  /** Persist an epoch-on-today as minutes-after-midnight without closing the editor.
+   *  The wheel fires per column change, so saving live keeps both HH and MM edits. */
+  const save = useCallback(
     (chosenMs: number) => {
       setDayEndMin(Math.round((chosenMs - startOfLocalDay(chosenMs)) / 60_000));
-      setEditing(false);
     },
     [setDayEndMin],
+  );
+
+  /** Persist the chosen time and close the editor (single-shot commit). */
+  const commit = useCallback(
+    (chosenMs: number) => {
+      save(chosenMs);
+      setEditing(false);
+    },
+    [save],
   );
 
   const open = useCallback(() => setEditing(true), []);
   const close = useCallback(() => setEditing(false), []);
 
-  return { dayEndMin, label, editing, open, close, commit };
+  return { dayEndMin, label, editing, open, close, save, commit };
 }

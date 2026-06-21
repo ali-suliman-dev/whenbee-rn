@@ -1,16 +1,19 @@
 import { useCallback, useState, type ReactNode } from 'react';
-import { View, Text, Pressable, Switch, ScrollView, type ViewStyle, type TextStyle } from 'react-native';
+import { Modal, View, Text, Pressable, Switch, ScrollView, type ViewStyle, type TextStyle } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { Screen } from '@/src/components/Screen';
 import { AppText } from '@/src/components/AppText';
+import { AppButton } from '@/src/components/AppButton';
 import { ProUpsellCard } from '@/src/components/ProUpsellCard';
 import { Chip } from '@/src/components/Chip';
 import { AppearanceGlyph } from '@/src/components/icons/AppearanceGlyph';
 import { DataResetGlyph } from '@/src/components/DataResetGlyph';
 import { ConfirmSheet } from '@/src/components/ConfirmSheet';
 import { Toast, AUTO_HIDE_MS } from '@/src/components/Toast';
+import { FinishTimeWheel } from '@/src/features/planner/FinishTimeWheel';
+import { dayEndEpochFor } from '@/src/lib/time';
 import { useTheme } from '@/src/theme/useTheme';
 import { type } from '@/src/theme/typography';
 import { useSettingsStore, type ColorModePref } from '@/src/stores/settingsStore';
@@ -18,6 +21,7 @@ import { useCategoriesStore } from '@/src/stores/categoriesStore';
 import { useEntitlement } from '@/src/features/paywall/useEntitlement';
 import { useAccountActions, type RestoreOutcome } from '@/src/features/paywall/useAccountActions';
 import { useReminderSetting } from '@/src/features/settings/useReminderSetting';
+import { useDayEndSetting } from '@/src/features/settings/useDayEndSetting';
 import { useAccountReset } from '@/src/features/settings/useAccountReset';
 
 const modes: ColorModePref[] = ['system', 'light', 'dark'];
@@ -123,6 +127,14 @@ export default function Settings() {
   const categoryCount = useCategoriesStore((s) => s.categories.length);
   const { restoring, manageSubscription, restorePurchases } = useAccountActions();
   const { enabled: remindersEnabled, toggle: toggleReminders } = useReminderSetting();
+  const {
+    dayEndMin,
+    label: dayEndLabel,
+    editing: dayEndEditing,
+    open: openDayEnd,
+    close: closeDayEnd,
+    save: saveDayEnd,
+  } = useDayEndSetting();
   const { resetting, resetProgress, eraseEverything } = useAccountReset();
 
   const [toastMsg, setToastMsg] = useState('');
@@ -252,6 +264,13 @@ export default function Settings() {
             }
           />
           <SettingRow
+            icon="moon-outline"
+            title="End of day"
+            note={`Your day winds down around ${dayEndLabel}`}
+            onPress={openDayEnd}
+            accessibilityLabel={`End of day, currently ${dayEndLabel}. Tap to change.`}
+          />
+          <SettingRow
             icon="lock-closed-outline"
             title="Privacy"
             note="What stays on your phone."
@@ -348,6 +367,43 @@ export default function Settings() {
         onConfirm={handleEraseEverything}
         onCancel={() => setSheet(null)}
       />
+
+      <Modal
+        visible={dayEndEditing}
+        transparent
+        animationType="fade"
+        onRequestClose={closeDayEnd}
+      >
+        <View style={{ flex: 1, justifyContent: 'flex-end' }}>
+          <Pressable
+            style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: t.colors.scrim }}
+            accessibilityLabel="Dismiss"
+            onPress={closeDayEnd}
+          />
+          <View
+            style={{
+              backgroundColor: t.colors.surface,
+              borderTopLeftRadius: t.radii.sheet,
+              borderTopRightRadius: t.radii.sheet,
+              borderCurve: 'continuous',
+              paddingHorizontal: t.space[5],
+              paddingTop: t.space[5],
+              paddingBottom: insets.bottom + t.space[5],
+              gap: t.space[4],
+            }}
+          >
+            <AppText variant="title" style={{ color: t.colors.ink }}>
+              When does your day wind down?
+            </AppText>
+            <FinishTimeWheel
+              showModes={false}
+              valueMs={dayEndEpochFor(Date.now(), dayEndMin)}
+              onChange={(ms) => saveDayEnd(ms)}
+            />
+            <AppButton label="Done" onPress={closeDayEnd} variant="amber" fullWidth />
+          </View>
+        </View>
+      </Modal>
 
       <Toast message={toastMsg} visible={toastVisible} />
     </Screen>
