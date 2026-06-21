@@ -93,7 +93,7 @@ export function CategoryRangeBand({
     color: isPro ? t.colors.onAmber : t.colors.primary,
   };
   const caret: ViewStyle = {
-    width: 0, height: 0, marginTop: -1,
+    width: 0, height: 0, marginTop: -t.progress.caret.overlap,
     borderLeftWidth: t.progress.caret.w / 2, borderRightWidth: t.progress.caret.w / 2,
     borderTopWidth: t.progress.caret.h, borderStyle: 'solid',
     borderLeftColor: 'transparent', borderRightColor: 'transparent',
