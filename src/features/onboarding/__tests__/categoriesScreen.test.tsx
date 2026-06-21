@@ -32,7 +32,7 @@ describe('Onboarding Step 1 — Pick tasks', () => {
     expect(useOnboardingStore.getState().picked.map((p) => p.id)).toEqual(['cleaning']);
 
     fireEvent.press(screen.getByText('Continue →'));
-    expect(pushMock).toHaveBeenCalledWith('/(onboarding)/ready');
+    expect(pushMock).toHaveBeenCalledWith('/(onboarding)/personalize');
   });
 
   it('toggling a chip off re-disables Continue', () => {

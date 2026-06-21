@@ -35,7 +35,7 @@ export default function Ready() {
 
   return (
     <Screen backdrop={<OnboardingBackdrop />}>
-      <StepProgress current={2} />
+      <StepProgress current={3} total={4} />
       <View style={{ flex: 1, gap: t.space[4], paddingTop: t.space[3] }}>
         <Reveal index={0}>
           <AppText

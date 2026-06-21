@@ -81,6 +81,12 @@ export interface AppEventProps {
 
   // ── Whenbee personalization ──────────────────────────────────────────────────
   whenbee_personalized: { attribute: string; skipped: boolean };
+  personalize_shown: Record<string, never>;
+  name_set: { length: number };
+  name_skipped: Record<string, never>;
+  quiz_completed: { archetype: string };
+  quiz_skipped: Record<string, never>;
+  archetype_reopened: Record<string, never>;
 
   // ── Native presence ──────────────────────────────────────────────────────────
   widget_added: { surface: 'home' | 'lock' | 'live_activity' };
