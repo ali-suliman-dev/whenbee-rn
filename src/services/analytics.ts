@@ -100,7 +100,7 @@ export interface AppEventProps {
   pro_reveal_tap: { surface: 'whenbee_hub' };
   pro_preview_tap: { surface: 'whenbee_hub' };
   paywall_view: {
-    trigger: 'make_day_honest' | 'settings_upgrade' | 'steals_your_time' | 'honest_range' | 'pro_reveal' | 'pro_preview' | 'goals';
+    trigger: 'make_day_honest' | 'settings_upgrade' | 'steals_your_time' | 'honest_range' | 'pro_reveal' | 'pro_preview' | 'goals' | 'focus_window';
     readiness?: 'pre' | 'honest';
   };
   founder_reserve: { result: 'reserved' };
@@ -127,6 +127,13 @@ export interface AppEventProps {
   goal_met: { category: string; target_band: number; logs_to_meet: number };
   goal_replaced: { category: string; from_band: number; to_band: number };
   goal_kept: { category: string; band: number };
+
+  // ── Focus-window planner (Pro) ────────────────────────────────────────────────
+  focus_window_viewed: { verdict: 'fits' | 'spills' | 'unset'; fit_count: number; total_count: number; window_min: number; is_pro: boolean };
+  focus_window_set: { window_start_min: number; window_end_min: number; window_min: number };
+  focus_window_spills: { fit_count: number; spill_count: number; window_min: number };
+  focus_window_promoted: { saved_min: number; evicted_n: number; verdict_after: 'fits' | 'spills' };
+  focus_window_paywall: { source: 'plan_section' };
 }
 
 export type AppEvent = keyof AppEventProps;
