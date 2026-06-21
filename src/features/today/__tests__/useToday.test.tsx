@@ -36,20 +36,18 @@ beforeEach(() => {
   });
 });
 
-describe('useToday companion + reclaim', () => {
+describe('useToday companion', () => {
   it('reports a first-run user (no lifetime nectar)', async () => {
     const { result } = renderHook(() => useToday());
     await waitFor(() => expect(result.current.hasEverLogged).toBe(false));
-    expect(result.current.reclaimLifetimeMin).toBe(0);
   });
 
-  it('reports a returning user with lifetime reclaim + stage', async () => {
+  it('reports a returning user with companion stage + seed', async () => {
     useCalibrationStore.setState({
       loadReclaimSummary: async () => summary({ lifetimeMin: 860, lifetimeNectar: 12, stage: 3, seed: 7 }),
     });
     const { result } = renderHook(() => useToday());
     await waitFor(() => expect(result.current.hasEverLogged).toBe(true));
-    expect(result.current.reclaimLifetimeMin).toBe(860);
     expect(result.current.companionStage).toBe(3);
     expect(result.current.companionSeed).toBe(7);
   });

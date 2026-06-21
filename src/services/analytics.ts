@@ -24,6 +24,10 @@ type HonestRangeConfidence = 'raw' | 'setting' | 'honest';
 /** Where a guess/timer/log originated. */
 type EventSource = 'today' | 'fab' | 'addtask' | 'timed' | 'retro';
 
+/** Hyperfocus guardrail multiple, mirrored locally (cf. `TierName`) so analytics
+ *  stays dependency-free. Matches `GuardrailMultiple`. */
+type GuardrailSetting = 'off' | '1.5x' | '2x' | '3x';
+
 /** Map of every analytics event to its props shape (the type contract). */
 export interface AppEventProps {
   // ── Lifecycle (kept; aliases of §2 app_installed / onboarding_completed) ──────
@@ -55,10 +59,6 @@ export interface AppEventProps {
   cell_capped: { tier: TierName };
   aha_shown: { category: string; multiplier: number; n: number };
   discovery_unlocked: { categoryId: string; multiplier: number };
-
-  // ── Reclaim ──────────────────────────────────────────────────────────────────
-  reclaim_deposit: { minutes: number; category: string; source: string };
-  reclaim_total_view: { lifetime_minutes: number };
 
   // ── Decision-moment surfacing ────────────────────────────────────────────────
   honest_suggestion_shown: { category: string; guess_min: number; suggested_min: number };
@@ -110,7 +110,7 @@ export interface AppEventProps {
   pro_reveal_tap: { surface: 'whenbee_hub' };
   pro_preview_tap: { surface: 'whenbee_hub' };
   paywall_view: {
-    trigger: 'make_day_honest' | 'settings_upgrade' | 'steals_your_time' | 'honest_range' | 'pro_reveal' | 'pro_preview' | 'goals';
+    trigger: 'make_day_honest' | 'settings_upgrade' | 'steals_your_time' | 'honest_range' | 'pro_reveal' | 'pro_preview' | 'goals' | 'focus_window' | 'hyperfocus_guard' | 'pdf_export';
     readiness?: 'pre' | 'honest';
   };
   founder_reserve: { result: 'reserved' };
@@ -122,6 +122,16 @@ export interface AppEventProps {
 
   // ── On-device share ──────────────────────────────────────────────────────────
   plan_shared: { surface: 'plan' | 'archetype'; is_pro: boolean; result: 'shared' | 'gated' | 'error' };
+
+  // ── PDF report export (Pro) ──────────────────────────────────────────────────
+  report_opened: { is_pro: boolean };
+  report_paywall: { trigger: 'pdf_export' };
+  report_export: {
+    window: '30d' | '90d' | 'all';
+    category_count: number;
+    total_logs: number;
+    result: 'shared' | 'gated' | 'thin' | 'error';
+  };
 
   // ── Calendar / reminders ─────────────────────────────────────────────────────
   calendar_padded: { events_count: number; day_end_shift_min: number };
@@ -137,6 +147,20 @@ export interface AppEventProps {
   goal_met: { category: string; target_band: number; logs_to_meet: number };
   goal_replaced: { category: string; from_band: number; to_band: number };
   goal_kept: { category: string; band: number };
+
+  // ── Hyperfocus guardrail (Pro) ────────────────────────────────────────────────
+  guardrail_armed: { setting: GuardrailSetting; threshold_min: number; honest_min: number };
+  guardrail_shown: { channel: 'in_app' | 'notification'; elapsed_min: number; threshold_min: number };
+  guardrail_resolved: { action: 'keep_going' | 'wrap_up'; elapsed_min: number };
+  guardrail_setting_changed: { from: GuardrailSetting; to: GuardrailSetting };
+  guardrail_paywall: Record<string, never>;
+
+  // ── Focus-window planner (Pro) ────────────────────────────────────────────────
+  focus_window_viewed: { verdict: 'fits' | 'spills' | 'unset'; fit_count: number; total_count: number; window_min: number; is_pro: boolean };
+  focus_window_set: { window_start_min: number; window_end_min: number; window_min: number };
+  focus_window_spills: { fit_count: number; spill_count: number; window_min: number };
+  focus_window_promoted: { saved_min: number; evicted_n: number; verdict_after: 'fits' | 'spills' };
+  focus_window_paywall: { source: 'plan_section' };
 }
 
 export type AppEvent = keyof AppEventProps;

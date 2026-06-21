@@ -162,6 +162,53 @@ describe('timerStore', () => {
     expect(useTimerStore.getState().isQuickStart).toBe(false);
   });
 
+  it('starting a session leaves guardNudged false', () => {
+    useTimerStore.getState().start({ label: 'X', category: 'admin', estimateMin: 20 }, T0);
+    expect(useTimerStore.getState().guardNudged).toBe(false);
+  });
+
+  it('markGuardNudged latches guardNudged true', () => {
+    useTimerStore.getState().start({ label: 'X', category: 'admin', estimateMin: 20 }, T0);
+    useTimerStore.getState().markGuardNudged();
+    expect(useTimerStore.getState().guardNudged).toBe(true);
+  });
+
+  it('stop clears guardNudged back to false', () => {
+    useTimerStore.getState().start({ label: 'X', category: 'admin', estimateMin: 20 }, T0);
+    useTimerStore.getState().markGuardNudged();
+    useTimerStore.getState().stop(T0 + 30 * MIN);
+    expect(useTimerStore.getState().guardNudged).toBe(false);
+  });
+
+  it('cancel clears guardNudged back to false', () => {
+    useTimerStore.getState().quickStart(T0);
+    useTimerStore.getState().markGuardNudged();
+    useTimerStore.getState().cancel();
+    expect(useTimerStore.getState().guardNudged).toBe(false);
+  });
+
+  it('resumeFromKv round-trips guardNudged', () => {
+    useTimerStore.getState().start({ label: 'X', category: 'admin', estimateMin: 20 }, T0);
+    useTimerStore.getState().markGuardNudged();
+    // wipe in-memory state but leave kv intact (the persisted snapshot has guardNudged true)
+    useTimerStore.setState({
+      taskLabel: null,
+      category: null,
+      estimateMin: 0,
+      startedAt: null,
+      pausedAccumMs: 0,
+      pausedAt: null,
+      isRunning: false,
+      guessMin: 0,
+      taskId: null,
+      suggestedHonestMin: 0,
+      isQuickStart: false,
+      guardNudged: false,
+    });
+    useTimerStore.getState().resumeFromKv();
+    expect(useTimerStore.getState().guardNudged).toBe(true);
+  });
+
   it('resumeFromKv round-trips isQuickStart flag', () => {
     useTimerStore.getState().quickStart(T0);
     // wipe in-memory state but leave kv intact

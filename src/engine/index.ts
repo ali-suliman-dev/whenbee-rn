@@ -38,3 +38,8 @@ export {
   accuracyToErrorBand, errorBandToAccuracy, goalProgress, isGoalMet,
   reconcileGoal, canSetGoal, presetsForAccuracy, recommendedPreset,
 } from './goals';
+export { focusWindowMinutes, fitFocusWindow, promoteIntoWindow } from './focusWindow';
+export type { FocusWindowTask, FocusWindowInput } from './focusWindow';
+export { guardrailFactor, guardrailThresholdMin } from './guardrail';
+export { reportAccuracy, reportAccuracySpark, topSurprises, steadiestCategory } from './report';
+export type { ReportEventInput, ReportSurprise } from './report';

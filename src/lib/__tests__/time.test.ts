@@ -4,6 +4,8 @@ import {
   projectedFinish,
   minutesLeft,
   isOverrun,
+  startOfLocalDay,
+  dayEndEpochFor,
 } from '@/src/lib/time';
 
 // Build a deterministic local epoch from explicit Y/M/D h:m so the formatted
@@ -101,5 +103,31 @@ describe('isOverrun', () => {
     expect(isOverrun(15, 15 * 60)).toBe(true);
     expect(isOverrun(15, 15 * 60 + 1)).toBe(true);
     expect(isOverrun(15, 30 * 60)).toBe(true);
+  });
+});
+
+describe('startOfLocalDay', () => {
+  it('returns local midnight of the same calendar day', () => {
+    const noon = new Date(2026, 5, 21, 12, 34, 56, 789).getTime(); // 21 Jun 2026, local
+    const midnight = startOfLocalDay(noon);
+    const d = new Date(midnight);
+    expect(d.getHours()).toBe(0);
+    expect(d.getMinutes()).toBe(0);
+    expect(d.getSeconds()).toBe(0);
+    expect(d.getMilliseconds()).toBe(0);
+    expect(d.getDate()).toBe(21);
+  });
+});
+
+describe('dayEndEpochFor', () => {
+  const noon = new Date(2026, 5, 21, 12, 0, 0, 0).getTime();
+  it('places the day-end at the given minutes after local midnight (21:00)', () => {
+    expect(dayEndEpochFor(noon, 21 * 60)).toBe(startOfLocalDay(noon) + 21 * 60 * 60_000);
+  });
+  it('0 minutes equals local midnight', () => {
+    expect(dayEndEpochFor(noon, 0)).toBe(startOfLocalDay(noon));
+  });
+  it('1439 minutes equals 23:59 local', () => {
+    expect(dayEndEpochFor(noon, 1439)).toBe(startOfLocalDay(noon) + 1439 * 60_000);
   });
 });

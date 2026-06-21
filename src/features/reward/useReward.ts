@@ -41,11 +41,6 @@ export interface RewardView {
   sealed: boolean;
   capEyebrow: string | null;
   ritualLine: string;
-  /** Minutes this log just banked. The deposit beat renders only when >= 1. */
-  reclaimDeltaMin: number;
-  /** Count-up bounds: from the pre-deposit total up to the new lifetime total. */
-  reclaimFrom: number;
-  reclaimTo: number;
   /** The just-logged event's id — the row a captured reason is tagged against. */
   eventId: string | null;
   /** 'over' / 'under' when the run diverged from the guess past the gate; else null. */
@@ -119,9 +114,6 @@ export function useReward(): RewardView {
       sealed: false,
       capEyebrow: null,
       ritualLine: RITUAL_DEFAULT,
-      reclaimDeltaMin: 0,
-      reclaimFrom: 0,
-      reclaimTo: 0,
       eventId: null,
       reasonDirection: null,
       result: null,
@@ -134,12 +126,6 @@ export function useReward(): RewardView {
   // (deterministically by the running log count) and reads the dedicated
   // "Caught up. Thank you." line for retro (the rewardStore carries the source).
   const headline = rewardHeadline(source, logs);
-
-  // Reclaim count-up bounds. `reclaimTo` is the post-deposit lifetime total; the
-  // bar counts up from the pre-deposit total so the deposit reads as a deposit.
-  const reclaimDeltaMin = result.reclaimDeltaMin;
-  const reclaimTo = result.reclaimLifetimeMin;
-  const reclaimFrom = reclaimTo - reclaimDeltaMin;
 
   // Hero delta vs the guess — a glanceable "5 min over" beats the old gray
   // sentence. Ungated and neutral: every log gets one, spot-on included.
@@ -156,14 +142,11 @@ export function useReward(): RewardView {
     deltaDirection,
     category,
     categoryLabel: categoryName(category),
-    honeyPct: result.sharpness,
+    honeyPct: Math.round(result.sharpness),
     multiplier: result.multiplier,
     sealed,
     capEyebrow: result.leveledUp ? `${result.tierAfter} cell sealed` : null,
     ritualLine: sealed ? RITUAL_SEAL : RITUAL_DEFAULT,
-    reclaimDeltaMin,
-    reclaimFrom,
-    reclaimTo,
     eventId: result.eventId,
     reasonDirection: reasonDirectionFor(actualMin, guessMin),
     result,

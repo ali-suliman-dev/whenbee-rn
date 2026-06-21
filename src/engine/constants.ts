@@ -1,5 +1,5 @@
 // Calibration engine constants. PURE TS — no RN/Expo/clock.
-import type { AdaptSpeed, Tier } from '../domain/types';
+import type { AdaptSpeed, GuardrailMultiple, Tier } from '../domain/types';
 
 export const RATIO_FLOOR = 1 / 6; // clamp so one disaster can't poison the model
 export const RATIO_CEIL = 6;
@@ -98,6 +98,9 @@ export const GLOBAL_PRIOR_MIN_LOGS = 4; // below this, use the population prior 
 export const GLOBAL_PRIOR_K = 6; // pseudo-count: personal weight = n/(n+k)
 export const GLOBAL_PRIOR_MAX_WEIGHT = 0.6; // cap so a new category keeps its own identity
 
+// ── End-of-day preference ─────────────────────────────────────────────────────
+/** Default end-of-day, minutes after local midnight. 21:00 = a sane "I stop by 9pm". */
+export const DEFAULT_DAY_END_MIN = 21 * 60; // 1260
 // ── Accuracy trend series (ProgressChart — "you, then vs now") ────────────────
 export const ACCURACY_TREND_MIN_LOGS = 12; // below this, UI falls back to 2-point — each of 6 buckets needs ≥2 logs
 export const ACCURACY_TREND_BUCKETS = 6; // max ordered windows in the series
@@ -116,3 +119,22 @@ export const GOAL_MIN_LOGS = 5;
 export const GOAL_PRESETS = [40, 25, 15, 10] as const;
 /** A recommended target must be at least this many points tighter than current. */
 export const GOAL_RECOMMEND_STEP = 8;
+
+// ── Hyperfocus guardrail (Pro) ───────────────────────────────────────────────
+/** Setting → multiple of the honest number. 'off' has no entry. */
+export const GUARDRAIL_FACTORS = { '1.5x': 1.5, '2x': 2, '3x': 3 } as const;
+/** Default guardrail for a fresh install. */
+export const DEFAULT_GUARDRAIL: GuardrailMultiple = 'off';
+/** Never fire a nudge before this many elapsed minutes, regardless of factor. */
+export const GUARDRAIL_MIN_THRESHOLD_MIN = 25;
+
+// ── Focus-window planner (Pro) ────────────────────────────────────────────────
+// No tight-ratio threshold: the verdict is binary (everything fits, or something
+// spills). The window length is whatever the user set; there is no default window.
+// (No tunable constants for v1 — the fit is exact. Kept as a home for future tuning.)
+
+// ── PDF report (Pro) ─────────────────────────────────────────────────────────
+export const REPORT_MIN_LOGS = 6; // window minimum to allow export
+export const REPORT_CATEGORY_MIN_LOGS = 4; // per-row minimum in the bias table
+export const REPORT_SPARK_BUCKETS = 6; // accuracy sparkline buckets
+export const REPORT_MAX_SURPRISES = 5; // biggest-surprises cap

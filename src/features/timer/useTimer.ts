@@ -1,9 +1,11 @@
-import { useCallback, useEffect, useMemo, useRef } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   useSharedValue,
   useDerivedValue,
   useFrameCallback,
+  useAnimatedReaction,
   useReducedMotion,
+  runOnJS,
   type SharedValue,
 } from 'react-native-reanimated';
 import { router } from 'expo-router';
@@ -20,11 +22,15 @@ import {
   ensureNotificationPermission,
   scheduleTimerDone,
   cancelTimerDone,
+  scheduleGuardCheckIn,
+  cancelGuardCheckIn,
 } from '@/src/services/timerNotifications';
 import {
   startFinishTimeActivity,
   endFinishTimeActivity,
 } from '@/src/services/liveActivity';
+import { useEntitlement } from '@/src/features/paywall/useEntitlement';
+import { guardrailThresholdMin } from '@/src/engine';
 import type { AdaptSpeed } from '@/src/domain/types';
 
 // ──────────────────────────────────────────────────────────────────────────────
@@ -104,6 +110,17 @@ export interface UseTimerResult {
    */
   onStopAndLog: (labelOverride?: string, categoryOverride?: string) => Promise<void>;
   onAbandon: () => Promise<void>;
+  /**
+   * True once the hyperfocus guardrail (Pro, opt-in) has crossed its threshold for
+   * this foregrounded session and the calm amber check-in card should mount. Fires
+   * at most once per session (de-duped against the background notification).
+   */
+  guardDue: boolean;
+  /** Dismiss the check-in card and stay on the timer. The session is already marked
+   *  nudged, so nothing fires again this session. The calm, no-pressure answer. */
+  keepGoing: () => void;
+  /** Dismiss the check-in card and run the normal Stop-and-log flow. */
+  wrapUp: () => Promise<void>;
 }
 
 export function useTimer(params: TimerParams): UseTimerResult {
@@ -135,6 +152,14 @@ export function useTimer(params: TimerParams): UseTimerResult {
    * (normal flow: onStopAndLog calls stop() itself).
    */
   const frozenActualMinRef = useRef<number | null>(null);
+  const markGuardNudged = useTimerStore((s) => s.markGuardNudged);
+  const [guardDue, setGuardDue] = useState(false);
+  // Hyperfocus guardrail (Pro, opt-in): the foreground threshold in SECONDS. Set on
+  // the UI thread at session start so the reaction below compares against elapsedSec
+  // without reading the setting/entitlement each frame. -1 = not armed (off / not Pro
+  // / already nudged / no usable honest number). A shared value (not a ref) so the
+  // worklet reliably sees the value the fresh-session effect writes after commit.
+  const guardThresholdSec = useSharedValue(-1);
   if (startedAtRef.current === null) {
     const s = useTimerStore.getState();
     const sameTask = taskId ? s.taskId === taskId : s.taskLabel === label;
@@ -174,12 +199,36 @@ export function useTimer(params: TimerParams): UseTimerResult {
       taskLabel: label,
       finishEpoch: Math.round(projectedFinish(startedAt, suggestedHonestMin) / 1000),
     });
-    // Only schedule the "estimate is up" ping when the user has opted into
-    // reminders (off by default). Read non-reactively — this effect runs once.
+    // Hyperfocus guardrail (Pro, opt-in): arm at session start. Non-reactive reads —
+    // this effect runs once. Gate on Pro + the setting; a session that already nudged
+    // (resumed after a kill) never re-arms. The foreground threshold is stashed in a
+    // ref regardless of reminders; the BACKGROUND ping rides the same reminders gate
+    // the "estimate is up" ping uses (notifications are opt-in).
+    const guardSetting = useSettingsStore.getState().hyperfocusGuard;
+    const guardPro = useEntitlement.getState().isPro;
+    const alreadyNudged = useTimerStore.getState().guardNudged;
+    const guardThresholdMin =
+      guardPro && !alreadyNudged
+        ? guardrailThresholdMin({ honestMin: suggestedHonestMin, setting: guardSetting })
+        : null;
+    if (guardThresholdMin != null) {
+      analytics.capture('guardrail_armed', {
+        setting: guardSetting,
+        threshold_min: guardThresholdMin,
+        honest_min: suggestedHonestMin,
+      });
+    }
+    guardThresholdSec.set(guardThresholdMin != null ? guardThresholdMin * 60 : -1);
+
+    // Only schedule the "estimate is up" ping (and the guard ping) when the user has
+    // opted into reminders (off by default). Read non-reactively — this effect runs once.
     if (useSettingsStore.getState().remindersEnabled) {
       void (async () => {
         const granted = await ensureNotificationPermission();
         if (granted) await scheduleTimerDone({ label, startedAt, estimateMin });
+        if (granted && guardThresholdMin != null) {
+          await scheduleGuardCheckIn({ label, startedAt, thresholdMin: guardThresholdMin });
+        }
       })();
     }
     // Runs exactly once for a fresh session; route params are stable for the
@@ -217,6 +266,43 @@ export function useTimer(params: TimerParams): UseTimerResult {
   // consumer forgets to read overProgress directly (defensive; no-op cost).
   useDerivedValue(() => overProgress.value, [overProgress]);
 
+  // ── Hyperfocus guardrail — foreground driver ────────────────────────────────
+  // Fire EXACTLY ONCE the moment elapsed crosses the armed threshold, mirroring the
+  // FinishTime/PaceLabel pattern: the comparison runs on the UI thread; the JS work
+  // (state, store, analytics — none of which are worklets) hops the boundary via
+  // runOnJS. The threshold (seconds) lives in a ref so this never reads the
+  // setting/entitlement per frame. No threshold armed → the reaction is a cheap no-op.
+  const fireGuard = useCallback(
+    (elapsedMin: number, thresholdMin: number) => {
+      // Re-check the latched flag on the JS thread (the background notification may
+      // have already nudged); one nudge per session, never both channels.
+      if (useTimerStore.getState().guardNudged) return;
+      markGuardNudged();
+      setGuardDue(true);
+      // Foreground won — don't also fire the background ping for this session.
+      void cancelGuardCheckIn();
+      analytics.capture('guardrail_shown', {
+        channel: 'in_app',
+        elapsed_min: elapsedMin,
+        threshold_min: thresholdMin,
+      });
+    },
+    [markGuardNudged],
+  );
+
+  useAnimatedReaction(
+    () => {
+      const th = guardThresholdSec.value;
+      return th >= 0 && elapsedSec.value >= th ? th : -1;
+    },
+    (thSec, prev) => {
+      if (thSec >= 0 && (prev == null || prev < 0)) {
+        runOnJS(fireGuard)(Math.floor(elapsedSec.value / 60), Math.round(thSec / 60));
+      }
+    },
+    [fireGuard],
+  );
+
   const onStopAndLog = useCallback(async (labelOverride?: string, categoryOverride?: string) => {
     // For quick-start sessions the clock was already frozen by onFreezeForCapture
     // before the capture sheet was shown. Use the pre-computed value; for normal
@@ -229,6 +315,7 @@ export function useTimer(params: TimerParams): UseTimerResult {
       ({ actualMin } = stop(Date.now()));
     }
     void cancelTimerDone();
+    void cancelGuardCheckIn();
     endFinishTimeActivity();
 
     // For the quick-start capture-sheet Save path, the caller passes the user-chosen
@@ -298,6 +385,7 @@ export function useTimer(params: TimerParams): UseTimerResult {
     const result = stop(Date.now());
     frozenActualMinRef.current = result.actualMin;
     void cancelTimerDone();
+    void cancelGuardCheckIn();
     endFinishTimeActivity();
     return result;
   }, [stop]);
@@ -305,6 +393,7 @@ export function useTimer(params: TimerParams): UseTimerResult {
   const onAbandon = useCallback(async () => {
     cancel();
     void cancelTimerDone();
+    void cancelGuardCheckIn();
     endFinishTimeActivity();
     const adaptSpeed: AdaptSpeed =
       useCategoriesStore.getState().categories.find((c) => c.id === category)?.adaptSpeed ??
@@ -321,6 +410,26 @@ export function useTimer(params: TimerParams): UseTimerResult {
     });
     router.dismiss();
   }, [cancel, applyLog, category, guessMin, label]);
+
+  // Guardrail card answers. The session was already marked nudged when the card
+  // mounted, so neither answer re-arms anything. "Keep going" is the calm default
+  // (just dismiss); "Wrap up" runs the normal Stop-and-log flow.
+  const keepGoing = useCallback(() => {
+    setGuardDue(false);
+    analytics.capture('guardrail_resolved', {
+      action: 'keep_going',
+      elapsed_min: Math.floor(elapsedSec.get() / 60),
+    });
+  }, [elapsedSec]);
+
+  const wrapUp = useCallback(async () => {
+    setGuardDue(false);
+    analytics.capture('guardrail_resolved', {
+      action: 'wrap_up',
+      elapsed_min: Math.floor(elapsedSec.get() / 60),
+    });
+    await onStopAndLog();
+  }, [elapsedSec, onStopAndLog]);
 
   // NOTE: no destroy-on-dismiss. Closing the sheet MINIMIZES the timer — a running
   // session is cleared ONLY by an explicit Stop (onStopAndLog) or Abandon
@@ -341,5 +450,8 @@ export function useTimer(params: TimerParams): UseTimerResult {
     onFreezeForCapture,
     onStopAndLog,
     onAbandon,
+    guardDue,
+    keepGoing,
+    wrapUp,
   };
 }

@@ -34,7 +34,7 @@ export const tokens = {
   // `hitSlop` = extra tap area added via the Pressable hitSlop prop so that small
   // touch targets (secondary buttons, skip links) comfortably meet the 44pt HIG
   // floor without visually enlarging the element.
-  size: { control: { xs: 32, sm: 36, md: 44, lg: 52 }, coin: 40, wheelCol: 72, wheelRow: 32, shareCard: 340, timelineCol: 110, planCardMin: 70, gripW: 14, hitSlop: 8 },
+  size: { control: { xs: 32, sm: 36, md: 44, lg: 52 }, coin: 40, wheelCol: 72, wheelRow: 32, shareCard: 340, timelineCol: 110, planCardMin: 70, gripW: 14, hitSlop: 8, sparkline: 32 },
 
   // Icon sizing scale — replaces inline 12/16/18/20/22/24/30 across the app.
   iconSize: { xs: 12, sm: 16, md: 20, lg: 24, xl: 32 },
@@ -57,7 +57,7 @@ export const tokens = {
   borderWidth: { hairline: 0, thin: 0, thick: 2, card: 0, share: 1, chip: 1 },
 
   // Replaces scattered 0.3 / 0.4 / 0.6 opacities.
-  opacity: { disabled: 0.4, pressed: 0.6 },
+  opacity: { disabled: 0.4, pressed: 0.6, wash: 0.78 },
 
   // Onboarding aurora glow opacities (mode-independent alphas; colours come from colors.primary/primaryEdge).
   gradients: { backdropTop: 0.22, backdropCorner: 0.16 },
@@ -111,6 +111,11 @@ export const tokens = {
   //   gapTrack = bar height; tickW/tickH = the live elapsed marker riding the bar.
   progress: {
     track: 6, gapTrack: 8, tickW: 3, tickH: 16,
+    // bandTrack = the category-detail hero range band height (a bolder strip than
+    // the Add-Task gapTrack). caret = the convergence-point callout triangle that
+    // floats above the band (w = base, h = height of the downward caret, overlap = 1px
+    // optical overlap of the caret tip onto its pill).
+    bandTrack: 16, caret: { w: 10, h: 6, overlap: 1 },
     // teaserFill = the fixed illustrative fill fraction on a LOCKED (non-Pro) goal
     // teaser track — it shows the SHAPE of progress, never the user's real data.
     teaserFill: 0.34,
@@ -450,6 +455,10 @@ export const tokens = {
   // native blur dep); barOpacity = the teased bars' own alpha; pillPadX = "Pro"
   // pill horizontal padding.
   proTeaser: { previewH: 118, barGap: 9, barRadius: 4, scrimOpacity: 0.28, barOpacity: 0.55, pillPadX: 11 },
+
+  // Discovery marker geometry — the honey-hex sign (amber + = runs longer, green
+  // − = runs faster) on each gallery card. One size; consumed via t.discovery.hex.
+  discovery: { hex: 30 },
 
   // ── brand illustration palette ──────────────────────────────────────────────
   // Fixed art colors for the Whenbee mascot (BeeMascot). Brand art does NOT recolor

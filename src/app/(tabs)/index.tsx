@@ -46,7 +46,6 @@ export default function Today() {
     categoryName,
     companionStage,
     companionSeed,
-    reclaimLifetimeMin,
     hasEverLogged,
   } = useToday();
   const isTimerRunning = useTimerStore((s) => s.isRunning);
@@ -253,7 +252,6 @@ export default function Today() {
           ) : totalCount === 0 ? (
             <TodayEmptyState
               variant={hasEverLogged ? 'daily' : 'first-run'}
-              reclaimLifetimeMin={reclaimLifetimeMin}
               onPrimary={() => {
                 haptics.light();
                 router.push('/(modals)/add-task');

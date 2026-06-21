@@ -47,6 +47,18 @@ export function projectedFinish(startedAtMs: number, durationMin: number): numbe
   return startedAtMs + durationMin * 60000;
 }
 
+/** Epoch ms of local midnight for the day containing `nowMs`. Pure (no Date.now). */
+export function startOfLocalDay(nowMs: number): number {
+  const d = new Date(nowMs);
+  d.setHours(0, 0, 0, 0);
+  return d.getTime();
+}
+
+/** Epoch ms of today's end-of-day for `dayEndMin` (minutes after local midnight). */
+export function dayEndEpochFor(nowMs: number, dayEndMin: number): number {
+  return startOfLocalDay(nowMs) + dayEndMin * 60_000;
+}
+
 /** Whole minutes remaining vs the estimate; negative on overrun. */
 export function minutesLeft(estimateMin: number, elapsedSec: number): number {
   return estimateMin - Math.floor(elapsedSec / 60);
