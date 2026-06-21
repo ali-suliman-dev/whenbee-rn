@@ -49,3 +49,8 @@ test('renders discoveries in the order they are passed (newest-first contract)',
   expect(posSecond).toBeGreaterThan(-1);
   expect(posFirst).toBeLessThan(posSecond);
 });
+
+test('card has a composed accessibilityLabel for screen readers (longer discovery)', () => {
+  const { getByLabelText } = render(<DiscoveriesGallery discoveries={[disc({})]} />);
+  expect(getByLabelText(/Admin & email runs 1\.6 times longer/)).toBeTruthy();
+});

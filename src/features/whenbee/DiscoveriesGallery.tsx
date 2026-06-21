@@ -56,8 +56,10 @@ const DiscoveryCard = memo(function DiscoveryCard({ discovery }: { discovery: Di
     marginTop: t.space[0.5],
   };
 
+  const a11yLabel = `${categoryLabel(discovery.categoryId)} runs ${multiplierValue(discovery.multiplier)} times ${direction} — ${discoveryProof(discovery.honestForFifteen, direction)}`;
+
   return (
-    <View style={card}>
+    <View style={card} accessible accessibilityLabel={a11yLabel}>
       <DiscoveryHex direction={direction} size={t.discovery.hex} />
       <View style={meta}>
         <Text style={cat}>{categoryLabel(discovery.categoryId)}</Text>
