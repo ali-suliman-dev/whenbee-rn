@@ -56,10 +56,6 @@ export interface AppEventProps {
   aha_shown: { category: string; multiplier: number; n: number };
   discovery_unlocked: { categoryId: string; multiplier: number };
 
-  // ── Reclaim ──────────────────────────────────────────────────────────────────
-  reclaim_deposit: { minutes: number; category: string; source: string };
-  reclaim_total_view: { lifetime_minutes: number };
-
   // ── Decision-moment surfacing ────────────────────────────────────────────────
   honest_suggestion_shown: { category: string; guess_min: number; suggested_min: number };
   optimistic_nudge_shown: { category: string; guess_min: number; multiplier: number };

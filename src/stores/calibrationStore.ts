@@ -796,13 +796,6 @@ export const useCalibrationStore = create<CalibrationState>((set, get) => ({
         });
       }
 
-      if (result.reclaimDeltaMin >= 1) {
-        analytics.capture('reclaim_deposit', {
-          minutes: result.reclaimDeltaMin,
-          category: input.category,
-          source: input.source,
-        });
-      }
     } catch {
       // services are safe; this is belt-and-suspenders
     }
