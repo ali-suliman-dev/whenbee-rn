@@ -58,4 +58,14 @@ describe('HonestCard — range band hero', () => {
     expect(screen.getByText('runs 2.0×')).toBeOnTheScreen();
     expect(screen.queryByText('Now an honest number')).toBeNull();
   });
+
+  it('hides the precise convergence tick from free users (Pro gate)', () => {
+    render(<HonestCard {...base} confidence="setting" range={{ lowMinutes: 20, highMinutes: 40 }} isPro={false} />);
+    expect(screen.queryByTestId('convergence-tick')).toBeNull();
+  });
+
+  it('shows the precise convergence tick for Pro users', () => {
+    render(<HonestCard {...base} confidence="setting" range={{ lowMinutes: 20, highMinutes: 40 }} isPro />);
+    expect(screen.getByTestId('convergence-tick')).toBeOnTheScreen();
+  });
 });

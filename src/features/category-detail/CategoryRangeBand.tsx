@@ -81,9 +81,13 @@ export function CategoryRangeBand({
   // Caret callout: a small pill + downward triangle, centered on the point.
   // width:0 + alignItems:center centers variable-width children on the point%
   // (RN transforms are numeric, so translateX(-50%) is not an option).
+  // Pro: the caret marks the precise convergence point. Free: a neutral teaser
+  // centered on the band's filled range — it must never reveal the precise
+  // point's position (the point is the Pro-gated value).
+  const caretLeftPct = (isPro ? pointPct : left + width / 2) * 100;
   const calloutWrap: ViewStyle = {
     position: 'absolute', top: -(t.progress.caret.h + t.space[6]),
-    left: `${pointPct * 100}%`, width: 0, alignItems: 'center',
+    left: `${caretLeftPct}%`, width: 0, alignItems: 'center',
   };
   const pill: ViewStyle = {
     backgroundColor: isPro ? t.brand.honeyFill : t.colors.primarySoft,
@@ -131,7 +135,7 @@ export function CategoryRangeBand({
       <View style={track}>
         {showGhost ? <View style={ghost} pointerEvents="none" /> : null}
         <Animated.View style={[segBase, { backgroundColor: fill }, segStyle]} />
-        <View style={tick} pointerEvents="none" />
+        {isPro ? <View style={tick} testID="convergence-tick" pointerEvents="none" /> : null}
         <Animated.View style={[calloutWrap, caretStyle]}>
           {isPro || !onUnlockPress ? (
             calloutInner
