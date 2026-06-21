@@ -87,6 +87,10 @@ const emptyDraft: RoutineDraft = {
 interface RoutinesState {
   db: Database | null;
   routines: RoutineWithSteps[];
+  /** Per-step learned multiplier, keyed by `routine:{routineId}:{stepId}`. Present
+   *  only when the step's recurring stat has earned its own fit (≥ RECURRING_MIN_LOGS);
+   *  the hook falls back to the step's category M otherwise. Refreshed on load. */
+  stepMByKey: Record<string, number>;
   draft: RoutineDraft;
   activeRun: ActiveRoutineRun | null;
 
@@ -172,6 +176,7 @@ export const useRoutinesStore = create<RoutinesState>()(
     (set, get) => ({
       db: null,
       routines: [],
+      stepMByKey: {},
       draft: emptyDraft,
       activeRun: null,
 
@@ -179,8 +184,20 @@ export const useRoutinesStore = create<RoutinesState>()(
 
       loadRoutines: async () => {
         const db = await resolveDb(get, set);
-        const routines = await makeRoutinesRepo(db).list();
-        set({ routines });
+        const repo = makeRoutinesRepo(db);
+        const recurring = makeRecurringRepo(db);
+        const routines = await repo.list();
+        // Resolve each step's earned recurring M (when it has its own fit) so the
+        // hook can derive honest minutes purely; thin steps fall back to category M.
+        const stepMByKey: Record<string, number> = {};
+        for (const { routine, steps } of routines) {
+          for (const step of steps) {
+            const key = routineStepKey(routine.id, step.id);
+            const stat = await recurring.get(key);
+            if (stat && recurringHasEnoughData(stat.n)) stepMByKey[key] = stat.mEffective;
+          }
+        }
+        set({ routines, stepMByKey });
       },
 
       // ── Build draft ──────────────────────────────────────────────────────────
@@ -394,7 +411,7 @@ export const useRoutinesStore = create<RoutinesState>()(
         set({ activeRun: null });
       },
 
-      reset: () => set({ routines: [], draft: emptyDraft, activeRun: null }),
+      reset: () => set({ routines: [], stepMByKey: {}, draft: emptyDraft, activeRun: null }),
     }),
     {
       name: 'routines-active-run',
