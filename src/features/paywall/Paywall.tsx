@@ -34,7 +34,7 @@ import { openManageSubscriptions } from './manageSubscription';
 // outcomes come from the entitlement result.
 // ──────────────────────────────────────────────────────────────────────────────
 
-type Trigger = 'make_day_honest' | 'settings_upgrade' | 'steals_your_time' | 'pro_reveal' | 'pro_preview' | 'goals' | 'focus_window' | 'hyperfocus_guard' | 'pdf_export';
+type Trigger = 'make_day_honest' | 'settings_upgrade' | 'steals_your_time' | 'pro_reveal' | 'pro_preview' | 'goals' | 'focus_window' | 'hyperfocus_guard' | 'pdf_export' | 'routines';
 
 /** Earned-readiness framing for the lead heading. */
 type Readiness = 'pre' | 'honest';
@@ -65,7 +65,8 @@ function isTrigger(v: unknown): v is Trigger {
     v === 'goals' ||
     v === 'focus_window' ||
     v === 'hyperfocus_guard' ||
-    v === 'pdf_export'
+    v === 'pdf_export' ||
+    v === 'routines'
   );
 }
 
