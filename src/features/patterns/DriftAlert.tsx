@@ -1,35 +1,41 @@
 import { View, Text, type ViewStyle, type TextStyle } from 'react-native';
 import { useTheme } from '@/src/theme/useTheme';
 import { type } from '@/src/theme/typography';
-import { PatternCard } from './PatternCard';
 import type { DriftAlertCard } from './usePatterns';
 
 // ──────────────────────────────────────────────────────────────────────────────
-// DriftAlert (S9) — "what changed?": a category whose pace shifted between its
-// earliest and most recent logs. Neutral by design — it names a shift, never a
-// fault. Pace changes (sleep, meds, season, life) are information, not a problem.
+// DriftNote (S9) — "what changed". A quiet amber margin-note (no card chrome), a
+// diamond marker, one neutral sentence. Reports a shift in pace, never a verdict:
+// the honest numbers already follow along, so there is nothing to fix.
 // ──────────────────────────────────────────────────────────────────────────────
 
-export function DriftAlert({ card }: { card: DriftAlertCard }) {
+export function DriftNote({ card }: { card: DriftAlertCard }) {
   const t = useTheme();
+  const { categoryName, earlyMultiplier, recentMultiplier, slowerLately } = card;
 
-  const headline: TextStyle = { ...(type.bodyLg as unknown as TextStyle), color: t.colors.ink };
-  const detail: TextStyle = { ...(type.bodySm as unknown as TextStyle), color: t.colors.inkSoft };
-  const block: ViewStyle = { gap: t.space[1.5] };
+  const wrap: ViewStyle = {
+    flexDirection: 'row',
+    gap: t.space[3],
+    backgroundColor: t.colors.accentSoft,
+    borderRadius: t.radii.md,
+    borderCurve: 'continuous',
+    padding: t.space[4],
+  };
+  const marker: TextStyle = { ...(type.bodySm as unknown as TextStyle), color: t.colors.accent };
+  const body: TextStyle = { ...(type.bodySm as unknown as TextStyle), color: t.colors.ink, flex: 1 };
+  const name: TextStyle = { ...(type.bodySmBold as unknown as TextStyle), color: t.colors.amberText };
 
-  const headlineText = card.slowerLately
-    ? `${card.categoryName} is taking a bit longer lately.`
-    : `${card.categoryName} is moving quicker lately.`;
-
+  const lead = slowerLately ? 'is taking longer lately' : 'is moving quicker lately';
   return (
-    <PatternCard eyebrow="WHAT CHANGED" icon="swap-vertical-outline" dismissLabel="Hide what changed">
-      <View style={block}>
-        <Text style={headline}>{headlineText}</Text>
-        <Text style={detail}>
-          It used to run about {card.earlyMultiplier.toFixed(1)}× your guess; recently it&apos;s nearer{' '}
-          {card.recentMultiplier.toFixed(1)}×. Your honest numbers already follow along.
-        </Text>
-      </View>
-    </PatternCard>
+    <View style={wrap}>
+      <Text style={marker}>◆</Text>
+      <Text style={body}>
+        <Text style={name}>{categoryName}</Text> {lead} — it used to run {earlyMultiplier.toFixed(1)}×, now nearer{' '}
+        {recentMultiplier.toFixed(1)}×. Your honest numbers already follow along.
+      </Text>
+    </View>
   );
 }
+
+// TODO(task10): remove alias once the route imports DriftNote directly.
+export { DriftNote as DriftAlert };
