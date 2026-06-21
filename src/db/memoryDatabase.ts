@@ -3,7 +3,7 @@
 // fully synchronous; the async signatures satisfy the port contract.
 
 import type { Database } from './Database';
-import type { CategoryStatRow, CompanionRow, ContextEventRow, ContextTagRow, DiscoveryRow, ReasonEventRow, RecurringStatRow, TaskEventRow } from './types';
+import type { CategoryStatRow, CompanionRow, ContextEventRow, ContextTagRow, DiscoveryRow, ReasonEventRow, RecurringStatRow, RoutineRow, RoutineStepRow, TaskEventRow } from './types';
 
 export function createMemoryDatabase(): Database {
   const categoryStats = new Map<string, CategoryStatRow>();
@@ -11,6 +11,8 @@ export function createMemoryDatabase(): Database {
   const events = new Map<string, TaskEventRow>();
   const contextTags = new Map<string, ContextTagRow>();
   const discoveries = new Map<string, DiscoveryRow>();
+  const routines = new Map<string, RoutineRow>();
+  const routineSteps = new Map<string, RoutineStepRow>();
   const companion: CompanionRow = {
     reclaimedMinutesLifetime: 0,
     lifetimeDataPoints: 0,
@@ -56,6 +58,44 @@ export function createMemoryDatabase(): Database {
     },
     async upsertRecurringStat(row: RecurringStatRow): Promise<void> {
       recurringStats.set(row.key, { ...row });
+    },
+
+    async listRoutines(): Promise<RoutineRow[]> {
+      return [...routines.values()].sort((a, b) => b.updatedAt - a.updatedAt).map((r) => ({ ...r }));
+    },
+    async getRoutine(id: string): Promise<RoutineRow | null> {
+      const row = routines.get(id);
+      return row ? { ...row } : null;
+    },
+    async listRoutineSteps(routineId: string): Promise<RoutineStepRow[]> {
+      return [...routineSteps.values()]
+        .filter((s) => s.routineId === routineId)
+        .sort((a, b) => a.position - b.position)
+        .map((s) => ({ ...s }));
+    },
+    async saveRoutine(routine: RoutineRow, steps: RoutineStepRow[]): Promise<void> {
+      routines.set(routine.id, { ...routine });
+      // Replace this routine's steps wholesale.
+      for (const [id, s] of routineSteps) {
+        if (s.routineId === routine.id) routineSteps.delete(id);
+      }
+      for (const step of steps) routineSteps.set(step.id, { ...step });
+    },
+    async deleteRoutine(id: string): Promise<void> {
+      routines.delete(id);
+      for (const [stepId, s] of routineSteps) {
+        if (s.routineId === id) routineSteps.delete(stepId);
+      }
+    },
+    async setRoutineTransitionFactor(id: string, factor: number, updatedAt: number): Promise<void> {
+      const row = routines.get(id);
+      if (row === undefined) return;
+      routines.set(id, { ...row, transitionFactor: factor, updatedAt });
+    },
+    async incrementRoutineRunCount(id: string, updatedAt: number): Promise<void> {
+      const row = routines.get(id);
+      if (row === undefined) return;
+      routines.set(id, { ...row, runCount: row.runCount + 1, updatedAt });
     },
 
     async getCompanion(): Promise<CompanionRow> {
@@ -157,6 +197,8 @@ export function createMemoryDatabase(): Database {
       events.clear();
       contextTags.clear();
       discoveries.clear();
+      routines.clear();
+      routineSteps.clear();
       companion.reclaimedMinutesLifetime = 0;
       companion.lifetimeDataPoints = 0;
       companion.maxTier = 0;

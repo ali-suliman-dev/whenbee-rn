@@ -133,6 +133,20 @@ export const GUARDRAIL_MIN_THRESHOLD_MIN = 25;
 // spills). The window length is whatever the user set; there is no default window.
 // (No tunable constants for v1 — the fit is exact. Kept as a home for future tuning.)
 
+// ── Routines (Pro) ───────────────────────────────────────────────────────────
+/** Day-1 chain transition factor: per-step honest numbers, summed, underestimate
+ *  the whole because the seams (transitions, re-starts) aren't in any single step.
+ *  1.15 = +15% prior overhead; only ever replaced by the learned factor. */
+export const TRANSITION_PRIOR = 1.15;
+/** EWMA learning rate for the transition factor over full timed runs. */
+export const TRANSITION_ALPHA = 0.3;
+/** Below this many completed full runs, the routine total is prior-based
+ *  ("based on typical patterns") and the transition factor stays at TRANSITION_PRIOR. */
+export const ROUTINE_PERSONAL_MIN_RUNS = 3;
+/** Clamp the learned transition factor so one chaotic run can't poison the chain. */
+export const TRANSITION_FLOOR = 1.0;
+export const TRANSITION_CEIL = 2.0;
+
 // ── PDF report (Pro) ─────────────────────────────────────────────────────────
 export const REPORT_MIN_LOGS = 6; // window minimum to allow export
 export const REPORT_CATEGORY_MIN_LOGS = 4; // per-row minimum in the bias table

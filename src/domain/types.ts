@@ -278,3 +278,49 @@ export interface FocusWindowResult {
   /** 'prior' if every task fell back to priors; else 'personal'. */
   basis: 'personal' | 'prior';
 }
+
+// ── Routines (Pro) ────────────────────────────────────────────────────────────
+
+/** A saved, reusable, learned multi-step sequence (Pro). */
+export interface Routine {
+  id: string;
+  name: string;
+  /** Optional local be-done-by minute-of-day (0–1439), or null for no anchor. */
+  doneByMinuteOfDay: number | null;
+  /** Learned chain-level transition factor (≥1). Captures the seam time between
+   *  steps that per-step estimates miss. Defaults to TRANSITION_PRIOR until runs
+   *  exist; only ever moves via EWMA over full timed runs. */
+  transitionFactor: number;
+  /** Count of completed full runs that have trained the routine. Monotonic. */
+  runCount: number;
+  createdAt: number;
+  updatedAt: number;
+}
+
+/** One ordered step within a routine. Order is `position` (0-based, contiguous). */
+export interface RoutineStep {
+  id: string;
+  routineId: string;
+  position: number;
+  label: string;
+  category: Category;
+  /** The user's guess for this step (minutes). The learned per-step honest number
+   *  is derived: round5(guessMin × M_for(category|recurringKey)). */
+  guessMin: number;
+}
+
+/** Per-step recurring key, namespaced so it never collides with free recurring
+ *  keys. Shape: `routine:{routineId}:{stepId}`. */
+export type RoutineStepKey = `routine:${string}:${string}`;
+
+/** The derived, display-ready honest summary of a whole routine. */
+export interface RoutineSummary {
+  routineId: string;
+  /** round5(sum(per-step honest) × transitionFactor). */
+  honestTotalMin: number;
+  /** 'personal' once enough full runs exist, else 'prior'. */
+  basis: 'personal' | 'prior';
+  label: string; // "based on your last N runs" | "based on typical patterns"
+  runCount: number;
+  steps: { stepId: string; honestMin: number }[];
+}

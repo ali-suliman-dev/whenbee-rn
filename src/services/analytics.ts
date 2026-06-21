@@ -110,7 +110,7 @@ export interface AppEventProps {
   pro_reveal_tap: { surface: 'whenbee_hub' };
   pro_preview_tap: { surface: 'whenbee_hub' };
   paywall_view: {
-    trigger: 'make_day_honest' | 'settings_upgrade' | 'steals_your_time' | 'honest_range' | 'pro_reveal' | 'pro_preview' | 'goals' | 'focus_window' | 'hyperfocus_guard' | 'pdf_export';
+    trigger: 'make_day_honest' | 'settings_upgrade' | 'steals_your_time' | 'honest_range' | 'pro_reveal' | 'pro_preview' | 'goals' | 'focus_window' | 'hyperfocus_guard' | 'pdf_export' | 'routines';
     readiness?: 'pre' | 'honest';
   };
   founder_reserve: { result: 'reserved' };
@@ -161,6 +161,23 @@ export interface AppEventProps {
   focus_window_spills: { fit_count: number; spill_count: number; window_min: number };
   focus_window_promoted: { saved_min: number; evicted_n: number; verdict_after: 'fits' | 'spills' };
   focus_window_paywall: { source: 'plan_section' };
+
+  // ── Routines (Pro) ────────────────────────────────────────────────────────────
+  routines_tab_viewed: { is_pro: boolean; routine_count: number };
+  routines_paywall: { trigger: 'routines' };
+  routine_created: { step_count: number; has_anchor: boolean };
+  routine_edited: { routine_id_hash: string; step_count: number };
+  routine_run_started: { step_count: number; basis: 'personal' | 'prior' };
+  routine_step_completed: { position: number; over: boolean };
+  routine_step_skipped: { position: number };
+  routine_run_completed: {
+    step_count: number;
+    full_run: boolean;
+    total_actual_min: number;
+    total_honest_min: number;
+    run_count_after: number;
+  };
+  routine_run_abandoned: { steps_done: number; step_count: number };
 }
 
 export type AppEvent = keyof AppEventProps;

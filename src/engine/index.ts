@@ -43,3 +43,4 @@ export type { FocusWindowTask, FocusWindowInput } from './focusWindow';
 export { guardrailFactor, guardrailThresholdMin } from './guardrail';
 export { reportAccuracy, reportAccuracySpark, topSurprises, steadiestCategory } from './report';
 export type { ReportEventInput, ReportSurprise } from './report';
+export { stepHonestMinutes, routineHonestTotal, routineBasis, distributeRoutineRun } from './routine';
