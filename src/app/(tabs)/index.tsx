@@ -55,8 +55,11 @@ export default function Today() {
   const removeTask = useTasksStore((s) => s.removeTask);
   const promoteToFocus = useTasksStore((s) => s.promoteToFocus);
 
-  // First-run peek: teach the hidden swipe once, then never again.
+  // First-run peek: teach the hidden swipe once, then never again. The flag is
+  // burned only after the peek actually animates (see onPeeked below) — never on
+  // a bare mount — so the one-shot can't be spent without the user seeing it.
   const [peekFirstRow] = useState(() => kv.getString('today.seenSwipeHint') == null);
+  const markSwipeHintSeen = useCallback(() => kv.set('today.seenSwipeHint', '1'), []);
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [showCoachMark, setShowCoachMark] = useState(
     () => kv.getString('today.seenCoachMarkV1') == null,
@@ -66,10 +69,6 @@ export default function Today() {
     setShowCoachMark(false);
     kv.set('today.seenCoachMarkV1', '1');
   }, []);
-
-  useEffect(() => {
-    if (peekFirstRow) kv.set('today.seenSwipeHint', '1');
-  }, [peekFirstRow]);
 
   const hasDone = done.length > 0;
   useEffect(() => {
@@ -267,6 +266,7 @@ export default function Today() {
                   onDelete={() => deleteTask(row.id)}
                   onLongPress={() => promptDelete(row.id, row.label)}
                   peekHint={peekFirstRow && idx === 0}
+                  onPeeked={markSwipeHintSeen}
                   isExiting={deletingId === row.id}
                 />
               ))}
