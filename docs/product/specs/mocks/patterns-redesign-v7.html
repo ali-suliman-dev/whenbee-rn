@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Patterns redesign v7 — finals</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Inter:wght@500;600;700&display=swap" rel="stylesheet" />
+<style>
+  :root{
+    --bg:#14151D; --surface:#1F2130; --surfaceRaised:#292B3C; --surfaceSunken:#15161F;
+    --hairline:rgba(255,255,255,.08); --border:rgba(255,255,255,.14);
+    --ink:#F4F1EA; --inkSoft:#ADA9B5; --inkFaint:rgba(244,241,234,.40);
+    --primary:#8275F0; --primaryEdge:#6B5BE6;
+    --accent:#EEAE4D; --accentEdge:#C68A30; --accentSoft:rgba(238,174,77,.18); --amberText:#EEAE4D;
+    --onAmber:#20233A; --honeyFill:#F5C03F;
+    --radCard:16px; --radFull:999px;
+    --txt:'Plus Jakarta Sans',system-ui,sans-serif; --num:'Inter',system-ui,sans-serif;
+    --eye:10px; --name:22px; --big:42px;
+  }
+  *{box-sizing:border-box;margin:0;padding:0;}
+  body{background:#0c0d12;font-family:var(--txt);color:#fff;padding:40px 28px 80px;}
+  h1.studio{font-size:22px;font-weight:800;letter-spacing:-.4px;margin-bottom:6px;}
+  p.studio{font-size:13px;color:#8b8e9b;max-width:820px;line-height:1.55;margin-bottom:34px;}
+  .group{margin-bottom:54px;}
+  .grouphead{display:flex;align-items:baseline;gap:10px;margin-bottom:18px;}
+  .grouphead h2{font-size:16px;font-weight:700;color:#fff;}
+  .grouphead .tag{font-size:11px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;color:#d6a24a;background:rgba(238,174,77,.14);padding:3px 8px;border-radius:6px;}
+  .row{display:flex;gap:26px;flex-wrap:wrap;align-items:flex-start;}
+  .opt{display:flex;flex-direction:column;gap:10px;width:380px;}
+  .optlabel{font-size:12px;font-weight:700;color:#cdd0db;}
+  .optlabel span{color:#74777f;font-weight:500;}
+  .anim{font-size:11px;color:#73767f;line-height:1.5;}
+  .anim b{color:#a6a9b4;font-weight:600;}
+  .canvas{width:380px;background:var(--bg);border-radius:30px;padding:22px 16px;box-shadow:0 22px 55px rgba(0,0,0,.55);}
+  .num{font-family:var(--num);font-variant-numeric:tabular-nums;}
+  .eyebrow{font-family:var(--txt);font-size:var(--eye);font-weight:700;letter-spacing:2.2px;text-transform:uppercase;line-height:1;}
+  .name{font-family:var(--txt);font-size:var(--name);font-weight:800;letter-spacing:-.4px;color:var(--ink);line-height:1.05;}
+
+  /* ===== #2 C2 — stat hero (no watermark) ===== */
+  .big{position:relative;border-radius:var(--radCard);background:var(--surface);border:1px solid var(--hairline);padding:22px;overflow:hidden;}
+  .big .crestmini{position:absolute;right:20px;top:18px;}
+  .big .eyebrow{color:var(--amberText);margin-bottom:9px;}
+  .big .name{margin-bottom:16px;}
+  .big .hero{display:flex;align-items:center;gap:12px;padding-top:16px;border-top:1px solid var(--hairline);}
+  .big .v{font-family:var(--num);font-weight:700;font-size:var(--big);color:var(--accent);letter-spacing:-1.4px;line-height:.82;flex:0 0 auto;}
+  .big .v .x{font-size:25px;}
+  .big .lbl{font-family:var(--txt);font-size:13.5px;font-weight:500;color:var(--inkSoft);line-height:1.32;}
+
+  /* ===== #3 real HonestMap (faithful) ===== */
+  .sectionhead{font-family:var(--txt);font-size:11px;font-weight:700;letter-spacing:1.6px;text-transform:uppercase;color:var(--inkSoft);display:flex;align-items:center;gap:12px;margin:0 2px 12px;}
+  .sectionhead .ln{flex:1;height:1px;background:var(--hairline);}
+  .hm{background:var(--surface);border-radius:var(--radCard);border:1px solid var(--hairline);overflow:hidden;}
+  .hm .lead{font-family:var(--txt);font-size:13px;font-weight:500;color:var(--inkSoft);padding:14px 16px 6px;line-height:1.4;}
+  .hmrow{display:flex;align-items:center;gap:12px;padding:16px;border-bottom:1px solid var(--hairline);}
+  .hmrow:last-child{border-bottom:0;}
+  .hmleft{flex:1;}
+  .hmname{font-family:var(--txt);font-size:16px;font-weight:700;color:var(--ink);}
+  .hmsub{font-family:var(--txt);font-size:10px;font-weight:400;color:var(--inkSoft);margin-top:4px;}
+  .dial{display:flex;gap:4px;align-items:center;}
+  .pip{width:16px;height:6px;border-radius:999px;}
+  .pip.on{background:var(--accent);} .pip.off{background:var(--surfaceSunken);}
+  .hmright{text-align:right;}
+  .hmhonest{display:flex;align-items:flex-end;gap:3px;justify-content:flex-end;}
+  .hmhonest .v{font-family:var(--num);font-weight:700;font-size:20px;color:var(--accent);line-height:1;}
+  .hmhonest .u{font-family:var(--txt);font-size:12px;font-weight:500;color:var(--inkSoft);}
+  .hmguess{font-family:var(--txt);font-size:10px;font-weight:400;color:var(--inkFaint);margin-top:3px;}
+</style>
+</head>
+<body>
+
+<h1 class="studio">Patterns — finals (v7)</h1>
+<p class="studio">#2: C2 stat hero, background watermark removed, top-right crest refined (two crest treatments to pick). #3: the real YOUR NUMBERS component, design untouched — only the copy is clearer.</p>
+
+<!-- ===================== #2 ===================== -->
+<div class="group">
+  <div class="grouphead"><h2>#2 · Archetype — C2 final</h2><span class="tag">no watermark · refined crest</span></div>
+  <div class="row">
+
+    <div class="opt">
+      <div class="optlabel">C2 · crest A <span>· honeycomb cell (honey-filled + cap)</span></div>
+      <div class="canvas">
+        <div class="big">
+          <svg class="crestmini" width="30" height="33" viewBox="0 0 50 54">
+            <defs><clipPath id="cA"><polygon points="25,4 43,14 43,34 25,44 7,34 7,14"/></clipPath></defs>
+            <g clip-path="url(#cA)"><rect x="0" y="0" width="50" height="54" fill="#15161F"/><rect x="0" y="18" width="50" height="36" fill="#EEAE4D"/></g>
+            <line x1="7" y1="18" x2="43" y2="18" stroke="#F5C03F" stroke-width="2"/>
+            <polygon points="25,4 43,14 43,34 25,44 7,34 7,14" fill="none" stroke="#C68A30" stroke-width="2.4"/>
+          </svg>
+          <div class="eyebrow">Your time archetype</div>
+          <div class="name">The Optimist</div>
+          <div class="hero">
+            <span class="v num">1.4<span class="x">×</span></span>
+            <span class="lbl">longer than you guess,<br>on average</span>
+          </div>
+        </div>
+      </div>
+      <div class="anim"><b>Crest A:</b> a single honeycomb cell, honey-filled with a cap line — literally the app's comb motif. On entry the honey fills bottom-up.</div>
+    </div>
+
+    <div class="opt">
+      <div class="optlabel">C2 · crest B <span>· line-art hex + honey core</span></div>
+      <div class="canvas">
+        <div class="big">
+          <svg class="crestmini" width="30" height="33" viewBox="0 0 50 54">
+            <polygon points="25,4 43,14 43,34 25,44 7,34 7,14" fill="none" stroke="#EEAE4D" stroke-width="2.4"/>
+            <polygon points="25,16 34,21 34,31 25,36 16,31 16,21" fill="#EEAE4D"/>
+          </svg>
+          <div class="eyebrow">Your time archetype</div>
+          <div class="name">The Optimist</div>
+          <div class="hero">
+            <span class="v num">1.4<span class="x">×</span></span>
+            <span class="lbl">longer than you guess,<br>on average</span>
+          </div>
+        </div>
+      </div>
+      <div class="anim"><b>Crest B:</b> crisp outer hex + a solid honey core hex. Cleaner, flatter, more "mark" than illustration.</div>
+    </div>
+
+  </div>
+</div>
+
+<!-- ===================== #3 ===================== -->
+<div class="group">
+  <div class="grouphead"><h2>#3 · YOUR NUMBERS — copy only</h2><span class="tag">design untouched</span></div>
+  <div class="row">
+
+    <div class="opt">
+      <div class="optlabel">Before <span>· current copy</span></div>
+      <div class="canvas">
+        <div class="sectionhead">Your numbers<span class="ln"></span></div>
+        <div class="hm">
+          <div class="lead">Every area reads honest now. Your numbers are yours.</div>
+          <div class="hmrow">
+            <div class="hmleft"><div class="hmname">Getting ready</div><div class="hmsub">runs 1.6× · honest</div></div>
+            <div class="dial"><div class="pip on"></div><div class="pip on"></div><div class="pip on"></div></div>
+            <div class="hmright"><div class="hmhonest"><span class="v num">~25</span><span class="u">m</span></div><div class="hmguess">vs 15 guess</div></div>
+          </div>
+          <div class="hmrow">
+            <div class="hmleft"><div class="hmname">Admin &amp; email</div><div class="hmsub">runs 1.5× · honest</div></div>
+            <div class="dial"><div class="pip on"></div><div class="pip on"></div><div class="pip on"></div></div>
+            <div class="hmright"><div class="hmhonest"><span class="v num">~25</span><span class="u">m</span></div><div class="hmguess">vs 15 guess</div></div>
+          </div>
+          <div class="hmrow">
+            <div class="hmleft"><div class="hmname">Cooking</div><div class="hmsub">runs 1.6× · honest</div></div>
+            <div class="dial"><div class="pip on"></div><div class="pip on"></div><div class="pip on"></div></div>
+            <div class="hmright"><div class="hmhonest"><span class="v num">~25</span><span class="u">m</span></div><div class="hmguess">vs 15 guess</div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="opt">
+      <div class="optlabel">After <span>· clearer copy, same design</span></div>
+      <div class="canvas">
+        <div class="sectionhead">Your numbers<span class="ln"></span></div>
+        <div class="hm">
+          <div class="lead">Every area reads honest now — these are your real times.</div>
+          <div class="hmrow">
+            <div class="hmleft"><div class="hmname">Getting ready</div><div class="hmsub">1.6× longer than you guess · honest</div></div>
+            <div class="dial"><div class="pip on"></div><div class="pip on"></div><div class="pip on"></div></div>
+            <div class="hmright"><div class="hmhonest"><span class="v num">~25</span><span class="u">m</span></div><div class="hmguess">you guess 15m</div></div>
+          </div>
+          <div class="hmrow">
+            <div class="hmleft"><div class="hmname">Admin &amp; email</div><div class="hmsub">1.5× longer than you guess · honest</div></div>
+            <div class="dial"><div class="pip on"></div><div class="pip on"></div><div class="pip on"></div></div>
+            <div class="hmright"><div class="hmhonest"><span class="v num">~25</span><span class="u">m</span></div><div class="hmguess">you guess 15m</div></div>
+          </div>
+          <div class="hmrow">
+            <div class="hmleft"><div class="hmname">Cooking</div><div class="hmsub">1.6× longer than you guess · honest</div></div>
+            <div class="dial"><div class="pip on"></div><div class="pip on"></div><div class="pip on"></div></div>
+            <div class="hmright"><div class="hmhonest"><span class="v num">~25</span><span class="u">m</span></div><div class="hmguess">you guess 15m</div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+</body>
+</html>
