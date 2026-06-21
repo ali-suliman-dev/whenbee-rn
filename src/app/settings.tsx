@@ -137,6 +137,8 @@ export default function Settings() {
     open: openDayEnd,
     close: closeDayEnd,
     save: saveDayEnd,
+    dayEndEnabled,
+    setDayEndEnabled,
   } = useDayEndSetting();
   const { resetting, resetProgress, eraseEverything } = useAccountReset();
 
@@ -227,7 +229,7 @@ export default function Settings() {
         </View>
 
         <View style={{ gap: t.space[3] }}>
-          <AppText variant="label">General</AppText>
+          <AppText variant="label">Your Whenbee</AppText>
           <SettingRow
             icon="albums-outline"
             title="Categories"
@@ -240,6 +242,10 @@ export default function Settings() {
             note="Give your companion a name."
             onPress={() => router.push('/(modals)/companion')}
           />
+        </View>
+
+        <View style={{ gap: t.space[3] }}>
+          <AppText variant="label">Notifications</AppText>
           <SettingRow
             icon="notifications-outline"
             title="Time-up reminders"
@@ -269,13 +275,33 @@ export default function Settings() {
               />
             }
           />
+        </View>
+
+        <View style={{ gap: t.space[3] }}>
+          <AppText variant="label">Scheduling</AppText>
           <SettingRow
             icon="moon-outline"
             title="End of day"
-            note={`Your day winds down around ${dayEndLabel}`}
-            onPress={openDayEnd}
-            accessibilityLabel={`End of day, currently ${dayEndLabel}. Tap to change.`}
+            note={dayEndEnabled ? `Your day winds down around ${dayEndLabel}` : 'Off'}
+            onPress={dayEndEnabled ? openDayEnd : undefined}
+            accessibilityLabel={
+              dayEndEnabled
+                ? `End of day, currently ${dayEndLabel}. Tap to change.`
+                : 'End of day, off'
+            }
+            trailing={
+              <Switch
+                value={dayEndEnabled}
+                onValueChange={setDayEndEnabled}
+                trackColor={{ true: t.colors.primary, false: t.colors.hairline }}
+                accessibilityLabel="End of day"
+              />
+            }
           />
+        </View>
+
+        <View style={{ gap: t.space[3] }}>
+          <AppText variant="label">Your data</AppText>
           <SettingRow
             icon="document-text-outline"
             title="Export a report"

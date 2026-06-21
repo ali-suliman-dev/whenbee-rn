@@ -1,4 +1,5 @@
 import { View, type TextStyle, type ViewStyle } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import { Chip } from '@/src/components/Chip';
 import { AppText } from '@/src/components/AppText';
 import { useTheme } from '@/src/theme/useTheme';
@@ -50,9 +51,12 @@ export function GuardrailSettingRow() {
 
   return (
     <View style={card}>
-      <View style={{ gap: t.space[0.5] }}>
-        <AppText style={titleStyle}>Hyperfocus check-in</AppText>
-        <AppText style={captionStyle}>A gentle nudge when a task runs long.</AppText>
+      <View style={{ flexDirection: 'row', alignItems: 'center', gap: t.space[3] }}>
+        <Ionicons name="hourglass-outline" size={t.iconSize.md} color={t.colors.inkSoft} />
+        <View style={{ gap: t.space[0.5] }}>
+          <AppText style={titleStyle}>Hyperfocus check-in</AppText>
+          <AppText style={captionStyle}>A gentle nudge when a task runs long.</AppText>
+        </View>
       </View>
       <View style={options}>
         {OPTIONS.map((o) => (
