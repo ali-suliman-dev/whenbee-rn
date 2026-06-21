@@ -101,3 +101,11 @@ export const GLOBAL_PRIOR_MAX_WEIGHT = 0.6; // cap so a new category keeps its o
 // ── Accuracy trend series (ProgressChart — "you, then vs now") ────────────────
 export const ACCURACY_TREND_MIN_LOGS = 6; // below this, UI falls back to 2-point
 export const ACCURACY_TREND_BUCKETS = 6; // max ordered windows in the series
+
+// ── Archetype quiz seed (provisional time-personality before data) ───────────
+/** Seed multiplier per Q1 pace answer (self-perceived bias, NOT a duration). */
+export const ARCHETYPE_SEED_PACE = { about: 1.15, bit: 1.5, lot: 2.1, lose: 3.0 } as const;
+/** Q2 'rabbit holes' multiplies the seed by this (capped at RATIO_CEIL). */
+export const ARCHETYPE_SEED_RABBIT_BUMP = 1.15;
+/** Seed acts as a prior worth this many pseudo-logs; real logs wash it out. */
+export const ARCHETYPE_SEED_PSEUDO = 5;
