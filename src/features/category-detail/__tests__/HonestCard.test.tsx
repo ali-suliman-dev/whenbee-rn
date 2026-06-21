@@ -7,38 +7,48 @@ const base = {
   multiplier: 2.0,
   provenance: 'based on your runs',
   tier: 'Setting',
-  n: 4,
+  n: 2,
   logsToNext: 2,
   nextTier: 'Ripening' as const,
 };
 
-describe('HonestCard — range vs tight number', () => {
-  it('shows the band and a learning line for raw confidence', () => {
-    render(
-      <HonestCard {...base} confidence="raw" range={{ lowMinutes: 20, highMinutes: 40 }} />,
-    );
+describe('HonestCard — range band hero', () => {
+  it('shows the range, tier meaning, and maturity caption while learning (free)', () => {
+    render(<HonestCard {...base} confidence="setting" range={{ lowMinutes: 20, highMinutes: 40 }} isPro={false} />);
     expect(screen.getByText('20–40')).toBeOnTheScreen();
-    expect(screen.getByText(/Still learning your pace/)).toBeOnTheScreen();
+    expect(screen.getByText('YOUR HONEST RANGE')).toBeOnTheScreen();
+    expect(screen.getByText('still sharpening your pace')).toBeOnTheScreen();
+    expect(screen.getByText(/4 more runs/)).toBeOnTheScreen();
+    // Free: the convergence caret is the LOCKED teaser (lock glyph + point).
+    expect(screen.getByText(/~30/)).toBeOnTheScreen();
     // No tight number / multiplier while learning.
-    expect(screen.queryByText('~30')).toBeNull();
     expect(screen.queryByText('runs 2.0×')).toBeNull();
   });
 
-  it('shows the band and a clearer learning line for setting confidence', () => {
-    render(
-      <HonestCard {...base} confidence="setting" range={{ lowMinutes: 25, highMinutes: 35 }} />,
-    );
-    expect(screen.getByText('25–35')).toBeOnTheScreen();
-    expect(screen.getByText(/Getting clearer/)).toBeOnTheScreen();
+  it('uses the raw tier meaning for raw confidence', () => {
+    render(<HonestCard {...base} n={1} confidence="raw" range={{ lowMinutes: 20, highMinutes: 45 }} />);
+    expect(screen.getByText('just getting to know your pace')).toBeOnTheScreen();
   });
 
-  it('shows the tight number, multiplier, and honest affirmation once honest', () => {
+  it('shows the narrowing proof for Pro with a wider prior range', () => {
+    render(
+      <HonestCard
+        {...base}
+        confidence="setting"
+        range={{ lowMinutes: 20, highMinutes: 40 }}
+        isPro
+        firstHonestRange={{ lowMinutes: 10, highMinutes: 55 }}
+      />,
+    );
+    expect(screen.getByText(/Tightened from 10–55/)).toBeOnTheScreen();
+  });
+
+  it('shows the tight number, multiplier, and affirmation once honest', () => {
     render(<HonestCard {...base} confidence="honest" range={null} />);
     expect(screen.getByText('~30')).toBeOnTheScreen();
     expect(screen.getByText('runs 2.0×')).toBeOnTheScreen();
     expect(screen.getByText('Now an honest number')).toBeOnTheScreen();
-    // No band when honest.
-    expect(screen.queryByText(/–/)).toBeNull();
+    expect(screen.getByText('YOUR HONEST NUMBER')).toBeOnTheScreen();
   });
 
   it('falls back to the tight number when confidence is omitted (back-compat)', () => {
