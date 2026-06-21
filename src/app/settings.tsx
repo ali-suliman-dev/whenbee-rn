@@ -319,24 +319,22 @@ export default function Settings() {
           />
         </View>
 
-        {__DEV__ ? (
-          <View style={{ gap: t.space[3] }}>
-            <AppText variant="label">Developer</AppText>
-            <SettingRow
-              icon="construct-outline"
-              title="Unlock Pro (dev)"
-              note="Flip the Pro entitlement to preview gated screens. Dev builds only — never ships."
-              trailing={
-                <Switch
-                  value={isPro}
-                  onValueChange={setPro}
-                  trackColor={{ true: t.colors.primary, false: t.colors.hairline }}
-                  accessibilityLabel="Unlock Pro (dev)"
-                />
-              }
-            />
-          </View>
-        ) : null}
+        <View style={{ gap: t.space[3] }}>
+          <AppText variant="label">Developer</AppText>
+          <SettingRow
+            icon="construct-outline"
+            title="Unlock Pro (testing)"
+            note="Flip the Pro entitlement to preview every gated screen. For testing — leave off in normal use."
+            trailing={
+              <Switch
+                value={isPro}
+                onValueChange={setPro}
+                trackColor={{ true: t.colors.primary, false: t.colors.hairline }}
+                accessibilityLabel="Unlock Pro (testing)"
+              />
+            }
+          />
+        </View>
       </ScrollView>
 
       <ConfirmSheet
