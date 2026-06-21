@@ -22,6 +22,7 @@ import { useTimer } from '@/src/features/timer/useTimer';
 import { TimerRing } from '@/src/features/timer/TimerRing';
 import { PaceLabel } from '@/src/features/timer/PaceLabel';
 import { FinishTime } from '@/src/features/timer/FinishTime';
+import { GuardrailCheckIn } from '@/src/features/timer/GuardrailCheckIn';
 import { PostStopCaptureSheet } from '@/src/components/quick/PostStopCaptureSheet';
 import { guessCategory } from '@/src/features/shared/categoryGuess';
 import { usePickerCategories } from '@/src/features/shared/CategoryChips';
@@ -330,8 +331,17 @@ export default function Timer() {
 
         {/* Bottom: pace pill · controls (✕ Abandon disc · Stop & log).
             Screen only insets top/left/right, so the footer adds the home-indicator
-            inset itself — otherwise the buttons sit under it and can't be pressed. */}
-        <View style={{ gap: t.space[4], paddingBottom: insets.bottom + t.space[2] }}>
+            inset itself — otherwise the buttons sit under it and can't be pressed.
+            While the guardrail check-in is up, the controls dim (never disappear) so
+            focus shifts to the card; the ring stays live and readable above. */}
+        <View
+          style={{
+            gap: t.space[4],
+            paddingBottom: insets.bottom + t.space[2],
+            opacity: timer.guardDue ? t.opacity.pressed : 1,
+          }}
+          pointerEvents={timer.guardDue ? 'none' : 'auto'}
+        >
           <PaceLabel elapsedSec={timer.elapsedSec} estimateSec={timer.estimateSec} />
 
           <View style={controlsRow}>
@@ -370,6 +380,24 @@ export default function Timer() {
             onSave={() => void handleCaptureSave()}
             onSkip={() => void handleCaptureSkip()}
           />
+        ) : null}
+
+        {/* Hyperfocus guardrail check-in (Pro, opt-in) — a calm amber panel pinned to
+            the bottom over the dimmed controls. The ring stays readable above. Mounted
+            only while due; entering-only motion drives the dismiss internally. */}
+        {timer.guardDue ? (
+          <View
+            style={{ position: 'absolute', left: 0, right: 0, bottom: 0 }}
+            pointerEvents="box-none"
+          >
+            <GuardrailCheckIn
+              taskLabel={label}
+              elapsedMin={Math.max(0, Math.floor((Date.now() - timer.startedAt) / 60000))}
+              bottomInset={insets.bottom}
+              onKeepGoing={timer.keepGoing}
+              onWrapUp={() => void timer.wrapUp()}
+            />
+          </View>
         ) : null}
     </Screen>
   );
