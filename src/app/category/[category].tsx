@@ -134,22 +134,18 @@ export default function CategoryDetailScreen() {
                 split by hairlines (no card chrome) so the hero + Pro card lead. */}
             <View style={styles(t).sections}>
               <RecentList recent={detail.recent} />
-            </Card>
-
-            {/* 4 — Trend over time. */}
-            <Card>
-              <TrendChart trend={detail.trend} />
-            </Card>
+              <View style={styles(t).divider} />
+              <View style={styles(t).trendCard}>
+                <TrendChart trend={detail.trend} />
+              </View>
+              <View style={styles(t).divider} />
+              <AdaptSegment value={adaptSpeed} onChange={handleSetAdapt} />
+            </View>
 
             {/* 5 — Pro: a forward goal on this category (Pro live card / locked teaser). */}
             <ProGate fallback={<GoalLocked categoryId={categoryId} />}>
               <GoalCard categoryId={categoryId} categoryName={detail.categoryName} />
             </ProGate>
-
-            {/* 6 — The control: how fast it learns. */}
-            <Card>
-              <AdaptSegment value={adaptSpeed} onChange={handleSetAdapt} />
-            </View>
 
             {/* Quiet reset */}
             <View style={styles(t).resetBlock}>
