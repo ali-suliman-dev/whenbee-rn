@@ -59,3 +59,17 @@ describe('settingsStore focus window', () => {
     expect(useSettingsStore.getState().windowEndMin).toBeNull();
   });
 });
+
+describe('settingsStore hyperfocusGuard', () => {
+  beforeEach(() => useSettingsStore.getState().reset());
+  it('defaults to off', () => expect(useSettingsStore.getState().hyperfocusGuard).toBe('off'));
+  it('sets a value', () => {
+    useSettingsStore.getState().setHyperfocusGuard('2x');
+    expect(useSettingsStore.getState().hyperfocusGuard).toBe('2x');
+  });
+  it('reset restores off', () => {
+    useSettingsStore.getState().setHyperfocusGuard('3x');
+    useSettingsStore.getState().reset();
+    expect(useSettingsStore.getState().hyperfocusGuard).toBe('off');
+  });
+});

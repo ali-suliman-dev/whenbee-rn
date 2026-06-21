@@ -23,6 +23,9 @@ import { useAccountActions, type RestoreOutcome } from '@/src/features/paywall/u
 import { useReminderSetting } from '@/src/features/settings/useReminderSetting';
 import { useDayEndSetting } from '@/src/features/settings/useDayEndSetting';
 import { useAccountReset } from '@/src/features/settings/useAccountReset';
+import { ProGate } from '@/src/features/paywall/ProGate';
+import { GuardrailSettingRow } from '@/src/features/settings/GuardrailSettingRow';
+import { GuardrailLockedRow } from '@/src/features/settings/GuardrailLockedRow';
 
 const modes: ColorModePref[] = ['system', 'light', 'dark'];
 
@@ -250,6 +253,9 @@ export default function Settings() {
               />
             }
           />
+          <ProGate fallback={<GuardrailLockedRow />}>
+            <GuardrailSettingRow />
+          </ProGate>
           <SettingRow
             icon="sparkles-outline"
             title="Daily check-in"

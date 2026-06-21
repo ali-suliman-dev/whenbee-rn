@@ -1,5 +1,5 @@
 // Calibration engine constants. PURE TS — no RN/Expo/clock.
-import type { AdaptSpeed, Tier } from '../domain/types';
+import type { AdaptSpeed, GuardrailMultiple, Tier } from '../domain/types';
 
 export const RATIO_FLOOR = 1 / 6; // clamp so one disaster can't poison the model
 export const RATIO_CEIL = 6;
@@ -111,6 +111,14 @@ export const GOAL_MIN_LOGS = 5;
 export const GOAL_PRESETS = [40, 25, 15, 10] as const;
 /** A recommended target must be at least this many points tighter than current. */
 export const GOAL_RECOMMEND_STEP = 8;
+
+// ── Hyperfocus guardrail (Pro) ───────────────────────────────────────────────
+/** Setting → multiple of the honest number. 'off' has no entry. */
+export const GUARDRAIL_FACTORS = { '1.5x': 1.5, '2x': 2, '3x': 3 } as const;
+/** Default guardrail for a fresh install. */
+export const DEFAULT_GUARDRAIL: GuardrailMultiple = 'off';
+/** Never fire a nudge before this many elapsed minutes, regardless of factor. */
+export const GUARDRAIL_MIN_THRESHOLD_MIN = 25;
 
 // ── Focus-window planner (Pro) ────────────────────────────────────────────────
 // No tight-ratio threshold: the verdict is binary (everything fits, or something

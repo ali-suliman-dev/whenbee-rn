@@ -222,6 +222,11 @@ export interface CategoryGoal {
   met: boolean;
 }
 
+// ── Hyperfocus guardrail (Pro) ────────────────────────────────────────────────
+
+/** Hyperfocus guardrail trigger multiple of the honest number, or off. */
+export type GuardrailMultiple = 'off' | '1.5x' | '2x' | '3x';
+
 // ── Voice intake ────────────────────────────────────────────────────────────
 
 /** Where a spoken task's structuring came from. */

@@ -24,6 +24,10 @@ type HonestRangeConfidence = 'raw' | 'setting' | 'honest';
 /** Where a guess/timer/log originated. */
 type EventSource = 'today' | 'fab' | 'addtask' | 'timed' | 'retro';
 
+/** Hyperfocus guardrail multiple, mirrored locally (cf. `TierName`) so analytics
+ *  stays dependency-free. Matches `GuardrailMultiple`. */
+type GuardrailSetting = 'off' | '1.5x' | '2x' | '3x';
+
 /** Map of every analytics event to its props shape (the type contract). */
 export interface AppEventProps {
   // ── Lifecycle (kept; aliases of §2 app_installed / onboarding_completed) ──────
@@ -100,7 +104,7 @@ export interface AppEventProps {
   pro_reveal_tap: { surface: 'whenbee_hub' };
   pro_preview_tap: { surface: 'whenbee_hub' };
   paywall_view: {
-    trigger: 'make_day_honest' | 'settings_upgrade' | 'steals_your_time' | 'honest_range' | 'pro_reveal' | 'pro_preview' | 'goals' | 'focus_window';
+    trigger: 'make_day_honest' | 'settings_upgrade' | 'steals_your_time' | 'honest_range' | 'pro_reveal' | 'pro_preview' | 'goals' | 'focus_window' | 'hyperfocus_guard';
     readiness?: 'pre' | 'honest';
   };
   founder_reserve: { result: 'reserved' };
@@ -127,6 +131,13 @@ export interface AppEventProps {
   goal_met: { category: string; target_band: number; logs_to_meet: number };
   goal_replaced: { category: string; from_band: number; to_band: number };
   goal_kept: { category: string; band: number };
+
+  // ── Hyperfocus guardrail (Pro) ────────────────────────────────────────────────
+  guardrail_armed: { setting: GuardrailSetting; threshold_min: number; honest_min: number };
+  guardrail_shown: { channel: 'in_app' | 'notification'; elapsed_min: number; threshold_min: number };
+  guardrail_resolved: { action: 'keep_going' | 'wrap_up'; elapsed_min: number };
+  guardrail_setting_changed: { from: GuardrailSetting; to: GuardrailSetting };
+  guardrail_paywall: Record<string, never>;
 
   // ── Focus-window planner (Pro) ────────────────────────────────────────────────
   focus_window_viewed: { verdict: 'fits' | 'spills' | 'unset'; fit_count: number; total_count: number; window_min: number; is_pro: boolean };

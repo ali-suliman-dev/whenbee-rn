@@ -37,3 +37,4 @@ export {
 } from './goals';
 export { focusWindowMinutes, fitFocusWindow, promoteIntoWindow } from './focusWindow';
 export type { FocusWindowTask, FocusWindowInput } from './focusWindow';
+export { guardrailFactor, guardrailThresholdMin } from './guardrail';
