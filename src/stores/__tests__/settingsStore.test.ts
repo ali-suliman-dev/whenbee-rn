@@ -31,3 +31,31 @@ describe('settingsStore dayEndMin', () => {
     expect(useSettingsStore.getState().dayEndMin).toBe(DEFAULT_DAY_END_MIN);
   });
 });
+
+describe('settingsStore focus window', () => {
+  beforeEach(() => useSettingsStore.getState().reset());
+
+  it('defaults to unset (null/null)', () => {
+    expect(useSettingsStore.getState().windowStartMin).toBeNull();
+    expect(useSettingsStore.getState().windowEndMin).toBeNull();
+  });
+
+  it('setFocusWindow stores both', () => {
+    useSettingsStore.getState().setFocusWindow(540, 720);
+    expect(useSettingsStore.getState().windowStartMin).toBe(540);
+    expect(useSettingsStore.getState().windowEndMin).toBe(720);
+  });
+
+  it('clamps to [0,1439]', () => {
+    useSettingsStore.getState().setFocusWindow(-10, 99999);
+    expect(useSettingsStore.getState().windowStartMin).toBe(0);
+    expect(useSettingsStore.getState().windowEndMin).toBe(1439);
+  });
+
+  it('reset clears to null', () => {
+    useSettingsStore.getState().setFocusWindow(540, 720);
+    useSettingsStore.getState().reset();
+    expect(useSettingsStore.getState().windowStartMin).toBeNull();
+    expect(useSettingsStore.getState().windowEndMin).toBeNull();
+  });
+});
