@@ -111,6 +111,9 @@ export const tokens = {
   //   gapTrack = bar height; tickW/tickH = the live elapsed marker riding the bar.
   progress: {
     track: 6, gapTrack: 8, tickW: 3, tickH: 16,
+    // teaserFill = the fixed illustrative fill fraction on a LOCKED (non-Pro) goal
+    // teaser track — it shows the SHAPE of progress, never the user's real data.
+    teaserFill: 0.34,
     // gapStripe = the focus-card guess segment's diagonal hatch (indigo lines on
     // primarySoft). Tones the guess down from a solid indigo block so Start is the
     // single filled indigo on Today. lineW = stroke width, gapW = clear gap between.

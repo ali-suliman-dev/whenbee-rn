@@ -14,6 +14,9 @@ import { AhaCard } from '@/src/features/category-detail/AhaCard';
 import { AdaptSegment } from '@/src/features/category-detail/AdaptSegment';
 import { TrendChart } from '@/src/features/category-detail/TrendChart';
 import { RecentList } from '@/src/features/category-detail/RecentList';
+import { GoalCard } from '@/src/features/category-detail/GoalCard';
+import { GoalLocked } from '@/src/features/category-detail/GoalLocked';
+import { ProGate } from '@/src/features/paywall/ProGate';
 import { TIERS } from '@/src/engine';
 
 // ──────────────────────────────────────────────────────────────────────────────
@@ -125,7 +128,12 @@ export default function CategoryDetailScreen() {
               <TrendChart trend={detail.trend} />
             </Card>
 
-            {/* 5 — The control: how fast it learns. */}
+            {/* 5 — Pro: a forward goal on this category (Pro live card / locked teaser). */}
+            <ProGate fallback={<GoalLocked categoryId={categoryId} />}>
+              <GoalCard categoryId={categoryId} categoryName={detail.categoryName} />
+            </ProGate>
+
+            {/* 6 — The control: how fast it learns. */}
             <Card>
               <AdaptSegment value={adaptSpeed} onChange={handleSetAdapt} />
             </Card>

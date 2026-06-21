@@ -97,3 +97,11 @@ export const AFFINE_PRIOR_PSEUDO = 4;
 export const GLOBAL_PRIOR_MIN_LOGS = 4; // below this, use the population prior unchanged
 export const GLOBAL_PRIOR_K = 6; // pseudo-count: personal weight = n/(n+k)
 export const GLOBAL_PRIOR_MAX_WEIGHT = 0.6; // cap so a new category keeps its own identity
+
+// ── Per-category goals (Pro, no-guilt) ───────────────────────────────────────
+/** Need at least this many counted logs before a category can have a goal. */
+export const GOAL_MIN_LOGS = 5;
+/** Offered "within X%" targets, loosest → tightest (displayed as error bands). */
+export const GOAL_PRESETS = [40, 25, 15, 10] as const;
+/** A recommended target must be at least this many points tighter than current. */
+export const GOAL_RECOMMEND_STEP = 8;
