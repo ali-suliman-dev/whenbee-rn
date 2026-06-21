@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { View, Text, TextInput, Pressable, ScrollView, KeyboardAvoidingView, Platform, type ViewStyle, type TextStyle } from 'react-native';
-import { router } from 'expo-router';
+import { router, useLocalSearchParams } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Screen } from '@/src/components/Screen';
@@ -27,7 +27,9 @@ export default function AddTask() {
   const t = useTheme();
   const insets = useSafeAreaInsets();
   const toastDismissMs = t.motion.pulse; // let the toast land before the sheet closes
-  const a = useAddTask();
+  // Arrived from the trio mic quick-action → title pre-filled from the transcript.
+  const { title: spokenTitle } = useLocalSearchParams<{ title?: string }>();
+  const a = useAddTask(spokenTitle);
   const [toastVisible, setToastVisible] = useState(false);
   const [addingCategory, setAddingCategory] = useState(false);
   const [newCategory, setNewCategory] = useState('');
@@ -130,6 +132,9 @@ export default function AddTask() {
               placeholder="e.g. Reply to that email"
               returnKeyType="done"
               accessibilityLabel="Task title"
+              // Title's already filled when spoken — don't grab focus over the
+              // keyboard so the user can go straight to the guess field.
+              autoFocus={!spokenTitle}
             />
           </View>
 

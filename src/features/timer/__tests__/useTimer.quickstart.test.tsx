@@ -36,6 +36,7 @@ jest.mock('expo-router', () => ({
     push: jest.fn(),
   },
   useLocalSearchParams: () => mockParams,
+  useFocusEffect: (cb: () => void | (() => void)) => cb(),
 }));
 
 // ── Other mocks (mirrors timerScreen.test.tsx) ────────────────────────────────

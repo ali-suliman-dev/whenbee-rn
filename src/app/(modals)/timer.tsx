@@ -1,4 +1,4 @@
-import { useCallback, useState } from 'react';
+import { useCallback, useRef, useState } from 'react';
 import { View, Pressable, Alert, type ViewStyle, type TextStyle } from 'react-native';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -26,6 +26,7 @@ import { PostStopCaptureSheet } from '@/src/components/quick/PostStopCaptureShee
 import { guessCategory } from '@/src/features/shared/categoryGuess';
 import { usePickerCategories } from '@/src/features/shared/CategoryChips';
 import { useCalibrationStore } from '@/src/stores/calibrationStore';
+import { useVocabStore } from '@/src/stores/vocabStore';
 
 // ──────────────────────────────────────────────────────────────────────────────
 // Live Timer (Screen 3) — calm focus ring; measures actual vs guess, reframes
@@ -89,6 +90,11 @@ export default function Timer() {
   const [capturedLabel, setCapturedLabel] = useState('');
   const categories = usePickerCategories();
   const stats = useCalibrationStore((s) => s.statsByCategory);
+  const learned = useVocabStore((s) => s.map);
+  const bankVocab = useVocabStore((s) => s.bank);
+  // Flips once the user taps a chip — from then on typing no longer re-guesses,
+  // so a manual pick is never silently overwritten (mirrors the Add-Task sheet).
+  const manualCatRef = useRef(false);
 
   // Pre-select most-frequent category (by log count from calibration stats).
   // Wrapped in useCallback so handleStopPress can list it in deps without a
@@ -107,30 +113,59 @@ export default function Timer() {
 
   const [capturedCategory, setCapturedCategory] = useState<string | null>(null);
 
+  // Re-guess the category live as the user types in the capture sheet — the same
+  // smart categorizer the Add-Task sheet uses (learned picks → custom names →
+  // built-in keywords). A manual chip tap (manualCatRef) freezes it.
+  const onCapturedLabelChange = useCallback(
+    (s: string) => {
+      setCapturedLabel(s);
+      if (manualCatRef.current) return;
+      const g = guessCategory(s, {
+        learned,
+        namedCats: categories,
+        availableIds: categories.map((c) => c.id),
+      });
+      if (g) setCapturedCategory(g);
+    },
+    [learned, categories],
+  );
+
+  const onCapturedCategoryChange = useCallback((id: string) => {
+    manualCatRef.current = true;
+    setCapturedCategory(id);
+  }, []);
+
   const handleStopPress = useCallback(() => {
     if (timer.isQuickStart) {
       // Freeze the clock immediately so actualMin is anchored to now.
       timer.onFreezeForCapture();
-      // Seed category from the label if typed; else most-frequent.
-      const availableIds = categories.map((c) => c.id);
+      // Seed category from the label if typed; else most-frequent. Re-arm
+      // auto-guessing for this capture (the user may not have typed yet).
+      manualCatRef.current = false;
       const guessed = capturedLabel.trim()
-        ? guessCategory(capturedLabel, { availableIds })
+        ? guessCategory(capturedLabel, {
+            learned,
+            namedCats: categories,
+            availableIds: categories.map((c) => c.id),
+          })
         : null;
       setCapturedCategory(guessed ?? pickDefaultCategory());
       setShowCaptureSheet(true);
     } else {
       void timer.onStopAndLog();
     }
-  }, [timer, capturedLabel, categories, pickDefaultCategory]);
+  }, [timer, capturedLabel, categories, learned, pickDefaultCategory]);
 
   const handleCaptureSave = useCallback(async () => {
     // Pass label + category directly as overrides — the store is already cleared by
     // onFreezeForCapture at this point; overrides bypass the cleared state entirely.
     const finalLabel = capturedLabel.trim() || 'Focus session';
     const finalCategory = capturedCategory ?? categories[0]?.id ?? 'admin';
+    // Teach the categorizer this title→category link so future guesses sharpen.
+    if (capturedLabel.trim()) bankVocab(capturedLabel.trim(), finalCategory);
     setShowCaptureSheet(false);
     await timer.onStopAndLog(finalLabel, finalCategory);
-  }, [capturedLabel, capturedCategory, categories, timer]);
+  }, [capturedLabel, capturedCategory, categories, bankVocab, timer]);
 
   const handleCaptureSkip = useCallback(async () => {
     setShowCaptureSheet(false);
@@ -329,9 +364,9 @@ export default function Timer() {
         {showCaptureSheet ? (
           <PostStopCaptureSheet
             label={capturedLabel}
-            onLabelChange={setCapturedLabel}
+            onLabelChange={onCapturedLabelChange}
             category={capturedCategory}
-            onCategoryChange={setCapturedCategory}
+            onCategoryChange={onCapturedCategoryChange}
             onSave={() => void handleCaptureSave()}
             onSkip={() => void handleCaptureSkip()}
           />

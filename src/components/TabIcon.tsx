@@ -56,10 +56,13 @@ const ICON_PATHS: Record<TabIconName, Sub[]> = {
   ],
   calendar: [
     {
+      // True length ≈ 57.4 (48 straight + ~9.4 in the four corner arcs). `len`
+      // MUST over-estimate or the single-value dasharray wraps: a sliver of the
+      // accent leaks at rest and a gap opens when fully drawn.
       d: 'M5 6.5 h14 a1.5 1.5 0 0 1 1.5 1.5 V18 a1.5 1.5 0 0 1-1.5 1.5 H5 a1.5 1.5 0 0 1-1.5-1.5 V8 a1.5 1.5 0 0 1 1.5-1.5 Z',
-      len: 50,
+      len: 60,
     },
-    { d: 'M3.5 10 H20.5', len: 17 },
+    { d: 'M3.5 10 H20.5', len: 18 },
     { d: 'M8 4.5 V7', len: 3 },
     { d: 'M16 4.5 V7', len: 3 },
   ],
