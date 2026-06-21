@@ -21,7 +21,8 @@ describe('buildAccuracySeries', () => {
     const ratios = [...Array(6).fill(2), ...Array(6).fill(1)];
     const out = buildAccuracySeries(ratios);
     expect(out).not.toBeNull();
-    expect(out!.points[0]).toBeLessThan(out!.points[out!.points.length - 1]);
+    const pts = out!.points;
+    expect(pts[0]!).toBeLessThan(pts[pts.length - 1]!);
     expect(out!.deltaPts).toBeGreaterThan(0);
   });
 
