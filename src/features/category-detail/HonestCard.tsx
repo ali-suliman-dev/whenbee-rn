@@ -1,9 +1,7 @@
 import { View, Text, type ViewStyle, type TextStyle } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { Card } from '@/src/components/Card';
 import { HonestNumber } from '@/src/components/HonestNumber';
 import { HonestBand } from '@/src/components/HonestBand';
-import { HonestBandLockedTeaser } from '@/src/features/shared/HonestBandLockedTeaser';
 import { useTheme } from '@/src/theme/useTheme';
 import { type } from '@/src/theme/typography';
 import type { CalibrationConfidence, HonestRange } from '@/src/domain/types';
@@ -61,10 +59,8 @@ const LEARNING_LINE: Record<Exclude<CalibrationConfidence, 'honest'>, string> = 
 };
 
 export function HonestCard({
-  categoryName,
   honestMinutes,
   multiplier,
-  provenance,
   tier,
   n,
   logsToNext,
@@ -98,8 +94,12 @@ export function HonestCard({
     flex: 1,
   };
 
-  const eyebrowRow: ViewStyle = { flexDirection: 'row', alignItems: 'center', gap: t.space[2] };
-  const eyebrow: TextStyle = { ...(type.eyebrow as unknown as TextStyle), color: t.colors.primary };
+  // Hero block — eyebrow + number + learning line are ONE unit: tight internal
+  // rhythm so they read as a single focal group, well separated from the rest.
+  const heroBlock: ViewStyle = { gap: t.space[2] };
+  // Quiet, neutral eyebrow — the number is the headline now, so the label recedes
+  // (no loud indigo competing with the ink hero number).
+  const eyebrow: TextStyle = { ...(type.eyebrow as unknown as TextStyle), color: t.colors.inkSoft };
   const numberRow: ViewStyle = {
     flexDirection: 'row',
     alignItems: 'flex-end',
@@ -111,15 +111,11 @@ export function HonestCard({
     color: t.colors.inkSoft,
     paddingBottom: t.space[1],
   };
-  const provenanceText: TextStyle = {
-    ...(type.caption as unknown as TextStyle),
-    color: t.colors.inkSoft,
-  };
-  // B15 reason note — a quiet, optional second provenance line. Display-only:
-  // it sits below the number and never participates in computing it.
+  // B15 reason note — a quiet, optional second line that hugs the number group.
+  // Display-only: it never participates in computing the number.
   const reasonNoteText: TextStyle = {
-    ...(type.bodySm as unknown as TextStyle),
-    color: t.colors.inkSoft,
+    ...(type.caption as unknown as TextStyle),
+    color: t.colors.inkFaint,
   };
   // The learning line (under a band) and the honest affirmation (under a point).
   const learningLine: TextStyle = {
@@ -143,7 +139,7 @@ export function HonestCard({
   const bandStrip: ViewStyle = { flex: 1 };
 
   return (
-    <Card tone="focal" style={{ gap: t.space[3] }}>
+    <View style={{ gap: t.space[4] }}>
       {tier ? (
         <View style={tierRow}>
           <View style={pill}>
@@ -156,66 +152,60 @@ export function HonestCard({
         </View>
       ) : null}
 
-      <View style={eyebrowRow}>
-        <Ionicons name="search-outline" size={16} color={t.colors.primary} />
-        <Text style={eyebrow}>YOUR HONEST NUMBER FOR {categoryName.toUpperCase()}</Text>
+      <View style={heroBlock}>
+        <Text style={eyebrow}>YOUR HONEST NUMBER</Text>
+
+        {showRange && range ? (
+          <>
+            <View style={numberRow}>
+              <HonestNumber
+                size="xl"
+                tone="ink"
+                value={`${range.lowMinutes}–${range.highMinutes}`}
+                unit="min"
+              />
+            </View>
+            <Text style={learningLine}>
+              {LEARNING_LINE[confidence === 'raw' ? 'raw' : 'setting']}
+            </Text>
+          </>
+        ) : (
+          <>
+            <View style={numberRow}>
+              <HonestNumber size="xl" tone="ink" value={`~${honestMinutes}`} unit="min" />
+              <Text style={multNote}>runs {multiplier.toFixed(1)}×</Text>
+            </View>
+            {confidence === 'honest' ? (
+              <View style={affirmRow}>
+                <Ionicons name="checkmark-circle" size={t.iconSize.sm} color={t.colors.accent} />
+                <Text style={affirmText}>Now an honest number</Text>
+              </View>
+            ) : null}
+          </>
+        )}
+        {reasonNote ? <Text style={reasonNoteText}>{reasonNote}</Text> : null}
       </View>
 
-      {showRange && range ? (
-        <>
-          <View style={numberRow}>
-            <HonestNumber
-              size="xl"
-              tone="indigo"
-              value={`${range.lowMinutes}–${range.highMinutes}`}
-              unit="min"
-            />
-          </View>
-          <Text style={learningLine}>
-            {LEARNING_LINE[confidence === 'raw' ? 'raw' : 'setting']}
-          </Text>
-        </>
-      ) : (
-        <>
-          <View style={numberRow}>
-            <HonestNumber size="xl" tone="indigo" value={`~${honestMinutes}`} unit="min" />
-            <Text style={multNote}>runs {multiplier.toFixed(1)}×</Text>
-          </View>
-          {confidence === 'honest' ? (
-            <View style={affirmRow}>
-              <Ionicons name="checkmark-circle" size={t.iconSize.sm} color={t.colors.accent} />
-              <Text style={affirmText}>Now an honest number</Text>
+      {/* Surface B — the honest-band strip for Pro, while still learning. Free
+          users get the always-on Pro tease (ProHonestWeekTease) on the screen
+          instead, so nothing locked clutters the hero. */}
+      {showRange && range && isPro ? (
+        <View>
+          <View style={stripRow}>
+            <Text style={endLabel}>{range.lowMinutes}</Text>
+            <View style={bandStrip}>
+              <HonestBand
+                range={range}
+                point={honestMinutes}
+                confidence={confidence ?? 'setting'}
+                height={t.progress.gapTrack}
+              />
             </View>
-          ) : null}
-        </>
-      )}
-
-      {/* Surface B — the honest-band strip (Pro) or its locked teaser (free).
-          Only while learning; once honest the number is a single point. */}
-      {showRange && range ? (
-        isPro ? (
-          <View>
-            <View style={stripRow}>
-              <Text style={endLabel}>{range.lowMinutes}</Text>
-              <View style={bandStrip}>
-                <HonestBand
-                  range={range}
-                  point={honestMinutes}
-                  confidence={confidence ?? 'setting'}
-                  height={t.progress.gapTrack}
-                />
-              </View>
-              <Text style={endLabel}>{range.highMinutes}</Text>
-            </View>
-            <Text style={narrowCaption}>{narrowingCaption(firstHonestRange, range)}</Text>
+            <Text style={endLabel}>{range.highMinutes}</Text>
           </View>
-        ) : (
-          <HonestBandLockedTeaser />
-        )
+          <Text style={narrowCaption}>{narrowingCaption(firstHonestRange, range)}</Text>
+        </View>
       ) : null}
-
-      <Text style={provenanceText}>{provenance} · learned on-device</Text>
-      {reasonNote ? <Text style={reasonNoteText}>{reasonNote}</Text> : null}
-    </Card>
+    </View>
   );
 }

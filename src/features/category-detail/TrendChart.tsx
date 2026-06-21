@@ -51,16 +51,37 @@ export function TrendChart({ trend }: TrendChartProps) {
       : 'Steady and consistent — your pace is predictable here.';
 
   let body: React.ReactNode;
-  if (points.length < MIN_POINTS) {
+  const hasTrend = points.length >= MIN_POINTS;
+
+  if (!hasTrend) {
     const empty: ViewStyle = {
       height: CHART_H,
       alignItems: 'center',
       justifyContent: 'center',
+      paddingHorizontal: t.space[5],
       backgroundColor: t.colors.surfaceSunken,
       borderRadius: t.radii.md,
+      borderCurve: 'continuous',
+      overflow: 'hidden',
     };
+    const fill: ViewStyle = { position: 'absolute', left: 0, right: 0, top: 0, bottom: 0 };
     body = (
+      // A faint dashed baseline previews the 1× honest line the trend will ride —
+      // turns a blank slab into "your chart, waiting" rather than dead space.
       <View style={empty}>
+        <View style={fill} pointerEvents="none">
+          <Svg width="100%" height={CHART_H} viewBox={`0 0 100 ${CHART_H}`} preserveAspectRatio="none">
+            <Line
+              x1={PAD}
+              y1={CHART_H / 2}
+              x2={100 - PAD}
+              y2={CHART_H / 2}
+              stroke={t.colors.hairline}
+              strokeWidth={1}
+              strokeDasharray="3 3"
+            />
+          </Svg>
+        </View>
         <Text style={[caption, { textAlign: 'center' }]}>
           Not enough logs yet — your trend appears after a few more.
         </Text>
@@ -131,7 +152,9 @@ export function TrendChart({ trend }: TrendChartProps) {
         </View>
       </View>
       {body}
-      <Text style={caption}>{captionText}</Text>
+      {/* Only assert a verdict when there's actually a trend — otherwise the
+          "steady and consistent" line contradicts the empty state above it. */}
+      {hasTrend ? <Text style={caption}>{captionText}</Text> : null}
     </View>
   );
 }
