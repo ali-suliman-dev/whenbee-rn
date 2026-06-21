@@ -23,7 +23,6 @@ import { AccuracyCorrelationsLocked } from '@/src/features/patterns/AccuracyCorr
 import { useContextInsights } from '@/src/features/patterns/useContextInsights';
 import { ContextCorrelations } from '@/src/features/patterns/ContextCorrelations';
 import { ContextCorrelationsLocked } from '@/src/features/patterns/ContextCorrelationsLocked';
-import { PredictionCard } from '@/src/features/patterns/PredictionCard';
 
 // ──────────────────────────────────────────────────────────────────────────────
 // Patterns — the free, read-only self-insight surface, redesigned as a hero +
@@ -89,9 +88,8 @@ export default function Patterns() {
             {/* 4 · YOUR NUMBERS */}
             {view.calibrationMap.length > 0 ? (
               <Animated.View entering={rise()} style={{ gap: t.space[3] }}>
-                <SectionHeader label="YOUR HONEST MAP" />
+                <SectionHeader label="Your numbers" />
                 <HonestMap rows={view.calibrationMap} />
-                {view.prediction ? <PredictionCard card={view.prediction} /> : null}
               </Animated.View>
             ) : null}
 
