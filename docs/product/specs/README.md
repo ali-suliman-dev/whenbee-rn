@@ -2,17 +2,23 @@
 
 Detailed, build-ready specs for the **new Whenbee Pro bundle** (calendar/Honest-Day dropped 2026-06-19). Each file is one feature, specified precisely enough to implement without re-deciding product or design. Rationale + evidence for *why* these features live in [../07-PRO-VALUE-IDEAS.md](../07-PRO-VALUE-IDEAS.md).
 
+> **⚠️ FREE/PRO RE-SPLIT — decided 2026-06-21 (this note wins over the table's old "First build?" column).** An audit found several specs duplicate already-shipped free code. Updated gating:
+> - **04 Day-capacity check → DROPPED FROM PRO. It is FREE.** The fits/over/which-to-cut math already ships free in the Start-By planner (`src/engine/planner.ts` `planBackward` + `cutLadder` + `VerdictCard`). The only genuinely-new, useful piece is a durable global **End of day** setting — also free (it is configuration, not a payoff). See [docs/plans/day-end-setting.md](../../plans/day-end-setting.md) and [docs/superpowers/plans/2026-06-21-free-bucket.md](../../superpowers/plans/2026-06-21-free-bucket.md). Do **not** build 04 as a Pro feature.
+> - **02 Review ritual → SPLIT-GATED.** Viewing your week is FREE (the existing `WeeklyReview` content stays free). Only the *scheduled ritual surface* + the two Pro correlation cards (steals-your-time, when-you're-sharpest) are Pro.
+> - **07 Long-range history → SPLIT-GATED (and the riskiest gate).** The recent 30-day window + receipts are FREE; only *depth* (90/365/all, season-compare, re-open past reviews) is Pro. It is the purest "view your own data" — confirm it earns a paywall slot before building, or soften to a free view with a lighter Pro hook.
+> - **03 / 05** already split free vs Pro inside their own specs (point number / static widget = free; band / rich ring = Pro). Unchanged.
+
 ## The specs
 
 | # | Spec | One-liner | First build? |
 |---|---|---|---|
 | 01 | [PDF report export](01-pdf-report-export.md) | Clinician/coach/self PDF of your real durations & bias | ✅ recommended |
-| 02 | [Review ritual](02-review-ritual.md) | Cadenced "Honest Week / Month" recap (the retention ritual) | ✅ recommended |
-| 03 | [Confidence band](03-confidence-band.md) | Honest *range* (P25–P75) that visibly narrows over time | ✅ recommended |
-| 04 | [Day-capacity check](04-day-capacity-check.md) | "Will today actually fit?" — in-app, **no calendar** | ✅ recommended |
+| 02 | [Review ritual](02-review-ritual.md) | Cadenced "Honest Week / Month" recap (the retention ritual) | ✅ **split** — week content free; ritual+correlations Pro |
+| 03 | [Confidence band](03-confidence-band.md) | Honest *range* (P25–P75) that visibly narrows over time | ✅ recommended (band UI ~80% built) |
+| 04 | [Day-capacity check](04-day-capacity-check.md) | "Will today actually fit?" — in-app, **no calendar** | ❌ **NOT PRO** — math ships free; only the End of day setting is new (free) |
 | 05 | [Persistent presence](05-persistent-presence.md) | Home/lock-screen widget + Live Activity (finish scaffold) | next |
 | 06 | [Routines](06-routines.md) | Multi-step sequences with one learned honest total | next |
-| 07 | [Long-range history](07-long-range-history.md) | Unlimited history + re-openable past reviews (the data moat) | next |
+| 07 | [Long-range history](07-long-range-history.md) | Unlimited history + re-openable past reviews (the data moat) | next — **split** (30d free; depth Pro; riskiest gate, reconfirm) |
 | 08 | [Hyperfocus guardrail](08-hyperfocus-guardrail.md) | Soft, no-guilt nudge when a task runs 2× over | next |
 | 09 | [Focus-window planner](09-focus-window-planner.md) | Fit tasks inside your daily good-hours/med window | later |
 | 10 | [Per-category goals](10-per-category-goals.md) | No-guilt accuracy goals/experiments per category | later |

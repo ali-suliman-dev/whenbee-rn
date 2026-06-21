@@ -101,3 +101,10 @@ export const GLOBAL_PRIOR_MAX_WEIGHT = 0.6; // cap so a new category keeps its o
 // ── Accuracy trend series (ProgressChart — "you, then vs now") ────────────────
 export const ACCURACY_TREND_MIN_LOGS = 6; // below this, UI falls back to 2-point
 export const ACCURACY_TREND_BUCKETS = 6; // max ordered windows in the series
+// ── Per-category goals (Pro, no-guilt) ───────────────────────────────────────
+/** Need at least this many counted logs before a category can have a goal. */
+export const GOAL_MIN_LOGS = 5;
+/** Offered "within X%" targets, loosest → tightest (displayed as error bands). */
+export const GOAL_PRESETS = [40, 25, 15, 10] as const;
+/** A recommended target must be at least this many points tighter than current. */
+export const GOAL_RECOMMEND_STEP = 8;

@@ -31,3 +31,7 @@ export {
   companionStageFor, capabilityFor, keeperReached, driftHealthFromRecent, COMPANION_KEEPER_QUOTA,
 } from './companion';
 export type { CompanionStage, CompanionCapability, DriftHealth } from './companion';
+export {
+  accuracyToErrorBand, errorBandToAccuracy, goalProgress, isGoalMet,
+  reconcileGoal, canSetGoal, presetsForAccuracy, recommendedPreset,
+} from './goals';

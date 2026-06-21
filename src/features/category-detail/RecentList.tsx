@@ -1,4 +1,5 @@
 import { View, Text, type ViewStyle, type TextStyle } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '@/src/theme/useTheme';
 import { type } from '@/src/theme/typography';
 import type { RecentLog } from '@/src/stores/calibrationStore';
@@ -55,12 +56,15 @@ function RecentRow({ row }: { row: RecentLog }) {
   // the ratio (capped so a 6× over-run doesn't overflow the row).
   const actualFraction = Math.min(1, row.estimateMin / Math.max(row.actualMin, 1));
 
+  // One spacing source per axis: the row owns vertical rhythm via `gap`, so neither
+  // the label row nor the track carries a margin (mixing the two drifts alignment).
   const labelRow: ViewStyle = {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    marginBottom: t.space[1],
   };
+  // Guess → actual reads as a direction (what you thought vs. what it took).
+  const guessRow: ViewStyle = { flexDirection: 'row', alignItems: 'center', gap: t.space[1.5] };
   const label: TextStyle = { ...(type.bodySm as unknown as TextStyle), color: t.colors.ink };
   const ratio: TextStyle = {
     fontFamily: 'Inter-Bold',
@@ -82,11 +86,13 @@ function RecentRow({ row }: { row: RecentLog }) {
   };
 
   return (
-    <View>
+    <View style={{ gap: t.space[1.5] }}>
       <View style={labelRow}>
-        <Text style={label}>
-          guessed {row.estimateMin} · took {row.actualMin}
-        </Text>
+        <View style={guessRow}>
+          <Text style={label}>guessed {row.estimateMin}</Text>
+          <Ionicons name="arrow-forward" size={t.iconSize.xs} color={t.colors.inkFaint} />
+          <Text style={label}>took {row.actualMin}</Text>
+        </View>
         <Text style={ratio}>{row.ratio.toFixed(1)}×</Text>
       </View>
       <View style={trackBg} accessibilityRole="progressbar">
