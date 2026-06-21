@@ -142,7 +142,7 @@ export function useReward(): RewardView {
     deltaDirection,
     category,
     categoryLabel: categoryName(category),
-    honeyPct: result.sharpness,
+    honeyPct: Math.round(result.sharpness),
     multiplier: result.multiplier,
     sealed,
     capEyebrow: result.leveledUp ? `${result.tierAfter} cell sealed` : null,
