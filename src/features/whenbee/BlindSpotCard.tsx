@@ -1,56 +1,115 @@
-import { Pressable, View, Text, type ViewStyle, type TextStyle } from 'react-native';
-import { router } from 'expo-router';
-import { Ionicons } from '@expo/vector-icons';
 import { Card } from '@/src/components/Card';
-import { useTheme } from '@/src/theme/useTheme';
 import { type } from '@/src/theme/typography';
+import { useTheme } from '@/src/theme/useTheme';
+import { Ionicons } from '@expo/vector-icons';
+import { router } from 'expo-router';
+import {
+  Pressable,
+  Text,
+  View,
+  type DimensionValue,
+  type TextStyle,
+  type ViewStyle,
+} from 'react-native';
+import Animated, { useAnimatedStyle, useSharedValue, withTiming } from 'react-native-reanimated';
 import type { BlindSpot } from './useWhenbeeHub';
 
 // ──────────────────────────────────────────────────────────────────────────────
-// BlindSpotCard — a kind "let's calibrate this next" nudge, never a scold. The
-// internal name is "blind spot"; the user-facing copy is an invitation. It points
-// at the lowest-sharpness tracked category and offers a one-tap drill into its
-// Tune screen. Flat card (hairline border) — this is a quiet suggestion, not the
-// hero, so it stays under the focal Reclaim card in the visual hierarchy.
+// BlindSpotCard — a kind "let's calibrate this next" nudge, never a scold. Points
+// at the lowest-sharpness tracked category and drills into its Tune screen.
 //
-//   WHENBEE'S STILL LEARNING THIS ONE
-//   Deep Work
-//   A few more honest logs here and its number gets sharper.   →
+// Layout (flat-tactical, one warm anchor):
+//   [amber ✦ tile]  STILL LEARNING            ›
+//                   Cleaning
+//   A few honest logs and this number gets sharper.
+//   ▓▓▓▓▓░░░░░░░  ← slim honey track (floored at the endowed sliver, never cold)
 //
-// Rendered only when a blind spot exists (the parent gates on vm.blindSpot).
+// The honey fill is the eye-catch and the information scent (you can SEE there's
+// progress to make), floored at ring.endowedPct so a fresh category never reads as
+// an empty/failed bar — same no-guilt move as the hub ring.
 // ──────────────────────────────────────────────────────────────────────────────
 
 export function BlindSpotCard({ blindSpot }: { blindSpot: BlindSpot }) {
   const t = useTheme();
 
+  const scale = useSharedValue(1);
+  const pressStyle = useAnimatedStyle(() => ({ transform: [{ scale: scale.get() }] }));
+
   function open() {
     router.push({ pathname: '/category/[category]', params: { category: blindSpot.categoryId } });
   }
 
-  const eyebrow: TextStyle = { ...(type.eyebrow as unknown as TextStyle), color: t.colors.inkSoft };
-  const name: TextStyle = { ...(type.subtitle as unknown as TextStyle), color: t.colors.ink };
-  const body: TextStyle = { ...(type.body as unknown as TextStyle), color: t.colors.inkSoft, flex: 1 };
+  const pct = Math.max(0, Math.min(100, Math.round(blindSpot.sharpness)));
+  // Floor the fill so a barely-started category still shows a warm sliver, never a
+  // cold empty bar (matches the hub ring's endowed sliver — no-guilt invariant).
+  const fillPct = Math.max(t.ring.endowedPct, pct);
 
-  const footerRow: ViewStyle = {
-    flexDirection: 'row',
+  const eyebrow: TextStyle = {
+    ...(type.eyebrow as unknown as TextStyle),
+    color: t.colors.inkFaint,
+  };
+  const title: TextStyle = { ...(type.heading as unknown as TextStyle), color: t.colors.ink };
+  const body: TextStyle = { ...(type.bodySm as unknown as TextStyle), color: t.colors.inkSoft };
+
+  const chip: ViewStyle = {
+    width: t.size.coin,
+    height: t.size.coin,
+    borderRadius: t.radii.md,
+    borderCurve: 'continuous',
+    backgroundColor: t.colors.surfaceSunken,
     alignItems: 'center',
-    gap: t.space[3],
+    justifyContent: 'center',
+  };
+  const group: ViewStyle = { gap: t.space[1] };
+  const headRow: ViewStyle = { flexDirection: 'row', alignItems: 'center', gap: t.space[3] };
+  const titleCol: ViewStyle = { flex: 1, gap: t.space[0.5] };
+  const track: ViewStyle = {
+    height: t.progress.track,
+    borderRadius: t.radii.full,
+    backgroundColor: t.colors.surfaceSunken,
+    overflow: 'hidden',
+  };
+  const fill: ViewStyle = {
+    height: '100%',
+    width: `${fillPct}%` as DimensionValue,
+    borderRadius: t.radii.full,
+    backgroundColor: t.colors.accent,
   };
 
   return (
     <Pressable
       onPress={open}
+      onPressIn={() =>
+        scale.set(withTiming(0.985, { duration: t.motion.press, easing: t.motion.easing.out }))
+      }
+      onPressOut={() =>
+        scale.set(withTiming(1, { duration: t.motion.fast, easing: t.motion.easing.out }))
+      }
       accessibilityRole="button"
       accessibilityLabel={`Calibrate ${blindSpot.name} next`}
     >
-      <Card style={{ gap: t.space[2] }}>
-        <Text style={eyebrow}>WHENBEE&apos;S STILL LEARNING THIS ONE</Text>
-        <Text style={name}>{blindSpot.name}</Text>
-        <View style={footerRow}>
-          <Text style={body}>A few more honest logs here and its number gets sharper.</Text>
-          <Ionicons name="arrow-forward" size={20} color={t.colors.primary} />
-        </View>
-      </Card>
+      <Animated.View style={pressStyle}>
+        <Card style={{ gap: t.space[5] }}>
+          <View style={group}>
+            <View style={headRow}>
+              <View style={chip}>
+                <Ionicons name="bulb-outline" size={t.iconSize.sm} color={t.colors.ink} />
+              </View>
+              <View style={titleCol}>
+                <Text style={eyebrow}>STILL LEARNING</Text>
+                <Text style={title} numberOfLines={1}>
+                  {blindSpot.name}
+                </Text>
+              </View>
+              <Ionicons name="chevron-forward" size={t.iconSize.sm} color={t.colors.inkFaint} />
+            </View>
+            <Text style={body}>A few honest logs and this number gets sharper.</Text>
+          </View>
+          <View style={track}>
+            <View style={fill} />
+          </View>
+        </Card>
+      </Animated.View>
     </Pressable>
   );
 }

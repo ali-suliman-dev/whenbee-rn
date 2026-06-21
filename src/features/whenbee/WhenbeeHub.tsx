@@ -76,7 +76,11 @@ export function WhenbeeHub() {
 
   const isEmpty = vm.honestLogCount === 0;
 
-  const shownSharpness = useFocusedValue(vm.leadSharpness);
+  // Sharpness flows LIVE into the ring — HoneyRing itself gates animate-vs-snap on
+  // focus (live growth animates; growth earned off-screen is already-full on
+  // arrival, no replay). Seal + stage stay deferred: those are once-per-arrival
+  // celebrations you want to actually witness when you land.
+  const shownSharpness = vm.leadSharpness;
   const shownSealed = useFocusedValue(vm.tier === 'Honest');
   const shownStage = useFocusedValue(vm.companion.stage);
 
@@ -98,6 +102,9 @@ export function WhenbeeHub() {
 
   const heroZone: ViewStyle = { alignItems: 'center', gap: t.space[3] };
   const zoneWrap: ViewStyle = { gap: t.space[2] };
+  // The Areas zone gets extra air above its label so it reads as a fresh section,
+  // not crowding the conditional card (BlindSpot/Discoveries) above it.
+  const areasZone: ViewStyle = { ...zoneWrap, marginTop: t.space[2] };
   const zoneLabel: TextStyle = { ...(type.eyebrow as unknown as TextStyle), color: t.colors.inkSoft };
   const zoneExplain: TextStyle = {
     ...(type.micro as unknown as TextStyle),
@@ -171,7 +178,7 @@ export function WhenbeeHub() {
 
       {/* YOUR AREAS zone */}
       {categories.length > 0 ? (
-        <View style={zoneWrap}>
+        <View style={areasZone}>
           <Text style={zoneLabel}>Your areas</Text>
           <Text style={zoneExplain}>fill = how honest your guesses are · tap to tune</Text>
           <View style={{ gap: t.space[2] }}>

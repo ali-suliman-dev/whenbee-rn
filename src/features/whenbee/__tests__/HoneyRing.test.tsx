@@ -3,6 +3,15 @@ import { render } from '@testing-library/react-native';
 import * as Reanimated from 'react-native-reanimated';
 import { HoneyRing } from '../HoneyRing';
 
+// HoneyRing reads screen focus (to gate animate-vs-snap) via expo-router's
+// useNavigation. Standalone render has no navigator — stub a focused one.
+jest.mock('expo-router', () => ({
+  useNavigation: () => ({
+    isFocused: () => true,
+    addListener: () => () => {},
+  }),
+}));
+
 describe('HoneyRing', () => {
   it('renders its children (the bee slot)', () => {
     const { getByText } = render(
