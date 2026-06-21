@@ -22,6 +22,7 @@ export const type = {
   bodySm:    { fontFamily: 'Jakarta-Medium',    fontSize: fs.bodySm,    lineHeight: 20 },
   bodySmBold: { fontFamily: 'Jakarta-Bold',     fontSize: fs.bodySm,    lineHeight: 20 },
   caption:   { fontFamily: 'Jakarta-Medium',    fontSize: fs.caption,   lineHeight: 18 },
+  captionBold: { fontFamily: 'Jakarta-Bold',   fontSize: fs.caption,   lineHeight: 18 },
   micro:     { fontFamily: 'Jakarta-Regular',   fontSize: fs.micro,     lineHeight: 16 },
   eyebrow:   { fontFamily: 'Jakarta-Bold',      fontSize: fs.xs,        lineHeight: 14, letterSpacing: 2, textTransform: 'uppercase' as const },
   timerNumeral:   { fontFamily: 'Inter-SemiBold', fontSize: fs.timer,    lineHeight: 78, letterSpacing: -2.3, fontVariant: ['tabular-nums'] as const },
