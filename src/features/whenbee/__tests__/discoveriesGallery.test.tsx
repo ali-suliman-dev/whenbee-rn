@@ -36,3 +36,16 @@ test('empty list renders the invitation, not a card', () => {
   const { getByText } = render(<DiscoveriesGallery discoveries={[]} />);
   expect(getByText(/Nothing here yet/i)).toBeTruthy();
 });
+
+test('renders discoveries in the order they are passed (newest-first contract)', () => {
+  const first = disc({ id: 'd-first', categoryId: 'admin', honestForFifteen: 24 });
+  const second = disc({ id: 'd-second', categoryId: 'writing', honestForFifteen: 9 });
+  const json = JSON.stringify(
+    render(<DiscoveriesGallery discoveries={[first, second]} />).toJSON(),
+  );
+  const posFirst = json.indexOf('Admin & email');
+  const posSecond = json.indexOf('Writing');
+  expect(posFirst).toBeGreaterThan(-1);
+  expect(posSecond).toBeGreaterThan(-1);
+  expect(posFirst).toBeLessThan(posSecond);
+});
