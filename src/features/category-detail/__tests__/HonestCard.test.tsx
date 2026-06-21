@@ -19,8 +19,9 @@ describe('HonestCard — range band hero', () => {
     expect(screen.getByText('YOUR HONEST RANGE')).toBeOnTheScreen();
     expect(screen.getByText('still sharpening your pace')).toBeOnTheScreen();
     expect(screen.getByText(/4 more runs/)).toBeOnTheScreen();
-    // Free: the convergence caret is the LOCKED teaser (lock glyph + point).
-    expect(screen.getByText(/~30/)).toBeOnTheScreen();
+    // Free: the precise convergence point is HIDDEN behind the Pro teaser — no ~30 leaked.
+    expect(screen.queryByText('~30')).toBeNull();
+    expect(screen.getByText('Pro')).toBeOnTheScreen();
     // No tight number / multiplier while learning.
     expect(screen.queryByText('runs 2.0×')).toBeNull();
   });

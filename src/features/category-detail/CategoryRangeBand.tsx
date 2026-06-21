@@ -1,5 +1,6 @@
 import { useEffect } from 'react';
 import { View, Text, Pressable, type ViewStyle, type TextStyle } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import Animated, {
   ReduceMotion,
   useAnimatedStyle,
@@ -108,10 +109,18 @@ export function CategoryRangeBand({
 
   // The caret is the locked-Pro affordance for free users (tap → paywall). Keep
   // the Pressable a bare wrapper; the visual pill sits on the inner View.
+  const lockRow: ViewStyle = { flexDirection: 'row', alignItems: 'center', gap: t.space[1] };
   const calloutInner = (
     <View style={{ alignItems: 'center' }}>
       <View style={pill}>
-        <Text style={pillText}>{isPro ? `~${point}` : `\u{1F512} ~${point}`}</Text>
+        {isPro ? (
+          <Text style={pillText}>{`~${point}`}</Text>
+        ) : (
+          <View style={lockRow}>
+            <Ionicons name="lock-closed" size={t.iconSize.xs} color={t.colors.primary} />
+            <Text style={pillText}>Pro</Text>
+          </View>
+        )}
       </View>
       <View style={caret} />
     </View>
