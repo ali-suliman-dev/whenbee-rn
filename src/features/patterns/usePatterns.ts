@@ -7,10 +7,12 @@ import {
   confidenceFor,
   correlateAccuracy,
   buildAccuracySeries,
+  provisionalArchetypeMultiplier,
 } from '@/src/engine';
 import type { AccuracyCorrelation, AccuracySample, AccuracyTrend } from '@/src/engine';
 import type { CalibrationConfidence } from '@/src/domain/types';
 import { useCalibrationStore, type PatternsData, type PatternLog } from '@/src/stores/calibrationStore';
+import { useSettingsStore } from '@/src/stores/settingsStore';
 
 // ──────────────────────────────────────────────────────────────────────────────
 // usePatterns — the free self-insight surface (read-only over the engine).
@@ -46,6 +48,8 @@ export interface ArchetypeCard {
   blurb: string;
   /** Average personal multiplier across categories, for the supporting line. */
   averageMultiplier: number;
+  /** True when this is a seed-based estimate rather than an earned personality. */
+  provisional: boolean;
 }
 
 export interface PlanExperimentCard {
@@ -161,19 +165,10 @@ function ratiosOf(logs: PatternLog[]): number[] {
 // ── pure derivations (each unit-tested) ───────────────────────────────────────
 
 /**
- * One shareable time-personality from the per-category multiplier spread.
- * Deterministic: the average personal M places you on a calm ladder, never a
- * diagnosis. Needs a real history across categories before it speaks.
+ * Maps a multiplier to a flattering-but-honest archetype card.
+ * Wording stays curious and kind — a self-portrait, not a label.
  */
-export function deriveArchetype(data: PatternsData): ArchetypeCard | null {
-  const personal = data.categories.filter((c) => c.n >= PERSONAL_MIN_LOGS);
-  const totalLogs = personal.reduce((sum, c) => sum + c.n, 0);
-  if (personal.length < ARCHETYPE_MIN_CATEGORIES || totalLogs < ARCHETYPE_MIN_LOGS) return null;
-
-  const avg = personal.reduce((sum, c) => sum + c.mEffective, 0) / personal.length;
-
-  // Flattering-but-honest ladder. Wording stays curious and kind — a self-portrait,
-  // not a label. Every rung frames the optimism warmly.
+function archetypeFor(avg: number, provisional: boolean): ArchetypeCard {
   let title: string;
   let blurb: string;
   if (avg < 1.3) {
@@ -189,8 +184,32 @@ export function deriveArchetype(data: PatternsData): ArchetypeCard | null {
     title = 'The Dreamer';
     blurb = 'Big plans, generous timelines. Your honest numbers keep them grounded.';
   }
+  return { title, blurb, averageMultiplier: avg, provisional };
+}
 
-  return { title, blurb, averageMultiplier: avg };
+/**
+ * One shareable time-personality from the per-category multiplier spread.
+ * Deterministic: the average personal M places you on a calm ladder, never a
+ * diagnosis. Needs a real history across categories before it speaks.
+ *
+ * When the earned gate hasn't been cleared yet, a quiz seed can produce a
+ * provisional archetype — blended from the seed with whatever completed-log
+ * ratios exist. Without a seed, returns null (placeholder territory).
+ */
+export function deriveArchetype(data: PatternsData, seed?: { m0: number }): ArchetypeCard | null {
+  const personal = data.categories.filter((c) => c.n >= PERSONAL_MIN_LOGS);
+  const totalLogs = personal.reduce((sum, c) => sum + c.n, 0);
+  const earned = personal.length >= ARCHETYPE_MIN_CATEGORIES && totalLogs >= ARCHETYPE_MIN_LOGS;
+
+  if (!earned) {
+    if (!seed) return null;
+    // Provisional: blend the quiz seed with whatever completed-log ratios exist.
+    const ratios = ratiosOf(completedLogs(data.logs));
+    return archetypeFor(provisionalArchetypeMultiplier(seed.m0, ratios), true);
+  }
+
+  const avg = personal.reduce((sum, c) => sum + c.mEffective, 0) / personal.length;
+  return archetypeFor(avg, false);
 }
 
 /**
@@ -362,11 +381,11 @@ export function deriveAccuracyTrend(data: PatternsData): AccuracyTrend | null {
 }
 
 /** Run every derivation over one snapshot — the whole tab's view-model. */
-export function derivePatterns(data: PatternsData, nowMs: number): PatternsView {
+export function derivePatterns(data: PatternsData, nowMs: number, seed?: { m0: number }): PatternsView {
   const anyCompleted = completedLogs(data.logs).length > 0;
   return {
     empty: !anyCompleted,
-    archetype: deriveArchetype(data),
+    archetype: deriveArchetype(data, seed),
     planExperiment: derivePlanExperiment(data),
     youVsPast: deriveYouVsPast(data),
     biggestSurprise: deriveBiggestSurprise(data, nowMs),
@@ -388,6 +407,7 @@ interface UsePatternsResult {
 /** Loads the cross-category snapshot through the store, then derives the view. */
 export function usePatterns(nowMs: number = Date.now()): UsePatternsResult {
   const loadPatternsData = useCalibrationStore((s) => s.loadPatternsData);
+  const archetypeSeed = useSettingsStore((s) => s.archetypeSeed);
   const [view, setView] = useState<PatternsView | null>(null);
   const [loading, setLoading] = useState(true);
   // Freeze "now" at first render. The default `Date.now()` is recomputed every
@@ -397,9 +417,9 @@ export function usePatterns(nowMs: number = Date.now()): UsePatternsResult {
 
   const refresh = useCallback(async () => {
     const data = await loadPatternsData();
-    setView(derivePatterns(data, nowRef.current));
+    setView(derivePatterns(data, nowRef.current, archetypeSeed ? { m0: archetypeSeed.m0 } : undefined));
     setLoading(false);
-  }, [loadPatternsData]);
+  }, [loadPatternsData, archetypeSeed]);
 
   // Re-derive on tab focus — a log in another tab won't push to this hook, so the
   // insight cards are recomputed every time the user enters Patterns.
