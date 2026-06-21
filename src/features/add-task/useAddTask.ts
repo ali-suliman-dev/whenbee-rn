@@ -49,7 +49,7 @@ export interface UseAddTaskResult {
 
 const DEFAULT_GUESS = 15;
 
-export function useAddTask(): UseAddTaskResult {
+export function useAddTask(initialTitle?: string): UseAddTaskResult {
   const hydrate = useCalibrationStore((s) => s.hydrate);
   const statsByCategory = useCalibrationStore((s) => s.statsByCategory);
   const addTask = useTasksStore((s) => s.addTask);
@@ -78,6 +78,16 @@ export function useAddTask(): UseAddTaskResult {
     setGuessedCategory(g);
     setCategoryState(g);
   };
+
+  // Seed once from a spoken transcript (trio mic quick-add). Routes through
+  // setTitle so the same category auto-guess runs as if the user had typed it.
+  const seededRef = useRef(false);
+  useEffect(() => {
+    if (seededRef.current || !initialTitle) return;
+    seededRef.current = true;
+    setTitle(initialTitle);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- one-shot seed; setTitle is re-created each render and the ref guards re-entry
+  }, [initialTitle]);
 
   // Any manual pick wins and clears the ✦ guess marker.
   const setCategory = (id: string) => {

@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, type ComponentProps } from 'react';
+import { useEffect, useState, type ComponentProps } from 'react';
 import { Modal, Pressable, View, type LayoutChangeEvent, type TextStyle, type ViewStyle } from 'react-native';
 import Animated, {
   useSharedValue,
@@ -13,8 +13,10 @@ import { useTheme } from '@/src/theme/useTheme';
 import { TabIcon, type TabIconName } from './TabIcon';
 import { TabBarAddButton, type AddButtonConfig } from './TabBarAddButton';
 import { QuickActionArc } from './quick/QuickActionArc';
+import { ListeningSheet } from './voice/ListeningSheet';
 import { router } from 'expo-router';
 import { useTimerStore } from '@/src/stores/timerStore';
+import { useVoiceQuickAdd } from '@/src/features/voice/useVoiceQuickAdd';
 
 // ─── Add-button config ────────────────────────────────────────────────────────
 //
@@ -64,11 +66,25 @@ export function WhenbeeTabBar({ state, descriptors, navigation }: BottomTabBarPr
 
   const tabCount = state.routes.length;
   const [barW, setBarW] = useState(0);
+  // `arcOpen` = intent (drives expand/retract + the + button's rotation).
+  // `arcMounted` = whether the overlay is in the tree — stays true through the
+  // retract so the exit animation can play, then flips false on `onClosed`.
   const [arcOpen, setArcOpen] = useState(false);
-  const [btnCenter, setBtnCenter] = useState<{ x: number; y: number } | null>(null);
+  const [arcMounted, setArcMounted] = useState(false);
+
+  // Trio mic → standalone recording, then Add-Task pre-filled (no drawer behind
+  // the sheet). The ListeningSheet below is driven by this single capture.
+  const voiceQuickAdd = useVoiceQuickAdd();
 
   // Compute effective tab-slot width based on placement.
   const tabW = computeTabW(barW, tabCount, ADD_BTN);
+
+  // Deterministic + button anchor — derived from layout, never measured. The
+  // arc bubbles fan from here, so a stable anchor is what keeps them from
+  // drifting after the user navigates around the app.
+  const btnLeft = tabW > 0 ? (ADD_BTN.splitAt + 0.5) * tabW - ADD_BTN.size / 2 : 0;
+  const anchorX = btnLeft + ADD_BTN.size / 2;
+  const anchorBottom = insets.bottom + 8 + ADD_BTN.size / 2;
 
   // Sliding indicator.
   const indicatorX = useSharedValue(0);
@@ -89,21 +105,28 @@ export function WhenbeeTabBar({ state, descriptors, navigation }: BottomTabBarPr
     if (w !== barW) setBarW(w);
   }
 
-  function closeArc() { setArcOpen(false); }
-  function toggleArc() { setArcOpen(v => !v); }
+  // Animated close: keep the overlay mounted, flip intent → the arc retracts and
+  // calls onClosed when it finishes (which unmounts it).
+  function requestCloseArc() { setArcOpen(false); }
+  // Hard close: skip the retract (we're navigating away — the overlay would
+  // unmount under the pushed screen anyway).
+  function hardCloseArc() { setArcOpen(false); setArcMounted(false); }
+  function openArc() { setArcMounted(true); setArcOpen(true); }
+  function toggleArc() { if (arcOpen) requestCloseArc(); else openArc(); }
 
   function handleVoice() {
-    closeArc();
-    // Voice auto-start deferred: add-task modal has no trivial voice param yet.
-    router.push('/(modals)/add-task');
+    hardCloseArc();
+    // Record first, in a standalone sheet. Only when the transcript lands does
+    // Add-Task open (pre-filled) — see useVoiceQuickAdd.
+    void voiceQuickAdd.start();
   }
   function handleTimer() {
-    closeArc();
+    hardCloseArc();
     useTimerStore.getState().quickStart();
     router.push({ pathname: '/(modals)/timer', params: { quick: '1' } });
   }
   function handleType() {
-    closeArc();
+    hardCloseArc();
     router.push('/(modals)/add-task');
   }
 
@@ -143,33 +166,50 @@ export function WhenbeeTabBar({ state, descriptors, navigation }: BottomTabBarPr
           tabW={tabW}
           onLayout={handleLayout}
           onToggleArc={toggleArc}
-          onBtnLayout={setBtnCenter}
         />
         <Modal
           transparent
-          visible={arcOpen}
+          visible={arcMounted}
           animationType="none"
-          onRequestClose={closeArc}
+          onRequestClose={requestCloseArc}
           statusBarTranslucent
         >
           <View style={{ flex: 1 }} pointerEvents="box-none">
             <Pressable
               style={{ flex: 1, backgroundColor: t.colors.scrim }}
-              onPress={closeArc}
+              onPress={requestCloseArc}
               accessibilityLabel="Dismiss"
               accessibilityRole="button"
             />
           </View>
-          {btnCenter !== null && (
-            <QuickActionArc
-              anchorX={btnCenter.x}
-              anchorY={btnCenter.y}
-              onVoice={handleVoice}
-              onTimer={handleTimer}
-              onType={handleType}
-            />
+          {tabW > 0 && (
+            <>
+              <QuickActionArc
+                anchorX={anchorX}
+                anchorBottom={anchorBottom}
+                open={arcOpen}
+                onClosed={() => setArcMounted(false)}
+                onVoice={handleVoice}
+                onTimer={handleTimer}
+                onType={handleType}
+              />
+              {/* A + cap lifted into the overlay, painted ON TOP of the bubbles so
+                  they emerge from — and tuck back behind — it. Same screen spot as
+                  the real button, so it reads as the one + button staying put.
+                  Tapping it closes the arc. */}
+              <View
+                style={{ position: 'absolute', left: btnLeft, bottom: insets.bottom + 8, zIndex: 10 }}
+              >
+                <TabBarAddButton config={ADD_BTN} onPress={requestCloseArc} />
+              </View>
+            </>
           )}
         </Modal>
+        <ListeningSheet
+          visible={voiceQuickAdd.status === 'listening'}
+          partial={voiceQuickAdd.partial}
+          onStop={voiceQuickAdd.stop}
+        />
       </>
     );
   }
@@ -190,10 +230,9 @@ export function WhenbeeTabBar({ state, descriptors, navigation }: BottomTabBarPr
 function CentreElevatedBar({
   state, descriptors, navigation,
   bar, indicator, indicatorStyle, tabW, onLayout,
-  onToggleArc, onBtnLayout,
-}: BarProps & { tabW: number; onToggleArc: () => void; onBtnLayout: (center: { x: number; y: number }) => void }) {
+  onToggleArc,
+}: BarProps & { tabW: number; onToggleArc: () => void }) {
   const insets = useSafeAreaInsets();
-  const btnRef = useRef<View>(null);
   const leftRoutes = state.routes.slice(0, ADD_BTN.splitAt);
   const rightRoutes = state.routes.slice(ADD_BTN.splitAt);
 
@@ -240,16 +279,7 @@ function CentreElevatedBar({
 
       {/* Button rendered absolutely so it can float above the bar's top edge. */}
       {tabW > 0 && (
-        <View
-          ref={btnRef}
-          style={{ position: 'absolute', left: btnLeft, bottom: btnBottom }}
-          onLayout={() => {
-            // measureInWindow gives true screen coords after layout settles.
-            btnRef.current?.measureInWindow((x, y, width, height) => {
-              onBtnLayout({ x: x + width / 2, y: y + height / 2 });
-            });
-          }}
-        >
+        <View style={{ position: 'absolute', left: btnLeft, bottom: btnBottom }}>
           <TabBarAddButton config={ADD_BTN} onPress={onToggleArc} />
         </View>
       )}
