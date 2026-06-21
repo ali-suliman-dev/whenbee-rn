@@ -74,8 +74,9 @@ describe('CategoryDetailScreen', () => {
     render(<CategoryDetailScreen />);
 
     // n=8 but the spread of clamped ratios (CV ≈ 0.38 > 0.35) keeps confidence at
-    // 'setting', so the hero shows the band + a learning line, not the tight ~30.
-    expect(await screen.findByText(/Getting clearer/)).toBeOnTheScreen();
+    // 'setting', so the hero shows the range band + tier meaning, not the tight ~30.
+    expect(await screen.findByText('YOUR HONEST RANGE')).toBeOnTheScreen();
+    expect(screen.getByText('still sharpening your pace')).toBeOnTheScreen();
     expect(screen.queryByText('~30')).toBeNull();
   });
 

@@ -111,6 +111,11 @@ export const tokens = {
   //   gapTrack = bar height; tickW/tickH = the live elapsed marker riding the bar.
   progress: {
     track: 6, gapTrack: 8, tickW: 3, tickH: 16,
+    // bandTrack = the category-detail hero range band height (a bolder strip than
+    // the Add-Task gapTrack). caret = the convergence-point callout triangle that
+    // floats above the band (w = base, h = height of the downward caret, overlap = 1px
+    // optical overlap of the caret tip onto its pill).
+    bandTrack: 16, caret: { w: 10, h: 6, overlap: 1 },
     // teaserFill = the fixed illustrative fill fraction on a LOCKED (non-Pro) goal
     // teaser track — it shows the SHAPE of progress, never the user's real data.
     teaserFill: 0.34,
