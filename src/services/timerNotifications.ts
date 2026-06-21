@@ -18,6 +18,7 @@ import { projectedFinish, formatClock } from '@/src/lib/time';
 
 const NOTIF_ID_KEY = 'whenbee.timerNotifId';
 const STARTBY_ID_KEY = 'whenbee.startByNotifId';
+const GUARD_ID_KEY = 'whenbee.guardNotifId';
 
 type NotificationsModule = typeof import('expo-notifications');
 
@@ -145,6 +146,57 @@ export async function cancelStartBy(): Promise<void> {
     if (id) {
       await N.cancelScheduledNotificationAsync(id);
       kv.delete(STARTBY_ID_KEY);
+    }
+  } catch {
+    // best-effort
+  }
+}
+
+/**
+ * Hyperfocus guardrail (Pro) — schedule one soft "still on this?" check-in at
+ * start + thresholdMin, so a backgrounded/closed session still gets the single,
+ * gentle nudge. Cancels any prior guard ping first. Skips silently if the fire
+ * time is already past. No-op without the native module. No-guilt: amber tone in
+ * copy only, never a countdown, fires once per session.
+ */
+export async function scheduleGuardCheckIn(opts: {
+  label: string;
+  startedAt: number;
+  thresholdMin: number;
+}): Promise<void> {
+  const N = getModule();
+  if (!N) return;
+  try {
+    await cancelGuardCheckIn();
+    const fireMs = opts.startedAt + opts.thresholdMin * 60_000;
+    const secondsFromNow = Math.round((fireMs - Date.now()) / 1000);
+    if (secondsFromNow <= 0) return;
+
+    const id = await N.scheduleNotificationAsync({
+      content: {
+        title: 'Still on this?',
+        body: `You've been on ${opts.label} about ${opts.thresholdMin} minutes. Surface whenever you want.`,
+      },
+      trigger: {
+        type: N.SchedulableTriggerInputTypes.TIME_INTERVAL,
+        seconds: secondsFromNow,
+      },
+    });
+    kv.set(GUARD_ID_KEY, id);
+  } catch {
+    // best-effort; a failed schedule must never block the timer
+  }
+}
+
+/** Cancel the scheduled guardrail check-in notification, if any. */
+export async function cancelGuardCheckIn(): Promise<void> {
+  const N = getModule();
+  if (!N) return;
+  try {
+    const id = kv.getString(GUARD_ID_KEY);
+    if (id) {
+      await N.cancelScheduledNotificationAsync(id);
+      kv.delete(GUARD_ID_KEY);
     }
   } catch {
     // best-effort
