@@ -12,8 +12,9 @@ export default function ModalsLayout() {
       <Stack.Screen name="report" options={{ presentation: 'fullScreenModal', headerShown: false }} />
       <Stack.Screen
         name="discoveries"
-        options={{ presentation: 'card', headerShown: true, title: 'Things you’ve learned' }}
+        options={{ presentation: 'card', headerShown: true, title: "Things you've learned" }}
       />
+      <Stack.Screen name="archetype-quiz" options={{ presentation: 'formSheet', headerShown: false }} />
     </Stack>
   );
 }

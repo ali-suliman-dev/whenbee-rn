@@ -4,8 +4,10 @@ import { useCalibrationStore, type PatternsData } from '@/src/stores/calibration
 
 // Mock expo-router: useFocusEffect runs the callback once (mirrors an immediate
 // focus) so usePatterns' on-focus refresh path is exercised without navigation.
+// useRouter is stubbed so ArchetypePlaceholder's onTakeQuiz can push without error.
 jest.mock('expo-router', () => ({
   useFocusEffect: (cb: () => void) => cb(),
+  useRouter: () => ({ push: jest.fn() }),
 }));
 
 // ──────────────────────────────────────────────────────────────────────────────
@@ -94,6 +96,16 @@ describe('Patterns screen', () => {
     expect(screen.getByLabelText('Admin & email readiness: honest, 3 of 3')).toBeOnTheScreen();
     // Warm, no-guilt framing line (single honest area).
     expect(screen.getByText('One area reads honest now. The rest are catching up.')).toBeOnTheScreen();
+  });
+
+  it('shows the archetype placeholder for a logged-but-unearned user', async () => {
+    setPatternsData({
+      nameOf: (id) => id,
+      categories: [{ categoryId: 'admin', n: 1, mEffective: 2.0, sharpness: 20 }],
+      logs: [{ category: 'admin', estimateMin: 10, actualMin: 20, status: 'completed' as const, source: 'timed' as const, createdAt: NOW - DAY }],
+    });
+    render(<Patterns />);
+    await waitFor(() => expect(screen.getByText('Meet your time personality')).toBeOnTheScreen());
   });
 
   it('shows a partially-filled dial for a raw category', async () => {

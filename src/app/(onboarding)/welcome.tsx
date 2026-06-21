@@ -18,7 +18,7 @@ export default function Welcome() {
   const insets = useSafeAreaInsets();
   return (
     <Screen backdrop={<OnboardingBackdrop />}>
-      <StepProgress current={0} />
+      <StepProgress current={0} total={4} />
       <View style={{ flex: 1, gap: t.space[4], paddingTop: t.space[3] }}>
         <Reveal index={0}>
           <BrandLockup />
