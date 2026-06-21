@@ -438,6 +438,19 @@ export const tokens = {
     },
   },
 
+  // Patterns ProgressChart geometry — sparkline of accuracy over time. height =
+  // SVG box height (pt); stroke = line weight; dot = endpoint radius; areaOpacity
+  // = gradient fill alpha under the line; strokeDash = path length used for the
+  // draw-on animation (large enough to cover any path).
+  chart: { height: 96, stroke: 2.5, dot: 4.5, areaOpacity: 0.32, strokeDash: 1000 },
+
+  // Premium Pro teaser card (ProTeaserCard) — frosted preview panel + amber pill.
+  // previewH = preview panel height (pt); barGap = gap between faux bars; barRadius
+  // = bar corner; scrimOpacity = the overlay that fakes "frost" over the bars (no
+  // native blur dep); barOpacity = the teased bars' own alpha; pillPadX = "Pro"
+  // pill horizontal padding.
+  proTeaser: { previewH: 118, barGap: 9, barRadius: 4, scrimOpacity: 0.28, barOpacity: 0.55, pillPadX: 11 },
+
   // ── brand illustration palette ──────────────────────────────────────────────
   // Fixed art colors for the Whenbee mascot (BeeMascot). Brand art does NOT recolor
   // by mode — a mascot reads as the SAME bee in light and dark, the way a logo does.

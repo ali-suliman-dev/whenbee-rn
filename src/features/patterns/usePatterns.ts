@@ -6,8 +6,9 @@ import {
   honestNumber,
   confidenceFor,
   correlateAccuracy,
+  buildAccuracySeries,
 } from '@/src/engine';
-import type { AccuracyCorrelation, AccuracySample } from '@/src/engine';
+import type { AccuracyCorrelation, AccuracySample, AccuracyTrend } from '@/src/engine';
 import type { CalibrationConfidence } from '@/src/domain/types';
 import { useCalibrationStore, type PatternsData, type PatternLog } from '@/src/stores/calibrationStore';
 
@@ -123,6 +124,8 @@ export interface PatternsView {
   calibrationMap: CalibrationMapRow[];
   /** S3 — when you're sharpest (time-of-day / weekday). Pro-gated at the screen. */
   accuracyCorrelations: AccuracyCorrelation[];
+  /** Short accuracy series for the free progress chart; null below the min-log gate. */
+  accuracyTrend: AccuracyTrend | null;
 }
 
 // ── shared helpers ────────────────────────────────────────────────────────────
@@ -353,6 +356,11 @@ export function deriveAccuracyCorrelations(data: PatternsData): AccuracyCorrelat
   return correlateAccuracy(samples);
 }
 
+/** Ordered accuracy series for the progress chart, over all completed logs. */
+export function deriveAccuracyTrend(data: PatternsData): AccuracyTrend | null {
+  return buildAccuracySeries(ratiosOf(completedLogs(data.logs)));
+}
+
 /** Run every derivation over one snapshot — the whole tab's view-model. */
 export function derivePatterns(data: PatternsData, nowMs: number): PatternsView {
   const anyCompleted = completedLogs(data.logs).length > 0;
@@ -366,6 +374,7 @@ export function derivePatterns(data: PatternsData, nowMs: number): PatternsView 
     driftAlert: deriveDriftAlert(data),
     calibrationMap: deriveCalibrationMap(data),
     accuracyCorrelations: deriveAccuracyCorrelations(data),
+    accuracyTrend: deriveAccuracyTrend(data),
   };
 }
 

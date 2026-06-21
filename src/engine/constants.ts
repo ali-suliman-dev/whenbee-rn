@@ -98,6 +98,9 @@ export const GLOBAL_PRIOR_MIN_LOGS = 4; // below this, use the population prior 
 export const GLOBAL_PRIOR_K = 6; // pseudo-count: personal weight = n/(n+k)
 export const GLOBAL_PRIOR_MAX_WEIGHT = 0.6; // cap so a new category keeps its own identity
 
+// ── Accuracy trend series (ProgressChart — "you, then vs now") ────────────────
+export const ACCURACY_TREND_MIN_LOGS = 6; // below this, UI falls back to 2-point
+export const ACCURACY_TREND_BUCKETS = 6; // max ordered windows in the series
 // ── Per-category goals (Pro, no-guilt) ───────────────────────────────────────
 /** Need at least this many counted logs before a category can have a goal. */
 export const GOAL_MIN_LOGS = 5;

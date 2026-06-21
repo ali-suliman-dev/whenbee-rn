@@ -37,7 +37,7 @@ describe('Patterns screen', () => {
     });
     // No insight cards, and nothing that reads as a scold.
     expect(screen.queryByText('YOUR TIME PERSONALITY')).toBeNull();
-    expect(screen.queryByText('YOUR HONEST MAP')).toBeNull();
+    expect(screen.queryByText('Your numbers')).toBeNull();
   });
 
   it('renders earned cards when seeded with qualifying data', async () => {
@@ -60,11 +60,12 @@ describe('Patterns screen', () => {
     render(<Patterns />);
 
     await waitFor(() => {
-      // Archetype qualifies (2 categories, ≥12 logs) and the honest map lists rows.
+      // ArchetypeHero qualifies (2 categories, ≥12 logs) and the honest map lists rows.
       expect(screen.getByText('YOUR TIME PERSONALITY')).toBeOnTheScreen();
     });
-    expect(screen.getByText('YOUR HONEST MAP')).toBeOnTheScreen();
-    expect(screen.getByText('WHAT TO EXPECT')).toBeOnTheScreen();
+    expect(screen.getByText('Your numbers')).toBeOnTheScreen();
+    // Section header from the redesigned sectioned story.
+    expect(screen.getByText('Your progress')).toBeTruthy();
     // The empty state must NOT show when cards are present.
     expect(screen.queryByText('Your patterns are on the way')).toBeNull();
   });
@@ -87,7 +88,7 @@ describe('Patterns screen', () => {
     render(<Patterns />);
 
     await waitFor(() => {
-      expect(screen.getByText('YOUR HONEST MAP')).toBeOnTheScreen();
+      expect(screen.getByText('Your numbers')).toBeOnTheScreen();
     });
     // Dial exposes its filled-step count via the progressbar label (honest = 3 of 3).
     expect(screen.getByLabelText('Admin & email readiness: honest, 3 of 3')).toBeOnTheScreen();
@@ -114,7 +115,7 @@ describe('Patterns screen', () => {
     render(<Patterns />);
 
     await waitFor(() => {
-      expect(screen.getByText('YOUR HONEST MAP')).toBeOnTheScreen();
+      expect(screen.getByText('Your numbers')).toBeOnTheScreen();
     });
     // raw → only the first pip lit (1 of 3).
     expect(screen.getByLabelText('admin readiness: raw, 1 of 3')).toBeOnTheScreen();
