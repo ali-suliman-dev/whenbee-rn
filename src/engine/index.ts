@@ -22,6 +22,8 @@ export { reclaimDividendMinutes, formatReclaim } from './reclaim';
 export { correlateReasons, reasonNoteFor, reasonPhrase } from './reasons';
 export { correlateAccuracy } from './accuracy';
 export type { AccuracySample, AccuracyCorrelation } from './accuracy';
+export { buildAccuracySeries } from './accuracyTrend';
+export type { AccuracyTrend } from './accuracyTrend';
 export { correlateContext } from './context';
 export type { ContextSample, ContextCorrelation } from './context';
 export { confidenceFor, honestRangeFor, quantile, reservePriceVisible } from './confidence';
@@ -29,3 +31,7 @@ export {
   companionStageFor, capabilityFor, keeperReached, driftHealthFromRecent, COMPANION_KEEPER_QUOTA,
 } from './companion';
 export type { CompanionStage, CompanionCapability, DriftHealth } from './companion';
+export {
+  accuracyToErrorBand, errorBandToAccuracy, goalProgress, isGoalMet,
+  reconcileGoal, canSetGoal, presetsForAccuracy, recommendedPreset,
+} from './goals';

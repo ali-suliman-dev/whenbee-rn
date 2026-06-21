@@ -104,7 +104,7 @@ export interface AppEventProps {
   pro_reveal_tap: { surface: 'whenbee_hub' };
   pro_preview_tap: { surface: 'whenbee_hub' };
   paywall_view: {
-    trigger: 'make_day_honest' | 'settings_upgrade' | 'steals_your_time' | 'honest_range' | 'pro_reveal' | 'pro_preview';
+    trigger: 'make_day_honest' | 'settings_upgrade' | 'steals_your_time' | 'honest_range' | 'pro_reveal' | 'pro_preview' | 'goals';
     readiness?: 'pre' | 'honest';
   };
   founder_reserve: { result: 'reserved' };
@@ -123,6 +123,14 @@ export interface AppEventProps {
   reminder_disabled: Record<string, never>;
   drift_recheck: { action: 'shown' | 'recheck' | 'dismissed' };
   context_tagged: { key: string; value: string };
+
+  // ── Per-category goals (Pro) ──────────────────────────────────────────────────
+  goal_card_viewed: { category: string; state: 'empty' | 'active' | 'met' | 'not_enough' | 'locked' };
+  goal_set: { category: string; target_band: number; baseline_band: number };
+  goal_paywall: { category: string };
+  goal_met: { category: string; target_band: number; logs_to_meet: number };
+  goal_replaced: { category: string; from_band: number; to_band: number };
+  goal_kept: { category: string; band: number };
 }
 
 export type AppEvent = keyof AppEventProps;

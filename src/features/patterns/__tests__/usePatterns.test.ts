@@ -297,4 +297,21 @@ describe('derivePatterns', () => {
     );
     expect(view.empty).toBe(true);
   });
+
+  it('exposes an accuracy trend once enough completed logs exist', () => {
+    const data = makeData({
+      logs: Array.from({ length: 12 }, (_, i) => log({ createdAt: NOW - (12 - i) * DAY })),
+    });
+    const view = derivePatterns(data, NOW);
+    expect(view.accuracyTrend).not.toBeNull();
+    expect(view.accuracyTrend!.points.length).toBeGreaterThanOrEqual(2);
+  });
+
+  it('leaves accuracy trend null for a thin history', () => {
+    const data = makeData({
+      logs: Array.from({ length: 3 }, (_, i) => log({ createdAt: NOW - (3 - i) * DAY })),
+    });
+    const view = derivePatterns(data, NOW);
+    expect(view.accuracyTrend).toBeNull();
+  });
 });

@@ -1,4 +1,4 @@
-import { useEffect, useMemo } from 'react';
+import { useEffect, useMemo, useRef } from 'react';
 import { View, type ViewStyle } from 'react-native';
 import Svg, { Circle, G, Defs, LinearGradient, Stop, Polygon } from 'react-native-svg';
 import Animated, {
@@ -12,6 +12,7 @@ import Animated, {
   type EasingFunctionFactory,
 } from 'react-native-reanimated';
 import { useTheme } from '@/src/theme/useTheme';
+import { useIsScreenFocused } from '@/src/hooks/useIsScreenFocused';
 
 const AnimatedCircle = Animated.createAnimatedComponent(Circle);
 
@@ -36,9 +37,12 @@ function hexPoints(size: number): string {
 // children (the bee slot). When sealed, a flat wax-seal hex overlays the bee.
 // No glow — flat-tactical only.
 //
-// Animation: on mount the fill arc animates from endowedPct to the target over
-// motion.ringFill with easing.honey. A flat amber head-dot rides the arc to the
-// landing point; on landing the stroke "pops" (thicken → restore). Both the
+// Animation: the intro fill arc animates from endowedPct to the target over
+// motion.ringFill with easing.honey. Afterward the arc only *animates* growth the
+// user can actually see — while the screen is focused. Sharpness earned while the
+// hub is off-screen lands already-full on arrival (snap, no replay), so honey is
+// never spent celebrating to an empty room. A flat amber head-dot rides the arc to
+// the landing point; on landing the stroke "pops" (thicken → restore). Both the
 // head-dot and the stroke pop are skipped under useReducedMotion(). Monotonic:
 // the shared value only ever moves upward (never animates down).
 //
@@ -65,6 +69,12 @@ export function HoneyRing({
   const pct = Math.max(t.ring.endowedPct, Math.min(100, sharpness));
 
   const reduced = useReducedMotion();
+  const focused = useIsScreenFocused();
+  // The intro fill (endowedPct → first real value) always plays — it's the one
+  // beloved "honey pours in" moment. After that, only growth earned while the
+  // user is *watching* animates; growth earned off-screen is already-full on
+  // arrival (snap, no replay).
+  const introDone = useRef(false);
 
   // Monotonic: start at endowedPct (or pct if reduced) — never animate down.
   const progress = useSharedValue(reduced ? pct : t.ring.endowedPct);
@@ -73,13 +83,21 @@ export function HoneyRing({
   useEffect(() => {
     if (reduced) {
       progress.set(pct);
+      introDone.current = true;
       return;
     }
-    // Only animate forward (monotonic guarantee).
-    if (pct > progress.get()) {
+    // Only ever move forward (monotonic guarantee).
+    if (pct <= progress.get()) return;
+
+    if (!introDone.current || focused) {
+      // Intro fill, or live growth the user can see → animate.
       progress.set(withTiming(pct, { duration: t.motion.ringFill, easing: t.motion.easing.honey }));
+    } else {
+      // Grew while off-screen → land already-full, no celebratory replay.
+      progress.set(pct);
     }
-  }, [pct, reduced, progress, t.motion.ringFill, t.motion.easing.honey]);
+    introDone.current = true;
+  }, [pct, focused, reduced, progress, t.motion.ringFill, t.motion.easing.honey]);
 
   useEffect(() => {
     if (reduced) return;
