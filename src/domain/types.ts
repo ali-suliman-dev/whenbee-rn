@@ -203,6 +203,25 @@ export interface PlanResult {
   totalMin: number;
 }
 
+// ── Per-category goals (Pro, no-guilt) ────────────────────────────────────────
+
+/** A per-category, no-guilt accuracy goal (Pro). Loss-proof: `bestAccuracy` only
+ *  ever rises (max-latched); the target is the only thing that changes when a goal
+ *  is met and replaced. Never a streak, never a deadline. */
+export interface CategoryGoal {
+  categoryId: string;
+  /** Target accuracy 0..100 (engine sharpness scale; higher = tighter). */
+  targetAccuracy: number;
+  /** Best accuracy reached since this goal began — MONOTONIC. Drives progress. */
+  bestAccuracy: number;
+  /** Accuracy when the goal was set — the baseline the progress fills from. */
+  baselineAccuracy: number;
+  /** epoch ms the goal was set (display only, never a countdown). */
+  setAt: number;
+  /** True once bestAccuracy >= targetAccuracy has ever held (latched). */
+  met: boolean;
+}
+
 // ── Voice intake ────────────────────────────────────────────────────────────
 
 /** Where a spoken task's structuring came from. */

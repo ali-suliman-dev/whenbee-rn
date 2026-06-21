@@ -80,7 +80,7 @@ describe('WhenbeeHub', () => {
 
     render(<WhenbeeHub />);
 
-    expect(screen.getByText("WHENBEE'S STILL LEARNING THIS ONE")).toBeOnTheScreen();
+    expect(screen.getByText('STILL LEARNING')).toBeOnTheScreen();
     expect(screen.getByText('Deep Work')).toBeOnTheScreen();
   });
 

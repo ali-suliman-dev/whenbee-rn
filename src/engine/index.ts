@@ -34,3 +34,7 @@ export type { CompanionStage, CompanionCapability, DriftHealth } from './compani
 export { seedMultiplierFor, provisionalArchetypeMultiplier } from './archetypeSeed';
 export type { QuizAnswers } from './archetypeSeed';
 export { greetingFor } from './greeting';
+export {
+  accuracyToErrorBand, errorBandToAccuracy, goalProgress, isGoalMet,
+  reconcileGoal, canSetGoal, presetsForAccuracy, recommendedPreset,
+} from './goals';

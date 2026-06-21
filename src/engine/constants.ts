@@ -109,3 +109,10 @@ export const ARCHETYPE_SEED_PACE = { about: 1.15, bit: 1.5, lot: 2.1, lose: 3.0 
 export const ARCHETYPE_SEED_RABBIT_BUMP = 1.15;
 /** Seed acts as a prior worth this many pseudo-logs; real logs wash it out. */
 export const ARCHETYPE_SEED_PSEUDO = 5;
+// ── Per-category goals (Pro, no-guilt) ───────────────────────────────────────
+/** Need at least this many counted logs before a category can have a goal. */
+export const GOAL_MIN_LOGS = 5;
+/** Offered "within X%" targets, loosest → tightest (displayed as error bands). */
+export const GOAL_PRESETS = [40, 25, 15, 10] as const;
+/** A recommended target must be at least this many points tighter than current. */
+export const GOAL_RECOMMEND_STEP = 8;
