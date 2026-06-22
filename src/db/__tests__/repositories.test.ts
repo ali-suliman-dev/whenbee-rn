@@ -101,6 +101,7 @@ describe('taskEventsRepo', () => {
       createdAt: 1,
       suggestedHonestMin: null,
       reclaimDividendMin: 0,
+      startLocalMinute: null,
       ...overrides,
     };
   }
