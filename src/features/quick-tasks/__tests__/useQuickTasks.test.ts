@@ -25,6 +25,7 @@ async function seed() {
       createdAt: RECENT_MS + i,
       suggestedHonestMin: 50,
       reclaimDividendMin: 0,
+      startLocalMinute: null,
     });
   }
   useCalibrationStore.setState({ statsByCategory: {} });

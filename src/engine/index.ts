@@ -44,3 +44,5 @@ export { guardrailFactor, guardrailThresholdMin } from './guardrail';
 export { reportAccuracy, reportAccuracySpark, topSurprises, steadiestCategory } from './report';
 export type { ReportEventInput, ReportSurprise } from './report';
 export { stepHonestMinutes, routineHonestTotal, routineBasis, distributeRoutineRun } from './routine';
+export { learnFocusWindow } from './focusWindowLearn';
+export type { LearnFocusInput, LearnedFocusWindow, FocusEventInput } from '@/src/domain/types';

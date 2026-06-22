@@ -29,6 +29,7 @@ import { useTasksStore } from '@/src/stores/tasksStore';
 import { kv } from '@/src/lib/kv';
 import { useFocusedValue } from '@/src/hooks/useFocusedValue';
 import { useGreeting } from '@/src/features/today/useGreeting';
+import { TodayFocusHook } from '@/src/features/today/TodayFocusHook';
 
 // Date label, e.g. "Fri · Jun 12" — the day + date, no clock (the time added
 // nothing here and ticked distractingly).
@@ -198,6 +199,11 @@ export default function Today() {
           {dailyRitualEnabled ? (
             <RitualSeal done={ritualDone} onLog={() => router.push('/(modals)/retro')} />
           ) : null}
+
+          {/* Contextual focus-window nudge — only when the engine has a personal
+              window, the window hasn't ended, and at least one queued task exists.
+              Slots between the honey HUD and the quick-task chips row. */}
+          <TodayFocusHook nowMs={Date.now()} />
 
           {/* Quick-task chips — repeating tasks the user has run before. Only
               shown when history exists (chips.length > 0 inside the component);

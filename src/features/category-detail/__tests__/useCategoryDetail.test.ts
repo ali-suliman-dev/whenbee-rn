@@ -36,6 +36,7 @@ function event(over: Partial<TaskEventRow>): TaskEventRow {
     createdAt: T0,
     suggestedHonestMin: null,
     reclaimDividendMin: 0,
+    startLocalMinute: null,
     ...over,
   };
 }
