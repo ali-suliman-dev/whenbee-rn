@@ -6,7 +6,7 @@ export function resolveTheme(mode: ColorMode) {
     fontSize: tokens.fontSize, fontWeight: tokens.fontWeight, fontFamily: tokens.fontFamily,
     lineHeight: tokens.lineHeight, letterSpacing: tokens.letterSpacing, shadow: tokens.shadow, motion: tokens.motion,
     honeycomb: tokens.honeycomb, brand: tokens.brand, burst: tokens.burst, progress: tokens.progress,
-    companion: tokens.companion, ring: tokens.ring, seal: tokens.seal, mote: tokens.mote, row: tokens.row, planRail: tokens.planRail, upsell: tokens.upsell, quick: tokens.quick, chart: tokens.chart, proTeaser: tokens.proTeaser, discovery: tokens.discovery };
+    companion: tokens.companion, ring: tokens.ring, headerRing: tokens.headerRing, seal: tokens.seal, mote: tokens.mote, row: tokens.row, planRail: tokens.planRail, upsell: tokens.upsell, quick: tokens.quick, chart: tokens.chart, proTeaser: tokens.proTeaser, discovery: tokens.discovery };
 }
 export type Theme = ReturnType<typeof resolveTheme>;
 export function useTheme(): Theme { return resolveTheme(useColorMode()); }
