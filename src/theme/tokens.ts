@@ -367,6 +367,11 @@ export const tokens = {
   // sliver shown at Raw so a fresh ring is never a cold 0.
   // headDot = flat amber dot that rides the arc during the fill animation (px).
   ring: { size: 200, stroke: 9, popStroke: 11, capStroke: 13, endowedPct: 6, headDot: 13 },
+  // Compact Today-header honey ring (reuses HoneyRing at a small size). size =
+  // SVG square edge; stroke = ring weight; bee = BeeMascot size inside; caption =
+  // tier-word font size beneath the ring. The ceremony sub-geometry (head-dot,
+  // ripple, motes, seal) scales from `size` inside HoneyRing — see the ring group.
+  headerRing: { size: 58, stroke: 4.5, bee: 31, caption: 10.5, glowOpacity: 0.5 },
   // Wax-seal hex stamped over the bee at the Honest cap (flat-top hexagon WIDTH).
   seal: { size: 38 },
   // Flat motes flicked outward on the cap (solid squares — no glow).

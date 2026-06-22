@@ -12,7 +12,9 @@ import { FocusCard } from '@/src/features/today/FocusCard';
 import { RunningFocusCard } from '@/src/features/today/RunningFocusCard';
 import { TaskRow } from '@/src/features/today/TaskRow';
 import { DoneSection } from '@/src/features/today/DoneSection';
-import { TodayHud } from '@/src/components/honeycomb/TodayHud';
+import { TodayHeaderRing } from '@/src/features/today/TodayHeaderRing';
+import { leadHoney } from '@/src/features/today/leadHoney';
+import { RitualSeal } from '@/src/features/today/RitualSeal';
 import type { HoneycombCell } from '@/src/components/honeycomb/Honeycomb';
 import { TodayEmptyState } from '@/src/features/today/TodayEmptyState';
 import { RetroLogChip } from '@/src/features/today/RetroLogChip';
@@ -149,6 +151,8 @@ export default function Today() {
   const shownCells = useFocusedValue(honeyCells);
 
   const greeting = useGreeting();
+  // Single call — avoids computing leadHoney(shownCells) twice in JSX.
+  const lead = leadHoney(shownCells);
 
   const sectionLabel: TextStyle = {
     ...(type.eyebrow as unknown as TextStyle),
@@ -166,41 +170,35 @@ export default function Today() {
           }}
           showsVerticalScrollIndicator={false}
         >
-          <Text
-            style={{ ...(type.subtitle as unknown as TextStyle), color: t.colors.ink }}
-            accessibilityRole="header"
-          >
-            {greeting}
-          </Text>
-
           <ScreenHeader
             title="Today"
             subtitle={dateLabel(new Date())}
+            eyebrow={greeting}
             right={
-              <Pressable
-                onPress={() => router.push('/settings')}
-                accessibilityRole="button"
-                accessibilityLabel="Settings"
-                hitSlop={8}
-              >
-                <Ionicons name="settings-outline" size={22} color={t.colors.inkSoft} />
-              </Pressable>
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: t.space[4] }}>
+                <Pressable
+                  onPress={() => router.push('/settings')}
+                  accessibilityRole="button"
+                  accessibilityLabel="Settings"
+                  hitSlop={8}
+                >
+                  <Ionicons name="settings-outline" size={22} color={t.colors.inkSoft} />
+                </Pressable>
+                <TodayHeaderRing
+                  sharpness={lead.sharpness}
+                  tier={lead.tier}
+                  stage={companionStage}
+                  seed={companionSeed}
+                />
+              </View>
             }
           />
 
-          {/* The honey HUD hugs the header (tighten the inherited list gap) but
-              sits clearly apart from the focus card below it. */}
-          <View style={{ marginTop: -t.space[2], marginBottom: t.space[3] }}>
-            <TodayHud
-              cells={shownCells}
-              stage={companionStage}
-              seed={companionSeed}
-              onPress={() => router.push('/(tabs)/whenbee')}
-              ritualEnabled={dailyRitualEnabled}
-              ritualDone={ritualDone}
-              onLogRitual={() => router.push('/(modals)/retro')}
-            />
-          </View>
+          {/* Daily ritual (opt-in) lived in the honey HUD footer; the HUD is gone,
+              so render the seal standalone where the card was. */}
+          {dailyRitualEnabled ? (
+            <RitualSeal done={ritualDone} onLog={() => router.push('/(modals)/retro')} />
+          ) : null}
 
           {/* Contextual focus-window nudge — only when the engine has a personal
               window, the window hasn't ended, and at least one queued task exists.
