@@ -35,12 +35,19 @@ test('drops mis-logs, retro logs, and degenerate categories; clamps s', () => {
 const ev = (min: number, actual: number, dayKey: number) =>
   ({ category: 'admin', status: 'completed' as const, estimateMin: 30, actualMin: actual, startLocalMinute: min, ageDays: 0, dayKey });
 
-test('a single sparse fast event cannot spike its bin above a dense cluster', () => {
-  const events = [ev(420, 5, 99)]; // 07:00, very fast, one event
-  for (let d = 0; d < 12; d++) events.push(ev(600, 24, d)); // 10:00 cluster, mild
+test('a single extreme event is pulled toward the global mean, not left at its raw value', () => {
+  const events = [ev(420, 3, 0)]; // one very-fast event (s clamped high ≈ ln3)
+  for (let d = 0; d < 12; d++) events.push(ev(600, 30, d)); // baseline cluster, s≈0
   const { shrunk } = scoreBins(buildSignals(events, fit));
   const binAt = (m: number) => Math.round((m - 315) / 30);
-  expect(shrunk[binAt(420)]!).toBeLessThan(shrunk[binAt(600)]!); // shrinkage wins
+  expect(shrunk[binAt(420)]!).toBeLessThan(0.6); // suppressed well below its raw clamped s≈1.1
+});
+
+test('a single outlier fast event never manufactures a personal window (coverage + gate)', () => {
+  const events: ReturnType<typeof ev>[] = [];
+  for (let d = 0; d < 20; d++) for (const m of [360, 540, 720, 900, 1080]) events.push(ev(m, 28, d));
+  events.push(ev(420, 3, 99)); // lone outlier, single day
+  expect(learnFocusWindow({ events, fitByCategory: fit, shown: null }).basis).toBe('prior');
 });
 
 // ── Task 6: Select window ─────────────────────────────────────────────────────

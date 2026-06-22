@@ -90,18 +90,14 @@ export function scoreBins(signals: EventSignal[]): BinScores {
   const totalW = W.reduce((a, b) => a + b, 0);
   const globalMean = totalW > 0 ? WS.reduce((a, b) => a + b, 0) / totalW : 0;
 
-  // kernel smooth m → mt (reflect at edges)
+  // EB-shrink each bin toward the GLOBAL mean (confidence weighting), THEN kernel-smooth
+  // for contiguity. Shrinking toward a smoothed-LOCAL value let a single soft-split event
+  // reinforce itself across its two bins and spike the displayed curve.
+  const eb = m.map((mb, i) => (W[i]! * mb + C.FW_SHRINK_KAPPA * globalMean) / (W[i]! + C.FW_SHRINK_KAPPA));
   const k = C.FW_KERNEL;
-  const mt = m.map((_, i) => {
-    const lo = m[Math.max(0, i - 1)]!, mid = m[i]!, hi = m[Math.min(n - 1, i + 1)]!;
+  const shrunk = eb.map((_, i) => {
+    const lo = eb[Math.max(0, i - 1)]!, mid = eb[i]!, hi = eb[Math.min(n - 1, i + 1)]!;
     return k[0]! * lo + k[1]! * mid + k[2]! * hi;
-  });
-
-  // shrink each bin toward its smoothed-local value (fall back to global when no neighbours)
-  const shrunk = m.map((_, i) => {
-    const target = mt[i]!; // smoothed-local; equals ~global where flat
-    void globalMean;
-    return (W[i]! * m[i]! + C.FW_SHRINK_KAPPA * target) / (W[i]! + C.FW_SHRINK_KAPPA);
   });
 
   const mean = shrunk.reduce((a, b) => a + b, 0) / n;
