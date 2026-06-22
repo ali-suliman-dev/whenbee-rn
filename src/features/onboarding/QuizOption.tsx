@@ -95,7 +95,9 @@ export function QuizOption({
     minHeight: isTile ? t.size.control.lg * 2 : t.size.control.lg,
     borderRadius: t.radii.card,
     borderCurve: 'continuous',
-    backgroundColor: selected ? t.colors.primaryChip : t.colors.surfaceRaised,
+    // SOLID indigo when selected (a translucent chip over the coin-edge bled into a
+    // bright blur and made indigo-on-indigo text vanish). Solid fill + light text.
+    backgroundColor: selected ? t.colors.primary : t.colors.surfaceRaised,
   };
 
   const labelStyle: TextStyle = {
@@ -103,7 +105,7 @@ export function QuizOption({
     textAlign: isTile ? 'center' : 'left',
     fontSize: t.fontSize.md,
     fontWeight: t.fontWeight.semibold as TextStyle['fontWeight'],
-    color: selected ? t.colors.primary : t.colors.ink,
+    color: selected ? t.colors.onIndigo : t.colors.ink,
   };
 
   return (

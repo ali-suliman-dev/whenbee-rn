@@ -43,9 +43,12 @@ export function ArchetypeReveal({
   const t = useTheme();
   const reduced = useReducedMotion();
 
-  // Entering-only: opacity + a subtle scale settle. No translateY, no spring.
+  // Entering-only. The card fades; the crest ILLUSTRATION scales in (a resize, not a
+  // slide/bounce) while the bee animates its own paths; text fades. No translateY,
+  // no spring, button never animates.
   const cardOpacity = useSharedValue(reduced ? 1 : 0);
-  const cardScale = useSharedValue(reduced ? 1 : 0.97);
+  const crestOpacity = useSharedValue(reduced ? 1 : 0);
+  const crestScale = useSharedValue(reduced ? 1 : 0.9);
   const eyebrow = useSharedValue(reduced ? 1 : 0);
   const titleV = useSharedValue(reduced ? 1 : 0);
   const stat = useSharedValue(reduced ? 1 : 0);
@@ -55,7 +58,8 @@ export function ArchetypeReveal({
     if (reduced) return;
     const out = { duration: t.motion.reveal, easing: t.motion.easing.out };
     cardOpacity.set(withTiming(1, out));
-    cardScale.set(withTiming(1, out));
+    crestOpacity.set(withTiming(1, out));
+    crestScale.set(withTiming(1, out));
     const fade = (sv: typeof eyebrow, delay: number) =>
       sv.set(withDelay(delay, withTiming(1, { duration: t.motion.base, easing: t.motion.easing.standard })));
     fade(eyebrow, 220);
@@ -64,9 +68,10 @@ export function ArchetypeReveal({
     fade(blurbV, 540);
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
-  const cardStyle = useAnimatedStyle(() => ({
-    opacity: cardOpacity.get(),
-    transform: [{ scale: cardScale.get() }],
+  const cardStyle = useAnimatedStyle(() => ({ opacity: cardOpacity.get() }));
+  const crestStyle = useAnimatedStyle(() => ({
+    opacity: crestOpacity.get(),
+    transform: [{ scale: crestScale.get() }],
   }));
   const eyebrowAnim = useAnimatedStyle(() => ({ opacity: eyebrow.get() }));
   const titleAnim = useAnimatedStyle(() => ({ opacity: titleV.get() }));
@@ -110,7 +115,9 @@ export function ArchetypeReveal({
           <Rect x="0" y="0" width="100%" height="100%" fill="url(#revealGrad)" />
         </Svg>
 
-        <ArchetypeCrest />
+        <Animated.View style={crestStyle}>
+          <ArchetypeCrest />
+        </Animated.View>
         <Animated.Text style={[eyebrowStyle, eyebrowAnim]}>YOUR TIME PERSONALITY</Animated.Text>
         <Animated.Text style={[titleStyle, titleAnim]}>{title}</Animated.Text>
         <Animated.View style={[multRow, statAnim]}>

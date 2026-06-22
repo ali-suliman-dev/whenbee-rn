@@ -64,6 +64,11 @@ export function QuizStepScreen({ step }: { step: number }): React.JSX.Element | 
     <Screen backdrop={<OnboardingBackdrop />}>
       <StepProgress current={QUIZ_BASE + step} total={ONBOARDING_TOTAL} />
 
+      {/* Skip lives quietly at the top, just under the progress bar. */}
+      <View style={{ flexDirection: 'row', justifyContent: 'flex-end' }}>
+        <AppButton label="Skip" variant="ghost" size="sm" onPress={skip} />
+      </View>
+
       <View style={{ flex: 1, paddingTop: t.space[2] }}>
         <View style={{ alignItems: 'center', gap: t.space[3] }}>
           <BeeMascot size={t.companion.quizBee} animated glow={false} />
@@ -125,18 +130,14 @@ export function QuizStepScreen({ step }: { step: number }): React.JSX.Element | 
 
         <View style={{ flex: 1 }} />
 
-        <View style={{ flexDirection: 'row', alignItems: 'center', gap: t.space[3] }}>
-          <AppButton label="Skip" variant="ghost" onPress={skip} />
-          <View style={{ flex: 1 }}>
-            <AppButton
-              label="Next →"
-              variant="indigo"
-              fullWidth
-              disabled={!hasAnswer}
-              onPress={goNext}
-            />
-          </View>
-        </View>
+        {/* Only the Next button at the bottom — full width, the standard CTA. */}
+        <AppButton
+          label="Next →"
+          variant="indigo"
+          fullWidth
+          disabled={!hasAnswer}
+          onPress={goNext}
+        />
       </View>
       <View style={{ height: insets.bottom }} />
     </Screen>
