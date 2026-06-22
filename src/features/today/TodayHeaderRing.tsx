@@ -40,7 +40,7 @@ export function TodayHeaderRing({
     Platform.OS === 'ios' && glowRadius > 0
       ? {
           shadowColor: t.colors.accent,
-          shadowOpacity: 0.5,
+          shadowOpacity: t.headerRing.glowOpacity,
           shadowRadius: glowRadius,
           shadowOffset: { width: 0, height: 0 },
         }

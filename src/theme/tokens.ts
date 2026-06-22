@@ -365,7 +365,7 @@ export const tokens = {
   // SVG square edge; stroke = ring weight; bee = BeeMascot size inside; caption =
   // tier-word font size beneath the ring. The ceremony sub-geometry (head-dot,
   // ripple, motes, seal) scales from `size` inside HoneyRing — see the ring group.
-  headerRing: { size: 58, stroke: 4.5, bee: 31, caption: 10.5 },
+  headerRing: { size: 58, stroke: 4.5, bee: 31, caption: 10.5, glowOpacity: 0.5 },
   // Wax-seal hex stamped over the bee at the Honest cap (flat-top hexagon WIDTH).
   seal: { size: 38 },
   // Flat motes flicked outward on the cap (solid squares — no glow).
