@@ -110,7 +110,7 @@ export interface AppEventProps {
   pro_reveal_tap: { surface: 'whenbee_hub' };
   pro_preview_tap: { surface: 'whenbee_hub' };
   paywall_view: {
-    trigger: 'make_day_honest' | 'settings_upgrade' | 'steals_your_time' | 'honest_range' | 'pro_reveal' | 'pro_preview' | 'goals' | 'focus_window' | 'hyperfocus_guard' | 'pdf_export' | 'routines';
+    trigger: 'make_day_honest' | 'settings_upgrade' | 'steals_your_time' | 'honest_range' | 'pro_reveal' | 'pro_preview' | 'goals' | 'focus_window' | 'hyperfocus_guard' | 'pdf_export' | 'routines' | 'review_ritual';
     readiness?: 'pre' | 'honest';
   };
   founder_reserve: { result: 'reserved' };
@@ -161,6 +161,13 @@ export interface AppEventProps {
   focus_window_spills: { fit_count: number; spill_count: number; window_min: number };
   focus_window_promoted: { saved_min: number; evicted_n: number; verdict_after: 'fits' | 'spills' };
   focus_window_paywall: { source: 'plan_section' };
+
+  // ── Honest Week / Month review ritual (Pro) ───────────────────────────────────
+  review_card_shown: { period_kind: 'week' | 'month'; state: 'ready' | 'quiet'; is_pro: boolean };
+  review_opened: { period_kind: 'week' | 'month'; source: 'card' | 'notification' | 'manual' };
+  review_completed: { period_kind: 'week' | 'month'; cards_seen: number; scroll_depth: number };
+  review_notify_toggled: { enabled: boolean };
+  review_notification_sent: { period_kind: 'week' | 'month' };
 
   // ── Routines (Pro) ────────────────────────────────────────────────────────────
   routines_tab_viewed: { is_pro: boolean; routine_count: number };
