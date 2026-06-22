@@ -10,6 +10,7 @@ jest.mock('expo-router', () => ({ router: { push: jest.fn() }, useRouter: () => 
 // Mock FocusCurve (SVG hard to render in tests)
 jest.mock('../FocusCurve', () => ({
   FocusCurve: ({ variant }: { variant: string }) => {
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
     const { View } = require('react-native');
     return <View testID={`focus-curve-${variant}`} />;
   },
@@ -18,6 +19,7 @@ jest.mock('../FocusCurve', () => ({
 // Mock FocusWindowCard
 jest.mock('../FocusWindowCard', () => ({
   FocusWindowCard: () => {
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
     const { View } = require('react-native');
     return <View testID="focus-window-card" />;
   },
