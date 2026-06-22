@@ -74,7 +74,7 @@ export const tokens = {
   // `shallowEdge`/`shallowDrop` = a thinner coin-edge for buttons that must read
   // calmer (e.g. the FocusCard Start) without losing the tactile push — opt in via
   // AppButton's `depth="shallow"`.
-  depth: { edge: 8, drop: 7, shallowEdge: 4, shallowDrop: 3 },
+  depth: { edge: 8, drop: 7, shallowEdge: 4, shallowDrop: 3, optionEdge: 6 },
 
   // The numeric type scale — typography.ts (the role layer) derives every role
   // size from these, so the whole scale is editable in one place.
@@ -192,6 +192,7 @@ export const tokens = {
       bg: '#F4F2FC', // cream (page ground — the 60%)
       surface: '#FFFFFF', // card — lifts off the cream
       surfaceRaised: '#FFFFFF', // focal card (pair with soft shadow)
+      surfaceRaisedEdge: '#DAD3EC', // coin-edge under a raised NEUTRAL surface (tactile option tiles)
       surfaceSunken: '#F1EEFB', // wells / inset tracks
       // surfaceSunken: '#E4DEF7', // wells / inset tracks
       // surfaceSunken: '#ECE8DE', // wells / inset tracks
@@ -271,6 +272,7 @@ export const tokens = {
       bg: '#14151D',
       surface: '#1F2130',
       surfaceRaised: '#292B3C',
+      surfaceRaisedEdge: '#1B1C27', // coin-edge under a raised NEUTRAL surface (tactile option tiles)
       surfaceSunken: '#15161F',
       hairline: 'rgba(255,255,255,0.08)', // internal dividers only
       border: 'rgba(255,255,255,0.14)', // cards that must read
@@ -480,9 +482,18 @@ export const tokens = {
   // reveal keeps its rich honey→indigo look in light AND dark, so its own light text
   // is bundled here rather than the mode ramp).
   reveal: {
-    crestW: 168, bee: 120, coinHex: 38, coinEdge: 5,
-    gradTop: '#2C2654', gradMid: '#211F33', gradBot: '#33271F',
-    inkOn: '#F4F1EA', blurbOn: '#DCD7EA',
+    crestW: 168, bee: 120, coinHex: 26, coinEdge: 4,
+    // Refined deep-indigo collectible surface (NOT muddy brown). Lit indigo at the
+    // top catches the eye, deepening to a near-black cool base so the gold stat and
+    // amber coin read as the only warmth.
+    gradTop: '#2F2A5C', gradMid: '#211D34', gradBot: '#14111E',
+    inkOn: '#F4F1EA', blurbOn: '#CFCAE0', eyebrowOn: '#9A95AD',
+    // Shine system (what makes the card feel premium):
+    //  bloom     = soft indigo light pooled behind the crest (radial, top-centre)
+    //  sheen     = the diagonal reflection streak glancing across the upper-left (white; opacity via stops)
+    //  border    = faint 1px collectible-card edge that catches light
+    //  crestGlow = subtle top-light on the embossed hex facet behind the bee
+    bloom: '#7C6DE8', sheen: '#FFFFFF', border: 'rgba(255,255,255,0.08)', crestGlow: '#FFFFFF',
     // On-card highlight sweep + the soft amber row-divider hairline (stat-sheet).
     shine: 'rgba(255,255,255,0.05)', amberHairline: 'rgba(238,174,77,0.18)',
   },
