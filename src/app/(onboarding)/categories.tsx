@@ -152,7 +152,7 @@ export default function Categories() {
           label="Continue →"
           fullWidth
           disabled={!canContinue}
-          onPress={() => router.push('/(onboarding)/personalize')}
+          onPress={() => router.push('/(onboarding)/name')}
         />
       </Reveal>
       <View style={{ height: insets.bottom }} />

@@ -10,11 +10,15 @@ it('renders the personality title and average multiplier', () => {
   expect(getAllByText(/1\.6×/).length).toBeGreaterThan(0);
 });
 
-it('shows a provisional marker when the card is provisional', () => {
-  const { getAllByText } = render(
+it('renders the stat-sheet ledger (the multiplier row) and a share button', () => {
+  const { getByText, getAllByText } = render(
     <ArchetypeHero card={{ title: 'The Gentle Optimist', blurb: 'x', averageMultiplier: 1.5, provisional: true }} />,
   );
-  expect(getAllByText(/still learning/i).length).toBeGreaterThan(0);
+  // The stat-sheet drops the provisional/"rare" badge by design — it always shows the
+  // Runs row (the multiplier) plus a real Share pill below the card.
+  expect(getByText('Runs')).toBeTruthy();
+  expect(getAllByText(/1\.5× long/).length).toBeGreaterThan(0);
+  expect(getByText(/share my archetype/i)).toBeTruthy();
 });
 
 it('renders the placeholder invite with a quiz CTA', () => {

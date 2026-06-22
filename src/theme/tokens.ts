@@ -93,9 +93,13 @@ export const tokens = {
   letterSpacing: { tight: -0.5, normal: 0.2, wide: 0.8 },
 
   // Soft elevation for raised/focal cards (CSS box-shadow renders cross-platform).
+  // `lift` is a genuinely soft drop (real blur radius + elevation) for a focal
+  // floating card (the Patterns stat-sheet) — sm/md keep radius:0 because they back
+  // hard coin-edges, not soft shadows.
   shadow: {
     sm: { offset: 3, opacity: 1, radius: 0 },
     md: { offset: 6, opacity: 1, radius: 0 },
+    lift: { offset: 16, opacity: 1, radius: 36, elevation: 12 },
   },
 
   // Honeycomb cell geometry — flat-top hexagon WIDTH (point-to-point across the
@@ -382,6 +386,9 @@ export const tokens = {
     // BeeMascot size (px) for the compact Today HUD — smaller than the hub/onboarding
     // bee so the companion reads as a quiet presence beside the honey bar.
     hudBee: 46,
+    // BeeMascot size (px) for the onboarding quiz host — the companion "asking" each
+    // question, centered above the prompt. Bigger than the HUD, smaller than the hub.
+    quizBee: 92,
     // Soft-coin backing for the HUD bee. Ringless (no honey ring to frame it), so it
     // needs a HIGH core — a sharp solid disc with only a thin feathered rim — or it
     // reads as a glow at this small size. hudCoinCore = the solid-hold fraction.
@@ -476,6 +483,8 @@ export const tokens = {
     crestW: 168, bee: 120, coinHex: 38, coinEdge: 5,
     gradTop: '#2C2654', gradMid: '#211F33', gradBot: '#33271F',
     inkOn: '#F4F1EA', blurbOn: '#DCD7EA',
+    // On-card highlight sweep + the soft amber row-divider hairline (stat-sheet).
+    shine: 'rgba(255,255,255,0.05)', amberHairline: 'rgba(238,174,77,0.18)',
   },
 
   // Quiz step progress comb (QuizProgressComb) — one flat-top honey cell per quiz
