@@ -468,7 +468,15 @@ export const tokens = {
   // bee = the BeeMascot size inside it; coinHex = the small gold ✦ coin-hex seal at
   // the hex's top-right; coinEdge = its coin-edge depth (cf. burst.coinEdge). Pure
   // geometry — colors come from `colors`/`brand`.
-  reveal: { crestW: 168, bee: 120, coinHex: 38, coinEdge: 5 },
+  // crestW/bee/coinHex/coinEdge = geometry. grad*/inkOn/blurbOn = the card's fixed,
+  // MODE-INDEPENDENT collectible-card surface + on-card text (like brand art, the
+  // reveal keeps its rich honey→indigo look in light AND dark, so its own light text
+  // is bundled here rather than the mode ramp).
+  reveal: {
+    crestW: 168, bee: 120, coinHex: 38, coinEdge: 5,
+    gradTop: '#2C2654', gradMid: '#211F33', gradBot: '#33271F',
+    inkOn: '#F4F1EA', blurbOn: '#DCD7EA',
+  },
 
   // Quiz step progress comb (QuizProgressComb) — one flat-top honey cell per quiz
   // question. cell = cell WIDTH (height = w×√3/2); gap = space between cells.
