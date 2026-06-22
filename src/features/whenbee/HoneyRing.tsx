@@ -54,15 +54,19 @@ export function HoneyRing({
   sharpness,
   sealed,
   children,
+  size,
+  stroke: strokeProp,
 }: {
   sharpness: number;
   sealed: boolean;
   children: React.ReactNode;
+  size?: number;
+  stroke?: number;
 }) {
   const t = useTheme();
-  const S = t.ring.size;
+  const S = size ?? t.ring.size;
   // Widen to `number` so the shared value accepts the full popStroke range.
-  const sw: number = t.ring.stroke;
+  const sw: number = strokeProp ?? t.ring.stroke;
   const r = (S - sw) / 2;
   const cx = S / 2;
   const circumference = 2 * Math.PI * r;
@@ -79,6 +83,8 @@ export function HoneyRing({
   // Monotonic: start at endowedPct (or pct if reduced) — never animate down.
   const progress = useSharedValue(reduced ? pct : t.ring.endowedPct);
   const stroke = useSharedValue(sw);
+  // Pop target scales with the active stroke (= t.ring.popStroke at the default).
+  const popStroke = sw * (t.ring.popStroke / t.ring.stroke);
 
   useEffect(() => {
     if (reduced) {
@@ -106,13 +112,13 @@ export function HoneyRing({
     const id = setTimeout(() => {
       stroke.set(
         withSequence(
-          withTiming(t.ring.popStroke, { duration: t.motion.strokePop / 2, easing: t.motion.easing.honey }),
+          withTiming(popStroke, { duration: t.motion.strokePop / 2, easing: t.motion.easing.honey }),
           withTiming(sw, { duration: t.motion.strokePop / 2, easing: t.motion.easing.honey }),
         ),
       );
     }, delay);
     return () => clearTimeout(id);
-  }, [reduced, stroke, sw, t.ring.popStroke, t.motion.strokePop, t.motion.ringFill, t.motion.easing.honey]);
+  }, [reduced, stroke, sw, popStroke, t.motion.strokePop, t.motion.ringFill, t.motion.easing.honey]);
 
   const fillProps = useAnimatedProps(() => ({
     strokeDashoffset: circumference * (1 - progress.get() / 100),
@@ -166,9 +172,9 @@ export function HoneyRing({
 
   const svgAbsolute: ViewStyle = { position: 'absolute' };
 
-  const dotSize = t.ring.headDot;
-  const sealW = t.seal.size;
-  const sealH = t.seal.size * 1.1;
+  const dotSize = S * (t.ring.headDot / t.ring.size);
+  const sealW = S * (t.seal.size / t.ring.size);
+  const sealH = sealW * 1.1;
 
   return (
     <View style={wrap}>
@@ -223,9 +229,9 @@ export function HoneyRing({
       {/* Ripples: three thin outline rings expanding outward (skipped under reduced motion) */}
       {sealed && !reduced ? (
         <>
-          <Ripple delay={0} t={t} />
-          <Ripple delay={t.motion.sealSeq * 0.15} t={t} />
-          <Ripple delay={t.motion.sealSeq * 0.3} t={t} />
+          <Ripple delay={0} ringSize={S} t={t} />
+          <Ripple delay={t.motion.sealSeq * 0.15} ringSize={S} t={t} />
+          <Ripple delay={t.motion.sealSeq * 0.3} ringSize={S} t={t} />
         </>
       ) : null}
       {/* Motes: flat solid squares flick outward (skipped under reduced motion) */}
@@ -235,8 +241,8 @@ export function HoneyRing({
               key={i}
               index={i}
               count={t.mote.count}
-              distance={t.mote.distance}
-              size={t.mote.size}
+              distance={S * (t.mote.distance / t.ring.size)}
+              size={S * (t.mote.size / t.ring.size)}
               color={t.colors.accent}
               sealSeq={t.motion.sealSeq}
               easing={t.motion.easing.honey}
@@ -262,7 +268,7 @@ export function HoneyRing({
 // ── Ripple sub-component ─────────────────────────────────────────────────────
 // A single thin concentric outline ring that expands from 0.5× to 1.5× the
 // ring diameter and fades to transparent. Stagger via `delay`.
-function Ripple({ delay, t }: { delay: number; t: ReturnType<typeof useTheme> }) {
+function Ripple({ delay, ringSize, t }: { delay: number; ringSize: number; t: ReturnType<typeof useTheme> }) {
   const s = useSharedValue(0.5);
   const o = useSharedValue(0.5);
 
@@ -276,7 +282,7 @@ function Ripple({ delay, t }: { delay: number; t: ReturnType<typeof useTheme> })
     transform: [{ scale: s.get() }],
   }));
 
-  const size = t.ring.size * 0.72;
+  const size = ringSize * 0.72;
   return (
     <Animated.View
       pointerEvents="none"
