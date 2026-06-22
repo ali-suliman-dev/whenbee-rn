@@ -301,6 +301,16 @@ export interface CategoryDetail {
   firstHonestRange: HonestRange | null;
 }
 
+/** One event row exposed to the focus-window learning hook (read-only, cross-category). */
+export interface FocusEventRow {
+  category: string;
+  estimateMin: number;
+  actualMin: number | null;
+  status: LogStatus;
+  startedAt: number | null;
+  startLocalMinute: number | null;
+}
+
 /** One completed/raw log row exposed to the Patterns surface (read-only). */
 export interface PatternLog {
   category: string;
@@ -406,6 +416,9 @@ interface CalibrationState {
   loadDiscoveries: () => Promise<{ discoveries: Discovery[]; discoveryCount: number }>;
   /** Cross-category snapshot for the read-only Patterns self-insight surface. */
   loadPatternsData: () => Promise<PatternsData>;
+  /** READ-ONLY. Recent events with startLocalMinute for focus-window learning.
+   *  The hook consumes this via the store (layer rule: no direct db access). */
+  loadFocusEvents: (limit?: number) => Promise<FocusEventRow[]>;
   /** READ-ONLY. Reason correlations for the Pro "what steals your time" surface.
    *  Never trains the model; safe to skip. */
   loadReasonInsights: () => Promise<ReasonInsight[]>;
@@ -1014,6 +1027,20 @@ export const useCalibrationStore = create<CalibrationState>((set, get) => ({
     }));
 
     return { categories, logs, nameOf: detailCategoryName };
+  },
+
+  loadFocusEvents: async (limit = PATTERNS_SCAN_LIMIT) => {
+    const db = await resolveDb(get, set);
+    const taskEventsRepo = makeTaskEventsRepo(db);
+    const rows = await taskEventsRepo.listRecent(limit);
+    return rows.map((e) => ({
+      category: e.category,
+      estimateMin: e.estimateMin,
+      actualMin: e.actualMin,
+      status: e.status,
+      startedAt: e.startedAt,
+      startLocalMinute: e.startLocalMinute,
+    }));
   },
 
   loadReasonInsights: async () => {
