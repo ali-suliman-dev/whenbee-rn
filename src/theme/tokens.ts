@@ -463,6 +463,19 @@ export const tokens = {
   // − = runs faster) on each gallery card. One size; consumed via t.discovery.hex.
   discovery: { hex: 30 },
 
+  // Focus-curve SVG illustration geometry. Used in FocusCurve (Plan › Focus tab).
+  // viewH/viewW = SVG internal dimensions (pt); strokeW = curve stroke weight;
+  // dotR = peak dot radius; bandOpacity = window-band fill opacity;
+  // areaOpacity = gradient area fill alpha under the curve.
+  focusCurve: {
+    viewH: 80,        // SVG height pt
+    viewW: 400,       // SVG internal width
+    strokeW: 2,       // curve stroke weight
+    dotR: 5,          // peak dot radius
+    bandOpacity: 0.5, // window band fill opacity
+    areaOpacity: 0.18, // gradient area fill alpha
+  },
+
   // ── brand illustration palette ──────────────────────────────────────────────
   // Fixed art colors for the Whenbee mascot (BeeMascot). Brand art does NOT recolor
   // by mode — a mascot reads as the SAME bee in light and dark, the way a logo does.
