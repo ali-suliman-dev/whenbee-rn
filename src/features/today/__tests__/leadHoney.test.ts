@@ -18,7 +18,7 @@ describe('leadHoney', () => {
   });
 
   it('picks the most-ripened (max sharpness) cell as the lead', () => {
-    const cells = [cell(20, 'Forming'), cell(72, 'Honest'), cell(55, 'Ripening')];
+    const cells = [cell(20, 'Setting'), cell(72, 'Honest'), cell(55, 'Ripening')];
     expect(leadHoney(cells)).toEqual({ sharpness: 72, tier: 'Honest' });
   });
 });
