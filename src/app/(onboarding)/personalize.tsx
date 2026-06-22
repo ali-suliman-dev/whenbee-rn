@@ -56,7 +56,8 @@ export default function Personalize() {
       <StepProgress current={2} total={4} />
       <View style={{ flex: 1, gap: t.space[4], paddingTop: t.space[2] }}>
         {phase === 'name' && (
-          <NameAsk onContinue={handleNameContinue} />
+          // The name phase manages its own keyboard-aware bottom footer + inset.
+          <NameAsk onContinue={handleNameContinue} bottomInset={insets.bottom} />
         )}
         {phase === 'quiz' && (
           <TimeStyleQuiz onComplete={handleQuizComplete} onSkip={handleQuizSkip} />
@@ -70,7 +71,8 @@ export default function Personalize() {
           />
         )}
       </View>
-      <View style={{ height: insets.bottom }} />
+      {/* The name phase insets itself; only the quiz/reveal phases need this. */}
+      {phase !== 'name' && <View style={{ height: insets.bottom }} />}
     </Screen>
   );
 }
