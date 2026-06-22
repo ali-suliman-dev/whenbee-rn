@@ -249,6 +249,9 @@ export interface ApplyLogParams {
   label?: string | null;
   nowMs?: number;
   suggestedHonestMin?: number | null;
+  /** Epoch ms at which the task timer STARTED; used to derive `startLocalMinute`
+   *  at persist time. Absent / null for retroactive (manual) logs. */
+  startedAt?: number | null;
 }
 
 export interface LogResult {
@@ -585,11 +588,15 @@ export const useCalibrationStore = create<CalibrationState>((set, get) => ({
       actualMin: input.actualMin,
       status: input.status,
       source: input.source,
-      startedAt: null,
+      startedAt: input.startedAt ?? null,
       endedAt: nowMs,
       createdAt,
       suggestedHonestMin: input.suggestedHonestMin ?? null,
       reclaimDividendMin: result.reclaimDeltaMin,
+      startLocalMinute:
+        input.startedAt != null
+          ? new Date(input.startedAt).getHours() * 60 + new Date(input.startedAt).getMinutes()
+          : null,
     });
 
     // The rolling clamped-ratio window AFTER this log (oldest → newest), reused for

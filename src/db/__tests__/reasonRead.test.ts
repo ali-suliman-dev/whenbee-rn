@@ -16,6 +16,7 @@ function event(id: string, category: string, createdAt: number): TaskEventRow {
     createdAt,
     suggestedHonestMin: null,
     reclaimDividendMin: 0,
+    startLocalMinute: null,
   };
 }
 

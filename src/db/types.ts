@@ -40,6 +40,7 @@ export interface TaskEventRow {
   createdAt: number;
   suggestedHonestMin: number | null;
   reclaimDividendMin: number;
+  startLocalMinute: number | null;
 }
 
 /** Per recurring-task rolling stats (keyed by `${categoryId}:${normalizedLabel}`). */

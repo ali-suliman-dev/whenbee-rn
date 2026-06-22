@@ -32,6 +32,7 @@ async function seedEnergyEvent(
     createdAt: NOON,
     suggestedHonestMin: null,
     reclaimDividendMin: 0,
+    startLocalMinute: null,
   };
   await makeTaskEventsRepo(db).insert(event);
   await useCalibrationStore.getState().setContext(id, 'energy', energy, 'manual');

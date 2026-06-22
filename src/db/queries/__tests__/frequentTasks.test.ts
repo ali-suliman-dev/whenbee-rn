@@ -10,7 +10,7 @@ function ev(over: Partial<TaskEventRow>): TaskEventRow {
     id: `e-${Math.random()}`, category: 'admin', label: 'Emails',
     estimateMin: 30, actualMin: 45, status: 'completed', source: 'timed',
     startedAt: NOW - DAY, endedAt: NOW - DAY, createdAt: NOW - DAY,
-    suggestedHonestMin: 45, reclaimDividendMin: 0, ...over,
+    suggestedHonestMin: 45, reclaimDividendMin: 0, startLocalMinute: null, ...over,
   };
 }
 

@@ -8,7 +8,7 @@ it('listFrequentTasks returns only >=3x completed tasks, capped', async () => {
   for (let i = 0; i < 3; i++) {
     await db.insertTaskEvent({ id: `e${i}`, category: 'admin', label: 'Emails', estimateMin: 30,
       actualMin: 40, status: 'completed', source: 'timed', startedAt: 1, endedAt: 1 + i, createdAt: 1,
-      suggestedHonestMin: 40, reclaimDividendMin: 0 });
+      suggestedHonestMin: 40, reclaimDividendMin: 0, startLocalMinute: null });
   }
   const out = await repo.listFrequentTasks();
   expect(out.map((t) => t.label)).toEqual(['Emails']);

@@ -40,6 +40,7 @@ async function seedReasonEvent(
     createdAt: AFTERNOON_THU,
     suggestedHonestMin: null,
     reclaimDividendMin: 0,
+    startLocalMinute: null,
     ...over,
   };
   await makeTaskEventsRepo(db).insert(event);

@@ -26,6 +26,7 @@ interface TaskEventDbRow {
   created_at: number;
   suggested_honest_min: number | null;
   reclaim_dividend_min: number;
+  start_local_minute: number | null;
 }
 
 interface CategoryStatDbRow {
@@ -90,6 +91,7 @@ function mapTaskEvent(r: TaskEventDbRow): TaskEventRow {
     createdAt: r.created_at,
     suggestedHonestMin: r.suggested_honest_min,
     reclaimDividendMin: r.reclaim_dividend_min,
+    startLocalMinute: r.start_local_minute ?? null,
   };
 }
 
@@ -237,8 +239,9 @@ export async function createSqliteDatabase(name = 'whenbee.db'): Promise<Databas
       await db.runAsync(
         `INSERT INTO task_events
            (id, category, label, estimate_min, actual_min, status, source,
-            started_at, ended_at, created_at, suggested_honest_min, reclaim_dividend_min)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+            started_at, ended_at, created_at, suggested_honest_min, reclaim_dividend_min,
+            start_local_minute)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
         row.id,
         row.category,
         row.label,
@@ -250,7 +253,8 @@ export async function createSqliteDatabase(name = 'whenbee.db'): Promise<Databas
         row.endedAt,
         row.createdAt,
         row.suggestedHonestMin,
-        row.reclaimDividendMin
+        row.reclaimDividendMin,
+        row.startLocalMinute
       );
     },
 

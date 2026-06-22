@@ -135,6 +135,10 @@ export interface TaskEvent {
   createdAt: number;
   suggestedHonestMin: number | null;
   reclaimDividendMin: number;
+  /** Local minute-of-day (0–1439) at the moment work STARTED, captured at log
+   *  time. null = no trustworthy start time (retroactive/backfilled) → excluded
+   *  from focus-window learning. Never recomputed from createdAt, never trained. */
+  startLocalMinute: number | null;
 }
 
 // ── Reverse Start-By planner ────────────────────────────────────────────────
