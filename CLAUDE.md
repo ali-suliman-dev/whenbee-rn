@@ -47,6 +47,15 @@ Run lint + typecheck + test before every commit — CI runs the same set on ever
 - Sheets that slide up (non-full-screen) must start with `<SheetGrabber />`.
 - Never set `presentation: 'card'` on a modal that has content — use `formSheet` or `fullScreenModal`.
 
+## One primary action per screen — HARD RULE
+
+**A screen gets exactly ONE filled/`indigo`/`fullWidth` CTA — the single thing the screen exists to do.** Two equal-weight primary buttons in one viewport is decision paralysis (Hick's law); when two CTAs look equally important, users hesitate on both and the click-through on each drops. This is a real bug, not a style nit. Rules:
+
+- **One `variant="indigo"` (or any filled/`fullWidth`) button per screen.** Everything else is secondary: `ghost`, a text link, or a quiet row. Never stack two filled CTAs — not vertically, not side-by-side at equal weight.
+- **A Pro upsell does NOT get its own primary CTA next to the screen's real action.** A locked/teaser card competing with the actual job (e.g. `FocusWindowLocked`'s indigo "Fit your focus window" sitting above the indigo "Build my plan") is the exact anti-pattern — collapse the upsell to a quiet row or move it off the screen. The screen's own job always owns the one primary CTA.
+- **Before adding any feature card to an existing screen, ask "what is this screen's ONE job?"** If the card isn't that job, it's a secondary affordance (quiet row → sheet) or it belongs on a different screen / its own mode — not a full-bleed card mid-flow. A big card dropped in "because this is the planning screen" is placement-by-default; features earn their place by serving the screen's single job, never by proximity.
+- **Audit the FREE path, not just the Pro path.** Hierarchy bugs hide in the locked/teaser variant a paying tester never sees (the duplicate-indigo case above only appears for non-Pro users). Check both entitlement states.
+
 ## Known gotchas (scaffold defaults that bite)
 
 - **Dev build only — Expo Go cannot run this app.** Native modules (`react-native-purchases`, `@sentry`, `@expo/ui`, `expo-glass-effect`, `expo-dev-client`) make Expo Go spin forever. Use `npm run ios`.
