@@ -21,6 +21,7 @@ import { useCategoriesStore } from '@/src/stores/categoriesStore';
 import { useEntitlement } from '@/src/features/paywall/useEntitlement';
 import { useAccountActions, type RestoreOutcome } from '@/src/features/paywall/useAccountActions';
 import { useReminderSetting } from '@/src/features/settings/useReminderSetting';
+import { useReviewNotifySetting } from '@/src/features/settings/useReviewNotifySetting';
 import { useDayEndSetting } from '@/src/features/settings/useDayEndSetting';
 import { useAccountReset } from '@/src/features/settings/useAccountReset';
 import { ProGate } from '@/src/features/paywall/ProGate';
@@ -132,6 +133,7 @@ export default function Settings() {
   const categoryCount = useCategoriesStore((s) => s.categories.length);
   const { restoring, manageSubscription, restorePurchases } = useAccountActions();
   const { enabled: remindersEnabled, toggle: toggleReminders } = useReminderSetting();
+  const { enabled: reviewNotifyEnabled, toggle: toggleReviewNotify } = useReviewNotifySetting();
   const {
     dayEndMin,
     label: dayEndLabel,
@@ -170,6 +172,11 @@ export default function Settings() {
 
   async function handleToggleReminders(next: boolean) {
     const ok = await toggleReminders(next);
+    if (next && !ok) showToast(REMINDER_DENIED);
+  }
+
+  async function handleToggleReviewNotify(next: boolean) {
+    const ok = await toggleReviewNotify(next);
     if (next && !ok) showToast(REMINDER_DENIED);
   }
 
@@ -299,6 +306,21 @@ export default function Settings() {
               />
             }
           />
+          {isPro ? (
+            <SettingRow
+              icon="leaf-outline"
+              title="Monday review"
+              note="A gentle nudge when your honest week is ready. Off by default."
+              trailing={
+                <Switch
+                  value={reviewNotifyEnabled}
+                  onValueChange={handleToggleReviewNotify}
+                  trackColor={{ true: t.colors.primary, false: t.colors.hairline }}
+                  accessibilityLabel="Monday review"
+                />
+              }
+            />
+          ) : null}
           <ProGate fallback={<GuardrailLockedRow />}>
             <GuardrailSettingRow />
           </ProGate>
