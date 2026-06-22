@@ -10,6 +10,7 @@ import { OnboardingFooterCard } from '@/src/components/OnboardingFooterCard';
 import { LockGlyph } from '@/src/components/LockGlyph';
 import { useTheme } from '@/src/theme/useTheme';
 import { StepProgress } from '@/src/features/onboarding/StepProgress';
+import { onboardingStepIndex, ONBOARDING_TOTAL } from '@/src/features/onboarding/onboardingFlow';
 import { BrandLockup } from '@/src/features/onboarding/BrandLockup';
 import { Reveal } from '@/src/features/onboarding/Reveal';
 
@@ -18,7 +19,7 @@ export default function Welcome() {
   const insets = useSafeAreaInsets();
   return (
     <Screen backdrop={<OnboardingBackdrop />}>
-      <StepProgress current={0} total={4} />
+      <StepProgress current={onboardingStepIndex('welcome')} total={ONBOARDING_TOTAL} />
       <View style={{ flex: 1, gap: t.space[4], paddingTop: t.space[3] }}>
         <Reveal index={0}>
           <BrandLockup />

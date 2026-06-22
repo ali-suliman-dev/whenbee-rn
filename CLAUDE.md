@@ -47,6 +47,22 @@ Run lint + typecheck + test before every commit — CI runs the same set on ever
 - Sheets that slide up (non-full-screen) must start with `<SheetGrabber />`.
 - Never set `presentation: 'card'` on a modal that has content — use `formSheet` or `fullScreenModal`.
 
+## Animation — HARD RULE (no tacky entrances)
+
+**Never animate a UI element by sliding it up into place and bouncing.** A content element that translates in (translateY) and settles with a spring/overshoot — "drops in and bounces" — is tacky and banned. Specifically:
+
+- **No spring/bounce/overshoot on content entrances.** No `withSpring` that overshoots, no bounce easing on text, cards, badges, numbers. Entrances settle, they don't wobble.
+- **No translate-in slides on content** (text, stats, badges rising up into place). Fade with opacity instead.
+- **Never animate buttons** in/out/up/down on entrance. A button appears at full opacity, full size. Don't fade, slide, or pop it in.
+- **What IS allowed:** animate the actual SVG **paths** (draw, fill, morph — e.g. the bee's micro-life), **opacity** fades, a **subtle resize** (scale settling with `ease-out`, no overshoot), or a small **wiggle**. Prefer path/opacity/scale over moving elements around.
+- Durations stay short (UI < ~300ms; a hero reveal may stagger opacity fades but each ≤ the motion tokens). Reduced-motion → final state, no travel.
+
+This applies everywhere, onboarding included. The archetype reveal is the reference: card fades + settles a hair in scale, the bee animates its paths, text fades — nothing slides up, nothing bounces, the button is static.
+
+## Button sizing — HARD RULE
+
+**Onboarding and primary-CTA buttons use the standard `AppButton` default size. Never `size="lg"` for them.** `lg` (52pt tall, 20pt label, 24 padX) reads as an oversized, clumsy slab next to the rest of the flow. The onboarding `Continue` / `Get started` / `Next` / `Open my day` buttons are all the default `AppButton` (md) — keep every onboarding primary button visually identical. A quiz `Next` in a Skip+Next row is the default size inside a `flex:1` container, not `lg`.
+
 ## Known gotchas (scaffold defaults that bite)
 
 - **Dev build only — Expo Go cannot run this app.** Native modules (`react-native-purchases`, `@sentry`, `@expo/ui`, `expo-glass-effect`, `expo-dev-client`) make Expo Go spin forever. Use `npm run ios`.

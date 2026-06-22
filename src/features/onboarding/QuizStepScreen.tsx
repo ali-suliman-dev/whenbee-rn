@@ -1,5 +1,5 @@
 import { useEffect } from 'react';
-import { View, type ViewStyle } from 'react-native';
+import { View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import { Screen } from '@/src/components/Screen';
@@ -10,16 +10,19 @@ import { BeeMascot } from '@/src/components/BeeMascot';
 import { useTheme } from '@/src/theme/useTheme';
 import { useOnboardingStore } from '@/src/stores/onboardingStore';
 import { usePersonalize } from '@/src/features/onboarding/usePersonalize';
-import { QuizProgressComb } from './QuizProgressComb';
+import { StepProgress } from '@/src/features/onboarding/StepProgress';
+import { ONBOARDING_TOTAL, QUIZ_BASE } from '@/src/features/onboarding/onboardingFlow';
 import { QuizOption } from './QuizOption';
 import { QUIZ_QUESTIONS, QUIZ_SUBTEXT } from './quizQuestions';
 import type { QuizAnswers } from '@/src/engine';
 
 // ──────────────────────────────────────────────────────────────────────────────
 // QuizStepScreen — one time-style quiz question per route (Layout A, companion-led).
-// The Whenbee bee hosts; a honey-comb seals one cell per question; the answer
-// NEVER auto-advances (the user taps Next). Skip-left / Next-right, one row. Back
-// is the native swipe (no hint). Reveal is reached only from the last step's Next.
+// The quiz is PART of onboarding: the same top progress bar counts each question as
+// a step (no separate comb). The Whenbee bee hosts; the answer NEVER auto-advances
+// (the user taps Next). Skip-left / Next-right, one row, Next styled exactly like
+// the onboarding Continue (default size — never the oversized lg). Back = native
+// swipe. Reveal is reached only from the last step's Next.
 // ──────────────────────────────────────────────────────────────────────────────
 
 export function QuizStepScreen({ step }: { step: number }): React.JSX.Element | null {
@@ -33,7 +36,6 @@ export function QuizStepScreen({ step }: { step: number }): React.JSX.Element | 
   const isLast = step === QUIZ_QUESTIONS.length - 1;
 
   useEffect(() => {
-    // Guard a bad/out-of-range deep link — bounce to the first question.
     if (!question) router.replace('/(onboarding)/quiz/0');
   }, [question]);
 
@@ -41,6 +43,7 @@ export function QuizStepScreen({ step }: { step: number }): React.JSX.Element | 
 
   const selected = quizAnswers[question.key];
   const hasAnswer = selected !== undefined;
+  const isTile = question.layout === 'tile';
 
   function choose(value: string) {
     if (!question) return;
@@ -57,17 +60,12 @@ export function QuizStepScreen({ step }: { step: number }): React.JSX.Element | 
     router.push('/(onboarding)/ready');
   }
 
-  const optionsWrap: ViewStyle =
-    question.layout === 'tile'
-      ? { flexDirection: 'row', flexWrap: 'wrap', gap: t.space[2.5] }
-      : { gap: t.space[2.5] };
-
   return (
     <Screen backdrop={<OnboardingBackdrop />}>
-      <View style={{ flex: 1, paddingTop: t.space[2] }}>
-        <QuizProgressComb total={QUIZ_QUESTIONS.length} current={step} />
+      <StepProgress current={QUIZ_BASE + step} total={ONBOARDING_TOTAL} />
 
-        <View style={{ alignItems: 'center', gap: t.space[3], marginTop: t.space[5] }}>
+      <View style={{ flex: 1, paddingTop: t.space[2] }}>
+        <View style={{ alignItems: 'center', gap: t.space[3] }}>
           <BeeMascot size={t.companion.quizBee} animated glow={false} />
           <AppText
             style={{
@@ -88,39 +86,51 @@ export function QuizStepScreen({ step }: { step: number }): React.JSX.Element | 
           </AppText>
         </View>
 
-        <View style={[optionsWrap, { marginTop: t.space[6], justifyContent: 'center' }]}>
-          {question.options.map((opt) => (
-            <View
-              key={opt.value}
-              style={question.layout === 'tile' ? { flexBasis: '47%', flexGrow: 1 } : undefined}
-            >
+        {isTile ? (
+          <View
+            style={{
+              flexDirection: 'row',
+              flexWrap: 'wrap',
+              gap: t.space[2.5],
+              justifyContent: 'center',
+              marginTop: t.space[6],
+            }}
+          >
+            {question.options.map((opt) => (
+              <View key={opt.value} style={{ width: '47%' }}>
+                <QuizOption
+                  layout="tile"
+                  label={opt.label}
+                  glyph={opt.glyph}
+                  selected={selected === opt.value}
+                  onPress={() => choose(opt.value)}
+                />
+              </View>
+            ))}
+          </View>
+        ) : (
+          <View style={{ gap: t.space[2.5], marginTop: t.space[6] }}>
+            {question.options.map((opt) => (
               <QuizOption
-                layout={question.layout}
+                key={opt.value}
+                layout="row"
                 label={opt.label}
                 glyph={opt.glyph}
                 selected={selected === opt.value}
                 onPress={() => choose(opt.value)}
               />
-            </View>
-          ))}
-        </View>
+            ))}
+          </View>
+        )}
 
         <View style={{ flex: 1 }} />
 
-        <View
-          style={{
-            flexDirection: 'row',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-            gap: t.space[3],
-          }}
-        >
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: t.space[3] }}>
           <AppButton label="Skip" variant="ghost" onPress={skip} />
-          <View style={{ flex: 1, maxWidth: t.size.shareCard / 1.7 }}>
+          <View style={{ flex: 1 }}>
             <AppButton
               label="Next →"
               variant="indigo"
-              size="lg"
               fullWidth
               disabled={!hasAnswer}
               onPress={goNext}

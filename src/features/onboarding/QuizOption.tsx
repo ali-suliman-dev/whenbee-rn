@@ -14,19 +14,17 @@ import { ArchetypeQuizGlyph, type QuizGlyphKind } from './ArchetypeQuizGlyph';
 // ──────────────────────────────────────────────────────────────────────────────
 // QuizOption — a selectable answer for the "Whenbee learns you" quiz.
 //
-// Two layouts, one component:
-//   tile — glyph on top, label below; used in a 2-col grid for 3–4-option steps.
-//   row  — glyph left, label right, full width; used for 2-option steps.
+//   tile — glyph above label, centered; the parent grid sets its WIDTH (this
+//          component never sets flex/width, so it can't collapse a sibling).
+//   row  — glyph left, label right, full width; for 2-option steps.
 //
 // Selected = indigo `primaryChip` fill on a solid `primaryEdge` coin-edge, the
-// surface lifted ~2px so it reads as a card pressed proud of its edge (mirrors
-// AppButton's filled-pill depth). The glyph flips to its amber `active` state.
-// No border line — the fill + lift carry the selection.
+// surface lifted ~2px proud of that edge (mirrors AppButton's filled-pill depth).
+// The glyph flips to its amber `active` state. No border line.
 //
-// reactCompiler + NativeWind drop function-style `style` on a Pressable, so the
-// Pressable stays a bare touch wrapper: every visual + the press dip lives on an
-// inner Animated.View. Press-in dips scale to `scale.pressIn`; release springs
-// back. Entering-only — no exiting layout animation (Fabric crash guard).
+// reactCompiler drops function-style `style` on a Pressable, so the Pressable
+// stays a bare touch wrapper; the visual + press dip live on the inner View.
+// Entering-only — no exiting layout animation (Fabric crash guard).
 // ──────────────────────────────────────────────────────────────────────────────
 
 type Layout = 'tile' | 'row';
@@ -48,12 +46,9 @@ export function QuizOption({
   const reducedMotion = useReducedMotion();
   const isTile = layout === 'tile';
 
-  // The coin-edge depth: how far the darker indigo edge peeks below the surface
-  // when selected, and how far the surface lifts proud of it (the 2px lift).
   const EDGE = t.depth.edge;
-  const LIFT = t.space[0.5]; // 2pt upward lift on select (spec)
+  const LIFT = t.space[0.5];
 
-  // Press dip lives on the surface; the bare Pressable holds no visual style.
   const pressScale = useSharedValue(1);
   const surfaceStyle = useAnimatedStyle(() => ({
     transform: [{ scale: pressScale.get() }, { translateY: selected ? -LIFT : 0 }],
@@ -68,21 +63,17 @@ export function QuizOption({
     pressScale.set(withSpring(1, t.motion.spring));
   }
   function handlePress() {
-    // selection-tick: the native single-select texture. lib/haptics is boundary-
-    // safe + already platform-guarded (no-op on web / failures swallowed).
     if (!selected) haptics.selection();
     onPress();
   }
 
-  // Wrapper reserves the edge depth so a selected option's coin-edge never
-  // overlaps a sibling row/tile (cf. AppButton). Unselected reserves nothing.
+  // Bare wrapper. Width comes from the parent (tile grid) or stretch (row) — never
+  // a flex here, so a tile can't grow and crush its neighbours.
   const wrapper: ViewStyle = {
     alignSelf: 'stretch',
-    flex: isTile ? 1 : undefined,
     paddingBottom: selected ? EDGE : 0,
   };
 
-  // Solid indigo depth edge behind the surface — only while selected.
   const edgeBase: ViewStyle = {
     position: 'absolute',
     left: 0,
@@ -99,9 +90,9 @@ export function QuizOption({
     alignItems: 'center',
     justifyContent: isTile ? 'center' : 'flex-start',
     gap: isTile ? t.space[2] : t.space[3],
-    paddingVertical: isTile ? t.space[5] : t.space[4],
+    paddingVertical: t.space[4],
     paddingHorizontal: t.space[4],
-    minHeight: isTile ? undefined : t.size.control.lg,
+    minHeight: isTile ? t.size.control.lg * 2 : t.size.control.lg,
     borderRadius: t.radii.card,
     borderCurve: 'continuous',
     backgroundColor: selected ? t.colors.primaryChip : t.colors.surfaceRaised,
@@ -126,7 +117,7 @@ export function QuizOption({
     >
       {selected ? <View style={edgeBase} /> : null}
       <Animated.View style={[surface, surfaceStyle]}>
-        <ArchetypeQuizGlyph kind={glyph} active={selected} />
+        <ArchetypeQuizGlyph kind={glyph} active={selected} size={isTile ? t.iconSize.xl : t.iconSize.md} />
         <AppText style={labelStyle}>{label}</AppText>
       </Animated.View>
     </Pressable>

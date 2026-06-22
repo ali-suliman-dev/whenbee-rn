@@ -6,6 +6,7 @@ import { Screen } from '@/src/components/Screen';
 import { OnboardingBackdrop } from '@/src/components/OnboardingBackdrop';
 import { useTheme } from '@/src/theme/useTheme';
 import { StepProgress } from '@/src/features/onboarding/StepProgress';
+import { onboardingStepIndex, ONBOARDING_TOTAL } from '@/src/features/onboarding/onboardingFlow';
 import { NameAsk } from '@/src/features/onboarding/NameAsk';
 import { usePersonalize } from '@/src/features/onboarding/usePersonalize';
 
@@ -28,7 +29,7 @@ export default function NameScreen() {
 
   return (
     <Screen backdrop={<OnboardingBackdrop />}>
-      <StepProgress current={2} total={4} />
+      <StepProgress current={onboardingStepIndex('name')} total={ONBOARDING_TOTAL} />
       <View style={{ flex: 1, paddingTop: t.space[2] }}>
         <NameAsk onContinue={handleContinue} bottomInset={insets.bottom} />
       </View>
