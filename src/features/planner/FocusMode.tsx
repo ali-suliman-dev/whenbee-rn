@@ -5,7 +5,7 @@ import { useTheme } from '@/src/theme/useTheme';
 import { type } from '@/src/theme/typography';
 import { AppText } from '@/src/components/AppText';
 import { AppButton } from '@/src/components/AppButton';
-import { formatClock } from '@/src/lib/time';
+import { formatClockMeridiem } from '@/src/lib/time';
 import { FW_GATE_MIN_COMPLETED } from '@/src/engine/constants';
 import { useEntitlement } from '@/src/features/paywall/useEntitlement';
 import { FocusCurve } from './FocusCurve';
@@ -28,11 +28,11 @@ import { useSettingsStore } from '@/src/stores/settingsStore';
 //   learned + Free → indigo "Unlock my focus window"
 // ──────────────────────────────────────────────────────────────────────────────
 
-/** Minutes-after-midnight → a clock string via the app formatter. */
+/** Minutes-after-midnight → a meridiem clock string (e.g. "9:00am"). */
 function clockFor(min: number): string {
   const d = new Date();
   d.setHours(Math.floor(min / 60), min % 60, 0, 0);
-  return formatClock(d.getTime());
+  return formatClockMeridiem(d.getTime());
 }
 
 export function FocusMode() {
@@ -58,6 +58,14 @@ export function FocusMode() {
   const eyebrowStyle: TextStyle = {
     ...(type.eyebrow as unknown as TextStyle),
     color: t.colors.primary,
+  };
+
+  // Window-time label: shares the eyebrow color/size but NOT the uppercase transform,
+  // so "9:00am–11:30am" renders in natural case (not "9:00AM–11:30AM").
+  const windowTimeStyle: TextStyle = {
+    ...(type.eyebrow as unknown as TextStyle),
+    color: t.colors.primary,
+    textTransform: 'none',
   };
 
   const titleStyle: TextStyle = {
@@ -129,7 +137,7 @@ export function FocusMode() {
             windowEndMin={learnedEnd ?? undefined}
           />
           {windowLabel ? (
-            <AppText style={eyebrowStyle}>{windowLabel}</AppText>
+            <AppText style={windowTimeStyle}>{windowLabel}</AppText>
           ) : null}
           <AppText style={metaStyle}>
             {`Learned from ${sampleCount} sessions · your most productive logged hours`}

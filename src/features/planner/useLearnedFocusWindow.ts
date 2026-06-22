@@ -114,14 +114,27 @@ export function useLearnedFocusWindow(nowMs?: number): LearnedFocusWindow {
   // Write the learned window into settingsStore when:
   //   1. The engine gained enough data to say 'personal', AND
   //   2. The user hasn't manually overridden their window, AND
-  //   3. Hysteresis didn't hold the previous window (the window actually moved).
+  //   3. Hysteresis didn't hold the previous window (the window actually moved), AND
+  //   4. The window values actually differ from what is already stored.
+  //
+  // The fourth guard makes the write idempotent: a per-render Date.now() changes
+  // `now` on every render, which would otherwise re-trigger the effect and cause
+  // repeated store writes even when nothing about the window has changed.
   useEffect(() => {
-    if (!focusWindowUserSet && result.basis === 'personal' && !result.held) {
+    if (
+      !focusWindowUserSet &&
+      result.basis === 'personal' &&
+      !result.held &&
+      (result.startMin !== focusShownStartMin || result.endMin !== focusShownEndMin)
+    ) {
       setLearnedFocusWindow(result.startMin, result.endMin, now);
     }
-    // Run whenever the engine result or the user-set flag changes.
-    // `now` is included so a clock-injection in tests also triggers this.
-  }, [result, focusWindowUserSet, setLearnedFocusWindow, now]);
+    // Run whenever the engine result, the user-set flag, or the stored window changes.
+    // `now` is intentionally excluded — it changes on every render (Date.now()) but
+    // carries no signal about whether to write. The idempotency guard (startMin/endMin
+    // vs. stored) handles all meaningful change detection.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [result, focusWindowUserSet, focusShownStartMin, focusShownEndMin, setLearnedFocusWindow]);
 
   return result;
 }

@@ -39,12 +39,12 @@ const ENTER = FadeIn.duration(tokens.motion.base).reduceMotion(ReduceMotion.Syst
 
 export function FocusCurve({ scoreByBin, variant, windowStartMin, windowEndMin }: FocusCurveProps) {
   const t = useTheme();
-  const { viewH, viewW, strokeW, dotR, bandOpacity, areaOpacity } = t.focusCurve;
+  const { viewH, viewW, strokeW, dotR, bandOpacity, areaOpacity, yPad, yBase, dash, axisH, axisGap, axisLabelW } = t.focusCurve;
 
   // x maps bin index → SVG x coordinate
   const x = (i: number) => (i / (BIN_COUNT - 1)) * viewW;
   // y maps score [0,1] → SVG y coordinate (high score = low y = tall bar)
-  const y = (v: number) => viewH - v * (viewH - 8) - 4;
+  const y = (v: number) => viewH - v * (viewH - yBase) - yPad;
 
   // Guard: pad or trim scoreByBin to BIN_COUNT
   const scores = Array.from({ length: BIN_COUNT }, (_, i) => scoreByBin[i] ?? 0);
@@ -80,7 +80,7 @@ export function FocusCurve({ scoreByBin, variant, windowStartMin, windowEndMin }
   // Stroke color + style per variant
   const strokeColor =
     variant === 'learned' ? t.colors.primary : t.colors.primarySoft2;
-  const strokeDasharray = variant === 'forming' ? '4 4' : undefined;
+  const strokeDasharray = variant === 'forming' ? dash : undefined;
 
   const showBand = variant === 'learned' && windowStartMin !== undefined && windowEndMin !== undefined;
   const showArea = variant === 'learned';
@@ -92,8 +92,8 @@ export function FocusCurve({ scoreByBin, variant, windowStartMin, windowEndMin }
   const axisRowStyle: ViewStyle = {
     flexDirection: 'row',
     position: 'relative',
-    height: 16,
-    marginTop: 2,
+    height: axisH,
+    marginTop: axisGap,
   };
 
   const axisLabelStyle: TextStyle = {
@@ -101,7 +101,7 @@ export function FocusCurve({ scoreByBin, variant, windowStartMin, windowEndMin }
     fontSize: t.fontSize.micro,
     color: t.colors.inkFaint,
     textAlign: 'center',
-    width: 28,
+    width: axisLabelW,
   };
 
   return (

@@ -3,7 +3,7 @@ import { router } from 'expo-router';
 import { useTheme } from '@/src/theme/useTheme';
 import { type } from '@/src/theme/typography';
 import { AppText } from '@/src/components/AppText';
-import { formatClock } from '@/src/lib/time';
+import { formatClockMeridiem } from '@/src/lib/time';
 import { useEntitlement } from '@/src/features/paywall/useEntitlement';
 import { useLearnedFocusWindow } from '@/src/features/planner/useLearnedFocusWindow';
 import { useTasksStore } from '@/src/stores/tasksStore';
@@ -28,11 +28,11 @@ export interface TodayFocusHookProps {
   nowMs: number;
 }
 
-/** Minutes-after-midnight → clock string. */
+/** Minutes-after-midnight → meridiem clock string (e.g. "9:00am"). */
 function clockFor(min: number): string {
   const d = new Date();
   d.setHours(Math.floor(min / 60), min % 60, 0, 0);
-  return formatClock(d.getTime());
+  return formatClockMeridiem(d.getTime());
 }
 
 export function TodayFocusHook({ nowMs }: TodayFocusHookProps): React.ReactElement | null {
