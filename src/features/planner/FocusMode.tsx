@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { View, ScrollView, Pressable, type ViewStyle, type TextStyle } from 'react-native';
+import { View, ScrollView, type ViewStyle, type TextStyle } from 'react-native';
 import { router } from 'expo-router';
 import { useTheme } from '@/src/theme/useTheme';
 import { type } from '@/src/theme/typography';
