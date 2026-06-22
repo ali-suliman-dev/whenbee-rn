@@ -47,6 +47,14 @@ beforeEach(() => {
 });
 
 describe('Today screen', () => {
+  it('renders the greeting in the header eyebrow (no standalone subtitle block)', () => {
+    const { getByText } = render(<Today />);
+    // The greeting text still appears (now as the eyebrow). useGreeting is time-based;
+    // assert the time-independent prefix.
+    expect(getByText(/^Good (morning|afternoon|evening)/)).toBeTruthy();
+    expect(getByText('Today')).toBeTruthy();
+  });
+
   it('shows the first-run empty state when the user has never logged', async () => {
     render(<Today />);
     expect(await screen.findByText('Time your first task')).toBeOnTheScreen();
