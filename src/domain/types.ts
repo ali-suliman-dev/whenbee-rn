@@ -250,6 +250,39 @@ export interface ParsedTaskDraft {
   source: VoiceStructuringSource;
 }
 
+// ── Learned focus window inputs/outputs (Pro) — spec 14 ──────────────────────
+
+export interface FocusEventInput {
+  category: string;
+  estimateMin: number;
+  actualMin: number;
+  status: LogStatus;
+  startLocalMinute: number | null;
+  /** (nowMs − startedAt)/86_400_000 — computed by the caller (engine is clock-free). */
+  ageDays: number;
+  /** floor(startedAt / 86_400_000) — stable integer day index for distinct-day counts. */
+  dayKey: number;
+}
+
+export interface LearnFocusInput {
+  events: readonly FocusEventInput[];
+  fitByCategory: Record<string, { a: number; b: number }>;
+  shown: { startMin: number; endMin: number; lastMoveAtDays: number } | null;
+  /** Stable seed for the permutation test (caller derives from data; defaults inside if 0). */
+  seed?: number;
+}
+
+export interface LearnedFocusWindow {
+  startMin: number;
+  endMin: number;
+  basis: 'personal' | 'prior';
+  confidence: number;                 // 0–1, for wording only (never shown as %)
+  scoreByBin: number[];               // 38 bins, normalised [0,1] for the curve
+  sampleCount: number;
+  distinctDays: number;
+  held: boolean;                      // true → hysteresis kept the shown window
+}
+
 // ── Focus-window planner (Pro) ────────────────────────────────────────────────
 
 /** The focus-window fit verdict. Amber-never-red by construction. */
