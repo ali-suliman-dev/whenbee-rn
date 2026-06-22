@@ -505,6 +505,31 @@ export const tokens = {
   // Patterns archetype stat-sheet single honey-hex glyph (HoneyHexGlyph) WIDTH.
   honeyGlyph: { w: 46 },
 
+  // Focus-curve SVG illustration geometry. Used in FocusCurve (Plan › Focus tab).
+  // viewH/viewW = SVG internal dimensions (pt); strokeW = curve stroke weight;
+  // dotR = peak dot radius; bandOpacity = window-band fill opacity;
+  // areaOpacity = gradient area fill alpha under the curve.
+  // yPad = lower y inset from SVG bottom (keeps the curve off the very bottom edge);
+  // yBase = upper y inset (keeps the curve's peak clear of the top edge);
+  // dash = the strokeDasharray value for the 'forming' dashed variant;
+  // axisH = height of the time-axis label row below the SVG;
+  // axisGap = marginTop between the SVG and the axis row;
+  // axisLabelW = fixed width of each axis label (centred under its tick position).
+  focusCurve: {
+    viewH: 80,         // SVG height pt
+    viewW: 400,        // SVG internal width
+    strokeW: 2,        // curve stroke weight
+    dotR: 5,           // peak dot radius
+    bandOpacity: 0.5,  // window band fill opacity
+    areaOpacity: 0.18, // gradient area fill alpha
+    yPad: 4,           // lower y inset: y(v) = viewH - v*(viewH-yBase) - yPad
+    yBase: 8,          // upper y inset: headroom above peak
+    dash: '4 4',       // strokeDasharray for the 'forming' dashed curve
+    axisH: 16,         // time-axis row height (pt)
+    axisGap: 2,        // marginTop between SVG and axis row (pt)
+    axisLabelW: 28,    // fixed width of each axis label (pt)
+  },
+
   // ── brand illustration palette ──────────────────────────────────────────────
   // Fixed art colors for the Whenbee mascot (BeeMascot). Brand art does NOT recolor
   // by mode — a mascot reads as the SAME bee in light and dark, the way a logo does.

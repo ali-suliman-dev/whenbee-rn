@@ -134,4 +134,11 @@ export const MIGRATIONS: string[] = [
   CREATE INDEX IF NOT EXISTS idx_routine_steps_routine
     ON routine_steps (routine_id, position);
   `,
+
+  // 0009 — focus-window learning: local minute-of-day at task start. NULL for
+  // retroactive / backfilled rows; only rows logged live (startedAt known) carry
+  // a value. Never recomputed from createdAt after the fact.
+  `
+  ALTER TABLE task_events ADD COLUMN start_local_minute INTEGER;
+  `,
 ];

@@ -28,9 +28,6 @@ import { FinishTimeWheel } from './FinishTimeWheel';
 import { BreatherChips } from './BreatherChips';
 import { PlanTaskCard, type PlanTaskCardProps } from './PlanTaskCard';
 import { VerdictCard } from './VerdictCard';
-import { ProGate } from '@/src/features/paywall/ProGate';
-import { FocusWindowCard } from './FocusWindowCard';
-import { FocusWindowLocked } from './FocusWindowLocked';
 import type { usePlanner } from './usePlanner';
 
 // ──────────────────────────────────────────────────────────────────────────────
@@ -577,14 +574,6 @@ export function BuildView({ planner, nowMs = Date.now() }: BuildViewProps) {
             }, 150);
           }}
         />
-      </View>
-
-      {/* ── Focus window (Pro) — its own section, standalone (no capacity card) ── */}
-      <View style={screenPad}>
-        <SectionLabel>Focus window</SectionLabel>
-        <ProGate fallback={<FocusWindowLocked />}>
-          <FocusWindowCard />
-        </ProGate>
       </View>
 
       {/* ── Spacer to push verdict + CTA to bottom ── */}

@@ -39,6 +39,20 @@ interface SettingsState {
   windowEndMin: number | null;
   /** Set the focus window atomically so the card never sees a half-set window. */
   setFocusWindow: (startMin: number, endMin: number) => void;
+  /** True once the user manually dragged/set the focus window — suppresses
+   *  auto-learn overrides. False when only the engine has updated it. */
+  focusWindowUserSet: boolean;
+  /** The start minute the learned window was last written to (mirrors windowStartMin
+   *  but kept separately so the engine can detect real shifts vs. confirmation). */
+  focusShownStartMin: number | null;
+  /** The end minute the learned window was last written to. */
+  focusShownEndMin: number | null;
+  /** Epoch ms when the focus window was last moved (user or engine). Used for
+   *  the hysteresis dwell check — window must have dwelt for FW_DWELL_DAYS. */
+  focusLastMoveAtMs: number | null;
+  /** Called by the engine hook when the learned window moves. Also writes
+   *  through to windowStartMin/EndMin so the packer reads the new window. */
+  setLearnedFocusWindow: (startMin: number, endMin: number, atMs: number) => void;
   /** Hyperfocus guardrail multiple of the honest number, or 'off'. Off by default;
    *  the gentle check-in is opt-in and Pro-only. Reads the model, trains nothing. */
   hyperfocusGuard: GuardrailMultiple;
@@ -68,7 +82,23 @@ export const useSettingsStore = create<SettingsState>()(
       windowStartMin: null,
       windowEndMin: null,
       setFocusWindow: (startMin, endMin) =>
-        set({ windowStartMin: clampDayEndMin(startMin), windowEndMin: clampDayEndMin(endMin) }),
+        set({
+          windowStartMin: clampDayEndMin(startMin),
+          windowEndMin: clampDayEndMin(endMin),
+          focusWindowUserSet: true,
+        }),
+      focusWindowUserSet: false,
+      focusShownStartMin: null,
+      focusShownEndMin: null,
+      focusLastMoveAtMs: null,
+      setLearnedFocusWindow: (startMin, endMin, atMs) =>
+        set({
+          windowStartMin: startMin,
+          windowEndMin: endMin,
+          focusShownStartMin: startMin,
+          focusShownEndMin: endMin,
+          focusLastMoveAtMs: atMs,
+        }),
       hyperfocusGuard: DEFAULT_GUARDRAIL,
       setHyperfocusGuard: (hyperfocusGuard) => set({ hyperfocusGuard }),
       dayEndEnabled: true,
@@ -85,6 +115,10 @@ export const useSettingsStore = create<SettingsState>()(
           windowStartMin: null,
           windowEndMin: null,
           hyperfocusGuard: DEFAULT_GUARDRAIL,
+          focusWindowUserSet: false,
+          focusShownStartMin: null,
+          focusShownEndMin: null,
+          focusLastMoveAtMs: null,
         }),
     }),
     { name: 'settings', storage: createJSONStorage(() => zustandKv) },
