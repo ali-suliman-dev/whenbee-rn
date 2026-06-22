@@ -463,6 +463,20 @@ export const tokens = {
   // − = runs faster) on each gallery card. One size; consumed via t.discovery.hex.
   discovery: { hex: 30 },
 
+  // Archetype reveal "collectible crest" geometry (ArchetypeCrest / ArchetypeReveal).
+  // crestW = the symmetric flat-top hex WIDTH behind the bee (height derives w×√3/2);
+  // bee = the BeeMascot size inside it; coinHex = the small gold ✦ coin-hex seal at
+  // the hex's top-right; coinEdge = its coin-edge depth (cf. burst.coinEdge). Pure
+  // geometry — colors come from `colors`/`brand`.
+  reveal: { crestW: 168, bee: 120, coinHex: 38, coinEdge: 5 },
+
+  // Quiz step progress comb (QuizProgressComb) — one flat-top honey cell per quiz
+  // question. cell = cell WIDTH (height = w×√3/2); gap = space between cells.
+  quizComb: { cell: 26, gap: 7 },
+
+  // Patterns archetype stat-sheet single honey-hex glyph (HoneyHexGlyph) WIDTH.
+  honeyGlyph: { w: 46 },
+
   // ── brand illustration palette ──────────────────────────────────────────────
   // Fixed art colors for the Whenbee mascot (BeeMascot). Brand art does NOT recolor
   // by mode — a mascot reads as the SAME bee in light and dark, the way a logo does.
