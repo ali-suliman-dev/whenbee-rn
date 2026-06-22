@@ -361,3 +361,58 @@ export interface RoutineSummary {
   runCount: number;
   steps: { stepId: string; honestMin: number }[];
 }
+
+// ── Honest Week / Month review ritual (Pro) ───────────────────────────────────
+
+/** Whether a review covers the week that just ended or the previous calendar month. */
+export type ReviewPeriodKind = 'week' | 'month';
+
+/** A closed review window, resolved from a `nowMs` against local-day boundaries. */
+export interface ReviewPeriod {
+  /** Stable id for the period (e.g. `2026-W25` / `2026-05`). Drives seen-state + question rotation. */
+  id: string;
+  kind: ReviewPeriodKind;
+  /** Local-midnight start (inclusive). */
+  startMs: number;
+  /** Local-midnight end (exclusive — the next period's start). */
+  endMs: number;
+  /** Human label for the cover card (e.g. `Jun 9 – Jun 15` / `May`). */
+  label: string;
+}
+
+/** One category whose multiplier moved toward 1.0 over the review window. */
+export interface TightenedRow {
+  categoryId: string;
+  categoryName: string;
+  /** Geometric-mean multiplier over the earliest half of the window's logs. */
+  earlyMultiplier: number;
+  /** Geometric-mean multiplier over the most recent half. */
+  recentMultiplier: number;
+}
+
+/** The single most surprising log in a window — reused from the Patterns
+ *  biggest-surprise derivation (`BiggestSurpriseCard` references this shape). */
+export interface ReviewBiggestSurprise {
+  categoryId: string;
+  categoryName: string;
+  estimateMin: number;
+  actualMin: number;
+  /** clamped ratio actual/estimate. */
+  ratio: number;
+}
+
+/** A calm, recomputed-live recap of a closed period. No reclaim, no score, no
+ *  guilt — every card field is null/empty when the data hasn't earned it. */
+export interface ReviewSummary {
+  period: ReviewPeriod;
+  loggedCount: number;
+  loggedMinutes: number;
+  /** Verbal accuracy read (sharper / looser-is-data / steady); null below the gate. */
+  accuracyLine: string | null;
+  /** Optional "you're sharpest in the …" phrase from the accuracy correlations. */
+  sharpestPhrase: string | null;
+  tightened: TightenedRow[];
+  biggestSurprise: ReviewBiggestSurprise | null;
+  /** A rotating reflective question, deterministic by period id. Always present. */
+  reflection: string;
+}

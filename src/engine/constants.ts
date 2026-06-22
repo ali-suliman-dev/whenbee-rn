@@ -182,6 +182,14 @@ export const ROUTINE_PERSONAL_MIN_RUNS = 3;
 export const TRANSITION_FLOOR = 1.0;
 export const TRANSITION_CEIL = 2.0;
 
+// ── Review ritual (Pro) ──────────────────────────────────────────────────────
+/** Min multiplier drop (early → recent half) for a category to count as "tightened". */
+export const REVIEW_TIGHTEN_GAP = 0.15;
+/** Cap on how many tightened categories the review surfaces. */
+export const REVIEW_MAX_TIGHTENED = 2;
+/** Below this many completed logs in a category's half-split, it's too thin to call. */
+export const REVIEW_TIGHTEN_MIN_HALF = 2;
+
 // ── PDF report (Pro) ─────────────────────────────────────────────────────────
 export const REPORT_MIN_LOGS = 6; // window minimum to allow export
 export const REPORT_CATEGORY_MIN_LOGS = 4; // per-row minimum in the bias table

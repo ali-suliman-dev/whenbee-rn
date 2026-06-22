@@ -10,7 +10,7 @@ import {
   provisionalArchetypeMultiplier,
 } from '@/src/engine';
 import type { AccuracyCorrelation, AccuracySample, AccuracyTrend } from '@/src/engine';
-import type { CalibrationConfidence } from '@/src/domain/types';
+import type { CalibrationConfidence, ReviewBiggestSurprise } from '@/src/domain/types';
 import { useCalibrationStore, type PatternsData, type PatternLog } from '@/src/stores/calibrationStore';
 import { useSettingsStore } from '@/src/stores/settingsStore';
 
@@ -73,14 +73,9 @@ export interface YouVsPastCard {
   delta: number;
 }
 
-export interface BiggestSurpriseCard {
-  categoryId: string;
-  categoryName: string;
-  estimateMin: number;
-  actualMin: number;
-  /** clamped ratio actual/estimate. */
-  ratio: number;
-}
+/** The biggest-surprise card. Shares the domain `ReviewBiggestSurprise` shape so
+ *  the review ritual can reuse this exact derivation without re-declaring it. */
+export type BiggestSurpriseCard = ReviewBiggestSurprise;
 
 export interface PredictionCard {
   categoryId: string;

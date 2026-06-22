@@ -13,7 +13,9 @@ import { DriftNote } from '@/src/features/patterns/DriftAlert';
 import { HonestMap } from '@/src/features/patterns/CalibrationMap';
 import { SectionHeader } from '@/src/features/patterns/SectionHeader';
 import { PatternsEmpty } from '@/src/features/patterns/PatternsEmpty';
-import { WeeklyReview } from '@/src/features/patterns/WeeklyReview';
+import { useReview } from '@/src/features/review/useReview';
+import { ReviewRitualCard } from '@/src/features/review/ReviewRitualCard';
+import { ReviewRitualLocked } from '@/src/features/review/ReviewRitualLocked';
 import { useReasonInsights } from '@/src/features/patterns/useReasonInsights';
 import { ProGate } from '@/src/features/paywall/ProGate';
 import { StealsYourTime } from '@/src/features/patterns/StealsYourTime';
@@ -39,6 +41,7 @@ export default function Patterns() {
   const reduced = useReducedMotion();
   const router = useRouter();
   const { view } = usePatterns();
+  const { summary: reviewSummary, period: reviewPeriod, isFresh: reviewFresh } = useReview();
   const { insights } = useReasonInsights();
   const { insights: contextInsights } = useContextInsights();
 
@@ -83,7 +86,14 @@ export default function Patterns() {
               </Animated.View>
             )}
 
-            <WeeklyReview view={view} />
+            {/* The scheduled recap ritual: Pro gets the live card (amber when
+                fresh, quiet once opened); free gets the real-period locked teaser.
+                Mirrors the StealsYourTime / *Locked ProGate pairing below. */}
+            <Animated.View entering={rise()}>
+              <ProGate fallback={reviewSummary ? <ReviewRitualLocked period={reviewPeriod} /> : null}>
+                {reviewSummary ? <ReviewRitualCard summary={reviewSummary} isFresh={reviewFresh} /> : null}
+              </ProGate>
+            </Animated.View>
 
             {/* 2 · YOUR PROGRESS */}
             {hasProgress ? (

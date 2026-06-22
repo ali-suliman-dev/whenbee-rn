@@ -44,5 +44,14 @@ export { guardrailFactor, guardrailThresholdMin } from './guardrail';
 export { reportAccuracy, reportAccuracySpark, topSurprises, steadiestCategory } from './report';
 export type { ReportEventInput, ReportSurprise } from './report';
 export { stepHonestMinutes, routineHonestTotal, routineBasis, distributeRoutineRun } from './routine';
+export {
+  resolveWeekPeriod,
+  resolveMonthPeriod,
+  reviewCadenceFor,
+  deriveTightened,
+  buildReviewSummary,
+  REVIEW_REFLECTION_QUESTIONS,
+} from './review';
+export type { TightenedEntry, BuildReviewSummaryInput } from './review';
 export { learnFocusWindow } from './focusWindowLearn';
 export type { LearnFocusInput, LearnedFocusWindow, FocusEventInput } from '@/src/domain/types';
