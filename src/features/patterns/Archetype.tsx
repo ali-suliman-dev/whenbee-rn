@@ -1,89 +1,113 @@
-import { View, Text, Pressable, type ViewStyle, type TextStyle } from 'react-native';
-import Svg, { Circle, RadialGradient, Defs, Stop } from 'react-native-svg';
+import { View, Text, Pressable, Platform, type ViewStyle, type TextStyle } from 'react-native';
+import Svg, { Defs, LinearGradient, Stop, Rect } from 'react-native-svg';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '@/src/theme/useTheme';
 import { type } from '@/src/theme/typography';
 import { AppButton } from '@/src/components/AppButton';
+import { HoneyHexGlyph } from '@/src/components/HoneyHexGlyph';
 import { ShareableCard } from '@/src/components/ShareableCard';
 import { useShareCard } from '@/src/features/share/useShareCard';
+import { useOnboardingStore } from '@/src/stores/onboardingStore';
+import { archetypeTraits } from './archetypeTraits';
 import type { ArchetypeCard } from './usePatterns';
 
 // ──────────────────────────────────────────────────────────────────────────────
-// ArchetypeHero (S1) — the FOCAL card of the Patterns screen. Your shareable time
-// personality, sized up: a raised surface with a soft amber honey-glow, the large
-// average multiplier, and a quiet share affordance. Identity first — the eye lands
-// here before skimming the sectioned story below.
+// ArchetypeHero (S1) — the FOCAL card of the Patterns screen, as a "stat-sheet":
+// a rich (mode-independent) honey→indigo surface with a single honey-hex glyph, an
+// amber eyebrow + the archetype title, and a short ledger of traits derived from the
+// quiz answers + the calibration multiplier. Share is a real secondary pill BELOW
+// the card (keeps the screen's one primary CTA). No border, no rank/"rare" copy.
 // ──────────────────────────────────────────────────────────────────────────────
 
 export function ArchetypeHero({ card }: { card: ArchetypeCard }) {
   const t = useTheme();
   const archetypeShare = useShareCard('archetype');
+  const quizAnswers = useOnboardingStore((s) => s.quizAnswers);
   const { title: archTitle, blurb, averageMultiplier } = card;
+  const rows = archetypeTraits(quizAnswers, averageMultiplier);
 
   const cardStyle: ViewStyle = {
     position: 'relative',
     overflow: 'hidden',
-    borderRadius: t.radii.card,
+    borderRadius: t.radii.sheet,
     borderCurve: 'continuous',
-    backgroundColor: t.colors.surfaceRaised,
-    borderWidth: t.borderWidth.share,
-    borderColor: t.colors.border,
+    backgroundColor: t.reveal.gradBot,
     padding: t.space[5],
-    gap: t.space[2],
+    ...Platform.select({
+      ios: {
+        shadowColor: '#000',
+        shadowOpacity: 0.45,
+        shadowRadius: t.shadow.lift.radius,
+        shadowOffset: { width: 0, height: t.shadow.lift.offset },
+      },
+      default: { elevation: t.shadow.lift.elevation },
+    }),
   };
-  const eyebrowRow: ViewStyle = { flexDirection: 'row', alignItems: 'center', gap: t.space[2] };
-  const eyebrow: TextStyle = { ...(type.eyebrow as unknown as TextStyle), color: t.colors.primary };
-  const titleStyle: TextStyle = { ...(type.subtitle as unknown as TextStyle), color: t.colors.ink, marginTop: t.space[1] };
-  const multRow: ViewStyle = { flexDirection: 'row', alignItems: 'baseline', gap: t.space[1.5] };
-  const mult: TextStyle = { ...(type.honestNumberLg as unknown as TextStyle), color: t.colors.accent };
-  const multCaption: TextStyle = { ...(type.caption as unknown as TextStyle), color: t.colors.inkSoft };
-  const blurbStyle: TextStyle = { ...(type.body as unknown as TextStyle), color: t.colors.inkSoft, maxWidth: 280 };
-  const shareRow: ViewStyle = { flexDirection: 'row', alignItems: 'center', gap: t.space[1], alignSelf: 'flex-start', marginTop: t.space[2] };
-  const shareLabel: TextStyle = { ...(type.caption as unknown as TextStyle), color: t.colors.inkSoft };
-  const provisionalPill: ViewStyle = {
+  const headerRow: ViewStyle = { flexDirection: 'row', alignItems: 'center', gap: t.space[4], marginBottom: t.space[5] };
+  const eyebrow: TextStyle = { ...(type.eyebrow as unknown as TextStyle), color: t.colors.accent };
+  const titleStyle: TextStyle = { ...(type.subtitle as unknown as TextStyle), color: t.reveal.inkOn, marginTop: t.space[1] };
+  const row: ViewStyle = { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingVertical: t.space[3] };
+  const divider: ViewStyle = { borderTopWidth: t.borderWidth.share, borderTopColor: t.reveal.amberHairline };
+  const rowLabel: TextStyle = { ...(type.body as unknown as TextStyle), color: t.reveal.blurbOn };
+  const rowValue = (amber?: boolean): TextStyle => ({
+    ...(type.bodyLg as unknown as TextStyle),
+    color: amber ? t.brand.honeyFill : t.reveal.inkOn,
+  });
+  const shareBtn: ViewStyle = {
     alignSelf: 'flex-start',
-    backgroundColor: t.colors.surfaceSunken,
-    paddingHorizontal: t.space[2.5],
-    paddingVertical: t.space[1],
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: t.space[2],
+    marginTop: t.space[3],
+    paddingHorizontal: t.space[4],
+    height: t.size.control.md,
     borderRadius: t.radii.full,
+    backgroundColor: t.colors.surfaceRaised,
   };
-  const provisionalText: TextStyle = { ...(type.micro as unknown as TextStyle), color: t.colors.inkSoft };
+  const shareLabel: TextStyle = { ...(type.bodySmBold as unknown as TextStyle), color: t.colors.ink };
 
   return (
-    <View style={cardStyle}>
-      {/* Amber honey-glow — decorative, mode-independent alpha from tokens. */}
-      <Svg width={180} height={180} style={{ position: 'absolute', top: -t.space[10], right: -t.space[8] }}>
-        <Defs>
-          <RadialGradient id="heroGlow" cx="50%" cy="50%" r="50%">
-            <Stop offset="0%" stopColor={t.colors.accent} stopOpacity={t.gradients.backdropTop} />
-            <Stop offset="70%" stopColor={t.colors.accent} stopOpacity={0} />
-          </RadialGradient>
-        </Defs>
-        <Circle cx={90} cy={90} r={90} fill="url(#heroGlow)" />
-      </Svg>
+    <View>
+      <View style={cardStyle}>
+        {/* Rich honey→indigo surface (clipped by the card's rounded overflow). */}
+        <Svg style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 }} pointerEvents="none">
+          <Defs>
+            <LinearGradient id="archGrad" x1="0" y1="0" x2="0.4" y2="1">
+              <Stop offset="0" stopColor={t.reveal.gradTop} />
+              <Stop offset="0.55" stopColor={t.reveal.gradMid} />
+              <Stop offset="1" stopColor={t.reveal.gradBot} />
+            </LinearGradient>
+          </Defs>
+          <Rect x="0" y="0" width="100%" height="100%" fill="url(#archGrad)" />
+        </Svg>
 
-      <View style={eyebrowRow}>
-        <Text style={eyebrow}>YOUR TIME PERSONALITY</Text>
-      </View>
-      <Text style={titleStyle}>{archTitle}</Text>
-      <View style={multRow}>
-        <Text style={mult}>{averageMultiplier.toFixed(1)}×</Text>
-        <Text style={multCaption}>your guess, on average</Text>
-      </View>
-      {card.provisional ? (
-        <View style={provisionalPill}>
-          <Text style={provisionalText}>Provisional · still learning</Text>
+        <View style={headerRow}>
+          <HoneyHexGlyph />
+          <View style={{ flex: 1 }}>
+            <Text style={eyebrow}>YOUR TIME PERSONALITY</Text>
+            <Text style={titleStyle}>{archTitle}</Text>
+          </View>
         </View>
-      ) : null}
-      <Text style={blurbStyle}>{blurb}</Text>
-      <Pressable style={shareRow} onPress={archetypeShare.onShare}>
-        <Ionicons name="share-outline" size={13} color={t.colors.inkSoft} />
+
+        {rows.map((r, i) => (
+          <View key={r.label} style={[row, i > 0 ? divider : null]}>
+            <Text style={rowLabel}>{r.label}</Text>
+            <Text style={rowValue(r.amber)}>{r.value}</Text>
+          </View>
+        ))}
+      </View>
+
+      <Pressable style={shareBtn} onPress={archetypeShare.onShare} accessibilityRole="button">
+        <Ionicons name="share-outline" size={t.iconSize.sm} color={t.colors.ink} />
         <Text style={shareLabel}>Share my archetype</Text>
       </Pressable>
 
       {/* Off-screen capture card — react-native-view-shot only; never visible. */}
       <View style={{ position: 'absolute', left: -9999, top: 0 }} pointerEvents="none">
-        <ShareableCard ref={archetypeShare.ref} data={{ kind: 'archetype', title: archTitle, blurb, averageMultiplier }} />
+        <ShareableCard
+          ref={archetypeShare.ref}
+          data={{ kind: 'archetype', title: archTitle, blurb, averageMultiplier }}
+        />
       </View>
     </View>
   );
@@ -92,15 +116,13 @@ export function ArchetypeHero({ card }: { card: ArchetypeCard }) {
 export function ArchetypePlaceholder({ onTakeQuiz }: { onTakeQuiz: () => void }) {
   const t = useTheme();
   const cardStyle: ViewStyle = {
-    borderRadius: t.radii.card,
+    borderRadius: t.radii.sheet,
     borderCurve: 'continuous',
     backgroundColor: t.colors.surface,
-    borderWidth: t.borderWidth.share,
-    borderColor: t.colors.border,
     padding: t.space[5],
     gap: t.space[2],
   };
-  const eyebrowStyle: TextStyle = { ...(type.eyebrow as unknown as TextStyle), color: t.colors.primary };
+  const eyebrowStyle: TextStyle = { ...(type.eyebrow as unknown as TextStyle), color: t.colors.accent };
   const titleStyle: TextStyle = { ...(type.subtitle as unknown as TextStyle), color: t.colors.ink };
   const bodyStyle: TextStyle = { ...(type.body as unknown as TextStyle), color: t.colors.inkSoft };
   return (

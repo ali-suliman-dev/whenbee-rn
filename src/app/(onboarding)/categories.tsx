@@ -12,6 +12,7 @@ import { BeeGlyph } from '@/src/components/BeeGlyph';
 import { useTheme } from '@/src/theme/useTheme';
 import { useOnboarding } from '@/src/features/onboarding/useOnboarding';
 import { StepProgress } from '@/src/features/onboarding/StepProgress';
+import { onboardingStepIndex, ONBOARDING_TOTAL } from '@/src/features/onboarding/onboardingFlow';
 import { Reveal } from '@/src/features/onboarding/Reveal';
 import {
   ONBOARDING_CATEGORIES,
@@ -64,7 +65,7 @@ export default function Categories() {
 
   return (
     <Screen backdrop={<OnboardingBackdrop />}>
-      <StepProgress current={1} total={4} />
+      <StepProgress current={onboardingStepIndex('categories')} total={ONBOARDING_TOTAL} />
       {/* Tapping anywhere outside the inline "+ New" input dismisses the keyboard. */}
       <Pressable
         accessible={false}
@@ -152,7 +153,7 @@ export default function Categories() {
           label="Continue →"
           fullWidth
           disabled={!canContinue}
-          onPress={() => router.push('/(onboarding)/personalize')}
+          onPress={() => router.push('/(onboarding)/name')}
         />
       </Reveal>
       <View style={{ height: insets.bottom }} />

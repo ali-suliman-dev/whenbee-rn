@@ -1,6 +1,7 @@
 import { Text } from 'react-native';
 import { render } from '@testing-library/react-native';
 import * as Reanimated from 'react-native-reanimated';
+import Svg from 'react-native-svg';
 import { HoneyRing } from '../HoneyRing';
 
 // HoneyRing reads screen focus (to gate animate-vs-snap) via expo-router's
@@ -50,5 +51,24 @@ describe('HoneyRing', () => {
     const tree = toJSON();
     expect(tree).toBeTruthy();
     (Reanimated.useReducedMotion as jest.Mock).mockRestore?.();
+  });
+});
+
+describe('HoneyRing size parameterization', () => {
+  it('renders the SVG at the default ring size when no size prop is given', () => {
+    const { UNSAFE_getAllByType } = render(
+      <HoneyRing sharpness={40} sealed={false}><Text>bee</Text></HoneyRing>,
+    );
+    // The first <Svg> (track+arc) carries width === t.ring.size (200).
+    const svg = UNSAFE_getAllByType(Svg)[0];
+    expect(svg.props.width).toBe(200);
+  });
+
+  it('renders the SVG at a custom size when size prop is given', () => {
+    const { UNSAFE_getAllByType } = render(
+      <HoneyRing sharpness={40} sealed={false} size={58} stroke={4.5}><Text>bee</Text></HoneyRing>,
+    );
+    const svg = UNSAFE_getAllByType(Svg)[0];
+    expect(svg.props.width).toBe(58);
   });
 });

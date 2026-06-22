@@ -53,3 +53,5 @@ export {
   REVIEW_REFLECTION_QUESTIONS,
 } from './review';
 export type { TightenedEntry, BuildReviewSummaryInput } from './review';
+export { learnFocusWindow } from './focusWindowLearn';
+export type { LearnFocusInput, LearnedFocusWindow, FocusEventInput } from '@/src/domain/types';

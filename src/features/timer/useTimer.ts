@@ -343,6 +343,7 @@ export function useTimer(params: TimerParams): UseTimerResult {
       adaptSpeed,
       label: resolvedLabel,
       suggestedHonestMin,
+      startedAt: startedAtRef.current ?? undefined,
     });
 
     useRewardStore.getState().setReward({
@@ -407,6 +408,7 @@ export function useTimer(params: TimerParams): UseTimerResult {
       source: 'timed',
       adaptSpeed,
       label,
+      startedAt: startedAtRef.current ?? undefined,
     });
     router.dismiss();
   }, [cancel, applyLog, category, guessMin, label]);

@@ -133,6 +133,41 @@ export const GUARDRAIL_MIN_THRESHOLD_MIN = 25;
 // spills). The window length is whatever the user set; there is no default window.
 // (No tunable constants for v1 — the fit is exact. Kept as a home for future tuning.)
 
+// ── Learned focus window (Pro) — spec 14 ──────────────────────────────────────
+export const FW_WAKING_START_MIN = 300;            // 05:00
+export const FW_WAKING_END_MIN = 1440;             // 24:00
+export const FW_BIN_MIN = 30;
+export const FW_BIN_COUNT = (FW_WAKING_END_MIN - FW_WAKING_START_MIN) / FW_BIN_MIN; // 38
+export const FW_S_CLAMP = Math.log(3);
+export const FW_MIN_ACTUAL_MIN = 3;
+export const FW_MIN_PLAUSIBLE_RATIO = 0.1;
+export const FW_FIT_B_MIN = 0.2;
+export const FW_FIT_B_MAX = 5;
+export const FW_RECENCY_HALFLIFE_DAYS = 35;
+export const FW_DURATION_CAP_MIN = 90;
+export const FW_WEIGHT_CAP = 2;
+export const FW_SHRINK_KAPPA = 4;
+export const FW_KERNEL = [0.25, 0.5, 0.25] as const;
+export const FW_WINDOW_MIN_LEN = 90;
+export const FW_WINDOW_MAX_LEN = 240;
+export const FW_EDGE_SNAP_MIN = 15;
+export const FW_PERM_N = 200;
+export const FW_PERM_PCTL = 0.95;
+export const FW_GATE_MIN_COMPLETED = 15;
+export const FW_GATE_MIN_DISTINCT_DAYS = 5;
+export const FW_BIN_MIN_EVENTS = 6;
+export const FW_BIN_MIN_DAYS = 4;
+export const FW_SD_MIN = 0.08;
+export const FW_BIMODAL_RATIO = 0.85;
+export const FW_BIMODAL_SEP_BINS = 2;
+export const FW_HYSTERESIS_SD_FRAC = 0.5;
+export const FW_DWELL_DAYS = 7;
+export const FW_MOVE_OVERLAP_MAX = 0.5;
+export const FW_COMPLETION_WEIGHT = 0.15;
+export const FW_COMPLETION_KAPPA = 8;
+export const FW_COMPLETION_DROP_CORR = 0.6;
+export const FW_PRIOR_WINDOW = { startMin: 540, endMin: 690 } as const; // 09:00–11:30
+
 // ── Routines (Pro) ───────────────────────────────────────────────────────────
 /** Day-1 chain transition factor: per-step honest numbers, summed, underestimate
  *  the whole because the seams (transitions, re-starts) aren't in any single step.

@@ -74,7 +74,7 @@ export const tokens = {
   // `shallowEdge`/`shallowDrop` = a thinner coin-edge for buttons that must read
   // calmer (e.g. the FocusCard Start) without losing the tactile push — opt in via
   // AppButton's `depth="shallow"`.
-  depth: { edge: 8, drop: 7, shallowEdge: 4, shallowDrop: 3 },
+  depth: { edge: 8, drop: 7, shallowEdge: 4, shallowDrop: 3, optionEdge: 6 },
 
   // The numeric type scale — typography.ts (the role layer) derives every role
   // size from these, so the whole scale is editable in one place.
@@ -93,9 +93,13 @@ export const tokens = {
   letterSpacing: { tight: -0.5, normal: 0.2, wide: 0.8 },
 
   // Soft elevation for raised/focal cards (CSS box-shadow renders cross-platform).
+  // `lift` is a genuinely soft drop (real blur radius + elevation) for a focal
+  // floating card (the Patterns stat-sheet) — sm/md keep radius:0 because they back
+  // hard coin-edges, not soft shadows.
   shadow: {
     sm: { offset: 3, opacity: 1, radius: 0 },
     md: { offset: 6, opacity: 1, radius: 0 },
+    lift: { offset: 16, opacity: 1, radius: 36, elevation: 12 },
   },
 
   // Honeycomb cell geometry — flat-top hexagon WIDTH (point-to-point across the
@@ -188,6 +192,7 @@ export const tokens = {
       bg: '#F4F2FC', // cream (page ground — the 60%)
       surface: '#FFFFFF', // card — lifts off the cream
       surfaceRaised: '#FFFFFF', // focal card (pair with soft shadow)
+      surfaceRaisedEdge: '#DAD3EC', // coin-edge under a raised NEUTRAL surface (tactile option tiles)
       surfaceSunken: '#F1EEFB', // wells / inset tracks
       // surfaceSunken: '#E4DEF7', // wells / inset tracks
       // surfaceSunken: '#ECE8DE', // wells / inset tracks
@@ -267,6 +272,7 @@ export const tokens = {
       bg: '#14151D',
       surface: '#1F2130',
       surfaceRaised: '#292B3C',
+      surfaceRaisedEdge: '#1B1C27', // coin-edge under a raised NEUTRAL surface (tactile option tiles)
       surfaceSunken: '#15161F',
       hairline: 'rgba(255,255,255,0.08)', // internal dividers only
       border: 'rgba(255,255,255,0.14)', // cards that must read
@@ -361,6 +367,11 @@ export const tokens = {
   // sliver shown at Raw so a fresh ring is never a cold 0.
   // headDot = flat amber dot that rides the arc during the fill animation (px).
   ring: { size: 200, stroke: 9, popStroke: 11, capStroke: 13, endowedPct: 6, headDot: 13 },
+  // Compact Today-header honey ring (reuses HoneyRing at a small size). size =
+  // SVG square edge; stroke = ring weight; bee = BeeMascot size inside; caption =
+  // tier-word font size beneath the ring. The ceremony sub-geometry (head-dot,
+  // ripple, motes, seal) scales from `size` inside HoneyRing — see the ring group.
+  headerRing: { size: 58, stroke: 4.5, bee: 31, caption: 10.5, glowOpacity: 0.5 },
   // Wax-seal hex stamped over the bee at the Honest cap (flat-top hexagon WIDTH).
   seal: { size: 38 },
   // Flat motes flicked outward on the cap (solid squares — no glow).
@@ -382,6 +393,9 @@ export const tokens = {
     // BeeMascot size (px) for the compact Today HUD — smaller than the hub/onboarding
     // bee so the companion reads as a quiet presence beside the honey bar.
     hudBee: 46,
+    // BeeMascot size (px) for the onboarding quiz host — the companion "asking" each
+    // question, centered above the prompt. Bigger than the HUD, smaller than the hub.
+    quizBee: 92,
     // Soft-coin backing for the HUD bee. Ringless (no honey ring to frame it), so it
     // needs a HIGH core — a sharp solid disc with only a thin feathered rim — or it
     // reads as a glow at this small size. hudCoinCore = the solid-hold fraction.
@@ -462,6 +476,64 @@ export const tokens = {
   // Discovery marker geometry — the honey-hex sign (amber + = runs longer, green
   // − = runs faster) on each gallery card. One size; consumed via t.discovery.hex.
   discovery: { hex: 30 },
+
+  // Archetype reveal "collectible crest" geometry (ArchetypeCrest / ArchetypeReveal).
+  // crestW = the symmetric flat-top hex WIDTH behind the bee (height derives w×√3/2);
+  // bee = the BeeMascot size inside it; coinHex = the small gold ✦ coin-hex seal at
+  // the hex's top-right; coinEdge = its coin-edge depth (cf. burst.coinEdge). Pure
+  // geometry — colors come from `colors`/`brand`.
+  // crestW/bee/coinHex/coinEdge = geometry. grad*/inkOn/blurbOn = the card's fixed,
+  // MODE-INDEPENDENT collectible-card surface + on-card text (like brand art, the
+  // reveal keeps its rich honey→indigo look in light AND dark, so its own light text
+  // is bundled here rather than the mode ramp).
+  reveal: {
+    crestW: 168, bee: 120, coinHex: 26, coinEdge: 4,
+    // Refined deep-indigo collectible surface (NOT muddy brown). Lit indigo at the
+    // top catches the eye, deepening to a near-black cool base so the gold stat and
+    // amber coin read as the only warmth.
+    gradTop: '#2F2A5C', gradMid: '#211D34', gradBot: '#14111E',
+    inkOn: '#F4F1EA', blurbOn: '#CFCAE0', eyebrowOn: '#9A95AD',
+    // Shine system (what makes the card feel premium):
+    //  bloom     = soft indigo light pooled behind the crest (radial, top-centre)
+    //  sheen     = the diagonal reflection streak glancing across the upper-left (white; opacity via stops)
+    //  border    = faint 1px collectible-card edge that catches light
+    //  crestGlow = subtle top-light on the embossed hex facet behind the bee
+    bloom: '#7C6DE8', sheen: '#FFFFFF', border: 'rgba(255,255,255,0.08)', crestGlow: '#FFFFFF',
+    // On-card highlight sweep + the soft amber row-divider hairline (stat-sheet).
+    shine: 'rgba(255,255,255,0.05)', amberHairline: 'rgba(238,174,77,0.18)',
+  },
+
+  // Quiz step progress comb (QuizProgressComb) — one flat-top honey cell per quiz
+  // question. cell = cell WIDTH (height = w×√3/2); gap = space between cells.
+  quizComb: { cell: 26, gap: 7 },
+
+  // Patterns archetype stat-sheet single honey-hex glyph (HoneyHexGlyph) WIDTH.
+  honeyGlyph: { w: 46 },
+
+  // Focus-curve SVG illustration geometry. Used in FocusCurve (Plan › Focus tab).
+  // viewH/viewW = SVG internal dimensions (pt); strokeW = curve stroke weight;
+  // dotR = peak dot radius; bandOpacity = window-band fill opacity;
+  // areaOpacity = gradient area fill alpha under the curve.
+  // yPad = lower y inset from SVG bottom (keeps the curve off the very bottom edge);
+  // yBase = upper y inset (keeps the curve's peak clear of the top edge);
+  // dash = the strokeDasharray value for the 'forming' dashed variant;
+  // axisH = height of the time-axis label row below the SVG;
+  // axisGap = marginTop between the SVG and the axis row;
+  // axisLabelW = fixed width of each axis label (centred under its tick position).
+  focusCurve: {
+    viewH: 80,         // SVG height pt
+    viewW: 400,        // SVG internal width
+    strokeW: 2,        // curve stroke weight
+    dotR: 5,           // peak dot radius
+    bandOpacity: 0.5,  // window band fill opacity
+    areaOpacity: 0.18, // gradient area fill alpha
+    yPad: 4,           // lower y inset: y(v) = viewH - v*(viewH-yBase) - yPad
+    yBase: 8,          // upper y inset: headroom above peak
+    dash: '4 4',       // strokeDasharray for the 'forming' dashed curve
+    axisH: 16,         // time-axis row height (pt)
+    axisGap: 2,        // marginTop between SVG and axis row (pt)
+    axisLabelW: 28,    // fixed width of each axis label (pt)
+  },
 
   // ── brand illustration palette ──────────────────────────────────────────────
   // Fixed art colors for the Whenbee mascot (BeeMascot). Brand art does NOT recolor

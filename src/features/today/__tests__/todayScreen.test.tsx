@@ -6,6 +6,15 @@ import { useTasksStore } from '@/src/stores/tasksStore';
 
 jest.spyOn(ActionSheetIOS, 'showActionSheetWithOptions').mockImplementation(() => {});
 
+// TodayFocusHook uses useLearnedFocusWindow which triggers an async sqlite load.
+// Stub it with a prior-basis window so TodayFocusHook renders null (gate: basis !== 'personal').
+jest.mock('@/src/features/planner/useLearnedFocusWindow', () => ({
+  useLearnedFocusWindow: () => ({
+    startMin: 540, endMin: 690, basis: 'prior' as const,
+    confidence: 0.3, scoreByBin: new Array(38).fill(0.3), sampleCount: 0, distinctDays: 0, held: false,
+  }),
+}));
+
 jest.mock('expo-router', () => ({
   router: { push: jest.fn() },
   useFocusEffect: (cb: () => void | (() => void)) => cb(),
@@ -47,6 +56,14 @@ beforeEach(() => {
 });
 
 describe('Today screen', () => {
+  it('renders the greeting in the header eyebrow (no standalone subtitle block)', () => {
+    const { getByText } = render(<Today />);
+    // The greeting text still appears (now as the eyebrow). useGreeting is time-based;
+    // assert the time-independent prefix.
+    expect(getByText(/^Good (morning|afternoon|evening)/)).toBeTruthy();
+    expect(getByText('Today')).toBeTruthy();
+  });
+
   it('shows the first-run empty state when the user has never logged', async () => {
     render(<Today />);
     expect(await screen.findByText('Time your first task')).toBeOnTheScreen();

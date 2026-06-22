@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#14151D; --surface:#1F2130; --surfaceRaised:#292B3C; --surfaceSunken:#15161F;
+    --hairline:rgba(255,255,255,0.08); --border:rgba(255,255,255,0.14);
+    --ink:#F4F1EA; --inkSoft:#ADA9B5; --inkFaint:rgba(244,241,234,0.40);
+    --primary:#8275F0; --accent:#EEAE4D; --ringTrack:rgba(255,255,255,0.08);
+    --companionCoin:#292B3C;
+    --beeBody:#5F4EE4; --beeStripe:#F6B442; --beeWing:#FCE7C5; --honey:#F5C03F;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{background:#0c0d12;font-family:'Inter',system-ui,sans-serif;padding:40px 32px 60px;color:#cfcad6}
+  h2.section{font-size:15px;font-weight:700;letter-spacing:.2px;color:#e7e3ee;margin:34px 0 4px}
+  p.note{font-size:12.5px;color:#8b8893;max-width:880px;line-height:1.5;margin-bottom:18px}
+  .row{display:flex;gap:30px;flex-wrap:wrap;align-items:flex-start}
+  .col{display:flex;flex-direction:column;gap:10px}
+  .cap{color:#dcd8e2;font-size:13px;font-weight:600}
+  .capSub{color:#7c7a85;font-size:11.5px;max-width:360px;line-height:1.45}
+
+  .phone{width:372px;background:var(--bg);border-radius:36px;padding:24px 22px 22px;overflow:hidden;border:1px solid #23242e}
+  .mini{width:340px;background:var(--bg);border-radius:26px;padding:20px 20px 24px;border:1px solid #23242e}
+
+  .eyebrow{font-family:'Inter';font-size:11.5px;font-weight:600;letter-spacing:.6px;color:var(--inkSoft)}
+  .eyebrow b{color:var(--ink);font-weight:700}
+  .title{font-family:'Plus Jakarta Sans';font-size:31px;font-weight:800;letter-spacing:-0.6px;color:var(--ink);line-height:1.04}
+  .date{font-family:'Inter';font-size:13px;font-weight:500;color:var(--inkSoft);margin-top:4px}
+  .tierCapMute{font-family:'Inter';font-size:11px;font-weight:500;color:var(--inkSoft)}
+  .gear{color:var(--inkSoft);width:23px;height:23px;display:block}
+
+  .focusCard{margin-top:24px;background:var(--surface);border:1px solid var(--hairline);border-radius:16px;padding:16px}
+  .fcCat{font-size:11px;font-weight:600;letter-spacing:.6px;color:var(--inkSoft)}
+  .fcTitle{font-family:'Plus Jakarta Sans';font-size:20px;font-weight:700;color:var(--ink);margin-top:10px}
+  .fcBar{height:8px;border-radius:99px;background:var(--surfaceSunken);margin-top:16px;overflow:hidden;position:relative}
+  .fcBarFill{position:absolute;left:0;top:0;bottom:0;width:46%;border-radius:99px;background:repeating-linear-gradient(90deg,#A898F5 0 2px,transparent 2px 6px)}
+  .fcTick{position:absolute;top:-4px;width:3px;height:16px;border-radius:2px;background:var(--accent);left:46%}
+  .coin{width:40px;height:40px;border-radius:99px;background:var(--primary);display:flex;align-items:center;justify-content:center;color:#14151D;font-size:15px}
+  .trow{margin-top:12px;background:var(--surface);border:1px solid var(--hairline);border-radius:14px;padding:14px 16px;display:flex;justify-content:space-between;align-items:center}
+  .rowL{font-size:14px;font-weight:600;color:var(--ink)}
+  .rowR{font-size:12px;color:var(--inkSoft)}
+  .secLbl{font-size:11px;font-weight:600;letter-spacing:.8px;color:var(--inkSoft);margin-top:22px;text-transform:uppercase}
+  .ringWrap{position:relative;display:flex;align-items:center;justify-content:center}
+  .bee{position:absolute}
+</style>
+</head>
+<body>
+
+<script>
+function bee(px){
+  return `<svg class="bee" width="${px}" height="${px}" viewBox="0 0 48 48" fill="none">
+    <path d="M19 12 Q16 6 13 6" stroke="#191E2B" stroke-width="2" stroke-linecap="round"/>
+    <path d="M29 12 Q32 6 35 6" stroke="#191E2B" stroke-width="2" stroke-linecap="round"/>
+    <circle cx="12.5" cy="5.5" r="1.8" fill="#191E2B"/><circle cx="35.5" cy="5.5" r="1.8" fill="#191E2B"/>
+    <ellipse cx="13" cy="22" rx="8" ry="11" fill="#FCE7C5" opacity="0.92"/>
+    <ellipse cx="35" cy="22" rx="8" ry="11" fill="#FCE7C5" opacity="0.92"/>
+    <rect x="14" y="13" width="20" height="26" rx="10" fill="#5F4EE4"/>
+    <rect x="14" y="13" width="20" height="9" rx="4.5" fill="#F6B442"/>
+    <rect x="14" y="26" width="20" height="5" rx="2.5" fill="#F6B442"/>
+    <circle cx="20.5" cy="18" r="1.7" fill="#262D40"/><circle cx="27.5" cy="18" r="1.7" fill="#262D40"/>
+  </svg>`;
+}
+function ring(size, stroke, pct, beePx, glow){
+  const r=(size-stroke)/2, c=2*Math.PI*r, off=c*(1-pct/100), cx=size/2;
+  return `<div class="ringWrap" style="width:${size}px;height:${size}px${glow?';filter:drop-shadow(0 0 11px rgba(238,174,77,0.30))':''}">
+    <svg width="${size}" height="${size}" style="transform:rotate(-90deg)">
+      <circle cx="${cx}" cy="${cx}" r="${r}" stroke="var(--ringTrack)" stroke-width="${stroke}" fill="none"/>
+      <circle cx="${cx}" cy="${cx}" r="${r}" stroke="var(--accent)" stroke-width="${stroke}" fill="none" stroke-linecap="round" stroke-dasharray="${c}" stroke-dashoffset="${off}"/>
+    </svg>${bee(beePx)}</div>`;
+}
+function gear(){return `<svg class="gear" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><circle cx="12" cy="12" r="3.2"/><path d="M12 2.5v2M12 19.5v2M21.5 12h-2M4.5 12h-2M18.7 5.3l-1.4 1.4M6.7 17.3l-1.4 1.4M18.7 18.7l-1.4-1.4M6.7 6.7L5.3 5.3" stroke-linecap="round"/></svg>`;}
+
+function body(){
+  return `<div class="focusCard">
+      <div style="display:flex;justify-content:space-between;align-items:center"><span class="fcCat">DEEP WORK</span><span style="color:var(--inkFaint);font-size:12px">finish 2:40 pm</span></div>
+      <div class="fcTitle">Write the launch post</div>
+      <div class="fcBar"><div class="fcBarFill"></div><div class="fcTick"></div></div>
+      <div style="margin-top:18px;display:flex;justify-content:flex-end"><div class="coin">▶</div></div>
+    </div>
+    <div class="secLbl">Up next</div>
+    <div class="trow"><span class="rowL">Review PRs</span><span class="rowR">25m</span></div>
+    <div class="trow"><span class="rowL">Inbox sweep</span><span class="rowR">15m</span></div>`;
+}
+
+window.addEventListener('DOMContentLoaded',()=>{
+  const PCT=38;
+
+  // ===== A refined (chosen) — greeting eyebrow w/ name, ring far-right, gear inboard =====
+  document.getElementById('aref').innerHTML = `
+    <div style="display:flex;justify-content:space-between;align-items:center">
+      <div>
+        <div class="eyebrow">Good morning, <b>Ali</b></div>
+        <div class="title" style="margin-top:4px">Today</div>
+        <div class="date">Mon · Jun 22</div>
+      </div>
+      <div style="display:flex;align-items:center;gap:18px">
+        ${gear()}
+        ${ring(58,4.5,PCT, 31, true)}
+      </div>
+    </div>
+    ${body()}`;
+
+  // ===== A label variants =====
+  document.getElementById('alab1').innerHTML = `
+    <div style="display:flex;justify-content:space-between;align-items:center">
+      <div><div class="eyebrow">Good morning, <b>Ali</b></div>
+        <div class="title" style="margin-top:4px">Today</div><div class="date">Mon · Jun 22</div></div>
+      <div style="display:flex;align-items:center;gap:18px">${gear()}${ring(58,4.5,PCT,31,true)}</div>
+    </div>${body()}`;
+  document.getElementById('alab2').innerHTML = `
+    <div style="display:flex;justify-content:space-between;align-items:center">
+      <div><div class="eyebrow">Good morning, <b>Ali</b></div>
+        <div class="title" style="margin-top:4px">Today</div><div class="date">Mon · Jun 22</div></div>
+      <div style="display:flex;align-items:center;gap:18px">${gear()}
+        <div style="display:flex;flex-direction:column;align-items:center;gap:5px;margin-top:2px">
+          ${ring(58,4.5,PCT,31,true)}<div class="tierCapMute" style="font-size:10.5px">Ripening</div>
+        </div></div>
+    </div>${body()}`;
+
+  // ===== R1 research — settings ALONE far-right (expected slot); ring leads the left =====
+  document.getElementById('r1').innerHTML = `
+    <div style="display:flex;justify-content:space-between;align-items:center">
+      <div style="display:flex;align-items:center;gap:14px">
+        ${ring(50,4,PCT, 27, true)}
+        <div>
+          <div class="eyebrow">Good morning, <b>Ali</b></div>
+          <div class="title" style="margin-top:2px;font-size:28px">Today</div>
+          <div class="date">Mon · Jun 22</div>
+        </div>
+      </div>
+      ${gear()}
+    </div>
+    ${body()}`;
+
+  // ===== R2 research — merged: one far-right control (honey ring), settings inside hub =====
+  document.getElementById('r2').innerHTML = `
+    <div style="display:flex;justify-content:space-between;align-items:center">
+      <div>
+        <div class="eyebrow">Good morning, <b>Ali</b></div>
+        <div class="title" style="margin-top:4px">Today</div>
+        <div class="date">Mon · Jun 22</div>
+      </div>
+      ${ring(58,4.5,PCT, 31, true)}
+    </div>
+    ${body()}`;
+
+  // ===== greeting placement minis (header-only) =====
+  document.getElementById('g1').innerHTML = `
+    <div style="display:flex;justify-content:space-between;align-items:center">
+      <div><div class="eyebrow">Good morning, <b>Ali</b></div>
+        <div class="title" style="margin-top:4px">Today</div><div class="date">Mon · Jun 22</div></div>
+      <div style="display:flex;align-items:center;gap:16px">${gear()}${ring(54,4,PCT, 29, true)}</div>
+    </div>`;
+  document.getElementById('g2').innerHTML = `
+    <div style="display:flex;justify-content:space-between;align-items:center">
+      <div><div class="title">Today</div>
+        <div class="date">Mon · Jun 22 · <span style="color:var(--ink);font-weight:600">Good morning, Ali</span></div></div>
+      <div style="display:flex;align-items:center;gap:16px">${gear()}${ring(54,4,PCT, 29, true)}</div>
+    </div>`;
+  document.getElementById('g3').innerHTML = `
+    <div style="display:flex;justify-content:space-between;align-items:flex-start">
+      <div><div class="title">Today</div><div class="date">Mon · Jun 22</div></div>
+      <div style="display:flex;align-items:center;gap:16px">
+        ${gear()}
+        <div style="display:flex;flex-direction:column;align-items:center;gap:6px">
+          ${ring(54,4,PCT, 29, true)}
+          <div class="tierCapMute" style="font-size:10.5px">Morning, Ali</div>
+        </div>
+      </div>
+    </div>`;
+});
+</script>
+
+<h2 class="section">A — ring label: which?</h2>
+<p class="note">Ring-only relies on amber = honey recognition (Apple-rings style). Caption spells out the tier for first-run clarity. Both on the chosen A layout.</p>
+<div class="row">
+  <div class="col"><div class="cap">A1 · Ring only</div><div class="phone" id="alab1"></div></div>
+  <div class="col"><div class="cap">A2 · Ring + "Ripening" caption</div><div class="phone" id="alab2"></div></div>
+</div>
+
+<h2 class="section">A — refined (your pick)</h2>
+<p class="note">Greeting kept but earns its place: a quiet eyebrow that carries the personalization (the name). "Today" stays the hero. Honey ring far-right with a soft glow (glow only kicks in from Ripening tier up). Tasks start right under the header. Ring tap → honeycomb hub.</p>
+<div class="row"><div class="phone" id="aref"></div></div>
+
+<h2 class="section">The two-icon concern — research-based options</h2>
+<p class="note">iOS convention: the trailing (far-right) header slot is a stable nav control — Apple Fitness, Music, App Store, Photos each keep ONE circular control there, never two stacked. Two tappable circles side-by-side also creates target ambiguity (which goes where?). Two ways to honor "settings lives far-right":</p>
+<div class="row">
+  <div class="col"><div class="cap">R1 · Settings far-right, ring leads left</div><div class="capSub">Gear sits ALONE on the far right — exactly where the thumb expects it. The honey ring becomes a status medallion leading the left, next to the greeting. Mirrors Apple Fitness (status one side, profile/settings the other). Zero ambiguity.</div><div class="phone" id="r1"></div></div>
+  <div class="col"><div class="cap">R2 · Merged — one far-right control</div><div class="capSub">No gear in the header. The honey ring IS the single far-right control (like an avatar). Tap → honeycomb hub, where Settings also lives. Cleanest, but settings moves one level deeper — a real tradeoff.</div><div class="phone" id="r2"></div></div>
+</div>
+
+<h2 class="section">Where the greeting could live (on A)</h2>
+<p class="note">If we keep the time-based greeting + name — "Good morning / afternoon / evening, Ali" — three placements:</p>
+<div class="row">
+  <div class="col"><div class="cap">g1 · Eyebrow above Today</div><div class="capSub">Warm + clear. Personalization reads first, title second.</div><div class="mini" id="g1"></div></div>
+  <div class="col"><div class="cap">g2 · Folded into the date line</div><div class="capSub">Most compact. Greeting rides the date so the header is two lines flat.</div><div class="mini" id="g2"></div></div>
+  <div class="col"><div class="cap">g3 · Caption under the ring</div><div class="capSub">Greeting attaches to the bee — ties the warmth to the companion.</div><div class="mini" id="g3"></div></div>
+</div>
+
+</body>
+</html>

@@ -5,7 +5,8 @@ import { Chip } from '@/src/components/Chip';
 import { AppText } from '@/src/components/AppText';
 import { useTheme } from '@/src/theme/useTheme';
 import type { QuizAnswers } from '@/src/engine';
-import { ArchetypeQuizGlyph, type QuizGlyphKind } from './ArchetypeQuizGlyph';
+import { ArchetypeQuizGlyph } from './ArchetypeQuizGlyph';
+import { QUIZ_QUESTIONS } from './quizQuestions';
 
 // ──────────────────────────────────────────────────────────────────────────────
 // TimeStyleQuiz — 2–3 question illustrated chip flow.
@@ -19,47 +20,10 @@ import { ArchetypeQuizGlyph, type QuizGlyphKind } from './ArchetypeQuizGlyph';
 // exiting = SIGABRT). Reduced-motion guard: entering is set to undefined.
 // ──────────────────────────────────────────────────────────────────────────────
 
-interface QuizOption {
-  value: string;
-  label: string;
-  glyph: QuizGlyphKind;
-}
-
-interface Question {
-  key: keyof QuizAnswers;
-  prompt: string;
-  options: readonly QuizOption[];
-}
-
-const QUESTIONS: readonly Question[] = [
-  {
-    key: 'pace',
-    prompt: 'When you plan your day, things usually take…',
-    options: [
-      { value: 'about', label: 'About right', glyph: 'pace_about' },
-      { value: 'bit', label: 'A bit longer', glyph: 'pace_bit' },
-      { value: 'lot', label: 'A lot longer', glyph: 'pace_lot' },
-      { value: 'lose', label: 'I lose track', glyph: 'pace_lose' },
-    ],
-  },
-  {
-    key: 'mid',
-    prompt: 'Mid-task, you usually…',
-    options: [
-      { value: 'track', label: 'Stay on track', glyph: 'mid_track' },
-      { value: 'rabbit', label: 'Fall down rabbit holes', glyph: 'mid_rabbit' },
-    ],
-  },
-  {
-    key: 'focus',
-    prompt: 'You focus best…',
-    options: [
-      { value: 'morning', label: 'Mornings', glyph: 'focus_morning' },
-      { value: 'evening', label: 'Evenings', glyph: 'focus_evening' },
-      { value: 'varies', label: 'It varies', glyph: 'focus_varies' },
-    ],
-  },
-] as const;
+// Question content is the single source in quizQuestions.ts, shared with the
+// onboarding per-step screen (QuizStepScreen). This modal renders the same set as
+// a chip flow; it ignores the per-question `layout` hint.
+const QUESTIONS = QUIZ_QUESTIONS;
 
 // Per-chip stagger delay matches the onboarding enterStagger budget (t.motion.enterStagger).
 // The cascade stays within ~500ms for liveliness.

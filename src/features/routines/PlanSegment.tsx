@@ -16,10 +16,11 @@ import { type } from '@/src/theme/typography';
 // pill snaps on first measure, then animates on every change.
 // ──────────────────────────────────────────────────────────────────────────────
 
-export type PlanTab = 'today' | 'routines';
+export type PlanTab = 'today' | 'focus' | 'routines';
 
 const OPTIONS: { value: PlanTab; label: string }[] = [
-  { value: 'today', label: 'Today' },
+  { value: 'today', label: 'Plan' },
+  { value: 'focus', label: 'Focus' },
   { value: 'routines', label: 'Routines' },
 ];
 

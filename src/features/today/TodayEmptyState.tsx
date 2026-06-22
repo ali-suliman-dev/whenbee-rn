@@ -9,7 +9,7 @@ import { RetroLogChip } from './RetroLogChip';
 //   • first-run  — the user has never logged. One job: reach the first log fast.
 //   • daily      — a returning user with an empty day. No guilt; a gentle plan
 //                  invite with one clear way to start.
-// The companion presence lives in TodayHud above; this body stays calm + actionable.
+// The companion presence lives in the header honey ring above; this body stays calm + actionable.
 // All copy is verbatim from the spec copy deck (no em dashes, no guilt language).
 // ──────────────────────────────────────────────────────────────────────────────
 

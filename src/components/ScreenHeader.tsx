@@ -15,14 +15,21 @@ export function ScreenHeader({
   title,
   subtitle,
   right,
+  eyebrow,
 }: {
   title: string;
   subtitle?: string;
   right?: ReactNode;
+  eyebrow?: string;
 }) {
   const t = useTheme();
   return (
     <View style={{ paddingTop: t.space[1], paddingBottom: t.space[3], gap: 2 }}>
+      {eyebrow ? (
+        <AppText variant="caption" style={{ color: t.colors.inkSoft }}>
+          {eyebrow}
+        </AppText>
+      ) : null}
       <View
         style={{
           flexDirection: 'row',

@@ -26,7 +26,7 @@ describe('domain types', () => {
     const event: TaskEvent = {
       id: 'a', category: 'cleaning', label: null, estimateMin: 15, actualMin: 30,
       status: 'completed', source: 'timed', startedAt: 1, endedAt: 2, createdAt: 3,
-      suggestedHonestMin: null, reclaimDividendMin: 0,
+      suggestedHonestMin: null, reclaimDividendMin: 0, startLocalMinute: null,
     };
 
     expect([tier, speed, source, status]).toHaveLength(4);
