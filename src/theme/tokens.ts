@@ -81,7 +81,7 @@ export const tokens = {
   fontSize: {
     '2xs': 8, xs: 10, sm: 12, base: 14, md: 16, lg: 20, xl: 24, '2xl': 30, '3xl': 38,
     // finer steps the role scale needs
-    micro: 10, caption: 12, bodySm: 14, bodyLg: 16, subtitle: 22, title: 26, honestLg: 36, honest: 40, timerClock: 64, timer: 78,
+    micro: 10, caption: 12, bodySm: 14, bodyLg: 16, titleSm: 18, subtitle: 22, title: 26, honestLg: 36, honest: 40, honestHero: 46, timerClock: 64, timer: 78,
   },
   fontWeight: { regular: '400', medium: '500', semibold: '600', bold: '700' },
   fontFamily: { ui: 'System', mono: 'Menlo' },
@@ -239,6 +239,7 @@ export const tokens = {
 
       // ── utility ──
       scrim: 'rgba(20,21,29,0.45)', // modal/sheet overlay
+      scrimStrong: 'rgba(16,17,24,0.58)', // darken layer over a BlurView backdrop (focal reward modal)
       shadowSoft: 'rgba(32,35,58,0.12)',
       // Inverse pill (toasts) — always the OPPOSITE of the mode so it pops:
       // light mode → dark pill + warm-white text.
@@ -318,6 +319,7 @@ export const tokens = {
 
       // ── utility ──
       scrim: 'rgba(10,11,16,0.60)',
+      scrimStrong: 'rgba(12,13,20,0.78)', // cool darken layer over a BlurView backdrop — heavy enough to mute warm content bleed (focal reward modal)
       shadowSoft: 'rgba(0,0,0,0.45)',
       // dark mode → light pill + dark text, so the toast reads against the deep bg.
       inverseSurface: '#ECE8DE',

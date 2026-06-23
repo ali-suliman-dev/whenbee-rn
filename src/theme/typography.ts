@@ -15,6 +15,7 @@ const fs = tokens.fontSize;
 export const type = {
   display: { fontFamily: 'Jakarta-ExtraBold', fontSize: fs['2xl'], lineHeight: 33, letterSpacing: -0.75 },
   title: { fontFamily: 'Jakarta-ExtraBold', fontSize: fs.title, lineHeight: 31, letterSpacing: -0.6 },
+  titleSm: { fontFamily: 'Jakarta-ExtraBold', fontSize: fs.titleSm, lineHeight: 23, letterSpacing: -0.3 },
   subtitle: { fontFamily: 'Jakarta-Bold', fontSize: fs.subtitle, lineHeight: 27, letterSpacing: -0.2 },
   heading: { fontFamily: 'Jakarta-Bold', fontSize: fs.base, lineHeight: 22 },
   bodyLg: { fontFamily: 'Jakarta-Bold', fontSize: fs.bodyLg, lineHeight: 22 },
@@ -29,6 +30,7 @@ export const type = {
   timerClock: { fontFamily: 'Inter-SemiBold', fontSize: fs.timerClock, lineHeight: 70, letterSpacing: -1.5, fontVariant: ['tabular-nums'] as const },
   honestNumberLg: { fontFamily: 'Inter-Bold', fontSize: fs.honestLg, lineHeight: 38, letterSpacing: -0.9, fontVariant: ['tabular-nums'] as const },
   honestNumberXl: { fontFamily: 'Inter-Bold', fontSize: fs.honest, lineHeight: 42, letterSpacing: -1.0, fontVariant: ['tabular-nums'] as const },
+  honestNumberHero: { fontFamily: 'Inter-Bold', fontSize: fs.honestHero, lineHeight: 48, letterSpacing: -1.2, fontVariant: ['tabular-nums'] as const },
   bigNumber: { fontFamily: 'Inter-Bold', fontSize: fs.lg, lineHeight: 24, letterSpacing: -0.4, fontVariant: ['tabular-nums'] as const },
   honestNumberMd: { fontFamily: 'Inter-Bold', fontSize: fs.xl, lineHeight: 28, letterSpacing: -0.5, fontVariant: ['tabular-nums'] as const },
   multiplier: { fontFamily: 'Inter-Bold', fontSize: fs.subtitle, lineHeight: 24, letterSpacing: -0.4, fontVariant: ['tabular-nums'] as const },

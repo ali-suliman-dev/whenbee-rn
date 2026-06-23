@@ -197,6 +197,8 @@ export default function CategoryDetailScreen() {
         {justGraduated && detail ? (
           <GraduationMoment
             honestMinutes={detail.summary.honestMinutes}
+            multiplier={detail.summary.multiplier}
+            sampleSize={detail.summary.sampleSize}
             onDone={clearJustGraduated}
           />
         ) : null}
