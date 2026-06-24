@@ -1,8 +1,9 @@
 import { useState, useCallback } from 'react';
-import { View, Text, Pressable } from 'react-native';
+import { View, Pressable } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import { useTheme } from '@/src/theme/useTheme';
+import { AppText } from '@/src/components/AppText';
 import { useRoutinesStore } from '@/src/stores/routinesStore';
 import type { ScheduledRoutineBlock as ScheduledRoutineBlockModel } from './useScheduledRoutines';
 
@@ -65,7 +66,7 @@ export function ScheduledRoutineBlock({ block }: Props) {
   const nameStyle = {
     flex: 1,
     fontSize: t.fontSize.base,
-    fontWeight: t.fontWeight.semibold,
+    fontWeight: t.fontWeight.semibold as '600',
     color: t.colors.ink,
     fontFamily: t.fontFamily.ui,
   };
@@ -98,7 +99,7 @@ export function ScheduledRoutineBlock({ block }: Props) {
     fontSize: t.fontSize.sm,
     color: t.colors.inkSoft,
     fontFamily: t.fontFamily.ui,
-    flex: 1,
+    flex: 1 as const,
   };
 
   const stepMinStyle = {
@@ -120,15 +121,15 @@ export function ScheduledRoutineBlock({ block }: Props) {
       >
         <View style={headerStyle}>
           {/* Routine name */}
-          <Text style={nameStyle} numberOfLines={1}>
+          <AppText style={nameStyle} numberOfLines={1}>
             {block.name}
-          </Text>
+          </AppText>
 
           {/* Total + start-by metadata */}
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: t.space[2] }}>
-            <Text style={metaStyle}>{block.honestTotalMin}m</Text>
+            <AppText style={metaStyle}>{block.honestTotalMin}m</AppText>
             {block.startByMin !== null ? (
-              <Text style={metaStyle}>· start by {minuteOfDayToClock(block.startByMin)}</Text>
+              <AppText style={metaStyle}>· start by {minuteOfDayToClock(block.startByMin)}</AppText>
             ) : null}
           </View>
 
@@ -141,6 +142,7 @@ export function ScheduledRoutineBlock({ block }: Props) {
             onPress={handleRun}
             accessibilityRole="button"
             accessibilityLabel={`Run ${block.name}`}
+            accessibilityHint="Starts the guided timer sequence"
             hitSlop={8}
           >
             <View
@@ -164,10 +166,10 @@ export function ScheduledRoutineBlock({ block }: Props) {
         <View style={stepsContainerStyle}>
           {block.steps.map((step) => (
             <View key={step.stepId} style={stepRowStyle}>
-              <Text style={stepLabelStyle} numberOfLines={1}>
+              <AppText style={stepLabelStyle} numberOfLines={1}>
                 {step.label}
-              </Text>
-              <Text style={stepMinStyle}>{step.honestMin}m</Text>
+              </AppText>
+              <AppText style={stepMinStyle}>{step.honestMin}m</AppText>
             </View>
           ))}
         </View>

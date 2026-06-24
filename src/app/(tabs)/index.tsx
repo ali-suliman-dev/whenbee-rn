@@ -549,9 +549,9 @@ export default function Today() {
                   {/* Scheduled routine blocks — one per routine scheduled for
                       this weekday. Derived read: no task rows written to the DB.
                       Each block is collapsible and has a "Run" affordance. Only
-                      shown on today/future days (isPastDay is already guarded
-                      by the outer !isPastDay condition). */}
-                  {scheduledRoutineBlocks.length > 0 ? (
+                      shown for Pro users on today/future days (isPastDay is
+                      already guarded by the outer !isPastDay condition). */}
+                  {isPro && scheduledRoutineBlocks.length > 0 ? (
                     <View style={{ gap: t.space[2], marginBottom: t.space[2] }}>
                       <Text style={sectionLabel}>{"TODAY'S ROUTINES"}</Text>
                       {scheduledRoutineBlocks.map((block) => (

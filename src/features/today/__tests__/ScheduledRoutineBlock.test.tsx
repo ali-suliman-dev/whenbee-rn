@@ -92,8 +92,9 @@ describe('ScheduledRoutineBlock', () => {
 
   it('calls startRun when Run is pressed', () => {
     const mockStartRun = jest.fn().mockResolvedValue(undefined);
-    mockUseRoutinesStore.mockImplementation(
-      (sel: (s: { startRun: jest.Mock }) => unknown) => sel({ startRun: mockStartRun }),
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    mockUseRoutinesStore.mockImplementation((sel: (s: any) => unknown) =>
+      sel({ startRun: mockStartRun }),
     );
 
     render(<ScheduledRoutineBlock block={BLOCK} />);

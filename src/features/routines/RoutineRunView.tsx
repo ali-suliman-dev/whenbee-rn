@@ -157,7 +157,14 @@ export function RoutineRunView() {
             {doneCount} of {total} done
           </AppText>
         </View>
-        <AppButton label="Stop" variant="ghost" size="xs" onPress={() => { void abandonRun(); }} />
+        <AppButton
+          label="Stop"
+          variant="ghost"
+          size="xs"
+          onPress={() => { void abandonRun(); }}
+          accessibilityLabel="Stop routine"
+          accessibilityHint="Ends the run and discards progress for this session"
+        />
       </View>
 
       {allResolved ? (
@@ -275,10 +282,34 @@ function StepCard({
       </AppText>
       {isNow ? (
         <>
-          <AppText style={timerStyle}>{formatRemaining(remainingSec)}</AppText>
+          <AppText
+            style={timerStyle}
+            accessibilityLabel={
+              remainingSec >= 0
+                ? `${Math.floor(remainingSec / 60)} minutes ${remainingSec % 60} seconds remaining`
+                : `${Math.floor(-remainingSec / 60)} minutes ${(-remainingSec) % 60} seconds over`
+            }
+            accessibilityLiveRegion="polite"
+          >
+            {formatRemaining(remainingSec)}
+          </AppText>
           <View style={{ flexDirection: 'row', gap: t.space[2] }}>
-            <AppButton label="Done" variant="indigo" size="sm" onPress={onDone} />
-            <AppButton label="Skip" variant="ghost" size="sm" onPress={onSkip} />
+            <AppButton
+              label="Done"
+              variant="indigo"
+              size="sm"
+              onPress={onDone}
+              accessibilityLabel="Mark step done"
+              accessibilityHint="Records your time and moves to the next step"
+            />
+            <AppButton
+              label="Skip"
+              variant="ghost"
+              size="sm"
+              onPress={onSkip}
+              accessibilityLabel="Skip this step"
+              accessibilityHint="Skips to the next step without recording time"
+            />
           </View>
         </>
       ) : null}
@@ -309,12 +340,12 @@ function RunRecap({
   };
   const body: TextStyle = { ...(type.body as unknown as TextStyle), color: t.colors.ink };
 
-  // Ran long → the "Good to know" variant; on-time/short → "settling". No guilt
-  // either way; amber accent only, never red. (Spec §10.)
+  // Ran long → calibration learn copy; on-time/short → reinforcing copy. No guilt
+  // either way — amber accent only, never red. (Spec §10.)
   const ranLong = actualMin > honestMin;
   const text = ranLong
-    ? `That run took ${actualMin} min. Good to know — I'll fold that into your ${name} so the next "start by" is more honest.`
-    : `That run took ${actualMin} min. Your ${name} is settling — next time I'll expect about ${honestMin}.`;
+    ? `${name} took ${actualMin} min this time. I'll update the start-by so it's more accurate next week.`
+    : `${name} done in ${actualMin} min — right on track. I'll keep that in mind for next time.`;
 
   return (
     <View style={card}>

@@ -167,7 +167,14 @@ export function RoutineBuildView({ onDone }: { onDone: () => void }) {
     >
       <View style={headerRow}>
         <AppText style={title}>{draft.editingId ? 'Edit sequence' : 'New sequence'}</AppText>
-        <AppButton label="Save" variant="indigo" size="sm" disabled={!canSave} onPress={() => { void saveDraft().then(onDone); }} />
+        <AppButton
+          label="Save"
+          variant="indigo"
+          size="sm"
+          disabled={!canSave}
+          onPress={() => { void saveDraft().then(onDone); }}
+          accessibilityLabel={canSave ? 'Save routine' : 'Add a name and at least one step to save'}
+        />
       </View>
 
       <TaskTitleField
@@ -247,9 +254,14 @@ export function RoutineBuildView({ onDone }: { onDone: () => void }) {
       {/* Be done by (optional) */}
       <View style={{ gap: t.space[2] }}>
         <View style={headerRow}>
-          <AppText style={fieldLabel}>BE DONE BY</AppText>
+          <AppText style={fieldLabel} accessibilityRole="header">FINISH BY</AppText>
           {draft.doneByMinuteOfDay !== null ? (
-            <Pressable onPress={() => setDoneBy(null)} hitSlop={t.space[2]} accessibilityRole="button" accessibilityLabel="Clear be done by">
+            <Pressable
+              onPress={() => setDoneBy(null)}
+              hitSlop={t.space[2]}
+              accessibilityRole="button"
+              accessibilityLabel="Clear finish time"
+            >
               <AppText style={caption}>Clear</AppText>
             </Pressable>
           ) : null}
