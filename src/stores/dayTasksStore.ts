@@ -7,6 +7,7 @@
 import { create, type StoreApi, type UseBoundStore } from 'zustand';
 import { getDatabase } from '@/src/db/client';
 import { makeTasksRepo, type TasksRepo } from '@/src/db/repositories/tasksRepo';
+import { migrateLegacyTasks, type LegacyTodayTask } from '@/src/db/migrateLegacyTasks';
 import { tasksForSelectedDay, type DayTask } from '@/src/engine/daySelectors';
 import { toLocalDayKey } from '@/src/lib/day';
 import { kv } from '@/src/lib/kv';
@@ -72,7 +73,9 @@ interface LegacyKvState {
   state?: { tasks?: LegacyTodayTaskRaw[] };
 }
 
-/** Union the three query buckets into a deduplicated DayTask list. */
+/** Union the three query buckets into a deduplicated DayTask list.
+ *  C1: queued tasks are filtered by plannedDate rules; done tasks are already
+ *  scoped to the day by completedAt window and included as-is. */
 async function loadDay(
   repo: TasksRepo,
   selectedDate: string,
@@ -84,9 +87,16 @@ async function loadDay(
     isToday ? repo.listCarryover(today) : Promise.resolve([]),
     repo.listDoneForDay(selectedDate),
   ]);
-  const seen = new Map<string, (typeof byDate)[number]>();
-  for (const t of [...byDate, ...carry, ...doneForDay]) seen.set(t.id, t);
-  return tasksForSelectedDay({ tasks: [...seen.values()], selectedDate, today });
+  // Deduplicate the queued set (byDate + carry may overlap). Done is kept separate.
+  const seenQueued = new Map<string, (typeof byDate)[number]>();
+  for (const t of [...byDate, ...carry]) seenQueued.set(t.id, t);
+
+  return tasksForSelectedDay({
+    queued: [...seenQueued.values()],
+    done: doneForDay,
+    selectedDate,
+    today,
+  });
 }
 
 // ---------------------------------------------------------------------------
@@ -107,31 +117,27 @@ export function makeDayTasksStore(deps: Deps): UseBoundStore<StoreApi<DayTasksSt
       const today = toLocalDayKey(now);
       set({ loading: true, selectedDate: today });
 
-      // One-time legacy kv migration
-      if (kvGet(MIGRATED_FLAG) !== '1') {
-        const raw = kvGet(LEGACY_KV_KEY);
-        const parsed = raw ? (JSON.parse(raw) as LegacyKvState) : null;
-        const legacy: LegacyTodayTaskRaw[] = parsed?.state?.tasks ?? [];
-        let i = 0;
-        for (const t of legacy) {
-          await repo.add({
-            id: t.id,
-            label: t.label,
-            category: t.category,
-            guessMin: t.guessMin,
-            plannedDate: today,
-            status: t.status,
-            orderIndex: i++,
-            doneByMin: null,
-            createdAt: t.createdAt,
-            completedAt: t.completedAt ?? null,
-            actualMin: t.actualMin ?? null,
-            fromRoutineId: null,
-            calendarEventId: null,
-          });
-        }
-        kvSet(MIGRATED_FLAG, '1');
-      }
+      // One-time legacy kv migration (I1: use the tested migrateLegacyTasks module).
+      const raw = kvGet(LEGACY_KV_KEY);
+      const parsed = raw ? (JSON.parse(raw) as LegacyKvState) : null;
+      const rawLegacy: LegacyTodayTaskRaw[] = parsed?.state?.tasks ?? [];
+      const legacy: LegacyTodayTask[] = rawLegacy.map((t) => ({
+        id: t.id,
+        label: t.label,
+        category: t.category,
+        guessMin: t.guessMin,
+        createdAt: t.createdAt,
+        status: t.status,
+        completedAt: t.completedAt ?? null,
+        actualMin: t.actualMin ?? null,
+      }));
+      await migrateLegacyTasks({
+        add: (t) => repo.add(t),
+        legacy,
+        nowMs: now,
+        alreadyMigrated: kvGet(MIGRATED_FLAG) === '1',
+      });
+      kvSet(MIGRATED_FLAG, '1');
 
       set({ dayTasks: await loadDay(repo, today, today), loading: false });
     },
