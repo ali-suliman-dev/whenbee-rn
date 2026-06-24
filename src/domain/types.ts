@@ -162,8 +162,8 @@ export interface PlanTaskRunState {
   suggestedHonestMin: number;
 }
 
-/** Discriminates between a scheduled task block and a between-task breather gap. */
-export type PlanTimelineKind = 'task' | 'breather';
+/** Discriminates between a scheduled task block, a between-task breather gap, or a fixed calendar event anchor. */
+export type PlanTimelineKind = 'task' | 'breather' | 'event';
 
 /** One ordered task fed to the backward pass. `durationMin` is the honest block. */
 export interface PlanTaskInput {
