@@ -41,6 +41,7 @@ import { CapacityChip } from '@/src/features/today/CapacityChip';
 import { CalendarOverlaySection } from '@/src/features/today/CalendarOverlaySection';
 import { useDayCapacity } from '@/src/features/today/useDayCapacity';
 import { DayTimeline } from '@/src/features/today/DayTimeline';
+import { useEntitlement } from '@/src/features/paywall/useEntitlement';
 
 // Date label for a day-key, e.g. "Fri · Jun 12" — the day + date, no clock.
 function dateLabel(key: string): string {
@@ -65,9 +66,12 @@ function weekdayName(key: string): string {
 interface ViewToggleProps {
   viewMode: 'list' | 'timeline';
   onSelect: (m: 'list' | 'timeline') => void;
+  /** Called instead of onSelect('timeline') when the user is on the free tier. */
+  onTimelineGated?: () => void;
+  isPro: boolean;
 }
 
-function ViewToggle({ viewMode, onSelect }: ViewToggleProps) {
+function ViewToggle({ viewMode, onSelect, onTimelineGated, isPro }: ViewToggleProps) {
   const t = useTheme();
 
   const trackStyle = {
@@ -112,9 +116,15 @@ function ViewToggle({ viewMode, onSelect }: ViewToggleProps) {
       </Pressable>
       <Pressable
         testID="view-toggle-timeline"
-        onPress={() => onSelect('timeline')}
+        onPress={() => {
+          if (!isPro) {
+            onTimelineGated?.();
+          } else {
+            onSelect('timeline');
+          }
+        }}
         accessibilityRole="tab"
-        accessibilityLabel="Timeline view"
+        accessibilityLabel={isPro ? 'Timeline view' : 'Timeline view — Pro feature'}
         accessibilityState={{ selected: viewMode === 'timeline' }}
         hitSlop={4}
       >
@@ -143,6 +153,7 @@ export default function Today() {
   const viewMode = useDayTasksStore((s) => s.viewMode);
   const setViewMode = useDayTasksStore((s) => s.setViewMode);
   const markPlanned = useDayTasksStore((s) => s.markPlanned);
+  const isPro = useEntitlement((s) => s.isPro);
   const today = toLocalDayKey(Date.now());
   const isPastDay = compareDayKeys(selectedDate, today) < 0;
   const headerTitle = selectedDate === today ? 'Today' : weekdayName(selectedDate);
@@ -189,16 +200,20 @@ export default function Today() {
     kv.set('today.seenCoachMarkV1', '1');
   }, []);
 
-  // "Plan my day" — stamps planComputedAt (fire-and-forget) + flips to Timeline.
-  // Optimistic: flip the view immediately so the transition feels instant.
-  // Pro gating (C1) is wired in the next task; here we wire the happy path only.
+  // "Plan my day" — Pro feature. Free users are routed to the paywall.
+  // Pro users: stamps planComputedAt (fire-and-forget) then cross-fades to Timeline.
   const handlePlanMyDay = useCallback(() => {
     haptics.light();
+    if (!isPro) {
+      router.push({ pathname: '/(modals)/paywall', params: { trigger: 'plan_my_day' } });
+      return;
+    }
     void markPlanned();
     setViewMode('timeline');
-  }, [markPlanned, setViewMode]);
+  }, [isPro, markPlanned, setViewMode]);
 
   // Toggle between list and timeline views.
+  // Free users tapping Timeline hit the paywall gate via onTimelineGated.
   const handleViewSelect = useCallback(
     (m: 'list' | 'timeline') => {
       haptics.light();
@@ -206,6 +221,12 @@ export default function Today() {
     },
     [setViewMode],
   );
+
+  // Called from ViewToggle when a free user taps the Timeline pill.
+  const handleTimelineGated = useCallback(() => {
+    haptics.light();
+    router.push({ pathname: '/(modals)/paywall', params: { trigger: 'plan_my_day' } });
+  }, []);
 
   // The done-list coach-mark auto-dismiss now lives in DoneSection (it only runs
   // once the list is expanded, so a collapsed list never burns the one-shot).
@@ -467,10 +488,15 @@ export default function Today() {
           {!isPastDay ? (
             <>
               {/* Segmented control: List ⇄ Timeline */}
-              <ViewToggle viewMode={viewMode} onSelect={handleViewSelect} />
+              <ViewToggle
+                viewMode={viewMode}
+                onSelect={handleViewSelect}
+                onTimelineGated={handleTimelineGated}
+                isPro={isPro}
+              />
 
-              {viewMode === 'timeline' ? (
-                /* Timeline lens — DayTimeline is self-contained (reads useDayPlan). */
+              {viewMode === 'timeline' && isPro ? (
+                /* Timeline lens — Pro only; DayTimeline is self-contained (reads useDayPlan). */
                 <Animated.View entering={FadeIn.duration(t.motion.base)}>
                   <DayTimeline />
                 </Animated.View>
@@ -484,7 +510,7 @@ export default function Today() {
                     testID="plan-my-day-btn"
                     onPress={handlePlanMyDay}
                     accessibilityRole="button"
-                    accessibilityLabel="Plan my day"
+                    accessibilityLabel={isPro ? 'Plan my day' : 'Plan my day — Pro feature'}
                     hitSlop={8}
                     style={{ alignSelf: 'flex-start', marginBottom: t.space[3] }}
                   >

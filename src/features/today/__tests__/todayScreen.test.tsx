@@ -1,5 +1,6 @@
 import { render, screen, fireEvent } from '@testing-library/react-native';
 import { ActionSheetIOS } from 'react-native';
+import { router } from 'expo-router';
 import Today from '@/src/app/(tabs)/index';
 import { useCalibrationStore, type ReclaimSummary } from '@/src/stores/calibrationStore';
 import { useDayTasksStore } from '@/src/stores/dayTasksStore';
@@ -292,14 +293,16 @@ describe('List ⇄ Timeline toggle (B3)', () => {
     expect(screen.queryByTestId('view-toggle-timeline')).toBeNull();
   });
 
-  it('tapping "Plan my day" calls markPlanned and switches viewMode to timeline', () => {
+  it('Pro: tapping "Plan my day" calls markPlanned and switches viewMode to timeline', () => {
+    useEntitlement.setState({ isPro: true });
     seedTodayWithTask();
     const { getByTestId } = render(<Today />);
     fireEvent.press(getByTestId('plan-my-day-btn'));
     expect(useDayTasksStore.getState().viewMode).toBe('timeline');
   });
 
-  it('renders DayTimeline when viewMode is timeline', () => {
+  it('Pro: renders DayTimeline when viewMode is timeline', () => {
+    useEntitlement.setState({ isPro: true });
     seedTodayWithTask();
     useDayTasksStore.setState({ viewMode: 'timeline' });
     render(<Today />);
@@ -317,7 +320,8 @@ describe('List ⇄ Timeline toggle (B3)', () => {
     expect(screen.getByText('UP NEXT')).toBeOnTheScreen();
   });
 
-  it('tapping Timeline toggle switches viewMode to timeline', () => {
+  it('Pro: tapping Timeline toggle switches viewMode to timeline', () => {
+    useEntitlement.setState({ isPro: true });
     seedTodayWithTask();
     const { getByTestId } = render(<Today />);
     fireEvent.press(getByTestId('view-toggle-timeline'));
@@ -325,10 +329,105 @@ describe('List ⇄ Timeline toggle (B3)', () => {
   });
 
   it('tapping List toggle from timeline switches back to list', () => {
+    useEntitlement.setState({ isPro: true });
     seedTodayWithTask();
     useDayTasksStore.setState({ viewMode: 'timeline' });
     const { getByTestId } = render(<Today />);
     fireEvent.press(getByTestId('view-toggle-list'));
     expect(useDayTasksStore.getState().viewMode).toBe('list');
+  });
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+// C1 — Pro gate: Plan-my-day + Timeline are Pro
+// ─────────────────────────────────────────────────────────────────────────────
+
+describe('C1 — Pro gate: Plan-my-day + Timeline', () => {
+  function seedTodayWithTask() {
+    const task = makeQueued({
+      id: 'c1',
+      label: 'Deep work block',
+      category: 'work',
+      guessMin: 60,
+    });
+    useDayTasksStore.setState({
+      dayTasks: [task],
+      shelfTasks: [],
+      selectedDate: new Date().toISOString().slice(0, 10),
+      viewMode: 'list',
+      selectFocusTask: () => task,
+      loadShelf: async () => {},
+      setViewMode: jest.fn((m: 'list' | 'timeline') =>
+        useDayTasksStore.setState({ viewMode: m }),
+      ),
+      markPlanned: jest.fn(async () => {}),
+    });
+  }
+
+  beforeEach(() => {
+    jest.mocked(router.push).mockClear();
+  });
+
+  // ── Free user ──────────────────────────────────────────────────────────────
+
+  it('free: tapping "Plan my day" routes to paywall with trigger=plan_my_day', () => {
+    useEntitlement.setState({ isPro: false });
+    seedTodayWithTask();
+    const { getByTestId } = render(<Today />);
+    fireEvent.press(getByTestId('plan-my-day-btn'));
+    expect(router.push).toHaveBeenCalledWith({
+      pathname: '/(modals)/paywall',
+      params: { trigger: 'plan_my_day' },
+    });
+  });
+
+  it('free: tapping "Plan my day" does NOT switch viewMode to timeline', () => {
+    useEntitlement.setState({ isPro: false });
+    seedTodayWithTask();
+    const { getByTestId } = render(<Today />);
+    fireEvent.press(getByTestId('plan-my-day-btn'));
+    expect(useDayTasksStore.getState().viewMode).toBe('list');
+  });
+
+  it('free: DayTimeline is NOT rendered even when viewMode is timeline', () => {
+    useEntitlement.setState({ isPro: false });
+    seedTodayWithTask();
+    // Manually put the store into timeline mode — simulates a stale session state.
+    useDayTasksStore.setState({ viewMode: 'timeline' });
+    render(<Today />);
+    expect(screen.queryByTestId('day-timeline-root')).toBeNull();
+  });
+
+  it('free: tapping Timeline toggle routes to paywall, does not flip viewMode', () => {
+    useEntitlement.setState({ isPro: false });
+    seedTodayWithTask();
+    const { getByTestId } = render(<Today />);
+    fireEvent.press(getByTestId('view-toggle-timeline'));
+    expect(router.push).toHaveBeenCalledWith({
+      pathname: '/(modals)/paywall',
+      params: { trigger: 'plan_my_day' },
+    });
+    expect(useDayTasksStore.getState().viewMode).toBe('list');
+  });
+
+  // ── Pro user ───────────────────────────────────────────────────────────────
+
+  it('Pro: tapping "Plan my day" flips to Timeline, does NOT route to paywall', () => {
+    useEntitlement.setState({ isPro: true });
+    seedTodayWithTask();
+    const { getByTestId } = render(<Today />);
+    fireEvent.press(getByTestId('plan-my-day-btn'));
+    expect(router.push).not.toHaveBeenCalledWith(
+      expect.objectContaining({ pathname: '/(modals)/paywall' }),
+    );
+    expect(useDayTasksStore.getState().viewMode).toBe('timeline');
+  });
+
+  it('Pro: DayTimeline renders when viewMode is timeline', () => {
+    useEntitlement.setState({ isPro: true });
+    seedTodayWithTask();
+    useDayTasksStore.setState({ viewMode: 'timeline' });
+    render(<Today />);
+    expect(screen.getByTestId('day-timeline-root')).toBeOnTheScreen();
   });
 });
