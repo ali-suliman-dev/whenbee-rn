@@ -23,6 +23,8 @@ import { useAccountActions, type RestoreOutcome } from '@/src/features/paywall/u
 import { useReminderSetting } from '@/src/features/settings/useReminderSetting';
 import { useReviewNotifySetting } from '@/src/features/settings/useReviewNotifySetting';
 import { useDayEndSetting } from '@/src/features/settings/useDayEndSetting';
+import { useQuietHours } from '@/src/features/settings/useQuietHours';
+import { useNotificationSound } from '@/src/features/settings/useNotificationSound';
 import { useAccountReset } from '@/src/features/settings/useAccountReset';
 import { usePresenceSection } from '@/src/features/settings/usePresenceSection';
 import { ProGate } from '@/src/features/paywall/ProGate';
@@ -32,6 +34,26 @@ import { GuardrailLockedRow } from '@/src/features/settings/GuardrailLockedRow';
 import { seedDemoData } from '@/src/features/dev/seedDemoData';
 
 const modes: ColorModePref[] = ['system', 'light', 'dark'];
+
+/** Format minutes-after-midnight as "HH:MM" (24-hour, zero-padded). */
+function formatMinutesOfDay(min: number): string {
+  const h = Math.floor(min / 60) % 24;
+  const m = min % 60;
+  return `${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}`;
+}
+
+const SOUND_LABELS: Record<'honey' | 'default' | 'none', string> = {
+  honey: 'Honey',
+  default: 'Default',
+  none: 'None',
+};
+
+const SOUND_ORDER: ('honey' | 'default' | 'none')[] = ['honey', 'default', 'none'];
+
+function nextSoundValue(current: 'honey' | 'default' | 'none'): 'honey' | 'default' | 'none' {
+  const idx = SOUND_ORDER.indexOf(current);
+  return SOUND_ORDER[(idx + 1) % SOUND_ORDER.length] ?? 'default';
+}
 
 const RESTORE_MESSAGE: Record<RestoreOutcome, string> = {
   success: 'Pro restored.',
@@ -137,6 +159,12 @@ export default function Settings() {
   const { restoring, manageSubscription, restorePurchases } = useAccountActions();
   const { enabled: remindersEnabled, toggle: toggleReminders } = useReminderSetting();
   const { enabled: reviewNotifyEnabled, toggle: toggleReviewNotify } = useReviewNotifySetting();
+  const honestReachedEnabled = useSettingsStore((s) => s.honestReachedEnabled);
+  const setHonestReachedEnabled = useSettingsStore((s) => s.setHonestReachedEnabled);
+  const startByEnabled = useSettingsStore((s) => s.startByEnabled);
+  const setStartByEnabled = useSettingsStore((s) => s.setStartByEnabled);
+  const { quietHours, update: updateQuietHours } = useQuietHours();
+  const { value: notificationSound, set: setNotificationSound } = useNotificationSound();
   const {
     dayEndMin,
     label: dayEndLabel,
@@ -316,10 +344,12 @@ export default function Settings() {
 
         <View style={{ gap: t.space[3] }}>
           <AppText variant="label">Notifications</AppText>
+
+          {/* Master reminders toggle */}
           <SettingRow
             icon="notifications-outline"
-            title="Time-up reminders"
-            note="One nudge when your honest estimate is up."
+            title="Reminders"
+            note="Pings for honest finish, start-by nudges, and more."
             trailing={
               <Switch
                 value={remindersEnabled}
@@ -329,24 +359,93 @@ export default function Settings() {
               />
             }
           />
-          {isPro ? (
-            <SettingRow
-              icon="leaf-outline"
-              title="Monday review"
-              note="A gentle nudge when your honest week is ready. Off by default."
-              trailing={
-                <Switch
-                  value={reviewNotifyEnabled}
-                  onValueChange={handleToggleReviewNotify}
-                  trackColor={{ true: t.colors.primary, false: t.colors.hairline }}
-                  accessibilityLabel="Monday review"
+
+          {/* Per-type sub-rows — only visible when reminders are on */}
+          {remindersEnabled ? (
+            <>
+              <SettingRow
+                icon="checkmark-circle-outline"
+                title="Honest finish reached"
+                note="A ping when your honest estimate is up."
+                trailing={
+                  <Switch
+                    value={honestReachedEnabled}
+                    onValueChange={setHonestReachedEnabled}
+                    trackColor={{ true: t.colors.primary, false: t.colors.hairline }}
+                    accessibilityLabel="Honest finish reached"
+                  />
+                }
+              />
+              <SettingRow
+                icon="arrow-forward-circle-outline"
+                title="Start-by nudge"
+                note="A reminder when it's time to begin your next task."
+                trailing={
+                  <Switch
+                    value={startByEnabled}
+                    onValueChange={setStartByEnabled}
+                    trackColor={{ true: t.colors.primary, false: t.colors.hairline }}
+                    accessibilityLabel="Start-by nudge"
+                  />
+                }
+              />
+              {isPro ? (
+                <SettingRow
+                  icon="leaf-outline"
+                  title="Monday review"
+                  note="A gentle nudge when your honest week is ready. Off by default."
+                  trailing={
+                    <Switch
+                      value={reviewNotifyEnabled}
+                      onValueChange={handleToggleReviewNotify}
+                      trackColor={{ true: t.colors.primary, false: t.colors.hairline }}
+                      accessibilityLabel="Monday review"
+                    />
+                  }
                 />
-              }
-            />
+              ) : null}
+              <ProGate fallback={<GuardrailLockedRow />}>
+                <GuardrailSettingRow />
+              </ProGate>
+
+              {/* Quiet hours row */}
+              <SettingRow
+                icon="moon-outline"
+                title="Quiet hours"
+                note={
+                  quietHours.enabled
+                    ? `${formatMinutesOfDay(quietHours.startMin)} – ${formatMinutesOfDay(quietHours.endMin)}`
+                    : 'Off'
+                }
+                trailing={
+                  <Switch
+                    value={quietHours.enabled}
+                    onValueChange={(v) => updateQuietHours({ enabled: v })}
+                    trackColor={{ true: t.colors.primary, false: t.colors.hairline }}
+                    accessibilityLabel="Quiet hours"
+                  />
+                }
+              />
+
+              {/* Sound selector — cycles Honey / Default / None */}
+              <SettingRow
+                icon="musical-note-outline"
+                title="Sound"
+                note={SOUND_LABELS[notificationSound]}
+                onPress={() => setNotificationSound(nextSoundValue(notificationSound))}
+                accessibilityLabel="Notification sound"
+                trailing={
+                  <Ionicons
+                    name="chevron-expand-outline"
+                    size={t.iconSize.sm}
+                    color={t.colors.inkSoft}
+                  />
+                }
+              />
+            </>
           ) : null}
-          <ProGate fallback={<GuardrailLockedRow />}>
-            <GuardrailSettingRow />
-          </ProGate>
+
+          {/* Daily check-in — not gated by remindersEnabled */}
           <SettingRow
             icon="sparkles-outline"
             title="Daily check-in"
