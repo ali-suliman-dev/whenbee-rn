@@ -1,6 +1,6 @@
 import '../global.css';
 import { useEffect } from 'react';
-import { Appearance } from 'react-native';
+import { AppState, Appearance } from 'react-native';
 import { Stack } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import { useFonts } from 'expo-font';
@@ -8,6 +8,7 @@ import { AppProviders } from '@/src/providers/AppProviders';
 import { useTheme } from '@/src/theme/useTheme';
 import { useSettingsStore } from '@/src/stores/settingsStore';
 import { useTimerStore } from '@/src/stores/timerStore';
+import { useDayTasksStore } from '@/src/stores/dayTasksStore';
 import { setClockHour12 } from '@/src/lib/time';
 import { prefers24Hour } from '@/src/lib/clockPrefs';
 
@@ -113,6 +114,17 @@ export default function RootLayout() {
     // Clean up any OS-owned Live Activity that survived a kill while no timer is
     // running (e.g. app was force-quit after the timer already ended). Fire-and-forget.
     store.reconcilePresenceOnBoot();
+  }, []);
+
+  // Boot the day-tasks store and refresh "today" when the app returns to the
+  // foreground (handles the midnight boundary: the selected day re-points to the
+  // new calendar date without user action).
+  useEffect(() => {
+    void useDayTasksStore.getState().init();
+    const sub = AppState.addEventListener('change', (s) => {
+      if (s === 'active') void useDayTasksStore.getState().goToToday();
+    });
+    return () => sub.remove();
   }, []);
 
   if (!fontsLoaded && !fontError) {

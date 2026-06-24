@@ -105,6 +105,16 @@ test('reload re-reads the current day', async () => {
   expect(store.getState().selectFocusTask()).toBeNull(); // the only task is done
 });
 
+test('goToToday after a day boundary moves the selected day to the new today', async () => {
+  const { store } = freshStore();
+  const day1 = new Date(2026, 5, 24, 23, 0, 0).getTime();
+  const day2 = new Date(2026, 5, 25, 8, 0, 0).getTime();
+  await store.getState().init(day1);
+  expect(store.getState().selectedDate).toBe('2026-06-24');
+  await store.getState().goToToday(day2);
+  expect(store.getState().selectedDate).toBe('2026-06-25');
+});
+
 // I1 regression: seeding a legacy kv blob triggers import via migrateLegacyTasks.
 test('I1 regression: legacy today-tasks kv blob seeds tasks onto today on init', async () => {
   const legacyBlob = JSON.stringify({
