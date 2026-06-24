@@ -166,7 +166,7 @@ export function RoutineBuildView({ onDone }: { onDone: () => void }) {
       keyboardShouldPersistTaps="handled"
     >
       <View style={headerRow}>
-        <AppText style={title}>{draft.editingId ? 'Edit routine' : 'New routine'}</AppText>
+        <AppText style={title}>{draft.editingId ? 'Edit sequence' : 'New sequence'}</AppText>
         <AppButton label="Save" variant="indigo" size="sm" disabled={!canSave} onPress={() => { void saveDraft().then(onDone); }} />
       </View>
 

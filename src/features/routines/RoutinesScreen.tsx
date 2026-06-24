@@ -8,6 +8,7 @@ import { RoutinesList } from './RoutinesList';
 import { RoutinesLocked } from './RoutinesLocked';
 import { RoutineBuildView } from './RoutineBuildView';
 import { RoutineRunView } from './RoutineRunView';
+import { EXAMPLE_ROUTINE } from './exampleRoutine';
 
 // ──────────────────────────────────────────────────────────────────────────────
 // RoutinesScreen — the Routines surface controller (Pro). Owns the internal view:
@@ -53,11 +54,22 @@ export function RoutinesScreen() {
     void editExisting(id);
     setView({ kind: 'build' });
   };
+  /** Load the pre-built example into the draft and open the build view.
+   *  Nothing is written to the DB — the user can run or tweak before saving. */
+  const tryExample = () => {
+    resetDraft();
+    const store = useRoutinesStore.getState();
+    store.setName(EXAMPLE_ROUTINE.name);
+    for (const step of EXAMPLE_ROUTINE.steps) {
+      store.addStep(step);
+    }
+    setView({ kind: 'build' });
+  };
 
   return (
     <Animated.View key="list" style={{ flex: 1 }} entering={ENTER}>
       <ProGate fallback={<RoutinesLocked />}>
-        <RoutinesList isPro={isPro} onNew={startNew} onOpen={openExisting} />
+        <RoutinesList isPro={isPro} onNew={startNew} onOpen={openExisting} onTryExample={tryExample} />
       </ProGate>
     </Animated.View>
   );
