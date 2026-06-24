@@ -5,22 +5,21 @@ import { useTheme } from '@/src/theme/useTheme';
 import { type } from '@/src/theme/typography';
 
 // ──────────────────────────────────────────────────────────────────────────────
-// PlanSegment — the Plan-tab header segmented control: Today · Routines.
+// PlanSegment — the Plan-tab header segmented control: Plan · Routines.
 //
-// `Today` is the existing free Start-By flow; `Routines` is the Pro surface. The
-// active segment carries the screen's one indigo (the gliding pill = primaryChip),
-// per the 60-30-10 rule. Both segments are always visible so the value is
-// discoverable; gating is the content's job, not this control's.
+// `Plan` (today) is the existing free Start-By flow; `Routines` is the Pro
+// surface. The active segment carries the screen's one indigo (the gliding
+// pill = primaryChip), per the 60-30-10 rule. Both segments are always visible
+// so the value is discoverable; gating is the content's job, not this control's.
 //
 // Mirrors AdaptSegment's slide physics (strong ease-out, no spring bounce). The
 // pill snaps on first measure, then animates on every change.
 // ──────────────────────────────────────────────────────────────────────────────
 
-export type PlanTab = 'today' | 'focus' | 'routines';
+export type PlanTab = 'today' | 'routines';
 
 const OPTIONS: { value: PlanTab; label: string }[] = [
   { value: 'today', label: 'Plan' },
-  { value: 'focus', label: 'Focus' },
   { value: 'routines', label: 'Routines' },
 ];
 
