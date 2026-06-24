@@ -19,7 +19,7 @@ import { render } from '@testing-library/react-native';
 import Timer from '@/src/app/(modals)/timer';
 import { useTimerStore } from '@/src/stores/timerStore';
 import { useCalibrationStore } from '@/src/stores/calibrationStore';
-import { useTasksStore } from '@/src/stores/tasksStore';
+import { useDayTasksStore } from '@/src/stores/dayTasksStore';
 import { useRewardStore } from '@/src/stores/rewardStore';
 import type { LogResult } from '@/src/stores/calibrationStore';
 
@@ -74,7 +74,11 @@ beforeEach(() => {
     suggestedHonestMin: 0,
     isQuickStart: false,
   });
-  useTasksStore.setState({ tasks: [] });
+  useDayTasksStore.setState({
+    dayTasks: [],
+    completeTask: jest.fn(async () => {}),
+    reload: jest.fn(async () => {}),
+  });
   useRewardStore.getState().clear();
   useCalibrationStore.setState({
     applyLog: jest.fn(async () => okResult),
