@@ -49,6 +49,13 @@ export function TodayFocusHook({ nowMs }: TodayFocusHookProps): React.ReactEleme
   const window = useLearnedFocusWindow(nowMs);
   const windowEndMin = useSettingsStore((s) => s.windowEndMin);
 
+  // ── pressed feedback (no spring/bounce — settling opacity only) ───────────
+  // Hooks must be unconditional — hoisted above all early-return gates.
+  const pressedOpacity = useSharedValue(1);
+  const pressedStyle = useAnimatedStyle(() => ({
+    opacity: pressedOpacity.get(),
+  }));
+
   const { basis, startMin, endMin } = window;
 
   // Gate 1: must have a learned personal window
@@ -59,14 +66,6 @@ export function TodayFocusHook({ nowMs }: TodayFocusHookProps): React.ReactEleme
   const nowMinuteOfDay = now.getHours() * 60 + now.getMinutes();
   const effectiveEnd = windowEndMin ?? endMin;
   if (nowMinuteOfDay > effectiveEnd) return null;
-
-  // ── pressed feedback (no spring/bounce — settling opacity only) ───────────
-  // eslint-disable-next-line react-hooks/rules-of-hooks
-  const pressedOpacity = useSharedValue(1);
-  // eslint-disable-next-line react-hooks/rules-of-hooks
-  const pressedStyle = useAnimatedStyle(() => ({
-    opacity: pressedOpacity.get(),
-  }));
 
   const handlePressIn = () => {
     pressedOpacity.set(withTiming(t.opacity.pressed, { duration: 80 }));

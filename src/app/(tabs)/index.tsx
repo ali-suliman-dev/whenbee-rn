@@ -410,8 +410,9 @@ export default function Today() {
             <RitualSeal done={ritualDone} onLog={() => router.push('/(modals)/retro')} />
           ) : null}
 
-          {/* Contextual focus-window nudge — only when the engine has a personal
-              window, the window hasn't ended, and at least one queued task exists.
+          {/* Contextual focus-window nudge — shown when the engine has a personal
+              window and the current time is before the window end (no task-count
+              gate — removed Phase 5 A1; the insight is useful on an empty list too).
               Slots between the honey HUD and the quick-task chips row. */}
           <TodayFocusHook nowMs={Date.now()} />
 

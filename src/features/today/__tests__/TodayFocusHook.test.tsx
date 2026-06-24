@@ -135,6 +135,54 @@ test('Free: tap routes to paywall with trigger focus_window', () => {
   });
 });
 
+// ── Conditional-hooks regression: basis transition must not crash ─────────────
+//
+// Before the fix, useSharedValue / useAnimatedStyle were called AFTER the
+// `if (basis !== 'personal') return null` gate. When the same mounted instance
+// re-rendered with basis flipping 'prior'→'personal', React would throw
+// "Rendered more hooks than during the previous render."
+// These tests verify that one mounted instance survives the transition cleanly.
+
+test('hooks-order regression: re-render prior→personal does not throw', () => {
+  // Start with a prior-basis window (gate 1 fires → returns null).
+  jest.mocked(useLearnedFocusWindow).mockReturnValue(PRIOR_WINDOW);
+  mockIsPro = true;
+
+  const { rerender, toJSON } = render(<TodayFocusHook nowMs={NOW_BEFORE_WINDOW_END} />);
+  expect(toJSON()).toBeNull(); // gate active, renders null
+
+  // Flip to personal — same mounted instance, should not throw.
+  jest.mocked(useLearnedFocusWindow).mockReturnValue(PERSONAL_WINDOW);
+  expect(() => {
+    rerender(<TodayFocusHook nowMs={NOW_BEFORE_WINDOW_END} />);
+  }).not.toThrow();
+
+  // After the flip the component should render visible content.
+  expect(toJSON()).not.toBeNull();
+});
+
+test('hooks-order regression: re-render before→after window-end does not throw', () => {
+  // Start: personal window, time is BEFORE end (gate 2 inactive).
+  jest.mocked(useLearnedFocusWindow).mockReturnValue(PERSONAL_WINDOW);
+  mockIsPro = true;
+
+  // Pin Date so minute-of-day = 0 (well before endMin 660).
+  const nowBefore = 0; // midnight = minute 0
+  const { rerender, toJSON } = render(<TodayFocusHook nowMs={nowBefore} />);
+  expect(toJSON()).not.toBeNull(); // renders content
+
+  // Advance time past window end (11:05am → minute 665 > endMin 660).
+  const nowAfter = new Date();
+  nowAfter.setHours(11, 5, 0, 0);
+
+  expect(() => {
+    rerender(<TodayFocusHook nowMs={nowAfter.getTime()} />);
+  }).not.toThrow();
+
+  // After crossing the window end the gate should suppress rendering.
+  expect(toJSON()).toBeNull();
+});
+
 // ── Pro-gate regression: free path never leaks clock times ───────────────────
 
 test('Free: full tree contains no clock time strings (Pro-gate regression)', () => {
