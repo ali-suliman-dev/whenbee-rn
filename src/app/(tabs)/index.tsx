@@ -525,7 +525,7 @@ export default function Today() {
                         borderRadius: t.radii.full,
                       }}
                     >
-                      <Ionicons name="sparkles-outline" size={14} color={t.colors.primary} />
+                      <Ionicons name="sparkles-outline" size={t.iconSize.xs} color={t.colors.primary} />
                       <Text
                         style={{
                           fontSize: t.fontSize.sm,

@@ -33,17 +33,15 @@ import Animated, {
 import { useDayPlan } from './useDayPlan';
 import { useLearnedFocusWindow } from '@/src/features/planner/useLearnedFocusWindow';
 import { useDayTasksStore } from '@/src/stores/dayTasksStore';
+import { useEntitlement } from '@/src/features/paywall/useEntitlement';
 import { useTheme } from '@/src/theme/useTheme';
 import { AppText } from '@/src/components/AppText';
 import { formatClock, formatClockMeridiem, fmtHm } from '@/src/lib/time';
-import type { PlanResult, PlanTimelineItem, PlanVerdict } from '@/src/domain/types';
+import type { PlanTimelineItem, PlanVerdict } from '@/src/domain/types';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Constants
 // ─────────────────────────────────────────────────────────────────────────────
-
-/** Minutes in a day (for focus-band overlap math). */
-const MINS_PER_DAY = 1440;
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Helpers
@@ -74,11 +72,6 @@ function overlapsWindow(
  */
 function overflowLabel(verdict: PlanVerdict): string {
   if (verdict.kind === 'cut-one') {
-    const endStr = formatClock(
-      // derive a rough "by when" from the startBy
-      verdict.startBy,
-    );
-    void endStr; // used below for context
     return `This won't all fit today — move "${verdict.cut.label}" to tomorrow?`;
   }
   if (verdict.kind === 'multi-cut') {
@@ -340,10 +333,14 @@ function DoneByChip({
 }) {
   const t = useTheme();
 
-  const label =
-    doneByMin !== null
-      ? `Done by ${formatClock(Date.now() - (Date.now() % 86_400_000) + doneByMin * 60_000)}`
-      : 'Set done-by time';
+  const label = useMemo(() => {
+    if (doneByMin === null) return 'Set done-by time';
+    // Compute epoch from LOCAL midnight of today so formatClock reflects
+    // the correct local time regardless of UTC offset.
+    const localMidnight = new Date();
+    localMidnight.setHours(0, 0, 0, 0);
+    return `Done by ${formatClock(localMidnight.getTime() + doneByMin * 60_000)}`;
+  }, [doneByMin]);
 
   const chipStyle: ViewStyle = {
     flexDirection: 'row',
@@ -425,6 +422,9 @@ export function DayTimeline() {
   const t = useTheme();
   const reducedMotion = useReducedMotion();
 
+  // ── Pro guard (defence-in-depth — should be unreachable for free users) ──
+  const isPro = useEntitlement((s) => s.isPro);
+
   // ── Data ──────────────────────────────────────────────────────────────────
   const { plan, status, doneByMin, setDoneBy } = useDayPlan();
   const focusWindow = useLearnedFocusWindow();
@@ -442,6 +442,11 @@ export function DayTimeline() {
 
   // ── Empty state ───────────────────────────────────────────────────────────
   if (status === 'empty' || plan === null) {
+    return null;
+  }
+
+  // ── Pro guard (defence-in-depth) ──────────────────────────────────────────
+  if (!isPro) {
     return null;
   }
 
@@ -531,12 +536,7 @@ export function DayTimeline() {
         <View style={timelineContainerStyle}>
           {/* Focus band — only personal, only behind the list */}
           {showFocusBand ? (
-            <FocusBandOverlay
-              plan={plan}
-              focusStartMin={focusWindow.startMin}
-              focusEndMin={focusWindow.endMin}
-              bandStyle={focusBandStyle}
-            />
+            <FocusBandOverlay bandStyle={focusBandStyle} />
           ) : null}
 
           {plan.timeline.map((item, idx) => (
@@ -568,25 +568,10 @@ export function DayTimeline() {
 
 /**
  * The focus band sits as a View behind the row list when the basis is personal.
- * We give it the testID that tests look for.
- * The band is purely decorative (non-interactive).
+ * Renders a full-bleed ambient tint; the per-row left-accent (focusBandActive)
+ * carries the precise highlight — this component is purely decorative.
  */
-function FocusBandOverlay({
-  plan,
-  focusStartMin,
-  focusEndMin,
-  bandStyle,
-}: {
-  plan: PlanResult;
-  focusStartMin: number;
-  focusEndMin: number;
-  bandStyle: ViewStyle;
-}) {
-  // We render a single overlay div that covers the full timeline; it's opacity-
-  // dimmed so it reads as a subtle tint, not a hard band.
-  // A more precise per-row highlight is handled by `focusBandActive` on each row.
-  void plan; void focusStartMin; void focusEndMin;
-
+function FocusBandOverlay({ bandStyle }: { bandStyle: ViewStyle }) {
   return (
     <View
       testID="timeline-focus-band"
@@ -651,4 +636,4 @@ function TimelineRow({ item, index, enterAnim, focusBandActive }: TimelineRowPro
   );
 }
 
-void MINS_PER_DAY; // suppress unused-var (used by future full band positioning)
+

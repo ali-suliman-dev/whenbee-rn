@@ -14,6 +14,7 @@ import * as Reanimated from 'react-native-reanimated';
 import { DayTimeline } from '@/src/features/today/DayTimeline';
 import { useDayPlan } from '@/src/features/today/useDayPlan';
 import { useLearnedFocusWindow } from '@/src/features/planner/useLearnedFocusWindow';
+import { formatClock } from '@/src/lib/time';
 import type { PlanResult, LearnedFocusWindow } from '@/src/domain/types';
 
 // ── Module mocks ──────────────────────────────────────────────────────────────
@@ -35,6 +36,13 @@ jest.mock('@/src/features/planner/useLearnedFocusWindow', () => ({
 
 jest.mock('@/src/theme/useColorMode', () => ({
   useColorMode: () => 'light',
+}));
+
+// Default: Pro enabled so existing tests are unaffected by the Pro guard.
+jest.mock('@/src/features/paywall/useEntitlement', () => ({
+  useEntitlement: jest.fn((selector: (s: any) => any) =>
+    selector({ isPro: true }),
+  ),
 }));
 
 // ── Typed mock references ─────────────────────────────────────────────────────
@@ -294,5 +302,68 @@ describe('DayTimeline — empty plan', () => {
     render(<DayTimeline />);
     expect(screen.queryByTestId('timeline-overflow-banner')).toBeNull();
     expect(screen.queryByTestId('timeline-event-event-1')).toBeNull();
+  });
+});
+
+// ═════════════════════════════════════════════════════════════════════════════
+// Test 6 — DoneByChip: label reflects doneByMin as a LOCAL time
+// ═════════════════════════════════════════════════════════════════════════════
+
+describe('DayTimeline — DoneByChip local-time label', () => {
+  beforeEach(() => {
+    mockUseDayPlan.mockReturnValue({
+      plan: makeFitsPlan(),
+      status: 'ready',
+      doneByMin: 1080, // 18:00 local (6 PM)
+      setDoneBy: mockSetDoneBy,
+    });
+  });
+
+  it('displays "Done by" with the time that formatClock produces for local midnight + doneByMin', () => {
+    render(<DayTimeline />);
+    // Derive the expected label exactly as the component does:
+    // local midnight + doneByMin * 60_000 → formatClock
+    const localMidnight = new Date();
+    localMidnight.setHours(0, 0, 0, 0);
+    const expectedTime = formatClock(localMidnight.getTime() + 1080 * 60_000);
+    expect(screen.getByText(`Done by ${expectedTime}`)).toBeOnTheScreen();
+  });
+});
+
+// ═════════════════════════════════════════════════════════════════════════════
+// Test 7 — Pro guard: renders nothing when isPro is false
+// ═════════════════════════════════════════════════════════════════════════════
+
+describe('DayTimeline — Pro guard', () => {
+  beforeEach(() => {
+    // Override useEntitlement to return isPro = false for this suite.
+    const { useEntitlement } = jest.requireMock(
+      '@/src/features/paywall/useEntitlement',
+    ) as { useEntitlement: jest.Mock };
+    useEntitlement.mockImplementation((selector: (s: any) => any) =>
+      selector({ isPro: false }),
+    );
+    mockUseDayPlan.mockReturnValue({
+      plan: makeFitsPlan(),
+      status: 'ready',
+      doneByMin: 1080,
+      setDoneBy: mockSetDoneBy,
+    });
+  });
+
+  afterEach(() => {
+    // Restore to Pro = true so other suites are unaffected.
+    const { useEntitlement } = jest.requireMock(
+      '@/src/features/paywall/useEntitlement',
+    ) as { useEntitlement: jest.Mock };
+    useEntitlement.mockImplementation((selector: (s: any) => any) =>
+      selector({ isPro: true }),
+    );
+  });
+
+  it('renders nothing when isPro is false (defence-in-depth guard)', () => {
+    render(<DayTimeline />);
+    expect(screen.queryByTestId('timeline-overflow-banner')).toBeNull();
+    expect(screen.queryByText('Write report')).toBeNull();
   });
 });
