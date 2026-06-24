@@ -203,3 +203,9 @@ export const DAY_LOAD = { snugFrac: 0.8 } as const;
 
 /** Total waking-window minutes available per day (08:00–22:00 = 14 h). */
 export const WAKING_WINDOW_MIN = 840;
+
+// ── Daily waking window bounds (Plan-my-day / Timeline) ───────────────────────
+/** Earliest schedulable minute of day (08:00). */
+export const WAKING_START_MIN = 8 * 60; // 480
+/** Latest schedulable minute of day (22:00) — the default "done by" fallback. */
+export const WAKING_END_MIN = 22 * 60; // 1320
