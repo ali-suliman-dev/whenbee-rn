@@ -5,6 +5,14 @@ import { useCalibrationStore, type ReclaimSummary } from '@/src/stores/calibrati
 import { useDayTasksStore } from '@/src/stores/dayTasksStore';
 import type { DayTask } from '@/src/engine/daySelectors';
 
+// CalendarStrip renders a FlatList with initialScrollIndex; the underlying
+// scrollToIndex call in the effect warns in jsdom — mock the component so
+// the Today screen tests stay focused on screen-level logic, not strip internals
+// (the strip has its own dedicated test file).
+jest.mock('@/src/features/today/calendarStrip/CalendarStrip', () => ({
+  CalendarStrip: () => null,
+}));
+
 jest.spyOn(ActionSheetIOS, 'showActionSheetWithOptions').mockImplementation(() => {});
 
 // TodayFocusHook uses useLearnedFocusWindow which triggers an async sqlite load.
@@ -89,7 +97,15 @@ describe('Today screen', () => {
     // The greeting text still appears (now as the eyebrow). useGreeting is time-based;
     // assert the time-independent prefix.
     expect(getByText(/^Good (morning|afternoon|evening)/)).toBeTruthy();
+    // When selectedDate === today the title reads "Today".
     expect(getByText('Today')).toBeTruthy();
+  });
+
+  it('shows the weekday name when a non-today date is selected', () => {
+    // Seed a past date (2023-11-13 = Monday).
+    useDayTasksStore.setState({ selectedDate: '2023-11-13', dayTasks: [], selectFocusTask: () => null });
+    const { getByText } = render(<Today />);
+    expect(getByText('Monday')).toBeTruthy();
   });
 
   it('shows the first-run empty state when the user has never logged', async () => {

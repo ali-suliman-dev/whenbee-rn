@@ -27,17 +27,27 @@ import { useTimerStore } from '@/src/stores/timerStore';
 import { useSettingsStore } from '@/src/stores/settingsStore';
 import { projectedFinish, formatClockMeridiem } from '@/src/lib/time';
 import { useDayTasksStore } from '@/src/stores/dayTasksStore';
+import { toLocalDayKey, weekdayOf } from '@/src/lib/day';
 import { kv } from '@/src/lib/kv';
 import { useFocusedValue } from '@/src/hooks/useFocusedValue';
 import { useGreeting } from '@/src/features/today/useGreeting';
 import { TodayFocusHook } from '@/src/features/today/TodayFocusHook';
+import { CalendarStrip } from '@/src/features/today/calendarStrip/CalendarStrip';
 
-// Date label, e.g. "Fri · Jun 12" — the day + date, no clock (the time added
-// nothing here and ticked distractingly).
-function dateLabel(now: Date): string {
-  const day = now.toLocaleDateString('en-US', { weekday: 'short' });
-  const date = now.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
-  return `${day} · ${date}`;
+// Date label for a day-key, e.g. "Fri · Jun 12" — the day + date, no clock.
+function dateLabel(key: string): string {
+  const [y, m, d] = key.split('-').map(Number) as [number, number, number];
+  const date = new Date(y, m - 1, d);
+  const day = date.toLocaleDateString('en-US', { weekday: 'short' });
+  const monthDay = date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+  return `${day} · ${monthDay}`;
+}
+
+/** Full weekday name for the header title when a non-today day is selected. */
+const WEEKDAY_NAMES = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'] as const;
+
+function weekdayName(key: string): string {
+  return WEEKDAY_NAMES[weekdayOf(key)] ?? 'Today';
 }
 
 export default function Today() {
@@ -53,6 +63,11 @@ export default function Today() {
     companionSeed,
     hasEverLogged,
   } = useToday();
+  const selectedDate = useDayTasksStore((s) => s.selectedDate);
+  const today = toLocalDayKey(Date.now());
+  const headerTitle = selectedDate === today ? 'Today' : weekdayName(selectedDate);
+  const headerSubtitle = dateLabel(selectedDate);
+
   const isTimerRunning = useTimerStore((s) => s.isRunning);
   const runningTaskLabel = useTimerStore((s) => s.taskLabel);
   const [pendingRow, setPendingRow] = useState<TodayRow | null>(null);
@@ -172,9 +187,9 @@ export default function Today() {
           showsVerticalScrollIndicator={false}
         >
           <ScreenHeader
-            title="Today"
+            title={headerTitle}
             largeTitle
-            subtitle={dateLabel(new Date())}
+            subtitle={headerSubtitle}
             eyebrow={
               <AppText variant="caption" style={{ color: t.colors.inkSoft }}>
                 {greeting.lead}
@@ -210,6 +225,10 @@ export default function Today() {
               </View>
             }
           />
+
+          {/* 7-day calendar strip — sits directly under the header title block,
+              scrolls with content, lets the user jump to any day in the ±52 wk range. */}
+          <CalendarStrip />
 
           {/* Daily ritual (opt-in) lived in the honey HUD footer; the HUD is gone,
               so render the seal standalone where the card was. */}
