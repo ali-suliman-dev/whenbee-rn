@@ -195,3 +195,8 @@ export const REPORT_MIN_LOGS = 6; // window minimum to allow export
 export const REPORT_CATEGORY_MIN_LOGS = 4; // per-row minimum in the bias table
 export const REPORT_SPARK_BUCKETS = 6; // accuracy sparkline buckets
 export const REPORT_MAX_SURPRISES = 5; // biggest-surprises cap
+
+// ── Day-capacity (honestDayLoad) ──────────────────────────────────────────────
+// `snugFrac` = fraction of free time at/above which the day reads 'snug' (still
+// fits). Amber-only — 'over' is a calm fact (offer to move), never red/guilt.
+export const DAY_LOAD = { snugFrac: 0.8 } as const;
