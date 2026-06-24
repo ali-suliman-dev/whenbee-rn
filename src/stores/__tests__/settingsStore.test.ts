@@ -92,3 +92,56 @@ describe('settingsStore hyperfocusGuard', () => {
     expect(useSettingsStore.getState().hyperfocusGuard).toBe('off');
   });
 });
+
+describe('settingsStore calendar overlay preferences', () => {
+  beforeEach(() => useSettingsStore.getState().reset());
+
+  it('defaults showEvents to false', () => {
+    expect(useSettingsStore.getState().calendar.showEvents).toBe(false);
+  });
+
+  it('defaults enabledCalendarIds to empty array', () => {
+    expect(useSettingsStore.getState().calendar.enabledCalendarIds).toEqual([]);
+  });
+
+  it('setShowEvents(true) persists and reads back true', () => {
+    useSettingsStore.getState().setShowEvents(true);
+    expect(useSettingsStore.getState().calendar.showEvents).toBe(true);
+  });
+
+  it('setShowEvents(false) persists and reads back false', () => {
+    useSettingsStore.getState().setShowEvents(true);
+    useSettingsStore.getState().setShowEvents(false);
+    expect(useSettingsStore.getState().calendar.showEvents).toBe(false);
+  });
+
+  it('setEnabledCalendars persists and reads back the ids', () => {
+    useSettingsStore.getState().setEnabledCalendars(['a', 'b']);
+    expect(useSettingsStore.getState().calendar.enabledCalendarIds).toEqual(['a', 'b']);
+  });
+
+  it('setEnabledCalendars replaces previous list', () => {
+    useSettingsStore.getState().setEnabledCalendars(['a', 'b']);
+    useSettingsStore.getState().setEnabledCalendars(['c']);
+    expect(useSettingsStore.getState().calendar.enabledCalendarIds).toEqual(['c']);
+  });
+
+  it('toggleCalendar adds a new id', () => {
+    useSettingsStore.getState().toggleCalendar('x');
+    expect(useSettingsStore.getState().calendar.enabledCalendarIds).toEqual(['x']);
+  });
+
+  it('toggleCalendar removes an existing id', () => {
+    useSettingsStore.getState().setEnabledCalendars(['x', 'y']);
+    useSettingsStore.getState().toggleCalendar('x');
+    expect(useSettingsStore.getState().calendar.enabledCalendarIds).toEqual(['y']);
+  });
+
+  it('reset restores calendar defaults', () => {
+    useSettingsStore.getState().setShowEvents(true);
+    useSettingsStore.getState().setEnabledCalendars(['a', 'b']);
+    useSettingsStore.getState().reset();
+    expect(useSettingsStore.getState().calendar.showEvents).toBe(false);
+    expect(useSettingsStore.getState().calendar.enabledCalendarIds).toEqual([]);
+  });
+});
