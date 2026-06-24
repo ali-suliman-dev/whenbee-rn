@@ -303,6 +303,7 @@ export default function Today() {
                   categoryLabel={row.categoryLabel}
                   guessMin={row.guessMin}
                   honestMin={row.honestMin}
+                  carriedFrom={row.carriedFrom}
                   onPress={() => startRow(row)}
                   onDelete={() => deleteTask(row.id)}
                   onLongPress={() => promptDelete(row.id, row.label)}

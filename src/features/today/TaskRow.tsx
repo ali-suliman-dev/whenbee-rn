@@ -13,6 +13,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '@/src/theme/useTheme';
 import { type } from '@/src/theme/typography';
 import { haptics } from '@/src/lib/haptics';
+import { weekdayOf } from '@/src/lib/day';
 
 // ──────────────────────────────────────────────────────────────────────────────
 // TaskRow — one Today list task, in two states:
@@ -53,6 +54,16 @@ interface TaskRowProps {
   showCoachMark?: boolean;
   /** Called when the swipeable begins opening — parent dismisses the coach mark. */
   onCoachMarkDismiss?: () => void;
+  /** Original plannedDate when this task carried over from a past day (e.g. '2026-06-22').
+   *  When set and the row is queued, a neutral "· from Mon" tag appears beside the category.
+   *  Hidden on done rows — the completion receipt already tells the story. */
+  carriedFrom?: string | null;
+}
+
+// Short weekday name for a YYYY-MM-DD key, e.g. '2026-06-22' → 'Mon'.
+const SHORT_WEEKDAY = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'] as const;
+function shortWeekday(key: string): string {
+  return SHORT_WEEKDAY[weekdayOf(key)] ?? key;
 }
 
 export function TaskRow({
@@ -70,6 +81,7 @@ export function TaskRow({
   isExiting = false,
   showCoachMark = false,
   onCoachMarkDismiss,
+  carriedFrom,
 }: TaskRowProps) {
   const t = useTheme();
   const reducedMotion = useReducedMotion();
@@ -226,7 +238,15 @@ export function TaskRow({
         <Text style={titleText} numberOfLines={1}>
           {title}
         </Text>
-        <Text style={catText}>{categoryLabel}</Text>
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: t.space[0.5] }}>
+          <Text style={catText}>{categoryLabel}</Text>
+          {!done && carriedFrom ? (
+            <Text style={catText}>
+              {'· from '}
+              {shortWeekday(carriedFrom)}
+            </Text>
+          ) : null}
+        </View>
       </View>
 
       {done ? (
