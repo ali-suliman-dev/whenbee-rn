@@ -2,7 +2,7 @@ import { useCallback, useMemo, useState } from 'react';
 import { fitFocusWindow, promoteIntoWindow } from '@/src/engine';
 import type { FocusWindowResult } from '@/src/domain/types';
 import { usePlanStore } from '@/src/stores/planStore';
-import { useTasksStore } from '@/src/stores/tasksStore';
+import { useDayTasksStore } from '@/src/stores/dayTasksStore';
 import { useCalibrationStore } from '@/src/stores/calibrationStore';
 import { useSettingsStore } from '@/src/stores/settingsStore';
 import { resolveHonestTasks } from './resolveHonestTasks';
@@ -10,7 +10,7 @@ import { resolveHonestTasks } from './resolveHonestTasks';
 // ──────────────────────────────────────────────────────────────────────────────
 // useFocusWindow — composes the pure focus-window engine with the planning stores.
 //
-// Resolves the deduped union of plan-draft + Today tasks to honest minutes (in
+// Resolves the deduped union of plan-draft + selected-day tasks to honest minutes (in
 // draft order = priority), drops done tasks, then packs them into the user's
 // fixed focus window. Returns null while the window is unset (the invite state).
 // `promote` runs the pure eviction promote and holds the result in local state so
@@ -30,7 +30,7 @@ export interface UseFocusWindowResult {
 
 export function useFocusWindow(): UseFocusWindowResult {
   const draftTasks = usePlanStore((s) => s.draft.tasks);
-  const todayTasks = useTasksStore((s) => s.tasks);
+  const todayTasks = useDayTasksStore((s) => s.dayTasks);
   const statsByCategory = useCalibrationStore((s) => s.statsByCategory);
   const windowStartMin = useSettingsStore((s) => s.windowStartMin);
   const windowEndMin = useSettingsStore((s) => s.windowEndMin);

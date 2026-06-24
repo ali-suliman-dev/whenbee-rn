@@ -6,7 +6,7 @@ import { AppText } from '@/src/components/AppText';
 import { formatClockMeridiem } from '@/src/lib/time';
 import { useEntitlement } from '@/src/features/paywall/useEntitlement';
 import { useLearnedFocusWindow } from '@/src/features/planner/useLearnedFocusWindow';
-import { useTasksStore } from '@/src/stores/tasksStore';
+import { useDayTasksStore } from '@/src/stores/dayTasksStore';
 import { useSettingsStore } from '@/src/stores/settingsStore';
 
 // ──────────────────────────────────────────────────────────────────────────────
@@ -40,7 +40,7 @@ export function TodayFocusHook({ nowMs }: TodayFocusHookProps): React.ReactEleme
   const isPro = useEntitlement((s) => s.isPro);
   const window = useLearnedFocusWindow(nowMs);
   const windowEndMin = useSettingsStore((s) => s.windowEndMin);
-  const tasks = useTasksStore((s) => s.tasks);
+  const tasks = useDayTasksStore((s) => s.dayTasks);
 
   const { basis, startMin, endMin } = window;
 
