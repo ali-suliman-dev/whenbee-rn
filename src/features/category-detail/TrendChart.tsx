@@ -86,6 +86,8 @@ export function TrendChart({ trend }: { trend: TrendSeries }) {
         formatY={(v) => `${v.toFixed(1)}×`}
         xLabels={[`${days}d ago`, `${Math.round(days / 2)}d`, 'now']}
         referenceLine={{ value: 1, label: 'ideal' }}
+        valueDecimals={2}
+        valueSuffix="×"
       />
     );
   }

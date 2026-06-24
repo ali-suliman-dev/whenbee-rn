@@ -479,6 +479,9 @@ export const tokens = {
     height: 168, stroke: 2.5, dot: 2.5, endDot: 4, areaOpacity: 0.16, strokeDash: 1000,
     gutter: 34, rightPad: 8, topPad: 12, xLabelH: 18, gridW: 1, refOpacity: 0.5,
     axisFont: 10, endRing: 2,
+    // endpoint breathing halo: pulseR = max extra radius the ring grows; pulseOpacity
+    // = its peak alpha (fades to 0 as it expands). crosshairW = scrub crosshair weight.
+    pulseR: 9, pulseOpacity: 0.4, crosshairW: 1,
   },
 
   // Premium Pro teaser card (ProTeaserCard) — frosted preview panel + amber pill.

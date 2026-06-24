@@ -62,7 +62,7 @@ export function ProgressChart({ trend, fallback }: { trend: AccuracyTrend | null
         axis={axis}
         formatY={(v) => `${v}%`}
         xLabels={xLabels}
-        endpointColor={t.colors.accent}
+        valueSuffix="%"
       />
 
       <Text style={contextLine}>
