@@ -3,6 +3,7 @@ import { useState, useCallback } from 'react';
 import { router } from 'expo-router';
 import { haptics } from '@/src/lib/haptics';
 import { Ionicons } from '@expo/vector-icons';
+import { AppText } from '@/src/components/AppText';
 import { Screen } from '@/src/components/Screen';
 import { ScreenHeader } from '@/src/components/ScreenHeader';
 import { useTheme } from '@/src/theme/useTheme';
@@ -172,8 +173,24 @@ export default function Today() {
         >
           <ScreenHeader
             title="Today"
+            largeTitle
             subtitle={dateLabel(new Date())}
-            eyebrow={greeting}
+            eyebrow={
+              <AppText variant="caption" style={{ color: t.colors.inkSoft }}>
+                {greeting.lead}
+                {greeting.name ? (
+                  <>
+                    {', '}
+                    <AppText
+                      variant="caption"
+                      style={{ color: t.colors.ink, fontWeight: t.fontWeight.bold }}
+                    >
+                      {greeting.name}
+                    </AppText>
+                  </>
+                ) : null}
+              </AppText>
+            }
             right={
               <View style={{ flexDirection: 'row', alignItems: 'center', gap: t.space[4] }}>
                 <Pressable

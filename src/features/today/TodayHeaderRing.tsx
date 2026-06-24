@@ -1,4 +1,6 @@
-import { Pressable, View, Text, Platform, type ViewStyle, type TextStyle } from 'react-native';
+// `Text`, `TextStyle`, and the `type` typography import are kept only by the
+// commented-out tier label below — restore them if it comes back.
+import { Pressable, View } from 'react-native';
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
@@ -9,16 +11,18 @@ import Animated, {
 import { router } from 'expo-router';
 import { HoneyRing } from '@/src/features/whenbee/HoneyRing';
 import { BeeMascot, type BeeVariant } from '@/src/components/BeeMascot';
+import { BeeCoin } from '@/src/components/BeeCoin';
 import { useTheme } from '@/src/theme/useTheme';
-import { type } from '@/src/theme/typography';
+// import { type } from '@/src/theme/typography'; // re-enable with the tier label
 import type { CompanionStage } from '@/src/engine';
 import type { HoneycombCell } from '@/src/components/honeycomb/Honeycomb';
 
 // Compact Today-header honey ring: the SAME animated HoneyRing as the hub, shrunk
 // to t.headerRing.size, with a nameless BeeMascot inside (no name overlay, no
-// RingBadge) and the tier word beneath. Tap → the Whenbee hub. A soft amber glow
-// (iOS shadow — never boxShadow) blooms from the Ripening stage up via
-// companion.glow. Honey is monotonic; the ring only ever fills forward.
+// RingBadge) and the tier word beneath. Tap → the Whenbee hub. Behind the bee sits
+// the SAME soft BeeCoin the hub uses (colors.companionCoin) — shrunk to
+// headerRing.coinSize so it backs the bee inside the ring without enlarging the bee
+// or ring. Honey is monotonic; the ring only ever fills forward.
 export function TodayHeaderRing({
   sharpness,
   tier,
@@ -35,24 +39,20 @@ export function TodayHeaderRing({
   const scale = useSharedValue(1);
   const pressStyle = useAnimatedStyle(() => ({ transform: [{ scale: scale.get() }] }));
 
-  const glowRadius = t.companion.glow[stage - 1] ?? 0;
-  const glow: ViewStyle =
-    Platform.OS === 'ios' && glowRadius > 0
-      ? {
-          shadowColor: t.colors.accent,
-          shadowOpacity: t.headerRing.glowOpacity,
-          shadowRadius: glowRadius,
-          shadowOffset: { width: 0, height: 0 },
-        }
-      : {};
-
-  const caption: TextStyle = {
-    ...(type.micro as unknown as TextStyle),
-    fontSize: t.headerRing.caption,
-    color: t.colors.inkSoft,
-    textAlign: 'center',
-    marginTop: t.space[1],
-  };
+  // Tier label hidden for now. When restored: absolutely positioned below the
+  // ring so the block measures as the ring circle alone — that keeps the sibling
+  // gear centered to the circle, not to circle + label (which sits it too high).
+  // const caption: TextStyle = {
+  //   ...(type.micro as unknown as TextStyle),
+  //   position: 'absolute',
+  //   top: '100%',
+  //   left: 0,
+  //   right: 0,
+  //   fontSize: t.headerRing.caption,
+  //   color: t.colors.inkSoft,
+  //   textAlign: 'center',
+  //   marginTop: t.space[1],
+  // };
 
   return (
     <Pressable
@@ -67,22 +67,25 @@ export function TodayHeaderRing({
       accessibilityLabel={`Whenbee, honey tier ${tier}. Tap to open your honeycomb.`}
     >
       <Animated.View style={[{ alignItems: 'center' }, pressStyle]}>
-        <View style={glow}>
-          <HoneyRing
-            sharpness={sharpness}
-            sealed={tier === 'Honest'}
-            size={t.headerRing.size}
-            stroke={t.headerRing.stroke}
-          >
+        <HoneyRing
+          sharpness={sharpness}
+          sealed={tier === 'Honest'}
+          size={t.headerRing.size}
+          stroke={t.headerRing.stroke}
+        >
+          <View style={{ alignItems: 'center', justifyContent: 'center' }}>
+            <BeeCoin size={t.headerRing.coinSize} color={t.colors.companionCoin} />
             <BeeMascot
               size={t.headerRing.bee}
               variant={`stage-${stage}` as BeeVariant}
               seed={seed}
               animated
+              glow={false}
             />
-          </HoneyRing>
-        </View>
-        <Text style={caption}>{tier}</Text>
+          </View>
+        </HoneyRing>
+        {/* Tier label hidden for now — may bring back. */}
+        {/* <Text style={caption}>{tier}</Text> */}
       </Animated.View>
     </Pressable>
   );
