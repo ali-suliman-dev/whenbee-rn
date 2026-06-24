@@ -330,7 +330,14 @@ export default function Today() {
                 </Pressable>
               ) : totalCount === 0 ? (
                 <TodayEmptyState
-                  variant={hasEverLogged ? 'daily' : 'first-run'}
+                  variant={
+                    selectedDate !== today
+                      ? 'future'
+                      : hasEverLogged
+                        ? 'daily'
+                        : 'first-run'
+                  }
+                  weekday={selectedDate !== today ? weekdayName(selectedDate) : undefined}
                   onPrimary={() => {
                     haptics.light();
                     router.push('/(modals)/add-task');
