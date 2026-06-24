@@ -145,3 +145,57 @@ describe('settingsStore calendar overlay preferences', () => {
     expect(useSettingsStore.getState().calendar.enabledCalendarIds).toEqual([]);
   });
 });
+
+describe('settingsStore calendar export fields (A1)', () => {
+  beforeEach(() => useSettingsStore.getState().reset());
+
+  it('defaults exportEnabled to false', () => {
+    expect(useSettingsStore.getState().calendar.exportEnabled).toBe(false);
+  });
+
+  it('defaults whenbeeCalendarId to null', () => {
+    expect(useSettingsStore.getState().calendar.whenbeeCalendarId).toBeNull();
+  });
+
+  it('setExportEnabled(true) persists and reads back true', () => {
+    useSettingsStore.getState().setExportEnabled(true);
+    expect(useSettingsStore.getState().calendar.exportEnabled).toBe(true);
+  });
+
+  it('setExportEnabled(false) persists and reads back false', () => {
+    useSettingsStore.getState().setExportEnabled(true);
+    useSettingsStore.getState().setExportEnabled(false);
+    expect(useSettingsStore.getState().calendar.exportEnabled).toBe(false);
+  });
+
+  it('setWhenbeeCalendarId stores an id', () => {
+    useSettingsStore.getState().setWhenbeeCalendarId('abc-123');
+    expect(useSettingsStore.getState().calendar.whenbeeCalendarId).toBe('abc-123');
+  });
+
+  it('setWhenbeeCalendarId(null) clears the id', () => {
+    useSettingsStore.getState().setWhenbeeCalendarId('abc-123');
+    useSettingsStore.getState().setWhenbeeCalendarId(null);
+    expect(useSettingsStore.getState().calendar.whenbeeCalendarId).toBeNull();
+  });
+
+  it('reset clears export fields to defaults', () => {
+    useSettingsStore.getState().setExportEnabled(true);
+    useSettingsStore.getState().setWhenbeeCalendarId('some-id');
+    useSettingsStore.getState().reset();
+    expect(useSettingsStore.getState().calendar.exportEnabled).toBe(false);
+    expect(useSettingsStore.getState().calendar.whenbeeCalendarId).toBeNull();
+  });
+
+  it('export fields do not disturb existing calendar overlay fields', () => {
+    useSettingsStore.getState().setShowEvents(true);
+    useSettingsStore.getState().setEnabledCalendars(['x']);
+    useSettingsStore.getState().setExportEnabled(true);
+    useSettingsStore.getState().setWhenbeeCalendarId('cal-id');
+    const cal = useSettingsStore.getState().calendar;
+    expect(cal.showEvents).toBe(true);
+    expect(cal.enabledCalendarIds).toEqual(['x']);
+    expect(cal.exportEnabled).toBe(true);
+    expect(cal.whenbeeCalendarId).toBe('cal-id');
+  });
+});

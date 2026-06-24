@@ -35,7 +35,7 @@ beforeEach(() => {
       { id: 'cal-2', title: 'Work' },
     ]),
   );
-  useSettingsStore.setState({ calendar: { showEvents: false, enabledCalendarIds: [] } });
+  useSettingsStore.setState({ calendar: { showEvents: false, enabledCalendarIds: [], exportEnabled: false, whenbeeCalendarId: null } });
 });
 
 describe('CalendarSettingsSection', () => {
@@ -70,7 +70,7 @@ describe('CalendarSettingsSection', () => {
   });
 
   it('calls setShowEvents(false) without requesting access when master toggle is turned off', async () => {
-    useSettingsStore.setState({ calendar: { showEvents: true, enabledCalendarIds: [] } });
+    useSettingsStore.setState({ calendar: { showEvents: true, enabledCalendarIds: [], exportEnabled: false, whenbeeCalendarId: null } });
     const { getByRole } = render(<CalendarSettingsSection />);
     const toggle = getByRole('switch');
 
@@ -83,7 +83,7 @@ describe('CalendarSettingsSection', () => {
   });
 
   it('renders the calendar list when showEvents is true and access is granted', async () => {
-    useSettingsStore.setState({ calendar: { showEvents: true, enabledCalendarIds: [] } });
+    useSettingsStore.setState({ calendar: { showEvents: true, enabledCalendarIds: [], exportEnabled: false, whenbeeCalendarId: null } });
     const { findByText } = render(<CalendarSettingsSection />);
 
     await findByText('Personal');
@@ -91,14 +91,14 @@ describe('CalendarSettingsSection', () => {
   });
 
   it('does NOT render the calendar list when showEvents is false', () => {
-    useSettingsStore.setState({ calendar: { showEvents: false, enabledCalendarIds: [] } });
+    useSettingsStore.setState({ calendar: { showEvents: false, enabledCalendarIds: [], exportEnabled: false, whenbeeCalendarId: null } });
     const { queryByText } = render(<CalendarSettingsSection />);
     expect(queryByText('Personal')).toBeNull();
     expect(queryByText('Work')).toBeNull();
   });
 
   it('toggles a calendar in/out of enabledCalendarIds when tapped', async () => {
-    useSettingsStore.setState({ calendar: { showEvents: true, enabledCalendarIds: [] } });
+    useSettingsStore.setState({ calendar: { showEvents: true, enabledCalendarIds: [], exportEnabled: false, whenbeeCalendarId: null } });
     const { findByText } = render(<CalendarSettingsSection />);
 
     const personalRow = await findByText('Personal');
@@ -115,7 +115,7 @@ describe('CalendarSettingsSection', () => {
 
   it('removes a calendar from enabledCalendarIds when tapped a second time', async () => {
     useSettingsStore.setState({
-      calendar: { showEvents: true, enabledCalendarIds: ['cal-1'] },
+      calendar: { showEvents: true, enabledCalendarIds: ['cal-1'], exportEnabled: false, whenbeeCalendarId: null },
     });
     const { findByText } = render(<CalendarSettingsSection />);
 

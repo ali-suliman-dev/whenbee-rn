@@ -100,7 +100,7 @@ beforeEach(() => {
   });
 
   useSettingsStore.setState({
-    calendar: { showEvents: true, enabledCalendarIds: [] },
+    calendar: { showEvents: true, enabledCalendarIds: [], exportEnabled: false, whenbeeCalendarId: null },
   });
 
   useCalibrationStore.setState({
@@ -165,7 +165,7 @@ describe('useDayCapacity', () => {
 
     it('passes enabledCalendarIds when non-empty', async () => {
       useSettingsStore.setState({
-        calendar: { showEvents: true, enabledCalendarIds: ['cal-a', 'cal-b'] },
+        calendar: { showEvents: true, enabledCalendarIds: ['cal-a', 'cal-b'], exportEnabled: false, whenbeeCalendarId: null },
       });
 
       renderHook(() => useDayCapacity());
@@ -193,7 +193,7 @@ describe('useDayCapacity', () => {
   describe('when showEvents=false', () => {
     beforeEach(() => {
       useSettingsStore.setState({
-        calendar: { showEvents: false, enabledCalendarIds: [] },
+        calendar: { showEvents: false, enabledCalendarIds: [], exportEnabled: false, whenbeeCalendarId: null },
       });
     });
 
