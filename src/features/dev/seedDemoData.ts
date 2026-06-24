@@ -1,6 +1,6 @@
 // __DEV__-only demo-data seeder.
 //
-// Fills the app with ~2 weeks of realistic completed task logs across four
+// Fills the app with ~2 months of realistic completed task logs across four
 // categories so every Pro surface (Honest Week/Month, day-capacity, confidence
 // band, correlations, Patterns, Discoveries) has something to show — WITHOUT
 // touching a real device install. Simulator and device keep fully separate data
@@ -26,7 +26,7 @@ import { useEntitlement } from '@/src/features/paywall/useEntitlement';
 import type { AdaptSpeed } from '@/src/domain/types';
 
 const DAY_MS = 86_400_000;
-const WINDOW_DAYS = 14;
+const WINDOW_DAYS = 60;
 
 interface DemoCategory {
   id: string;
@@ -53,7 +53,7 @@ const DEMO_CATEGORIES: DemoCategory[] = [
     adaptSpeed: 'balanced',
     estimateMin: 15,
     bias: 1.6,
-    count: 14,
+    count: 52,
     labels: ['Shower & dress', 'Morning routine', 'Get out the door'],
   },
   {
@@ -62,7 +62,7 @@ const DEMO_CATEGORIES: DemoCategory[] = [
     adaptSpeed: 'balanced',
     estimateMin: 20,
     bias: 1.45,
-    count: 12,
+    count: 42,
     labels: ['Inbox catch-up', 'Pay invoices', 'Reply to emails', 'Paperwork'],
   },
   {
@@ -71,7 +71,7 @@ const DEMO_CATEGORIES: DemoCategory[] = [
     adaptSpeed: 'balanced',
     estimateMin: 75,
     bias: 1.25,
-    count: 7,
+    count: 26,
     labels: ['Write the spec', 'Code review', 'Design pass', 'Focus block'],
   },
   {
@@ -80,7 +80,7 @@ const DEMO_CATEGORIES: DemoCategory[] = [
     adaptSpeed: 'balanced',
     estimateMin: 35,
     bias: 1.5,
-    count: 6,
+    count: 17,
     labels: ['Groceries', 'Post office', 'Pharmacy run'],
   },
 ];
@@ -175,7 +175,7 @@ export async function seedDemoData(): Promise<number> {
   useOnboardingStore.getState().complete();
   useEntitlement.getState().setPro(true);
 
-  // 3. Clean slate for these categories, then replay ~2 weeks forwards.
+  // 3. Clean slate for these categories, then replay ~2 months forwards.
   await resetDemoCategories();
 
   const events = buildEvents(Date.now());

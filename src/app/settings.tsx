@@ -27,6 +27,7 @@ import { useAccountReset } from '@/src/features/settings/useAccountReset';
 import { ProGate } from '@/src/features/paywall/ProGate';
 import { GuardrailSettingRow } from '@/src/features/settings/GuardrailSettingRow';
 import { GuardrailLockedRow } from '@/src/features/settings/GuardrailLockedRow';
+import { seedDemoData } from '@/src/features/dev/seedDemoData';
 
 const modes: ColorModePref[] = ['system', 'light', 'dark'];
 
@@ -191,6 +192,18 @@ export default function Settings() {
     await eraseEverything(); // navigates to onboarding; no toast needed
   }
 
+  const [seeding, setSeeding] = useState(false);
+  async function handleSeedDemo() {
+    if (seeding) return;
+    setSeeding(true);
+    try {
+      const n = await seedDemoData();
+      showToast(`Seeded ${n} logs across 2 months.`);
+    } finally {
+      setSeeding(false);
+    }
+  }
+
   return (
     <Screen edges={['left', 'right']}>
       <ScrollView
@@ -263,7 +276,7 @@ export default function Settings() {
             <Ionicons name="person-outline" size={t.iconSize.md} color={t.colors.inkSoft} />
             <TextInput
               accessibilityLabel="Your name"
-              placeholder="Your name"
+              placeholder="Tell Whenbee your name"
               placeholderTextColor={t.colors.inkFaint}
               value={displayName ?? ''}
               onChangeText={(text) => setDisplayName(text || undefined)}
@@ -434,6 +447,15 @@ export default function Settings() {
               />
             }
           />
+          {__DEV__ && (
+            <SettingRow
+              icon="flask-outline"
+              title="Seed demo data"
+              note="Lay down ~2 months of logs across four categories so every Pro surface has something to show. Sim-only — resets the demo categories each run."
+              onPress={handleSeedDemo}
+              disabled={seeding}
+            />
+          )}
         </View>
       </ScrollView>
 
