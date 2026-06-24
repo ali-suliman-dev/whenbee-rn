@@ -7,6 +7,7 @@ import { resolveSuggestion, priorFor, CATEGORY_NAMES, type CompanionStage } from
 import { analytics } from '@/src/services/analytics';
 import { formatClock, projectedFinish } from '@/src/lib/time';
 import { publishWidgetSnapshot, clearWidgetSnapshot } from '@/src/services/liveActivity';
+import { useEntitlement } from '@/src/features/paywall/useEntitlement';
 import type { CalibrationSummary } from '@/src/domain/types';
 
 // ──────────────────────────────────────────────────────────────────────────────
@@ -168,13 +169,16 @@ export function useToday(): UseTodayResult {
       clearWidgetSnapshot();
       return;
     }
+    const honestFinishEpoch = Math.round(projectedFinish(now, honestMin) / 1000);
     publishWidgetSnapshot({
       nextTaskLabel: focus.label,
       category: categoryName(focus.category),
       honestFinishClock: formatClock(projectedFinish(now, honestMin)),
       startDeepLink: `whenbee://timer?taskId=${focus.id}`,
-      reclaimTodayMin: 0,
       updatedAtEpoch: epoch,
+      honestFinishEpoch,
+      // Read non-reactively: a widget write must not re-render Today on entitlement change.
+      isPro: useEntitlement.getState().isPro,
     });
   }, [focus, honestMin]);
 

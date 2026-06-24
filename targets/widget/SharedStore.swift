@@ -27,12 +27,14 @@ struct WidgetSnapshot: Codable {
     let honestFinishClock: String
     /// Deep link the one-tap "Start" button opens, e.g. "whenbee://timer?taskId=123".
     let startDeepLink: String
-    /// Minutes reclaimed today (0 = hide). With no next task and this > 0, the widget
-    /// shows a calm evening "you got ahead of Nm today". Optional so a snapshot written
-    /// before this field still decodes.
-    let reclaimTodayMin: Int?
     /// Unix seconds when JS wrote this — lets the widget show a "stale" fallback.
     let updatedAtEpoch: Double
+    /// Unix seconds of the honest finish. Optional so older snapshots still decode.
+    /// Drives the ring arc fraction (see `arcFraction`).
+    let honestFinishEpoch: Double?
+    /// Pro entitlement at write time. The widget renders the rich arc + reclaim
+    /// line only when true. Optional/defaulted false for back-compat.
+    let isPro: Bool?
 
     static var placeholder: WidgetSnapshot {
         WidgetSnapshot(
@@ -40,13 +42,31 @@ struct WidgetSnapshot: Codable {
             category: "Deep work",
             honestFinishClock: "7:10",
             startDeepLink: "whenbee://timer",
-            reclaimTodayMin: 0,
-            updatedAtEpoch: Date().timeIntervalSince1970
+            updatedAtEpoch: Date().timeIntervalSince1970,
+            honestFinishEpoch: Date().addingTimeInterval(45 * 60).timeIntervalSince1970,
+            isPro: true
         )
     }
 }
 
 enum SharedStore {
+    /// Seconds after which a snapshot is "stale" and the finish line drops its
+    /// confident "Honest finish" prefix. Mirrors kStaleSeconds in the plan.
+    static let staleSeconds: Double = 6 * 3600
+
+    /// Fraction [0,1] of the way from `updatedAt` to `finish` at `now`.
+    /// Byte-mirror of arcFraction() in src/engine/presence.ts. Negative span → 0,
+    /// zero span → 1 (no divide-by-zero), past finish → 1.
+    static func arcFraction(updatedAt: Double, finish: Double, now: Double) -> Double {
+        let span = finish - updatedAt
+        if span < 0 { return 0 }
+        if span == 0 { return 1 }
+        let elapsed = now - updatedAt
+        if elapsed <= 0 { return 0 }
+        if elapsed >= span { return 1 }
+        return elapsed / span
+    }
+
     /// Loads the latest snapshot JS wrote, or `nil` if none/undecodable.
     static func loadSnapshot() -> WidgetSnapshot? {
         guard

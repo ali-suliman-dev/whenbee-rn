@@ -36,60 +36,132 @@ struct NextTaskProvider: TimelineProvider {
 
 struct NextTaskWidgetView: View {
     var entry: NextTaskEntry
+    @Environment(\.widgetFamily) var family
 
     private var hasTask: Bool { !entry.snapshot.nextTaskLabel.isEmpty }
-    private var reclaimToday: Int { entry.snapshot.reclaimTodayMin ?? 0 }
+    private var isPro: Bool { entry.snapshot.isPro ?? false }
+
+    // MARK: – Stale-aware finish line
+
+    private var isStale: Bool {
+        Date().timeIntervalSince1970 - entry.snapshot.updatedAtEpoch > SharedStore.staleSeconds
+    }
+
+    private var finishLine: String {
+        isStale ? entry.snapshot.honestFinishClock
+                : "Honest finish \(entry.snapshot.honestFinishClock)"
+    }
+
+    // MARK: – Medium ring
+
+    private var arc: Double {
+        guard let finish = entry.snapshot.honestFinishEpoch else { return 0 }
+        return SharedStore.arcFraction(
+            updatedAt: entry.snapshot.updatedAtEpoch,
+            finish: finish,
+            now: Date().timeIntervalSince1970
+        )
+    }
+
+    private var ring: some View {
+        ZStack {
+            Circle()
+                .stroke(Color("WBRingTrack"), lineWidth: 4)
+            if isPro {
+                Circle()
+                    .trim(from: 0, to: arc)
+                    .stroke(Color("WBAccent"), style: StrokeStyle(lineWidth: 4, lineCap: .round))
+                    .rotationEffect(.degrees(-90))
+            } else {
+                // Free: a quiet dot at 12-o'clock on the track — no filled arc.
+                Circle()
+                    .fill(Color("WBRingTrack"))
+                    .frame(width: 6, height: 6)
+                    .offset(y: -28)
+            }
+            Text(entry.snapshot.honestFinishClock)
+                .font(.headline)
+                .foregroundStyle(Color("WBInk"))
+        }
+        .frame(width: 56, height: 56)
+    }
+
+    // MARK: – Task block (shared between small + medium left column)
+
+    @ViewBuilder
+    private var taskBlock: some View {
+        if hasTask {
+            Text(entry.snapshot.nextTaskLabel)
+                .font(.headline)
+                .foregroundStyle(Color("WBInk"))
+                .lineLimit(2)
+            Text(finishLine)
+                .font(.subheadline.weight(.medium))
+                .foregroundStyle(isStale ? Color("WBInkSoft") : Color("WBAccent"))
+            Link(destination: URL(string: entry.snapshot.startDeepLink) ?? URL(string: "whenbee://")!) {
+                Text("Start")
+                    .font(.caption.weight(.semibold))
+                    .foregroundStyle(.white)
+                    .padding(.horizontal, 12)
+                    .padding(.vertical, 5)
+                    .background(Color("WBPrimary"), in: Capsule())
+            }
+            .padding(.top, 2)
+        } else {
+            // No-task state — quiet, never guilt-y (product invariant).
+            Text("Nothing queued")
+                .font(.headline)
+                .foregroundStyle(Color("WBInk"))
+            Text("Add a task to see its honest finish")
+                .font(.caption)
+                .foregroundStyle(Color("WBInkSoft"))
+        }
+    }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 6) {
-            // Minimal Whenbee presence: wordmark + the honey dot.
-            HStack(spacing: 4) {
-                Circle()
-                    .fill(.tint)
-                    .frame(width: 7, height: 7)
-                Text("Whenbee")
-                    .font(.caption2.weight(.semibold))
-                    .foregroundStyle(.secondary)
-            }
-
-            Spacer(minLength: 0)
-
-            if hasTask {
-                Text(entry.snapshot.nextTaskLabel)
-                    .font(.headline)
-                    .lineLimit(2)
-                Text("Honest finish \(entry.snapshot.honestFinishClock)")
-                    .font(.subheadline.weight(.medium))
-                    .foregroundStyle(.tint)
-                // One-tap start: opens the timer for this task via deep link.
-                Link(destination: URL(string: entry.snapshot.startDeepLink) ?? URL(string: "whenbee://")!) {
-                    Text("Start")
-                        .font(.caption.weight(.semibold))
-                        .padding(.horizontal, 12)
-                        .padding(.vertical, 5)
-                        .background(.tint, in: Capsule())
-                        .foregroundStyle(.white)
+        if family == .systemMedium {
+            // Medium: two-column layout — task block left, ring right.
+            HStack(alignment: .top, spacing: 12) {
+                VStack(alignment: .leading, spacing: 6) {
+                    // Minimal Whenbee presence: wordmark + honey dot.
+                    HStack(spacing: 4) {
+                        Circle()
+                            .fill(Color("WBPrimary"))
+                            .frame(width: 7, height: 7)
+                        Text("Whenbee")
+                            .font(.caption2.weight(.semibold))
+                            .foregroundStyle(Color("WBInkSoft"))
+                    }
+                    Spacer(minLength: 0)
+                    taskBlock
                 }
-                .padding(.top, 2)
-            } else if reclaimToday > 0 {
-                // Evening "got ahead" state — a calm reclaim payoff, never guilt-y.
-                Text("You got ahead of \(reclaimToday)m today")
-                    .font(.headline)
-                    .lineLimit(2)
-                Text("Honest time, learned on-device")
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-            } else {
-                // No-task state — quiet, never guilt-y (product invariant).
-                Text("Nothing queued")
-                    .font(.headline)
-                Text("Add a task to see its honest finish")
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
+                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .leading)
+
+                VStack {
+                    Spacer(minLength: 0)
+                    ring
+                    Spacer(minLength: 0)
+                }
             }
+            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .leading)
+            .padding(14)
+        } else {
+            // Small: single-column layout (original).
+            VStack(alignment: .leading, spacing: 6) {
+                HStack(spacing: 4) {
+                    Circle()
+                        .fill(Color("WBPrimary"))
+                        .frame(width: 7, height: 7)
+                    Text("Whenbee")
+                        .font(.caption2.weight(.semibold))
+                        .foregroundStyle(Color("WBInkSoft"))
+                }
+                Spacer(minLength: 0)
+                taskBlock
+            }
+            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .leading)
+            .padding(14)
         }
-        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .leading)
-        .padding(14)
     }
 }
 
@@ -121,3 +193,17 @@ struct NextTaskWidget: Widget {
         .supportedFamilies([.systemSmall, .systemMedium])
     }
 }
+
+#if DEBUG
+#Preview("Small · task", as: .systemSmall) {
+    NextTaskWidget()
+} timeline: {
+    NextTaskEntry(date: .now, snapshot: .placeholder)
+}
+
+#Preview("Medium · Pro ring", as: .systemMedium) {
+    NextTaskWidget()
+} timeline: {
+    NextTaskEntry(date: .now, snapshot: .placeholder)
+}
+#endif

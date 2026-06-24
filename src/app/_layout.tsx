@@ -108,7 +108,11 @@ export default function RootLayout() {
   // Restore a running timer that survived a full app close (the snapshot carries
   // wall-clock startedAt, so elapsed stays correct). Run once at boot.
   useEffect(() => {
-    useTimerStore.getState().resumeFromKv();
+    const store = useTimerStore.getState();
+    store.resumeFromKv();
+    // Clean up any OS-owned Live Activity that survived a kill while no timer is
+    // running (e.g. app was force-quit after the timer already ended). Fire-and-forget.
+    store.reconcilePresenceOnBoot();
   }, []);
 
   if (!fontsLoaded && !fontError) {

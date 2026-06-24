@@ -28,6 +28,7 @@ import {
 import {
   startFinishTimeActivity,
   endFinishTimeActivity,
+  updateFinishTimeActivity,
 } from '@/src/services/liveActivity';
 import { useEntitlement } from '@/src/features/paywall/useEntitlement';
 import { guardrailThresholdMin } from '@/src/engine';
@@ -145,6 +146,7 @@ export function useTimer(params: TimerParams): UseTimerResult {
   // ("Cannot update a component while rendering a different component"). The fresh
   // session is committed to the store in the effect below, after commit.
   const startedFresh = useRef(false);
+  const overrunTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const startedAtRef = useRef<number | null>(null);
   /**
    * Stores the actualMin computed by onFreezeForCapture so onStopAndLog can use
@@ -198,7 +200,19 @@ export function useTimer(params: TimerParams): UseTimerResult {
     startFinishTimeActivity({
       taskLabel: label,
       finishEpoch: Math.round(projectedFinish(startedAt, suggestedHonestMin) / 1000),
+      startEpoch: Math.round(startedAt / 1000),
+      isProRich: useEntitlement.getState().isPro,
     });
+    // Schedule the overrun flip for when wall-clock crosses the honest finish.
+    // If the timer somehow starts already past the finish (e.g. a resumed session),
+    // delay is 0 and the flip happens on the next JS turn — still correct.
+    const finishMs = projectedFinish(startedAt, suggestedHonestMin);
+    const delay = Math.max(0, finishMs - Date.now());
+    if (overrunTimerRef.current) clearTimeout(overrunTimerRef.current);
+    overrunTimerRef.current = setTimeout(() => {
+      updateFinishTimeActivity({ isOverrun: true });
+    }, delay);
+
     // Hyperfocus guardrail (Pro, opt-in): arm at session start. Non-reactive reads —
     // this effect runs once. Gate on Pro + the setting; a session that already nudged
     // (resumed after a kill) never re-arms. The foreground threshold is stashed in a
@@ -266,6 +280,18 @@ export function useTimer(params: TimerParams): UseTimerResult {
   // consumer forgets to read overProgress directly (defensive; no-op cost).
   useDerivedValue(() => overProgress.value, [overProgress]);
 
+  const clearOverrunTimer = useCallback(() => {
+    if (overrunTimerRef.current) {
+      clearTimeout(overrunTimerRef.current);
+      overrunTimerRef.current = null;
+    }
+  }, []);
+
+  // Cancel any pending overrun flip when the component unmounts (minimize/reopen
+  // path). The timer is NOT stopped on unmount — only on explicit stop/abandon —
+  // but if a new sheet instance mounts it will schedule its own flip.
+  useEffect(() => () => clearOverrunTimer(), [clearOverrunTimer]);
+
   // ── Hyperfocus guardrail — foreground driver ────────────────────────────────
   // Fire EXACTLY ONCE the moment elapsed crosses the armed threshold, mirroring the
   // FinishTime/PaceLabel pattern: the comparison runs on the UI thread; the JS work
@@ -304,6 +330,7 @@ export function useTimer(params: TimerParams): UseTimerResult {
   );
 
   const onStopAndLog = useCallback(async (labelOverride?: string, categoryOverride?: string) => {
+    clearOverrunTimer();
     // For quick-start sessions the clock was already frozen by onFreezeForCapture
     // before the capture sheet was shown. Use the pre-computed value; for normal
     // timers frozenActualMinRef is null and we stop the clock right now.
@@ -372,7 +399,7 @@ export function useTimer(params: TimerParams): UseTimerResult {
     }
 
     router.replace('/(modals)/reward');
-  }, [stop, applyLog, category, guessMin, label, taskId, suggestedHonestMin]);
+  }, [stop, applyLog, category, guessMin, label, taskId, suggestedHonestMin, clearOverrunTimer]);
 
   /**
    * Freeze the elapsed time WITHOUT writing a calibration log. Stores the
@@ -392,6 +419,7 @@ export function useTimer(params: TimerParams): UseTimerResult {
   }, [stop]);
 
   const onAbandon = useCallback(async () => {
+    clearOverrunTimer();
     cancel();
     void cancelTimerDone();
     void cancelGuardCheckIn();
@@ -411,7 +439,7 @@ export function useTimer(params: TimerParams): UseTimerResult {
       startedAt: startedAtRef.current ?? undefined,
     });
     router.dismiss();
-  }, [cancel, applyLog, category, guessMin, label]);
+  }, [cancel, applyLog, category, guessMin, label, clearOverrunTimer]);
 
   // Guardrail card answers. The session was already marked nudged when the card
   // mounted, so neither answer re-arms anything. "Keep going" is the calm default
