@@ -29,7 +29,10 @@ import {
   startFinishTimeActivity,
   endFinishTimeActivity,
   updateFinishTimeActivity,
+  presenceAvailable,
+  isFinishTimeActivityActive,
 } from '@/src/services/liveActivity';
+import { shouldSuppressHonestBanner, guardCollidesWithHonest, honestReachedFireMs } from '@/src/lib/notifyTiming';
 import { useEntitlement } from '@/src/features/paywall/useEntitlement';
 import { guardrailThresholdMin } from '@/src/engine';
 import type { AdaptSpeed } from '@/src/domain/types';
@@ -239,9 +242,17 @@ export function useTimer(params: TimerParams): UseTimerResult {
     if (useSettingsStore.getState().remindersEnabled) {
       void (async () => {
         const granted = await ensureNotificationPermission();
-        if (granted) await scheduleTimerDone({ label, startedAt, honestMin: suggestedHonestMin });
-        if (granted && guardThresholdMin != null) {
-          await scheduleGuardCheckIn({ label, startedAt, thresholdMin: guardThresholdMin });
+        if (!granted) return;
+        const suppressHonest = shouldSuppressHonestBanner(presenceAvailable(), isFinishTimeActivityActive());
+        if (!suppressHonest && useSettingsStore.getState().honestReachedEnabled) {
+          await scheduleTimerDone({ label, startedAt, honestMin: suggestedHonestMin });
+        }
+        if (guardThresholdMin != null) {
+          const honestFireMs = honestReachedFireMs(startedAt, suggestedHonestMin);
+          const guardFireMs = startedAt + guardThresholdMin * 60_000;
+          if (!guardCollidesWithHonest(honestFireMs, guardFireMs)) {
+            await scheduleGuardCheckIn({ label, startedAt, thresholdMin: guardThresholdMin });
+          }
         }
       })();
     }
