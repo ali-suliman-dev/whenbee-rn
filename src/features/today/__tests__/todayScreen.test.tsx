@@ -82,9 +82,11 @@ function makeQueued(overrides: {
 }
 
 beforeEach(() => {
+  // Reset to today so isPastDay is always false unless a test explicitly sets a past date.
   useDayTasksStore.setState({
     dayTasks: [],
     shelfTasks: [],
+    selectedDate: new Date().toISOString().slice(0, 10),
     selectFocusTask: () => null,
     loadShelf: async () => {},
   });

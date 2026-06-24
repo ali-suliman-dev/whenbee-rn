@@ -27,13 +27,15 @@ import { useTimerStore } from '@/src/stores/timerStore';
 import { useSettingsStore } from '@/src/stores/settingsStore';
 import { projectedFinish, formatClockMeridiem } from '@/src/lib/time';
 import { useDayTasksStore } from '@/src/stores/dayTasksStore';
-import { toLocalDayKey, addDays, weekdayOf } from '@/src/lib/day';
+import { toLocalDayKey, addDays, weekdayOf, compareDayKeys } from '@/src/lib/day';
 import { kv } from '@/src/lib/kv';
 import { useFocusedValue } from '@/src/hooks/useFocusedValue';
 import { useGreeting } from '@/src/features/today/useGreeting';
 import { TodayFocusHook } from '@/src/features/today/TodayFocusHook';
 import { CalendarStrip } from '@/src/features/today/calendarStrip/CalendarStrip';
 import { ShelfSection } from '@/src/features/today/ShelfSection';
+import { DayRecapCard } from '@/src/features/today/DayRecapCard';
+import { useDayRecap } from '@/src/features/today/useDayRecap';
 
 // Date label for a day-key, e.g. "Fri · Jun 12" — the day + date, no clock.
 function dateLabel(key: string): string {
@@ -66,8 +68,12 @@ export default function Today() {
   } = useToday();
   const selectedDate = useDayTasksStore((s) => s.selectedDate);
   const today = toLocalDayKey(Date.now());
+  const isPastDay = compareDayKeys(selectedDate, today) < 0;
   const headerTitle = selectedDate === today ? 'Today' : weekdayName(selectedDate);
   const headerSubtitle = dateLabel(selectedDate);
+
+  // Recap for past days — null when today or future.
+  const recap = useDayRecap();
 
   const isTimerRunning = useTimerStore((s) => s.isRunning);
   const runningTaskLabel = useTimerStore((s) => s.taskLabel);
@@ -279,85 +285,99 @@ export default function Today() {
               slots between the honey HUD and whatever occupies the focus slot. */}
           <QuickTaskChips />
 
-          {/* A live session takes the focus slot itself (the same footprint as the
-              Next card, so nothing jumps), carrying its guess→plan context + the
-              live elapsed. Otherwise the Next card invites the next start. */}
-          {isTimerRunning ? (
-            <RunningFocusCard categoryName={categoryName} />
-          ) : focus && summary ? (
-            <Pressable
-              key={focus.id}
-              onLongPress={() => promptRowActions(focus.id, focus.label)}
-              delayLongPress={300}
-              accessibilityRole="button"
-              accessibilityLabel={`${focus.label}. Long-press to delete.`}
-            >
-              <FocusCard
-                categoryLabel={categoryName(focus.category)}
-                taskTitle={focus.label}
-                summary={summary}
-                finishClock={formatClockMeridiem(
-                  projectedFinish(Date.now(), summary.honestMinutes),
-                )}
-                onDelete={() => deleteTask(focus.id)}
-                isExiting={deletingId === focus.id}
-                onStart={() =>
-                  router.push({
-                    pathname: '/(modals)/timer',
-                    params: {
-                      taskId: focus.id,
-                      label: focus.label,
-                      category: focus.category,
-                      estimateMin: summary.honestMinutes,
-                      guessMin: focus.guessMin,
-                    },
-                  })
-                }
-              />
-            </Pressable>
-          ) : totalCount === 0 ? (
-            <TodayEmptyState
-              variant={hasEverLogged ? 'daily' : 'first-run'}
-              onPrimary={() => {
-                haptics.light();
-                router.push('/(modals)/add-task');
-              }}
-              onLog={() => router.push('/(modals)/retro')}
-            />
-          ) : null}
-
-          {upNext.length > 0 ? (
-            <View style={{ gap: t.space[2] }}>
-              <Text style={sectionLabel}>UP NEXT</Text>
-              {upNext.map((row, idx) => (
-                <TaskRow
-                  key={row.id}
-                  title={row.label}
-                  categoryLabel={row.categoryLabel}
-                  guessMin={row.guessMin}
-                  honestMin={row.honestMin}
-                  carriedFrom={row.carriedFrom}
-                  onPress={() => startRow(row)}
-                  onDelete={() => deleteTask(row.id)}
-                  onLongPress={() => promptRowActions(row.id, row.label)}
-                  onMove={() => void useDayTasksStore.getState().moveToTomorrow(row.id)}
-                  peekHint={peekFirstRow && idx === 0}
-                  onPeeked={markSwipeHintSeen}
-                  isExiting={deletingId === row.id}
+          {/* Past-day banked recap — replaces the focus/empty hero entirely.
+              The strip + header stay; the task list and running card are hidden.
+              recap is guaranteed non-null when isPastDay (useDayRecap contract). */}
+          {isPastDay && recap ? (
+            <DayRecapCard recap={recap} rows={[...upNext, ...done]} />
+          ) : (
+            <>
+              {/* A live session takes the focus slot itself (the same footprint as the
+                  Next card, so nothing jumps), carrying its guess→plan context + the
+                  live elapsed. Otherwise the Next card invites the next start. */}
+              {isTimerRunning ? (
+                <RunningFocusCard categoryName={categoryName} />
+              ) : focus && summary ? (
+                <Pressable
+                  key={focus.id}
+                  onLongPress={() => promptRowActions(focus.id, focus.label)}
+                  delayLongPress={300}
+                  accessibilityRole="button"
+                  accessibilityLabel={`${focus.label}. Long-press to delete.`}
+                >
+                  <FocusCard
+                    categoryLabel={categoryName(focus.category)}
+                    taskTitle={focus.label}
+                    summary={summary}
+                    finishClock={formatClockMeridiem(
+                      projectedFinish(Date.now(), summary.honestMinutes),
+                    )}
+                    onDelete={() => deleteTask(focus.id)}
+                    isExiting={deletingId === focus.id}
+                    onStart={() =>
+                      router.push({
+                        pathname: '/(modals)/timer',
+                        params: {
+                          taskId: focus.id,
+                          label: focus.label,
+                          category: focus.category,
+                          estimateMin: summary.honestMinutes,
+                          guessMin: focus.guessMin,
+                        },
+                      })
+                    }
+                  />
+                </Pressable>
+              ) : totalCount === 0 ? (
+                <TodayEmptyState
+                  variant={hasEverLogged ? 'daily' : 'first-run'}
+                  onPrimary={() => {
+                    haptics.light();
+                    router.push('/(modals)/add-task');
+                  }}
+                  onLog={() => router.push('/(modals)/retro')}
                 />
-              ))}
-            </View>
-          ) : null}
+              ) : null}
+            </>
+          )}
 
-          {done.length > 0 ? (
-            <DoneSection
-              rows={done}
-              deletingId={deletingId}
-              onDelete={deleteTask}
-              onLongPress={promptRowActions}
-              showCoachMark={showCoachMark}
-              onCoachMarkDismiss={dismissCoachMark}
-            />
+          {/* UP NEXT + DONE — only for today/future; past days embed the list in DayRecapCard. */}
+          {!isPastDay ? (
+            <>
+              {upNext.length > 0 ? (
+                <View style={{ gap: t.space[2] }}>
+                  <Text style={sectionLabel}>UP NEXT</Text>
+                  {upNext.map((row, idx) => (
+                    <TaskRow
+                      key={row.id}
+                      title={row.label}
+                      categoryLabel={row.categoryLabel}
+                      guessMin={row.guessMin}
+                      honestMin={row.honestMin}
+                      carriedFrom={row.carriedFrom}
+                      onPress={() => startRow(row)}
+                      onDelete={() => deleteTask(row.id)}
+                      onLongPress={() => promptRowActions(row.id, row.label)}
+                      onMove={() => void useDayTasksStore.getState().moveToTomorrow(row.id)}
+                      peekHint={peekFirstRow && idx === 0}
+                      onPeeked={markSwipeHintSeen}
+                      isExiting={deletingId === row.id}
+                    />
+                  ))}
+                </View>
+              ) : null}
+
+              {done.length > 0 ? (
+                <DoneSection
+                  rows={done}
+                  deletingId={deletingId}
+                  onDelete={deleteTask}
+                  onLongPress={promptRowActions}
+                  showCoachMark={showCoachMark}
+                  onCoachMarkDismiss={dismissCoachMark}
+                />
+              ) : null}
+            </>
           ) : null}
 
           {/* No-day-yet shelf — quiet, beneath all day tasks, only when populated. */}
