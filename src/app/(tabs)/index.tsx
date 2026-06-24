@@ -42,6 +42,8 @@ import { CalendarOverlaySection } from '@/src/features/today/CalendarOverlaySect
 import { useDayCapacity } from '@/src/features/today/useDayCapacity';
 import { DayTimeline } from '@/src/features/today/DayTimeline';
 import { useEntitlement } from '@/src/features/paywall/useEntitlement';
+import { useScheduledRoutines } from '@/src/features/today/useScheduledRoutines';
+import { ScheduledRoutineBlock } from '@/src/features/today/ScheduledRoutineBlock';
 
 // Date label for a day-key, e.g. "Fri · Jun 12" — the day + date, no clock.
 function dateLabel(key: string): string {
@@ -156,6 +158,10 @@ export default function Today() {
   const isPro = useEntitlement((s) => s.isPro);
   const today = toLocalDayKey(Date.now());
   const isPastDay = compareDayKeys(selectedDate, today) < 0;
+
+  // Scheduled routine blocks for the selected day — derived read, no DB writes.
+  // Only shown on today/future days (past days use DayRecapCard).
+  const { blocks: scheduledRoutineBlocks } = useScheduledRoutines(selectedDate);
   const headerTitle = selectedDate === today ? 'Today' : weekdayName(selectedDate);
   const headerSubtitle = dateLabel(selectedDate);
 
@@ -539,6 +545,20 @@ export default function Today() {
                       </Text>
                     </View>
                   </Pressable>
+
+                  {/* Scheduled routine blocks — one per routine scheduled for
+                      this weekday. Derived read: no task rows written to the DB.
+                      Each block is collapsible and has a "Run" affordance. Only
+                      shown on today/future days (isPastDay is already guarded
+                      by the outer !isPastDay condition). */}
+                  {scheduledRoutineBlocks.length > 0 ? (
+                    <View style={{ gap: t.space[2], marginBottom: t.space[2] }}>
+                      <Text style={sectionLabel}>{"TODAY'S ROUTINES"}</Text>
+                      {scheduledRoutineBlocks.map((block) => (
+                        <ScheduledRoutineBlock key={block.routineId} block={block} />
+                      ))}
+                    </View>
+                  ) : null}
 
                   {upNext.length > 0 ? (
                     <View style={{ gap: t.space[2] }}>
