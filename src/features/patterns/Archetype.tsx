@@ -1,30 +1,55 @@
-import { View, Text, Pressable, Platform, type ViewStyle, type TextStyle } from 'react-native';
+import { useState } from 'react';
+import { View, Text, Pressable, Platform, type LayoutChangeEvent, type ViewStyle, type TextStyle } from 'react-native';
 import Svg, { Defs, LinearGradient, Stop, Rect } from 'react-native-svg';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '@/src/theme/useTheme';
 import { type } from '@/src/theme/typography';
 import { AppButton } from '@/src/components/AppButton';
-import { HoneyHexGlyph } from '@/src/components/HoneyHexGlyph';
 import { ShareableCard } from '@/src/components/ShareableCard';
 import { useShareCard } from '@/src/features/share/useShareCard';
 import { useOnboardingStore } from '@/src/stores/onboardingStore';
 import { archetypeTraits } from './archetypeTraits';
-import type { ArchetypeCard } from './usePatterns';
+import { archetypeStats } from './archetypeStats';
+import type { ArchetypeCard, CalibrationMapRow } from './usePatterns';
 
 // ──────────────────────────────────────────────────────────────────────────────
-// ArchetypeHero (S1) — the FOCAL card of the Patterns screen, as a "stat-sheet":
-// a rich (mode-independent) honey→indigo surface with a single honey-hex glyph, an
-// amber eyebrow + the archetype title, and a short ledger of traits derived from the
-// quiz answers + the calibration multiplier. Share is a real secondary pill BELOW
-// the card (keeps the screen's one primary CTA). No border, no rank/"rare" copy.
+// ArchetypeHero (S1) — the FOCAL card of the Patterns screen. The card IS the stat
+// (v8 mock, option A): on the mode-independent honey→indigo surface, the average
+// calibration multiplier is a jeweled honey hero numeral with a one-line read, the
+// archetype title sits above it, and any quiz-derived traits become a compact stat
+// block BELOW a hairline (shown only when answered, so the card never looks barren).
+// Share is a quiet secondary pill below the card (keeps the screen's one primary CTA).
 // ──────────────────────────────────────────────────────────────────────────────
 
-export function ArchetypeHero({ card }: { card: ArchetypeCard }) {
+/** Honest, guilt-free one-liner under the hero multiplier. */
+function multiplierRead(m: number): string {
+  if (m <= 1.05) return 'right on your guess';
+  return 'longer than you guess';
+}
+
+export function ArchetypeHero({
+  card,
+  calibrationMap = [],
+}: {
+  card: ArchetypeCard;
+  /** Per-category learned map — drives the on-device stat rows (no quiz needed). */
+  calibrationMap?: CalibrationMapRow[];
+}) {
   const t = useTheme();
+  // Measure the card so the gradient SVG gets an explicit viewBox + size — without
+  // it react-native-svg renders a hard vertical seam (see svg-fullbleed-seam memory).
+  const [size, setSize] = useState({ w: 0, h: 0 });
+  const onLayout = (e: LayoutChangeEvent) =>
+    setSize({ w: e.nativeEvent.layout.width, h: e.nativeEvent.layout.height });
   const archetypeShare = useShareCard('archetype');
   const quizAnswers = useOnboardingStore((s) => s.quizAnswers);
   const { title: archTitle, blurb, averageMultiplier } = card;
-  const rows = archetypeTraits(quizAnswers, averageMultiplier);
+  // The amber row IS the hero numeral now. Supporting rows = what the model has
+  // LEARNED (tracked count, sharpest/longest category) first, then any quiz traits.
+  const supporting = [
+    ...archetypeStats(calibrationMap),
+    ...archetypeTraits(quizAnswers, averageMultiplier).filter((r) => !r.amber),
+  ].slice(0, 4);
 
   const cardStyle: ViewStyle = {
     position: 'relative',
@@ -43,62 +68,97 @@ export function ArchetypeHero({ card }: { card: ArchetypeCard }) {
       default: { elevation: t.shadow.lift.elevation },
     }),
   };
-  const headerRow: ViewStyle = { flexDirection: 'row', alignItems: 'center', gap: t.space[4], marginBottom: t.space[5] };
   const eyebrow: TextStyle = { ...(type.eyebrow as unknown as TextStyle), color: t.colors.accent };
   const titleStyle: TextStyle = { ...(type.subtitle as unknown as TextStyle), color: t.reveal.inkOn, marginTop: t.space[1] };
-  const row: ViewStyle = { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingVertical: t.space[3] };
-  const divider: ViewStyle = { borderTopWidth: t.borderWidth.share, borderTopColor: t.reveal.amberHairline };
-  const rowLabel: TextStyle = { ...(type.body as unknown as TextStyle), color: t.reveal.blurbOn };
-  const rowValue = (amber?: boolean): TextStyle => ({
-    ...(type.bodyLg as unknown as TextStyle),
-    color: amber ? t.brand.honeyFill : t.reveal.inkOn,
-  });
+
+  // Hero stat: a big honey numeral with a smaller deeper-amber "×", read beside it.
+  const heroRow: ViewStyle = { flexDirection: 'row', alignItems: 'flex-end', gap: t.space[3], marginTop: t.space[5] };
+  const heroNum: TextStyle = { ...(type.honestNumberHero as unknown as TextStyle), color: t.brand.honeyFill };
+  const heroX: TextStyle = { fontFamily: 'Inter-Bold', fontSize: t.fontSize.xl, color: t.colors.accent, letterSpacing: -0.5 };
+  const heroRead: TextStyle = { ...(type.bodySm as unknown as TextStyle), color: t.reveal.blurbOn, flexShrink: 1, paddingBottom: t.space[2] };
+
+  // Supporting LEARNED-stat block. An amber rule splits it from the hero; each row
+  // is split from the next by a faint neutral hairline. All text is 10/12pt.
+  const supportWrap: ViewStyle = {
+    marginTop: t.space[5],
+    borderTopWidth: t.borderWidth.share,
+    borderTopColor: t.reveal.amberHairline,
+  };
+  const statRow: ViewStyle = {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingVertical: t.space[3],
+  };
+  const statDivider: ViewStyle = { borderTopWidth: t.borderWidth.share, borderTopColor: t.reveal.border };
+  const statLabel: TextStyle = { ...(type.caption as unknown as TextStyle), color: t.reveal.blurbOn };
+  const statValue: TextStyle = { ...(type.captionBold as unknown as TextStyle), color: t.reveal.inkOn };
+
   const shareBtn: ViewStyle = {
     alignSelf: 'flex-start',
     flexDirection: 'row',
     alignItems: 'center',
-    gap: t.space[2],
+    gap: t.space[1],
     marginTop: t.space[3],
-    paddingHorizontal: t.space[4],
-    height: t.size.control.md,
+    paddingHorizontal: t.space[3],
+    height: t.size.control.xs,
     borderRadius: t.radii.full,
     backgroundColor: t.colors.surfaceRaised,
   };
-  const shareLabel: TextStyle = { ...(type.bodySmBold as unknown as TextStyle), color: t.colors.ink };
+  const shareLabel: TextStyle = { ...(type.captionBold as unknown as TextStyle), fontSize: t.fontSize.xs, color: t.colors.ink };
 
   return (
     <View>
-      <View style={cardStyle}>
-        {/* Rich honey→indigo surface (clipped by the card's rounded overflow). */}
-        <Svg style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 }} pointerEvents="none">
-          <Defs>
-            <LinearGradient id="archGrad" x1="0" y1="0" x2="0.4" y2="1">
-              <Stop offset="0" stopColor={t.reveal.gradTop} />
-              <Stop offset="0.55" stopColor={t.reveal.gradMid} />
-              <Stop offset="1" stopColor={t.reveal.gradBot} />
-            </LinearGradient>
-          </Defs>
-          <Rect x="0" y="0" width="100%" height="100%" fill="url(#archGrad)" />
-        </Svg>
+      <View style={cardStyle} onLayout={onLayout}>
+        {/* Midnight-ink surface. Explicit viewBox + preserveAspectRatio="none" +
+            measured size are REQUIRED — percentage sizing alone seams vertically. */}
+        {size.w > 0 ? (
+          <Svg
+            width={size.w}
+            height={size.h}
+            viewBox={`0 0 ${size.w} ${size.h}`}
+            preserveAspectRatio="none"
+            style={{ position: 'absolute', top: 0, left: 0 }}
+            pointerEvents="none"
+          >
+            <Defs>
+              <LinearGradient id="archGrad" x1="0" y1="0" x2="0" y2="1">
+                <Stop offset="0" stopColor={t.reveal.gradTop} />
+                <Stop offset="0.55" stopColor={t.reveal.gradMid} />
+                <Stop offset="1" stopColor={t.reveal.gradBot} />
+              </LinearGradient>
+            </Defs>
+            <Rect x="0" y="0" width={size.w} height={size.h} fill="url(#archGrad)" />
+          </Svg>
+        ) : null}
 
-        <View style={headerRow}>
-          <HoneyHexGlyph />
-          <View style={{ flex: 1 }}>
-            <Text style={eyebrow}>YOUR TIME PERSONALITY</Text>
-            <Text style={titleStyle}>{archTitle}</Text>
-          </View>
+        <Text style={eyebrow}>YOUR TIME PERSONALITY</Text>
+        <Text style={titleStyle}>{archTitle}</Text>
+
+        <View style={heroRow}>
+          <Text style={heroNum} accessibilityLabel={`${averageMultiplier.toFixed(1)} times`}>
+            {averageMultiplier.toFixed(1)}
+            <Text style={heroX}>×</Text>
+          </Text>
+          <Text style={heroRead}>{multiplierRead(averageMultiplier)}</Text>
         </View>
 
-        {rows.map((r, i) => (
-          <View key={r.label} style={[row, i > 0 ? divider : null]}>
-            <Text style={rowLabel}>{r.label}</Text>
-            <Text style={rowValue(r.amber)}>{r.value}</Text>
+        {supporting.length > 0 ? (
+          <View style={supportWrap}>
+            {supporting.map((r, i) => (
+              <View key={r.label} style={[statRow, i > 0 ? statDivider : null]}>
+                <Text style={statLabel}>{r.label}</Text>
+                <Text style={statValue} numberOfLines={1}>
+                  {r.value}
+                </Text>
+              </View>
+            ))}
           </View>
-        ))}
+        ) : null}
       </View>
 
       <Pressable style={shareBtn} onPress={archetypeShare.onShare} accessibilityRole="button">
-        <Ionicons name="share-outline" size={t.iconSize.sm} color={t.colors.ink} />
+        <Ionicons name="share-outline" size={t.iconSize.xs} color={t.colors.ink} />
         <Text style={shareLabel}>Share my archetype</Text>
       </Pressable>
 

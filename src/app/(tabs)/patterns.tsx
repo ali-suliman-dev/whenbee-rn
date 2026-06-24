@@ -79,7 +79,7 @@ export default function Patterns() {
           <>
             {/* 1 · IDENTITY */}
             {view.archetype ? (
-              <Animated.View entering={rise()}><ArchetypeHero card={view.archetype} /></Animated.View>
+              <Animated.View entering={rise()}><ArchetypeHero card={view.archetype} calibrationMap={view.calibrationMap} /></Animated.View>
             ) : (
               <Animated.View entering={rise()}>
                 <ArchetypePlaceholder onTakeQuiz={() => router.push('/(modals)/archetype-quiz')} />

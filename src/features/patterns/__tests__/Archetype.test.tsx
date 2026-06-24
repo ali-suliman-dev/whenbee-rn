@@ -10,15 +10,30 @@ it('renders the personality title and average multiplier', () => {
   expect(getAllByText(/1\.6×/).length).toBeGreaterThan(0);
 });
 
-it('renders the stat-sheet ledger (the multiplier row) and a share button', () => {
-  const { getByText, getAllByText } = render(
+it('renders the hero multiplier read and a share button', () => {
+  const { getByText } = render(
     <ArchetypeHero card={{ title: 'The Gentle Optimist', blurb: 'x', averageMultiplier: 1.5, provisional: true }} />,
   );
-  // The stat-sheet drops the provisional/"rare" badge by design — it always shows the
-  // Runs row (the multiplier) plus a real Share pill below the card.
-  expect(getByText('Runs')).toBeTruthy();
-  expect(getAllByText(/1\.5× long/).length).toBeGreaterThan(0);
+  // The hero is the jeweled multiplier with an honest, guilt-free one-liner.
+  expect(getByText('longer than you guess')).toBeTruthy();
   expect(getByText(/share my archetype/i)).toBeTruthy();
+});
+
+it('surfaces LEARNED stats from the calibration map even with no quiz answers', () => {
+  const { getByText } = render(
+    <ArchetypeHero
+      card={{ title: 'The Gentle Optimist', blurb: 'x', averageMultiplier: 1.5, provisional: false }}
+      calibrationMap={[
+        { categoryId: 'email', categoryName: 'Email', guessMin: 15, honestMin: 16, multiplier: 1.05, sampleSize: 4, confidence: 'honest' },
+        { categoryId: 'reports', categoryName: 'Reports', guessMin: 15, honestMin: 29, multiplier: 1.9, sampleSize: 8, confidence: 'honest' },
+      ]}
+    />,
+  );
+  expect(getByText('Tracked')).toBeTruthy();
+  expect(getByText('12 tasks')).toBeTruthy();
+  expect(getByText('Most accurate')).toBeTruthy();
+  expect(getByText('Runs longest')).toBeTruthy();
+  expect(getByText('Reports')).toBeTruthy();
 });
 
 it('renders the placeholder invite with a quiz CTA', () => {
