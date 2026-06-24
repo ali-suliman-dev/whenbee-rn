@@ -41,7 +41,9 @@ export interface UseAddTaskResult {
   /** True when the suggestion is based on the population prior (cold category, n < 3). */
   preEstimate: boolean;
   canSubmit: boolean;
-  onAddAndStart: () => Promise<void>;
+  /** Adds the task and navigates to the timer.
+   *  @param date - override the target date (default: store selectedDate). */
+  onAddAndStart: (date?: string | null) => Promise<void>;
   /** Queues the task on the selected day (or the optionally provided date)
    *  without navigating; returns true on success so the screen can show
    *  the "Added to today" toast before dismissing.
@@ -155,13 +157,14 @@ export function useAddTask(initialTitle?: string): UseAddTaskResult {
     return true;
   };
 
-  const onAddAndStart = async (): Promise<void> => {
+  const onAddAndStart = async (date?: string | null): Promise<void> => {
     if (!canSubmit || category === null || suggestion === null) return;
+    const resolvedDate = date === undefined ? useDayTasksStore.getState().selectedDate : date;
     const task = await addTask({
       label: title.trim(),
       category,
       guessMin,
-      date: useDayTasksStore.getState().selectedDate,
+      date: resolvedDate,
     });
     bank(title.trim(), category);
     // suggestedHonestMin = the honest number the user SAW in the Add-Task sheet
