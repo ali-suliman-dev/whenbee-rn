@@ -50,3 +50,15 @@ test('done task on today shows in today (bucketed by plannedDate==today here)', 
   const out = tasksForSelectedDay({ tasks, selectedDate: today, today });
   expect(out.map((t) => t.id)).toEqual(['d']);
 });
+
+test('shelf task (no plannedDate) never appears on today', () => {
+  const tasks = [task({ id: 'shelf', plannedDate: null })];
+  const out = tasksForSelectedDay({ tasks, selectedDate: today, today });
+  expect(out).toHaveLength(0);
+});
+
+test('a DONE task carried from a past day does NOT appear on today', () => {
+  const tasks = [task({ id: 'doneOld', plannedDate: '2026-06-22', status: 'done', completedAt: 5 })];
+  const out = tasksForSelectedDay({ tasks, selectedDate: today, today });
+  expect(out.map((t) => t.id)).toEqual([]);
+});

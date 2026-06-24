@@ -62,3 +62,21 @@ test('setDoneBy + getDayMeta', async () => {
   await repo.setDoneBy('2026-06-24', 1020);
   expect((await repo.getDayMeta('2026-06-24'))?.doneByMin).toBe(1020);
 });
+
+test('listCarryover includes tasks planned for today itself', async () => {
+  const repo = makeTasksRepo(createMemoryDatabase());
+  await repo.add(task({ id: 'today', plannedDate: '2026-06-24' }));
+  await repo.add(task({ id: 'old', plannedDate: '2026-06-22' }));
+  const list = await repo.listCarryover('2026-06-24');
+  expect(list.map((t) => t.id).sort()).toEqual(['old', 'today']);
+});
+
+test('complete without actualMin leaves actualMin untouched', async () => {
+  const repo = makeTasksRepo(createMemoryDatabase());
+  await repo.add(task({ id: 'a', actualMin: null }));
+  await repo.complete('a', { completedAt: 5000 });
+  const got = await repo.get('a');
+  expect(got?.status).toBe('done');
+  expect(got?.completedAt).toBe(5000);
+  expect(got?.actualMin).toBeNull();
+});
