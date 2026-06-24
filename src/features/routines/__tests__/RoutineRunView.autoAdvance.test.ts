@@ -14,6 +14,11 @@
 import { useRoutinesStore } from '@/src/stores/routinesStore';
 import { createMemoryDatabase } from '@/src/db';
 
+// expo-haptics is already mocked in jest.setup.js
+import { endFinishTimeActivity } from '@/src/services/liveActivity';
+import { haptics } from '@/src/lib/haptics';
+import * as Haptics from 'expo-haptics';
+
 // ── Mocks ────────────────────────────────────────────────────────────────────
 
 jest.mock('@/src/services/liveActivity', () => ({
@@ -30,11 +35,6 @@ jest.mock('@/src/services/routineNotifications', () => ({
 jest.mock('@/src/services/analytics', () => ({
   analytics: { capture: jest.fn() },
 }));
-
-// expo-haptics is already mocked in jest.setup.js
-import { endFinishTimeActivity } from '@/src/services/liveActivity';
-import { haptics } from '@/src/lib/haptics';
-import * as Haptics from 'expo-haptics';
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
