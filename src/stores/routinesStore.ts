@@ -19,9 +19,15 @@ import {
   clampRatio,
   priorFor,
   TRANSITION_PRIOR,
+  stepHonestMinutes,
+  routineHonestTotal,
 } from '@/src/engine';
 import type { Routine, RoutineStep, RoutineStepKey } from '@/src/domain/types';
 import { analytics } from '@/src/services/analytics';
+import {
+  scheduleRoutineAlerts,
+  cancelRoutineAlerts,
+} from '@/src/services/routineNotifications';
 
 // ──────────────────────────────────────────────────────────────────────────────
 // routinesStore — saved routines list + build/edit draft + a KV-persisted
@@ -141,6 +147,39 @@ async function resolveDb(
   const db = await getDatabase();
   set({ db });
   return db;
+}
+
+/**
+ * Compute startByMinuteOfDay for a routine, given its persisted steps.
+ * Returns null when doneByMinuteOfDay is null or there are no steps.
+ * Mirrors the engine call in useRoutines (no React dependency so it's usable in
+ * the async store action). Uses the default transition prior for newly created
+ * routines until trained.
+ */
+async function computeStartByMinuteOfDay(
+  db: Database,
+  routine: Routine,
+  steps: RoutineStep[],
+): Promise<number | null> {
+  if (routine.doneByMinuteOfDay === null || steps.length === 0) return null;
+  const recurring = makeRecurringRepo(db);
+  const catStats = makeCategoryStatsRepo(db);
+  const perStepHonest = await Promise.all(
+    steps.map(async (step) => {
+      const key = `routine:${routine.id}:${step.id}` as import('@/src/domain/types').RoutineStepKey;
+      const stat = await recurring.get(key);
+      let m: number;
+      if (stat && recurringHasEnoughData(stat.n)) {
+        m = stat.mEffective;
+      } else {
+        const cat = await catStats.get(step.category);
+        m = cat.mEffective;
+      }
+      return stepHonestMinutes(step.guessMin, m);
+    }),
+  );
+  const honestTotalMin = routineHonestTotal(perStepHonest, routine.transitionFactor);
+  return Math.max(0, routine.doneByMinuteOfDay - honestTotalMin);
 }
 
 /**
@@ -319,6 +358,15 @@ export const useRoutinesStore = create<RoutinesState>()(
           ? { routine_id_hash: hashId(id), step_count: steps.length }
           : { step_count: steps.length, has_anchor: draft.doneByMinuteOfDay !== null });
 
+        // Schedule or cancel start-by alerts based on the saved routine.
+        const startByMin = await computeStartByMinuteOfDay(db, routine, steps);
+        if (startByMin !== null) {
+          await scheduleRoutineAlerts(routine, startByMin);
+        } else {
+          // No anchor → cancel any existing alerts (alert toggle changed or anchor removed).
+          await cancelRoutineAlerts(id);
+        }
+
         set({ draft: emptyDraft });
         await get().loadRoutines();
         return id;
@@ -327,6 +375,8 @@ export const useRoutinesStore = create<RoutinesState>()(
       removeRoutine: async (id) => {
         const db = await resolveDb(get, set);
         await makeRoutinesRepo(db).remove(id);
+        // Cancel any scheduled alerts for the deleted routine.
+        await cancelRoutineAlerts(id);
         await get().loadRoutines();
       },
 
