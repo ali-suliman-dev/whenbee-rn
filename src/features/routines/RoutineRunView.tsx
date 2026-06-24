@@ -84,13 +84,48 @@ export function RoutineRunView() {
     advancedRef.current = { id: runningId, fired: false };
   }
 
-  // A 1s tick to drive the live countdown readout.
+  // A 1s tick to drive the live countdown readout AND auto-advance.
+  // Auto-advance lives here (not in the render body) to avoid "Cannot update a
+  // component while rendering" warnings — store setters must not be called during
+  // render. The advancedRef guard ensures the advance fires exactly once per step.
   const [, force] = useState(0);
   useEffect(() => {
     if (!runningId) return;
-    const id = setInterval(() => force((n) => n + 1), 1000);
+    const id = setInterval(() => {
+      force((n) => n + 1);
+
+      // Auto-advance: check if the running step has reached its honest estimate.
+      const state = useRoutinesStore.getState();
+      const run = state.activeRun;
+      if (!run) return;
+      const runningStep = run.steps.find((rs) => rs.status === 'running');
+      if (!runningStep) return;
+      if (advancedRef.current.fired) return;
+
+      // Get the routine definition to compute the honest seconds for this step.
+      const routineEntry = state.routines.find((r) => r.routine.id === run.routineId);
+      if (!routineEntry) return;
+      const stepDef = routineEntry.steps.find((s) => s.id === runningStep.stepId);
+      if (!stepDef) return;
+
+      const calibStats = useCalibrationStore.getState().statsByCategory;
+      const stepM = calibStats[stepDef.category]?.mEffective ?? priorFor(stepDef.category);
+      const honestSec = Math.round(stepHonestMinutes(stepDef.guessMin, stepM) * 60);
+      const stepElapsedSec = Math.max(
+        0,
+        Math.floor((Date.now() - startRef.current.at) / 1000),
+      );
+
+      if (stepElapsedSec >= honestSec) {
+        advancedRef.current.fired = true;
+        const actualMin = Math.max(1, Math.round((Date.now() - startRef.current.at) / MS_PER_MIN));
+        analytics.capture('routine_step_completed', { position: run.steps.indexOf(runningStep), over: false });
+        if (!reducedMotion) haptics.success();
+        state.completeStep(runningStep.stepId, actualMin);
+      }
+    }, 1000);
     return () => clearInterval(id);
-  }, [runningId]);
+  }, [runningId, reducedMotion]);
 
   if (!activeRun || !routine) {
     return (
@@ -122,21 +157,6 @@ export function RoutineRunView() {
   const handleSkip = (id: string, position: number) => {
     analytics.capture('routine_step_skipped', { position });
     skipStep(id);
-  };
-
-  /**
-   * Called by the 1s interval when elapsed crosses the honest estimate.
-   * Fires completeStep + a gentle haptic exactly once (advancedRef guard).
-   * Reduced-motion: still auto-advances; suppresses the haptic.
-   */
-  const handleAutoAdvance = (id: string, position: number) => {
-    if (advancedRef.current.fired) return; // guard: no refire
-    advancedRef.current.fired = true;
-    const min = Math.max(1, Math.round(elapsedMin()));
-    analytics.capture('routine_step_completed', { position, over: false });
-    // Gentle chime: haptic success (tactile beat). Suppressed under reduced-motion.
-    if (!reducedMotion) haptics.success();
-    completeStep(id, min);
   };
 
   const header: TextStyle = { ...(type.heading as unknown as TextStyle), color: t.colors.ink };
@@ -193,11 +213,6 @@ export function RoutineRunView() {
           // Elapsed seconds for this step (0 when not running).
           const stepElapsedSec = rs.status === 'running' ? elapsedSec() : 0;
           const remainingSec = honestSec - stepElapsedSec;
-
-          // Auto-advance check: when elapsed crosses the honest estimate, fire once.
-          if (rs.status === 'running' && stepElapsedSec >= honestSec && !advancedRef.current.fired) {
-            handleAutoAdvance(rs.stepId, i);
-          }
 
           return (
             <View key={rs.stepId} style={row}>

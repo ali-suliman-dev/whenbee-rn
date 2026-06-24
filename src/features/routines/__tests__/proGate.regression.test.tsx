@@ -16,7 +16,6 @@ import { useEntitlement } from '@/src/features/paywall/useEntitlement';
 import { useRoutinesStore } from '@/src/stores/routinesStore';
 import { createMemoryDatabase } from '@/src/db';
 import { RoutinesScreen } from '../RoutinesScreen';
-import type { ScheduledRoutineBlock as ScheduledRoutineBlockModel } from '@/src/features/today/useScheduledRoutines';
 
 // ── Mocks (hoisted by babel-jest) ────────────────────────────────────────────
 
@@ -105,49 +104,7 @@ describe('RoutinesScreen — Pro gate', () => {
 });
 
 // ─────────────────────────────────────────────────────────────────────────────
-
-describe('Scheduled routine blocks — Pro gate invariant', () => {
-  /**
-   * In index.tsx the render condition is:
-   *   `isPro && scheduledRoutineBlocks.length > 0`
-   *
-   * These tests assert the gate logic invariant directly. The Today screen
-   * integration tests cover the full render path for the screen.
-   */
-
-  const SAMPLE_BLOCK: ScheduledRoutineBlockModel = {
-    routineId: 'r1',
-    name: 'Morning flow',
-    honestTotalMin: 45,
-    startByMin: 435,
-    steps: [
-      { stepId: 's1', label: 'Meditate', honestMin: 15 },
-      { stepId: 's2', label: 'Exercise', honestMin: 30 },
-    ],
-  };
-
-  it('gate is OFF for a free user even when blocks exist', () => {
-    const isPro = false;
-    const blocks = [SAMPLE_BLOCK];
-    // Invariant: free user never sees scheduled routine blocks
-    expect(isPro && blocks.length > 0).toBe(false);
-  });
-
-  it('gate is ON for a Pro user with scheduled routine blocks', () => {
-    const isPro = true;
-    const blocks = [SAMPLE_BLOCK];
-    expect(isPro && blocks.length > 0).toBe(true);
-  });
-
-  it('gate is OFF for a Pro user with no scheduled routines', () => {
-    const isPro = true;
-    const blocks: ScheduledRoutineBlockModel[] = [];
-    expect(isPro && blocks.length > 0).toBe(false);
-  });
-
-  it('gate is OFF for a free user with no blocks', () => {
-    const isPro = false;
-    const blocks: ScheduledRoutineBlockModel[] = [];
-    expect(isPro && blocks.length > 0).toBe(false);
-  });
-});
+// NOTE: The real render gate test lives in:
+//   src/features/today/__tests__/scheduledRoutineGate.test.tsx
+// That file renders ScheduledRoutineBlock inside the same gate condition used in
+// index.tsx and asserts DOM presence/absence for free vs Pro users.

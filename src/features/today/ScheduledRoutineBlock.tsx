@@ -4,6 +4,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import { useTheme } from '@/src/theme/useTheme';
 import { AppText } from '@/src/components/AppText';
+import { formatClock } from '@/src/lib/time';
 import { useRoutinesStore } from '@/src/stores/routinesStore';
 import type { ScheduledRoutineBlock as ScheduledRoutineBlockModel } from './useScheduledRoutines';
 
@@ -22,14 +23,15 @@ interface Props {
   block: ScheduledRoutineBlockModel;
 }
 
-/** Convert minute-of-day (0–1439) to a 12-hour clock string, e.g. 450 → "7:30 AM". */
-function minuteOfDayToClock(min: number): string {
-  const h = Math.floor(min / 60) % 24;
-  const m = min % 60;
-  const period = h < 12 ? 'AM' : 'PM';
-  const h12 = h % 12 === 0 ? 12 : h % 12;
-  const mm = m < 10 ? `0${m}` : String(m);
-  return `${h12}:${mm} ${period}`;
+/**
+ * Minute-of-day → clock string via the shared app formatter (12/24h honoured).
+ * Mirrors the `clockFor` helper in RoutinesList.tsx so all routine time displays
+ * follow the same system setting instead of hardcoding 12h AM/PM.
+ */
+function clockFor(minuteOfDay: number): string {
+  const d = new Date();
+  d.setHours(Math.floor(minuteOfDay / 60), minuteOfDay % 60, 0, 0);
+  return formatClock(d.getTime());
 }
 
 export function ScheduledRoutineBlock({ block }: Props) {
@@ -115,7 +117,7 @@ export function ScheduledRoutineBlock({ block }: Props) {
         testID="routine-block-header"
         onPress={handleToggle}
         accessibilityRole="button"
-        accessibilityLabel={`${block.name}, ${block.honestTotalMin} minutes${block.startByMin !== null ? `, start by ${minuteOfDayToClock(block.startByMin)}` : ''}. ${expanded ? 'Collapse' : 'Expand'} steps.`}
+        accessibilityLabel={`${block.name}, ${block.honestTotalMin} minutes${block.startByMin !== null ? `, start by ${clockFor(block.startByMin)}` : ''}. ${expanded ? 'Collapse' : 'Expand'} steps.`}
         accessibilityState={{ expanded }}
         hitSlop={4}
       >
@@ -129,7 +131,7 @@ export function ScheduledRoutineBlock({ block }: Props) {
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: t.space[2] }}>
             <AppText style={metaStyle}>{block.honestTotalMin}m</AppText>
             {block.startByMin !== null ? (
-              <AppText style={metaStyle}>· start by {minuteOfDayToClock(block.startByMin)}</AppText>
+              <AppText style={metaStyle}>· start by {clockFor(block.startByMin)}</AppText>
             ) : null}
           </View>
 

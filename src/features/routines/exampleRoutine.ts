@@ -24,13 +24,14 @@ export interface ExampleRoutineSpec {
  * required. When the user has category data, B2 (calibration-seeded step
  * durations) will override these once they add their own steps.
  *
- * Categories match the app's built-in set: getting-ready, meals, commuting.
+ * Categories match the app's built-in seed set (src/features/onboarding/categories.ts):
+ *   getting_ready, cooking, errands — the closest real ids for a morning routine.
  */
 export const EXAMPLE_ROUTINE: ExampleRoutineSpec = {
   name: 'Morning routine',
   steps: [
-    { label: 'Get ready', category: 'getting-ready', guessMin: 20 },
-    { label: 'Breakfast', category: 'meals', guessMin: 15 },
-    { label: 'Commute prep', category: 'commuting', guessMin: 10 },
+    { label: 'Get ready', category: 'getting_ready', guessMin: 20 },
+    { label: 'Breakfast', category: 'cooking', guessMin: 15 },
+    { label: 'Commute prep', category: 'errands', guessMin: 10 },
   ],
 } as const;
