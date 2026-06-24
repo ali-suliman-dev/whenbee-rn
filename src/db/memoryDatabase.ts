@@ -3,7 +3,7 @@
 // fully synchronous; the async signatures satisfy the port contract.
 
 import type { Database } from './Database';
-import type { CategoryStatRow, CompanionRow, ContextEventRow, ContextTagRow, DiscoveryRow, ReasonEventRow, RecurringStatRow, RoutineRow, RoutineStepRow, TaskEventRow } from './types';
+import type { CategoryStatRow, CompanionRow, ContextEventRow, ContextTagRow, DayMetaRow, DiscoveryRow, ReasonEventRow, RecurringStatRow, RoutineRow, RoutineStepRow, TaskEventRow, TaskRow } from './types';
 
 export function createMemoryDatabase(): Database {
   const categoryStats = new Map<string, CategoryStatRow>();
@@ -13,6 +13,8 @@ export function createMemoryDatabase(): Database {
   const discoveries = new Map<string, DiscoveryRow>();
   const routines = new Map<string, RoutineRow>();
   const routineSteps = new Map<string, RoutineStepRow>();
+  const tasks = new Map<string, TaskRow>();
+  const dayMeta = new Map<string, DayMetaRow>();
   const companion: CompanionRow = {
     reclaimedMinutesLifetime: 0,
     lifetimeDataPoints: 0,
@@ -191,6 +193,53 @@ export function createMemoryDatabase(): Database {
       companion.discoveryCount += 1;
     },
 
+    async insertTask(row: TaskRow): Promise<void> {
+      tasks.set(row.id, { ...row });
+    },
+    async updateTask(id: string, patch: Partial<TaskRow>): Promise<void> {
+      const existing = tasks.get(id);
+      if (existing === undefined) return;
+      tasks.set(id, { ...existing, ...patch, id });
+    },
+    async deleteTask(id: string): Promise<void> {
+      tasks.delete(id);
+    },
+    async getTask(id: string): Promise<TaskRow | null> {
+      const r = tasks.get(id);
+      return r ? { ...r } : null;
+    },
+    async listTasksByDate(date: string): Promise<TaskRow[]> {
+      return [...tasks.values()]
+        .filter((t) => t.plannedDate === date)
+        .sort((a, b) => a.orderIndex - b.orderIndex)
+        .map((t) => ({ ...t }));
+    },
+    async listQueuedOnOrBefore(date: string): Promise<TaskRow[]> {
+      return [...tasks.values()]
+        .filter((t) => t.status === 'queued' && t.plannedDate !== null && t.plannedDate <= date)
+        .sort((a, b) => a.orderIndex - b.orderIndex)
+        .map((t) => ({ ...t }));
+    },
+    async listDoneCompletedBetween(startMs: number, endMs: number): Promise<TaskRow[]> {
+      return [...tasks.values()]
+        .filter((t) => t.status === 'done' && t.completedAt !== null && t.completedAt >= startMs && t.completedAt < endMs)
+        .sort((a, b) => (a.completedAt ?? 0) - (b.completedAt ?? 0))
+        .map((t) => ({ ...t }));
+    },
+    async listShelfTasks(): Promise<TaskRow[]> {
+      return [...tasks.values()]
+        .filter((t) => t.status === 'queued' && t.plannedDate === null)
+        .sort((a, b) => a.orderIndex - b.orderIndex)
+        .map((t) => ({ ...t }));
+    },
+    async getDayMeta(date: string): Promise<DayMetaRow | null> {
+      const r = dayMeta.get(date);
+      return r ? { ...r } : null;
+    },
+    async upsertDayMeta(row: DayMetaRow): Promise<void> {
+      dayMeta.set(row.date, { ...row });
+    },
+
     async wipeAll(): Promise<void> {
       categoryStats.clear();
       recurringStats.clear();
@@ -199,6 +248,8 @@ export function createMemoryDatabase(): Database {
       discoveries.clear();
       routines.clear();
       routineSteps.clear();
+      tasks.clear();
+      dayMeta.clear();
       companion.reclaimedMinutesLifetime = 0;
       companion.lifetimeDataPoints = 0;
       companion.maxTier = 0;
