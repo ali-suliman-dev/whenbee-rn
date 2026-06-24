@@ -3,7 +3,6 @@ import { router } from 'expo-router';
 import { getDatabase } from '@/src/db';
 import { wipeLearning, wipeEverything } from '@/src/services/dataReset';
 import { useCalibrationStore } from '@/src/stores/calibrationStore';
-import { useTasksStore } from '@/src/stores/tasksStore';
 import { useDayTasksStore } from '@/src/stores/dayTasksStore';
 import { usePlanStore } from '@/src/stores/planStore';
 import { useTimerStore } from '@/src/stores/timerStore';
@@ -31,7 +30,6 @@ export function useAccountReset() {
       // Session/learning caches → empty, then repopulate from the now-clean db.
       // DB wipe already cleared tasks/day_meta; reload refreshes in-memory dayTasks.
       kv.delete('tasks-migrated-v1');
-      useTasksStore.getState().clear();
       await useDayTasksStore.getState().reload();
       usePlanStore.getState().reset();
       useTimerStore.getState().cancel();
@@ -50,7 +48,6 @@ export function useAccountReset() {
       await wipeEverything(db);
       // DB wipe already cleared tasks/day_meta; reload refreshes in-memory dayTasks.
       kv.delete('tasks-migrated-v1');
-      useTasksStore.getState().clear();
       await useDayTasksStore.getState().reload();
       usePlanStore.getState().reset();
       useTimerStore.getState().cancel();

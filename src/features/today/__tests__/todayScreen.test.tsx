@@ -2,7 +2,6 @@ import { render, screen } from '@testing-library/react-native';
 import { ActionSheetIOS } from 'react-native';
 import Today from '@/src/app/(tabs)/index';
 import { useCalibrationStore, type ReclaimSummary } from '@/src/stores/calibrationStore';
-import { useTasksStore } from '@/src/stores/tasksStore';
 import { useDayTasksStore } from '@/src/stores/dayTasksStore';
 import type { DayTask } from '@/src/engine/daySelectors';
 
@@ -75,7 +74,6 @@ function makeQueued(overrides: {
 }
 
 beforeEach(() => {
-  useTasksStore.setState({ tasks: [] });
   useDayTasksStore.setState({ dayTasks: [], selectFocusTask: () => null });
   useCalibrationStore.setState({
     logs: 0,
