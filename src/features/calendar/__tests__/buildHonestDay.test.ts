@@ -8,7 +8,7 @@ const MIN = 60_000;
 const at = (offsetMin: number) => DAY_START + offsetMin * MIN;
 
 function event(id: string, title: string, startMin: number, endMin: number): CalendarEvent {
-  return { id, title, startMs: at(startMin), endMs: at(endMin) };
+  return { id, title, startMs: at(startMin), endMs: at(endMin), allDay: false, calendarId: 'test-cal' };
 }
 
 describe('categoryForTitle', () => {

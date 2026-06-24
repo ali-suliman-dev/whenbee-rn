@@ -19,8 +19,8 @@ const requestReadAccess = jest.fn(async () => true);
 const DAY = new Date('2026-06-13T08:00:00').getTime();
 const MIN = 60_000;
 const mockEvents: CalendarEvent[] = [
-  { id: 'e1', title: 'Write report', startMs: DAY, endMs: DAY + 30 * MIN },
-  { id: 'e2', title: 'Client call', startMs: DAY + 120 * MIN, endMs: DAY + 150 * MIN },
+  { id: 'e1', title: 'Write report', startMs: DAY, endMs: DAY + 30 * MIN, allDay: false, calendarId: 'test-cal' },
+  { id: 'e2', title: 'Client call', startMs: DAY + 120 * MIN, endMs: DAY + 150 * MIN, allDay: false, calendarId: 'test-cal' },
 ];
 const getTodaysEvents = jest.fn(async () => mockEvents);
 
@@ -35,6 +35,8 @@ function setCalendar() {
     isStub: true,
     requestReadAccess,
     getTodaysEvents,
+    getEventsForDay: jest.fn(async () => mockEvents),
+    listCalendars: jest.fn(async () => [{ id: 'test-cal', title: 'Calendar' }]),
     writeAdjustments,
   });
 }
