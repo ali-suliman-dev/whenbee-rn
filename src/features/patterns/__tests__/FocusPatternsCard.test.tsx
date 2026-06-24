@@ -136,6 +136,14 @@ describe('FocusPatternsCard', () => {
       expect(screen.getByTestId('focus-curve-locked')).toBeTruthy();
       expect(screen.queryByTestId('focus-curve-learned')).toBeNull();
     });
+
+    it('full tree contains no clock time strings (Pro-gate regression)', () => {
+      // startMin=540 (9:00am), endMin=690 (11:30am). If the gate leaks, those
+      // meridiem strings would appear anywhere in the rendered tree.
+      const { toJSON } = render(<FocusPatternsCard />);
+      const json = JSON.stringify(toJSON());
+      expect(json).not.toMatch(/\d{1,2}:\d{2}(am|pm)/i);
+    });
   });
 
   describe('Pro + forming (basis prior)', () => {

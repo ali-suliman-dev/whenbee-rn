@@ -135,6 +135,20 @@ test('Free: tap routes to paywall with trigger focus_window', () => {
   });
 });
 
+// ── Pro-gate regression: free path never leaks clock times ───────────────────
+
+test('Free: full tree contains no clock time strings (Pro-gate regression)', () => {
+  // Pin clock to a fixed instant so time-formatting is deterministic.
+  // PERSONAL_WINDOW: startMin=540 (9:00am), endMin=660 (11:00am).
+  // If the gate leaks, those strings would appear in the rendered tree.
+  mockIsPro = false;
+  jest.mocked(useLearnedFocusWindow).mockReturnValue(PERSONAL_WINDOW);
+  const { toJSON } = render(<TodayFocusHook nowMs={NOW_BEFORE_WINDOW_END} />);
+  const json = JSON.stringify(toJSON());
+  // No meridiem clock patterns (e.g. "9:00am", "11:00am") should appear
+  expect(json).not.toMatch(/\d{1,2}:\d{2}(am|pm)/i);
+});
+
 // ── Render regression: visual text actually appears ───────────────────────────
 
 test('Pro: the row renders visible text (regression for function-form Pressable style bug)', () => {

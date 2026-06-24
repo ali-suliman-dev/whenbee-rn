@@ -151,7 +151,13 @@ export function TodayFocusHook({ nowMs }: TodayFocusHookProps): React.ReactEleme
             </>
           )}
         </View>
-        <AppText style={chevronStyle}>›</AppText>
+        <AppText
+          style={chevronStyle}
+          importantForAccessibility="no"
+          accessibilityElementsHidden
+        >
+          ›
+        </AppText>
       </AnimatedView>
     </Pressable>
   );

@@ -148,7 +148,12 @@ export function FocusPatternsCard() {
       <View style={cardStyle} testID="focus-locked-teaser">
         <View>
           <FocusCurve scoreByBin={scoreByBin} variant="locked" />
-          <View style={frostStyle} pointerEvents="none">
+          <View
+            style={frostStyle}
+            pointerEvents="none"
+            importantForAccessibility="no"
+            accessibilityElementsHidden
+          >
             <AppText style={lockTextStyle}>🔒</AppText>
           </View>
         </View>
