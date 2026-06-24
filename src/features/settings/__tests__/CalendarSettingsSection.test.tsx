@@ -1,4 +1,4 @@
-import { renderHook, act, render, fireEvent, waitFor } from '@testing-library/react-native';
+import { act, render, fireEvent } from '@testing-library/react-native';
 
 // ── Mocks ─────────────────────────────────────────────────────────────────────
 
