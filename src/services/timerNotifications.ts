@@ -54,15 +54,19 @@ function getModule(): NotificationsModule | null {
   }
 }
 
-/** Ask for permission gently (first timer start). No-op without the module. */
-export async function ensureNotificationPermission(): Promise<boolean> {
+/** Ask for permission gently (first timer start). No-op without the module.
+ *  Pass `{ provisional: true }` for a quiet, no-prompt iOS provisional grant
+ *  when the status is undetermined; omit for the standard full-permission prompt. */
+export async function ensureNotificationPermission(opts?: { provisional?: boolean }): Promise<boolean> {
   const N = getModule();
   if (!N) return false;
   try {
     const current = await N.getPermissionsAsync();
     if (current.granted) return true;
     if (!current.canAskAgain) return false;
-    const next = await N.requestPermissionsAsync();
+    const next = opts?.provisional
+      ? await N.requestPermissionsAsync({ ios: { allowProvisional: true } })
+      : await N.requestPermissionsAsync();
     return next.granted;
   } catch {
     return false;
