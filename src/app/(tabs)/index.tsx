@@ -36,6 +36,9 @@ import { CalendarStrip } from '@/src/features/today/calendarStrip/CalendarStrip'
 import { ShelfSection } from '@/src/features/today/ShelfSection';
 import { DayRecapCard } from '@/src/features/today/DayRecapCard';
 import { useDayRecap } from '@/src/features/today/useDayRecap';
+import { CapacityChip } from '@/src/features/today/CapacityChip';
+import { CalendarOverlaySection } from '@/src/features/today/CalendarOverlaySection';
+import { useDayCapacity } from '@/src/features/today/useDayCapacity';
 
 // Date label for a day-key, e.g. "Fri · Jun 12" — the day + date, no clock.
 function dateLabel(key: string): string {
@@ -209,6 +212,10 @@ export default function Today() {
   // Single call — avoids computing leadHoney(shownCells) twice in JSX.
   const lead = leadHoney(shownCells);
 
+  // Day capacity — single call here so CapacityChip and CalendarOverlaySection
+  // share the same resolved events (avoids double calendar fetches).
+  const cap = useDayCapacity();
+
   const sectionLabel: TextStyle = {
     ...(type.eyebrow as unknown as TextStyle),
     color: t.colors.inkSoft,
@@ -268,6 +275,12 @@ export default function Today() {
           {/* 7-day calendar strip — sits directly under the header title block,
               scrolls with content, lets the user jump to any day in the ±52 wk range. */}
           <CalendarStrip />
+
+          {/* Capacity chip — only on today/future (past shows DayRecapCard instead).
+              Passes the pre-resolved cap result so the chip skips its own fetch. */}
+          {!isPastDay ? (
+            <CapacityChip weekdayLabel={headerTitle} cap={cap} />
+          ) : null}
 
           {/* Daily ritual (opt-in) lived in the honey HUD footer; the HUD is gone,
               so render the seal standalone where the card was. */}
@@ -384,6 +397,13 @@ export default function Today() {
                   onCoachMarkDismiss={dismissCoachMark}
                 />
               ) : null}
+
+              {/* Read-only calendar overlay — Pro + showEvents only (cap returns []
+                  for free users so this naturally renders nothing for them). */}
+              <CalendarOverlaySection
+                events={cap.events}
+                allDayEvents={cap.allDayEvents}
+              />
             </>
           ) : null}
 
