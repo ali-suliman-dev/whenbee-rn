@@ -1,6 +1,7 @@
 import { View, Text, Pressable, ScrollView, ActionSheetIOS, type TextStyle } from 'react-native';
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback, useEffect, useRef } from 'react';
 import { router } from 'expo-router';
+import Animated, { FadeIn } from 'react-native-reanimated';
 import { haptics } from '@/src/lib/haptics';
 import { Ionicons } from '@expo/vector-icons';
 import { AppText } from '@/src/components/AppText';
@@ -39,6 +40,7 @@ import { useDayRecap } from '@/src/features/today/useDayRecap';
 import { CapacityChip } from '@/src/features/today/CapacityChip';
 import { CalendarOverlaySection } from '@/src/features/today/CalendarOverlaySection';
 import { useDayCapacity } from '@/src/features/today/useDayCapacity';
+import { DayTimeline } from '@/src/features/today/DayTimeline';
 
 // Date label for a day-key, e.g. "Fri · Jun 12" — the day + date, no clock.
 function dateLabel(key: string): string {
@@ -56,6 +58,74 @@ function weekdayName(key: string): string {
   return WEEKDAY_NAMES[weekdayOf(key)] ?? 'Today';
 }
 
+// ─────────────────────────────────────────────────────────────────────────────
+// ViewToggle — segmented List ⇄ Timeline control
+// ─────────────────────────────────────────────────────────────────────────────
+
+interface ViewToggleProps {
+  viewMode: 'list' | 'timeline';
+  onSelect: (m: 'list' | 'timeline') => void;
+}
+
+function ViewToggle({ viewMode, onSelect }: ViewToggleProps) {
+  const t = useTheme();
+
+  const trackStyle = {
+    flexDirection: 'row' as const,
+    backgroundColor: t.colors.surfaceSunken,
+    borderRadius: t.radii.full,
+    padding: 3,
+    alignSelf: 'flex-start' as const,
+  };
+
+  function pillStyle(active: boolean) {
+    return {
+      paddingHorizontal: t.space[4],
+      paddingVertical: t.space[2],
+      borderRadius: t.radii.full,
+      backgroundColor: active ? t.colors.surface : 'transparent',
+    };
+  }
+
+  function labelStyle(active: boolean): TextStyle {
+    return {
+      fontSize: t.fontSize.sm,
+      fontWeight: active ? t.fontWeight.semibold : t.fontWeight.regular,
+      color: active ? t.colors.ink : t.colors.inkSoft,
+      fontFamily: t.fontFamily.ui,
+    };
+  }
+
+  return (
+    <View style={trackStyle} accessibilityRole="tablist">
+      <Pressable
+        testID="view-toggle-list"
+        onPress={() => onSelect('list')}
+        accessibilityRole="tab"
+        accessibilityLabel="List view"
+        accessibilityState={{ selected: viewMode === 'list' }}
+        hitSlop={4}
+      >
+        <View style={pillStyle(viewMode === 'list')}>
+          <Text style={labelStyle(viewMode === 'list')}>List</Text>
+        </View>
+      </Pressable>
+      <Pressable
+        testID="view-toggle-timeline"
+        onPress={() => onSelect('timeline')}
+        accessibilityRole="tab"
+        accessibilityLabel="Timeline view"
+        accessibilityState={{ selected: viewMode === 'timeline' }}
+        hitSlop={4}
+      >
+        <View style={pillStyle(viewMode === 'timeline')}>
+          <Text style={labelStyle(viewMode === 'timeline')}>Timeline</Text>
+        </View>
+      </Pressable>
+    </View>
+  );
+}
+
 export default function Today() {
   const t = useTheme();
   const {
@@ -70,10 +140,23 @@ export default function Today() {
     hasEverLogged,
   } = useToday();
   const selectedDate = useDayTasksStore((s) => s.selectedDate);
+  const viewMode = useDayTasksStore((s) => s.viewMode);
+  const setViewMode = useDayTasksStore((s) => s.setViewMode);
+  const markPlanned = useDayTasksStore((s) => s.markPlanned);
   const today = toLocalDayKey(Date.now());
   const isPastDay = compareDayKeys(selectedDate, today) < 0;
   const headerTitle = selectedDate === today ? 'Today' : weekdayName(selectedDate);
   const headerSubtitle = dateLabel(selectedDate);
+
+  // Reset to List whenever the selected day changes — prevents being stranded
+  // in a stale Timeline from a previous day's plan.
+  const prevSelectedDate = useRef(selectedDate);
+  useEffect(() => {
+    if (prevSelectedDate.current !== selectedDate) {
+      prevSelectedDate.current = selectedDate;
+      setViewMode('list');
+    }
+  }, [selectedDate, setViewMode]);
 
   // Recap for past days — null when today or future.
   const recap = useDayRecap();
@@ -105,6 +188,24 @@ export default function Today() {
     setShowCoachMark(false);
     kv.set('today.seenCoachMarkV1', '1');
   }, []);
+
+  // "Plan my day" — stamps planComputedAt (fire-and-forget) + flips to Timeline.
+  // Optimistic: flip the view immediately so the transition feels instant.
+  // Pro gating (C1) is wired in the next task; here we wire the happy path only.
+  const handlePlanMyDay = useCallback(() => {
+    haptics.light();
+    void markPlanned();
+    setViewMode('timeline');
+  }, [markPlanned, setViewMode]);
+
+  // Toggle between list and timeline views.
+  const handleViewSelect = useCallback(
+    (m: 'list' | 'timeline') => {
+      haptics.light();
+      setViewMode(m);
+    },
+    [setViewMode],
+  );
 
   // The done-list coach-mark auto-dismiss now lives in DoneSection (it only runs
   // once the list is expanded, so a collapsed list never burns the one-shot).
@@ -361,49 +462,99 @@ export default function Today() {
             </>
           )}
 
-          {/* UP NEXT + DONE — only for today/future; past days embed the list in DayRecapCard. */}
+          {/* List ⇄ Timeline toggle + day body — only on today/future days.
+              Past days use DayRecapCard above and never show the planner lens. */}
           {!isPastDay ? (
             <>
-              {upNext.length > 0 ? (
-                <View style={{ gap: t.space[2] }}>
-                  <Text style={sectionLabel}>UP NEXT</Text>
-                  {upNext.map((row, idx) => (
-                    <TaskRow
-                      key={row.id}
-                      title={row.label}
-                      categoryLabel={row.categoryLabel}
-                      guessMin={row.guessMin}
-                      honestMin={row.honestMin}
-                      carriedFrom={row.carriedFrom}
-                      onPress={() => startRow(row)}
-                      onDelete={() => deleteTask(row.id)}
-                      onLongPress={() => promptRowActions(row.id, row.label)}
-                      onMove={() => void useDayTasksStore.getState().moveToTomorrow(row.id)}
-                      peekHint={peekFirstRow && idx === 0}
-                      onPeeked={markSwipeHintSeen}
-                      isExiting={deletingId === row.id}
+              {/* Segmented control: List ⇄ Timeline */}
+              <ViewToggle viewMode={viewMode} onSelect={handleViewSelect} />
+
+              {viewMode === 'timeline' ? (
+                /* Timeline lens — DayTimeline is self-contained (reads useDayPlan). */
+                <Animated.View entering={FadeIn.duration(t.motion.base)}>
+                  <DayTimeline />
+                </Animated.View>
+              ) : (
+                /* List lens — the existing task list + calendar overlay. */
+                <Animated.View entering={FadeIn.duration(t.motion.base)}>
+                  {/* "Plan my day" — quiet action chip beneath the toggle in List mode.
+                      Stamps planComputedAt and cross-fades to the Timeline.
+                      Pro gating is wired in C1; here this is the happy-path only. */}
+                  <Pressable
+                    testID="plan-my-day-btn"
+                    onPress={handlePlanMyDay}
+                    accessibilityRole="button"
+                    accessibilityLabel="Plan my day"
+                    hitSlop={8}
+                    style={{ alignSelf: 'flex-start', marginBottom: t.space[3] }}
+                  >
+                    <View
+                      style={{
+                        flexDirection: 'row',
+                        alignItems: 'center',
+                        gap: t.space[2],
+                        paddingHorizontal: t.space[4],
+                        paddingVertical: t.space[2],
+                        backgroundColor: t.colors.primaryWash,
+                        borderRadius: t.radii.full,
+                      }}
+                    >
+                      <Ionicons name="sparkles-outline" size={14} color={t.colors.primary} />
+                      <Text
+                        style={{
+                          fontSize: t.fontSize.sm,
+                          fontWeight: t.fontWeight.medium,
+                          color: t.colors.primary,
+                          fontFamily: t.fontFamily.ui,
+                        }}
+                      >
+                        Plan my day
+                      </Text>
+                    </View>
+                  </Pressable>
+
+                  {upNext.length > 0 ? (
+                    <View style={{ gap: t.space[2] }}>
+                      <Text style={sectionLabel}>UP NEXT</Text>
+                      {upNext.map((row, idx) => (
+                        <TaskRow
+                          key={row.id}
+                          title={row.label}
+                          categoryLabel={row.categoryLabel}
+                          guessMin={row.guessMin}
+                          honestMin={row.honestMin}
+                          carriedFrom={row.carriedFrom}
+                          onPress={() => startRow(row)}
+                          onDelete={() => deleteTask(row.id)}
+                          onLongPress={() => promptRowActions(row.id, row.label)}
+                          onMove={() => void useDayTasksStore.getState().moveToTomorrow(row.id)}
+                          peekHint={peekFirstRow && idx === 0}
+                          onPeeked={markSwipeHintSeen}
+                          isExiting={deletingId === row.id}
+                        />
+                      ))}
+                    </View>
+                  ) : null}
+
+                  {done.length > 0 ? (
+                    <DoneSection
+                      rows={done}
+                      deletingId={deletingId}
+                      onDelete={deleteTask}
+                      onLongPress={promptRowActions}
+                      showCoachMark={showCoachMark}
+                      onCoachMarkDismiss={dismissCoachMark}
                     />
-                  ))}
-                </View>
-              ) : null}
+                  ) : null}
 
-              {done.length > 0 ? (
-                <DoneSection
-                  rows={done}
-                  deletingId={deletingId}
-                  onDelete={deleteTask}
-                  onLongPress={promptRowActions}
-                  showCoachMark={showCoachMark}
-                  onCoachMarkDismiss={dismissCoachMark}
-                />
-              ) : null}
-
-              {/* Read-only calendar overlay — Pro + showEvents only (cap returns []
-                  for free users so this naturally renders nothing for them). */}
-              <CalendarOverlaySection
-                events={cap.events}
-                allDayEvents={cap.allDayEvents}
-              />
+                  {/* Read-only calendar overlay — Pro + showEvents only (cap returns []
+                      for free users so this naturally renders nothing for them). */}
+                  <CalendarOverlaySection
+                    events={cap.events}
+                    allDayEvents={cap.allDayEvents}
+                  />
+                </Animated.View>
+              )}
             </>
           ) : null}
 
