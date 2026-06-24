@@ -2,6 +2,28 @@ import { render, screen, waitFor } from '@testing-library/react-native';
 import Patterns from '@/src/app/(tabs)/patterns';
 import { useCalibrationStore, type PatternsData } from '@/src/stores/calibrationStore';
 
+// FocusPatternsCard (now mounted on this screen) calls useLearnedFocusWindow,
+// which loads focus events from calibrationStore via expo-sqlite. Stub it so the
+// screen tests don't hit the sqlite path — the card's own tests cover its states.
+jest.mock('@/src/features/planner/useLearnedFocusWindow', () => ({
+  useLearnedFocusWindow: () => ({
+    basis: 'prior' as const,
+    startMin: 540,
+    endMin: 690,
+    scoreByBin: Array(38).fill(0),
+    sampleCount: 0,
+    distinctDays: 0,
+    confidence: 0,
+    held: false,
+  }),
+}));
+
+// FocusCurve renders SVG which is fine in tests, but stub FocusWindowEditorSheet
+// (uses Modal + FinishTimeWheel with native scroll) to keep the screen test lean.
+jest.mock('@/src/features/planner/FocusWindowEditorSheet', () => ({
+  FocusWindowEditorSheet: () => null,
+}));
+
 // Mock expo-router: useFocusEffect runs the callback once (mirrors an immediate
 // focus) so usePatterns' on-focus refresh path is exercised without navigation.
 // useRouter is stubbed so ArchetypePlaceholder's onTakeQuiz can push without error.
