@@ -1,5 +1,5 @@
 // src/lib/__tests__/day.test.ts
-import { toLocalDayKey, addDays, compareDayKeys } from '@/src/lib/day';
+import { toLocalDayKey, addDays, compareDayKeys, weekdayOf } from '@/src/lib/day';
 
 describe('day keys', () => {
   test('toLocalDayKey formats local Y-M-D zero-padded', () => {
@@ -24,5 +24,23 @@ describe('day keys', () => {
     expect(compareDayKeys('2026-06-24', '2026-06-25')).toBeLessThan(0);
     expect(compareDayKeys('2026-06-25', '2026-06-24')).toBeGreaterThan(0);
     expect(compareDayKeys('2026-06-24', '2026-06-24')).toBe(0);
+  });
+});
+
+describe('weekdayOf', () => {
+  test('2026-06-24 is Wednesday (3)', () => {
+    expect(weekdayOf('2026-06-24')).toBe(3);
+  });
+
+  test('2026-06-21 is Sunday (0)', () => {
+    expect(weekdayOf('2026-06-21')).toBe(0);
+  });
+
+  test('2026-06-22 is Monday (1)', () => {
+    expect(weekdayOf('2026-06-22')).toBe(1);
+  });
+
+  test('2026-06-28 is Sunday (0)', () => {
+    expect(weekdayOf('2026-06-28')).toBe(0);
   });
 });

@@ -23,3 +23,12 @@ export function addDays(key: string, n: number): string {
 export function compareDayKeys(a: string, b: string): number {
   return a < b ? -1 : a > b ? 1 : 0;
 }
+
+/**
+ * Returns the local weekday index (0 = Sunday … 6 = Saturday) for a 'YYYY-MM-DD' key.
+ * Uses local Date construction — consistent with toLocalDayKey.
+ */
+export function weekdayOf(key: string): number {
+  const [y, m, d] = key.split('-').map(Number) as [number, number, number];
+  return new Date(y, m - 1, d).getDay();
+}
