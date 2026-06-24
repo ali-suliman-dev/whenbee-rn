@@ -1,5 +1,5 @@
 // src/services/__tests__/notificationResponses.test.ts
-const calls: Record<string, any[]> = { timer: [], startBy: [] };
+const calls: { timer: any[]; startBy: any[] } = { timer: [], startBy: [] };
 jest.mock('@/src/services/timerNotifications', () => ({
   scheduleTimerDone: jest.fn(async (o: any) => calls.timer.push(o)),
   scheduleStartBy: jest.fn(async (o: any) => calls.startBy.push(o)),
