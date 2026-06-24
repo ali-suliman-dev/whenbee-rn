@@ -1,6 +1,15 @@
 import { requireOptionalNativeModule } from 'expo-modules-core';
 import { isExpoGo } from '@/src/lib/isExpoGo';
 import { kv } from '@/src/lib/kv';
+import { useSettingsStore } from '@/src/stores/settingsStore';
+import { CAT, THREAD, resolveNotificationSound } from '@/src/services/notificationCategories';
+import type { NotificationContentInput } from 'expo-notifications';
+
+/** expo-notifications' types omit threadIdentifier (iOS grouping) even though the
+ *  runtime accepts it. Extend locally so we can pass it without casting each call. */
+type NotificationContentInputWithThread = NotificationContentInput & {
+  threadIdentifier?: string;
+};
 
 // ──────────────────────────────────────────────────────────────────────────────
 // reviewNotifications — the opt-in Monday "your honest week is ready" nudge for
@@ -74,11 +83,16 @@ export async function scheduleWeeklyReview(periodId: string): Promise<void> {
   if (!N) return;
   try {
     await cancelWeeklyReview();
+    const notifContent: NotificationContentInputWithThread = {
+      title: 'Your honest week is ready',
+      body: "Your week in honest numbers, whenever you've got a minute.",
+      sound: resolveNotificationSound(useSettingsStore.getState().notificationSound),
+      categoryIdentifier: CAT.REVIEW,
+      threadIdentifier: THREAD.REVIEW,
+      data: { kind: 'review' },
+    };
     const id = await N.scheduleNotificationAsync({
-      content: {
-        title: 'Your honest week is ready',
-        body: 'A calm look back, whenever you have a minute.',
-      },
+      content: notifContent,
       trigger: {
         type: N.SchedulableTriggerInputTypes.WEEKLY,
         weekday: MONDAY,
