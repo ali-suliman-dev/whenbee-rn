@@ -28,6 +28,10 @@ import {
   scheduleRoutineAlerts,
   cancelRoutineAlerts,
 } from '@/src/services/routineNotifications';
+import {
+  startFinishTimeActivity,
+  endFinishTimeActivity,
+} from '@/src/services/liveActivity';
 
 // ──────────────────────────────────────────────────────────────────────────────
 // routinesStore — saved routines list + build/edit draft + a KV-persisted
@@ -385,15 +389,32 @@ export const useRoutinesStore = create<RoutinesState>()(
         const db = await resolveDb(get, set);
         const loaded = await makeRoutinesRepo(db).get(routineId);
         if (!loaded) return;
-        const steps: RunStep[] = loaded.steps
-          .slice()
-          .sort((a, b) => a.position - b.position)
-          .map((step, index) => ({ stepId: step.id, status: index === 0 ? 'running' : 'upcoming' }));
-        set({ activeRun: { routineId, startedAt: Date.now(), steps } });
+        const ordered = loaded.steps.slice().sort((a, b) => a.position - b.position);
+        const steps: RunStep[] = ordered.map((step, index) => ({
+          stepId: step.id,
+          status: index === 0 ? 'running' : 'upcoming',
+        }));
+        const now = Date.now();
+        set({ activeRun: { routineId, startedAt: now, steps } });
         analytics.capture('routine_run_started', {
           step_count: steps.length,
           basis: routineBasis(loaded.routine.runCount).basis,
         });
+
+        // Wire the Lock-Screen Live Activity countdown for the first step (guarded no-op
+        // until the device build; the in-app countdown is always active). Use the first
+        // step's guessMin as a best-effort honest estimate (category M unknown at this
+        // point without the async resolve path — the view shows the accurate number).
+        const firstStep = ordered[0];
+        if (firstStep) {
+          const finishEpoch = Math.round((now + firstStep.guessMin * 60_000) / 1000);
+          startFinishTimeActivity({
+            taskLabel: `${loaded.routine.name} · ${firstStep.label}`,
+            finishEpoch,
+            startEpoch: Math.round(now / 1000),
+            isProRich: false, // entitlement not imported here; the device LA picks it up
+          });
+        }
       },
 
       completeStep: (stepId, actualMin) =>
@@ -473,6 +494,7 @@ export const useRoutinesStore = create<RoutinesState>()(
           run_count_after: loaded.routine.runCount + (fullRun ? 1 : 0),
         });
 
+        endFinishTimeActivity();
         set({ activeRun: null });
         await get().loadRoutines();
       },
@@ -483,6 +505,7 @@ export const useRoutinesStore = create<RoutinesState>()(
           const stepsDone = run.steps.filter((rs) => rs.status === 'done').length;
           analytics.capture('routine_run_abandoned', { steps_done: stepsDone, step_count: run.steps.length });
         }
+        endFinishTimeActivity();
         set({ activeRun: null });
       },
 
