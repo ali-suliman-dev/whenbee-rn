@@ -81,7 +81,7 @@ export const tokens = {
   fontSize: {
     '2xs': 8, xs: 10, sm: 12, base: 14, md: 16, lg: 20, xl: 24, '2xl': 30, '3xl': 38,
     // finer steps the role scale needs
-    micro: 10, caption: 12, bodySm: 14, bodyLg: 16, titleSm: 18, subtitle: 22, title: 26, honestLg: 36, honest: 40, honestHero: 46, timerClock: 64, timer: 78,
+    crumb: 9, micro: 10, caption: 12, bodySm: 14, bodyLg: 16, titleSm: 18, subtitle: 22, title: 26, honestLg: 36, honest: 40, honestHero: 46, timerClock: 64, timer: 78,
   },
   fontWeight: { regular: '400', medium: '500', semibold: '600', bold: '700' },
   fontFamily: { ui: 'System', mono: 'Menlo' },
@@ -222,6 +222,8 @@ export const tokens = {
       accent: '#EEAE4D',
       accentEdge: '#C68A30',
       accentSoft: '#FBEFD6', // low-emphasis amber fill
+      honeyWash: '#FBF2DF', // solid warm panel — the honest-number hero surface (one continuous tint, no gradient seam)
+      accentChip: '#F3E2C0', // solid warm chip (tier/status pill) — a step deeper than accentSoft
       accentCoin: 'rgba(238,174,77,0.32)', // tint disc that still reads on accentSoft
       // RayBurst sunburst wedge fill. A deeper periwinkle than primarySoft so the
       // rays actually read on cream (primarySoft was near-invisible on the page bg).
@@ -304,6 +306,8 @@ export const tokens = {
       accent: '#EEAE4D',
       accentEdge: '#C68A30',
       accentSoft: 'rgba(238,174,77,0.18)',
+      honeyWash: '#2B2620', // solid warm-dark panel — the honest-number hero surface (one continuous tint, no gradient seam)
+      accentChip: '#2E2A20', // solid warm-dark chip (tier/status pill) — reads as a coin on the deep bg
       accentCoin: 'rgba(238,174,77,0.28)', // tint disc that still reads on accentSoft
       // RayBurst wedge fill — indigo lifted just off the deep bg (the #8 look).
       rayFill: 'rgba(130,117,240,0.30)',
@@ -373,7 +377,7 @@ export const tokens = {
   // SVG square edge; stroke = ring weight; bee = BeeMascot size inside; caption =
   // tier-word font size beneath the ring. The ceremony sub-geometry (head-dot,
   // ripple, motes, seal) scales from `size` inside HoneyRing — see the ring group.
-  headerRing: { size: 58, stroke: 4.5, bee: 31, caption: 10.5, glowOpacity: 0.5 },
+  headerRing: { size: 58, stroke: 4.5, bee: 31, caption: 10.5, coinSize: 48 },
   // Wax-seal hex stamped over the bee at the Honest cap (flat-top hexagon WIDTH).
   seal: { size: 38 },
   // Flat motes flicked outward on the cap (solid squares — no glow).
@@ -490,10 +494,10 @@ export const tokens = {
   // is bundled here rather than the mode ramp).
   reveal: {
     crestW: 168, bee: 120, coinHex: 26, coinEdge: 4,
-    // Refined deep-indigo collectible surface (NOT muddy brown). Lit indigo at the
-    // top catches the eye, deepening to a near-black cool base so the gold stat and
-    // amber coin read as the only warmth.
-    gradTop: '#2F2A5C', gradMid: '#211D34', gradBot: '#14111E',
+    // "Midnight ink" collectible surface — a quiet cool-slate gradient (NOT muddy
+    // purple). Near-flat so the lower stat block stays legible; the honey stat and
+    // amber coin remain the only warmth on the card.
+    gradTop: '#242436', gradMid: '#232333', gradBot: '#222230',
     inkOn: '#F4F1EA', blurbOn: '#CFCAE0', eyebrowOn: '#9A95AD',
     // Shine system (what makes the card feel premium):
     //  bloom     = soft indigo light pooled behind the crest (radial, top-centre)
