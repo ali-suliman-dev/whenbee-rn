@@ -6,6 +6,11 @@ jest.mock('expo-modules-core', () => ({
   requireOptionalNativeModule: () => ({}), // pretend the native scheduler exists
 }));
 jest.mock('@/src/lib/isExpoGo', () => ({ isExpoGo: false }));
+jest.mock('@/src/stores/settingsStore', () => ({
+  useSettingsStore: {
+    getState: () => ({ notificationSound: 'default', quietHours: { enabled: false, startMin: 0, endMin: 0 } }),
+  },
+}));
 jest.mock('expo-notifications', () => ({
   SchedulableTriggerInputTypes: { TIME_INTERVAL: 'timeInterval', WEEKLY: 'weekly' },
   getPermissionsAsync: jest.fn(async () => ({ granted: true, canAskAgain: true })),
