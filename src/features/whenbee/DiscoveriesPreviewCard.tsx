@@ -1,14 +1,14 @@
-import { Pressable, View, Text, type ViewStyle, type TextStyle } from 'react-native';
-import { router } from 'expo-router';
-import { Ionicons } from '@expo/vector-icons';
-import { useTheme } from '@/src/theme/useTheme';
-import { type } from '@/src/theme/typography';
 import type { Discovery } from '@/src/domain/types';
+import { type } from '@/src/theme/typography';
+import { useTheme } from '@/src/theme/useTheme';
+import { Ionicons } from '@expo/vector-icons';
+import { router } from 'expo-router';
+import { Pressable, Text, View, type TextStyle, type ViewStyle } from 'react-native';
 import {
+  categoryLabel,
   discoveryDirection,
   discoverySentence,
   multiplierValue,
-  categoryLabel,
 } from './discoveryDisplay';
 
 // ──────────────────────────────────────────────────────────────────────────────
