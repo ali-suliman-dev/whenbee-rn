@@ -84,7 +84,7 @@ export interface Database {
   updateTask(id: string, patch: Partial<TaskRow>): Promise<void>;
   deleteTask(id: string): Promise<void>;
   getTask(id: string): Promise<TaskRow | null>;
-  /** All tasks planned for a day, order_index ascending. */
+  /** Queued tasks planned for a day, order_index ascending. */
   listTasksByDate(date: string): Promise<TaskRow[]>;
   /** Queued tasks whose plannedDate <= date (the carryover query), order_index asc. */
   listQueuedOnOrBefore(date: string): Promise<TaskRow[]>;

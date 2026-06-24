@@ -656,7 +656,7 @@ export async function createSqliteDatabase(name = 'whenbee.db'): Promise<Databas
 
     async listTasksByDate(date: string): Promise<TaskRow[]> {
       const rows = await db.getAllAsync<TaskDbRow>(
-        'SELECT * FROM tasks WHERE planned_date = ? ORDER BY order_index ASC', date,
+        `SELECT * FROM tasks WHERE planned_date = ? AND status = 'queued' ORDER BY order_index ASC`, date,
       );
       return rows.map(mapTask);
     },

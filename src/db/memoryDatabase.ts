@@ -210,7 +210,7 @@ export function createMemoryDatabase(): Database {
     },
     async listTasksByDate(date: string): Promise<TaskRow[]> {
       return [...tasks.values()]
-        .filter((t) => t.plannedDate === date)
+        .filter((t) => t.plannedDate === date && t.status === 'queued')
         .sort((a, b) => a.orderIndex - b.orderIndex)
         .map((t) => ({ ...t }));
     },
