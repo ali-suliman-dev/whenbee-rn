@@ -200,3 +200,6 @@ export const REPORT_MAX_SURPRISES = 5; // biggest-surprises cap
 // `snugFrac` = fraction of free time at/above which the day reads 'snug' (still
 // fits). Amber-only — 'over' is a calm fact (offer to move), never red/guilt.
 export const DAY_LOAD = { snugFrac: 0.8 } as const;
+
+/** Total waking-window minutes available per day (08:00–22:00 = 14 h). */
+export const WAKING_WINDOW_MIN = 840;
