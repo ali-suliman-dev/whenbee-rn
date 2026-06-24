@@ -29,3 +29,11 @@ test('empty day is comfortable, zeros', () => {
   const r = honestDayLoad({ taskHonestMins: [], eventTimedMins: [], wakingWindowMin: 600 });
   expect(r).toMatchObject({ taskMin: 0, eventMin: 0, committedMin: 0, verdict: 'comfortable', overByMin: 0 });
 });
+
+test('events shrink free but verdict is task-vs-free (no double count)', () => {
+  const r = honestDayLoad({ taskHonestMins: [100], eventTimedMins: [400], wakingWindowMin: 600 });
+  // free = 600 − 400 = 200; taskMin 100 < 0.8*200=160 → comfortable; committed 500 < 600 → not over
+  expect(r.verdict).toBe('comfortable');
+  expect(r.freeMin).toBe(200);
+  expect(r.overByMin).toBe(0);
+});

@@ -1,4 +1,4 @@
-import { View, Text, Linking, type ViewStyle, type TextStyle } from 'react-native';
+import { View, Text, Pressable, Linking, type ViewStyle, type TextStyle } from 'react-native';
 import { useTheme } from '@/src/theme/useTheme';
 import { type } from '@/src/theme/typography';
 import type { CalendarEvent } from '@/src/services/calendar';
@@ -106,19 +106,19 @@ export function CalendarOverlaySection({
 
       {/* Timed event rows */}
       {events.map((evt) => (
-        <View
+        <Pressable
           key={evt.id}
-          style={rowWrap}
-          // Non-interactive read-only marker for accessibility
-          accessibilityRole="text"
-          accessibilityLabel={`${evt.title}, ${fmtRange(evt.startMs, evt.endMs)}, read-only calendar event`}
-          onTouchEnd={() => openInCalendar(evt.startMs)}
+          accessibilityRole="button"
+          accessibilityLabel={`${evt.title}, ${fmtRange(evt.startMs, evt.endMs)}, open in Calendar`}
+          onPress={() => openInCalendar(evt.startMs)}
         >
-          <Text style={eventTitle} numberOfLines={1}>
-            {evt.title}
-          </Text>
-          <Text style={timeRange}>{fmtRange(evt.startMs, evt.endMs)}</Text>
-        </View>
+          <View style={rowWrap}>
+            <Text style={eventTitle} numberOfLines={1}>
+              {evt.title}
+            </Text>
+            <Text style={timeRange}>{fmtRange(evt.startMs, evt.endMs)}</Text>
+          </View>
+        </Pressable>
       ))}
 
       {/* All-day events sub-line — excluded from capacity math */}

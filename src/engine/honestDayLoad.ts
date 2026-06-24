@@ -23,10 +23,10 @@ export function honestDayLoad({ taskHonestMins, eventTimedMins, wakingWindowMin 
   const eventMin = sum(eventTimedMins);
   const committedMin = taskMin + eventMin;
   const freeMin = Math.max(0, wakingWindowMin - eventMin);
+  const overByMin = Math.max(0, committedMin - wakingWindowMin);
   let verdict: DayLoadResult['verdict'];
   if (committedMin > wakingWindowMin) verdict = 'over';
-  else if (committedMin > DAY_LOAD.snugFrac * freeMin) verdict = 'snug';
+  else if (taskMin > DAY_LOAD.snugFrac * freeMin) verdict = 'snug';
   else verdict = 'comfortable';
-  const overByMin = Math.max(0, committedMin - wakingWindowMin);
   return { taskMin, eventMin, committedMin, freeMin, verdict, overByMin };
 }

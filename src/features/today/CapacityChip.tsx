@@ -5,7 +5,7 @@ import Animated, { useReducedMotion, withTiming, useSharedValue, useAnimatedStyl
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '@/src/theme/useTheme';
 import { type } from '@/src/theme/typography';
-import { useDayCapacity, type DayCapacityResult } from '@/src/features/today/useDayCapacity';
+import type { DayCapacityResult } from '@/src/features/today/useDayCapacity';
 import { useEntitlement } from '@/src/features/paywall/useEntitlement';
 import { fmtHm } from '@/src/lib/time';
 
@@ -30,34 +30,21 @@ export interface CapacityChipProps {
   /** Label for "today" vs a named day — e.g. "Today" or "Thursday". Defaults "Today". */
   weekdayLabel?: string;
   /**
-   * Pre-resolved capacity result from the parent screen. When provided the chip
-   * skips its own internal `useDayCapacity()` call, avoiding a double calendar
-   * fetch when the screen and the chip both need the same data.
+   * Resolved capacity result from the parent screen. Required — the chip is a
+   * pure presentational component; the caller (index.tsx) owns the single
+   * `useDayCapacity()` call and passes the result in.
    */
-  cap?: DayCapacityResult;
+  cap: DayCapacityResult;
 }
 
-/** Percentage of the waking window committed (capped 0–1 for the bar). */
-function committedFrac(committedMin: number, wakingWindowMin: number): number {
-  if (wakingWindowMin <= 0) return 0;
-  return Math.min(1, committedMin / wakingWindowMin);
-}
 
-function taskFrac(taskMin: number, wakingWindowMin: number): number {
-  if (wakingWindowMin <= 0) return 0;
-  return Math.min(1, taskMin / wakingWindowMin);
-}
-
-export function CapacityChip({ weekdayLabel = 'Today', cap: capProp }: CapacityChipProps): React.ReactElement | null {
+export function CapacityChip({ weekdayLabel = 'Today', cap }: CapacityChipProps): React.ReactElement | null {
   const t = useTheme();
   const reduced = useReducedMotion();
 
-  // Use a pre-resolved result from the parent when available (avoids double
-  // calendar fetch). Fall back to the internal hook when the chip is used
-  // standalone (e.g. in isolation tests without a parent-level cap call).
-  const capInternal = useDayCapacity();
-  const { status, load, events } = capProp ?? capInternal;
-  const isPro2 = useEntitlement((s) => s.isPro);
+  // Pure presentational — caller owns the useDayCapacity() call.
+  const { status, load, events, isPro: isProCap } = cap;
+  const isPro2 = useEntitlement((s) => s.isPro) || isProCap;
 
   const [expanded, setExpanded] = useState(false);
   // Track dismissed state for the session (no nag)
@@ -200,9 +187,11 @@ export function CapacityChip({ weekdayLabel = 'Today', cap: capProp }: CapacityC
     flexDirection: 'row',
   };
 
-  const totalFrac = committedFrac(taskMin + eventMin, Math.max(taskMin + eventMin + freeMin, 1));
-  const tFrac = taskFrac(taskMin, Math.max(taskMin + eventMin + freeMin, 1));
-  const eFrac = totalFrac - tFrac;
+  // Normalize bar segments to the waking window (= freeMin + eventMin), not
+  // taskMin+eventMin+freeMin which under-fills as tasks grow (M3 fix).
+  const window = Math.max(freeMin + eventMin, 1);
+  const tFrac = Math.min(1, taskMin / window);
+  const eFrac = Math.min(1 - tFrac, eventMin / window);
 
   const taskSeg: ViewStyle = {
     flex: tFrac,

@@ -2,12 +2,10 @@ import React from 'react';
 import { render, screen, fireEvent } from '@testing-library/react-native';
 import * as Reanimated from 'react-native-reanimated';
 import { CapacityChip } from '@/src/features/today/CapacityChip';
-import { useDayCapacity } from '@/src/features/today/useDayCapacity';
+import type { DayCapacityResult } from '@/src/features/today/useDayCapacity';
 import type { DayLoadResult } from '@/src/engine/honestDayLoad';
 
 // ── Mocks ────────────────────────────────────────────────────────────────────
-
-jest.mock('@/src/features/today/useDayCapacity');
 
 // useEntitlement is a Zustand store — mock the selector pattern directly.
 let mockIsPro = false;
@@ -19,8 +17,6 @@ jest.mock('@/src/features/paywall/useEntitlement', () => ({
 jest.mock('expo-router', () => ({ router: { push: jest.fn() } }));
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
-
-const mockUseDayCapacity = jest.mocked(useDayCapacity);
 
 // Stub useReducedMotion (returns false = animations run, no effect in tests)
 let reducedMotionSpy: jest.SpyInstance;
@@ -43,52 +39,50 @@ function makeLoad(overrides: Partial<DayLoadResult> = {}): DayLoadResult {
   };
 }
 
-function setupPro(loadOverrides: Partial<DayLoadResult> = {}) {
-  mockIsPro = true;
-  mockUseDayCapacity.mockReturnValue({
+function makeCap(
+  loadOverrides: Partial<DayLoadResult> = {},
+  partial: Partial<DayCapacityResult> = {},
+): DayCapacityResult {
+  return {
     status: 'ready',
     load: makeLoad(loadOverrides),
     events: [],
     allDayEvents: [],
     isPro: true,
-  });
+    ...partial,
+  };
 }
 
-function setupFree() {
+function setupPro(loadOverrides: Partial<DayLoadResult> = {}): DayCapacityResult {
+  mockIsPro = true;
+  return makeCap(loadOverrides);
+}
+
+function setupFree(): DayCapacityResult {
   mockIsPro = false;
-  mockUseDayCapacity.mockReturnValue({
-    status: 'off',
-    load: makeLoad(),
-    events: [],
-    allDayEvents: [],
-    isPro: false,
-  });
+  return makeCap({}, { status: 'off', isPro: false });
 }
 
 // ── Tests ────────────────────────────────────────────────────────────────────
 
 describe('CapacityChip — Pro ready', () => {
-  beforeEach(() => setupPro());
-
   it('renders the comfortable verdict "fits" in the collapsed chip', () => {
-    render(<CapacityChip />);
+    render(<CapacityChip cap={setupPro()} />);
     expect(screen.getByText(/fits/i)).toBeOnTheScreen();
   });
 
   it('renders "snug" when verdict is snug', () => {
-    setupPro({ verdict: 'snug' });
-    render(<CapacityChip />);
+    render(<CapacityChip cap={setupPro({ verdict: 'snug' })} />);
     expect(screen.getByText(/snug/i)).toBeOnTheScreen();
   });
 
   it('renders "heavy" when verdict is over', () => {
-    setupPro({ verdict: 'over', overByMin: 75 });
-    render(<CapacityChip />);
+    render(<CapacityChip cap={setupPro({ verdict: 'over', overByMin: 75 })} />);
     expect(screen.getByText(/heavy/i)).toBeOnTheScreen();
   });
 
   it('expands on press to show the legend with "free"', () => {
-    render(<CapacityChip />);
+    render(<CapacityChip cap={setupPro()} />);
     // Initially collapsed — "free" not yet visible
     const chip = screen.getByTestId('capacity-chip-collapsed');
     fireEvent.press(chip);
@@ -97,8 +91,7 @@ describe('CapacityChip — Pro ready', () => {
   });
 
   it('shows "move" copy when over but never "overdue" or "behind"', () => {
-    setupPro({ verdict: 'over', overByMin: 60 });
-    render(<CapacityChip />);
+    render(<CapacityChip cap={setupPro({ verdict: 'over', overByMin: 60 })} />);
     // Expand first
     const chip = screen.getByTestId('capacity-chip-collapsed');
     fireEvent.press(chip);
@@ -108,13 +101,12 @@ describe('CapacityChip — Pro ready', () => {
   });
 
   it('does NOT render "failed" copy anywhere', () => {
-    setupPro({ verdict: 'over', overByMin: 120 });
-    render(<CapacityChip />);
+    render(<CapacityChip cap={setupPro({ verdict: 'over', overByMin: 120 })} />);
     expect(screen.queryByText(/failed/i)).toBeNull();
   });
 
   it('shows "Pad my calendar" link in expanded state (the write surface CTA)', () => {
-    render(<CapacityChip />);
+    render(<CapacityChip cap={setupPro()} />);
     const chip = screen.getByTestId('capacity-chip-collapsed');
     fireEvent.press(chip);
     expect(screen.getByText(/pad my calendar/i)).toBeOnTheScreen();
@@ -122,37 +114,35 @@ describe('CapacityChip — Pro ready', () => {
 });
 
 describe('CapacityChip — Free user', () => {
-  beforeEach(() => setupFree());
-
   it('renders the teaser "will fit"', () => {
-    render(<CapacityChip />);
+    render(<CapacityChip cap={setupFree()} />);
     expect(screen.getByText(/will fit/i)).toBeOnTheScreen();
   });
 
   it('renders the "Pro" pill', () => {
-    render(<CapacityChip />);
+    render(<CapacityChip cap={setupFree()} />);
     expect(screen.getByText('Pro')).toBeOnTheScreen();
   });
 
   it('does NOT render the honest-day number text', () => {
-    render(<CapacityChip />);
+    render(<CapacityChip cap={setupFree()} />);
     // The chip text should NOT contain "Honest day" or the time display (e.g. "2h")
     expect(screen.queryByTestId('capacity-chip-collapsed')).toBeNull();
   });
 
   it('does NOT render the bar/legend container', () => {
-    render(<CapacityChip />);
+    render(<CapacityChip cap={setupFree()} />);
     expect(screen.queryByTestId('capacity-bar')).toBeNull();
     expect(screen.queryByText(/free/i)).toBeNull();
   });
 
   it('does NOT render the "Pad my calendar" write link (Pro-only write surface)', () => {
-    render(<CapacityChip />);
+    render(<CapacityChip cap={setupFree()} />);
     expect(screen.queryByText(/pad my calendar/i)).toBeNull();
   });
 
   it('does NOT render any capacity number in the accessible output', () => {
-    render(<CapacityChip />);
+    render(<CapacityChip cap={setupFree()} />);
     // The collapsed chip with testID "capacity-chip-collapsed" must be absent
     expect(screen.queryByTestId('capacity-chip-collapsed')).toBeNull();
     // "Honest day" prefix must not appear (the number is right after it)
@@ -161,7 +151,7 @@ describe('CapacityChip — Free user', () => {
 
   it('routes to paywall with day_capacity trigger on press', () => {
     const { router } = jest.requireMock('expo-router') as { router: { push: jest.Mock } };
-    render(<CapacityChip />);
+    render(<CapacityChip cap={setupFree()} />);
     const teaser = screen.getByTestId('capacity-teaser');
     fireEvent.press(teaser);
     expect(router.push).toHaveBeenCalledWith({
@@ -174,28 +164,16 @@ describe('CapacityChip — Free user', () => {
 describe('CapacityChip — Pro denied/off', () => {
   it('shows task-only load when status is denied', () => {
     mockIsPro = true;
-    mockUseDayCapacity.mockReturnValue({
-      status: 'denied',
-      load: makeLoad({ eventMin: 0 }),
-      events: [],
-      allDayEvents: [],
-      isPro: true,
-    });
-    render(<CapacityChip />);
+    const cap = makeCap({ eventMin: 0 }, { status: 'denied' });
+    render(<CapacityChip cap={cap} />);
     // Still shows a collapsed chip for Pro users even when denied
     expect(screen.getByTestId('capacity-chip-collapsed')).toBeOnTheScreen();
   });
 
   it('shows task-only load when status is off', () => {
     mockIsPro = true;
-    mockUseDayCapacity.mockReturnValue({
-      status: 'off',
-      load: makeLoad({ eventMin: 0 }),
-      events: [],
-      allDayEvents: [],
-      isPro: true,
-    });
-    render(<CapacityChip />);
+    const cap = makeCap({ eventMin: 0 }, { status: 'off' });
+    render(<CapacityChip cap={cap} />);
     expect(screen.getByTestId('capacity-chip-collapsed')).toBeOnTheScreen();
   });
 });
