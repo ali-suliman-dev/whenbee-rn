@@ -1,6 +1,4 @@
-// `Text`, `TextStyle`, and the `type` typography import are kept only by the
-// commented-out tier label below — restore them if it comes back.
-import { Pressable, View } from 'react-native';
+import { Pressable, Text, View, type TextStyle } from 'react-native';
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
@@ -13,7 +11,7 @@ import { HoneyRing } from '@/src/features/whenbee/HoneyRing';
 import { BeeMascot, type BeeVariant } from '@/src/components/BeeMascot';
 import { BeeCoin } from '@/src/components/BeeCoin';
 import { useTheme } from '@/src/theme/useTheme';
-// import { type } from '@/src/theme/typography'; // re-enable with the tier label
+import { type } from '@/src/theme/typography';
 import type { CompanionStage } from '@/src/engine';
 import type { HoneycombCell } from '@/src/components/honeycomb/Honeycomb';
 
@@ -39,20 +37,20 @@ export function TodayHeaderRing({
   const scale = useSharedValue(1);
   const pressStyle = useAnimatedStyle(() => ({ transform: [{ scale: scale.get() }] }));
 
-  // Tier label hidden for now. When restored: absolutely positioned below the
-  // ring so the block measures as the ring circle alone — that keeps the sibling
-  // gear centered to the circle, not to circle + label (which sits it too high).
-  // const caption: TextStyle = {
-  //   ...(type.micro as unknown as TextStyle),
-  //   position: 'absolute',
-  //   top: '100%',
-  //   left: 0,
-  //   right: 0,
-  //   fontSize: t.headerRing.caption,
-  //   color: t.colors.inkSoft,
-  //   textAlign: 'center',
-  //   marginTop: t.space[1],
-  // };
+  // Tier word caption: absolutely positioned below the ring so the block measures
+  // as the ring circle alone — that keeps the sibling gear centered to the circle,
+  // not to circle + label (which would sit it too high).
+  const caption: TextStyle = {
+    ...(type.micro as unknown as TextStyle),
+    position: 'absolute',
+    top: '100%',
+    left: 0,
+    right: 0,
+    fontSize: t.headerRing.caption,
+    color: t.colors.inkSoft,
+    textAlign: 'center',
+    marginTop: t.space[1],
+  };
 
   return (
     <Pressable
@@ -84,8 +82,7 @@ export function TodayHeaderRing({
             />
           </View>
         </HoneyRing>
-        {/* Tier label hidden for now — may bring back. */}
-        {/* <Text style={caption}>{tier}</Text> */}
+        <Text style={caption}>{tier}</Text>
       </Animated.View>
     </Pressable>
   );
