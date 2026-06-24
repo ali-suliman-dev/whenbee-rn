@@ -10,6 +10,7 @@ import { useSettingsStore } from '@/src/stores/settingsStore';
 import { useTimerStore } from '@/src/stores/timerStore';
 import { setClockHour12 } from '@/src/lib/time';
 import { prefers24Hour } from '@/src/lib/clockPrefs';
+import { useNotificationSetup } from '@/src/features/notifications/useNotificationSetup';
 
 // Match every clock readout (Started/Done, planner, calendar) to the device's
 // "24-Hour Time" toggle. Read once at module load — it's a synchronous native const.
@@ -34,6 +35,8 @@ function RootNavigator() {
   useEffect(() => {
     Appearance.setColorScheme(colorPref === 'system' ? null : colorPref);
   }, [colorPref]);
+
+  useNotificationSetup();
 
   return (
     <Stack
