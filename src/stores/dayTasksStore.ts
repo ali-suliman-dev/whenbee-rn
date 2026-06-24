@@ -9,7 +9,7 @@ import { getDatabase } from '@/src/db/client';
 import { makeTasksRepo, type TasksRepo } from '@/src/db/repositories/tasksRepo';
 import { migrateLegacyTasks, type LegacyTodayTask } from '@/src/db/migrateLegacyTasks';
 import { tasksForSelectedDay, type DayTask } from '@/src/engine/daySelectors';
-import { toLocalDayKey } from '@/src/lib/day';
+import { toLocalDayKey, addDays } from '@/src/lib/day';
 import type { Task } from '@/src/domain/types';
 import { kv } from '@/src/lib/kv';
 
@@ -45,6 +45,8 @@ export interface DayTasksState {
   moveTask: (id: string, toDate: string | null, nowMs?: number) => Promise<void>;
   removeTask: (id: string, nowMs?: number) => Promise<void>;
   promoteToFocus: (id: string, nowMs?: number) => Promise<void>;
+  /** Move a task to tomorrow (today + 1). Convenience over moveTask. */
+  moveToTomorrow: (id: string, nowMs?: number) => Promise<void>;
   selectFocusTask: () => DayTask | null;
   reload: (nowMs?: number) => Promise<void>;
 }
@@ -229,6 +231,11 @@ export function makeDayTasksStore(deps: Deps): UseBoundStore<StoreApi<DayTasksSt
       await repo.update(id, { orderIndex: minOrder - 1 });
       const today = toLocalDayKey(nowMs ?? Date.now());
       set(await loadDayAndDots(get().selectedDate, today));
+    },
+
+    async moveToTomorrow(id, nowMs) {
+      const tomorrow = addDays(toLocalDayKey(nowMs ?? Date.now()), 1);
+      await get().moveTask(id, tomorrow, nowMs);
     },
 
     selectFocusTask() {

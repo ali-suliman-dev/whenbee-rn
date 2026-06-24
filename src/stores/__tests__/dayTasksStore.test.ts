@@ -126,6 +126,21 @@ test('promoteToFocus makes the target task the selectFocusTask', async () => {
   expect(store.getState().selectFocusTask()?.label).toBe('Second');
 });
 
+test('moveToTomorrow: task leaves today and appears when selecting tomorrow', async () => {
+  const { store } = freshStore();
+  await store.getState().init(NOW);
+  await store.getState().addTask({ label: 'Move me', category: 'admin', guessMin: 30, nowMs: NOW });
+  const id = store.getState().dayTasks[0]!.id;
+
+  // Move it to tomorrow — today's list should be empty afterward.
+  await (store.getState() as any).moveToTomorrow(id, NOW);
+  expect(store.getState().dayTasks.map((t) => t.label)).not.toContain('Move me');
+
+  // Selecting tomorrow should surface it.
+  await store.getState().selectDate('2026-06-25');
+  expect(store.getState().dayTasks.map((t) => t.label)).toContain('Move me');
+});
+
 // I1 regression: seeding a legacy kv blob triggers import via migrateLegacyTasks.
 test('I1 regression: legacy today-tasks kv blob seeds tasks onto today on init', async () => {
   const legacyBlob = JSON.stringify({
