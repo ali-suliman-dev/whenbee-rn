@@ -105,3 +105,90 @@ describe('stub — getTodaysEvents delegates to getEventsForDay', () => {
     expect(todayIds).toEqual(dayIds);
   });
 });
+
+// ── A2: app-owned Whenbee-calendar write ops (stub path) ─────────────────────
+
+describe('stub — requestWriteAccess (A2)', () => {
+  it('resolves to true in the stub', async () => {
+    const result = await stub.requestWriteAccess();
+    expect(result).toBe(true);
+  });
+});
+
+describe('stub — ensureWhenbeeCalendar (A2)', () => {
+  it('returns a non-empty string id', async () => {
+    const id = await stub.ensureWhenbeeCalendar(null);
+    expect(typeof id).toBe('string');
+    expect(id.length).toBeGreaterThan(0);
+  });
+
+  it('returns the same stub id regardless of existingId', async () => {
+    const id1 = await stub.ensureWhenbeeCalendar(null);
+    const id2 = await stub.ensureWhenbeeCalendar('some-existing-id');
+    expect(id1).toBe(id2);
+  });
+});
+
+describe('stub — createWhenbeeEvent (A2)', () => {
+  it('returns a non-empty string event id', async () => {
+    const calendarId = await stub.ensureWhenbeeCalendar(null);
+    const eventId = await stub.createWhenbeeEvent(calendarId, {
+      title: 'Deep work',
+      startMs: Date.now(),
+      endMs: Date.now() + 60 * 60_000,
+    });
+    expect(typeof eventId).toBe('string');
+    expect(eventId.length).toBeGreaterThan(0);
+  });
+});
+
+describe('stub — updateWhenbeeEvent (A2)', () => {
+  it('resolves without error (stub no-op)', async () => {
+    await expect(
+      stub.updateWhenbeeEvent('fake-event-id', {
+        startMs: Date.now(),
+        endMs: Date.now() + 30 * 60_000,
+        title: 'Updated',
+      }),
+    ).resolves.toBeUndefined();
+  });
+});
+
+describe('stub — deleteWhenbeeEvent (A2)', () => {
+  it('resolves without error (stub no-op)', async () => {
+    await expect(stub.deleteWhenbeeEvent('fake-event-id')).resolves.toBeUndefined();
+  });
+});
+
+describe('stub — deleteAllWhenbeeEvents (A2)', () => {
+  it('returns 0 (stub no-op)', async () => {
+    const calendarId = await stub.ensureWhenbeeCalendar(null);
+    const count = await stub.deleteAllWhenbeeEvents(calendarId);
+    expect(count).toBe(0);
+  });
+});
+
+describe('stub — deleteWhenbeeCalendar (A2)', () => {
+  it('resolves without error (stub no-op)', async () => {
+    const calendarId = await stub.ensureWhenbeeCalendar(null);
+    await expect(stub.deleteWhenbeeCalendar(calendarId)).resolves.toBeUndefined();
+  });
+});
+
+describe('stub — existing read ops + writeAdjustments still work after A2 (regression)', () => {
+  it('requestReadAccess still returns true', async () => {
+    expect(await stub.requestReadAccess()).toBe(true);
+  });
+
+  it('writeAdjustments still returns 0 (no-op in stub)', async () => {
+    const written = await stub.writeAdjustments([
+      { id: 'e1', startMs: Date.now(), endMs: Date.now() + 3600_000 },
+    ]);
+    expect(written).toBe(0);
+  });
+
+  it('listCalendars still returns mock-cal', async () => {
+    const cals = await stub.listCalendars();
+    expect(cals.map((c) => c.id)).toContain('mock-cal');
+  });
+});

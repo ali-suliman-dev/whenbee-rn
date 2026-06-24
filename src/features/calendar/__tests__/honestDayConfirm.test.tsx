@@ -38,6 +38,13 @@ function setCalendar() {
     getEventsForDay: jest.fn(async () => mockEvents),
     listCalendars: jest.fn(async () => [{ id: 'test-cal', title: 'Calendar' }]),
     writeAdjustments,
+    requestWriteAccess: jest.fn(async () => true),
+    ensureWhenbeeCalendar: jest.fn(async () => 'whenbee-cal-stub'),
+    createWhenbeeEvent: jest.fn(async () => 'stub-event'),
+    updateWhenbeeEvent: jest.fn(async () => undefined),
+    deleteWhenbeeEvent: jest.fn(async () => undefined),
+    deleteAllWhenbeeEvents: jest.fn(async () => 0),
+    deleteWhenbeeCalendar: jest.fn(async () => undefined),
   });
 }
 
