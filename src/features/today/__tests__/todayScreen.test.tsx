@@ -82,7 +82,12 @@ function makeQueued(overrides: {
 }
 
 beforeEach(() => {
-  useDayTasksStore.setState({ dayTasks: [], selectFocusTask: () => null });
+  useDayTasksStore.setState({
+    dayTasks: [],
+    shelfTasks: [],
+    selectFocusTask: () => null,
+    loadShelf: async () => {},
+  });
   useCalibrationStore.setState({
     logs: 0,
     statsByCategory: {},

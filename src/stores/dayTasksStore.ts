@@ -26,6 +26,8 @@ export interface DayTasksState {
   dayTasks: DayTask[];
   /** Sorted YYYY-MM-DD keys of all queued-task planned dates — powers calendar dot hints. */
   datesWithTasks: string[];
+  /** Tasks with no planned date (shelf / "no day yet"). Populated by loadShelf(). */
+  shelfTasks: DayTask[];
   loading: boolean;
   init: (nowMs?: number) => Promise<void>;
   selectDate: (date: string) => Promise<void>;
@@ -49,6 +51,8 @@ export interface DayTasksState {
   moveToTomorrow: (id: string, nowMs?: number) => Promise<void>;
   selectFocusTask: () => DayTask | null;
   reload: (nowMs?: number) => Promise<void>;
+  /** Refresh shelfTasks from the repo (tasks with plannedDate = null). */
+  loadShelf: () => Promise<void>;
 }
 
 // ---------------------------------------------------------------------------
@@ -134,6 +138,7 @@ export function makeDayTasksStore(deps: Deps): UseBoundStore<StoreApi<DayTasksSt
     viewMode: 'list',
     dayTasks: [],
     datesWithTasks: [],
+    shelfTasks: [],
     loading: false,
 
     async init(nowMs) {
@@ -245,6 +250,12 @@ export function makeDayTasksStore(deps: Deps): UseBoundStore<StoreApi<DayTasksSt
     async reload(nowMs) {
       const today = toLocalDayKey(nowMs ?? Date.now());
       set(await loadDayAndDots(get().selectedDate, today));
+    },
+
+    async loadShelf() {
+      const raw = await repo.listShelf();
+      const shelfTasks: DayTask[] = raw.map((t) => ({ ...t, carriedFrom: null }));
+      set({ shelfTasks });
     },
   }));
 }

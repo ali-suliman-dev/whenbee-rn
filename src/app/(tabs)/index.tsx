@@ -1,5 +1,5 @@
 import { View, Text, Pressable, ScrollView, ActionSheetIOS, type TextStyle } from 'react-native';
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { router } from 'expo-router';
 import { haptics } from '@/src/lib/haptics';
 import { Ionicons } from '@expo/vector-icons';
@@ -33,6 +33,7 @@ import { useFocusedValue } from '@/src/hooks/useFocusedValue';
 import { useGreeting } from '@/src/features/today/useGreeting';
 import { TodayFocusHook } from '@/src/features/today/TodayFocusHook';
 import { CalendarStrip } from '@/src/features/today/calendarStrip/CalendarStrip';
+import { ShelfSection } from '@/src/features/today/ShelfSection';
 
 // Date label for a day-key, e.g. "Fri · Jun 12" — the day + date, no clock.
 function dateLabel(key: string): string {
@@ -74,6 +75,12 @@ export default function Today() {
   const dailyRitualEnabled = useSettingsStore((s) => s.dailyRitualEnabled);
   const removeTask = useDayTasksStore((s) => s.removeTask);
   const promoteToFocus = useDayTasksStore((s) => s.promoteToFocus);
+  const shelfTasks = useDayTasksStore((s) => s.shelfTasks);
+
+  // Keep the shelf fresh: load on mount and whenever tasks change.
+  useEffect(() => {
+    void useDayTasksStore.getState().loadShelf();
+  }, [totalCount]);
 
   // First-run peek: teach the hidden swipe once, then never again. The flag is
   // burned only after the peek actually animates (see onPeeked below) — never on
@@ -95,7 +102,7 @@ export default function Today() {
   function deleteTask(id: string) {
     haptics.medium();
     dismissCoachMark();
-    void removeTask(id);
+    void removeTask(id).then(() => useDayTasksStore.getState().loadShelf());
     setDeletingId(null);
   }
   function showDayPicker(id: string) {
@@ -352,6 +359,25 @@ export default function Today() {
               onCoachMarkDismiss={dismissCoachMark}
             />
           ) : null}
+
+          {/* No-day-yet shelf — quiet, beneath all day tasks, only when populated. */}
+          <ShelfSection
+            shelfTasks={shelfTasks}
+            onMoveTask={(id, target) => {
+              if (target === 'tomorrow') {
+                haptics.light();
+                void useDayTasksStore.getState().moveToTomorrow(id).then(() =>
+                  useDayTasksStore.getState().loadShelf()
+                );
+              }
+            }}
+            onDeleteTask={(id) => {
+              haptics.medium();
+              void useDayTasksStore.getState().removeTask(id).then(() =>
+                useDayTasksStore.getState().loadShelf()
+              );
+            }}
+          />
 
           {totalCount === 0 && !isTimerRunning ? null : (
             <RetroLogChip

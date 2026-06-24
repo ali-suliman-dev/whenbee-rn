@@ -158,3 +158,32 @@ test('I1 regression: legacy today-tasks kv blob seeds tasks onto today on init',
   // I2: orderIndex should equal createdAt (100), not positional index (0)
   expect(tasks.find((t) => t.id === 'leg1')?.orderIndex).toBe(100);
 });
+
+// ── E2: shelf (no-day tasks) ─────────────────────────────────────────────────
+
+test('loadShelf populates shelfTasks after adding a task with date: null', async () => {
+  const { store } = freshStore();
+  await store.getState().init(NOW);
+  await store.getState().addTask({ label: 'Someday task', category: 'admin', guessMin: 20, date: null, nowMs: NOW });
+  await store.getState().loadShelf();
+  expect(store.getState().shelfTasks.map((t) => t.label)).toContain('Someday task');
+});
+
+test('shelfTasks is empty when no unscheduled tasks exist', async () => {
+  const { store } = freshStore();
+  await store.getState().init(NOW);
+  await store.getState().addTask({ label: 'Has a date', category: 'admin', guessMin: 10, nowMs: NOW });
+  await store.getState().loadShelf();
+  expect(store.getState().shelfTasks).toHaveLength(0);
+});
+
+test('moving a shelf task to a day removes it from shelfTasks on reload', async () => {
+  const { store } = freshStore();
+  await store.getState().init(NOW);
+  await store.getState().addTask({ label: 'Floating', category: 'admin', guessMin: 15, date: null, nowMs: NOW });
+  await store.getState().loadShelf();
+  const id = store.getState().shelfTasks[0]!.id;
+  await store.getState().moveTask(id, '2026-06-25', NOW);
+  await store.getState().loadShelf();
+  expect(store.getState().shelfTasks).toHaveLength(0);
+});
