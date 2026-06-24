@@ -466,11 +466,20 @@ export const tokens = {
     },
   },
 
-  // Patterns ProgressChart geometry — sparkline of accuracy over time. height =
-  // SVG box height (pt); stroke = line weight; dot = endpoint radius; areaOpacity
-  // = gradient fill alpha under the line; strokeDash = path length used for the
-  // draw-on animation (large enough to cover any path).
-  chart: { height: 96, stroke: 2.5, dot: 4.5, areaOpacity: 0.32, strokeDash: 1000 },
+  // AxisLineChart geometry — a real labelled line chart (TrendChart, ProgressChart).
+  // height = plot box height incl. the x-label row (pt); stroke = line weight; dot =
+  // interior data-point radius; endDot = emphasised endpoint radius; areaOpacity =
+  // gradient fill alpha under the line; strokeDash = path length for the draw-on
+  // animation (overestimate so it covers any path). gutter = left column width that
+  // holds the y-axis labels; rightPad/topPad = plot insets; xLabelH = bottom row for
+  // x-axis labels; gridW = gridline weight; refOpacity = the dashed reference line's
+  // alpha; axisFont = y/x label size (pt). endRing = surface-coloured halo stroke
+  // around the endpoint so it reads as a node, not a blob.
+  chart: {
+    height: 168, stroke: 2.5, dot: 2.5, endDot: 4, areaOpacity: 0.16, strokeDash: 1000,
+    gutter: 34, rightPad: 8, topPad: 12, xLabelH: 18, gridW: 1, refOpacity: 0.5,
+    axisFont: 10, endRing: 2,
+  },
 
   // Premium Pro teaser card (ProTeaserCard) — frosted preview panel + amber pill.
   // previewH = preview panel height (pt); barGap = gap between faux bars; barRadius
