@@ -117,6 +117,7 @@ function getNativePresence(): NativePresenceModule {
 // ── Public API (all guarded, all fire-and-forget) ────────────────────────────
 
 let homeWidgetSeen = false;
+let finishTimeActivityActive = false;
 
 /**
  * Publish the next-task snapshot to the Home-screen widget. Call on a counted
@@ -150,6 +151,7 @@ export function clearWidgetSnapshot(): void {
  * ring). Call on timer start. No-op in Expo Go / tests.
  */
 export function startFinishTimeActivity(attributes: LiveActivityAttributes): void {
+  finishTimeActivityActive = true;
   try {
     const presence = getNativePresence();
     presence.startLiveActivity(attributes);
@@ -170,6 +172,7 @@ export function updateFinishTimeActivity(state: { isOverrun: boolean }): void {
 
 /** End the running-timer Live Activity. Call on timer stop / cancel. No-op in Expo Go / tests. */
 export function endFinishTimeActivity(): void {
+  finishTimeActivityActive = false;
   try {
     const presence = getNativePresence();
     presence.endLiveActivity();
@@ -186,4 +189,9 @@ export function endFinishTimeActivity(): void {
  */
 export function presenceAvailable(): boolean {
   return !getNativePresence().isStub;
+}
+
+/** True while a finish-time Live Activity is live (drives notification suppression). */
+export function isFinishTimeActivityActive(): boolean {
+  return finishTimeActivityActive;
 }
