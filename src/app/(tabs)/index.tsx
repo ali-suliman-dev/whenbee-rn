@@ -26,7 +26,7 @@ import { useCalibrationStore } from '@/src/stores/calibrationStore';
 import { useTimerStore } from '@/src/stores/timerStore';
 import { useSettingsStore } from '@/src/stores/settingsStore';
 import { projectedFinish, formatClockMeridiem } from '@/src/lib/time';
-import { useTasksStore } from '@/src/stores/tasksStore';
+import { useDayTasksStore } from '@/src/stores/dayTasksStore';
 import { kv } from '@/src/lib/kv';
 import { useFocusedValue } from '@/src/hooks/useFocusedValue';
 import { useGreeting } from '@/src/features/today/useGreeting';
@@ -57,8 +57,8 @@ export default function Today() {
   const runningTaskLabel = useTimerStore((s) => s.taskLabel);
   const [pendingRow, setPendingRow] = useState<TodayRow | null>(null);
   const dailyRitualEnabled = useSettingsStore((s) => s.dailyRitualEnabled);
-  const removeTask = useTasksStore((s) => s.removeTask);
-  const promoteToFocus = useTasksStore((s) => s.promoteToFocus);
+  const removeTask = useDayTasksStore((s) => s.removeTask);
+  const promoteToFocus = useDayTasksStore((s) => s.promoteToFocus);
 
   // First-run peek: teach the hidden swipe once, then never again. The flag is
   // burned only after the peek actually animates (see onPeeked below) — never on
@@ -80,7 +80,7 @@ export default function Today() {
   function deleteTask(id: string) {
     haptics.medium();
     dismissCoachMark();
-    removeTask(id);
+    void removeTask(id);
     setDeletingId(null);
   }
   function promptDelete(id: string, label: string) {
@@ -124,7 +124,7 @@ export default function Today() {
     haptics.medium();
     const row = pendingRow;
     setPendingRow(null);
-    promoteToFocus(row.id);
+    void promoteToFocus(row.id);
     navigateToTimer(row);
   }
 

@@ -115,6 +115,17 @@ test('goToToday after a day boundary moves the selected day to the new today', a
   expect(store.getState().selectedDate).toBe('2026-06-25');
 });
 
+test('promoteToFocus makes the target task the selectFocusTask', async () => {
+  const { store } = freshStore();
+  await store.getState().init(NOW);
+  await store.getState().addTask({ label: 'First', category: 'admin', guessMin: 10, nowMs: NOW });
+  await store.getState().addTask({ label: 'Second', category: 'admin', guessMin: 10, nowMs: NOW + 1 });
+  // Second is currently not focus (First is)
+  const secondId = store.getState().dayTasks.find((t) => t.label === 'Second')!.id;
+  await store.getState().promoteToFocus(secondId, NOW + 2);
+  expect(store.getState().selectFocusTask()?.label).toBe('Second');
+});
+
 // I1 regression: seeding a legacy kv blob triggers import via migrateLegacyTasks.
 test('I1 regression: legacy today-tasks kv blob seeds tasks onto today on init', async () => {
   const legacyBlob = JSON.stringify({

@@ -42,6 +42,7 @@ export interface DayTasksState {
   ) => Promise<void>;
   moveTask: (id: string, toDate: string | null, nowMs?: number) => Promise<void>;
   removeTask: (id: string, nowMs?: number) => Promise<void>;
+  promoteToFocus: (id: string, nowMs?: number) => Promise<void>;
   selectFocusTask: () => DayTask | null;
   reload: (nowMs?: number) => Promise<void>;
 }
@@ -200,6 +201,17 @@ export function makeDayTasksStore(deps: Deps): UseBoundStore<StoreApi<DayTasksSt
 
     async removeTask(id, nowMs) {
       await repo.remove(id);
+      const today = toLocalDayKey(nowMs ?? Date.now());
+      set({ dayTasks: await loadDay(repo, get().selectedDate, today) });
+    },
+
+    async promoteToFocus(id, nowMs) {
+      const queued = get().dayTasks.filter((t) => t.status === 'queued');
+      const minOrder = queued.reduce(
+        (min, t) => Math.min(min, t.orderIndex),
+        queued[0]?.orderIndex ?? 0,
+      );
+      await repo.update(id, { orderIndex: minOrder - 1 });
       const today = toLocalDayKey(nowMs ?? Date.now());
       set({ dayTasks: await loadDay(repo, get().selectedDate, today) });
     },
