@@ -22,8 +22,8 @@ describe('HonestCard — range band hero', () => {
     // Free: the precise convergence point is HIDDEN behind the Pro teaser — no ~30 leaked.
     expect(screen.queryByText('~30')).toBeNull();
     expect(screen.getByText('Pro')).toBeOnTheScreen();
-    // No tight number / multiplier while learning.
-    expect(screen.queryByText('runs 2.0×')).toBeNull();
+    // No tight number / multiplier chip while learning.
+    expect(screen.queryByText('2.0')).toBeNull();
   });
 
   it('uses the raw tier meaning for raw confidence', () => {
@@ -47,16 +47,19 @@ describe('HonestCard — range band hero', () => {
   it('shows the tight number, multiplier, and affirmation once honest', () => {
     render(<HonestCard {...base} confidence="honest" range={null} />);
     expect(screen.getByText('~30')).toBeOnTheScreen();
-    expect(screen.getByText('runs 2.0×')).toBeOnTheScreen();
-    expect(screen.getByText('Now an honest number')).toBeOnTheScreen();
-    expect(screen.getByText('YOUR HONEST NUMBER')).toBeOnTheScreen();
+    // A design: multiplier folds into the quiet meta line ("2.0× your guess").
+    expect(screen.getByText('2.0×')).toBeOnTheScreen();
+    expect(screen.getByText('honest now')).toBeOnTheScreen();
+    // A design: eyebrow removed — the number speaks for itself.
+    expect(screen.queryByText('YOUR HONEST NUMBER')).toBeNull();
   });
 
   it('falls back to the tight number when confidence is omitted (back-compat)', () => {
     render(<HonestCard {...base} />);
     expect(screen.getByText('~30')).toBeOnTheScreen();
-    expect(screen.getByText('runs 2.0×')).toBeOnTheScreen();
-    expect(screen.queryByText('Now an honest number')).toBeNull();
+    expect(screen.getByText('2.0×')).toBeOnTheScreen();
+    // Not honest → no seal in the meta line.
+    expect(screen.queryByText('honest now')).toBeNull();
   });
 
   it('hides the precise convergence tick from free users (Pro gate)', () => {

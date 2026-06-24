@@ -12,6 +12,7 @@ import { router, useLocalSearchParams } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { Screen } from '@/src/components/Screen';
 import { Toast } from '@/src/components/Toast';
+import { HoneyHex } from '@/src/components/HoneyHex';
 import { useTheme } from '@/src/theme/useTheme';
 import { type } from '@/src/theme/typography';
 import { useCategoryDetail } from '@/src/features/category-detail/useCategoryDetail';
@@ -78,20 +79,26 @@ export default function CategoryDetailScreen() {
   return (
     <Screen>
       <View style={{ flex: 1 }}>
-        {/* Top bar — back chevron + eyebrow + category name */}
-        <View style={styles(t).topBar}>
+        {/* Top bar (Ha) — breadcrumb back, then a large title + honey tier pill */}
+        <View style={styles(t).header}>
           <Pressable
             onPress={() => router.back()}
             accessibilityRole="button"
             accessibilityLabel="Back"
-            hitSlop={10}
-            style={styles(t).backBtn}
+            hitSlop={t.size.hitSlop}
+            style={styles(t).crumb}
           >
-            <Ionicons name="chevron-back" size={24} color={t.colors.ink} />
+            <Ionicons name="chevron-back" size={t.iconSize.md} color={t.colors.inkSoft} />
+            <Text style={styles(t).crumbText}>Category insights</Text>
           </Pressable>
-          <View style={{ flex: 1 }}>
-            <Text style={styles(t).eyebrow}>CATEGORY INSIGHTS</Text>
-            <Text style={styles(t).h2}>{detail?.categoryName ?? ' '}</Text>
+          <View style={styles(t).titleRow}>
+            <Text style={styles(t).h2} numberOfLines={1}>{detail?.categoryName ?? ' '}</Text>
+            {detail?.tier ? (
+              <View style={styles(t).tierPill}>
+                <HoneyHex size={t.space[2.5]} />
+                <Text style={styles(t).tierPillText}>{detail.tier}</Text>
+              </View>
+            ) : null}
           </View>
         </View>
 
@@ -209,25 +216,53 @@ export default function CategoryDetailScreen() {
 
 function styles(t: ReturnType<typeof useTheme>) {
   return {
-    topBar: {
-      flexDirection: 'row',
-      alignItems: 'flex-start',
-      gap: t.space[2],
+    header: {
       paddingTop: t.space[2],
+      gap: t.space[1],
     } as ViewStyle,
-    backBtn: {
-      width: 44,
-      height: 44,
+    // Breadcrumb back row — the chevron + "Category insights" reads as one tappable
+    // crumb (44pt target via hitSlop), the eyebrow now lives here instead of above.
+    crumb: {
+      flexDirection: 'row',
       alignItems: 'center',
-      justifyContent: 'center',
-      marginLeft: -t.space[2],
+      gap: t.space[1],
+      minHeight: 36,
+      marginLeft: -t.space[1],
     } as ViewStyle,
-    eyebrow: {
-      ...(type.eyebrow as unknown as TextStyle),
-      fontSize: t.fontSize['2xs'],
+    crumbText: {
+      ...(type.bodySmBold as unknown as TextStyle),
+      fontSize: t.fontSize.crumb,
       color: t.colors.inkSoft,
     } as TextStyle,
-    h2: { ...(type.title as unknown as TextStyle), fontSize: t.fontSize.xl, color: t.colors.ink } as TextStyle,
+    titleRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      gap: t.space[3],
+    } as ViewStyle,
+    h2: {
+      ...(type.display as unknown as TextStyle),
+      fontSize: t.fontSize.lg,
+      lineHeight: t.fontSize.lg * t.lineHeight.normal,
+      color: t.colors.ink,
+      flexShrink: 1,
+    } as TextStyle,
+    // Honey tier pill — the category's ripeness, on the warm-solid chip surface.
+    tierPill: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: t.space[1.5],
+      backgroundColor: t.colors.accentChip,
+      borderRadius: t.radii.full,
+      borderCurve: 'continuous',
+      paddingHorizontal: t.space[3],
+      paddingVertical: t.space[1.5],
+    } as ViewStyle,
+    tierPillText: {
+      ...(type.captionBold as unknown as TextStyle),
+      fontSize: t.fontSize.xs,
+      color: t.colors.amberText,
+    } as TextStyle,
     // The receipts / trend / tuner sit directly on the page (no surface) split by
     // clear hairline dividers — dividers alone define the sections, no borders.
     sections: { gap: t.space[5] } as ViewStyle,

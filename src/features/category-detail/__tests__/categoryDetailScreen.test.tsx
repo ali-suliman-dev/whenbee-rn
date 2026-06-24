@@ -104,9 +104,10 @@ describe('CategoryDetailScreen', () => {
 
     render(<CategoryDetailScreen />);
 
-    // round_to_5(15 × 2.0) = 30 → "~30", with the runs multiplier line.
+    // round_to_5(15 × 2.0) = 30 → "~30", with the multiplier in the meta line ("2.0×").
     expect(await screen.findByText('~30')).toBeOnTheScreen();
-    expect(screen.getByText('runs 2.0×')).toBeOnTheScreen();
+    // "2.0×" appears in the hero meta line AND the recent rows — just assert ≥1.
+    expect(screen.getAllByText('2.0×').length).toBeGreaterThan(0);
   });
 
   it('shows the AhaCard only when an insight is present', async () => {
