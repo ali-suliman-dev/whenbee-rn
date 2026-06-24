@@ -34,10 +34,6 @@ type LegacyVariant = 'primary' | 'secondary';
 type Variant = NewVariant | LegacyVariant;
 type Size = 'xs' | 'sm' | 'md' | 'lg';
 
-const EDGE = 6; // how far the darker edge peeks below a FILLED pill (the 3D depth)
-const DROP = EDGE - 1; // how far a filled pill drops on press (compresses onto the edge)
-const GHOST_PRESS_SCALE = 0.97; // ghost has no edge — a subtle squeeze carries the press
-
 function resolveVariant(v: Variant): NewVariant {
   if (v === 'primary') return 'indigo';
   if (v === 'secondary') return 'ghost';
@@ -49,20 +45,31 @@ export function AppButton({
   onPress,
   variant = 'indigo',
   size = 'md',
+  depth = 'standard',
   disabled = false,
   fullWidth = false,
   icon,
+  accessibilityLabel,
 }: {
   label: string;
   onPress: () => void;
   variant?: Variant;
   size?: Size;
+  /** Coin-edge depth for FILLED variants. `shallow` = a thinner, calmer edge. */
+  depth?: 'standard' | 'shallow';
   disabled?: boolean;
   fullWidth?: boolean;
   icon?: ReactNode;
+  accessibilityLabel?: string;
 }) {
   const t = useTheme();
   const reducedMotion = useReducedMotion();
+
+  // Coin-edge depth (filled) + squeeze (ghost), from tokens — no magic numbers.
+  const shallow = depth === 'shallow';
+  const EDGE = shallow ? t.depth.shallowEdge : t.depth.edge; // darker edge peeking below a FILLED pill (the 3D depth)
+  const DROP = shallow ? t.depth.shallowDrop : t.depth.drop; // how far a filled pill drops onto the edge on press
+  const GHOST_PRESS_SCALE = t.scale.pressIn; // ghost has no edge — a squeeze carries the press
 
   const resolved = resolveVariant(variant);
   const isGhost = resolved === 'ghost';
@@ -108,6 +115,9 @@ export function AppButton({
   }));
 
   function handlePressIn() {
+    // Haptic fires the instant the finger lands — before the motion guard, so
+    // reduced-motion users still feel the tap even though the dip is suppressed.
+    haptics.light();
     if (reducedMotion) return;
     if (isGhost) pressScale.set(withSpring(GHOST_PRESS_SCALE, t.motion.spring));
     else pressY.set(withTiming(DROP, { duration: t.motion.press }));
@@ -158,11 +168,9 @@ export function AppButton({
   return (
     <Pressable
       accessibilityRole="button"
+      accessibilityLabel={accessibilityLabel}
       disabled={disabled}
-      onPress={() => {
-        haptics.light();
-        onPress();
-      }}
+      onPress={onPress}
       onPressIn={handlePressIn}
       onPressOut={handlePressOut}
       style={wrapper}

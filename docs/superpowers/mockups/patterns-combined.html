@@ -1,0 +1,169 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Patterns — combined screen</title>
+<style>
+  :root{
+    --bg:#14151D; --surface:#1F2130; --raised:#292B3C; --sunken:#15161F;
+    --hairline:rgba(255,255,255,0.08); --border:rgba(255,255,255,0.14);
+    --ink:#F4F1EA; --inkSoft:#ADA9B5; --inkFaint:rgba(244,241,234,0.40);
+    --primary:#8275F0; --primarySoft:rgba(130,117,240,0.22); --primaryWash:rgba(130,117,240,0.10);
+    --accent:#EEAE4D; --accentSoft:rgba(238,174,77,0.18); --amberText:#EEAE4D;
+    --accentEdge:#C68A30; --onAmber:#20233A;
+    --success:#33B07C; --successSoft:rgba(51,176,124,0.18);
+    --micro:10px; --subtitle:22px; --title:26px; --honestLg:36px;
+    --r-md:12px; --r-card:16px; --r-full:999px;
+    --ease-out:cubic-bezier(0.23,1,0.32,1);
+  }
+  *{box-sizing:border-box;margin:0;padding:0;-webkit-font-smoothing:antialiased;}
+  body{background:#0b0b0f;font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text','Segoe UI',sans-serif;color:var(--ink);padding:48px;display:flex;justify-content:center;}
+  .phone{width:390px;background:var(--bg);border-radius:44px;padding:14px;border:1px solid rgba(255,255,255,0.07);box-shadow:0 40px 90px rgba(0,0,0,0.6),inset 0 1px 0 rgba(255,255,255,0.04);height:fit-content;}
+  .screen{background:var(--bg);border-radius:32px;overflow:hidden;}
+  .statusbar{display:flex;justify-content:space-between;align-items:center;padding:14px 26px 6px;font-size:13px;font-weight:600;}
+  .statusbar .dots{display:flex;gap:5px;align-items:center;}
+  .statusbar .dots span{width:5px;height:5px;border-radius:50%;background:var(--inkFaint);}
+  .scroll{padding:6px 20px 30px;}
+  .hd{padding:8px 0 16px;}
+  .hd h1{font-size:var(--title);font-weight:700;letter-spacing:-0.6px;}
+  .hd p{font-size:13.5px;color:var(--inkSoft);margin-top:3px;}
+
+  .eyebrow{display:flex;align-items:center;gap:7px;font-size:var(--micro);font-weight:600;letter-spacing:0.8px;text-transform:uppercase;color:var(--primary);}
+  .eyebrow.amber{color:var(--amberText);}
+  .eyebrow .dot{width:5px;height:5px;border-radius:50%;background:currentColor;}
+
+  @keyframes rise{from{opacity:0;transform:translateY(10px);}to{opacity:1;transform:translateY(0);}}
+  .rise{opacity:0;animation:rise .42s var(--ease-out) forwards;}
+  .d1{animation-delay:.05s}.d2{animation-delay:.12s}.d3{animation-delay:.19s}.d4{animation-delay:.26s}.d5{animation-delay:.33s}.d6{animation-delay:.40s}
+
+  /* hero */
+  .hero{position:relative;border-radius:var(--r-card);overflow:hidden;padding:24px 22px 22px;background:linear-gradient(160deg,#2a2546 0%,var(--raised) 60%);border:1px solid var(--border);}
+  .hero .glow{position:absolute;top:-40px;right:-30px;width:180px;height:180px;border-radius:50%;background:radial-gradient(circle,rgba(245,192,63,0.22),transparent 70%);}
+  .hero .bee{position:absolute;top:18px;right:18px;}
+  .hero h3{margin-top:14px;font-size:var(--subtitle);font-weight:700;letter-spacing:-0.4px;}
+  .hero .mult{margin-top:6px;display:flex;align-items:baseline;gap:6px;}
+  .hero .mult b{font-size:var(--honestLg);font-weight:700;color:var(--accent);letter-spacing:-1px;line-height:1;}
+  .hero .mult span{font-size:13px;color:var(--inkSoft);}
+  .hero .blurb{margin-top:12px;font-size:13.5px;line-height:1.5;color:var(--inkSoft);max-width:280px;}
+  .hero .share{margin-top:16px;display:inline-flex;align-items:center;gap:6px;font-size:12.5px;font-weight:600;color:var(--primary);background:var(--primarySoft);padding:9px 14px;border-radius:var(--r-full);}
+
+  /* section header */
+  .sechead{display:flex;align-items:center;gap:10px;margin:24px 2px 12px;}
+  .sechead h4{font-size:var(--micro);font-weight:700;letter-spacing:0.9px;text-transform:uppercase;color:var(--inkSoft);white-space:nowrap;}
+  .sechead .line{flex:1;height:1px;background:var(--hairline);}
+
+  /* accuracy chart */
+  .chartcard{background:var(--surface);border:1px solid var(--hairline);border-radius:var(--r-card);padding:18px 18px 14px;}
+  .chartcard .top{display:flex;justify-content:space-between;align-items:flex-start;}
+  .chartcard h3{font-size:17px;font-weight:700;letter-spacing:-0.3px;margin-top:12px;}
+  .chartcard .delta{display:inline-flex;align-items:center;gap:5px;background:var(--successSoft);color:var(--success);font-size:12px;font-weight:700;padding:5px 10px;border-radius:var(--r-full);}
+  .chartcard svg{display:block;margin-top:10px;width:100%;}
+  .chartcard .axis{display:flex;justify-content:space-between;margin-top:6px;font-size:11px;color:var(--inkFaint);}
+
+  /* drift annotation */
+  .annot{display:flex;gap:12px;align-items:flex-start;background:var(--accentSoft);border-radius:var(--r-md);padding:14px 16px;}
+  .annot .ic{color:var(--accent);font-size:15px;line-height:1.4;}
+  .annot p{font-size:13px;line-height:1.55;color:var(--ink);}
+  .annot b{color:var(--amberText);font-weight:700;}
+
+  /* numbers table */
+  .mapcard{background:var(--surface);border:1px solid var(--hairline);border-radius:var(--r-card);padding:4px 18px;}
+  .maprow{display:flex;align-items:center;gap:14px;padding:16px 0;border-bottom:1px solid var(--hairline);}
+  .maprow:last-child{border-bottom:0;}
+  .maprow .nm{flex:1;}
+  .maprow .nm b{display:block;font-size:17px;font-weight:700;letter-spacing:-0.3px;}
+  .maprow .nm small{font-size:11.5px;color:var(--inkSoft);}
+  .dial{display:flex;gap:4px;}
+  .dial i{width:16px;height:6px;border-radius:3px;background:var(--sunken);}
+  .dial i.lit{background:var(--accent);}
+  .maprow .hon{text-align:right;min-width:62px;}
+  .maprow .hon b{font-size:19px;font-weight:700;color:var(--accent);letter-spacing:-0.5px;}
+  .maprow .hon small{display:block;font-size:10.5px;color:var(--inkFaint);}
+
+  /* pro premium card */
+  .pro{background:var(--raised);border:1px solid var(--border);border-radius:var(--r-card);padding:14px 14px 18px;box-shadow:0 16px 40px rgba(0,0,0,0.35);}
+  .pro .preview{position:relative;background:var(--sunken);border:1px solid var(--hairline);border-radius:var(--r-md);height:118px;overflow:hidden;}
+  .pro .preview .inner{position:absolute;inset:0;padding:14px 16px;filter:blur(5px);opacity:0.85;}
+  .pro .preview .ghost{font-size:11px;font-weight:600;letter-spacing:0.6px;color:var(--inkSoft);text-transform:uppercase;}
+  .pro .preview .pbars{position:absolute;left:16px;right:16px;bottom:14px;display:flex;align-items:flex-end;gap:9px;height:62px;}
+  .pro .preview .pbars i{flex:1;background:var(--accent);border-radius:4px 4px 0 0;}
+  .pro .pill{position:absolute;top:12px;right:12px;display:inline-flex;align-items:center;gap:5px;background:var(--accent);color:var(--onAmber);font-size:12px;font-weight:700;padding:5px 11px 5px 9px;border-radius:var(--r-full);filter:none;box-shadow:0 2px 6px rgba(0,0,0,0.3);z-index:2;}
+  .pro .eyebrow{margin-top:16px;}
+  .pro h2{margin-top:11px;font-size:23px;font-weight:700;line-height:1.18;letter-spacing:-0.5px;color:var(--ink);}
+  .pro .sub{margin-top:10px;font-size:14px;line-height:1.5;color:var(--inkSoft);}
+  .pro .cta{margin-top:18px;display:block;width:100%;text-align:center;background:var(--accent);color:var(--onAmber);font-size:15.5px;font-weight:700;letter-spacing:-0.2px;padding:15px;border-radius:14px;box-shadow:0 4px 0 var(--accentEdge);transition:transform .11s var(--ease-out),box-shadow .11s var(--ease-out);}
+  .pro .cta:active{transform:translateY(3px);box-shadow:0 1px 0 var(--accentEdge);}
+  .pro .foot{margin-top:14px;text-align:center;font-size:12.5px;color:var(--inkFaint);}
+</style>
+</head>
+<body>
+  <div class="phone"><div class="screen">
+    <div class="statusbar"><span>9:41</span><div class="dots"><span></span><span></span><span></span><span></span><span style="width:16px;height:10px;border-radius:2px;background:var(--ink)"></span></div></div>
+    <div class="scroll">
+      <div class="hd rise d1"><h1>Patterns</h1><p>What your time keeps telling you.</p></div>
+
+      <!-- 1 · IDENTITY -->
+      <div class="hero rise d2">
+        <div class="glow"></div>
+        <svg class="bee" width="46" height="46" viewBox="0 0 46 46" fill="none">
+          <polygon points="23,4 39,13 39,33 23,42 7,33 7,13" fill="var(--primarySoft)" stroke="var(--primary)" stroke-width="1.5"/>
+          <ellipse cx="23" cy="24" rx="8" ry="9" fill="var(--primary)"/>
+          <rect x="16" y="20" width="14" height="2.4" rx="1.2" fill="var(--accent)"/>
+          <rect x="16" y="25" width="14" height="2.4" rx="1.2" fill="var(--accent)"/>
+          <circle cx="20" cy="17" r="1.4" fill="var(--ink)"/><circle cx="26" cy="17" r="1.4" fill="var(--ink)"/>
+        </svg>
+        <div class="eyebrow"><span class="dot"></span>Your time personality</div>
+        <h3>The Gentle Optimist</h3>
+        <div class="mult"><b>1.6×</b><span>your guess, on average</span></div>
+        <p class="blurb">You lean hopeful, then mostly catch up. A little padding does it.</p>
+        <div class="share">✦ Share my archetype</div>
+      </div>
+
+      <!-- 2 · PROGRESS -->
+      <div class="sechead rise d3"><h4>Your progress</h4><div class="line"></div></div>
+      <div class="chartcard rise d3">
+        <div class="top"><div class="eyebrow"><span class="dot"></span>Accuracy over time</div><div class="delta">▲ +8 pts</div></div>
+        <h3>You, then vs now</h3>
+        <svg viewBox="0 0 320 96" preserveAspectRatio="none" height="96">
+          <defs><linearGradient id="g" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="rgba(130,117,240,0.32)"/><stop offset="1" stop-color="rgba(130,117,240,0)"/></linearGradient></defs>
+          <path d="M0,74 C40,70 60,62 90,64 C130,66 150,42 190,38 C230,34 262,22 318,12 L318,96 L0,96 Z" fill="url(#g)"/>
+          <path d="M0,74 C40,70 60,62 90,64 C130,66 150,42 190,38 C230,34 262,22 318,12" fill="none" stroke="var(--primary)" stroke-width="2.6" stroke-linecap="round"/>
+          <circle cx="318" cy="12" r="4.5" fill="var(--accent)"/>
+        </svg>
+        <div class="axis"><span>At first · 61%</span><span>Lately · 69%</span></div>
+      </div>
+
+      <!-- 3 · WHAT CHANGED -->
+      <div class="sechead rise d4"><h4>What changed</h4><div class="line"></div></div>
+      <div class="annot rise d4">
+        <div class="ic">◆</div>
+        <p><b>Admin</b> is taking longer lately — it used to run 1.6×, now nearer 2.0×. Your honest numbers already follow along.</p>
+      </div>
+
+      <!-- 4 · YOUR NUMBERS -->
+      <div class="sechead rise d5"><h4>Your numbers</h4><div class="line"></div></div>
+      <div class="mapcard rise d5">
+        <div class="maprow"><div class="nm"><b>Cleaning</b><small>runs 1.5× · settling</small></div><div class="dial"><i class="lit"></i><i></i><i></i></div><div class="hon"><b>~25m</b><small>vs 15 guess</small></div></div>
+        <div class="maprow"><div class="nm"><b>Admin</b><small>runs 2.0× · honest</small></div><div class="dial"><i class="lit"></i><i class="lit"></i><i class="lit"></i></div><div class="hon"><b>~31m</b><small>vs 15 guess</small></div></div>
+        <div class="maprow"><div class="nm"><b>Email</b><small>runs 0.8× · honest</small></div><div class="dial"><i class="lit"></i><i class="lit"></i><i class="lit"></i></div><div class="hon"><b>~12m</b><small>vs 15 guess</small></div></div>
+      </div>
+
+      <!-- 5 · PRO -->
+      <div style="height:28px"></div>
+      <div class="pro rise d6">
+        <div class="preview">
+          <div class="pill">🔒 Pro</div>
+          <div class="inner"><div class="ghost">When you’re sharpest · by hour</div></div>
+          <div class="pbars" style="filter:blur(5px);opacity:0.9"><i style="height:42%"></i><i style="height:66%"></i><i style="height:34%"></i><i style="height:100%"></i><i style="height:58%"></i><i style="height:40%"></i><i style="height:30%"></i></div>
+        </div>
+        <div class="eyebrow amber"><span class="dot"></span>Whenbee Pro</div>
+        <h2>Know your sharpest hours.</h2>
+        <p class="sub">Some hours you read time better than others. See exactly when — and when to leave a little more buffer.</p>
+        <div class="cta">Reveal my rhythm</div>
+        <div class="foot">Cancel anytime · learned on-device</div>
+      </div>
+    </div>
+  </div></div>
+</body>
+</html>

@@ -6,7 +6,11 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## What this app is
 
-Whenbee — a near-zero-friction iOS app for "time optimists". The user guesses a task duration, runs a one-tap timer, and the app learns their personal per-category bias (a multiplier), then shows an **honest number** wherever they plan. The wedge is **calibration** (free); **Pro is a payoff bundle** — PDF report export, the Honest Week/Month review ritual, day-capacity check, confidence band, persistent presence, routines, long-range history, hyperfocus guardrail, focus-window planner, per-category goals + the existing correlations. **The calendar / Honest-Day feature was dropped 2026-06-19** (no calendar anywhere). Specs: `docs/product/specs/`.
+Whenbee — a near-zero-friction iOS app for "time optimists". The user guesses a task duration, runs a one-tap timer, and the app learns their personal per-category bias (a multiplier), then shows an **honest number** wherever they plan. The wedge is **calibration** (free); **Pro is a payoff bundle** — PDF report export, the Honest Week/Month review ritual, day-capacity check, confidence band, persistent presence, routines, long-range history, hyperfocus guardrail, focus-window planner, per-category goals + the existing correlations. Specs: `docs/product/specs/`.
+
+> **⛔ DO NOT SUBMIT TO THE APP STORE until every P0 + P1 item in [`docs/product/11-APP-STORE-LAUNCH-BLOCKERS.md`](docs/product/11-APP-STORE-LAUNCH-BLOCKERS.md) is checked off.** That doc is the pre-submission gate from the 2026-06-21 reviewer-mindset audit — it lists real rejection/friction risks (missing paywall Terms+Privacy links, privacy-disclosure mismatch with PostHog/Sentry, no hosted Privacy Policy URL, iPad layout, stray permission strings, Apple-LLM crash guard, encryption flag) with a fix plan and production-ready legal/reviewer copy for each. **If the user asks to ship, launch, submit, or build for the App Store, point them at this doc first and confirm the gate is clear.** Open the doc, don't summarize from memory — the checklist is the source of truth.
+
+> **⚠️ CALENDAR / HONEST-DAY IS BACK — as a Pro feature (decided 2026-06-21).** It was dropped 2026-06-19, then reinstated. **Do NOT remove calendar code, the `expo-calendar` plugin, or `NSCalendarsUsageDescription` in `app.json`** — they ship. The earlier "B2 removal" in `docs/product/02-GAP-ANALYSIS.md` is **void**. Calendar / Honest-Day belongs in the **Pro bundle**. Anything in the docs that still says "calendar dropped" is stale — this note wins.
 
 **Product invariants — never violate these:**
 
@@ -33,6 +37,32 @@ Run lint + typecheck + test before every commit — CI runs the same set on ever
 
 **Full how-to — env setup, Expo Go vs. dev builds, EAS build/submit profiles, troubleshooting — is in [docs/DEVELOPMENT.md](docs/DEVELOPMENT.md).** Use `npx expo install <pkg>` (not `npm install`) for Expo/RN deps, then `npx expo-doctor` (expect 18/18).
 
+## Modal / sheet UI — HARD RULE
+
+**Every modal and sheet MUST use `headerShown: false`.** The native iOS header bar is a white bar that clashes with the dark-themed app on every mode. It is NEVER acceptable. Rules:
+
+- Every `<Stack.Screen>` entry in `src/app/(modals)/_layout.tsx` must have `headerShown: false`. No exceptions.
+- Any new modal route added to `(modals)/` must be explicitly listed in `_layout.tsx` with `headerShown: false` — unlisted screens fall through to the layout default and will show a header.
+- Screens must render their own title using `type.subtitle` + `t.colors.ink` (see `add-task.tsx` for the pattern).
+- Sheets that slide up (non-full-screen) must start with `<SheetGrabber />`.
+- Never set `presentation: 'card'` on a modal that has content — use `formSheet` or `fullScreenModal`.
+
+## Animation — HARD RULE (no tacky entrances)
+
+**Never animate a UI element by sliding it up into place and bouncing.** A content element that translates in (translateY) and settles with a spring/overshoot — "drops in and bounces" — is tacky and banned. Specifically:
+
+- **No spring/bounce/overshoot on content entrances.** No `withSpring` that overshoots, no bounce easing on text, cards, badges, numbers. Entrances settle, they don't wobble.
+- **No translate-in slides on content** (text, stats, badges rising up into place). Fade with opacity instead.
+- **Never animate buttons** in/out/up/down on entrance. A button appears at full opacity, full size. Don't fade, slide, or pop it in.
+- **What IS allowed:** animate the actual SVG **paths** (draw, fill, morph — e.g. the bee's micro-life), **opacity** fades, a **subtle resize** (scale settling with `ease-out`, no overshoot), or a small **wiggle**. Prefer path/opacity/scale over moving elements around.
+- Durations stay short (UI < ~300ms; a hero reveal may stagger opacity fades but each ≤ the motion tokens). Reduced-motion → final state, no travel.
+
+This applies everywhere, onboarding included. The archetype reveal is the reference: card fades + settles a hair in scale, the bee animates its paths, text fades — nothing slides up, nothing bounces, the button is static.
+
+## Button sizing — HARD RULE
+
+**Onboarding and primary-CTA buttons use the standard `AppButton` default size. Never `size="lg"` for them.** `lg` (52pt tall, 20pt label, 24 padX) reads as an oversized, clumsy slab next to the rest of the flow. The onboarding `Continue` / `Get started` / `Next` / `Open my day` buttons are all the default `AppButton` (md) — keep every onboarding primary button visually identical. A quiz `Next` in a Skip+Next row is the default size inside a `flex:1` container, not `lg`.
+
 ## Known gotchas (scaffold defaults that bite)
 
 - **Dev build only — Expo Go cannot run this app.** Native modules (`react-native-purchases`, `@sentry`, `@expo/ui`, `expo-glass-effect`, `expo-dev-client`) make Expo Go spin forever. Use `npm run ios`.
@@ -41,7 +71,8 @@ Run lint + typecheck + test before every commit — CI runs the same set on ever
 - **Footers/tab bar must add `useSafeAreaInsets().bottom`** — `Screen` only insets top/left/right, so anything pinned to the bottom otherwise sits under the home indicator.
 - **Zustand persist + sync kv (`zustandKv`) rehydrates during `create()`.** Set hydration flags via the captured `state` in `onRehydrateStorage`, never the store const (TDZ → flag never flips → infinite boot spinner). See `onboardingStore`.
 - **Fonts live in `src/assets/fonts/`**, not root `assets/`. `@/*` resolves both `./` and `./src/*` — check both roots before assuming a file is missing.
-- **Verify UI on the sim:** there's no CLI tap. Reset onboarding by deleting `Documents/SQLite/ExpoSQLiteStorage` + `whenbee.db` in the app data container (`xcrun simctl get_app_container booted com.whenbee.app data`), then `xcrun simctl launch booted com.whenbee.app`; capture with `xcrun simctl io booted screenshot`.
+- **`react-native-svg` ignores `pathLength`.** A stroke-draw via `strokeDasharray={1}`+`pathLength={1}` renders DOTTED, not normalized. Dash by the path's REAL length (`strokeDasharray={len}`, animate `strokeDashoffset` `len→0`), and OVERESTIMATE `len` — if it's shorter than the true path the tail stays permanently hidden (a gap in the shape at rest). See `ArchetypeQuizGlyph`.
+- **Verify UI on the sim:** there's no CLI tap. Jump straight to a mid-flow screen with a deep link — `xcrun simctl openurl booted "whenbee:///(onboarding)/quiz/0"` (scheme `whenbee`, expo-router path) — then `xcrun simctl io booted screenshot`. (To restart onboarding from scratch instead, delete `Documents/SQLite/ExpoSQLiteStorage` + `whenbee.db` in the app data container — `xcrun simctl get_app_container booted com.whenbee.app data` — then `xcrun simctl launch booted com.whenbee.app`.) Deep-link can't trigger taps, so press-driven animations still need a manual tap on the connected sim.
 
 ## Architecture big picture
 
@@ -76,7 +107,7 @@ UI (src/app, src/components, src/features)
 
 ## Project status — this is a code-complete v1, NOT an MVP
 
-Whenbee is **not an MVP**. Nearly the entire final build plan is implemented in `src/`: the full calibration engine, the Honeycomb + Whenbee companion (6 stages, capability unlocks, drift-health), the Reclaim Bank, the **Discoveries gallery**, the Start-By planner, the Patterns self-insight tab **including the Pro correlations** (steals-your-time, accuracy, context), RevenueCat monetization, onboarding, settings, PostHog + Sentry. The **calendar / Honest-Day feature is dropped** (2026-06-19) — its code is slated for removal (tracked as B2 in `docs/product/02-GAP-ANALYSIS.md`) and the new Pro bundle (`docs/product/specs/`) replaces it. Treat this as a near-shippable product — the remaining work is the new Pro bundle, finishing, device verification, and launch. **Full picture: [docs/product/](docs/product/) (start at `README.md` → `00-STATUS.md` → `02-GAP-ANALYSIS.md`).**
+Whenbee is **not an MVP**. Nearly the entire final build plan is implemented in `src/`: the full calibration engine, the Honeycomb + Whenbee companion (6 stages, capability unlocks, drift-health), the Reclaim Bank, the **Discoveries gallery**, the Start-By planner, the Patterns self-insight tab **including the Pro correlations** (steals-your-time, accuracy, context), RevenueCat monetization, onboarding, settings, PostHog + Sentry. The **calendar / Honest-Day feature is reinstated as a Pro feature** (2026-06-21, reversing the 2026-06-19 drop) — its code STAYS; the B2 removal in `docs/product/02-GAP-ANALYSIS.md` is void (see the flag at the top of this file). Treat this as a near-shippable product — the remaining work is the new Pro bundle, finishing, device verification, and launch. **Full picture: [docs/product/](docs/product/) (start at `README.md` → `00-STATUS.md` → `02-GAP-ANALYSIS.md`).**
 
 ### Genuinely not built yet (future / post-launch)
 

@@ -3,7 +3,14 @@ import { router } from 'expo-router';
 import Categories from '@/src/app/(onboarding)/categories';
 import { useOnboardingStore } from '@/src/stores/onboardingStore';
 
-jest.mock('expo-router', () => ({ router: { push: jest.fn() } }));
+jest.mock('expo-router', () => ({
+  router: { push: jest.fn() },
+  useFocusEffect: (cb: () => void | (() => void)) => cb(),
+  useNavigation: () => ({
+    isFocused: () => true,
+    addListener: () => () => {},
+  }),
+}));
 
 const pushMock = router.push as jest.Mock;
 
@@ -25,7 +32,7 @@ describe('Onboarding Step 1 — Pick tasks', () => {
     expect(useOnboardingStore.getState().picked.map((p) => p.id)).toEqual(['cleaning']);
 
     fireEvent.press(screen.getByText('Continue →'));
-    expect(pushMock).toHaveBeenCalledWith('/(onboarding)/ready');
+    expect(pushMock).toHaveBeenCalledWith('/(onboarding)/name');
   });
 
   it('toggling a chip off re-disables Continue', () => {

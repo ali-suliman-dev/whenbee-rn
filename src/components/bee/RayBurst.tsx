@@ -1,7 +1,8 @@
-import { useEffect } from 'react';
+import { useCallback } from 'react';
 import { View, type ViewStyle } from 'react-native';
 import Svg, { Defs, RadialGradient, Stop, Path, Rect, G } from 'react-native-svg';
 import Animated, {
+  cancelAnimation,
   useSharedValue,
   useAnimatedStyle,
   withRepeat,
@@ -10,6 +11,7 @@ import Animated, {
   useReducedMotion,
 } from 'react-native-reanimated';
 import { useTheme } from '@/src/theme/useTheme';
+import { useAmbientMotion } from '@/src/hooks/useAmbientMotion';
 
 // ──────────────────────────────────────────────────────────────────────────────
 // RayBurst — the soft radiating sunburst behind the Whenbee (brand reference:
@@ -64,10 +66,16 @@ export function RayBurst({ size }: { size: number }) {
 
   const spin = useSharedValue(0);
 
-  useEffect(() => {
-    if (reducedMotion) return;
-    spin.set(withRepeat(withTiming(360, { duration: t.motion.drift, easing: Easing.linear }), -1, false));
-  }, [reducedMotion, spin, t.motion.drift]);
+  useAmbientMotion(
+    !reducedMotion,
+    useCallback(() => {
+      spin.set(withRepeat(withTiming(360, { duration: t.motion.drift, easing: Easing.linear }), -1, false));
+      return () => {
+        cancelAnimation(spin);
+        spin.set(0);
+      };
+    }, [spin, t.motion.drift]),
+  );
 
   const spinStyle = useAnimatedStyle(() => ({ transform: [{ rotate: `${spin.get()}deg` }] }));
 

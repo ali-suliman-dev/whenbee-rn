@@ -12,7 +12,8 @@ const ACTIVE_TIMER_KEY = 'whenbee.activeTimer';
  */
 interface PersistedTimer {
   taskLabel: string;
-  category: string;
+  /** null for quick-start sessions where category is captured at stop. */
+  category: string | null;
   estimateMin: number;
   startedAt: number;
   pausedAccumMs: number;
@@ -20,10 +21,16 @@ interface PersistedTimer {
   guessMin: number;
   taskId: string | null;
   suggestedHonestMin: number;
+  /** Whether this session was started without a category (quick-start mode). */
+  isQuickStart: boolean;
+  /** True once the hyperfocus guardrail has nudged this session (so a backgrounded
+   *  or closed session that already nudged never re-nudges on resume). */
+  guardNudged: boolean;
 }
 
 interface TimerState {
   taskLabel: string | null;
+  /** null for quick-start sessions; non-null for normal starts. */
   category: string | null;
   estimateMin: number;
   startedAt: number | null;
@@ -33,6 +40,11 @@ interface TimerState {
   guessMin: number;
   taskId: string | null;
   suggestedHonestMin: number;
+  /** True when the timer was started without a category (quick-start mode). */
+  isQuickStart: boolean;
+  /** True once the hyperfocus guardrail fired for this session (de-dupe across the
+   *  in-app card and the background notification — only one nudge per session). */
+  guardNudged: boolean;
   start: (
     task: {
       label: string;
@@ -44,12 +56,19 @@ interface TimerState {
     },
     nowMs?: number,
   ) => void;
+  /**
+   * Start a bare timer with no category. The stop flow captures label + category
+   * while context is fresh. Sets isQuickStart to true.
+   */
+  quickStart: (nowMs?: number) => void;
   pause: (nowMs?: number) => void;
   resume: (nowMs?: number) => void;
   /** Returns ACTIVE minutes (excludes paused spans), min 1. Clears state + kv. */
   stop: (nowMs: number) => { actualMin: number };
   /** Abandon path — clears state + kv, returns nothing. */
   cancel: () => void;
+  /** Latch the guardrail nudge for this session (whichever channel fires first). */
+  markGuardNudged: () => void;
   /** Rehydrate from kv if a timer was running (background/crash-resume). */
   resumeFromKv: () => void;
   /**
@@ -72,10 +91,14 @@ const CLEARED = {
   guessMin: 0,
   taskId: null,
   suggestedHonestMin: 0,
+  isQuickStart: false,
+  guardNudged: false,
 } as const;
 
 function persistRunning(state: TimerState): void {
-  if (state.startedAt === null || state.taskLabel === null || state.category === null) return;
+  // Quick-start sessions have no category; normal sessions require both label and category.
+  if (state.startedAt === null || state.taskLabel === null) return;
+  if (!state.isQuickStart && state.category === null) return;
   const snapshot: PersistedTimer = {
     taskLabel: state.taskLabel,
     category: state.category,
@@ -86,6 +109,8 @@ function persistRunning(state: TimerState): void {
     guessMin: state.guessMin,
     taskId: state.taskId,
     suggestedHonestMin: state.suggestedHonestMin,
+    isQuickStart: state.isQuickStart,
+    guardNudged: state.guardNudged,
   };
   try {
     kv.set(ACTIVE_TIMER_KEY, JSON.stringify(snapshot));
@@ -118,6 +143,26 @@ export const useTimerStore = create<TimerState>((set, get) => ({
       guessMin: task.guessMin ?? task.estimateMin,
       taskId: task.taskId ?? null,
       suggestedHonestMin: task.suggestedHonestMin ?? task.estimateMin,
+      isQuickStart: false,
+      guardNudged: false,
+    });
+    persistRunning(get());
+  },
+
+  quickStart: (nowMs = Date.now()) => {
+    set({
+      taskLabel: '',
+      category: null,
+      estimateMin: 0,
+      startedAt: nowMs,
+      pausedAccumMs: 0,
+      pausedAt: null,
+      isRunning: true,
+      guessMin: 0,
+      taskId: null,
+      suggestedHonestMin: 0,
+      isQuickStart: true,
+      guardNudged: false,
     });
     persistRunning(get());
   },
@@ -166,6 +211,11 @@ export const useTimerStore = create<TimerState>((set, get) => ({
     }
   },
 
+  markGuardNudged: () => {
+    set({ guardNudged: true });
+    persistRunning(get());
+  },
+
   resumeFromKv: () => {
     const raw = kv.getString(ACTIVE_TIMER_KEY);
     if (raw === null) return;
@@ -183,6 +233,10 @@ export const useTimerStore = create<TimerState>((set, get) => ({
         guessMin: p.guessMin ?? p.estimateMin,
         taskId: p.taskId ?? null,
         suggestedHonestMin: p.suggestedHonestMin ?? p.estimateMin,
+        // Default false for snapshots written before isQuickStart was introduced.
+        isQuickStart: p.isQuickStart ?? false,
+        // Default false for snapshots written before guardNudged was introduced.
+        guardNudged: p.guardNudged ?? false,
       });
     } catch {
       clearPersisted();

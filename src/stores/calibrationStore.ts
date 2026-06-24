@@ -33,6 +33,10 @@ import {
   honestNumber,
   correlateReasons,
   correlateContext,
+  proReadiness,
+  reconcileGoal,
+  errorBandToAccuracy,
+  accuracyToErrorBand,
   SHARPNESS_WINDOW,
   TIERS,
   CATEGORY_NAMES,
@@ -45,6 +49,7 @@ import type {
   AffineFit,
   AffineStats,
   GlobalBias,
+  ProFeatureId,
 } from '@/src/engine';
 import type {
   AdaptSpeed,
@@ -59,6 +64,7 @@ import type {
   ReasonInsight,
   ReasonSample,
   TrendSeries,
+  CategoryGoal,
 } from '@/src/domain/types';
 import { haptics } from '@/src/services/haptics';
 import { analytics } from '@/src/services/analytics';
@@ -70,6 +76,10 @@ import { useCategoriesStore } from './categoriesStore';
 // category). Reading/writing kv is synchronous and Expo Go-safe.
 const FIRST_LOG_FLAG = 'whenbee.firstLogFired';
 const AHA_FLAG_PREFIX = 'whenbee.ahaFired.';
+
+/** kv flag: set once the Pro pitch has been unlocked; cleared only by a full
+ *  data reset. Monotonic latch: confidence can fall, the pitch must not re-lock. */
+const PRO_PITCH_LATCH_KEY = 'whenbee.proPitchUnlocked';
 
 // Per-category graduation ledger: the set of category ids that have already
 // reached 'honest' confidence and fired their graduation moment (Step 9 reads
@@ -94,6 +104,51 @@ function readGraduated(): Set<string> {
 /** Persist the graduation ledger as a stable JSON array (sorted for determinism). */
 function writeGraduated(ids: Set<string>): void {
   kv.set(GRADUATED_KEY, JSON.stringify([...ids].sort()));
+}
+
+// ── Per-category goals (Pro, no-guilt) — kv only, OFF the training path ───────
+// A goal is a small mutable preference + a latched best, not a log, so it lives in
+// kv (one key per category) and never enters SQLite or the model. Goal methods
+// only ever READ a category's `sharpness`; they never call applyLog or write stats.
+const goalKey = (categoryId: string): string => `goal.${categoryId}`;
+/** Ledger of category ids whose met-celebration already fired (mirrors the
+ *  graduation ledger so the seal shows exactly once). */
+const GOAL_CELEBRATED_KEY = 'goal.celebrated';
+
+/** Read one category's goal, tolerating a missing/corrupt value by returning
+ *  null — a bad read falls back to the empty state, never an error surface. */
+function readGoal(categoryId: string): CategoryGoal | null {
+  const raw = kv.getString(goalKey(categoryId));
+  if (raw === null) return null;
+  try {
+    return JSON.parse(raw) as CategoryGoal;
+  } catch {
+    return null;
+  }
+}
+
+/** Persist one category's goal as a single JSON kv value. */
+function writeGoal(goal: CategoryGoal): void {
+  kv.set(goalKey(goal.categoryId), JSON.stringify(goal));
+}
+
+/** Read the met-celebration ledger as a Set, tolerating missing/corrupt values. */
+function readGoalCelebrated(): Set<string> {
+  const raw = kv.getString(GOAL_CELEBRATED_KEY);
+  if (raw === null) return new Set();
+  try {
+    const parsed = JSON.parse(raw) as unknown;
+    return Array.isArray(parsed)
+      ? new Set(parsed.filter((id): id is string => typeof id === 'string'))
+      : new Set();
+  } catch {
+    return new Set();
+  }
+}
+
+/** Persist the met-celebration ledger as a stable JSON array (sorted). */
+function writeGoalCelebrated(ids: Set<string>): void {
+  kv.set(GOAL_CELEBRATED_KEY, JSON.stringify([...ids].sort()));
 }
 
 // Cross-category cold-start bias. A single GlobalBias row (an EWMA of every
@@ -194,6 +249,9 @@ export interface ApplyLogParams {
   label?: string | null;
   nowMs?: number;
   suggestedHonestMin?: number | null;
+  /** Epoch ms at which the task timer STARTED; used to derive `startLocalMinute`
+   *  at persist time. Absent / null for retroactive (manual) logs. */
+  startedAt?: number | null;
 }
 
 export interface LogResult {
@@ -241,6 +299,16 @@ export interface CategoryDetail {
   /** The first meaningful honest range for this category (frozen at first 'setting').
    *  The "from" anchor for the narrowing caption; null until the first band. */
   firstHonestRange: HonestRange | null;
+}
+
+/** One event row exposed to the focus-window learning hook (read-only, cross-category). */
+export interface FocusEventRow {
+  category: string;
+  estimateMin: number;
+  actualMin: number | null;
+  status: LogStatus;
+  startedAt: number | null;
+  startLocalMinute: number | null;
 }
 
 /** One completed/raw log row exposed to the Patterns surface (read-only). */
@@ -348,6 +416,9 @@ interface CalibrationState {
   loadDiscoveries: () => Promise<{ discoveries: Discovery[]; discoveryCount: number }>;
   /** Cross-category snapshot for the read-only Patterns self-insight surface. */
   loadPatternsData: () => Promise<PatternsData>;
+  /** READ-ONLY. Recent events with startLocalMinute for focus-window learning.
+   *  The hook consumes this via the store (layer rule: no direct db access). */
+  loadFocusEvents: (limit?: number) => Promise<FocusEventRow[]>;
   /** READ-ONLY. Reason correlations for the Pro "what steals your time" surface.
    *  Never trains the model; safe to skip. */
   loadReasonInsights: () => Promise<ReasonInsight[]>;
@@ -371,6 +442,24 @@ interface CalibrationState {
    *  cleared by the dataReset service; this just drops the cached mirrors so the
    *  UI doesn't show stale stats before the next hydrate. */
   reset: () => void;
+  /** Latched Pro-readiness selector. `pitchUnlocked` is true once any category
+   *  reaches 'setting' confidence, and stays true forever (kv-latched) — a full
+   *  data reset is the only way to relock it. `perFeatureReady` is a pure snapshot. */
+  getProReadiness: () => { pitchUnlocked: boolean; perFeatureReady: Record<ProFeatureId, boolean> };
+
+  // ── Per-category goals (Pro, no-guilt) — read/write OFF the training path ────
+  /** Read a category's goal, reconcile it against the live `sharpness` (advancing
+   *  the max-latched best + met), persist the advance, and return it. Null if none. */
+  loadGoal: (categoryId: string) => CategoryGoal | null;
+  /** Build + persist a fresh goal for `categoryId` from its current `sharpness`,
+   *  with the given "within X%" target band. Fires `goal_set`. Reads only sharpness. */
+  setGoal: (categoryId: string, targetErrorBand: number) => CategoryGoal;
+  /** Remove a category's goal + its met-celebration entry (used by resetCategory). */
+  clearGoal: (categoryId: string) => void;
+  /** Whether the met-celebration already fired for this category. */
+  hasCelebratedGoal: (categoryId: string) => boolean;
+  /** Latch this category's met-celebration as fired (idempotent). */
+  markGoalCelebrated: (categoryId: string) => void;
 }
 
 async function resolveDb(get: () => CalibrationState, set: (p: Partial<CalibrationState>) => void) {
@@ -512,11 +601,15 @@ export const useCalibrationStore = create<CalibrationState>((set, get) => ({
       actualMin: input.actualMin,
       status: input.status,
       source: input.source,
-      startedAt: null,
+      startedAt: input.startedAt ?? null,
       endedAt: nowMs,
       createdAt,
       suggestedHonestMin: input.suggestedHonestMin ?? null,
       reclaimDividendMin: result.reclaimDeltaMin,
+      startLocalMinute:
+        input.startedAt != null
+          ? new Date(input.startedAt).getHours() * 60 + new Date(input.startedAt).getMinutes()
+          : null,
     });
 
     // The rolling clamped-ratio window AFTER this log (oldest → newest), reused for
@@ -723,13 +816,6 @@ export const useCalibrationStore = create<CalibrationState>((set, get) => ({
         });
       }
 
-      if (result.reclaimDeltaMin >= 1) {
-        analytics.capture('reclaim_deposit', {
-          minutes: result.reclaimDeltaMin,
-          category: input.category,
-          source: input.source,
-        });
-      }
     } catch {
       // services are safe; this is belt-and-suspenders
     }
@@ -943,6 +1029,20 @@ export const useCalibrationStore = create<CalibrationState>((set, get) => ({
     return { categories, logs, nameOf: detailCategoryName };
   },
 
+  loadFocusEvents: async (limit = PATTERNS_SCAN_LIMIT) => {
+    const db = await resolveDb(get, set);
+    const taskEventsRepo = makeTaskEventsRepo(db);
+    const rows = await taskEventsRepo.listRecent(limit);
+    return rows.map((e) => ({
+      category: e.category,
+      estimateMin: e.estimateMin,
+      actualMin: e.actualMin,
+      status: e.status,
+      startedAt: e.startedAt,
+      startLocalMinute: e.startLocalMinute,
+    }));
+  },
+
   loadReasonInsights: async () => {
     const db = await resolveDb(get, set);
     // Read-only reason⋈event join. This never trains the model — it only powers the
@@ -1056,12 +1156,83 @@ export const useCalibrationStore = create<CalibrationState>((set, get) => ({
         },
       },
     }));
+
+    // A reset category starts goal-free — drop any stale goal + celebration so a
+    // fresh baseline isn't carried over from the old learning.
+    get().clearGoal(categoryId);
+  },
+
+  getProReadiness: () => {
+    const stats = Object.values(get().statsByCategory);
+    // Lead confidence = the most-advanced category's confidence axis.
+    const order: Record<'raw' | 'setting' | 'honest', number> = { raw: 0, setting: 1, honest: 2 };
+    const leadConfidence = stats.reduce<'raw' | 'setting' | 'honest'>((best, s) => {
+      const c = confidenceFor({ n: s.n, clampedRatios: s.clampedRatios ?? [] });
+      const cRank = order[c];
+      const bestRank = order[best];
+      return cRank > bestRank ? c : best;
+    }, 'raw');
+    const totalCompletedLogs = stats.reduce((sum, s) => sum + s.n, 0);
+    const snapshot = proReadiness({ leadConfidence, totalCompletedLogs });
+    // Latch: once unlocked, stay unlocked (confidence can fall; the pitch can't relock).
+    const latched = kv.getString(PRO_PITCH_LATCH_KEY) === '1';
+    const pitchUnlocked = snapshot.pitchUnlocked || latched;
+    if (pitchUnlocked && !latched) kv.set(PRO_PITCH_LATCH_KEY, '1');
+    return { pitchUnlocked, perFeatureReady: snapshot.perFeatureReady };
+  },
+
+  // ── Per-category goals — kv only, never the model ───────────────────────────
+  loadGoal: (categoryId) => {
+    const existing = readGoal(categoryId);
+    if (!existing) return null;
+    // Reconcile against the LIVE sharpness so simply opening the screen advances
+    // the max-latched best/met. reconcileGoal is pure + monotonic (best never drops).
+    const sharpness = get().statsByCategory[categoryId]?.sharpness ?? 0;
+    const reconciled = reconcileGoal(existing, sharpness);
+    writeGoal(reconciled);
+    return reconciled;
+  },
+
+  setGoal: (categoryId, targetErrorBand) => {
+    const sharpness = get().statsByCategory[categoryId]?.sharpness ?? 0;
+    const targetAccuracy = errorBandToAccuracy(targetErrorBand);
+    const goal: CategoryGoal = {
+      categoryId,
+      targetAccuracy,
+      baselineAccuracy: sharpness,
+      bestAccuracy: sharpness,
+      met: sharpness >= targetAccuracy,
+      setAt: Date.now(),
+    };
+    writeGoal(goal);
+    analytics.capture('goal_set', {
+      category: categoryId,
+      target_band: targetErrorBand,
+      baseline_band: accuracyToErrorBand(sharpness),
+    });
+    return goal;
+  },
+
+  clearGoal: (categoryId) => {
+    kv.delete(goalKey(categoryId));
+    const led = readGoalCelebrated();
+    if (led.delete(categoryId)) writeGoalCelebrated(led);
+  },
+
+  hasCelebratedGoal: (categoryId) => readGoalCelebrated().has(categoryId),
+
+  markGoalCelebrated: (categoryId) => {
+    const led = readGoalCelebrated();
+    if (led.has(categoryId)) return;
+    led.add(categoryId);
+    writeGoalCelebrated(led);
   },
 
   reset: () => {
-    // Factory reset clears the cross-category bias too — a fresh start anchors on
-    // the cold population priors, not the prior install's optimism.
+    // Factory reset clears the cross-category bias and the Pro pitch latch too —
+    // a fresh start should require re-earning the pitch gate.
     kv.delete(GLOBAL_BIAS_KEY);
+    kv.delete(PRO_PITCH_LATCH_KEY);
     set({ logs: 0, statsByCategory: {}, graduatedCategories: new Set() });
   },
 }));

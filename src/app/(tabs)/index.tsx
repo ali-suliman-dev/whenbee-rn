@@ -1,8 +1,9 @@
 import { View, Text, Pressable, ScrollView, ActionSheetIOS, type TextStyle } from 'react-native';
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useCallback } from 'react';
 import { router } from 'expo-router';
 import { haptics } from '@/src/lib/haptics';
 import { Ionicons } from '@expo/vector-icons';
+import { AppText } from '@/src/components/AppText';
 import { Screen } from '@/src/components/Screen';
 import { ScreenHeader } from '@/src/components/ScreenHeader';
 import { useTheme } from '@/src/theme/useTheme';
@@ -11,10 +12,14 @@ import { useToday, type TodayRow } from '@/src/features/today/useToday';
 import { FocusCard } from '@/src/features/today/FocusCard';
 import { RunningFocusCard } from '@/src/features/today/RunningFocusCard';
 import { TaskRow } from '@/src/features/today/TaskRow';
-import { TodayHud } from '@/src/components/honeycomb/TodayHud';
+import { DoneSection } from '@/src/features/today/DoneSection';
+import { TodayHeaderRing } from '@/src/features/today/TodayHeaderRing';
+import { leadHoney } from '@/src/features/today/leadHoney';
+import { RitualSeal } from '@/src/features/today/RitualSeal';
 import type { HoneycombCell } from '@/src/components/honeycomb/Honeycomb';
 import { TodayEmptyState } from '@/src/features/today/TodayEmptyState';
 import { RetroLogChip } from '@/src/features/today/RetroLogChip';
+import { QuickTaskChips } from '@/src/components/quick/QuickTaskChips';
 import { SwitchTaskSheet } from '@/src/features/today/SwitchTaskSheet';
 import { useCategoriesStore } from '@/src/stores/categoriesStore';
 import { useCalibrationStore } from '@/src/stores/calibrationStore';
@@ -23,6 +28,9 @@ import { useSettingsStore } from '@/src/stores/settingsStore';
 import { projectedFinish, formatClockMeridiem } from '@/src/lib/time';
 import { useTasksStore } from '@/src/stores/tasksStore';
 import { kv } from '@/src/lib/kv';
+import { useFocusedValue } from '@/src/hooks/useFocusedValue';
+import { useGreeting } from '@/src/features/today/useGreeting';
+import { TodayFocusHook } from '@/src/features/today/TodayFocusHook';
 
 // Date label, e.g. "Fri · Jun 12" — the day + date, no clock (the time added
 // nothing here and ticked distractingly).
@@ -43,7 +51,6 @@ export default function Today() {
     categoryName,
     companionStage,
     companionSeed,
-    reclaimLifetimeMin,
     hasEverLogged,
   } = useToday();
   const isTimerRunning = useTimerStore((s) => s.isRunning);
@@ -53,8 +60,11 @@ export default function Today() {
   const removeTask = useTasksStore((s) => s.removeTask);
   const promoteToFocus = useTasksStore((s) => s.promoteToFocus);
 
-  // First-run peek: teach the hidden swipe once, then never again.
+  // First-run peek: teach the hidden swipe once, then never again. The flag is
+  // burned only after the peek actually animates (see onPeeked below) — never on
+  // a bare mount — so the one-shot can't be spent without the user seeing it.
   const [peekFirstRow] = useState(() => kv.getString('today.seenSwipeHint') == null);
+  const markSwipeHintSeen = useCallback(() => kv.set('today.seenSwipeHint', '1'), []);
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [showCoachMark, setShowCoachMark] = useState(
     () => kv.getString('today.seenCoachMarkV1') == null,
@@ -65,19 +75,8 @@ export default function Today() {
     kv.set('today.seenCoachMarkV1', '1');
   }, []);
 
-  useEffect(() => {
-    if (peekFirstRow) kv.set('today.seenSwipeHint', '1');
-  }, [peekFirstRow]);
-
-  const hasDone = done.length > 0;
-  useEffect(() => {
-    if (!showCoachMark || !hasDone) return;
-    const timer = setTimeout(dismissCoachMark, 4000);
-    return () => clearTimeout(timer);
-  // dismissCoachMark is stable (useCallback with no deps)
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [showCoachMark, hasDone]);
-
+  // The done-list coach-mark auto-dismiss now lives in DoneSection (it only runs
+  // once the list is expanded, so a collapsed list never burns the one-shot).
   function deleteTask(id: string) {
     haptics.medium();
     dismissCoachMark();
@@ -86,7 +85,12 @@ export default function Today() {
   }
   function promptDelete(id: string, label: string) {
     ActionSheetIOS.showActionSheetWithOptions(
-      { title: label, options: ['Remove', 'Cancel'], destructiveButtonIndex: 0, cancelButtonIndex: 1 },
+      {
+        title: label,
+        options: ['Remove', 'Cancel'],
+        destructiveButtonIndex: 0,
+        cancelButtonIndex: 1,
+      },
       (i) => {
         if (i === 0) setDeletingId(id);
       },
@@ -144,6 +148,13 @@ export default function Today() {
     };
   });
 
+  const ritualDone = useFocusedValue(done.length > 0);
+  const shownCells = useFocusedValue(honeyCells);
+
+  const greeting = useGreeting();
+  // Single call — avoids computing leadHoney(shownCells) twice in JSX.
+  const lead = leadHoney(shownCells);
+
   const sectionLabel: TextStyle = {
     ...(type.eyebrow as unknown as TextStyle),
     color: t.colors.inkSoft,
@@ -162,32 +173,59 @@ export default function Today() {
         >
           <ScreenHeader
             title="Today"
+            largeTitle
             subtitle={dateLabel(new Date())}
+            eyebrow={
+              <AppText variant="caption" style={{ color: t.colors.inkSoft }}>
+                {greeting.lead}
+                {greeting.name ? (
+                  <>
+                    {', '}
+                    <AppText
+                      variant="caption"
+                      style={{ color: t.colors.ink, fontWeight: t.fontWeight.bold }}
+                    >
+                      {greeting.name}
+                    </AppText>
+                  </>
+                ) : null}
+              </AppText>
+            }
             right={
-              <Pressable
-                onPress={() => router.push('/settings')}
-                accessibilityRole="button"
-                accessibilityLabel="Settings"
-                hitSlop={8}
-              >
-                <Ionicons name="settings-outline" size={22} color={t.colors.inkSoft} />
-              </Pressable>
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: t.space[4] }}>
+                <Pressable
+                  onPress={() => router.push('/settings')}
+                  accessibilityRole="button"
+                  accessibilityLabel="Settings"
+                  hitSlop={8}
+                >
+                  <Ionicons name="settings-outline" size={22} color={t.colors.inkSoft} />
+                </Pressable>
+                <TodayHeaderRing
+                  sharpness={lead.sharpness}
+                  tier={lead.tier}
+                  stage={companionStage}
+                  seed={companionSeed}
+                />
+              </View>
             }
           />
 
-          {/* The honey HUD hugs the header (tighten the inherited list gap) but
-              sits clearly apart from the focus card below it. */}
-          <View style={{ marginTop: -t.space[2], marginBottom: t.space[3] }}>
-            <TodayHud
-              cells={honeyCells}
-              stage={companionStage}
-              seed={companionSeed}
-              onPress={() => router.push('/(tabs)/whenbee')}
-              ritualEnabled={dailyRitualEnabled}
-              ritualDone={done.length > 0}
-              onLogRitual={() => router.push('/(modals)/retro')}
-            />
-          </View>
+          {/* Daily ritual (opt-in) lived in the honey HUD footer; the HUD is gone,
+              so render the seal standalone where the card was. */}
+          {dailyRitualEnabled ? (
+            <RitualSeal done={ritualDone} onLog={() => router.push('/(modals)/retro')} />
+          ) : null}
+
+          {/* Contextual focus-window nudge — only when the engine has a personal
+              window, the window hasn't ended, and at least one queued task exists.
+              Slots between the honey HUD and the quick-task chips row. */}
+          <TodayFocusHook nowMs={Date.now()} />
+
+          {/* Quick-task chips — repeating tasks the user has run before. Only
+              shown when history exists (chips.length > 0 inside the component);
+              slots between the honey HUD and whatever occupies the focus slot. */}
+          <QuickTaskChips />
 
           {/* A live session takes the focus slot itself (the same footprint as the
               Next card, so nothing jumps), carrying its guess→plan context + the
@@ -196,17 +234,21 @@ export default function Today() {
             <RunningFocusCard categoryName={categoryName} />
           ) : focus && summary ? (
             <Pressable
+              key={focus.id}
               onLongPress={() => promptDelete(focus.id, focus.label)}
               delayLongPress={300}
               accessibilityRole="button"
               accessibilityLabel={`${focus.label}. Long-press to delete.`}
             >
               <FocusCard
-                category={focus.category}
                 categoryLabel={categoryName(focus.category)}
                 taskTitle={focus.label}
                 summary={summary}
-                finishClock={formatClockMeridiem(projectedFinish(Date.now(), summary.honestMinutes))}
+                finishClock={formatClockMeridiem(
+                  projectedFinish(Date.now(), summary.honestMinutes),
+                )}
+                onDelete={() => deleteTask(focus.id)}
+                isExiting={deletingId === focus.id}
                 onStart={() =>
                   router.push({
                     pathname: '/(modals)/timer',
@@ -224,7 +266,6 @@ export default function Today() {
           ) : totalCount === 0 ? (
             <TodayEmptyState
               variant={hasEverLogged ? 'daily' : 'first-run'}
-              reclaimLifetimeMin={reclaimLifetimeMin}
               onPrimary={() => {
                 haptics.light();
                 router.push('/(modals)/add-task');
@@ -247,6 +288,7 @@ export default function Today() {
                   onDelete={() => deleteTask(row.id)}
                   onLongPress={() => promptDelete(row.id, row.label)}
                   peekHint={peekFirstRow && idx === 0}
+                  onPeeked={markSwipeHintSeen}
                   isExiting={deletingId === row.id}
                 />
               ))}
@@ -254,25 +296,14 @@ export default function Today() {
           ) : null}
 
           {done.length > 0 ? (
-            <View style={{ gap: t.space[2] }}>
-              <Text style={sectionLabel}>DONE TODAY</Text>
-              {done.map((row, idx) => (
-                <TaskRow
-                  key={row.id}
-                  title={row.label}
-                  categoryLabel={row.categoryLabel}
-                  guessMin={row.guessMin}
-                  honestMin={row.honestMin}
-                  actualMin={row.actualMin}
-                  done
-                  onDelete={() => deleteTask(row.id)}
-                  onLongPress={() => promptDelete(row.id, row.label)}
-                  isExiting={deletingId === row.id}
-                  showCoachMark={showCoachMark && idx === 0}
-                  onCoachMarkDismiss={dismissCoachMark}
-                />
-              ))}
-            </View>
+            <DoneSection
+              rows={done}
+              deletingId={deletingId}
+              onDelete={deleteTask}
+              onLongPress={promptDelete}
+              showCoachMark={showCoachMark}
+              onCoachMarkDismiss={dismissCoachMark}
+            />
           ) : null}
 
           {totalCount === 0 && !isTimerRunning ? null : (
@@ -282,7 +313,6 @@ export default function Today() {
             />
           )}
         </ScrollView>
-
       </View>
 
       <SwitchTaskSheet

@@ -1,5 +1,6 @@
-import { useEffect } from 'react';
+import { useCallback } from 'react';
 import Animated, {
+  cancelAnimation,
   useAnimatedProps,
   useAnimatedStyle,
   useReducedMotion,
@@ -11,6 +12,7 @@ import Animated, {
 } from 'react-native-reanimated';
 import Svg, { Path, Rect, Circle, Defs, RadialGradient, Stop } from 'react-native-svg';
 import { useTheme } from '@/src/theme/useTheme';
+import { useAmbientMotion } from '@/src/hooks/useAmbientMotion';
 
 const AnimatedRect = Animated.createAnimatedComponent(Rect);
 
@@ -33,15 +35,15 @@ const BODY_TILT = 2; // ± degrees of turn toward the look direction
 // Same approach as WhenbeeAvatar's SVG — no svg-transformer dependency.
 //
 // ONE base artwork at every stage (no per-variant asset). The 6-stage companion
-// "expression" is layered ON the base, driven by two inputs:
+// "expression" is layered ON the base via a single input:
 //   • stage 1..6 → a soft amber GLOW halo whose radius grows with presence
 //     (companion.glow token; stages 1–2 have none — a young bee is plain).
-//   • seed       → a deterministic stripe recolor WITHIN the amber family (a gentle
-//     hue shift, never red), so two installs read as the SAME bee with its own warmth.
 //
 // Colors are token-sourced from `brand.bee` (fixed, mode-independent — a mascot
-// reads as the same bee in light and dark, like a logo). The glow halo uses the
-// drift tint so a 'curious' bee warms toward indigo without any sad/wilt state.
+// reads as the same bee in light and dark, like a logo). The bee's YELLOWS are the
+// fixed honey tokens at ALL times — never recolored. (An earlier per-install seed
+// hue-shift could drift the head shadow toward red-orange and flashed reddish on
+// first render when the real seed loaded; honey-always removes both problems.)
 // ──────────────────────────────────────────────────────────────────────────────
 
 export type BeeVariant =
@@ -60,53 +62,18 @@ function stageOf(variant: BeeVariant): number {
   return Number.isFinite(n) ? Math.max(1, Math.min(6, n)) : 1;
 }
 
-// Amber band the stripe hue is allowed to roam (HSL hue degrees). The base brand
-// stripe (#F6B442) sits ~38°; we let the seed nudge ±10° so it stays unmistakably
-// amber/honey and never slips toward red (<20°) or yellow-green (>55°).
-const STRIPE_HUE_BASE = 38;
-const STRIPE_HUE_SWING = 10;
-const STRIPE_SAT = 0.91;
-const STRIPE_LIGHT = 0.61;
-const STRIPE_LIGHT_LO = 0.48; // head-shadow stripe (matches brand.stripeLo darkness)
-
-/** Deterministic [0,1) from an integer seed — a cheap fract(sin) hash, pure. */
-function seededUnit(seed: number): number {
-  const x = Math.sin(seed * 12.9898) * 43758.5453;
-  return x - Math.floor(x);
-}
-
-/** HSL → #rrggbb. h in degrees, s/l in [0,1]. Pure, no deps. */
-function hslHex(h: number, s: number, l: number): string {
-  const c = (1 - Math.abs(2 * l - 1)) * s;
-  const hp = h / 60;
-  const x = c * (1 - Math.abs((hp % 2) - 1));
-  let r = 0;
-  let g = 0;
-  let b = 0;
-  if (hp < 1) [r, g, b] = [c, x, 0];
-  else if (hp < 2) [r, g, b] = [x, c, 0];
-  else if (hp < 3) [r, g, b] = [0, c, x];
-  else if (hp < 4) [r, g, b] = [0, x, c];
-  else if (hp < 5) [r, g, b] = [x, 0, c];
-  else [r, g, b] = [c, 0, x];
-  const m = l - c / 2;
-  const to = (v: number) =>
-    Math.round((v + m) * 255)
-      .toString(16)
-      .padStart(2, '0');
-  return `#${to(r)}${to(g)}${to(b)}`;
-}
-
 export function BeeMascot({
   size = 88,
   variant = 'default',
-  seed = 1,
   animated = false,
   glow = true,
 }: {
   size?: number;
   variant?: BeeVariant;
-  /** Per-install seed → deterministic stripe warmth (amber family only). */
+  /**
+   * Retained for caller compatibility only — the bee's yellows are fixed honey and
+   * no longer recolored, so the seed has no visual effect. Safe to stop passing.
+   */
   seed?: number;
   /** Opt-in in-place wing flutter (onboarding companion). Off everywhere else. */
   animated?: boolean;
@@ -121,10 +88,9 @@ export function BeeMascot({
   // noUncheckedIndexedAccess: glow array may be undefined-at-index — fall back to 0.
   const glowRadius = t.companion.glow[stage - 1] ?? 0;
 
-  // Seed → hue within the amber band → the two stripe tints (band + head-shadow).
-  const hue = STRIPE_HUE_BASE + (seededUnit(seed) * 2 - 1) * STRIPE_HUE_SWING;
-  const stripe = hslHex(hue, STRIPE_SAT, STRIPE_LIGHT);
-  const stripeLo = hslHex(hue, STRIPE_SAT, STRIPE_LIGHT_LO);
+  // The bee's yellows are the fixed honey tokens at ALL times (band + head-shadow).
+  const stripe = c.stripe;
+  const stripeLo = c.stripeLo;
 
   // ── Three calm, looping layers of life (premium, never busy) ──────────────────
   //   • flutter — wings buzz in place: small + fast = an insect hum, not a bird flap
@@ -136,38 +102,40 @@ export function BeeMascot({
   const look = useSharedValue(0);
 
   const m = t.motion;
-  useEffect(() => {
-    if (!animated || reduced) {
-      flutter.set(0);
-      blink.set(0);
-      look.set(0);
-      return;
-    }
-    // Wings: continuous soft buzz (decelerating sine each fold → no mechanical snap).
-    flutter.set(withRepeat(withTiming(1, { duration: m.beeWingBuzz, easing: m.easing.calm }), -1, true));
-    // Blink: quick close → open, then a long calm hold before the next one.
-    blink.set(
-      withRepeat(
-        withSequence(
-          withTiming(1, { duration: m.beeBlink, easing: m.easing.calm }),
-          withTiming(0, { duration: m.beeBlink, easing: m.easing.calm }),
-          withDelay(m.beeBlinkGap, withTiming(0, { duration: 0 })),
+  useAmbientMotion(
+    Boolean(animated) && !reduced,
+    useCallback(() => {
+      flutter.set(withRepeat(withTiming(1, { duration: m.beeWingBuzz, easing: m.easing.calm }), -1, true));
+      blink.set(
+        withRepeat(
+          withSequence(
+            withTiming(1, { duration: m.beeBlink, easing: m.easing.calm }),
+            withTiming(0, { duration: m.beeBlink, easing: m.easing.calm }),
+            withDelay(m.beeBlinkGap, withTiming(0, { duration: 0 })),
+          ),
+          -1,
         ),
-        -1,
-      ),
-    );
-    // Glance: dwell centre → ease right → dwell → ease left → dwell → recentre.
-    look.set(
-      withRepeat(
-        withSequence(
-          withDelay(m.beeLookHold, withTiming(1, { duration: m.beeLook, easing: m.easing.calm })),
-          withDelay(m.beeLookHold, withTiming(-1, { duration: m.beeLook, easing: m.easing.calm })),
-          withDelay(m.beeLookHold, withTiming(0, { duration: m.beeLook, easing: m.easing.calm })),
+      );
+      look.set(
+        withRepeat(
+          withSequence(
+            withDelay(m.beeLookHold, withTiming(1, { duration: m.beeLook, easing: m.easing.calm })),
+            withDelay(m.beeLookHold, withTiming(-1, { duration: m.beeLook, easing: m.easing.calm })),
+            withDelay(m.beeLookHold, withTiming(0, { duration: m.beeLook, easing: m.easing.calm })),
+          ),
+          -1,
         ),
-        -1,
-      ),
-    );
-  }, [animated, reduced, flutter, blink, look, m]);
+      );
+      return () => {
+        cancelAnimation(flutter);
+        cancelAnimation(blink);
+        cancelAnimation(look);
+        flutter.set(0);
+        blink.set(0);
+        look.set(0);
+      };
+    }, [flutter, blink, look, m]),
+  );
 
   const wingStyle = useAnimatedStyle(() => ({
     transform: [{ scaleX: 1 - WING_FOLD * flutter.get() }],
@@ -194,6 +162,10 @@ export function BeeMascot({
     ],
   }));
 
+  // Clamp the halo radius to the viewBox half (1200): the Svg canvas is square and
+  // clips anything past its bounds, so a circle larger than 1200 gets cropped to a
+  // BOX. Keeping the transparent rim at exactly the edge renders a clean circle.
+  const haloRadius = Math.min(1100 + glowRadius * 40, 1200);
   const glowHalo =
     glow && glowRadius > 0 ? (
       <>
@@ -203,9 +175,7 @@ export function BeeMascot({
             <Stop offset="100%" stopColor={stripe} stopOpacity={0} />
           </RadialGradient>
         </Defs>
-        {/* Map the token px radius onto the 2400 viewBox: a base 1100 + token growth,
-            so the halo blooms outward as the companion climbs. */}
-        <Circle cx={1200} cy={1200} r={1100 + glowRadius * 40} fill="url(#beeGlow)" />
+        <Circle cx={1200} cy={1200} r={haloRadius} fill="url(#beeGlow)" />
       </>
     ) : null;
 

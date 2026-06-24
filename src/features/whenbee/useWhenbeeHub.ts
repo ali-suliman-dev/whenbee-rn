@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useCalibrationStore } from '@/src/stores/calibrationStore';
 import type { CompanionPresence } from '@/src/stores/calibrationStore';
+import type { ProFeatureId } from '@/src/engine';
 import { useCategoriesStore } from '@/src/stores/categoriesStore';
 import { tierFor, capabilityFor, CATEGORY_NAMES } from '@/src/engine';
 import { analytics } from '@/src/services/analytics';
@@ -52,6 +53,10 @@ export interface WhenbeeHubVM {
   showDriftRecheck: boolean;
   /** Dismiss the drift re-check card for this cycle (re-arms when drift settles). */
   dismissDriftRecheck: () => void;
+  /** Pro-feature gate readiness derived from calibration state. */
+  proReadiness: { pitchUnlocked: boolean; perFeatureReady: Record<ProFeatureId, boolean> };
+  /** Lead sharpness rounded to the nearest integer (0–100), for progress display. */
+  honeyPct: number;
 }
 
 /** kv flag: set while the drift re-check card has been dismissed; cleared the
@@ -96,6 +101,7 @@ export function useWhenbeeHub(): WhenbeeHubVM {
   const loadDiscoveries = useCalibrationStore((s) => s.loadDiscoveries);
   const nameCompanion = useCalibrationStore((s) => s.nameCompanion);
   const statsByCategory = useCalibrationStore((s) => s.statsByCategory);
+  const getProReadiness = useCalibrationStore((s) => s.getProReadiness);
   const categories = useCategoriesStore((s) => s.categories);
 
   const [reclaim, setReclaim] = useState(EMPTY_RECLAIM);
@@ -152,6 +158,13 @@ export function useWhenbeeHub(): WhenbeeHubVM {
   // Lead = the most-ripened cell; its sharpness sets the tier the user is chasing.
   const leadSharpness = useMemo<number>(() => leadSharpnessOf(cells), [cells]);
   const tier = useMemo<Tier>(() => tierFor(leadSharpness), [leadSharpness]);
+  const honeyPct = useMemo<number>(() => Math.round(leadSharpness), [leadSharpness]);
+
+  // Pro-readiness reads via get() inside getProReadiness, but we explicitly include
+  // statsByCategory and focusTick so the memo recomputes whenever calibration data
+  // or focus state changes — ensuring pitchUnlocked flips mid-session as the user logs.
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  const proReadiness = useMemo(() => getProReadiness(), [getProReadiness, statsByCategory, focusTick]);
 
   // Blind spot = lowest-sharpness tracked category that has at least one log.
   const blindSpot = useMemo<BlindSpot | null>(() => {
@@ -198,5 +211,7 @@ export function useWhenbeeHub(): WhenbeeHubVM {
     renameCompanion,
     showDriftRecheck,
     dismissDriftRecheck,
+    proReadiness,
+    honeyPct,
   };
 }

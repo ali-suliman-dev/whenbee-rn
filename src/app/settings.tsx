@@ -1,16 +1,19 @@
 import { useCallback, useState, type ReactNode } from 'react';
-import { Alert, View, Text, Pressable, Switch, ScrollView, type ViewStyle, type TextStyle } from 'react-native';
+import { Alert, Modal, View, Text, Pressable, Switch, ScrollView, TextInput, type ViewStyle, type TextStyle } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { Screen } from '@/src/components/Screen';
 import { AppText } from '@/src/components/AppText';
+import { AppButton } from '@/src/components/AppButton';
 import { ProUpsellCard } from '@/src/components/ProUpsellCard';
 import { Chip } from '@/src/components/Chip';
 import { AppearanceGlyph } from '@/src/components/icons/AppearanceGlyph';
 import { DataResetGlyph } from '@/src/components/DataResetGlyph';
 import { ConfirmSheet } from '@/src/components/ConfirmSheet';
 import { Toast, AUTO_HIDE_MS } from '@/src/components/Toast';
+import { FinishTimeWheel } from '@/src/features/planner/FinishTimeWheel';
+import { dayEndEpochFor } from '@/src/lib/time';
 import { useTheme } from '@/src/theme/useTheme';
 import { type } from '@/src/theme/typography';
 import { useSettingsStore, type ColorModePref } from '@/src/stores/settingsStore';
@@ -18,11 +21,15 @@ import { useCategoriesStore } from '@/src/stores/categoriesStore';
 import { useEntitlement } from '@/src/features/paywall/useEntitlement';
 import { useAccountActions, type RestoreOutcome } from '@/src/features/paywall/useAccountActions';
 import { useReminderSetting } from '@/src/features/settings/useReminderSetting';
+import { useReviewNotifySetting } from '@/src/features/settings/useReviewNotifySetting';
+import { useDayEndSetting } from '@/src/features/settings/useDayEndSetting';
 import { useAccountReset } from '@/src/features/settings/useAccountReset';
 import { usePresenceSection } from '@/src/features/settings/usePresenceSection';
 import { ProGate } from '@/src/features/paywall/ProGate';
 import { PresenceRingTeaser } from '@/src/components/PresenceRingTeaser';
-import { AppButton } from '@/src/components/AppButton';
+import { GuardrailSettingRow } from '@/src/features/settings/GuardrailSettingRow';
+import { GuardrailLockedRow } from '@/src/features/settings/GuardrailLockedRow';
+import { seedDemoData } from '@/src/features/dev/seedDemoData';
 
 const modes: ColorModePref[] = ['system', 'light', 'dark'];
 
@@ -120,6 +127,8 @@ export default function Settings() {
   const t = useTheme();
   const insets = useSafeAreaInsets();
   const { colorMode, setColorMode } = useSettingsStore();
+  const displayName = useSettingsStore((s) => s.displayName);
+  const setDisplayName = useSettingsStore((s) => s.setDisplayName);
   const dailyRitualEnabled = useSettingsStore((s) => s.dailyRitualEnabled);
   const setDailyRitualEnabled = useSettingsStore((s) => s.setDailyRitualEnabled);
   const isPro = useEntitlement((s) => s.isPro);
@@ -127,6 +136,17 @@ export default function Settings() {
   const categoryCount = useCategoriesStore((s) => s.categories.length);
   const { restoring, manageSubscription, restorePurchases } = useAccountActions();
   const { enabled: remindersEnabled, toggle: toggleReminders } = useReminderSetting();
+  const { enabled: reviewNotifyEnabled, toggle: toggleReviewNotify } = useReviewNotifySetting();
+  const {
+    dayEndMin,
+    label: dayEndLabel,
+    editing: dayEndEditing,
+    open: openDayEnd,
+    close: closeDayEnd,
+    save: saveDayEnd,
+    dayEndEnabled,
+    setDayEndEnabled,
+  } = useDayEndSetting();
   const { resetting, resetProgress, eraseEverything } = useAccountReset();
   const { isPresenceAvailable, handlePresenceCta } = usePresenceSection();
 
@@ -159,6 +179,11 @@ export default function Settings() {
     if (next && !ok) showToast(REMINDER_DENIED);
   }
 
+  async function handleToggleReviewNotify(next: boolean) {
+    const ok = await toggleReviewNotify(next);
+    if (next && !ok) showToast(REMINDER_DENIED);
+  }
+
   async function handleResetProgress() {
     setSheet(null);
     await resetProgress();
@@ -175,6 +200,18 @@ export default function Settings() {
   async function handleEraseEverything() {
     setSheet(null);
     await eraseEverything(); // navigates to onboarding; no toast needed
+  }
+
+  const [seeding, setSeeding] = useState(false);
+  async function handleSeedDemo() {
+    if (seeding) return;
+    setSeeding(true);
+    try {
+      const n = await seedDemoData();
+      showToast(`Seeded ${n} logs across 2 months.`);
+    } finally {
+      setSeeding(false);
+    }
   }
 
   return (
@@ -224,12 +261,50 @@ export default function Settings() {
         </View>
 
         <View style={{ gap: t.space[3] }}>
-          <AppText variant="label">General</AppText>
+          <AppText variant="label">Your Whenbee</AppText>
           <SettingRow
             icon="albums-outline"
             title="Categories"
             note={`${categoryCount} tracked`}
             onPress={() => router.push('/categories')}
+          />
+          <View
+            style={{
+              flexDirection: 'row',
+              alignItems: 'center',
+              gap: t.space[3],
+              minHeight: t.size.control.lg,
+              backgroundColor: t.colors.surface,
+              borderWidth: t.borderWidth.hairline,
+              borderColor: t.colors.hairline,
+              borderRadius: t.radii.card,
+              borderCurve: 'continuous',
+              paddingHorizontal: t.space[4],
+              paddingVertical: t.space[3],
+            }}
+          >
+            <Ionicons name="person-outline" size={t.iconSize.md} color={t.colors.inkSoft} />
+            <TextInput
+              accessibilityLabel="Your name"
+              placeholder="Tell Whenbee your name"
+              placeholderTextColor={t.colors.inkFaint}
+              value={displayName ?? ''}
+              onChangeText={(text) => setDisplayName(text || undefined)}
+              style={{
+                flex: 1,
+                ...(type.bodySmBold as unknown as TextStyle),
+                color: t.colors.ink,
+              }}
+              returnKeyType="done"
+              autoCorrect={false}
+            />
+          </View>
+          <SettingRow
+            icon="time-outline"
+            title="Re-take time-style quiz"
+            note="Update your time-personality seed."
+            onPress={() => router.push('/(modals)/archetype-quiz')}
+            accessibilityLabel="Re-take time-style quiz"
           />
           <SettingRow
             icon="happy-outline"
@@ -237,6 +312,10 @@ export default function Settings() {
             note="Give your companion a name."
             onPress={() => router.push('/(modals)/companion')}
           />
+        </View>
+
+        <View style={{ gap: t.space[3] }}>
+          <AppText variant="label">Notifications</AppText>
           <SettingRow
             icon="notifications-outline"
             title="Time-up reminders"
@@ -250,6 +329,24 @@ export default function Settings() {
               />
             }
           />
+          {isPro ? (
+            <SettingRow
+              icon="leaf-outline"
+              title="Monday review"
+              note="A gentle nudge when your honest week is ready. Off by default."
+              trailing={
+                <Switch
+                  value={reviewNotifyEnabled}
+                  onValueChange={handleToggleReviewNotify}
+                  trackColor={{ true: t.colors.primary, false: t.colors.hairline }}
+                  accessibilityLabel="Monday review"
+                />
+              }
+            />
+          ) : null}
+          <ProGate fallback={<GuardrailLockedRow />}>
+            <GuardrailSettingRow />
+          </ProGate>
           <SettingRow
             icon="sparkles-outline"
             title="Daily check-in"
@@ -262,6 +359,39 @@ export default function Settings() {
                 accessibilityLabel="Daily check-in"
               />
             }
+          />
+        </View>
+
+        <View style={{ gap: t.space[3] }}>
+          <AppText variant="label">Scheduling</AppText>
+          <SettingRow
+            icon="moon-outline"
+            title="End of day"
+            note={dayEndEnabled ? `Your day winds down around ${dayEndLabel}` : 'Off'}
+            onPress={dayEndEnabled ? openDayEnd : undefined}
+            accessibilityLabel={
+              dayEndEnabled
+                ? `End of day, currently ${dayEndLabel}. Tap to change.`
+                : 'End of day, off'
+            }
+            trailing={
+              <Switch
+                value={dayEndEnabled}
+                onValueChange={setDayEndEnabled}
+                trackColor={{ true: t.colors.primary, false: t.colors.hairline }}
+                accessibilityLabel="End of day"
+              />
+            }
+          />
+        </View>
+
+        <View style={{ gap: t.space[3] }}>
+          <AppText variant="label">Your data</AppText>
+          <SettingRow
+            icon="document-text-outline"
+            title="Export a report"
+            note="A clean PDF of your real time data to keep or share with a coach or doctor."
+            onPress={() => router.push('/(modals)/report')}
           />
           <SettingRow
             icon="lock-closed-outline"
@@ -373,24 +503,31 @@ export default function Settings() {
           />
         </View>
 
-        {__DEV__ ? (
-          <View style={{ gap: t.space[3] }}>
-            <AppText variant="label">Developer</AppText>
+        <View style={{ gap: t.space[3] }}>
+          <AppText variant="label">Developer</AppText>
+          <SettingRow
+            icon="construct-outline"
+            title="Unlock Pro (testing)"
+            note="Flip the Pro entitlement to preview every gated screen. For testing — leave off in normal use."
+            trailing={
+              <Switch
+                value={isPro}
+                onValueChange={setPro}
+                trackColor={{ true: t.colors.primary, false: t.colors.hairline }}
+                accessibilityLabel="Unlock Pro (testing)"
+              />
+            }
+          />
+          {__DEV__ && (
             <SettingRow
-              icon="construct-outline"
-              title="Unlock Pro (dev)"
-              note="Flip the Pro entitlement to preview gated screens. Dev builds only — never ships."
-              trailing={
-                <Switch
-                  value={isPro}
-                  onValueChange={setPro}
-                  trackColor={{ true: t.colors.primary, false: t.colors.hairline }}
-                  accessibilityLabel="Unlock Pro (dev)"
-                />
-              }
+              icon="flask-outline"
+              title="Seed demo data"
+              note="Lay down ~2 months of logs across four categories so every Pro surface has something to show. Sim-only — resets the demo categories each run."
+              onPress={handleSeedDemo}
+              disabled={seeding}
             />
-          </View>
-        ) : null}
+          )}
+        </View>
       </ScrollView>
 
       <ConfirmSheet
@@ -421,6 +558,43 @@ export default function Settings() {
         onConfirm={handleEraseEverything}
         onCancel={() => setSheet(null)}
       />
+
+      <Modal
+        visible={dayEndEditing}
+        transparent
+        animationType="fade"
+        onRequestClose={closeDayEnd}
+      >
+        <View style={{ flex: 1, justifyContent: 'flex-end' }}>
+          <Pressable
+            style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: t.colors.scrim }}
+            accessibilityLabel="Dismiss"
+            onPress={closeDayEnd}
+          />
+          <View
+            style={{
+              backgroundColor: t.colors.surface,
+              borderTopLeftRadius: t.radii.sheet,
+              borderTopRightRadius: t.radii.sheet,
+              borderCurve: 'continuous',
+              paddingHorizontal: t.space[5],
+              paddingTop: t.space[5],
+              paddingBottom: insets.bottom + t.space[5],
+              gap: t.space[4],
+            }}
+          >
+            <AppText variant="title" style={{ color: t.colors.ink }}>
+              When does your day wind down?
+            </AppText>
+            <FinishTimeWheel
+              showModes={false}
+              valueMs={dayEndEpochFor(Date.now(), dayEndMin)}
+              onChange={(ms) => saveDayEnd(ms)}
+            />
+            <AppButton label="Done" onPress={closeDayEnd} variant="amber" fullWidth />
+          </View>
+        </View>
+      </Modal>
 
       <Toast message={toastMsg} visible={toastVisible} />
     </Screen>

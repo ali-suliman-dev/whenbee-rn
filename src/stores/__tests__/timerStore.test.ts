@@ -138,4 +138,97 @@ describe('timerStore', () => {
     expect(state.startedAt).toBe(T0);
     expect(state.taskLabel).toBe('Vacuum');
   });
+
+  it('quickStart runs a bare timer flagged as quick-start', () => {
+    useTimerStore.getState().quickStart(T0);
+    const s = useTimerStore.getState();
+    expect(s.isRunning).toBe(true);
+    expect(s.isQuickStart).toBe(true);
+    expect(s.category).toBeNull();
+    expect(s.taskLabel).toBe('');
+    expect(s.estimateMin).toBe(0);
+    const { actualMin } = useTimerStore.getState().stop(T0 + 5 * MIN);
+    expect(actualMin).toBe(5);
+  });
+
+  it('normal start is not flagged quick-start', () => {
+    useTimerStore.getState().start({ label: 'Emails', category: 'admin', estimateMin: 40 }, T0);
+    expect(useTimerStore.getState().isQuickStart).toBe(false);
+  });
+
+  it('cancel clears isQuickStart', () => {
+    useTimerStore.getState().quickStart(T0);
+    useTimerStore.getState().cancel();
+    expect(useTimerStore.getState().isQuickStart).toBe(false);
+  });
+
+  it('starting a session leaves guardNudged false', () => {
+    useTimerStore.getState().start({ label: 'X', category: 'admin', estimateMin: 20 }, T0);
+    expect(useTimerStore.getState().guardNudged).toBe(false);
+  });
+
+  it('markGuardNudged latches guardNudged true', () => {
+    useTimerStore.getState().start({ label: 'X', category: 'admin', estimateMin: 20 }, T0);
+    useTimerStore.getState().markGuardNudged();
+    expect(useTimerStore.getState().guardNudged).toBe(true);
+  });
+
+  it('stop clears guardNudged back to false', () => {
+    useTimerStore.getState().start({ label: 'X', category: 'admin', estimateMin: 20 }, T0);
+    useTimerStore.getState().markGuardNudged();
+    useTimerStore.getState().stop(T0 + 30 * MIN);
+    expect(useTimerStore.getState().guardNudged).toBe(false);
+  });
+
+  it('cancel clears guardNudged back to false', () => {
+    useTimerStore.getState().quickStart(T0);
+    useTimerStore.getState().markGuardNudged();
+    useTimerStore.getState().cancel();
+    expect(useTimerStore.getState().guardNudged).toBe(false);
+  });
+
+  it('resumeFromKv round-trips guardNudged', () => {
+    useTimerStore.getState().start({ label: 'X', category: 'admin', estimateMin: 20 }, T0);
+    useTimerStore.getState().markGuardNudged();
+    // wipe in-memory state but leave kv intact (the persisted snapshot has guardNudged true)
+    useTimerStore.setState({
+      taskLabel: null,
+      category: null,
+      estimateMin: 0,
+      startedAt: null,
+      pausedAccumMs: 0,
+      pausedAt: null,
+      isRunning: false,
+      guessMin: 0,
+      taskId: null,
+      suggestedHonestMin: 0,
+      isQuickStart: false,
+      guardNudged: false,
+    });
+    useTimerStore.getState().resumeFromKv();
+    expect(useTimerStore.getState().guardNudged).toBe(true);
+  });
+
+  it('resumeFromKv round-trips isQuickStart flag', () => {
+    useTimerStore.getState().quickStart(T0);
+    // wipe in-memory state but leave kv intact
+    useTimerStore.setState({
+      taskLabel: null,
+      category: null,
+      estimateMin: 0,
+      startedAt: null,
+      pausedAccumMs: 0,
+      pausedAt: null,
+      isRunning: false,
+      isQuickStart: false,
+      guessMin: 0,
+      taskId: null,
+      suggestedHonestMin: 0,
+    });
+    useTimerStore.getState().resumeFromKv();
+    const st = useTimerStore.getState();
+    expect(st.isRunning).toBe(true);
+    expect(st.isQuickStart).toBe(true);
+    expect(st.category).toBeNull();
+  });
 });

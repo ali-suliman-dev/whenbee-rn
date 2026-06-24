@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { useFocusEffect } from 'expo-router';
 import { useCalibrationStore } from '@/src/stores/calibrationStore';
 import { useTasksStore, selectFocus, type TodayTask } from '@/src/stores/tasksStore';
+import { useTimerStore } from '@/src/stores/timerStore';
 import { resolveSuggestion, priorFor, CATEGORY_NAMES, type CompanionStage } from '@/src/engine';
 import { analytics } from '@/src/services/analytics';
 import { formatClock, projectedFinish } from '@/src/lib/time';
@@ -47,8 +48,6 @@ interface UseTodayResult {
   companionStage: CompanionStage;
   /** The companion's procedural seed — drives the HUD bee's stripe warmth. */
   companionSeed: number;
-  /** Lifetime minutes reclaimed — the daily-empty proof line (hidden when < 1). */
-  reclaimLifetimeMin: number;
   /** True once the user has ever logged — picks first-run vs daily empty copy. */
   hasEverLogged: boolean;
   /** True when the focus task's honest number is based on the population prior (cold, n < 3). */
@@ -73,10 +72,11 @@ export function useToday(): UseTodayResult {
   const statsByCategory = useCalibrationStore((s) => s.statsByCategory);
   const loadReclaimSummary = useCalibrationStore((s) => s.loadReclaimSummary);
   const tasks = useTasksStore((s) => s.tasks);
+  const isTimerRunning = useTimerStore((s) => s.isRunning);
+  const runningTaskId = useTimerStore((s) => s.taskId);
 
   const [companionStage, setCompanionStage] = useState<CompanionStage>(1);
   const [companionSeed, setCompanionSeed] = useState(1);
-  const [reclaimLifetimeMin, setReclaimLifetimeMin] = useState(0);
   const [lifetimeNectar, setLifetimeNectar] = useState(0);
 
   // Warm the per-category stats cache on mount (instant once hydrated).
@@ -84,8 +84,7 @@ export function useToday(): UseTodayResult {
     void hydrate();
   }, [hydrate]);
 
-  // Companion presence + lifetime reclaim drive the HUD bee and the daily-empty
-  // proof line. Re-read on focus so a fresh deposit / tier-up shows on return.
+  // Companion presence drives the HUD bee. Re-read on focus so a tier-up shows on return.
   useFocusEffect(
     useCallback(() => {
       let active = true;
@@ -93,7 +92,6 @@ export function useToday(): UseTodayResult {
         if (!active) return;
         setCompanionStage(s.companion.stage);
         setCompanionSeed(s.companion.seed);
-        setReclaimLifetimeMin(s.lifetimeMin);
         setLifetimeNectar(s.companion.lifetimeNectar);
       });
       return () => {
@@ -123,11 +121,18 @@ export function useToday(): UseTodayResult {
     actualMin: task.actualMin,
   });
 
-  // Focus = oldest queued task. up-next = the remaining queued ones; done stays
-  // checked-off (most-recent first) so the day reads as progress, not a vanish.
+  // Focus = oldest queued task (the Next card when nothing is running).
   const focus = selectFocus(tasks);
+
+  // The "now" slot — the single task shown at the top of the day. While a timer
+  // runs, the screen renders the RUNNING task there (from timerStore), so up-next
+  // must hide THAT task, not the oldest-queued one. Keying up-next off this id
+  // (instead of always off focus.id) is what stops the running task duplicating
+  // into the list while the previously-focused task silently vanishes. A
+  // quick-start session has no taskId → nothing is hidden, the whole queue shows.
+  const nowSlotId = isTimerRunning ? runningTaskId : (focus?.id ?? null);
   const upNext = tasks
-    .filter((task) => task.status === 'queued' && task.id !== focus?.id)
+    .filter((task) => task.status === 'queued' && task.id !== nowSlotId)
     .map(toRow);
   const done = tasks
     .filter((task) => task.status === 'done')
@@ -186,7 +191,6 @@ export function useToday(): UseTodayResult {
     categoryName,
     companionStage,
     companionSeed,
-    reclaimLifetimeMin,
     hasEverLogged: lifetimeNectar > 0,
     focusPreEstimate: summary?.basis === 'prior',
   };

@@ -1,10 +1,18 @@
 import { useState } from 'react';
-import { View, Text, Pressable, ScrollView, type ViewStyle, type TextStyle } from 'react-native';
+import {
+  View,
+  Text,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  type ViewStyle,
+  type TextStyle,
+} from 'react-native';
 import { router, useLocalSearchParams } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { Screen } from '@/src/components/Screen';
-import { Card } from '@/src/components/Card';
 import { Toast } from '@/src/components/Toast';
+import { HoneyHex } from '@/src/components/HoneyHex';
 import { useTheme } from '@/src/theme/useTheme';
 import { type } from '@/src/theme/typography';
 import { useCategoryDetail } from '@/src/features/category-detail/useCategoryDetail';
@@ -12,8 +20,12 @@ import { HonestCard } from '@/src/features/category-detail/HonestCard';
 import { GraduationMoment } from '@/src/features/category-detail/GraduationMoment';
 import { AhaCard } from '@/src/features/category-detail/AhaCard';
 import { AdaptSegment } from '@/src/features/category-detail/AdaptSegment';
+import { ProHonestWeekTease } from '@/src/features/category-detail/ProHonestWeekTease';
 import { TrendChart } from '@/src/features/category-detail/TrendChart';
 import { RecentList } from '@/src/features/category-detail/RecentList';
+import { GoalCard } from '@/src/features/category-detail/GoalCard';
+import { GoalLocked } from '@/src/features/category-detail/GoalLocked';
+import { ProGate } from '@/src/features/paywall/ProGate';
 import { TIERS } from '@/src/engine';
 
 // ──────────────────────────────────────────────────────────────────────────────
@@ -67,20 +79,26 @@ export default function CategoryDetailScreen() {
   return (
     <Screen>
       <View style={{ flex: 1 }}>
-        {/* Top bar — back chevron + eyebrow + category name */}
-        <View style={styles(t).topBar}>
+        {/* Top bar (Ha) — breadcrumb back, then a large title + honey tier pill */}
+        <View style={styles(t).header}>
           <Pressable
             onPress={() => router.back()}
             accessibilityRole="button"
             accessibilityLabel="Back"
-            hitSlop={10}
-            style={styles(t).backBtn}
+            hitSlop={t.size.hitSlop}
+            style={styles(t).crumb}
           >
-            <Ionicons name="chevron-back" size={24} color={t.colors.ink} />
+            <Ionicons name="chevron-back" size={t.iconSize.md} color={t.colors.inkSoft} />
+            <Text style={styles(t).crumbText}>Category insights</Text>
           </Pressable>
-          <View style={{ flex: 1 }}>
-            <Text style={styles(t).eyebrow}>CATEGORY INSIGHTS</Text>
-            <Text style={styles(t).h2}>{detail?.categoryName ?? ' '}</Text>
+          <View style={styles(t).titleRow}>
+            <Text style={styles(t).h2} numberOfLines={1}>{detail?.categoryName ?? ' '}</Text>
+            {detail?.tier ? (
+              <View style={styles(t).tierPill}>
+                <HoneyHex size={t.space[2.5]} />
+                <Text style={styles(t).tierPillText}>{detail.tier}</Text>
+              </View>
+            ) : null}
           </View>
         </View>
 
@@ -110,25 +128,31 @@ export default function CategoryDetailScreen() {
               firstHonestRange={detail.firstHonestRange}
             />
 
-            {/* 2 — The aha insight (when there's one worth surfacing). */}
+            {/* 2 — Pro: the always-on payoff anchor (free users only; Pro users get
+                the live band inside the hero instead of a tease). */}
+            {!isPro ? <ProHonestWeekTease /> : null}
+
+            {/* 3 — The aha insight (when there's one worth surfacing). */}
             {detail.insight ? (
               <AhaCard insight={detail.insight} categoryName={detail.categoryName} n={detail.n} />
             ) : null}
 
-            {/* 3 — Recent receipts: the evidence behind the number. */}
-            <Card>
+            {/* 4 — The receipts, trend, and learning control. Quiet inline sections
+                split by hairlines (no card chrome) so the hero + Pro card lead. */}
+            <View style={styles(t).sections}>
               <RecentList recent={detail.recent} />
-            </Card>
-
-            {/* 4 — Trend over time. */}
-            <Card>
-              <TrendChart trend={detail.trend} />
-            </Card>
-
-            {/* 5 — The control: how fast it learns. */}
-            <Card>
+              <View style={styles(t).divider} />
+              <View style={styles(t).trendCard}>
+                <TrendChart trend={detail.trend} />
+              </View>
+              <View style={styles(t).divider} />
               <AdaptSegment value={adaptSpeed} onChange={handleSetAdapt} />
-            </Card>
+            </View>
+
+            {/* 5 — Pro: a forward goal on this category (Pro live card / locked teaser). */}
+            <ProGate fallback={<GoalLocked categoryId={categoryId} />}>
+              <GoalCard categoryId={categoryId} categoryName={detail.categoryName} />
+            </ProGate>
 
             {/* Quiet reset */}
             <View style={styles(t).resetBlock}>
@@ -180,6 +204,8 @@ export default function CategoryDetailScreen() {
         {justGraduated && detail ? (
           <GraduationMoment
             honestMinutes={detail.summary.honestMinutes}
+            multiplier={detail.summary.multiplier}
+            sampleSize={detail.summary.sampleSize}
             onDone={clearJustGraduated}
           />
         ) : null}
@@ -190,21 +216,65 @@ export default function CategoryDetailScreen() {
 
 function styles(t: ReturnType<typeof useTheme>) {
   return {
-    topBar: {
-      flexDirection: 'row',
-      alignItems: 'flex-start',
-      gap: t.space[2],
+    header: {
       paddingTop: t.space[2],
+      gap: t.space[1],
     } as ViewStyle,
-    backBtn: {
-      width: 44,
-      height: 44,
+    // Breadcrumb back row — the chevron + "Category insights" reads as one tappable
+    // crumb (44pt target via hitSlop), the eyebrow now lives here instead of above.
+    crumb: {
+      flexDirection: 'row',
       alignItems: 'center',
-      justifyContent: 'center',
-      marginLeft: -t.space[2],
+      gap: t.space[1],
+      minHeight: 36,
+      marginLeft: -t.space[1],
     } as ViewStyle,
-    eyebrow: { ...(type.eyebrow as unknown as TextStyle), color: t.colors.inkSoft } as TextStyle,
-    h2: { ...(type.title as unknown as TextStyle), color: t.colors.ink } as TextStyle,
+    crumbText: {
+      ...(type.bodySmBold as unknown as TextStyle),
+      fontSize: t.fontSize.crumb,
+      color: t.colors.inkSoft,
+    } as TextStyle,
+    titleRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      gap: t.space[3],
+    } as ViewStyle,
+    h2: {
+      ...(type.display as unknown as TextStyle),
+      fontSize: t.fontSize.lg,
+      lineHeight: t.fontSize.lg * t.lineHeight.normal,
+      color: t.colors.ink,
+      flexShrink: 1,
+    } as TextStyle,
+    // Honey tier pill — the category's ripeness, on the warm-solid chip surface.
+    tierPill: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: t.space[1.5],
+      backgroundColor: t.colors.accentChip,
+      borderRadius: t.radii.full,
+      borderCurve: 'continuous',
+      paddingHorizontal: t.space[3],
+      paddingVertical: t.space[1.5],
+    } as ViewStyle,
+    tierPillText: {
+      ...(type.captionBold as unknown as TextStyle),
+      fontSize: t.fontSize.xs,
+      color: t.colors.amberText,
+    } as TextStyle,
+    // The receipts / trend / tuner sit directly on the page (no surface) split by
+    // clear hairline dividers — dividers alone define the sections, no borders.
+    sections: { gap: t.space[5] } as ViewStyle,
+    divider: { height: StyleSheet.hairlineWidth, backgroundColor: t.colors.divider } as ViewStyle,
+    // Only the trend gets a subtle surface — a quiet panel so the chart reads as a
+    // contained module; Recent + Tune stay flat on the page.
+    trendCard: {
+      backgroundColor: t.colors.surface,
+      borderRadius: t.radii.card,
+      borderCurve: 'continuous',
+      padding: t.space[4],
+    } as ViewStyle,
     tierRow: { flexDirection: 'row', alignItems: 'center', gap: t.space[2] } as ViewStyle,
     // Tier = honey ripeness → amber, consistent with the Today honeycomb pill.
     pill: {
@@ -220,12 +290,21 @@ function styles(t: ReturnType<typeof useTheme>) {
     } as TextStyle,
     tierMeta: { ...(type.caption as unknown as TextStyle), color: t.colors.inkSoft } as TextStyle,
     resetBlock: { paddingTop: t.space[2] } as ViewStyle,
+    // A quiet filled pill (the same raised `surface` as other interactive wells)
+    // — reads as tappable without a border or the indigo CTA color. Hugs its
+    // content and centers, so it looks like a control, not a line of body text.
     resetLink: {
+      alignSelf: 'center',
       flexDirection: 'row',
       alignItems: 'center',
       justifyContent: 'center',
       gap: t.space[2],
       minHeight: 44,
+      paddingHorizontal: t.space[4],
+      paddingVertical: t.space[2],
+      borderRadius: t.radii.full,
+      borderCurve: 'continuous',
+      backgroundColor: t.colors.surface,
     } as ViewStyle,
     resetLinkText: {
       ...(type.bodySm as unknown as TextStyle),

@@ -31,7 +31,10 @@ export const tokens = {
   // so the centre highlight reads as a pill (not a circle) and fits "1h 35m".
   // `wheelRow` = inline wheel row height (Duration + FinishTime) — tighter than
   // control.sm so the faded neighbour numbers sit close to the selected pill.
-  size: { control: { xs: 32, sm: 36, md: 44, lg: 52 }, coin: 40, wheelCol: 72, wheelRow: 32, shareCard: 340, timelineCol: 110, planCardMin: 70, gripW: 14 },
+  // `hitSlop` = extra tap area added via the Pressable hitSlop prop so that small
+  // touch targets (secondary buttons, skip links) comfortably meet the 44pt HIG
+  // floor without visually enlarging the element.
+  size: { control: { xs: 32, sm: 36, md: 44, lg: 52 }, coin: 40, wheelCol: 72, wheelRow: 32, shareCard: 340, timelineCol: 110, planCardMin: 70, gripW: 14, hitSlop: 8, sparkline: 32 },
 
   // Icon sizing scale — replaces inline 12/16/18/20/22/24/30 across the app.
   iconSize: { xs: 12, sm: 16, md: 20, lg: 24, xl: 32 },
@@ -54,21 +57,31 @@ export const tokens = {
   borderWidth: { hairline: 0, thin: 0, thick: 2, card: 0, share: 1, chip: 1 },
 
   // Replaces scattered 0.3 / 0.4 / 0.6 opacities.
-  opacity: { disabled: 0.4, pressed: 0.6 },
+  opacity: { disabled: 0.4, pressed: 0.6, wash: 0.78 },
 
   // Onboarding aurora glow opacities (mode-independent alphas; colours come from colors.primary/primaryEdge).
   gradients: { backdropTop: 0.22, backdropCorner: 0.16 },
 
-  // Tactile scale feedback for tappable controls (chips, segments).
+  // Tactile scale feedback for tappable controls (chips, segments, ghost button).
   //   pressIn — finger-down dip; the control yields to the touch (only while held).
-  scale: { pressIn: 0.96 },
+  //   0.94 deepens the squeeze so the press reads as a real physical push.
+  scale: { pressIn: 0.94 },
+
+  // Coin-edge depth for FILLED pill buttons (AppButton indigo/amber). `edge` is how
+  // far the darker bottom edge peeks below the pill at rest (the 3D thickness);
+  // `drop` is how far the pill travels down onto that edge on press. drop < edge
+  // leaves a 1pt sliver so the edge never fully disappears under the pill.
+  // `shallowEdge`/`shallowDrop` = a thinner coin-edge for buttons that must read
+  // calmer (e.g. the FocusCard Start) without losing the tactile push — opt in via
+  // AppButton's `depth="shallow"`.
+  depth: { edge: 8, drop: 7, shallowEdge: 4, shallowDrop: 3, optionEdge: 6 },
 
   // The numeric type scale — typography.ts (the role layer) derives every role
   // size from these, so the whole scale is editable in one place.
   fontSize: {
     '2xs': 8, xs: 10, sm: 12, base: 14, md: 16, lg: 20, xl: 24, '2xl': 30, '3xl': 38,
     // finer steps the role scale needs
-    micro: 10, caption: 12, bodySm: 14, bodyLg: 16, subtitle: 22, title: 26, honestLg: 36, honest: 40, timerClock: 64, timer: 78,
+    crumb: 9, micro: 10, caption: 12, bodySm: 14, bodyLg: 16, titleSm: 18, subtitle: 22, title: 26, honestLg: 36, honest: 40, honestHero: 46, timerClock: 64, timer: 78,
   },
   fontWeight: { regular: '400', medium: '500', semibold: '600', bold: '700' },
   fontFamily: { ui: 'System', mono: 'Menlo' },
@@ -80,9 +93,13 @@ export const tokens = {
   letterSpacing: { tight: -0.5, normal: 0.2, wide: 0.8 },
 
   // Soft elevation for raised/focal cards (CSS box-shadow renders cross-platform).
+  // `lift` is a genuinely soft drop (real blur radius + elevation) for a focal
+  // floating card (the Patterns stat-sheet) — sm/md keep radius:0 because they back
+  // hard coin-edges, not soft shadows.
   shadow: {
     sm: { offset: 3, opacity: 1, radius: 0 },
     md: { offset: 6, opacity: 1, radius: 0 },
+    lift: { offset: 16, opacity: 1, radius: 36, elevation: 12 },
   },
 
   // Honeycomb cell geometry — flat-top hexagon WIDTH (point-to-point across the
@@ -101,6 +118,14 @@ export const tokens = {
   //   gapTrack = bar height; tickW/tickH = the live elapsed marker riding the bar.
   progress: {
     track: 6, gapTrack: 8, tickW: 3, tickH: 16,
+    // bandTrack = the category-detail hero range band height (a bolder strip than
+    // the Add-Task gapTrack). caret = the convergence-point callout triangle that
+    // floats above the band (w = base, h = height of the downward caret, overlap = 1px
+    // optical overlap of the caret tip onto its pill).
+    bandTrack: 16, caret: { w: 10, h: 6, overlap: 1 },
+    // teaserFill = the fixed illustrative fill fraction on a LOCKED (non-Pro) goal
+    // teaser track — it shows the SHAPE of progress, never the user's real data.
+    teaserFill: 0.34,
     // gapStripe = the focus-card guess segment's diagonal hatch (indigo lines on
     // primarySoft). Tones the guess down from a solid indigo block so Start is the
     // single filled indigo on Today. lineW = stroke width, gapW = clear gap between.
@@ -149,6 +174,10 @@ export const tokens = {
     // Honey starts only AFTER the border finishes: border ends at dBorder+border
     // = 40+660 = 700ms, so dHoney = 740 leaves a 40ms beat before honey wells up.
     seal: { border: 660, honey: 580, bloom: 900, mark: 360, spark: 620, dBorder: 40, dHoney: 740, dBloom: 1020, dMark: 1240, dSpark: 1260 },
+    // Quick-action arc — the three bubbles that fan from behind the + button.
+    // Slow + smooth on the way out (a premium unfurl), a touch quicker tucking
+    // back behind the button. Tune both here, not in the component.
+    arcIn: 1000, arcOut: 840,
     // Shared physics — deduped from AppButton + FAB.
     spring: { damping: 13, stiffness: 340 },
     // Named curves — declared once, not re-typed per file.
@@ -163,11 +192,13 @@ export const tokens = {
       bg: '#F4F2FC', // cream (page ground — the 60%)
       surface: '#FFFFFF', // card — lifts off the cream
       surfaceRaised: '#FFFFFF', // focal card (pair with soft shadow)
+      surfaceRaisedEdge: '#DAD3EC', // coin-edge under a raised NEUTRAL surface (tactile option tiles)
       surfaceSunken: '#F1EEFB', // wells / inset tracks
       // surfaceSunken: '#E4DEF7', // wells / inset tracks
       // surfaceSunken: '#ECE8DE', // wells / inset tracks
       hairline: '#DAD5C9', // 1px internal dividers (reads at 3:1 non-text)
       border: '#CFC9BA', // stronger edge for cards that must read
+      divider: 'rgba(0,0,0,0.10)', // section separator — a darker recessed line (not a tint)
       shineOverlay: 'rgba(255,255,255,0.55)', // inner top-edge specular (glass lift)
 
       // ── ink ramp (text) ──
@@ -181,6 +212,7 @@ export const tokens = {
       primarySoft: '#E4E0FA', // low-emphasis indigo fill
       primaryWash: '#EFEDFC', // faintest indigo tint — lighter than primarySoft, still reads off white
       primarySoft2: 'rgba(130,117,240,0.6)',
+      primaryChip: 'rgba(107,91,230,0.16)', // CTA indigo at higher opacity than primarySoft (pairs with primary text)
       // Guess-segment diagonal stripe pair — softer than the CTA, clearly two-tone.
       gapStripeHi: '#C8C2F0', // lighter lavender stripe
       gapStripeLo: '#A89EE4', // medium indigo stripe
@@ -190,6 +222,8 @@ export const tokens = {
       accent: '#EEAE4D',
       accentEdge: '#C68A30',
       accentSoft: '#FBEFD6', // low-emphasis amber fill
+      honeyWash: '#FBF2DF', // solid warm panel — the honest-number hero surface (one continuous tint, no gradient seam)
+      accentChip: '#F3E2C0', // solid warm chip (tier/status pill) — a step deeper than accentSoft
       accentCoin: 'rgba(238,174,77,0.32)', // tint disc that still reads on accentSoft
       // RayBurst sunburst wedge fill. A deeper periwinkle than primarySoft so the
       // rays actually read on cream (primarySoft was near-invisible on the page bg).
@@ -207,6 +241,7 @@ export const tokens = {
 
       // ── utility ──
       scrim: 'rgba(20,21,29,0.45)', // modal/sheet overlay
+      scrimStrong: 'rgba(16,17,24,0.58)', // darken layer over a BlurView backdrop (focal reward modal)
       shadowSoft: 'rgba(32,35,58,0.12)',
       // Inverse pill (toasts) — always the OPPOSITE of the mode so it pops:
       // light mode → dark pill + warm-white text.
@@ -240,9 +275,11 @@ export const tokens = {
       bg: '#14151D',
       surface: '#1F2130',
       surfaceRaised: '#292B3C',
+      surfaceRaisedEdge: '#1B1C27', // coin-edge under a raised NEUTRAL surface (tactile option tiles)
       surfaceSunken: '#15161F',
       hairline: 'rgba(255,255,255,0.08)', // internal dividers only
       border: 'rgba(255,255,255,0.14)', // cards that must read
+      divider: 'rgba(0,0,0,0.32)', // section separator — a darker recessed line on the deep bg
       shineOverlay: 'rgba(255,255,255,0.07)', // inner top-edge specular (glass lift)
 
       // ── ink ramp ──
@@ -258,6 +295,7 @@ export const tokens = {
       primarySoft: 'rgba(130,117,240,0.22)',
       primaryWash: 'rgba(130,117,240,0.10)', // faintest indigo tint (dark parity; unused in dark chips)
       primarySoft2: 'rgba(130,117,240,0.6)',
+      primaryChip: 'rgba(130,117,240,0.20)', // CTA indigo at higher opacity than primarySoft — a more-filled tinted chip (pairs with primary text)
       // Guess-segment diagonal stripe pair — indigo stripes on near-bg fill.
       gapStripeHi: '#A898F5', // lighter than CTA primary (#8275F0), clearly visible
       gapStripeLo: '#15161F', // = surfaceSunken — blends into bg, only Hi pops
@@ -268,6 +306,8 @@ export const tokens = {
       accent: '#EEAE4D',
       accentEdge: '#C68A30',
       accentSoft: 'rgba(238,174,77,0.18)',
+      honeyWash: '#2B2620', // solid warm-dark panel — the honest-number hero surface (one continuous tint, no gradient seam)
+      accentChip: '#2E2A20', // solid warm-dark chip (tier/status pill) — reads as a coin on the deep bg
       accentCoin: 'rgba(238,174,77,0.28)', // tint disc that still reads on accentSoft
       // RayBurst wedge fill — indigo lifted just off the deep bg (the #8 look).
       rayFill: 'rgba(130,117,240,0.30)',
@@ -283,6 +323,7 @@ export const tokens = {
 
       // ── utility ──
       scrim: 'rgba(10,11,16,0.60)',
+      scrimStrong: 'rgba(12,13,20,0.78)', // cool darken layer over a BlurView backdrop — heavy enough to mute warm content bleed (focal reward modal)
       shadowSoft: 'rgba(0,0,0,0.45)',
       // dark mode → light pill + dark text, so the toast reads against the deep bg.
       inverseSurface: '#ECE8DE',
@@ -332,6 +373,11 @@ export const tokens = {
   // sliver shown at Raw so a fresh ring is never a cold 0.
   // headDot = flat amber dot that rides the arc during the fill animation (px).
   ring: { size: 200, stroke: 9, popStroke: 11, capStroke: 13, endowedPct: 6, headDot: 13 },
+  // Compact Today-header honey ring (reuses HoneyRing at a small size). size =
+  // SVG square edge; stroke = ring weight; bee = BeeMascot size inside; caption =
+  // tier-word font size beneath the ring. The ceremony sub-geometry (head-dot,
+  // ripple, motes, seal) scales from `size` inside HoneyRing — see the ring group.
+  headerRing: { size: 58, stroke: 4.5, bee: 31, caption: 10.5, coinSize: 48 },
   // Wax-seal hex stamped over the bee at the Honest cap (flat-top hexagon WIDTH).
   seal: { size: 38 },
   // Flat motes flicked outward on the cap (solid squares — no glow).
@@ -353,6 +399,9 @@ export const tokens = {
     // BeeMascot size (px) for the compact Today HUD — smaller than the hub/onboarding
     // bee so the companion reads as a quiet presence beside the honey bar.
     hudBee: 46,
+    // BeeMascot size (px) for the onboarding quiz host — the companion "asking" each
+    // question, centered above the prompt. Bigger than the HUD, smaller than the hub.
+    quizBee: 92,
     // Soft-coin backing for the HUD bee. Ringless (no honey ring to frame it), so it
     // needs a HIGH core — a sharp solid disc with only a thin feathered rim — or it
     // reads as a glow at this small size. hudCoinCore = the solid-hold fraction.
@@ -384,6 +433,113 @@ export const tokens = {
   // ticket perforation notch diameter; `emblem` = the honeycomb glyph size in the
   // stub; `comb` = the Reclaim-hero honeycomb motif size.
   upsell: { stub: 88, edge: 6, notch: 14, emblem: 40, comb: 60 },
+
+  // Quick-task chips row (Today screen). All geometry in one place so the row
+  // is tunable without touching the component. `disc` = the play-button circle
+  // diameter; `chipPadH`/`chipPadV` = chip horizontal/vertical inner padding;
+  // `chipGap` = gap between the icon disc and the text block; `rowGap` = gap
+  // between chips in the horizontal row.
+  // `arc` = the quick-action arc overlay spawned by the tab-bar + button.
+  //   bubbleSize   = diameter of each circular bubble (flat disc)
+  //   centerSize   = diameter of the center (Timer) bubble — slightly larger, primary-fill
+  //   fanRadius    = arc radius: how far each bubble sits from the + button center
+  //   verticalOffset = extra upward shift of the arc center above the + button
+  //   iconSize     = Ionicons glyph size inside each bubble
+  quick: {
+    disc: 28, chipPadH: 12, chipPadV: 10, chipGap: 8, rowGap: 8,
+    arc: {
+      bubbleSize: 52,
+      centerSize: 60,
+      fanRadius: 92,
+      verticalOffset: 16,
+      iconSize: 22,
+      // Side bubbles fan out ±spreadDeg from 270° (straight up). Wider = taller crown on Timer.
+      spreadDeg: 52,
+      // leadFrac = how late (as a fraction of the 0→1 open progress) the side
+      // bubbles start vs the center (Timer). The center leads the expand and is
+      // the last to tuck back behind the + on close — a subtle hero-first cascade.
+      leadFrac: 0.12,
+      // spinDeg = how far each bubble rotates as it travels out (and back in).
+      // Sides mirror each other; reads as a hand of cards fanning open. Large
+      // enough (~¾ turn) that the rotation is obvious, not a subtle nudge.
+      spinDeg: 300,
+    },
+  },
+
+  // Patterns ProgressChart geometry — sparkline of accuracy over time. height =
+  // SVG box height (pt); stroke = line weight; dot = endpoint radius; areaOpacity
+  // = gradient fill alpha under the line; strokeDash = path length used for the
+  // draw-on animation (large enough to cover any path).
+  chart: { height: 96, stroke: 2.5, dot: 4.5, areaOpacity: 0.32, strokeDash: 1000 },
+
+  // Premium Pro teaser card (ProTeaserCard) — frosted preview panel + amber pill.
+  // previewH = preview panel height (pt); barGap = gap between faux bars; barRadius
+  // = bar corner; scrimOpacity = the overlay that fakes "frost" over the bars (no
+  // native blur dep); barOpacity = the teased bars' own alpha; pillPadX = "Pro"
+  // pill horizontal padding.
+  proTeaser: { previewH: 118, barGap: 9, barRadius: 4, scrimOpacity: 0.28, barOpacity: 0.55, pillPadX: 11 },
+
+  // Discovery marker geometry — the honey-hex sign (amber + = runs longer, green
+  // − = runs faster) on each gallery card. One size; consumed via t.discovery.hex.
+  discovery: { hex: 30 },
+
+  // Archetype reveal "collectible crest" geometry (ArchetypeCrest / ArchetypeReveal).
+  // crestW = the symmetric flat-top hex WIDTH behind the bee (height derives w×√3/2);
+  // bee = the BeeMascot size inside it; coinHex = the small gold ✦ coin-hex seal at
+  // the hex's top-right; coinEdge = its coin-edge depth (cf. burst.coinEdge). Pure
+  // geometry — colors come from `colors`/`brand`.
+  // crestW/bee/coinHex/coinEdge = geometry. grad*/inkOn/blurbOn = the card's fixed,
+  // MODE-INDEPENDENT collectible-card surface + on-card text (like brand art, the
+  // reveal keeps its rich honey→indigo look in light AND dark, so its own light text
+  // is bundled here rather than the mode ramp).
+  reveal: {
+    crestW: 168, bee: 120, coinHex: 26, coinEdge: 4,
+    // "Midnight ink" collectible surface — a quiet cool-slate gradient (NOT muddy
+    // purple). Near-flat so the lower stat block stays legible; the honey stat and
+    // amber coin remain the only warmth on the card.
+    gradTop: '#242436', gradMid: '#232333', gradBot: '#222230',
+    inkOn: '#F4F1EA', blurbOn: '#CFCAE0', eyebrowOn: '#9A95AD',
+    // Shine system (what makes the card feel premium):
+    //  bloom     = soft indigo light pooled behind the crest (radial, top-centre)
+    //  sheen     = the diagonal reflection streak glancing across the upper-left (white; opacity via stops)
+    //  border    = faint 1px collectible-card edge that catches light
+    //  crestGlow = subtle top-light on the embossed hex facet behind the bee
+    bloom: '#7C6DE8', sheen: '#FFFFFF', border: 'rgba(255,255,255,0.08)', crestGlow: '#FFFFFF',
+    // On-card highlight sweep + the soft amber row-divider hairline (stat-sheet).
+    shine: 'rgba(255,255,255,0.05)', amberHairline: 'rgba(238,174,77,0.18)',
+  },
+
+  // Quiz step progress comb (QuizProgressComb) — one flat-top honey cell per quiz
+  // question. cell = cell WIDTH (height = w×√3/2); gap = space between cells.
+  quizComb: { cell: 26, gap: 7 },
+
+  // Patterns archetype stat-sheet single honey-hex glyph (HoneyHexGlyph) WIDTH.
+  honeyGlyph: { w: 46 },
+
+  // Focus-curve SVG illustration geometry. Used in FocusCurve (Plan › Focus tab).
+  // viewH/viewW = SVG internal dimensions (pt); strokeW = curve stroke weight;
+  // dotR = peak dot radius; bandOpacity = window-band fill opacity;
+  // areaOpacity = gradient area fill alpha under the curve.
+  // yPad = lower y inset from SVG bottom (keeps the curve off the very bottom edge);
+  // yBase = upper y inset (keeps the curve's peak clear of the top edge);
+  // dash = the strokeDasharray value for the 'forming' dashed variant;
+  // axisH = height of the time-axis label row below the SVG;
+  // axisGap = marginTop between the SVG and the axis row;
+  // axisLabelW = fixed width of each axis label (centred under its tick position).
+  focusCurve: {
+    viewH: 80,         // SVG height pt
+    viewW: 400,        // SVG internal width
+    strokeW: 2,        // curve stroke weight
+    dotR: 5,           // peak dot radius
+    bandOpacity: 0.5,  // window band fill opacity
+    areaOpacity: 0.18, // gradient area fill alpha
+    yPad: 4,           // lower y inset: y(v) = viewH - v*(viewH-yBase) - yPad
+    yBase: 8,          // upper y inset: headroom above peak
+    dash: '4 4',       // strokeDasharray for the 'forming' dashed curve
+    axisH: 16,         // time-axis row height (pt)
+    axisGap: 2,        // marginTop between SVG and axis row (pt)
+    axisLabelW: 28,    // fixed width of each axis label (pt)
+  },
 
   // ── brand illustration palette ──────────────────────────────────────────────
   // Fixed art colors for the Whenbee mascot (BeeMascot). Brand art does NOT recolor

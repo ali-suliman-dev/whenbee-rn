@@ -24,6 +24,10 @@ type HonestRangeConfidence = 'raw' | 'setting' | 'honest';
 /** Where a guess/timer/log originated. */
 type EventSource = 'today' | 'fab' | 'addtask' | 'timed' | 'retro';
 
+/** Hyperfocus guardrail multiple, mirrored locally (cf. `TierName`) so analytics
+ *  stays dependency-free. Matches `GuardrailMultiple`. */
+type GuardrailSetting = 'off' | '1.5x' | '2x' | '3x';
+
 /** Map of every analytics event to its props shape (the type contract). */
 export interface AppEventProps {
   // ── Lifecycle (kept; aliases of §2 app_installed / onboarding_completed) ──────
@@ -56,10 +60,6 @@ export interface AppEventProps {
   aha_shown: { category: string; multiplier: number; n: number };
   discovery_unlocked: { categoryId: string; multiplier: number };
 
-  // ── Reclaim ──────────────────────────────────────────────────────────────────
-  reclaim_deposit: { minutes: number; category: string; source: string };
-  reclaim_total_view: { lifetime_minutes: number };
-
   // ── Decision-moment surfacing ────────────────────────────────────────────────
   honest_suggestion_shown: { category: string; guess_min: number; suggested_min: number };
   optimistic_nudge_shown: { category: string; guess_min: number; multiplier: number };
@@ -81,6 +81,12 @@ export interface AppEventProps {
 
   // ── Whenbee personalization ──────────────────────────────────────────────────
   whenbee_personalized: { attribute: string; skipped: boolean };
+  personalize_shown: Record<string, never>;
+  name_set: { length: number };
+  name_skipped: Record<string, never>;
+  quiz_completed: { archetype: string };
+  quiz_skipped: Record<string, never>;
+  archetype_reopened: Record<string, never>;
 
   // ── Native presence ──────────────────────────────────────────────────────────
   widget_added: { surface: 'home' | 'lock' | 'live_activity' };
@@ -97,12 +103,26 @@ export interface AppEventProps {
   honest_range_narrowed: { was_width_min: number; now_width_min: number };
 
   // ── Monetization ─────────────────────────────────────────────────────────────
+  // Ripening Pro card impression events (WhenbeeHub, non-Pro path).
+  ripening_pro_shown: { surface: 'whenbee_hub' };
+  pro_reveal_shown: { surface: 'whenbee_hub' };
+  // Ripening Pro card CTA taps.
+  pro_reveal_tap: { surface: 'whenbee_hub' };
+  pro_preview_tap: { surface: 'whenbee_hub' };
   paywall_view: {
     trigger:
       | 'make_day_honest'
       | 'settings_upgrade'
       | 'steals_your_time'
       | 'honest_range'
+      | 'pro_reveal'
+      | 'pro_preview'
+      | 'goals'
+      | 'focus_window'
+      | 'hyperfocus_guard'
+      | 'pdf_export'
+      | 'routines'
+      | 'review_ritual'
       | 'persistent_presence';
     readiness?: 'pre' | 'honest';
   };
@@ -116,12 +136,68 @@ export interface AppEventProps {
   // ── On-device share ──────────────────────────────────────────────────────────
   plan_shared: { surface: 'plan' | 'archetype'; is_pro: boolean; result: 'shared' | 'gated' | 'error' };
 
+  // ── PDF report export (Pro) ──────────────────────────────────────────────────
+  report_opened: { is_pro: boolean };
+  report_paywall: { trigger: 'pdf_export' };
+  report_export: {
+    window: '30d' | '90d' | 'all';
+    category_count: number;
+    total_logs: number;
+    result: 'shared' | 'gated' | 'thin' | 'error';
+  };
+
   // ── Calendar / reminders ─────────────────────────────────────────────────────
   calendar_padded: { events_count: number; day_end_shift_min: number };
   reminder_enabled: Record<string, never>;
   reminder_disabled: Record<string, never>;
   drift_recheck: { action: 'shown' | 'recheck' | 'dismissed' };
   context_tagged: { key: string; value: string };
+
+  // ── Per-category goals (Pro) ──────────────────────────────────────────────────
+  goal_card_viewed: { category: string; state: 'empty' | 'active' | 'met' | 'not_enough' | 'locked' };
+  goal_set: { category: string; target_band: number; baseline_band: number };
+  goal_paywall: { category: string };
+  goal_met: { category: string; target_band: number; logs_to_meet: number };
+  goal_replaced: { category: string; from_band: number; to_band: number };
+  goal_kept: { category: string; band: number };
+
+  // ── Hyperfocus guardrail (Pro) ────────────────────────────────────────────────
+  guardrail_armed: { setting: GuardrailSetting; threshold_min: number; honest_min: number };
+  guardrail_shown: { channel: 'in_app' | 'notification'; elapsed_min: number; threshold_min: number };
+  guardrail_resolved: { action: 'keep_going' | 'wrap_up'; elapsed_min: number };
+  guardrail_setting_changed: { from: GuardrailSetting; to: GuardrailSetting };
+  guardrail_paywall: Record<string, never>;
+
+  // ── Focus-window planner (Pro) ────────────────────────────────────────────────
+  focus_window_viewed: { verdict: 'fits' | 'spills' | 'unset'; fit_count: number; total_count: number; window_min: number; is_pro: boolean };
+  focus_window_set: { window_start_min: number; window_end_min: number; window_min: number };
+  focus_window_spills: { fit_count: number; spill_count: number; window_min: number };
+  focus_window_promoted: { saved_min: number; evicted_n: number; verdict_after: 'fits' | 'spills' };
+  focus_window_paywall: { source: 'plan_section' };
+
+  // ── Honest Week / Month review ritual (Pro) ───────────────────────────────────
+  review_card_shown: { period_kind: 'week' | 'month'; state: 'ready' | 'quiet'; is_pro: boolean };
+  review_opened: { period_kind: 'week' | 'month'; source: 'card' | 'notification' | 'manual' };
+  review_completed: { period_kind: 'week' | 'month'; cards_seen: number; scroll_depth: number };
+  review_notify_toggled: { enabled: boolean };
+  review_notification_sent: { period_kind: 'week' | 'month' };
+
+  // ── Routines (Pro) ────────────────────────────────────────────────────────────
+  routines_tab_viewed: { is_pro: boolean; routine_count: number };
+  routines_paywall: { trigger: 'routines' };
+  routine_created: { step_count: number; has_anchor: boolean };
+  routine_edited: { routine_id_hash: string; step_count: number };
+  routine_run_started: { step_count: number; basis: 'personal' | 'prior' };
+  routine_step_completed: { position: number; over: boolean };
+  routine_step_skipped: { position: number };
+  routine_run_completed: {
+    step_count: number;
+    full_run: boolean;
+    total_actual_min: number;
+    total_honest_min: number;
+    run_count_after: number;
+  };
+  routine_run_abandoned: { steps_done: number; step_count: number };
 }
 
 export type AppEvent = keyof AppEventProps;

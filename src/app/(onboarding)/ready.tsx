@@ -12,6 +12,7 @@ import { ReasonGlyph } from '@/src/features/reward/ReasonGlyph';
 import { useTheme } from '@/src/theme/useTheme';
 import { useOnboarding } from '@/src/features/onboarding/useOnboarding';
 import { StepProgress } from '@/src/features/onboarding/StepProgress';
+import { onboardingStepIndex, ONBOARDING_TOTAL } from '@/src/features/onboarding/onboardingFlow';
 import { Reveal } from '@/src/features/onboarding/Reveal';
 
 // Raw (now) → Honest (goal) look-ahead. Not a setup wall — a goal preview.
@@ -35,7 +36,7 @@ export default function Ready() {
 
   return (
     <Screen backdrop={<OnboardingBackdrop />}>
-      <StepProgress current={2} />
+      <StepProgress current={onboardingStepIndex('ready')} total={ONBOARDING_TOTAL} />
       <View style={{ flex: 1, gap: t.space[4], paddingTop: t.space[3] }}>
         <Reveal index={0}>
           <AppText

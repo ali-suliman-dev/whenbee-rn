@@ -15,6 +15,7 @@ function makeEvent(overrides: Partial<TaskEventRow> = {}): TaskEventRow {
     createdAt: 1000,
     suggestedHonestMin: null,
     reclaimDividendMin: 0,
+    startLocalMinute: null,
     ...overrides,
   };
 }

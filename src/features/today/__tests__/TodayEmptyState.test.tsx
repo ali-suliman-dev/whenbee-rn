@@ -5,7 +5,7 @@ describe('TodayEmptyState', () => {
   it('renders first-run copy and fires the primary CTA', () => {
     const onPrimary = jest.fn();
     render(
-      <TodayEmptyState variant="first-run" reclaimLifetimeMin={0} onPrimary={onPrimary} onLog={() => {}} />,
+      <TodayEmptyState variant="first-run" onPrimary={onPrimary} onLog={() => {}} />,
     );
     expect(screen.getByText('Time your first task')).toBeOnTheScreen();
     expect(
@@ -18,20 +18,15 @@ describe('TodayEmptyState', () => {
     expect(onPrimary).toHaveBeenCalledTimes(1);
   });
 
-  it('renders daily copy with the lifetime reclaim line and fires log', () => {
+  it('renders daily copy without a reclaim line and fires log', () => {
     const onLog = jest.fn();
     render(
-      <TodayEmptyState variant="daily" reclaimLifetimeMin={860} onPrimary={() => {}} onLog={onLog} />,
+      <TodayEmptyState variant="daily" onPrimary={() => {}} onLog={onLog} />,
     );
     expect(screen.getByText('Nothing on yet')).toBeOnTheScreen();
     expect(screen.getByText("What's on today?")).toBeOnTheScreen();
-    expect(screen.getByText('14h 20m reclaimed so far')).toBeOnTheScreen();
+    expect(screen.queryByText(/reclaimed so far/)).toBeNull();
     fireEvent.press(screen.getByText('Or log something you finished'));
     expect(onLog).toHaveBeenCalledTimes(1);
-  });
-
-  it('hides the reclaim line on a daily day with nothing banked', () => {
-    render(<TodayEmptyState variant="daily" reclaimLifetimeMin={0} onPrimary={() => {}} onLog={() => {}} />);
-    expect(screen.queryByText(/reclaimed so far/)).toBeNull();
   });
 });

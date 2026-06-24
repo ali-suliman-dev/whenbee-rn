@@ -4,8 +4,10 @@ import { useCalibrationStore, type PatternsData } from '@/src/stores/calibration
 
 // Mock expo-router: useFocusEffect runs the callback once (mirrors an immediate
 // focus) so usePatterns' on-focus refresh path is exercised without navigation.
+// useRouter is stubbed so ArchetypePlaceholder's onTakeQuiz can push without error.
 jest.mock('expo-router', () => ({
   useFocusEffect: (cb: () => void) => cb(),
+  useRouter: () => ({ push: jest.fn() }),
 }));
 
 // ──────────────────────────────────────────────────────────────────────────────
@@ -37,7 +39,7 @@ describe('Patterns screen', () => {
     });
     // No insight cards, and nothing that reads as a scold.
     expect(screen.queryByText('YOUR TIME PERSONALITY')).toBeNull();
-    expect(screen.queryByText('YOUR HONEST MAP')).toBeNull();
+    expect(screen.queryByText('Your numbers')).toBeNull();
   });
 
   it('renders earned cards when seeded with qualifying data', async () => {
@@ -60,11 +62,12 @@ describe('Patterns screen', () => {
     render(<Patterns />);
 
     await waitFor(() => {
-      // Archetype qualifies (2 categories, ≥12 logs) and the honest map lists rows.
+      // ArchetypeHero qualifies (2 categories, ≥12 logs) and the honest map lists rows.
       expect(screen.getByText('YOUR TIME PERSONALITY')).toBeOnTheScreen();
     });
-    expect(screen.getByText('YOUR HONEST MAP')).toBeOnTheScreen();
-    expect(screen.getByText('WHAT TO EXPECT')).toBeOnTheScreen();
+    expect(screen.getByText('Your numbers')).toBeOnTheScreen();
+    // Section header from the redesigned sectioned story.
+    expect(screen.getByText('Your progress')).toBeTruthy();
     // The empty state must NOT show when cards are present.
     expect(screen.queryByText('Your patterns are on the way')).toBeNull();
   });
@@ -87,12 +90,22 @@ describe('Patterns screen', () => {
     render(<Patterns />);
 
     await waitFor(() => {
-      expect(screen.getByText('YOUR HONEST MAP')).toBeOnTheScreen();
+      expect(screen.getByText('Your numbers')).toBeOnTheScreen();
     });
     // Dial exposes its filled-step count via the progressbar label (honest = 3 of 3).
     expect(screen.getByLabelText('Admin & email readiness: honest, 3 of 3')).toBeOnTheScreen();
     // Warm, no-guilt framing line (single honest area).
     expect(screen.getByText('One area reads honest now. The rest are catching up.')).toBeOnTheScreen();
+  });
+
+  it('shows the archetype placeholder for a logged-but-unearned user', async () => {
+    setPatternsData({
+      nameOf: (id) => id,
+      categories: [{ categoryId: 'admin', n: 1, mEffective: 2.0, sharpness: 20 }],
+      logs: [{ category: 'admin', estimateMin: 10, actualMin: 20, status: 'completed' as const, source: 'timed' as const, createdAt: NOW - DAY }],
+    });
+    render(<Patterns />);
+    await waitFor(() => expect(screen.getByText('Meet your time personality')).toBeOnTheScreen());
   });
 
   it('shows a partially-filled dial for a raw category', async () => {
@@ -114,7 +127,7 @@ describe('Patterns screen', () => {
     render(<Patterns />);
 
     await waitFor(() => {
-      expect(screen.getByText('YOUR HONEST MAP')).toBeOnTheScreen();
+      expect(screen.getByText('Your numbers')).toBeOnTheScreen();
     });
     // raw → only the first pip lit (1 of 3).
     expect(screen.getByLabelText('admin readiness: raw, 1 of 3')).toBeOnTheScreen();

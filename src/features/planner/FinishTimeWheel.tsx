@@ -220,17 +220,20 @@ function ColumnWheel({
 
 export function FinishTimeWheel({
   valueMs,
-  mode,
+  mode = 'be done by',
   onChange,
   nowMs,
+  showModes = true,
 }: {
   /** Selected deadline as epoch ms. If null/undefined, defaults to the next whole hour. */
   valueMs: number | null;
-  /** Which deadline semantic is active. */
-  mode: DeadlineMode;
+  /** Which deadline semantic is active. Defaults to 'be done by' (used when modes are hidden). */
+  mode?: DeadlineMode;
   onChange: (deadlineMs: number, mode: DeadlineMode) => void;
   /** I3: injected clock — avoids new Date() calls for deterministic tests + midnight safety. */
   nowMs?: number;
+  /** When false, hide the mode chip row so the wheel is a plain time picker. Default true. */
+  showModes?: boolean;
 }) {
   const t = useTheme();
   const reducedMotion = useReducedMotion();
@@ -336,11 +339,13 @@ export function FinishTimeWheel({
   return (
     <View>
       {/* Mode chips */}
-      <View style={chipRow}>
-        {MODES.map((m) => (
-          <Chip key={m} label={m} selected={mode === m} onPress={() => handleModePress(m)} />
-        ))}
-      </View>
+      {showModes ? (
+        <View style={chipRow}>
+          {MODES.map((m) => (
+            <Chip key={m} label={m} selected={mode === m} onPress={() => handleModePress(m)} />
+          ))}
+        </View>
+      ) : null}
 
       {/* Dual wheel */}
       <View style={{ position: 'relative' }}>

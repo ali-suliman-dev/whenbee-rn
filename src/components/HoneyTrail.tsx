@@ -1,6 +1,7 @@
-import { useEffect } from 'react';
+import { useCallback } from 'react';
 import { View, type ViewStyle } from 'react-native';
 import Animated, {
+  cancelAnimation,
   Keyframe,
   useAnimatedStyle,
   useReducedMotion,
@@ -9,6 +10,7 @@ import Animated, {
   withTiming,
 } from 'react-native-reanimated';
 import Svg, { Circle, Ellipse, Line } from 'react-native-svg';
+import { useAmbientMotion } from '@/src/hooks/useAmbientMotion';
 import { useTheme } from '@/src/theme/useTheme';
 import { AppText } from './AppText';
 import { BeeMascot } from './BeeMascot';
@@ -59,12 +61,18 @@ function Node({ state, lively = false }: { state: TrailState; lively?: boolean }
   // Calm "you are here" breath on the current node — grows and fades, then resets
   // while invisible (no blink). Only the 'now' node in lively mode runs it.
   const pulse = useSharedValue(0);
-  useEffect(() => {
-    if (state !== 'now' || !lively || reduced) return;
-    pulse.set(
-      withRepeat(withTiming(1, { duration: t.motion.halo, easing: t.motion.easing.calm }), -1, false),
-    );
-  }, [state, lively, reduced, pulse, t.motion]);
+  useAmbientMotion(
+    state === 'now' && lively && !reduced,
+    useCallback(() => {
+      pulse.set(
+        withRepeat(withTiming(1, { duration: t.motion.halo, easing: t.motion.easing.calm }), -1, false),
+      );
+      return () => {
+        cancelAnimation(pulse);
+        pulse.set(0);
+      };
+    }, [pulse, t.motion]),
+  );
   const haloStyle = useAnimatedStyle(() => ({
     opacity: (1 - pulse.get()) * t.opacity.disabled,
     transform: [{ scale: 1 + pulse.get() * 0.55 }],

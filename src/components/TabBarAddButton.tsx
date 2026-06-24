@@ -1,5 +1,7 @@
 import { Pressable, View } from 'react-native';
 import Animated, {
+  Extrapolation,
+  interpolate,
   useSharedValue,
   useAnimatedStyle,
   withTiming,
@@ -35,9 +37,11 @@ interface Props {
   config: AddButtonConfig;
   /** Right-divider only — width that the button slot occupies (tabs use the rest). */
   slotWidth?: number;
+  /** If provided, called instead of the default route-push. Used to toggle the quick-action arc. */
+  onPress?: () => void;
 }
 
-export function TabBarAddButton({ config }: Props) {
+export function TabBarAddButton({ config, onPress: onPressProp }: Props) {
   const t = useTheme();
   const reducedMotion = useReducedMotion();
 
@@ -45,8 +49,11 @@ export function TabBarAddButton({ config }: Props) {
 
   // Primary axis: coin sinks on press, springs back.
   const pressY = useSharedValue(0);
-  // Secondary axis: subtle squash → spring pop with overshoot (the addictive moment).
+  // Secondary axis: subtle squash → calm settle.
   const pressScale = useSharedValue(1);
+  // Reward axis: a soft ring blooms out of the coin on every press — the little
+  // hit of feedback that makes tapping feel alive without shouting.
+  const ring = useSharedValue(0);
 
   const animStyle = useAnimatedStyle(() => ({
     transform: [
@@ -55,21 +62,37 @@ export function TabBarAddButton({ config }: Props) {
     ],
   }));
 
+  const ringStyle = useAnimatedStyle(() => ({
+    opacity: interpolate(ring.get(), [0, 0.15, 1], [0, 0.28, 0], Extrapolation.CLAMP),
+    transform: [{ scale: interpolate(ring.get(), [0, 1], [0.7, 1.9], Extrapolation.CLAMP) }],
+  }));
+
+  function firePulse() {
+    if (reducedMotion) return;
+    ring.set(0);
+    ring.set(withTiming(1, { duration: t.motion.reveal, easing: t.motion.easing.out }));
+  }
+
   function onPressIn() {
     if (reducedMotion) return;
     pressY.set(withTiming(EDGE_DEPTH - 1, { duration: t.motion.press }));
     // Squash slightly — communicates the button "heard" the press.
-    pressScale.set(withTiming(0.93, { duration: t.motion.press }));
+    pressScale.set(withTiming(0.94, { duration: t.motion.press }));
   }
   function onPressOut() {
     if (reducedMotion) return;
     pressY.set(withSpring(0, t.motion.spring));
-    // Pop spring: low damping creates the satisfying overshoot bounce.
-    pressScale.set(withSpring(1, { damping: 10, stiffness: 240, mass: 0.5 }));
+    // Calm settle — a touch of life, no aggressive bounce.
+    pressScale.set(withSpring(1, t.motion.spring));
   }
   function onPress() {
     haptics.light();
-    router.push('/(modals)/add-task');
+    firePulse();
+    if (onPressProp != null) {
+      onPressProp();
+    } else {
+      router.push('/(modals)/add-task');
+    }
   }
 
   const isElevated = config.placement === 'center-elevated';
@@ -88,6 +111,23 @@ export function TabBarAddButton({ config }: Props) {
         coin edge peeks out below. Edge and face share the same left origin.
       */}
       <View style={{ width: config.size, height: config.size + EDGE_DEPTH }}>
+        {/* Press ripple — a soft primary ring that blooms out and fades on tap. */}
+        <Animated.View
+          pointerEvents="none"
+          style={[
+            ringStyle,
+            {
+              position: 'absolute',
+              bottom: 0,
+              left: 0,
+              width: config.size,
+              height: config.size,
+              borderRadius: config.borderRadius,
+              backgroundColor: t.colors.primary,
+            },
+          ]}
+        />
+
         {/* Coin edge — darker slab, pinned to bottom of inner container. */}
         <View
           style={{

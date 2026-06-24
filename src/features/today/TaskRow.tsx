@@ -44,6 +44,9 @@ interface TaskRowProps {
   onLongPress?: () => void;
   /** First-run only: briefly reveal then re-hide the swipe once, to teach it. */
   peekHint?: boolean;
+  /** Fired once the peek actually animates — lets the parent burn the "seen" flag
+   *  only when the hint truly played (not merely on first mount). */
+  onPeeked?: () => void;
   /** When true, slide the row left off-screen then call onDelete (teaches swipe direction). */
   isExiting?: boolean;
   /** Show "← swipe to remove" coach overlay (first done row, first session). */
@@ -63,6 +66,7 @@ export function TaskRow({
   onDelete,
   onLongPress,
   peekHint = false,
+  onPeeked,
   isExiting = false,
   showCoachMark = false,
   onCoachMarkDismiss,
@@ -120,7 +124,12 @@ export function TaskRow({
   useEffect(() => {
     if (!peekHint || reducedMotion || !onDelete || hasPeeked.current) return;
     hasPeeked.current = true;
-    const open = setTimeout(() => swipeRef.current?.openRight(), t.motion.fast);
+    const open = setTimeout(() => {
+      swipeRef.current?.openRight();
+      // The hint is now playing — safe to mark it seen (the parent persists this),
+      // so a mount with no row to peek never silently burns the one-shot.
+      onPeeked?.();
+    }, t.motion.fast);
     const close = setTimeout(() => swipeRef.current?.close(), t.motion.fast + t.motion.reveal);
     return () => {
       clearTimeout(open);

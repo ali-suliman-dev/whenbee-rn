@@ -12,6 +12,10 @@ import { useEntitlement } from '@/src/features/paywall/useEntitlement';
 jest.mock('expo-router', () => ({
   router: { push: jest.fn() },
   useFocusEffect: (cb: () => void) => cb(),
+  useNavigation: () => ({
+    isFocused: () => true,
+    addListener: () => () => {},
+  }),
 }));
 
 // Feed the hub VM fixtures directly — no DB stand-up in the screen test.
@@ -46,6 +50,8 @@ function vm(overrides: Partial<WhenbeeHubVM> = {}): WhenbeeHubVM {
     renameCompanion: jest.fn(),
     showDriftRecheck: false,
     dismissDriftRecheck: jest.fn(),
+    proReadiness: { pitchUnlocked: false, perFeatureReady: {} as WhenbeeHubVM['proReadiness']['perFeatureReady'] },
+    honeyPct: 0,
     ...overrides,
   };
 }
@@ -74,7 +80,7 @@ describe('WhenbeeHub', () => {
 
     render(<WhenbeeHub />);
 
-    expect(screen.getByText("WHENBEE'S STILL LEARNING THIS ONE")).toBeOnTheScreen();
+    expect(screen.getByText('STILL LEARNING')).toBeOnTheScreen();
     expect(screen.getByText('Deep Work')).toBeOnTheScreen();
   });
 
@@ -101,8 +107,18 @@ describe('WhenbeeHub', () => {
     expect(screen.getByText('Log your first task')).toBeTruthy();
   });
 
-  it('renders the day-honest CTA when there are logs', () => {
+  it('renders the RipeningProCard when there are logs and not Pro', () => {
     mockHook.mockReturnValue(vm({ honestLogCount: 5 }));
+
+    render(<WhenbeeHub />);
+
+    // RipeningProCard ripening state headline (pitchUnlocked: false by default)
+    expect(screen.getByText('Your honest range')).toBeOnTheScreen();
+  });
+
+  it('renders the day-honest CTA for Pro users with logs', () => {
+    mockHook.mockReturnValue(vm({ honestLogCount: 5 }));
+    useEntitlement.setState({ isPro: true, ready: true });
 
     render(<WhenbeeHub />);
 

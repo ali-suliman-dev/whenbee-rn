@@ -11,6 +11,7 @@ jest.mock('expo-router', () => ({
     replace: (...a: unknown[]) => mockReplace(...a),
     back: (...a: unknown[]) => mockBack(...a),
   },
+  useLocalSearchParams: () => ({}),
 }));
 
 beforeEach(() => {

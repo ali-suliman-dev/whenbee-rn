@@ -32,7 +32,7 @@ describe('HonestCard — optional B15 reason note', () => {
     render(<HonestCard {...base} reasonNote={NOTE} />);
     // Identical number to the no-note branch — the note cannot move it.
     expect(screen.getByText('~28')).toBeOnTheScreen();
-    expect(screen.getByText('runs 2.0×')).toBeOnTheScreen();
+    expect(screen.getByText('2.0×')).toBeOnTheScreen();
     expect(screen.getByText(NOTE)).toBeOnTheScreen();
   });
 });

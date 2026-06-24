@@ -1,5 +1,4 @@
 import { render, screen } from '@testing-library/react-native';
-import * as Reanimated from 'react-native-reanimated';
 import Reward from '@/src/app/(modals)/reward';
 import { useRewardStore } from '@/src/stores/rewardStore';
 import { useCalibrationStore } from '@/src/stores/calibrationStore';
@@ -12,6 +11,11 @@ jest.mock('expo-router', () => ({
     dismiss: (...a: unknown[]) => mockDismiss(...a),
     push: (...a: unknown[]) => mockPush(...a),
   },
+  useFocusEffect: (cb: () => void | (() => void)) => cb(),
+  useNavigation: () => ({
+    isFocused: () => true,
+    addListener: () => () => {},
+  }),
 }));
 
 const baseResult: LogResult = {
@@ -106,7 +110,7 @@ describe('Reward screen', () => {
     expect(screen.queryByText('HONEY')).toBeNull();
   });
 
-  it('renders the reclaim deposit beat (chip + count-up target) when minutes were banked', () => {
+  it('renders the hub CTA button with the new label', () => {
     useRewardStore.getState().setReward({
       actualMin: 32,
       guessMin: 15,
@@ -115,18 +119,15 @@ describe('Reward screen', () => {
       result: { ...baseResult, reclaimDeltaMin: 15, reclaimLifetimeMin: 200 },
     });
     render(<Reward />);
-    // The amber chip reads the minutes this log banked.
-    expect(screen.getByText('+15m reclaimed')).toBeOnTheScreen();
-    // The count-up lands on the new lifetime total: formatReclaim(200) → "3h 20m".
-    // (The numeral is an AnimatedTextInput; its formatted total surfaces on the
-    // beat's accessibility label.)
-    expect(screen.getByLabelText('Reclaimed 15 minutes, 3h 20m banked')).toBeOnTheScreen();
-    // The two exits read the redesigned labels.
-    expect(screen.getByText('See my Reclaim')).toBeOnTheScreen();
+    // No reclaim chip — the beat is gone.
+    expect(screen.queryByText(/reclaimed/)).toBeNull();
+    expect(screen.queryByLabelText(/banked/)).toBeNull();
+    // The primary CTA now reads "See your bee".
+    expect(screen.getByText('See your bee')).toBeOnTheScreen();
     expect(screen.getByText('Back to today')).toBeOnTheScreen();
   });
 
-  it('renders NO reclaim element when nothing was banked (never a "+0m")', () => {
+  it('shows no reclaim element regardless of reclaimDeltaMin', () => {
     useRewardStore.getState().setReward({
       actualMin: 12,
       guessMin: 12,
@@ -135,28 +136,8 @@ describe('Reward screen', () => {
       result: { ...baseResult, reclaimDeltaMin: 0, reclaimLifetimeMin: 40 },
     });
     render(<Reward />);
-    // No chip at all — not "+0m", and the whole beat is absent.
-    expect(screen.queryByText('+0m reclaimed')).toBeNull();
-    expect(screen.queryByText(/reclaimed$/)).toBeNull();
-    expect(screen.queryByLabelText(/banked$/)).toBeNull();
-  });
-
-  it('reduce-motion: renders the final reclaim values without crashing', () => {
-    const spy = jest.spyOn(Reanimated, 'useReducedMotion').mockReturnValue(true);
-    try {
-      useRewardStore.getState().setReward({
-        actualMin: 32,
-        guessMin: 15,
-        category: 'cleaning',
-        label: null,
-        result: { ...baseResult, reclaimDeltaMin: 15, reclaimLifetimeMin: 200 },
-      });
-      render(<Reward />);
-      expect(screen.getByText('+15m reclaimed')).toBeOnTheScreen();
-      expect(screen.getByLabelText('Reclaimed 15 minutes, 3h 20m banked')).toBeOnTheScreen();
-    } finally {
-      spy.mockRestore();
-    }
+    expect(screen.queryByText(/reclaimed/)).toBeNull();
+    expect(screen.queryByLabelText(/banked/)).toBeNull();
   });
 
   it('shows the over-run reason row when the run ran well past the guess', () => {
@@ -172,7 +153,7 @@ describe('Reward screen', () => {
     expect(screen.getByText('Where did the time go?')).toBeOnTheScreen();
     expect(screen.getByText('Paused')).toBeOnTheScreen();
     // The two exits are still present — the row never blocks them.
-    expect(screen.getByText('See my Reclaim')).toBeOnTheScreen();
+    expect(screen.getByText('See your bee')).toBeOnTheScreen();
     expect(screen.getByText('Back to today')).toBeOnTheScreen();
   });
 

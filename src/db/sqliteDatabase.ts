@@ -11,7 +11,7 @@ import * as SQLite from 'expo-sqlite';
 import { runMigrations } from './client';
 import type { Database } from './Database';
 import type { AdaptSpeed, LogSource, LogStatus } from '@/src/domain/types';
-import type { CategoryStatRow, CompanionRow, ContextEventRow, ContextTagRow, DiscoveryRow, ReasonEventRow, RecurringStatRow, TaskEventRow } from './types';
+import type { CategoryStatRow, CompanionRow, ContextEventRow, ContextTagRow, DiscoveryRow, ReasonEventRow, RecurringStatRow, RoutineRow, RoutineStepRow, TaskEventRow } from './types';
 
 interface TaskEventDbRow {
   id: string;
@@ -26,6 +26,7 @@ interface TaskEventDbRow {
   created_at: number;
   suggested_honest_min: number | null;
   reclaim_dividend_min: number;
+  start_local_minute: number | null;
 }
 
 interface CategoryStatDbRow {
@@ -90,6 +91,7 @@ function mapTaskEvent(r: TaskEventDbRow): TaskEventRow {
     createdAt: r.created_at,
     suggestedHonestMin: r.suggested_honest_min,
     reclaimDividendMin: r.reclaim_dividend_min,
+    startLocalMinute: r.start_local_minute ?? null,
   };
 }
 
@@ -135,6 +137,48 @@ function mapRecurringStat(r: RecurringStatDbRow): RecurringStatRow {
     logEwma: r.ewma_logr,
     mEffective: r.m_effective,
     updatedAt: r.updated_at,
+  };
+}
+
+interface RoutineDbRow {
+  id: string;
+  name: string;
+  done_by_minute_of_day: number | null;
+  transition_factor: number;
+  run_count: number;
+  created_at: number;
+  updated_at: number;
+}
+
+interface RoutineStepDbRow {
+  id: string;
+  routine_id: string;
+  position: number;
+  label: string;
+  category: string;
+  guess_min: number;
+}
+
+function mapRoutine(r: RoutineDbRow): RoutineRow {
+  return {
+    id: r.id,
+    name: r.name,
+    doneByMinuteOfDay: r.done_by_minute_of_day,
+    transitionFactor: r.transition_factor,
+    runCount: r.run_count,
+    createdAt: r.created_at,
+    updatedAt: r.updated_at,
+  };
+}
+
+function mapRoutineStep(r: RoutineStepDbRow): RoutineStepRow {
+  return {
+    id: r.id,
+    routineId: r.routine_id,
+    position: r.position,
+    label: r.label,
+    category: r.category,
+    guessMin: r.guess_min,
   };
 }
 
@@ -195,8 +239,9 @@ export async function createSqliteDatabase(name = 'whenbee.db'): Promise<Databas
       await db.runAsync(
         `INSERT INTO task_events
            (id, category, label, estimate_min, actual_min, status, source,
-            started_at, ended_at, created_at, suggested_honest_min, reclaim_dividend_min)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+            started_at, ended_at, created_at, suggested_honest_min, reclaim_dividend_min,
+            start_local_minute)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
         row.id,
         row.category,
         row.label,
@@ -208,7 +253,8 @@ export async function createSqliteDatabase(name = 'whenbee.db'): Promise<Databas
         row.endedAt,
         row.createdAt,
         row.suggestedHonestMin,
-        row.reclaimDividendMin
+        row.reclaimDividendMin,
+        row.startLocalMinute
       );
     },
 
@@ -258,6 +304,90 @@ export async function createSqliteDatabase(name = 'whenbee.db'): Promise<Databas
         row.n,
         row.mEffective,
         row.updatedAt
+      );
+    },
+
+    async listRoutines(): Promise<RoutineRow[]> {
+      const rows = await db.getAllAsync<RoutineDbRow>(
+        'SELECT * FROM routines ORDER BY updated_at DESC'
+      );
+      return rows.map(mapRoutine);
+    },
+
+    async getRoutine(id: string): Promise<RoutineRow | null> {
+      const row = await db.getFirstAsync<RoutineDbRow>(
+        'SELECT * FROM routines WHERE id = ?',
+        id
+      );
+      return row ? mapRoutine(row) : null;
+    },
+
+    async listRoutineSteps(routineId: string): Promise<RoutineStepRow[]> {
+      const rows = await db.getAllAsync<RoutineStepDbRow>(
+        'SELECT * FROM routine_steps WHERE routine_id = ? ORDER BY position ASC',
+        routineId
+      );
+      return rows.map(mapRoutineStep);
+    },
+
+    async saveRoutine(routine: RoutineRow, steps: RoutineStepRow[]): Promise<void> {
+      await db.withTransactionAsync(async () => {
+        await db.runAsync(
+          `INSERT INTO routines
+             (id, name, done_by_minute_of_day, transition_factor, run_count, created_at, updated_at)
+           VALUES (?, ?, ?, ?, ?, ?, ?)
+           ON CONFLICT(id) DO UPDATE SET
+             name = excluded.name,
+             done_by_minute_of_day = excluded.done_by_minute_of_day,
+             transition_factor = excluded.transition_factor,
+             run_count = excluded.run_count,
+             updated_at = excluded.updated_at`,
+          routine.id,
+          routine.name,
+          routine.doneByMinuteOfDay,
+          routine.transitionFactor,
+          routine.runCount,
+          routine.createdAt,
+          routine.updatedAt
+        );
+        // Replace this routine's steps wholesale so edits/reorders are atomic.
+        await db.runAsync('DELETE FROM routine_steps WHERE routine_id = ?', routine.id);
+        for (const step of steps) {
+          await db.runAsync(
+            `INSERT INTO routine_steps (id, routine_id, position, label, category, guess_min)
+             VALUES (?, ?, ?, ?, ?, ?)`,
+            step.id,
+            step.routineId,
+            step.position,
+            step.label,
+            step.category,
+            step.guessMin
+          );
+        }
+      });
+    },
+
+    async deleteRoutine(id: string): Promise<void> {
+      await db.withTransactionAsync(async () => {
+        await db.runAsync('DELETE FROM routine_steps WHERE routine_id = ?', id);
+        await db.runAsync('DELETE FROM routines WHERE id = ?', id);
+      });
+    },
+
+    async setRoutineTransitionFactor(id: string, factor: number, updatedAt: number): Promise<void> {
+      await db.runAsync(
+        'UPDATE routines SET transition_factor = ?, updated_at = ? WHERE id = ?',
+        factor,
+        updatedAt,
+        id
+      );
+    },
+
+    async incrementRoutineRunCount(id: string, updatedAt: number): Promise<void> {
+      await db.runAsync(
+        'UPDATE routines SET run_count = run_count + 1, updated_at = ? WHERE id = ?',
+        updatedAt,
+        id
       );
     },
 
@@ -457,6 +587,8 @@ export async function createSqliteDatabase(name = 'whenbee.db'): Promise<Databas
            DELETE FROM recurring_stats;
            DELETE FROM log_tags;
            DELETE FROM discoveries;
+           DELETE FROM routines;
+           DELETE FROM routine_steps;
            UPDATE companion SET
              reclaimed_minutes_lifetime = 0,
              lifetime_data_points = 0,

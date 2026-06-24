@@ -4,6 +4,8 @@
 
 ---
 
+> **⚠️ FREE/PRO RE-SPLIT — 2026-06-21 (overrides the gating below where they conflict).** A code audit found parts of this catalog duplicate already-shipped free code. Changes: **1.4 day-capacity is NO LONGER Pro — it is free** (the fits/over/which-to-cut math already ships free in the Start-By planner `planBackward`+`cutLadder`+`VerdictCard`; the only new piece is a durable global **End of day** setting, also free — plans: [docs/plans/day-end-setting.md](../plans/day-end-setting.md), [docs/superpowers/plans/2026-06-21-free-bucket.md](../superpowers/plans/2026-06-21-free-bucket.md)). **1.2 review and 2.2 history are SPLIT** — viewing your week / your recent 30 days is free; only the scheduled ritual + Pro correlations (1.2) and the history *depth* 90/365/all + season-compare + re-open (2.2) are Pro. **2.2 is the riskiest "pay for your own data" gate — reconfirm before building.**
+
 ## The 5 hard truths the research agreed on
 
 These came back independently from all three passes. They constrain *how* we monetize, before any feature list.
@@ -46,7 +48,9 @@ Show "this usually takes 40–55 min" with a band that visibly **narrows** as yo
 - *Why they pay recurringly:* the band tightening over months is the felt proof the model is learning *them*; ties to truth #3 + #5.
 - *Effort:* Medium (variance is already computable in the engine). · **REFINEMENT** of the honest number
 
-**1.4 — Day-capacity / over-commitment honest check**
+**1.4 — Day-capacity / over-commitment honest check — ❌ MOVED TO FREE (2026-06-21)**
+> **Not Pro.** The sum-vs-window, fits/over verdict, and "which one to cut" already ship free in the Start-By planner (`src/engine/planner.ts` `planBackward` + `cutLadder` + `VerdictCard`). The only genuinely-new piece is a durable global **End of day** setting (so the user doesn't set a deadline each time) — and that is configuration, not a payoff, so it is also free. Build the setting per [docs/plans/day-end-setting.md](../plans/day-end-setting.md); do not build 1.4 as a Pro feature.
+
 Sum today's honest numbers vs. the real hours you have, and flag — calmly, amber-not-red — when the day is physically over-packed. The no-guilt inverse of a streak.
 - *Evidence:* the explicit reason ADHD users pay $20/mo for Sunsama: *"Most task managers make you feel behind. Sunsama warns you when you're overcommitted"* ([SaskADHD](https://saskadhd.com/sunsama-review-a-therapists-take-on-the-daily-planner-that-actually-works-with-your-brain/)). Turns per-task accuracy into a daily planning decision.
 - *Why they pay recurringly:* used every planning session; the single most actionable thing the multiplier enables. **This replaces calendar padding entirely — same "will my day fit?" payoff, zero calendar access.**
@@ -104,9 +108,9 @@ The numbers stay on-device and deterministic; an *optional* LLM turns them into 
 Pulling the highest-confidence, lowest-backlash, most-compounding items into one coherent Pro that **never gates the core loop**:
 
 > **Whenbee Pro = the payoff layer on top of free calibration:**
-> 1. **See if your day will actually fit** — in-app day-capacity check (1.4) over your planned/Plan-tab tasks. *The calendar payoff, with zero calendar access.*
-> 2. **Honest ranges + presence** — confidence band that narrows (1.3) + persistent lock-screen/widget presence (1.5).
-> 3. **The cadenced mirror** — Honest Week / monthly review (1.2) + long-range history (2.2).
+> 1. ~~See if your day will actually fit (1.4)~~ — **moved to FREE 2026-06-21** (the planner already does this; the End of day setting is free). No longer a Pro pillar.
+> 2. **Honest ranges + presence** — confidence band that narrows (1.3) + persistent lock-screen/widget presence (1.5, rich states only).
+> 3. **The cadenced mirror** — Honest Week / monthly review (1.2, ritual + correlations only; week content is free) + long-range history (2.2, depth only; recent 30d is free).
 > 4. **Take it with you** — clinician/coach/self PDF export (1.1).
 > 5. **Stay ahead** — routines with learned totals (2.1) + hyperfocus guardrail (2.3) + focus-window planner (2.4).
 
@@ -128,7 +132,7 @@ That bundle hits all five research truths: keeps the loop free, sells what the m
 ## Open decisions / next steps
 
 1. **Calendar stance — RESOLVED (2026-06-19): dropped entirely.** No write, no read, no import. Capacity check + routines carry the value. Code removal tracked as B2 in [02-GAP-ANALYSIS](02-GAP-ANALYSIS.md).
-2. **First Pro build order** — recommend **1.1 PDF export + 1.2 review ritual + 1.4 capacity check + 1.3 confidence band** as the opening Pro that's validated, compounding, and largely reuses existing engine output.
+2. **First Pro build order** — UPDATED 2026-06-21 (1.4 dropped from Pro): recommend **1.3 confidence band (band UI ~80% built) + 1.2 review ritual (ritual+correlations) + 1.1 PDF export** as the opening Pro. (1.4 capacity is now free; build the End of day setting first as a free-bucket item — [docs/superpowers/plans/2026-06-21-free-bucket.md](../superpowers/plans/2026-06-21-free-bucket.md).)
 3. **Optional LLM Estimate Coach (2.6)** — decide if/when to add as a separate add-on tier; keep it strictly off the core loop.
 4. Re-validate with your own funnel once live: does the paid cohort actually return for the weekly review? (PostHog — the cadenced-ritual return is the retention signal that matters.)
 

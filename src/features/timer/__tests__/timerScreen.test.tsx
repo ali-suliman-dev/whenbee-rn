@@ -19,6 +19,11 @@ jest.mock('expo-router', () => ({
     dismiss: (...a: unknown[]) => mockDismiss(...a),
   },
   useLocalSearchParams: () => mockParams,
+  useFocusEffect: (cb: () => void | (() => void)) => cb(),
+  useNavigation: () => ({
+    isFocused: () => true,
+    addListener: () => () => {},
+  }),
 }));
 
 const okResult: LogResult = {
@@ -143,6 +148,10 @@ describe('Live Timer screen', () => {
     expect(arg.category).toBe('getting_ready');
     // The honest number the user SAW is banked for reclaim.
     expect(arg.suggestedHonestMin).toBe(28);
+    // focus-window wiring: startedAt (session start epoch) must be passed so
+    // startLocalMinute is populated; a missing/null value means no learning.
+    expect(typeof arg.startedAt).toBe('number');
+    expect(arg.startedAt).toBeGreaterThan(0);
 
     // Reward hand-off populated + task removed + navigation.
     expect(useRewardStore.getState().guessMin).toBe(15);

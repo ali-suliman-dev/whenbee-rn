@@ -1,6 +1,7 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { Pressable, View, Text, type ViewStyle, type TextStyle } from 'react-native';
 import Animated, {
+  cancelAnimation,
   useSharedValue,
   useAnimatedStyle,
   withSpring,
@@ -10,6 +11,7 @@ import Animated, {
   useReducedMotion,
 } from 'react-native-reanimated';
 import { router } from 'expo-router';
+import { useAmbientMotion } from '@/src/hooks/useAmbientMotion';
 import { Card } from '@/src/components/Card';
 import { useTheme } from '@/src/theme/useTheme';
 import { type } from '@/src/theme/typography';
@@ -51,6 +53,7 @@ export function RunningFocusCard({ categoryName }: RunningFocusCardProps) {
   const suggestedHonestMin = useTimerStore((s) => s.suggestedHonestMin);
   const estimateMin = useTimerStore((s) => s.estimateMin);
   const taskId = useTimerStore((s) => s.taskId);
+  const isQuickStart = useTimerStore((s) => s.isQuickStart);
 
   const [elapsedSec, setElapsedSec] = useState(0);
 
@@ -74,19 +77,25 @@ export function RunningFocusCard({ categoryName }: RunningFocusCardProps) {
 
   // The live coin breathes (opacity) — the one moving "alive" signal, not a scold.
   const pulse = useSharedValue(1);
-  useEffect(() => {
-    if (reduced) return;
-    pulse.set(
-      withRepeat(
-        withSequence(
-          withTiming(t.opacity.pressed, { duration: t.motion.pulse }),
-          withTiming(1, { duration: t.motion.pulse }),
+  useAmbientMotion(
+    !reduced,
+    useCallback(() => {
+      pulse.set(
+        withRepeat(
+          withSequence(
+            withTiming(t.opacity.pressed, { duration: t.motion.pulse }),
+            withTiming(1, { duration: t.motion.pulse }),
+          ),
+          -1,
+          false,
         ),
-        -1,
-        false,
-      ),
-    );
-  }, [reduced, pulse, t.motion.pulse, t.opacity.pressed]);
+      );
+      return () => {
+        cancelAnimation(pulse);
+        pulse.set(1);
+      };
+    }, [pulse, t.motion.pulse, t.opacity.pressed]),
+  );
   const pulseStyle = useAnimatedStyle(() => ({ opacity: pulse.get() }));
 
   if (!isRunning || startedAt === null) return null;
@@ -99,11 +108,13 @@ export function RunningFocusCard({ categoryName }: RunningFocusCardProps) {
       pathname: '/(modals)/timer',
       params: {
         ...(taskId ? { taskId } : null),
-        label: taskLabel ?? 'Focus session',
+        label: taskLabel || 'Timing now',
         category: category ?? 'getting_ready',
         estimateMin: String(estimateMin),
         guessMin: String(guessMin),
         suggestedHonestMin: String(honestMin),
+        // Preserve quick-start flag so useTimer attaches rather than restarting.
+        ...(isQuickStart ? { quick: '1' } : null),
       },
     });
   }
@@ -165,7 +176,7 @@ export function RunningFocusCard({ categoryName }: RunningFocusCardProps) {
               <Text style={eyebrow}>NOW · {categoryLabel.toUpperCase()}</Text>
             </View>
             <Text style={title} numberOfLines={1}>
-              {taskLabel ?? 'Focus session'}
+              {taskLabel || 'Timing now'}
             </Text>
           </View>
           <View style={rightCol}>

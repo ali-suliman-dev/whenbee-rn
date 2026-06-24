@@ -1,5 +1,5 @@
 // Calibration engine constants. PURE TS — no RN/Expo/clock.
-import type { AdaptSpeed, Tier } from '../domain/types';
+import type { AdaptSpeed, GuardrailMultiple, Tier } from '../domain/types';
 
 export const RATIO_FLOOR = 1 / 6; // clamp so one disaster can't poison the model
 export const RATIO_CEIL = 6;
@@ -30,6 +30,20 @@ export const SHARPNESS_WINDOW = 8; // last N completed logs feed the accuracy nu
 export const TIERS: readonly Tier[] = ['Raw', 'Setting', 'Ripening', 'Thickening', 'Honest'];
 export const TIER_THRESHOLDS: readonly number[] = [0, 40, 64, 82, 93];
 export const SHARPNESS_PER_LOG = 4; // assumed gain/log when estimating "logs to next tier"
+
+// ── Honey as calibration maturity (replaces pure-accuracy sharpness) ─────────────
+/** Effort-floor asymptote — pure showing-up tops out at Thickening, never seals.
+ *  Equals TIER_THRESHOLDS[3] (Thickening) on purpose. */
+export const HONEY_FLOOR_CAP = 82;
+/** Effort-floor curvature: floor(n) = HONEY_FLOOR_CAP · n/(n+HONEY_FLOOR_K).
+ *  K=2 → floor(1)≈27, floor(2)≈41, floor(3)≈49, approaching 82. */
+export const HONEY_FLOOR_K = 2;
+/** Trust weight on the accuracy term: t(n) = n/(n+HONEY_TRUST_K). Small early so
+ *  one lucky guess can't seal; →1 as data accumulates. Mirrors GLOBAL_PRIOR_K. */
+export const HONEY_TRUST_K = 6;
+/** Honey cannot reach this (the Honest threshold) unless the seal is EARNED
+ *  (high accuracy AND confidence==='honest'). Equals TIER_THRESHOLDS[4]. */
+export const HONEY_SEAL_GATE = 93;
 
 /** Insight (Aha) gates. */
 export const INSIGHT_MIN_LOGS = 5;
@@ -83,3 +97,101 @@ export const AFFINE_PRIOR_PSEUDO = 4;
 export const GLOBAL_PRIOR_MIN_LOGS = 4; // below this, use the population prior unchanged
 export const GLOBAL_PRIOR_K = 6; // pseudo-count: personal weight = n/(n+k)
 export const GLOBAL_PRIOR_MAX_WEIGHT = 0.6; // cap so a new category keeps its own identity
+
+// ── End-of-day preference ─────────────────────────────────────────────────────
+/** Default end-of-day, minutes after local midnight. 21:00 = a sane "I stop by 9pm". */
+export const DEFAULT_DAY_END_MIN = 21 * 60; // 1260
+// ── Accuracy trend series (ProgressChart — "you, then vs now") ────────────────
+export const ACCURACY_TREND_MIN_LOGS = 12; // below this, UI falls back to 2-point — each of 6 buckets needs ≥2 logs
+export const ACCURACY_TREND_BUCKETS = 6; // max ordered windows in the series
+
+// ── Archetype quiz seed (provisional time-personality before data) ───────────
+/** Seed multiplier per Q1 pace answer (self-perceived bias, NOT a duration). */
+export const ARCHETYPE_SEED_PACE = { about: 1.15, bit: 1.5, lot: 2.1, lose: 3.0 } as const;
+/** Q2 'rabbit holes' multiplies the seed by this (capped at RATIO_CEIL). */
+export const ARCHETYPE_SEED_RABBIT_BUMP = 1.15;
+/** Seed acts as a prior worth this many pseudo-logs; real logs wash it out. */
+export const ARCHETYPE_SEED_PSEUDO = 5;
+// ── Per-category goals (Pro, no-guilt) ───────────────────────────────────────
+/** Need at least this many counted logs before a category can have a goal. */
+export const GOAL_MIN_LOGS = 5;
+/** Offered "within X%" targets, loosest → tightest (displayed as error bands). */
+export const GOAL_PRESETS = [40, 25, 15, 10] as const;
+/** A recommended target must be at least this many points tighter than current. */
+export const GOAL_RECOMMEND_STEP = 8;
+
+// ── Hyperfocus guardrail (Pro) ───────────────────────────────────────────────
+/** Setting → multiple of the honest number. 'off' has no entry. */
+export const GUARDRAIL_FACTORS = { '1.5x': 1.5, '2x': 2, '3x': 3 } as const;
+/** Default guardrail for a fresh install. */
+export const DEFAULT_GUARDRAIL: GuardrailMultiple = 'off';
+/** Never fire a nudge before this many elapsed minutes, regardless of factor. */
+export const GUARDRAIL_MIN_THRESHOLD_MIN = 25;
+
+// ── Focus-window planner (Pro) ────────────────────────────────────────────────
+// No tight-ratio threshold: the verdict is binary (everything fits, or something
+// spills). The window length is whatever the user set; there is no default window.
+// (No tunable constants for v1 — the fit is exact. Kept as a home for future tuning.)
+
+// ── Learned focus window (Pro) — spec 14 ──────────────────────────────────────
+export const FW_WAKING_START_MIN = 300;            // 05:00
+export const FW_WAKING_END_MIN = 1440;             // 24:00
+export const FW_BIN_MIN = 30;
+export const FW_BIN_COUNT = (FW_WAKING_END_MIN - FW_WAKING_START_MIN) / FW_BIN_MIN; // 38
+export const FW_S_CLAMP = Math.log(3);
+export const FW_MIN_ACTUAL_MIN = 3;
+export const FW_MIN_PLAUSIBLE_RATIO = 0.1;
+export const FW_FIT_B_MIN = 0.2;
+export const FW_FIT_B_MAX = 5;
+export const FW_RECENCY_HALFLIFE_DAYS = 35;
+export const FW_DURATION_CAP_MIN = 90;
+export const FW_WEIGHT_CAP = 2;
+export const FW_SHRINK_KAPPA = 4;
+export const FW_KERNEL = [0.25, 0.5, 0.25] as const;
+export const FW_WINDOW_MIN_LEN = 90;
+export const FW_WINDOW_MAX_LEN = 240;
+export const FW_EDGE_SNAP_MIN = 15;
+export const FW_PERM_N = 200;
+export const FW_PERM_PCTL = 0.95;
+export const FW_GATE_MIN_COMPLETED = 15;
+export const FW_GATE_MIN_DISTINCT_DAYS = 5;
+export const FW_BIN_MIN_EVENTS = 6;
+export const FW_BIN_MIN_DAYS = 4;
+export const FW_SD_MIN = 0.08;
+export const FW_BIMODAL_RATIO = 0.85;
+export const FW_BIMODAL_SEP_BINS = 2;
+export const FW_HYSTERESIS_SD_FRAC = 0.5;
+export const FW_DWELL_DAYS = 7;
+export const FW_MOVE_OVERLAP_MAX = 0.5;
+export const FW_COMPLETION_WEIGHT = 0.15;
+export const FW_COMPLETION_KAPPA = 8;
+export const FW_COMPLETION_DROP_CORR = 0.6;
+export const FW_PRIOR_WINDOW = { startMin: 540, endMin: 690 } as const; // 09:00–11:30
+
+// ── Routines (Pro) ───────────────────────────────────────────────────────────
+/** Day-1 chain transition factor: per-step honest numbers, summed, underestimate
+ *  the whole because the seams (transitions, re-starts) aren't in any single step.
+ *  1.15 = +15% prior overhead; only ever replaced by the learned factor. */
+export const TRANSITION_PRIOR = 1.15;
+/** EWMA learning rate for the transition factor over full timed runs. */
+export const TRANSITION_ALPHA = 0.3;
+/** Below this many completed full runs, the routine total is prior-based
+ *  ("based on typical patterns") and the transition factor stays at TRANSITION_PRIOR. */
+export const ROUTINE_PERSONAL_MIN_RUNS = 3;
+/** Clamp the learned transition factor so one chaotic run can't poison the chain. */
+export const TRANSITION_FLOOR = 1.0;
+export const TRANSITION_CEIL = 2.0;
+
+// ── Review ritual (Pro) ──────────────────────────────────────────────────────
+/** Min multiplier drop (early → recent half) for a category to count as "tightened". */
+export const REVIEW_TIGHTEN_GAP = 0.15;
+/** Cap on how many tightened categories the review surfaces. */
+export const REVIEW_MAX_TIGHTENED = 2;
+/** Below this many completed logs in a category's half-split, it's too thin to call. */
+export const REVIEW_TIGHTEN_MIN_HALF = 2;
+
+// ── PDF report (Pro) ─────────────────────────────────────────────────────────
+export const REPORT_MIN_LOGS = 6; // window minimum to allow export
+export const REPORT_CATEGORY_MIN_LOGS = 4; // per-row minimum in the bias table
+export const REPORT_SPARK_BUCKETS = 6; // accuracy sparkline buckets
+export const REPORT_MAX_SURPRISES = 5; // biggest-surprises cap

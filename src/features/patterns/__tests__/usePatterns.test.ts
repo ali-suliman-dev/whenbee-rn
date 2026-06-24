@@ -277,6 +277,21 @@ describe('deriveCalibrationMap', () => {
   });
 });
 
+describe('provisional archetype', () => {
+  it('returns a provisional archetype from the quiz seed when data is thin', () => {
+    const data = makeData({ logs: [log({ category: 'admin' })] }); // 1 completed log, below gate
+    const view = derivePatterns(data, Date.now(), { m0: 1.5 });
+    expect(view.archetype).not.toBeNull();
+    expect(view.archetype!.provisional).toBe(true);
+  });
+
+  it('returns null archetype with no seed and thin data', () => {
+    const data = makeData({ logs: [log({ category: 'admin' })] });
+    const view = derivePatterns(data, Date.now());
+    expect(view.archetype).toBeNull();
+  });
+});
+
 describe('derivePatterns', () => {
   it('marks the whole view empty when nothing completed exists', () => {
     const view = derivePatterns(makeData(), NOW);
@@ -296,5 +311,22 @@ describe('derivePatterns', () => {
       NOW,
     );
     expect(view.empty).toBe(true);
+  });
+
+  it('exposes an accuracy trend once enough completed logs exist', () => {
+    const data = makeData({
+      logs: Array.from({ length: 12 }, (_, i) => log({ createdAt: NOW - (12 - i) * DAY })),
+    });
+    const view = derivePatterns(data, NOW);
+    expect(view.accuracyTrend).not.toBeNull();
+    expect(view.accuracyTrend!.points.length).toBeGreaterThanOrEqual(2);
+  });
+
+  it('leaves accuracy trend null for a thin history', () => {
+    const data = makeData({
+      logs: Array.from({ length: 3 }, (_, i) => log({ createdAt: NOW - (3 - i) * DAY })),
+    });
+    const view = derivePatterns(data, NOW);
+    expect(view.accuracyTrend).toBeNull();
   });
 });

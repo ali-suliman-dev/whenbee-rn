@@ -1,22 +1,25 @@
-import { useCallback } from 'react';
+import { useCallback, useEffect } from 'react';
 import { View, Text, type ViewStyle, type TextStyle } from 'react-native';
 import { router, useFocusEffect } from 'expo-router';
 import { AppButton } from '@/src/components/AppButton';
 import { AppText } from '@/src/components/AppText';
-import { ProUpsellCard } from '@/src/components/ProUpsellCard';
+import { RipeningProCard } from '@/src/components/ripening-pro/RipeningProCard';
 import { ScreenHeader } from '@/src/components/ScreenHeader';
 import { useTheme } from '@/src/theme/useTheme';
 import { type } from '@/src/theme/typography';
 import { useCategoriesStore } from '@/src/stores/categoriesStore';
 import { useCalibrationStore } from '@/src/stores/calibrationStore';
 import { useEntitlement } from '@/src/features/paywall/useEntitlement';
-import { CATEGORY_NAMES } from '@/src/engine';
+import { useFocusedValue } from '@/src/hooks/useFocusedValue';
+import { analytics } from '@/src/services/analytics';
+import { TIERS, logsToNextTier } from '@/src/engine';
 import { useWhenbeeHub } from './useWhenbeeHub';
 import { WhenbeeAvatar } from './WhenbeeAvatar';
 import { HoneyRing } from './HoneyRing';
 import { RingBadge } from './RingBadge';
 import { AreaRow } from './AreaRow';
 import { DiscoveriesPreviewCard } from './DiscoveriesPreviewCard';
+import { categoryLabel } from './discoveryDisplay';
 import { BlindSpotCard } from './BlindSpotCard';
 import { LifeDriftCard } from './LifeDriftCard';
 
@@ -37,15 +40,6 @@ import { LifeDriftCard } from './LifeDriftCard';
 // micro-life (soft wing flutter, slow blink, glance whose body-lean conveys direction).
 // ──────────────────────────────────────────────────────────────────────────────
 
-function categoryLabel(id: string): string {
-  const seed = CATEGORY_NAMES[id];
-  if (seed) return seed;
-  return id
-    .split(/[_\-\s]+/)
-    .filter(Boolean)
-    .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
-    .join(' ');
-}
 
 export function WhenbeeHub() {
   const t = useTheme();
@@ -62,7 +56,25 @@ export function WhenbeeHub() {
     }, [refresh]),
   );
 
+  // Fire a shown impression once per pitchUnlocked state change.
+  // Keyed on pitchUnlocked so it fires at most once per transition.
+  const { pitchUnlocked } = vm.proReadiness;
+  useEffect(() => {
+    if (isPro) return;
+    analytics.capture(pitchUnlocked ? 'pro_reveal_shown' : 'ripening_pro_shown', {
+      surface: 'whenbee_hub',
+    });
+  }, [pitchUnlocked, isPro]);
+
   const isEmpty = vm.honestLogCount === 0;
+
+  // Sharpness flows LIVE into the ring — HoneyRing itself gates animate-vs-snap on
+  // focus (live growth animates; growth earned off-screen is already-full on
+  // arrival, no replay). Seal + stage stay deferred: those are once-per-arrival
+  // celebrations you want to actually witness when you land.
+  const shownSharpness = vm.leadSharpness;
+  const shownSealed = useFocusedValue(vm.tier === 'Honest');
+  const shownStage = useFocusedValue(vm.companion.stage);
 
   function openCategory(id: string) {
     router.push({ pathname: '/category/[category]', params: { category: id } });
@@ -82,6 +94,9 @@ export function WhenbeeHub() {
 
   const heroZone: ViewStyle = { alignItems: 'center', gap: t.space[3] };
   const zoneWrap: ViewStyle = { gap: t.space[2] };
+  // The Areas zone gets extra air above its label so it reads as a fresh section,
+  // not crowding the conditional card (BlindSpot/Discoveries) above it.
+  const areasZone: ViewStyle = { ...zoneWrap, marginTop: t.space[2] };
   const zoneLabel: TextStyle = { ...(type.eyebrow as unknown as TextStyle), color: t.colors.inkSoft };
   const zoneExplain: TextStyle = {
     ...(type.micro as unknown as TextStyle),
@@ -94,6 +109,21 @@ export function WhenbeeHub() {
     marginTop: t.space[2],
   };
 
+  // ── Ripening Pro card derivations (non-Pro path only) ────────────────────
+  // Mirror the same tier-index pattern as HoneycombStripPlaceholder.
+  const tierIdx = TIERS.indexOf(vm.tier);
+  const nextTierName =
+    tierIdx >= 0 && tierIdx < TIERS.length - 1 ? (TIERS[tierIdx + 1] ?? null) : null;
+
+  // Four key features shown in the card; waitLabels are honest, no-guilt.
+  const { perFeatureReady } = vm.proReadiness;
+  const ripeningFeatures = [
+    { id: 'confidence-band' as const, ready: perFeatureReady['confidence-band'], waitLabel: 'soon' },
+    { id: 'steals-your-time' as const, ready: perFeatureReady['steals-your-time'], waitLabel: 'soon' },
+    { id: 'day-capacity' as const, ready: perFeatureReady['day-capacity'], waitLabel: 'soon' },
+    { id: 'honest-week' as const, ready: perFeatureReady['honest-week'], waitLabel: 'about a week' },
+  ];
+
   return (
     <View style={{ gap: t.space[5] }}>
       {/* Header — title only; the ring + zones carry the context. */}
@@ -101,9 +131,9 @@ export function WhenbeeHub() {
 
       {/* HERO — honey ring + bee (no glow) + ring badge */}
       <View style={heroZone}>
-        <HoneyRing sharpness={vm.leadSharpness} sealed={vm.tier === 'Honest'}>
+        <HoneyRing sharpness={shownSharpness} sealed={shownSealed}>
           <WhenbeeAvatar
-            stage={vm.companion.stage}
+            stage={shownStage}
             seed={vm.companion.seed}
             driftHealth={vm.companion.driftHealth}
             name={vm.companion.name ?? undefined}
@@ -113,7 +143,7 @@ export function WhenbeeHub() {
             animated
           />
         </HoneyRing>
-        <RingBadge sharpness={vm.leadSharpness} />
+        <RingBadge sharpness={shownSharpness} />
       </View>
 
       {/* DISCOVERIES zone — shown once any aha card has been banked */}
@@ -140,7 +170,7 @@ export function WhenbeeHub() {
 
       {/* YOUR AREAS zone */}
       {categories.length > 0 ? (
-        <View style={zoneWrap}>
+        <View style={areasZone}>
           <Text style={zoneLabel}>Your areas</Text>
           <Text style={zoneExplain}>fill = how honest your guesses are · tap to tune</Text>
           <View style={{ gap: t.space[2] }}>
@@ -173,11 +203,20 @@ export function WhenbeeHub() {
           onPress={openDayHonest}
         />
       ) : (
-        <ProUpsellCard
-          title="Make my whole day honest"
-          note="Auto-pad your calendar with your real buffers."
-          onPress={openDayHonest}
-          accessibilityLabel="Go Pro and make your whole day honest"
+        <RipeningProCard
+          pitchUnlocked={vm.proReadiness.pitchUnlocked}
+          honeyPct={vm.honeyPct}
+          nextTierName={nextTierName}
+          logsToNext={logsToNextTier(vm.leadSharpness)}
+          features={ripeningFeatures}
+          onSeePro={() => {
+            analytics.capture('pro_reveal_tap', { surface: 'whenbee_hub' });
+            router.push({ pathname: '/(modals)/paywall', params: { trigger: 'pro_reveal' } });
+          }}
+          onPreview={() => {
+            analytics.capture('pro_preview_tap', { surface: 'whenbee_hub' });
+            router.push({ pathname: '/(modals)/paywall', params: { trigger: 'pro_preview' } });
+          }}
         />
       )}
     </View>

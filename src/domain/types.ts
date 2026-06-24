@@ -135,6 +135,10 @@ export interface TaskEvent {
   createdAt: number;
   suggestedHonestMin: number | null;
   reclaimDividendMin: number;
+  /** Local minute-of-day (0–1439) at the moment work STARTED, captured at log
+   *  time. null = no trustworthy start time (retroactive/backfilled) → excluded
+   *  from focus-window learning. Never recomputed from createdAt, never trained. */
+  startLocalMinute: number | null;
 }
 
 // ── Reverse Start-By planner ────────────────────────────────────────────────
@@ -203,6 +207,30 @@ export interface PlanResult {
   totalMin: number;
 }
 
+// ── Per-category goals (Pro, no-guilt) ────────────────────────────────────────
+
+/** A per-category, no-guilt accuracy goal (Pro). Loss-proof: `bestAccuracy` only
+ *  ever rises (max-latched); the target is the only thing that changes when a goal
+ *  is met and replaced. Never a streak, never a deadline. */
+export interface CategoryGoal {
+  categoryId: string;
+  /** Target accuracy 0..100 (engine sharpness scale; higher = tighter). */
+  targetAccuracy: number;
+  /** Best accuracy reached since this goal began — MONOTONIC. Drives progress. */
+  bestAccuracy: number;
+  /** Accuracy when the goal was set — the baseline the progress fills from. */
+  baselineAccuracy: number;
+  /** epoch ms the goal was set (display only, never a countdown). */
+  setAt: number;
+  /** True once bestAccuracy >= targetAccuracy has ever held (latched). */
+  met: boolean;
+}
+
+// ── Hyperfocus guardrail (Pro) ────────────────────────────────────────────────
+
+/** Hyperfocus guardrail trigger multiple of the honest number, or off. */
+export type GuardrailMultiple = 'off' | '1.5x' | '2x' | '3x';
+
 // ── Voice intake ────────────────────────────────────────────────────────────
 
 /** Where a spoken task's structuring came from. */
@@ -220,4 +248,171 @@ export interface ParsedTaskDraft {
   /** The raw STT transcript, always kept so the draft stays editable/inspectable. */
   rawTranscript: string;
   source: VoiceStructuringSource;
+}
+
+// ── Learned focus window inputs/outputs (Pro) — spec 14 ──────────────────────
+
+export interface FocusEventInput {
+  category: string;
+  estimateMin: number;
+  actualMin: number;
+  status: LogStatus;
+  startLocalMinute: number | null;
+  /** (nowMs − startedAt)/86_400_000 — computed by the caller (engine is clock-free). */
+  ageDays: number;
+  /** floor(startedAt / 86_400_000) — stable integer day index for distinct-day counts. */
+  dayKey: number;
+}
+
+export interface LearnFocusInput {
+  events: readonly FocusEventInput[];
+  fitByCategory: Record<string, { a: number; b: number }>;
+  shown: { startMin: number; endMin: number; lastMoveAtDays: number } | null;
+  /** Stable seed for the permutation test (caller derives from data; defaults inside if 0). */
+  seed?: number;
+}
+
+export interface LearnedFocusWindow {
+  startMin: number;
+  endMin: number;
+  basis: 'personal' | 'prior';
+  confidence: number;                 // 0–1, for wording only (never shown as %)
+  scoreByBin: number[];               // 38 bins, normalised [0,1] for the curve
+  sampleCount: number;
+  distinctDays: number;
+  held: boolean;                      // true → hysteresis kept the shown window
+}
+
+// ── Focus-window planner (Pro) ────────────────────────────────────────────────
+
+/** The focus-window fit verdict. Amber-never-red by construction. */
+export type FocusWindowVerdict = 'fits' | 'spills';
+
+/** One task placed by the focus-window fit (in-window or spilled). */
+export interface FocusWindowPlacement {
+  id: string;
+  label: string;
+  honestMin: number;
+  /** true = fits inside the window; false = spilled past it. */
+  inWindow: boolean;
+}
+
+/** Pure result of the focus-window fit (minutes; clock/time-of-day supplied by caller). */
+export interface FocusWindowResult {
+  /** Fixed window length = windowEndMin − windowStartMin, floored at 0. */
+  windowMin: number;
+  /** Sum of honestMin of in-window tasks. */
+  packedMin: number;
+  /** In-window placements in priority order. */
+  inWindow: FocusWindowPlacement[];
+  /** Spilled placements in priority order. */
+  spilled: FocusWindowPlacement[];
+  verdict: FocusWindowVerdict;
+  /** inWindow.length */
+  fitCount: number;
+  /** inWindow.length + spilled.length */
+  totalCount: number;
+  /** 'prior' if every task fell back to priors; else 'personal'. */
+  basis: 'personal' | 'prior';
+}
+
+// ── Routines (Pro) ────────────────────────────────────────────────────────────
+
+/** A saved, reusable, learned multi-step sequence (Pro). */
+export interface Routine {
+  id: string;
+  name: string;
+  /** Optional local be-done-by minute-of-day (0–1439), or null for no anchor. */
+  doneByMinuteOfDay: number | null;
+  /** Learned chain-level transition factor (≥1). Captures the seam time between
+   *  steps that per-step estimates miss. Defaults to TRANSITION_PRIOR until runs
+   *  exist; only ever moves via EWMA over full timed runs. */
+  transitionFactor: number;
+  /** Count of completed full runs that have trained the routine. Monotonic. */
+  runCount: number;
+  createdAt: number;
+  updatedAt: number;
+}
+
+/** One ordered step within a routine. Order is `position` (0-based, contiguous). */
+export interface RoutineStep {
+  id: string;
+  routineId: string;
+  position: number;
+  label: string;
+  category: Category;
+  /** The user's guess for this step (minutes). The learned per-step honest number
+   *  is derived: round5(guessMin × M_for(category|recurringKey)). */
+  guessMin: number;
+}
+
+/** Per-step recurring key, namespaced so it never collides with free recurring
+ *  keys. Shape: `routine:{routineId}:{stepId}`. */
+export type RoutineStepKey = `routine:${string}:${string}`;
+
+/** The derived, display-ready honest summary of a whole routine. */
+export interface RoutineSummary {
+  routineId: string;
+  /** round5(sum(per-step honest) × transitionFactor). */
+  honestTotalMin: number;
+  /** 'personal' once enough full runs exist, else 'prior'. */
+  basis: 'personal' | 'prior';
+  label: string; // "based on your last N runs" | "based on typical patterns"
+  runCount: number;
+  steps: { stepId: string; honestMin: number }[];
+}
+
+// ── Honest Week / Month review ritual (Pro) ───────────────────────────────────
+
+/** Whether a review covers the week that just ended or the previous calendar month. */
+export type ReviewPeriodKind = 'week' | 'month';
+
+/** A closed review window, resolved from a `nowMs` against local-day boundaries. */
+export interface ReviewPeriod {
+  /** Stable id for the period (e.g. `2026-W25` / `2026-05`). Drives seen-state + question rotation. */
+  id: string;
+  kind: ReviewPeriodKind;
+  /** Local-midnight start (inclusive). */
+  startMs: number;
+  /** Local-midnight end (exclusive — the next period's start). */
+  endMs: number;
+  /** Human label for the cover card (e.g. `Jun 9 – Jun 15` / `May`). */
+  label: string;
+}
+
+/** One category whose multiplier moved toward 1.0 over the review window. */
+export interface TightenedRow {
+  categoryId: string;
+  categoryName: string;
+  /** Geometric-mean multiplier over the earliest half of the window's logs. */
+  earlyMultiplier: number;
+  /** Geometric-mean multiplier over the most recent half. */
+  recentMultiplier: number;
+}
+
+/** The single most surprising log in a window — reused from the Patterns
+ *  biggest-surprise derivation (`BiggestSurpriseCard` references this shape). */
+export interface ReviewBiggestSurprise {
+  categoryId: string;
+  categoryName: string;
+  estimateMin: number;
+  actualMin: number;
+  /** clamped ratio actual/estimate. */
+  ratio: number;
+}
+
+/** A calm, recomputed-live recap of a closed period. No reclaim, no score, no
+ *  guilt — every card field is null/empty when the data hasn't earned it. */
+export interface ReviewSummary {
+  period: ReviewPeriod;
+  loggedCount: number;
+  loggedMinutes: number;
+  /** Verbal accuracy read (sharper / looser-is-data / steady); null below the gate. */
+  accuracyLine: string | null;
+  /** Optional "you're sharpest in the …" phrase from the accuracy correlations. */
+  sharpestPhrase: string | null;
+  tightened: TightenedRow[];
+  biggestSurprise: ReviewBiggestSurprise | null;
+  /** A rotating reflective question, deterministic by period id. Always present. */
+  reflection: string;
 }

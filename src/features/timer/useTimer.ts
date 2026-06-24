@@ -1,9 +1,11 @@
-import { useCallback, useEffect, useMemo, useRef } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   useSharedValue,
   useDerivedValue,
   useFrameCallback,
+  useAnimatedReaction,
   useReducedMotion,
+  runOnJS,
   type SharedValue,
 } from 'react-native-reanimated';
 import { router } from 'expo-router';
@@ -20,6 +22,8 @@ import {
   ensureNotificationPermission,
   scheduleTimerDone,
   cancelTimerDone,
+  scheduleGuardCheckIn,
+  cancelGuardCheckIn,
 } from '@/src/services/timerNotifications';
 import {
   startFinishTimeActivity,
@@ -27,6 +31,7 @@ import {
   updateFinishTimeActivity,
 } from '@/src/services/liveActivity';
 import { useEntitlement } from '@/src/features/paywall/useEntitlement';
+import { guardrailThresholdMin } from '@/src/engine';
 import type { AdaptSpeed } from '@/src/domain/types';
 
 // ──────────────────────────────────────────────────────────────────────────────
@@ -63,6 +68,13 @@ export interface TimerParams {
    * passed from Today or Add-Task.
    */
   suggestedHonestMin?: number;
+  /**
+   * Set to true when the screen was opened via the arc Timer button after calling
+   * quickStart(). The store already has an isRunning quick-start session; the
+   * mount effect must NOT call start() (which would reset isQuickStart to false
+   * and overwrite the bare session with placeholder params).
+   */
+  isQuickNav?: boolean;
 }
 
 export interface UseTimerResult {
@@ -79,18 +91,48 @@ export interface UseTimerResult {
   label: string;
   guessMin: number;
   reducedMotion: boolean;
-  onStopAndLog: () => Promise<void>;
+  /** True when this session was started without a category (quick-start mode). */
+  isQuickStart: boolean;
+  /**
+   * Freeze the clock (stop + record actualMin) WITHOUT logging a calibration
+   * event. Used by the quick-start capture sheet: call this on Stop tap so the
+   * elapsed time is locked in; the sheet then calls onStopAndLog or onAbandon
+   * once the user chooses Save / Skip.
+   *
+   * Returns { actualMin } so the capture sheet can pass it through if needed.
+   * Only meaningful for quick-start sessions; the normal Stop button never calls it.
+   */
+  onFreezeForCapture: () => { actualMin: number };
+  /**
+   * Stop the timer and write a calibration log. For the quick-start capture-sheet
+   * Save path, pass the user-chosen labelOverride and categoryOverride — the store
+   * was already cleared by onFreezeForCapture so reading it would return the
+   * quick-start defaults. The normal timer Stop path calls this with no args.
+   */
+  onStopAndLog: (labelOverride?: string, categoryOverride?: string) => Promise<void>;
   onAbandon: () => Promise<void>;
+  /**
+   * True once the hyperfocus guardrail (Pro, opt-in) has crossed its threshold for
+   * this foregrounded session and the calm amber check-in card should mount. Fires
+   * at most once per session (de-duped against the background notification).
+   */
+  guardDue: boolean;
+  /** Dismiss the check-in card and stay on the timer. The session is already marked
+   *  nudged, so nothing fires again this session. The calm, no-pressure answer. */
+  keepGoing: () => void;
+  /** Dismiss the check-in card and run the normal Stop-and-log flow. */
+  wrapUp: () => Promise<void>;
 }
 
 export function useTimer(params: TimerParams): UseTimerResult {
-  const { taskId, label, category, estimateMin, guessMin, suggestedHonestMin = estimateMin } =
+  const { taskId, label, category, estimateMin, guessMin, suggestedHonestMin = estimateMin, isQuickNav = false } =
     params;
   const reducedMotion = useReducedMotion();
 
   const start = useTimerStore((s) => s.start);
   const stop = useTimerStore((s) => s.stop);
   const cancel = useTimerStore((s) => s.cancel);
+  const isQuickStart = useTimerStore((s) => s.isQuickStart);
   const applyLog = useCalibrationStore((s) => s.applyLog);
 
   // ATTACH vs RESTART: if a session is already running for THIS task (reopened from
@@ -106,10 +148,31 @@ export function useTimer(params: TimerParams): UseTimerResult {
   const startedFresh = useRef(false);
   const overrunTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const startedAtRef = useRef<number | null>(null);
+  /**
+   * Stores the actualMin computed by onFreezeForCapture so onStopAndLog can use
+   * it when it fires after the capture sheet's "Save". null = not yet frozen
+   * (normal flow: onStopAndLog calls stop() itself).
+   */
+  const frozenActualMinRef = useRef<number | null>(null);
+  const markGuardNudged = useTimerStore((s) => s.markGuardNudged);
+  const [guardDue, setGuardDue] = useState(false);
+  // Hyperfocus guardrail (Pro, opt-in): the foreground threshold in SECONDS. Set on
+  // the UI thread at session start so the reaction below compares against elapsedSec
+  // without reading the setting/entitlement each frame. -1 = not armed (off / not Pro
+  // / already nudged / no usable honest number). A shared value (not a ref) so the
+  // worklet reliably sees the value the fresh-session effect writes after commit.
+  const guardThresholdSec = useSharedValue(-1);
   if (startedAtRef.current === null) {
     const s = useTimerStore.getState();
     const sameTask = taskId ? s.taskId === taskId : s.taskLabel === label;
-    if (s.isRunning && sameTask && s.startedAt !== null) {
+    // Quick-nav: the arc Timer button called quickStart() then navigated here
+    // immediately. The store has a running isQuickStart session but sameTask would
+    // be false (store taskLabel='' vs label='Focus session'). Detect this case
+    // explicitly so we ATTACH rather than calling start() (which would set
+    // isQuickStart=false and overwrite the session with placeholder params).
+    const isAttachableQuickStart = isQuickNav && s.isRunning && s.isQuickStart;
+    const canAttach = s.startedAt !== null && (sameTask || isAttachableQuickStart);
+    if (s.isRunning && canAttach && s.startedAt !== null) {
       startedAtRef.current = s.startedAt; // attach to the running session
     } else {
       startedAtRef.current = Date.now(); // fresh session — store write deferred below
@@ -149,12 +212,37 @@ export function useTimer(params: TimerParams): UseTimerResult {
     overrunTimerRef.current = setTimeout(() => {
       updateFinishTimeActivity({ isOverrun: true });
     }, delay);
-    // Only schedule the "estimate is up" ping when the user has opted into
-    // reminders (off by default). Read non-reactively — this effect runs once.
+
+    // Hyperfocus guardrail (Pro, opt-in): arm at session start. Non-reactive reads —
+    // this effect runs once. Gate on Pro + the setting; a session that already nudged
+    // (resumed after a kill) never re-arms. The foreground threshold is stashed in a
+    // ref regardless of reminders; the BACKGROUND ping rides the same reminders gate
+    // the "estimate is up" ping uses (notifications are opt-in).
+    const guardSetting = useSettingsStore.getState().hyperfocusGuard;
+    const guardPro = useEntitlement.getState().isPro;
+    const alreadyNudged = useTimerStore.getState().guardNudged;
+    const guardThresholdMin =
+      guardPro && !alreadyNudged
+        ? guardrailThresholdMin({ honestMin: suggestedHonestMin, setting: guardSetting })
+        : null;
+    if (guardThresholdMin != null) {
+      analytics.capture('guardrail_armed', {
+        setting: guardSetting,
+        threshold_min: guardThresholdMin,
+        honest_min: suggestedHonestMin,
+      });
+    }
+    guardThresholdSec.set(guardThresholdMin != null ? guardThresholdMin * 60 : -1);
+
+    // Only schedule the "estimate is up" ping (and the guard ping) when the user has
+    // opted into reminders (off by default). Read non-reactively — this effect runs once.
     if (useSettingsStore.getState().remindersEnabled) {
       void (async () => {
         const granted = await ensureNotificationPermission();
         if (granted) await scheduleTimerDone({ label, startedAt, estimateMin });
+        if (granted && guardThresholdMin != null) {
+          await scheduleGuardCheckIn({ label, startedAt, thresholdMin: guardThresholdMin });
+        }
       })();
     }
     // Runs exactly once for a fresh session; route params are stable for the
@@ -204,14 +292,69 @@ export function useTimer(params: TimerParams): UseTimerResult {
   // but if a new sheet instance mounts it will schedule its own flip.
   useEffect(() => () => clearOverrunTimer(), [clearOverrunTimer]);
 
-  const onStopAndLog = useCallback(async () => {
+  // ── Hyperfocus guardrail — foreground driver ────────────────────────────────
+  // Fire EXACTLY ONCE the moment elapsed crosses the armed threshold, mirroring the
+  // FinishTime/PaceLabel pattern: the comparison runs on the UI thread; the JS work
+  // (state, store, analytics — none of which are worklets) hops the boundary via
+  // runOnJS. The threshold (seconds) lives in a ref so this never reads the
+  // setting/entitlement per frame. No threshold armed → the reaction is a cheap no-op.
+  const fireGuard = useCallback(
+    (elapsedMin: number, thresholdMin: number) => {
+      // Re-check the latched flag on the JS thread (the background notification may
+      // have already nudged); one nudge per session, never both channels.
+      if (useTimerStore.getState().guardNudged) return;
+      markGuardNudged();
+      setGuardDue(true);
+      // Foreground won — don't also fire the background ping for this session.
+      void cancelGuardCheckIn();
+      analytics.capture('guardrail_shown', {
+        channel: 'in_app',
+        elapsed_min: elapsedMin,
+        threshold_min: thresholdMin,
+      });
+    },
+    [markGuardNudged],
+  );
+
+  useAnimatedReaction(
+    () => {
+      const th = guardThresholdSec.value;
+      return th >= 0 && elapsedSec.value >= th ? th : -1;
+    },
+    (thSec, prev) => {
+      if (thSec >= 0 && (prev == null || prev < 0)) {
+        runOnJS(fireGuard)(Math.floor(elapsedSec.value / 60), Math.round(thSec / 60));
+      }
+    },
+    [fireGuard],
+  );
+
+  const onStopAndLog = useCallback(async (labelOverride?: string, categoryOverride?: string) => {
     clearOverrunTimer();
-    const { actualMin } = stop(Date.now());
+    // For quick-start sessions the clock was already frozen by onFreezeForCapture
+    // before the capture sheet was shown. Use the pre-computed value; for normal
+    // timers frozenActualMinRef is null and we stop the clock right now.
+    let actualMin: number;
+    if (frozenActualMinRef.current !== null) {
+      actualMin = frozenActualMinRef.current;
+      frozenActualMinRef.current = null;
+    } else {
+      ({ actualMin } = stop(Date.now()));
+    }
     void cancelTimerDone();
+    void cancelGuardCheckIn();
     endFinishTimeActivity();
 
+    // For the quick-start capture-sheet Save path, the caller passes the user-chosen
+    // label + category as explicit overrides — the store was already cleared by
+    // onFreezeForCapture before the sheet was shown, so reading the store would
+    // return the quick-start defaults (empty label, null category). Fall back to the
+    // closure-captured route params for normal (non-quick-start) timer stops.
+    const resolvedLabel = labelOverride ?? label;
+    const resolvedCategory = categoryOverride ?? category;
+
     const adaptSpeed: AdaptSpeed =
-      useCategoriesStore.getState().categories.find((c) => c.id === category)?.adaptSpeed ??
+      useCategoriesStore.getState().categories.find((c) => c.id === resolvedCategory)?.adaptSpeed ??
       'balanced';
 
     // estimateMin here = the user's GUESS (ratio = actual / guess), NOT the
@@ -219,21 +362,22 @@ export function useTimer(params: TimerParams): UseTimerResult {
     // suggestedHonestMin = the honest number the user SAW (defaults to estimateMin
     // which IS the honest number passed from Today / Add-Task).
     const result = await applyLog({
-      category,
+      category: resolvedCategory,
       estimateMin: guessMin,
       actualMin,
       status: 'completed',
       source: 'timed',
       adaptSpeed,
-      label,
+      label: resolvedLabel,
       suggestedHonestMin,
+      startedAt: startedAtRef.current ?? undefined,
     });
 
     useRewardStore.getState().setReward({
       actualMin,
       guessMin,
-      category,
-      label,
+      category: resolvedCategory,
+      label: resolvedLabel,
       result,
     });
 
@@ -257,10 +401,28 @@ export function useTimer(params: TimerParams): UseTimerResult {
     router.replace('/(modals)/reward');
   }, [stop, applyLog, category, guessMin, label, taskId, suggestedHonestMin, clearOverrunTimer]);
 
+  /**
+   * Freeze the elapsed time WITHOUT writing a calibration log. Stores the
+   * `actualMin` in a ref so `onStopAndLog` (called after the capture sheet's
+   * Save action) uses the value at the moment the user tapped Stop rather than
+   * the time at which they tapped Save (which may be seconds later).
+   *
+   * Only the quick-start capture sheet calls this; normal timers skip it.
+   */
+  const onFreezeForCapture = useCallback((): { actualMin: number } => {
+    const result = stop(Date.now());
+    frozenActualMinRef.current = result.actualMin;
+    void cancelTimerDone();
+    void cancelGuardCheckIn();
+    endFinishTimeActivity();
+    return result;
+  }, [stop]);
+
   const onAbandon = useCallback(async () => {
     clearOverrunTimer();
     cancel();
     void cancelTimerDone();
+    void cancelGuardCheckIn();
     endFinishTimeActivity();
     const adaptSpeed: AdaptSpeed =
       useCategoriesStore.getState().categories.find((c) => c.id === category)?.adaptSpeed ??
@@ -274,9 +436,30 @@ export function useTimer(params: TimerParams): UseTimerResult {
       source: 'timed',
       adaptSpeed,
       label,
+      startedAt: startedAtRef.current ?? undefined,
     });
     router.dismiss();
   }, [cancel, applyLog, category, guessMin, label, clearOverrunTimer]);
+
+  // Guardrail card answers. The session was already marked nudged when the card
+  // mounted, so neither answer re-arms anything. "Keep going" is the calm default
+  // (just dismiss); "Wrap up" runs the normal Stop-and-log flow.
+  const keepGoing = useCallback(() => {
+    setGuardDue(false);
+    analytics.capture('guardrail_resolved', {
+      action: 'keep_going',
+      elapsed_min: Math.floor(elapsedSec.get() / 60),
+    });
+  }, [elapsedSec]);
+
+  const wrapUp = useCallback(async () => {
+    setGuardDue(false);
+    analytics.capture('guardrail_resolved', {
+      action: 'wrap_up',
+      elapsed_min: Math.floor(elapsedSec.get() / 60),
+    });
+    await onStopAndLog();
+  }, [elapsedSec, onStopAndLog]);
 
   // NOTE: no destroy-on-dismiss. Closing the sheet MINIMIZES the timer — a running
   // session is cleared ONLY by an explicit Stop (onStopAndLog) or Abandon
@@ -293,7 +476,12 @@ export function useTimer(params: TimerParams): UseTimerResult {
     label,
     guessMin,
     reducedMotion,
+    isQuickStart,
+    onFreezeForCapture,
     onStopAndLog,
     onAbandon,
+    guardDue,
+    keepGoing,
+    wrapUp,
   };
 }

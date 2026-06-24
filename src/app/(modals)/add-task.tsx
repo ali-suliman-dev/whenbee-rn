@@ -1,7 +1,8 @@
 import { useEffect, useRef, useState } from 'react';
-import { View, Text, TextInput, Pressable, ScrollView, type ViewStyle, type TextStyle } from 'react-native';
-import { router } from 'expo-router';
+import { View, Text, TextInput, Pressable, ScrollView, KeyboardAvoidingView, Platform, type ViewStyle, type TextStyle } from 'react-native';
+import { router, useLocalSearchParams } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Screen } from '@/src/components/Screen';
 import { AppButton } from '@/src/components/AppButton';
 import { SheetGrabber } from '@/src/components/SheetGrabber';
@@ -24,8 +25,11 @@ import { HonestSuggestionCard } from '@/src/features/shared/HonestSuggestionCard
 
 export default function AddTask() {
   const t = useTheme();
+  const insets = useSafeAreaInsets();
   const toastDismissMs = t.motion.pulse; // let the toast land before the sheet closes
-  const a = useAddTask();
+  // Arrived from the trio mic quick-action → title pre-filled from the transcript.
+  const { title: spokenTitle } = useLocalSearchParams<{ title?: string }>();
+  const a = useAddTask(spokenTitle);
   const [toastVisible, setToastVisible] = useState(false);
   const [addingCategory, setAddingCategory] = useState(false);
   const [newCategory, setNewCategory] = useState('');
@@ -93,95 +97,113 @@ export default function AddTask() {
     backgroundColor: newCategory.trim().length > 0 ? t.colors.primary : t.colors.surfaceSunken,
   };
 
+  const footerStyle: ViewStyle = {
+    borderTopWidth: t.borderWidth.hairline,
+    borderTopColor: t.colors.hairline,
+    paddingTop: t.space[3],
+    paddingBottom: insets.bottom + t.space[3],
+    gap: t.space[2],
+  };
+
   return (
     <Screen>
-      <ScrollView
-        contentContainerStyle={{ gap: t.space[5], paddingTop: t.space[3], paddingBottom: t.space[6] }}
-        showsVerticalScrollIndicator={false}
+      <KeyboardAvoidingView
+        style={{ flex: 1 }}
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
       >
-        <SheetGrabber />
+        <ScrollView
+          style={{ flex: 1 }}
+          contentContainerStyle={{ gap: t.space[5], paddingTop: t.space[3], paddingBottom: t.space[4] }}
+          showsVerticalScrollIndicator={false}
+        >
+          <SheetGrabber />
 
-        <View style={{ gap: t.space[1] }}>
-          <Text style={heading}>New task</Text>
-          <Text style={sub}>What are you working on?</Text>
-        </View>
+          <View style={{ gap: t.space[1] }}>
+            <Text style={heading}>New task</Text>
+            <Text style={sub}>What are you working on?</Text>
+          </View>
 
-        <View style={{ gap: t.space[2] }}>
-          <Text style={fieldLabel}>TASK</Text>
-          <TaskTitleField
-            variant="boxed"
-            value={a.title}
-            onChangeText={a.setTitle}
-            placeholder="e.g. Reply to that email"
-            returnKeyType="done"
-            accessibilityLabel="Task title"
-          />
-        </View>
+          <View style={{ gap: t.space[2] }}>
+            <Text style={fieldLabel}>TASK</Text>
+            <TaskTitleField
+              variant="boxed"
+              value={a.title}
+              onChangeText={a.setTitle}
+              placeholder="e.g. Reply to that email"
+              returnKeyType="done"
+              accessibilityLabel="Task title"
+              // Title's already filled when spoken — don't grab focus over the
+              // keyboard so the user can go straight to the guess field.
+              autoFocus={!spokenTitle}
+            />
+          </View>
 
-        <View style={{ gap: t.space[2] }}>
-          <Text style={fieldLabel}>CATEGORY</Text>
-          <CategoryChips
-            categories={a.categories}
-            value={a.category}
-            onChange={a.setCategory}
-            onAddNew={() => setAddingCategory(true)}
-            guessedId={a.guessedCategory}
-            usage={a.usage}
-          />
-          {a.guessedCategory && a.category === a.guessedCategory ? (
-            <View style={guessHint}>
-              <Ionicons name="bulb-outline" size={t.iconSize.sm} color={t.colors.primary} />
-              <Text style={guessHintText}>
-                Guessed {a.categories.find((c) => c.id === a.guessedCategory)?.name} · tap to change
-              </Text>
-            </View>
-          ) : null}
-          {addingCategory ? (
-            <View style={newCatRow}>
-              <TextInput
-                style={[inputText, { flex: 1, paddingVertical: t.space[2] }]}
-                value={newCategory}
-                onChangeText={setNewCategory}
-                onSubmitEditing={confirmNewCategory}
-                placeholder="Name a new category"
-                placeholderTextColor={t.colors.inkSoft}
-                autoFocus
-                returnKeyType="done"
-                accessibilityLabel="New category name"
-              />
-              <Pressable
-                onPress={confirmNewCategory}
-                accessibilityRole="button"
-                accessibilityLabel="Add category"
-                hitSlop={6}
-                style={confirmCatBtn}
-              >
-                <Ionicons
-                  name="checkmark"
-                  size={t.iconSize.md}
-                  color={newCategory.trim().length > 0 ? t.colors.onIndigo : t.colors.inkSoft}
+          <View style={{ gap: t.space[2] }}>
+            <Text style={fieldLabel}>CATEGORY</Text>
+            <CategoryChips
+              categories={a.categories}
+              value={a.category}
+              onChange={a.setCategory}
+              onAddNew={() => setAddingCategory(true)}
+              guessedId={a.guessedCategory}
+              usage={a.usage}
+            />
+            {a.guessedCategory && a.category === a.guessedCategory ? (
+              <View style={guessHint}>
+                <Ionicons name="bulb-outline" size={t.iconSize.sm} color={t.colors.primary} />
+                <Text style={guessHintText}>
+                  Guessed {a.categories.find((c) => c.id === a.guessedCategory)?.name} · tap to change
+                </Text>
+              </View>
+            ) : null}
+            {addingCategory ? (
+              <View style={newCatRow}>
+                <TextInput
+                  style={[inputText, { flex: 1, paddingVertical: t.space[2] }]}
+                  value={newCategory}
+                  onChangeText={setNewCategory}
+                  onSubmitEditing={confirmNewCategory}
+                  placeholder="Name a new category"
+                  placeholderTextColor={t.colors.inkSoft}
+                  autoFocus
+                  returnKeyType="done"
+                  accessibilityLabel="New category name"
                 />
-              </Pressable>
-            </View>
+                <Pressable
+                  onPress={confirmNewCategory}
+                  accessibilityRole="button"
+                  accessibilityLabel="Add category"
+                  hitSlop={6}
+                  style={confirmCatBtn}
+                >
+                  <Ionicons
+                    name="checkmark"
+                    size={t.iconSize.md}
+                    color={newCategory.trim().length > 0 ? t.colors.onIndigo : t.colors.inkSoft}
+                  />
+                </Pressable>
+              </View>
+            ) : null}
+          </View>
+
+          <View style={{ gap: t.space[2] }}>
+            <Text style={fieldLabel}>YOUR GUESS</Text>
+            <TimeField value={a.guessMin} onChange={a.setGuessMin} />
+          </View>
+
+          {a.suggestion ? (
+            <HonestSuggestionCard
+              honestMinutes={a.suggestion.honestMinutes}
+              guessMinutes={a.suggestion.guessMinutes}
+              confidence={a.suggestion.confidence}
+              range={a.suggestion.range}
+              preEstimate={a.preEstimate}
+            />
           ) : null}
-        </View>
+        </ScrollView>
 
-        <View style={{ gap: t.space[2] }}>
-          <Text style={fieldLabel}>YOUR GUESS</Text>
-          <TimeField value={a.guessMin} onChange={a.setGuessMin} />
-        </View>
-
-        {a.suggestion ? (
-          <HonestSuggestionCard
-            honestMinutes={a.suggestion.honestMinutes}
-            guessMinutes={a.suggestion.guessMinutes}
-            confidence={a.suggestion.confidence}
-            range={a.suggestion.range}
-            preEstimate={a.preEstimate}
-          />
-        ) : null}
-
-        <View style={{ gap: t.space[2], marginTop: -t.space[3] }}>
+        {/* Pinned CTA footer — sits in the lower-third thumb zone, rises with keyboard */}
+        <View style={footerStyle}>
           <AppButton
             label="Add & start timer"
             variant="indigo"
@@ -197,7 +219,7 @@ export default function AddTask() {
             onPress={handleAddToToday}
           />
         </View>
-      </ScrollView>
+      </KeyboardAvoidingView>
 
       <Toast message="Added to today" visible={toastVisible} />
     </Screen>

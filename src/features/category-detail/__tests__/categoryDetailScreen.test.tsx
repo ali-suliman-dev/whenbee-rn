@@ -29,6 +29,7 @@ function event(over: Partial<TaskEventRow>): TaskEventRow {
     createdAt: T0,
     suggestedHonestMin: null,
     reclaimDividendMin: 0,
+    startLocalMinute: null,
     ...over,
   };
 }
@@ -74,8 +75,9 @@ describe('CategoryDetailScreen', () => {
     render(<CategoryDetailScreen />);
 
     // n=8 but the spread of clamped ratios (CV ≈ 0.38 > 0.35) keeps confidence at
-    // 'setting', so the hero shows the band + a learning line, not the tight ~30.
-    expect(await screen.findByText(/Getting clearer/)).toBeOnTheScreen();
+    // 'setting', so the hero shows the range band + tier meaning, not the tight ~30.
+    expect(await screen.findByText('YOUR HONEST RANGE')).toBeOnTheScreen();
+    expect(screen.getByText('still sharpening your pace')).toBeOnTheScreen();
     expect(screen.queryByText('~30')).toBeNull();
   });
 
@@ -102,9 +104,10 @@ describe('CategoryDetailScreen', () => {
 
     render(<CategoryDetailScreen />);
 
-    // round_to_5(15 × 2.0) = 30 → "~30", with the runs multiplier line.
+    // round_to_5(15 × 2.0) = 30 → "~30", with the multiplier in the meta line ("2.0×").
     expect(await screen.findByText('~30')).toBeOnTheScreen();
-    expect(screen.getByText('runs 2.0×')).toBeOnTheScreen();
+    // "2.0×" appears in the hero meta line AND the recent rows — just assert ≥1.
+    expect(screen.getAllByText('2.0×').length).toBeGreaterThan(0);
   });
 
   it('shows the AhaCard only when an insight is present', async () => {

@@ -1,6 +1,6 @@
-import { View, Text, type ViewStyle, type TextStyle } from 'react-native';
-import { useTheme } from '@/src/theme/useTheme';
 import { type } from '@/src/theme/typography';
+import { useTheme } from '@/src/theme/useTheme';
+import { Text, View, type TextStyle, type ViewStyle } from 'react-native';
 import { ringCopy } from './ringCopy';
 
 // Compact 2-line tier badge under the honey ring. Line 1: tier word + overall %.
@@ -11,7 +11,7 @@ export function RingBadge({ sharpness }: { sharpness: number }) {
 
   const wrap: ViewStyle = {
     alignSelf: 'center',
-    backgroundColor: t.colors.surfaceRaised,
+    backgroundColor: t.colors.surface,
     borderWidth: t.borderWidth.hairline,
     borderColor: t.colors.hairline,
     borderRadius: t.radii.card,

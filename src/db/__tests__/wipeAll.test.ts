@@ -13,7 +13,7 @@ describe('Database.wipeAll', () => {
     await db.insertTaskEvent({
       id: 'e1', category: 'cooking', label: null, estimateMin: 15, actualMin: 20,
       status: 'completed', source: 'timed', startedAt: null, endedAt: 2000,
-      createdAt: 2000, suggestedHonestMin: 18, reclaimDividendMin: 2,
+      createdAt: 2000, suggestedHonestMin: 18, reclaimDividendMin: 2, startLocalMinute: null,
     });
     await db.insertDiscovery({
       id: 'd1', categoryId: 'cooking', multiplier: 1.3, honestForFifteen: 20,

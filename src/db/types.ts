@@ -40,6 +40,7 @@ export interface TaskEventRow {
   createdAt: number;
   suggestedHonestMin: number | null;
   reclaimDividendMin: number;
+  startLocalMinute: number | null;
 }
 
 /** Per recurring-task rolling stats (keyed by `${categoryId}:${normalizedLabel}`). */
@@ -72,6 +73,27 @@ export interface DiscoveryRow {
   honestForFifteen: number;
   headline: string;
   discoveredAt: number;
+}
+
+/** A saved routine row (Pro). */
+export interface RoutineRow {
+  id: string;
+  name: string;
+  doneByMinuteOfDay: number | null;
+  transitionFactor: number;
+  runCount: number;
+  createdAt: number;
+  updatedAt: number;
+}
+
+/** One ordered step row within a routine (Pro). */
+export interface RoutineStepRow {
+  id: string;
+  routineId: string;
+  position: number;
+  label: string;
+  category: string;
+  guessMin: number;
 }
 
 /** A context tag attached to a task event (capture-only; never read by the model). */
