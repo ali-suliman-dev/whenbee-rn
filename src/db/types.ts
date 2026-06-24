@@ -82,6 +82,10 @@ export interface RoutineRow {
   doneByMinuteOfDay: number | null;
   transitionFactor: number;
   runCount: number;
+  /** Comma-joined weekday integers (e.g. "1,3,5"). Empty string = unscheduled. */
+  scheduleDays: string;
+  alertEnabled: boolean;
+  alertLeadMin: number;
   createdAt: number;
   updatedAt: number;
 }

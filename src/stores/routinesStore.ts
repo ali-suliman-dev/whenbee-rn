@@ -59,6 +59,10 @@ interface RoutineDraft {
   name: string;
   doneByMinuteOfDay: number | null;
   steps: DraftStep[];
+  /** Weekdays on which this routine is scheduled (0–6). Empty = unscheduled. */
+  scheduleDays: number[];
+  alertEnabled: boolean;
+  alertLeadMin: number;
 }
 
 /** Per-step status during a live run. A skip is first-class, never a failure. */
@@ -83,6 +87,9 @@ const emptyDraft: RoutineDraft = {
   name: '',
   doneByMinuteOfDay: null,
   steps: [],
+  scheduleDays: [],
+  alertEnabled: false,
+  alertLeadMin: 0,
 };
 
 interface RoutinesState {
@@ -101,6 +108,8 @@ interface RoutinesState {
   // ── Build draft ──────────────────────────────────────────────────────────────
   setName: (name: string) => void;
   setDoneBy: (minuteOfDay: number | null) => void;
+  setSchedule: (days: number[]) => void;
+  setAlert: (enabled: boolean, leadMin: number) => void;
   addStep: (step: { label: string; category: string; guessMin: number }) => void;
   editStep: (id: string, patch: Partial<Omit<DraftStep, 'id'>>) => void;
   removeStep: (id: string) => void;
@@ -207,6 +216,11 @@ export const useRoutinesStore = create<RoutinesState>()(
       setDoneBy: (minuteOfDay) =>
         set((s) => ({ draft: { ...s.draft, doneByMinuteOfDay: minuteOfDay } })),
 
+      setSchedule: (days) => set((s) => ({ draft: { ...s.draft, scheduleDays: days } })),
+
+      setAlert: (enabled, leadMin) =>
+        set((s) => ({ draft: { ...s.draft, alertEnabled: enabled, alertLeadMin: leadMin } })),
+
       addStep: ({ label, category, guessMin }) =>
         set((s) => ({
           draft: {
@@ -254,6 +268,9 @@ export const useRoutinesStore = create<RoutinesState>()(
             editingId: loaded.routine.id,
             name: loaded.routine.name,
             doneByMinuteOfDay: loaded.routine.doneByMinuteOfDay,
+            scheduleDays: loaded.routine.scheduleDays,
+            alertEnabled: loaded.routine.alertEnabled,
+            alertLeadMin: loaded.routine.alertLeadMin,
             steps: loaded.steps
               .slice()
               .sort((a, b) => a.position - b.position)
@@ -280,6 +297,9 @@ export const useRoutinesStore = create<RoutinesState>()(
           doneByMinuteOfDay: draft.doneByMinuteOfDay,
           transitionFactor: existing?.routine.transitionFactor ?? TRANSITION_PRIOR,
           runCount: existing?.routine.runCount ?? 0,
+          scheduleDays: draft.scheduleDays,
+          alertEnabled: draft.alertEnabled,
+          alertLeadMin: draft.alertLeadMin,
           createdAt: existing?.routine.createdAt ?? now,
           updatedAt: now,
         };

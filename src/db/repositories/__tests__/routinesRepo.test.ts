@@ -9,6 +9,9 @@ function seed(): { routine: Routine; steps: RoutineStep[] } {
     doneByMinuteOfDay: 9 * 60,
     transitionFactor: 1.15,
     runCount: 0,
+    scheduleDays: [],
+    alertEnabled: false,
+    alertLeadMin: 0,
     createdAt: 1000,
     updatedAt: 1000,
   };
@@ -46,7 +49,7 @@ it('update replaces the step set wholesale', async () => {
     { id: 's4', routineId: 'r1', position: 0, label: 'Meds', category: 'admin', guessMin: 5 },
     { id: 's5', routineId: 'r1', position: 1, label: 'Shower', category: 'getting-ready', guessMin: 20 },
   ];
-  await repo.update({ ...routine, name: 'New morning', updatedAt: 2000 }, newSteps);
+  await repo.update({ ...routine, name: 'New morning', updatedAt: 2000, scheduleDays: [], alertEnabled: false, alertLeadMin: 0 }, newSteps);
 
   const got = await repo.get('r1');
   expect(got?.routine.name).toBe('New morning');
@@ -80,13 +83,61 @@ it('setTransitionFactor and incrementRunCount persist', async () => {
 it('list returns newest-updated first', async () => {
   const repo = makeRoutinesRepo(createMemoryDatabase());
   await repo.create(
-    { id: 'a', name: 'A', doneByMinuteOfDay: null, transitionFactor: 1.15, runCount: 0, createdAt: 1, updatedAt: 1 },
+    { id: 'a', name: 'A', doneByMinuteOfDay: null, transitionFactor: 1.15, runCount: 0, createdAt: 1, updatedAt: 1, scheduleDays: [], alertEnabled: false, alertLeadMin: 0 },
     [],
   );
   await repo.create(
-    { id: 'b', name: 'B', doneByMinuteOfDay: null, transitionFactor: 1.15, runCount: 0, createdAt: 2, updatedAt: 5 },
+    { id: 'b', name: 'B', doneByMinuteOfDay: null, transitionFactor: 1.15, runCount: 0, createdAt: 2, updatedAt: 5, scheduleDays: [], alertEnabled: false, alertLeadMin: 0 },
     [],
   );
   const list = await repo.list();
   expect(list.map((r) => r.routine.id)).toEqual(['b', 'a']);
+});
+
+// ── A1: Scheduling + alert fields ──────────────────────────────────────────────
+
+it('round-trips scheduleDays, alertEnabled, alertLeadMin via the memory adapter', async () => {
+  const repo = makeRoutinesRepo(createMemoryDatabase());
+  const routine: Routine = {
+    id: 'r-sched',
+    name: 'Workout',
+    doneByMinuteOfDay: 7 * 60,
+    transitionFactor: 1.15,
+    runCount: 0,
+    createdAt: 1000,
+    updatedAt: 1000,
+    scheduleDays: [1, 3, 5],
+    alertEnabled: true,
+    alertLeadMin: 10,
+  };
+  await repo.create(routine, []);
+
+  const got = await repo.get('r-sched');
+  expect(got?.routine.scheduleDays).toEqual([1, 3, 5]);
+  expect(got?.routine.alertEnabled).toBe(true);
+  expect(got?.routine.alertLeadMin).toBe(10);
+
+  const list = await repo.list();
+  expect(list[0]?.routine.scheduleDays).toEqual([1, 3, 5]);
+});
+
+it('empty scheduleDays round-trips as an empty array', async () => {
+  const repo = makeRoutinesRepo(createMemoryDatabase());
+  const routine: Routine = {
+    id: 'r-empty',
+    name: 'Empty days',
+    doneByMinuteOfDay: null,
+    transitionFactor: 1.15,
+    runCount: 0,
+    createdAt: 1000,
+    updatedAt: 1000,
+    scheduleDays: [],
+    alertEnabled: false,
+    alertLeadMin: 0,
+  };
+  await repo.create(routine, []);
+
+  const got = await repo.get('r-empty');
+  expect(got?.routine.scheduleDays).toEqual([]);
+  expect(got?.routine.alertEnabled).toBe(false);
 });
