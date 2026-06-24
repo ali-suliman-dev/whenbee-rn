@@ -31,8 +31,8 @@ import {
   updateFinishTimeActivity,
 } from '@/src/services/liveActivity';
 import { useEntitlement } from '@/src/features/paywall/useEntitlement';
-import { guardrailThresholdMin } from '@/src/engine';
-import type { AdaptSpeed } from '@/src/domain/types';
+import { guardrailThresholdMin, confidenceFor, honestRangeFor } from '@/src/engine';
+import type { AdaptSpeed, CalibrationConfidence, HonestRange } from '@/src/domain/types';
 
 // ──────────────────────────────────────────────────────────────────────────────
 // useTimer — the Live Timer's whole brain. Keeps timer.tsx thin.
@@ -93,6 +93,18 @@ export interface UseTimerResult {
   reducedMotion: boolean;
   /** True when this session was started without a category (quick-start mode). */
   isQuickStart: boolean;
+  /**
+   * Earned-Readiness of the running category (raw→setting→honest), resolved once at
+   * session start from the cached stats. Drives whether the finish reads as a range
+   * (still learning) or a settled point (honest). 'raw' for a cold/unknown category.
+   */
+  confidence: CalibrationConfidence;
+  /**
+   * The honest finish RANGE for the running category — the slim spread the task
+   * tends to land in, bracketing `suggestedHonestMin`. null when the category has
+   * no usable spread yet (unknown / n=0), so the timer shows the point finish.
+   */
+  range: HonestRange | null;
   /**
    * Freeze the clock (stop + record actualMin) WITHOUT logging a calibration
    * event. Used by the quick-start capture sheet: call this on Stop tap so the
@@ -251,6 +263,32 @@ export function useTimer(params: TimerParams): UseTimerResult {
   }, []);
 
   const estimateSec = Math.max(0, Math.round(estimateMin * 60));
+
+  // ── Honest finish range (Surface C) ─────────────────────────────────────────
+  // Resolve the running category's confidence + honest range ONCE per session from
+  // the cached calibration stats. The finish-time surface (FinishTime) shows the
+  // range "Done {low}–{high}" while the model is still learning (Pro), and the
+  // settled point "Done ~{finish}" once honest or for free users. Read the cache
+  // non-reactively (a snapshot at session start, like the guardrail arm above) and
+  // memoize on the category — a category with no usable spread yields range: null.
+  const { range, confidence } = useMemo<{ range: HonestRange | null; confidence: CalibrationConfidence }>(() => {
+    const stat = useCalibrationStore.getState().statsByCategory[category];
+    const clampedRatios = stat?.clampedRatios ?? [];
+    const n = stat?.n ?? 0;
+    const resolvedConfidence = confidenceFor({ n, clampedRatios });
+    // No spread to draw → point finish. A raw/cold category (no ratios) and any
+    // unknown category both fall here.
+    if (clampedRatios.length === 0) return { range: null, confidence: resolvedConfidence };
+    const resolvedRange = honestRangeFor({
+      honestMinutes: suggestedHonestMin,
+      guessMinutes: guessMin,
+      clampedRatios,
+      prior: stat?.priorMult ?? 1,
+    });
+    return { range: resolvedRange, confidence: resolvedConfidence };
+    // category/guess/honest are stable for the component's lifetime (route params).
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [category]);
 
   // ── UI-thread elapsed driver ────────────────────────────────────────────────
   const elapsedSec = useSharedValue(0);
@@ -477,6 +515,8 @@ export function useTimer(params: TimerParams): UseTimerResult {
     guessMin,
     reducedMotion,
     isQuickStart,
+    confidence,
+    range,
     onFreezeForCapture,
     onStopAndLog,
     onAbandon,
