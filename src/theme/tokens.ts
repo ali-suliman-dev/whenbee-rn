@@ -541,6 +541,28 @@ export const tokens = {
     axisLabelW: 28,    // fixed width of each axis label (pt)
   },
 
+  // Calendar strip geometry. All strip sizing in one place.
+  //   rowPadV       vertical padding above/below the 7-cell row (inside the strip container)
+  //   cellW         width of one day cell (7 cells fill the screen width; FlatList pages by screenWidth)
+  //   cellH         height of the cell inner View (the tappable area)
+  //   labelSize     weekday label font size (e.g. 'Mon')
+  //   numSize       day-number font size (e.g. '24')
+  //   pillPadH      horizontal inner padding of the selected-state pill
+  //   pillPadV      vertical inner padding of the selected-state pill
+  //   dotSize       diameter of the hasTasks amber dot under the cell
+  //   dotGap        gap between the cell and its dot
+  strip: {
+    rowPadV: 8,
+    cellW: 44,   // layout: screenWidth / 7 at runtime, this is a design reference
+    cellH: 56,
+    labelSize: 10,
+    numSize: 16,
+    pillPadH: 6,
+    pillPadV: 4,
+    dotSize: 4,
+    dotGap: 3,
+  },
+
   // ── brand illustration palette ──────────────────────────────────────────────
   // Fixed art colors for the Whenbee mascot (BeeMascot). Brand art does NOT recolor
   // by mode — a mascot reads as the SAME bee in light and dark, the way a logo does.

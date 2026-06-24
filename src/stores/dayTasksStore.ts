@@ -24,6 +24,8 @@ export interface DayTasksState {
   selectedDate: string;
   viewMode: 'list' | 'timeline';
   dayTasks: DayTask[];
+  /** Sorted YYYY-MM-DD keys of all queued-task planned dates — powers calendar dot hints. */
+  datesWithTasks: string[];
   loading: boolean;
   init: (nowMs?: number) => Promise<void>;
   selectDate: (date: string) => Promise<void>;
@@ -113,10 +115,23 @@ async function loadDay(
 export function makeDayTasksStore(deps: Deps): UseBoundStore<StoreApi<DayTasksState>> {
   const { repo, kvGet, kvSet } = deps;
 
+  /** Load day tasks + refresh dot hints in one shot. */
+  async function loadDayAndDots(
+    selectedDate: string,
+    today: string,
+  ): Promise<Pick<DayTasksState, 'dayTasks' | 'datesWithTasks'>> {
+    const [dayTasks, datesWithTasks] = await Promise.all([
+      loadDay(repo, selectedDate, today),
+      repo.dates(),
+    ]);
+    return { dayTasks, datesWithTasks };
+  }
+
   return create<DayTasksState>()((set, get) => ({
     selectedDate: toLocalDayKey(Date.now()),
     viewMode: 'list',
     dayTasks: [],
+    datesWithTasks: [],
     loading: false,
 
     async init(nowMs) {
@@ -146,17 +161,17 @@ export function makeDayTasksStore(deps: Deps): UseBoundStore<StoreApi<DayTasksSt
       });
       kvSet(MIGRATED_FLAG, '1');
 
-      set({ dayTasks: await loadDay(repo, today, today), loading: false });
+      set({ ...(await loadDayAndDots(today, today)), loading: false });
     },
 
     async selectDate(date) {
       const today = toLocalDayKey(Date.now());
-      set({ selectedDate: date, dayTasks: await loadDay(repo, date, today) });
+      set({ selectedDate: date, ...(await loadDayAndDots(date, today)) });
     },
 
     async goToToday(nowMs) {
       const today = toLocalDayKey(nowMs ?? Date.now());
-      set({ selectedDate: today, dayTasks: await loadDay(repo, today, today) });
+      set({ selectedDate: today, ...(await loadDayAndDots(today, today)) });
     },
 
     setViewMode(m) {
@@ -183,26 +198,26 @@ export function makeDayTasksStore(deps: Deps): UseBoundStore<StoreApi<DayTasksSt
       };
       await repo.add(task);
       const today = toLocalDayKey(createdAt);
-      set({ dayTasks: await loadDay(repo, get().selectedDate, today) });
+      set(await loadDayAndDots(get().selectedDate, today));
       return task;
     },
 
     async completeTask(id, opts) {
       await repo.complete(id, opts);
       const today = toLocalDayKey(opts.nowMs ?? Date.now());
-      set({ dayTasks: await loadDay(repo, get().selectedDate, today) });
+      set(await loadDayAndDots(get().selectedDate, today));
     },
 
     async moveTask(id, toDate, nowMs) {
       await repo.move(id, toDate);
       const today = toLocalDayKey(nowMs ?? Date.now());
-      set({ dayTasks: await loadDay(repo, get().selectedDate, today) });
+      set(await loadDayAndDots(get().selectedDate, today));
     },
 
     async removeTask(id, nowMs) {
       await repo.remove(id);
       const today = toLocalDayKey(nowMs ?? Date.now());
-      set({ dayTasks: await loadDay(repo, get().selectedDate, today) });
+      set(await loadDayAndDots(get().selectedDate, today));
     },
 
     async promoteToFocus(id, nowMs) {
@@ -213,7 +228,7 @@ export function makeDayTasksStore(deps: Deps): UseBoundStore<StoreApi<DayTasksSt
       );
       await repo.update(id, { orderIndex: minOrder - 1 });
       const today = toLocalDayKey(nowMs ?? Date.now());
-      set({ dayTasks: await loadDay(repo, get().selectedDate, today) });
+      set(await loadDayAndDots(get().selectedDate, today));
     },
 
     selectFocusTask() {
@@ -222,7 +237,7 @@ export function makeDayTasksStore(deps: Deps): UseBoundStore<StoreApi<DayTasksSt
 
     async reload(nowMs) {
       const today = toLocalDayKey(nowMs ?? Date.now());
-      set({ dayTasks: await loadDay(repo, get().selectedDate, today) });
+      set(await loadDayAndDots(get().selectedDate, today));
     },
   }));
 }
@@ -249,6 +264,7 @@ function makeLazyRepo(): TasksRepo {
     complete: async (id, o) => (await resolve()).complete(id, o),
     getDayMeta: async (d) => (await resolve()).getDayMeta(d),
     setDoneBy: async (d, m) => (await resolve()).setDoneBy(d, m),
+    dates: async () => (await resolve()).dates(),
   };
 }
 
