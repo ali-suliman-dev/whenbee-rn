@@ -1,7 +1,17 @@
 import { requireOptionalNativeModule } from 'expo-modules-core';
 import { isExpoGo } from '@/src/lib/isExpoGo';
 import { kv } from '@/src/lib/kv';
-import { projectedFinish, formatClock } from '@/src/lib/time';
+import { formatClock } from '@/src/lib/time';
+import { useSettingsStore } from '@/src/stores/settingsStore';
+import { honestReachedFireMs, nextAllowedFireMs } from '@/src/lib/notifyTiming';
+import { CAT, THREAD, resolveNotificationSound } from '@/src/services/notificationCategories';
+import type { NotificationContentInput } from 'expo-notifications';
+
+/** expo-notifications' types omit threadIdentifier (iOS grouping) even though the
+ *  runtime accepts it. Extend locally so we can pass it without casting each call. */
+type NotificationContentInputWithThread = NotificationContentInput & {
+  threadIdentifier?: string;
+};
 
 // ──────────────────────────────────────────────────────────────────────────────
 // timerNotifications — a single local "your estimate is up" ping so the timer is
@@ -60,31 +70,45 @@ export async function ensureNotificationPermission(): Promise<boolean> {
 }
 
 /**
- * Schedule the single "estimate is up" notification at start + estimateMin.
- * Cancels any prior one first. Skips silently if the fire time is already past.
+ * Honest-reached ping: fires at start + honestMin (the learned, realistic finish),
+ * framed as calm data. timeSensitive so it surfaces through Focus. Actionable via
+ * the WB_HONEST_REACHED category. Cancels any prior one; skips if already past.
  */
 export async function scheduleTimerDone(opts: {
   label: string;
   startedAt: number;
-  estimateMin: number;
+  honestMin: number;
+  hasCalibration?: boolean;
 }): Promise<void> {
   const N = getModule();
   if (!N) return;
   try {
     await cancelTimerDone();
-    const fireMs = projectedFinish(opts.startedAt, opts.estimateMin);
+    const fireMs = honestReachedFireMs(opts.startedAt, opts.honestMin);
     const secondsFromNow = Math.round((fireMs - Date.now()) / 1000);
     if (secondsFromNow <= 0) return;
-
+    const calibrated = opts.hasCalibration ?? true;
+    const content = calibrated
+      ? {
+          title: "You're near the finish",
+          body: `This is about when ${opts.label} usually wraps. Log it when you're done.`,
+        }
+      : {
+          title: `Time check for ${opts.label}`,
+          body: `This was your estimate for ${opts.label}. Log it whenever you wrap.`,
+        };
+    const sound = resolveNotificationSound(useSettingsStore.getState().notificationSound);
+    const notifContent: NotificationContentInputWithThread = {
+      ...content,
+      sound,
+      interruptionLevel: 'timeSensitive',
+      categoryIdentifier: CAT.HONEST,
+      threadIdentifier: THREAD.TIMER,
+      data: { kind: 'honest', label: opts.label, startedAt: opts.startedAt, honestMin: opts.honestMin },
+    };
     const id = await N.scheduleNotificationAsync({
-      content: {
-        title: 'Time check',
-        body: `Your honest estimate for ${opts.label} is up. Log it whenever you wrap up.`,
-      },
-      trigger: {
-        type: N.SchedulableTriggerInputTypes.TIME_INTERVAL,
-        seconds: secondsFromNow,
-      },
+      content: notifContent,
+      trigger: { type: N.SchedulableTriggerInputTypes.TIME_INTERVAL, seconds: secondsFromNow },
     });
     kv.set(NOTIF_ID_KEY, id);
   } catch {
@@ -124,11 +148,18 @@ export async function scheduleStartBy(opts: {
     await cancelStartBy();
     const secondsFromNow = Math.round((opts.startByMs - Date.now()) / 1000);
     if (secondsFromNow <= 0) return;
+    const sound = resolveNotificationSound(useSettingsStore.getState().notificationSound);
+    const notifContent: NotificationContentInputWithThread = {
+      title: `Start by ${formatClock(opts.startByMs)}`,
+      body: `Start ${opts.firstTaskLabel} now and you'll finish by ${formatClock(opts.deadlineMs)}.`,
+      sound,
+      interruptionLevel: 'timeSensitive',
+      categoryIdentifier: CAT.START_BY,
+      threadIdentifier: THREAD.PLAN,
+      data: { kind: 'startBy', startByMs: opts.startByMs, firstTaskLabel: opts.firstTaskLabel, deadlineMs: opts.deadlineMs },
+    };
     const id = await N.scheduleNotificationAsync({
-      content: {
-        title: `Start by ${formatClock(opts.startByMs)}`,
-        body: `Begin ${opts.firstTaskLabel} now to finish by ${formatClock(opts.deadlineMs)}.`,
-      },
+      content: notifContent,
       trigger: { type: N.SchedulableTriggerInputTypes.TIME_INTERVAL, seconds: secondsFromNow },
     });
     kv.set(STARTBY_ID_KEY, id);
@@ -157,7 +188,7 @@ export async function cancelStartBy(): Promise<void> {
  * start + thresholdMin, so a backgrounded/closed session still gets the single,
  * gentle nudge. Cancels any prior guard ping first. Skips silently if the fire
  * time is already past. No-op without the native module. No-guilt: amber tone in
- * copy only, never a countdown, fires once per session.
+ * copy only, never a countdown, fires once per session. Quiet-hours aware.
  */
 export async function scheduleGuardCheckIn(opts: {
   label: string;
@@ -168,19 +199,23 @@ export async function scheduleGuardCheckIn(opts: {
   if (!N) return;
   try {
     await cancelGuardCheckIn();
-    const fireMs = opts.startedAt + opts.thresholdMin * 60_000;
+    const desiredMs = opts.startedAt + opts.thresholdMin * 60_000;
+    const quiet = useSettingsStore.getState().quietHours;
+    const fireMs = nextAllowedFireMs(desiredMs, quiet, Date.now());
     const secondsFromNow = Math.round((fireMs - Date.now()) / 1000);
     if (secondsFromNow <= 0) return;
-
+    const sound = resolveNotificationSound(useSettingsStore.getState().notificationSound);
+    const notifContent: NotificationContentInputWithThread = {
+      title: `Still on ${opts.label}?`,
+      body: `You've been at it about ${opts.thresholdMin} minutes. No pressure, just a nudge.`,
+      sound,
+      categoryIdentifier: CAT.GUARD,
+      threadIdentifier: THREAD.GUARD,
+      data: { kind: 'guard', label: opts.label, thresholdMin: opts.thresholdMin },
+    };
     const id = await N.scheduleNotificationAsync({
-      content: {
-        title: 'Still on this?',
-        body: `You've been on ${opts.label} about ${opts.thresholdMin} minutes. Surface whenever you want.`,
-      },
-      trigger: {
-        type: N.SchedulableTriggerInputTypes.TIME_INTERVAL,
-        seconds: secondsFromNow,
-      },
+      content: notifContent,
+      trigger: { type: N.SchedulableTriggerInputTypes.TIME_INTERVAL, seconds: secondsFromNow },
     });
     kv.set(GUARD_ID_KEY, id);
   } catch {

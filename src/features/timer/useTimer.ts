@@ -239,7 +239,7 @@ export function useTimer(params: TimerParams): UseTimerResult {
     if (useSettingsStore.getState().remindersEnabled) {
       void (async () => {
         const granted = await ensureNotificationPermission();
-        if (granted) await scheduleTimerDone({ label, startedAt, estimateMin });
+        if (granted) await scheduleTimerDone({ label, startedAt, honestMin: suggestedHonestMin });
         if (granted && guardThresholdMin != null) {
           await scheduleGuardCheckIn({ label, startedAt, thresholdMin: guardThresholdMin });
         }
