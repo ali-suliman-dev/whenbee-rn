@@ -3,6 +3,8 @@ import { ActionSheetIOS } from 'react-native';
 import Today from '@/src/app/(tabs)/index';
 import { useCalibrationStore, type ReclaimSummary } from '@/src/stores/calibrationStore';
 import { useTasksStore } from '@/src/stores/tasksStore';
+import { useDayTasksStore } from '@/src/stores/dayTasksStore';
+import type { DayTask } from '@/src/engine/daySelectors';
 
 jest.spyOn(ActionSheetIOS, 'showActionSheetWithOptions').mockImplementation(() => {});
 
@@ -45,8 +47,36 @@ function summary(over: Partial<{ lifetimeMin: number; lifetimeNectar: number; st
   };
 }
 
+/** Build a minimal queued DayTask for seeding dayTasksStore in screen tests. */
+function makeQueued(overrides: {
+  id: string;
+  label: string;
+  category: string;
+  guessMin: number;
+  createdAt?: number;
+}): DayTask {
+  const createdAt = overrides.createdAt ?? T0;
+  return {
+    id: overrides.id,
+    label: overrides.label,
+    category: overrides.category,
+    guessMin: overrides.guessMin,
+    status: 'queued',
+    plannedDate: '2023-11-14',
+    orderIndex: createdAt,
+    doneByMin: null,
+    createdAt,
+    completedAt: null,
+    actualMin: null,
+    fromRoutineId: null,
+    calendarEventId: null,
+    carriedFrom: null,
+  };
+}
+
 beforeEach(() => {
   useTasksStore.setState({ tasks: [] });
+  useDayTasksStore.setState({ dayTasks: [], selectFocusTask: () => null });
   useCalibrationStore.setState({
     logs: 0,
     statsByCategory: {},
@@ -85,9 +115,8 @@ describe('Today screen', () => {
         getting_ready: { mEffective: 2.0, n: 8, sharpness: 70, tier: 'Ripening', fit: { a: 0, b: 2.0 } },
       },
     });
-    useTasksStore
-      .getState()
-      .addTask({ label: 'Leave for work', category: 'getting_ready', guessMin: 15, nowMs: T0 });
+    const task = makeQueued({ id: 'f1', label: 'Leave for work', category: 'getting_ready', guessMin: 15 });
+    useDayTasksStore.setState({ dayTasks: [task], selectFocusTask: () => task });
 
     render(<Today />);
 
@@ -107,12 +136,9 @@ describe('Today screen', () => {
       },
     });
     // First task becomes the focus card; second is an up-next row with guessMin 25.
-    useTasksStore
-      .getState()
-      .addTask({ label: 'Leave for work', category: 'getting_ready', guessMin: 15, nowMs: T0 });
-    useTasksStore
-      .getState()
-      .addTask({ label: 'Pack bag', category: 'getting_ready', guessMin: 25, nowMs: T0 + 1 });
+    const focus = makeQueued({ id: 'g1', label: 'Leave for work', category: 'getting_ready', guessMin: 15, createdAt: T0 });
+    const upNext = makeQueued({ id: 'g2', label: 'Pack bag', category: 'getting_ready', guessMin: 25, createdAt: T0 + 1 });
+    useDayTasksStore.setState({ dayTasks: [focus, upNext], selectFocusTask: () => focus });
 
     render(<Today />);
 

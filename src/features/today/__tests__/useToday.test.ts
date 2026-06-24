@@ -1,8 +1,9 @@
 import { renderHook } from '@testing-library/react-native';
 import { useToday } from '../useToday';
 import { useCalibrationStore, type ReclaimSummary } from '@/src/stores/calibrationStore';
-import { useTasksStore } from '@/src/stores/tasksStore';
+import { useDayTasksStore } from '@/src/stores/dayTasksStore';
 import { useTimerStore } from '@/src/stores/timerStore';
+import type { DayTask } from '@/src/engine/daySelectors';
 
 // useFocusEffect runs its effect immediately in tests (no real navigation focus).
 jest.mock('expo-router', () => ({
@@ -37,8 +38,36 @@ function stubStoreEffects() {
   });
 }
 
+/** Build a minimal queued DayTask for test seeding. */
+function makeQueued(overrides: {
+  id: string;
+  label: string;
+  category: string;
+  guessMin: number;
+  createdAt?: number;
+}): DayTask {
+  const createdAt = overrides.createdAt ?? T0;
+  return {
+    id: overrides.id,
+    label: overrides.label,
+    category: overrides.category,
+    guessMin: overrides.guessMin,
+    status: 'queued',
+    plannedDate: '2023-11-14',
+    orderIndex: createdAt,
+    doneByMin: null,
+    createdAt,
+    completedAt: null,
+    actualMin: null,
+    fromRoutineId: null,
+    calendarEventId: null,
+    carriedFrom: null,
+  };
+}
+
+
 beforeEach(() => {
-  useTasksStore.setState({ tasks: [] });
+  useDayTasksStore.setState({ dayTasks: [] });
   useCalibrationStore.setState({ logs: 0, statsByCategory: {} });
   useTimerStore.getState().cancel();
   stubStoreEffects();
@@ -53,9 +82,11 @@ describe('useToday', () => {
 
   it('falls back to the population prior (basis "prior") when the category has n=0', () => {
     // No cached stat for this category → prior fallback, label = typical patterns.
-    useTasksStore
-      .getState()
-      .addTask({ label: 'Tidy up', category: 'cleaning', guessMin: 15, nowMs: T0 });
+    useDayTasksStore.setState({
+      dayTasks: [makeQueued({ id: 'a1', label: 'Tidy up', category: 'cleaning', guessMin: 15 })],
+      selectFocusTask: () =>
+        makeQueued({ id: 'a1', label: 'Tidy up', category: 'cleaning', guessMin: 15 }),
+    });
 
     const { result } = renderHook(() => useToday());
     expect(result.current.focus?.label).toBe('Tidy up');
@@ -69,9 +100,11 @@ describe('useToday', () => {
         cleaning: { mEffective: 2.0, n: 3, sharpness: 50, tier: 'Setting', fit: { a: 0, b: 2.0 } },
       },
     });
-    useTasksStore
-      .getState()
-      .addTask({ label: 'Deep clean', category: 'cleaning', guessMin: 15, nowMs: T0 });
+    useDayTasksStore.setState({
+      dayTasks: [makeQueued({ id: 'b1', label: 'Deep clean', category: 'cleaning', guessMin: 15 })],
+      selectFocusTask: () =>
+        makeQueued({ id: 'b1', label: 'Deep clean', category: 'cleaning', guessMin: 15 }),
+    });
 
     const { result } = renderHook(() => useToday());
     // honest = round_to_5(15 × 2.0) = 30
@@ -82,9 +115,11 @@ describe('useToday', () => {
 
   it('focusPreEstimate is true for a cold category (n=0)', () => {
     // No cached stat → prior fallback → focusPreEstimate = true.
-    useTasksStore
-      .getState()
-      .addTask({ label: 'Cold task', category: 'cleaning', guessMin: 15, nowMs: T0 });
+    useDayTasksStore.setState({
+      dayTasks: [makeQueued({ id: 'c1', label: 'Cold task', category: 'cleaning', guessMin: 15 })],
+      selectFocusTask: () =>
+        makeQueued({ id: 'c1', label: 'Cold task', category: 'cleaning', guessMin: 15 }),
+    });
 
     const { result } = renderHook(() => useToday());
     expect(result.current.focusPreEstimate).toBe(true);
@@ -96,9 +131,13 @@ describe('useToday', () => {
         cleaning: { mEffective: 2.0, n: 3, sharpness: 50, tier: 'Setting', fit: { a: 0, b: 2.0 } },
       },
     });
-    useTasksStore
-      .getState()
-      .addTask({ label: 'Personal task', category: 'cleaning', guessMin: 15, nowMs: T0 });
+    useDayTasksStore.setState({
+      dayTasks: [
+        makeQueued({ id: 'd1', label: 'Personal task', category: 'cleaning', guessMin: 15 }),
+      ],
+      selectFocusTask: () =>
+        makeQueued({ id: 'd1', label: 'Personal task', category: 'cleaning', guessMin: 15 }),
+    });
 
     const { result } = renderHook(() => useToday());
     expect(result.current.focusPreEstimate).toBe(false);
@@ -106,10 +145,13 @@ describe('useToday', () => {
 
   describe('while a timer is running', () => {
     function seedThreeQueued() {
-      const store = useTasksStore.getState();
-      const a = store.addTask({ label: 'TEST', category: 'admin', guessMin: 15, nowMs: T0 });
-      const b = store.addTask({ label: 'TEST 2', category: 'admin', guessMin: 5, nowMs: T0 + 1 });
-      const c = store.addTask({ label: 'TEST 3', category: 'admin', guessMin: 15, nowMs: T0 + 2 });
+      const a = makeQueued({ id: 'ta', label: 'TEST', category: 'admin', guessMin: 15, createdAt: T0 });
+      const b = makeQueued({ id: 'tb', label: 'TEST 2', category: 'admin', guessMin: 5, createdAt: T0 + 1 });
+      const c = makeQueued({ id: 'tc', label: 'TEST 3', category: 'admin', guessMin: 15, createdAt: T0 + 2 });
+      useDayTasksStore.setState({
+        dayTasks: [a, b, c],
+        selectFocusTask: () => a,
+      });
       return { a, b, c };
     }
 
@@ -145,5 +187,26 @@ describe('useToday', () => {
     const { result } = renderHook(() => useToday());
     expect(result.current.categoryName('getting_ready')).toBe('Getting ready');
     expect(result.current.categoryName('deep_work')).toBe('Deep Work');
+  });
+
+  it('carriedFrom is threaded into TodayRow from DayTask', () => {
+    const carried: DayTask = {
+      ...makeQueued({ id: 'e1', label: 'Carry task', category: 'admin', guessMin: 10 }),
+      carriedFrom: '2023-11-13',
+    };
+    // Make it not the focus (add a queued task ahead of it)
+    const first = makeQueued({ id: 'e0', label: 'First', category: 'admin', guessMin: 5, createdAt: T0 - 1 });
+    useDayTasksStore.setState({
+      dayTasks: [first, carried],
+      selectFocusTask: () => first,
+    });
+
+    const { result } = renderHook(() => useToday());
+    const carriedRow = result.current.upNext.find((r) => r.id === 'e1');
+    expect(carriedRow?.carriedFrom).toBe('2023-11-13');
+    // Not-carried row
+    const firstRow = result.current.upNext.find((r) => r.id === 'e0');
+    // first task is focus (filtered to nowSlotId), so it's not in upNext
+    expect(firstRow).toBeUndefined();
   });
 });

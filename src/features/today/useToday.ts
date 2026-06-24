@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useFocusEffect } from 'expo-router';
 import { useCalibrationStore } from '@/src/stores/calibrationStore';
-import { useTasksStore, selectFocus, type TodayTask } from '@/src/stores/tasksStore';
+import { useDayTasksStore } from '@/src/stores/dayTasksStore';
 import { useTimerStore } from '@/src/stores/timerStore';
 import { resolveSuggestion, priorFor, CATEGORY_NAMES, type CompanionStage } from '@/src/engine';
 import { analytics } from '@/src/services/analytics';
@@ -9,6 +9,7 @@ import { formatClock, projectedFinish } from '@/src/lib/time';
 import { publishWidgetSnapshot, clearWidgetSnapshot } from '@/src/services/liveActivity';
 import { useEntitlement } from '@/src/features/paywall/useEntitlement';
 import type { CalibrationSummary } from '@/src/domain/types';
+import type { DayTask } from '@/src/engine/daySelectors';
 
 // ──────────────────────────────────────────────────────────────────────────────
 // useToday — resolves the focus task + its honest-number suggestion.
@@ -32,10 +33,12 @@ export interface TodayRow {
   done: boolean;
   /** Actual minutes once finished (null while queued / if not timed). */
   actualMin: number | null;
+  /** Original plannedDate when this task carried over onto today; null if not carried. */
+  carriedFrom: string | null;
 }
 
 interface UseTodayResult {
-  focus: TodayTask | null;
+  focus: DayTask | null;
   summary: CalibrationSummary | null;
   /** Queued tasks AFTER the focus (the up-next rows). */
   upNext: TodayRow[];
@@ -71,7 +74,8 @@ export function useToday(): UseTodayResult {
   const hydrate = useCalibrationStore((s) => s.hydrate);
   const statsByCategory = useCalibrationStore((s) => s.statsByCategory);
   const loadReclaimSummary = useCalibrationStore((s) => s.loadReclaimSummary);
-  const tasks = useTasksStore((s) => s.tasks);
+  const dayTasks = useDayTasksStore((s) => s.dayTasks);
+  const selectFocusTask = useDayTasksStore((s) => s.selectFocusTask);
   const isTimerRunning = useTimerStore((s) => s.isRunning);
   const runningTaskId = useTimerStore((s) => s.taskId);
 
@@ -102,7 +106,7 @@ export function useToday(): UseTodayResult {
 
   // Resolve a task's honest suggestion from its category's learned bias (or the
   // population prior for a cold category). Shared by the focus card + list rows.
-  const honestFor = (task: TodayTask): CalibrationSummary => {
+  const honestFor = (task: DayTask): CalibrationSummary => {
     const cached = statsByCategory[task.category];
     const category = cached
       ? { fit: cached.fit, n: cached.n }
@@ -110,7 +114,7 @@ export function useToday(): UseTodayResult {
     return resolveSuggestion({ guessMinutes: task.guessMin, category, recurring: null });
   };
 
-  const toRow = (task: TodayTask): TodayRow => ({
+  const toRow = (task: DayTask): TodayRow => ({
     id: task.id,
     label: task.label,
     category: task.category,
@@ -119,10 +123,11 @@ export function useToday(): UseTodayResult {
     honestMin: honestFor(task).honestMinutes,
     done: task.status === 'done',
     actualMin: task.actualMin,
+    carriedFrom: task.status === 'done' ? null : (task.carriedFrom ?? null),
   });
 
-  // Focus = oldest queued task (the Next card when nothing is running).
-  const focus = selectFocus(tasks);
+  // Focus = first queued task from the selected day's tasks.
+  const focus = selectFocusTask();
 
   // The "now" slot — the single task shown at the top of the day. While a timer
   // runs, the screen renders the RUNNING task there (from timerStore), so up-next
@@ -131,12 +136,11 @@ export function useToday(): UseTodayResult {
   // into the list while the previously-focused task silently vanishes. A
   // quick-start session has no taskId → nothing is hidden, the whole queue shows.
   const nowSlotId = isTimerRunning ? runningTaskId : (focus?.id ?? null);
-  const upNext = tasks
+  const upNext = dayTasks
     .filter((task) => task.status === 'queued' && task.id !== nowSlotId)
     .map(toRow);
-  const done = tasks
+  const done = dayTasks
     .filter((task) => task.status === 'done')
-    .reverse()
     .map(toRow);
 
   const summary: CalibrationSummary | null = focus ? honestFor(focus) : null;
@@ -187,7 +191,7 @@ export function useToday(): UseTodayResult {
     summary,
     upNext,
     done,
-    totalCount: tasks.length,
+    totalCount: dayTasks.length,
     categoryName,
     companionStage,
     companionSeed,
