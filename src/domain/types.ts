@@ -367,6 +367,7 @@ export interface RoutineSummary {
 /** Whether a review covers the week that just ended or the previous calendar month. */
 export type ReviewPeriodKind = 'week' | 'month';
 
+
 /** A closed review window, resolved from a `nowMs` against local-day boundaries. */
 export interface ReviewPeriod {
   /** Stable id for the period (e.g. `2026-W25` / `2026-05`). Drives seen-state + question rotation. */
@@ -415,4 +416,38 @@ export interface ReviewSummary {
   biggestSurprise: ReviewBiggestSurprise | null;
   /** A rotating reflective question, deterministic by period id. Always present. */
   reflection: string;
+}
+
+// ── Day-planned tasks (planning expansion, spec 2026-06-24) ───────────────────
+
+/** A task lives on a day (or the "No day yet" shelf when plannedDate is null). */
+export type TaskStatus = 'queued' | 'done';
+
+export interface Task {
+  id: string;
+  label: string;
+  category: Category;
+  guessMin: number;
+  /** Local 'YYYY-MM-DD' the task is planned for; null = "No day yet" shelf. */
+  plannedDate: string | null;
+  status: TaskStatus;
+  /** Manual order within a (plannedDate) bucket; lower = earlier. */
+  orderIndex: number;
+  /** Optional per-task hard deadline, minute-of-day 0–1439; null = none. */
+  doneByMin: number | null;
+  createdAt: number;
+  /** epoch ms when marked done; null while queued. Done bucketing uses this. */
+  completedAt: number | null;
+  actualMin: number | null;
+  /** Set when this task is a materialized routine instance. */
+  fromRoutineId: string | null;
+  /** Set when exported to the device calendar (links for update/delete). */
+  calendarEventId: string | null;
+}
+
+/** Day-level planning attributes (the "I want to be done by" target lives here). */
+export interface DayMeta {
+  date: string; // local 'YYYY-MM-DD'
+  doneByMin: number | null;
+  planComputedAt: number | null;
 }
