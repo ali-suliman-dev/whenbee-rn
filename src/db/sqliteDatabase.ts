@@ -11,7 +11,7 @@ import * as SQLite from 'expo-sqlite';
 import { runMigrations } from './client';
 import type { Database } from './Database';
 import type { AdaptSpeed, LogSource, LogStatus } from '@/src/domain/types';
-import type { CategoryStatRow, CompanionRow, ContextEventRow, ContextTagRow, DiscoveryRow, ReasonEventRow, RecurringStatRow, RoutineRow, RoutineStepRow, TaskEventRow } from './types';
+import type { CategoryStatRow, CompanionRow, ContextEventRow, ContextTagRow, DayMetaRow, DiscoveryRow, ReasonEventRow, RecurringStatRow, RoutineRow, RoutineStepRow, TaskEventRow, TaskRow } from './types';
 
 interface TaskEventDbRow {
   id: string;
@@ -180,6 +180,50 @@ function mapRoutineStep(r: RoutineStepDbRow): RoutineStepRow {
     category: r.category,
     guessMin: r.guess_min,
   };
+}
+
+interface TaskDbRow {
+  id: string;
+  label: string;
+  category: string;
+  guess_min: number;
+  planned_date: string | null;
+  status: string;
+  order_index: number;
+  done_by_min: number | null;
+  created_at: number;
+  completed_at: number | null;
+  actual_min: number | null;
+  from_routine_id: string | null;
+  calendar_event_id: string | null;
+}
+
+interface DayMetaDbRow {
+  date: string;
+  done_by_min: number | null;
+  plan_computed_at: number | null;
+}
+
+function mapTask(r: TaskDbRow): TaskRow {
+  return {
+    id: r.id,
+    label: r.label,
+    category: r.category as TaskRow['category'],
+    guessMin: r.guess_min,
+    plannedDate: r.planned_date,
+    status: r.status as TaskRow['status'],
+    orderIndex: r.order_index,
+    doneByMin: r.done_by_min,
+    createdAt: r.created_at,
+    completedAt: r.completed_at,
+    actualMin: r.actual_min,
+    fromRoutineId: r.from_routine_id,
+    calendarEventId: r.calendar_event_id,
+  };
+}
+
+function mapDayMeta(r: DayMetaDbRow): DayMetaRow {
+  return { date: r.date, doneByMin: r.done_by_min, planComputedAt: r.plan_computed_at };
 }
 
 export async function createSqliteDatabase(name = 'whenbee.db'): Promise<Database> {
@@ -579,6 +623,80 @@ export async function createSqliteDatabase(name = 'whenbee.db'): Promise<Databas
       );
     },
 
+    async insertTask(row: TaskRow): Promise<void> {
+      await db.runAsync(
+        `INSERT INTO tasks (id, label, category, guess_min, planned_date, status, order_index, done_by_min, created_at, completed_at, actual_min, from_routine_id, calendar_event_id)
+         VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)`,
+        row.id, row.label, row.category, row.guessMin, row.plannedDate, row.status,
+        row.orderIndex, row.doneByMin, row.createdAt, row.completedAt, row.actualMin,
+        row.fromRoutineId, row.calendarEventId,
+      );
+    },
+
+    async updateTask(id: string, patch: Partial<TaskRow>): Promise<void> {
+      const existing = await db.getFirstAsync<TaskDbRow>('SELECT * FROM tasks WHERE id = ?', id);
+      if (existing === null || existing === undefined) return;
+      const next: TaskRow = { ...mapTask(existing), ...patch, id };
+      await db.runAsync(
+        `UPDATE tasks SET label=?, category=?, guess_min=?, planned_date=?, status=?, order_index=?, done_by_min=?, created_at=?, completed_at=?, actual_min=?, from_routine_id=?, calendar_event_id=? WHERE id=?`,
+        next.label, next.category, next.guessMin, next.plannedDate, next.status,
+        next.orderIndex, next.doneByMin, next.createdAt, next.completedAt, next.actualMin,
+        next.fromRoutineId, next.calendarEventId, id,
+      );
+    },
+
+    async deleteTask(id: string): Promise<void> {
+      await db.runAsync('DELETE FROM tasks WHERE id = ?', id);
+    },
+
+    async getTask(id: string): Promise<TaskRow | null> {
+      const row = await db.getFirstAsync<TaskDbRow>('SELECT * FROM tasks WHERE id = ?', id);
+      return row ? mapTask(row) : null;
+    },
+
+    async listTasksByDate(date: string): Promise<TaskRow[]> {
+      const rows = await db.getAllAsync<TaskDbRow>(
+        'SELECT * FROM tasks WHERE planned_date = ? ORDER BY order_index ASC', date,
+      );
+      return rows.map(mapTask);
+    },
+
+    async listQueuedOnOrBefore(date: string): Promise<TaskRow[]> {
+      const rows = await db.getAllAsync<TaskDbRow>(
+        `SELECT * FROM tasks WHERE status = 'queued' AND planned_date IS NOT NULL AND planned_date <= ? ORDER BY order_index ASC`,
+        date,
+      );
+      return rows.map(mapTask);
+    },
+
+    async listDoneCompletedBetween(startMs: number, endMs: number): Promise<TaskRow[]> {
+      const rows = await db.getAllAsync<TaskDbRow>(
+        `SELECT * FROM tasks WHERE status = 'done' AND completed_at >= ? AND completed_at < ? ORDER BY completed_at ASC`,
+        startMs, endMs,
+      );
+      return rows.map(mapTask);
+    },
+
+    async listShelfTasks(): Promise<TaskRow[]> {
+      const rows = await db.getAllAsync<TaskDbRow>(
+        `SELECT * FROM tasks WHERE status = 'queued' AND planned_date IS NULL ORDER BY order_index ASC`,
+      );
+      return rows.map(mapTask);
+    },
+
+    async getDayMeta(date: string): Promise<DayMetaRow | null> {
+      const row = await db.getFirstAsync<DayMetaDbRow>('SELECT * FROM day_meta WHERE date = ?', date);
+      return row ? mapDayMeta(row) : null;
+    },
+
+    async upsertDayMeta(row: DayMetaRow): Promise<void> {
+      await db.runAsync(
+        `INSERT INTO day_meta (date, done_by_min, plan_computed_at) VALUES (?,?,?)
+         ON CONFLICT(date) DO UPDATE SET done_by_min = excluded.done_by_min, plan_computed_at = excluded.plan_computed_at`,
+        row.date, row.doneByMin, row.planComputedAt,
+      );
+    },
+
     async wipeAll(): Promise<void> {
       await db.withTransactionAsync(async () => {
         await db.execAsync(
@@ -589,6 +707,8 @@ export async function createSqliteDatabase(name = 'whenbee.db'): Promise<Databas
            DELETE FROM discoveries;
            DELETE FROM routines;
            DELETE FROM routine_steps;
+           DELETE FROM tasks;
+           DELETE FROM day_meta;
            UPDATE companion SET
              reclaimed_minutes_lifetime = 0,
              lifetime_data_points = 0,
