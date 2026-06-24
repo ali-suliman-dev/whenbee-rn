@@ -51,9 +51,9 @@ export function ShelfSection({ shelfTasks, onMoveTask, onDeleteTask }: ShelfSect
     flex: 1,
   };
 
-  const countText: TextStyle = {
-    ...(type.eyebrow as unknown as TextStyle),
-    color: t.colors.inkSoft,
+  const countText: ViewStyle = {
+    alignItems: 'center',
+    justifyContent: 'center',
   };
 
   const list: ViewStyle = {

@@ -176,7 +176,15 @@ export function makeDayTasksStore(deps: Deps): UseBoundStore<StoreApi<DayTasksSt
       });
       kvSet(MIGRATED_FLAG, '1');
 
-      set({ ...(await loadDayAndDots(today, today)), loading: false });
+      const [dayAndDots, shelfRaw] = await Promise.all([
+        loadDayAndDots(today, today),
+        repo.listShelf(),
+      ]);
+      set({
+        ...dayAndDots,
+        shelfTasks: shelfRaw.map((t) => ({ ...t, carriedFrom: null })),
+        loading: false,
+      });
     },
 
     async selectDate(date) {

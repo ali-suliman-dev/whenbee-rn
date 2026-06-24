@@ -215,3 +215,31 @@ test('moving a shelf task to a day removes it from shelfTasks on reload', async 
   await store.getState().loadShelf();
   expect(store.getState().shelfTasks).toHaveLength(0);
 });
+
+// FIX3: init() seeds shelfTasks — a consumer reading shelfTasks before Today mounts sees data.
+test('FIX3: init seeds shelfTasks from pre-existing unscheduled tasks', async () => {
+  const { store, repo } = freshStore();
+  // Seed a shelf task directly into the repo before init is called.
+  const preexisting = {
+    id: 'shelf-pre-1',
+    label: 'Pre-seeded shelf task',
+    category: 'admin',
+    guessMin: 25,
+    plannedDate: null,
+    status: 'queued' as const,
+    orderIndex: NOW - 1000,
+    doneByMin: null,
+    createdAt: NOW - 1000,
+    completedAt: null,
+    actualMin: null,
+    fromRoutineId: null,
+    calendarEventId: null,
+  };
+  await repo.add(preexisting);
+
+  // init() should populate shelfTasks without a manual loadShelf() call.
+  await store.getState().init(NOW);
+  const shelf = store.getState().shelfTasks;
+  expect(shelf.map((t) => t.id)).toContain('shelf-pre-1');
+  expect(shelf.find((t) => t.id === 'shelf-pre-1')?.label).toBe('Pre-seeded shelf task');
+});

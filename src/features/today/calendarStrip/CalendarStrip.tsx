@@ -301,6 +301,12 @@ export function CalendarStrip() {
         initialNumToRender={3}
         maxToRenderPerBatch={3}
         windowSize={5}
+        onScrollToIndexFailed={(info) => {
+          const offset = info.index * screenWidth;
+          requestAnimationFrame(() =>
+            listRef.current?.scrollToOffset({ offset, animated: false }),
+          );
+        }}
       />
     </View>
   );
