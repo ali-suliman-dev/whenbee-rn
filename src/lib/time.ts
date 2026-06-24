@@ -59,6 +59,20 @@ export function dayEndEpochFor(nowMs: number, dayEndMin: number): number {
   return startOfLocalDay(nowMs) + dayEndMin * 60_000;
 }
 
+/**
+ * Format a minute count as a compact "Xh Ym" string. Examples:
+ *   75 → "1h 15m"    60 → "1h"    45 → "45m"    0 → "0m"
+ * Used by CapacityChip to display task/event durations.
+ */
+export function fmtHm(totalMin: number): string {
+  const mins = Math.max(0, Math.round(totalMin));
+  const h = Math.floor(mins / 60);
+  const m = mins % 60;
+  if (h > 0 && m > 0) return `${h}h ${m}m`;
+  if (h > 0) return `${h}h`;
+  return `${m}m`;
+}
+
 /** Whole minutes remaining vs the estimate; negative on overrun. */
 export function minutesLeft(estimateMin: number, elapsedSec: number): number {
   return estimateMin - Math.floor(elapsedSec / 60);

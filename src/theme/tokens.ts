@@ -479,6 +479,12 @@ export const tokens = {
   // pill horizontal padding.
   proTeaser: { previewH: 118, barGap: 9, barRadius: 4, scrimOpacity: 0.28, barOpacity: 0.55, pillPadX: 11 },
 
+  // CapacityChip geometry — the quiet Honest-Day collapsed/expanded chip on Today.
+  // barH = height of the two-segment capacity bar track; iconDisc = ⚡ disc diameter;
+  // segRadius = rounded cap on each bar segment; pillPadX = horizontal padding inside
+  // the "Pro" pill teaser.
+  capacity: { barH: 6, iconDisc: 20, segRadius: 3, pillPadX: 8 },
+
   // Discovery marker geometry — the honey-hex sign (amber + = runs longer, green
   // − = runs faster) on each gallery card. One size; consumed via t.discovery.hex.
   discovery: { hex: 30 },
