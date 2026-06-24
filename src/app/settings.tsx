@@ -13,7 +13,7 @@ import { DataResetGlyph } from '@/src/components/DataResetGlyph';
 import { ConfirmSheet } from '@/src/components/ConfirmSheet';
 import { Toast, AUTO_HIDE_MS } from '@/src/components/Toast';
 import { FinishTimeWheel } from '@/src/features/planner/FinishTimeWheel';
-import { dayEndEpochFor } from '@/src/lib/time';
+import { dayEndEpochFor, formatClockMeridiem } from '@/src/lib/time';
 import { useTheme } from '@/src/theme/useTheme';
 import { type } from '@/src/theme/typography';
 import { useSettingsStore, type ColorModePref } from '@/src/stores/settingsStore';
@@ -35,25 +35,11 @@ import { seedDemoData } from '@/src/features/dev/seedDemoData';
 
 const modes: ColorModePref[] = ['system', 'light', 'dark'];
 
-/** Format minutes-after-midnight as "HH:MM" (24-hour, zero-padded). */
-function formatMinutesOfDay(min: number): string {
-  const h = Math.floor(min / 60) % 24;
-  const m = min % 60;
-  return `${h.toString().padStart(2, '0')}:${m.toString().padStart(2, '0')}`;
-}
-
-const SOUND_LABELS: Record<'honey' | 'default' | 'none', string> = {
-  honey: 'Honey',
-  default: 'Default',
-  none: 'None',
-};
-
-const SOUND_ORDER: ('honey' | 'default' | 'none')[] = ['honey', 'default', 'none'];
-
-function nextSoundValue(current: 'honey' | 'default' | 'none'): 'honey' | 'default' | 'none' {
-  const idx = SOUND_ORDER.indexOf(current);
-  return SOUND_ORDER[(idx + 1) % SOUND_ORDER.length] ?? 'default';
-}
+const SOUND_OPTIONS: { value: 'honey' | 'default' | 'none'; label: string }[] = [
+  { value: 'honey', label: 'Honey' },
+  { value: 'default', label: 'Default' },
+  { value: 'none', label: 'None' },
+];
 
 const RESTORE_MESSAGE: Record<RestoreOutcome, string> = {
   success: 'Pro restored.',
@@ -163,7 +149,15 @@ export default function Settings() {
   const setHonestReachedEnabled = useSettingsStore((s) => s.setHonestReachedEnabled);
   const startByEnabled = useSettingsStore((s) => s.startByEnabled);
   const setStartByEnabled = useSettingsStore((s) => s.setStartByEnabled);
-  const { quietHours, update: updateQuietHours } = useQuietHours();
+  const {
+    quietHours,
+    update: updateQuietHours,
+    editingBoundary,
+    openStart: openQuietStart,
+    openEnd: openQuietEnd,
+    closeEditor: closeQuietEditor,
+    saveBoundary: saveQuietBoundary,
+  } = useQuietHours();
   const { value: notificationSound, set: setNotificationSound } = useNotificationSound();
   const {
     dayEndMin,
@@ -355,7 +349,7 @@ export default function Settings() {
                 value={remindersEnabled}
                 onValueChange={handleToggleReminders}
                 trackColor={{ true: t.colors.primary, false: t.colors.hairline }}
-                accessibilityLabel="Time-up reminders"
+                accessibilityLabel="Reminders"
               />
             }
           />
@@ -408,15 +402,11 @@ export default function Settings() {
                 <GuardrailSettingRow />
               </ProGate>
 
-              {/* Quiet hours row */}
+              {/* Quiet hours — toggle + tappable boundary rows when enabled */}
               <SettingRow
                 icon="moon-outline"
                 title="Quiet hours"
-                note={
-                  quietHours.enabled
-                    ? `${formatMinutesOfDay(quietHours.startMin)} – ${formatMinutesOfDay(quietHours.endMin)}`
-                    : 'Off'
-                }
+                note="Suppress notifications during sleep or focus windows."
                 trailing={
                   <Switch
                     value={quietHours.enabled}
@@ -426,22 +416,70 @@ export default function Settings() {
                   />
                 }
               />
-
-              {/* Sound selector — cycles Honey / Default / None */}
-              <SettingRow
-                icon="musical-note-outline"
-                title="Sound"
-                note={SOUND_LABELS[notificationSound]}
-                onPress={() => setNotificationSound(nextSoundValue(notificationSound))}
-                accessibilityLabel="Notification sound"
-                trailing={
-                  <Ionicons
-                    name="chevron-expand-outline"
-                    size={t.iconSize.sm}
-                    color={t.colors.inkSoft}
+              {quietHours.enabled ? (
+                <>
+                  <SettingRow
+                    icon="time-outline"
+                    title={`From  ${formatClockMeridiem(dayEndEpochFor(Date.now(), quietHours.startMin))}`}
+                    note="Quiet window starts"
+                    onPress={openQuietStart}
+                    accessibilityLabel="Quiet hours start time"
                   />
-                }
-              />
+                  <SettingRow
+                    icon="time-outline"
+                    title={`Until  ${formatClockMeridiem(dayEndEpochFor(Date.now(), quietHours.endMin))}`}
+                    note="Quiet window ends"
+                    onPress={openQuietEnd}
+                    accessibilityLabel="Quiet hours end time"
+                  />
+                </>
+              ) : null}
+
+              {/* Sound selector — chip row mirroring GuardrailSettingRow */}
+              <View
+                style={{
+                  gap: t.space[3],
+                  backgroundColor: t.colors.surface,
+                  borderWidth: t.borderWidth.hairline,
+                  borderColor: t.colors.hairline,
+                  borderRadius: t.radii.card,
+                  borderCurve: 'continuous',
+                  paddingHorizontal: t.space[4],
+                  paddingVertical: t.space[3],
+                }}
+              >
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: t.space[3] }}>
+                  <Ionicons name="musical-note-outline" size={t.iconSize.md} color={t.colors.inkSoft} />
+                  <View style={{ gap: t.space[0.5] }}>
+                    <AppText
+                      style={{
+                        ...(type.bodySmBold as unknown as import('react-native').TextStyle),
+                        color: t.colors.ink,
+                      }}
+                    >
+                      Sound
+                    </AppText>
+                    <AppText
+                      style={{
+                        ...(type.caption as unknown as import('react-native').TextStyle),
+                        color: t.colors.inkSoft,
+                      }}
+                    >
+                      Tone played when a notification fires.
+                    </AppText>
+                  </View>
+                </View>
+                <View style={{ flexDirection: 'row', gap: t.space[2] }}>
+                  {SOUND_OPTIONS.map((o) => (
+                    <Chip
+                      key={o.value}
+                      label={o.label}
+                      selected={notificationSound === o.value}
+                      onPress={() => setNotificationSound(o.value)}
+                    />
+                  ))}
+                </View>
+              </View>
             </>
           ) : null}
 
@@ -691,6 +729,49 @@ export default function Settings() {
               onChange={(ms) => saveDayEnd(ms)}
             />
             <AppButton label="Done" onPress={closeDayEnd} variant="amber" fullWidth />
+          </View>
+        </View>
+      </Modal>
+
+      {/* Quiet hours time editor — mirrors the day-end modal exactly */}
+      <Modal
+        visible={editingBoundary !== null}
+        transparent
+        animationType="fade"
+        onRequestClose={closeQuietEditor}
+      >
+        <View style={{ flex: 1, justifyContent: 'flex-end' }}>
+          <Pressable
+            style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: t.colors.scrim }}
+            accessibilityLabel="Dismiss"
+            onPress={closeQuietEditor}
+          />
+          <View
+            style={{
+              backgroundColor: t.colors.surface,
+              borderTopLeftRadius: t.radii.sheet,
+              borderTopRightRadius: t.radii.sheet,
+              borderCurve: 'continuous',
+              paddingHorizontal: t.space[5],
+              paddingTop: t.space[5],
+              paddingBottom: insets.bottom + t.space[5],
+              gap: t.space[4],
+            }}
+          >
+            <AppText variant="title" style={{ color: t.colors.ink }}>
+              {editingBoundary === 'start' ? 'Quiet from' : 'Quiet until'}
+            </AppText>
+            <FinishTimeWheel
+              showModes={false}
+              valueMs={dayEndEpochFor(
+                Date.now(),
+                editingBoundary === 'start' ? quietHours.startMin : quietHours.endMin,
+              )}
+              onChange={(ms) => {
+                if (editingBoundary !== null) saveQuietBoundary(editingBoundary, ms);
+              }}
+            />
+            <AppButton label="Done" onPress={closeQuietEditor} variant="amber" fullWidth />
           </View>
         </View>
       </Modal>
