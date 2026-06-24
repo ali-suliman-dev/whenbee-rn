@@ -41,8 +41,9 @@ export default function AddTask() {
     };
   }, []);
 
-  function handleAddToToday() {
-    if (!a.addToToday()) return;
+  async function handleAddToToday() {
+    const added = await a.addToToday();
+    if (!added) return;
     setToastVisible(true);
     dismissTimer.current = setTimeout(() => router.back(), toastDismissMs);
   }

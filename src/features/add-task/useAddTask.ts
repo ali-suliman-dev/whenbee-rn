@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { router } from 'expo-router';
 import { useCalibrationStore } from '@/src/stores/calibrationStore';
 import { useCategoriesStore } from '@/src/stores/categoriesStore';
-import { useTasksStore } from '@/src/stores/tasksStore';
+import { useDayTasksStore } from '@/src/stores/dayTasksStore';
 import { useVocabStore } from '@/src/stores/vocabStore';
 import { resolveSuggestion, priorFor } from '@/src/engine';
 import { usePickerCategories, type PickerCategory } from '@/src/features/shared/CategoryChips';
@@ -41,10 +41,12 @@ export interface UseAddTaskResult {
   /** True when the suggestion is based on the population prior (cold category, n < 3). */
   preEstimate: boolean;
   canSubmit: boolean;
-  onAddAndStart: () => void;
-  /** Queues the task without navigating; returns true on success so the screen
-   *  can show the "Added to today" toast before dismissing. */
-  addToToday: () => boolean;
+  onAddAndStart: () => Promise<void>;
+  /** Queues the task on the selected day (or the optionally provided date)
+   *  without navigating; returns true on success so the screen can show
+   *  the "Added to today" toast before dismissing.
+   *  @param date - override the target date (default: store selectedDate). */
+  addToToday: (date?: string | null) => Promise<boolean>;
 }
 
 const DEFAULT_GUESS = 15;
@@ -52,7 +54,7 @@ const DEFAULT_GUESS = 15;
 export function useAddTask(initialTitle?: string): UseAddTaskResult {
   const hydrate = useCalibrationStore((s) => s.hydrate);
   const statsByCategory = useCalibrationStore((s) => s.statsByCategory);
-  const addTask = useTasksStore((s) => s.addTask);
+  const addTask = useDayTasksStore((s) => s.addTask);
   const addCategoryToStore = useCategoriesStore((s) => s.addCategory);
   const categories = usePickerCategories();
   const learned = useVocabStore((s) => s.map);
@@ -145,16 +147,22 @@ export function useAddTask(initialTitle?: string): UseAddTaskResult {
 
   const canSubmit = title.trim().length > 0 && category !== null;
 
-  const addToToday = (): boolean => {
+  const addToToday = async (date?: string | null): Promise<boolean> => {
     if (!canSubmit || category === null) return false;
-    addTask({ label: title.trim(), category, guessMin });
+    const resolvedDate = date === undefined ? useDayTasksStore.getState().selectedDate : date;
+    await addTask({ label: title.trim(), category, guessMin, date: resolvedDate });
     bank(title.trim(), category);
     return true;
   };
 
-  const onAddAndStart = () => {
+  const onAddAndStart = async (): Promise<void> => {
     if (!canSubmit || category === null || suggestion === null) return;
-    const task = addTask({ label: title.trim(), category, guessMin });
+    const task = await addTask({
+      label: title.trim(),
+      category,
+      guessMin,
+      date: useDayTasksStore.getState().selectedDate,
+    });
     bank(title.trim(), category);
     // suggestedHonestMin = the honest number the user SAW in the Add-Task sheet
     // (suggestion.honestMinutes). Passed explicitly so the timer's applyLog banks
