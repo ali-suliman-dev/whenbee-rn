@@ -27,7 +27,7 @@ import { useTimerStore } from '@/src/stores/timerStore';
 import { useSettingsStore } from '@/src/stores/settingsStore';
 import { projectedFinish, formatClockMeridiem } from '@/src/lib/time';
 import { useDayTasksStore } from '@/src/stores/dayTasksStore';
-import { toLocalDayKey, weekdayOf } from '@/src/lib/day';
+import { toLocalDayKey, addDays, weekdayOf } from '@/src/lib/day';
 import { kv } from '@/src/lib/kv';
 import { useFocusedValue } from '@/src/hooks/useFocusedValue';
 import { useGreeting } from '@/src/features/today/useGreeting';
@@ -98,16 +98,42 @@ export default function Today() {
     void removeTask(id);
     setDeletingId(null);
   }
-  function promptDelete(id: string, label: string) {
+  function showDayPicker(id: string) {
+    // Build next 7 days as labels for pick-a-day (tomorrow through +7).
+    const today = toLocalDayKey(Date.now());
+    const WEEKDAY_LABELS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'] as const;
+    const days = Array.from({ length: 7 }, (_, i) => {
+      const key = addDays(today, i + 1);
+      const label = i === 0 ? 'Tomorrow' : WEEKDAY_LABELS[weekdayOf(key)] ?? key;
+      return { key, label };
+    });
+    ActionSheetIOS.showActionSheetWithOptions(
+      {
+        title: 'Pick a day',
+        options: [...days.map((d) => d.label), 'Cancel'],
+        cancelButtonIndex: days.length,
+      },
+      (i) => {
+        if (i < days.length) {
+          const day = days[i];
+          if (day) void useDayTasksStore.getState().moveTask(id, day.key);
+        }
+      },
+    );
+  }
+
+  function promptRowActions(id: string, label: string) {
     ActionSheetIOS.showActionSheetWithOptions(
       {
         title: label,
-        options: ['Remove', 'Cancel'],
-        destructiveButtonIndex: 0,
-        cancelButtonIndex: 1,
+        options: ['Move to tomorrow', 'Pick a day…', 'Remove', 'Cancel'],
+        destructiveButtonIndex: 2,
+        cancelButtonIndex: 3,
       },
       (i) => {
-        if (i === 0) setDeletingId(id);
+        if (i === 0) void useDayTasksStore.getState().moveToTomorrow(id);
+        else if (i === 1) showDayPicker(id);
+        else if (i === 2) setDeletingId(id);
       },
     );
   }
@@ -254,7 +280,7 @@ export default function Today() {
           ) : focus && summary ? (
             <Pressable
               key={focus.id}
-              onLongPress={() => promptDelete(focus.id, focus.label)}
+              onLongPress={() => promptRowActions(focus.id, focus.label)}
               delayLongPress={300}
               accessibilityRole="button"
               accessibilityLabel={`${focus.label}. Long-press to delete.`}
@@ -306,7 +332,8 @@ export default function Today() {
                   carriedFrom={row.carriedFrom}
                   onPress={() => startRow(row)}
                   onDelete={() => deleteTask(row.id)}
-                  onLongPress={() => promptDelete(row.id, row.label)}
+                  onLongPress={() => promptRowActions(row.id, row.label)}
+                  onMove={() => void useDayTasksStore.getState().moveToTomorrow(row.id)}
                   peekHint={peekFirstRow && idx === 0}
                   onPeeked={markSwipeHintSeen}
                   isExiting={deletingId === row.id}
@@ -320,7 +347,7 @@ export default function Today() {
               rows={done}
               deletingId={deletingId}
               onDelete={deleteTask}
-              onLongPress={promptDelete}
+              onLongPress={promptRowActions}
               showCoachMark={showCoachMark}
               onCoachMarkDismiss={dismissCoachMark}
             />

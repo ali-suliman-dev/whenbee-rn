@@ -4,8 +4,9 @@ import { TaskRow } from '@/src/features/today/TaskRow';
 jest.mock('react-native-gesture-handler/ReanimatedSwipeable', () => {
   // eslint-disable-next-line @typescript-eslint/no-require-imports
   const { View } = require('react-native');
-  const Mock = ({ children, renderRightActions }: any) => (
+  const Mock = ({ children, renderRightActions, renderLeftActions }: any) => (
     <View>
+      {renderLeftActions ? renderLeftActions(0, 0, { close: () => {} }) : null}
       {renderRightActions ? renderRightActions(0, 0, { close: () => {} }) : null}
       {children}
     </View>
@@ -86,6 +87,37 @@ describe('TaskRow', () => {
       />,
     );
     expect(screen.queryByText(/from/i)).toBeNull();
+  });
+
+  it('move: left action is rendered and calls onMove("tomorrow") when onMove is provided and not done', () => {
+    const onMove = jest.fn();
+    render(
+      <TaskRow
+        title="Buy groceries"
+        categoryLabel="Errands"
+        guessMin={15}
+        honestMin={25}
+        onMove={onMove}
+      />,
+    );
+    fireEvent.press(screen.getByTestId('taskrow-move-tomorrow'));
+    expect(onMove).toHaveBeenCalledWith('tomorrow');
+  });
+
+  it('move: no left action on a done row even when onMove is provided', () => {
+    const onMove = jest.fn();
+    render(
+      <TaskRow
+        title="Done task"
+        categoryLabel="Errands"
+        guessMin={15}
+        honestMin={25}
+        actualMin={20}
+        done
+        onMove={onMove}
+      />,
+    );
+    expect(screen.queryByTestId('taskrow-move-tomorrow')).toBeNull();
   });
 
   it('carryover: no tag on a done row even when carriedFrom is set', () => {
