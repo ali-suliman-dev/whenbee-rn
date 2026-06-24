@@ -42,9 +42,7 @@ export function ScheduledRoutineBlock({ block }: Props) {
 
   const handleRun = useCallback(() => {
     void startRun(block.routineId);
-    // Navigate to the routines/plan tab where the run view lives.
-    // When C2 renames plan→routines this path updates; for now 'plan' is the tab.
-    router.push('/(tabs)/plan');
+    router.push('/(tabs)/routines');
   }, [startRun, block.routineId]);
 
   const containerStyle = {

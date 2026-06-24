@@ -5,6 +5,7 @@
 
 import React from 'react';
 import { render, screen, fireEvent } from '@testing-library/react-native';
+import { useRoutinesStore } from '@/src/stores/routinesStore';
 import { ScheduledRoutineBlock } from '../ScheduledRoutineBlock';
 
 // ── Mocks ────────────────────────────────────────────────────────────────────
@@ -16,6 +17,8 @@ jest.mock('@/src/stores/routinesStore', () => ({
 }));
 
 jest.mock('expo-router', () => ({ router: { push: jest.fn() } }));
+
+const mockUseRoutinesStore = jest.mocked(useRoutinesStore);
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -89,8 +92,7 @@ describe('ScheduledRoutineBlock', () => {
 
   it('calls startRun when Run is pressed', () => {
     const mockStartRun = jest.fn().mockResolvedValue(undefined);
-    const { useRoutinesStore: mockStore } = require('@/src/stores/routinesStore');
-    (mockStore as jest.Mock).mockImplementation(
+    mockUseRoutinesStore.mockImplementation(
       (sel: (s: { startRun: jest.Mock }) => unknown) => sel({ startRun: mockStartRun }),
     );
 
