@@ -4,12 +4,14 @@ import { getDatabase } from '@/src/db';
 import { wipeLearning, wipeEverything } from '@/src/services/dataReset';
 import { useCalibrationStore } from '@/src/stores/calibrationStore';
 import { useTasksStore } from '@/src/stores/tasksStore';
+import { useDayTasksStore } from '@/src/stores/dayTasksStore';
 import { usePlanStore } from '@/src/stores/planStore';
 import { useTimerStore } from '@/src/stores/timerStore';
 import { useCategoriesStore } from '@/src/stores/categoriesStore';
 import { useSettingsStore } from '@/src/stores/settingsStore';
 import { useVocabStore } from '@/src/stores/vocabStore';
 import { useOnboardingStore } from '@/src/stores/onboardingStore';
+import { kv } from '@/src/lib/kv';
 
 /**
  * Drives the two Settings "Danger zone" resets. Clears persistence (db + kv) via
@@ -27,7 +29,10 @@ export function useAccountReset() {
       const db = await getDatabase();
       await wipeLearning(db);
       // Session/learning caches → empty, then repopulate from the now-clean db.
+      // DB wipe already cleared tasks/day_meta; reload refreshes in-memory dayTasks.
+      kv.delete('tasks-migrated-v1');
       useTasksStore.getState().clear();
+      await useDayTasksStore.getState().reload();
       usePlanStore.getState().reset();
       useTimerStore.getState().cancel();
       useCalibrationStore.getState().reset();
@@ -43,7 +48,10 @@ export function useAccountReset() {
     try {
       const db = await getDatabase();
       await wipeEverything(db);
+      // DB wipe already cleared tasks/day_meta; reload refreshes in-memory dayTasks.
+      kv.delete('tasks-migrated-v1');
       useTasksStore.getState().clear();
+      await useDayTasksStore.getState().reload();
       usePlanStore.getState().reset();
       useTimerStore.getState().cancel();
       useCalibrationStore.getState().reset();
