@@ -23,7 +23,7 @@ function NotPro() {
   return (
     <Screen>
       <View style={{ paddingTop: 24, gap: 16 }}>
-        <AppText variant="title">Honest Day is a Pro feature</AppText>
+        <AppText variant="title">Padding your calendar is a Pro feature</AppText>
         <AppButton
           label="See what Pro unlocks"
           variant="amber"
@@ -58,8 +58,8 @@ function HonestDayContent() {
         showsVerticalScrollIndicator={false}
       >
         <ScreenHeader
-          title="Your honest day"
-          subtitle="Your real buffers, mapped onto today. Nothing changes until you say so."
+          title="Pad my calendar"
+          subtitle="Your real buffers, mapped onto today. Nothing changes until you tap apply."
         />
 
         {status === 'loading' ? (
@@ -69,7 +69,7 @@ function HonestDayContent() {
         {status === 'denied' ? (
           <View style={{ gap: t.space[4] }}>
             <AppText variant="body">
-              Whenbee needs calendar access to show your honest day. You can turn it on in Settings
+              Whenbee needs calendar access to pad your calendar. You can turn it on in Settings
               whenever you&apos;re ready.
             </AppText>
             <AppButton label="Maybe later" variant="ghost" onPress={() => router.back()} />
@@ -79,7 +79,7 @@ function HonestDayContent() {
         {status === 'empty' ? (
           <View style={{ gap: t.space[4] }}>
             <AppText variant="body">
-              Today&apos;s calendar is clear. Add a few events and come back — your honest day will be
+              Today&apos;s calendar is clear. Add a few events and come back — the padding will be
               waiting.
             </AppText>
             <AppButton label="Done" variant="ghost" onPress={() => router.back()} />

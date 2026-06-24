@@ -17,7 +17,7 @@ import { fmtHm } from '@/src/lib/time';
 //   · tap → expand in-place: a two-segment task/meetings bar + legend + free hrs
 //   · over: amber tint + "~Nh heavy — move one?" (NO red, NO guilt, NO "overdue")
 //   · denied/off: task-only load + calm "Turn on calendar in Settings" affordance
-//   · "Make my day honest" quiet link → /(modals)/honest-day
+//   · "Pad my calendar" quiet link → /(modals)/honest-day (the WRITE surface)
 //
 // Free: frosted teaser "See if {day} will fit" + "Pro" pill → paywall.
 //   NEVER renders the number, bar, or legend for free users (position gated too).
@@ -248,7 +248,7 @@ export function CapacityChip({ weekdayLabel = 'Today', cap: capProp }: CapacityC
     color: t.colors.amberText,
   };
 
-  // "Make my day honest" link
+  // "Pad my calendar" link — leads to the write/buffer surface
   const honestLink: TextStyle = {
     ...(type.caption as unknown as TextStyle),
     color: t.colors.primary,
@@ -340,14 +340,14 @@ export function CapacityChip({ weekdayLabel = 'Today', cap: capProp }: CapacityC
             </Text>
           )}
 
-          {/* "Make my day honest" quiet link */}
+          {/* "Pad my calendar" quiet link → the write surface */}
           <Pressable
             accessibilityRole="link"
-            accessibilityLabel="Make my day honest"
+            accessibilityLabel="Pad my calendar — add honest buffers to today's events"
             onPress={() => router.push({ pathname: '/(modals)/honest-day' })}
           >
             <View>
-              <Text style={honestLink}>Make my day honest</Text>
+              <Text style={honestLink}>Pad my calendar</Text>
             </View>
           </Pressable>
 

@@ -97,7 +97,7 @@ describe('Honest-Day confirmed-write-only', () => {
 
     render(<HonestDayRoute />);
 
-    expect(screen.getByText('Honest Day is a Pro feature')).toBeOnTheScreen();
+    expect(screen.getByText('Padding your calendar is a Pro feature')).toBeOnTheScreen();
     expect(screen.queryByText('Apply to my calendar')).toBeNull();
     expect(writeAdjustments).not.toHaveBeenCalled();
   });

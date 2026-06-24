@@ -112,6 +112,13 @@ describe('CapacityChip — Pro ready', () => {
     render(<CapacityChip />);
     expect(screen.queryByText(/failed/i)).toBeNull();
   });
+
+  it('shows "Pad my calendar" link in expanded state (the write surface CTA)', () => {
+    render(<CapacityChip />);
+    const chip = screen.getByTestId('capacity-chip-collapsed');
+    fireEvent.press(chip);
+    expect(screen.getByText(/pad my calendar/i)).toBeOnTheScreen();
+  });
 });
 
 describe('CapacityChip — Free user', () => {
@@ -137,6 +144,19 @@ describe('CapacityChip — Free user', () => {
     render(<CapacityChip />);
     expect(screen.queryByTestId('capacity-bar')).toBeNull();
     expect(screen.queryByText(/free/i)).toBeNull();
+  });
+
+  it('does NOT render the "Pad my calendar" write link (Pro-only write surface)', () => {
+    render(<CapacityChip />);
+    expect(screen.queryByText(/pad my calendar/i)).toBeNull();
+  });
+
+  it('does NOT render any capacity number in the accessible output', () => {
+    render(<CapacityChip />);
+    // The collapsed chip with testID "capacity-chip-collapsed" must be absent
+    expect(screen.queryByTestId('capacity-chip-collapsed')).toBeNull();
+    // "Honest day" prefix must not appear (the number is right after it)
+    expect(screen.queryByText(/honest day/i)).toBeNull();
   });
 
   it('routes to paywall with day_capacity trigger on press', () => {
