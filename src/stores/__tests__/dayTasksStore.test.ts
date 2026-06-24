@@ -78,6 +78,33 @@ test('C1 regression: task planned yesterday, completed today → in today, not o
   expect(onYesterday).toBeUndefined();
 });
 
+test('addTask returns the created task', async () => {
+  const { store } = freshStore();
+  await store.getState().init(NOW);
+  const task = await store.getState().addTask({ label: 'Write', category: 'deep-work', guessMin: 60, nowMs: NOW });
+  expect(task.id).toBeTruthy();
+  expect(task.label).toBe('Write');
+  expect(task.plannedDate).toBe('2026-06-24');
+});
+
+test('selectFocusTask returns the first queued task', async () => {
+  const { store } = freshStore();
+  await store.getState().init(NOW);
+  await store.getState().addTask({ label: 'First', category: 'admin', guessMin: 10, nowMs: NOW });
+  await store.getState().addTask({ label: 'Second', category: 'admin', guessMin: 10, nowMs: NOW + 1 });
+  expect(store.getState().selectFocusTask()?.label).toBe('First');
+});
+
+test('reload re-reads the current day', async () => {
+  const { store } = freshStore();
+  await store.getState().init(NOW);
+  await store.getState().addTask({ label: 'X', category: 'admin', guessMin: 10, nowMs: NOW });
+  const id = store.getState().dayTasks[0]!.id;
+  await store.getState().completeTask(id, { completedAt: NOW + 5, actualMin: 11, nowMs: NOW });
+  await store.getState().reload(NOW);
+  expect(store.getState().selectFocusTask()).toBeNull(); // the only task is done
+});
+
 // I1 regression: seeding a legacy kv blob triggers import via migrateLegacyTasks.
 test('I1 regression: legacy today-tasks kv blob seeds tasks onto today on init', async () => {
   const legacyBlob = JSON.stringify({

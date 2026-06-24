@@ -10,6 +10,7 @@ import { makeTasksRepo, type TasksRepo } from '@/src/db/repositories/tasksRepo';
 import { migrateLegacyTasks, type LegacyTodayTask } from '@/src/db/migrateLegacyTasks';
 import { tasksForSelectedDay, type DayTask } from '@/src/engine/daySelectors';
 import { toLocalDayKey } from '@/src/lib/day';
+import type { Task } from '@/src/domain/types';
 import { kv } from '@/src/lib/kv';
 
 const MIGRATED_FLAG = 'tasks-migrated-v1';
@@ -34,10 +35,15 @@ export interface DayTasksState {
     guessMin: number;
     date?: string | null;
     nowMs?: number;
-  }) => Promise<void>;
-  completeTask: (id: string, opts: { completedAt: number; actualMin?: number }) => Promise<void>;
-  moveTask: (id: string, toDate: string | null) => Promise<void>;
-  removeTask: (id: string) => Promise<void>;
+  }) => Promise<Task>;
+  completeTask: (
+    id: string,
+    opts: { completedAt: number; actualMin?: number; nowMs?: number },
+  ) => Promise<void>;
+  moveTask: (id: string, toDate: string | null, nowMs?: number) => Promise<void>;
+  removeTask: (id: string, nowMs?: number) => Promise<void>;
+  selectFocusTask: () => DayTask | null;
+  reload: (nowMs?: number) => Promise<void>;
 }
 
 // ---------------------------------------------------------------------------
@@ -159,7 +165,7 @@ export function makeDayTasksStore(deps: Deps): UseBoundStore<StoreApi<DayTasksSt
     async addTask({ label, category, guessMin, date, nowMs }) {
       const createdAt = nowMs ?? Date.now();
       const plannedDate = date === undefined ? get().selectedDate : date;
-      await repo.add({
+      const task: Task = {
         id: makeId(createdAt),
         label,
         category,
@@ -173,26 +179,37 @@ export function makeDayTasksStore(deps: Deps): UseBoundStore<StoreApi<DayTasksSt
         actualMin: null,
         fromRoutineId: null,
         calendarEventId: null,
-      });
+      };
+      await repo.add(task);
       const today = toLocalDayKey(createdAt);
       set({ dayTasks: await loadDay(repo, get().selectedDate, today) });
+      return task;
     },
 
     async completeTask(id, opts) {
       await repo.complete(id, opts);
-      const today = toLocalDayKey(Date.now());
+      const today = toLocalDayKey(opts.nowMs ?? Date.now());
       set({ dayTasks: await loadDay(repo, get().selectedDate, today) });
     },
 
-    async moveTask(id, toDate) {
+    async moveTask(id, toDate, nowMs) {
       await repo.move(id, toDate);
-      const today = toLocalDayKey(Date.now());
+      const today = toLocalDayKey(nowMs ?? Date.now());
       set({ dayTasks: await loadDay(repo, get().selectedDate, today) });
     },
 
-    async removeTask(id) {
+    async removeTask(id, nowMs) {
       await repo.remove(id);
-      const today = toLocalDayKey(Date.now());
+      const today = toLocalDayKey(nowMs ?? Date.now());
+      set({ dayTasks: await loadDay(repo, get().selectedDate, today) });
+    },
+
+    selectFocusTask() {
+      return get().dayTasks.find((t) => t.status === 'queued') ?? null;
+    },
+
+    async reload(nowMs) {
+      const today = toLocalDayKey(nowMs ?? Date.now());
       set({ dayTasks: await loadDay(repo, get().selectedDate, today) });
     },
   }));
@@ -223,16 +240,9 @@ function makeLazyRepo(): TasksRepo {
   };
 }
 
-let _bound: UseBoundStore<StoreApi<DayTasksState>> | null = null;
-
 /** The app-wide store. Call `.getState().init()` once at boot. */
-export function useDayTasksStore(): UseBoundStore<StoreApi<DayTasksState>> {
-  if (_bound === null) {
-    _bound = makeDayTasksStore({
-      repo: makeLazyRepo(),
-      kvGet: (k) => kv.getString(k),
-      kvSet: (k, v) => kv.set(k, v),
-    });
-  }
-  return _bound;
-}
+export const useDayTasksStore: UseBoundStore<StoreApi<DayTasksState>> = makeDayTasksStore({
+  repo: makeLazyRepo(),
+  kvGet: (k) => kv.getString(k),
+  kvSet: (k, v) => kv.set(k, v),
+});
