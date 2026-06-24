@@ -36,7 +36,7 @@ jest.mock('@/src/features/planner/FocusWindowEditorSheet', () => ({
 // on SVG internals.
 jest.mock('@/src/features/planner/FocusCurve', () => ({
   FocusCurve: ({ variant }: { variant: string }) => {
-    const { View } = require('react-native');
+    const { View } = jest.requireActual<typeof import('react-native')>('react-native');
     return <View testID={`focus-curve-${variant}`} />;
   },
 }));
@@ -55,13 +55,11 @@ function mockWindow(overrides: Partial<LearnedFocusWindow>) {
     confidence: 0.9,
     held: false,
   };
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   (useLearnedFocusWindow as unknown as jest.Mock).mockReturnValue({ ...base, ...overrides });
 }
 
 /** Shorthand: set the mock return value for useEntitlement. */
 function mockEntitlement(isPro: boolean) {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   (useEntitlement as unknown as jest.Mock).mockImplementation((sel: (s: { isPro: boolean }) => unknown) =>
     sel({ isPro }),
   );

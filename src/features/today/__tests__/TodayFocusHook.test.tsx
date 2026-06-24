@@ -55,8 +55,6 @@ const PERSONAL_WINDOW = {
 
 // nowMs = midnight (0) → minute-of-day = 0, well before 11am end
 const NOW_BEFORE_WINDOW_END = 0;
-// nowMs at 11:01am, past the 11am end
-const NOW_AFTER_WINDOW_END = new Date().setHours(11, 1, 0, 0) - new Date().setHours(0, 0, 0, 0);
 
 beforeEach(() => {
   mockIsPro = false;
