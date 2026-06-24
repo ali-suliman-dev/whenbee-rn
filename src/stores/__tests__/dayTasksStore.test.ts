@@ -177,6 +177,34 @@ test('shelfTasks is empty when no unscheduled tasks exist', async () => {
   expect(store.getState().shelfTasks).toHaveLength(0);
 });
 
+test('FIX2: addTask with date:null auto-refreshes shelfTasks immediately (no extra loadShelf call)', async () => {
+  const { store } = freshStore();
+  await store.getState().init(NOW);
+  await store.getState().addTask({ label: 'Shelf auto', category: 'admin', guessMin: 15, date: null, nowMs: NOW });
+  // shelfTasks should be populated WITHOUT a manual loadShelf call
+  expect(store.getState().shelfTasks.map((t) => t.label)).toContain('Shelf auto');
+});
+
+test('FIX2: removeTask auto-refreshes shelfTasks', async () => {
+  const { store } = freshStore();
+  await store.getState().init(NOW);
+  await store.getState().addTask({ label: 'To remove', category: 'admin', guessMin: 15, date: null, nowMs: NOW });
+  const id = store.getState().shelfTasks[0]!.id;
+  await store.getState().removeTask(id, NOW);
+  // shelfTasks should be empty immediately
+  expect(store.getState().shelfTasks).toHaveLength(0);
+});
+
+test('FIX2: moveTask auto-refreshes shelfTasks', async () => {
+  const { store } = freshStore();
+  await store.getState().init(NOW);
+  await store.getState().addTask({ label: 'To move', category: 'admin', guessMin: 15, date: null, nowMs: NOW });
+  const id = store.getState().shelfTasks[0]!.id;
+  await store.getState().moveTask(id, '2026-06-25', NOW);
+  // shelfTasks should be empty immediately (task now has a date)
+  expect(store.getState().shelfTasks).toHaveLength(0);
+});
+
 test('moving a shelf task to a day removes it from shelfTasks on reload', async () => {
   const { store } = freshStore();
   await store.getState().init(NOW);

@@ -189,6 +189,31 @@ describe('useToday', () => {
     expect(result.current.categoryName('deep_work')).toBe('Deep Work');
   });
 
+  it('done rows are sorted newest-first (most recently completed at top)', () => {
+    const older: DayTask = {
+      ...makeQueued({ id: 'done-old', label: 'Older done', category: 'admin', guessMin: 10 }),
+      status: 'done',
+      completedAt: T0 + 1000,
+      actualMin: 10,
+    };
+    const newer: DayTask = {
+      ...makeQueued({ id: 'done-new', label: 'Newer done', category: 'admin', guessMin: 10 }),
+      status: 'done',
+      completedAt: T0 + 5000,
+      actualMin: 10,
+    };
+    // Store gives us oldest-first (ascending by completedAt)
+    useDayTasksStore.setState({
+      dayTasks: [older, newer],
+      selectFocusTask: () => null,
+    });
+
+    const { result } = renderHook(() => useToday());
+    const doneIds = result.current.done.map((r) => r.id);
+    expect(doneIds[0]).toBe('done-new'); // newest first
+    expect(doneIds[1]).toBe('done-old');
+  });
+
   it('carriedFrom is threaded into TodayRow from DayTask', () => {
     const carried: DayTask = {
       ...makeQueued({ id: 'e1', label: 'Carry task', category: 'admin', guessMin: 10 }),

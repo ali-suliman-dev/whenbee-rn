@@ -141,6 +141,8 @@ export function useToday(): UseTodayResult {
     .map(toRow);
   const done = dayTasks
     .filter((task) => task.status === 'done')
+    .slice()
+    .sort((a, b) => (b.completedAt ?? 0) - (a.completedAt ?? 0))
     .map(toRow);
 
   const summary: CalibrationSummary | null = focus ? honestFor(focus) : null;

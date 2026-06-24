@@ -133,7 +133,15 @@ export function makeDayTasksStore(deps: Deps): UseBoundStore<StoreApi<DayTasksSt
     return { dayTasks, datesWithTasks };
   }
 
-  return create<DayTasksState>()((set, get) => ({
+  return create<DayTasksState>()((set, get) => {
+    /** Refresh shelfTasks from the repo. Called after any mutation that can
+     *  change shelf membership (add/move/complete/remove). */
+    async function refreshShelf(): Promise<void> {
+      const raw = await repo.listShelf();
+      set({ shelfTasks: raw.map((t) => ({ ...t, carriedFrom: null })) });
+    }
+
+    return ({
     selectedDate: toLocalDayKey(Date.now()),
     viewMode: 'list',
     dayTasks: [],
@@ -205,26 +213,38 @@ export function makeDayTasksStore(deps: Deps): UseBoundStore<StoreApi<DayTasksSt
       };
       await repo.add(task);
       const today = toLocalDayKey(createdAt);
-      set(await loadDayAndDots(get().selectedDate, today));
+      await Promise.all([
+        loadDayAndDots(get().selectedDate, today).then((d) => set(d)),
+        refreshShelf(),
+      ]);
       return task;
     },
 
     async completeTask(id, opts) {
       await repo.complete(id, opts);
       const today = toLocalDayKey(opts.nowMs ?? Date.now());
-      set(await loadDayAndDots(get().selectedDate, today));
+      await Promise.all([
+        loadDayAndDots(get().selectedDate, today).then((d) => set(d)),
+        refreshShelf(),
+      ]);
     },
 
     async moveTask(id, toDate, nowMs) {
       await repo.move(id, toDate);
       const today = toLocalDayKey(nowMs ?? Date.now());
-      set(await loadDayAndDots(get().selectedDate, today));
+      await Promise.all([
+        loadDayAndDots(get().selectedDate, today).then((d) => set(d)),
+        refreshShelf(),
+      ]);
     },
 
     async removeTask(id, nowMs) {
       await repo.remove(id);
       const today = toLocalDayKey(nowMs ?? Date.now());
-      set(await loadDayAndDots(get().selectedDate, today));
+      await Promise.all([
+        loadDayAndDots(get().selectedDate, today).then((d) => set(d)),
+        refreshShelf(),
+      ]);
     },
 
     async promoteToFocus(id, nowMs) {
@@ -253,11 +273,10 @@ export function makeDayTasksStore(deps: Deps): UseBoundStore<StoreApi<DayTasksSt
     },
 
     async loadShelf() {
-      const raw = await repo.listShelf();
-      const shelfTasks: DayTask[] = raw.map((t) => ({ ...t, carriedFrom: null }));
-      set({ shelfTasks });
+      await refreshShelf();
     },
-  }));
+  });
+  });
 }
 
 // ---------------------------------------------------------------------------
