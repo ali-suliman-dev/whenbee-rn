@@ -184,3 +184,66 @@ describe('useDayCapacity — scheduled routine block contribution', () => {
     expect(result.current.load?.taskMin).toBe(40);
   });
 });
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Pro-gate regression: free users must NOT have routine minutes in their load.
+// Routines are a Pro feature; the load computation must gate them at the hook
+// level, not just at the display level.
+// ─────────────────────────────────────────────────────────────────────────────
+
+describe('useDayCapacity — routine minutes Pro-gate regression', () => {
+  beforeEach(() => {
+    useDayTasksStore.setState({ selectedDate: WEDNESDAY, dayTasks: [] });
+    useSettingsStore.setState({
+      calendar: { showEvents: false, enabledCalendarIds: [], exportEnabled: false, whenbeeCalendarId: null },
+    });
+    useCalibrationStore.setState({ statsByCategory: {} });
+    useRoutinesStore.setState({ routines: [], stepMByKey: {} });
+  });
+
+  afterEach(() => {
+    jest.clearAllMocks();
+  });
+
+  it('free user: routine minutes are NOT included in taskMin (hook-level gate)', async () => {
+    // A routine scheduled for today with 30-min step (M=1.0 → honest 30)
+    const routine = makeRoutineWithSteps({
+      id: 'r1',
+      scheduleDays: [3], // Wednesday
+      steps: [{ id: 's1', guessMin: 30 }],
+    });
+    useRoutinesStore.setState({
+      routines: [routine],
+      stepMByKey: { 'routine:r1:s1': 1.0 },
+    });
+
+    // FREE user — routines must not bleed into the load value
+    useEntitlement.setState({ isPro: false, ready: true });
+
+    const { result } = renderHook(() => useDayCapacity());
+    await act(async () => {});
+
+    // taskMin must be 0 (no tasks, no routine minutes for free users)
+    expect(result.current.load?.taskMin).toBe(0);
+  });
+
+  it('Pro user: routine minutes ARE included in taskMin', async () => {
+    const routine = makeRoutineWithSteps({
+      id: 'r1',
+      scheduleDays: [3],
+      steps: [{ id: 's1', guessMin: 30 }],
+    });
+    useRoutinesStore.setState({
+      routines: [routine],
+      stepMByKey: { 'routine:r1:s1': 1.0 },
+    });
+
+    useEntitlement.setState({ isPro: true, ready: true });
+
+    const { result } = renderHook(() => useDayCapacity());
+    await act(async () => {});
+
+    // Pro: taskMin = 30 from the routine block
+    expect(result.current.load?.taskMin).toBe(30);
+  });
+});

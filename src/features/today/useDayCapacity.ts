@@ -46,16 +46,16 @@ export function useDayCapacity(_nowMs?: number): DayCapacityResult {
 
   // ── Scheduled routines for the selected day ────────────────────────────────
   // Derived read — no DB writes. Each scheduled routine counts toward capacity
-  // as a single block (honestTotalMin). Pro-gated alongside calendar (capacity
-  // feature is Pro-only; the hook is still called but its minutes join the same
-  // taskHonestMins array regardless of Pro status — the full load is always
-  // computed; the CapacityChip gates the display for free users).
+  // as a single block (honestTotalMin). Pro-only: routines are a Pro feature,
+  // so their minutes must not enter the load for free users (Pro-gate invariant:
+  // free users must not see gated values or their position).
   const { blocks: routineBlocks } = useScheduledRoutines(selectedDate);
 
   // ── Honest minutes for queued tasks + scheduled routines ─────────────────
   // Mirrors the resolver used by useToday / resolveHonestTasks: guess × M_eff,
   // rounded to 5. Only 'queued' tasks feed the capacity read. Scheduled routine
-  // blocks are appended to this array so they count toward the day's load.
+  // blocks are appended only for Pro users — excludes them from the free-user
+  // load so routine minutes can never be inferred from the teaser UI.
   const taskHonestMins = useMemo((): readonly number[] => {
     const taskMins = dayTasks
       .filter((t) => t.status === 'queued')
@@ -67,10 +67,10 @@ export function useDayCapacity(_nowMs?: number): DayCapacityResult {
         return resolveSuggestion({ guessMinutes: t.guessMin, category: cat, recurring: null })
           .honestMinutes;
       });
-    // Each scheduled routine counts as one block (its honest total).
-    const routineMins = routineBlocks.map((b) => b.honestTotalMin);
+    // Each scheduled routine counts as one block (its honest total) — Pro only.
+    const routineMins = isPro ? routineBlocks.map((b) => b.honestTotalMin) : [];
     return [...taskMins, ...routineMins];
-  }, [dayTasks, statsByCategory, routineBlocks]);
+  }, [dayTasks, statsByCategory, routineBlocks, isPro]);
 
   // ── Calendar async effect ─────────────────────────────────────────────────
   // Runs when Pro + showEvents. Respects the per-calendar filter (empty list =

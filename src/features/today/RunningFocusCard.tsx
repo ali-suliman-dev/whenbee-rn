@@ -124,7 +124,8 @@ export function RunningFocusCard({ categoryName }: RunningFocusCardProps) {
     ...(type.eyebrow as unknown as TextStyle),
     fontSize: t.fontSize['2xs'],
     letterSpacing: 1.5,
-    lineHeight: 12,
+    // 1.5× the override fontSize — absolute RN lineHeight (tokens.lineHeight are ratios)
+    lineHeight: t.fontSize['2xs'] * 1.5,
   };
 
   const topline: ViewStyle = { flexDirection: 'row', alignItems: 'flex-end', gap: t.space[3] };

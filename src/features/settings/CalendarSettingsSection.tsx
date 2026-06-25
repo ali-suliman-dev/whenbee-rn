@@ -240,21 +240,25 @@ export function CalendarSettingsSection() {
 
               return (
                 <View key={cal.id}>
+                  {/* Bare Pressable + inner View — reactCompiler drops function-form styles on Pressable */}
                   <Pressable
                     onPress={() => toggleCalendar(cal.id)}
                     accessibilityRole="checkbox"
                     accessibilityState={{ checked: isEnabled }}
                     accessibilityLabel={`${cal.title}, ${isEnabled ? 'visible' : 'hidden'}`}
-                    style={({ pressed }) => [row, { opacity: pressed ? t.opacity.pressed : 1 }]}
                   >
-                    <Ionicons
-                      name={isEnabled ? 'checkmark-circle' : 'ellipse-outline'}
-                      size={t.iconSize.md}
-                      color={isEnabled ? t.colors.primary : t.colors.inkFaint}
-                    />
-                    <AppText style={{ ...(type.bodySm as unknown as TextStyle), color: t.colors.ink, flex: 1 }}>
-                      {cal.title}
-                    </AppText>
+                    {({ pressed }) => (
+                      <View style={[row, { opacity: pressed ? t.opacity.pressed : 1 }]}>
+                        <Ionicons
+                          name={isEnabled ? 'checkmark-circle' : 'ellipse-outline'}
+                          size={t.iconSize.md}
+                          color={isEnabled ? t.colors.primary : t.colors.inkFaint}
+                        />
+                        <AppText style={{ ...(type.bodySm as unknown as TextStyle), color: t.colors.ink, flex: 1 }}>
+                          {cal.title}
+                        </AppText>
+                      </View>
+                    )}
                   </Pressable>
                   {!isLast ? <View style={divider} /> : null}
                 </View>
@@ -323,37 +327,37 @@ export function CalendarSettingsSection() {
         </View>
       ) : (
         /* Free user: locked row routes to paywall */
+        /* Bare Pressable + inner View — reactCompiler drops function-form styles on Pressable */
         <Pressable
           onPress={openExportPaywall}
           accessibilityRole="button"
           accessibilityLabel="Add plan to a Whenbee calendar — Pro feature. Tap to upgrade."
-          style={({ pressed }) => [
-            card,
-            row,
-            { opacity: pressed ? t.opacity.pressed : 1 },
-          ]}
         >
-          <Ionicons
-            name="calendar-sharp"
-            size={t.iconSize.md}
-            color={t.colors.inkFaint}
-            accessibilityElementsHidden
-            importantForAccessibility="no"
-          />
-          <View style={{ flex: 1, gap: t.space[0.5] }}>
-            <AppText style={{ ...(type.bodySmBold as unknown as TextStyle), color: t.colors.inkFaint }}>
-              Add plan to a Whenbee calendar
-            </AppText>
-            <AppText style={noteStyle}>
-              After you run {'"'}Plan my day{'"'}, the schedule goes straight to your calendar.
-            </AppText>
-          </View>
-          <View style={{ flexDirection: 'row', alignItems: 'center', gap: t.space[1] }}>
-            <Ionicons name="lock-closed" size={t.iconSize.sm} color={t.colors.inkFaint} accessibilityElementsHidden importantForAccessibility="no" />
-            <AppText style={{ ...(type.caption as unknown as TextStyle), color: t.colors.inkFaint }}>
-              Pro
-            </AppText>
-          </View>
+          {({ pressed }) => (
+            <View style={[card, row, { opacity: pressed ? t.opacity.pressed : 1 }]}>
+              <Ionicons
+                name="calendar-sharp"
+                size={t.iconSize.md}
+                color={t.colors.inkFaint}
+                accessibilityElementsHidden
+                importantForAccessibility="no"
+              />
+              <View style={{ flex: 1, gap: t.space[0.5] }}>
+                <AppText style={{ ...(type.bodySmBold as unknown as TextStyle), color: t.colors.inkFaint }}>
+                  Add plan to a Whenbee calendar
+                </AppText>
+                <AppText style={noteStyle}>
+                  After you run {'"'}Plan my day{'"'}, the schedule goes straight to your calendar.
+                </AppText>
+              </View>
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: t.space[1] }}>
+                <Ionicons name="lock-closed" size={t.iconSize.sm} color={t.colors.inkFaint} accessibilityElementsHidden importantForAccessibility="no" />
+                <AppText style={{ ...(type.caption as unknown as TextStyle), color: t.colors.inkFaint }}>
+                  Pro
+                </AppText>
+              </View>
+            </View>
+          )}
         </Pressable>
       )}
     </View>

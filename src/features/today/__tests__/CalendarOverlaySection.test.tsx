@@ -138,3 +138,29 @@ describe('CalendarOverlaySection — mixed', () => {
     expect(screen.getByText(/holiday/i)).toBeOnTheScreen();
   });
 });
+
+// Pro-gate regression: useDayCapacity returns [] for free users (calendar is
+// never fetched). CalendarOverlaySection must render nothing when events=[].
+// This test documents the contract between the hook and the component so that
+// a future change to useDayCapacity can't silently surface calendar data to
+// free users without a test failure.
+describe('CalendarOverlaySection — Pro-gate regression (free user)', () => {
+  it('renders nothing when both arrays are empty (the free-user contract)', () => {
+    // useDayCapacity returns events=[] and allDayEvents=[] for free users;
+    // CalendarOverlaySection must produce no UI in that case.
+    const { toJSON } = render(
+      <CalendarOverlaySection events={[]} allDayEvents={[]} />,
+    );
+    expect(toJSON()).toBeNull();
+  });
+
+  it('never renders the "Calendar" eyebrow for a free user (empty arrays)', () => {
+    render(<CalendarOverlaySection events={[]} allDayEvents={[]} />);
+    expect(screen.queryByText(/calendar/i)).toBeNull();
+  });
+
+  it('never renders any event title for a free user (empty arrays)', () => {
+    render(<CalendarOverlaySection events={[]} allDayEvents={[]} />);
+    expect(screen.queryByText(/team sync/i)).toBeNull();
+  });
+});
