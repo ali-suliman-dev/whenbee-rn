@@ -23,6 +23,9 @@ export interface TasksRepo {
   setPlanComputedAt(date: string, planComputedAt: number): Promise<void>;
   /** Distinct plannedDates of all queued tasks — used to populate calendar dot hints. */
   dates(): Promise<string[]>;
+  /** All tasks that currently have a non-null calendarEventId — used to bulk-clear
+   *  export links when the user disables calendar export. */
+  listWithCalendarEventId(): Promise<Task[]>;
 }
 
 function toTask(r: TaskRow): Task {
@@ -103,6 +106,9 @@ export function makeTasksRepo(db: Database): TasksRepo {
     },
     async dates() {
       return db.listDatesWithTasks();
+    },
+    async listWithCalendarEventId() {
+      return (await db.listTasksWithCalendarEventId()).map(toTask);
     },
   };
 }

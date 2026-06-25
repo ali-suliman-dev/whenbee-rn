@@ -96,4 +96,7 @@ export interface Database {
   upsertDayMeta(row: DayMetaRow): Promise<void>;
   /** Distinct plannedDates of all queued (non-shelf) tasks. Used for calendar dot hints. */
   listDatesWithTasks(): Promise<string[]>;
+  /** All tasks that currently have a non-null calendarEventId. Used to bulk-clear
+   *  export links when the user disables the calendar export feature. */
+  listTasksWithCalendarEventId(): Promise<TaskRow[]>;
 }
