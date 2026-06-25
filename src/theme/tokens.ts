@@ -34,7 +34,7 @@ export const tokens = {
   // `hitSlop` = extra tap area added via the Pressable hitSlop prop so that small
   // touch targets (secondary buttons, skip links) comfortably meet the 44pt HIG
   // floor without visually enlarging the element.
-  size: { control: { xs: 32, sm: 36, md: 44, lg: 52 }, coin: 40, wheelCol: 72, wheelRow: 32, shareCard: 340, timelineCol: 110, planCardMin: 70, gripW: 14, hitSlop: 8, sparkline: 32 },
+  size: { control: { xs: 32, sm: 36, md: 44, lg: 52 }, coin: 40, wheelCol: 72, wheelRow: 32, shareCard: 340, timelineCol: 110, planCardMin: 70, gripW: 14, hitSlop: 8, sparkline: 32, honestBand: 180 },
 
   // Icon sizing scale — replaces inline 12/16/18/20/22/24/30 across the app.
   iconSize: { xs: 12, sm: 16, md: 20, lg: 24, xl: 32 },
@@ -466,11 +466,23 @@ export const tokens = {
     },
   },
 
-  // Patterns ProgressChart geometry — sparkline of accuracy over time. height =
-  // SVG box height (pt); stroke = line weight; dot = endpoint radius; areaOpacity
-  // = gradient fill alpha under the line; strokeDash = path length used for the
-  // draw-on animation (large enough to cover any path).
-  chart: { height: 96, stroke: 2.5, dot: 4.5, areaOpacity: 0.32, strokeDash: 1000 },
+  // AxisLineChart geometry — a real labelled line chart (TrendChart, ProgressChart).
+  // height = plot box height incl. the x-label row (pt); stroke = line weight; dot =
+  // interior data-point radius; endDot = emphasised endpoint radius; areaOpacity =
+  // gradient fill alpha under the line; strokeDash = path length for the draw-on
+  // animation (overestimate so it covers any path). gutter = left column width that
+  // holds the y-axis labels; rightPad/topPad = plot insets; xLabelH = bottom row for
+  // x-axis labels; gridW = gridline weight; refOpacity = the dashed reference line's
+  // alpha; axisFont = y/x label size (pt). endRing = surface-coloured halo stroke
+  // around the endpoint so it reads as a node, not a blob.
+  chart: {
+    height: 168, stroke: 2.5, dot: 2.5, endDot: 4, areaOpacity: 0.16, strokeDash: 1000,
+    gutter: 34, rightPad: 8, topPad: 12, xLabelH: 18, gridW: 1, refOpacity: 0.5,
+    axisFont: 10, endRing: 2,
+    // endpoint breathing halo: pulseR = max extra radius the ring grows; pulseOpacity
+    // = its peak alpha (fades to 0 as it expands). crosshairW = scrub crosshair weight.
+    pulseR: 9, pulseOpacity: 0.4, crosshairW: 1,
+  },
 
   // Premium Pro teaser card (ProTeaserCard) — frosted preview panel + amber pill.
   // previewH = preview panel height (pt); barGap = gap between faux bars; barRadius

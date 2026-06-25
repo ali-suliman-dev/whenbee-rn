@@ -218,6 +218,7 @@ function styles(t: ReturnType<typeof useTheme>) {
   return {
     header: {
       paddingTop: t.space[2],
+      paddingBottom: t.space[4],
       gap: t.space[1],
     } as ViewStyle,
     // Breadcrumb back row — the chevron + "Category insights" reads as one tappable

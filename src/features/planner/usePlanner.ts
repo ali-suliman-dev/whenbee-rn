@@ -167,9 +167,11 @@ export function usePlanner(args: UsePlannerArgs = {}) {
         status: verdictStatus(result.verdict),
         freed_min: 0,
       });
-      // G17 — schedule the "start by" nudge (opt-in; off unless reminders are on).
+      // G17 — schedule the "start by" nudge (opt-in; off unless reminders are on
+      // and the start-by ping type is enabled). Reads non-reactively at save time.
+      const settings = useSettingsStore.getState();
       const first = result.timeline[0];
-      if (useSettingsStore.getState().remindersEnabled && first && draft.deadline !== null) {
+      if (settings.remindersEnabled && settings.startByEnabled && first && draft.deadline !== null) {
         void scheduleStartBy({
           startByMs: result.startBy,
           firstTaskLabel: first.label,
