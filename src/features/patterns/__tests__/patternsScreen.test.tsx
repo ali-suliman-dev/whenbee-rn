@@ -1,4 +1,4 @@
-import { render, screen, waitFor } from '@testing-library/react-native';
+import { render, screen, waitFor, fireEvent } from '@testing-library/react-native';
 import Patterns from '@/src/app/(tabs)/patterns';
 import { useCalibrationStore, type PatternsData } from '@/src/stores/calibrationStore';
 
@@ -156,5 +156,82 @@ describe('Patterns screen', () => {
     expect(
       screen.getByText('Your areas are still settling. A few more logs and the numbers sharpen.'),
     ).toBeOnTheScreen();
+  });
+});
+
+describe('Patterns screen — segment routing', () => {
+  beforeEach(() => {
+    setPatternsData({
+      nameOf: (id) => id,
+      categories: [
+        { categoryId: 'admin', n: 8, mEffective: 2.0, sharpness: 60 },
+        { categoryId: 'email', n: 6, mEffective: 1.8, sharpness: 55 },
+      ],
+      logs: Array.from({ length: 8 }, (_, i) => ({
+        category: 'admin',
+        estimateMin: 10,
+        actualMin: 20,
+        status: 'completed' as const,
+        source: 'timed' as const,
+        createdAt: NOW - (8 - i) * DAY,
+      })),
+    });
+  });
+
+  it('hero and review render regardless of selected tab', async () => {
+    render(<Patterns />);
+    await waitFor(() => {
+      expect(screen.getByText('YOUR TIME PERSONALITY')).toBeOnTheScreen();
+    });
+    // Switch to Insights tab — hero must still be present
+    fireEvent.press(screen.getByRole('button', { name: 'Insights' }));
+    expect(screen.getByText('YOUR TIME PERSONALITY')).toBeOnTheScreen();
+  });
+
+  it('numbers tab (default) shows progress, not correlations content', async () => {
+    render(<Patterns />);
+    await waitFor(() => {
+      expect(screen.getByText('Your progress')).toBeOnTheScreen();
+    });
+    // Numbers-specific content is visible; correlations-only content is not
+    expect(screen.getByText('Your numbers')).toBeOnTheScreen();
+    // The correlations segment content (pro gate locked card) must not appear on numbers tab
+    expect(screen.queryByText('What steals your time')).toBeNull();
+  });
+
+  it('insights tab shows empty message when no insight cards exist', async () => {
+    render(<Patterns />);
+    await waitFor(() => {
+      expect(screen.getByText('YOUR TIME PERSONALITY')).toBeOnTheScreen();
+    });
+    fireEvent.press(screen.getByRole('button', { name: 'Insights' }));
+    await waitFor(() => {
+      expect(screen.getByText('Nothing new right now.')).toBeOnTheScreen();
+    });
+  });
+
+  it('correlations tab hides numbers content', async () => {
+    render(<Patterns />);
+    await waitFor(() => {
+      expect(screen.getByText('YOUR TIME PERSONALITY')).toBeOnTheScreen();
+    });
+    fireEvent.press(screen.getByRole('button', { name: 'Correlations' }));
+    // Numbers-only content must not be visible on correlations tab
+    expect(screen.queryByText('Your progress')).toBeNull();
+    // Segment control itself must still be present
+    expect(screen.getByRole('button', { name: 'Correlations' })).toBeOnTheScreen();
+  });
+
+  it('insights tab shows dismissable feed area after switch', async () => {
+    render(<Patterns />);
+    await waitFor(() => {
+      expect(screen.getByText('YOUR TIME PERSONALITY')).toBeOnTheScreen();
+    });
+    fireEvent.press(screen.getByRole('button', { name: 'Insights' }));
+    // Hero still pinned, and the insights empty state renders
+    expect(screen.getByText('YOUR TIME PERSONALITY')).toBeOnTheScreen();
+    await waitFor(() => {
+      expect(screen.getByText('Nothing new right now.')).toBeOnTheScreen();
+    });
   });
 });
