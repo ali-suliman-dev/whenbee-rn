@@ -10,14 +10,15 @@ import { RunView } from '@/src/features/planner/RunView';
 import { AbandonButton } from '@/src/features/planner/AbandonButton';
 import { PlanSegment, type PlanTab } from '@/src/features/routines/PlanSegment';
 import { RoutinesScreen } from '@/src/features/routines/RoutinesScreen';
-import { FocusMode } from '@/src/features/planner/FocusMode';
 
 // ──────────────────────────────────────────────────────────────────────────────
 // Plan — thin route. A header segmented control switches between:
-//   Today    — the existing free Start-By flow (BuildView ↔ RunView). UNCHANGED.
-//   Routines — the Pro saved-sequence surface (ProGate'd inside RoutinesScreen).
+//   Plan (today)  — the existing free Start-By flow (BuildView ↔ RunView).
+//   Routines      — the Pro saved-sequence surface (ProGate'd inside RoutinesScreen).
 // The segment is always visible so the Routines value is discoverable; gating is
 // the Routines content's job. No business logic lives here.
+// Focus curve/window detail lives in Patterns (FocusPatternsCard); task-packing
+// is in the Phase-4 Timeline.
 //
 // Entering-only — NO `exiting` layout animation (Fabric SIGABRT on conditionally-
 // unmounted views). Reduced-motion → instant (FadeIn with ReduceMotion.System).
@@ -46,10 +47,6 @@ export default function PlanScreen() {
       {tab === 'routines' ? (
         <Animated.View key="routines" style={{ flex: 1, paddingHorizontal: t.space[5] }} entering={ENTER}>
           <RoutinesScreen />
-        </Animated.View>
-      ) : tab === 'focus' ? (
-        <Animated.View key="focus" style={{ flex: 1 }} entering={ENTER}>
-          <FocusMode />
         </Animated.View>
       ) : phase === 'run' ? (
         <Animated.View key="run" style={{ flex: 1 }} entering={ENTER}>

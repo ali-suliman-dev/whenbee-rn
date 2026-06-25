@@ -26,6 +26,7 @@ import { AccuracyCorrelationsLocked } from '@/src/features/patterns/AccuracyCorr
 import { useContextInsights } from '@/src/features/patterns/useContextInsights';
 import { ContextCorrelations } from '@/src/features/patterns/ContextCorrelations';
 import { ContextCorrelationsLocked } from '@/src/features/patterns/ContextCorrelationsLocked';
+import { FocusPatternsCard } from '@/src/features/patterns/FocusPatternsCard';
 
 // ──────────────────────────────────────────────────────────────────────────────
 // Patterns — the free, read-only self-insight surface, redesigned as a hero +
@@ -121,7 +122,13 @@ export default function Patterns() {
               </Animated.View>
             ) : null}
 
-            {/* 5 · PRO — unlocked insights for Pro users; one teaser for free users */}
+            {/* 5 · YOUR FOCUS — curve + window + maturity (migrated from Plan tab) */}
+            <Animated.View entering={rise()} style={{ gap: t.space[3] }}>
+              <SectionHeader label="Your focus" />
+              <FocusPatternsCard />
+            </Animated.View>
+
+            {/* 6 · PRO — unlocked insights for Pro users; one teaser for free users */}
             <Animated.View entering={rise()} style={{ gap: t.space[3] }}>
               <ProGate fallback={lockedTeaser === 'steals' ? <StealsYourTimeLocked /> : null}>
                 <StealsYourTime insights={insights} />

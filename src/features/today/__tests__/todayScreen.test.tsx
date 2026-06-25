@@ -8,6 +8,19 @@ import type { DayTask } from '@/src/engine/daySelectors';
 import { useDayCapacity } from '@/src/features/today/useDayCapacity';
 import { useEntitlement } from '@/src/features/paywall/useEntitlement';
 import type { DayLoadResult } from '@/src/engine/honestDayLoad';
+import { toLocalDayKey } from '@/src/lib/day';
+
+// Pin the clock so "today" is always 2026-06-24 regardless of the real date.
+// The Today screen calls Date.now() to compute today's date and isPastDay.
+const FIXED_NOW = new Date(2026, 5, 24, 12, 0, 0).getTime(); // local 2026-06-24 noon
+const FIXED_TODAY = toLocalDayKey(FIXED_NOW); // '2026-06-24'
+
+beforeAll(() => {
+  jest.spyOn(Date, 'now').mockReturnValue(FIXED_NOW);
+});
+afterAll(() => {
+  (Date.now as jest.Mock).mockRestore();
+});
 
 // DayTimeline + useDayPlan pull native calendar and the engine planner —
 // mock both so screen-level tests stay focused on toggle wiring, not plan internals.
@@ -128,11 +141,13 @@ beforeEach(() => {
     allDayEvents: [],
     isPro: false,
   });
-  // Reset to today so isPastDay is always false unless a test explicitly sets a past date.
+  // Reset to the pinned today so isPastDay is always false unless a test explicitly
+  // sets a past date. Must use FIXED_TODAY (local key) — not a UTC ISO string — so
+  // it matches the screen's own toLocalDayKey(Date.now()) computation.
   useDayTasksStore.setState({
     dayTasks: [],
     shelfTasks: [],
-    selectedDate: new Date().toISOString().slice(0, 10),
+    selectedDate: FIXED_TODAY,
     selectFocusTask: () => null,
     loadShelf: async () => {},
   });
