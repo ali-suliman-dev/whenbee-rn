@@ -2,7 +2,7 @@
 // a concrete adapter. Two adapters implement it: an in-memory Map-backed one
 // (tests + fallback) and the real expo-sqlite one (device runtime).
 
-import type { CategoryStatRow, CompanionRow, ContextEventRow, ContextTagRow, DiscoveryRow, ReasonEventRow, RecurringStatRow, RoutineRow, RoutineStepRow, TaskEventRow } from './types';
+import type { CategoryStatRow, CompanionRow, ContextEventRow, ContextTagRow, DayMetaRow, DiscoveryRow, ReasonEventRow, RecurringStatRow, RoutineRow, RoutineStepRow, TaskEventRow, TaskRow } from './types';
 
 export interface Database {
   getCategoryStat(categoryId: string): Promise<CategoryStatRow | null>;
@@ -77,4 +77,21 @@ export interface Database {
   /** Factory reset: clears every table and returns the companion singleton to its
    *  default row (seed 0 so the next hydrate re-seeds a fresh appearance, name null). */
   wipeAll(): Promise<void>;
+
+  // ── Day-planned tasks + day meta (planning expansion) ───────────────────────
+  insertTask(row: TaskRow): Promise<void>;
+  /** Partial update by id; only provided fields change. */
+  updateTask(id: string, patch: Partial<TaskRow>): Promise<void>;
+  deleteTask(id: string): Promise<void>;
+  getTask(id: string): Promise<TaskRow | null>;
+  /** Queued tasks planned for a day, order_index ascending. */
+  listTasksByDate(date: string): Promise<TaskRow[]>;
+  /** Queued tasks whose plannedDate <= date (the carryover query), order_index asc. */
+  listQueuedOnOrBefore(date: string): Promise<TaskRow[]>;
+  /** Done tasks whose completedAt is in [startMs, endMs). For a day's recap bucket. */
+  listDoneCompletedBetween(startMs: number, endMs: number): Promise<TaskRow[]>;
+  /** Queued tasks with no plannedDate (the "No day yet" shelf). */
+  listShelfTasks(): Promise<TaskRow[]>;
+  getDayMeta(date: string): Promise<DayMetaRow | null>;
+  upsertDayMeta(row: DayMetaRow): Promise<void>;
 }

@@ -2,7 +2,7 @@
 // and the rest of the app. SQL columns are snake_case and mapped in the
 // sqlite adapter; everything above the port speaks these shapes.
 
-import type { AdaptSpeed, HonestRange, LogSource, LogStatus } from '@/src/domain/types';
+import type { AdaptSpeed, Category, HonestRange, LogSource, LogStatus, TaskStatus } from '@/src/domain/types';
 
 /** Denormalized per-category rolling stats row. */
 export interface CategoryStatRow {
@@ -124,4 +124,28 @@ export interface ContextEventRow {
   estimateMin: number;
   actualMin: number | null;
   createdAt: number;
+}
+
+/** A day-planned task row (system of record for the planning surfaces). */
+export interface TaskRow {
+  id: string;
+  label: string;
+  category: Category;
+  guessMin: number;
+  plannedDate: string | null;
+  status: TaskStatus;
+  orderIndex: number;
+  doneByMin: number | null;
+  createdAt: number;
+  completedAt: number | null;
+  actualMin: number | null;
+  fromRoutineId: string | null;
+  calendarEventId: string | null;
+}
+
+/** Day-level planning attributes row. */
+export interface DayMetaRow {
+  date: string;
+  doneByMin: number | null;
+  planComputedAt: number | null;
 }

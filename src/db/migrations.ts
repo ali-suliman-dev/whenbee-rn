@@ -141,4 +141,33 @@ export const MIGRATIONS: string[] = [
   `
   ALTER TABLE task_events ADD COLUMN start_local_minute INTEGER;
   `,
+
+  // 0010 — Day-planned tasks + day-level planning meta (planning expansion).
+  // Tasks graduate from the ephemeral kv list to a durable per-day table so the
+  // calendar surface can carry tasks over silently and bank per-day history.
+  `
+  CREATE TABLE IF NOT EXISTS tasks (
+    id TEXT PRIMARY KEY,
+    label TEXT NOT NULL,
+    category TEXT NOT NULL,
+    guess_min INTEGER NOT NULL,
+    planned_date TEXT,
+    status TEXT NOT NULL,
+    order_index INTEGER NOT NULL DEFAULT 0,
+    done_by_min INTEGER,
+    created_at INTEGER NOT NULL,
+    completed_at INTEGER,
+    actual_min INTEGER,
+    from_routine_id TEXT,
+    calendar_event_id TEXT
+  );
+  CREATE INDEX IF NOT EXISTS idx_tasks_planned_date ON tasks (planned_date, order_index);
+  CREATE INDEX IF NOT EXISTS idx_tasks_status_completed ON tasks (status, completed_at);
+
+  CREATE TABLE IF NOT EXISTS day_meta (
+    date TEXT PRIMARY KEY,
+    done_by_min INTEGER,
+    plan_computed_at INTEGER
+  );
+  `,
 ];
