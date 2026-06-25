@@ -42,7 +42,7 @@ const DIVIDER_SLOT_W = ADD_BTN.size + 16 + 1; // button + padding + 1px divider
 
 const ICONS: Record<string, TabIconName> = {
   index: 'home',
-  plan: 'calendar',
+  routines: 'calendar',
   whenbee: 'bee',
   patterns: 'pulse',
 };

@@ -18,6 +18,11 @@ import {
 } from '@/src/engine';
 import { useRoutinesStore } from '@/src/stores/routinesStore';
 import { useCalibrationStore } from '@/src/stores/calibrationStore';
+import {
+  seedGuessForCategory,
+  typicalCaptionForCategory,
+  DEFAULT_STEP_GUESS,
+} from './calibrationSeed';
 
 // ──────────────────────────────────────────────────────────────────────────────
 // RoutineBuildView — name a routine, add ordered steps, set an optional be-done-by
@@ -29,26 +34,33 @@ import { useCalibrationStore } from '@/src/stores/calibrationStore';
 
 const MS_PER_MIN = 60_000;
 
-type ComposerState = { open: boolean; title: string; category: string | null; guessed: string | null };
+type ComposerState = {
+  open: boolean;
+  title: string;
+  category: string | null;
+  guessed: string | null;
+  /** Calibration-seeded guess for a freshly-picked category; null = use default. */
+  seededGuess: number | null;
+};
 type ComposerAction =
   | { type: 'open' }
   | { type: 'close' }
   | { type: 'setTitleAndGuess'; value: string; guess: string | null }
   | { type: 'setTitle'; value: string }
-  | { type: 'setCategory'; id: string };
+  | { type: 'setCategory'; id: string; seededGuess: number | null };
 
 function composerReducer(state: ComposerState, action: ComposerAction): ComposerState {
   switch (action.type) {
     case 'open':
-      return { open: true, title: '', category: null, guessed: null };
+      return { open: true, title: '', category: null, guessed: null, seededGuess: null };
     case 'close':
-      return { open: false, title: '', category: null, guessed: null };
+      return { open: false, title: '', category: null, guessed: null, seededGuess: null };
     case 'setTitleAndGuess':
-      return { ...state, title: action.value, category: action.guess, guessed: action.guess };
+      return { ...state, title: action.value, category: action.guess, guessed: action.guess, seededGuess: null };
     case 'setTitle':
       return { ...state, title: action.value };
     case 'setCategory':
-      return { ...state, category: action.id, guessed: null };
+      return { ...state, category: action.id, guessed: null, seededGuess: action.seededGuess };
     default:
       return state;
   }
@@ -73,6 +85,7 @@ export function RoutineBuildView({ onDone }: { onDone: () => void }) {
     title: '',
     category: null,
     guessed: null,
+    seededGuess: null,
   });
 
   const categoryM = (category: string): number =>
@@ -91,7 +104,10 @@ export function RoutineBuildView({ onDone }: { onDone: () => void }) {
   const handleAddStep = () => {
     const label = composer.title.trim();
     if (!label) return;
-    addStep({ label, category: composer.category ?? 'admin', guessMin: 15 });
+    // Use the calibration-seeded guess when the category was just picked
+    // (seededGuess is set by setCategory). Fall back to DEFAULT_STEP_GUESS.
+    const guessMin = composer.seededGuess ?? DEFAULT_STEP_GUESS;
+    addStep({ label, category: composer.category ?? 'admin', guessMin });
     dispatch({ type: 'close' });
   };
 
@@ -150,8 +166,15 @@ export function RoutineBuildView({ onDone }: { onDone: () => void }) {
       keyboardShouldPersistTaps="handled"
     >
       <View style={headerRow}>
-        <AppText style={title}>{draft.editingId ? 'Edit routine' : 'New routine'}</AppText>
-        <AppButton label="Save" variant="indigo" size="sm" disabled={!canSave} onPress={() => { void saveDraft().then(onDone); }} />
+        <AppText style={title}>{draft.editingId ? 'Edit sequence' : 'New sequence'}</AppText>
+        <AppButton
+          label="Save"
+          variant="indigo"
+          size="sm"
+          disabled={!canSave}
+          onPress={() => { void saveDraft().then(onDone); }}
+          accessibilityLabel={canSave ? 'Save routine' : 'Add a name and at least one step to save'}
+        />
       </View>
 
       <TaskTitleField
@@ -195,9 +218,25 @@ export function RoutineBuildView({ onDone }: { onDone: () => void }) {
             <CategoryChips
               categories={categories}
               value={composer.category}
-              onChange={(id) => dispatch({ type: 'setCategory', id })}
+              onChange={(id) => {
+                const seededGuess = seedGuessForCategory(id, statsByCategory);
+                dispatch({
+                  type: 'setCategory',
+                  id,
+                  // Only apply the seed when there's actual learned data (seededGuess
+                  // differs from the default when n >= PERSONAL_MIN_LOGS).
+                  seededGuess: seededGuess !== DEFAULT_STEP_GUESS ? seededGuess : null,
+                });
+              }}
               guessedId={composer.guessed}
             />
+            {/* Quiet calibration caption — visible only when the category has learned data */}
+            {composer.category !== null &&
+              typicalCaptionForCategory(composer.category, statsByCategory) !== null ? (
+              <AppText style={caption}>
+                {typicalCaptionForCategory(composer.category, statsByCategory)}
+              </AppText>
+            ) : null}
             <View style={{ flexDirection: 'row', gap: t.space[2] }}>
               <AppButton label="Add step" variant="indigo" size="xs" disabled={!composer.title.trim()} onPress={handleAddStep} />
               <AppButton label="Cancel" variant="ghost" size="xs" onPress={() => dispatch({ type: 'close' })} />
@@ -215,9 +254,14 @@ export function RoutineBuildView({ onDone }: { onDone: () => void }) {
       {/* Be done by (optional) */}
       <View style={{ gap: t.space[2] }}>
         <View style={headerRow}>
-          <AppText style={fieldLabel}>BE DONE BY</AppText>
+          <AppText style={fieldLabel} accessibilityRole="header">FINISH BY</AppText>
           {draft.doneByMinuteOfDay !== null ? (
-            <Pressable onPress={() => setDoneBy(null)} hitSlop={t.space[2]} accessibilityRole="button" accessibilityLabel="Clear be done by">
+            <Pressable
+              onPress={() => setDoneBy(null)}
+              hitSlop={t.space[2]}
+              accessibilityRole="button"
+              accessibilityLabel="Clear finish time"
+            >
               <AppText style={caption}>Clear</AppText>
             </Pressable>
           ) : null}

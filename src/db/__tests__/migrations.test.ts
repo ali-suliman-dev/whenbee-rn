@@ -246,10 +246,12 @@ describe('MIGRATIONS 0008 — routines (Pro)', () => {
 });
 
 describe('memoryDatabase — routines port (round-trip + wipe)', () => {
+  const baseRoutineRow = { scheduleDays: '', alertEnabled: false, alertLeadMin: 0 };
+
   it('saveRoutine / listRoutineSteps round-trips ordered steps', async () => {
     const db = createMemoryDatabase();
     await db.saveRoutine(
-      { id: 'r1', name: 'AM', doneByMinuteOfDay: 540, transitionFactor: 1.15, runCount: 0, createdAt: 1, updatedAt: 1 },
+      { id: 'r1', name: 'AM', doneByMinuteOfDay: 540, transitionFactor: 1.15, runCount: 0, createdAt: 1, updatedAt: 1, ...baseRoutineRow },
       [
         { id: 's2', routineId: 'r1', position: 1, label: 'b', category: 'admin', guessMin: 10 },
         { id: 's1', routineId: 'r1', position: 0, label: 'a', category: 'admin', guessMin: 20 },
@@ -262,7 +264,7 @@ describe('memoryDatabase — routines port (round-trip + wipe)', () => {
   it('incrementRoutineRunCount + setRoutineTransitionFactor persist', async () => {
     const db = createMemoryDatabase();
     await db.saveRoutine(
-      { id: 'r1', name: 'AM', doneByMinuteOfDay: null, transitionFactor: 1.15, runCount: 0, createdAt: 1, updatedAt: 1 },
+      { id: 'r1', name: 'AM', doneByMinuteOfDay: null, transitionFactor: 1.15, runCount: 0, createdAt: 1, updatedAt: 1, ...baseRoutineRow },
       [],
     );
     await db.incrementRoutineRunCount('r1', 2);
@@ -275,7 +277,7 @@ describe('memoryDatabase — routines port (round-trip + wipe)', () => {
   it('wipeAll clears routines + steps', async () => {
     const db = createMemoryDatabase();
     await db.saveRoutine(
-      { id: 'r1', name: 'AM', doneByMinuteOfDay: null, transitionFactor: 1.15, runCount: 0, createdAt: 1, updatedAt: 1 },
+      { id: 'r1', name: 'AM', doneByMinuteOfDay: null, transitionFactor: 1.15, runCount: 0, createdAt: 1, updatedAt: 1, ...baseRoutineRow },
       [{ id: 's1', routineId: 'r1', position: 0, label: 'a', category: 'admin', guessMin: 20 }],
     );
     await db.wipeAll();

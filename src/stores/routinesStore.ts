@@ -19,9 +19,19 @@ import {
   clampRatio,
   priorFor,
   TRANSITION_PRIOR,
+  stepHonestMinutes,
+  routineHonestTotal,
 } from '@/src/engine';
 import type { Routine, RoutineStep, RoutineStepKey } from '@/src/domain/types';
 import { analytics } from '@/src/services/analytics';
+import {
+  scheduleRoutineAlerts,
+  cancelRoutineAlerts,
+} from '@/src/services/routineNotifications';
+import {
+  startFinishTimeActivity,
+  endFinishTimeActivity,
+} from '@/src/services/liveActivity';
 
 // ──────────────────────────────────────────────────────────────────────────────
 // routinesStore — saved routines list + build/edit draft + a KV-persisted
@@ -59,6 +69,10 @@ interface RoutineDraft {
   name: string;
   doneByMinuteOfDay: number | null;
   steps: DraftStep[];
+  /** Weekdays on which this routine is scheduled (0–6). Empty = unscheduled. */
+  scheduleDays: number[];
+  alertEnabled: boolean;
+  alertLeadMin: number;
 }
 
 /** Per-step status during a live run. A skip is first-class, never a failure. */
@@ -83,6 +97,9 @@ const emptyDraft: RoutineDraft = {
   name: '',
   doneByMinuteOfDay: null,
   steps: [],
+  scheduleDays: [],
+  alertEnabled: false,
+  alertLeadMin: 0,
 };
 
 interface RoutinesState {
@@ -101,6 +118,8 @@ interface RoutinesState {
   // ── Build draft ──────────────────────────────────────────────────────────────
   setName: (name: string) => void;
   setDoneBy: (minuteOfDay: number | null) => void;
+  setSchedule: (days: number[]) => void;
+  setAlert: (enabled: boolean, leadMin: number) => void;
   addStep: (step: { label: string; category: string; guessMin: number }) => void;
   editStep: (id: string, patch: Partial<Omit<DraftStep, 'id'>>) => void;
   removeStep: (id: string) => void;
@@ -132,6 +151,39 @@ async function resolveDb(
   const db = await getDatabase();
   set({ db });
   return db;
+}
+
+/**
+ * Compute startByMinuteOfDay for a routine, given its persisted steps.
+ * Returns null when doneByMinuteOfDay is null or there are no steps.
+ * Mirrors the engine call in useRoutines (no React dependency so it's usable in
+ * the async store action). Uses the default transition prior for newly created
+ * routines until trained.
+ */
+async function computeStartByMinuteOfDay(
+  db: Database,
+  routine: Routine,
+  steps: RoutineStep[],
+): Promise<number | null> {
+  if (routine.doneByMinuteOfDay === null || steps.length === 0) return null;
+  const recurring = makeRecurringRepo(db);
+  const catStats = makeCategoryStatsRepo(db);
+  const perStepHonest = await Promise.all(
+    steps.map(async (step) => {
+      const key = `routine:${routine.id}:${step.id}` as import('@/src/domain/types').RoutineStepKey;
+      const stat = await recurring.get(key);
+      let m: number;
+      if (stat && recurringHasEnoughData(stat.n)) {
+        m = stat.mEffective;
+      } else {
+        const cat = await catStats.get(step.category);
+        m = cat.mEffective;
+      }
+      return stepHonestMinutes(step.guessMin, m);
+    }),
+  );
+  const honestTotalMin = routineHonestTotal(perStepHonest, routine.transitionFactor);
+  return Math.max(0, routine.doneByMinuteOfDay - honestTotalMin);
 }
 
 /**
@@ -207,6 +259,11 @@ export const useRoutinesStore = create<RoutinesState>()(
       setDoneBy: (minuteOfDay) =>
         set((s) => ({ draft: { ...s.draft, doneByMinuteOfDay: minuteOfDay } })),
 
+      setSchedule: (days) => set((s) => ({ draft: { ...s.draft, scheduleDays: days } })),
+
+      setAlert: (enabled, leadMin) =>
+        set((s) => ({ draft: { ...s.draft, alertEnabled: enabled, alertLeadMin: leadMin } })),
+
       addStep: ({ label, category, guessMin }) =>
         set((s) => ({
           draft: {
@@ -254,6 +311,9 @@ export const useRoutinesStore = create<RoutinesState>()(
             editingId: loaded.routine.id,
             name: loaded.routine.name,
             doneByMinuteOfDay: loaded.routine.doneByMinuteOfDay,
+            scheduleDays: loaded.routine.scheduleDays,
+            alertEnabled: loaded.routine.alertEnabled,
+            alertLeadMin: loaded.routine.alertLeadMin,
             steps: loaded.steps
               .slice()
               .sort((a, b) => a.position - b.position)
@@ -280,6 +340,9 @@ export const useRoutinesStore = create<RoutinesState>()(
           doneByMinuteOfDay: draft.doneByMinuteOfDay,
           transitionFactor: existing?.routine.transitionFactor ?? TRANSITION_PRIOR,
           runCount: existing?.routine.runCount ?? 0,
+          scheduleDays: draft.scheduleDays,
+          alertEnabled: draft.alertEnabled,
+          alertLeadMin: draft.alertLeadMin,
           createdAt: existing?.routine.createdAt ?? now,
           updatedAt: now,
         };
@@ -299,6 +362,15 @@ export const useRoutinesStore = create<RoutinesState>()(
           ? { routine_id_hash: hashId(id), step_count: steps.length }
           : { step_count: steps.length, has_anchor: draft.doneByMinuteOfDay !== null });
 
+        // Schedule or cancel start-by alerts based on the saved routine.
+        const startByMin = await computeStartByMinuteOfDay(db, routine, steps);
+        if (startByMin !== null) {
+          await scheduleRoutineAlerts(routine, startByMin);
+        } else {
+          // No anchor → cancel any existing alerts (alert toggle changed or anchor removed).
+          await cancelRoutineAlerts(id);
+        }
+
         set({ draft: emptyDraft });
         await get().loadRoutines();
         return id;
@@ -307,6 +379,8 @@ export const useRoutinesStore = create<RoutinesState>()(
       removeRoutine: async (id) => {
         const db = await resolveDb(get, set);
         await makeRoutinesRepo(db).remove(id);
+        // Cancel any scheduled alerts for the deleted routine.
+        await cancelRoutineAlerts(id);
         await get().loadRoutines();
       },
 
@@ -315,15 +389,32 @@ export const useRoutinesStore = create<RoutinesState>()(
         const db = await resolveDb(get, set);
         const loaded = await makeRoutinesRepo(db).get(routineId);
         if (!loaded) return;
-        const steps: RunStep[] = loaded.steps
-          .slice()
-          .sort((a, b) => a.position - b.position)
-          .map((step, index) => ({ stepId: step.id, status: index === 0 ? 'running' : 'upcoming' }));
-        set({ activeRun: { routineId, startedAt: Date.now(), steps } });
+        const ordered = loaded.steps.slice().sort((a, b) => a.position - b.position);
+        const steps: RunStep[] = ordered.map((step, index) => ({
+          stepId: step.id,
+          status: index === 0 ? 'running' : 'upcoming',
+        }));
+        const now = Date.now();
+        set({ activeRun: { routineId, startedAt: now, steps } });
         analytics.capture('routine_run_started', {
           step_count: steps.length,
           basis: routineBasis(loaded.routine.runCount).basis,
         });
+
+        // Wire the Lock-Screen Live Activity countdown for the first step (guarded no-op
+        // until the device build; the in-app countdown is always active). Use the first
+        // step's guessMin as a best-effort honest estimate (category M unknown at this
+        // point without the async resolve path — the view shows the accurate number).
+        const firstStep = ordered[0];
+        if (firstStep) {
+          const finishEpoch = Math.round((now + firstStep.guessMin * 60_000) / 1000);
+          startFinishTimeActivity({
+            taskLabel: `${loaded.routine.name} · ${firstStep.label}`,
+            finishEpoch,
+            startEpoch: Math.round(now / 1000),
+            isProRich: false, // entitlement not imported here; the device LA picks it up
+          });
+        }
       },
 
       completeStep: (stepId, actualMin) =>
@@ -403,6 +494,7 @@ export const useRoutinesStore = create<RoutinesState>()(
           run_count_after: loaded.routine.runCount + (fullRun ? 1 : 0),
         });
 
+        endFinishTimeActivity();
         set({ activeRun: null });
         await get().loadRoutines();
       },
@@ -413,6 +505,7 @@ export const useRoutinesStore = create<RoutinesState>()(
           const stepsDone = run.steps.filter((rs) => rs.status === 'done').length;
           analytics.capture('routine_run_abandoned', { steps_done: stepsDone, step_count: run.steps.length });
         }
+        endFinishTimeActivity();
         set({ activeRun: null });
       },
 

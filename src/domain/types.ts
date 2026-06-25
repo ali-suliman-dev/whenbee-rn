@@ -330,6 +330,13 @@ export interface Routine {
   transitionFactor: number;
   /** Count of completed full runs that have trained the routine. Monotonic. */
   runCount: number;
+  /** Weekdays on which this routine is scheduled (0 = Sunday … 6 = Saturday).
+   *  Empty array means unscheduled (runs on-demand only). */
+  scheduleDays: number[];
+  /** Whether a start-by alert should fire before the routine begins. */
+  alertEnabled: boolean;
+  /** How many minutes before the routine's start-by time to fire the alert. */
+  alertLeadMin: number;
   createdAt: number;
   updatedAt: number;
 }

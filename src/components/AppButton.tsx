@@ -50,6 +50,8 @@ export function AppButton({
   fullWidth = false,
   icon,
   accessibilityLabel,
+  accessibilityHint,
+  accessibilityState,
 }: {
   label: string;
   onPress: () => void;
@@ -61,6 +63,8 @@ export function AppButton({
   fullWidth?: boolean;
   icon?: ReactNode;
   accessibilityLabel?: string;
+  accessibilityHint?: string;
+  accessibilityState?: { disabled?: boolean; selected?: boolean; checked?: boolean | 'mixed'; busy?: boolean; expanded?: boolean };
 }) {
   const t = useTheme();
   const reducedMotion = useReducedMotion();
@@ -169,6 +173,8 @@ export function AppButton({
     <Pressable
       accessibilityRole="button"
       accessibilityLabel={accessibilityLabel}
+      accessibilityHint={accessibilityHint}
+      accessibilityState={accessibilityState ?? (disabled ? { disabled: true } : undefined)}
       disabled={disabled}
       onPress={onPress}
       onPressIn={handlePressIn}

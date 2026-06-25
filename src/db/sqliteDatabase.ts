@@ -146,6 +146,9 @@ interface RoutineDbRow {
   done_by_minute_of_day: number | null;
   transition_factor: number;
   run_count: number;
+  schedule_days: string;
+  alert_enabled: number;
+  alert_lead_min: number;
   created_at: number;
   updated_at: number;
 }
@@ -166,6 +169,9 @@ function mapRoutine(r: RoutineDbRow): RoutineRow {
     doneByMinuteOfDay: r.done_by_minute_of_day,
     transitionFactor: r.transition_factor,
     runCount: r.run_count,
+    scheduleDays: r.schedule_days ?? '',
+    alertEnabled: r.alert_enabled === 1,
+    alertLeadMin: r.alert_lead_min ?? 0,
     createdAt: r.created_at,
     updatedAt: r.updated_at,
   };
@@ -378,19 +384,25 @@ export async function createSqliteDatabase(name = 'whenbee.db'): Promise<Databas
       await db.withTransactionAsync(async () => {
         await db.runAsync(
           `INSERT INTO routines
-             (id, name, done_by_minute_of_day, transition_factor, run_count, created_at, updated_at)
-           VALUES (?, ?, ?, ?, ?, ?, ?)
+             (id, name, done_by_minute_of_day, transition_factor, run_count, schedule_days, alert_enabled, alert_lead_min, created_at, updated_at)
+           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
            ON CONFLICT(id) DO UPDATE SET
              name = excluded.name,
              done_by_minute_of_day = excluded.done_by_minute_of_day,
              transition_factor = excluded.transition_factor,
              run_count = excluded.run_count,
+             schedule_days = excluded.schedule_days,
+             alert_enabled = excluded.alert_enabled,
+             alert_lead_min = excluded.alert_lead_min,
              updated_at = excluded.updated_at`,
           routine.id,
           routine.name,
           routine.doneByMinuteOfDay,
           routine.transitionFactor,
           routine.runCount,
+          routine.scheduleDays,
+          routine.alertEnabled ? 1 : 0,
+          routine.alertLeadMin,
           routine.createdAt,
           routine.updatedAt
         );

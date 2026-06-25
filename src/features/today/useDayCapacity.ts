@@ -7,6 +7,7 @@ import { getCalendar, type CalendarEvent } from '@/src/services/calendar';
 import { honestDayLoad, type DayLoadResult } from '@/src/engine/honestDayLoad';
 import { WAKING_WINDOW_MIN } from '@/src/engine/constants';
 import { resolveSuggestion, priorFor } from '@/src/engine';
+import { useScheduledRoutines } from './useScheduledRoutines';
 
 // ──────────────────────────────────────────────────────────────────────────────
 // useDayCapacity — combines the selected day's queued tasks (honest minutes via
@@ -43,11 +44,20 @@ export function useDayCapacity(_nowMs?: number): DayCapacityResult {
   const [events, setEvents] = useState<CalendarEvent[]>([]);
   const [allDayEvents, setAllDayEvents] = useState<CalendarEvent[]>([]);
 
-  // ── Honest minutes for queued tasks ──────────────────────────────────────
+  // ── Scheduled routines for the selected day ────────────────────────────────
+  // Derived read — no DB writes. Each scheduled routine counts toward capacity
+  // as a single block (honestTotalMin). Pro-gated alongside calendar (capacity
+  // feature is Pro-only; the hook is still called but its minutes join the same
+  // taskHonestMins array regardless of Pro status — the full load is always
+  // computed; the CapacityChip gates the display for free users).
+  const { blocks: routineBlocks } = useScheduledRoutines(selectedDate);
+
+  // ── Honest minutes for queued tasks + scheduled routines ─────────────────
   // Mirrors the resolver used by useToday / resolveHonestTasks: guess × M_eff,
-  // rounded to 5. Only 'queued' tasks feed the capacity read.
+  // rounded to 5. Only 'queued' tasks feed the capacity read. Scheduled routine
+  // blocks are appended to this array so they count toward the day's load.
   const taskHonestMins = useMemo((): readonly number[] => {
-    return dayTasks
+    const taskMins = dayTasks
       .filter((t) => t.status === 'queued')
       .map((t) => {
         const cached = statsByCategory[t.category];
@@ -57,7 +67,10 @@ export function useDayCapacity(_nowMs?: number): DayCapacityResult {
         return resolveSuggestion({ guessMinutes: t.guessMin, category: cat, recurring: null })
           .honestMinutes;
       });
-  }, [dayTasks, statsByCategory]);
+    // Each scheduled routine counts as one block (its honest total).
+    const routineMins = routineBlocks.map((b) => b.honestTotalMin);
+    return [...taskMins, ...routineMins];
+  }, [dayTasks, statsByCategory, routineBlocks]);
 
   // ── Calendar async effect ─────────────────────────────────────────────────
   // Runs when Pro + showEvents. Respects the per-calendar filter (empty list =

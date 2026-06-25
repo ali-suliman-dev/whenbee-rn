@@ -12,6 +12,7 @@ import { Card } from '@/src/components/Card';
 import { formatClock } from '@/src/lib/time';
 import { analytics } from '@/src/services/analytics';
 import { useRoutines, type RoutineCardModel } from './useRoutines';
+import { EXAMPLE_ROUTINE } from './exampleRoutine';
 
 // ──────────────────────────────────────────────────────────────────────────────
 // RoutinesList — the Pro Routines surface: saved routine cards + empty state +
@@ -85,15 +86,64 @@ function RoutineCard({ model, onOpen }: { model: RoutineCardModel; onOpen: (id: 
   );
 }
 
+// ──────────────────────────────────────────────────────────────────────────────
+// ExampleCard — the pre-built "Morning routine" shown when the list is empty.
+// "Try it" fires onTryExample without writing anything to the DB. No-guilt copy.
+// ──────────────────────────────────────────────────────────────────────────────
+
+function ExampleCard({ onTryExample }: { onTryExample: () => void }) {
+  const t = useTheme();
+  const card: ViewStyle = {
+    backgroundColor: t.colors.surface,
+    borderWidth: t.borderWidth.card,
+    borderColor: t.colors.hairline,
+    borderRadius: t.radii.card,
+    borderCurve: 'continuous' as ViewStyle['borderCurve'],
+    padding: t.space[3],
+    gap: t.space[2],
+  };
+  const nameStyle: TextStyle = { ...(type.bodyLg as unknown as TextStyle), color: t.colors.ink };
+  const metaStyle: TextStyle = { ...(type.caption as unknown as TextStyle), color: t.colors.inkSoft };
+  const stepCount = EXAMPLE_ROUTINE.steps.length;
+
+  return (
+    <Animated.View entering={CARD_ENTER}>
+      <View style={card}>
+        <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: t.space[2] }}>
+          <AppText style={nameStyle} numberOfLines={1}>
+            {EXAMPLE_ROUTINE.name}
+          </AppText>
+          <StepChip count={stepCount} />
+        </View>
+        <AppText style={metaStyle}>
+          {EXAMPLE_ROUTINE.steps.map((s) => s.label).join(' · ')}
+        </AppText>
+        <AppButton
+          label="Try it"
+          variant="secondary"
+          fullWidth
+          onPress={onTryExample}
+          accessibilityLabel={`Try the ${EXAMPLE_ROUTINE.name} example`}
+        />
+      </View>
+    </Animated.View>
+  );
+}
+
 export function RoutinesList({
   isPro,
   onNew,
   onOpen,
+  onTryExample,
   nowMs,
 }: {
   isPro: boolean;
   onNew: () => void;
   onOpen: (id: string) => void;
+  /** Called when the user taps "Try it" on the example card. The parent loads the
+   *  example into the draft (resetDraft → setName → addStep × n) and navigates to
+   *  BuildView. Nothing is persisted until the user explicitly saves. */
+  onTryExample: () => void;
   nowMs?: number;
 }) {
   const t = useTheme();
@@ -108,7 +158,7 @@ export function RoutinesList({
     analytics.capture('routines_tab_viewed', { is_pro: isPro, routine_count: summaries.length });
   }, [isPro, summaries.length]);
 
-  const emptyBody: TextStyle = { ...(type.body as unknown as TextStyle), color: t.colors.inkSoft };
+  const introText: TextStyle = { ...(type.body as unknown as TextStyle), color: t.colors.inkSoft };
 
   return (
     <ScrollView
@@ -116,9 +166,12 @@ export function RoutinesList({
       showsVerticalScrollIndicator={false}
     >
       {summaries.length === 0 ? (
-        <AppText style={emptyBody}>
-          Save a sequence you do a lot, like your morning. I&apos;ll learn how long the whole thing really takes.
-        </AppText>
+        <>
+          <AppText style={introText}>
+            A guided sequence that runs on a timer — it tells you what to do now, then moves you on.
+          </AppText>
+          <ExampleCard onTryExample={onTryExample} />
+        </>
       ) : (
         summaries.map((model) => <RoutineCard key={model.routineId} model={model} onOpen={onOpen} />)
       )}

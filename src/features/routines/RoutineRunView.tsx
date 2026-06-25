@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { ScrollView, View, type ViewStyle, type TextStyle } from 'react-native';
+import { useReducedMotion } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTheme } from '@/src/theme/useTheme';
 import { type } from '@/src/theme/typography';
@@ -12,12 +13,25 @@ import { stepHonestMinutes, routineHonestTotal, priorFor } from '@/src/engine';
 import { useRoutinesStore, type RunStepStatus } from '@/src/stores/routinesStore';
 import { useCalibrationStore } from '@/src/stores/calibrationStore';
 import { analytics } from '@/src/services/analytics';
+import { haptics } from '@/src/lib/haptics';
 
 // ──────────────────────────────────────────────────────────────────────────────
-// RoutineRunView — run a saved routine step-by-step on the shared rail. The
-// current step carries a one-tap timer; finishing records its real minutes and
-// advances. Skipping is first-class (no guilt, no red). Finishing the last step
-// hands the run to the store (Task 4) which trains the chain. (Spec §5.3 / §10.)
+// RoutineRunView — guided run with a live COUNTDOWN per step.
+//
+// AUTO-ADVANCE RULE: when elapsed seconds reaches the step's honest estimate
+// (honestMin × 60), the step auto-completes once (guarded by a per-step
+// `advancedRef` so the interval never re-fires), a haptic fires as a gentle
+// chime, and the next step starts. Manual Done (complete early) and Skip always
+// work. Overrun is never punished: if the user keeps working past the estimate
+// the countdown goes negative ("+2:10") and they can Done manually.
+//
+// LIVE ACTIVITY: startRun (store) already fires startFinishTimeActivity; this
+// view calls endFinishTimeActivity via the store's finishRun/abandonRun.
+//
+// REDUCED-MOTION: when the system reduced-motion flag is on, the countdown still
+// ticks (it is information, not decoration) but no haptic fires on auto-advance
+// (the chime is purely tactile; we skip it out of respect for the accessibility
+// preference). The step still auto-advances — only the haptic is suppressed.
 // ──────────────────────────────────────────────────────────────────────────────
 
 const MS_PER_MIN = 60_000;
@@ -29,9 +43,19 @@ function railStateFor(status: RunStepStatus): RailNodeState {
   return 'next';
 }
 
+/**
+ * Format a signed remaining-seconds value for display.
+ * Positive → MM:SS countdown. Zero/negative → "+MM:SS" overrun (calm, no guilt).
+ */
+function formatRemaining(remainingSec: number): string {
+  if (remainingSec >= 0) return formatMmSs(remainingSec);
+  return `+${formatMmSs(-remainingSec)}`;
+}
+
 export function RoutineRunView() {
   const t = useTheme();
   const insets = useSafeAreaInsets();
+  const reducedMotion = useReducedMotion();
 
   const activeRun = useRoutinesStore((s) => s.activeRun);
   const routines = useRoutinesStore((s) => s.routines);
@@ -53,13 +77,55 @@ export function RoutineRunView() {
     startRef.current = { id: runningId, at: Date.now() };
   }
 
-  // A 1s tick to drive the live elapsed readout for the running step.
+  // Guard: tracks whether the current running step has already auto-advanced.
+  // Keyed by stepId so it resets automatically when the running step changes.
+  const advancedRef = useRef<{ id: string | null; fired: boolean }>({ id: null, fired: false });
+  if (advancedRef.current.id !== runningId) {
+    advancedRef.current = { id: runningId, fired: false };
+  }
+
+  // A 1s tick to drive the live countdown readout AND auto-advance.
+  // Auto-advance lives here (not in the render body) to avoid "Cannot update a
+  // component while rendering" warnings — store setters must not be called during
+  // render. The advancedRef guard ensures the advance fires exactly once per step.
   const [, force] = useState(0);
   useEffect(() => {
     if (!runningId) return;
-    const id = setInterval(() => force((n) => n + 1), 1000);
+    const id = setInterval(() => {
+      force((n) => n + 1);
+
+      // Auto-advance: check if the running step has reached its honest estimate.
+      const state = useRoutinesStore.getState();
+      const run = state.activeRun;
+      if (!run) return;
+      const runningStep = run.steps.find((rs) => rs.status === 'running');
+      if (!runningStep) return;
+      if (advancedRef.current.fired) return;
+
+      // Get the routine definition to compute the honest seconds for this step.
+      const routineEntry = state.routines.find((r) => r.routine.id === run.routineId);
+      if (!routineEntry) return;
+      const stepDef = routineEntry.steps.find((s) => s.id === runningStep.stepId);
+      if (!stepDef) return;
+
+      const calibStats = useCalibrationStore.getState().statsByCategory;
+      const stepM = calibStats[stepDef.category]?.mEffective ?? priorFor(stepDef.category);
+      const honestSec = Math.round(stepHonestMinutes(stepDef.guessMin, stepM) * 60);
+      const stepElapsedSec = Math.max(
+        0,
+        Math.floor((Date.now() - startRef.current.at) / 1000),
+      );
+
+      if (stepElapsedSec >= honestSec) {
+        advancedRef.current.fired = true;
+        const actualMin = Math.max(1, Math.round((Date.now() - startRef.current.at) / MS_PER_MIN));
+        analytics.capture('routine_step_completed', { position: run.steps.indexOf(runningStep), over: false });
+        if (!reducedMotion) haptics.success();
+        state.completeStep(runningStep.stepId, actualMin);
+      }
+    }, 1000);
     return () => clearInterval(id);
-  }, [runningId]);
+  }, [runningId, reducedMotion]);
 
   if (!activeRun || !routine) {
     return (
@@ -77,6 +143,7 @@ export function RoutineRunView() {
   const doneCount = orderedRun.filter((rs) => rs.status === 'done' || rs.status === 'skipped').length;
   const allResolved = orderedRun.every((rs) => rs.status === 'done' || rs.status === 'skipped');
 
+  const elapsedSec = (): number => Math.max(0, Math.floor((Date.now() - startRef.current.at) / 1000));
   const elapsedMin = (): number => Math.max(0, (Date.now() - startRef.current.at) / MS_PER_MIN);
 
   const handleDone = (id: string, position: number) => {
@@ -110,7 +177,14 @@ export function RoutineRunView() {
             {doneCount} of {total} done
           </AppText>
         </View>
-        <AppButton label="Stop" variant="ghost" size="xs" onPress={() => { void abandonRun(); }} />
+        <AppButton
+          label="Stop"
+          variant="ghost"
+          size="xs"
+          onPress={() => { void abandonRun(); }}
+          accessibilityLabel="Stop routine"
+          accessibilityHint="Ends the run and discards progress for this session"
+        />
       </View>
 
       {allResolved ? (
@@ -130,6 +204,16 @@ export function RoutineRunView() {
           const step = stepById.get(rs.stepId);
           if (!step) return null;
           const prev = i > 0 ? railStateFor(orderedRun[i - 1]!.status) : undefined;
+
+          // Compute per-step honest seconds for the countdown target.
+          const stepM = statsByCategory[step.category]?.mEffective ?? priorFor(step.category);
+          const honestMin = stepHonestMinutes(step.guessMin, stepM);
+          const honestSec = Math.round(honestMin * 60);
+
+          // Elapsed seconds for this step (0 when not running).
+          const stepElapsedSec = rs.status === 'running' ? elapsedSec() : 0;
+          const remainingSec = honestSec - stepElapsedSec;
+
           return (
             <View key={rs.stepId} style={row}>
               <PlanRail
@@ -145,7 +229,8 @@ export function RoutineRunView() {
                   category={step.category}
                   status={rs.status}
                   actualMin={rs.actualMin}
-                  elapsedSec={rs.status === 'running' ? Math.floor((Date.now() - startRef.current.at) / 1000) : 0}
+                  remainingSec={remainingSec}
+                  isOverrun={rs.status === 'running' && remainingSec < 0}
                   onDone={() => handleDone(rs.stepId, i)}
                   onSkip={() => handleSkip(rs.stepId, i)}
                 />
@@ -163,7 +248,8 @@ function StepCard({
   category,
   status,
   actualMin,
-  elapsedSec,
+  remainingSec,
+  isOverrun,
   onDone,
   onSkip,
 }: {
@@ -171,7 +257,8 @@ function StepCard({
   category: string;
   status: RunStepStatus;
   actualMin?: number;
-  elapsedSec: number;
+  remainingSec: number;
+  isOverrun: boolean;
   onDone: () => void;
   onSkip: () => void;
 }) {
@@ -194,7 +281,11 @@ function StepCard({
     textDecorationLine: status === 'skipped' ? 'line-through' : 'none',
   };
   const catStyle: TextStyle = { ...(type.caption as unknown as TextStyle), color: t.colors.inkSoft };
-  const timer: TextStyle = { ...(type.timerClock as unknown as TextStyle), color: t.colors.ink };
+  // Overrun: amber accent (never red — no guilt). Normal countdown: ink.
+  const timerStyle: TextStyle = {
+    ...(type.timerClock as unknown as TextStyle),
+    color: isOverrun ? t.colors.accent : t.colors.ink,
+  };
 
   return (
     <View style={card}>
@@ -206,10 +297,34 @@ function StepCard({
       </AppText>
       {isNow ? (
         <>
-          <AppText style={timer}>{formatMmSs(elapsedSec)}</AppText>
+          <AppText
+            style={timerStyle}
+            accessibilityLabel={
+              remainingSec >= 0
+                ? `${Math.floor(remainingSec / 60)} minutes ${remainingSec % 60} seconds remaining`
+                : `${Math.floor(-remainingSec / 60)} minutes ${(-remainingSec) % 60} seconds over`
+            }
+            accessibilityLiveRegion="polite"
+          >
+            {formatRemaining(remainingSec)}
+          </AppText>
           <View style={{ flexDirection: 'row', gap: t.space[2] }}>
-            <AppButton label="Done" variant="indigo" size="sm" onPress={onDone} />
-            <AppButton label="Skip" variant="ghost" size="sm" onPress={onSkip} />
+            <AppButton
+              label="Done"
+              variant="indigo"
+              size="sm"
+              onPress={onDone}
+              accessibilityLabel="Mark step done"
+              accessibilityHint="Records your time and moves to the next step"
+            />
+            <AppButton
+              label="Skip"
+              variant="ghost"
+              size="sm"
+              onPress={onSkip}
+              accessibilityLabel="Skip this step"
+              accessibilityHint="Skips to the next step without recording time"
+            />
           </View>
         </>
       ) : null}
@@ -240,12 +355,12 @@ function RunRecap({
   };
   const body: TextStyle = { ...(type.body as unknown as TextStyle), color: t.colors.ink };
 
-  // Ran long → the "Good to know" variant; on-time/short → "settling". No guilt
-  // either way; amber accent only, never red. (Spec §10.)
+  // Ran long → calibration learn copy; on-time/short → reinforcing copy. No guilt
+  // either way — amber accent only, never red. (Spec §10.)
   const ranLong = actualMin > honestMin;
   const text = ranLong
-    ? `That run took ${actualMin} min. Good to know — I'll fold that into your ${name} so the next "start by" is more honest.`
-    : `That run took ${actualMin} min. Your ${name} is settling — next time I'll expect about ${honestMin}.`;
+    ? `${name} took ${actualMin} min this time. I'll update the start-by so it's more accurate next week.`
+    : `${name} done in ${actualMin} min — right on track. I'll keep that in mind for next time.`;
 
   return (
     <View style={card}>

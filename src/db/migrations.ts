@@ -170,4 +170,13 @@ export const MIGRATIONS: string[] = [
     plan_computed_at INTEGER
   );
   `,
+
+  // 0011 — Routine scheduling + alert fields (additive). Allows a routine to be
+  // associated with specific weekdays and to fire a start-by alert ahead of the
+  // routine's anchored doneBy time.
+  `
+  ALTER TABLE routines ADD COLUMN schedule_days TEXT NOT NULL DEFAULT '';
+  ALTER TABLE routines ADD COLUMN alert_enabled INTEGER NOT NULL DEFAULT 0;
+  ALTER TABLE routines ADD COLUMN alert_lead_min INTEGER NOT NULL DEFAULT 0;
+  `,
 ];

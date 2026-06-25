@@ -104,6 +104,55 @@ describe('routinesStore — run training', () => {
     expect(after?.routine.runCount).toBe(0);
   });
 
+  // ── A1: schedule + alert draft actions ──────────────────────────────────────
+
+  it('setSchedule updates draft scheduleDays', async () => {
+    await freshStore();
+    useRoutinesStore.getState().setSchedule([1, 3, 5]);
+    expect(useRoutinesStore.getState().draft.scheduleDays).toEqual([1, 3, 5]);
+  });
+
+  it('setAlert updates draft alertEnabled and alertLeadMin', async () => {
+    await freshStore();
+    useRoutinesStore.getState().setAlert(true, 15);
+    expect(useRoutinesStore.getState().draft.alertEnabled).toBe(true);
+    expect(useRoutinesStore.getState().draft.alertLeadMin).toBe(15);
+  });
+
+  it('saveDraft persists scheduleDays and alert fields via the repo', async () => {
+    const db = await freshStore();
+    const s = useRoutinesStore.getState();
+    s.setName('Gym session');
+    s.addStep({ label: 'Warm up', category: 'exercise', guessMin: 10 });
+    s.setSchedule([0, 2, 4]);
+    s.setAlert(true, 20);
+    const id = await useRoutinesStore.getState().saveDraft();
+
+    const repo = makeRoutinesRepo(db);
+    const saved = await repo.get(id);
+    expect(saved?.routine.scheduleDays).toEqual([0, 2, 4]);
+    expect(saved?.routine.alertEnabled).toBe(true);
+    expect(saved?.routine.alertLeadMin).toBe(20);
+  });
+
+  it('editExisting loads scheduleDays and alert fields back into the draft', async () => {
+    await freshStore();
+    const s = useRoutinesStore.getState();
+    s.setName('Evening wind-down');
+    s.addStep({ label: 'Read', category: 'learning', guessMin: 30 });
+    s.setSchedule([0, 1, 2, 3, 4]);
+    s.setAlert(true, 5);
+    const id = await useRoutinesStore.getState().saveDraft();
+
+    // Reset the draft but keep the same db so editExisting can load the saved routine.
+    useRoutinesStore.getState().resetDraft();
+    await useRoutinesStore.getState().editExisting(id);
+    const draft = useRoutinesStore.getState().draft;
+    expect(draft.scheduleDays).toEqual([0, 1, 2, 3, 4]);
+    expect(draft.alertEnabled).toBe(true);
+    expect(draft.alertLeadMin).toBe(5);
+  });
+
   it('basis flips to personal only after the min-runs threshold of full runs', async () => {
     const db = await freshStore();
     const s = useRoutinesStore.getState();

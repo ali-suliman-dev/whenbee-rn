@@ -29,6 +29,17 @@ export interface RoutinesRepo {
   incrementRunCount(id: string, updatedAt?: number): Promise<void>;
 }
 
+/** Parse a comma-joined schedule_days string into a number[]. */
+function parseScheduleDays(raw: string): number[] {
+  if (raw === '') return [];
+  return raw.split(',').map(Number);
+}
+
+/** Serialize a weekday array into a comma-joined string for the row. */
+function serializeScheduleDays(days: number[]): string {
+  return days.join(',');
+}
+
 function toRoutine(row: RoutineRow): Routine {
   return {
     id: row.id,
@@ -36,6 +47,9 @@ function toRoutine(row: RoutineRow): Routine {
     doneByMinuteOfDay: row.doneByMinuteOfDay,
     transitionFactor: row.transitionFactor,
     runCount: row.runCount,
+    scheduleDays: parseScheduleDays(row.scheduleDays),
+    alertEnabled: row.alertEnabled,
+    alertLeadMin: row.alertLeadMin,
     createdAt: row.createdAt,
     updatedAt: row.updatedAt,
   };
@@ -48,6 +62,9 @@ function toRoutineRow(routine: Routine): RoutineRow {
     doneByMinuteOfDay: routine.doneByMinuteOfDay,
     transitionFactor: routine.transitionFactor,
     runCount: routine.runCount,
+    scheduleDays: serializeScheduleDays(routine.scheduleDays),
+    alertEnabled: routine.alertEnabled,
+    alertLeadMin: routine.alertLeadMin,
     createdAt: routine.createdAt,
     updatedAt: routine.updatedAt,
   };
