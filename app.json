@@ -11,7 +11,10 @@
     "ios": {
       "bundleIdentifier": "com.whenbee.app",
       "supportsTablet": true,
-      "appleTeamId": "KXJDWZ2PKA"
+      "appleTeamId": "KXJDWZ2PKA",
+      "entitlements": {
+        "com.apple.developer.usernotifications.time-sensitive": true
+      }
     },
     "android": {
       "package": "com.whenbee.app",
