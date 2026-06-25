@@ -12,6 +12,7 @@ import { formatMmSs } from '@/src/lib/time';
 import { stepHonestMinutes, routineHonestTotal, priorFor } from '@/src/engine';
 import { useRoutinesStore, type RunStepStatus } from '@/src/stores/routinesStore';
 import { useCalibrationStore } from '@/src/stores/calibrationStore';
+import { categoryName } from '@/src/features/shared/categoryName';
 import { analytics } from '@/src/services/analytics';
 import { haptics } from '@/src/lib/haptics';
 
@@ -226,7 +227,7 @@ export function RoutineRunView() {
               <View style={cardCol}>
                 <StepCard
                   label={step.label}
-                  category={step.category}
+                  category={categoryName(step.category)}
                   status={rs.status}
                   actualMin={rs.actualMin}
                   remainingSec={remainingSec}
