@@ -1,9 +1,11 @@
-import { ScrollView } from 'react-native';
+import { useState } from 'react';
+import { ScrollView, Text } from 'react-native';
 import Animated, { FadeInDown, useReducedMotion } from 'react-native-reanimated';
 import { useRouter } from 'expo-router';
 import { Screen } from '@/src/components/Screen';
 import { ScreenHeader } from '@/src/components/ScreenHeader';
 import { useTheme } from '@/src/theme/useTheme';
+import { type } from '@/src/theme/typography';
 import { usePatterns } from '@/src/features/patterns/usePatterns';
 import { ArchetypeHero, ArchetypePlaceholder } from '@/src/features/patterns/Archetype';
 import { ProgressChart } from '@/src/features/patterns/ProgressChart';
@@ -27,14 +29,18 @@ import { useContextInsights } from '@/src/features/patterns/useContextInsights';
 import { ContextCorrelations } from '@/src/features/patterns/ContextCorrelations';
 import { ContextCorrelationsLocked } from '@/src/features/patterns/ContextCorrelationsLocked';
 import { FocusPatternsCard } from '@/src/features/patterns/FocusPatternsCard';
+import { PatternsSegment, type PatternsTab } from '@/src/features/patterns/PatternsSegment';
 
 // ──────────────────────────────────────────────────────────────────────────────
-// Patterns — the free, read-only self-insight surface, redesigned as a hero +
-// sectioned story: identity (ArchetypeHero) → progress (ProgressChart) → what
-// changed (DriftNote / surprise) → your numbers (HonestMap) → Pro (one premium
-// teaser). Every block is a pure projection over the engine (usePatterns) and
-// hides until earned. Sections rise + stagger on entry (entering-only on Fabric;
-// reduced-motion skips the transform). No guilt, no streaks, amber stays scarce.
+// Patterns — segmented self-insight surface.
+//
+// Structure:
+//   [pinned] ArchetypeHero / ArchetypePlaceholder
+//   [pinned] ReviewRitualCard (Pro) / ReviewRitualLocked (free)
+//   [pinned] PatternsSegment control (Numbers | Insights | Correlations)
+//   [routed] selected segment content only
+//
+// No guilt, no streaks, amber stays scarce. Entering-only on Fabric.
 // ──────────────────────────────────────────────────────────────────────────────
 
 export default function Patterns() {
@@ -45,15 +51,13 @@ export default function Patterns() {
   const { summary: reviewSummary, period: reviewPeriod, isFresh: reviewFresh } = useReview();
   const { insights } = useReasonInsights();
   const { insights: contextInsights } = useContextInsights();
+  const [tab, setTab] = useState<PatternsTab>('numbers');
 
   const showEmpty = view !== null && view.empty;
 
-  // Per-section entrance: rise + fade, staggered top→bottom (< 500ms total).
+  // order resets to 0 each render so stagger always starts fresh from the top
   let order = 0;
   const rise = () => (reduced ? undefined : FadeInDown.duration(t.motion.base).delay((order++) * t.motion.enterStagger));
-
-  const hasProgress = view ? view.youVsPast !== null || view.accuracyTrend !== null || view.planExperiment !== null : false;
-  const hasChanged = view ? view.driftAlert !== null || view.biggestSurprise !== null : false;
 
   // For non-Pro users: show exactly ONE locked teaser, chosen by the most
   // compelling data available. Priority: reason insights → accuracy → context.
@@ -67,6 +71,86 @@ export default function Patterns() {
           : null
     : null;
 
+  // ── Segment content renderers ────────────────────────────────────────────────
+
+  function renderNumbers() {
+    if (!view) return null;
+    return (
+      <>
+        {/* Progress — always rendered; ProgressChart handles its own empty state */}
+        <Animated.View entering={rise()} style={{ gap: t.space[3] }}>
+          <SectionHeader label="Your progress" />
+          <ProgressChart trend={view.accuracyTrend} fallback={view.youVsPast} />
+        </Animated.View>
+
+        {/* Your numbers */}
+        {view.calibrationMap.length > 0 ? (
+          <Animated.View entering={rise()} style={{ gap: t.space[3] }}>
+            <SectionHeader label="Your numbers" />
+            <HonestMap rows={view.calibrationMap} />
+          </Animated.View>
+        ) : null}
+
+        {/* Your focus */}
+        <Animated.View entering={rise()} style={{ gap: t.space[3] }}>
+          <SectionHeader label="Your focus" />
+          <FocusPatternsCard />
+        </Animated.View>
+      </>
+    );
+  }
+
+  function renderInsights() {
+    if (!view) return null;
+    const hasDrift = view.driftAlert !== null;
+    const hasSurprise = view.biggestSurprise !== null;
+    const hasPlanExperiment = view.planExperiment !== null;
+    const hasAny = hasDrift || hasSurprise || hasPlanExperiment;
+
+    if (!hasAny) {
+      return (
+        <Animated.View entering={rise()}>
+          <Text
+            style={{
+              ...(type.bodySm as object),
+              color: t.colors.inkSoft,
+              textAlign: 'center',
+              paddingVertical: t.space[6],
+            }}
+          >
+            {"You're all caught up."}
+          </Text>
+        </Animated.View>
+      );
+    }
+
+    return (
+      <Animated.View entering={rise()} style={{ gap: t.space[3] }}>
+        {hasDrift ? <DriftNote card={view.driftAlert!} /> : null}
+        {hasSurprise ? <BiggestSurprise card={view.biggestSurprise!} /> : null}
+        {hasPlanExperiment ? <PlanExperiment card={view.planExperiment!} /> : null}
+      </Animated.View>
+    );
+  }
+
+  function renderCorrelations() {
+    if (!view) return null;
+    return (
+      <Animated.View entering={rise()} style={{ gap: t.space[3] }}>
+        <ProGate fallback={lockedTeaser === 'steals' ? <StealsYourTimeLocked /> : null}>
+          <StealsYourTime insights={insights} />
+          <StealsYourTimeWeekly insights={insights} />
+        </ProGate>
+        <ProGate fallback={lockedTeaser === 'accuracy' ? <AccuracyCorrelationsLocked /> : null}>
+          {view.accuracyCorrelations.length > 0 ? <AccuracyCorrelations correlations={view.accuracyCorrelations} /> : null}
+        </ProGate>
+        <ProGate fallback={lockedTeaser === 'context' ? <ContextCorrelationsLocked /> : null}>
+          {contextInsights.length > 0 ? <ContextCorrelations correlations={contextInsights} /> : null}
+        </ProGate>
+      </Animated.View>
+    );
+  }
+
   return (
     <Screen>
       <ScreenHeader title="Patterns" subtitle="What your time keeps telling you." />
@@ -78,7 +162,7 @@ export default function Patterns() {
 
         {view && !view.empty ? (
           <>
-            {/* 1 · IDENTITY */}
+            {/* 1 · IDENTITY — always pinned */}
             {view.archetype ? (
               <Animated.View entering={rise()}><ArchetypeHero card={view.archetype} calibrationMap={view.calibrationMap} /></Animated.View>
             ) : (
@@ -87,60 +171,22 @@ export default function Patterns() {
               </Animated.View>
             )}
 
-            {/* The scheduled recap ritual: Pro gets the live card (amber when
-                fresh, quiet once opened); free gets the real-period locked teaser.
-                Mirrors the StealsYourTime / *Locked ProGate pairing below. */}
+            {/* 2 · REVIEW RITUAL — always pinned under hero */}
             <Animated.View entering={rise()}>
               <ProGate fallback={reviewSummary ? <ReviewRitualLocked period={reviewPeriod} /> : null}>
                 {reviewSummary ? <ReviewRitualCard summary={reviewSummary} isFresh={reviewFresh} /> : null}
               </ProGate>
             </Animated.View>
 
-            {/* 2 · YOUR PROGRESS */}
-            {hasProgress ? (
-              <Animated.View entering={rise()} style={{ gap: t.space[3] }}>
-                <SectionHeader label="Your progress" />
-                <ProgressChart trend={view.accuracyTrend} fallback={view.youVsPast} />
-                {view.planExperiment ? <PlanExperiment card={view.planExperiment} /> : null}
-              </Animated.View>
-            ) : null}
-
-            {/* 3 · WHAT CHANGED */}
-            {hasChanged ? (
-              <Animated.View entering={rise()} style={{ gap: t.space[3] }}>
-                <SectionHeader label="What changed" />
-                {view.driftAlert ? <DriftNote card={view.driftAlert} /> : null}
-                {view.biggestSurprise ? <BiggestSurprise card={view.biggestSurprise} /> : null}
-              </Animated.View>
-            ) : null}
-
-            {/* 4 · YOUR NUMBERS */}
-            {view.calibrationMap.length > 0 ? (
-              <Animated.View entering={rise()} style={{ gap: t.space[3] }}>
-                <SectionHeader label="Your numbers" />
-                <HonestMap rows={view.calibrationMap} />
-              </Animated.View>
-            ) : null}
-
-            {/* 5 · YOUR FOCUS — curve + window + maturity (migrated from Plan tab) */}
-            <Animated.View entering={rise()} style={{ gap: t.space[3] }}>
-              <SectionHeader label="Your focus" />
-              <FocusPatternsCard />
+            {/* 3 · SEGMENT CONTROL — always pinned */}
+            <Animated.View entering={rise()}>
+              <PatternsSegment value={tab} onChange={setTab} />
             </Animated.View>
 
-            {/* 6 · PRO — unlocked insights for Pro users; one teaser for free users */}
-            <Animated.View entering={rise()} style={{ gap: t.space[3] }}>
-              <ProGate fallback={lockedTeaser === 'steals' ? <StealsYourTimeLocked /> : null}>
-                <StealsYourTime insights={insights} />
-                <StealsYourTimeWeekly insights={insights} />
-              </ProGate>
-              <ProGate fallback={lockedTeaser === 'accuracy' ? <AccuracyCorrelationsLocked /> : null}>
-                {view.accuracyCorrelations.length > 0 ? <AccuracyCorrelations correlations={view.accuracyCorrelations} /> : null}
-              </ProGate>
-              <ProGate fallback={lockedTeaser === 'context' ? <ContextCorrelationsLocked /> : null}>
-                {contextInsights.length > 0 ? <ContextCorrelations correlations={contextInsights} /> : null}
-              </ProGate>
-            </Animated.View>
+            {/* 4 · SEGMENT CONTENT — only the selected tab renders */}
+            {tab === 'numbers' ? renderNumbers() : null}
+            {tab === 'insights' ? renderInsights() : null}
+            {tab === 'correlations' ? renderCorrelations() : null}
           </>
         ) : null}
       </ScrollView>

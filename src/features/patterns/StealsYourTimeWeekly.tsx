@@ -26,8 +26,12 @@ export function StealsYourTimeWeekly({ insights }: { insights: ReasonInsight[] }
   const label: TextStyle = { ...(type.bodySm as unknown as TextStyle), color: t.colors.ink, flex: 1 };
   const pctText: TextStyle = { ...(type.bigNumber as unknown as TextStyle), color: t.colors.primary };
 
+  // dismissId: a fingerprint of the top 4 rows (categoryId + reason) so a new
+  // week's top pattern (different categories/reasons) produces a new id.
+  const dismissId = `steals-weekly:${rows.map((r) => `${r.categoryId}-${r.reason}`).join('|')}`;
+
   return (
-    <PatternCard eyebrow="THIS WEEK'S PATTERN" icon="albums-outline" dismissLabel="Hide this week's pattern">
+    <PatternCard eyebrow="THIS WEEK'S PATTERN" icon="albums-outline" dismissLabel="Hide this week's pattern" dismissId={dismissId}>
       <View style={list}>
         {rows.map((r) => (
           <View key={r.categoryId} style={row}>

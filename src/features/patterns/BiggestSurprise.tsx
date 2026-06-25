@@ -21,8 +21,13 @@ export function BiggestSurprise({ card }: { card: BiggestSurpriseCard }) {
     ? `${card.categoryName} stretched the most this week.`
     : `${card.categoryName} wrapped up early this week.`;
 
+  // dismissId: "surprise:{categoryId}:{estimateMin}x{actualMin}" — stable for
+  // this exact task result; a new week's surprise (different numbers) gets a
+  // fresh id and is NOT pre-dismissed.
+  const dismissId = `surprise:${card.categoryId}:${card.estimateMin}x${card.actualMin}`;
+
   return (
-    <PatternCard eyebrow="THIS WEEK'S SURPRISE" icon="bulb-outline" dismissLabel="Hide this week's surprise">
+    <PatternCard eyebrow="THIS WEEK'S SURPRISE" icon="bulb-outline" dismissLabel="Hide this week's surprise" dismissId={dismissId}>
       <View style={block}>
         <Text style={headline}>{headlineText}</Text>
         <Text style={detail}>

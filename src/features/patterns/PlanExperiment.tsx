@@ -33,8 +33,13 @@ export function PlanExperiment({ card }: { card: PlanExperimentCard }) {
     ? `Timed tasks land ${acc(card.timedError)}% accurate vs ${acc(card.retroError)}% when logged after.`
     : `Logged-after tasks land ${acc(card.retroError)}% accurate vs ${acc(card.timedError)}% when timed. Honestly — your gut does well here.`;
 
+  // dismissId: "experiment:{timedCount}:{retroCount}" — encodes the observation
+  // counts so that a new batch of data (different counts) re-shows the updated
+  // verdict. Same counts = same insight = stays dismissed.
+  const dismissId = `experiment:${card.timedCount}:${card.retroCount}`;
+
   return (
-    <PatternCard eyebrow="PLAN VS WING IT" icon="flask-outline" dismissLabel="Hide the plan experiment">
+    <PatternCard eyebrow="PLAN VS WING IT" icon="flask-outline" dismissLabel="Hide the plan experiment" dismissId={dismissId}>
       <View style={block}>
         <Text style={verdict}>{headline}</Text>
         <Text style={detail}>{supporting}</Text>
@@ -51,7 +56,7 @@ export function PlanExperimentPending() {
   const t = useTheme();
   const body: TextStyle = { ...(type.bodySm as unknown as TextStyle), color: t.colors.inkSoft };
   return (
-    <PatternCard eyebrow="PLAN VS WING IT" icon="flask-outline" dismissLabel="Hide the plan experiment">
+    <PatternCard eyebrow="PLAN VS WING IT" icon="flask-outline" dismissLabel="Hide the plan experiment" dismissId="experiment-pending">
       <Text style={body}>
         A few more timed and a few logged-after tasks and you&apos;ll see whether the timer makes you
         sharper. No rush.

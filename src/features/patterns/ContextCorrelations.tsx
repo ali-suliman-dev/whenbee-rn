@@ -35,8 +35,12 @@ export function ContextCorrelations({ correlations }: { correlations: ContextCor
   const detailText = `About ${top.bestAccuracy}% accurate on ${valueLabel(top.key, top.bestValue)} sessions, vs ${top.worstAccuracy}% on ${valueLabel(top.key, top.worstValue)} ones.`;
   const metaText = `Based on the ${noun} you noted across ${top.sampleCount} sessions · learned on-device`;
 
+  // dismissId: key + bestValue + sampleCount so a genuinely different correlation
+  // (new dimension or new sample batch) produces a new id and shows again.
+  const dismissId = `context:${top.key}:${top.bestValue}:${top.sampleCount}`;
+
   return (
-    <PatternCard eyebrow="WHAT MOVES YOUR ACCURACY" icon="battery-half-outline" dismissLabel="Hide what moves your accuracy">
+    <PatternCard eyebrow="WHAT MOVES YOUR ACCURACY" icon="battery-half-outline" dismissLabel="Hide what moves your accuracy" dismissId={dismissId}>
       <View style={block}>
         <Text style={headline}>{headlineText}</Text>
         <Text style={detail}>{detailText}</Text>

@@ -23,8 +23,12 @@ export function YouVsPast({ card }: { card: YouVsPastCard }) {
     ? `That's ${card.delta} points sharper than when you started. Nice work.`
     : 'Right where you started — and steady reads are a real skill.';
 
+  // dismissId: encodes the exact accuracy pair so a meaningfully different reading
+  // (either score changes by a point) produces a new id and shows again.
+  const dismissId = `you-vs-past:${card.earlyAccuracy}:${card.recentAccuracy}`;
+
   return (
-    <PatternCard eyebrow="YOU, THEN VS NOW" icon="trending-up-outline" dismissLabel="Hide your progress">
+    <PatternCard eyebrow="YOU, THEN VS NOW" icon="trending-up-outline" dismissLabel="Hide your progress" dismissId={dismissId}>
       <View style={columns}>
         <View style={col}>
           <Text style={label}>At first</Text>

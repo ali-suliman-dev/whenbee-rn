@@ -1,28 +1,37 @@
-import { useState, type ReactNode } from 'react';
+import { type ReactNode } from 'react';
 import { View, Text, Pressable, type ViewStyle, type TextStyle } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { Card } from '@/src/components/Card';
 import { useTheme } from '@/src/theme/useTheme';
 import { type } from '@/src/theme/typography';
+import { usePatternDismiss } from './usePatternDismiss';
 
 // ──────────────────────────────────────────────────────────────────────────────
 // PatternCard — the shared shell for every Patterns self-insight card. Keeps the
 // 7 cards on one rhythm: an indigo eyebrow (the section voice), an optional dismiss
 // (×, 44pt hit target, matches AhaCard), then the card's own body. Flat tone — the
-// workhorse surface; no shadow, no red, amber stays scarce. Dismiss is local state
-// (kind: a card you've read can step aside without nagging you again this session).
+// workhorse surface; no shadow, no red, amber stays scarce.
+//
+// Dismissal is DURABLE (not session-only): each card receives a stable `dismissId`
+// keyed by content/period (e.g. "drift:{categoryId}:{ISO-week}"); dismissing writes
+// that id to kv so the card stays gone across restarts. A genuinely-new insight
+// (different content key) appears as fresh — no pre-dismissal of new content.
+// See usePatternDismiss for the full id scheme.
 // ──────────────────────────────────────────────────────────────────────────────
 
 interface PatternCardProps {
   eyebrow: string;
   icon: keyof typeof Ionicons.glyphMap;
   dismissLabel: string;
+  /** Stable, content-keyed id for this card instance. Same id = stays dismissed;
+   *  different id (new content/period) = appears fresh. Required. */
+  dismissId: string;
   children: ReactNode;
 }
 
-export function PatternCard({ eyebrow, icon, dismissLabel, children }: PatternCardProps) {
+export function PatternCard({ eyebrow, icon, dismissLabel, dismissId, children }: PatternCardProps) {
   const t = useTheme();
-  const [dismissed, setDismissed] = useState(false);
+  const { dismissed, dismiss } = usePatternDismiss(dismissId);
   if (dismissed) return null;
 
   const header: ViewStyle = {
@@ -32,7 +41,7 @@ export function PatternCard({ eyebrow, icon, dismissLabel, children }: PatternCa
   };
   const eyebrowRow: ViewStyle = { flexDirection: 'row', alignItems: 'center', gap: t.space[2], flex: 1 };
   const eyebrowText: TextStyle = { ...(type.eyebrow as unknown as TextStyle), color: t.colors.primary };
-  const dismiss: ViewStyle = {
+  const dismissBtn: ViewStyle = {
     width: t.size.control.md,
     height: t.size.control.md,
     marginRight: -t.space[2],
@@ -51,11 +60,11 @@ export function PatternCard({ eyebrow, icon, dismissLabel, children }: PatternCa
           </Text>
         </View>
         <Pressable
-          onPress={() => setDismissed(true)}
+          onPress={dismiss}
           accessibilityRole="button"
           accessibilityLabel={dismissLabel}
           hitSlop={8}
-          style={dismiss}
+          style={dismissBtn}
         >
           <Ionicons name="close" size={t.iconSize.sm} color={t.colors.inkFaint} />
         </Pressable>

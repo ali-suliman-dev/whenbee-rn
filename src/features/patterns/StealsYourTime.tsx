@@ -42,11 +42,16 @@ export function StealsYourTime({ insights }: { insights: ReasonInsight[] }) {
   const detailText = `${pct}% of ${top.categoryName} overruns trace back to ${reasonPhrase(top.reason)}${skewSuffix(top)}.`;
   const metaText = `Based on ${top.sampleCount} of ${top.totalOver} times you noted why · learned on-device`;
 
+  // dismissId: categoryId + reason + sampleCount so a new data batch or new top
+  // reason (genuinely-different insight) produces a fresh id and shows again.
+  const dismissId = `steals:${top.categoryId}:${top.reason}:${top.sampleCount}`;
+
   return (
     <PatternCard
       eyebrow="WHAT STEALS YOUR TIME"
       icon="hourglass-outline"
       dismissLabel="Hide what steals your time"
+      dismissId={dismissId}
     >
       <View style={block}>
         <Text style={headline}>{headlineText}</Text>
