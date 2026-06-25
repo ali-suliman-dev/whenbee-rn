@@ -716,6 +716,13 @@ export async function createSqliteDatabase(name = 'whenbee.db'): Promise<Databas
       return rows.map((r) => r.planned_date).sort();
     },
 
+    async listTasksWithCalendarEventId(): Promise<TaskRow[]> {
+      const rows = await db.getAllAsync<TaskDbRow>(
+        `SELECT * FROM tasks WHERE calendar_event_id IS NOT NULL`,
+      );
+      return rows.map(mapTask);
+    },
+
     async wipeAll(): Promise<void> {
       await db.withTransactionAsync(async () => {
         await db.execAsync(

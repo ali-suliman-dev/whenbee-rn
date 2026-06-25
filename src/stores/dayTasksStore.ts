@@ -12,6 +12,19 @@ import { tasksForSelectedDay, type DayTask } from '@/src/engine/daySelectors';
 import { toLocalDayKey, addDays } from '@/src/lib/day';
 import type { Task } from '@/src/domain/types';
 import { kv } from '@/src/lib/kv';
+import { syncDayPlanToCalendar } from '@/src/services/calendarExport';
+import { getCalendar } from '@/src/services/calendar';
+import { useSettingsStore } from '@/src/stores/settingsStore';
+import { useEntitlement } from '@/src/features/paywall/useEntitlement';
+
+/** Timed task from the plan engine — the minimum shape needed for a calendar sync. */
+export interface PlannedExportTask {
+  id: string;
+  label: string;
+  startMs: number;
+  endMs: number;
+  calendarEventId: string | null;
+}
 
 const MIGRATED_FLAG = 'tasks-migrated-v1';
 const LEGACY_KV_KEY = 'today-tasks'; // the old persist() store key
@@ -59,6 +72,27 @@ export interface DayTasksState {
   reload: (nowMs?: number) => Promise<void>;
   /** Refresh shelfTasks from the repo (tasks with plannedDate = null). */
   loadShelf: () => Promise<void>;
+  /**
+   * Sync the selected day's timed plan to the Whenbee calendar.
+   *
+   * Guard: no-op when export is disabled, not Pro, or whenbeeCalendarId is null.
+   * Horizon: v1 syncs the SELECTED day only — multi-day auto-sync is future work.
+   *
+   * `plannedTasks` — the timed tasks from the plan engine (kind 'task' items with
+   * startMs/endMs). The caller (Plan-my-day handler or Timeline) builds this list.
+   * The store derives priorLinks from the tasks' current calendarEventIds.
+   */
+  syncExportForSelectedDay: (
+    plannedTasks: PlannedExportTask[],
+    nowMs?: number,
+  ) => Promise<void>;
+  /**
+   * Clear calendarEventId on ALL tasks that currently have one.
+   * Called after disabling the calendar export (B1) so stale db links don't
+   * accumulate. The caller's disableExport already deleted the Whenbee events;
+   * this clears the local task→event mapping.
+   */
+  clearAllCalendarLinks: () => Promise<void>;
 }
 
 // ---------------------------------------------------------------------------
@@ -285,6 +319,20 @@ export function makeDayTasksStore(deps: Deps): UseBoundStore<StoreApi<DayTasksSt
     },
 
     async removeTask(id, nowMs) {
+      // Phase 7 B2: if export is on and the task has a linked Whenbee event,
+      // delete the event before removing the task from the db.
+      const { calendar: calPrefs } = useSettingsStore.getState();
+      if (calPrefs.exportEnabled && calPrefs.whenbeeCalendarId) {
+        const task = await repo.get(id);
+        if (task?.calendarEventId) {
+          try {
+            await getCalendar().deleteWhenbeeEvent(task.calendarEventId);
+          } catch {
+            // Best-effort — the db row is removed regardless.
+          }
+        }
+      }
+
       await repo.remove(id);
       const today = toLocalDayKey(nowMs ?? Date.now());
       await Promise.all([
@@ -321,6 +369,63 @@ export function makeDayTasksStore(deps: Deps): UseBoundStore<StoreApi<DayTasksSt
     async loadShelf() {
       await refreshShelf();
     },
+
+    async syncExportForSelectedDay(plannedTasks, nowMs) {
+      // Guard: export must be on, user must be Pro, and the Whenbee calendar id set.
+      const { calendar: calPrefs } = useSettingsStore.getState();
+      const { isPro } = useEntitlement.getState();
+      if (!calPrefs.exportEnabled || !isPro || !calPrefs.whenbeeCalendarId) return;
+
+      const { selectedDate } = get();
+      const calendarId = calPrefs.whenbeeCalendarId;
+
+      // Build priorLinks from the PERSISTED day tasks (tasks that currently have a
+      // calendarEventId in the db for this day). Using plannedTasks would mean
+      // every priorLink.taskId is always in the new plan, so the reconcile-delete
+      // path in the sync service never fires and orphaned events leak.
+      const persistedDayTasks = await repo.listByDate(selectedDate);
+      const priorLinks = persistedDayTasks
+        .filter((t) => t.calendarEventId !== null)
+        .map((t) => ({ taskId: t.id, eventId: t.calendarEventId as string }));
+
+      const result = await syncDayPlanToCalendar({
+        date: selectedDate,
+        calendarId,
+        plannedTasks,
+        priorLinks,
+      });
+
+      // Persist the returned taskId→eventId links onto the tasks.
+      await Promise.all(
+        result.links.map(({ taskId, eventId }) =>
+          repo.update(taskId, { calendarEventId: eventId }),
+        ),
+      );
+
+      // Clear calendarEventId for tasks whose event was deleted (no longer in plan).
+      // These are tasks that were in priorLinks but not in plannedTasks — the sync
+      // service already deleted their events; we clear the stale db link.
+      const plannedIds = new Set(plannedTasks.map((t) => t.id));
+      const staleLinkIds = priorLinks
+        .filter((l) => !plannedIds.has(l.taskId))
+        .map((l) => l.taskId);
+      if (staleLinkIds.length > 0) {
+        await Promise.all(
+          staleLinkIds.map((taskId) => repo.update(taskId, { calendarEventId: null })),
+        );
+      }
+
+      // Refresh the day view so the store reflects the updated calendarEventIds.
+      const today = toLocalDayKey(nowMs ?? Date.now());
+      set(await loadDayAndDots(selectedDate, today));
+    },
+
+    async clearAllCalendarLinks() {
+      const linked = await repo.listWithCalendarEventId();
+      await Promise.all(
+        linked.map((t) => repo.update(t.id, { calendarEventId: null })),
+      );
+    },
   });
   });
 }
@@ -349,6 +454,7 @@ function makeLazyRepo(): TasksRepo {
     setDoneBy: async (d, m) => (await resolve()).setDoneBy(d, m),
     setPlanComputedAt: async (d, t) => (await resolve()).setPlanComputedAt(d, t),
     dates: async () => (await resolve()).dates(),
+    listWithCalendarEventId: async () => (await resolve()).listWithCalendarEventId(),
   };
 }
 

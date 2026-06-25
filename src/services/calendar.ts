@@ -4,13 +4,28 @@ import { toLocalDayKey } from '@/src/lib/day';
 // ──────────────────────────────────────────────────────────────────────────────
 // calendar — the expo-calendar house (isExpoGo-guarded, like purchases/sentry).
 //
-// TRUST MODEL (do not weaken): we request READ access first and show the user a
-// preview. We NEVER write to the calendar except from `writeAdjustments`, and
-// `writeAdjustments` is only ever called from the Honest-Day confirm handler.
-// There is no auto-write, no write-on-mount, no write-on-read.
+// TRUST MODEL (do not weaken):
+//
+// READ path:
+//   We request READ access first and show the user a preview. There is no
+//   auto-read, no read-on-mount beyond the user-triggered day view.
+//
+// HONEST-DAY write path (existing):
+//   `writeAdjustments` is the ONLY place we edit existing user calendar events.
+//   It is called exclusively from the Honest-Day confirm handler and touches
+//   only the event ids passed to it.
+//
+// APP-OWNED WRITE path (Phase 7 addition):
+//   The methods below (`requestWriteAccess`, `ensureWhenbeeCalendar`,
+//   `createWhenbeeEvent`, `updateWhenbeeEvent`, `deleteWhenbeeEvent`,
+//   `deleteAllWhenbeeEvents`, `deleteWhenbeeCalendar`) operate EXCLUSIVELY on
+//   the app-owned "Whenbee" calendar (identified by the calendarId passed in
+//   from settings.calendar.whenbeeCalendarId). They NEVER write to, read from,
+//   or delete any event or calendar that the user owns. The calendarId
+//   parameter is the single gate — callers must pass only the Whenbee id.
 //
 // Expo Go can't load the native module, so the stub returns a deterministic set
-// of mock events (so the UI/tests work) and `writeAdjustments` is a no-op.
+// of mock events (so the UI/tests work) and all writes are no-ops.
 // ──────────────────────────────────────────────────────────────────────────────
 
 /** One calendar event, reduced to what the honest-day builder needs. */
@@ -35,10 +50,26 @@ export interface CalendarAdjustment {
   endMs: number;
 }
 
+/** Input shape for creating or updating a Whenbee-owned event. */
+export interface WhenbeeEventInput {
+  title: string;
+  startMs: number;
+  endMs: number;
+}
+
+/** Input shape for updating a Whenbee-owned event (title is optional). */
+export interface WhenbeeEventUpdate {
+  startMs: number;
+  endMs: number;
+  title?: string;
+}
+
 export interface CalendarModule {
   isStub: boolean;
   /** True once read access is granted. Asks the OS the first time. */
   requestReadAccess: () => Promise<boolean>;
+  /** Request WRITE permission for the calendar. Required before any write op. */
+  requestWriteAccess: () => Promise<boolean>;
   /**
    * Events for a specific local day (YYYY-MM-DD). If `calendarIds` is provided
    * and non-empty, only events from those calendars are returned.
@@ -56,6 +87,50 @@ export interface CalendarModule {
    * how many events were written.
    */
   writeAdjustments: (adjustments: CalendarAdjustment[]) => Promise<number>;
+
+  // ── App-owned Whenbee-calendar write ops ────────────────────────────────────
+  // These methods operate ONLY on the app-owned "Whenbee" calendar.
+  // The calendarId / eventId they receive MUST be the Whenbee one — never a
+  // user calendar. No write path touches any other calendar.
+
+  /**
+   * Return a valid app-owned "Whenbee" calendar id. Creates the calendar if
+   * `existingId` is null or no longer exists on-device. The new calendar is
+   * titled "Whenbee" and is attached to the default modifiable local source.
+   */
+  ensureWhenbeeCalendar: (existingId: string | null) => Promise<string>;
+
+  /**
+   * Create an event in the Whenbee calendar. Returns the native event id.
+   * ONLY called with the Whenbee calendarId from settings.
+   */
+  createWhenbeeEvent: (calendarId: string, event: WhenbeeEventInput) => Promise<string>;
+
+  /**
+   * Update an existing Whenbee-owned event's times (and optionally title).
+   * ONLY called with event ids created by `createWhenbeeEvent`.
+   */
+  updateWhenbeeEvent: (eventId: string, update: WhenbeeEventUpdate) => Promise<void>;
+
+  /**
+   * Delete a single Whenbee-owned event.
+   * ONLY called with event ids created by `createWhenbeeEvent`.
+   */
+  deleteWhenbeeEvent: (eventId: string) => Promise<void>;
+
+  /**
+   * Delete ALL events in the Whenbee calendar (used on export disable).
+   * Scans a wide window (~10 years) and deletes every event found.
+   * Returns the count of deleted events.
+   * ONLY ever called with the Whenbee calendarId.
+   */
+  deleteAllWhenbeeEvents: (calendarId: string) => Promise<number>;
+
+  /**
+   * Remove the app-owned Whenbee calendar entirely (optional, on full disable).
+   * ONLY called with the Whenbee calendarId.
+   */
+  deleteWhenbeeCalendar: (calendarId: string) => Promise<void>;
 }
 
 type NativeCalendar = typeof import('expo-calendar');
@@ -72,6 +147,7 @@ function dayKeyBounds(dayKey: string): { start: number; end: number } {
 // A realistic, optimistic day: three back-to-back blocks whose titles map to
 // known categories, so the preview and the cascade both have something to show.
 const MOCK_CALENDAR_ID = 'mock-cal';
+const STUB_WHENBEE_CALENDAR_ID = 'whenbee-cal-stub';
 
 function mockEventsForDay(dayKey: string): CalendarEvent[] {
   const { start } = dayKeyBounds(dayKey);
@@ -111,6 +187,8 @@ function createStub(): CalendarModule {
 
     requestReadAccess: async () => true,
 
+    requestWriteAccess: async () => true,
+
     getEventsForDay: async (
       dayKey: string,
       calendarIds?: readonly string[],
@@ -132,14 +210,37 @@ function createStub(): CalendarModule {
 
     // No-op: Expo Go has no calendar to write to. Reports zero written.
     writeAdjustments: async () => 0,
+
+    // ── App-owned write ops — stub implementations ───────────────────────────
+
+    ensureWhenbeeCalendar: async (_existingId) => STUB_WHENBEE_CALENDAR_ID,
+
+    createWhenbeeEvent: async (_calendarId, _event) => 'whenbee-event-stub',
+
+    updateWhenbeeEvent: async (_eventId, _update) => undefined,
+
+    deleteWhenbeeEvent: async (_eventId) => undefined,
+
+    deleteAllWhenbeeEvents: async (_calendarId) => 0,
+
+    deleteWhenbeeCalendar: async (_calendarId) => undefined,
   };
 }
+
+/** Wide window for delete-all: 5 years back to 5 years forward. */
+const DELETE_ALL_PAST_MS = 5 * 365 * 24 * 60 * 60_000;
+const DELETE_ALL_FUTURE_MS = 5 * 365 * 24 * 60 * 60_000;
 
 function createNative(Calendar: NativeCalendar): CalendarModule {
   return {
     isStub: false,
 
     requestReadAccess: async () => {
+      const { status } = await Calendar.requestCalendarPermissionsAsync();
+      return status === 'granted';
+    },
+
+    requestWriteAccess: async () => {
       const { status } = await Calendar.requestCalendarPermissionsAsync();
       return status === 'granted';
     },
@@ -183,8 +284,9 @@ function createNative(Calendar: NativeCalendar): CalendarModule {
       return calendars.map((c) => ({ id: c.id, title: c.title }));
     },
 
-    // ⚠️ The ONLY write path. Mutates each event's start/end to the confirmed
-    // honest times. Reached exclusively from the confirm handler.
+    // ⚠️ The ONLY path for editing user-owned calendar events. Mutates each
+    // event's start/end to the confirmed honest times. Reached exclusively from
+    // the confirm handler.
     writeAdjustments: async (adjustments) => {
       let written = 0;
       for (const adj of adjustments) {
@@ -195,6 +297,98 @@ function createNative(Calendar: NativeCalendar): CalendarModule {
         written += 1;
       }
       return written;
+    },
+
+    // ── App-owned write ops — native implementations ─────────────────────────
+    // SAFETY: every method below accepts a calendarId / eventId that MUST be
+    // the app-owned Whenbee calendar — callers are responsible for passing only
+    // that id. These methods never look up, enumerate, or touch any other
+    // calendar or event.
+
+    ensureWhenbeeCalendar: async (existingId) => {
+      // If we have a stored id, verify it still exists.
+      if (existingId !== null) {
+        try {
+          const calendars = await Calendar.getCalendarsAsync(Calendar.EntityTypes.EVENT);
+          const found = calendars.find((c) => c.id === existingId);
+          if (found !== undefined) return existingId;
+        } catch {
+          // Fall through to create a new one.
+        }
+      }
+
+      // Pick a modifiable local source (prefer the default calendar's source).
+      let sourceId: string | undefined;
+      try {
+        const defaultCal = await Calendar.getDefaultCalendarAsync();
+        sourceId = defaultCal.source?.id;
+      } catch {
+        // getDefaultCalendarAsync may not be available on all platforms.
+      }
+
+      if (sourceId === undefined) {
+        // Fall back: find a local/modifiable source.
+        const sources = await Calendar.getSourcesAsync();
+        const local = sources.find(
+          (s) => s.type === Calendar.SourceType.LOCAL || s.isLocalAccount,
+        );
+        sourceId = local?.id ?? sources[0]?.id;
+      }
+
+      const newId = await Calendar.createCalendarAsync({
+        title: 'Whenbee',
+        color: '#F5A623',
+        entityType: Calendar.EntityTypes.EVENT,
+        sourceId,
+        name: 'whenbee',
+        ownerAccount: 'whenbee',
+        accessLevel: Calendar.CalendarAccessLevel.OWNER,
+      });
+
+      return newId;
+    },
+
+    createWhenbeeEvent: async (calendarId, event) => {
+      const id = await Calendar.createEventAsync(calendarId, {
+        title: event.title,
+        startDate: new Date(event.startMs),
+        endDate: new Date(event.endMs),
+        timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+      });
+      return id;
+    },
+
+    updateWhenbeeEvent: async (eventId, update) => {
+      await Calendar.updateEventAsync(eventId, {
+        startDate: new Date(update.startMs),
+        endDate: new Date(update.endMs),
+        ...(update.title !== undefined ? { title: update.title } : {}),
+      });
+    },
+
+    deleteWhenbeeEvent: async (eventId) => {
+      await Calendar.deleteEventAsync(eventId);
+    },
+
+    deleteAllWhenbeeEvents: async (calendarId) => {
+      const now = Date.now();
+      const rangeStart = new Date(now - DELETE_ALL_PAST_MS);
+      const rangeEnd = new Date(now + DELETE_ALL_FUTURE_MS);
+      const events = await Calendar.getEventsAsync(
+        [calendarId],
+        rangeStart,
+        rangeEnd,
+      );
+      let count = 0;
+      for (const event of events) {
+        await Calendar.deleteEventAsync(event.id);
+        count += 1;
+      }
+      return count;
+    },
+
+    deleteWhenbeeCalendar: async (calendarId) => {
+      await Calendar.deleteCalendarAsync(calendarId);
     },
   };
 }

@@ -69,7 +69,7 @@ beforeEach(() => {
   });
 
   useSettingsStore.setState({
-    calendar: { showEvents: false, enabledCalendarIds: [] },
+    calendar: { showEvents: false, enabledCalendarIds: [], exportEnabled: false, whenbeeCalendarId: null },
   });
 
   useCalibrationStore.setState({ statsByCategory: {} });

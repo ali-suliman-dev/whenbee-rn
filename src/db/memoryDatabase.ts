@@ -248,6 +248,11 @@ export function createMemoryDatabase(): Database {
       }
       return [...seen].sort();
     },
+    async listTasksWithCalendarEventId(): Promise<TaskRow[]> {
+      return [...tasks.values()]
+        .filter((t) => t.calendarEventId !== null)
+        .map((t) => ({ ...t }));
+    },
 
     async wipeAll(): Promise<void> {
       categoryStats.clear();

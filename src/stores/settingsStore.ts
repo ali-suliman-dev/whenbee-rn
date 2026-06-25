@@ -15,14 +15,30 @@ const clampDayEndMin = (m: number): number =>
     : DEFAULT_DAY_END_MIN;
 
 /** Calendar overlay preferences. `enabledCalendarIds` is empty by default — treat
- *  all calendars as enabled until the user narrows the selection. */
+ *  all calendars as enabled until the user narrows the selection.
+ *
+ *  Export fields (Phase 7):
+ *  - `exportEnabled`: when true, Pro users push their planned day to the
+ *    app-owned "Whenbee" calendar. Off by default; opt-in only.
+ *  - `whenbeeCalendarId`: the native id of the app-owned calendar created by
+ *    `ensureWhenbeeCalendar`. Null until the user first enables export.
+ */
 interface CalendarPrefs {
   showEvents: boolean;
   // empty enabledCalendarIds means treat all calendars as enabled until user narrows the selection
   enabledCalendarIds: string[];
+  /** Whether to push the planned day to the Whenbee calendar. Off by default; Pro-only. */
+  exportEnabled: boolean;
+  /** Native id of the app-owned "Whenbee" calendar. Null until export is first enabled. */
+  whenbeeCalendarId: string | null;
 }
 
-const DEFAULT_CALENDAR: CalendarPrefs = { showEvents: false, enabledCalendarIds: [] };
+const DEFAULT_CALENDAR: CalendarPrefs = {
+  showEvents: false,
+  enabledCalendarIds: [],
+  exportEnabled: false,
+  whenbeeCalendarId: null,
+};
 
 interface SettingsState {
   colorMode: ColorModePref;
@@ -90,6 +106,10 @@ interface SettingsState {
   setEnabledCalendars: (ids: string[]) => void;
   /** Toggle a single calendar id in/out of the enabled list. */
   toggleCalendar: (id: string) => void;
+  /** Enable or disable pushing the planned day to the Whenbee calendar (Pro-only). */
+  setExportEnabled: (enabled: boolean) => void;
+  /** Store (or clear) the native id of the app-owned "Whenbee" calendar. */
+  setWhenbeeCalendarId: (id: string | null) => void;
   /** Return every preference to its first-run default (full data-reset path). */
   reset: () => void;
 }
@@ -152,6 +172,10 @@ export const useSettingsStore = create<SettingsState>()(
           const next = ids.includes(id) ? ids.filter((x) => x !== id) : [...ids, id];
           return { calendar: { ...s.calendar, enabledCalendarIds: next } };
         }),
+      setExportEnabled: (exportEnabled) =>
+        set((s) => ({ calendar: { ...s.calendar, exportEnabled } })),
+      setWhenbeeCalendarId: (whenbeeCalendarId) =>
+        set((s) => ({ calendar: { ...s.calendar, whenbeeCalendarId } })),
       reset: () =>
         set({
           colorMode: 'system',
@@ -175,6 +199,21 @@ export const useSettingsStore = create<SettingsState>()(
           notificationSound: 'default',
         }),
     }),
-    { name: 'settings', storage: createJSONStorage(() => zustandKv) },
+    {
+      name: 'settings',
+      storage: createJSONStorage(() => zustandKv),
+      // Deep-backfill the calendar slice so that pre-Phase-7 persisted blobs
+      // (which only have showEvents/enabledCalendarIds) rehydrate the new export
+      // fields as their defaults instead of `undefined`, which would violate the
+      // non-optional CalendarPrefs type.
+      merge: (persisted, current) => {
+        const p = persisted as Partial<SettingsState> | null | undefined;
+        return {
+          ...current,
+          ...(p ?? {}),
+          calendar: { ...DEFAULT_CALENDAR, ...(p?.calendar ?? {}) },
+        };
+      },
+    },
   ),
 );
