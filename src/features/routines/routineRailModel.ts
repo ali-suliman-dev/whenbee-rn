@@ -64,8 +64,13 @@ export function buildRoutineRail(input: BuildRoutineRailInput): RoutineRailModel
     });
     if (cursor !== null) cursor += honestMin;
 
-    if (i < steps.length - 1 && round5(breatherEach) > 0) {
-      rows.push({ kind: 'breather', min: round5(breatherEach) });
+    if (i < steps.length - 1) {
+      // Always advance the clock by the exact (unrounded) breather gap so that
+      // subsequent step clockMin values stay anchored to the finish-by time, even
+      // when the gap is too small to merit a visible breather row (< 2.5 min).
+      if (round5(breatherEach) > 0) {
+        rows.push({ kind: 'breather', min: round5(breatherEach) });
+      }
       if (cursor !== null) cursor += breatherEach;
     }
   });

@@ -70,6 +70,35 @@ describe('buildRoutineRail', () => {
     expect(finish && finish.kind === 'finish' && finish.clockMin).toBe(520);
   });
 
+  it('advances cursor by sub-5-min breather so later step clockMin stays anchored', () => {
+    // 5 steps × 20 min each, m=1 → perStep=[20,20,20,20,20], sumSteps=100
+    // transitionFactor=1.05 → honestTotalMin=round5(105)=105, totalBreather=5
+    // nGaps=4, breatherEach=5/4=1.25, round5(1.25)=0 → no breather rows drawn
+    // BUT cursor must still advance by 1.25 min per gap.
+    // doneByMinuteOfDay=600 → startByMin=495
+    // step1.clockMin=495, step2.clockMin=495+20+1.25=516.25 (not 515).
+    const m = buildRoutineRail({
+      steps: [
+        { id: 'a', label: 'A', category: 'x', guessMin: 20 },
+        { id: 'b', label: 'B', category: 'x', guessMin: 20 },
+        { id: 'c', label: 'C', category: 'x', guessMin: 20 },
+        { id: 'd', label: 'D', category: 'x', guessMin: 20 },
+        { id: 'e', label: 'E', category: 'x', guessMin: 20 },
+      ],
+      mFor: mOne,
+      transitionFactor: 1.05,
+      doneByMinuteOfDay: 600,
+    });
+    // No breather rows because round5(1.25) = 0.
+    expect(m.rows.every((r) => r.kind !== 'breather')).toBe(true);
+    expect(m.startByMin).toBe(495);
+    const step1 = m.rows[1];
+    const step2 = m.rows[2];
+    expect(step1 && step1.kind === 'step' && step1.clockMin).toBe(495);
+    // Cursor must have advanced by breatherEach=1.25 between step1 and step2.
+    expect(step2 && step2.kind === 'step' && step2.clockMin).toBe(516.25);
+  });
+
   it('start-by floors at 0 when the routine is longer than the finish-by', () => {
     const m = buildRoutineRail({
       steps: [{ id: 'a', label: 'A', category: 'x', guessMin: 30 }],
