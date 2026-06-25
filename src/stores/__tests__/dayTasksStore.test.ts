@@ -243,3 +243,83 @@ test('FIX3: init seeds shelfTasks from pre-existing unscheduled tasks', async ()
   expect(shelf.map((t) => t.id)).toContain('shelf-pre-1');
   expect(shelf.find((t) => t.id === 'shelf-pre-1')?.label).toBe('Pre-seeded shelf task');
 });
+
+// ── B1: dayMeta + setDoneBy + markPlanned ─────────────────────────────────────
+
+test('B1: dayMeta is null before init', () => {
+  const { store } = freshStore();
+  expect(store.getState().dayMeta).toBeNull();
+});
+
+test('B1: init loads dayMeta (null when no row exists)', async () => {
+  const { store } = freshStore();
+  await store.getState().init(NOW);
+  // No dayMeta row yet → should be null
+  expect(store.getState().dayMeta).toBeNull();
+});
+
+test('B1: setDoneBy persists and reloads dayMeta.doneByMin', async () => {
+  const { store } = freshStore();
+  await store.getState().init(NOW);
+  await store.getState().setDoneBy(18 * 60); // 18:00
+
+  const meta = store.getState().dayMeta;
+  expect(meta).not.toBeNull();
+  expect(meta?.doneByMin).toBe(18 * 60);
+});
+
+test('B1: setDoneBy(null) clears doneByMin', async () => {
+  const { store } = freshStore();
+  await store.getState().init(NOW);
+  await store.getState().setDoneBy(17 * 60);
+  await store.getState().setDoneBy(null);
+
+  const meta = store.getState().dayMeta;
+  expect(meta?.doneByMin).toBeNull();
+});
+
+test('B1: markPlanned stamps planComputedAt', async () => {
+  const { store } = freshStore();
+  await store.getState().init(NOW);
+  await store.getState().markPlanned(NOW);
+
+  const meta = store.getState().dayMeta;
+  expect(meta).not.toBeNull();
+  expect(meta?.planComputedAt).toBe(NOW);
+});
+
+test('B1: markPlanned preserves existing doneByMin', async () => {
+  const { store } = freshStore();
+  await store.getState().init(NOW);
+  await store.getState().setDoneBy(20 * 60);
+  await store.getState().markPlanned(NOW);
+
+  const meta = store.getState().dayMeta;
+  expect(meta?.doneByMin).toBe(20 * 60);
+  expect(meta?.planComputedAt).toBe(NOW);
+});
+
+test('B1: selectDate loads dayMeta for the new date', async () => {
+  const { store, repo } = freshStore();
+  await store.getState().init(NOW);
+  // Seed a dayMeta row for tomorrow
+  await repo.setDoneBy('2026-06-25', 19 * 60);
+
+  await store.getState().selectDate('2026-06-25');
+  const meta = store.getState().dayMeta;
+  expect(meta?.doneByMin).toBe(19 * 60);
+});
+
+test('B1: goToToday loads dayMeta for today', async () => {
+  const { store } = freshStore();
+  await store.getState().init(NOW);
+  await store.getState().setDoneBy(16 * 60);
+
+  // Simulate navigating away and back
+  await store.getState().selectDate('2026-06-25');
+  expect(store.getState().dayMeta).toBeNull();
+
+  await store.getState().goToToday(NOW);
+  const meta = store.getState().dayMeta;
+  expect(meta?.doneByMin).toBe(16 * 60);
+});

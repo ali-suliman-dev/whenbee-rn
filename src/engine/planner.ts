@@ -29,18 +29,18 @@ interface PlanBackwardInput {
 }
 
 /** A task paired with its effective block (duration + buffer), in minutes. */
-interface EffectiveTask {
+export interface EffectiveTask {
   task: PlanTaskInput;
   effectiveMin: number;
 }
 
 /** Effective block for one task = honest duration + the buffer chip, never < 0. */
-function effectiveBlockMin(durationMin: number, bufferMin: number): number {
+export function effectiveBlockMin(durationMin: number, bufferMin: number): number {
   return Math.max(0, durationMin) + Math.max(0, bufferMin);
 }
 
 /** startBy such that placing `totalMin` of work ends exactly at `deadline`. */
-function startByFor(deadline: number, totalMin: number): number {
+export function startByFor(deadline: number, totalMin: number): number {
   return deadline - totalMin * MS_PER_MIN;
 }
 
@@ -93,7 +93,7 @@ function overshootMinutes(nowMs: number, totalMin: number, deadline: number): nu
  *   2. Keep dropping the next-largest until it fits → `multi-cut` (≥2 dropped).
  *   3. If even keeping only the single SMALLEST task won't fit → `push-deadline`.
  */
-function cutLadder(
+export function cutLadder(
   deadline: number,
   nowMs: number,
   totalMin: number,
@@ -134,7 +134,7 @@ function cutLadder(
 }
 
 /** The smallest effective block among the tasks (0 when there are none). */
-function smallestEffectiveMin(effectives: readonly EffectiveTask[]): number {
+export function smallestEffectiveMin(effectives: readonly EffectiveTask[]): number {
   let min = Infinity;
   for (const e of effectives) min = Math.min(min, e.effectiveMin);
   return Number.isFinite(min) ? min : 0;

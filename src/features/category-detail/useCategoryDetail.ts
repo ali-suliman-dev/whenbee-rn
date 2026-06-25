@@ -1,4 +1,4 @@
-import { useCallback, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { useFocusEffect } from 'expo-router';
 import { useCalibrationStore, type CategoryDetail } from '@/src/stores/calibrationStore';
 import { useCategoriesStore } from '@/src/stores/categoriesStore';
@@ -52,8 +52,21 @@ export function useCategoryDetail(categoryId: string): UseCategoryDetailResult {
   const [justGraduated, setJustGraduated] = useState(false);
   const [reasonNote, setReasonNote] = useState<string | undefined>(undefined);
 
+  // Guard: prevent async setState calls after the component unmounts.
+  // Without this, a pending refresh() that completes after unmount fires state
+  // updates into the wrong React reconciler context, corrupting other tests in
+  // the same Jest worker (the updates land during the next test file's execution).
+  const mountedRef = useRef(true);
+  useEffect(() => {
+    mountedRef.current = true;
+    return () => {
+      mountedRef.current = false;
+    };
+  }, []);
+
   const refresh = useCallback(async () => {
     const next = await loadCategoryDetail(categoryId);
+    if (!mountedRef.current) return;
     setDetail(next);
     setLoading(false);
 
@@ -73,6 +86,7 @@ export function useCategoryDetail(categoryId: string): UseCategoryDetailResult {
       return;
     }
     const insights = await loadReasonInsights();
+    if (!mountedRef.current) return;
     const dominant = insights.find(
       (i) => i.categoryId === categoryId && i.share >= REASON_NOTE_MIN_SHARE,
     );

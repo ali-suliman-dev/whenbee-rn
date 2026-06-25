@@ -24,6 +24,8 @@ export interface DayTasksState {
   selectedDate: string;
   viewMode: 'list' | 'timeline';
   dayTasks: DayTask[];
+  /** Day-level planning metadata for the currently selected date. Null until loaded. */
+  dayMeta: { doneByMin: number | null; planComputedAt: number | null } | null;
   /** Sorted YYYY-MM-DD keys of all queued-task planned dates — powers calendar dot hints. */
   datesWithTasks: string[];
   /** Tasks with no planned date (shelf / "no day yet"). Populated by loadShelf(). */
@@ -33,6 +35,10 @@ export interface DayTasksState {
   selectDate: (date: string) => Promise<void>;
   goToToday: (nowMs?: number) => Promise<void>;
   setViewMode: (m: 'list' | 'timeline') => void;
+  /** Persist a "done by" minute-of-day target for the selected date and reload dayMeta. */
+  setDoneBy: (min: number | null) => Promise<void>;
+  /** Stamp planComputedAt = now for the selected date (called when a plan is triggered). */
+  markPlanned: (nowMs?: number) => Promise<void>;
   addTask: (input: {
     label: string;
     category: string;
@@ -133,6 +139,15 @@ export function makeDayTasksStore(deps: Deps): UseBoundStore<StoreApi<DayTasksSt
     return { dayTasks, datesWithTasks };
   }
 
+  /** Load the day-level meta for a date from the repo (null when no row exists). */
+  async function loadDayMeta(
+    date: string,
+  ): Promise<{ doneByMin: number | null; planComputedAt: number | null } | null> {
+    const row = await repo.getDayMeta(date);
+    if (!row) return null;
+    return { doneByMin: row.doneByMin, planComputedAt: row.planComputedAt };
+  }
+
   return create<DayTasksState>()((set, get) => {
     /** Refresh shelfTasks from the repo. Called after any mutation that can
      *  change shelf membership (add/move/complete/remove). */
@@ -145,6 +160,7 @@ export function makeDayTasksStore(deps: Deps): UseBoundStore<StoreApi<DayTasksSt
     selectedDate: toLocalDayKey(Date.now()),
     viewMode: 'list',
     dayTasks: [],
+    dayMeta: null,
     datesWithTasks: [],
     shelfTasks: [],
     loading: false,
@@ -176,12 +192,14 @@ export function makeDayTasksStore(deps: Deps): UseBoundStore<StoreApi<DayTasksSt
       });
       kvSet(MIGRATED_FLAG, '1');
 
-      const [dayAndDots, shelfRaw] = await Promise.all([
+      const [dayAndDots, shelfRaw, dayMetaRow] = await Promise.all([
         loadDayAndDots(today, today),
         repo.listShelf(),
+        loadDayMeta(today),
       ]);
       set({
         ...dayAndDots,
+        dayMeta: dayMetaRow,
         shelfTasks: shelfRaw.map((t) => ({ ...t, carriedFrom: null })),
         loading: false,
       });
@@ -189,16 +207,36 @@ export function makeDayTasksStore(deps: Deps): UseBoundStore<StoreApi<DayTasksSt
 
     async selectDate(date) {
       const today = toLocalDayKey(Date.now());
-      set({ selectedDate: date, ...(await loadDayAndDots(date, today)) });
+      const [dayAndDots, dayMetaRow] = await Promise.all([
+        loadDayAndDots(date, today),
+        loadDayMeta(date),
+      ]);
+      set({ selectedDate: date, ...dayAndDots, dayMeta: dayMetaRow });
     },
 
     async goToToday(nowMs) {
       const today = toLocalDayKey(nowMs ?? Date.now());
-      set({ selectedDate: today, ...(await loadDayAndDots(today, today)) });
+      const [dayAndDots, dayMetaRow] = await Promise.all([
+        loadDayAndDots(today, today),
+        loadDayMeta(today),
+      ]);
+      set({ selectedDate: today, ...dayAndDots, dayMeta: dayMetaRow });
     },
 
     setViewMode(m) {
       set({ viewMode: m });
+    },
+
+    async setDoneBy(min) {
+      const { selectedDate } = get();
+      await repo.setDoneBy(selectedDate, min);
+      set({ dayMeta: await loadDayMeta(selectedDate) });
+    },
+
+    async markPlanned(nowMs) {
+      const { selectedDate } = get();
+      await repo.setPlanComputedAt(selectedDate, nowMs ?? Date.now());
+      set({ dayMeta: await loadDayMeta(selectedDate) });
     },
 
     async addTask({ label, category, guessMin, date, nowMs }) {
@@ -309,6 +347,7 @@ function makeLazyRepo(): TasksRepo {
     complete: async (id, o) => (await resolve()).complete(id, o),
     getDayMeta: async (d) => (await resolve()).getDayMeta(d),
     setDoneBy: async (d, m) => (await resolve()).setDoneBy(d, m),
+    setPlanComputedAt: async (d, t) => (await resolve()).setPlanComputedAt(d, t),
     dates: async () => (await resolve()).dates(),
   };
 }
