@@ -14,6 +14,16 @@ const clampDayEndMin = (m: number): number =>
     ? Math.min(MINUTES_IN_DAY - 1, Math.max(0, Math.round(m)))
     : DEFAULT_DAY_END_MIN;
 
+/** Calendar overlay preferences. `enabledCalendarIds` is empty by default — treat
+ *  all calendars as enabled until the user narrows the selection. */
+interface CalendarPrefs {
+  showEvents: boolean;
+  // empty enabledCalendarIds means treat all calendars as enabled until user narrows the selection
+  enabledCalendarIds: string[];
+}
+
+const DEFAULT_CALENDAR: CalendarPrefs = { showEvents: false, enabledCalendarIds: [] };
+
 interface SettingsState {
   colorMode: ColorModePref;
   setColorMode: (m: ColorModePref) => void;
@@ -72,6 +82,14 @@ interface SettingsState {
   /** Whether the end-of-day feature is active. On by default. */
   dayEndEnabled: boolean;
   setDayEndEnabled: (v: boolean) => void;
+  /** Calendar overlay preferences: master toggle + per-calendar filter. */
+  calendar: CalendarPrefs;
+  /** Master toggle for showing device-calendar events on the day surface. */
+  setShowEvents: (showEvents: boolean) => void;
+  /** Replace the enabled-calendar list. An empty list means all calendars are enabled. */
+  setEnabledCalendars: (ids: string[]) => void;
+  /** Toggle a single calendar id in/out of the enabled list. */
+  toggleCalendar: (id: string) => void;
   /** Return every preference to its first-run default (full data-reset path). */
   reset: () => void;
 }
@@ -123,6 +141,17 @@ export const useSettingsStore = create<SettingsState>()(
       setHyperfocusGuard: (hyperfocusGuard) => set({ hyperfocusGuard }),
       dayEndEnabled: true,
       setDayEndEnabled: (dayEndEnabled) => set({ dayEndEnabled }),
+      calendar: DEFAULT_CALENDAR,
+      setShowEvents: (showEvents) =>
+        set((s) => ({ calendar: { ...s.calendar, showEvents } })),
+      setEnabledCalendars: (ids) =>
+        set((s) => ({ calendar: { ...s.calendar, enabledCalendarIds: ids } })),
+      toggleCalendar: (id) =>
+        set((s) => {
+          const ids = s.calendar.enabledCalendarIds;
+          const next = ids.includes(id) ? ids.filter((x) => x !== id) : [...ids, id];
+          return { calendar: { ...s.calendar, enabledCalendarIds: next } };
+        }),
       reset: () =>
         set({
           colorMode: 'system',
@@ -139,6 +168,7 @@ export const useSettingsStore = create<SettingsState>()(
           focusShownStartMin: null,
           focusShownEndMin: null,
           focusLastMoveAtMs: null,
+          calendar: DEFAULT_CALENDAR,
           honestReachedEnabled: true,
           startByEnabled: true,
           quietHours: { enabled: true, startMin: 1260, endMin: 480 },

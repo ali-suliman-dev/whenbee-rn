@@ -57,3 +57,4 @@ export type { TightenedEntry, BuildReviewSummaryInput } from './review';
 export { learnFocusWindow } from './focusWindowLearn';
 export type { LearnFocusInput, LearnedFocusWindow, FocusEventInput } from '@/src/domain/types';
 export { tasksForSelectedDay, type DayTask, type DaySelectorInput } from './daySelectors';
+export { honestDayLoad, type DayLoadInput, type DayLoadResult } from './honestDayLoad';

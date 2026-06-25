@@ -31,6 +31,7 @@ import { ProGate } from '@/src/features/paywall/ProGate';
 import { PresenceRingTeaser } from '@/src/components/PresenceRingTeaser';
 import { GuardrailSettingRow } from '@/src/features/settings/GuardrailSettingRow';
 import { GuardrailLockedRow } from '@/src/features/settings/GuardrailLockedRow';
+import { CalendarSettingsSection } from '@/src/features/settings/CalendarSettingsSection';
 import { seedDemoData } from '@/src/features/dev/seedDemoData';
 
 const modes: ColorModePref[] = ['system', 'light', 'dark'];
@@ -521,6 +522,8 @@ export default function Settings() {
             }
           />
         </View>
+
+        <CalendarSettingsSection />
 
         <View style={{ gap: t.space[3] }}>
           <AppText variant="label">Your data</AppText>

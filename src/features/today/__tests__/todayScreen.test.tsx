@@ -4,6 +4,23 @@ import Today from '@/src/app/(tabs)/index';
 import { useCalibrationStore, type ReclaimSummary } from '@/src/stores/calibrationStore';
 import { useDayTasksStore } from '@/src/stores/dayTasksStore';
 import type { DayTask } from '@/src/engine/daySelectors';
+import { useDayCapacity } from '@/src/features/today/useDayCapacity';
+import { useEntitlement } from '@/src/features/paywall/useEntitlement';
+import type { DayLoadResult } from '@/src/engine/honestDayLoad';
+
+// useDayCapacity pulls native calendar — mock it for screen-level tests so
+// calendar permission requests and async effects don't fire.
+jest.mock('@/src/features/today/useDayCapacity');
+
+const mockUseDayCapacity = jest.mocked(useDayCapacity);
+
+function makeLoad(overrides: Partial<DayLoadResult> = {}): DayLoadResult {
+  return {
+    taskMin: 120, eventMin: 0, committedMin: 120,
+    freeMin: 720, verdict: 'comfortable', overByMin: 0,
+    ...overrides,
+  };
+}
 
 // CalendarStrip renders a FlatList with initialScrollIndex; the underlying
 // scrollToIndex call in the effect warns in jsdom — mock the component so
@@ -82,6 +99,15 @@ function makeQueued(overrides: {
 }
 
 beforeEach(() => {
+  // Default: free user (isPro = false). Tests that need Pro call setState directly.
+  useEntitlement.setState({ isPro: false });
+  mockUseDayCapacity.mockReturnValue({
+    status: 'off',
+    load: makeLoad(),
+    events: [],
+    allDayEvents: [],
+    isPro: false,
+  });
   // Reset to today so isPastDay is always false unless a test explicitly sets a past date.
   useDayTasksStore.setState({
     dayTasks: [],
@@ -148,6 +174,38 @@ describe('Today screen', () => {
     // No empty-state copy when a task is present.
     expect(screen.queryByText('Time your first task')).toBeNull();
     expect(screen.queryByText("What's on today?")).toBeNull();
+  });
+
+  it('renders the capacity chip teaser on today (free user)', () => {
+    // selectedDate is today (set in beforeEach).
+    render(<Today />);
+    // Free user sees the "will fit" teaser from CapacityChip.
+    expect(screen.getByTestId('capacity-teaser')).toBeOnTheScreen();
+  });
+
+  it('renders the capacity chip collapsed for a Pro user on today', () => {
+    useEntitlement.setState({ isPro: true });
+    mockUseDayCapacity.mockReturnValue({
+      status: 'ready',
+      load: makeLoad(),
+      events: [],
+      allDayEvents: [],
+      isPro: true,
+    });
+    render(<Today />);
+    expect(screen.getByTestId('capacity-chip-collapsed')).toBeOnTheScreen();
+  });
+
+  it('does NOT render the capacity chip on a past day', () => {
+    // 2023-11-13 is a past date.
+    useDayTasksStore.setState({
+      selectedDate: '2023-11-13',
+      dayTasks: [],
+      selectFocusTask: () => null,
+    });
+    render(<Today />);
+    expect(screen.queryByTestId('capacity-chip-collapsed')).toBeNull();
+    expect(screen.queryByTestId('capacity-teaser')).toBeNull();
   });
 
   it('leads up-next rows with the honest estimate and supports with the guess', async () => {
