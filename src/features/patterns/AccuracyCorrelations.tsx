@@ -38,8 +38,12 @@ export function AccuracyCorrelations({
   const meta: TextStyle = { ...(type.micro as unknown as TextStyle), color: t.colors.inkFaint };
   const block: ViewStyle = { gap: t.space[1.5] };
 
+  // dismissId: encodes the top correlation's dimension + label pair so a genuinely
+  // different pattern (new dimension or label) produces a new id and shows again.
+  const dismissId = `accuracy-correlations:${top.dimension}:${top.betterLabel}:${top.sampleCount}`;
+
   return (
-    <PatternCard eyebrow="WHEN YOU'RE SHARPEST" icon="time-outline" dismissLabel="Hide when you're sharpest">
+    <PatternCard eyebrow="WHEN YOU'RE SHARPEST" icon="time-outline" dismissLabel="Hide when you're sharpest" dismissId={dismissId}>
       <View style={block}>
         <Text style={headline}>{headlineFor(top)}</Text>
         <Text style={detail}>{detailFor(top)}</Text>

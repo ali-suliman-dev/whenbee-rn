@@ -19,8 +19,12 @@ export function PredictionCard({ card }: { card: PredictionCardData }) {
   const multNote: TextStyle = { ...(type.bodySm as unknown as TextStyle), color: t.colors.inkSoft, paddingBottom: t.space[1] };
   const note: TextStyle = { ...(type.caption as unknown as TextStyle), color: t.colors.inkFaint };
 
+  // dismissId: categoryId + sampleSize — a new observation batch (different count)
+  // refreshes the prediction; same category + count stays dismissed.
+  const dismissId = `prediction:${card.categoryId}:${card.sampleSize}`;
+
   return (
-    <PatternCard eyebrow="WHAT TO EXPECT" icon="time-outline" dismissLabel="Hide the prediction">
+    <PatternCard eyebrow="WHAT TO EXPECT" icon="time-outline" dismissLabel="Hide the prediction" dismissId={dismissId}>
       <Text style={lead}>A typical {card.categoryName.toLowerCase()} task usually runs</Text>
       <View style={numberRow}>
         <HonestNumber size="xl" tone="indigo" value={`~${card.honestForFifteen}`} unit="min" />
