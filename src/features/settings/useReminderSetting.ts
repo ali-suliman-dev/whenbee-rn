@@ -17,6 +17,7 @@ export function useReminderSetting() {
     async (next: boolean): Promise<boolean> => {
       if (next) {
         const granted = await ensureNotificationPermission();
+        analytics.capture('notification_permission', { tier: granted ? 'full' : 'denied' });
         if (!granted) return false;
         setEnabled(true);
         analytics.capture('reminder_enabled', {});

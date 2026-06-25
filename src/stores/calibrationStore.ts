@@ -222,7 +222,7 @@ function claimAha(categoryId: string): boolean {
   return true;
 }
 
-interface CachedStat {
+export interface CachedStat {
   mEffective: number;
   n: number;
   sharpness: number;

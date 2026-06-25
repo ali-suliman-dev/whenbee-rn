@@ -35,9 +35,18 @@ function makeTestStore() {
   });
 }
 
+// Freeze the wall clock to the scenario's "today" so the recap's past/today/future
+// comparison is deterministic regardless of the real date the suite runs on.
+let nowSpy: jest.SpyInstance;
+
 beforeEach(() => {
+  nowSpy = jest.spyOn(Date, 'now').mockReturnValue(TODAY_MS);
   // Reset the bound singleton to a clean state between tests.
   useDayTasksStore.setState({ dayTasks: [], selectedDate: '2026-06-24' });
+});
+
+afterEach(() => {
+  nowSpy.mockRestore();
 });
 
 describe('useDayRecap', () => {
