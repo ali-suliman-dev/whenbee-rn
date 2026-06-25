@@ -8,17 +8,6 @@ import { makeTasksRepo } from '@/src/db/repositories/tasksRepo';
 import { makeDayTasksStore, useDayTasksStore } from '@/src/stores/dayTasksStore';
 import { useDayRecap } from '@/src/features/today/useDayRecap';
 
-// Pin the clock so "today" is always 2026-06-24 regardless of the real date.
-// useDayRecap calls Date.now() internally to determine today vs. past.
-const FIXED_NOW = new Date(2026, 5, 24, 12, 0, 0).getTime(); // local 2026-06-24 noon
-
-beforeAll(() => {
-  jest.spyOn(Date, 'now').mockReturnValue(FIXED_NOW);
-});
-afterAll(() => {
-  (Date.now as jest.Mock).mockRestore();
-});
-
 // 2026-06-23 09:00 (yesterday relative to the test scenario)
 const YESTERDAY_MS = new Date(2026, 5, 23, 9, 0, 0).getTime();
 // 2026-06-24 09:00 (today in the test scenario)
