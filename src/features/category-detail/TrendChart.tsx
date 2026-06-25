@@ -17,7 +17,7 @@ import type { TrendSeries } from '@/src/domain/types';
 const MIN_POINTS = 3;
 const EMPTY_H = 96;
 const PAD = 8;
-const DAY = 86_400; // loggedAt is in seconds
+const DAY = 86_400_000; // loggedAt (createdAt) is epoch milliseconds
 
 export function TrendChart({ trend }: { trend: TrendSeries }) {
   const t = useTheme();
