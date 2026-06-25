@@ -118,6 +118,9 @@ export function CalendarSettingsSection() {
               onPress: async () => {
                 if (whenbeeCalendarId !== null) {
                   await disableExport(whenbeeCalendarId);
+                  // §8.2: also remove the empty Whenbee calendar itself so it
+                  // doesn't linger in the user's calendar list.
+                  await getCalendar().deleteWhenbeeCalendar(whenbeeCalendarId);
                 }
                 // Clear stale task→event db links so the next export starts clean.
                 await useDayTasksStore.getState().clearAllCalendarLinks();

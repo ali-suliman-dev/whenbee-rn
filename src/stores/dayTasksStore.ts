@@ -379,9 +379,12 @@ export function makeDayTasksStore(deps: Deps): UseBoundStore<StoreApi<DayTasksSt
       const { selectedDate } = get();
       const calendarId = calPrefs.whenbeeCalendarId;
 
-      // Build priorLinks from the tasks' existing calendarEventIds so the sync
-      // service can reconcile stale events (tasks removed from the plan since last export).
-      const priorLinks = plannedTasks
+      // Build priorLinks from the PERSISTED day tasks (tasks that currently have a
+      // calendarEventId in the db for this day). Using plannedTasks would mean
+      // every priorLink.taskId is always in the new plan, so the reconcile-delete
+      // path in the sync service never fires and orphaned events leak.
+      const persistedDayTasks = await repo.listByDate(selectedDate);
+      const priorLinks = persistedDayTasks
         .filter((t) => t.calendarEventId !== null)
         .map((t) => ({ taskId: t.id, eventId: t.calendarEventId as string }));
 

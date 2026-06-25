@@ -175,6 +175,21 @@ export const useSettingsStore = create<SettingsState>()(
           calendar: DEFAULT_CALENDAR,
         }),
     }),
-    { name: 'settings', storage: createJSONStorage(() => zustandKv) },
+    {
+      name: 'settings',
+      storage: createJSONStorage(() => zustandKv),
+      // Deep-backfill the calendar slice so that pre-Phase-7 persisted blobs
+      // (which only have showEvents/enabledCalendarIds) rehydrate the new export
+      // fields as their defaults instead of `undefined`, which would violate the
+      // non-optional CalendarPrefs type.
+      merge: (persisted, current) => {
+        const p = persisted as Partial<SettingsState> | null | undefined;
+        return {
+          ...current,
+          ...(p ?? {}),
+          calendar: { ...DEFAULT_CALENDAR, ...(p?.calendar ?? {}) },
+        };
+      },
+    },
   ),
 );

@@ -348,3 +348,64 @@ test('B2: syncExportForSelectedDay includes existing calendarEventId as priorLin
   const priorLinks = callArg['priorLinks'] as { taskId: string; eventId: string }[];
   expect(priorLinks).toContainEqual({ taskId: 'task-prev', eventId: 'whenbee-event-prev' });
 });
+
+// ── Test 10: Orphan-event leak fix — priorLinks from PERSISTED links, not new plan ─
+//
+// Regression test for FIX 1: priorLinks MUST be built from the day's persisted
+// calendarEventId values, NOT from the incoming plannedTasks. Without this fix,
+// every priorLink.taskId is always in the new plan, so tasks dropped from the plan
+// never trigger a reconcile-delete and their Whenbee events leak.
+
+test('FIX1: task dropped from plan (persisted calendarEventId, absent from new plannedTasks) → deleteWhenbeeEvent called and calendarEventId cleared', async () => {
+  mockExportEnabled = true;
+  mockIsPro = true;
+  mockWhenbeeCalendarId = WHENBEE_CAL_ID;
+
+  const { store, repo } = freshStore();
+  await store.getState().init(NOW);
+
+  // Task A was previously exported — it has a calendarEventId in the db.
+  const taskA = makeTask({
+    id: 'task-A',
+    label: 'Task A (was exported)',
+    plannedDate: '2026-06-24',
+    calendarEventId: 'whenbee-event-A',
+  });
+  await repo.add(taskA);
+  await store.getState().reload(NOW);
+
+  // The new plan does NOT include task A (user removed it from today's plan).
+  // syncDayPlanToCalendar is the real reconcile gate; we need the priorLinks
+  // passed to it to include task A so it can issue a delete. We wire the mock
+  // to simulate what the real service does: call deleteWhenbeeEvent for orphaned
+  // priorLinks.
+  mockSyncDayPlanToCalendar.mockImplementation(
+    async ({ priorLinks, plannedTasks: pTasks }: {
+      priorLinks: { taskId: string; eventId: string }[];
+      plannedTasks: { id: string }[];
+    }) => {
+      const plannedSet = new Set(pTasks.map((t) => t.id));
+      for (const prior of priorLinks) {
+        if (!plannedSet.has(prior.taskId)) {
+          mockDeleteWhenbeeEvent(prior.eventId);
+        }
+      }
+      return { created: 0, updated: 0, deleted: 1, links: [] };
+    },
+  );
+
+  // New plan: empty (task A was dropped).
+  await store.getState().syncExportForSelectedDay([], NOW);
+
+  // priorLinks passed to the service must contain task A's persisted link.
+  const callArg = mockSyncDayPlanToCalendar.mock.calls[0]?.[0] as Record<string, unknown>;
+  const priorLinks = callArg['priorLinks'] as { taskId: string; eventId: string }[];
+  expect(priorLinks).toContainEqual({ taskId: 'task-A', eventId: 'whenbee-event-A' });
+
+  // deleteWhenbeeEvent must have been called for task A's event (orphan deleted).
+  expect(mockDeleteWhenbeeEvent).toHaveBeenCalledWith('whenbee-event-A');
+
+  // After sync, calendarEventId on task A must be cleared (staleLinkIds path).
+  const updated = await repo.get('task-A');
+  expect(updated?.calendarEventId).toBeNull();
+});

@@ -14,6 +14,7 @@ const mockListCalendars = jest.fn<Promise<{ id: string; title: string }[]>, []>(
     { id: 'cal-2', title: 'Work' },
   ]),
 );
+const mockDeleteWhenbeeCalendar = jest.fn<Promise<void>, [string]>(() => Promise.resolve());
 
 jest.mock('@/src/services/calendar', () => ({
   getCalendar: () => ({
@@ -21,6 +22,7 @@ jest.mock('@/src/services/calendar', () => ({
     requestWriteAccess: () => mockRequestWriteAccess(),
     ensureWhenbeeCalendar: (id: string | null) => mockEnsureWhenbeeCalendar(id),
     listCalendars: () => mockListCalendars(),
+    deleteWhenbeeCalendar: (id: string) => mockDeleteWhenbeeCalendar(id),
   }),
 }));
 
@@ -60,6 +62,7 @@ beforeEach(() => {
   mockRequestWriteAccess.mockImplementation(() => Promise.resolve(true));
   mockEnsureWhenbeeCalendar.mockImplementation(() => Promise.resolve('whenbee-cal-native'));
   mockDisableExport.mockImplementation(() => Promise.resolve(0));
+  mockDeleteWhenbeeCalendar.mockImplementation(() => Promise.resolve());
   mockListCalendars.mockImplementation(() =>
     Promise.resolve([
       { id: 'cal-1', title: 'Personal' },
@@ -256,6 +259,8 @@ describe('CalendarSettingsSection — export toggle (B1)', () => {
 
     expect(alertSpy).toHaveBeenCalled();
     expect(mockDisableExport).toHaveBeenCalledWith('whenbee-cal-native');
+    // §8.2: also removes the empty Whenbee calendar itself.
+    expect(mockDeleteWhenbeeCalendar).toHaveBeenCalledWith('whenbee-cal-native');
     // clearAllCalendarLinks must also be called (C1 wiring).
     expect(mockClearAllCalendarLinks).toHaveBeenCalledTimes(1);
     const { calendar } = useSettingsStore.getState();
