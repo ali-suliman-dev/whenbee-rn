@@ -57,10 +57,15 @@ export function RoutineBuildView({ onDone }: { onDone: () => void }) {
 
   const canSave = draft.name.trim().length > 0 && draft.steps.length > 0;
 
-  const editing =
-    sheet.kind === 'step' && sheet.editId !== null
-      ? draft.steps.find((s) => s.id === sheet.editId) ?? null
-      : null;
+  const editing = useMemo(
+    () =>
+      sheet.kind === 'step' && sheet.editId !== null
+        ? draft.steps.find((s) => s.id === sheet.editId) ?? null
+        : null,
+    // Recompute only when which step is open changes, not on every draft.steps mutation.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [sheet.kind === 'step' ? sheet.editId : null],
+  );
 
   const handleStepSubmit = (step: StepDraft) => {
     if (sheet.kind === 'step' && sheet.editId !== null) {
