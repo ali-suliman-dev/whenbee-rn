@@ -171,10 +171,21 @@ describe('CalendarSettingsSection', () => {
 
 // ── B1: Export toggle ─────────────────────────────────────────────────────────
 
+// Mock clearAllCalendarLinks on dayTasksStore (needed for disable-export flow).
+const mockClearAllCalendarLinks = jest.fn<Promise<void>, []>(() => Promise.resolve());
+jest.mock('@/src/stores/dayTasksStore', () => ({
+  useDayTasksStore: {
+    getState: () => ({
+      clearAllCalendarLinks: () => mockClearAllCalendarLinks(),
+    }),
+  },
+}));
+
 describe('CalendarSettingsSection — export toggle (B1)', () => {
   it('toggling ON (Pro, write granted) calls requestWriteAccess + ensureWhenbeeCalendar, stores the id, sets exportEnabled true', async () => {
     const { getByLabelText } = render(<CalendarSettingsSection />);
-    const exportToggle = getByLabelText('Add my plan to a Whenbee calendar');
+    // Label includes "currently off" suffix when export is off.
+    const exportToggle = getByLabelText(/Add plan to a Whenbee calendar/i);
 
     await act(async () => {
       fireEvent(exportToggle, 'valueChange', true);
@@ -188,24 +199,23 @@ describe('CalendarSettingsSection — export toggle (B1)', () => {
     expect(calendar.exportEnabled).toBe(true);
   });
 
-  it('shows the contract copy when export is enabled', async () => {
-    const { getByLabelText, getByText } = render(<CalendarSettingsSection />);
-    const exportToggle = getByLabelText('Add my plan to a Whenbee calendar');
+  it('shows the contract copy (Whenbee uses its own calendar) when export is enabled', async () => {
+    const { getByLabelText, getByTestId } = render(<CalendarSettingsSection />);
+    const exportToggle = getByLabelText(/Add plan to a Whenbee calendar/i);
 
     await act(async () => {
       fireEvent(exportToggle, 'valueChange', true);
     });
 
-    expect(
-      getByText(/Whenbee creates its own calendar/i),
-    ).toBeTruthy();
+    // Contract copy is rendered — the testID is the source of truth.
+    expect(getByTestId('export-contract-copy')).toBeTruthy();
   });
 
   it('stays off and shows a write-denied hint when write access is denied', async () => {
     mockRequestWriteAccess.mockImplementation(() => Promise.resolve(false));
 
-    const { getByLabelText, queryByText, getByText } = render(<CalendarSettingsSection />);
-    const exportToggle = getByLabelText('Add my plan to a Whenbee calendar');
+    const { getByLabelText, queryByTestId, getByText } = render(<CalendarSettingsSection />);
+    const exportToggle = getByLabelText(/Add plan to a Whenbee calendar/i);
 
     await act(async () => {
       fireEvent(exportToggle, 'valueChange', true);
@@ -216,10 +226,10 @@ describe('CalendarSettingsSection — export toggle (B1)', () => {
     // hint shown
     expect(getByText(/Calendar access is off/i)).toBeTruthy();
     // contract copy NOT shown (export still off)
-    expect(queryByText(/Whenbee creates its own calendar/i)).toBeNull();
+    expect(queryByTestId('export-contract-copy')).toBeNull();
   });
 
-  it('toggling OFF shows an Alert and on confirm calls disableExport + clears ids', async () => {
+  it('toggling OFF shows an Alert and on confirm calls disableExport + clearAllCalendarLinks, then clears ids', async () => {
     useSettingsStore.setState({
       calendar: {
         showEvents: false,
@@ -229,15 +239,16 @@ describe('CalendarSettingsSection — export toggle (B1)', () => {
       },
     });
     alertSpy.mockImplementation((_title, _msg, buttons) => {
-      // Simulate pressing the destructive "Turn off" button.
+      // Simulate pressing the destructive "Remove and turn off" button.
       const destructive = (buttons as { text: string; onPress?: () => void }[]).find(
-        (b) => b.text === 'Turn off',
+        (b) => b.text === 'Remove and turn off',
       );
       destructive?.onPress?.();
     });
 
     const { getByLabelText } = render(<CalendarSettingsSection />);
-    const exportToggle = getByLabelText('Add my plan to a Whenbee calendar');
+    // When export is ON the label includes "currently on" and the contract note.
+    const exportToggle = getByLabelText(/Add plan to a Whenbee calendar/i);
 
     await act(async () => {
       fireEvent(exportToggle, 'valueChange', false);
@@ -245,6 +256,8 @@ describe('CalendarSettingsSection — export toggle (B1)', () => {
 
     expect(alertSpy).toHaveBeenCalled();
     expect(mockDisableExport).toHaveBeenCalledWith('whenbee-cal-native');
+    // clearAllCalendarLinks must also be called (C1 wiring).
+    expect(mockClearAllCalendarLinks).toHaveBeenCalledTimes(1);
     const { calendar } = useSettingsStore.getState();
     expect(calendar.exportEnabled).toBe(false);
     expect(calendar.whenbeeCalendarId).toBeNull();
@@ -256,7 +269,7 @@ describe('CalendarSettingsSection — export toggle (B1)', () => {
     const { getByLabelText } = render(<CalendarSettingsSection />);
 
     // The row exists but tapping it routes to paywall (Pressable, not Switch).
-    const exportRow = getByLabelText('Add my plan to a Whenbee calendar, Pro feature');
+    const exportRow = getByLabelText(/Add plan to a Whenbee calendar.*Pro feature/i);
 
     await act(async () => {
       fireEvent.press(exportRow);

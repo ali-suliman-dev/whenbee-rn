@@ -44,6 +44,7 @@ import { DayTimeline } from '@/src/features/today/DayTimeline';
 import { useEntitlement } from '@/src/features/paywall/useEntitlement';
 import { useScheduledRoutines } from '@/src/features/today/useScheduledRoutines';
 import { ScheduledRoutineBlock } from '@/src/features/today/ScheduledRoutineBlock';
+import { useDayPlan } from '@/src/features/today/useDayPlan';
 
 // Date label for a day-key, e.g. "Fri · Jun 12" — the day + date, no clock.
 function dateLabel(key: string): string {
@@ -175,6 +176,10 @@ export default function Today() {
     }
   }, [selectedDate, setViewMode]);
 
+  // Day plan — consumed here only for the export wire; DayTimeline re-reads it
+  // internally. We call the hook once so the plan is available in handlePlanMyDay.
+  const { plan: dayPlan } = useDayPlan();
+
   // Recap for past days — null when today or future.
   const recap = useDayRecap();
 
@@ -207,7 +212,8 @@ export default function Today() {
   }, []);
 
   // "Plan my day" — Pro feature. Free users are routed to the paywall.
-  // Pro users: stamps planComputedAt (fire-and-forget) then cross-fades to Timeline.
+  // Pro users: stamps planComputedAt, syncs the timed plan to the Whenbee calendar
+  // (fire-and-forget, guarded inside the store action), then cross-fades to Timeline.
   const handlePlanMyDay = useCallback(() => {
     haptics.light();
     if (!isPro) {
@@ -216,7 +222,36 @@ export default function Today() {
     }
     void markPlanned();
     setViewMode('timeline');
-  }, [isPro, markPlanned, setViewMode]);
+
+    // Export wire (C1 / B2): if the calendar export is on, push the computed
+    // timed plan to the Whenbee calendar. The store action is fully guarded
+    // (isExpoGo + Pro + exportEnabled + whenbeeCalendarId) so this is safe to
+    // call unconditionally — it's a no-op when any guard fails.
+    //
+    // We build PlannedExportTask from the plan's 'task' timeline items.
+    // calendarEventId comes from the store's dayTasks (the db source of truth).
+    if (dayPlan !== null) {
+      const { exportEnabled } = useSettingsStore.getState().calendar;
+      if (exportEnabled) {
+        const currentDayTasks = useDayTasksStore.getState().dayTasks;
+        const calEventIdByTaskId = new Map(
+          currentDayTasks.map((t) => [t.id, t.calendarEventId ?? null]),
+        );
+
+        const timedTasks = dayPlan.timeline
+          .filter((item) => item.kind === 'task')
+          .map((item) => ({
+            id: item.id,
+            label: item.label,
+            startMs: item.startAt,
+            endMs: item.endAt,
+            calendarEventId: calEventIdByTaskId.get(item.id) ?? null,
+          }));
+
+        void useDayTasksStore.getState().syncExportForSelectedDay(timedTasks);
+      }
+    }
+  }, [isPro, markPlanned, setViewMode, dayPlan]);
 
   // Toggle between list and timeline views.
   // Free users tapping Timeline hit the paywall gate via onTimelineGated.
