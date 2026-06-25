@@ -5,17 +5,6 @@ import { useDayTasksStore } from '@/src/stores/dayTasksStore';
 import { useCategoriesStore } from '@/src/stores/categoriesStore';
 import type { Task } from '@/src/domain/types';
 
-// Pin the clock so "today" is always 2026-06-24 regardless of the real date.
-// add-task.tsx calls Date.now() to compute today's date for the toast and day picker.
-const FIXED_NOW = new Date(2026, 5, 24, 12, 0, 0).getTime(); // local 2026-06-24 noon
-
-beforeAll(() => {
-  jest.spyOn(Date, 'now').mockReturnValue(FIXED_NOW);
-});
-afterAll(() => {
-  (Date.now as jest.Mock).mockRestore();
-});
-
 const mockReplace = jest.fn();
 const mockBack = jest.fn();
 jest.mock('expo-router', () => ({
@@ -29,7 +18,14 @@ jest.mock('expo-router', () => ({
 // Capture tasks added via the async addTask mock so tests can assert on them.
 let capturedTasks: Task[] = [];
 
+// The screen derives "today" from the wall clock; freeze it to the day the
+// mocked selectedDate ('2026-06-24') represents so the toast/label logic is
+// deterministic regardless of the real date the suite runs on.
+const TODAY_MS = new Date(2026, 5, 24, 9, 0, 0).getTime();
+let nowSpy: jest.SpyInstance;
+
 beforeEach(() => {
+  nowSpy = jest.spyOn(Date, 'now').mockReturnValue(TODAY_MS);
   mockReplace.mockClear();
   mockBack.mockClear();
   capturedTasks = [];
@@ -68,6 +64,10 @@ beforeEach(() => {
       getting_ready: { mEffective: 2.0, n: 8, sharpness: 70, tier: 'Ripening', fit: { a: 0, b: 2.0 } },
     },
   });
+});
+
+afterEach(() => {
+  nowSpy.mockRestore();
 });
 
 describe('Add Task screen', () => {

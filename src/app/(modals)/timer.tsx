@@ -28,6 +28,7 @@ import { guessCategory } from '@/src/features/shared/categoryGuess';
 import { usePickerCategories } from '@/src/features/shared/CategoryChips';
 import { useCalibrationStore } from '@/src/stores/calibrationStore';
 import { useVocabStore } from '@/src/stores/vocabStore';
+import { useEntitlement } from '@/src/features/paywall/useEntitlement';
 
 // ──────────────────────────────────────────────────────────────────────────────
 // Live Timer (Screen 3) — calm focus ring; measures actual vs guess, reframes
@@ -83,6 +84,8 @@ export default function Timer() {
   // the store has an isRunning quick-start session that should not be overwritten.
   const isQuickNav = params.quick === '1';
   const timer = useTimer({ taskId, label, category, estimateMin, guessMin, suggestedHonestMin, isQuickNav });
+  // Pro gates Surface C — the honest finish RANGE. Free keeps the point finish.
+  const isPro = useEntitlement((s) => s.isPro);
 
   // ── Quick-start capture sheet state ─────────────────────────────────────
   // Shown after the user taps Stop on a quick-start session (no category yet).
@@ -325,6 +328,9 @@ export default function Timer() {
               startedAt={timer.startedAt}
               startedClock={timer.startedClock}
               finishClock={timer.finishClock}
+              range={timer.range}
+              confidence={timer.confidence}
+              isPro={isPro}
             />
           </View>
         </View>

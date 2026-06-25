@@ -1,6 +1,15 @@
 import { requireOptionalNativeModule } from 'expo-modules-core';
 import { isExpoGo } from '@/src/lib/isExpoGo';
 import { kv } from '@/src/lib/kv';
+import { useSettingsStore } from '@/src/stores/settingsStore';
+import { CAT, THREAD, resolveNotificationSound } from '@/src/services/notificationCategories';
+import type { NotificationContentInput } from 'expo-notifications';
+
+/** expo-notifications' types omit threadIdentifier (iOS grouping) even though the
+ *  runtime accepts it. Extend locally so we can pass it without casting each call. */
+type NotificationContentInputWithThread = NotificationContentInput & {
+  threadIdentifier?: string;
+};
 
 // ──────────────────────────────────────────────────────────────────────────────
 // reviewNotifications — the opt-in Monday "your honest week is ready" nudge for
@@ -48,15 +57,19 @@ function getModule(): NotificationsModule | null {
 }
 
 /** Ask for permission gently (when the user flips the toggle on). No-op without
- *  the module. Shared shape with the timer reminder so behavior is consistent. */
-export async function ensureReviewNotificationPermission(): Promise<boolean> {
+ *  the module. Shared shape with the timer reminder so behavior is consistent.
+ *  Pass `{ provisional: true }` for a quiet, no-prompt iOS provisional grant
+ *  when the status is undetermined; omit for the standard full-permission prompt. */
+export async function ensureReviewNotificationPermission(opts?: { provisional?: boolean }): Promise<boolean> {
   const N = getModule();
   if (!N) return false;
   try {
     const current = await N.getPermissionsAsync();
     if (current.granted) return true;
     if (!current.canAskAgain) return false;
-    const next = await N.requestPermissionsAsync();
+    const next = opts?.provisional
+      ? await N.requestPermissionsAsync({ ios: { allowProvisional: true } })
+      : await N.requestPermissionsAsync();
     return next.granted;
   } catch {
     return false;
@@ -74,11 +87,16 @@ export async function scheduleWeeklyReview(periodId: string): Promise<void> {
   if (!N) return;
   try {
     await cancelWeeklyReview();
+    const notifContent: NotificationContentInputWithThread = {
+      title: 'Your honest week is ready',
+      body: "Your week in honest numbers, whenever you've got a minute.",
+      sound: resolveNotificationSound(useSettingsStore.getState().notificationSound),
+      categoryIdentifier: CAT.REVIEW,
+      threadIdentifier: THREAD.REVIEW,
+      data: { kind: 'review' },
+    };
     const id = await N.scheduleNotificationAsync({
-      content: {
-        title: 'Your honest week is ready',
-        body: 'A calm look back, whenever you have a minute.',
-      },
+      content: notifContent,
       trigger: {
         type: N.SchedulableTriggerInputTypes.WEEKLY,
         weekday: MONDAY,
