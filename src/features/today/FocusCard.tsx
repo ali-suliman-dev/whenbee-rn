@@ -84,7 +84,8 @@ export function FocusCard({
     ...(type.eyebrow as unknown as TextStyle),
     fontSize: t.fontSize['2xs'],
     letterSpacing: 1.5,
-    lineHeight: 12,
+    // 1.5× the override fontSize — absolute RN lineHeight (tokens.lineHeight are ratios)
+    lineHeight: t.fontSize['2xs'] * 1.5,
   };
   const header: ViewStyle = {
     flexDirection: 'row',

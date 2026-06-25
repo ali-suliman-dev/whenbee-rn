@@ -2,10 +2,10 @@ import { useEffect } from 'react';
 import { Modal, Pressable, View, type ViewStyle, type TextStyle } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Animated, {
+  Easing,
   useAnimatedStyle,
   useReducedMotion,
   useSharedValue,
-  withSpring,
   withTiming,
 } from 'react-native-reanimated';
 import { useTheme } from '@/src/theme/useTheme';
@@ -39,12 +39,14 @@ export function SwitchTaskSheet({
       progress.set(visible ? 1 : 0);
       return;
     }
+    // Entrance: ease-out decelerate (no spring/overshoot on content — CLAUDE.md rule).
+    // Exit: fast timing (t.motion.fast) — exits should feel snappy.
     progress.set(
       visible
-        ? withSpring(1, { damping: 18, stiffness: 240 })
+        ? withTiming(1, { duration: t.motion.base, easing: Easing.out(Easing.cubic) })
         : withTiming(0, { duration: t.motion.fast }),
     );
-  }, [visible, reduced, progress, t.motion.fast]);
+  }, [visible, reduced, progress, t.motion.fast, t.motion.base]);
 
   const scrimStyle = useAnimatedStyle(() => ({ opacity: progress.get() }));
   const sheetStyle = useAnimatedStyle(() => ({
