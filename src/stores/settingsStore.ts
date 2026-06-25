@@ -3,6 +3,7 @@ import { persist, createJSONStorage } from 'zustand/middleware';
 import { zustandKv } from '@/src/lib/kv';
 import { DEFAULT_DAY_END_MIN, DEFAULT_GUARDRAIL } from '@/src/engine/constants';
 import type { GuardrailMultiple } from '@/src/domain/types';
+import type { QuietHours } from '@/src/lib/notifyTiming';
 
 export type ColorModePref = 'system' | 'light' | 'dark';
 
@@ -29,6 +30,17 @@ interface SettingsState {
   /** Local "your estimate is up" timer ping. Off by default — reminders are opt-in. */
   remindersEnabled: boolean;
   setRemindersEnabled: (v: boolean) => void;
+  /** Per-type ping toggles, shown only when reminders are on. Default on. */
+  honestReachedEnabled: boolean;
+  setHonestReachedEnabled: (v: boolean) => void;
+  startByEnabled: boolean;
+  setStartByEnabled: (v: boolean) => void;
+  /** Quiet window for gentle pings (guard, review). Time-sensitive pings ignore it. */
+  quietHours: QuietHours;
+  setQuietHours: (q: QuietHours) => void;
+  /** Notification sound choice. 'honey' maps to the system sound until the asset ships. */
+  notificationSound: 'honey' | 'default' | 'none';
+  setNotificationSound: (v: 'honey' | 'default' | 'none') => void;
   /** Gentle "one honest thing a day" line on Today. Off by default; no streak, no guilt. */
   dailyRitualEnabled: boolean;
   setDailyRitualEnabled: (v: boolean) => void;
@@ -89,6 +101,14 @@ export const useSettingsStore = create<SettingsState>()(
       setColorMode: (colorMode) => set({ colorMode }),
       remindersEnabled: false,
       setRemindersEnabled: (remindersEnabled) => set({ remindersEnabled }),
+      honestReachedEnabled: true,
+      setHonestReachedEnabled: (honestReachedEnabled) => set({ honestReachedEnabled }),
+      startByEnabled: true,
+      setStartByEnabled: (startByEnabled) => set({ startByEnabled }),
+      quietHours: { enabled: true, startMin: 1260, endMin: 480 },
+      setQuietHours: (quietHours) => set({ quietHours }),
+      notificationSound: 'default',
+      setNotificationSound: (notificationSound) => set({ notificationSound }),
       dailyRitualEnabled: false,
       setDailyRitualEnabled: (dailyRitualEnabled) => set({ dailyRitualEnabled }),
       displayName: undefined,
@@ -149,6 +169,10 @@ export const useSettingsStore = create<SettingsState>()(
           focusShownEndMin: null,
           focusLastMoveAtMs: null,
           calendar: DEFAULT_CALENDAR,
+          honestReachedEnabled: true,
+          startByEnabled: true,
+          quietHours: { enabled: true, startMin: 1260, endMin: 480 },
+          notificationSound: 'default',
         }),
     }),
     { name: 'settings', storage: createJSONStorage(() => zustandKv) },

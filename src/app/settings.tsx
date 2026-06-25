@@ -13,7 +13,7 @@ import { DataResetGlyph } from '@/src/components/DataResetGlyph';
 import { ConfirmSheet } from '@/src/components/ConfirmSheet';
 import { Toast, AUTO_HIDE_MS } from '@/src/components/Toast';
 import { FinishTimeWheel } from '@/src/features/planner/FinishTimeWheel';
-import { dayEndEpochFor } from '@/src/lib/time';
+import { dayEndEpochFor, formatClockMeridiem } from '@/src/lib/time';
 import { useTheme } from '@/src/theme/useTheme';
 import { type } from '@/src/theme/typography';
 import { useSettingsStore, type ColorModePref } from '@/src/stores/settingsStore';
@@ -23,6 +23,8 @@ import { useAccountActions, type RestoreOutcome } from '@/src/features/paywall/u
 import { useReminderSetting } from '@/src/features/settings/useReminderSetting';
 import { useReviewNotifySetting } from '@/src/features/settings/useReviewNotifySetting';
 import { useDayEndSetting } from '@/src/features/settings/useDayEndSetting';
+import { useQuietHours } from '@/src/features/settings/useQuietHours';
+import { useNotificationSound } from '@/src/features/settings/useNotificationSound';
 import { useAccountReset } from '@/src/features/settings/useAccountReset';
 import { usePresenceSection } from '@/src/features/settings/usePresenceSection';
 import { ProGate } from '@/src/features/paywall/ProGate';
@@ -33,6 +35,12 @@ import { CalendarSettingsSection } from '@/src/features/settings/CalendarSetting
 import { seedDemoData } from '@/src/features/dev/seedDemoData';
 
 const modes: ColorModePref[] = ['system', 'light', 'dark'];
+
+const SOUND_OPTIONS: { value: 'honey' | 'default' | 'none'; label: string }[] = [
+  { value: 'honey', label: 'Honey' },
+  { value: 'default', label: 'Default' },
+  { value: 'none', label: 'None' },
+];
 
 const RESTORE_MESSAGE: Record<RestoreOutcome, string> = {
   success: 'Pro restored.',
@@ -138,6 +146,20 @@ export default function Settings() {
   const { restoring, manageSubscription, restorePurchases } = useAccountActions();
   const { enabled: remindersEnabled, toggle: toggleReminders } = useReminderSetting();
   const { enabled: reviewNotifyEnabled, toggle: toggleReviewNotify } = useReviewNotifySetting();
+  const honestReachedEnabled = useSettingsStore((s) => s.honestReachedEnabled);
+  const setHonestReachedEnabled = useSettingsStore((s) => s.setHonestReachedEnabled);
+  const startByEnabled = useSettingsStore((s) => s.startByEnabled);
+  const setStartByEnabled = useSettingsStore((s) => s.setStartByEnabled);
+  const {
+    quietHours,
+    update: updateQuietHours,
+    editingBoundary,
+    openStart: openQuietStart,
+    openEnd: openQuietEnd,
+    closeEditor: closeQuietEditor,
+    saveBoundary: saveQuietBoundary,
+  } = useQuietHours();
+  const { value: notificationSound, set: setNotificationSound } = useNotificationSound();
   const {
     dayEndMin,
     label: dayEndLabel,
@@ -317,37 +339,152 @@ export default function Settings() {
 
         <View style={{ gap: t.space[3] }}>
           <AppText variant="label">Notifications</AppText>
+
+          {/* Master reminders toggle */}
           <SettingRow
             icon="notifications-outline"
-            title="Time-up reminders"
-            note="One nudge when your honest estimate is up."
+            title="Reminders"
+            note="Pings for honest finish, start-by nudges, and more."
             trailing={
               <Switch
                 value={remindersEnabled}
                 onValueChange={handleToggleReminders}
                 trackColor={{ true: t.colors.primary, false: t.colors.hairline }}
-                accessibilityLabel="Time-up reminders"
+                accessibilityLabel="Reminders"
               />
             }
           />
-          {isPro ? (
-            <SettingRow
-              icon="leaf-outline"
-              title="Monday review"
-              note="A gentle nudge when your honest week is ready. Off by default."
-              trailing={
-                <Switch
-                  value={reviewNotifyEnabled}
-                  onValueChange={handleToggleReviewNotify}
-                  trackColor={{ true: t.colors.primary, false: t.colors.hairline }}
-                  accessibilityLabel="Monday review"
+
+          {/* Per-type sub-rows — only visible when reminders are on */}
+          {remindersEnabled ? (
+            <>
+              <SettingRow
+                icon="checkmark-circle-outline"
+                title="Honest finish reached"
+                note="A ping when your honest estimate is up."
+                trailing={
+                  <Switch
+                    value={honestReachedEnabled}
+                    onValueChange={setHonestReachedEnabled}
+                    trackColor={{ true: t.colors.primary, false: t.colors.hairline }}
+                    accessibilityLabel="Honest finish reached"
+                  />
+                }
+              />
+              <SettingRow
+                icon="arrow-forward-circle-outline"
+                title="Start-by nudge"
+                note="A reminder when it's time to begin your next task."
+                trailing={
+                  <Switch
+                    value={startByEnabled}
+                    onValueChange={setStartByEnabled}
+                    trackColor={{ true: t.colors.primary, false: t.colors.hairline }}
+                    accessibilityLabel="Start-by nudge"
+                  />
+                }
+              />
+              {isPro ? (
+                <SettingRow
+                  icon="leaf-outline"
+                  title="Monday review"
+                  note="A gentle nudge when your honest week is ready. Off by default."
+                  trailing={
+                    <Switch
+                      value={reviewNotifyEnabled}
+                      onValueChange={handleToggleReviewNotify}
+                      trackColor={{ true: t.colors.primary, false: t.colors.hairline }}
+                      accessibilityLabel="Monday review"
+                    />
+                  }
                 />
-              }
-            />
+              ) : null}
+              <ProGate fallback={<GuardrailLockedRow />}>
+                <GuardrailSettingRow />
+              </ProGate>
+
+              {/* Quiet hours — toggle + tappable boundary rows when enabled */}
+              <SettingRow
+                icon="moon-outline"
+                title="Quiet hours"
+                note="Suppress notifications during sleep or focus windows."
+                trailing={
+                  <Switch
+                    value={quietHours.enabled}
+                    onValueChange={(v) => updateQuietHours({ enabled: v })}
+                    trackColor={{ true: t.colors.primary, false: t.colors.hairline }}
+                    accessibilityLabel="Quiet hours"
+                  />
+                }
+              />
+              {quietHours.enabled ? (
+                <>
+                  <SettingRow
+                    icon="time-outline"
+                    title={`From  ${formatClockMeridiem(dayEndEpochFor(Date.now(), quietHours.startMin))}`}
+                    note="Quiet window starts"
+                    onPress={openQuietStart}
+                    accessibilityLabel="Quiet hours start time"
+                  />
+                  <SettingRow
+                    icon="time-outline"
+                    title={`Until  ${formatClockMeridiem(dayEndEpochFor(Date.now(), quietHours.endMin))}`}
+                    note="Quiet window ends"
+                    onPress={openQuietEnd}
+                    accessibilityLabel="Quiet hours end time"
+                  />
+                </>
+              ) : null}
+
+              {/* Sound selector — chip row mirroring GuardrailSettingRow */}
+              <View
+                style={{
+                  gap: t.space[3],
+                  backgroundColor: t.colors.surface,
+                  borderWidth: t.borderWidth.hairline,
+                  borderColor: t.colors.hairline,
+                  borderRadius: t.radii.card,
+                  borderCurve: 'continuous',
+                  paddingHorizontal: t.space[4],
+                  paddingVertical: t.space[3],
+                }}
+              >
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: t.space[3] }}>
+                  <Ionicons name="musical-note-outline" size={t.iconSize.md} color={t.colors.inkSoft} />
+                  <View style={{ gap: t.space[0.5] }}>
+                    <AppText
+                      style={{
+                        ...(type.bodySmBold as unknown as import('react-native').TextStyle),
+                        color: t.colors.ink,
+                      }}
+                    >
+                      Sound
+                    </AppText>
+                    <AppText
+                      style={{
+                        ...(type.caption as unknown as import('react-native').TextStyle),
+                        color: t.colors.inkSoft,
+                      }}
+                    >
+                      Tone played when a notification fires.
+                    </AppText>
+                  </View>
+                </View>
+                <View style={{ flexDirection: 'row', gap: t.space[2] }}>
+                  {SOUND_OPTIONS.map((o) => (
+                    <Chip
+                      key={o.value}
+                      label={o.label}
+                      selected={notificationSound === o.value}
+                      onPress={() => setNotificationSound(o.value)}
+                    />
+                  ))}
+                </View>
+              </View>
+            </>
           ) : null}
-          <ProGate fallback={<GuardrailLockedRow />}>
-            <GuardrailSettingRow />
-          </ProGate>
+
+          {/* Daily check-in — not gated by remindersEnabled */}
           <SettingRow
             icon="sparkles-outline"
             title="Daily check-in"
@@ -595,6 +732,49 @@ export default function Settings() {
               onChange={(ms) => saveDayEnd(ms)}
             />
             <AppButton label="Done" onPress={closeDayEnd} variant="amber" fullWidth />
+          </View>
+        </View>
+      </Modal>
+
+      {/* Quiet hours time editor — mirrors the day-end modal exactly */}
+      <Modal
+        visible={editingBoundary !== null}
+        transparent
+        animationType="fade"
+        onRequestClose={closeQuietEditor}
+      >
+        <View style={{ flex: 1, justifyContent: 'flex-end' }}>
+          <Pressable
+            style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: t.colors.scrim }}
+            accessibilityLabel="Dismiss"
+            onPress={closeQuietEditor}
+          />
+          <View
+            style={{
+              backgroundColor: t.colors.surface,
+              borderTopLeftRadius: t.radii.sheet,
+              borderTopRightRadius: t.radii.sheet,
+              borderCurve: 'continuous',
+              paddingHorizontal: t.space[5],
+              paddingTop: t.space[5],
+              paddingBottom: insets.bottom + t.space[5],
+              gap: t.space[4],
+            }}
+          >
+            <AppText variant="title" style={{ color: t.colors.ink }}>
+              {editingBoundary === 'start' ? 'Quiet from' : 'Quiet until'}
+            </AppText>
+            <FinishTimeWheel
+              showModes={false}
+              valueMs={dayEndEpochFor(
+                Date.now(),
+                editingBoundary === 'start' ? quietHours.startMin : quietHours.endMin,
+              )}
+              onChange={(ms) => {
+                if (editingBoundary !== null) saveQuietBoundary(editingBoundary, ms);
+              }}
+            />
+            <AppButton label="Done" onPress={closeQuietEditor} variant="amber" fullWidth />
           </View>
         </View>
       </Modal>
