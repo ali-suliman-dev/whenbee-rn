@@ -37,12 +37,23 @@ function loadDismissed(): string[] {
   }
 }
 
+/** Maximum number of dismissed ids to keep. Oldest entries are dropped first
+ *  when this cap is exceeded. The cap is intentionally generous (100 ids) — a
+ *  user would have to dismiss every Insight card across many weeks to hit it,
+ *  and when they do the oldest dismissals (weeks-ago insights) are the safest
+ *  to forget (those insights will have new ids by then anyway). */
+const MAX_DISMISSED = 100;
+
 /** Persist a new dismissed id (idempotent — a second dismiss of the same id is
- *  a no-op; the set never has duplicates). */
+ *  a no-op; the set never has duplicates). Trims to MAX_DISMISSED by dropping
+ *  the oldest entries (FIFO) so the set doesn't grow forever. */
 function persistDismiss(id: string): void {
   const current = loadDismissed();
   if (current.includes(id)) return;
-  kv.set(KV_KEY, JSON.stringify([...current, id]));
+  const next = [...current, id];
+  // Keep only the tail (most-recent MAX_DISMISSED entries).
+  const trimmed = next.length > MAX_DISMISSED ? next.slice(next.length - MAX_DISMISSED) : next;
+  kv.set(KV_KEY, JSON.stringify(trimmed));
 }
 
 /** Durable dismissal hook for a single Patterns insight card.

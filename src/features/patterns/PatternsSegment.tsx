@@ -36,8 +36,6 @@ const OPTIONS: { value: PatternsTab; label: string }[] = [
   { value: 'correlations', label: 'Correlations' },
 ];
 
-const PAD = 4; // inner track padding (= space[1]); the pill insets by this much
-
 interface PatternsSegmentProps {
   value: PatternsTab;
   onChange: (tab: PatternsTab) => void;
@@ -45,6 +43,8 @@ interface PatternsSegmentProps {
 
 export function PatternsSegment({ value, onChange }: PatternsSegmentProps) {
   const t = useTheme();
+  // Inner track padding — must match space[1] (4pt) so the pill insets correctly.
+  const PAD = t.space[1];
   const index = Math.max(0, OPTIONS.findIndex((o) => o.value === value));
 
   const [trackW, setTrackW] = useState(0);
@@ -63,7 +63,7 @@ export function PatternsSegment({ value, onChange }: PatternsSegmentProps) {
     } else {
       tx.set(withTiming(target, { duration: t.motion.base, easing: Easing.bezier(0.23, 1, 0.32, 1) }));
     }
-  }, [index, segW, tx, t.motion.base]);
+  }, [index, segW, tx, t.motion.base, PAD]);
 
   const pillStyle = useAnimatedStyle(() => ({ transform: [{ translateX: tx.get() }] }));
 

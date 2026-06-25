@@ -72,4 +72,28 @@ describe('usePatternDismiss', () => {
     const { result: w02 } = renderHook(() => usePatternDismiss('surprise:admin:2024-W02'));
     expect(w02.current.dismissed).toBe(false);
   });
+
+  it('caps the dismissed set at MAX_DISMISSED=100 (FIFO — oldest drop first)', () => {
+    // Fill the set to exactly the cap by dismissing 100 unique ids sequentially.
+    // We use raw kv.set to pre-populate so we don't need 100 hook renders.
+    const initial = Array.from({ length: 100 }, (_, i) => `old:${i}`);
+    kv.set('patterns-dismissed', JSON.stringify(initial));
+
+    // Dismiss one more id — this triggers the trim.
+    const { result } = renderHook(() => usePatternDismiss('new:100'));
+    act(() => { result.current.dismiss(); });
+
+    const raw = kv.getString('patterns-dismissed');
+    const stored = JSON.parse(raw!) as string[];
+
+    // Should still be at most 100 entries.
+    expect(stored.length).toBe(100);
+    // The newest id must be present.
+    expect(stored).toContain('new:100');
+    // The very oldest entry (old:0) was evicted (FIFO).
+    expect(stored).not.toContain('old:0');
+    // old:1 through old:99 must all still be present.
+    expect(stored).toContain('old:1');
+    expect(stored).toContain('old:99');
+  });
 });

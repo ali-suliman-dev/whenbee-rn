@@ -5,6 +5,7 @@ import { useRouter } from 'expo-router';
 import { Screen } from '@/src/components/Screen';
 import { ScreenHeader } from '@/src/components/ScreenHeader';
 import { useTheme } from '@/src/theme/useTheme';
+import { type } from '@/src/theme/typography';
 import { usePatterns } from '@/src/features/patterns/usePatterns';
 import { ArchetypeHero, ArchetypePlaceholder } from '@/src/features/patterns/Archetype';
 import { ProgressChart } from '@/src/features/patterns/ProgressChart';
@@ -80,7 +81,6 @@ export default function Patterns() {
         <Animated.View entering={rise()} style={{ gap: t.space[3] }}>
           <SectionHeader label="Your progress" />
           <ProgressChart trend={view.accuracyTrend} fallback={view.youVsPast} />
-          {view.planExperiment ? <PlanExperiment card={view.planExperiment} /> : null}
         </Animated.View>
 
         {/* Your numbers */}
@@ -104,20 +104,21 @@ export default function Patterns() {
     if (!view) return null;
     const hasDrift = view.driftAlert !== null;
     const hasSurprise = view.biggestSurprise !== null;
-    const hasAny = hasDrift || hasSurprise;
+    const hasPlanExperiment = view.planExperiment !== null;
+    const hasAny = hasDrift || hasSurprise || hasPlanExperiment;
 
     if (!hasAny) {
       return (
         <Animated.View entering={rise()}>
           <Text
             style={{
+              ...(type.bodySm as object),
               color: t.colors.inkSoft,
-              fontSize: 14,
               textAlign: 'center',
               paddingVertical: t.space[6],
             }}
           >
-            {'You\'re all caught up.'}
+            {"You're all caught up."}
           </Text>
         </Animated.View>
       );
@@ -127,6 +128,7 @@ export default function Patterns() {
       <Animated.View entering={rise()} style={{ gap: t.space[3] }}>
         {hasDrift ? <DriftNote card={view.driftAlert!} /> : null}
         {hasSurprise ? <BiggestSurprise card={view.biggestSurprise!} /> : null}
+        {hasPlanExperiment ? <PlanExperiment card={view.planExperiment!} /> : null}
       </Animated.View>
     );
   }
