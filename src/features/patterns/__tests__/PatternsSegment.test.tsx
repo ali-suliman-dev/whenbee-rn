@@ -43,9 +43,10 @@ describe('PatternsSegment', () => {
     render(<PatternsSegment value="insights" onChange={jest.fn()} />);
 
     // The selected option has accessibilityState.selected=true; others are false.
-    const numbers = screen.getByRole('button', { name: 'Numbers' });
-    const insights = screen.getByRole('button', { name: 'Insights' });
-    const correlations = screen.getByRole('button', { name: 'Correlations' });
+    // Role is "tab" (tabs inside a tablist, not generic buttons).
+    const numbers = screen.getByRole('tab', { name: 'Numbers' });
+    const insights = screen.getByRole('tab', { name: 'Insights' });
+    const correlations = screen.getByRole('tab', { name: 'Correlations' });
 
     expect(numbers).toHaveProp('accessibilityState', { selected: false });
     expect(insights).toHaveProp('accessibilityState', { selected: true });
@@ -58,8 +59,8 @@ describe('PatternsSegment', () => {
 
     rerender(<PatternsSegment value="correlations" onChange={onChange} />);
 
-    const numbers = screen.getByRole('button', { name: 'Numbers' });
-    const correlations = screen.getByRole('button', { name: 'Correlations' });
+    const numbers = screen.getByRole('tab', { name: 'Numbers' });
+    const correlations = screen.getByRole('tab', { name: 'Correlations' });
 
     expect(numbers).toHaveProp('accessibilityState', { selected: false });
     expect(correlations).toHaveProp('accessibilityState', { selected: true });

@@ -117,7 +117,7 @@ export default function Patterns() {
               paddingVertical: t.space[6],
             }}
           >
-            Nothing new right now.
+            {'You\'re all caught up.'}
           </Text>
         </Animated.View>
       );

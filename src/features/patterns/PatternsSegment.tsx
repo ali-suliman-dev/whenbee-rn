@@ -124,7 +124,7 @@ export function PatternsSegment({ value, onChange }: PatternsSegmentProps) {
           <Pressable
             key={opt.value}
             onPress={() => onChange(opt.value)}
-            accessibilityRole="button"
+            accessibilityRole="tab"
             accessibilityState={{ selected }}
             accessibilityLabel={opt.label}
             style={segment}

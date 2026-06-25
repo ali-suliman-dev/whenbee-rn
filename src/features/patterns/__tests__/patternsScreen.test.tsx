@@ -1,6 +1,7 @@
 import { render, screen, waitFor, fireEvent } from '@testing-library/react-native';
 import Patterns from '@/src/app/(tabs)/patterns';
 import { useCalibrationStore, type PatternsData } from '@/src/stores/calibrationStore';
+import { useEntitlement } from '@/src/features/paywall/useEntitlement';
 
 // FocusPatternsCard (now mounted on this screen) calls useLearnedFocusWindow,
 // which loads focus events from calibrationStore via expo-sqlite. Stub it so the
@@ -184,7 +185,7 @@ describe('Patterns screen — segment routing', () => {
       expect(screen.getByText('YOUR TIME PERSONALITY')).toBeOnTheScreen();
     });
     // Switch to Insights tab — hero must still be present
-    fireEvent.press(screen.getByRole('button', { name: 'Insights' }));
+    fireEvent.press(screen.getByRole('tab', { name: 'Insights' }));
     expect(screen.getByText('YOUR TIME PERSONALITY')).toBeOnTheScreen();
   });
 
@@ -204,9 +205,9 @@ describe('Patterns screen — segment routing', () => {
     await waitFor(() => {
       expect(screen.getByText('YOUR TIME PERSONALITY')).toBeOnTheScreen();
     });
-    fireEvent.press(screen.getByRole('button', { name: 'Insights' }));
+    fireEvent.press(screen.getByRole('tab', { name: 'Insights' }));
     await waitFor(() => {
-      expect(screen.getByText('Nothing new right now.')).toBeOnTheScreen();
+      expect(screen.getByText("You're all caught up.")).toBeOnTheScreen();
     });
   });
 
@@ -215,11 +216,11 @@ describe('Patterns screen — segment routing', () => {
     await waitFor(() => {
       expect(screen.getByText('YOUR TIME PERSONALITY')).toBeOnTheScreen();
     });
-    fireEvent.press(screen.getByRole('button', { name: 'Correlations' }));
+    fireEvent.press(screen.getByRole('tab', { name: 'Correlations' }));
     // Numbers-only content must not be visible on correlations tab
     expect(screen.queryByText('Your progress')).toBeNull();
     // Segment control itself must still be present
-    expect(screen.getByRole('button', { name: 'Correlations' })).toBeOnTheScreen();
+    expect(screen.getByRole('tab', { name: 'Correlations' })).toBeOnTheScreen();
   });
 
   it('insights tab shows dismissable feed area after switch', async () => {
@@ -227,11 +228,105 @@ describe('Patterns screen — segment routing', () => {
     await waitFor(() => {
       expect(screen.getByText('YOUR TIME PERSONALITY')).toBeOnTheScreen();
     });
-    fireEvent.press(screen.getByRole('button', { name: 'Insights' }));
+    fireEvent.press(screen.getByRole('tab', { name: 'Insights' }));
     // Hero still pinned, and the insights empty state renders
     expect(screen.getByText('YOUR TIME PERSONALITY')).toBeOnTheScreen();
     await waitFor(() => {
-      expect(screen.getByText('Nothing new right now.')).toBeOnTheScreen();
+      expect(screen.getByText("You're all caught up.")).toBeOnTheScreen();
+    });
+  });
+});
+
+// ──────────────────────────────────────────────────────────────────────────────
+// Pro-gate regression: free users on the Correlations tab see only the single
+// teaser card — never the actual correlation data. Numbers + Insights stay free.
+// ──────────────────────────────────────────────────────────────────────────────
+describe('Patterns screen — Pro-gate (Correlations)', () => {
+  const NOW_GATE = 1_700_000_000_000;
+  const DAY_GATE = 24 * 60 * 60 * 1000;
+
+  function seedWithInsights() {
+    // Seed loadReasonInsights with a real insight so lockedTeaser === 'steals'
+    // and the StealsYourTimeLocked teaser is the one shown.
+    useCalibrationStore.setState({
+      loadPatternsData: async () => ({
+        nameOf: (id: string) => id,
+        categories: [
+          { categoryId: 'admin', n: 8, mEffective: 2.0, sharpness: 60 },
+          { categoryId: 'email', n: 6, mEffective: 1.8, sharpness: 55 },
+        ],
+        logs: Array.from({ length: 8 }, (_, i) => ({
+          category: 'admin',
+          estimateMin: 10,
+          actualMin: 20,
+          status: 'completed' as const,
+          source: 'timed' as const,
+          createdAt: NOW_GATE - (8 - i) * DAY_GATE,
+        })),
+      }),
+      // One reason insight → lockedTeaser picks 'steals'
+      loadReasonInsights: async () => [
+        {
+          categoryId: 'admin',
+          categoryName: 'Admin',
+          reason: 'getting pulled away',
+          share: 0.6,
+          sampleCount: 5,
+          totalOver: 30,
+          timeSkew: null,
+          weekdaySkew: null,
+        },
+      ],
+      loadContextInsights: async () => [],
+    });
+  }
+
+  beforeEach(() => {
+    // Explicitly set free (belt-and-suspenders: kv won't set the override in
+    // tests, but this makes the intent clear and guards against future changes).
+    useEntitlement.setState({ isPro: false });
+    seedWithInsights();
+  });
+
+  afterEach(() => {
+    // Reset Pro state so this suite doesn't bleed into others.
+    useEntitlement.setState({ isPro: false });
+  });
+
+  it('free user on Correlations tab sees the teaser, not the correlation data', async () => {
+    render(<Patterns />);
+
+    await waitFor(() => {
+      expect(screen.getByText('YOUR TIME PERSONALITY')).toBeOnTheScreen();
+    });
+
+    // Switch to Correlations
+    fireEvent.press(screen.getByRole('tab', { name: 'Correlations' }));
+
+    await waitFor(() => {
+      // Teaser headline is visible (StealsYourTimeLocked)
+      expect(screen.getByText('See where your time really goes.')).toBeOnTheScreen();
+    });
+
+    // The actual Pro correlation component must NOT render for free users
+    expect(screen.queryByText('WHAT STEALS YOUR TIME')).toBeNull();
+  });
+
+  it('Numbers and Insights tabs remain free — no gate on those segments', async () => {
+    render(<Patterns />);
+
+    await waitFor(() => {
+      expect(screen.getByText('YOUR TIME PERSONALITY')).toBeOnTheScreen();
+    });
+
+    // Numbers tab is default — free content visible
+    expect(screen.getByText('Your progress')).toBeOnTheScreen();
+
+    // Switch to Insights — still free
+    fireEvent.press(screen.getByRole('tab', { name: 'Insights' }));
+    await waitFor(() => {
+      // No paywall text on the free Insights tab
+      expect(screen.queryByText('See where your time really goes.')).toBeNull();
     });
   });
 });
