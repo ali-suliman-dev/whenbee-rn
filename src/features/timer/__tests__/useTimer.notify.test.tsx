@@ -18,7 +18,7 @@ import { render } from '@testing-library/react-native';
 import Timer from '@/src/app/(modals)/timer';
 import { useTimerStore } from '@/src/stores/timerStore';
 import { useCalibrationStore } from '@/src/stores/calibrationStore';
-import { useTasksStore } from '@/src/stores/tasksStore';
+import { useDayTasksStore } from '@/src/stores/dayTasksStore';
 import { useRewardStore } from '@/src/stores/rewardStore';
 import { useSettingsStore } from '@/src/stores/settingsStore';
 import { useEntitlement } from '@/src/features/paywall/useEntitlement';
@@ -138,7 +138,7 @@ function resetAll(): void {
     guardNudged: false,
   });
 
-  useTasksStore.setState({ tasks: [] });
+  useDayTasksStore.setState({ dayTasks: [] });
   useRewardStore.getState().clear();
   useCalibrationStore.setState({
     applyLog: jest.fn(async () => okResult),

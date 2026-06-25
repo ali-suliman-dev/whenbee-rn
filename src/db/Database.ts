@@ -94,4 +94,6 @@ export interface Database {
   listShelfTasks(): Promise<TaskRow[]>;
   getDayMeta(date: string): Promise<DayMetaRow | null>;
   upsertDayMeta(row: DayMetaRow): Promise<void>;
+  /** Distinct plannedDates of all queued (non-shelf) tasks. Used for calendar dot hints. */
+  listDatesWithTasks(): Promise<string[]>;
 }

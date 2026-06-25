@@ -13,6 +13,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '@/src/theme/useTheme';
 import { type } from '@/src/theme/typography';
 import { haptics } from '@/src/lib/haptics';
+import { weekdayOf } from '@/src/lib/day';
 
 // ──────────────────────────────────────────────────────────────────────────────
 // TaskRow — one Today list task, in two states:
@@ -53,6 +54,19 @@ interface TaskRowProps {
   showCoachMark?: boolean;
   /** Called when the swipeable begins opening — parent dismisses the coach mark. */
   onCoachMarkDismiss?: () => void;
+  /** Original plannedDate when this task carried over from a past day (e.g. '2026-06-22').
+   *  When set and the row is queued, a neutral "· from Mon" tag appears beside the category.
+   *  Hidden on done rows — the completion receipt already tells the story. */
+  carriedFrom?: string | null;
+  /** Move this task — currently only 'tomorrow' is passed from the swipe action.
+   *  Only shown on queued rows (not done). Calls with a light-medium haptic. */
+  onMove?: (target: 'tomorrow') => void;
+}
+
+// Short weekday name for a YYYY-MM-DD key, e.g. '2026-06-22' → 'Mon'.
+const SHORT_WEEKDAY = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'] as const;
+function shortWeekday(key: string): string {
+  return SHORT_WEEKDAY[weekdayOf(key)] ?? key;
 }
 
 export function TaskRow({
@@ -70,6 +84,8 @@ export function TaskRow({
   isExiting = false,
   showCoachMark = false,
   onCoachMarkDismiss,
+  carriedFrom,
+  onMove,
 }: TaskRowProps) {
   const t = useTheme();
   const reducedMotion = useReducedMotion();
@@ -195,6 +211,23 @@ export function TaskRow({
     fontWeight: t.fontWeight.bold as TextStyle['fontWeight'],
     marginTop: t.space[0.5],
   };
+  const moveAction: ViewStyle = {
+    backgroundColor: t.colors.accent, // amber — move is non-destructive
+    borderTopLeftRadius: t.radii.card,
+    borderBottomLeftRadius: t.radii.card,
+    justifyContent: 'center',
+    alignItems: 'center',
+    width: t.size.control.lg + t.space[5] + t.space[4],
+    marginRight: -t.radii.card,
+    paddingRight: t.radii.card,
+  };
+  const moveLabel: TextStyle = {
+    ...(type.caption as unknown as TextStyle),
+    fontSize: t.fontSize.xs,
+    color: t.colors.paper,
+    fontWeight: t.fontWeight.bold as TextStyle['fontWeight'],
+    marginTop: t.space[0.5],
+  };
   const coachWrap: ViewStyle = {
     position: 'absolute',
     right: t.space[3],
@@ -226,7 +259,15 @@ export function TaskRow({
         <Text style={titleText} numberOfLines={1}>
           {title}
         </Text>
-        <Text style={catText}>{categoryLabel}</Text>
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: t.space[0.5] }}>
+          <Text style={catText}>{categoryLabel}</Text>
+          {!done && carriedFrom ? (
+            <Text style={catText}>
+              {'· from '}
+              {shortWeekday(carriedFrom)}
+            </Text>
+          ) : null}
+        </View>
       </View>
 
       {done ? (
@@ -259,6 +300,25 @@ export function TaskRow({
       ) : null}
     </Animated.View>
   );
+
+  function renderLeftActions() {
+    if (!onMove || done) return null;
+    return (
+      <Pressable
+        testID="taskrow-move-tomorrow"
+        onPress={() => {
+          haptics.light();
+          onMove('tomorrow');
+        }}
+        accessibilityRole="button"
+        accessibilityLabel={`Move ${title} to tomorrow`}
+        style={moveAction}
+      >
+        <Ionicons name="arrow-forward-outline" size={t.iconSize.xs} color={t.colors.paper} />
+        <Text style={moveLabel}>Tomorrow</Text>
+      </Pressable>
+    );
+  }
 
   function renderRightActions() {
     return (
@@ -311,15 +371,20 @@ export function TaskRow({
       interactive
     );
 
-  if (!onDelete) return body;
+  // Need swipeable if there's a delete action OR a move action
+  const hasSwipeActions = !!onDelete || (!!onMove && !done);
+  if (!hasSwipeActions) return body;
 
   return (
     <ReanimatedSwipeable
       ref={swipeRef}
       friction={2}
       rightThreshold={40}
+      leftThreshold={40}
       overshootRight={false}
-      renderRightActions={renderRightActions}
+      overshootLeft={false}
+      renderRightActions={onDelete ? renderRightActions : undefined}
+      renderLeftActions={onMove && !done ? renderLeftActions : undefined}
       onSwipeableWillOpen={() => onCoachMarkDismiss?.()}
     >
       {body}

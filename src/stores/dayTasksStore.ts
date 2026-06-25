@@ -9,7 +9,8 @@ import { getDatabase } from '@/src/db/client';
 import { makeTasksRepo, type TasksRepo } from '@/src/db/repositories/tasksRepo';
 import { migrateLegacyTasks, type LegacyTodayTask } from '@/src/db/migrateLegacyTasks';
 import { tasksForSelectedDay, type DayTask } from '@/src/engine/daySelectors';
-import { toLocalDayKey } from '@/src/lib/day';
+import { toLocalDayKey, addDays } from '@/src/lib/day';
+import type { Task } from '@/src/domain/types';
 import { kv } from '@/src/lib/kv';
 
 const MIGRATED_FLAG = 'tasks-migrated-v1';
@@ -23,6 +24,10 @@ export interface DayTasksState {
   selectedDate: string;
   viewMode: 'list' | 'timeline';
   dayTasks: DayTask[];
+  /** Sorted YYYY-MM-DD keys of all queued-task planned dates — powers calendar dot hints. */
+  datesWithTasks: string[];
+  /** Tasks with no planned date (shelf / "no day yet"). Populated by loadShelf(). */
+  shelfTasks: DayTask[];
   loading: boolean;
   init: (nowMs?: number) => Promise<void>;
   selectDate: (date: string) => Promise<void>;
@@ -34,10 +39,20 @@ export interface DayTasksState {
     guessMin: number;
     date?: string | null;
     nowMs?: number;
-  }) => Promise<void>;
-  completeTask: (id: string, opts: { completedAt: number; actualMin?: number }) => Promise<void>;
-  moveTask: (id: string, toDate: string | null) => Promise<void>;
-  removeTask: (id: string) => Promise<void>;
+  }) => Promise<Task>;
+  completeTask: (
+    id: string,
+    opts: { completedAt: number; actualMin?: number; nowMs?: number },
+  ) => Promise<void>;
+  moveTask: (id: string, toDate: string | null, nowMs?: number) => Promise<void>;
+  removeTask: (id: string, nowMs?: number) => Promise<void>;
+  promoteToFocus: (id: string, nowMs?: number) => Promise<void>;
+  /** Move a task to tomorrow (today + 1). Convenience over moveTask. */
+  moveToTomorrow: (id: string, nowMs?: number) => Promise<void>;
+  selectFocusTask: () => DayTask | null;
+  reload: (nowMs?: number) => Promise<void>;
+  /** Refresh shelfTasks from the repo (tasks with plannedDate = null). */
+  loadShelf: () => Promise<void>;
 }
 
 // ---------------------------------------------------------------------------
@@ -106,10 +121,32 @@ async function loadDay(
 export function makeDayTasksStore(deps: Deps): UseBoundStore<StoreApi<DayTasksState>> {
   const { repo, kvGet, kvSet } = deps;
 
-  return create<DayTasksState>()((set, get) => ({
+  /** Load day tasks + refresh dot hints in one shot. */
+  async function loadDayAndDots(
+    selectedDate: string,
+    today: string,
+  ): Promise<Pick<DayTasksState, 'dayTasks' | 'datesWithTasks'>> {
+    const [dayTasks, datesWithTasks] = await Promise.all([
+      loadDay(repo, selectedDate, today),
+      repo.dates(),
+    ]);
+    return { dayTasks, datesWithTasks };
+  }
+
+  return create<DayTasksState>()((set, get) => {
+    /** Refresh shelfTasks from the repo. Called after any mutation that can
+     *  change shelf membership (add/move/complete/remove). */
+    async function refreshShelf(): Promise<void> {
+      const raw = await repo.listShelf();
+      set({ shelfTasks: raw.map((t) => ({ ...t, carriedFrom: null })) });
+    }
+
+    return ({
     selectedDate: toLocalDayKey(Date.now()),
     viewMode: 'list',
     dayTasks: [],
+    datesWithTasks: [],
+    shelfTasks: [],
     loading: false,
 
     async init(nowMs) {
@@ -139,17 +176,25 @@ export function makeDayTasksStore(deps: Deps): UseBoundStore<StoreApi<DayTasksSt
       });
       kvSet(MIGRATED_FLAG, '1');
 
-      set({ dayTasks: await loadDay(repo, today, today), loading: false });
+      const [dayAndDots, shelfRaw] = await Promise.all([
+        loadDayAndDots(today, today),
+        repo.listShelf(),
+      ]);
+      set({
+        ...dayAndDots,
+        shelfTasks: shelfRaw.map((t) => ({ ...t, carriedFrom: null })),
+        loading: false,
+      });
     },
 
     async selectDate(date) {
       const today = toLocalDayKey(Date.now());
-      set({ selectedDate: date, dayTasks: await loadDay(repo, date, today) });
+      set({ selectedDate: date, ...(await loadDayAndDots(date, today)) });
     },
 
     async goToToday(nowMs) {
       const today = toLocalDayKey(nowMs ?? Date.now());
-      set({ selectedDate: today, dayTasks: await loadDay(repo, today, today) });
+      set({ selectedDate: today, ...(await loadDayAndDots(today, today)) });
     },
 
     setViewMode(m) {
@@ -159,7 +204,7 @@ export function makeDayTasksStore(deps: Deps): UseBoundStore<StoreApi<DayTasksSt
     async addTask({ label, category, guessMin, date, nowMs }) {
       const createdAt = nowMs ?? Date.now();
       const plannedDate = date === undefined ? get().selectedDate : date;
-      await repo.add({
+      const task: Task = {
         id: makeId(createdAt),
         label,
         category,
@@ -173,29 +218,73 @@ export function makeDayTasksStore(deps: Deps): UseBoundStore<StoreApi<DayTasksSt
         actualMin: null,
         fromRoutineId: null,
         calendarEventId: null,
-      });
+      };
+      await repo.add(task);
       const today = toLocalDayKey(createdAt);
-      set({ dayTasks: await loadDay(repo, get().selectedDate, today) });
+      await Promise.all([
+        loadDayAndDots(get().selectedDate, today).then((d) => set(d)),
+        refreshShelf(),
+      ]);
+      return task;
     },
 
     async completeTask(id, opts) {
       await repo.complete(id, opts);
-      const today = toLocalDayKey(Date.now());
-      set({ dayTasks: await loadDay(repo, get().selectedDate, today) });
+      const today = toLocalDayKey(opts.nowMs ?? Date.now());
+      await Promise.all([
+        loadDayAndDots(get().selectedDate, today).then((d) => set(d)),
+        refreshShelf(),
+      ]);
     },
 
-    async moveTask(id, toDate) {
+    async moveTask(id, toDate, nowMs) {
       await repo.move(id, toDate);
-      const today = toLocalDayKey(Date.now());
-      set({ dayTasks: await loadDay(repo, get().selectedDate, today) });
+      const today = toLocalDayKey(nowMs ?? Date.now());
+      await Promise.all([
+        loadDayAndDots(get().selectedDate, today).then((d) => set(d)),
+        refreshShelf(),
+      ]);
     },
 
-    async removeTask(id) {
+    async removeTask(id, nowMs) {
       await repo.remove(id);
-      const today = toLocalDayKey(Date.now());
-      set({ dayTasks: await loadDay(repo, get().selectedDate, today) });
+      const today = toLocalDayKey(nowMs ?? Date.now());
+      await Promise.all([
+        loadDayAndDots(get().selectedDate, today).then((d) => set(d)),
+        refreshShelf(),
+      ]);
     },
-  }));
+
+    async promoteToFocus(id, nowMs) {
+      const queued = get().dayTasks.filter((t) => t.status === 'queued');
+      const minOrder = queued.reduce(
+        (min, t) => Math.min(min, t.orderIndex),
+        queued[0]?.orderIndex ?? 0,
+      );
+      await repo.update(id, { orderIndex: minOrder - 1 });
+      const today = toLocalDayKey(nowMs ?? Date.now());
+      set(await loadDayAndDots(get().selectedDate, today));
+    },
+
+    async moveToTomorrow(id, nowMs) {
+      const tomorrow = addDays(toLocalDayKey(nowMs ?? Date.now()), 1);
+      await get().moveTask(id, tomorrow, nowMs);
+    },
+
+    selectFocusTask() {
+      return get().dayTasks.find((t) => t.status === 'queued') ?? null;
+    },
+
+    async reload(nowMs) {
+      const today = toLocalDayKey(nowMs ?? Date.now());
+      set(await loadDayAndDots(get().selectedDate, today));
+    },
+
+    async loadShelf() {
+      await refreshShelf();
+    },
+  });
+  });
 }
 
 // ---------------------------------------------------------------------------
@@ -220,19 +309,13 @@ function makeLazyRepo(): TasksRepo {
     complete: async (id, o) => (await resolve()).complete(id, o),
     getDayMeta: async (d) => (await resolve()).getDayMeta(d),
     setDoneBy: async (d, m) => (await resolve()).setDoneBy(d, m),
+    dates: async () => (await resolve()).dates(),
   };
 }
 
-let _bound: UseBoundStore<StoreApi<DayTasksState>> | null = null;
-
 /** The app-wide store. Call `.getState().init()` once at boot. */
-export function useDayTasksStore(): UseBoundStore<StoreApi<DayTasksState>> {
-  if (_bound === null) {
-    _bound = makeDayTasksStore({
-      repo: makeLazyRepo(),
-      kvGet: (k) => kv.getString(k),
-      kvSet: (k, v) => kv.set(k, v),
-    });
-  }
-  return _bound;
-}
+export const useDayTasksStore: UseBoundStore<StoreApi<DayTasksState>> = makeDayTasksStore({
+  repo: makeLazyRepo(),
+  kvGet: (k) => kv.getString(k),
+  kvSet: (k, v) => kv.set(k, v),
+});

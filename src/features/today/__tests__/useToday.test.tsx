@@ -1,7 +1,7 @@
 import { renderHook, waitFor } from '@testing-library/react-native';
 import { useToday } from '@/src/features/today/useToday';
 import { useCalibrationStore } from '@/src/stores/calibrationStore';
-import { useTasksStore } from '@/src/stores/tasksStore';
+import { useDayTasksStore } from '@/src/stores/dayTasksStore';
 
 jest.mock('expo-router', () => ({
   router: { push: jest.fn() },
@@ -28,7 +28,7 @@ function summary(over: Partial<{ lifetimeMin: number; lifetimeNectar: number; st
 }
 
 beforeEach(() => {
-  useTasksStore.setState({ tasks: [] });
+  useDayTasksStore.setState({ dayTasks: [] });
   useCalibrationStore.setState({
     statsByCategory: {},
     hydrate: async () => {},

@@ -9,8 +9,9 @@ jest.mock('@/src/features/planner/useLearnedFocusWindow', () => ({
 jest.mock('@/src/features/paywall/useEntitlement', () => ({
   useEntitlement: (sel: (s: Record<string, unknown>) => unknown) => sel({ isPro: false }),
 }));
-jest.mock('@/src/stores/tasksStore', () => ({
-  useTasksStore: (sel: (s: Record<string, unknown>) => unknown) => sel({ tasks: [{ id: '1', status: 'queued' }] }),
+jest.mock('@/src/stores/dayTasksStore', () => ({
+  useDayTasksStore: (sel: (s: Record<string, unknown>) => unknown) =>
+    sel({ dayTasks: [{ id: '1', status: 'queued', carriedFrom: null }] }),
 }));
 jest.mock('expo-router', () => ({ router: { push: jest.fn() } }));
 jest.mock('@/src/stores/settingsStore', () => ({

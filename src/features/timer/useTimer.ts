@@ -12,7 +12,7 @@ import { router } from 'expo-router';
 import { useTimerStore } from '@/src/stores/timerStore';
 import { useCalibrationStore } from '@/src/stores/calibrationStore';
 import { useCategoriesStore } from '@/src/stores/categoriesStore';
-import { useTasksStore } from '@/src/stores/tasksStore';
+import { useDayTasksStore } from '@/src/stores/dayTasksStore';
 import { useRewardStore } from '@/src/stores/rewardStore';
 import { useSettingsStore } from '@/src/stores/settingsStore';
 import { usePlanStore } from '@/src/stores/planStore';
@@ -432,7 +432,10 @@ export function useTimer(params: TimerParams): UseTimerResult {
 
     // Keep the task on Today — flip it to done (checked off) so the day shows
     // progress instead of the row vanishing. actualMin powers the "took N" receipt.
-    if (taskId) useTasksStore.getState().completeTask(taskId, { actualMin });
+    if (taskId) {
+      useDayTasksStore.getState().completeTask(taskId, { completedAt: Date.now(), actualMin });
+      void useDayTasksStore.getState().reload();
+    }
 
     // If this task is the active plan's running task, mark it done in the plan
     // run-state (pure UI bookkeeping — calibration already happened via applyLog above).

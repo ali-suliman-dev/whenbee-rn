@@ -239,6 +239,15 @@ export function createMemoryDatabase(): Database {
     async upsertDayMeta(row: DayMetaRow): Promise<void> {
       dayMeta.set(row.date, { ...row });
     },
+    async listDatesWithTasks(): Promise<string[]> {
+      const seen = new Set<string>();
+      for (const t of tasks.values()) {
+        if (t.status === 'queued' && t.plannedDate !== null) {
+          seen.add(t.plannedDate);
+        }
+      }
+      return [...seen].sort();
+    },
 
     async wipeAll(): Promise<void> {
       categoryStats.clear();

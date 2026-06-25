@@ -29,4 +29,20 @@ describe('TodayEmptyState', () => {
     fireEvent.press(screen.getByText('Or log something you finished'));
     expect(onLog).toHaveBeenCalledTimes(1);
   });
+
+  it('renders future variant with weekday heading and no guilt language', () => {
+    const onPrimary = jest.fn();
+    render(
+      <TodayEmptyState variant="future" weekday="Thursday" onPrimary={onPrimary} onLog={() => {}} />,
+    );
+    expect(screen.getByText("Thursday's wide open")).toBeOnTheScreen();
+    expect(
+      screen.getByText("Add what future-you should tackle — it carries over free if life happens."),
+    ).toBeOnTheScreen();
+    // no guilt/overdue language
+    expect(screen.queryByText(/overdue/i)).toBeNull();
+    expect(screen.queryByText(/missed/i)).toBeNull();
+    fireEvent.press(screen.getByText('Plan ahead'));
+    expect(onPrimary).toHaveBeenCalledTimes(1);
+  });
 });

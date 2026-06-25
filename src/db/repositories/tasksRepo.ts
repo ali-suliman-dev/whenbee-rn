@@ -19,6 +19,8 @@ export interface TasksRepo {
   complete(id: string, opts: { completedAt: number; actualMin?: number }): Promise<void>;
   getDayMeta(date: string): Promise<DayMeta | null>;
   setDoneBy(date: string, doneByMin: number | null): Promise<void>;
+  /** Distinct plannedDates of all queued tasks — used to populate calendar dot hints. */
+  dates(): Promise<string[]>;
 }
 
 function toTask(r: TaskRow): Task {
@@ -88,6 +90,9 @@ export function makeTasksRepo(db: Database): TasksRepo {
         doneByMin,
         planComputedAt: existing?.planComputedAt ?? null,
       });
+    },
+    async dates() {
+      return db.listDatesWithTasks();
     },
   };
 }

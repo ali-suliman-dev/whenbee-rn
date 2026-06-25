@@ -1,7 +1,7 @@
 import { renderHook, act } from '@testing-library/react-native';
 import { useFocusWindow } from '../useFocusWindow';
 import { usePlanStore } from '@/src/stores/planStore';
-import { useTasksStore } from '@/src/stores/tasksStore';
+import { useDayTasksStore } from '@/src/stores/dayTasksStore';
 import { useCalibrationStore } from '@/src/stores/calibrationStore';
 import { useSettingsStore } from '@/src/stores/settingsStore';
 import { DEFAULT_BUFFER_MIN, DEFAULT_BREATHER_MIN } from '@/src/engine';
@@ -11,7 +11,7 @@ function resetStores() {
     draft: { deadline: null, bufferMin: DEFAULT_BUFFER_MIN, breatherMin: DEFAULT_BREATHER_MIN, tasks: [] },
     active: null,
   });
-  useTasksStore.setState({ tasks: [] });
+  useDayTasksStore.setState({ dayTasks: [] });
   useCalibrationStore.setState({ logs: 0, statsByCategory: {} });
   useSettingsStore.getState().reset();
 }
@@ -79,17 +79,23 @@ describe('useFocusWindow', () => {
     act(() => {
       useSettingsStore.getState().setFocusWindow(540, 720);
     });
-    useTasksStore.setState({
-      tasks: [
+    useDayTasksStore.setState({
+      dayTasks: [
         {
           id: 't1',
           label: 'Done thing',
           category: 'admin',
           guessMin: 20,
+          plannedDate: '2026-06-24',
+          orderIndex: 0,
+          doneByMin: null,
           createdAt: 0,
           status: 'done',
           completedAt: 1,
           actualMin: null,
+          fromRoutineId: null,
+          calendarEventId: null,
+          carriedFrom: null,
         },
       ],
     });

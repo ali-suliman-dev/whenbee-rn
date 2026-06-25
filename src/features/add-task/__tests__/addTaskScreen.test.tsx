@@ -1,8 +1,9 @@
-import { render, screen, fireEvent } from '@testing-library/react-native';
+import { render, screen, fireEvent, act } from '@testing-library/react-native';
 import AddTask from '@/src/app/(modals)/add-task';
 import { useCalibrationStore } from '@/src/stores/calibrationStore';
-import { useTasksStore } from '@/src/stores/tasksStore';
+import { useDayTasksStore } from '@/src/stores/dayTasksStore';
 import { useCategoriesStore } from '@/src/stores/categoriesStore';
+import type { Task } from '@/src/domain/types';
 
 const mockReplace = jest.fn();
 const mockBack = jest.fn();
@@ -14,10 +15,45 @@ jest.mock('expo-router', () => ({
   useLocalSearchParams: () => ({}),
 }));
 
+// Capture tasks added via the async addTask mock so tests can assert on them.
+let capturedTasks: Task[] = [];
+
+// The screen derives "today" from the wall clock; freeze it to the day the
+// mocked selectedDate ('2026-06-24') represents so the toast/label logic is
+// deterministic regardless of the real date the suite runs on.
+const TODAY_MS = new Date(2026, 5, 24, 9, 0, 0).getTime();
+let nowSpy: jest.SpyInstance;
+
 beforeEach(() => {
+  nowSpy = jest.spyOn(Date, 'now').mockReturnValue(TODAY_MS);
   mockReplace.mockClear();
   mockBack.mockClear();
-  useTasksStore.setState({ tasks: [] });
+  capturedTasks = [];
+
+  // Mock useDayTasksStore so addTask is async and returns a Task.
+  useDayTasksStore.setState({
+    selectedDate: '2026-06-24',
+    addTask: jest.fn(async (input: { label: string; category: string; guessMin: number; date?: string | null }) => {
+      const task: Task = {
+        id: `task-${Date.now()}`,
+        label: input.label,
+        category: input.category,
+        guessMin: input.guessMin,
+        plannedDate: input.date ?? '2026-06-24',
+        status: 'queued',
+        orderIndex: Date.now(),
+        doneByMin: null,
+        createdAt: Date.now(),
+        completedAt: null,
+        actualMin: null,
+        fromRoutineId: null,
+        calendarEventId: null,
+      };
+      capturedTasks.push(task);
+      return task;
+    }),
+  } as unknown as Parameters<typeof useDayTasksStore.setState>[0]);
+
   useCategoriesStore.setState({
     categories: [{ id: 'getting_ready', name: 'Getting ready', adaptSpeed: 'balanced' }],
   });
@@ -28,6 +64,10 @@ beforeEach(() => {
       getting_ready: { mEffective: 2.0, n: 8, sharpness: 70, tier: 'Ripening', fit: { a: 0, b: 2.0 } },
     },
   });
+});
+
+afterEach(() => {
+  nowSpy.mockRestore();
 });
 
 describe('Add Task screen', () => {
@@ -44,31 +84,36 @@ describe('Add Task screen', () => {
     ).toBeOnTheScreen();
   });
 
-  it('Add to today: addTask with the guess + shows the toast', () => {
+  it('Add to today: calls dayTasksStore.addTask with selectedDate and shows toast', async () => {
     render(<AddTask />);
     fireEvent.changeText(screen.getByLabelText('Task title'), 'Reply to email');
     fireEvent.press(screen.getByText('Getting ready'));
 
-    fireEvent.press(screen.getByText('Add to today'));
+    await act(async () => {
+      fireEvent.press(screen.getByText('Add to today'));
+    });
 
-    const tasks = useTasksStore.getState().tasks;
-    expect(tasks).toHaveLength(1);
-    const added = tasks[0]!;
+    expect(capturedTasks).toHaveLength(1);
+    const added = capturedTasks[0]!;
     expect(added.label).toBe('Reply to email');
     expect(added.category).toBe('getting_ready');
     expect(added.guessMin).toBe(15);
+    expect(added.plannedDate).toBe('2026-06-24');
     // Toast shows before the deferred dismiss.
     expect(screen.getByText('Added to today')).toBeOnTheScreen();
   });
 
-  it('Add & start: navigates to timer with guessMin + honest estimateMin + suggestedHonestMin params', () => {
+  it('Add & start: navigates to timer with guessMin + honest estimateMin + suggestedHonestMin params', async () => {
     render(<AddTask />);
     fireEvent.changeText(screen.getByLabelText('Task title'), 'Leave for work');
     fireEvent.press(screen.getByText('Getting ready'));
 
-    fireEvent.press(screen.getByText('Add & start timer'));
+    await act(async () => {
+      fireEvent.press(screen.getByText('Add & start timer'));
+    });
 
-    const task = useTasksStore.getState().tasks[0]!;
+    expect(capturedTasks).toHaveLength(1);
+    const task = capturedTasks[0]!;
     expect(task).toBeDefined();
     expect(mockReplace).toHaveBeenCalledWith({
       pathname: '/(modals)/timer',
@@ -85,11 +130,13 @@ describe('Add Task screen', () => {
     });
   });
 
-  it('gates the actions until a title + category are set', () => {
+  it('gates the actions until a title + category are set', async () => {
     render(<AddTask />);
     // No title, no category → pressing Add & start does nothing.
-    fireEvent.press(screen.getByText('Add & start timer'));
+    await act(async () => {
+      fireEvent.press(screen.getByText('Add & start timer'));
+    });
     expect(mockReplace).not.toHaveBeenCalled();
-    expect(useTasksStore.getState().tasks).toHaveLength(0);
+    expect(capturedTasks).toHaveLength(0);
   });
 });

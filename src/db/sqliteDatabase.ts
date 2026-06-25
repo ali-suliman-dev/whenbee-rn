@@ -697,6 +697,13 @@ export async function createSqliteDatabase(name = 'whenbee.db'): Promise<Databas
       );
     },
 
+    async listDatesWithTasks(): Promise<string[]> {
+      const rows = await db.getAllAsync<{ planned_date: string }>(
+        `SELECT DISTINCT planned_date FROM tasks WHERE status = 'queued' AND planned_date IS NOT NULL`,
+      );
+      return rows.map((r) => r.planned_date).sort();
+    },
+
     async wipeAll(): Promise<void> {
       await db.withTransactionAsync(async () => {
         await db.execAsync(

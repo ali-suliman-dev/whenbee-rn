@@ -1,5 +1,5 @@
 import { View, Text, Pressable, ScrollView, ActionSheetIOS, type TextStyle } from 'react-native';
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { router } from 'expo-router';
 import { haptics } from '@/src/lib/haptics';
 import { Ionicons } from '@expo/vector-icons';
@@ -26,18 +26,31 @@ import { useCalibrationStore } from '@/src/stores/calibrationStore';
 import { useTimerStore } from '@/src/stores/timerStore';
 import { useSettingsStore } from '@/src/stores/settingsStore';
 import { projectedFinish, formatClockMeridiem } from '@/src/lib/time';
-import { useTasksStore } from '@/src/stores/tasksStore';
+import { useDayTasksStore } from '@/src/stores/dayTasksStore';
+import { toLocalDayKey, addDays, weekdayOf, compareDayKeys } from '@/src/lib/day';
 import { kv } from '@/src/lib/kv';
 import { useFocusedValue } from '@/src/hooks/useFocusedValue';
 import { useGreeting } from '@/src/features/today/useGreeting';
 import { TodayFocusHook } from '@/src/features/today/TodayFocusHook';
+import { CalendarStrip } from '@/src/features/today/calendarStrip/CalendarStrip';
+import { ShelfSection } from '@/src/features/today/ShelfSection';
+import { DayRecapCard } from '@/src/features/today/DayRecapCard';
+import { useDayRecap } from '@/src/features/today/useDayRecap';
 
-// Date label, e.g. "Fri · Jun 12" — the day + date, no clock (the time added
-// nothing here and ticked distractingly).
-function dateLabel(now: Date): string {
-  const day = now.toLocaleDateString('en-US', { weekday: 'short' });
-  const date = now.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
-  return `${day} · ${date}`;
+// Date label for a day-key, e.g. "Fri · Jun 12" — the day + date, no clock.
+function dateLabel(key: string): string {
+  const [y, m, d] = key.split('-').map(Number) as [number, number, number];
+  const date = new Date(y, m - 1, d);
+  const day = date.toLocaleDateString('en-US', { weekday: 'short' });
+  const monthDay = date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+  return `${day} · ${monthDay}`;
+}
+
+/** Full weekday name for the header title when a non-today day is selected. */
+const WEEKDAY_NAMES = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'] as const;
+
+function weekdayName(key: string): string {
+  return WEEKDAY_NAMES[weekdayOf(key)] ?? 'Today';
 }
 
 export default function Today() {
@@ -53,12 +66,27 @@ export default function Today() {
     companionSeed,
     hasEverLogged,
   } = useToday();
+  const selectedDate = useDayTasksStore((s) => s.selectedDate);
+  const today = toLocalDayKey(Date.now());
+  const isPastDay = compareDayKeys(selectedDate, today) < 0;
+  const headerTitle = selectedDate === today ? 'Today' : weekdayName(selectedDate);
+  const headerSubtitle = dateLabel(selectedDate);
+
+  // Recap for past days — null when today or future.
+  const recap = useDayRecap();
+
   const isTimerRunning = useTimerStore((s) => s.isRunning);
   const runningTaskLabel = useTimerStore((s) => s.taskLabel);
   const [pendingRow, setPendingRow] = useState<TodayRow | null>(null);
   const dailyRitualEnabled = useSettingsStore((s) => s.dailyRitualEnabled);
-  const removeTask = useTasksStore((s) => s.removeTask);
-  const promoteToFocus = useTasksStore((s) => s.promoteToFocus);
+  const removeTask = useDayTasksStore((s) => s.removeTask);
+  const promoteToFocus = useDayTasksStore((s) => s.promoteToFocus);
+  const shelfTasks = useDayTasksStore((s) => s.shelfTasks);
+
+  // Keep the shelf fresh: load on mount and whenever tasks change.
+  useEffect(() => {
+    void useDayTasksStore.getState().loadShelf();
+  }, [totalCount]);
 
   // First-run peek: teach the hidden swipe once, then never again. The flag is
   // burned only after the peek actually animates (see onPeeked below) — never on
@@ -80,19 +108,45 @@ export default function Today() {
   function deleteTask(id: string) {
     haptics.medium();
     dismissCoachMark();
-    removeTask(id);
+    void removeTask(id).then(() => useDayTasksStore.getState().loadShelf());
     setDeletingId(null);
   }
-  function promptDelete(id: string, label: string) {
+  function showDayPicker(id: string) {
+    // Build next 7 days as labels for pick-a-day (tomorrow through +7).
+    const today = toLocalDayKey(Date.now());
+    const WEEKDAY_LABELS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'] as const;
+    const days = Array.from({ length: 7 }, (_, i) => {
+      const key = addDays(today, i + 1);
+      const label = i === 0 ? 'Tomorrow' : WEEKDAY_LABELS[weekdayOf(key)] ?? key;
+      return { key, label };
+    });
+    ActionSheetIOS.showActionSheetWithOptions(
+      {
+        title: 'Pick a day',
+        options: [...days.map((d) => d.label), 'Cancel'],
+        cancelButtonIndex: days.length,
+      },
+      (i) => {
+        if (i < days.length) {
+          const day = days[i];
+          if (day) void useDayTasksStore.getState().moveTask(id, day.key);
+        }
+      },
+    );
+  }
+
+  function promptRowActions(id: string, label: string) {
     ActionSheetIOS.showActionSheetWithOptions(
       {
         title: label,
-        options: ['Remove', 'Cancel'],
-        destructiveButtonIndex: 0,
-        cancelButtonIndex: 1,
+        options: ['Move to tomorrow', 'Pick a day…', 'Remove', 'Cancel'],
+        destructiveButtonIndex: 2,
+        cancelButtonIndex: 3,
       },
       (i) => {
-        if (i === 0) setDeletingId(id);
+        if (i === 0) void useDayTasksStore.getState().moveToTomorrow(id);
+        else if (i === 1) showDayPicker(id);
+        else if (i === 2) setDeletingId(id);
       },
     );
   }
@@ -124,7 +178,7 @@ export default function Today() {
     haptics.medium();
     const row = pendingRow;
     setPendingRow(null);
-    promoteToFocus(row.id);
+    void promoteToFocus(row.id);
     navigateToTimer(row);
   }
 
@@ -172,9 +226,9 @@ export default function Today() {
           showsVerticalScrollIndicator={false}
         >
           <ScreenHeader
-            title="Today"
+            title={headerTitle}
             largeTitle
-            subtitle={dateLabel(new Date())}
+            subtitle={headerSubtitle}
             eyebrow={
               <AppText variant="caption" style={{ color: t.colors.inkSoft }}>
                 {greeting.lead}
@@ -211,6 +265,10 @@ export default function Today() {
             }
           />
 
+          {/* 7-day calendar strip — sits directly under the header title block,
+              scrolls with content, lets the user jump to any day in the ±52 wk range. */}
+          <CalendarStrip />
+
           {/* Daily ritual (opt-in) lived in the honey HUD footer; the HUD is gone,
               so render the seal standalone where the card was. */}
           {dailyRitualEnabled ? (
@@ -227,84 +285,126 @@ export default function Today() {
               slots between the honey HUD and whatever occupies the focus slot. */}
           <QuickTaskChips />
 
-          {/* A live session takes the focus slot itself (the same footprint as the
-              Next card, so nothing jumps), carrying its guess→plan context + the
-              live elapsed. Otherwise the Next card invites the next start. */}
-          {isTimerRunning ? (
-            <RunningFocusCard categoryName={categoryName} />
-          ) : focus && summary ? (
-            <Pressable
-              key={focus.id}
-              onLongPress={() => promptDelete(focus.id, focus.label)}
-              delayLongPress={300}
-              accessibilityRole="button"
-              accessibilityLabel={`${focus.label}. Long-press to delete.`}
-            >
-              <FocusCard
-                categoryLabel={categoryName(focus.category)}
-                taskTitle={focus.label}
-                summary={summary}
-                finishClock={formatClockMeridiem(
-                  projectedFinish(Date.now(), summary.honestMinutes),
-                )}
-                onDelete={() => deleteTask(focus.id)}
-                isExiting={deletingId === focus.id}
-                onStart={() =>
-                  router.push({
-                    pathname: '/(modals)/timer',
-                    params: {
-                      taskId: focus.id,
-                      label: focus.label,
-                      category: focus.category,
-                      estimateMin: summary.honestMinutes,
-                      guessMin: focus.guessMin,
-                    },
-                  })
-                }
-              />
-            </Pressable>
-          ) : totalCount === 0 ? (
-            <TodayEmptyState
-              variant={hasEverLogged ? 'daily' : 'first-run'}
-              onPrimary={() => {
-                haptics.light();
-                router.push('/(modals)/add-task');
-              }}
-              onLog={() => router.push('/(modals)/retro')}
-            />
-          ) : null}
-
-          {upNext.length > 0 ? (
-            <View style={{ gap: t.space[2] }}>
-              <Text style={sectionLabel}>UP NEXT</Text>
-              {upNext.map((row, idx) => (
-                <TaskRow
-                  key={row.id}
-                  title={row.label}
-                  categoryLabel={row.categoryLabel}
-                  guessMin={row.guessMin}
-                  honestMin={row.honestMin}
-                  onPress={() => startRow(row)}
-                  onDelete={() => deleteTask(row.id)}
-                  onLongPress={() => promptDelete(row.id, row.label)}
-                  peekHint={peekFirstRow && idx === 0}
-                  onPeeked={markSwipeHintSeen}
-                  isExiting={deletingId === row.id}
+          {/* Past-day banked recap — replaces the focus/empty hero entirely.
+              The strip + header stay; the task list and running card are hidden.
+              recap is guaranteed non-null when isPastDay (useDayRecap contract). */}
+          {isPastDay && recap ? (
+            <DayRecapCard recap={recap} rows={[...upNext, ...done]} />
+          ) : (
+            <>
+              {/* A live session takes the focus slot itself (the same footprint as the
+                  Next card, so nothing jumps), carrying its guess→plan context + the
+                  live elapsed. Otherwise the Next card invites the next start. */}
+              {isTimerRunning ? (
+                <RunningFocusCard categoryName={categoryName} />
+              ) : focus && summary ? (
+                <Pressable
+                  key={focus.id}
+                  onLongPress={() => promptRowActions(focus.id, focus.label)}
+                  delayLongPress={300}
+                  accessibilityRole="button"
+                  accessibilityLabel={`${focus.label}. Long-press to delete.`}
+                >
+                  <FocusCard
+                    categoryLabel={categoryName(focus.category)}
+                    taskTitle={focus.label}
+                    summary={summary}
+                    finishClock={formatClockMeridiem(
+                      projectedFinish(Date.now(), summary.honestMinutes),
+                    )}
+                    onDelete={() => deleteTask(focus.id)}
+                    isExiting={deletingId === focus.id}
+                    onStart={() =>
+                      router.push({
+                        pathname: '/(modals)/timer',
+                        params: {
+                          taskId: focus.id,
+                          label: focus.label,
+                          category: focus.category,
+                          estimateMin: summary.honestMinutes,
+                          guessMin: focus.guessMin,
+                        },
+                      })
+                    }
+                  />
+                </Pressable>
+              ) : totalCount === 0 ? (
+                <TodayEmptyState
+                  variant={
+                    selectedDate !== today
+                      ? 'future'
+                      : hasEverLogged
+                        ? 'daily'
+                        : 'first-run'
+                  }
+                  weekday={selectedDate !== today ? weekdayName(selectedDate) : undefined}
+                  onPrimary={() => {
+                    haptics.light();
+                    router.push('/(modals)/add-task');
+                  }}
+                  onLog={() => router.push('/(modals)/retro')}
                 />
-              ))}
-            </View>
+              ) : null}
+            </>
+          )}
+
+          {/* UP NEXT + DONE — only for today/future; past days embed the list in DayRecapCard. */}
+          {!isPastDay ? (
+            <>
+              {upNext.length > 0 ? (
+                <View style={{ gap: t.space[2] }}>
+                  <Text style={sectionLabel}>UP NEXT</Text>
+                  {upNext.map((row, idx) => (
+                    <TaskRow
+                      key={row.id}
+                      title={row.label}
+                      categoryLabel={row.categoryLabel}
+                      guessMin={row.guessMin}
+                      honestMin={row.honestMin}
+                      carriedFrom={row.carriedFrom}
+                      onPress={() => startRow(row)}
+                      onDelete={() => deleteTask(row.id)}
+                      onLongPress={() => promptRowActions(row.id, row.label)}
+                      onMove={() => void useDayTasksStore.getState().moveToTomorrow(row.id)}
+                      peekHint={peekFirstRow && idx === 0}
+                      onPeeked={markSwipeHintSeen}
+                      isExiting={deletingId === row.id}
+                    />
+                  ))}
+                </View>
+              ) : null}
+
+              {done.length > 0 ? (
+                <DoneSection
+                  rows={done}
+                  deletingId={deletingId}
+                  onDelete={deleteTask}
+                  onLongPress={promptRowActions}
+                  showCoachMark={showCoachMark}
+                  onCoachMarkDismiss={dismissCoachMark}
+                />
+              ) : null}
+            </>
           ) : null}
 
-          {done.length > 0 ? (
-            <DoneSection
-              rows={done}
-              deletingId={deletingId}
-              onDelete={deleteTask}
-              onLongPress={promptDelete}
-              showCoachMark={showCoachMark}
-              onCoachMarkDismiss={dismissCoachMark}
-            />
-          ) : null}
+          {/* No-day-yet shelf — quiet, beneath all day tasks, only when populated. */}
+          <ShelfSection
+            shelfTasks={shelfTasks}
+            onMoveTask={(id, target) => {
+              if (target === 'tomorrow') {
+                haptics.light();
+                void useDayTasksStore.getState().moveToTomorrow(id).then(() =>
+                  useDayTasksStore.getState().loadShelf()
+                );
+              }
+            }}
+            onDeleteTask={(id) => {
+              haptics.medium();
+              void useDayTasksStore.getState().removeTask(id).then(() =>
+                useDayTasksStore.getState().loadShelf()
+              );
+            }}
+          />
 
           {totalCount === 0 && !isTimerRunning ? null : (
             <RetroLogChip
