@@ -154,7 +154,7 @@ export function RoutineRail({
 
   function renderRow(r: RailRow, i: number) {
     const isFirst = i === 0;
-    const isLast = i === rows.length - 1;
+    const isLast = false;
 
     if (r.kind === 'start') {
       const label = clockLabel(r.clockMin);
