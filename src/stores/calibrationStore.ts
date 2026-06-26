@@ -457,6 +457,12 @@ interface CalibrationState {
   /** Read a category's goal, reconcile it against the live `sharpness` (advancing
    *  the max-latched best + met), persist the advance, and return it. Null if none. */
   loadGoal: (categoryId: string) => CategoryGoal | null;
+  /** Add-screen goal coach: the active goal's target band + the biggest time-of-day
+   *  lever for this category (worstValue, or null when no real pattern). Null when
+   *  the category has no active (un-met) goal. A bounded read; called on category change. */
+  loadGoalCoach: (
+    categoryId: string,
+  ) => Promise<{ targetBand: number; worstValue: string | null } | null>;
   /** Build + persist a fresh goal for `categoryId` from its current `sharpness`,
    *  with the given "within X%" target band. Fires `goal_set`. Reads only sharpness. */
   setGoal: (categoryId: string, targetErrorBand: number) => CategoryGoal;
@@ -950,6 +956,28 @@ export const useCalibrationStore = create<CalibrationState>((set, get) => ({
       lever,
       orderedRatios,
     };
+  },
+
+  loadGoalCoach: async (categoryId) => {
+    // Only coach an active, un-met goal. loadGoal reconciles the monotonic best.
+    const goal = get().loadGoal(categoryId);
+    if (!goal || goal.met) return null;
+
+    const db = await resolveDb(get, set);
+    const taskEventsRepo = makeTaskEventsRepo(db);
+    const events = await taskEventsRepo.listByCategory(categoryId, 30);
+    const lever = biggestLever([
+      {
+        key: 'timeOfDay',
+        samples: events
+          .filter((e) => e.status === 'completed' && e.actualMin !== null)
+          .map((e) => ({
+            value: timeOfDayBucket(new Date(e.createdAt).getHours()),
+            ratio: clampRatio(e.estimateMin, e.actualMin as number),
+          })),
+      },
+    ]);
+    return { targetBand: accuracyToErrorBand(goal.targetAccuracy), worstValue: lever?.worstValue ?? null };
   },
 
   loadReclaimSummary: async () => {
