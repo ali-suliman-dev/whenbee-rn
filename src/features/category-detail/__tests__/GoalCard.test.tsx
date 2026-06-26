@@ -26,24 +26,48 @@ describe('GoalCard loss-proof', () => {
   });
 
   it('a sharpness dip does not lower the displayed best (the progress never retreats)', () => {
-    const { rerender } = render(<GoalCard categoryId="admin" categoryName="Admin" />);
-    // Active goal: best so far is the band of best=70 → within 30%.
-    expect(screen.getByText('Best so far: within 30%')).toBeOnTheScreen();
+    const { rerender } = render(
+      <GoalCard categoryId="admin" categoryName="Admin" lever={null} ratios={[]} currentAccuracy={70} />,
+    );
+    // Active goal: best so far is the band of best=70 → ±30%.
+    expect(screen.getByText('±30%')).toBeOnTheScreen();
 
     // A rough stretch drops live sharpness to 50 (band 50). The best is max-latched,
-    // so loadGoal reconciles best up only — it must stay 70 (within 30%), never 50.
+    // so loadGoal reconciles best up only — it must stay 70 (±30%), never 50.
     act(() => seedStat('admin', 50, 9));
-    rerender(<GoalCard categoryId="admin" categoryName="Admin" />);
+    rerender(<GoalCard categoryId="admin" categoryName="Admin" lever={null} ratios={[]} currentAccuracy={50} />);
 
-    // Still within 30% — the dip is never surfaced and the best did not retreat.
-    expect(screen.getByText('Best so far: within 30%')).toBeOnTheScreen();
-    expect(screen.queryByText('Best so far: within 50%')).toBeNull();
+    // Still ±30% — the dip is never surfaced and the best did not retreat.
+    expect(screen.getByText('±30%')).toBeOnTheScreen();
+    expect(screen.queryByText('±50%')).toBeNull();
+  });
+
+  it('shows the biggest-lever coach row when a real lever is present', () => {
+    render(
+      <GoalCard
+        categoryId="admin"
+        categoryName="Admin"
+        currentAccuracy={70}
+        ratios={[]}
+        lever={{
+          key: 'timeOfDay',
+          bestValue: 'evenings',
+          worstValue: 'mornings',
+          bestAccuracy: 90,
+          worstAccuracy: 60,
+          gap: 30,
+          sampleCount: 8,
+        }}
+      />,
+    );
+    expect(screen.getByText('Your biggest lever')).toBeOnTheScreen();
+    expect(screen.getByText('mornings')).toBeOnTheScreen();
   });
 
   it('renders the not-enough state below GOAL_MIN_LOGS', () => {
     kv.delete('goal.writing');
     seedStat('writing', 60, 3);
-    render(<GoalCard categoryId="writing" categoryName="Writing" />);
+    render(<GoalCard categoryId="writing" categoryName="Writing" lever={null} ratios={[]} currentAccuracy={60} />);
     expect(screen.getByText('A few more logs and you can aim here')).toBeOnTheScreen();
     expect(screen.getByText('3 of 5 logged')).toBeOnTheScreen();
   });

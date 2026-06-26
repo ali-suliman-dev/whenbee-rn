@@ -40,6 +40,11 @@ export interface UseAddTaskResult {
   suggestion: CalibrationSummary | null;
   /** True when the suggestion is based on the population prior (cold category, n < 3). */
   preEstimate: boolean;
+  /** Add-screen goal coach for the active category (target band + biggest lever),
+   *  or null when the category has no active goal. Loaded on category change. */
+  goalCoach: { targetBand: number; worstValue: string | null } | null;
+  /** Write the honest suggestion into the guess field (the coach "Use Xm" action). */
+  applyHonest: () => void;
   canSubmit: boolean;
   /** Adds the task and navigates to the timer.
    *  @param date - override the target date (default: store selectedDate). */
@@ -56,6 +61,7 @@ const DEFAULT_GUESS = 15;
 export function useAddTask(initialTitle?: string): UseAddTaskResult {
   const hydrate = useCalibrationStore((s) => s.hydrate);
   const statsByCategory = useCalibrationStore((s) => s.statsByCategory);
+  const loadGoalCoach = useCalibrationStore((s) => s.loadGoalCoach);
   const addTask = useDayTasksStore((s) => s.addTask);
   const addCategoryToStore = useCategoriesStore((s) => s.addCategory);
   const categories = usePickerCategories();
@@ -141,6 +147,30 @@ export function useAddTask(initialTitle?: string): UseAddTaskResult {
     });
   }, [category, guessMin, suggestedMin]);
 
+  // Goal coach for the active category — a bounded read on category change (NOT
+  // per keystroke). Null whenever the category has no active, un-met goal.
+  const [goalCoach, setGoalCoach] = useState<{ targetBand: number; worstValue: string | null } | null>(
+    null,
+  );
+  useEffect(() => {
+    let alive = true;
+    if (category === null) {
+      setGoalCoach(null);
+      return;
+    }
+    void loadGoalCoach(category).then((res) => {
+      if (alive) setGoalCoach(res);
+    });
+    return () => {
+      alive = false;
+    };
+  }, [category, loadGoalCoach]);
+
+  // The coach "Use Xm" action — write the honest suggestion into the guess field.
+  const applyHonest = () => {
+    if (suggestion !== null) setGuessMin(suggestion.honestMinutes);
+  };
+
   const addCategory = (name: string): string => {
     const id = addCategoryToStore(name);
     setCategory(id); // marks manual + clears the guess marker
@@ -196,6 +226,8 @@ export function useAddTask(initialTitle?: string): UseAddTaskResult {
     setGuessMin,
     suggestion,
     preEstimate: suggestion?.basis === 'prior',
+    goalCoach,
+    applyHonest,
     canSubmit,
     onAddAndStart,
     addToToday,
