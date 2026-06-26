@@ -33,6 +33,7 @@ import {
   honestNumber,
   correlateReasons,
   correlateContext,
+  biggestLever,
   proReadiness,
   reconcileGoal,
   errorBandToAccuracy,
@@ -299,6 +300,11 @@ export interface CategoryDetail {
   /** The first meaningful honest range for this category (frozen at first 'setting').
    *  The "from" anchor for the narrowing caption; null until the first band. */
   firstHonestRange: HonestRange | null;
+  /** Goal-coach "biggest lever" — the strongest time-of-day accuracy pattern, or
+   *  null when none is statistically real. Drives the active goal card's coach row. */
+  lever: ContextCorrelation | null;
+  /** Completed clamped ratios, oldest → newest — the ETA projection's input. */
+  orderedRatios: number[];
 }
 
 /** One event row exposed to the focus-window learning hook (read-only, cross-category). */
@@ -473,6 +479,15 @@ async function resolveDb(get: () => CalibrationState, set: (p: Partial<Calibrati
 /** Generate a collision-resistant id without pulling in a uuid dependency. */
 function makeId(createdAt: number): string {
   return `${createdAt}-${Math.random().toString(36).slice(2)}`;
+}
+
+/** Local hour → a human time-of-day bucket. The label IS what the goal-coach row
+ *  phrases ("Your mornings miss widest"), so it returns the plural display form. */
+function timeOfDayBucket(hour: number): string {
+  if (hour >= 5 && hour < 12) return 'mornings';
+  if (hour >= 12 && hour < 17) return 'afternoons';
+  if (hour >= 17 && hour < 22) return 'evenings';
+  return 'late nights';
 }
 
 /** How many recent events the Patterns surface scans. Generous (the "this week"
@@ -905,6 +920,20 @@ export const useCalibrationStore = create<CalibrationState>((set, get) => ({
         createdAt: e.createdAt,
       }));
 
+    // Goal-coach "biggest lever": bucket completed logs by time-of-day (the one
+    // place a clock is unavoidable, as the Patterns accuracy correlations do) and
+    // ask the engine for the strongest real pattern — null when nothing qualifies.
+    const lever = biggestLever([
+      {
+        key: 'timeOfDay',
+        samples: completedOldestFirst.map((e) => ({
+          value: timeOfDayBucket(new Date(e.createdAt).getHours()),
+          ratio: clampRatio(e.estimateMin, e.actualMin as number),
+        })),
+      },
+    ]);
+    const orderedRatios = steps.map((s) => s.clampedRatio);
+
     return {
       categoryName: detailCategoryName(categoryId),
       n: stat.n,
@@ -918,6 +947,8 @@ export const useCalibrationStore = create<CalibrationState>((set, get) => ({
       trend,
       recent,
       firstHonestRange: stat.firstHonestRange ?? null,
+      lever,
+      orderedRatios,
     };
   },
 
