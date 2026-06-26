@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { router } from 'expo-router';
 import { useRewardStore } from '@/src/stores/rewardStore';
 import { useCalibrationStore } from '@/src/stores/calibrationStore';
@@ -6,6 +6,14 @@ import { haptics } from '@/src/services/haptics';
 import { rewardHeadline, isCapSeal } from './headline';
 import { categoryName } from '@/src/features/shared/categoryName';
 import type { LogResult } from '@/src/stores/calibrationStore';
+import type { PostLogQuality } from '@/src/engine';
+
+/** Reward-screen goal feedback: this log's band, a never-negative verdict, target. */
+export interface GoalLogFeedback {
+  thisBand: number;
+  quality: PostLogQuality;
+  targetBand: number;
+}
 
 // ──────────────────────────────────────────────────────────────────────────────
 // useReward — reads the ephemeral rewardStore hand-off, derives all display
@@ -46,6 +54,8 @@ export interface RewardView {
   /** 'over' / 'under' when the run diverged from the guess past the gate; else null. */
   reasonDirection: RunDirection | null;
   result: LogResult | null;
+  /** Goal coach feedback for this log (goaled category only); null otherwise. */
+  goalFeedback: GoalLogFeedback | null;
   onSeeWhenbee: () => void;
   onBackToToday: () => void;
 }
@@ -74,8 +84,26 @@ export function useReward(): RewardView {
   const result = useRewardStore((s) => s.result);
   const clear = useRewardStore((s) => s.clear);
   const logs = useCalibrationStore((s) => s.logs);
+  const loadGoalLogFeedback = useCalibrationStore((s) => s.loadGoalLogFeedback);
 
   const hasReward = result !== null;
+
+  // Goal feedback — a bounded read once the celebration lands, for a goaled
+  // category. Null otherwise; the line simply doesn't render.
+  const [goalFeedback, setGoalFeedback] = useState<GoalLogFeedback | null>(null);
+  useEffect(() => {
+    let alive = true;
+    if (!hasReward || category === '') {
+      setGoalFeedback(null);
+      return;
+    }
+    void loadGoalLogFeedback(category).then((res) => {
+      if (alive) setGoalFeedback(res);
+    });
+    return () => {
+      alive = false;
+    };
+  }, [hasReward, category, loadGoalLogFeedback]);
 
   // Land the celebration once with a success haptic (reduce-motion safe — haptic
   // is independent of the visual reveal).
@@ -117,6 +145,7 @@ export function useReward(): RewardView {
       eventId: null,
       reasonDirection: null,
       result: null,
+      goalFeedback: null,
       onSeeWhenbee,
       onBackToToday,
     };
@@ -150,6 +179,7 @@ export function useReward(): RewardView {
     eventId: result.eventId,
     reasonDirection: reasonDirectionFor(actualMin, guessMin),
     result,
+    goalFeedback,
     onSeeWhenbee,
     onBackToToday,
   };

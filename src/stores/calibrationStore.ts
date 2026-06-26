@@ -34,6 +34,7 @@ import {
   correlateReasons,
   correlateContext,
   biggestLever,
+  postLogQuality,
   proReadiness,
   reconcileGoal,
   errorBandToAccuracy,
@@ -47,6 +48,7 @@ import type {
   CompanionCapability,
   DriftHealth,
   ContextCorrelation,
+  PostLogQuality,
   AffineFit,
   AffineStats,
   GlobalBias,
@@ -463,6 +465,12 @@ interface CalibrationState {
   loadGoalCoach: (
     categoryId: string,
   ) => Promise<{ targetBand: number; worstValue: string | null } | null>;
+  /** Reward-screen post-log feedback for a goaled category: this log's error band,
+   *  a self-relative never-negative quality verdict, and the goal target band. Null
+   *  when the category has no active (un-met) goal or has no completed logs. */
+  loadGoalLogFeedback: (
+    categoryId: string,
+  ) => Promise<{ thisBand: number; quality: PostLogQuality; targetBand: number } | null>;
   /** Build + persist a fresh goal for `categoryId` from its current `sharpness`,
    *  with the given "within X%" target band. Fires `goal_set`. Reads only sharpness. */
   setGoal: (categoryId: string, targetErrorBand: number) => CategoryGoal;
@@ -978,6 +986,37 @@ export const useCalibrationStore = create<CalibrationState>((set, get) => ({
       },
     ]);
     return { targetBand: accuracyToErrorBand(goal.targetAccuracy), worstValue: lever?.worstValue ?? null };
+  },
+
+  loadGoalLogFeedback: async (categoryId) => {
+    const goal = get().loadGoal(categoryId);
+    if (!goal || goal.met) return null;
+
+    const db = await resolveDb(get, set);
+    const taskEventsRepo = makeTaskEventsRepo(db);
+    const events = await taskEventsRepo.listByCategory(categoryId, 30); // newest first
+    const completed = events.filter((e) => e.status === 'completed' && e.actualMin !== null);
+    if (completed.length === 0) return null;
+
+    // Per-log error on the engine's accuracy scale: min(1, |1 − 1/ratio|).
+    const errOf = (e: (typeof completed)[number]): number => {
+      const r = clampRatio(e.estimateMin, e.actualMin as number);
+      return Math.min(1, Math.abs(1 - 1 / r));
+    };
+    const WEEK_MS = 7 * 24 * 60 * 60 * 1000;
+    const newest = completed[0] as (typeof completed)[number];
+    const cutoff = newest.createdAt - WEEK_MS;
+    const thisError = errOf(newest);
+    const recentErrors = completed
+      .slice(1)
+      .filter((e) => e.createdAt >= cutoff)
+      .map(errOf);
+
+    return {
+      thisBand: Math.round(thisError * 100),
+      quality: postLogQuality({ thisError, recentErrors }),
+      targetBand: accuracyToErrorBand(goal.targetAccuracy),
+    };
   },
 
   loadReclaimSummary: async () => {
