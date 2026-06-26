@@ -8,17 +8,57 @@ import { type } from '@/src/theme/typography';
 import { analytics } from '@/src/services/analytics';
 
 // ──────────────────────────────────────────────────────────────────────────────
-// GoalLocked — the non-Pro teaser for the per-category goal (spec §9).
-//
-// Shows the SHAPE of the value, never the user's real accuracy: a greyed track at
-// a fixed illustrative fraction (no amber, no real data) under one line of copy.
-// Tapping opens the paywall with the `goals` trigger and fires `goal_paywall` so
-// the funnel goal_card_viewed(locked) → goal_paywall → purchase is measurable.
-// (`paywall_view {trigger:'goals'}` is fired once by the paywall route on mount —
-// single source of truth, no double-fire here.) The Pressable is a bare touch
-// wrapper; visuals live on the inner Card (RN reactCompiler + nativewind drop
-// function-form Pressable styles).
+// GoalLocked — the non-Pro teaser for the per-category goal COACH (spec
+// 2026-06-26-goal-coach §Locked). Sells the verb ("I'll coach you there"), never
+// the user's real numbers: a greyed teaser track at a fixed illustrative fraction
+// with a honey target tick (no amber data, no real %). The Pro affordance is a
+// coin-edge PRO pill (the app's coin language). Tapping opens the paywall with the
+// `goals` trigger and fires `goal_paywall`. The Pressable is a bare touch wrapper;
+// visuals live on the inner Card (RN reactCompiler + nativewind drop function-form
+// Pressable styles).
 // ──────────────────────────────────────────────────────────────────────────────
+
+/** A small tactile "PRO" coin pill — honey face on a darker amber edge (coin-edge
+ *  depth, like CoinBadge / CoinHex). Display-only. */
+function ProCoinPill() {
+  const t = useTheme();
+  const edge = t.burst.coinEdge;
+  const wrap: ViewStyle = { paddingBottom: edge };
+  const edgeBase: ViewStyle = {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    top: edge,
+    bottom: 0,
+    borderRadius: t.radii.full,
+    borderCurve: 'continuous',
+    backgroundColor: t.colors.accentEdge,
+  };
+  const face: ViewStyle = {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: t.space[1],
+    backgroundColor: t.colors.accent,
+    borderRadius: t.radii.full,
+    borderCurve: 'continuous',
+    paddingHorizontal: t.space[2.5],
+    paddingVertical: t.space[0.5],
+  };
+  const label: TextStyle = {
+    ...(type.captionBold as unknown as TextStyle),
+    color: t.colors.onAmber,
+    letterSpacing: 0.3,
+  };
+  return (
+    <View style={wrap}>
+      <View style={edgeBase} />
+      <View style={face}>
+        <Ionicons name="lock-closed" size={t.iconSize.xs} color={t.colors.onAmber} />
+        <AppText style={label}>PRO</AppText>
+      </View>
+    </View>
+  );
+}
 
 export function GoalLocked({ categoryId }: { categoryId: string }) {
   const t = useTheme();
@@ -29,26 +69,42 @@ export function GoalLocked({ categoryId }: { categoryId: string }) {
     justifyContent: 'space-between',
   };
   const eyebrow: TextStyle = { ...(type.eyebrow as unknown as TextStyle), color: t.colors.inkSoft };
-  const headline: TextStyle = { ...(type.bodyLg as unknown as TextStyle), color: t.colors.ink };
-  const ctaRow: ViewStyle = {
+  const titleRow: ViewStyle = {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
+    gap: t.space[2],
   };
-  const cta: TextStyle = { ...(type.bodySm as unknown as TextStyle), color: t.colors.inkSoft };
+  const headline: TextStyle = { ...(type.bodyLg as unknown as TextStyle), color: t.colors.ink, flex: 1 };
+  const sub: TextStyle = { ...(type.bodySm as unknown as TextStyle), color: t.colors.inkSoft };
 
   const track: ViewStyle = {
+    position: 'relative',
     height: t.progress.track,
     borderRadius: t.radii.full,
     backgroundColor: t.colors.surfaceSunken,
-    overflow: 'hidden',
+    overflow: 'visible',
   };
-  // Greyed fill — a neutral muted bar, never amber, at a fixed illustrative width.
+  // Greyed teaser fill — neutral, never amber, at a fixed illustrative width.
   const fill: ViewStyle = {
-    height: '100%',
+    position: 'absolute',
+    left: 0,
+    top: 0,
+    bottom: 0,
     width: `${t.progress.teaserFill * 100}%`,
     borderRadius: t.radii.full,
     backgroundColor: t.colors.inkFaint,
+  };
+  // A honey target tick — the SHAPE of "a target you aim for", no real number.
+  const tick: ViewStyle = {
+    position: 'absolute',
+    top: -t.space[1],
+    bottom: -t.space[1],
+    left: '52%',
+    width: t.progress.tickW,
+    borderRadius: t.radii.full,
+    backgroundColor: t.brand.honeyFill,
+    opacity: t.opacity.pressed,
   };
 
   const openPaywall = () => {
@@ -60,20 +116,21 @@ export function GoalLocked({ categoryId }: { categoryId: string }) {
     <Pressable
       onPress={openPaywall}
       accessibilityRole="button"
-      accessibilityLabel="Set a goal for this category with Pro"
+      accessibilityLabel="Set a goal for this category with Pro — Whenbee coaches you to it"
     >
       <Card style={{ gap: t.space[3] }}>
         <View style={headerRow}>
           <AppText style={eyebrow}>GOAL</AppText>
-          <Ionicons name="lock-closed" size={t.iconSize.sm} color={t.colors.inkFaint} />
+          <ProCoinPill />
         </View>
-        <AppText style={headline}>Set a target and watch it tighten</AppText>
+        <View style={titleRow}>
+          <AppText style={headline}>Set a target and I&apos;ll coach you there</AppText>
+          <Ionicons name="chevron-forward" size={t.iconSize.sm} color={t.colors.inkSoft} />
+        </View>
+        <AppText style={sub}>The number to guess, your biggest miss, how close you are.</AppText>
         <View style={track}>
           <View style={fill} />
-        </View>
-        <View style={ctaRow}>
-          <AppText style={cta}>Keep a forward goal on this category</AppText>
-          <Ionicons name="chevron-forward" size={t.iconSize.sm} color={t.colors.inkSoft} />
+          <View style={tick} />
         </View>
       </Card>
     </Pressable>
