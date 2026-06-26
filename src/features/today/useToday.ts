@@ -6,6 +6,7 @@ import { useTimerStore } from '@/src/stores/timerStore';
 import { resolveSuggestion, priorFor, CATEGORY_NAMES, type CompanionStage } from '@/src/engine';
 import { analytics } from '@/src/services/analytics';
 import { formatClock, projectedFinish } from '@/src/lib/time';
+import { toLocalDayKey } from '@/src/lib/day';
 import { publishWidgetSnapshot, clearWidgetSnapshot } from '@/src/services/liveActivity';
 import { useEntitlement } from '@/src/features/paywall/useEntitlement';
 import type { CalibrationSummary } from '@/src/domain/types';
@@ -76,6 +77,8 @@ export function useToday(): UseTodayResult {
   const loadReclaimSummary = useCalibrationStore((s) => s.loadReclaimSummary);
   const dayTasks = useDayTasksStore((s) => s.dayTasks);
   const selectFocusTask = useDayTasksStore((s) => s.selectFocusTask);
+  const selectedDate = useDayTasksStore((s) => s.selectedDate);
+  const isViewingToday = selectedDate === toLocalDayKey(Date.now());
   const isTimerRunning = useTimerStore((s) => s.isRunning);
   const runningTaskId = useTimerStore((s) => s.taskId);
 
@@ -135,7 +138,15 @@ export function useToday(): UseTodayResult {
   // (instead of always off focus.id) is what stops the running task duplicating
   // into the list while the previously-focused task silently vanishes. A
   // quick-start session has no taskId → nothing is hidden, the whole queue shows.
-  const nowSlotId = isTimerRunning ? runningTaskId : (focus?.id ?? null);
+  //
+  // On a FUTURE day there is no "now" — the next task isn't a hero, it just sits
+  // in the list like any other. So only carve out the focus slot when viewing
+  // today (a live timer always wins, since running is inherently "now").
+  const nowSlotId = isTimerRunning
+    ? runningTaskId
+    : isViewingToday
+      ? (focus?.id ?? null)
+      : null;
   const upNext = dayTasks
     .filter((task) => task.status === 'queued' && task.id !== nowSlotId)
     .map(toRow);
