@@ -22,27 +22,43 @@ import type { TodayRow } from './useToday';
 import type { DayRecap } from './useDayRecap';
 
 const SHORT_WEEKDAY = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'] as const;
+const SHORT_MONTH = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'] as const;
 function shortWeekday(key: string): string {
   return SHORT_WEEKDAY[weekdayOf(key)] ?? key;
 }
-
-// ──────────────────────────────────────────────────────────────────────────────
-// Stat pill — a single number + label, no units swapped mid-read.
-// ──────────────────────────────────────────────────────────────────────────────
-interface StatPillProps {
-  value: string;
-  label: string;
+/** "Tue · Jun 23" — a dated header so the card reads as a record of a real day. */
+function datedLabel(key: string): string {
+  const parts = key.split('-').map(Number);
+  const month = parts[1];
+  const day = parts[2];
+  if (month === undefined || day === undefined) return shortWeekday(key);
+  return `${shortWeekday(key)} · ${SHORT_MONTH[month - 1] ?? ''} ${day}`;
 }
 
-function StatPill({ value, label }: StatPillProps) {
+// ──────────────────────────────────────────────────────────────────────────────
+// Stat column — a value stacked over its label. Sibling columns share identical
+// vertical structure (same gap, no per-column margins) so the values sit on one
+// baseline and the labels line up beneath them.
+// ──────────────────────────────────────────────────────────────────────────────
+interface StatColumnProps {
+  value: string;
+  label: string;
+  /** Tints the value (used for the "ran faster" vs-guess case). Default = ink. */
+  tone?: 'ink' | 'soft';
+}
+
+function StatColumn({ value, label, tone = 'ink' }: StatColumnProps) {
   const t = useTheme();
-  const wrap: ViewStyle = {
+  const col: ViewStyle = {
+    flex: 1,
     alignItems: 'flex-start',
+    gap: t.space[1],
   };
-  const combined: TextStyle = {
+  const val: TextStyle = {
     fontFamily: 'Inter-Bold' as TextStyle['fontFamily'],
-    fontSize: t.fontSize.sm,
-    color: t.colors.ink,
+    fontSize: t.fontSize.lg,
+    lineHeight: t.fontSize.lg * t.lineHeight.tight,
+    color: tone === 'soft' ? t.colors.inkSoft : t.colors.ink,
     fontVariant: ['tabular-nums'],
   };
   const lbl: TextStyle = {
@@ -53,11 +69,9 @@ function StatPill({ value, label }: StatPillProps) {
   };
 
   return (
-    <View style={wrap}>
-      <Text style={combined}>
-        {value}
-        <Text style={lbl}> {label}</Text>
-      </Text>
+    <View style={col}>
+      <Text style={val}>{value}</Text>
+      <Text style={lbl}>{label}</Text>
     </View>
   );
 }
@@ -80,7 +94,11 @@ export function DayRecapCard({ recap, rows }: DayRecapCardProps) {
   const [expanded, setExpanded] = useState(false);
 
   const dayLabel = shortWeekday(recap.date);
+  const headerLabel = datedLabel(recap.date);
   const vsSign = recap.vsGuessMin >= 0 ? '+' : '';
+  // Ran-under-guess reads as a quiet positive (no guilt either way); ran-over stays
+  // neutral ink. Never red, never a score.
+  const vsTone = recap.vsGuessMin < 0 ? 'soft' : 'ink';
   const isEmpty = rows.length === 0;
 
   // ── Styles ────────────────────────────────────────────────────────────────
@@ -96,15 +114,8 @@ export function DayRecapCard({ recap, rows }: DayRecapCardProps) {
 
   const header: ViewStyle = {
     paddingHorizontal: t.space[4],
-    paddingTop: t.space[3],
-    paddingBottom: t.space[2],
-    gap: t.space[2],
-  };
-
-  const dayLine: ViewStyle = {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
+    paddingTop: t.space[4],
+    paddingBottom: t.space[3],
   };
 
   const dayTitle: TextStyle = {
@@ -120,10 +131,10 @@ export function DayRecapCard({ recap, rows }: DayRecapCardProps) {
 
   const statsRow: ViewStyle = {
     flexDirection: 'row',
-    alignItems: 'baseline',
-    gap: t.space[4],
+    gap: t.space[3],
     paddingHorizontal: t.space[4],
-    paddingVertical: t.space[3],
+    paddingTop: t.space[0.5],
+    paddingBottom: t.space[4],
   };
 
   const disclosure: ViewStyle = {
@@ -161,23 +172,16 @@ export function DayRecapCard({ recap, rows }: DayRecapCardProps) {
 
   return (
     <View style={card}>
-      {/* Header: day label */}
+      {/* Header: dated label — reads as a record of a specific day */}
       <View style={header}>
-        <View style={dayLine}>
-          <Text style={dayTitle}>{dayLabel}</Text>
-        </View>
+        <Text style={dayTitle}>{headerLabel}</Text>
       </View>
 
-      <View style={divider} />
-
-      {/* Stats row */}
+      {/* Stats — three equal columns, value over label */}
       <View style={statsRow}>
-        <StatPill value={`${recap.doneCount} of ${recap.plannedCount}`} label="done" />
-        <StatPill value={`${recap.realFocusMin}m`} label="focus" />
-        <StatPill
-          value={`${vsSign}${recap.vsGuessMin}m`}
-          label="vs guess"
-        />
+        <StatColumn value={`${recap.doneCount} of ${recap.plannedCount}`} label="done" />
+        <StatColumn value={`${recap.realFocusMin}m`} label="real focus" />
+        <StatColumn value={`${vsSign}${recap.vsGuessMin}m`} label="vs your guess" tone={vsTone} />
       </View>
 
       {/* Empty past day: quiet single-line, no toggle needed */}
