@@ -32,6 +32,7 @@ import { PresenceRingTeaser } from '@/src/components/PresenceRingTeaser';
 import { GuardrailSettingRow } from '@/src/features/settings/GuardrailSettingRow';
 import { GuardrailLockedRow } from '@/src/features/settings/GuardrailLockedRow';
 import { CalendarSettingsSection } from '@/src/features/settings/CalendarSettingsSection';
+import { StripVariantSwitcher } from '@/src/features/settings/StripVariantSwitcher';
 import { seedDemoData } from '@/src/features/dev/seedDemoData';
 
 const modes: ColorModePref[] = ['system', 'light', 'dark'];
@@ -140,6 +141,8 @@ export default function Settings() {
   const setDisplayName = useSettingsStore((s) => s.setDisplayName);
   const dailyRitualEnabled = useSettingsStore((s) => s.dailyRitualEnabled);
   const setDailyRitualEnabled = useSettingsStore((s) => s.setDailyRitualEnabled);
+  const quickStartEnabled = useSettingsStore((s) => s.quickStartEnabled);
+  const setQuickStartEnabled = useSettingsStore((s) => s.setQuickStartEnabled);
   const isPro = useEntitlement((s) => s.isPro);
   const setPro = useEntitlement((s) => s.setPro);
   const categoryCount = useCategoriesStore((s) => s.categories.length);
@@ -282,6 +285,10 @@ export default function Settings() {
             ))}
           </View>
         </View>
+
+        {/* TEMP A/B — calendar-strip design switcher. Remove after the decision
+            (see docs/product/specs/2026-06-25-calendar-strip-ab.md). */}
+        <StripVariantSwitcher />
 
         <View style={{ gap: t.space[3] }}>
           <AppText variant="label">Your Whenbee</AppText>
@@ -495,6 +502,21 @@ export default function Settings() {
                 onValueChange={setDailyRitualEnabled}
                 trackColor={{ true: t.colors.primary, false: t.colors.hairline }}
                 accessibilityLabel="Daily check-in"
+              />
+            }
+          />
+
+          {/* Quick-start chips — the "Tap to start again" row on Today */}
+          <SettingRow
+            icon="repeat-outline"
+            title="Tap to start again"
+            note="A row of tasks you run often, up top on Today — one tap re-runs them. Turn off for a cleaner screen."
+            trailing={
+              <Switch
+                value={quickStartEnabled}
+                onValueChange={setQuickStartEnabled}
+                trackColor={{ true: t.colors.primary, false: t.colors.hairline }}
+                accessibilityLabel="Tap to start again"
               />
             }
           />

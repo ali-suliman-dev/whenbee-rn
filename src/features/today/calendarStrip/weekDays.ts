@@ -31,6 +31,15 @@ const WEEKDAY_LABELS: readonly string[] = [
   'Sat',
 ] as const;
 
+// ─── formatA11yLabel ───────────────────────────────────────────────────────────
+
+/** Formats a day-key as "Weekday Month DD" for a11y labels (e.g. "Wednesday June 24"). */
+export function formatA11yLabel(key: string): string {
+  const [y, m, d] = key.split('-').map(Number) as [number, number, number];
+  const date = new Date(y, m - 1, d);
+  return date.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' });
+}
+
 // ─── weekFor ──────────────────────────────────────────────────────────────────
 
 /**
