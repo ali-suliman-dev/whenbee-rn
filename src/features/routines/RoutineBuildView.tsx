@@ -7,6 +7,7 @@ import { AppText } from '@/src/components/AppText';
 import { AppButton } from '@/src/components/AppButton';
 import { TaskTitleField } from '@/src/components/TaskTitleField';
 import { CategoryChips, usePickerCategories } from '@/src/features/shared/CategoryChips';
+import { categoryName } from '@/src/features/shared/categoryName';
 import { guessCategory } from '@/src/features/shared/categoryGuess';
 import { DurationWheel } from '@/src/features/planner/DurationWheel';
 import { FinishTimeWheel } from '@/src/features/planner/FinishTimeWheel';
@@ -90,6 +91,11 @@ export function RoutineBuildView({ onDone }: { onDone: () => void }) {
 
   const categoryM = (category: string): number =>
     statsByCategory[category]?.mEffective ?? priorFor(category);
+
+  // Display label for a step's category — prefer a tracked/custom name from the
+  // picker, fall back to seed name / title-cased slug. Never show the raw key.
+  const categoryLabel = (id: string): string =>
+    categories.find((c) => c.id === id)?.name ?? categoryName(id);
 
   // Live honest total: per-step honest × the prior transition factor (a fresh draft
   // has no learned factor; the displayed total moves with composition, not regression).
@@ -196,7 +202,7 @@ export function RoutineBuildView({ onDone }: { onDone: () => void }) {
           <StepRow
             key={step.id}
             label={step.label}
-            category={step.category}
+            category={categoryLabel(step.category)}
             honestMin={stepHonestMinutes(step.guessMin, categoryM(step.category))}
             guessMin={step.guessMin}
             onGuessChange={(min) => editStep(step.id, { guessMin: min })}

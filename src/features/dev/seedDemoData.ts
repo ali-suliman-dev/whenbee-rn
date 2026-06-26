@@ -25,8 +25,31 @@ import { useOnboardingStore } from '@/src/stores/onboardingStore';
 import { useEntitlement } from '@/src/features/paywall/useEntitlement';
 import type { AdaptSpeed } from '@/src/domain/types';
 
-const DAY_MS = 86_400_000;
 const WINDOW_DAYS = 60;
+
+// The focus window the demo data should make the engine DISCOVER. Picked in the
+// early afternoon so the learned window reads as personal — clearly NOT the
+// 09:00–11:30 prior fallback (FW_PRIOR_WINDOW), so the founder can tell at a
+// glance that calibration actually fired rather than a default showing through.
+const FOCUS_BAND_START_MIN = 14 * 60; // 14:00
+const FOCUS_BAND_END_MIN = 16 * 60; //   16:00
+const FOCUS_BAND_LEN_MIN = FOCUS_BAND_END_MIN - FOCUS_BAND_START_MIN;
+// Share of each category's logs that start inside the band. A minority — so the
+// band sits clearly ABOVE the all-day average (if focus hours were the majority
+// they'd define the mean and read as "normal"), while ~⅓ of ~137 logs still puts
+// every band bin well over FW_BIN_MIN_EVENTS / FW_BIN_MIN_DAYS.
+const FOCUS_BAND_SHARE = 0.33;
+// How much sharper the user is in-band. The bias is split MEAN-PRESERVINGLY around
+// each category's headline bias: in-band ≈ bias·(1−gain) (user beats their honest
+// number → positive focus signal s = log(honest/actual)), out-of-band the slack
+// picks up the slack so the category's average bias — and every honest number on
+// the other Pro surfaces — is unchanged. The in/out gap is what gives the bins
+// enough spread (sd) to clear FW_SD_MIN and the permutation gate. Tuned so the
+// engine learns a personal window on ~20/20 seeds (see scratch sim).
+const FOCUS_PERF_GAIN = 0.35;
+// Out-of-band start times spread across a plausible waking day, band excluded.
+const OUT_OF_BAND_START_MIN = 7 * 60; //  07:00
+const OUT_OF_BAND_END_MIN = 21 * 60; //   21:00
 
 interface DemoCategory {
   id: string;
@@ -91,6 +114,9 @@ interface SeedEvent {
   estimateMin: number;
   actualMin: number;
   adaptSpeed: AdaptSpeed;
+  /** Wall-clock start (local). Drives startLocalMinute → focus-window learning. */
+  startedAt: number;
+  /** End/log time = start + actual. Used as applyLog's nowMs (endedAt/createdAt). */
   nowMs: number;
 }
 
@@ -99,27 +125,59 @@ function jitter(amount: number): number {
   return (Math.random() * 2 - 1) * amount;
 }
 
+/** Local-midnight of (today − dayBack) plus a minute-of-day offset → epoch ms. */
+function startedAtFor(now: number, dayBack: number, startMinuteOfDay: number): number {
+  const d = new Date(now);
+  d.setHours(0, 0, 0, 0);
+  d.setDate(d.getDate() - dayBack);
+  return d.getTime() + startMinuteOfDay * 60_000;
+}
+
+/** A start minute outside the focus band, spread across the waking day. */
+function outOfBandStartMinute(): number {
+  const span = OUT_OF_BAND_END_MIN - OUT_OF_BAND_START_MIN - FOCUS_BAND_LEN_MIN;
+  const m = OUT_OF_BAND_START_MIN + Math.floor(Math.random() * span);
+  // Skip over the band so it stays empty for these picks.
+  return m >= FOCUS_BAND_START_MIN ? m + FOCUS_BAND_LEN_MIN : m;
+}
+
 /**
  * Build every demo event, sorted oldest → newest. Chronological order matters:
  * applyLog reads each category's recent window from what is already persisted, so
  * the sharpness/honey progression only looks real if we replay time forwards.
+ *
+ * Each event also gets a real wall-clock start: ~55% land in the focus band (where
+ * the user beats their honest number), the rest spread across the day. That
+ * time-of-day structure is what lets the focus-window engine learn a personal
+ * window instead of sitting on the prior forever.
  */
 function buildEvents(now: number): SeedEvent[] {
   const events: SeedEvent[] = [];
 
   for (const cat of DEMO_CATEGORIES) {
     for (let k = 0; k < cat.count; k++) {
-      // Spread the k logs evenly back across the window (k=0 oldest, last = today),
-      // dropped at a plausible daytime hour with a little jitter.
+      // Spread the k logs evenly back across the window (k=0 oldest, last = today).
       const dayBack = cat.count > 1 ? Math.round(((cat.count - 1 - k) / (cat.count - 1)) * (WINDOW_DAYS - 1)) : 0;
-      const hourMs = (8 + Math.floor(Math.random() * 11)) * 3_600_000; // 08:00–19:00
-      const nowMs = now - dayBack * DAY_MS - DAY_MS + hourMs;
+
+      const inBand = Math.random() < FOCUS_BAND_SHARE;
+      const startMinuteOfDay = inBand
+        ? FOCUS_BAND_START_MIN + Math.floor(Math.random() * FOCUS_BAND_LEN_MIN)
+        : outOfBandStartMinute();
+
+      // Mean-preserving bias split around cat.bias: sharper in-band, slacker out,
+      // so the category's average bias (and its honest number) is left untouched.
+      const biasIn = cat.bias * (1 - FOCUS_PERF_GAIN);
+      const biasOut = (cat.bias - FOCUS_BAND_SHARE * biasIn) / (1 - FOCUS_BAND_SHARE);
+      const effBias = inBand ? biasIn : biasOut;
 
       const estimateMin = Math.max(1, Math.round(cat.estimateMin * (1 + jitter(0.15))));
-      const actualMin = Math.max(1, Math.round(estimateMin * cat.bias * (1 + jitter(0.1))));
+      const actualMin = Math.max(1, Math.round(estimateMin * effBias * (1 + jitter(0.1))));
       const label = cat.labels[k % cat.labels.length] ?? cat.name;
 
-      events.push({ category: cat.id, label, estimateMin, actualMin, adaptSpeed: cat.adaptSpeed, nowMs });
+      const startedAt = startedAtFor(now, dayBack, startMinuteOfDay);
+      const nowMs = startedAt + actualMin * 60_000;
+
+      events.push({ category: cat.id, label, estimateMin, actualMin, adaptSpeed: cat.adaptSpeed, startedAt, nowMs });
     }
   }
 
@@ -189,6 +247,7 @@ export async function seedDemoData(): Promise<number> {
       status: 'completed',
       source: 'timed',
       adaptSpeed: e.adaptSpeed,
+      startedAt: e.startedAt,
       nowMs: e.nowMs,
     });
   }

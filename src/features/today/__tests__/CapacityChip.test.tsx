@@ -33,6 +33,7 @@ function makeLoad(overrides: Partial<DayLoadResult> = {}): DayLoadResult {
     eventMin: 60,
     committedMin: 180,
     freeMin: 540,
+    openMin: 420,
     verdict: 'comfortable',
     overByMin: 0,
     ...overrides,
@@ -81,13 +82,12 @@ describe('CapacityChip — Pro ready', () => {
     expect(screen.getByText(/heavy/i)).toBeOnTheScreen();
   });
 
-  it('expands on press to show the legend with "free"', () => {
+  it('expands on press to show the honest "open" leftover', () => {
     render(<CapacityChip cap={setupPro()} />);
-    // Initially collapsed — "free" not yet visible
     const chip = screen.getByTestId('capacity-chip-collapsed');
     fireEvent.press(chip);
-    // After expand, "free" text should appear
-    expect(screen.getByText(/free/i)).toBeOnTheScreen();
+    // After expand, the "open" leftover (window − committed) should appear
+    expect(screen.getByText(/open/i)).toBeOnTheScreen();
   });
 
   it('shows "move" copy when over but never "overdue" or "behind"', () => {
@@ -105,11 +105,11 @@ describe('CapacityChip — Pro ready', () => {
     expect(screen.queryByText(/failed/i)).toBeNull();
   });
 
-  it('shows "Pad my calendar" link in expanded state (the write surface CTA)', () => {
+  it('shows the "Pad calendar" action in expanded state (the write surface CTA)', () => {
     render(<CapacityChip cap={setupPro()} />);
     const chip = screen.getByTestId('capacity-chip-collapsed');
     fireEvent.press(chip);
-    expect(screen.getByText(/pad my calendar/i)).toBeOnTheScreen();
+    expect(screen.getByText(/pad calendar/i)).toBeOnTheScreen();
   });
 });
 
@@ -136,9 +136,9 @@ describe('CapacityChip — Free user', () => {
     expect(screen.queryByText(/free/i)).toBeNull();
   });
 
-  it('does NOT render the "Pad my calendar" write link (Pro-only write surface)', () => {
+  it('does NOT render the "Pad calendar" write action (Pro-only write surface)', () => {
     render(<CapacityChip cap={setupFree()} />);
-    expect(screen.queryByText(/pad my calendar/i)).toBeNull();
+    expect(screen.queryByText(/pad calendar/i)).toBeNull();
   });
 
   it('does NOT render any capacity number in the accessible output', () => {

@@ -112,7 +112,7 @@ export function CapacityChip({ weekdayLabel = 'Today', cap }: CapacityChipProps)
 
   if (!load) return null;
 
-  const { verdict, taskMin, eventMin, freeMin, overByMin } = load;
+  const { verdict, taskMin, eventMin, freeMin, openMin, overByMin } = load;
 
   // Verdict suffix copy — amber-only, no red, no guilt
   function verdictSuffix(): string {
@@ -128,18 +128,36 @@ export function CapacityChip({ weekdayLabel = 'Today', cap }: CapacityChipProps)
 
   // ── Collapsed chip styles ───────────────────────────────────────────────────
   const chipWrap: ViewStyle = {
-    backgroundColor: isOver && expanded ? overColor : t.colors.surfaceSunken,
+    // Matches the task-list rows (t.colors.surface) so the chip reads as part of
+    // the same card system, not a separate sunken well. Amber tint still wins
+    // when the day is over capacity and expanded.
+    backgroundColor: isOver && expanded ? overColor : t.colors.surface,
     borderRadius: t.radii.card,
     borderCurve: 'continuous',
     overflow: 'hidden',
+  };
+
+  // Header row holds the toggle (flex:1) and the × dismiss side by side, so × is a
+  // distinct tap target beside the chevron — not orphaned at the card's bottom-left.
+  const headerRow: ViewStyle = {
+    flexDirection: 'row',
+    alignItems: 'center',
   };
 
   const collapsedRow: ViewStyle = {
     flexDirection: 'row',
     alignItems: 'center',
     gap: t.space[2],
-    paddingHorizontal: t.space[4],
+    paddingLeft: t.space[4],
+    paddingRight: t.space[2],
     paddingVertical: t.space[2.5],
+  };
+
+  // × dismiss sits at the header's right edge, vertically centered on the row.
+  const xButton: ViewStyle = {
+    paddingVertical: t.space[2.5],
+    paddingRight: t.space[4],
+    paddingLeft: t.space[1],
   };
 
   const iconDisc: ViewStyle = {
@@ -225,23 +243,51 @@ export function CapacityChip({ weekdayLabel = 'Today', cap }: CapacityChipProps)
     color: t.colors.inkSoft,
   };
 
-  // Free hours label
-  const freeLabel: TextStyle = {
-    ...(type.caption as unknown as TextStyle),
-    color: t.colors.inkFaint,
-  };
-
   // Over copy — amber-only, calm offer
   const overCopy: TextStyle = {
     ...(type.caption as unknown as TextStyle),
     color: t.colors.amberText,
   };
 
-  // "Pad my calendar" link — leads to the write/buffer surface
-  const honestLink: TextStyle = {
-    ...(type.caption as unknown as TextStyle),
+  // ── Footer toolbar: "Xh open" left, "Pad calendar" pill right ──────────────
+  const footerDivider: ViewStyle = {
+    height: t.borderWidth.hairline || 1,
+    backgroundColor: t.colors.hairline,
+  };
+
+  const toolbarRow: ViewStyle = {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  };
+
+  // "open" = the real leftover (window − committed) = the empty bar segment. Shown
+  // as a quiet value+label so it reconciles with what the user sees in the bar.
+  const openLabel: TextStyle = {
+    ...(type.bodySm as unknown as TextStyle),
+    color: t.colors.inkSoft,
+  };
+  const openValue: TextStyle = {
+    ...(type.bodySm as unknown as TextStyle),
+    color: t.colors.ink,
+    fontWeight: t.fontWeight.bold as TextStyle['fontWeight'],
+    fontVariant: ['tabular-nums'],
+  };
+
+  // "Pad calendar" — the one Pro action. A tinted pill (NOT filled indigo) so it
+  // never competes with the screen's primary CTA → the honest-day write surface.
+  const padPill: ViewStyle = {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: t.space[1.5],
+    backgroundColor: t.colors.primaryChip,
+    borderRadius: t.radii.full,
+    paddingHorizontal: t.space[3],
+    paddingVertical: t.space[1.5],
+  };
+  const padPillText: TextStyle = {
+    ...(type.captionBold as unknown as TextStyle),
     color: t.colors.primary,
-    textDecorationLine: 'underline',
   };
 
   // Calendar settings nudge (denied / off with events)
@@ -255,34 +301,48 @@ export function CapacityChip({ weekdayLabel = 'Today', cap }: CapacityChipProps)
 
   return (
     <View style={chipWrap}>
-      {/* ── Collapsed row (always visible for Pro) ── */}
-      <Pressable
-        testID="capacity-chip-collapsed"
-        accessibilityRole="button"
-        accessibilityLabel={`Honest day ${fmtHm(taskMin + eventMin)} ${verdictSuffix()}. Tap to ${expanded ? 'collapse' : 'expand'}.`}
-        accessibilityState={{ expanded }}
-        onPress={handleToggle}
-      >
-        <View style={collapsedRow}>
-          {/* ⚡ icon disc */}
-          <View style={iconDisc}>
-            <Ionicons name="flash" size={t.iconSize.xs} color={t.colors.amberText} />
+      {/* ── Header: toggle (flex:1) + × dismiss beside the chevron ── */}
+      <View style={headerRow}>
+        <Pressable
+          testID="capacity-chip-collapsed"
+          accessibilityRole="button"
+          accessibilityLabel={`Honest day ${fmtHm(taskMin + eventMin)} ${verdictSuffix()}. Tap to ${expanded ? 'collapse' : 'expand'}.`}
+          accessibilityState={{ expanded }}
+          onPress={handleToggle}
+          style={{ flex: 1 }}
+        >
+          <View style={collapsedRow}>
+            {/* ⚡ icon disc */}
+            <View style={iconDisc}>
+              <Ionicons name="flash" size={t.iconSize.xs} color={t.colors.amberText} />
+            </View>
+
+            {/* "Honest day Xh Ym" */}
+            <Text style={chipLabel} numberOfLines={1}>
+              Honest day {fmtHm(taskMin + eventMin)}{' '}
+              <Text style={verdictSuffixStyle}>{verdictSuffix()}</Text>
+            </Text>
+
+            {/* Chevron — flips when expanded */}
+            <Ionicons
+              name={expanded ? 'chevron-up' : 'chevron-down'}
+              size={t.iconSize.xs}
+              color={t.colors.inkFaint}
+            />
           </View>
+        </Pressable>
 
-          {/* "Honest day Xh Ym" */}
-          <Text style={chipLabel} numberOfLines={1}>
-            Honest day {fmtHm(taskMin + eventMin)}{' '}
-            <Text style={verdictSuffixStyle}>{verdictSuffix()}</Text>
-          </Text>
-
-          {/* Chevron — flips when expanded */}
-          <Ionicons
-            name={expanded ? 'chevron-up' : 'chevron-down'}
-            size={t.iconSize.xs}
-            color={t.colors.inkFaint}
-          />
-        </View>
-      </Pressable>
+        {/* × dismiss for the session — one home, beside the chevron */}
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel="Dismiss capacity chip"
+          onPress={() => setDismissed(true)}
+          hitSlop={t.size.hitSlop}
+          style={xButton}
+        >
+          <Ionicons name="close" size={t.iconSize.xs} color={t.colors.inkFaint} />
+        </Pressable>
+      </View>
 
       {/* ── Expanded content (opacity-only fade; no slide-in) ── */}
       {expanded && (
@@ -310,11 +370,6 @@ export function CapacityChip({ weekdayLabel = 'Today', cap }: CapacityChipProps)
             )}
           </View>
 
-          {/* Free hours */}
-          <Text style={freeLabel}>
-            {Math.floor(freeMin / 60)}h free
-          </Text>
-
           {/* Over: calm amber nudge — no red, no guilt */}
           {isOver && (
             <Text style={overCopy}>
@@ -329,28 +384,26 @@ export function CapacityChip({ weekdayLabel = 'Today', cap }: CapacityChipProps)
             </Text>
           )}
 
-          {/* "Pad my calendar" quiet link → the write surface */}
-          <Pressable
-            accessibilityRole="link"
-            accessibilityLabel="Pad my calendar — add honest buffers to today's events"
-            onPress={() => router.push({ pathname: '/(modals)/honest-day' })}
-          >
-            <View>
-              <Text style={honestLink}>Pad my calendar</Text>
-            </View>
-          </Pressable>
+          {/* Footer toolbar: real leftover ("open" = window − committed) + the one
+              Pro action. "open" equals the empty bar segment, so number and bar agree. */}
+          <View style={footerDivider} />
+          <View style={toolbarRow}>
+            <Text style={openLabel}>
+              <Text style={openValue}>{fmtHm(openMin)}</Text> open
+            </Text>
 
-          {/* × dismiss for the session */}
-          <Pressable
-            accessibilityRole="button"
-            accessibilityLabel="Dismiss capacity chip"
-            onPress={() => setDismissed(true)}
-            hitSlop={t.size.hitSlop}
-          >
-            <View>
-              <Ionicons name="close" size={t.iconSize.xs} color={t.colors.inkFaint} />
-            </View>
-          </Pressable>
+            <Pressable
+              accessibilityRole="link"
+              accessibilityLabel="Pad my calendar — add honest buffers to today's events"
+              onPress={() => router.push({ pathname: '/(modals)/honest-day' })}
+              hitSlop={t.size.hitSlop}
+            >
+              <View style={padPill}>
+                <Ionicons name="calendar-outline" size={t.iconSize.sm} color={t.colors.primary} />
+                <Text style={padPillText}>Pad calendar</Text>
+              </View>
+            </Pressable>
+          </View>
         </Animated.View>
       )}
     </View>

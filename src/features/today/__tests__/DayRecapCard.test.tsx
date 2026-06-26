@@ -50,25 +50,28 @@ function makeRow(overrides: Partial<TodayRow> = {}): TodayRow {
 }
 
 describe('DayRecapCard', () => {
-  it('renders the done/planned stat line', () => {
+  it('renders the done/planned stat as value + label', () => {
     render(<DayRecapCard recap={makeRecap()} rows={[makeRow()]} />);
-    // The stat renders value + label as nested Text — RTLN matches the full string.
-    expect(screen.getByText('3 of 4 done')).toBeOnTheScreen();
+    // Value and label are now separate Text nodes in a stat column.
+    expect(screen.getByText('3 of 4')).toBeOnTheScreen();
+    expect(screen.getByText('done')).toBeOnTheScreen();
   });
 
   it('renders real focus minutes', () => {
     render(<DayRecapCard recap={makeRecap({ realFocusMin: 90 })} rows={[makeRow()]} />);
-    expect(screen.getByText('90m focus')).toBeOnTheScreen();
+    expect(screen.getByText('90m')).toBeOnTheScreen();
+    expect(screen.getByText('real focus')).toBeOnTheScreen();
   });
 
   it('renders positive vsGuessMin with + prefix', () => {
     render(<DayRecapCard recap={makeRecap({ vsGuessMin: 15 })} rows={[makeRow()]} />);
-    expect(screen.getByText('+15m vs guess')).toBeOnTheScreen();
+    expect(screen.getByText('+15m')).toBeOnTheScreen();
+    expect(screen.getByText('vs your guess')).toBeOnTheScreen();
   });
 
   it('renders negative vsGuessMin without + prefix', () => {
     render(<DayRecapCard recap={makeRecap({ vsGuessMin: -10 })} rows={[makeRow()]} />);
-    expect(screen.getByText('-10m vs guess')).toBeOnTheScreen();
+    expect(screen.getByText('-10m')).toBeOnTheScreen();
   });
 
   it('starts with list collapsed and expands on tap', () => {

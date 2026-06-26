@@ -570,15 +570,48 @@ export const tokens = {
   //   dotSize       diameter of the hasTasks amber dot under the cell
   //   dotGap        gap between the cell and its dot
   strip: {
-    rowPadV: 8,
-    cellW: 44,   // layout: screenWidth / 7 at runtime, this is a design reference
-    cellH: 56,
-    labelSize: 10,
-    numSize: 16,
-    pillPadH: 6,
-    pillPadV: 4,
+    rowPadV: 10,
+    cellW: 44,   // layout: innerWidth / 7 at runtime, this is a design reference
+    cellH: 60,
+    labelSize: 11,
+    numSize: 17,
+    pillPadH: 10,
+    pillPadV: 7,
     dotSize: 4,
-    dotGap: 3,
+    dotGap: 4,
+    padH: 4,     // strip card inner horizontal padding (cells inset from the rounded edge)
+    padV: 8,     // strip card inner vertical padding (above/below the cell row)
+    ringW: 1.5,  // today's hollow outline-ring weight (today = ring, selected = filled pill)
+
+    // ── A1 "Focus Lens" variant — selected number scales up; neighbours shrink +
+    //    fade by distance. Sizes are mode-agnostic; colors come from the ramp.
+    //    scaleD* are factors relative to heroNum (applied via transform on the UI
+    //    thread → one animating `selCol` drives every cell's lens morph).
+    lens: {
+      cardPadV: 14, cardPadH: 6,
+      heroNum: 23, label: 10, heroLabel: 11,
+      scaleD1: 0.74, scaleD2: 0.65, scaleD3: 0.57, // |dist| = 1 / 2 / ≥3
+      opacityD0: 1, opacityD1: 0.9, opacityD2: 0.66, opacityD3: 0.42,
+      gap: 7, dotSize: 4, heroDotSize: 5, dotGap: 4,
+      cellMinH: 52, // fixed row height so hero scaling never reflows siblings
+      pressScale: 0.97,
+    },
+    // ── B "Sliding Segment" variant — sunken borderless track + an elevated chip
+    //    that slides to the selected day (mirrors the List/Timeline ViewToggle).
+    segment: {
+      trackPadV: 5, trackPadH: 5,
+      chipRadius: 15, chipInsetX: 3,
+      // The chip frames weekday + number (height chipH) AND now reaches down to
+      // enclose the activity dot: the dot keeps its exact place (dotGap below the
+      // number block), and the chip extends past it by chipPadBelowDot so the dot
+      // sits INSIDE the selector with breathing room mirroring the top inset. No
+      // content moves — only the chip rectangle grows.
+      chipH: 50, dotGap: 8, chipPadBelowDot: 7,
+      label: 11, num: 17,
+      gap: 4, dotSize: 4,
+      chipShadowOpacity: 0.4, // iOS shadow alpha; android → elevation 2
+      pressScale: 0.97,
+    },
   },
 
   // ── brand illustration palette ──────────────────────────────────────────────
