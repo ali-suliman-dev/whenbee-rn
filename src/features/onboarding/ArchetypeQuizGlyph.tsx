@@ -36,6 +36,10 @@ export type QuizGlyphKind =
   | 'pace_lose'
   | 'mid_track'
   | 'mid_rabbit'
+  | 'sink_meetings'
+  | 'sink_chores'
+  | 'sink_errands'
+  | 'sink_deepwork'
   | 'focus_morning'
   | 'focus_evening'
   | 'focus_varies';
@@ -169,6 +173,64 @@ export function ArchetypeQuizGlyph({
             <Circle cx={17} cy={7.5} r={1.4} fill={indigo} />
             <Circle cx={17} cy={16.5} r={1.4} fill={amber} />
           </AG>
+        </>
+      ) : null}
+
+      {/* ── SINK: sink_meetings — calendar block + three amber people-dots ── */}
+      {kind === 'sink_meetings' ? (
+        <>
+          {/* Calendar body: 14×12 rect, indigo soft fill that blooms in */}
+          <DrawPath draw={draw} len={60} bloom d="M5 8 L5 20 L19 20 L19 8 Z" fill={indigoSoft} stroke={indigo} strokeWidth={SW} strokeLinejoin="round" />
+          {/* Top hangers — small pegs that sit above the frame */}
+          <DrawLine draw={draw} len={6} x1={9} y1={5} x2={9} y2={8} stroke={indigo} strokeWidth={SW} strokeLinecap="round" />
+          <DrawLine draw={draw} len={6} x1={15} y1={5} x2={15} y2={8} stroke={indigo} strokeWidth={SW} strokeLinecap="round" />
+          {/* Header divider */}
+          <DrawLine draw={draw} len={18} x1={5} y1={11} x2={19} y2={11} stroke={indigo} strokeWidth={SW} strokeLinecap="round" />
+          {/* Three amber attendee dots — the meeting metaphor */}
+          <AG animatedProps={fadeProps}>
+            <Circle cx={9} cy={15} r={1.5} fill={amber} />
+            <Circle cx={12} cy={15} r={1.5} fill={amber} />
+            <Circle cx={15} cy={15} r={1.5} fill={amber} />
+          </AG>
+        </>
+      ) : null}
+
+      {/* ── SINK: sink_chores — broom: diagonal handle + arc head + amber bristles ── */}
+      {kind === 'sink_chores' ? (
+        <>
+          {/* Handle — long diagonal stroke going bottom-left */}
+          <DrawLine draw={draw} len={20} x1={16} y1={4} x2={9} y2={17} stroke={indigo} strokeWidth={SW} strokeLinecap="round" />
+          {/* Broom head arc — sweeping cap across the top of the bristles */}
+          <DrawPath draw={draw} len={18} d="M7 16.5 Q12 14.5 17 16.5" fill="none" stroke={indigo} strokeWidth={SW} strokeLinecap="round" />
+          {/* Bristles — three amber tufts fanning downward */}
+          <DrawLine draw={draw} len={7} x1={8} y1={17} x2={7} y2={21} stroke={amber} strokeWidth={SW} strokeLinecap="round" />
+          <DrawLine draw={draw} len={6} x1={12} y1={17} x2={12} y2={21} stroke={amber} strokeWidth={SW} strokeLinecap="round" />
+          <DrawLine draw={draw} len={7} x1={16.5} y1={17} x2={17.5} y2={21} stroke={amber} strokeWidth={SW} strokeLinecap="round" />
+        </>
+      ) : null}
+
+      {/* ── SINK: sink_errands — location pin: teardrop body + amber inner ring ── */}
+      {kind === 'sink_errands' ? (
+        <>
+          {/* Teardrop outer body — four cubic curves making the classic pin shape */}
+          <DrawPath draw={draw} len={70} bloom d="M12 3 C16.5 3 20 6.5 20 11 C20 16.5 12 21 12 21 C12 21 4 16.5 4 11 C4 6.5 7.5 3 12 3 Z" fill={indigoSoft} stroke={indigo} strokeWidth={SW} />
+          {/* Inner circle — the pin-hole, amber for accent */}
+          <DrawCircle draw={draw} len={22} cx={12} cy={10} r={2.5} fill="none" stroke={amber} strokeWidth={SW} />
+        </>
+      ) : null}
+
+      {/* ── SINK: sink_deepwork — monitor frame + stand + two amber prompt lines ── */}
+      {kind === 'sink_deepwork' ? (
+        <>
+          {/* Screen frame */}
+          <DrawPath draw={draw} len={75} bloom d="M3 5 L21 5 L21 17 L3 17 Z" fill={indigoSoft} stroke={indigo} strokeWidth={SW} strokeLinejoin="round" />
+          {/* Stand */}
+          <DrawLine draw={draw} len={5} x1={12} y1={17} x2={12} y2={20} stroke={indigo} strokeWidth={SW} strokeLinecap="round" />
+          {/* Base */}
+          <DrawLine draw={draw} len={12} x1={8} y1={20} x2={16} y2={20} stroke={indigo} strokeWidth={SW} strokeLinecap="round" />
+          {/* Prompt lines — short amber lines suggest a focused code/text session */}
+          <DrawLine draw={draw} len={5} x1={6} y1={10} x2={9} y2={10} stroke={amber} strokeWidth={SW} strokeLinecap="round" />
+          <DrawLine draw={draw} len={12} x1={6} y1={13} x2={15} y2={13} stroke={amber} strokeWidth={SW + 0.2} strokeLinecap="round" />
         </>
       ) : null}
 
