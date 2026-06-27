@@ -20,7 +20,7 @@ export default function RevealScreen() {
   const t = useTheme();
   const insets = useSafeAreaInsets();
   const answers = useOnboardingStore((s) => s.quizAnswers);
-  const { saveQuiz } = usePersonalize();
+  const { saveQuiz, trackRevealShown } = usePersonalize();
   const [reveal, setReveal] = useState<RevealState | null>(null);
 
   useEffect(() => {
@@ -36,6 +36,8 @@ export default function RevealScreen() {
       ...(answers.focus !== undefined ? { focus: answers.focus } : {}),
     };
     setReveal({ card: saveQuiz(full), answers: full });
+    // Reveal is the archetype payoff — fires only when we have a valid quiz result.
+    trackRevealShown();
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   return (

@@ -13,7 +13,7 @@
 // then records 'accepted' in KV.
 // On "Not now": records 'declined'. Re-entry path = Settings notification toggle.
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { useCalibrationStore } from '@/src/stores/calibrationStore';
 import { getNotifSoftAsk, setNotifSoftAsk, type NotifSoftAskStatus } from './notifSoftAskState';
 import {
@@ -21,6 +21,7 @@ import {
   getNotificationPermissionStatus,
   type NotificationPermissionStatus,
 } from '@/src/services/timerNotifications';
+import { analytics } from '@/src/services/analytics';
 
 export interface NotifSoftAskView {
   /** Whether the soft-ask card should be rendered. */
@@ -53,16 +54,27 @@ export function useNotifSoftAsk(): NotifSoftAskView {
     status === 'pending' &&
     permStatus === 'undetermined';
 
+  // Fire notif_softask_shown exactly once when the card first becomes visible.
+  const shownTrackedRef = useRef(false);
+  useEffect(() => {
+    if (show && !shownTrackedRef.current) {
+      shownTrackedRef.current = true;
+      analytics.capture('notif_softask_shown');
+    }
+  }, [show]);
+
   const onAccept = useCallback(async () => {
     // Optimistically hide the card, then fire the OS prompt.
     setNotifSoftAsk('accepted');
     setStatus('accepted');
+    analytics.capture('notif_softask_accepted');
     await ensureNotificationPermission();
   }, []);
 
   const onDecline = useCallback(() => {
     setNotifSoftAsk('declined');
     setStatus('declined');
+    analytics.capture('notif_softask_declined');
   }, []);
 
   return { show, onAccept, onDecline };

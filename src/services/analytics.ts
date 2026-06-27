@@ -79,6 +79,21 @@ export interface AppEventProps {
   plan_cut_one: { n_tasks: number; status: 'fits' | 'over'; freed_min: number };
   plan_reprojected: { n_tasks: number; status: 'fits' | 'over'; freed_min: number };
 
+  // ── Onboarding / activation funnel ──────────────────────────────────────────
+  welcome_shown: Record<string, never>;
+  quiz_started: Record<string, never>;
+  reveal_shown: Record<string, never>;
+  categories_committed: { categories_picked: number };
+  /** Fires when the user starts their first-ever calibration timer (lifetimeNectar === 0 at start). */
+  first_task_started: Record<string, never>;
+  /** THE ACTIVATION EVENT — fires exactly once when the user completes their first-ever calibration (lifetimeNectar === 1 after log). */
+  first_task_completed: Record<string, never>;
+
+  // ── Notification soft-ask ────────────────────────────────────────────────────
+  notif_softask_shown: Record<string, never>;
+  notif_softask_accepted: Record<string, never>;
+  notif_softask_declined: Record<string, never>;
+
   // ── Whenbee personalization ──────────────────────────────────────────────────
   whenbee_personalized: { attribute: string; skipped: boolean };
   personalize_shown: Record<string, never>;

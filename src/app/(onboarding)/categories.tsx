@@ -23,7 +23,7 @@ import {
 export default function Categories() {
   const t = useTheme();
   const insets = useSafeAreaInsets();
-  const { picked, isPicked, togglePick } = useOnboarding();
+  const { picked, isPicked, togglePick, trackCategoriesCommitted } = useOnboarding();
   const [adding, setAdding] = useState(false);
   const [draft, setDraft] = useState('');
 
@@ -153,7 +153,10 @@ export default function Categories() {
           label="Continue →"
           fullWidth
           disabled={!canContinue}
-          onPress={() => router.push('/(onboarding)/ready')}
+          onPress={() => {
+            trackCategoriesCommitted();
+            router.push('/(onboarding)/ready');
+          }}
         />
       </Reveal>
       <View style={{ height: insets.bottom }} />

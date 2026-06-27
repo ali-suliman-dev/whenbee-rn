@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 import { View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
@@ -30,7 +30,7 @@ export function QuizStepScreen({ step }: { step: number }): React.JSX.Element | 
   const insets = useSafeAreaInsets();
   const quizAnswers = useOnboardingStore((s) => s.quizAnswers);
   const setQuizAnswer = useOnboardingStore((s) => s.setQuizAnswer);
-  const { trackQuizSkipped } = usePersonalize();
+  const { trackQuizSkipped, trackQuizStarted } = usePersonalize();
 
   const question = QUIZ_QUESTIONS[step];
   const isLast = step === QUIZ_QUESTIONS.length - 1;
@@ -38,6 +38,16 @@ export function QuizStepScreen({ step }: { step: number }): React.JSX.Element | 
   useEffect(() => {
     if (!question) router.replace('/(onboarding)/quiz/0');
   }, [question]);
+
+  // Fire quiz_started exactly once when the first quiz step mounts.
+  // once-guard: fires exactly once per mount regardless of StrictMode double-invoke.
+  const quizStartedFiredRef = useRef(false);
+  useEffect(() => {
+    if (step !== 0) return;
+    if (quizStartedFiredRef.current) return;
+    quizStartedFiredRef.current = true;
+    trackQuizStarted();
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   if (!question) return null;
 
