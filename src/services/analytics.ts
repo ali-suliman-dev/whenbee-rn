@@ -123,7 +123,9 @@ export interface AppEventProps {
       | 'pdf_export'
       | 'routines'
       | 'review_ritual'
-      | 'persistent_presence';
+      | 'persistent_presence'
+      | 'calendar_export'
+      | 'day_capacity';
     readiness?: 'pre' | 'honest';
   };
   founder_reserve: { result: 'reserved' };

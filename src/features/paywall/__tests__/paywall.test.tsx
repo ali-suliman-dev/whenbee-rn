@@ -160,12 +160,13 @@ describe('Paywall', () => {
   });
 
   // ── Readiness headline (Step 13) ──────────────────────────────────────────────
-  it('shows the default heading when readiness is pre (or omitted)', async () => {
+  it('shows the trigger-specific pre heading when readiness is pre (or omitted)', async () => {
     mockGetOfferings.mockResolvedValue(OFFERING);
     render(<Paywall trigger="make_day_honest" />);
     await waitFor(() => expect(screen.getByText('PRICE_YEARLY_42')).toBeTruthy());
 
-    expect(screen.getByText('Stop planning a day that was never going to fit.')).toBeTruthy();
+    // make_day_honest pre-framing comes from paywallCopy (adaptive copy map)
+    expect(screen.getByText('Your real day, before you live it.')).toBeTruthy();
     expect(screen.queryByText('Your numbers are real now.')).toBeNull();
   });
 
@@ -175,7 +176,7 @@ describe('Paywall', () => {
     await waitFor(() => expect(screen.getByText('PRICE_YEARLY_42')).toBeTruthy());
 
     expect(screen.getByText('Your numbers are real now.')).toBeTruthy();
-    expect(screen.queryByText('Stop planning a day that was never going to fit.')).toBeNull();
+    expect(screen.queryByText('Your real day, before you live it.')).toBeNull();
   });
 
   it('passes readiness through to the paywall_view event', async () => {
