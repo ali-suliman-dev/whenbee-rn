@@ -66,7 +66,7 @@ export function QuizStepScreen({ step }: { step: number }): React.JSX.Element | 
 
       {/* Skip lives quietly at the top, just under the progress bar. */}
       <View style={{ flexDirection: 'row', justifyContent: 'flex-end' }}>
-        <AppButton label="Skip" variant="ghost" size="xs" onPress={skip} />
+        <AppButton label="Skip to my type" variant="ghost" size="xs" onPress={skip} />
       </View>
 
       <View style={{ flex: 1, paddingTop: t.space[2] }}>

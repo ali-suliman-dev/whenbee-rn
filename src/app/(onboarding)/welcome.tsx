@@ -78,7 +78,7 @@ export default function Welcome() {
         <AppButton
           label="Get started →"
           fullWidth
-          onPress={() => router.push('/(onboarding)/categories')}
+          onPress={() => router.push('/(onboarding)/quiz/0')}
         />
       </Reveal>
       <View style={{ height: insets.bottom }} />

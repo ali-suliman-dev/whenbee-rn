@@ -81,12 +81,12 @@ export default function Categories() {
               letterSpacing: -0.6,
             }}
           >
-            What makes you run late?
+            Where does time slip most?
           </AppText>
         </Reveal>
         <Reveal index={1}>
           <AppText variant="body" style={{ color: t.colors.inkSoft }}>
-            {"Pick a few, or add your own. These are what I’ll learn first."}
+            {"Pick a few. I'll sharpen your honest number here first."}
           </AppText>
         </Reveal>
 
@@ -153,7 +153,7 @@ export default function Categories() {
           label="Continue →"
           fullWidth
           disabled={!canContinue}
-          onPress={() => router.push('/(onboarding)/name')}
+          onPress={() => router.push('/(onboarding)/ready')}
         />
       </Reveal>
       <View style={{ height: insets.bottom }} />

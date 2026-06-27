@@ -20,12 +20,12 @@ export default function ArchetypeQuizModal() {
   const t = useTheme();
   const insets = useSafeAreaInsets();
   const { saveQuiz, trackQuizSkipped, trackReopened } = usePersonalize();
-  const [reveal, setReveal] = useState<RevealCard | null>(null);
+  const [reveal, setReveal] = useState<{ card: RevealCard; answers: QuizAnswers } | null>(null);
 
   function handleQuizComplete(answers: QuizAnswers) {
     const card = saveQuiz(answers);
     trackReopened();
-    setReveal(card);
+    setReveal({ card, answers });
   }
 
   function handleQuizSkip() {
@@ -45,9 +45,10 @@ export default function ArchetypeQuizModal() {
           <TimeStyleQuiz onComplete={handleQuizComplete} onSkip={handleQuizSkip} />
         ) : (
           <ArchetypeReveal
-            title={reveal.title}
-            blurb={reveal.blurb}
-            multiplier={reveal.multiplier}
+            title={reveal.card.title}
+            blurb={reveal.card.blurb}
+            multiplier={reveal.card.multiplier}
+            quizAnswers={reveal.answers}
             onContinue={handleRevealContinue}
           />
         )}
