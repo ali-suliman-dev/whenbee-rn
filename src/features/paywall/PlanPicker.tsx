@@ -59,6 +59,17 @@ function savingsLabel(yearly: Package | undefined, monthly: Package | undefined)
   return `Save ${pct}%`;
 }
 
+/** Per-month equivalent of the yearly price (e.g. "≈ $2.92 / mo"), or null if unparseable. */
+function perMonthLabel(yearly: Package | undefined): string | null {
+  if (!yearly) return null;
+  const y = parsePrice(yearly.priceString);
+  if (y == null) return null;
+  const symbolMatch = yearly.priceString.match(/^[^\d]*/);
+  const symbol = symbolMatch ? symbolMatch[0].trim() : '';
+  const per = (y / 12).toFixed(2);
+  return `≈ ${symbol}${per} / mo`;
+}
+
 export function PlanPicker({
   offering,
   selectedId,
@@ -81,6 +92,7 @@ export function PlanPicker({
   const yearly = ordered.find((p) => p.duration === 'yearly');
   const monthly = ordered.find((p) => p.duration === 'monthly');
   const savings = savingsLabel(yearly, monthly);
+  const perMonth = perMonthLabel(yearly);
 
   const titleStyle: TextStyle = { ...(type.bodyLg as unknown as TextStyle), color: t.colors.ink };
   const noteStyle: TextStyle = {
@@ -98,6 +110,7 @@ export function PlanPicker({
     color: t.colors.onAmber,
     letterSpacing: 0.5,
   };
+  const perMonthStyle: TextStyle = { ...(type.caption as unknown as TextStyle), color: t.colors.inkSoft, fontVariant: ['tabular-nums'] };
 
   return (
     <View style={{ gap: t.space[3] }}>
@@ -148,7 +161,10 @@ export function PlanPicker({
               </View>
               <Text style={noteStyle}>{NOTE[pkg.duration]}</Text>
             </View>
-            <Text style={priceStyle}>{pkg.priceString}</Text>
+            <View style={{ alignItems: 'flex-end', gap: t.space[0.5] }}>
+              <Text style={priceStyle}>{pkg.priceString}</Text>
+              {isHero && perMonth ? <Text style={perMonthStyle}>{perMonth}</Text> : null}
+            </View>
           </Pressable>
         );
       })}
