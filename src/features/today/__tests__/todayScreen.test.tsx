@@ -50,7 +50,7 @@ const mockUseDayCapacity = jest.mocked(useDayCapacity);
 function makeLoad(overrides: Partial<DayLoadResult> = {}): DayLoadResult {
   return {
     taskMin: 120, eventMin: 0, committedMin: 120,
-    freeMin: 720, verdict: 'comfortable', overByMin: 0,
+    freeMin: 720, openMin: 720, verdict: 'comfortable', overByMin: 0,
     ...overrides,
   };
 }
@@ -212,7 +212,10 @@ describe('Today screen', () => {
   });
 
   it('renders the capacity chip teaser on today (free user)', () => {
-    // selectedDate is today (set in beforeEach).
+    // selectedDate is today (set in beforeEach). The chip only weighs a day that
+    // has tasks, so seed one.
+    const task = makeQueued({ id: 'c1', label: 'Leave for work', category: 'getting_ready', guessMin: 15 });
+    useDayTasksStore.setState({ dayTasks: [task], selectFocusTask: () => task });
     render(<Today />);
     // Free user sees the "will fit" teaser from CapacityChip.
     expect(screen.getByTestId('capacity-teaser')).toBeOnTheScreen();
@@ -227,8 +230,18 @@ describe('Today screen', () => {
       allDayEvents: [],
       isPro: true,
     });
+    const task = makeQueued({ id: 'c2', label: 'Leave for work', category: 'getting_ready', guessMin: 15 });
+    useDayTasksStore.setState({ dayTasks: [task], selectFocusTask: () => task });
     render(<Today />);
     expect(screen.getByTestId('capacity-chip-collapsed')).toBeOnTheScreen();
+  });
+
+  it('does NOT render the capacity chip on an empty today', () => {
+    // No tasks → nothing to weigh, so the chip stays hidden even on today.
+    useDayTasksStore.setState({ dayTasks: [], selectFocusTask: () => null });
+    render(<Today />);
+    expect(screen.queryByTestId('capacity-teaser')).toBeNull();
+    expect(screen.queryByTestId('capacity-chip-collapsed')).toBeNull();
   });
 
   it('does NOT render the capacity chip on a past day', () => {

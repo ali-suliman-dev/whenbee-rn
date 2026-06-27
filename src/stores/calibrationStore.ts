@@ -33,6 +33,8 @@ import {
   honestNumber,
   correlateReasons,
   correlateContext,
+  biggestLever,
+  postLogQuality,
   proReadiness,
   reconcileGoal,
   errorBandToAccuracy,
@@ -46,6 +48,7 @@ import type {
   CompanionCapability,
   DriftHealth,
   ContextCorrelation,
+  PostLogQuality,
   AffineFit,
   AffineStats,
   GlobalBias,
@@ -299,6 +302,11 @@ export interface CategoryDetail {
   /** The first meaningful honest range for this category (frozen at first 'setting').
    *  The "from" anchor for the narrowing caption; null until the first band. */
   firstHonestRange: HonestRange | null;
+  /** Goal-coach "biggest lever" — the strongest time-of-day accuracy pattern, or
+   *  null when none is statistically real. Drives the active goal card's coach row. */
+  lever: ContextCorrelation | null;
+  /** Completed clamped ratios, oldest → newest — the ETA projection's input. */
+  orderedRatios: number[];
 }
 
 /** One event row exposed to the focus-window learning hook (read-only, cross-category). */
@@ -451,6 +459,18 @@ interface CalibrationState {
   /** Read a category's goal, reconcile it against the live `sharpness` (advancing
    *  the max-latched best + met), persist the advance, and return it. Null if none. */
   loadGoal: (categoryId: string) => CategoryGoal | null;
+  /** Add-screen goal coach: the active goal's target band + the biggest time-of-day
+   *  lever for this category (worstValue, or null when no real pattern). Null when
+   *  the category has no active (un-met) goal. A bounded read; called on category change. */
+  loadGoalCoach: (
+    categoryId: string,
+  ) => Promise<{ targetBand: number; worstValue: string | null } | null>;
+  /** Reward-screen post-log feedback for a goaled category: this log's error band,
+   *  a self-relative never-negative quality verdict, and the goal target band. Null
+   *  when the category has no active (un-met) goal or has no completed logs. */
+  loadGoalLogFeedback: (
+    categoryId: string,
+  ) => Promise<{ thisBand: number; quality: PostLogQuality; targetBand: number } | null>;
   /** Build + persist a fresh goal for `categoryId` from its current `sharpness`,
    *  with the given "within X%" target band. Fires `goal_set`. Reads only sharpness. */
   setGoal: (categoryId: string, targetErrorBand: number) => CategoryGoal;
@@ -473,6 +493,15 @@ async function resolveDb(get: () => CalibrationState, set: (p: Partial<Calibrati
 /** Generate a collision-resistant id without pulling in a uuid dependency. */
 function makeId(createdAt: number): string {
   return `${createdAt}-${Math.random().toString(36).slice(2)}`;
+}
+
+/** Local hour → a human time-of-day bucket. The label IS what the goal-coach row
+ *  phrases ("Your mornings miss widest"), so it returns the plural display form. */
+function timeOfDayBucket(hour: number): string {
+  if (hour >= 5 && hour < 12) return 'mornings';
+  if (hour >= 12 && hour < 17) return 'afternoons';
+  if (hour >= 17 && hour < 22) return 'evenings';
+  return 'late nights';
 }
 
 /** How many recent events the Patterns surface scans. Generous (the "this week"
@@ -905,6 +934,20 @@ export const useCalibrationStore = create<CalibrationState>((set, get) => ({
         createdAt: e.createdAt,
       }));
 
+    // Goal-coach "biggest lever": bucket completed logs by time-of-day (the one
+    // place a clock is unavoidable, as the Patterns accuracy correlations do) and
+    // ask the engine for the strongest real pattern — null when nothing qualifies.
+    const lever = biggestLever([
+      {
+        key: 'timeOfDay',
+        samples: completedOldestFirst.map((e) => ({
+          value: timeOfDayBucket(new Date(e.createdAt).getHours()),
+          ratio: clampRatio(e.estimateMin, e.actualMin as number),
+        })),
+      },
+    ]);
+    const orderedRatios = steps.map((s) => s.clampedRatio);
+
     return {
       categoryName: detailCategoryName(categoryId),
       n: stat.n,
@@ -918,6 +961,61 @@ export const useCalibrationStore = create<CalibrationState>((set, get) => ({
       trend,
       recent,
       firstHonestRange: stat.firstHonestRange ?? null,
+      lever,
+      orderedRatios,
+    };
+  },
+
+  loadGoalCoach: async (categoryId) => {
+    // Only coach an active, un-met goal. loadGoal reconciles the monotonic best.
+    const goal = get().loadGoal(categoryId);
+    if (!goal || goal.met) return null;
+
+    const db = await resolveDb(get, set);
+    const taskEventsRepo = makeTaskEventsRepo(db);
+    const events = await taskEventsRepo.listByCategory(categoryId, 30);
+    const lever = biggestLever([
+      {
+        key: 'timeOfDay',
+        samples: events
+          .filter((e) => e.status === 'completed' && e.actualMin !== null)
+          .map((e) => ({
+            value: timeOfDayBucket(new Date(e.createdAt).getHours()),
+            ratio: clampRatio(e.estimateMin, e.actualMin as number),
+          })),
+      },
+    ]);
+    return { targetBand: accuracyToErrorBand(goal.targetAccuracy), worstValue: lever?.worstValue ?? null };
+  },
+
+  loadGoalLogFeedback: async (categoryId) => {
+    const goal = get().loadGoal(categoryId);
+    if (!goal || goal.met) return null;
+
+    const db = await resolveDb(get, set);
+    const taskEventsRepo = makeTaskEventsRepo(db);
+    const events = await taskEventsRepo.listByCategory(categoryId, 30); // newest first
+    const completed = events.filter((e) => e.status === 'completed' && e.actualMin !== null);
+    if (completed.length === 0) return null;
+
+    // Per-log error on the engine's accuracy scale: min(1, |1 − 1/ratio|).
+    const errOf = (e: (typeof completed)[number]): number => {
+      const r = clampRatio(e.estimateMin, e.actualMin as number);
+      return Math.min(1, Math.abs(1 - 1 / r));
+    };
+    const WEEK_MS = 7 * 24 * 60 * 60 * 1000;
+    const newest = completed[0] as (typeof completed)[number];
+    const cutoff = newest.createdAt - WEEK_MS;
+    const thisError = errOf(newest);
+    const recentErrors = completed
+      .slice(1)
+      .filter((e) => e.createdAt >= cutoff)
+      .map(errOf);
+
+    return {
+      thisBand: Math.round(thisError * 100),
+      quality: postLogQuality({ thisError, recentErrors }),
+      targetBand: accuracyToErrorBand(goal.targetAccuracy),
     };
   },
 

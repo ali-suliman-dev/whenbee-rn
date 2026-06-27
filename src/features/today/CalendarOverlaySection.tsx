@@ -60,7 +60,9 @@ export function CalendarOverlaySection({
   if (!hasAny) return null;
 
   const sectionWrap: ViewStyle = {
-    gap: t.space[2],
+    gap: t.space[2.5],
+    marginTop: t.space[4],
+    marginBottom: t.space[2],
   };
 
   const eyebrow: TextStyle = {
@@ -104,22 +106,26 @@ export function CalendarOverlaySection({
     <View style={sectionWrap}>
       <Text style={eyebrow}>Calendar</Text>
 
-      {/* Timed event rows */}
-      {events.map((evt) => (
-        <Pressable
-          key={evt.id}
-          accessibilityRole="button"
-          accessibilityLabel={`${evt.title}, ${fmtRange(evt.startMs, evt.endMs)}, open in Calendar`}
-          onPress={() => openInCalendar(evt.startMs)}
-        >
-          <View style={rowWrap}>
-            <Text style={eventTitle} numberOfLines={1}>
-              {evt.title}
-            </Text>
-            <Text style={timeRange}>{fmtRange(evt.startMs, evt.endMs)}</Text>
-          </View>
-        </Pressable>
-      ))}
+      {/* Timed event rows. Calendar events can have an empty title (busy blocks,
+          some accounts) — fall back to "Busy" so the row never renders blank. */}
+      {events.map((evt) => {
+        const title = evt.title?.trim() || 'Busy';
+        return (
+          <Pressable
+            key={evt.id}
+            accessibilityRole="button"
+            accessibilityLabel={`${title}, ${fmtRange(evt.startMs, evt.endMs)}, open in Calendar`}
+            onPress={() => openInCalendar(evt.startMs)}
+          >
+            <View style={rowWrap}>
+              <Text style={eventTitle} numberOfLines={1}>
+                {title}
+              </Text>
+              <Text style={timeRange}>{fmtRange(evt.startMs, evt.endMs)}</Text>
+            </View>
+          </Pressable>
+        );
+      })}
 
       {/* All-day events sub-line — excluded from capacity math */}
       {allDayEvents.length > 0 && (

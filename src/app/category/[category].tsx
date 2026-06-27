@@ -137,8 +137,9 @@ export default function CategoryDetailScreen() {
               <AhaCard insight={detail.insight} categoryName={detail.categoryName} n={detail.n} />
             ) : null}
 
-            {/* 4 — The receipts, trend, and learning control. Quiet inline sections
-                split by hairlines (no card chrome) so the hero + Pro card lead. */}
+            {/* 4 — The receipts, trend, the forward GOAL coach, then the learning
+                control. The goal sits ABOVE "Tune how I learn" (the coach is the
+                forward-looking payoff; the tuner is a quiet setting beneath it). */}
             <View style={styles(t).sections}>
               <RecentList recent={detail.recent} />
               <View style={styles(t).divider} />
@@ -146,13 +147,19 @@ export default function CategoryDetailScreen() {
                 <TrendChart trend={detail.trend} />
               </View>
               <View style={styles(t).divider} />
+              {/* Pro: the forward goal coach (Pro live card / locked teaser). */}
+              <ProGate fallback={<GoalLocked categoryId={categoryId} />}>
+                <GoalCard
+                  categoryId={categoryId}
+                  categoryName={detail.categoryName}
+                  lever={detail.lever}
+                  ratios={detail.orderedRatios}
+                  currentAccuracy={detail.sharpness}
+                />
+              </ProGate>
+              <View style={styles(t).divider} />
               <AdaptSegment value={adaptSpeed} onChange={handleSetAdapt} />
             </View>
-
-            {/* 5 — Pro: a forward goal on this category (Pro live card / locked teaser). */}
-            <ProGate fallback={<GoalLocked categoryId={categoryId} />}>
-              <GoalCard categoryId={categoryId} categoryName={detail.categoryName} />
-            </ProGate>
 
             {/* Quiet reset */}
             <View style={styles(t).resetBlock}>

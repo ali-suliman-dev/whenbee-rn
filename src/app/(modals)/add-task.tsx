@@ -14,6 +14,7 @@ import { useAddTask } from '@/src/features/add-task/useAddTask';
 import { CategoryChips } from '@/src/features/shared/CategoryChips';
 import { TimeField } from '@/src/features/shared/TimeField';
 import { HonestSuggestionCard } from '@/src/features/shared/HonestSuggestionCard';
+import { GoalCoachCard } from '@/src/features/add-task/GoalCoachCard';
 import { useDayTasksStore } from '@/src/stores/dayTasksStore';
 import { toLocalDayKey, addDays, weekdayOf } from '@/src/lib/day';
 
@@ -301,6 +302,19 @@ export default function AddTask() {
               confidence={a.suggestion.confidence}
               range={a.suggestion.range}
               preEstimate={a.preEstimate}
+            />
+          ) : null}
+
+          {/* Goal coach — only when this category has an active goal. A separate
+              card below the honest card; ties the honest number to the goal. */}
+          {a.suggestion && a.goalCoach ? (
+            <GoalCoachCard
+              categoryName={a.categories.find((c) => c.id === a.category)?.name ?? ''}
+              targetBand={a.goalCoach.targetBand}
+              worstValue={a.goalCoach.worstValue}
+              honestMinutes={a.suggestion.honestMinutes}
+              guessMinutes={a.guessMin}
+              onApply={a.applyHonest}
             />
           ) : null}
         </ScrollView>

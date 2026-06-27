@@ -131,6 +131,7 @@ function makeLoad(overrides: Partial<DayLoadResult> = {}): DayLoadResult {
     eventMin: 0,
     committedMin: 120,
     freeMin: 720,
+    openMin: 720,
     verdict: 'comfortable',
     overByMin: 0,
     ...overrides,

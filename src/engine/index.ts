@@ -39,6 +39,12 @@ export {
   accuracyToErrorBand, errorBandToAccuracy, goalProgress, isGoalMet,
   reconcileGoal, canSetGoal, presetsForAccuracy, recommendedPreset,
 } from './goals';
+export { biggestLever } from './biggestLever';
+export type { LeverDim } from './biggestLever';
+export { logsToGoal } from './logsToGoal';
+export type { LogsToGoalInput } from './logsToGoal';
+export { postLogQuality } from './postLogQuality';
+export type { PostLogQuality, PostLogInput } from './postLogQuality';
 export { focusWindowMinutes, fitFocusWindow, promoteIntoWindow } from './focusWindow';
 export type { FocusWindowTask, FocusWindowInput } from './focusWindow';
 export { guardrailFactor, guardrailThresholdMin } from './guardrail';

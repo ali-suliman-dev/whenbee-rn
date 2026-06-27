@@ -4,6 +4,10 @@ import { zustandKv } from '@/src/lib/kv';
 import { DEFAULT_DAY_END_MIN, DEFAULT_GUARDRAIL } from '@/src/engine/constants';
 import type { GuardrailMultiple } from '@/src/domain/types';
 import type { QuietHours } from '@/src/lib/notifyTiming';
+import {
+  type StripVariant,
+  DEFAULT_STRIP_VARIANT,
+} from '@/src/features/today/calendarStrip/stripVariant';
 
 export type ColorModePref = 'system' | 'light' | 'dark';
 
@@ -60,6 +64,9 @@ interface SettingsState {
   /** Gentle "one honest thing a day" line on Today. Off by default; no streak, no guilt. */
   dailyRitualEnabled: boolean;
   setDailyRitualEnabled: (v: boolean) => void;
+  /** "Tap to start again" quick-start chips on Today (repeat tasks you've run before). On by default. */
+  quickStartEnabled: boolean;
+  setQuickStartEnabled: (v: boolean) => void;
   /** Optional nickname for greetings/companion lines. No name = greeting only. */
   displayName?: string;
   setDisplayName: (name: string | undefined) => void;
@@ -110,6 +117,11 @@ interface SettingsState {
   setExportEnabled: (enabled: boolean) => void;
   /** Store (or clear) the native id of the app-owned "Whenbee" calendar. */
   setWhenbeeCalendarId: (id: string | null) => void;
+  /** TEMP A/B (remove after decision): which calendar-strip design renders.
+   *  Lets the founder compare both variants live on-device. See
+   *  src/features/today/calendarStrip/stripVariant.ts. */
+  stripVariant: StripVariant;
+  setStripVariant: (v: StripVariant) => void;
   /** Return every preference to its first-run default (full data-reset path). */
   reset: () => void;
 }
@@ -131,6 +143,8 @@ export const useSettingsStore = create<SettingsState>()(
       setNotificationSound: (notificationSound) => set({ notificationSound }),
       dailyRitualEnabled: false,
       setDailyRitualEnabled: (dailyRitualEnabled) => set({ dailyRitualEnabled }),
+      quickStartEnabled: true,
+      setQuickStartEnabled: (quickStartEnabled) => set({ quickStartEnabled }),
       displayName: undefined,
       setDisplayName: (displayName) => set({ displayName: displayName?.trim() ? displayName.trim() : undefined }),
       archetypeSeed: undefined,
@@ -176,11 +190,14 @@ export const useSettingsStore = create<SettingsState>()(
         set((s) => ({ calendar: { ...s.calendar, exportEnabled } })),
       setWhenbeeCalendarId: (whenbeeCalendarId) =>
         set((s) => ({ calendar: { ...s.calendar, whenbeeCalendarId } })),
+      stripVariant: DEFAULT_STRIP_VARIANT,
+      setStripVariant: (stripVariant) => set({ stripVariant }),
       reset: () =>
         set({
           colorMode: 'system',
           remindersEnabled: false,
           dailyRitualEnabled: false,
+          quickStartEnabled: true,
           displayName: undefined,
           archetypeSeed: undefined,
           dayEndMin: DEFAULT_DAY_END_MIN,
@@ -197,6 +214,7 @@ export const useSettingsStore = create<SettingsState>()(
           startByEnabled: true,
           quietHours: { enabled: true, startMin: 1260, endMin: 480 },
           notificationSound: 'default',
+          stripVariant: DEFAULT_STRIP_VARIANT,
         }),
     }),
     {

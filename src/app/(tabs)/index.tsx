@@ -34,6 +34,7 @@ import { useFocusedValue } from '@/src/hooks/useFocusedValue';
 import { useGreeting } from '@/src/features/today/useGreeting';
 import { TodayFocusHook } from '@/src/features/today/TodayFocusHook';
 import { CalendarStrip } from '@/src/features/today/calendarStrip/CalendarStrip';
+import { PlanMyDayButton } from '@/src/features/today/PlanMyDayButton';
 import { ShelfSection } from '@/src/features/today/ShelfSection';
 import { DayRecapCard } from '@/src/features/today/DayRecapCard';
 import { useDayRecap } from '@/src/features/today/useDayRecap';
@@ -79,6 +80,8 @@ function ViewToggle({ viewMode, onSelect, onTimelineGated, isPro }: ViewTogglePr
 
   const trackStyle = {
     flexDirection: 'row' as const,
+    alignItems: 'center' as const,
+    minHeight: t.size.control.sm,
     backgroundColor: t.colors.surfaceSunken,
     borderRadius: t.radii.full,
     padding: 3,
@@ -159,6 +162,7 @@ export default function Today() {
   const isPro = useEntitlement((s) => s.isPro);
   const today = toLocalDayKey(Date.now());
   const isPastDay = compareDayKeys(selectedDate, today) < 0;
+  const isToday = selectedDate === today;
 
   // Scheduled routine blocks for the selected day — derived read, no DB writes.
   // Only shown on today/future days (past days use DayRecapCard).
@@ -187,6 +191,7 @@ export default function Today() {
   const runningTaskLabel = useTimerStore((s) => s.taskLabel);
   const [pendingRow, setPendingRow] = useState<TodayRow | null>(null);
   const dailyRitualEnabled = useSettingsStore((s) => s.dailyRitualEnabled);
+  const quickStartEnabled = useSettingsStore((s) => s.quickStartEnabled);
   const removeTask = useDayTasksStore((s) => s.removeTask);
   const promoteToFocus = useDayTasksStore((s) => s.promoteToFocus);
   const shelfTasks = useDayTasksStore((s) => s.shelfTasks);
@@ -397,7 +402,6 @@ export default function Today() {
         >
           <ScreenHeader
             title={headerTitle}
-            largeTitle
             subtitle={headerSubtitle}
             eyebrow={
               <AppText variant="caption" style={{ color: t.colors.inkSoft }}>
@@ -439,9 +443,10 @@ export default function Today() {
               scrolls with content, lets the user jump to any day in the ±52 wk range. */}
           <CalendarStrip />
 
-          {/* Capacity chip — only on today/future (past shows DayRecapCard instead).
+          {/* Capacity chip — only on today/future (past shows DayRecapCard instead)
+              and only once the day has tasks; an empty day has no load to weigh.
               Passes the pre-resolved cap result so the chip skips its own fetch. */}
-          {!isPastDay ? (
+          {!isPastDay && totalCount > 0 ? (
             <CapacityChip weekdayLabel={headerTitle} cap={cap} />
           ) : null}
 
@@ -457,10 +462,10 @@ export default function Today() {
               Slots between the honey HUD and the quick-task chips row. */}
           <TodayFocusHook nowMs={Date.now()} />
 
-          {/* Quick-task chips — repeating tasks the user has run before. Only
-              shown when history exists (chips.length > 0 inside the component);
-              slots between the honey HUD and whatever occupies the focus slot. */}
-          <QuickTaskChips />
+          {/* Quick-task chips — repeating tasks the user has run before. Opt-out
+              via settings (quickStartEnabled); also self-hides when no history
+              exists (chips.length > 0 inside the component). */}
+          {quickStartEnabled ? <QuickTaskChips /> : null}
 
           {/* Past-day banked recap — replaces the focus/empty hero entirely.
               The strip + header stay; the task list and running card are hidden.
@@ -474,7 +479,7 @@ export default function Today() {
                   live elapsed. Otherwise the Next card invites the next start. */}
               {isTimerRunning ? (
                 <RunningFocusCard categoryName={categoryName} />
-              ) : focus && summary ? (
+              ) : isToday && focus && summary ? (
                 <Pressable
                   key={focus.id}
                   onLongPress={() => promptRowActions(focus.id, focus.label)}
@@ -529,13 +534,33 @@ export default function Today() {
               Past days use DayRecapCard above and never show the planner lens. */}
           {!isPastDay ? (
             <>
-              {/* Segmented control: List ⇄ Timeline */}
-              <ViewToggle
-                viewMode={viewMode}
-                onSelect={handleViewSelect}
-                onTimelineGated={handleTimelineGated}
-                isPro={isPro}
-              />
+              {/* Control row: List ⇄ Timeline segmented control (left) + the
+                  "Plan my day" action (right edge). Only once the day has tasks —
+                  there's nothing to switch lenses on or plan when it's empty. The
+                  action persists across both lenses — label swaps to "Re-plan" in
+                  Timeline so the planner can be re-run in place after the list changes. */}
+              {totalCount > 0 ? (
+                <View
+                  style={{
+                    flexDirection: 'row',
+                    justifyContent: 'space-between',
+                    alignItems: 'center',
+                    gap: t.space[3],
+                  }}
+                >
+                  <ViewToggle
+                    viewMode={viewMode}
+                    onSelect={handleViewSelect}
+                    onTimelineGated={handleTimelineGated}
+                    isPro={isPro}
+                  />
+                  <PlanMyDayButton
+                    onPress={handlePlanMyDay}
+                    isPro={isPro}
+                    label={viewMode === 'timeline' ? 'Re-plan' : 'Plan my day'}
+                  />
+                </View>
+              ) : null}
 
               {viewMode === 'timeline' && isPro ? (
                 /* Timeline lens — Pro only; DayTimeline is self-contained (reads useDayPlan). */
@@ -545,42 +570,6 @@ export default function Today() {
               ) : (
                 /* List lens — the existing task list + calendar overlay. */
                 <Animated.View entering={FadeIn.duration(t.motion.base)}>
-                  {/* "Plan my day" — quiet action chip beneath the toggle in List mode.
-                      Stamps planComputedAt and cross-fades to the Timeline.
-                      Pro gating is wired in C1; here this is the happy-path only. */}
-                  <Pressable
-                    testID="plan-my-day-btn"
-                    onPress={handlePlanMyDay}
-                    accessibilityRole="button"
-                    accessibilityLabel={isPro ? 'Plan my day' : 'Plan my day — Pro feature'}
-                    hitSlop={8}
-                    style={{ alignSelf: 'flex-start', marginBottom: t.space[3] }}
-                  >
-                    <View
-                      style={{
-                        flexDirection: 'row',
-                        alignItems: 'center',
-                        gap: t.space[2],
-                        paddingHorizontal: t.space[4],
-                        paddingVertical: t.space[2],
-                        backgroundColor: t.colors.primaryWash,
-                        borderRadius: t.radii.full,
-                      }}
-                    >
-                      <Ionicons name="sparkles-outline" size={t.iconSize.xs} color={t.colors.primary} />
-                      <Text
-                        style={{
-                          fontSize: t.fontSize.sm,
-                          fontWeight: t.fontWeight.medium,
-                          color: t.colors.primary,
-                          fontFamily: t.fontFamily.ui,
-                        }}
-                      >
-                        Plan my day
-                      </Text>
-                    </View>
-                  </Pressable>
-
                   {/* Scheduled routine blocks — one per routine scheduled for
                       this weekday. Derived read: no task rows written to the DB.
                       Each block is collapsible and has a "Run" affordance. Only

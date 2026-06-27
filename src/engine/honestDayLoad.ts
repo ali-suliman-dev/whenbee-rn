@@ -11,7 +11,10 @@ export interface DayLoadResult {
   taskMin: number;
   eventMin: number;
   committedMin: number;
+  /** Time available FOR TASKS = window − events. The verdict basis (snug = tasks crowding this). */
   freeMin: number;
+  /** The real leftover shown to the user = window − committed (tasks + events). Equals the empty bar. */
+  openMin: number;
   verdict: 'comfortable' | 'snug' | 'over';
   overByMin: number;
 }
@@ -23,10 +26,11 @@ export function honestDayLoad({ taskHonestMins, eventTimedMins, wakingWindowMin 
   const eventMin = sum(eventTimedMins);
   const committedMin = taskMin + eventMin;
   const freeMin = Math.max(0, wakingWindowMin - eventMin);
+  const openMin = Math.max(0, wakingWindowMin - committedMin);
   const overByMin = Math.max(0, committedMin - wakingWindowMin);
   let verdict: DayLoadResult['verdict'];
   if (committedMin > wakingWindowMin) verdict = 'over';
   else if (taskMin > DAY_LOAD.snugFrac * freeMin) verdict = 'snug';
   else verdict = 'comfortable';
-  return { taskMin, eventMin, committedMin, freeMin, verdict, overByMin };
+  return { taskMin, eventMin, committedMin, freeMin, openMin, verdict, overByMin };
 }
