@@ -178,7 +178,7 @@ describe('Today screen', () => {
 
   it('shows the first-run empty state when the user has never logged', async () => {
     render(<Today />);
-    expect(await screen.findByText('Time your first task')).toBeOnTheScreen();
+    expect(await screen.findByText('Time your first thing')).toBeOnTheScreen();
   });
 
   it('shows the daily empty state for a returning user', async () => {
@@ -207,7 +207,7 @@ describe('Today screen', () => {
     expect(screen.getByText('+ 15 learned')).toBeOnTheScreen();
     expect(screen.getByText('Start')).toBeOnTheScreen();
     // No empty-state copy when a task is present.
-    expect(screen.queryByText('Time your first task')).toBeNull();
+    expect(screen.queryByText('Time your first thing')).toBeNull();
     expect(screen.queryByText("What's on today?")).toBeNull();
   });
 
