@@ -35,6 +35,26 @@ beforeEach(() => {
   mockPush.mockClear();
   useRewardStore.getState().clear();
   useCalibrationStore.setState({ logs: 0 });
+  // Stub loadReclaimSummary so the NotifSoftAskCard (rendered inside Reward)
+  // never hits SQLite, which is unavailable in the Jest environment.
+  useCalibrationStore.setState({
+    loadReclaimSummary: jest.fn().mockResolvedValue({
+      lifetimeMin: 0,
+      byCategory: [],
+      biggestArea: null,
+      honestLogCount: 0,
+      companion: {
+        stage: 1,
+        capability: 'timer',
+        keeper: false,
+        lifetimeNectar: 0,
+        driftHealth: 'settled',
+        seed: 1,
+        name: null,
+      },
+      discoveryCount: 0,
+    }),
+  });
 });
 
 describe('Reward screen', () => {

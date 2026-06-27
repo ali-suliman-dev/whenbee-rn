@@ -19,9 +19,30 @@ jest.mock('@/src/services/timerNotifications', () => ({
 
 // ── helpers ───────────────────────────────────────────────────────────────────
 
+/** Build a minimal ReclaimSummary stub with the given lifetimeNectar value. */
+function makeReclaimSummary(lifetimeNectar: number) {
+  return {
+    lifetimeMin: 0,
+    byCategory: [],
+    biggestArea: null,
+    honestLogCount: lifetimeNectar,
+    companion: {
+      stage: 1 as const,
+      capability: 'timer' as const,
+      keeper: false,
+      lifetimeNectar,
+      driftHealth: 'settled' as const,
+      seed: 1,
+      name: null,
+    },
+    discoveryCount: 0,
+  };
+}
+
 /** Set up the test environment for a "should show" scenario. */
-function setupShowEnv() {
-  useCalibrationStore.setState({ logs: 1 });
+function setupShowEnv(lifetimeNectar = 1) {
+  const mockLoadReclaimSummary = jest.fn().mockResolvedValue(makeReclaimSummary(lifetimeNectar));
+  useCalibrationStore.setState({ loadReclaimSummary: mockLoadReclaimSummary });
   mockGetPermStatus.mockResolvedValue('undetermined');
   // kv is clean (default pending state).
 }
@@ -31,28 +52,29 @@ beforeEach(() => {
   mockGetPermStatus.mockReset();
   mockEnsurePerm.mockReset();
   mockEnsurePerm.mockResolvedValue(true);
-  // Reset logs to 0 (no calibrations yet).
-  useCalibrationStore.setState({ logs: 0 });
+  // Default: lifetime = 0 (no calibrations ever).
+  const mockLoadReclaimSummary = jest.fn().mockResolvedValue(makeReclaimSummary(0));
+  useCalibrationStore.setState({ loadReclaimSummary: mockLoadReclaimSummary });
 });
 
 // ── show predicate ─────────────────────────────────────────────────────────────
 
 describe('useNotifSoftAsk — show predicate', () => {
-  it('shows when: first calibration (logs=1) + pending + undetermined', async () => {
-    setupShowEnv();
+  it('shows when: first calibration ever (lifetimeNectar=1) + pending + undetermined', async () => {
+    setupShowEnv(1);
     const { result } = renderHook(() => useNotifSoftAsk());
 
     // Initially hidden while async status loads.
     expect(result.current.show).toBe(false);
 
-    // Wait for permission status to resolve.
+    // Wait for permission status and lifetimeNectar to resolve.
     await act(async () => {});
 
     expect(result.current.show).toBe(true);
   });
 
-  it('does NOT show when logs=0 (no calibration yet)', async () => {
-    useCalibrationStore.setState({ logs: 0 });
+  it('does NOT show when lifetimeNectar=0 (no calibration yet)', async () => {
+    setupShowEnv(0);
     mockGetPermStatus.mockResolvedValue('undetermined');
 
     const { result } = renderHook(() => useNotifSoftAsk());
@@ -61,8 +83,8 @@ describe('useNotifSoftAsk — show predicate', () => {
     expect(result.current.show).toBe(false);
   });
 
-  it('does NOT show when logs=2 (not first calibration)', async () => {
-    useCalibrationStore.setState({ logs: 2 });
+  it('does NOT show when lifetimeNectar=2 (not first calibration)', async () => {
+    setupShowEnv(2);
     mockGetPermStatus.mockResolvedValue('undetermined');
 
     const { result } = renderHook(() => useNotifSoftAsk());
@@ -72,7 +94,7 @@ describe('useNotifSoftAsk — show predicate', () => {
   });
 
   it('does NOT show when permission is already granted', async () => {
-    useCalibrationStore.setState({ logs: 1 });
+    setupShowEnv(1);
     mockGetPermStatus.mockResolvedValue('granted');
 
     const { result } = renderHook(() => useNotifSoftAsk());
@@ -82,7 +104,7 @@ describe('useNotifSoftAsk — show predicate', () => {
   });
 
   it('does NOT show when permission is denied', async () => {
-    useCalibrationStore.setState({ logs: 1 });
+    setupShowEnv(1);
     mockGetPermStatus.mockResolvedValue('denied');
 
     const { result } = renderHook(() => useNotifSoftAsk());
@@ -105,6 +127,24 @@ describe('useNotifSoftAsk — show predicate', () => {
   it('does NOT show when status is already declined', async () => {
     setupShowEnv();
     kv.set('whenbee.notifSoftAsk', 'declined');
+
+    const { result } = renderHook(() => useNotifSoftAsk());
+    await act(async () => {});
+
+    expect(result.current.show).toBe(false);
+  });
+
+  // ── regression: session-restart bug ──────────────────────────────────────────
+  // The old implementation used session-scoped `logs` (resets to 0 on boot).
+  // On a fresh session the user completes their SECOND-ever calibration, so
+  // session-logs reads 1 — but lifetime is 2. The card must NOT show.
+  it('regression — session restart: does NOT show on 2nd-ever calibration (lifetime=2, pending)', async () => {
+    // Simulate: user has 2 lifetime calibrations, notifSoftAsk still 'pending'
+    // (they never responded in the first session), permission still undetermined.
+    const mockLoadReclaimSummary = jest.fn().mockResolvedValue(makeReclaimSummary(2));
+    useCalibrationStore.setState({ loadReclaimSummary: mockLoadReclaimSummary });
+    mockGetPermStatus.mockResolvedValue('undetermined');
+    // KV is clean → status is 'pending' (default).
 
     const { result } = renderHook(() => useNotifSoftAsk());
     await act(async () => {});

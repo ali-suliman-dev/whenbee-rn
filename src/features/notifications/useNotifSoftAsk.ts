@@ -2,7 +2,10 @@
 // Hook that drives the post-calibration notification soft-ask card.
 //
 // Show predicate (ALL must hold):
-//   1. The current reward is the user's FIRST completed calibration (logs === 1).
+//   1. The current reward is the user's FIRST completed calibration EVER
+//      (lifetimeNectar === 1, sourced from the persisted companion row via
+//      loadReclaimSummary — NOT the session-scoped `logs` counter which resets
+//      to 0 on every app boot).
 //   2. The soft-ask state is 'pending' (never shown / user has not responded).
 //   3. The OS notification permission is still 'undetermined' (not yet granted or denied).
 //
@@ -29,22 +32,24 @@ export interface NotifSoftAskView {
 }
 
 export function useNotifSoftAsk(): NotifSoftAskView {
-  const logs = useCalibrationStore((s) => s.logs);
-  const isFirstCalibration = logs === 1;
+  const loadReclaimSummary = useCalibrationStore((s) => s.loadReclaimSummary);
 
   // Async state: null = loading, values populate after mount. Card stays hidden
   // while loading so there is no flash; the opacity entrance covers the reveal.
+  // lifetimeNectar comes from the persisted companion row (survives session restarts).
+  const [lifetimeNectar, setLifetimeNectar] = useState<number | null>(null);
   const [status, setStatus] = useState<NotifSoftAskStatus | null>(null);
   const [permStatus, setPermStatus] = useState<NotificationPermissionStatus | null>(null);
 
   useEffect(() => {
     setStatus(getNotifSoftAsk());
     void getNotificationPermissionStatus().then(setPermStatus);
-  }, []);
+    void loadReclaimSummary().then((s) => setLifetimeNectar(s.companion.lifetimeNectar));
+  }, [loadReclaimSummary]);
 
   // All three guards must pass before the card renders.
   const show =
-    isFirstCalibration &&
+    lifetimeNectar === 1 &&
     status === 'pending' &&
     permStatus === 'undetermined';
 
