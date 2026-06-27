@@ -59,15 +59,38 @@ function savingsLabel(yearly: Package | undefined, monthly: Package | undefined)
   return `Save ${pct}%`;
 }
 
-/** Per-month equivalent of the yearly price (e.g. "≈ $2.92 / mo"), or null if unparseable. */
+/** Per-month equivalent of the yearly price (e.g. "≈ $2.92 / mo"), or null if unparseable.
+ *
+ * Returns null when no non-empty prefix currency symbol is found (suffix-currency
+ * locales such as "34,99 €") — the yearly total price still shows, so the absence
+ * is graceful. Also handles:
+ *  - ISO-code prefixes ("USD 34.99" → "≈ USD 2.92 / mo", with a separating space)
+ *  - Zero-decimal currencies (no fractional separator → whole number, no cents)
+ */
 function perMonthLabel(yearly: Package | undefined): string | null {
   if (!yearly) return null;
   const y = parsePrice(yearly.priceString);
   if (y == null) return null;
+
+  // Capture any non-digit prefix (may be empty for suffix-currency locales).
   const symbolMatch = yearly.priceString.match(/^[^\d]*/);
   const symbol = symbolMatch ? symbolMatch[0].trim() : '';
-  const per = (y / 12).toFixed(2);
-  return `≈ ${symbol}${per} / mo`;
+
+  // Omit the line when there is no prefix symbol — rendering "≈ 2.92 / mo" (no
+  // currency indicator at all) would be ambiguous and worse than showing nothing.
+  if (symbol.length === 0) return null;
+
+  // Determine decimal precision: zero-decimal currencies have no fractional part
+  // in the price string's numeric section (e.g. "¥3500", "₩12000").
+  const numericPart = yearly.priceString.replace(/^[^\d]+/, '');
+  const isZeroDecimal = !/[.,]\d{2}/.test(numericPart);
+  const per = isZeroDecimal ? String(Math.round(y / 12)) : (y / 12).toFixed(2);
+
+  // ISO-code prefixes (all-alpha, e.g. "USD") need a space before the digits to
+  // read correctly. Glyph symbols ($, £, ¥, €…) keep no space.
+  const separator = /^[A-Za-z]+$/.test(symbol) ? ' ' : '';
+
+  return `≈ ${symbol}${separator}${per} / mo`;
 }
 
 export function PlanPicker({
