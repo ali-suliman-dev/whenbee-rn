@@ -2,6 +2,7 @@ import { render, screen, fireEvent } from '@testing-library/react-native';
 import { router } from 'expo-router';
 import Ready from '@/src/app/(onboarding)/ready';
 import { useOnboardingStore } from '@/src/stores/onboardingStore';
+import { useSettingsStore } from '@/src/stores/settingsStore';
 
 jest.mock('expo-router', () => ({
   router: { replace: jest.fn() },
@@ -46,5 +47,6 @@ describe('Onboarding Step 2 — Ready screen', () => {
     fireEvent.press(screen.getByText(/Time my first thing/));
     expect(replaceMock).toHaveBeenCalledWith('/(tabs)');
     expect(useOnboardingStore.getState().completed).toBe(true);
+    expect(useSettingsStore.getState().displayName).toBe('Jordan');
   });
 });

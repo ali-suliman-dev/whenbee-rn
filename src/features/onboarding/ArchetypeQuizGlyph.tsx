@@ -15,9 +15,10 @@ import { useTheme } from '@/src/theme/useTheme';
 // time-style quiz chips. One coherent set drawn on a 24-box with 1.6px strokes
 // and rounded joins, in the brand indigo (body) + amber (accent) palette.
 //
-// Nine kinds mapped to the three quiz question families:
+// Thirteen kinds mapped to four quiz question families:
 //   PACE   pace_about · pace_bit · pace_lot · pace_lose
 //   MID    mid_track · mid_rabbit
+//   SINK   sink_meetings · sink_chores · sink_errands · sink_deepwork
 //   FOCUS  focus_morning · focus_evening · focus_varies
 //
 // SELECT ANIMATION — refined PATH motion only. On active=true the WHOLE glyph

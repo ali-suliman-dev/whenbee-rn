@@ -91,8 +91,8 @@ export function ArchetypeReveal({
     crestScale.set(withTiming(1, out));
     const fade = (sv: typeof eyebrow, delay: number) =>
       sv.set(withDelay(delay, withTiming(1, { duration: t.motion.base, easing: t.motion.easing.standard })));
-    fade(echoV, 180);
     fade(eyebrow, 220);
+    fade(echoV, 260);
     fade(titleV, 320);
     fade(stat, 420);
     fade(blurbV, 540);
