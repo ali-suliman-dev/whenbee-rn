@@ -32,6 +32,6 @@ describe('onboardingStore — quiz answers', () => {
   });
 
   it('QUIZ_STEPS is the ordered set of question keys', () => {
-    expect(QUIZ_STEPS).toEqual(['pace', 'mid', 'focus']);
+    expect(QUIZ_STEPS).toEqual(['pace', 'mid', 'sink', 'focus']);
   });
 });

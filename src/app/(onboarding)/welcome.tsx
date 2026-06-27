@@ -1,3 +1,4 @@
+import { useEffect, useRef } from 'react';
 import { View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
@@ -9,6 +10,7 @@ import { OverflowBar } from '@/src/components/OverflowBar';
 import { OnboardingFooterCard } from '@/src/components/OnboardingFooterCard';
 import { LockGlyph } from '@/src/components/LockGlyph';
 import { useTheme } from '@/src/theme/useTheme';
+import { useOnboarding } from '@/src/features/onboarding/useOnboarding';
 import { StepProgress } from '@/src/features/onboarding/StepProgress';
 import { onboardingStepIndex, ONBOARDING_TOTAL } from '@/src/features/onboarding/onboardingFlow';
 import { BrandLockup } from '@/src/features/onboarding/BrandLockup';
@@ -17,6 +19,14 @@ import { Reveal } from '@/src/features/onboarding/Reveal';
 export default function Welcome() {
   const t = useTheme();
   const insets = useSafeAreaInsets();
+  const { trackWelcomeShown } = useOnboarding();
+  // once-guard: fires exactly once per mount regardless of StrictMode double-invoke
+  const firedRef = useRef(false);
+  useEffect(() => {
+    if (firedRef.current) return;
+    firedRef.current = true;
+    trackWelcomeShown();
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
   return (
     <Screen backdrop={<OnboardingBackdrop />}>
       <StepProgress current={onboardingStepIndex('welcome')} total={ONBOARDING_TOTAL} />
@@ -78,7 +88,7 @@ export default function Welcome() {
         <AppButton
           label="Get started →"
           fullWidth
-          onPress={() => router.push('/(onboarding)/categories')}
+          onPress={() => router.push('/(onboarding)/quiz/0')}
         />
       </Reveal>
       <View style={{ height: insets.bottom }} />

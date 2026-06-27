@@ -17,6 +17,16 @@ export function useOnboarding() {
 
   const isPicked = (id: string) => picked.some((p) => p.id === id);
 
+  /** Fire once when the welcome screen first mounts. */
+  const trackWelcomeShown = () => analytics.capture('welcome_shown');
+
+  /**
+   * Fire when the user taps Continue on the categories screen (categories_committed).
+   * Carries the count of picked categories.
+   */
+  const trackCategoriesCommitted = () =>
+    analytics.capture('categories_committed', { categories_picked: picked.length });
+
   /**
    * Finish the flow: persist the picked categories (balanced adapt speed by
    * default) and flip the boot-gate flag. category_stats rows are created lazily
@@ -33,7 +43,7 @@ export function useOnboarding() {
     });
   }
 
-  return { completed, hydrated, picked, togglePick, isPicked, complete };
+  return { completed, hydrated, picked, togglePick, isPicked, complete, trackWelcomeShown, trackCategoriesCommitted };
 }
 
 export type { PickedCategory };

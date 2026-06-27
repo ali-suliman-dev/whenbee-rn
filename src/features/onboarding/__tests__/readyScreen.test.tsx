@@ -1,7 +1,8 @@
-import { render, screen } from '@testing-library/react-native';
+import { render, screen, fireEvent } from '@testing-library/react-native';
 import { router } from 'expo-router';
 import Ready from '@/src/app/(onboarding)/ready';
 import { useOnboardingStore } from '@/src/stores/onboardingStore';
+import { useSettingsStore } from '@/src/stores/settingsStore';
 
 jest.mock('expo-router', () => ({
   router: { replace: jest.fn() },
@@ -20,11 +21,32 @@ describe('Onboarding Step 2 — Ready screen', () => {
     useOnboardingStore.setState({ completed: false, picked: [] });
   });
 
-  test('ready shows trail, no-guilt caption, promise, CTA', () => {
+  test('ready shows trail, legend, promise, nickname field, CTA', () => {
     render(<Ready />);
     expect(screen.getByText('Raw')).toBeTruthy();
+    // Trail legend — new copy from §E
+    expect(screen.getByText(/Your accuracy ripens as you log/i)).toBeTruthy();
     expect(screen.getByText(/no streak to break/i)).toBeTruthy();
     expect(screen.getByText(/Empty days are fine/i)).toBeTruthy();
-    expect(screen.getByText(/Open my day/)).toBeTruthy();
+    // Optional nickname field
+    expect(screen.getByText(/Anything I should call you/i)).toBeTruthy();
+    expect(screen.getByLabelText('Your nickname')).toBeTruthy();
+    // CTA — new label from §E
+    expect(screen.getByText(/Time my first thing/)).toBeTruthy();
+  });
+
+  test('CTA with no nickname calls replace to tabs', () => {
+    render(<Ready />);
+    fireEvent.press(screen.getByText(/Time my first thing/));
+    expect(replaceMock).toHaveBeenCalledWith('/(tabs)');
+  });
+
+  test('CTA with a nickname saves it before completing', () => {
+    render(<Ready />);
+    fireEvent.changeText(screen.getByLabelText('Your nickname'), 'Jordan');
+    fireEvent.press(screen.getByText(/Time my first thing/));
+    expect(replaceMock).toHaveBeenCalledWith('/(tabs)');
+    expect(useOnboardingStore.getState().completed).toBe(true);
+    expect(useSettingsStore.getState().displayName).toBe('Jordan');
   });
 });

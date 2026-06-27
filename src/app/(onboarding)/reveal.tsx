@@ -10,6 +10,9 @@ import { usePersonalize, type RevealCard } from '@/src/features/onboarding/usePe
 import { useOnboardingStore } from '@/src/stores/onboardingStore';
 import type { QuizAnswers } from '@/src/engine';
 
+// Structured full answers passed through to ArchetypeReveal for the echo line.
+type RevealState = { card: RevealCard; answers: QuizAnswers };
+
 // The archetype payoff. Gated: only reachable after the quiz — if the required
 // `pace` answer is missing (e.g. a stray deep link), bounce to ready. The seed +
 // analytics are committed once here via saveQuiz, then Continue → ready.
@@ -17,8 +20,8 @@ export default function RevealScreen() {
   const t = useTheme();
   const insets = useSafeAreaInsets();
   const answers = useOnboardingStore((s) => s.quizAnswers);
-  const { saveQuiz } = usePersonalize();
-  const [card, setCard] = useState<RevealCard | null>(null);
+  const { saveQuiz, trackRevealShown } = usePersonalize();
+  const [reveal, setReveal] = useState<RevealState | null>(null);
 
   useEffect(() => {
     const pace = answers.pace;
@@ -29,20 +32,24 @@ export default function RevealScreen() {
     const full: QuizAnswers = {
       pace,
       ...(answers.mid !== undefined ? { mid: answers.mid } : {}),
+      ...(answers.sink !== undefined ? { sink: answers.sink } : {}),
       ...(answers.focus !== undefined ? { focus: answers.focus } : {}),
     };
-    setCard(saveQuiz(full));
+    setReveal({ card: saveQuiz(full), answers: full });
+    // Reveal is the archetype payoff — fires only when we have a valid quiz result.
+    trackRevealShown();
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   return (
     <Screen backdrop={<OnboardingBackdrop />}>
       <View style={{ flex: 1, paddingTop: t.space[2] }}>
-        {card !== null ? (
+        {reveal !== null ? (
           <ArchetypeReveal
-            title={card.title}
-            blurb={card.blurb}
-            multiplier={card.multiplier}
-            onContinue={() => router.push('/(onboarding)/ready')}
+            title={reveal.card.title}
+            blurb={reveal.card.blurb}
+            multiplier={reveal.card.multiplier}
+            quizAnswers={reveal.answers}
+            onContinue={() => router.push('/(onboarding)/categories')}
           />
         ) : null}
       </View>

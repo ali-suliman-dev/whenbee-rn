@@ -8,17 +8,23 @@ jest.mock('expo-router', () => ({
   useNavigation: () => ({ isFocused: () => true, addListener: () => () => {} }),
 }));
 
-it('reveals the archetype and continues', () => {
+const QUIZ_ANSWERS = { pace: 'lot' as const, mid: 'rabbit' as const };
+
+it('reveals the archetype, echo line, and continues', () => {
   const onContinue = jest.fn();
   const { getByText } = render(
     <ArchetypeReveal
       title="The Gentle Optimist"
       blurb="You lean hopeful."
       multiplier={1.5}
+      quizAnswers={QUIZ_ANSWERS}
       onContinue={onContinue}
     />,
   );
   expect(getByText('The Gentle Optimist')).toBeTruthy();
-  fireEvent.press(getByText(/continue|see my day|let's go/i));
+  // Echo line renders with the prefix and engine output.
+  expect(getByText(/From your answers:/)).toBeTruthy();
+  // CTA uses the new label from §D.
+  fireEvent.press(getByText(/Sharpen it on my tasks/i));
   expect(onContinue).toHaveBeenCalled();
 });

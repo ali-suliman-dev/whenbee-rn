@@ -7,10 +7,10 @@ describe('TodayEmptyState', () => {
     render(
       <TodayEmptyState variant="first-run" onPrimary={onPrimary} onLog={() => {}} />,
     );
-    expect(screen.getByText('Time your first task')).toBeOnTheScreen();
+    expect(screen.getByText('Time your first thing')).toBeOnTheScreen();
     expect(
       screen.getByText(
-        "That's all it takes for Whenbee to start learning your real numbers, the ones you can plan around.",
+        "Guess how long it'll take, hit start, and I'll show you the honest number.",
       ),
     ).toBeOnTheScreen();
     expect(screen.queryByText(/reclaimed so far/)).toBeNull();

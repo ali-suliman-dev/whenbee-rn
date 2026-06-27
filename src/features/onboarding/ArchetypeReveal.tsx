@@ -13,7 +13,9 @@ import { useEffect, useState } from 'react';
 import { useTheme } from '@/src/theme/useTheme';
 import { type } from '@/src/theme/typography';
 import { AppButton } from '@/src/components/AppButton';
+import { buildRevealEcho } from '@/src/engine';
 import { ArchetypeCrest } from './ArchetypeCrest';
+import type { QuizAnswers } from '@/src/engine';
 
 // ──────────────────────────────────────────────────────────────────────────────
 // ArchetypeReveal — the "collectible crest" payoff. A rich, mode-independent
@@ -39,6 +41,7 @@ interface ArchetypeRevealProps {
   title: string;
   blurb: string;
   multiplier: number;
+  quizAnswers: QuizAnswers;
   onContinue: () => void;
 }
 
@@ -46,6 +49,7 @@ export function ArchetypeReveal({
   title,
   blurb,
   multiplier,
+  quizAnswers,
   onContinue,
 }: ArchetypeRevealProps): React.JSX.Element {
   const t = useTheme();
@@ -68,6 +72,7 @@ export function ArchetypeReveal({
   const cardOpacity = useSharedValue(reduced ? 1 : 0);
   const crestOpacity = useSharedValue(reduced ? 1 : 0);
   const crestScale = useSharedValue(reduced ? 1 : 0.86);
+  const echoV = useSharedValue(reduced ? 1 : 0);
   const eyebrow = useSharedValue(reduced ? 1 : 0);
   const titleV = useSharedValue(reduced ? 1 : 0);
   const stat = useSharedValue(reduced ? 1 : 0);
@@ -75,6 +80,8 @@ export function ArchetypeReveal({
   const noteV = useSharedValue(reduced ? 1 : 0);
   // One-pass diagonal light sweep glancing across the card on reveal (0→1 progress).
   const sweep = useSharedValue(reduced ? 1 : 0);
+  // The echo line is derived once; pure so it can't throw.
+  const echoLine = `From your answers: ${buildRevealEcho(quizAnswers)}`;
 
   useEffect(() => {
     if (reduced) return;
@@ -85,6 +92,7 @@ export function ArchetypeReveal({
     const fade = (sv: typeof eyebrow, delay: number) =>
       sv.set(withDelay(delay, withTiming(1, { duration: t.motion.base, easing: t.motion.easing.standard })));
     fade(eyebrow, 220);
+    fade(echoV, 260);
     fade(titleV, 320);
     fade(stat, 420);
     fade(blurbV, 540);
@@ -106,6 +114,7 @@ export function ArchetypeReveal({
     opacity: crestOpacity.get(),
     transform: [{ scale: crestScale.get() }],
   }));
+  const echoAnim = useAnimatedStyle(() => ({ opacity: echoV.get() }));
   const eyebrowAnim = useAnimatedStyle(() => ({ opacity: eyebrow.get() }));
   const titleAnim = useAnimatedStyle(() => ({ opacity: titleV.get() }));
   // Subtle resize on the headline stat — a gentle settle, never a bounce.
@@ -141,6 +150,8 @@ export function ArchetypeReveal({
     }),
   };
   const eyebrowStyle: TextStyle = { ...(type.eyebrow as unknown as TextStyle), color: t.reveal.eyebrowOn, textAlign: 'center', marginTop: t.space[4] };
+  // Echo line: answer-echo above the title. bodySm / reveal.blurbOn, centered.
+  const echoStyle: TextStyle = { ...(type.bodySm as unknown as TextStyle), color: t.reveal.blurbOn, textAlign: 'center', marginTop: t.space[3] };
   const titleStyle: TextStyle = { ...(type.title as unknown as TextStyle), color: t.reveal.inkOn, textAlign: 'center', marginTop: t.space[2] };
   // Stat: the multiplier is the hero, centred on the card so it sits on the same
   // optical axis as the title (a caption beside it would shove it off-centre). The
@@ -242,6 +253,7 @@ export function ArchetypeReveal({
           <ArchetypeCrest />
         </Animated.View>
         <Animated.Text style={[eyebrowStyle, eyebrowAnim]}>YOUR TIME PERSONALITY</Animated.Text>
+        <Animated.Text style={[echoStyle, echoAnim]}>{echoLine}</Animated.Text>
         <Animated.Text style={[titleStyle, titleAnim]}>{title}</Animated.Text>
         <Animated.View style={[statBlock, statAnim]}>
           <View style={multRow}>
@@ -254,12 +266,12 @@ export function ArchetypeReveal({
       </Animated.View>
 
       <Animated.Text style={[noteStyle, noteAnim]}>
-        This is just a first guess from your quiz. The more real tasks you time, the better it learns your pace, and this personality can shift as your numbers get sharper.
+        A first read from your answers. Every task you time makes it sharper — and your type can move as your numbers do.
       </Animated.Text>
 
       <View style={{ flex: 1 }} />
 
-      <AppButton label="Continue →" variant="indigo" fullWidth onPress={onContinue} />
+      <AppButton label="Sharpen it on my tasks →" variant="indigo" fullWidth onPress={onContinue} />
     </View>
   );
 }

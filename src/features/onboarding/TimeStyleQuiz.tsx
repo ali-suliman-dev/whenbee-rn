@@ -57,10 +57,11 @@ export function TimeStyleQuiz({
 
   function finish() {
     if (!answers.pace) return; // gate: pace is required
-    // Build a well-typed QuizAnswers — pace is required, mid + focus are optional.
+    // Build a well-typed QuizAnswers — pace is required, mid/sink/focus are optional.
     const result: QuizAnswers = {
       pace: answers.pace,
       ...(answers.mid !== undefined ? { mid: answers.mid } : {}),
+      ...(answers.sink !== undefined ? { sink: answers.sink } : {}),
       ...(answers.focus !== undefined ? { focus: answers.focus } : {}),
     };
     onComplete(result);
