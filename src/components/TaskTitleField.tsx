@@ -21,6 +21,8 @@ interface TaskTitleFieldProps {
   returnKeyType?: 'done' | 'default';
   onSubmitEditing?: () => void;
   accessibilityLabel?: string;
+  /** Optional style merged onto the inner TextInput — use to override font/size/color. */
+  textStyle?: TextStyle;
 }
 
 export const TaskTitleField = ({
@@ -32,6 +34,7 @@ export const TaskTitleField = ({
   returnKeyType = 'default',
   onSubmitEditing,
   accessibilityLabel,
+  textStyle,
 }: TaskTitleFieldProps) => {
   const t = useTheme();
   const [focused, setFocused] = useState(false);
@@ -71,7 +74,7 @@ export const TaskTitleField = ({
     <>
       <View style={variant === 'boxed' ? boxed : underline}>
         <TextInput
-          style={text}
+          style={[text, textStyle]}
           value={value}
           onChangeText={onChangeText}
           placeholder={placeholder}
