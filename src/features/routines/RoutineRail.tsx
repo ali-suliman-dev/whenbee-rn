@@ -119,7 +119,7 @@ export function RoutineRail({
   // a danger background). t.colors.onDanger does not exist as a token.
 
   const deleteActionStyle: ViewStyle = {
-    backgroundColor: t.colors.danger,
+    backgroundColor: t.colors.danger, // audit-ok: destructive — a delete action reads as red
     borderTopRightRadius: t.radii.card,
     borderBottomRightRadius: t.radii.card,
     justifyContent: 'center',
