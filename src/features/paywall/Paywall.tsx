@@ -14,16 +14,19 @@ import type { Package } from '@/src/services/purchases';
 import { useEntitlement } from './useEntitlement';
 import { useOfferings } from './useOfferings';
 import { useFounderReserve } from './useFounderReserve';
-import { BeforeAfterHero } from './BeforeAfterHero';
 import { FounderReserveCard } from './FounderReserveCard';
 import { PlanPicker } from './PlanPicker';
 import { openManageSubscriptions } from './manageSubscription';
+import { copyFor, isTrigger, type Trigger } from './paywallCopy';
+import { ValueStack } from './ValueStack';
+import { TrialTimeline } from './TrialTimeline';
+import { TopProof } from './TopProof';
 
 // ──────────────────────────────────────────────────────────────────────────────
-// Paywall — Whenbee's single Pro gate. The same flat-card vocabulary as Today:
-// one focal illustration, the honest-day before/after as the lead reason to pay,
-// four benefit lines, one modest social-proof line, the store-priced plan picker,
-// one CTA, then restore / manage / small print.
+// Paywall — Whenbee's single Pro gate. The adaptive top section (eyebrow/title/sub
+// + proof visual + which bundle row leads) is keyed off whichever gate the user
+// tapped, so the pitch is always relevant — never a generic calendar pitch for a
+// goals gate. The five-row bundle stack covers all of Pro.
 //
 // Prices are ALWAYS read from the live offering's `priceString` (never hardcoded).
 // While offerings load we show a calm spinner-free placeholder; if they fail or
@@ -34,42 +37,8 @@ import { openManageSubscriptions } from './manageSubscription';
 // outcomes come from the entitlement result.
 // ──────────────────────────────────────────────────────────────────────────────
 
-type Trigger = 'make_day_honest' | 'settings_upgrade' | 'steals_your_time' | 'pro_reveal' | 'pro_preview' | 'goals' | 'focus_window' | 'hyperfocus_guard' | 'pdf_export' | 'routines' | 'review_ritual';
-
 /** Earned-readiness framing for the lead heading. */
 type Readiness = 'pre' | 'honest';
-
-/**
- * The earned ("post-honest") heading + subhead. Shown only once a user's numbers
- * have settled into honest — it names what they've already earned, rather than
- * pitching a problem they haven't solved yet.
- */
-const HONEST_HEADING = 'Your numbers are real now.';
-const HONEST_SUBHEAD =
-  'You did the logging — Whenbee knows how your days actually run. Let it carry those real numbers into your calendar.';
-
-const BENEFITS = [
-  { icon: 'time-outline', text: 'Every calendar event padded with your real buffers, automatically.' },
-  { icon: 'trending-up', text: 'See how much your day can actually hold — before you overbook it.' },
-  { icon: 'refresh-outline', text: 'Recurring tasks remember their honest length, so you set them once.' },
-  { icon: 'arrow-forward', text: 'Send your honest plan or time profile to a coach or partner in one tap. The image is made on your phone and never leaves it without you.' },
-] as const;
-
-function isTrigger(v: unknown): v is Trigger {
-  return (
-    v === 'make_day_honest' ||
-    v === 'settings_upgrade' ||
-    v === 'steals_your_time' ||
-    v === 'pro_reveal' ||
-    v === 'pro_preview' ||
-    v === 'goals' ||
-    v === 'focus_window' ||
-    v === 'hyperfocus_guard' ||
-    v === 'pdf_export' ||
-    v === 'routines' ||
-    v === 'review_ritual'
-  );
-}
 
 /** Map a package to its analytics plan name. */
 function planName(pkg: Package): 'yearly' | 'lifetime' | 'monthly' {
@@ -180,17 +149,26 @@ export function Paywall({ trigger, readiness = 'pre' }: { trigger?: string; read
       ? `Unlock Pro — ${selected.priceString}`
       : 'Try 7 days free';
 
+  const copy = copyFor(resolvedTrigger, readiness);
+  const showTimeline = selected ? selected.duration !== 'lifetime' : true;
+
   const heading: TextStyle = { ...(type.title as unknown as TextStyle), color: t.colors.ink };
   const sub: TextStyle = { ...(type.body as unknown as TextStyle), color: t.colors.inkSoft };
-  const benefitText: TextStyle = { ...(type.bodySm as unknown as TextStyle), color: t.colors.ink, flex: 1 };
   const proofText: TextStyle = { ...(type.bodySm as unknown as TextStyle), color: t.colors.inkSoft, fontStyle: 'italic' };
   const fineText: TextStyle = { ...(type.caption as unknown as TextStyle), color: t.colors.inkFaint, textAlign: 'center' };
   const linkText: TextStyle = { ...(type.bodySm as unknown as TextStyle), color: t.colors.primary };
   const errorText: TextStyle = { ...(type.caption as unknown as TextStyle), color: t.colors.danger, textAlign: 'center' };
+  const eyebrowText: TextStyle = { ...(type.eyebrow as unknown as TextStyle), color: t.colors.amberText, letterSpacing: 0.8 };
 
-  const benefitRow: ViewStyle = { flexDirection: 'row', alignItems: 'center', gap: t.space[3] };
   const proofRow: ViewStyle = { flexDirection: 'row', alignItems: 'center', gap: t.space[2] };
   const linkRow: ViewStyle = { flexDirection: 'row', justifyContent: 'center', gap: t.space[6] };
+  const eyebrowChip: ViewStyle = {
+    alignSelf: 'flex-start',
+    flexDirection: 'row', alignItems: 'center', gap: t.space[1.5],
+    backgroundColor: t.colors.accentSoft,
+    borderRadius: t.radii.full,
+    paddingHorizontal: t.space[2.5], paddingVertical: t.space[1],
+  };
   // The free-tier reassurance (prototype): the real no-card, no-renewal trial.
   const freeStrip: ViewStyle = {
     backgroundColor: t.colors.primarySoft,
@@ -217,34 +195,19 @@ export function Paywall({ trigger, readiness = 'pre' }: { trigger?: string; read
         </View>
 
         <View style={{ gap: t.space[2] }}>
-          <Text style={heading}>
-            {isHonest ? HONEST_HEADING : 'Stop planning a day that was never going to fit.'}
-          </Text>
-          <Text style={sub}>
-            {isHonest
-              ? HONEST_SUBHEAD
-              : 'Whenbee already knows your real numbers. Let it quietly rebuild your calendar to match.'}
-          </Text>
+          <View style={eyebrowChip}>
+            <Ionicons name="sparkles-outline" size={t.iconSize.sm} color={t.colors.accent} />
+            <Text style={eyebrowText}>{copy.eyebrow}</Text>
+          </View>
+          <Text style={heading}>{copy.title}</Text>
+          <Text style={sub}>{copy.sub}</Text>
         </View>
 
-        {/* The single clearest reason to pay. */}
-        <BeforeAfterHero />
+        {/* Show-don't-tell proof, chosen by the gate. */}
+        <TopProof kind={copy.proof} />
 
-        {/* Benefits — calendar honesty headline first. */}
-        <View style={{ gap: t.space[3] }}>
-          {BENEFITS.map((b) => (
-            <View key={b.text} style={benefitRow}>
-              <Ionicons name={b.icon} size={t.iconSize.md} color={t.colors.primary} />
-              <Text style={benefitText}>{b.text}</Text>
-            </View>
-          ))}
-        </View>
-
-        {/* Social proof — one modest, honest line. No fabricated numbers. */}
-        <View style={proofRow}>
-          <Ionicons name="time-outline" size={t.iconSize.sm} color={t.colors.accent} />
-          <Text style={proofText}>Built by people who are late to everything. It is the tool we needed first.</Text>
-        </View>
+        {/* The whole bundle — five grouped rows, lead row floated to top. */}
+        <ValueStack lead={copy.lead} />
 
         {/* Plans — store-priced, three states. */}
         {status === 'loading' ? (
@@ -264,6 +227,8 @@ export function Paywall({ trigger, readiness = 'pre' }: { trigger?: string; read
             ) : null}
 
             <PlanPicker offering={offering} selectedId={selectedId} onSelect={handleSelect} />
+
+            {showTimeline ? <TrialTimeline /> : null}
 
             {error ? <Text style={errorText}>{error}</Text> : null}
 
@@ -298,19 +263,22 @@ export function Paywall({ trigger, readiness = 'pre' }: { trigger?: string; read
               </Pressable>
             </View>
 
-            {/* The free tier is the real no-card, no-renewal trial — say so plainly. */}
+            {/* Calibration is free forever — the real no-card trial. */}
             <View style={freeStrip}>
               <Text style={freeStripText}>
-                Not ready to decide? <Text style={freeStripStrong}>The free tier stays fully useful.</Text> No
-                card, no renewal. That is your real trial.
+                <Text style={freeStripStrong}>Calibration stays free, always.</Text> No card, no renewal — that is your real trial. Pro just adds the payoff.
               </Text>
+            </View>
+
+            {/* One honest line. No fabricated numbers. */}
+            <View style={proofRow}>
+              <Ionicons name="heart-outline" size={t.iconSize.sm} color={t.colors.accent} />
+              <Text style={proofText}>Built by people who are late to everything. It is the tool we needed first.</Text>
             </View>
           </>
         )}
 
-        {isExpoGo ? (
-          <Text style={fineText}>Running in Expo Go — purchases are simulated.</Text>
-        ) : null}
+        {isExpoGo ? <Text style={fineText}>Running in Expo Go — purchases are simulated.</Text> : null}
       </ScrollView>
     </Screen>
   );
