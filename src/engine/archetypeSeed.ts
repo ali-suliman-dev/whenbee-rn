@@ -8,12 +8,52 @@ export interface QuizAnswers {
   pace: 'about' | 'bit' | 'lot' | 'lose';
   mid?: 'track' | 'rabbit';
   focus?: 'morning' | 'evening' | 'varies';
+  sink?: 'meetings' | 'chores' | 'errands' | 'deepwork';
 }
 
 export function seedMultiplierFor(a: QuizAnswers): number {
   let m = ARCHETYPE_SEED_PACE[a.pace];
   if (a.mid === 'rabbit') m *= ARCHETYPE_SEED_RABBIT_BUMP;
   return Math.min(RATIO_CEIL, m);
+}
+
+const AREA_LABEL: Record<NonNullable<QuizAnswers['sink']>, string> = {
+  meetings: 'meetings',
+  chores: 'chores',
+  errands: 'errands',
+  deepwork: 'deep work',
+};
+
+const PACE_FRAG: Record<QuizAnswers['pace'], string> = {
+  about: 'your guesses land close',
+  bit: 'you plan a touch tight',
+  lot: 'you plan tight',
+  lose: 'time slips away on you',
+};
+
+/** Produces the reveal "answer echo" line shown above the archetype title.
+ *  Deterministic, no clock, pure TS. */
+export function buildRevealEcho(a: QuizAnswers): string {
+  const frags: string[] = [];
+
+  // Frag A — always present, from pace
+  frags.push(PACE_FRAG[a.pace]);
+
+  // Frag B — from mid, optional
+  if (a.mid === 'rabbit') {
+    const areaSuffix = a.sink !== undefined ? ` on ${AREA_LABEL[a.sink]}` : '';
+    frags.push(`rabbit-hole${areaSuffix}`);
+  } else if (a.mid === 'track') {
+    frags.push('you stay on track');
+  }
+
+  // Frag C — from sink, only when mid !== 'rabbit'
+  if (a.sink !== undefined && a.mid !== 'rabbit') {
+    frags.push(`${AREA_LABEL[a.sink]} eats your time`);
+  }
+
+  const joined = frags.join(' · ');
+  return joined.charAt(0).toUpperCase() + joined.slice(1);
 }
 
 /** Geometric-mean blend of the seed (worth ARCHETYPE_SEED_PSEUDO pseudo-logs) with

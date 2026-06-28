@@ -11,7 +11,7 @@ export interface PickedCategory {
 
 /** Ordered time-style quiz steps. `pace` is required; `mid`/`focus` enrich.
  *  The per-step quiz routes (`quiz/[step]`) index into this. */
-export const QUIZ_STEPS = ['pace', 'mid', 'focus'] as const satisfies readonly (keyof QuizAnswers)[];
+export const QUIZ_STEPS = ['pace', 'mid', 'sink', 'focus'] as const satisfies readonly (keyof QuizAnswers)[];
 
 interface OnboardingState {
   /** The boot gate flag. `hasOnboarded` is its public alias. */

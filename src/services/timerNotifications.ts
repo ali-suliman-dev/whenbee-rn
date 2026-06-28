@@ -54,6 +54,25 @@ function getModule(): NotificationsModule | null {
   }
 }
 
+/** Read-only permission status — does NOT prompt. Returns 'undetermined' when the
+ *  native module is absent (Expo Go / unit tests) so callers treat it as promptable.
+ *  Use this to decide whether a soft-ask card should appear before committing to
+ *  ensureNotificationPermission which fires the real OS prompt. */
+export type NotificationPermissionStatus = 'granted' | 'denied' | 'undetermined';
+
+export async function getNotificationPermissionStatus(): Promise<NotificationPermissionStatus> {
+  const N = getModule();
+  if (!N) return 'undetermined';
+  try {
+    const { granted, canAskAgain } = await N.getPermissionsAsync();
+    if (granted) return 'granted';
+    if (!canAskAgain) return 'denied';
+    return 'undetermined';
+  } catch {
+    return 'undetermined';
+  }
+}
+
 /** Ask for permission gently (first timer start). No-op without the module.
  *  Pass `{ provisional: true }` for a quiet, no-prompt iOS provisional grant
  *  when the status is undetermined; omit for the standard full-permission prompt. */

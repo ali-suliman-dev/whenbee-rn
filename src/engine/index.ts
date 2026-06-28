@@ -32,7 +32,7 @@ export {
   companionStageFor, capabilityFor, keeperReached, driftHealthFromRecent, COMPANION_KEEPER_QUOTA,
 } from './companion';
 export type { CompanionStage, CompanionCapability, DriftHealth } from './companion';
-export { seedMultiplierFor, provisionalArchetypeMultiplier } from './archetypeSeed';
+export { seedMultiplierFor, provisionalArchetypeMultiplier, buildRevealEcho } from './archetypeSeed';
 export type { QuizAnswers } from './archetypeSeed';
 export { greetingFor } from './greeting';
 export {

@@ -33,13 +33,13 @@ export function TodayEmptyState({ variant, weekday, onPrimary, onLog }: TodayEmp
   const eyebrowText = isFirstRun ? null : isFuture ? null : 'Nothing on yet';
 
   const lead = isFirstRun
-    ? 'Time your first task'
+    ? 'Time your first thing'
     : isFuture
       ? `${weekday ?? 'That day'}'s wide open`
       : "What's on today?";
 
   const sub = isFirstRun
-    ? "That's all it takes for Whenbee to start learning your real numbers, the ones you can plan around."
+    ? "Guess how long it'll take, hit start, and I'll show you the honest number."
     : isFuture
       ? "Add what future-you should tackle — it carries over free if life happens."
       : "Add a task and I'll show its honest finish, plus whether the day actually fits.";

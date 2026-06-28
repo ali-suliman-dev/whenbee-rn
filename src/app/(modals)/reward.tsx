@@ -6,6 +6,7 @@ import { EnergyChips } from '@/src/features/reward/EnergyChips';
 import { HoneyBar } from '@/src/features/reward/HoneyBar';
 import { ReasonChips } from '@/src/features/reward/ReasonChips';
 import { GoalRewardFeedback } from '@/src/features/reward/GoalRewardFeedback';
+import { NotifSoftAskCard } from '@/src/features/reward/NotifSoftAskCard';
 import { RewardBee } from '@/src/features/reward/RewardBee';
 import { useReward } from '@/src/features/reward/useReward';
 import { type } from '@/src/theme/typography';
@@ -236,6 +237,10 @@ export default function Reward() {
         {/* Goal coach — post-log feedback for a goaled category (self-relative,
             never-negative). Renders only when a goal is active. */}
         {r.goalFeedback ? <GoalRewardFeedback feedback={r.goalFeedback} /> : null}
+
+        {/* Notification soft-ask — amber card, first calibration only, once.
+            Predicate is in useNotifSoftAsk; this renders null when not needed. */}
+        <NotifSoftAskCard />
 
         {/* Zone 4 — optional tags card: reason + energy grouped in one surface so
             they read as a single "quick questions" section, not two orphan rows.

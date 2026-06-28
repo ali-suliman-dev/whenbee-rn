@@ -163,6 +163,10 @@ export function useTimer(params: TimerParams): UseTimerResult {
   const startedFresh = useRef(false);
   const overrunTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const startedAtRef = useRef<number | null>(null);
+  // once-guards for the first-task activation events (fire at most once per session,
+  // guarding against StrictMode double-invoke and any edge-case re-renders).
+  const firstTaskStartedFiredRef = useRef(false);
+  const firstTaskCompletedFiredRef = useRef(false);
   /**
    * Stores the actualMin computed by onFreezeForCapture so onStopAndLog can use
    * it when it fires after the capture sheet's "Save". null = not yet frozen
@@ -210,6 +214,17 @@ export function useTimer(params: TimerParams): UseTimerResult {
     // task_started: the timer opened a fresh session. `guess_min` is the user's raw
     // guess (drives calibration), not the honest ring target.
     analytics.capture('task_started', { category, guess_min: guessMin, source: 'today' });
+    // first_task_started: fires once if this is the genuine first-ever calibration
+    // (lifetimeNectar === 0, from the persisted companion row — survives session restarts).
+    // Fire-and-forget: swallow DB errors so analytics never breaks the core loop.
+    if (!firstTaskStartedFiredRef.current) {
+      void useCalibrationStore.getState().loadReclaimSummary().then((summary) => {
+        if (summary.companion.lifetimeNectar === 0 && !firstTaskStartedFiredRef.current) {
+          firstTaskStartedFiredRef.current = true;
+          analytics.capture('first_task_started');
+        }
+      }).catch(() => { /* analytics fire-and-forget; never break the core loop */ });
+    }
     // Lock-Screen / Dynamic Island finish-time ring counts down to the HONEST
     // finish (the number the user saw), not the raw guess. No-op in Expo Go.
     startFinishTimeActivity({
@@ -421,6 +436,19 @@ export function useTimer(params: TimerParams): UseTimerResult {
       suggestedHonestMin,
       startedAt: startedAtRef.current ?? undefined,
     });
+
+    // first_task_completed — THE ACTIVATION EVENT. Fires exactly once after the
+    // user's genuine first-ever calibration completes (lifetimeNectar === 1 after
+    // the log, sourced from the persisted companion row via loadReclaimSummary).
+    // Fire-and-forget: swallow DB errors so analytics never breaks the core loop.
+    if (!firstTaskCompletedFiredRef.current) {
+      void useCalibrationStore.getState().loadReclaimSummary().then((summary) => {
+        if (summary.companion.lifetimeNectar === 1 && !firstTaskCompletedFiredRef.current) {
+          firstTaskCompletedFiredRef.current = true;
+          analytics.capture('first_task_completed');
+        }
+      }).catch(() => { /* analytics fire-and-forget; never break the core loop */ });
+    }
 
     useRewardStore.getState().setReward({
       actualMin,

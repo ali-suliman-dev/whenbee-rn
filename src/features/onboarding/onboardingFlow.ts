@@ -8,11 +8,11 @@
 
 export const ONBOARDING_FLOW = [
   'welcome',
-  'categories',
-  'name',
   'quiz/0',
   'quiz/1',
   'quiz/2',
+  'quiz/3',
+  'categories',
   'ready',
 ] as const;
 

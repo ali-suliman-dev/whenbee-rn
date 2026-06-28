@@ -24,6 +24,10 @@ export function usePersonalize() {
   const setArchetypeSeed = useSettingsStore((s) => s.setArchetypeSeed);
   return {
     trackShown: () => analytics.capture('personalize_shown'),
+    /** Fire once when quiz step 0 first renders — marks quiz entry in the funnel. */
+    trackQuizStarted: () => analytics.capture('quiz_started'),
+    /** Fire once when the reveal screen first mounts (archetype payoff shown). */
+    trackRevealShown: () => analytics.capture('reveal_shown'),
     saveName: (name?: string) => {
       setDisplayName(name);
       if (name) {
