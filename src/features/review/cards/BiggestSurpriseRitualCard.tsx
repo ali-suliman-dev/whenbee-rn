@@ -1,4 +1,5 @@
 import { View, Text, StyleSheet, Platform } from 'react-native';
+import { Card } from '@/src/components/Card';
 import { useTheme } from '@/src/theme/useTheme';
 import type { ReviewBiggestSurprise, ConfidenceBand } from '@/src/domain/types';
 
@@ -23,7 +24,6 @@ export function BiggestSurpriseRitualCard({ surprise, band, loggedCount }: Props
     surprise.estimateMin > 0 ? (surprise.actualMin / surprise.estimateMin).toFixed(1) : '—';
 
   const styles = StyleSheet.create({
-    container: { padding: t.space[4] },
     eyebrow: {
       fontSize: 10,
       fontWeight: '700',
@@ -79,7 +79,7 @@ export function BiggestSurpriseRitualCard({ surprise, band, loggedCount }: Props
     const guessFlex = total > 0 ? surprise.estimateMin / total : 0.5;
     const realFlex = total > 0 ? surprise.actualMin / total : 0.5;
     return (
-      <View style={styles.container}>
+      <Card tone="flat">
         <Text style={styles.eyebrow}>YOUR BIGGEST SURPRISE</Text>
         <Text style={styles.heading}>
           <Text style={styles.categoryName}>{surprise.categoryName}</Text>
@@ -113,7 +113,7 @@ export function BiggestSurpriseRitualCard({ surprise, band, loggedCount }: Props
           </View>
           <Text style={styles.logCount}>{loggedCount} logs</Text>
         </View>
-      </View>
+      </Card>
     );
   }
 
@@ -127,7 +127,7 @@ export function BiggestSurpriseRitualCard({ surprise, band, loggedCount }: Props
   const descSuffix = insideRange ? ' Past your guess — inside your range.' : ' Past your guess.';
 
   return (
-    <View style={styles.container}>
+    <Card tone="flat">
       <Text style={styles.eyebrow}>YOUR BIGGEST SURPRISE</Text>
       <Text style={styles.heading}>
         <Text style={styles.categoryName}>{surprise.categoryName}</Text>
@@ -214,6 +214,6 @@ export function BiggestSurpriseRitualCard({ surprise, band, loggedCount }: Props
         </View>
         <Text style={styles.logCount}>{loggedCount} logs</Text>
       </View>
-    </View>
+    </Card>
   );
 }

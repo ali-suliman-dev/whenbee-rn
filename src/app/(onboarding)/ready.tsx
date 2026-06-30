@@ -105,7 +105,7 @@ export default function Ready() {
 
           {/* Optional nickname — quiet, skippable, folded in above the CTA. */}
           <Reveal index={4}>
-            <View style={{ gap: t.space[1] }}>
+            <View style={{ gap: t.space[2] }}>
               <View style={{ flexDirection: 'row', alignItems: 'baseline', gap: t.space[2] }}>
                 <AppText
                   style={{
@@ -132,13 +132,13 @@ export default function Ready() {
                 returnKeyType="done"
                 accessibilityLabel="Your nickname"
                 style={{
+                  height: t.size.control.md,
                   fontSize: t.fontSize.base,
                   color: t.colors.ink,
                   borderWidth: t.borderWidth.chip,
                   borderColor: t.colors.border,
                   borderRadius: t.radii.sm,
                   paddingHorizontal: t.space[3],
-                  paddingVertical: t.space[2],
                 }}
               />
             </View>
