@@ -79,9 +79,11 @@ export function FinishEditorSheet({
         <SheetGrabber />
         <AppText style={titleStyle}>Finish by</AppText>
         <FinishTimeWheel valueMs={valueMs} mode="be done by" showModes={false} onChange={onChange} />
-        <View style={{ flexDirection: 'row', gap: t.space[2] }}>
-          <AppButton label="Done" variant="indigo" onPress={onClose} />
-          {valueMs !== null ? <AppButton label="Clear" variant="ghost" onPress={onClear} /> : null}
+        <View style={{ flexDirection: 'row', justifyContent: 'flex-end', gap: t.space[2] }}>
+          {valueMs !== null ? (
+            <AppButton label="Clear" variant="ghost" size="2xs" onPress={onClear} />
+          ) : null}
+          <AppButton label="Done" variant="indigo" size="2xs" onPress={onClose} />
         </View>
       </View>
     </Animated.View>

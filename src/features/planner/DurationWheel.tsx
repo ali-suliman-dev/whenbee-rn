@@ -60,12 +60,15 @@ export function DurationWheel({
   valueMin,
   step = 5,
   onChange,
+  fullWidth = false,
 }: {
   /** Currently selected duration in minutes. */
   valueMin: number;
   /** Snap step in minutes. Defaults to 5. */
   step?: number;
   onChange: (minutes: number) => void;
+  /** Stretch the wheel to fill its parent's width instead of the fixed pill column. */
+  fullWidth?: boolean;
 }) {
   const t = useTheme();
   const reducedMotion = useReducedMotion();
@@ -153,7 +156,7 @@ export function DurationWheel({
   }));
 
   const container: ViewStyle = {
-    width: t.size.wheelCol,
+    width: fullWidth ? '100%' : t.size.wheelCol,
     height: wheelHeight,
     overflow: 'hidden',
   };

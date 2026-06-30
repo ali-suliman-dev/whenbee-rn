@@ -95,8 +95,10 @@ export function RoutineRail({
     color: t.colors.inkSoft,
   };
 
+  // Same weight as the "＋ add step" tail so the finish-time CTA reads as an
+  // equally tappable action, not a quiet caption.
   const capCtaStyle: TextStyle = {
-    ...(type.caption as unknown as TextStyle),
+    ...(type.bodySmBold as unknown as TextStyle),
     color: t.colors.primary,
   };
 

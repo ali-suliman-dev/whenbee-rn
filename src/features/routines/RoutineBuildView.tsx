@@ -1,9 +1,11 @@
 import { useMemo, useReducer } from 'react';
-import { ScrollView, View, type ViewStyle, type TextStyle } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
+import { Pressable, ScrollView, View, type ViewStyle, type TextStyle } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTheme } from '@/src/theme/useTheme';
 import { type } from '@/src/theme/typography';
 import { AppButton } from '@/src/components/AppButton';
+import { AppText } from '@/src/components/AppText';
 import { TaskTitleField } from '@/src/components/TaskTitleField';
 import { useRoutinesStore } from '@/src/stores/routinesStore';
 import { useCalibrationStore } from '@/src/stores/calibrationStore';
@@ -26,7 +28,7 @@ function sheetReducer(_state: SheetState, next: SheetState): SheetState {
   return next;
 }
 
-export function RoutineBuildView({ onDone }: { onDone: () => void }) {
+export function RoutineBuildView({ onDone, onBack }: { onDone: () => void; onBack: () => void }) {
   const t = useTheme();
   const insets = useSafeAreaInsets();
 
@@ -88,12 +90,25 @@ export function RoutineBuildView({ onDone }: { onDone: () => void }) {
     setDoneBy(d.getHours() * 60 + d.getMinutes());
   };
 
-  const nameStyle: TextStyle = { ...(type.subtitle as unknown as TextStyle), color: t.colors.ink };
+  // Routine name = an editable title. One step down from subtitle (per founder),
+  // with an eyebrow label + a visible resting underline so it reads as a field.
+  const nameStyle: TextStyle = { ...(type.titleSm as unknown as TextStyle), color: t.colors.ink };
+  const fieldLabel: TextStyle = { ...(type.eyebrow as unknown as TextStyle), color: t.colors.inkSoft };
+  const nameField: ViewStyle = { borderColor: t.colors.border };
 
+  const backRow: ViewStyle = {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: t.space[1],
+    alignSelf: 'flex-start',
+  };
+  const backLabel: TextStyle = { ...(type.bodySm as unknown as TextStyle), color: t.colors.inkSoft };
+
+  // The hosting route already pads the surface horizontally, so the dock only
+  // owns its vertical rhythm + safe-area inset — no second horizontal pad.
   const dock: ViewStyle = {
     flexDirection: 'row',
     gap: t.space[3],
-    paddingHorizontal: t.space[4],
     paddingTop: t.space[3],
     paddingBottom: insets.bottom + t.space[3],
     borderTopWidth: t.borderWidth.hairline,
@@ -113,15 +128,31 @@ export function RoutineBuildView({ onDone }: { onDone: () => void }) {
         showsVerticalScrollIndicator={false}
         keyboardShouldPersistTaps="handled"
       >
-        {/* Name = the routine title */}
-        <TaskTitleField
-          variant="underline"
-          value={draft.name}
-          onChangeText={setName}
-          placeholder="Name this routine"
-          returnKeyType="done"
-          textStyle={nameStyle}
-        />
+        {/* Back to the routines list — iOS chevron + previous-screen name */}
+        <Pressable
+          onPress={onBack}
+          hitSlop={t.size.hitSlop}
+          accessibilityRole="button"
+          accessibilityLabel="Back to routines"
+          style={backRow}
+        >
+          <Ionicons name="chevron-back" size={t.iconSize.md} color={t.colors.inkSoft} />
+          <AppText style={backLabel}>Routines</AppText>
+        </Pressable>
+
+        {/* Name = the routine title — labelled + underlined so it reads as a field */}
+        <View style={{ gap: t.space[1] }}>
+          <AppText style={fieldLabel}>Routine name</AppText>
+          <TaskTitleField
+            variant="underline"
+            value={draft.name}
+            onChangeText={setName}
+            placeholder="Name this routine"
+            returnKeyType="done"
+            textStyle={nameStyle}
+            containerStyle={nameField}
+          />
+        </View>
 
         <AnimatedHonestTotal minutes={model.honestTotalMin} />
 
@@ -140,6 +171,7 @@ export function RoutineBuildView({ onDone }: { onDone: () => void }) {
           <AppButton
             label="＋ Step"
             variant="ghost"
+            size="2xs"
             fullWidth
             onPress={() => setSheet({ kind: 'step', editId: null })}
           />
@@ -148,6 +180,7 @@ export function RoutineBuildView({ onDone }: { onDone: () => void }) {
           <AppButton
             label="Save"
             variant="indigo"
+            size="2xs"
             fullWidth
             disabled={!canSave}
             onPress={() => {

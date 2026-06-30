@@ -32,7 +32,7 @@ import { AppText } from './AppText';
 type NewVariant = 'indigo' | 'amber' | 'ghost' | 'danger';
 type LegacyVariant = 'primary' | 'secondary';
 type Variant = NewVariant | LegacyVariant;
-type Size = 'xs' | 'sm' | 'md' | 'lg';
+type Size = '2xs' | 'xs' | 'sm' | 'md' | 'lg';
 
 function resolveVariant(v: Variant): NewVariant {
   if (v === 'primary') return 'indigo';
@@ -79,9 +79,10 @@ export function AppButton({
   const isGhost = resolved === 'ghost';
   // One coherent size scale — height, label font, and side padding all step up
   // together, so a bigger button is bigger in every axis (not just taller).
-  //   xs  32h · 12pt · 12padX     sm  36h · 14pt · 16padX
-  //   md  44h · 16pt · 20padX     lg  52h · 20pt · 24padX
+  //   2xs 28h · 10pt · 10padX     xs  32h · 12pt · 12padX
+  //   sm  36h · 14pt · 16padX     md  44h · 16pt · 20padX     lg  52h · 20pt · 24padX
   const SIZE: Record<Size, { h: number; font: number; padX: number }> = {
+    '2xs': { h: t.size.control.xxs, font: t.fontSize.xs, padX: t.space[2.5] },
     xs: { h: t.size.control.xs, font: t.fontSize.sm, padX: t.space[3] },
     sm: { h: t.size.control.sm, font: t.fontSize.base, padX: t.space[4] },
     md: { h: t.size.control.md, font: t.fontSize.md, padX: t.space[5] },

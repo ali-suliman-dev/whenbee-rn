@@ -9,7 +9,7 @@ const ENTER = FadeIn.duration(tokens.motion.fast).reduceMotion(ReduceMotion.Syst
 
 export function AnimatedHonestTotal({ minutes }: { minutes: number }) {
   const t = useTheme();
-  const num: TextStyle = { ...(type.honestNumberLg as unknown as TextStyle), color: t.colors.ink };
+  const num: TextStyle = { ...(type.honestNumberMd as unknown as TextStyle), color: t.colors.ink };
   const caption: TextStyle = { ...(type.caption as unknown as TextStyle), color: t.colors.inkSoft };
   return (
     <View style={{ gap: t.space[0.5] }}>

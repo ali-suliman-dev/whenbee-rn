@@ -23,6 +23,8 @@ interface TaskTitleFieldProps {
   accessibilityLabel?: string;
   /** Optional style merged onto the inner TextInput — use to override font/size/color. */
   textStyle?: TextStyle;
+  /** Optional style merged onto the field container — use to override bg/border (e.g. a sunken field on a surface sheet). */
+  containerStyle?: ViewStyle;
 }
 
 export const TaskTitleField = ({
@@ -35,6 +37,7 @@ export const TaskTitleField = ({
   onSubmitEditing,
   accessibilityLabel,
   textStyle,
+  containerStyle,
 }: TaskTitleFieldProps) => {
   const t = useTheme();
   const [focused, setFocused] = useState(false);
@@ -72,7 +75,7 @@ export const TaskTitleField = ({
 
   return (
     <>
-      <View style={variant === 'boxed' ? boxed : underline}>
+      <View style={[variant === 'boxed' ? boxed : underline, containerStyle]}>
         <TextInput
           style={[text, textStyle]}
           value={value}

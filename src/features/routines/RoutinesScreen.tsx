@@ -41,7 +41,10 @@ export function RoutinesScreen() {
   if (isPro && view.kind === 'build') {
     return (
       <Animated.View key="build" style={{ flex: 1 }} entering={ENTER}>
-        <RoutineBuildView onDone={() => setView({ kind: 'list' })} />
+        <RoutineBuildView
+          onDone={() => setView({ kind: 'list' })}
+          onBack={() => setView({ kind: 'list' })}
+        />
       </Animated.View>
     );
   }

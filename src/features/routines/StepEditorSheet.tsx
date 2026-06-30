@@ -118,6 +118,14 @@ export function StepEditorSheet({
     gap: t.space[4],
   };
   const titleStyle: TextStyle = { ...(type.subtitle as unknown as TextStyle), color: t.colors.ink };
+  // Sunken field bg so the input reads as a distinct well on the surface sheet
+  // (surface-on-surface would be invisible).
+  const fieldStyle: ViewStyle = {
+    backgroundColor: t.colors.surfaceSunken,
+    borderColor: t.colors.hairline,
+  };
+  // Compact actions, anchored to the right edge of the sheet.
+  const actions: ViewStyle = { flexDirection: 'row', justifyContent: 'flex-end', gap: t.space[2] };
 
   // ─── Render ─────────────────────────────────────────────────────────────────
 
@@ -132,13 +140,14 @@ export function StepEditorSheet({
         <SheetGrabber />
         <AppText style={titleStyle}>{mode === 'add' ? 'Add a step' : 'Edit step'}</AppText>
         <TaskTitleField
-          variant="underline"
+          variant="boxed"
           value={label}
           onChangeText={handleTitleChange}
           placeholder="Step name"
           autoFocus
           returnKeyType="done"
           onSubmitEditing={handleSubmit}
+          containerStyle={fieldStyle}
         />
         <CategoryChips
           categories={categories}
@@ -146,15 +155,16 @@ export function StepEditorSheet({
           onChange={handlePickCategory}
           guessedId={guessed}
         />
-        <DurationWheel valueMin={guessMin} onChange={setGuessMin} />
-        <View style={{ flexDirection: 'row', gap: t.space[2] }}>
+        <DurationWheel valueMin={guessMin} onChange={setGuessMin} fullWidth />
+        <View style={actions}>
+          <AppButton label="Cancel" variant="ghost" size="2xs" onPress={onCancel} />
           <AppButton
             label={mode === 'add' ? 'Add step' : 'Save step'}
             variant="indigo"
+            size="2xs"
             disabled={!canSubmit}
             onPress={handleSubmit}
           />
-          <AppButton label="Cancel" variant="ghost" onPress={onCancel} />
         </View>
       </View>
     </Animated.View>
