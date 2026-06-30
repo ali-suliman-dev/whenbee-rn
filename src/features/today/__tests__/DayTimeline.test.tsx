@@ -38,6 +38,18 @@ jest.mock('@/src/theme/useColorMode', () => ({
   useColorMode: () => 'light',
 }));
 
+// Rows now render the shared Plan-tab spine (PlanRail → RailNode → useAmbientMotion
+// → useFocusEffect), which needs a navigation context. Mock expo-router so the
+// focus effect is a no-op in this isolated unit test.
+jest.mock('expo-router', () => ({
+  router: { push: jest.fn() },
+  useFocusEffect: (cb: () => void | (() => void)) => cb(),
+  useNavigation: () => ({
+    isFocused: () => true,
+    addListener: () => () => {},
+  }),
+}));
+
 // Default: Pro enabled so existing tests are unaffected by the Pro guard.
 jest.mock('@/src/features/paywall/useEntitlement', () => ({
   useEntitlement: jest.fn((selector: (s: any) => any) =>

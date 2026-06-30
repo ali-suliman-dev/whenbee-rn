@@ -35,6 +35,8 @@ npx jest -t "<name>"   # tests matching a name
 
 Run lint + typecheck + test before every commit — CI runs the same set on every push/PR and blocks merge on failure. After editing specific files, lint just those: `npx eslint <files>` (this repo uses the flat `eslint.config.js` — there is no `.eslintrc.js`).
 
+**ALWAYS run the tests after any code change — never report a task done without it.** Run the affected suite (`npx jest <path>`) plus the full suite (`npm test`) before claiming a change works. If a CI failure looks flaky (passes locally), do NOT shrug it off — reproduce the race and fix the root cause; a test that passes only sometimes is a real bug (usually an async/effect ordering window in the code under test, not "just CI").
+
 **Full how-to — env setup, Expo Go vs. dev builds, EAS build/submit profiles, troubleshooting — is in [docs/DEVELOPMENT.md](docs/DEVELOPMENT.md).** Use `npx expo install <pkg>` (not `npm install`) for Expo/RN deps, then `npx expo-doctor` (expect 18/18).
 
 ## Modal / sheet UI — HARD RULE

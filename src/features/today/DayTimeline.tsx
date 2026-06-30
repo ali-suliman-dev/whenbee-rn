@@ -31,6 +31,8 @@ import Animated, {
   useReducedMotion,
 } from 'react-native-reanimated';
 import { useDayPlan } from './useDayPlan';
+import { PlanRail } from '@/src/features/planner/PlanRail';
+import type { RailNodeState } from '@/src/features/planner/RailNode';
 import { useLearnedFocusWindow } from '@/src/features/planner/useLearnedFocusWindow';
 import { useDayTasksStore } from '@/src/stores/dayTasksStore';
 import { useEntitlement } from '@/src/features/paywall/useEntitlement';
@@ -99,154 +101,109 @@ function firstCutId(verdict: PlanVerdict): string | null {
 // Sub-components
 // ─────────────────────────────────────────────────────────────────────────────
 
-/** A thin spacer rendered for 'breather' items. */
-function BreatherRow() {
+/**
+ * Right-hand content for one timeline row (the gutter spine is rendered by
+ * PlanRail). One renderer per kind so each reads at the right weight:
+ *   task     — semibold ink label + honest duration
+ *   event    — italic muted label + duration (read-only meeting)
+ *   breather — empty spacer (the ☕ node on the spine carries the meaning)
+ * `focusBandActive` softly tints a task that falls inside the learned focus window.
+ */
+function RowContent({
+  item,
+  focusBandActive,
+}: {
+  item: PlanTimelineItem;
+  focusBandActive: boolean;
+}) {
   const t = useTheme();
-  const style: ViewStyle = {
-    height: t.space[3],
-    alignItems: 'center',
-    justifyContent: 'center',
-  };
-  const lineStyle: ViewStyle = {
-    height: t.borderWidth.hairline || 1,
-    width: t.space[8],
-    backgroundColor: t.colors.hairline,
-    opacity: 0.5,
-  };
-  return (
-    <View style={style} accessibilityElementsHidden>
-      <View style={lineStyle} />
-    </View>
-  );
-}
+  const durationMin = Math.round((item.endAt - item.startAt) / 60_000);
 
-/** A task row: clock + label + honest duration. */
-function TaskRow({ item }: { item: PlanTimelineItem }) {
-  const t = useTheme();
+  if (item.kind === 'breather') {
+    return <View style={{ flex: 1, minHeight: t.space[6] }} accessibilityElementsHidden />;
+  }
 
-  const rowStyle: ViewStyle = {
+  if (item.kind === 'event') {
+    const col: ViewStyle = {
+      flex: 1,
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      gap: t.space[2],
+      paddingVertical: t.space[3],
+      minHeight: t.size.control.sm,
+    };
+    const labelStyle: TextStyle = {
+      flex: 1,
+      fontSize: t.fontSize.caption,
+      color: t.colors.inkSoft,
+      fontStyle: 'italic',
+    };
+    const tagStyle: TextStyle = {
+      fontSize: t.fontSize.crumb,
+      color: t.colors.inkFaint,
+      flexShrink: 0,
+      textTransform: 'uppercase',
+      letterSpacing: t.letterSpacing.wide,
+    };
+    return (
+      <View
+        style={col}
+        testID={`timeline-event-${item.id}`}
+        accessible
+        accessibilityRole="text"
+        accessibilityLabel={`Meeting: ${item.label}, ${formatClock(item.startAt)} to ${formatClock(item.endAt)}`}
+        accessibilityHint="Read-only calendar event"
+      >
+        <AppText style={labelStyle} numberOfLines={1}>
+          {item.label}
+        </AppText>
+        <AppText style={tagStyle}>{fmtHm(durationMin)}</AppText>
+      </View>
+    );
+  }
+
+  // task
+  const col: ViewStyle = {
+    flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
-    paddingVertical: t.space[2],
-    paddingHorizontal: t.space[3],
+    justifyContent: 'space-between',
     gap: t.space[3],
+    paddingVertical: t.space[3],
     minHeight: t.size.control.md,
+    // Focus-window highlight: a soft indigo wash on the content (the left-accent
+    // role now belongs to the spine), so rows inside the learned window read warm.
+    ...(focusBandActive
+      ? {
+          backgroundColor: t.colors.primaryWash,
+          borderRadius: t.radii.sm,
+          paddingHorizontal: t.space[2],
+        }
+      : {}),
   };
-
-  const clockStyle: TextStyle = {
-    fontFamily: t.fontFamily.mono,
-    fontSize: t.fontSize.xs,
-    color: t.colors.primary,
-    width: t.space[8],
-    flexShrink: 0,
-  };
-
   const labelStyle: TextStyle = {
     flex: 1,
     fontSize: t.fontSize.bodySm,
     fontWeight: t.fontWeight.semibold as TextStyle['fontWeight'],
     color: t.colors.ink,
   };
-
   const durationStyle: TextStyle = {
     fontSize: t.fontSize.xs,
     color: t.colors.inkSoft,
     flexShrink: 0,
   };
-
-  const durationMin = Math.round((item.endAt - item.startAt) / 60_000);
-
   return (
     <View
-      style={rowStyle}
+      style={col}
       accessible
       accessibilityRole="text"
       accessibilityLabel={`${item.label}, starts ${formatClock(item.startAt)}, ${fmtHm(durationMin)}`}
     >
-      <AppText style={clockStyle}>{formatClock(item.startAt)}</AppText>
       <AppText style={labelStyle} numberOfLines={2}>
         {item.label}
       </AppText>
       <AppText style={durationStyle}>{fmtHm(durationMin)}</AppText>
-    </View>
-  );
-}
-
-/** A read-only meeting block. Greyed out, clearly non-interactive. */
-function EventRow({ item }: { item: PlanTimelineItem }) {
-  const t = useTheme();
-
-  const outerStyle: ViewStyle = {
-    marginHorizontal: t.space[3],
-    marginVertical: t.space[1],
-    borderRadius: t.radii.sm,
-    borderWidth: t.borderWidth.chip,
-    borderColor: t.colors.hairline,
-    backgroundColor: t.colors.surfaceSunken,
-    overflow: 'hidden',
-  };
-
-  const rowStyle: ViewStyle = {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingVertical: t.space[1.5],
-    paddingHorizontal: t.space[3],
-    gap: t.space[2],
-  };
-
-  const leftAccentStyle: ViewStyle = {
-    width: t.row.edgeW,
-    height: '100%',
-    backgroundColor: t.colors.inkFaint,
-    position: 'absolute',
-    left: 0,
-    top: 0,
-    bottom: 0,
-    borderRadius: t.radii.none,
-  };
-
-  const clockStyle: TextStyle = {
-    fontFamily: t.fontFamily.mono,
-    fontSize: t.fontSize.xs,
-    color: t.colors.inkFaint,
-    width: t.space[8],
-    flexShrink: 0,
-  };
-
-  const labelStyle: TextStyle = {
-    flex: 1,
-    fontSize: t.fontSize.caption,
-    color: t.colors.inkSoft,
-    fontStyle: 'italic',
-  };
-
-  const meetingTagStyle: TextStyle = {
-    fontSize: t.fontSize.crumb,
-    color: t.colors.inkFaint,
-    flexShrink: 0,
-    textTransform: 'uppercase',
-    letterSpacing: t.letterSpacing.wide,
-  };
-
-  const durationMin = Math.round((item.endAt - item.startAt) / 60_000);
-
-  return (
-    <View
-      testID={`timeline-event-${item.id}`}
-      style={outerStyle}
-      accessible
-      accessibilityRole="text"
-      accessibilityLabel={`Meeting: ${item.label}, ${formatClock(item.startAt)} to ${formatClock(item.endAt)}`}
-      accessibilityHint="Read-only calendar event"
-    >
-      <View style={leftAccentStyle} />
-      <View style={rowStyle}>
-        <AppText style={clockStyle}>{formatClock(item.startAt)}</AppText>
-        <AppText style={labelStyle} numberOfLines={1}>
-          {item.label}
-        </AppText>
-        <AppText style={meetingTagStyle}>{fmtHm(durationMin)}</AppText>
-      </View>
     </View>
   );
 }
@@ -361,10 +318,11 @@ function DoneByChip({
     fontWeight: t.fontWeight.medium as TextStyle['fontWeight'],
   };
 
-  // Build a list of half-hour options from 8am–10pm (stable — only depends on nothing)
+  // Build a list of half-hour options across the full 24h day so any finish time
+  // is reachable (stable — depends on nothing).
   const timeOptions = useMemo(() => {
     const opts: { label: string; min: number }[] = [];
-    for (let h = 8; h <= 22; h++) {
+    for (let h = 0; h <= 23; h++) {
       for (const m of [0, 30]) {
         const min = h * 60 + m;
         const d = new Date();
@@ -544,6 +502,8 @@ export function DayTimeline() {
               key={item.id}
               item={item}
               index={idx}
+              isFirst={idx === 0}
+              isLast={idx === plan.timeline.length - 1}
               enterAnim={enterAnim}
               focusBandActive={
                 showFocusBand &&
@@ -568,7 +528,7 @@ export function DayTimeline() {
 
 /**
  * The focus band sits as a View behind the row list when the basis is personal.
- * Renders a full-bleed ambient tint; the per-row left-accent (focusBandActive)
+ * Renders a full-bleed ambient tint; the per-row content wash (focusBandActive)
  * carries the precise highlight — this component is purely decorative.
  */
 function FocusBandOverlay({ bandStyle }: { bandStyle: ViewStyle }) {
@@ -582,17 +542,19 @@ function FocusBandOverlay({ bandStyle }: { bandStyle: ViewStyle }) {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// TimelineRow — animated wrapper for one item
+// TimelineRow — one row = the shared Plan-tab spine gutter + right-hand content
 // ─────────────────────────────────────────────────────────────────────────────
 
 interface TimelineRowProps {
   item: PlanTimelineItem;
   index: number;
+  isFirst: boolean;
+  isLast: boolean;
   enterAnim: ReturnType<typeof FadeIn.duration> | undefined;
   focusBandActive: boolean;
 }
 
-function TimelineRow({ item, index, enterAnim, focusBandActive }: TimelineRowProps) {
+function TimelineRow({ item, index, isFirst, isLast, enterAnim, focusBandActive }: TimelineRowProps) {
   const t = useTheme();
 
   // Stagger per row — subtle, within budget
@@ -600,38 +562,23 @@ function TimelineRow({ item, index, enterAnim, focusBandActive }: TimelineRowPro
     ? FadeIn.duration(t.motion.base).delay(index * t.motion.stagger)
     : undefined;
 
-  const rowWrapperStyle: ViewStyle = {
-    position: 'relative',
+  // Map plan item → rail node vocabulary (reused verbatim from the Run tab):
+  // task → hollow ring, event → muted ring + calendar glyph, breather → ☕.
+  const railState: RailNodeState =
+    item.kind === 'task' ? 'next' : item.kind === 'event' ? 'event' : 'breather';
+  const timeLabel = item.kind === 'breather' ? undefined : formatClock(item.startAt);
+
+  const rowStyle: ViewStyle = {
+    flexDirection: 'row',
+    columnGap: t.space[2],
+    alignItems: 'stretch',
     zIndex: 1,
-    // Highlight rows inside the focus window with a hair-thin left accent
-    ...(focusBandActive && item.kind === 'task'
-      ? {
-          borderLeftWidth: t.row.edgeW,
-          borderLeftColor: t.colors.primarySoft,
-        }
-      : {}),
   };
 
-  if (item.kind === 'breather') {
-    return (
-      <Animated.View entering={staggeredAnim} style={rowWrapperStyle}>
-        <BreatherRow />
-      </Animated.View>
-    );
-  }
-
-  if (item.kind === 'event') {
-    return (
-      <Animated.View entering={staggeredAnim} style={{ zIndex: 1, position: 'relative' }}>
-        <EventRow item={item} />
-      </Animated.View>
-    );
-  }
-
-  // task
   return (
-    <Animated.View entering={staggeredAnim} style={rowWrapperStyle}>
-      <TaskRow item={item} />
+    <Animated.View entering={staggeredAnim} style={rowStyle}>
+      <PlanRail state={railState} timeLabel={timeLabel} isFirst={isFirst} isLast={isLast} />
+      <RowContent item={item} focusBandActive={focusBandActive} />
     </Animated.View>
   );
 }

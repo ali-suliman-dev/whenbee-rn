@@ -9,6 +9,7 @@ import Animated, {
   Easing,
   useReducedMotion,
 } from 'react-native-reanimated';
+import { Ionicons } from '@expo/vector-icons';
 import { useAmbientMotion } from '@/src/hooks/useAmbientMotion';
 import { useTheme } from '@/src/theme/useTheme';
 import { AppText } from '@/src/components/AppText';
@@ -20,6 +21,7 @@ import { AppText } from '@/src/components/AppText';
 //   done     — green fill + ✓ check glyph
 //   now      — purple fill + white center dot + pulsing halo ring (2.2s calm)
 //   next     — hollow ring (hairline border)
+//   event    — muted hollow ring + calendar glyph (read-only external item)
 //   breather — small coffee-cup node (☕), dimmed
 //
 // The "now" pill label lives here too so the gutter column owns the full
@@ -29,7 +31,7 @@ import { AppText } from '@/src/components/AppText';
 // behind the filled node. Reduced-motion → static ring, no animation.
 // ──────────────────────────────────────────────────────────────────────────────
 
-export type RailNodeState = 'done' | 'now' | 'next' | 'breather';
+export type RailNodeState = 'done' | 'now' | 'next' | 'event' | 'breather';
 
 export interface RailNodeProps {
   state: RailNodeState;
@@ -152,6 +154,26 @@ export function RailNode({ state }: RailNodeProps) {
         <View style={nodeStyle}>
           <View style={dotStyle} />
         </View>
+      </View>
+    );
+  }
+
+  if (state === 'event') {
+    // Read-only external item (calendar meeting): a muted hollow ring carrying a
+    // small calendar glyph. Reads as "not yours to move" without a heavy box.
+    const ringStyle: ViewStyle = {
+      width: nodeSize,
+      height: nodeSize,
+      borderRadius: t.radii.full,
+      borderWidth: t.borderWidth.thick,
+      borderColor: t.colors.inkFaint,
+      backgroundColor: t.colors.bg,
+      justifyContent: 'center',
+      alignItems: 'center',
+    };
+    return (
+      <View style={ringStyle}>
+        <Ionicons name="calendar-outline" size={t.iconSize.xs - 2} color={t.colors.inkFaint} />
       </View>
     );
   }
