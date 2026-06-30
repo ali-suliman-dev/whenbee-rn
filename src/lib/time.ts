@@ -34,6 +34,34 @@ export function formatClockMeridiem(epochMs: number): string {
   return `${formatClock(epochMs)}${meridiem}`;
 }
 
+/** Minutes-after-midnight → local clock. 12h: "1:30" · 24h: "13:30". */
+export function formatClockMin(min: number, hour12 = hour12Default): string {
+  const norm = ((min % 1440) + 1440) % 1440;
+  const hours24 = Math.floor(norm / 60);
+  const minutes = (norm % 60).toString().padStart(2, '0');
+  if (!hour12) return `${hours24.toString().padStart(2, '0')}:${minutes}`;
+  const h12 = hours24 % 12 === 0 ? 12 : hours24 % 12;
+  return `${h12}:${minutes}`;
+}
+
+const meridiemOf = (min: number): 'am' | 'pm' =>
+  Math.floor((((min % 1440) + 1440) % 1440) / 60) < 12 ? 'am' : 'pm';
+
+/**
+ * Window range in the user's clock format.
+ *   12h same half  → "1:30 – 4:00 pm"
+ *   12h crossing   → "11:30 am – 1:00 pm"
+ *   24h            → "13:30 – 16:00"
+ */
+export function formatWindowRange(startMin: number, endMin: number, hour12 = hour12Default): string {
+  const s = formatClockMin(startMin, hour12);
+  const e = formatClockMin(endMin, hour12);
+  if (!hour12) return `${s} – ${e}`;
+  const ms = meridiemOf(startMin);
+  const me = meridiemOf(endMin);
+  return ms === me ? `${s} – ${e} ${me}` : `${s} ${ms} – ${e} ${me}`;
+}
+
 /** "mm:ss" with a 2-digit second; minutes are not capped (e.g. "61:01"). */
 export function formatMmSs(totalSeconds: number): string {
   const whole = Math.max(0, Math.floor(totalSeconds));
