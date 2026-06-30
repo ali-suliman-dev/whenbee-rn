@@ -10,7 +10,6 @@ import { useTheme } from '@/src/theme/useTheme';
 import { analytics } from '@/src/services/analytics';
 import { usePatterns } from '@/src/features/patterns/usePatterns';
 import { useReasonInsights } from '@/src/features/patterns/useReasonInsights';
-import { BiggestSurprise } from '@/src/features/patterns/BiggestSurprise';
 import { StealsYourTime } from '@/src/features/patterns/StealsYourTime';
 import { AccuracyCorrelations } from '@/src/features/patterns/AccuracyCorrelations';
 import { useReview } from './useReview';
@@ -18,6 +17,9 @@ import { CoverCard } from './cards/CoverCard';
 import { AccuracyReadCard } from './cards/AccuracyReadCard';
 import { TightenedCard } from './cards/TightenedCard';
 import { ReflectionCard } from './cards/ReflectionCard';
+import { WeekReadCard } from './cards/WeekReadCard';
+import { ForwardActionCard } from './cards/ForwardActionCard';
+import { BiggestSurpriseRitualCard } from './cards/BiggestSurpriseRitualCard';
 
 // ──────────────────────────────────────────────────────────────────────────────
 // ReviewModal — the Honest Week / Month ritual, opened from the Patterns card or
@@ -53,15 +55,20 @@ export function ReviewModal({ source = 'card' }: { source?: ReviewSource }) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  const hasWeekRead = summary?.weekRead != null;
   const hasAccuracy = summary?.accuracyLine != null;
+  const hasForwardAction = summary?.forwardAction != null;
   const hasTightened = (summary?.tightened.length ?? 0) > 0;
-  const hasSurprise = view?.biggestSurprise != null;
+  const hasSurprise = summary?.biggestSurprise != null;
   const hasSteals = insights.length > 0;
   const hasSharpest = (view?.accuracyCorrelations.length ?? 0) > 0;
   // Earned-card count drives the review_completed coverage number. Cover +
-  // reflection always render; the middle five are conditional.
+  // reflection always render; the middle six are conditional.
   const cardsSeen =
-    2 + [hasAccuracy, hasTightened, hasSurprise, hasSteals, hasSharpest].filter(Boolean).length;
+    2 +
+    [hasWeekRead, hasAccuracy, hasForwardAction, hasTightened, hasSurprise, hasSteals, hasSharpest].filter(
+      Boolean,
+    ).length;
 
   function complete() {
     if (summary) {
@@ -101,27 +108,47 @@ export function ReviewModal({ source = 'card' }: { source?: ReviewSource }) {
       >
         <SheetGrabber />
 
-        {/* 1 · Cover (always — counts or the calm empty line). */}
-        {Card(<CoverCard summary={summary} />)}
+        {/* 1 · Week read — verdict + daily sparkline (or cover fallback). */}
+        {hasWeekRead
+          ? Card(<WeekReadCard summary={summary} />)
+          : Card(<CoverCard summary={summary} />)}
 
         {/* 2 · How your guesses landed. */}
         {hasAccuracy && summary.accuracyLine
-          ? Card(<AccuracyReadCard line={summary.accuracyLine} sharpestPhrase={summary.sharpestPhrase} />)
+          ? Card(
+              <AccuracyReadCard
+                line={summary.accuracyLine}
+                sharpestPhrase={summary.sharpestPhrase}
+              />,
+            )
           : null}
 
-        {/* 3 · What tightened. */}
+        {/* 3 · One thing to try — forward action from biggest surprise. */}
+        {hasForwardAction && summary.forwardAction
+          ? Card(<ForwardActionCard action={summary.forwardAction} />)
+          : null}
+
+        {/* 4 · What tightened. */}
         {hasTightened ? Card(<TightenedCard rows={summary.tightened} />) : null}
 
-        {/* 4 · Your biggest surprise (reuse the Patterns body). */}
-        {hasSurprise && view?.biggestSurprise ? Card(<BiggestSurprise card={view.biggestSurprise} />) : null}
+        {/* 5 · Your biggest surprise — ritual card with optional confidence band. */}
+        {hasSurprise && summary.biggestSurprise
+          ? Card(
+              <BiggestSurpriseRitualCard
+                surprise={summary.biggestSurprise}
+                band={summary.confidenceBand ?? null}
+                loggedCount={summary.loggedCount}
+              />,
+            )
+          : null}
 
-        {/* 5 · What steals your time (Pro, reused). */}
+        {/* 6 · What steals your time (Pro, reused). */}
         {hasSteals ? Card(<StealsYourTime insights={insights} />) : null}
 
-        {/* 6 · When you're sharpest (Pro, reused). */}
+        {/* 7 · When you're sharpest (Pro, reused). */}
         {hasSharpest && view ? Card(<AccuracyCorrelations correlations={view.accuracyCorrelations} />) : null}
 
-        {/* 7 · Closing reflection (always present). */}
+        {/* 8 · Closing reflection (always present). */}
         {Card(<ReflectionCard question={summary.reflection} />)}
 
         <AppButton label="Done" variant="amber" size="lg" fullWidth onPress={complete} />

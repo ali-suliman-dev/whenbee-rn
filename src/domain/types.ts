@@ -409,6 +409,29 @@ export interface ReviewBiggestSurprise {
   ratio: number;
 }
 
+/** Verbal verdict + activity heat for the review week. */
+export interface WeekRead {
+  verdict: string;
+  areasClose: number;
+  areasTotal: number;
+  /** Log counts per weekday: index 0 = Monday … 6 = Sunday of the review period. */
+  dailyLogCounts: [number, number, number, number, number, number, number];
+}
+
+/** One-thing forward nudge derived from the biggest-surprise category. */
+export interface ForwardAction {
+  categoryName: string;
+  plannedMin: number;
+  overflowMin: number;
+  recommendedMin: number;
+}
+
+/** 80% confidence band (10th–90th percentile) for a category's actual durations. */
+export interface ConfidenceBand {
+  lowMin: number;
+  highMin: number;
+}
+
 /** A calm, recomputed-live recap of a closed period. No reclaim, no score, no
  *  guilt — every card field is null/empty when the data hasn't earned it. */
 export interface ReviewSummary {
@@ -423,6 +446,9 @@ export interface ReviewSummary {
   biggestSurprise: ReviewBiggestSurprise | null;
   /** A rotating reflective question, deterministic by period id. Always present. */
   reflection: string;
+  weekRead: WeekRead | null;
+  forwardAction: ForwardAction | null;
+  confidenceBand: ConfidenceBand | null;
 }
 
 // ── Day-planned tasks (planning expansion, spec 2026-06-24) ───────────────────
