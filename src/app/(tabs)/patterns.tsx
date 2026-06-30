@@ -28,7 +28,7 @@ import { AccuracyCorrelationsLocked } from '@/src/features/patterns/AccuracyCorr
 import { useContextInsights } from '@/src/features/patterns/useContextInsights';
 import { ContextCorrelations } from '@/src/features/patterns/ContextCorrelations';
 import { ContextCorrelationsLocked } from '@/src/features/patterns/ContextCorrelationsLocked';
-import { FocusPatternsCard } from '@/src/features/patterns/FocusPatternsCard';
+import { FocusPeakCard } from '@/src/features/patterns/FocusPeakCard';
 import { PatternsSegment, type PatternsTab } from '@/src/features/patterns/PatternsSegment';
 
 // ──────────────────────────────────────────────────────────────────────────────
@@ -90,12 +90,6 @@ export default function Patterns() {
             <HonestMap rows={view.calibrationMap} />
           </Animated.View>
         ) : null}
-
-        {/* Your focus */}
-        <Animated.View entering={rise()} style={{ gap: t.space[3] }}>
-          <SectionHeader label="Your focus" />
-          <FocusPatternsCard />
-        </Animated.View>
       </>
     );
   }
@@ -170,6 +164,11 @@ export default function Patterns() {
                 <ArchetypePlaceholder onTakeQuiz={() => router.push('/(modals)/archetype-quiz')} />
               </Animated.View>
             )}
+
+            {/* 1b · FOCUS — pinned under identity */}
+            <Animated.View entering={rise()}>
+              <FocusPeakCard />
+            </Animated.View>
 
             {/* 2 · REVIEW RITUAL — always pinned under hero */}
             <Animated.View entering={rise()}>
