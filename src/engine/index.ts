@@ -57,6 +57,9 @@ export {
   reviewCadenceFor,
   deriveTightened,
   buildReviewSummary,
+  deriveWeekRead,
+  deriveForwardAction,
+  deriveConfidenceBand,
   REVIEW_REFLECTION_QUESTIONS,
 } from './review';
 export type { TightenedEntry, BuildReviewSummaryInput } from './review';

@@ -6,6 +6,9 @@ import {
   reviewCadenceFor,
   buildReviewSummary,
   clampRatio,
+  deriveWeekRead,
+  deriveForwardAction,
+  deriveConfidenceBand,
   type TightenedEntry,
   type AccuracyCorrelation,
 } from '@/src/engine';
@@ -100,6 +103,13 @@ export function buildReviewFromData(data: PatternsData, period: ReviewPeriod): R
   // now − SURPRISE_WINDOW_MS; the windowed logs are already inside the period).
   const biggestSurprise = deriveBiggestSurprise(windowData, period.endMs);
   const correlations = deriveAccuracyCorrelations(windowData);
+  const tightenedEntries = tightenedEntriesFor(windowData);
+
+  const weekRead = deriveWeekRead(tightenedEntries, period, windowLogs);
+  const forwardAction = deriveForwardAction(biggestSurprise);
+  const confidenceBand = biggestSurprise
+    ? deriveConfidenceBand(data.logs, biggestSurprise.categoryId)
+    : null;
 
   return buildReviewSummary({
     period,
@@ -107,8 +117,11 @@ export function buildReviewFromData(data: PatternsData, period: ReviewPeriod): R
     loggedMinutes,
     accuracyLine: accuracyLineFor(windowData),
     sharpestPhrase: sharpestPhraseFor(correlations),
-    tightenedEntries: tightenedEntriesFor(windowData),
+    tightenedEntries,
     biggestSurprise,
+    weekRead,
+    forwardAction,
+    confidenceBand,
   });
 }
 

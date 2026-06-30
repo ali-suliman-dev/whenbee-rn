@@ -220,6 +220,9 @@ describe('buildReviewSummary', () => {
       sharpestPhrase: null,
       tightenedEntries: [],
       biggestSurprise: null,
+      weekRead: null,
+      forwardAction: null,
+      confidenceBand: null,
     });
     expect(s.loggedCount).toBe(0);
     expect(s.loggedMinutes).toBe(0);
@@ -241,6 +244,9 @@ describe('buildReviewSummary', () => {
         { categoryId: 'admin', categoryName: 'Admin', ratios: [2.0, 2.0, 1.2, 1.2] },
       ],
       biggestSurprise: surprise,
+      weekRead: null,
+      forwardAction: null,
+      confidenceBand: null,
     });
     expect(s.loggedCount).toBe(9);
     expect(s.loggedMinutes).toBe(240);
@@ -259,6 +265,9 @@ describe('buildReviewSummary', () => {
       sharpestPhrase: null,
       tightenedEntries: [],
       biggestSurprise: null,
+      weekRead: null,
+      forwardAction: null,
+      confidenceBand: null,
     };
     expect(buildReviewSummary(input).reflection).toBe(buildReviewSummary(input).reflection);
     expect(REVIEW_REFLECTION_QUESTIONS).toContain(buildReviewSummary(input).reflection);
@@ -273,6 +282,9 @@ describe('buildReviewSummary', () => {
       sharpestPhrase: null,
       tightenedEntries: [],
       biggestSurprise: null,
+      weekRead: null,
+      forwardAction: null,
+      confidenceBand: null,
     };
     const a = buildReviewSummary({ ...base, period: fixedPeriod }).reflection;
     const b = buildReviewSummary({ ...base, period: week2 }).reflection;

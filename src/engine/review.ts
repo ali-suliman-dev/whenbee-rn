@@ -15,6 +15,9 @@ import type {
   TightenedRow,
   ReviewSummary,
   ReviewBiggestSurprise,
+  WeekRead,
+  ForwardAction,
+  ConfidenceBand,
 } from '../domain/types';
 
 const DAY_MS = 24 * 60 * 60 * 1000;
@@ -168,6 +171,78 @@ function reflectionFor(period: ReviewPeriod): string {
   return REVIEW_REFLECTION_QUESTIONS[i] ?? REVIEW_REFLECTION_QUESTIONS[0];
 }
 
+/**
+ * "Close" = ratio between 0.77 and 1.30
+ * ≥ 60% → "A tight week."
+ * ≤ 30% → "A loose week."
+ * else  → "A mixed week."
+ */
+export function deriveWeekRead(
+  entries: TightenedEntry[],
+  _period: ReviewPeriod,
+  windowLogs: { createdAt: number }[],
+): WeekRead {
+  const closeEntries = entries.filter((e) => {
+    const avg = e.ratios.length > 0 ? e.ratios.reduce((a, b) => a + b, 0) / e.ratios.length : 1;
+    return avg >= 0.77 && avg <= 1.3;
+  });
+  const areasClose = closeEntries.length;
+  const areasTotal = entries.length;
+  const fraction = areasTotal > 0 ? areasClose / areasTotal : 0;
+  const verdict =
+    fraction >= 0.6 ? 'A tight week.' : fraction <= 0.3 ? 'A loose week.' : 'A mixed week.';
+
+  const dailyLogCounts: [number, number, number, number, number, number, number] = [
+    0, 0, 0, 0, 0, 0, 0,
+  ];
+  for (const log of windowLogs) {
+    const d = new Date(log.createdAt);
+    // getDay() returns 0=Sun...6=Sat; we want Mon=0...Sun=6
+    const dow = (d.getDay() + 6) % 7;
+    if (dow >= 0 && dow <= 6) {
+      dailyLogCounts[dow] = (dailyLogCounts[dow] ?? 0) + 1;
+    }
+  }
+
+  return { verdict, areasClose, areasTotal, dailyLogCounts };
+}
+
+/**
+ * Returns null if biggestSurprise is null or overflowMin ≤ 0.
+ */
+export function deriveForwardAction(
+  biggestSurprise: ReviewBiggestSurprise | null,
+): ForwardAction | null {
+  if (!biggestSurprise) return null;
+  const overflowMin = biggestSurprise.actualMin - biggestSurprise.estimateMin;
+  if (overflowMin <= 0) return null;
+  const recommendedMin = Math.round(biggestSurprise.actualMin / 5) * 5;
+  return {
+    categoryName: biggestSurprise.categoryName,
+    plannedMin: biggestSurprise.estimateMin,
+    overflowMin,
+    recommendedMin,
+  };
+}
+
+/**
+ * 80% confidence band (10th–90th percentile). Returns null if < 5 logs.
+ */
+export function deriveConfidenceBand(
+  allLogs: { actualMin: number | null; category: string }[],
+  categoryId: string,
+): ConfidenceBand | null {
+  const actuals = allLogs
+    .filter((l) => l.category === categoryId && l.actualMin !== null)
+    .map((l) => l.actualMin as number)
+    .sort((a, b) => a - b);
+  if (actuals.length < 5) return null;
+  const p10 = actuals[Math.floor(actuals.length * 0.1)] ?? actuals[0];
+  const p90 = actuals[Math.ceil(actuals.length * 0.9) - 1] ?? actuals[actuals.length - 1];
+  if (p10 === undefined || p90 === undefined) return null;
+  return { lowMin: p10, highMin: p90 };
+}
+
 /** Everything `buildReviewSummary` needs — the hook assembles it from the db
  *  snapshot (counts, window ratios) plus its own feature-level derivations
  *  (accuracy line, sharpest phrase, biggest surprise). */
@@ -179,6 +254,9 @@ export interface BuildReviewSummaryInput {
   sharpestPhrase: string | null;
   tightenedEntries: TightenedEntry[];
   biggestSurprise: ReviewBiggestSurprise | null;
+  weekRead: WeekRead | null;
+  forwardAction: ForwardAction | null;
+  confidenceBand: ConfidenceBand | null;
 }
 
 /**
@@ -196,5 +274,8 @@ export function buildReviewSummary(input: BuildReviewSummaryInput): ReviewSummar
     tightened: input.loggedCount > 0 ? deriveTightened(input.tightenedEntries) : [],
     biggestSurprise: input.loggedCount > 0 ? input.biggestSurprise : null,
     reflection: reflectionFor(input.period),
+    weekRead: input.loggedCount > 0 ? input.weekRead : null,
+    forwardAction: input.loggedCount > 0 ? input.forwardAction : null,
+    confidenceBand: input.loggedCount > 0 ? input.confidenceBand : null,
   };
 }
