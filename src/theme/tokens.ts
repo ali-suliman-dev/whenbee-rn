@@ -560,6 +560,8 @@ export const tokens = {
     detailH: 140,      // taller SVG for the detail sheet
     gridW: 1,          // horizontal gridline weight
     yLabelW: 30,       // Y-axis gutter width (pt)
+    peakLabelGap: 4,   // vertical gap between the peak dot and its label
+    peakLabelMinY: 10, // minimum y for the peak label (keeps it off the top edge)
   },
 
   // Calendar strip geometry. All strip sizing in one place.

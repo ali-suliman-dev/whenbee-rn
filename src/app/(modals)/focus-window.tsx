@@ -12,6 +12,7 @@ import { FocusCurve } from '@/src/features/planner/FocusCurve';
 import { FocusWindowEditorSheet } from '@/src/features/planner/FocusWindowEditorSheet';
 import { useLearnedFocusWindow } from '@/src/features/planner/useLearnedFocusWindow';
 import { useFocusInsights } from '@/src/features/patterns/useFocusInsights';
+import { whyNarrative } from '@/src/features/patterns/focusCopy';
 import { useSettingsStore } from '@/src/stores/settingsStore';
 import { confidenceLabel } from '@/src/engine';
 import { formatWindowRange, formatClockMin } from '@/src/lib/time';
@@ -63,7 +64,9 @@ export default function FocusWindowDetail() {
   const vS: TextStyle = { ...(type.bodyLg as unknown as TextStyle), color: t.colors.ink };
 
   const contrastClause = ins?.contrast != null ? `, ${ins.contrast.toFixed(1)}× above your dip` : '';
-  const why = `Mornings warm up slow — you peak after lunch${contrastClause}. Your last ${win.sampleCount} sessions agree, and it has held for ${weeks} weeks.`;
+  const why = ins
+    ? `${whyNarrative(ins.peakMin)}${contrastClause}. Your last ${win.sampleCount} sessions agree, and it has held for ${weeks} weeks.`
+    : `Your last ${win.sampleCount} sessions agree, and it has held for ${weeks} weeks.`;
 
   return (
     <Screen>
@@ -88,6 +91,8 @@ export default function FocusWindowDetail() {
           windowStartMin={win.startMin}
           windowEndMin={win.endMin}
           yAxis
+          height={t.focusCurve.detailH}
+          peakMin={ins?.peakMin}
           peakLabel={ins ? `peak · ${formatClockMin(ins.peakMin)}` : undefined}
         />
 

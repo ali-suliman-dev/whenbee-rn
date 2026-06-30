@@ -25,3 +25,11 @@ it('renders Tier-2 rows when available', () => {
   expect(getByText('Sharper than your slump')).toBeTruthy();
   expect(getByText('Most accurate')).toBeTruthy();
 });
+
+it('why-line lead matches the bucket for a non-afternoon peakMin', () => {
+  // 620 min (10:20a) → "<660" bucket, not the afternoon "peak after lunch" copy.
+  (useFocusInsights as jest.Mock).mockReturnValue({ peakMin: 620, troughMin: 555, contrast: null, accuracyBetterInWindow: null, durationLongerInWindow: null });
+  const { getByText, queryByText } = render(<FocusWindowDetail />);
+  expect(getByText(/You start sharp and fade after lunch/)).toBeTruthy();
+  expect(queryByText(/Mornings warm up slow/)).toBeNull();
+});

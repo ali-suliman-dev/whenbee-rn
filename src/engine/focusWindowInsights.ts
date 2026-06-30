@@ -32,18 +32,36 @@ export function computeFocusInsights(
   const eligible = (i: number) =>
     (eventsCount[i] ?? 0) >= C.FW_BIN_MIN_EVENTS && (distinctDays[i] ?? 0) >= C.FW_BIN_MIN_DAYS;
 
-  // Peak / trough over eligible bins; fall back to full argmax/argmin if none eligible.
-  let peakIdx = -1, troughIdx = -1, anyEligible = false;
+  // Peak over all eligible bins (boundary bins included — a strong start/end-of-day
+  // peak is real). Trough is restricted to *interior* bins (excludes index 0 and the
+  // last index) so a boundary artifact never gets reported as "your foggiest stretch".
+  // Falls back to full argmax/argmin over all bins if nothing qualifies.
+  const isInterior = (i: number) => i > 0 && i < shrunk.length - 1;
+  let peakIdx = -1, troughIdx = -1, anyEligible = false, anyEligibleInterior = false;
   for (let i = 0; i < shrunk.length; i++) {
     if (!eligible(i)) continue;
     anyEligible = true;
     if (peakIdx < 0 || shrunk[i]! > shrunk[peakIdx]!) peakIdx = i;
-    if (troughIdx < 0 || shrunk[i]! < shrunk[troughIdx]!) troughIdx = i;
+    if (isInterior(i)) {
+      anyEligibleInterior = true;
+      if (troughIdx < 0 || shrunk[i]! < shrunk[troughIdx]!) troughIdx = i;
+    }
   }
   if (!anyEligible) {
     for (let i = 0; i < shrunk.length; i++) {
       if (peakIdx < 0 || shrunk[i]! > shrunk[peakIdx]!) peakIdx = i;
+    }
+  }
+  if (!anyEligibleInterior) {
+    for (let i = 0; i < shrunk.length; i++) {
+      if (!isInterior(i)) continue;
       if (troughIdx < 0 || shrunk[i]! < shrunk[troughIdx]!) troughIdx = i;
+    }
+    // Degenerate case: fewer than 3 bins total — no interior bin exists at all.
+    if (troughIdx < 0) {
+      for (let i = 0; i < shrunk.length; i++) {
+        if (troughIdx < 0 || shrunk[i]! < shrunk[troughIdx]!) troughIdx = i;
+      }
     }
   }
 

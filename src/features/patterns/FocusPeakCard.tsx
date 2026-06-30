@@ -13,6 +13,7 @@ import { FocusCurve } from '@/src/features/planner/FocusCurve';
 import { FocusWindowEditorSheet } from '@/src/features/planner/FocusWindowEditorSheet';
 import { useLearnedFocusWindow } from '@/src/features/planner/useLearnedFocusWindow';
 import { useFocusInsights } from '@/src/features/patterns/useFocusInsights';
+import { whyNarrative } from '@/src/features/patterns/focusCopy';
 import { useSettingsStore } from '@/src/stores/settingsStore';
 
 // ──────────────────────────────────────────────────────────────────────────────
@@ -23,14 +24,6 @@ import { useSettingsStore } from '@/src/stores/settingsStore';
 //   locked (free)      (basis === 'personal' && !Pro) — frosted curve + teaser + Unlock CTA
 //   personal + Pro                                    — window range + curve + why-line, taps to detail
 // ──────────────────────────────────────────────────────────────────────────────
-
-// peak bin → narrative bucket (Tier-1, derived from peak time only)
-function whyNarrative(peakMin: number): string {
-  if (peakMin < 660) return 'You start sharp and fade after lunch.'; // before 11:00
-  if (peakMin < 780) return 'You hit your stride around midday.'; // 11:00–13:00
-  if (peakMin < 1020) return 'Mornings warm up slow — you peak after lunch'; // 13:00–17:00
-  return "You're a slow burn — you peak in the evening."; // after 17:00
-}
 
 export function FocusPeakCard() {
   const t = useTheme();
@@ -91,8 +84,13 @@ export function FocusPeakCard() {
     );
   }
 
-  const contrastClause = insights?.contrast != null ? `, ${insights.contrast.toFixed(1)}× above your dip` : '';
-  const why = insights ? `${whyNarrative(insights.peakMin)}${contrastClause}.` : '';
+  const whyLead = insights ? whyNarrative(insights.peakMin) : '';
+  const contrastAccent = insights?.contrast != null ? `${insights.contrast.toFixed(1)}×` : null;
+  const contrastRest = contrastAccent != null ? ' above your dip' : '';
+
+  const weeks = Math.max(1, Math.round(win.distinctDays / 7));
+  const footerMeta =
+    win.distinctDays >= 7 ? `${sampleCount} sessions · steady for ${weeks} weeks` : `${sampleCount} sessions · ${win.distinctDays} days`;
 
   // ── locked (free + personal) ──
   if (!isPro) {
@@ -146,10 +144,28 @@ export function FocusPeakCard() {
         <AppText style={{ ...(type.honestNumberMd as unknown as TextStyle), color: t.colors.ink }} testID="focus-window-range">
           {formatWindowRange(ws, we)}
         </AppText>
-        <FocusCurve scoreByBin={scoreByBin} variant="learned" windowStartMin={ws} windowEndMin={we} yAxis />
-        {why ? <AppText style={{ ...(type.body as TextStyle), color: t.colors.ink }}>{why}</AppText> : null}
+        <FocusCurve
+          scoreByBin={scoreByBin}
+          variant="learned"
+          windowStartMin={ws}
+          windowEndMin={we}
+          peakMin={insights?.peakMin}
+          yAxis
+        />
+        {whyLead ? (
+          <AppText style={{ ...(type.body as TextStyle), color: t.colors.ink }}>
+            {whyLead}
+            {contrastAccent != null ? ', ' : ''}
+            {contrastAccent != null ? (
+              <AppText style={{ ...(type.body as TextStyle), color: t.colors.accent, fontWeight: t.fontWeight.bold as TextStyle['fontWeight'] }}>
+                {contrastAccent}
+              </AppText>
+            ) : null}
+            {contrastRest}.
+          </AppText>
+        ) : null}
         <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
-          <AppText style={meta}>{`${sampleCount} sessions`}</AppText>
+          <AppText style={meta}>{footerMeta}</AppText>
           <AppText style={{ ...(type.captionBold as TextStyle), color: t.colors.primary }}>Open ›</AppText>
         </View>
       </View>

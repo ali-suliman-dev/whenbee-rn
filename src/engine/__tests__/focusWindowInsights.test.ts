@@ -49,4 +49,22 @@ describe('computeFocusInsights', () => {
     const b = computeFocusInsights(events, fits, 840, 960);
     expect(a).toEqual(b);
   });
+
+  it('never picks a boundary bin as the trough when an interior eligible bin exists', () => {
+    // Bin 0 (05:00–05:30, the very first waking bin) is the most extreme slump —
+    // a far worse over-run than any interior bin. Without the interior-only guard
+    // the boundary bin would win argmin and "your foggiest stretch" would always
+    // read 5:00am for any user with an idle/noisy first bin. Bin 5 is a real,
+    // well-covered interior slump bin; bin 19 is the sharp peak.
+    const events: FocusEventInput[] = [];
+    for (let d = 0; d < 8; d++) {
+      events.push(ev(315, 30, 300, d)); // bin 0 (boundary): honest 45 vs actual 300 → very negative s (clamped)
+      events.push(ev(465, 30, 90, d));  // bin 5 (interior): honest 45 vs actual 90 → moderately negative s
+      events.push(ev(885, 30, 30, d));  // bin 19 (interior): honest 45 vs actual 30 → positive s, the peak
+    }
+    const r = computeFocusInsights(events, fits, 840, 960);
+    expect(r.troughMin).not.toBe(315); // boundary bin must never be selected
+    expect(r.troughMin).toBe(465); // the interior slump bin wins instead
+    expect(r.peakMin).toBe(885);
+  });
 });
