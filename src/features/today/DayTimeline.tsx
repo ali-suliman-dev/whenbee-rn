@@ -30,9 +30,8 @@ import Animated, {
   FadeIn,
   useReducedMotion,
 } from 'react-native-reanimated';
+import { Ionicons } from '@expo/vector-icons';
 import { useDayPlan } from './useDayPlan';
-import { PlanRail } from '@/src/features/planner/PlanRail';
-import type { RailNodeState } from '@/src/features/planner/RailNode';
 import { useLearnedFocusWindow } from '@/src/features/planner/useLearnedFocusWindow';
 import { useDayTasksStore } from '@/src/stores/dayTasksStore';
 import { useEntitlement } from '@/src/features/paywall/useEntitlement';
@@ -102,12 +101,13 @@ function firstCutId(verdict: PlanVerdict): string | null {
 // ─────────────────────────────────────────────────────────────────────────────
 
 /**
- * Right-hand content for one timeline row (the gutter spine is rendered by
- * PlanRail). One renderer per kind so each reads at the right weight:
- *   task     — semibold ink label + honest duration
- *   event    — italic muted label + duration (read-only meeting)
- *   breather — empty spacer (the ☕ node on the spine carries the meaning)
- * `focusBandActive` softly tints a task that falls inside the learned focus window.
+ * One timeline row. Flat, box-free (Direction A "ghost rail"):
+ *   task     — indigo mono clock + semibold ink label + honest duration
+ *   event    — a quiet dotted tick + faint clock + calendar glyph + italic label
+ *              (read-only meeting; reads as external without any filled box)
+ *   breather — a thin centred hairline spacer
+ * `focusBandActive` adds a hair-thin indigo left accent to a task that falls
+ * inside the learned focus window (no full-bleed band — that was the grey box).
  */
 function RowContent({
   item,
@@ -119,19 +119,50 @@ function RowContent({
   const t = useTheme();
   const durationMin = Math.round((item.endAt - item.startAt) / 60_000);
 
+  // Shared geometry so task + event clocks line up to the same x.
+  const clockWidth = t.space[10]; // fits "21:00" at mono xs without clipping
+
   if (item.kind === 'breather') {
-    return <View style={{ flex: 1, minHeight: t.space[6] }} accessibilityElementsHidden />;
+    return (
+      <View
+        style={{ height: t.space[4], alignItems: 'center', justifyContent: 'center' }}
+        accessibilityElementsHidden
+      >
+        <View
+          style={{ height: 1, width: t.space[8], backgroundColor: t.colors.hairline, opacity: 0.5 }}
+        />
+      </View>
+    );
   }
 
   if (item.kind === 'event') {
-    const col: ViewStyle = {
-      flex: 1,
+    const row: ViewStyle = {
       flexDirection: 'row',
       alignItems: 'center',
-      justifyContent: 'space-between',
       gap: t.space[2],
-      paddingVertical: t.space[3],
+      paddingVertical: t.space[2],
+      paddingHorizontal: t.space[3],
       minHeight: t.size.control.sm,
+      position: 'relative',
+    };
+    // Dotted "external" tick in the left padding — keeps clocks aligned (absolute).
+    const tickStyle: ViewStyle = {
+      position: 'absolute',
+      left: t.space[0.5],
+      top: '50%',
+      width: 2.5,
+      height: 14,
+      marginTop: -7,
+      borderRadius: t.radii.full,
+      backgroundColor: t.colors.inkFaint,
+      opacity: 0.7,
+    };
+    const clockStyle: TextStyle = {
+      fontFamily: t.fontFamily.mono,
+      fontSize: t.fontSize.xs,
+      color: t.colors.inkFaint,
+      width: clockWidth,
+      flexShrink: 0,
     };
     const labelStyle: TextStyle = {
       flex: 1,
@@ -143,18 +174,20 @@ function RowContent({
       fontSize: t.fontSize.crumb,
       color: t.colors.inkFaint,
       flexShrink: 0,
-      textTransform: 'uppercase',
       letterSpacing: t.letterSpacing.wide,
     };
     return (
       <View
-        style={col}
+        style={row}
         testID={`timeline-event-${item.id}`}
         accessible
         accessibilityRole="text"
         accessibilityLabel={`Meeting: ${item.label}, ${formatClock(item.startAt)} to ${formatClock(item.endAt)}`}
         accessibilityHint="Read-only calendar event"
       >
+        <View style={tickStyle} />
+        <AppText style={clockStyle}>{formatClock(item.startAt)}</AppText>
+        <Ionicons name="calendar-outline" size={t.iconSize.xs} color={t.colors.inkFaint} />
         <AppText style={labelStyle} numberOfLines={1}>
           {item.label}
         </AppText>
@@ -164,23 +197,23 @@ function RowContent({
   }
 
   // task
-  const col: ViewStyle = {
-    flex: 1,
+  const row: ViewStyle = {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
     gap: t.space[3],
-    paddingVertical: t.space[3],
+    paddingVertical: t.space[2],
+    paddingHorizontal: t.space[3],
     minHeight: t.size.control.md,
-    // Focus-window highlight: a soft indigo wash on the content (the left-accent
-    // role now belongs to the spine), so rows inside the learned window read warm.
     ...(focusBandActive
-      ? {
-          backgroundColor: t.colors.primaryWash,
-          borderRadius: t.radii.sm,
-          paddingHorizontal: t.space[2],
-        }
+      ? { borderLeftWidth: t.row.edgeW, borderLeftColor: t.colors.primary }
       : {}),
+  };
+  const clockStyle: TextStyle = {
+    fontFamily: t.fontFamily.mono,
+    fontSize: t.fontSize.xs,
+    color: t.colors.primary,
+    width: clockWidth,
+    flexShrink: 0,
   };
   const labelStyle: TextStyle = {
     flex: 1,
@@ -195,11 +228,12 @@ function RowContent({
   };
   return (
     <View
-      style={col}
+      style={row}
       accessible
       accessibilityRole="text"
       accessibilityLabel={`${item.label}, starts ${formatClock(item.startAt)}, ${fmtHm(durationMin)}`}
     >
+      <AppText style={clockStyle}>{formatClock(item.startAt)}</AppText>
       <AppText style={labelStyle} numberOfLines={2}>
         {item.label}
       </AppText>
@@ -443,17 +477,13 @@ export function DayTimeline() {
     position: 'relative',
   };
 
-  // Focus band: a horizontal accent strip behind the timeline container rows
+  // Focus-window presence marker — a ZERO-PAINT anchor (no grey box). The visible
+  // highlight is the hair-thin indigo left-accent on each in-window task row
+  // (see RowContent); this invisible node only signals "personal window active".
   const focusBandStyle: ViewStyle = {
     position: 'absolute',
-    left: 0,
-    right: 0,
-    top: 0,
-    bottom: 0,
-    backgroundColor: t.colors.primaryWash,
-    opacity: 0.5,
-    // The band is an overlay; the rows sit on top
-    zIndex: 0,
+    width: 0,
+    height: 0,
     pointerEvents: 'none' as ViewStyle['pointerEvents'],
   };
 
@@ -502,8 +532,6 @@ export function DayTimeline() {
               key={item.id}
               item={item}
               index={idx}
-              isFirst={idx === 0}
-              isLast={idx === plan.timeline.length - 1}
               enterAnim={enterAnim}
               focusBandActive={
                 showFocusBand &&
@@ -542,19 +570,17 @@ function FocusBandOverlay({ bandStyle }: { bandStyle: ViewStyle }) {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// TimelineRow — one row = the shared Plan-tab spine gutter + right-hand content
+// TimelineRow — animated wrapper for one flat row
 // ─────────────────────────────────────────────────────────────────────────────
 
 interface TimelineRowProps {
   item: PlanTimelineItem;
   index: number;
-  isFirst: boolean;
-  isLast: boolean;
   enterAnim: ReturnType<typeof FadeIn.duration> | undefined;
   focusBandActive: boolean;
 }
 
-function TimelineRow({ item, index, isFirst, isLast, enterAnim, focusBandActive }: TimelineRowProps) {
+function TimelineRow({ item, index, enterAnim, focusBandActive }: TimelineRowProps) {
   const t = useTheme();
 
   // Stagger per row — subtle, within budget
@@ -562,22 +588,8 @@ function TimelineRow({ item, index, isFirst, isLast, enterAnim, focusBandActive 
     ? FadeIn.duration(t.motion.base).delay(index * t.motion.stagger)
     : undefined;
 
-  // Map plan item → rail node vocabulary (reused verbatim from the Run tab):
-  // task → hollow ring, event → muted ring + calendar glyph, breather → ☕.
-  const railState: RailNodeState =
-    item.kind === 'task' ? 'next' : item.kind === 'event' ? 'event' : 'breather';
-  const timeLabel = item.kind === 'breather' ? undefined : formatClock(item.startAt);
-
-  const rowStyle: ViewStyle = {
-    flexDirection: 'row',
-    columnGap: t.space[2],
-    alignItems: 'stretch',
-    zIndex: 1,
-  };
-
   return (
-    <Animated.View entering={staggeredAnim} style={rowStyle}>
-      <PlanRail state={railState} timeLabel={timeLabel} isFirst={isFirst} isLast={isLast} />
+    <Animated.View entering={staggeredAnim} style={{ zIndex: 1 }}>
       <RowContent item={item} focusBandActive={focusBandActive} />
     </Animated.View>
   );
