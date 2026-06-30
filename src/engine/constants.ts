@@ -168,6 +168,13 @@ export const FW_COMPLETION_KAPPA = 8;
 export const FW_COMPLETION_DROP_CORR = 0.6;
 export const FW_PRIOR_WINDOW = { startMin: 540, endMin: 690 } as const; // 09:00–11:30
 
+
+// ── Focus insights (detail-view "why" metrics) ───────────────────────────────
+export const FW_CONF_HIGH = 0.75;      // confidence ≥ → "High"
+export const FW_CONF_BUILDING = 0.5;   // confidence ≥ → "Building", else "Low"
+export const FW_INSIGHT_MIN_EVENTS = 5; // min events on EACH side for accuracy/duration
+
+export const FW_CONTRAST_MAX = 9;       // display ceiling for the "N× sharper" ratio
 // ── Routines (Pro) ───────────────────────────────────────────────────────────
 /** Day-1 chain transition factor: per-step honest numbers, summed, underestimate
  *  the whole because the seams (transitions, re-starts) aren't in any single step.
