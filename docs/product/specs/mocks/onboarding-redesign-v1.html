@@ -1,0 +1,327 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Whenbee · Onboarding redesign v1</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root{
+    /* light-theme tokens — verbatim from src/theme/tokens.ts */
+    --bg:#F4F2FC;
+    --surface:#FFFFFF;
+    --surfaceRaisedEdge:#DAD3EC;
+    --surfaceSunken:#F1EEFB;
+    --ink:#20233A;
+    --inkSoft:#5C5F73;
+    --inkFaint:#9B9DAB;
+    --primary:#6B5BE6;
+    --primarySoft:#E4E0FA;
+    --primaryEdge:#463B9E;
+    --accent:#EEAE4D;
+    --accentSoft:#FBEFD6;
+    --accentEdge:#C68A30;
+    --hairline:#DAD5C9;
+    /* reveal collectible (dark card) */
+    --rv-top:#242436; --rv-mid:#232333; --rv-bot:#222230;
+    --rv-ink:#F4F1EA; --rv-blurb:#CFCAE0; --rv-eyebrow:#9A95AD; --rv-bloom:#7C6DE8;
+    --r-sm:8px; --r-card:16px; --r-full:999px;
+  }
+  *{box-sizing:border-box; margin:0; padding:0;}
+  body{background:#E7E4F2; color:var(--ink); font-family:'Plus Jakarta Sans',sans-serif; padding:40px 28px 72px;}
+  h1{font-size:22px; font-weight:800; letter-spacing:-0.5px; margin-bottom:6px;}
+  .lead{color:#4a4c63; font-size:13.5px; line-height:1.55; margin-bottom:6px; max-width:900px;}
+  .lead b{color:#20233A;}
+  .seq{font-size:12px; color:#6a6c82; margin-bottom:30px; font-weight:600;}
+  .row{display:flex; gap:26px; align-items:flex-start; flex-wrap:wrap;}
+  .frame{width:340px;}
+  .cap{font-size:11px; font-weight:800; letter-spacing:1.2px; text-transform:uppercase; color:#6a6c82; margin-bottom:3px;}
+  .cap .n{color:var(--primary);}
+  .why{font-size:12px; color:#5a5c72; line-height:1.5; margin-bottom:12px; min-height:48px;}
+  .why b{color:#20233A;}
+
+  /* phone canvas */
+  .phone{background:var(--bg); border-radius:30px; padding:22px 18px 20px; border:1px solid #d8d3e8; min-height:620px; display:flex; flex-direction:column; box-shadow:0 10px 30px rgba(40,30,80,.10);}
+
+  /* progress dots */
+  .dots{display:flex; gap:5px; margin-bottom:22px;}
+  .dots .d{height:5px; flex:1; border-radius:var(--r-full); background:var(--surfaceSunken);}
+  .dots .d.on{background:var(--primary);}
+  .dots .d.half{background:linear-gradient(90deg,var(--primary) 50%, var(--surfaceSunken) 50%);}
+
+  /* type */
+  .head{font-size:28px; font-weight:800; letter-spacing:-0.6px; line-height:1.12; color:var(--ink);}
+  .head.sm{font-size:23px;}
+  .body{font-size:15px; color:var(--inkSoft); line-height:1.55; margin-top:12px;}
+  .label{font-size:11px; font-weight:800; letter-spacing:1.2px; text-transform:uppercase; color:var(--inkFaint);}
+  .spacer{flex:1;}
+
+  /* overflow bar (welcome) */
+  .ofWrap{background:var(--accentSoft); border-radius:var(--r-card); padding:16px; margin-top:20px;}
+  .ofbar{height:8px; border-radius:var(--r-full); background:#fff; display:flex; overflow:hidden;}
+  .ofbar .g{width:62%; background:var(--primary);}
+  .ofbar .e{width:38%; background:var(--accent);}
+  .oflabels{display:flex; justify-content:space-between; margin-top:9px;}
+  .oflabels .l{font-size:12px; font-weight:600; color:var(--inkSoft);}
+  .oflabels .r{font-size:12px; font-weight:700; color:var(--accentEdge);}
+  .offoot{font-size:11px; color:var(--inkFaint); margin-top:10px;}
+
+  /* footer privacy card */
+  .pcard{display:flex; gap:11px; align-items:center; background:var(--surface); border-radius:var(--r-card); padding:14px 15px; margin-top:16px;}
+  .pcard .ico{width:34px;height:34px;border-radius:var(--r-full); background:var(--primarySoft); display:flex;align-items:center;justify-content:center; flex-shrink:0;}
+  .pcard .t{font-size:12.5px; color:var(--inkSoft); line-height:1.4;}
+  .pcard.amber .ico{background:var(--accentSoft);}
+
+  /* buttons (coin-edge filled, default md=44 via inner) */
+  .btn{height:44px; border-radius:var(--r-full); display:flex; align-items:center; justify-content:center; gap:8px; font-weight:700; font-size:15px; font-family:'Plus Jakarta Sans';}
+  .btn.primary{background:var(--primary); color:#fff; box-shadow:0 6px 0 var(--primaryEdge); margin-bottom:6px;}
+  .btn.ghost{background:transparent; color:var(--inkSoft); height:40px; font-weight:600; font-size:14px;}
+  .btn .tri{width:0;height:0;border-left:8px solid #fff; border-top:5px solid transparent; border-bottom:5px solid transparent;}
+
+  /* quiz */
+  .qbee{width:72px;height:72px;border-radius:var(--r-full);background:var(--primarySoft); margin:4px auto 16px; display:flex;align-items:center;justify-content:center; font-size:32px;}
+  .prompt{font-size:21px; font-weight:700; color:var(--ink); text-align:center; line-height:1.25;}
+  .qsub{font-size:13px; color:var(--inkSoft); text-align:center; margin-top:8px; line-height:1.45;}
+  .qwhy{font-size:11.5px; color:var(--inkFaint); text-align:center; margin-top:6px; line-height:1.4;}
+  .tiles{display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-top:20px;}
+  .tile{background:var(--surface); border-radius:var(--r-card); padding:18px 12px; text-align:center; box-shadow:0 6px 0 var(--surfaceRaisedEdge); min-height:84px; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:8px;}
+  .tile.sel{box-shadow:0 6px 0 var(--primaryEdge); border:2px solid var(--primary);}
+  .tile .gl{width:26px;height:26px;border-radius:7px; background:var(--primarySoft);}
+  .tile.sel .gl{background:var(--primary);}
+  .tile .tl{font-size:13px; font-weight:700; color:var(--ink);}
+  .skiprow{display:flex; justify-content:flex-end; margin-bottom:8px;}
+  .skiplink{font-size:13px; font-weight:600; color:var(--inkSoft); display:flex; align-items:center; gap:4px;}
+
+  /* reveal collectible */
+  .revcard{position:relative; border-radius:20px; padding:26px 22px 24px; overflow:hidden;
+    background:linear-gradient(160deg,var(--rv-top),var(--rv-mid) 55%,var(--rv-bot)); border:1px solid rgba(255,255,255,.08);}
+  .revcard .bloom{position:absolute; top:-30px; left:50%; transform:translateX(-50%); width:230px;height:230px; border-radius:50%;
+    background:radial-gradient(circle, rgba(124,109,232,.55), transparent 65%); filter:blur(8px);}
+  .revcard .sheen{position:absolute; top:0; left:-20%; width:55%; height:100%; transform:rotate(18deg);
+    background:linear-gradient(90deg, transparent, rgba(255,255,255,.10), transparent);}
+  .rev-in{position:relative;}
+  .crest{width:84px;height:84px; margin:0 auto 14px; border-radius:50%;
+    background:radial-gradient(circle at 50% 40%, rgba(124,109,232,.45), rgba(36,36,54,.2) 70%);
+    display:flex;align-items:center;justify-content:center; font-size:38px;}
+  .eyebrow{text-align:center; font-size:10px; font-weight:800; letter-spacing:1.8px; color:var(--rv-eyebrow);}
+  .echo{text-align:center; font-size:12.5px; color:var(--rv-blurb); margin-top:14px; line-height:1.5;}
+  .echo b{color:var(--rv-ink);}
+  .rtitle{text-align:center; font-size:25px; font-weight:800; letter-spacing:-0.4px; color:var(--rv-ink); margin-top:6px;}
+  .mult{text-align:center; font-family:'Inter'; font-weight:700; color:var(--rv-ink); margin-top:14px; font-variant-numeric:tabular-nums;}
+  .mult .nm{font-size:46px; letter-spacing:-1px;}
+  .mult .x{font-size:24px; color:var(--rv-blurb);}
+  .mcap{text-align:center; font-size:11px; color:var(--rv-eyebrow); margin-top:2px;}
+  .rblurb{text-align:center; font-size:13px; color:var(--rv-blurb); margin-top:14px; line-height:1.5;}
+  .rdisc{text-align:center; font-size:11px; color:var(--inkFaint); margin-top:16px; line-height:1.45;}
+
+  /* categories chips */
+  .chips{display:flex; flex-wrap:wrap; gap:9px; margin-top:20px;}
+  .chip{background:var(--surface); border:1px solid var(--hairline); border-radius:var(--r-full); padding:10px 15px; font-size:13.5px; font-weight:600; color:var(--inkSoft);}
+  .chip.on{background:var(--primarySoft); border-color:var(--primary); color:var(--primaryEdge); font-weight:700;}
+  .chip.add{border-style:dashed; color:var(--inkFaint);}
+  .nudge{font-size:12.5px; color:var(--accentEdge); font-weight:600; margin-top:16px;}
+
+  /* honey trail */
+  .trail{display:flex; align-items:center; gap:0; margin-top:18px;}
+  .node{display:flex; flex-direction:column; align-items:center; gap:6px; flex:1;}
+  .dot{width:14px;height:14px;border-radius:50%; background:var(--surfaceSunken); border:2px solid var(--hairline);}
+  .node.now .dot{background:var(--primary); border-color:var(--primary);}
+  .node .nl{font-size:9.5px; font-weight:700; color:var(--inkFaint); letter-spacing:.3px;}
+  .node.now .nl{color:var(--primary);}
+  .link{height:2px; flex:1; background:var(--hairline); margin-top:-18px;}
+  .legend{font-size:11.5px; color:var(--inkFaint); line-height:1.45; margin-top:14px; text-align:center;}
+
+  /* name inline */
+  .nameline{display:flex; align-items:center; gap:10px; margin-top:18px; background:var(--surface); border:1px solid var(--hairline); border-radius:var(--r-card); padding:12px 14px;}
+  .nameline .ph{font-size:14px; color:var(--inkFaint);}
+  .nameline .opt{margin-left:auto; font-size:11px; color:var(--inkFaint); font-weight:600;}
+
+  /* first-run today */
+  .todaytop{display:flex; align-items:center; justify-content:space-between; margin-bottom:18px;}
+  .todaytop .ttl{font-size:22px; font-weight:800; letter-spacing:-.4px;}
+  .todaytop .hud{width:40px;height:40px;border-radius:50%; background:var(--primarySoft); display:flex;align-items:center;justify-content:center; font-size:20px;}
+  .firstcard{background:var(--surface); border-radius:var(--r-card); padding:22px 18px; text-align:center; border:1px dashed var(--primary);}
+  .firstcard .pl{width:52px;height:52px;border-radius:50%; background:var(--primary); margin:0 auto 14px; display:flex;align-items:center;justify-content:center; box-shadow:0 6px 0 var(--primaryEdge);}
+  .firstcard .pl .tri{width:0;height:0;border-left:15px solid #fff; border-top:10px solid transparent; border-bottom:10px solid transparent; margin-left:4px;}
+  .firstcard .ft{font-size:17px; font-weight:800; color:var(--ink);}
+  .firstcard .fb{font-size:13px; color:var(--inkSoft); margin-top:8px; line-height:1.5;}
+  .ghosttask{background:var(--surface); border-radius:var(--r-card); padding:15px 16px; margin-top:12px; opacity:.4; display:flex; justify-content:space-between; align-items:center;}
+  .ghosttask .gt{font-size:14px; font-weight:700;}
+  .ghosttask .gc{font-size:11px; color:var(--inkSoft); margin-top:2px;}
+</style>
+</head>
+<body>
+  <h1>Whenbee — Onboarding redesign v1</h1>
+  <p class="lead"><b>Reward before chore.</b> Reordered so the personalization quiz (investment) pays off with the archetype reveal (peak) <b>before</b> the categories setup. Reflect-answers-back made explicit on the reveal. Ends in <b>one real action</b>, never a dead empty screen. Light theme is hero; every value is a verbatim token from <code>src/theme/tokens.ts</code>.</p>
+  <p class="seq">Welcome → Quiz (Q1–Q4) → Reveal → Categories → Ready → First-run Today → Soft-ask (post-calibration) &nbsp;·&nbsp; rev b · paywall stays OUT · no streaks · no guilt · no feature tour</p>
+
+  <div class="row">
+
+    <!-- 1 WELCOME -->
+    <div class="frame">
+      <div class="cap"><span class="n">①</span> Welcome — value anchor</div>
+      <div class="why"><b>Job:</b> prove the value in one screen (your guess vs the honest number) before asking for anything.</div>
+      <div class="phone">
+        <div class="dots"><span class="d on"></span><span class="d"></span><span class="d"></span><span class="d"></span><span class="d"></span></div>
+        <div class="head">You're not lazy.<br>You're a time optimist.</div>
+        <div class="body">I learn how long things really take you, then show the honest number — so you stop planning around a guess.</div>
+        <div class="ofWrap">
+          <div class="label" style="margin-bottom:10px;">How long it really takes</div>
+          <div class="ofbar"><span class="g"></span><span class="e"></span></div>
+          <div class="oflabels"><span class="l">you guessed 15m</span><span class="r">+9m reality</span></div>
+          <div class="offoot">An example — yours come from your own timers.</div>
+        </div>
+        <div class="pcard">
+          <div class="ico">🔒</div>
+          <div class="t">No account, no email. Everything stays on this phone.</div>
+        </div>
+        <div class="spacer"></div>
+        <div class="btn primary"><span>Show me how</span><span class="tri"></span></div>
+      </div>
+    </div>
+
+    <!-- 2 QUIZ -->
+    <div class="frame">
+      <div class="cap"><span class="n">②</span> Quiz Q1 — start the investment</div>
+      <div class="why"><b>Moved earlier. 4 value-bearing Qs</b> (added: "where time runs away" — sharpens the seed). No padding to 10. Safe "I lose track" = can't-fail screen one.</div>
+      <div class="phone">
+        <div class="dots"><span class="d on"></span><span class="d" style="background:linear-gradient(90deg,var(--primary) 25%,var(--surfaceSunken) 25%);"></span><span class="d"></span><span class="d"></span><span class="d"></span></div>
+        <div class="skiprow"><span class="skiplink">Skip to my type →</span></div>
+        <div class="qbee">🐝</div>
+        <div class="prompt">When you plan your day, things usually take…</div>
+        <div class="qsub">No right answer here. Pick what's true most days, and I'll learn from it.</div>
+        <div class="qwhy">This sets your starting point. It sharpens the moment you time a real task.</div>
+        <div class="tiles">
+          <div class="tile"><span class="gl"></span><span class="tl">About right</span></div>
+          <div class="tile"><span class="gl"></span><span class="tl">A bit longer</span></div>
+          <div class="tile sel"><span class="gl"></span><span class="tl">A lot longer</span></div>
+          <div class="tile"><span class="gl"></span><span class="tl">I lose track</span></div>
+        </div>
+        <div class="spacer"></div>
+        <div class="btn primary"><span>Next</span><span class="tri"></span></div>
+      </div>
+    </div>
+
+    <!-- 3 REVEAL -->
+    <div class="frame">
+      <div class="cap"><span class="n">③</span> Reveal — the proxy aha (PEAK)</div>
+      <div class="why"><b>New answer-echo line</b> makes the number provably yours (Rise/Opal reflect-back). The collectible card + one-pass sweep stay.</div>
+      <div class="phone">
+        <div class="dots"><span class="d on"></span><span class="d on"></span><span class="d on"></span><span class="d"></span><span class="d"></span></div>
+        <div class="revcard">
+          <div class="bloom"></div><div class="sheen"></div>
+          <div class="rev-in">
+            <div class="crest">🐝</div>
+            <div class="eyebrow">YOUR TIME PERSONALITY</div>
+            <div class="echo">From your answers: <b>you plan tight</b> · <b>rabbit-hole on deep work</b> →</div>
+            <div class="rtitle">The Sprint Optimist</div>
+            <div class="mult"><span class="nm">2.1</span><span class="x">×</span></div>
+            <div class="mcap">your guess, on average</div>
+            <div class="rblurb">Your mind moves fast; the doing takes a touch longer. Now you know by how much.</div>
+            <div class="rdisc">A first read from your answers. Every task you time makes it sharper — and your type can move as your numbers do.</div>
+          </div>
+        </div>
+        <div class="spacer"></div>
+        <div class="btn primary" style="margin-top:18px;"><span>Sharpen it on my tasks</span><span class="tri"></span></div>
+      </div>
+    </div>
+
+    <!-- 4 CATEGORIES -->
+    <div class="frame">
+      <div class="cap"><span class="n">④</span> Categories — motivated setup</div>
+      <div class="why"><b>Reframed from blame to the thing they just learned.</b> Now a chore done while motivation is high, after the reward.</div>
+      <div class="phone">
+        <div class="dots"><span class="d on"></span><span class="d on"></span><span class="d on"></span><span class="d on"></span><span class="d"></span></div>
+        <div class="head sm">Where does time slip most?</div>
+        <div class="body">Pick a few. I'll sharpen your honest number here first.</div>
+        <div class="chips">
+          <span class="chip on">Getting ready</span>
+          <span class="chip on">Admin &amp; email</span>
+          <span class="chip">Cleaning</span>
+          <span class="chip on">Errands</span>
+          <span class="chip">Cooking</span>
+          <span class="chip">Out the door</span>
+          <span class="chip add">+ Add your own</span>
+        </div>
+        <div class="nudge">3 picked. That's plenty to learn from.</div>
+        <div class="spacer"></div>
+        <div class="btn primary"><span>Continue</span><span class="tri"></span></div>
+      </div>
+    </div>
+
+    <!-- 5 READY -->
+    <div class="frame">
+      <div class="cap"><span class="n">⑤</span> Ready — one action (lightened)</div>
+      <div class="why"><b>Soft-ask removed</b> (now fires after the first calibration, frame ⑦). Trail gets a legend. Optional name folded in. CTA names the action.</div>
+      <div class="phone">
+        <div class="dots"><span class="d on"></span><span class="d on"></span><span class="d on"></span><span class="d on"></span><span class="d on"></span></div>
+        <div class="head sm">One tap to start.<br>One tap to ripen.</div>
+        <div class="body">From your first guess, I'll show honest times. Each task you log makes them sharper — and I'll never scold you for a gap.</div>
+        <div class="label" style="margin-top:22px; margin-bottom:4px;">Where you're headed</div>
+        <div class="trail">
+          <div class="node now"><span class="dot"></span><span class="nl">RAW</span></div>
+          <div class="link"></div>
+          <div class="node"><span class="dot"></span><span class="nl">SETTING</span></div>
+          <div class="link"></div>
+          <div class="node"><span class="dot"></span><span class="nl">RIPENING</span></div>
+          <div class="link"></div>
+          <div class="node"><span class="dot"></span><span class="nl">THICK</span></div>
+          <div class="link"></div>
+          <div class="node"><span class="dot"></span><span class="nl">HONEST</span></div>
+        </div>
+        <div class="legend">Your accuracy ripens as you log. It only ever ripens — no streak to break.</div>
+        <div class="nameline"><span class="ph">Anything I should call you?</span><span class="opt">optional</span></div>
+        <div class="spacer"></div>
+        <div class="btn primary" style="margin-top:16px;"><span>Time my first thing</span><span class="tri"></span></div>
+      </div>
+    </div>
+
+    <!-- 6 FIRST RUN -->
+    <div class="frame">
+      <div class="cap"><span class="n">⑥</span> First-run Today — the hand-off</div>
+      <div class="why"><b>The biggest fix.</b> Never a blank list. One obvious action → the first real calibration = the activation event we measure.</div>
+      <div class="phone">
+        <div class="todaytop"><span class="ttl">Today</span><span class="hud">🐝</span></div>
+        <div class="label" style="margin-bottom:12px;">LET'S CALIBRATE</div>
+        <div class="firstcard">
+          <div class="pl"><span class="tri"></span></div>
+          <div class="ft">Time your first thing</div>
+          <div class="fb">Guess how long it'll take, hit start, and I'll show you the honest number.</div>
+        </div>
+        <div class="ghosttask"><div><div class="gt">Your tasks land here</div><div class="gc">each one sharpens your number</div></div><div style="font-size:11px;color:var(--inkFaint);">soon</div></div>
+        <div class="ghosttask"><div><div class="gt">…</div><div class="gc">&nbsp;</div></div></div>
+        <div class="spacer"></div>
+        <div class="legend" style="margin-bottom:4px;">Empty days are fine. Forgot to time something? Add it in one tap.</div>
+      </div>
+    </div>
+
+    <!-- 7 POST-CALIBRATION SOFT-ASK -->
+    <div class="frame">
+      <div class="cap"><span class="n">⑦</span> After 1st calibration — soft-ask</div>
+      <div class="why"><b>Moved here from Ready.</b> Honest number just landed = value felt. Ask is now self-evidently relevant (+89% opt-in at peak relevance). Native prompt fires only on "Sounds good".</div>
+      <div class="phone">
+        <div class="todaytop"><span class="ttl">First one done</span><span class="hud">🐝</span></div>
+        <div class="ofWrap" style="background:var(--surface); border:1px solid var(--hairline);">
+          <div class="label" style="margin-bottom:10px;">YOUR HONEST NUMBER · GETTING READY</div>
+          <div class="mult" style="color:var(--ink);"><span class="nm" style="color:var(--ink);">31</span><span class="x" style="color:var(--inkSoft);">m</span></div>
+          <div class="mcap" style="color:var(--inkSoft);">you guessed 20m · now you know</div>
+        </div>
+        <div class="pcard amber" style="margin-top:18px;">
+          <div class="ico">🔔</div>
+          <div class="t">A gentle nudge when a timer ends? No streaks, no scolding — just the honest number when it counts.</div>
+        </div>
+        <div style="display:flex; gap:8px; margin-top:10px;">
+          <div class="btn" style="flex:1; background:var(--accentSoft); color:var(--accentEdge); box-shadow:0 6px 0 #e7d4ad;">Sounds good</div>
+          <div class="btn ghost" style="flex:1;">Not now</div>
+        </div>
+        <div class="spacer"></div>
+        <div class="legend" style="margin-bottom:4px;">Decline = re-offered later from another relevant moment. iOS native prompt is one-shot, so we never burn it cold.</div>
+      </div>
+    </div>
+
+  </div>
+</body>
+</html>
+</content>

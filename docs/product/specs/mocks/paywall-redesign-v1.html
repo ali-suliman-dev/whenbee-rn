@@ -1,0 +1,439 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Whenbee · Paywall redesign v1</title>
+<style>
+  /* ===== REAL TOKENS (src/theme/tokens.ts — dark) ===== */
+  :root{
+    --bg:#14151D; --surface:#1F2130; --surfaceRaised:#292B3C; --surfaceSunken:#15161F;
+    --raisedEdge:#1B1C27;
+    --hairline:rgba(255,255,255,0.08); --border:rgba(255,255,255,0.14);
+    --shine:rgba(255,255,255,0.07);
+    --ink:#F4F1EA; --inkSoft:#ADA9B5; --inkFaint:rgba(244,241,234,0.40);
+    --primary:#8275F0; --primaryEdge:#6B5BE6; --primarySoft:rgba(130,117,240,0.22);
+    --primaryChip:rgba(130,117,240,0.20); --rayFill:rgba(130,117,240,0.30);
+    --accent:#EEAE4D; --accentEdge:#C68A30; --accentSoft:rgba(238,174,77,0.18);
+    --accentChip:#2E2A20; --honeyWash:#2B2620; --amberText:#EEAE4D;
+    --onAmber:#20233A; --onIndigo:#14151D; --success:#33B07C; --successSoft:rgba(51,176,124,0.18);
+    /* brand bee (mode-independent) */
+    --beeBody:#5F4EE4; --beeBodyHi:#6F60E7; --beeBodyLo:#4F3CE2;
+    --beeStripe:#F6B442; --beeStripeLo:#EA980B; --beeWing:#FCE7C5; --beeInk:#262D40; --beeAntenna:#191E2B;
+    /* spacing (4-based) */
+    --s1:4px; --s2:8px; --s3:12px; --s4:16px; --s5:20px; --s6:24px; --s8:32px; --s10:40px; --s12:48px;
+    /* radii */ --rSm:8px; --rMd:12px; --rCard:16px; --rSheet:20px; --rFull:999px;
+    /* coin edge */ --edge:8px; --shallowEdge:4px;
+    /* motion */ --premium:cubic-bezier(0.4,0,0.2,1);
+  }
+  *{box-sizing:border-box; margin:0; padding:0;}
+  html,body{background:#0b0c11; font-family:-apple-system,'Inter','Segoe UI',sans-serif;
+    -webkit-font-smoothing:antialiased; color:var(--ink);}
+  .wrap{max-width:1180px; margin:0 auto; padding:48px 24px 96px;}
+  h1.page{font-size:24px; font-weight:700; letter-spacing:-0.5px; color:#fff; margin-bottom:6px;}
+  p.page{font-size:14px; color:#8c8f9e; margin-bottom:8px; max-width:760px; line-height:1.6;}
+  .legend{display:flex; gap:18px; flex-wrap:wrap; margin:20px 0 36px; font-size:12.5px; color:#8c8f9e;}
+  .legend b{color:#c9cbd6; font-weight:600;}
+  .stage{display:flex; gap:56px; flex-wrap:wrap; justify-content:center; align-items:flex-start;}
+  .col{display:flex; flex-direction:column; align-items:center; gap:14px;}
+  .cap{font-size:12.5px; color:#8c8f9e; max-width:330px; text-align:center; line-height:1.55;}
+  .cap b{color:#cfd1db; font-weight:600;}
+
+  /* ===== device ===== */
+  .phone{width:340px; border-radius:44px; padding:10px; background:#000;
+    box-shadow:0 0 0 2px #2a2b34, 0 40px 80px rgba(0,0,0,0.6);}
+  .screen{position:relative; width:320px; height:694px; border-radius:36px; overflow:hidden;
+    background:var(--bg); display:flex; flex-direction:column;}
+  .notch{position:absolute; top:9px; left:50%; transform:translateX(-50%); width:104px; height:26px;
+    background:#000; border-radius:14px; z-index:40;}
+
+  /* scrollable sheet body */
+  .grabber{width:40px; height:5px; border-radius:999px; background:rgba(173,169,181,0.35);
+    margin:10px auto 0;}
+  .body{flex:1; overflow-y:auto; padding:0 20px 18px;}
+  .body::-webkit-scrollbar{width:0;}
+
+  /* ===== hero burst ===== */
+  .hero{position:relative; height:196px; display:flex; align-items:center; justify-content:center;
+    margin-top:2px;}
+  .rays{position:absolute; width:240px; height:240px; left:50%; top:50%;
+    transform:translate(-50%,-50%); border-radius:50%; overflow:hidden;
+    -webkit-mask:radial-gradient(circle at center, #000 18%, rgba(0,0,0,0.7) 42%, transparent 70%);
+            mask:radial-gradient(circle at center, #000 18%, rgba(0,0,0,0.7) 42%, transparent 70%);}
+  .rays i{position:absolute; left:50%; top:50%; width:13px; height:120px; transform-origin:50% 0;
+    background:var(--rayFill);}
+  /* coin badge on the bee shoulder */
+  .coin{position:absolute; top:34px; right:54px; width:42px; height:42px; border-radius:50%;
+    background:var(--accent); color:var(--onAmber); display:flex; align-items:center; justify-content:center;
+    font-size:18px; font-weight:700; box-shadow:0 var(--edge) 0 var(--accentEdge);
+    z-index:6;}
+  /* bee */
+  .bee{position:relative; z-index:5; width:150px; height:150px;}
+
+  /* ===== copy ===== */
+  .eyebrow{display:inline-flex; align-items:center; gap:6px; font-size:11px; font-weight:700;
+    letter-spacing:0.8px; text-transform:uppercase; color:var(--amberText);
+    background:var(--accentChip); border:1px solid rgba(238,174,77,0.28);
+    padding:5px 10px; border-radius:var(--rFull); margin:2px 0 12px;}
+  .h-title{font-size:25px; line-height:1.16; font-weight:700; letter-spacing:-0.5px; color:var(--ink);}
+  .h-sub{font-size:14.5px; line-height:1.5; color:var(--inkSoft); margin-top:10px;}
+  .h-sub b{color:var(--ink); font-weight:600;}
+
+  /* ===== value stack ===== */
+  .stack{margin-top:22px; display:flex; flex-direction:column; gap:2px;}
+  .row{display:flex; gap:13px; align-items:flex-start; padding:11px 4px;}
+  .row + .row{border-top:1px solid var(--hairline);}
+  .ic{flex:none; width:34px; height:34px; border-radius:10px; background:var(--primarySoft);
+    display:flex; align-items:center; justify-content:center; margin-top:1px;}
+  .ic svg{width:18px; height:18px; stroke:var(--primary); fill:none; stroke-width:1.9;
+    stroke-linecap:round; stroke-linejoin:round;}
+  .rtext .t{font-size:14.5px; font-weight:600; color:var(--ink); line-height:1.25;}
+  .rtext .d{font-size:12.5px; color:var(--inkSoft); line-height:1.45; margin-top:3px;}
+
+  /* ===== plan picker ===== */
+  .plans{margin-top:24px; display:flex; flex-direction:column; gap:10px;}
+  .plan{position:relative; border-radius:var(--rCard); border:1.5px solid var(--border);
+    background:var(--surface); padding:14px 15px; display:flex; align-items:center; justify-content:space-between;}
+  .plan.sel{border-color:var(--primary); background:var(--primaryChip);}
+  .plan .pl{display:flex; flex-direction:column; gap:3px;}
+  .plan .pt{font-size:15.5px; font-weight:600; color:var(--ink);}
+  .plan .pn{font-size:12px; color:var(--inkSoft);}
+  .plan .pr{text-align:right; display:flex; flex-direction:column; gap:2px;}
+  .plan .pp{font-size:16px; font-weight:700; color:var(--ink); font-variant-numeric:tabular-nums;}
+  .plan .pe{font-size:11.5px; color:var(--inkSoft); font-variant-numeric:tabular-nums;}
+  .badge{position:absolute; top:-9px; left:14px; font-size:10px; font-weight:700; letter-spacing:0.6px;
+    text-transform:uppercase; color:var(--onAmber); background:var(--accent);
+    padding:3px 8px; border-radius:var(--rFull);}
+  .radio{width:20px; height:20px; border-radius:50%; border:2px solid var(--inkFaint); flex:none; margin-left:12px;
+    position:relative;}
+  .plan.sel .radio{border-color:var(--primary);}
+  .plan.sel .radio::after{content:''; position:absolute; inset:3px; border-radius:50%; background:var(--primary);}
+
+  /* ===== trial timeline ===== */
+  .timeline{margin-top:16px; display:flex; align-items:center; gap:0; padding:0 2px;}
+  .tl{flex:1; display:flex; flex-direction:column; gap:6px; align-items:flex-start; position:relative;}
+  .tl .dot{width:11px; height:11px; border-radius:50%; background:var(--surfaceRaised);
+    border:2px solid var(--inkFaint);}
+  .tl.on .dot{background:var(--accent); border-color:var(--accent);}
+  .tl .line{position:absolute; left:11px; top:4px; height:2px; width:calc(100% - 11px); background:var(--hairline);}
+  .tl .tlh{font-size:11.5px; font-weight:600; color:var(--ink);}
+  .tl .tld{font-size:10.5px; color:var(--inkSoft); line-height:1.35;}
+
+  /* ===== CTA ===== */
+  .ctaWrap{margin-top:20px; padding-bottom:var(--edge);}
+  .cta{position:relative; width:100%; height:52px; border-radius:var(--rFull); border:none;
+    background:var(--accent); color:var(--onAmber); font-size:16.5px; font-weight:700;
+    box-shadow:0 var(--edge) 0 var(--accentEdge); cursor:pointer; letter-spacing:0.2px;}
+  .micro{margin-top:14px; font-size:11.5px; color:var(--inkFaint); text-align:center; line-height:1.5;}
+
+  /* ===== reassurance ===== */
+  .reassure{margin-top:18px; background:var(--successSoft); border-radius:var(--rCard);
+    padding:13px 14px; display:flex; gap:10px; align-items:flex-start;}
+  .reassure svg{width:17px; height:17px; stroke:var(--success); fill:none; stroke-width:2; flex:none; margin-top:1px;}
+  .reassure .rt{font-size:12.5px; color:var(--ink); line-height:1.45;}
+  .reassure .rt b{font-weight:600;}
+  .founder{margin-top:14px; font-size:12px; font-style:italic; color:var(--inkSoft); text-align:center; line-height:1.5;}
+
+  /* ===== legal row ===== */
+  .legal{margin-top:18px; display:flex; justify-content:center; gap:18px; flex-wrap:wrap;}
+  .legal a{font-size:12px; color:var(--primary); text-decoration:none; font-weight:500;}
+  .close{position:absolute; top:54px; right:20px; width:30px; height:30px; border-radius:50%;
+    background:rgba(255,255,255,0.07); display:flex; align-items:center; justify-content:center; z-index:30;}
+  .close svg{width:14px; height:14px; stroke:var(--inkSoft); stroke-width:2.2; fill:none; stroke-linecap:round;}
+
+  /* before/after mini (for one stack proof) */
+  .ba{margin-top:14px; display:flex; gap:10px;}
+  .ba .c{flex:1; background:var(--surface); border:1px solid var(--hairline); border-radius:var(--rMd); padding:12px;}
+  .ba .lab{font-size:10px; font-weight:700; letter-spacing:0.7px; text-transform:uppercase; margin-bottom:9px;}
+  .ba .lab.p{color:var(--inkSoft);} .ba .lab.h{color:var(--amberText);}
+  .ba .bar{height:7px; border-radius:5px; margin-bottom:6px;}
+  .ba .end{font-size:11px; margin-top:6px;} .ba .end.p{color:var(--inkSoft);} .ba .end.h{color:var(--amberText); font-weight:600;}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1 class="page">Whenbee · Paywall redesign v1</h1>
+  <p class="page">The old paywall pitched <b>one</b> feature (calendar) for a <b>nine-feature</b> Pro bundle, arriving the same way from 15 different gates — so it read as random and undersold. New structure: a <b>hero that adapts to the gate the user tapped</b>, a <b>scannable value-stack</b> that represents the whole bundle, an <b>anchored plan picker</b>, and an honest trust block. No fabricated numbers, no guilt.</p>
+  <div class="legend">
+    <span><b>Adaptive top</b> — eyebrow + headline change per trigger</span>
+    <span><b>Fixed bundle stack</b> — 5 grouped rows = all of Pro</span>
+    <span><b>Amber coin-edge CTA</b> — never indigo for Pro</span>
+    <span><b>Real dark tokens</b> from tokens.ts</span>
+  </div>
+
+  <div class="stage">
+
+    <!-- ============ SCREEN A: arrived from Honest-Day / calendar ============ -->
+    <div class="col">
+      <div class="phone"><div class="screen">
+        <div class="notch"></div>
+        <div class="close"><svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg></div>
+        <div class="grabber"></div>
+        <div class="body">
+
+          <!-- hero -->
+          <div class="hero">
+            <div class="rays" id="raysA"></div>
+            <div class="coin">✦</div>
+            <div class="bee"><svg viewBox="0 0 150 150" width="150" height="150">
+              <g>
+                <!-- wings -->
+                <ellipse cx="46" cy="64" rx="26" ry="20" fill="var(--beeWing)" opacity="0.96"/>
+                <ellipse cx="104" cy="64" rx="26" ry="20" fill="var(--beeWing)" opacity="0.96"/>
+                <!-- body -->
+                <ellipse cx="75" cy="86" rx="30" ry="34" fill="var(--beeBody)"/>
+                <path d="M48 78 h54 M50 96 h50 M56 112 h38" stroke="var(--beeStripe)" stroke-width="8" stroke-linecap="round"/>
+                <!-- head -->
+                <circle cx="75" cy="58" r="24" fill="var(--beeStripe)"/>
+                <!-- face -->
+                <circle cx="66" cy="56" r="3.2" fill="var(--beeInk)"/>
+                <circle cx="84" cy="56" r="3.2" fill="var(--beeInk)"/>
+                <path d="M68 66 q7 6 14 0" stroke="var(--beeInk)" stroke-width="2.6" fill="none" stroke-linecap="round"/>
+                <!-- antennae -->
+                <path d="M64 38 q-6 -10 -12 -12" stroke="var(--beeAntenna)" stroke-width="2.6" fill="none" stroke-linecap="round"/>
+                <path d="M86 38 q6 -10 12 -12" stroke="var(--beeAntenna)" stroke-width="2.6" fill="none" stroke-linecap="round"/>
+                <circle cx="51" cy="25" r="3" fill="var(--beeAntenna)"/>
+                <circle cx="99" cy="25" r="3" fill="var(--beeAntenna)"/>
+              </g>
+            </svg></div>
+          </div>
+
+          <span class="eyebrow">✦ Whenbee Pro</span>
+          <div class="h-title">Your real day,<br/>before you live it.</div>
+          <div class="h-sub">You did the logging — Whenbee knows how your days actually run. <b>Pro carries those real numbers into everything you plan.</b></div>
+
+          <!-- before/after proof (only on calendar entry) -->
+          <div class="ba">
+            <div class="c">
+              <div class="lab p">Your plan</div>
+              <div class="bar" style="width:90%;background:rgba(173,169,181,0.30)"></div>
+              <div class="bar" style="width:70%;background:rgba(173,169,181,0.30)"></div>
+              <div class="bar" style="width:82%;background:rgba(173,169,181,0.30)"></div>
+              <div class="end p">Crashes 5:00. Runs over.</div>
+            </div>
+            <div class="c">
+              <div class="lab h">Honest day</div>
+              <div class="bar" style="width:88%;background:var(--primary)"></div>
+              <div class="bar" style="width:40%;background:var(--accent)"></div>
+              <div class="bar" style="width:72%;background:var(--primary)"></div>
+              <div class="end h">Ends 7:10. It fits.</div>
+            </div>
+          </div>
+
+          <!-- value stack -->
+          <div class="stack">
+            <div class="row">
+              <div class="ic"><svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="17" rx="2"/><path d="M3 9h18M8 2v4M16 2v4"/></svg></div>
+              <div class="rtext"><div class="t">Honest calendar &amp; capacity</div><div class="d">Every event padded with your real buffers. See what the day can actually hold — and plan around your sharpest hours.</div></div>
+            </div>
+            <div class="row">
+              <div class="ic"><svg viewBox="0 0 24 24"><path d="M21 12a9 9 0 1 1-3-6.7M21 4v4h-4"/></svg></div>
+              <div class="rtext"><div class="t">Routines &amp; goal coach</div><div class="d">Recurring chains learn their honest length. Set an accuracy aim per category and get help at guess-time, with an ETA to your goal.</div></div>
+            </div>
+            <div class="row">
+              <div class="ic"><svg viewBox="0 0 24 24"><path d="M4 19V5M4 19h16M8 16l3-4 3 2 4-7"/></svg></div>
+              <div class="rtext"><div class="t">Sharper self-insight</div><div class="d">What steals your time, when you're most accurate, and what context costs you — the patterns your logs already hold.</div></div>
+            </div>
+            <div class="row">
+              <div class="ic"><svg viewBox="0 0 24 24"><path d="M4 6h16M4 12h10M4 18h7"/><path d="M19 14l2 2-5 5-2-.5.5-2z"/></svg></div>
+              <div class="rtext"><div class="t">Your week, reviewed</div><div class="d">A calm weekly &amp; monthly recap, long-range history, and a clean PDF or one-tap share — made on your phone, never sent without you.</div></div>
+            </div>
+            <div class="row">
+              <div class="ic"><svg viewBox="0 0 24 24"><path d="M18 8a6 6 0 1 0-12 0c0 7-3 9-3 9h18s-3-2-3-9M13.7 21a2 2 0 0 1-3.4 0"/></svg></div>
+              <div class="rtext"><div class="t">Always there</div><div class="d">Live timer and finish-time on your lock screen, plus a gentle nudge when you've run well past your guess.</div></div>
+            </div>
+          </div>
+
+          <!-- plan picker -->
+          <div class="plans">
+            <div class="plan sel">
+              <span class="badge">Save 42%</span>
+              <div class="pl"><div class="pt">Yearly</div><div class="pn">7-day free trial, then billed yearly</div></div>
+              <div style="display:flex;align-items:center">
+                <div class="pr"><div class="pp">$34.99</div><div class="pe">$2.92 / mo</div></div>
+                <div class="radio"></div>
+              </div>
+            </div>
+            <div class="plan">
+              <div class="pl"><div class="pt">Lifetime</div><div class="pn">Pay once. No subscription, ever.</div></div>
+              <div style="display:flex;align-items:center">
+                <div class="pr"><div class="pp">$89.00</div><div class="pe">one time</div></div>
+                <div class="radio"></div>
+              </div>
+            </div>
+            <div class="plan">
+              <div class="pl"><div class="pt">Monthly</div><div class="pn">7-day free trial, then billed monthly</div></div>
+              <div style="display:flex;align-items:center">
+                <div class="pr"><div class="pp">$4.99</div><div class="pe">/ mo</div></div>
+                <div class="radio"></div>
+              </div>
+            </div>
+          </div>
+
+          <!-- trial timeline -->
+          <div class="timeline">
+            <div class="tl on"><div class="line" style="background:var(--accent)"></div><div class="dot"></div><div class="tlh">Today</div><div class="tld">Full Pro unlocked, free</div></div>
+            <div class="tl"><div class="line"></div><div class="dot"></div><div class="tlh">Day 5</div><div class="tld">We remind you</div></div>
+            <div class="tl"><div class="dot"></div><div class="tlh">Day 7</div><div class="tld">Trial ends</div></div>
+          </div>
+
+          <!-- CTA -->
+          <div class="ctaWrap"><button class="cta">Try 7 days free</button></div>
+          <div class="micro">No charge today. Cancel anytime. On-device and private.</div>
+
+          <!-- reassurance -->
+          <div class="reassure">
+            <svg viewBox="0 0 24 24"><path d="M20 6L9 17l-5-5"/></svg>
+            <div class="rt"><b>Calibration stays free, always.</b> No card, no renewal — that's your real trial. Pro just adds the payoff.</div>
+          </div>
+          <div class="founder">"Built by people who are late to everything. It's the tool we needed first."</div>
+
+          <!-- legal -->
+          <div class="legal">
+            <a href="#">Restore</a><a href="#">Terms</a><a href="#">Privacy</a>
+          </div>
+        </div>
+      </div></div>
+      <div class="cap"><b>Entry: Honest-Day / calendar gate.</b> Hero outcome speaks to the calendar, the before/after proves it, then the stack shows everything else Pro adds.</div>
+    </div>
+
+    <!-- ============ SCREEN B: arrived from Goals gate (adaptive top) ============ -->
+    <div class="col">
+      <div class="phone"><div class="screen">
+        <div class="notch"></div>
+        <div class="close"><svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg></div>
+        <div class="grabber"></div>
+        <div class="body">
+
+          <div class="hero">
+            <div class="rays" id="raysB"></div>
+            <div class="coin">✦</div>
+            <div class="bee"><svg viewBox="0 0 150 150" width="150" height="150">
+              <g>
+                <ellipse cx="46" cy="64" rx="26" ry="20" fill="var(--beeWing)" opacity="0.96"/>
+                <ellipse cx="104" cy="64" rx="26" ry="20" fill="var(--beeWing)" opacity="0.96"/>
+                <ellipse cx="75" cy="86" rx="30" ry="34" fill="var(--beeBody)"/>
+                <path d="M48 78 h54 M50 96 h50 M56 112 h38" stroke="var(--beeStripe)" stroke-width="8" stroke-linecap="round"/>
+                <circle cx="75" cy="58" r="24" fill="var(--beeStripe)"/>
+                <circle cx="66" cy="56" r="3.2" fill="var(--beeInk)"/>
+                <circle cx="84" cy="56" r="3.2" fill="var(--beeInk)"/>
+                <path d="M68 66 q7 6 14 0" stroke="var(--beeInk)" stroke-width="2.6" fill="none" stroke-linecap="round"/>
+                <path d="M64 38 q-6 -10 -12 -12" stroke="var(--beeAntenna)" stroke-width="2.6" fill="none" stroke-linecap="round"/>
+                <path d="M86 38 q6 -10 12 -12" stroke="var(--beeAntenna)" stroke-width="2.6" fill="none" stroke-linecap="round"/>
+                <circle cx="51" cy="25" r="3" fill="var(--beeAntenna)"/>
+                <circle cx="99" cy="25" r="3" fill="var(--beeAntenna)"/>
+              </g>
+            </svg></div>
+          </div>
+
+          <span class="eyebrow">✦ Whenbee Pro</span>
+          <div class="h-title">You set the aim.<br/>Now get a coach.</div>
+          <div class="h-sub">Pick an accuracy goal for any category. <b>Whenbee coaches you at guess-time and shows your ETA to hitting it.</b></div>
+
+          <!-- coach mini proof (goals entry) -->
+          <div class="ba">
+            <div class="c" style="flex:1.4">
+              <div class="lab h">Deep work · aim ±15%</div>
+              <div style="display:flex;align-items:flex-end;gap:5px;height:46px;margin:8px 0 4px">
+                <div style="flex:1;height:60%;background:rgba(173,169,181,0.30);border-radius:3px"></div>
+                <div style="flex:1;height:78%;background:rgba(173,169,181,0.30);border-radius:3px"></div>
+                <div style="flex:1;height:50%;background:var(--primary);border-radius:3px"></div>
+                <div style="flex:1;height:40%;background:var(--primary);border-radius:3px"></div>
+                <div style="flex:1;height:34%;background:var(--accent);border-radius:3px"></div>
+              </div>
+              <div class="end h">On track — ~2 weeks to goal.</div>
+            </div>
+          </div>
+
+          <!-- same fixed stack -->
+          <div class="stack">
+            <div class="row">
+              <div class="ic"><svg viewBox="0 0 24 24"><path d="M21 12a9 9 0 1 1-3-6.7M21 4v4h-4"/></svg></div>
+              <div class="rtext"><div class="t">Routines &amp; goal coach</div><div class="d">Recurring chains learn their honest length. Set an accuracy aim per category and get help at guess-time, with an ETA to your goal.</div></div>
+            </div>
+            <div class="row">
+              <div class="ic"><svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="17" rx="2"/><path d="M3 9h18M8 2v4M16 2v4"/></svg></div>
+              <div class="rtext"><div class="t">Honest calendar &amp; capacity</div><div class="d">Every event padded with your real buffers. See what the day can actually hold — and plan around your sharpest hours.</div></div>
+            </div>
+            <div class="row">
+              <div class="ic"><svg viewBox="0 0 24 24"><path d="M4 19V5M4 19h16M8 16l3-4 3 2 4-7"/></svg></div>
+              <div class="rtext"><div class="t">Sharper self-insight</div><div class="d">What steals your time, when you're most accurate, and what context costs you — the patterns your logs already hold.</div></div>
+            </div>
+            <div class="row">
+              <div class="ic"><svg viewBox="0 0 24 24"><path d="M4 6h16M4 12h10M4 18h7"/><path d="M19 14l2 2-5 5-2-.5.5-2z"/></svg></div>
+              <div class="rtext"><div class="t">Your week, reviewed</div><div class="d">A calm weekly &amp; monthly recap, long-range history, and a clean PDF or one-tap share — made on your phone, never sent without you.</div></div>
+            </div>
+            <div class="row">
+              <div class="ic"><svg viewBox="0 0 24 24"><path d="M18 8a6 6 0 1 0-12 0c0 7-3 9-3 9h18s-3-2-3-9M13.7 21a2 2 0 0 1-3.4 0"/></svg></div>
+              <div class="rtext"><div class="t">Always there</div><div class="d">Live timer and finish-time on your lock screen, plus a gentle nudge when you've run well past your guess.</div></div>
+            </div>
+          </div>
+
+          <div class="plans">
+            <div class="plan sel">
+              <span class="badge">Save 42%</span>
+              <div class="pl"><div class="pt">Yearly</div><div class="pn">7-day free trial, then billed yearly</div></div>
+              <div style="display:flex;align-items:center">
+                <div class="pr"><div class="pp">$34.99</div><div class="pe">$2.92 / mo</div></div>
+                <div class="radio"></div>
+              </div>
+            </div>
+            <div class="plan">
+              <div class="pl"><div class="pt">Lifetime</div><div class="pn">Pay once. No subscription, ever.</div></div>
+              <div style="display:flex;align-items:center">
+                <div class="pr"><div class="pp">$89.00</div><div class="pe">one time</div></div>
+                <div class="radio"></div>
+              </div>
+            </div>
+            <div class="plan">
+              <div class="pl"><div class="pt">Monthly</div><div class="pn">7-day free trial, then billed monthly</div></div>
+              <div style="display:flex;align-items:center">
+                <div class="pr"><div class="pp">$4.99</div><div class="pe">/ mo</div></div>
+                <div class="radio"></div>
+              </div>
+            </div>
+          </div>
+
+          <div class="timeline">
+            <div class="tl on"><div class="line" style="background:var(--accent)"></div><div class="dot"></div><div class="tlh">Today</div><div class="tld">Full Pro unlocked, free</div></div>
+            <div class="tl"><div class="line"></div><div class="dot"></div><div class="tlh">Day 5</div><div class="tld">We remind you</div></div>
+            <div class="tl"><div class="dot"></div><div class="tlh">Day 7</div><div class="tld">Trial ends</div></div>
+          </div>
+
+          <div class="ctaWrap"><button class="cta">Try 7 days free</button></div>
+          <div class="micro">No charge today. Cancel anytime. On-device and private.</div>
+
+          <div class="reassure">
+            <svg viewBox="0 0 24 24"><path d="M20 6L9 17l-5-5"/></svg>
+            <div class="rt"><b>Calibration stays free, always.</b> No card, no renewal — that's your real trial. Pro just adds the payoff.</div>
+          </div>
+          <div class="founder">"Built by people who are late to everything. It's the tool we needed first."</div>
+
+          <div class="legal">
+            <a href="#">Restore</a><a href="#">Terms</a><a href="#">Privacy</a>
+          </div>
+        </div>
+      </div></div>
+      <div class="cap"><b>Entry: Goals gate.</b> Same screen — only the eyebrow, headline, sub, and top proof swap. The coached category leads the stack. Relevant, never random.</div>
+    </div>
+
+  </div>
+
+  <p class="page" style="margin-top:48px"><b>Adaptive top map (other gates reuse the same body):</b> patterns → "See exactly what steals your time." · focus-window → "Plan around your sharpest hours." · routines → "Set it once. It remembers the honest length." · settings/generic → "Your numbers are real now." The 5-row stack + plan picker + trust block are identical everywhere.</p>
+</div>
+
+<script>
+  // sunburst rays — 18 wedges, two alternating opacities (tokens.burst.ray)
+  function build(id){
+    const el=document.getElementById(id); const n=18;
+    for(let k=0;k<n;k++){
+      const i=document.createElement('i');
+      i.style.transform='translate(-50%,0) rotate('+(k*(360/n))+'deg)';
+      i.style.opacity = (k%2===0?0.85:0.4);
+      el.appendChild(i);
+    }
+  }
+  build('raysA'); build('raysB');
+</script>
+</body>
+</html>

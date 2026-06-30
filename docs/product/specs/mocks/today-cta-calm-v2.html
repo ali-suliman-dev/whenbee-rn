@@ -1,0 +1,239 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Today — Direction A pinned + proven demotion patterns</title>
+<style>
+  :root{
+    --bg:#14151D; --surface:#1F2130; --raised:#292B3C; --sunken:#15161F;
+    --hairline:rgba(255,255,255,0.08); --border:rgba(255,255,255,0.14);
+    --ink:#F4F1EA; --inkSoft:#ADA9B5; --inkFaint:rgba(244,241,234,0.40);
+    --primary:#8275F0; --primarySoft:rgba(130,117,240,0.22); --primaryWash:rgba(130,117,240,0.10);
+    --onIndigo:#14151D; --accent:#EEAE4D; --accentSoft:rgba(238,174,77,0.18); --amberText:#EEAE4D;
+    --success:#33B07C;
+    --rCard:16px; --rSm:8px; --rMd:12px; --full:999px; --mono:"Menlo","SF Mono",monospace;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{background:#0c0d12;color:var(--ink);font-family:-apple-system,system-ui,"Segoe UI",sans-serif;
+       padding:40px 28px 80px;-webkit-font-smoothing:antialiased}
+  h1{font-size:24px;font-weight:700;letter-spacing:-.5px;margin-bottom:6px}
+  .sub{color:var(--inkSoft);font-size:14px;max-width:860px;line-height:1.55;margin-bottom:8px}
+  .prin{color:var(--inkSoft);font-size:13px;max-width:860px;line-height:1.55;margin-bottom:34px;
+        border-left:2px solid var(--primary);padding-left:12px}
+  .prin b{color:var(--primary);font-weight:600}
+  .grid{display:flex;flex-wrap:wrap;gap:34px}
+  .col{width:312px}
+  .tag{display:inline-flex;align-items:center;gap:8px;font-size:11px;font-weight:700;letter-spacing:.6px;text-transform:uppercase;color:var(--primary);margin-bottom:4px}
+  .pin{background:var(--primary);color:var(--onIndigo);border-radius:var(--full);padding:2px 9px;font-size:10px;letter-spacing:.4px}
+  .apps{display:inline-block;font-size:10.5px;font-weight:600;letter-spacing:.3px;text-transform:none;color:var(--amberText);
+        background:var(--accentSoft);border-radius:var(--full);padding:2px 9px;margin-bottom:4px}
+  .name{font-size:16px;font-weight:600;margin-bottom:10px}
+  .why{color:var(--inkSoft);font-size:12.5px;line-height:1.55;margin-top:14px}
+  .why li{margin-left:16px;margin-bottom:3px}
+  .why .good{color:#8fd6b4}
+
+  .phone{background:var(--bg);border-radius:30px;border:1px solid var(--border);padding:16px 14px 12px;
+         box-shadow:0 14px 40px rgba(0,0,0,.45);position:relative;min-height:570px}
+  .phone.chosen{border:2px solid var(--primary);box-shadow:0 0 0 4px var(--primaryWash),0 14px 40px rgba(0,0,0,.5)}
+  .glabel{color:var(--inkSoft);font-size:12px;margin:2px 4px}
+  .gname{font-weight:700;color:var(--ink)}
+  .h2{font-size:26px;font-weight:700;letter-spacing:-.5px;margin:0 4px 14px}
+
+  .card{background:var(--surface);border-radius:var(--rCard);padding:12px 14px;margin:0 2px 14px}
+  .row{display:flex;align-items:center;justify-content:space-between}
+  .seclbl{font-size:11px;font-weight:700;letter-spacing:.6px;text-transform:uppercase;color:var(--inkSoft);margin:2px 6px 8px}
+
+  .cap{display:flex;align-items:center;gap:9px;font-size:14px;font-weight:600}
+  .bolt{width:20px;height:20px;border-radius:var(--full);background:var(--accentSoft);display:flex;align-items:center;justify-content:center;color:var(--amberText);font-size:11px}
+  .capmeta{color:var(--inkSoft);font-weight:400;font-size:13px}
+  .chev{color:var(--inkFaint);font-size:13px}
+
+  .btn{font-size:13px;font-weight:600;border-radius:var(--full);padding:8px 14px;border:none;display:inline-flex;align-items:center;gap:6px;cursor:default}
+  .b-ghost{background:transparent;color:var(--primary)} .b-ghost svg{width:14px;height:14px}
+  .b-quiet{background:transparent;color:var(--inkSoft);border:1px solid var(--hairline)} .b-quiet svg{width:14px;height:14px}
+  .kebab{color:var(--inkSoft);font-size:18px;font-weight:700;padding:4px 10px;border:1px solid var(--hairline);border-radius:var(--full);line-height:1}
+
+  .chips{display:flex;gap:8px;overflow:hidden;margin:0 2px 14px}
+  .chip{background:var(--surface);border-radius:var(--full);padding:8px 12px;display:flex;align-items:center;gap:7px;font-size:13px;font-weight:600;white-space:nowrap}
+  .chip .tri{color:var(--primary);font-size:10px} .chip .m{color:var(--inkSoft);font-weight:400;font-size:11px}
+
+  .seg{background:var(--sunken);border-radius:var(--rMd);padding:4px;display:inline-flex;gap:2px}
+  .seg span{font-size:13px;font-weight:600;padding:5px 14px;border-radius:var(--rSm);color:var(--inkSoft)}
+  .seg .on{background:var(--raised);color:var(--ink)}
+
+  .tl{background:var(--surface);border-radius:var(--rCard);padding:6px 4px;margin:0 2px}
+  .tlhdr{display:flex;align-items:center;justify-content:space-between;padding:8px 10px 6px}
+  .startby{font-family:var(--mono);font-size:11px;color:var(--inkSoft)}
+  .doneby{font-size:11px;font-weight:500;color:var(--primary);border:1px solid var(--primarySoft);background:var(--primaryWash);border-radius:var(--full);padding:4px 10px}
+  .trow{display:flex;align-items:center;gap:12px;padding:8px 12px;background:var(--surface);border-radius:var(--rSm)}
+  .trow .clk{font-family:var(--mono);font-size:11px;color:var(--primary);width:34px}
+  .trow .lbl{flex:1;font-size:14px;font-weight:600} .trow .dur{font-size:11px;color:var(--inkSoft)}
+
+  /* swipe peek */
+  .swipewrap{position:relative;overflow:hidden;border-radius:var(--rSm);margin:0 2px}
+  .swipe-actions{position:absolute;right:0;top:0;bottom:0;display:flex}
+  .swipe-actions .sa{width:62px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;font-size:10px;font-weight:600;color:#fff}
+  .sa.replan{background:var(--primary)} .sa.move{background:var(--accent);color:var(--onIndigo)}
+  .swipe-actions svg{width:15px;height:15px}
+  .trow.slid{transform:translateX(-124px);transition:transform .2s}
+
+  /* overflow menu sketch */
+  .menupop{position:absolute;right:8px;top:0;background:var(--raised);border:1px solid var(--border);border-radius:var(--rMd);
+           padding:6px;width:172px;box-shadow:0 10px 26px rgba(0,0,0,.5);z-index:5}
+  .menupop .mi{display:flex;align-items:center;gap:9px;padding:8px 9px;font-size:13px;color:var(--ink);border-radius:var(--rSm)}
+  .menupop .mi svg{width:15px;height:15px;color:var(--inkSoft)}
+  .menupop .mi:first-child{background:var(--primaryWash)}
+
+  /* quick-add bar */
+  .qbar{position:absolute;left:14px;right:14px;bottom:58px;display:flex;align-items:center;gap:10px;
+        background:var(--raised);border:1px solid var(--border);border-radius:var(--full);padding:11px 16px}
+  .qbar .plus{width:24px;height:24px;border-radius:var(--full);background:var(--primary);color:#fff;display:flex;align-items:center;justify-content:center;font-size:17px}
+  .qbar .ph{color:var(--inkSoft);font-size:14px}
+
+  .fab{position:absolute;left:50%;transform:translateX(-50%);bottom:46px;width:54px;height:54px;border-radius:18px;
+       background:var(--primary);color:#fff;display:flex;align-items:center;justify-content:center;font-size:28px;font-weight:300;
+       box-shadow:0 8px 18px rgba(130,117,240,.45)}
+  .nav{position:absolute;left:0;right:0;bottom:10px;display:flex;justify-content:space-around;color:var(--inkFaint);font-size:10px;padding:0 18px}
+  .nav .a{color:var(--primary)}
+  .ctx{font-size:12px;color:var(--inkSoft);padding:6px 8px}
+  .refresh{text-align:center;color:var(--inkFaint);font-size:11px;padding:6px 0 2px}
+</style>
+</head>
+<body>
+  <h1>Today — Direction A pinned, demotion done the way proven apps do it</h1>
+  <p class="sub">A is the decision: <b>one filled primary (the + FAB), every secondary demoted</b>. The open question is <i>where the demoted actions live</i>. Below: A, then the three patterns shipping apps actually use.</p>
+  <p class="prin"><b>Principle (locked):</b> exactly one indigo CTA on screen + the active nav. Re-plan, Pad calendar and Set done-by are secondary — they must stop competing.</p>
+
+  <div class="grid">
+
+    <!-- A pinned -->
+    <div class="col">
+      <span class="tag"><span class="pin">✓ PINNED</span> Direction A</span>
+      <div class="name">One primary — secondaries to ghost</div>
+      <div class="phone chosen">
+        <div class="glabel">Good evening, <span class="gname">Kalle</span></div>
+        <div class="h2">Wednesday</div>
+        <div class="card"><div class="row"><span class="cap"><span class="bolt">⚡</span>Honest day 1h 50m <span class="capmeta">· fits</span></span><span class="chev">⌄</span></div></div>
+        <div class="seclbl">Tap to start again</div>
+        <div class="chips"><span class="chip"><span class="tri">▶</span>Shower &amp; dress<span class="m">20m</span></span><span class="chip"><span class="tri">▶</span>Get out<span class="m">25m</span></span></div>
+        <div class="row" style="margin:0 4px 12px">
+          <div class="seg"><span>List</span><span class="on">Timeline</span></div>
+          <button class="btn b-ghost"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 2v6h-6M3 12a9 9 0 0 1 15-6.7L21 8M3 22v-6h6M21 12a9 9 0 0 1-15 6.7L3 16"/></svg>Re-plan</button>
+        </div>
+        <div class="tl">
+          <div class="tlhdr"><span class="startby">Start by 21:00</span><span class="doneby">Done by 22:00</span></div>
+          <div class="trow"><span class="clk">21:00</span><span class="lbl">Test</span><span class="dur">30m</span></div>
+          <div class="trow"><span class="clk">21:30</span><span class="lbl">Test 2</span><span class="dur">30m</span></div>
+        </div>
+        <div class="fab">+</div>
+        <div class="nav"><span class="a">Today</span><span>Routines</span><span></span><span>Whenbee</span><span>Patterns</span></div>
+      </div>
+      <ul class="why">
+        <li><span class="good">Only the FAB is filled indigo.</span> Re-plan = ghost; Pad calendar lives inside the capacity card (on expand).</li>
+        <li>The agreed base. The three options at right just relocate these ghost actions.</li>
+      </ul>
+    </div>
+
+    <!-- 1: overflow menu -->
+    <div class="col">
+      <span class="apps">Todoist · Apple Reminders · Things</span>
+      <div class="name">Option 1 — Overflow “⋯” menu</div>
+      <div class="phone">
+        <div class="glabel">Good evening, <span class="gname">Kalle</span></div>
+        <div class="h2">Wednesday</div>
+        <div class="card"><div class="row"><span class="cap"><span class="bolt">⚡</span>Honest day 1h 50m <span class="capmeta">· fits</span></span><span class="chev">⌄</span></div></div>
+        <div class="seclbl">Tap to start again</div>
+        <div class="chips"><span class="chip"><span class="tri">▶</span>Shower &amp; dress<span class="m">20m</span></span><span class="chip"><span class="tri">▶</span>Get out<span class="m">25m</span></span></div>
+        <div class="row" style="margin:0 4px 12px;position:relative">
+          <div class="seg"><span>List</span><span class="on">Timeline</span></div>
+          <span class="kebab">⋯</span>
+          <div class="menupop">
+            <div class="mi"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 2v6h-6M3 12a9 9 0 0 1 15-6.7L21 8M3 22v-6h6"/></svg>Re-plan day</div>
+            <div class="mi"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M3 9h18M8 2v4M16 2v4"/></svg>Pad calendar</div>
+            <div class="mi"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>Set done-by</div>
+          </div>
+        </div>
+        <div class="tl">
+          <div class="tlhdr"><span class="startby">Start by 21:00</span><span class="doneby">Done by 22:00</span></div>
+          <div class="trow"><span class="clk">21:00</span><span class="lbl">Test</span><span class="dur">30m</span></div>
+          <div class="trow"><span class="clk">21:30</span><span class="lbl">Test 2</span><span class="dur">30m</span></div>
+        </div>
+        <div class="fab">+</div>
+        <div class="nav"><span class="a">Today</span><span>Routines</span><span></span><span>Whenbee</span><span>Patterns</span></div>
+      </div>
+      <ul class="why">
+        <li>The universal "more" pattern: all day-level acts behind one neutral ⋯.</li>
+        <li><span class="good">Zero standing buttons</span> beyond the view toggle. Most familiar; safest.</li>
+        <li>Cost: actions are one tap deeper + slightly hidden for first-timers.</li>
+      </ul>
+    </div>
+
+    <!-- 2: swipe rows -->
+    <div class="col">
+      <span class="apps">Things 3 · Apple Mail</span>
+      <div class="name">Option 2 — Swipe on the rows</div>
+      <div class="phone">
+        <div class="glabel">Good evening, <span class="gname">Kalle</span></div>
+        <div class="h2">Wednesday</div>
+        <div class="card"><div class="row"><span class="cap"><span class="bolt">⚡</span>Honest day 1h 50m <span class="capmeta">· fits</span></span><span class="chev">⌄</span></div></div>
+        <div class="seclbl">Tap to start again</div>
+        <div class="chips"><span class="chip"><span class="tri">▶</span>Shower &amp; dress<span class="m">20m</span></span><span class="chip"><span class="tri">▶</span>Get out<span class="m">25m</span></span></div>
+        <div class="row" style="margin:0 4px 12px">
+          <div class="seg"><span>List</span><span class="on">Timeline</span></div>
+          <span class="ctx">Done by 22:00 · fits</span>
+        </div>
+        <div class="tl">
+          <div class="tlhdr"><span class="startby">Start by 21:00</span><span class="doneby">Adjust</span></div>
+          <div class="refresh">↻ pull to re-plan</div>
+          <div class="swipewrap">
+            <div class="swipe-actions">
+              <div class="sa replan"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 2v6h-6M3 12a9 9 0 0 1 15-6.7L21 8"/></svg>Reslot</div>
+              <div class="sa move"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M13 6l6 6-6 6"/></svg>Move</div>
+            </div>
+            <div class="trow slid"><span class="clk">21:00</span><span class="lbl">Test</span><span class="dur">30m</span></div>
+          </div>
+          <div class="trow" style="margin:2px"><span class="clk">21:30</span><span class="lbl">Test 2</span><span class="dur">30m</span></div>
+        </div>
+        <div class="fab">+</div>
+        <div class="nav"><span class="a">Today</span><span>Routines</span><span></span><span>Whenbee</span><span>Patterns</span></div>
+      </div>
+      <ul class="why">
+        <li>Per-item actions live on the row (swipe = reslot / move). Whole-day re-plan = pull-to-refresh.</li>
+        <li><span class="good">The calmest header of all</span> — no buttons, just toggle + status.</li>
+        <li>Cost: gestures are discoverable only after teaching; needs a one-time hint.</li>
+      </ul>
+    </div>
+
+    <!-- 3: quick-add bar -->
+    <div class="col">
+      <span class="apps">Akiflow · Sunsama · Structured</span>
+      <div class="name">Option 3 — One quick-add / plan bar</div>
+      <div class="phone">
+        <div class="glabel">Good evening, <span class="gname">Kalle</span></div>
+        <div class="h2">Wednesday</div>
+        <div class="card"><div class="row"><span class="cap"><span class="bolt">⚡</span>Honest day 1h 50m <span class="capmeta">· fits</span></span><span class="chev">⌄</span></div></div>
+        <div class="seclbl">Tap to start again</div>
+        <div class="chips"><span class="chip"><span class="tri">▶</span>Shower &amp; dress<span class="m">20m</span></span><span class="chip"><span class="tri">▶</span>Get out<span class="m">25m</span></span></div>
+        <div class="row" style="margin:0 4px 12px">
+          <div class="seg"><span>List</span><span class="on">Timeline</span></div>
+          <span class="ctx">Done by 22:00</span>
+        </div>
+        <div class="tl">
+          <div class="tlhdr"><span class="startby">Start by 21:00</span><span class="doneby">Done by 22:00</span></div>
+          <div class="trow"><span class="clk">21:00</span><span class="lbl">Test</span><span class="dur">30m</span></div>
+          <div class="trow"><span class="clk">21:30</span><span class="lbl">Test 2</span><span class="dur">30m</span></div>
+        </div>
+        <div class="qbar"><span class="plus">+</span><span class="ph">Add a task or plan your day…</span></div>
+        <div class="nav"><span class="a">Today</span><span>Routines</span><span></span><span>Whenbee</span><span>Patterns</span></div>
+      </div>
+      <ul class="why">
+        <li>One persistent bar replaces the FAB: tap = add; type "re-plan" / "done by 10pm" = the secondary acts.</li>
+        <li><span class="good">Single entry point for everything</span> — the planner-app pattern.</li>
+        <li>Cost: most ambitious (needs light NL parsing); biggest departure from today's FAB.</li>
+      </ul>
+    </div>
+
+  </div>
+</body>
+</html>

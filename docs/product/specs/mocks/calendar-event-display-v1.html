@@ -1,0 +1,192 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Calendar event in timeline — 4 directions</title>
+<style>
+  /* Real Whenbee dark tokens (src/theme/tokens.ts → colors.dark) */
+  :root{
+    --bg:#14151D; --surface:#1F2130; --raised:#292B3C; --sunken:#15161F;
+    --hairline:rgba(255,255,255,0.08); --border:rgba(255,255,255,0.14);
+    --ink:#F4F1EA; --inkSoft:#ADA9B5; --inkFaint:rgba(244,241,234,0.40);
+    --primary:#8275F0; --primarySoft:rgba(130,117,240,0.22); --primaryWash:rgba(130,117,240,0.10);
+    --accent:#EEAE4D; --accentSoft:rgba(238,174,77,0.18); --amberText:#EEAE4D;
+    --rCard:16px; --rSm:8px; --full:999px;
+    --mono:"Menlo","SF Mono",monospace;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{background:#0c0d12;color:var(--ink);font-family:-apple-system,system-ui,"Segoe UI",sans-serif;
+       padding:40px 28px 80px;-webkit-font-smoothing:antialiased}
+  h1{font-size:24px;font-weight:700;letter-spacing:-.5px;margin-bottom:6px}
+  .sub{color:var(--inkSoft);font-size:14px;max-width:760px;line-height:1.5;margin-bottom:8px}
+  .prob{color:var(--inkSoft);font-size:13px;max-width:760px;line-height:1.5;margin-bottom:34px;
+        border-left:2px solid var(--accent);padding-left:12px}
+  .prob b{color:var(--amberText);font-weight:600}
+  .grid{display:flex;flex-wrap:wrap;gap:34px}
+  .col{width:300px}
+  .tag{display:inline-block;font-size:11px;font-weight:700;letter-spacing:.6px;text-transform:uppercase;
+       color:var(--primary);margin-bottom:4px}
+  .name{font-size:16px;font-weight:600;margin-bottom:8px}
+  .why{color:var(--inkSoft);font-size:12.5px;line-height:1.55;margin-top:14px}
+  .why li{margin-left:16px;margin-bottom:3px}
+  .why .good{color:#8fd6b4}
+
+  /* phone shell */
+  .phone{background:var(--bg);border-radius:30px;border:1px solid var(--border);padding:18px 14px;
+         box-shadow:0 14px 40px rgba(0,0,0,.45)}
+  .hdr{display:flex;align-items:center;justify-content:space-between;padding:4px 6px 12px}
+  .startby{font-family:var(--mono);font-size:11px;color:var(--inkSoft)}
+  .doneby{font-size:11px;font-weight:500;color:var(--primary);
+          border:1px solid var(--primarySoft);background:var(--primaryWash);
+          border-radius:var(--full);padding:5px 11px}
+
+  /* task row (shared, the flat baseline the event must harmonise with) */
+  .task{display:flex;align-items:center;gap:12px;padding:9px 12px;min-height:44px}
+  .task .clk{font-family:var(--mono);font-size:11px;color:var(--primary);width:34px;flex:none}
+  .task .lbl{flex:1;font-size:14px;font-weight:600;color:var(--ink)}
+  .task .dur{font-size:11px;color:var(--inkSoft);flex:none}
+
+  /* glyphs */
+  .cal{width:13px;height:13px;flex:none;opacity:.9}
+  .hatch{background-image:repeating-linear-gradient(135deg,var(--inkFaint) 0 1.5px,transparent 1.5px 5px)}
+
+  /* ── A: ghost rail ── */
+  .a-evt{display:flex;align-items:center;gap:10px;padding:9px 12px 9px 14px;position:relative}
+  .a-evt:before{content:"";position:absolute;left:0;top:7px;bottom:7px;width:3px;border-radius:var(--full);
+                background:repeating-linear-gradient(180deg,var(--inkFaint) 0 3px,transparent 3px 6px)}
+  .a-evt .clk{font-family:var(--mono);font-size:11px;color:var(--inkFaint);width:34px;flex:none}
+  .a-evt .lbl{flex:1;font-size:13px;color:var(--inkSoft);font-style:italic;display:flex;align-items:center;gap:6px}
+  .a-evt .dur{font-size:10px;color:var(--inkFaint);letter-spacing:.6px}
+
+  /* ── B: hatch "blocked lane" ── */
+  .b-evt{display:flex;align-items:center;gap:10px;padding:10px 12px 10px 16px;position:relative;border-radius:var(--rSm)}
+  .b-evt:before{content:"";position:absolute;left:0;top:4px;bottom:4px;width:5px;border-radius:var(--rSm);
+                background-image:repeating-linear-gradient(135deg,var(--inkFaint) 0 1.5px,transparent 1.5px 5px)}
+  .b-evt .clk{font-family:var(--mono);font-size:11px;color:var(--inkFaint);width:34px;flex:none}
+  .b-evt .lbl{flex:1;font-size:13px;color:var(--inkSoft);display:flex;align-items:center;gap:6px}
+  .b-evt .pill{font-size:9px;font-weight:600;letter-spacing:.6px;text-transform:uppercase;color:var(--inkFaint);
+               border:1px solid var(--hairline);border-radius:var(--full);padding:2px 7px}
+
+  /* ── C: intentional tinted block (amber = external/meeting) ── */
+  .c-evt{display:flex;align-items:center;gap:10px;padding:11px 12px 11px 15px;position:relative;
+         background:var(--accentSoft);border-radius:var(--rSm);overflow:hidden}
+  .c-evt:before{content:"";position:absolute;left:0;top:0;bottom:0;width:3px;background:var(--accent)}
+  .c-evt .clk{font-family:var(--mono);font-size:11px;color:var(--amberText);width:34px;flex:none;opacity:.85}
+  .c-evt .lbl{flex:1;font-size:13px;font-weight:500;color:var(--ink);display:flex;align-items:center;gap:6px}
+  .c-evt .dur{font-size:10px;font-weight:600;color:var(--amberText);
+              background:rgba(238,174,77,.14);border-radius:var(--full);padding:2px 8px}
+
+  /* ── D: unified spine ── */
+  .spine{position:relative;padding-left:8px}
+  .spine:before{content:"";position:absolute;left:42px;top:6px;bottom:6px;width:2px;background:var(--hairline)}
+  .node{display:flex;align-items:center;gap:0;padding:9px 12px;min-height:44px;position:relative}
+  .node .clk{font-family:var(--mono);font-size:11px;width:34px;flex:none}
+  .node .dot{position:absolute;left:36px;width:13px;height:13px;border-radius:var(--full);
+             transform:translateX(-1px)}
+  .node .body{flex:1;display:flex;align-items:center;justify-content:space-between;margin-left:22px}
+  .node.task-n .clk{color:var(--primary)}
+  .node.task-n .dot{background:var(--primary);box-shadow:0 0 0 4px var(--bg)}
+  .node.task-n .body .t{font-size:14px;font-weight:600;color:var(--ink)}
+  .node.task-n .body .d{font-size:11px;color:var(--inkSoft)}
+  .node.evt-n .clk{color:var(--inkFaint)}
+  .node.evt-n .dot{background:var(--bg);border:2px solid var(--inkFaint);box-shadow:0 0 0 4px var(--bg)}
+  .node.evt-n .body .t{font-size:13px;color:var(--inkSoft);font-style:italic;display:flex;align-items:center;gap:6px}
+  .node.evt-n .body .d{font-size:10px;color:var(--inkFaint)}
+</style>
+</head>
+<body>
+  <h1>Calendar events in the day timeline — 4 directions</h1>
+  <p class="sub">The "Test calendar" meeting row needs to read as <i>external / fixed</i> without becoming a heavy box that fights the flat task rows beneath it.</p>
+  <p class="prob"><b>Today the meeting is a muddy <code>surfaceSunken</code> box</b> with a hairline border + grey left bar. It floats: a filled container sitting among border-less task rows, so the eye reads it as an error/disabled block, not a calendar item. Goal: same rhythm as the list, clear "not yours to move" signal, zero mud.</p>
+
+  <div class="grid">
+
+    <!-- A -->
+    <div class="col">
+      <span class="tag">Direction A</span>
+      <div class="name">Ghost rail — remove the box</div>
+      <div class="phone">
+        <div class="hdr"><span class="startby">Start by 21:00</span><span class="doneby">Done by 22:00</span></div>
+        <div class="a-evt">
+          <span class="clk">20:00</span>
+          <span class="lbl"><svg class="cal" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M3 9h18M8 2v4M16 2v4"/></svg>Test calendar</span>
+          <span class="dur">1H</span>
+        </div>
+        <div class="task"><span class="clk">21:00</span><span class="lbl">Test</span><span class="dur">30m</span></div>
+        <div class="task"><span class="clk">21:30</span><span class="lbl">Test 2</span><span class="dur">30m</span></div>
+      </div>
+      <ul class="why">
+        <li>No fill, no border — a dotted left tick + italic muted text is the only signal.</li>
+        <li>Sits on the exact row rhythm as tasks. <span class="good">Zero mud, calmest option.</span></li>
+        <li>Risk: a packed day of meetings can read as quiet — least "blocky".</li>
+      </ul>
+    </div>
+
+    <!-- B -->
+    <div class="col">
+      <span class="tag">Direction B</span>
+      <div class="name">Blocked lane — hatch stripe</div>
+      <div class="phone">
+        <div class="hdr"><span class="startby">Start by 21:00</span><span class="doneby">Done by 22:00</span></div>
+        <div class="b-evt">
+          <span class="clk">20:00</span>
+          <span class="lbl"><svg class="cal" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M3 9h18M8 2v4M16 2v4"/></svg>Test calendar</span>
+          <span class="pill">1H · busy</span>
+        </div>
+        <div class="task"><span class="clk">21:00</span><span class="lbl">Test</span><span class="dur">30m</span></div>
+        <div class="task"><span class="clk">21:30</span><span class="lbl">Test 2</span><span class="dur">30m</span></div>
+      </div>
+      <ul class="why">
+        <li>Reuses the app's diagonal-hatch motif (gapStripe) = "fixed / can't plan into it".</li>
+        <li>Still border-less; the hatch bar carries all the meaning, no background fill.</li>
+        <li>"busy" pill names <i>why</i> the time is gone. Semantic, not just greyed.</li>
+      </ul>
+    </div>
+
+    <!-- C -->
+    <div class="col">
+      <span class="tag">Direction C</span>
+      <div class="name">Intentional block — amber meeting</div>
+      <div class="phone">
+        <div class="hdr"><span class="startby">Start by 21:00</span><span class="doneby">Done by 22:00</span></div>
+        <div class="c-evt">
+          <span class="clk">20:00</span>
+          <span class="lbl"><svg class="cal" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M3 9h18M8 2v4M16 2v4"/></svg>Test calendar</span>
+          <span class="dur">1H</span>
+        </div>
+        <div class="task"><span class="clk">21:00</span><span class="lbl">Test</span><span class="dur">30m</span></div>
+        <div class="task"><span class="clk">21:30</span><span class="lbl">Test 2</span><span class="dur">30m</span></div>
+      </div>
+      <ul class="why">
+        <li>If a box stays, make it <i>mean</i> something: amber = external/meeting (a real palette role, not mud grey).</li>
+        <li>Amber left bar + amber duration chip = clearly a calendar item, deliberately styled.</li>
+        <li>Risk: amber is the honey/reward colour — could dilute that meaning. Use a neutral tint if so.</li>
+      </ul>
+    </div>
+
+    <!-- D -->
+    <div class="col">
+      <span class="tag">Direction D</span>
+      <div class="name">Unified spine — one timeline</div>
+      <div class="phone">
+        <div class="hdr"><span class="startby">Start by 21:00</span><span class="doneby">Done by 22:00</span></div>
+        <div class="spine">
+          <div class="node evt-n"><span class="clk">20:00</span><span class="dot"></span>
+            <span class="body"><span class="t"><svg class="cal" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M3 9h18M8 2v4M16 2v4"/></svg>Test calendar</span><span class="d">1H</span></span></div>
+          <div class="node task-n"><span class="clk">21:00</span><span class="dot"></span>
+            <span class="body"><span class="t">Test</span><span class="d">30m</span></span></div>
+          <div class="node task-n"><span class="clk">21:30</span><span class="dot"></span>
+            <span class="body"><span class="t">Test 2</span><span class="d">30m</span></span></div>
+        </div>
+      </div>
+      <ul class="why">
+        <li>Everything hangs off one vertical spine. Difference = node style, not background.</li>
+        <li><span class="good">Hollow node + italic = external; solid indigo node = your task.</span></li>
+        <li>Most cohesive "this is a single day" read. Biggest build change.</li>
+      </ul>
+    </div>
+
+  </div>
+</body>
+</html>

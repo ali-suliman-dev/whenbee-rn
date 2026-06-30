@@ -1,0 +1,647 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Honest Week — Synthesis Cards v2</title>
+<style>
+  :root {
+    --bg:             #14151D;
+    --surface:        #1F2130;
+    --surface-raised: #292B3C;
+    --surface-top:    #32354A;
+    --accent:         #EEAE4D;
+    --accent-edge:    #C68A30;
+    --accent-soft:    rgba(238,174,77,0.10);
+    --accent-mid:     rgba(238,174,77,0.22);
+    --primary:        #8275F0;
+    --ink:            #F4F1EA;
+    --ink-soft:       #ADA9B5;
+    --ink-faint:      rgba(244,241,234,0.28);
+    --r-card:         18px;
+    --r-chip:         8px;
+    --r-full:         999px;
+  }
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body {
+    background: var(--bg);
+    font-family: -apple-system, 'SF Pro Display', 'SF Pro Text', sans-serif;
+    color: var(--ink);
+    padding: 40px 24px 100px;
+  }
+
+  /* page chrome */
+  .pg-eyebrow { font-size:10px; font-weight:700; letter-spacing:.12em; text-transform:uppercase; color:var(--ink-faint); margin-bottom:5px; }
+  .pg-title   { font-size:28px; font-weight:800; color:var(--ink); margin-bottom:4px; }
+  .pg-sub     { font-size:14px; color:var(--ink-soft); margin-bottom:52px; line-height:1.5; }
+
+  .sec         { margin-bottom:72px; }
+  .sec-eye     { font-size:10px; font-weight:700; letter-spacing:.12em; text-transform:uppercase; color:var(--ink-faint); margin-bottom:4px; }
+  .sec-head    { font-size:20px; font-weight:700; color:var(--ink); margin-bottom:5px; }
+  .sec-desc    { font-size:13px; color:var(--ink-soft); margin-bottom:28px; line-height:1.55; max-width:640px; }
+
+  .grid        { display:grid; grid-template-columns:repeat(auto-fill, minmax(290px,1fr)); gap:20px; align-items:start; }
+
+  .opt         { display:flex; flex-direction:column; gap:10px; }
+  .opt-tag     { display:flex; align-items:center; gap:6px; flex-wrap:wrap; }
+  .badge       { background:var(--surface-raised); color:var(--ink); border-radius:4px; padding:2px 7px; font-size:10px; font-weight:700; }
+  .badge-amber { background:var(--accent-soft); color:var(--accent); border-radius:4px; padding:2px 7px; font-size:10px; font-weight:700; }
+  .tag-label   { font-size:11px; font-weight:600; color:var(--ink-soft); letter-spacing:.06em; }
+  .opt-note    { font-size:12px; color:var(--ink-faint); line-height:1.55; }
+
+  /* cards */
+  .card        { background:var(--surface); border-radius:var(--r-card); padding:20px; }
+  .card-ae     { border:1px solid rgba(238,174,77,.22); box-shadow:0 4px 0 var(--accent-edge); }
+  .card-ne     { border:1px solid rgba(255,255,255,.06); }
+
+  /* type */
+  .eyebrow     { font-size:10px; font-weight:700; letter-spacing:.12em; text-transform:uppercase; color:var(--ink-faint); margin-bottom:14px; }
+  .ey-amber    { color:var(--accent); }
+  .verdict     { font-size:22px; font-weight:700; color:var(--ink); line-height:1.2; }
+  .body-md     { font-size:15px; color:var(--ink-soft); line-height:1.55; }
+  .body-sm     { font-size:13px; color:var(--ink-soft); line-height:1.5; }
+  .cap         { font-size:11px; color:var(--ink-faint); }
+  .amber       { color:var(--accent); font-weight:700; }
+  .ink-bold    { color:var(--ink); font-weight:600; }
+
+  /* ── RING component ── */
+  .ring-wrap   { display:flex; flex-direction:column; align-items:center; gap:12px; }
+  .ring-center { position:relative; width:100px; height:100px; }
+  .ring-center svg { position:absolute; top:0; left:0; }
+  .ring-label  { position:absolute; top:50%; left:50%; transform:translate(-50%,-50%); text-align:center; }
+  .ring-num    { font-size:26px; font-weight:800; color:var(--accent); line-height:1; }
+  .ring-denom  { font-size:12px; color:var(--ink-faint); }
+  .ring-caption{ font-size:12px; color:var(--ink-soft); text-align:center; line-height:1.45; }
+
+  /* ── DOTS component ── */
+  .dots-wrap   { display:flex; gap:8px; align-items:center; margin:14px 0 6px; }
+  .area-dot    { display:flex; flex-direction:column; align-items:center; gap:5px; }
+  .dot-circle  { width:34px; height:34px; border-radius:50%; display:flex; align-items:center; justify-content:center; }
+  .dot-on      { background:var(--accent-soft); border:1.5px solid var(--accent); }
+  .dot-off     { background:var(--surface-top); border:1.5px solid rgba(255,255,255,.06); }
+  .dot-icon    { font-size:14px; }
+  .dot-lbl     { font-size:9px; font-weight:600; letter-spacing:.04em; text-transform:uppercase; color:var(--ink-faint); }
+
+  /* ── PROGRESS BAR component ── */
+  .pbar-wrap   { margin:14px 0 0; }
+  .pbar-track  { height:4px; background:var(--surface-top); border-radius:var(--r-full); overflow:hidden; }
+  .pbar-fill   { height:100%; border-radius:var(--r-full); background:var(--accent); }
+  .pbar-labels { display:flex; justify-content:space-between; margin-top:5px; }
+
+  /* ── SPARKLINE bars ── */
+  .bars-wrap   { display:flex; gap:3px; align-items:flex-end; height:44px; margin:14px 0 8px; }
+  .bar-col     { display:flex; flex-direction:column; align-items:center; gap:3px; flex:1; }
+  .bar-body    { width:100%; border-radius:3px 3px 0 0; min-height:4px; }
+  .bar-on      { background:var(--accent); }
+  .bar-soft    { background:var(--ink-faint); opacity:.5; }
+  .bar-lbl     { font-size:8px; color:var(--ink-faint); font-weight:600; text-transform:uppercase; }
+
+  /* ── BEFORE/AFTER component (card 3) ── */
+  .gap-wrap    { display:flex; gap:12px; margin:14px 0 10px; align-items:flex-end; }
+  .gap-col     { display:flex; flex-direction:column; gap:5px; flex:1; }
+  .gap-bar     { border-radius:4px; }
+  .gap-val     { font-size:16px; font-weight:700; }
+  .gap-cap     { font-size:10px; font-weight:600; letter-spacing:.07em; text-transform:uppercase; color:var(--ink-faint); }
+  .gap-ratio   { display:inline-block; background:var(--accent-soft); color:var(--accent); border-radius:var(--r-chip); padding:3px 9px; font-size:12px; font-weight:700; }
+
+  /* ── FORWARD ACTION illustration ── */
+  .action-pill { display:inline-flex; align-items:center; gap:6px; background:var(--surface-top); border-radius:var(--r-full); padding:7px 13px; margin-bottom:12px; }
+  .action-pill-cat { font-size:13px; font-weight:600; color:var(--ink); }
+  .action-pill-x   { font-size:12px; color:var(--ink-faint); }
+  .action-pill-val { font-size:13px; font-weight:700; color:var(--accent); }
+
+  .arrow-line  { display:flex; align-items:center; gap:8px; margin:14px 0 8px; }
+  .arrow-from  { font-size:13px; color:var(--ink-soft); }
+  .arrow-svg   { flex:1; height:20px; }
+  .arrow-to    { font-size:15px; font-weight:700; color:var(--accent); }
+
+  /* week-chip illustration */
+  .week-chip   { background:var(--surface-top); border-radius:10px; padding:12px 14px; display:flex; align-items:center; gap:12px; margin-bottom:12px; }
+  .wk-icon     { width:36px; height:36px; border-radius:8px; background:var(--accent-soft); border:1px solid rgba(238,174,77,.2); display:flex; align-items:center; justify-content:center; font-size:17px; flex-shrink:0; }
+  .wk-info     { display:flex; flex-direction:column; gap:2px; }
+  .wk-label    { font-size:10px; font-weight:700; letter-spacing:.1em; text-transform:uppercase; color:var(--ink-faint); }
+  .wk-val      { font-size:17px; font-weight:800; color:var(--accent); line-height:1; }
+  .wk-cat      { font-size:12px; color:var(--ink-soft); }
+
+  /* compass illustration */
+  .compass-wrap { display:flex; align-items:center; gap:16px; margin:12px 0; }
+  .compass-dial { width:56px; height:56px; border-radius:50%; background:var(--surface-top); border:1.5px solid rgba(255,255,255,.06); display:flex; align-items:center; justify-content:center; flex-shrink:0; }
+  .compass-body { flex:1; }
+
+  /* divider */
+  .div { height:1px; background:rgba(255,255,255,.06); margin:14px 0; }
+
+  /* pinned label */
+  .pinned { display:inline-block; background:rgba(130,117,240,.15); color:var(--primary); border-radius:4px; padding:2px 8px; font-size:10px; font-weight:700; }
+</style>
+</head>
+<body>
+
+<p class="pg-eyebrow">Honest Week · Synthesis Cards v2</p>
+<h1 class="pg-title">Visual Components</h1>
+<p class="pg-sub">Cards ① ② ③ — richer component explorations. A + B pinned on ①, X pinned on ②.<br>Real tokens · dark surface · iOS proportions.</p>
+
+
+<!-- ══════════════════════════════════════════════════
+     CARD ① — WEEK'S READ
+══════════════════════════════════════════════════ -->
+
+<div class="sec">
+  <p class="sec-eye">Card ①</p>
+  <h2 class="sec-head">The Week's Read</h2>
+  <p class="sec-desc">Verdict + data component + sample size. A and B pinned — exploring what the "data visual" inside them looks like.</p>
+
+  <div class="grid">
+
+    <!-- A1: ring inside verdict-first -->
+    <div class="opt">
+      <div class="opt-tag">
+        <span class="badge">A · Ring</span>
+        <span class="pinned">PINNED A</span>
+        <span class="tag-label">Verdict-first + donut ring</span>
+      </div>
+      <div class="card card-ae">
+        <p class="eyebrow">YOUR HONEST WEEK</p>
+        <div style="display:flex; align-items:center; gap:16px;">
+          <!-- ring -->
+          <div class="ring-center" style="width:88px;height:88px;flex-shrink:0;">
+            <svg width="88" height="88" viewBox="0 0 88 88">
+              <!-- track -->
+              <circle cx="44" cy="44" r="36" fill="none" stroke="rgba(255,255,255,0.06)" stroke-width="6"/>
+              <!-- fill 3/4 = 75% of 226.2 = 169.6 -->
+              <circle cx="44" cy="44" r="36" fill="none" stroke="#EEAE4D" stroke-width="6"
+                stroke-dasharray="169.6 226.2"
+                stroke-dashoffset="56.55"
+                stroke-linecap="round"/>
+            </svg>
+            <div class="ring-label">
+              <div class="ring-num">3/4</div>
+            </div>
+          </div>
+          <div style="flex:1;">
+            <p class="verdict">A tight week.</p>
+            <p class="body-sm" style="margin-top:6px;">3 of 4 areas landed close. <span class="amber">137 logs.</span></p>
+          </div>
+        </div>
+      </div>
+      <p class="opt-note">Ring at left anchors the fraction visually. Verdict + body in the right column. Compact and data-first. Ring arc = 3 of 4 areas.</p>
+    </div>
+
+    <!-- A2: 4 category dots + verdict -->
+    <div class="opt">
+      <div class="opt-tag">
+        <span class="badge">A · Dots</span>
+        <span class="pinned">PINNED A</span>
+        <span class="tag-label">Verdict-first + area dots</span>
+      </div>
+      <div class="card card-ae">
+        <p class="eyebrow">YOUR HONEST WEEK</p>
+        <p class="verdict">A tight week.</p>
+        <div class="dots-wrap" style="margin-top:12px;">
+          <div class="area-dot">
+            <div class="dot-circle dot-on"><span class="dot-icon">🏃</span></div>
+            <span class="dot-lbl">AM</span>
+          </div>
+          <div class="area-dot">
+            <div class="dot-circle dot-on"><span class="dot-icon">💼</span></div>
+            <span class="dot-lbl">Work</span>
+          </div>
+          <div class="area-dot">
+            <div class="dot-circle dot-on"><span class="dot-icon">🏠</span></div>
+            <span class="dot-lbl">Home</span>
+          </div>
+          <div class="area-dot">
+            <div class="dot-circle dot-off"><span class="dot-icon" style="opacity:.35;">📧</span></div>
+            <span class="dot-lbl">Admin</span>
+          </div>
+          <div style="margin-left:4px;">
+            <p class="body-sm" style="font-size:12px; color:var(--ink-faint);">3 close<br>1 drifted</p>
+          </div>
+        </div>
+        <p class="cap" style="margin-top:8px;"><span class="amber">137 logs</span> · Admin &amp; email ran longest</p>
+      </div>
+      <p class="opt-note">Dots give instant spatial read — you see which areas hit, which missed. Real emoji or category icon per area. Amber = on, faint = drifted.</p>
+    </div>
+
+    <!-- B1: fraction + bar -->
+    <div class="opt">
+      <div class="opt-tag">
+        <span class="badge">B · Fraction bar</span>
+        <span class="pinned">PINNED B</span>
+        <span class="tag-label">Number-first + segmented bar</span>
+      </div>
+      <div class="card card-ae">
+        <p class="eyebrow">YOUR HONEST WEEK</p>
+        <div style="display:flex; align-items:baseline; gap:5px; margin-bottom:4px;">
+          <span style="font-size:48px; font-weight:800; color:var(--accent); letter-spacing:-2px; line-height:1;">3</span>
+          <span style="font-size:24px; font-weight:500; color:var(--ink-faint);">/ 4</span>
+          <span style="font-size:14px; color:var(--ink-soft); margin-left:4px;">areas close</span>
+        </div>
+        <p class="body-sm" style="margin-bottom:14px;"><span class="amber">137 logs</span> &nbsp;·&nbsp; <span style="color:var(--ink-faint);">a tight week.</span></p>
+        <!-- segmented bar = 4 segments, 3 amber 1 faint -->
+        <div style="display:flex; gap:3px; height:5px;">
+          <div style="flex:1; background:var(--accent); border-radius:3px 0 0 3px;"></div>
+          <div style="flex:1; background:var(--accent);"></div>
+          <div style="flex:1; background:var(--accent);"></div>
+          <div style="flex:1; background:var(--surface-top); border-radius:0 3px 3px 0;"></div>
+        </div>
+        <div class="pbar-labels" style="margin-top:5px;">
+          <span class="cap">4 areas tracked</span>
+          <span class="cap" style="color:var(--accent);">3 landed</span>
+        </div>
+      </div>
+      <p class="opt-note">Segmented bar maps 1:1 to areas (not a %). Much more personal than "75%." Big amber number earns the verdict below it.</p>
+    </div>
+
+    <!-- B2: fraction + sparkline accuracy days -->
+    <div class="opt">
+      <div class="opt-tag">
+        <span class="badge">B · Sparkline</span>
+        <span class="pinned">PINNED B</span>
+        <span class="tag-label">Number-first + daily accuracy bars</span>
+      </div>
+      <div class="card card-ae">
+        <p class="eyebrow">YOUR HONEST WEEK</p>
+        <div style="display:flex; align-items:baseline; gap:5px;">
+          <span style="font-size:44px; font-weight:800; color:var(--accent); letter-spacing:-2px; line-height:1;">3</span>
+          <span style="font-size:22px; font-weight:500; color:var(--ink-faint);">/ 4</span>
+        </div>
+        <p class="body-sm" style="margin-top:2px; margin-bottom:12px;">areas landed close &nbsp;·&nbsp; <span class="amber">137 logs</span></p>
+        <!-- 7-day sparkline of daily accuracy -->
+        <div class="bars-wrap">
+          <div class="bar-col"><div class="bar-body bar-on" style="height:28px;"></div><div class="bar-lbl">M</div></div>
+          <div class="bar-col"><div class="bar-body bar-on" style="height:36px;"></div><div class="bar-lbl">T</div></div>
+          <div class="bar-col"><div class="bar-body bar-soft" style="height:18px;"></div><div class="bar-lbl">W</div></div>
+          <div class="bar-col"><div class="bar-body bar-on" style="height:40px;"></div><div class="bar-lbl">T</div></div>
+          <div class="bar-col"><div class="bar-body bar-on" style="height:32px;"></div><div class="bar-lbl">F</div></div>
+          <div class="bar-col"><div class="bar-body bar-soft" style="height:14px;"></div><div class="bar-lbl">S</div></div>
+          <div class="bar-col"><div class="bar-body bar-soft" style="height:10px;"></div><div class="bar-lbl">S</div></div>
+        </div>
+        <p class="cap">Weekdays sharper · weekends drift — that is the pattern.</p>
+      </div>
+      <p class="opt-note">Sparkline makes the week visible as a shape, not just a summary. Amber days = tight; faint = looser. Gives the "I can see my week" feeling.</p>
+    </div>
+
+    <!-- B3: big ring centered -->
+    <div class="opt">
+      <div class="opt-tag">
+        <span class="badge">B · Hero ring</span>
+        <span class="pinned">PINNED B</span>
+        <span class="tag-label">Number-first + centered ring hero</span>
+      </div>
+      <div class="card card-ae">
+        <p class="eyebrow">YOUR HONEST WEEK</p>
+        <div style="display:flex; flex-direction:column; align-items:center; padding:8px 0 14px;">
+          <div class="ring-center" style="width:120px;height:120px;">
+            <svg width="120" height="120" viewBox="0 0 120 120">
+              <circle cx="60" cy="60" r="50" fill="none" stroke="rgba(255,255,255,0.05)" stroke-width="8"/>
+              <!-- 3/4 of 314.16 = 235.6, offset -78.5 to start top -->
+              <circle cx="60" cy="60" r="50" fill="none" stroke="#EEAE4D" stroke-width="8"
+                stroke-dasharray="235.6 314.16"
+                stroke-dashoffset="78.54"
+                stroke-linecap="round"/>
+              <!-- gap dot (the 1 missed area) -->
+              <circle cx="60" cy="10" r="4" fill="rgba(255,255,255,0.15)"/>
+            </svg>
+            <div class="ring-label">
+              <div class="ring-num" style="font-size:32px;">3</div>
+              <div class="ring-denom" style="font-size:14px;">of 4</div>
+            </div>
+          </div>
+          <p style="font-size:20px; font-weight:700; color:var(--ink); margin-top:4px;">A tight week.</p>
+          <p class="body-sm" style="text-align:center; margin-top:4px;">Based on <span class="amber">137 logs</span></p>
+        </div>
+      </div>
+      <p class="opt-note">Hero ring is the most visually impactful — fills the card, number in center. Works if this is the ONLY ring in the modal. Dot on the track shows the one missed area.</p>
+    </div>
+
+    <!-- A3: minimal verdict + inline pills -->
+    <div class="opt">
+      <div class="opt-tag">
+        <span class="badge">A · Pill row</span>
+        <span class="pinned">PINNED A</span>
+        <span class="tag-label">Verdict-first + area pills inline</span>
+      </div>
+      <div class="card card-ae">
+        <p class="eyebrow">YOUR HONEST WEEK</p>
+        <p class="verdict">A tight week.</p>
+        <div style="display:flex; gap:6px; flex-wrap:wrap; margin:12px 0 10px;">
+          <span style="background:var(--accent-soft);border:1px solid rgba(238,174,77,.25);border-radius:var(--r-full);padding:4px 11px;font-size:12px;font-weight:600;color:var(--accent);">Morning routine ✓</span>
+          <span style="background:var(--accent-soft);border:1px solid rgba(238,174,77,.25);border-radius:var(--r-full);padding:4px 11px;font-size:12px;font-weight:600;color:var(--accent);">Deep work ✓</span>
+          <span style="background:var(--accent-soft);border:1px solid rgba(238,174,77,.25);border-radius:var(--r-full);padding:4px 11px;font-size:12px;font-weight:600;color:var(--accent);">Home ✓</span>
+          <span style="background:var(--surface-top);border:1px solid rgba(255,255,255,.06);border-radius:var(--r-full);padding:4px 11px;font-size:12px;font-weight:600;color:var(--ink-faint);">Admin ↑1.8×</span>
+        </div>
+        <p class="cap"><span class="amber">137 logs</span> &nbsp;·&nbsp; 3 areas landed, 1 ran long</p>
+      </div>
+      <p class="opt-note">Pill tags are the categories themselves — immediate recognition. Green = landed, faint = drifted with ratio. Very personal: you see your actual area names.</p>
+    </div>
+
+  </div>
+</div>
+
+
+<!-- ══════════════════════════════════════════════════
+     CARD ② — FORWARD ACTION
+══════════════════════════════════════════════════ -->
+
+<div class="sec">
+  <p class="sec-eye">Card ②</p>
+  <h2 class="sec-head">One Thing to Try</h2>
+  <p class="sec-desc">X pinned (eyebrow + body). Exploring how an illustration or component makes the action feel more concrete and forward-looking.</p>
+
+  <div class="grid">
+
+    <!-- X pinned: eyebrow + body (baseline) -->
+    <div class="opt">
+      <div class="opt-tag">
+        <span class="badge">X</span>
+        <span class="pinned">PINNED X</span>
+        <span class="tag-label">Eyebrow + body · baseline</span>
+      </div>
+      <div class="card card-ne">
+        <p class="eyebrow ey-amber">ONE THING TO TRY</p>
+        <p style="font-size:16px; font-weight:500; color:var(--ink); line-height:1.5;">Give <span class="amber">Admin &amp; email</span> about 1.8× next week — your day stops slipping.</p>
+      </div>
+      <p class="opt-note">Baseline. Clean, consistent with app card language. Amber eyebrow signals actionability without extra chrome.</p>
+    </div>
+
+    <!-- X + multiplier chip illustration -->
+    <div class="opt">
+      <div class="opt-tag">
+        <span class="badge">X · Chip</span>
+        <span class="pinned">PINNED X</span>
+        <span class="tag-label">+ Category × multiplier chip</span>
+      </div>
+      <div class="card card-ne">
+        <p class="eyebrow ey-amber">ONE THING TO TRY</p>
+        <div class="week-chip">
+          <div class="wk-icon">📧</div>
+          <div class="wk-info">
+            <span class="wk-label">Admin &amp; email</span>
+            <span class="wk-val">× 1.8</span>
+            <span class="wk-cat">next week</span>
+          </div>
+        </div>
+        <p class="body-sm">Give this area about 1.8× what you guessed — your day stops slipping.</p>
+      </div>
+      <p class="opt-note">The chip makes the category + multiplier scannable before reading the body. Category icon + name + ratio at a glance. The text below is the "why."</p>
+    </div>
+
+    <!-- X + arrow illustration -->
+    <div class="opt">
+      <div class="opt-tag">
+        <span class="badge">X · Arrow</span>
+        <span class="pinned">PINNED X</span>
+        <span class="tag-label">+ Guess → adjusted arrow</span>
+      </div>
+      <div class="card card-ne">
+        <p class="eyebrow ey-amber">ONE THING TO TRY</p>
+        <p class="body-sm" style="margin-bottom:12px;">Admin &amp; email</p>
+        <div class="arrow-line">
+          <span class="arrow-from">~18m guess</span>
+          <svg class="arrow-svg" viewBox="0 0 80 20" fill="none">
+            <line x1="0" y1="10" x2="65" y2="10" stroke="#EEAE4D" stroke-width="1.5" stroke-dasharray="4 3"/>
+            <polygon points="65,5 80,10 65,15" fill="#EEAE4D"/>
+          </svg>
+          <span class="arrow-to">~33m real</span>
+        </div>
+        <p class="body-sm" style="margin-top:10px;">Buffer it at <span class="amber">1.8×</span> next week and your day stops slipping.</p>
+      </div>
+      <p class="opt-note">Dashed arrow shows the gap between guess and reality. Very concrete. User sees the discrepancy visually, then the action text is the resolution.</p>
+    </div>
+
+    <!-- X + compass illustration -->
+    <div class="opt">
+      <div class="opt-tag">
+        <span class="badge">X · Compass</span>
+        <span class="pinned">PINNED X</span>
+        <span class="tag-label">+ SVG compass needle</span>
+      </div>
+      <div class="card card-ne">
+        <p class="eyebrow ey-amber">ONE THING TO TRY</p>
+        <div class="compass-wrap">
+          <div class="compass-dial">
+            <svg width="40" height="40" viewBox="0 0 40 40">
+              <!-- compass rose -->
+              <circle cx="20" cy="20" r="18" fill="none" stroke="rgba(255,255,255,0.08)" stroke-width="1"/>
+              <!-- N mark -->
+              <text x="20" y="7" text-anchor="middle" font-size="7" fill="rgba(255,255,255,0.2)" font-weight="700">N</text>
+              <!-- needle: amber north, faint south -->
+              <polygon points="20,8 17,20 20,22 23,20" fill="#EEAE4D"/>
+              <polygon points="20,32 17,20 20,22 23,20" fill="rgba(255,255,255,0.12)"/>
+              <circle cx="20" cy="20" r="2.5" fill="var(--surface-raised)"/>
+            </svg>
+          </div>
+          <div class="compass-body">
+            <p style="font-size:15px; font-weight:600; color:var(--ink); line-height:1.4;">Give <span class="amber">Admin &amp; email</span> about 1.8× next week.</p>
+            <p class="cap" style="margin-top:4px;">Your day stops slipping.</p>
+          </div>
+        </div>
+      </div>
+      <p class="opt-note">Compass signals "direction for next week." Amber needle = forward. Decorative but thematically strong. May feel ornate vs the clean card language elsewhere.</p>
+    </div>
+
+    <!-- X + before/after visual (clean-week) -->
+    <div class="opt">
+      <div class="opt-tag">
+        <span class="badge">X · Affirm</span>
+        <span class="pinned">PINNED X</span>
+        <span class="tag-label">Clean-week: hold steady variant</span>
+      </div>
+      <div class="card card-ne">
+        <p class="eyebrow ey-amber">ONE THING TO TRY</p>
+        <div style="display:flex; align-items:center; gap:12px; margin:10px 0 12px;">
+          <svg width="36" height="36" viewBox="0 0 36 36" fill="none">
+            <circle cx="18" cy="18" r="16" fill="rgba(238,174,77,0.08)" stroke="rgba(238,174,77,0.2)" stroke-width="1.5"/>
+            <!-- checkmark -->
+            <polyline points="10,18 16,24 26,12" stroke="#EEAE4D" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+          <p style="font-size:15px; font-weight:500; color:var(--ink); line-height:1.4;">Hold steady. Your reads are landing — three areas in a row now.</p>
+        </div>
+        <p class="cap">Nothing needs adjusting this week.</p>
+      </div>
+      <p class="opt-note">When the week was clean: amber check icon, affirmation tone. Never omits the card — silence for a sharp week is a missed moment of positive signal.</p>
+    </div>
+
+  </div>
+</div>
+
+
+<!-- ══════════════════════════════════════════════════
+     CARD ③ — BIGGEST SURPRISE (visual treatment)
+══════════════════════════════════════════════════ -->
+
+<div class="sec">
+  <p class="sec-eye">Card ③</p>
+  <h2 class="sec-head">Your Biggest Surprise</h2>
+  <p class="sec-desc">Currently reuses BiggestSurprise from Patterns verbatim. Needs a visual treatment that makes the guess→real gap feel visceral and earned — not just text.</p>
+
+  <div class="grid">
+
+    <!-- Current (text only) -->
+    <div class="opt">
+      <div class="opt-tag">
+        <span class="badge">Current</span>
+        <span class="tag-label">Text only (today)</span>
+      </div>
+      <div class="card card-ne" style="opacity:.6;">
+        <p class="eyebrow">YOUR BIGGEST SURPRISE</p>
+        <p class="body-md"><span class="ink-bold">Admin &amp; email</span> — 18m guessed, 33m real. About <span class="amber">1.8×</span> your read.</p>
+      </div>
+      <p class="opt-note">Verbatim reuse from Patterns. No visual component. User has already seen this exact card on the Correlations tab.</p>
+    </div>
+
+    <!-- Guess vs Real bars -->
+    <div class="opt">
+      <div class="opt-tag">
+        <span class="badge">③-A</span>
+        <span class="badge-amber">★ Rec</span>
+        <span class="tag-label">Guess vs real bars</span>
+      </div>
+      <div class="card card-ne">
+        <p class="eyebrow">YOUR BIGGEST SURPRISE</p>
+        <p class="body-sm" style="margin-bottom:14px;"><span class="ink-bold">Admin &amp; email</span></p>
+
+        <!-- Bar comparison -->
+        <div style="display:flex; flex-direction:column; gap:8px; margin-bottom:14px;">
+          <!-- guess bar -->
+          <div style="display:flex; align-items:center; gap:10px;">
+            <span style="font-size:11px; color:var(--ink-faint); width:52px; text-align:right; flex-shrink:0;">Guess</span>
+            <div style="flex:1; height:28px; background:var(--surface-top); border-radius:5px; overflow:hidden; position:relative;">
+              <div style="width:55%; height:100%; background:rgba(255,255,255,0.15); border-radius:5px; display:flex; align-items:center; padding:0 8px;">
+                <span style="font-size:13px; font-weight:600; color:var(--ink);">18m</span>
+              </div>
+            </div>
+          </div>
+          <!-- real bar -->
+          <div style="display:flex; align-items:center; gap:10px;">
+            <span style="font-size:11px; color:var(--ink-faint); width:52px; text-align:right; flex-shrink:0;">Real</span>
+            <div style="flex:1; height:28px; background:var(--surface-top); border-radius:5px; overflow:hidden; position:relative;">
+              <div style="width:100%; height:100%; background:rgba(238,174,77,0.2); border:1px solid rgba(238,174,77,0.25); border-radius:5px; display:flex; align-items:center; padding:0 8px;">
+                <span style="font-size:13px; font-weight:700; color:var(--accent);">33m</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div style="display:flex; align-items:center; justify-content:space-between;">
+          <span class="gap-ratio">1.8× your read</span>
+          <span class="cap">based on 28 logs</span>
+        </div>
+      </div>
+      <p class="opt-note">Bars make the gap visceral — you SEE how much bigger the real bar is. Guess is neutral, real is amber. The ratio chip sits below as the conclusion. Completely exclusive to the ritual (Patterns never shows this bar format).</p>
+    </div>
+
+    <!-- Gap SVG visualization -->
+    <div class="opt">
+      <div class="opt-tag">
+        <span class="badge">③-B</span>
+        <span class="tag-label">Gap illustration + triad row</span>
+      </div>
+      <div class="card card-ne">
+        <p class="eyebrow">YOUR BIGGEST SURPRISE</p>
+        <p class="body-sm" style="margin-bottom:14px;"><span class="ink-bold">Admin &amp; email</span> ran almost twice as long as you thought.</p>
+
+        <!-- SVG gap: two circles proportional -->
+        <div style="display:flex; align-items:center; gap:0; justify-content:center; margin:0 0 16px;">
+          <div style="display:flex; flex-direction:column; align-items:center; gap:6px;">
+            <div style="width:52px; height:52px; border-radius:50%; background:rgba(255,255,255,0.1); border:1.5px solid rgba(255,255,255,.12); display:flex; align-items:center; justify-content:center;">
+              <span style="font-size:14px; font-weight:700; color:var(--ink);">18m</span>
+            </div>
+            <span style="font-size:10px; color:var(--ink-faint); font-weight:600; letter-spacing:.06em; text-transform:uppercase;">Guess</span>
+          </div>
+          <div style="flex:1; display:flex; align-items:center; justify-content:center;">
+            <svg width="48" height="20" viewBox="0 0 48 20">
+              <line x1="4" y1="10" x2="40" y2="10" stroke="rgba(238,174,77,0.3)" stroke-width="1" stroke-dasharray="3 2"/>
+              <polygon points="38,6 48,10 38,14" fill="rgba(238,174,77,0.4)"/>
+            </svg>
+          </div>
+          <div style="display:flex; flex-direction:column; align-items:center; gap:6px;">
+            <div style="width:82px; height:82px; border-radius:50%; background:rgba(238,174,77,0.1); border:1.5px solid rgba(238,174,77,.3); display:flex; align-items:center; justify-content:center;">
+              <span style="font-size:18px; font-weight:800; color:var(--accent);">33m</span>
+            </div>
+            <span style="font-size:10px; color:var(--accent); font-weight:600; letter-spacing:.06em; text-transform:uppercase;">Real</span>
+          </div>
+        </div>
+
+        <div style="display:flex; justify-content:center;">
+          <span class="gap-ratio">1.8× · based on 28 logs</span>
+        </div>
+      </div>
+      <p class="opt-note">Proportional circles make the gap immediately visceral. Larger circle = longer real time. Arrow bridges them. Bold but might feel abstract vs bars.</p>
+    </div>
+
+    <!-- Triad row (number + sample + comparison) -->
+    <div class="opt">
+      <div class="opt-tag">
+        <span class="badge">③-C</span>
+        <span class="tag-label">Triad stat row + small bars</span>
+      </div>
+      <div class="card card-ne">
+        <p class="eyebrow">YOUR BIGGEST SURPRISE</p>
+        <p class="body-sm" style="margin-bottom:14px;"><span class="ink-bold">Admin &amp; email</span></p>
+        <!-- 3-col stat grid -->
+        <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:8px; margin-bottom:14px;">
+          <div style="background:var(--surface-top); border-radius:8px; padding:10px 10px;">
+            <div style="font-size:18px; font-weight:700; color:var(--ink); line-height:1;">18m</div>
+            <div style="font-size:9px; font-weight:700; letter-spacing:.08em; text-transform:uppercase; color:var(--ink-faint); margin-top:3px;">Guessed</div>
+          </div>
+          <div style="background:var(--surface-top); border-radius:8px; padding:10px 10px;">
+            <div style="font-size:18px; font-weight:700; color:var(--accent); line-height:1;">33m</div>
+            <div style="font-size:9px; font-weight:700; letter-spacing:.08em; text-transform:uppercase; color:var(--ink-faint); margin-top:3px;">Real</div>
+          </div>
+          <div style="background:var(--surface-top); border-radius:8px; padding:10px 10px;">
+            <div style="font-size:18px; font-weight:700; color:var(--accent); line-height:1;">1.8×</div>
+            <div style="font-size:9px; font-weight:700; letter-spacing:.08em; text-transform:uppercase; color:var(--ink-faint); margin-top:3px;">Ratio</div>
+          </div>
+        </div>
+        <p class="cap">Based on <span class="amber">28 logs</span> · highest drift this week</p>
+      </div>
+      <p class="opt-note">Triad rule in grid form: number + real + ratio each in their own chip. Very readable. Clean, dashboard-like. No illustration, but the grid structure is the component.</p>
+    </div>
+
+    <!-- Combined rec: bars + triad -->
+    <div class="opt">
+      <div class="opt-tag">
+        <span class="badge">③-D</span>
+        <span class="badge-amber">★ Full triad</span>
+        <span class="tag-label">Bars + triad chips combined</span>
+      </div>
+      <div class="card card-ne">
+        <p class="eyebrow">YOUR BIGGEST SURPRISE</p>
+        <p class="body-sm" style="margin-bottom:14px;"><span class="ink-bold">Admin &amp; email</span> — biggest drift this week</p>
+
+        <!-- bars -->
+        <div style="display:flex; flex-direction:column; gap:6px; margin-bottom:12px;">
+          <div style="display:flex; align-items:center; gap:10px;">
+            <span style="font-size:10px; color:var(--ink-faint); width:44px; text-align:right; flex-shrink:0;">Guess</span>
+            <div style="flex:1; background:var(--surface-top); border-radius:4px; overflow:hidden;">
+              <div style="width:55%; height:24px; background:rgba(255,255,255,0.12); border-radius:4px; display:flex; align-items:center; padding:0 8px;">
+                <span style="font-size:12px; font-weight:600; color:var(--ink);">18m</span>
+              </div>
+            </div>
+          </div>
+          <div style="display:flex; align-items:center; gap:10px;">
+            <span style="font-size:10px; color:var(--ink-faint); width:44px; text-align:right; flex-shrink:0;">Real</span>
+            <div style="flex:1; background:var(--surface-top); border-radius:4px; overflow:hidden;">
+              <div style="width:100%; height:24px; background:rgba(238,174,77,0.18); border:1px solid rgba(238,174,77,0.25); border-radius:4px; display:flex; align-items:center; padding:0 8px;">
+                <span style="font-size:12px; font-weight:700; color:var(--accent);">33m</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ratio + sample -->
+        <div style="display:flex; align-items:center; justify-content:space-between;">
+          <span class="gap-ratio" style="font-size:14px; padding:4px 12px;">1.8× your read</span>
+          <span class="cap">28 logs · <span style="color:var(--accent);">highest drift</span></span>
+        </div>
+      </div>
+      <p class="opt-note">Bars + ratio chip = the full triad in one card. Most earned feeling. Bars show the gap; chip names the ratio; sample count in caption. Exclusive visual — never appears in Patterns tab.</p>
+    </div>
+
+  </div>
+</div>
+
+</body>
+</html>
