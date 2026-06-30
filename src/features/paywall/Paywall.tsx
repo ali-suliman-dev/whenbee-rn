@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { View, Text, ScrollView, Pressable, type ViewStyle, type TextStyle } from 'react-native';
 import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
@@ -81,14 +81,17 @@ export function Paywall({ trigger, readiness = 'pre' }: { trigger?: string; read
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // Default the selection to the hero (yearly) once the offering lands.
-  useEffect(() => {
-    if (status !== 'ready' || !offering || selectedId) return;
+  // Default the selection to the hero (yearly) — derived synchronously so the CTA
+  // is live the same render the offering lands. An effect-based default left a
+  // window where the offering was ready and the CTA rendered, but `selected` was
+  // still null → a dead/disabled tap (and a flaky purchase test).
+  const heroId = useMemo(() => {
+    if (!offering) return null;
     const hero = offering.packages.find((p) => p.duration === 'yearly') ?? offering.packages[0];
-    if (hero) setSelectedId(hero.id);
-  }, [status, offering, selectedId]);
+    return hero?.id ?? null;
+  }, [offering]);
 
-  const selected = offering?.packages.find((p) => p.id === selectedId) ?? null;
+  const selected = offering?.packages.find((p) => p.id === (selectedId ?? heroId)) ?? null;
 
   // Founder-price reservation: offered ONLY before the user's numbers are honest,
   // and only when the live offering actually carries a founder package. Suppressed
