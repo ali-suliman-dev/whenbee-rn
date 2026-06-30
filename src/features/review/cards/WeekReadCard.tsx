@@ -1,4 +1,5 @@
 import { View, Text, StyleSheet } from 'react-native';
+import { Card } from '@/src/components/Card';
 import { useTheme } from '@/src/theme/useTheme';
 import type { ReviewSummary } from '@/src/domain/types';
 
@@ -31,7 +32,6 @@ export function WeekReadCard({ summary }: Props) {
   const days = ['M', 'T', 'W', 'T', 'F', 'S', 'S'] as const;
 
   const styles = StyleSheet.create({
-    container: { padding: t.space[4] },
     verdict: { fontSize: 26, fontWeight: '700', color: t.colors.ink, marginBottom: t.space[1] },
     subtitle: { fontSize: 14, color: t.colors.inkSoft, marginBottom: t.space[5] },
     logCount: { fontWeight: '700', color: t.colors.amberText },
@@ -43,7 +43,7 @@ export function WeekReadCard({ summary }: Props) {
   });
 
   return (
-    <View style={styles.container}>
+    <Card tone="flat">
       <Text style={styles.verdict}>{wr.verdict}</Text>
       <Text style={styles.subtitle}>
         {wr.areasClose} of {wr.areasTotal} areas landed close.{' '}
@@ -62,6 +62,6 @@ export function WeekReadCard({ summary }: Props) {
         })}
       </View>
       {caption ? <Text style={styles.caption}>{caption}</Text> : null}
-    </View>
+    </Card>
   );
 }

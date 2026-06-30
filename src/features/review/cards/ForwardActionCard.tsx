@@ -1,4 +1,5 @@
 import { View, Text, StyleSheet } from 'react-native';
+import { Card } from '@/src/components/Card';
 import { useTheme } from '@/src/theme/useTheme';
 import type { ForwardAction } from '@/src/domain/types';
 
@@ -19,12 +20,6 @@ export function ForwardActionCard({ action }: Props) {
   const overflowFlex = total > 0 ? action.overflowMin / total : 0.5;
 
   const styles = StyleSheet.create({
-    container: {
-      padding: t.space[4],
-      borderWidth: 1,
-      borderColor: 'rgba(255,255,255,0.06)',
-      borderRadius: t.radii.card,
-    },
     eyebrow: {
       fontSize: 10,
       fontWeight: '700',
@@ -61,7 +56,7 @@ export function ForwardActionCard({ action }: Props) {
   });
 
   return (
-    <View style={styles.container}>
+    <Card tone="flat">
       <Text style={styles.eyebrow}>ONE THING TO TRY</Text>
       <Text style={styles.heading}>
         <Text style={styles.categoryName}>{action.categoryName}</Text>
@@ -84,6 +79,6 @@ export function ForwardActionCard({ action }: Props) {
         <Text style={styles.recommendedMin}>~{action.recommendedMin}m</Text>
         {' next week and the overflow disappears.'}
       </Text>
-    </View>
+    </Card>
   );
 }
