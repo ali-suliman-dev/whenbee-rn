@@ -1,10 +1,11 @@
 // src/features/today/PlanMyDayButton.tsx
 // The "Plan my day" action sitting at the right edge of the List/Timeline toggle
 // row (label swaps to "Re-plan" in Timeline). It is a SECONDARY,
-// Pro-gated action — never a filled indigo CTA (Start owns the one primary on the
-// screen). So it reads as a crafted, tactile *tinted* chip: a soft indigo fill
-// with a crisp indigo hairline, a filled sparkle, and a semibold indigo label,
-// plus the house "ghost" press (scale squeeze + haptic). No edge, no bounce.
+// Pro-gated action — never a filled indigo CTA (the + FAB owns the one primary on
+// the screen). It reads as a quiet GHOST: no fill, no border — just a filled
+// sparkle + a semibold indigo label, with the house "ghost" press (scale squeeze
+// + haptic). No edge, no bounce. Demoting the fill keeps the screen calm so the
+// single filled FAB is unmistakably the primary action.
 // reactCompiler gotcha: Pressable stays a bare touch wrapper; visual + the press
 // animation live on the inner Animated.View (shared value via .get()/.set()).
 
@@ -58,13 +59,11 @@ export function PlanMyDayButton({ onPress, isPro, label }: PlanMyDayButtonProps)
             alignItems: 'center',
             justifyContent: 'center',
             minHeight: t.size.control.sm,
-            gap: t.space[2],
-            paddingHorizontal: t.space[4],
-            backgroundColor: t.colors.primarySoft,
+            gap: t.space[1.5],
+            paddingHorizontal: t.space[2],
+            backgroundColor: 'transparent',
             borderRadius: t.radii.full,
             borderCurve: 'continuous',
-            borderWidth: t.borderWidth.hairline,
-            borderColor: t.colors.primarySoft2,
           },
           aStyle,
         ]}

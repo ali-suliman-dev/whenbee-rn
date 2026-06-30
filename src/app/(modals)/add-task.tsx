@@ -113,6 +113,16 @@ export default function AddTask() {
     setAddingCategory(false);
   }
 
+  // Secondary CTA mirrors the chosen day so it never lies ("Add to today" while
+  // adding to Tomorrow). Shelf → "Add to shelf"; today → "Add to today"; else the
+  // weekday/"Tomorrow".
+  const addCtaLabel =
+    targetDate === null
+      ? 'Add to shelf'
+      : targetDate === today
+      ? 'Add to today'
+      : `Add to ${targetDayLabel(targetDate, today)}`;
+
   const heading: TextStyle = { ...(type.subtitle as unknown as TextStyle), color: t.colors.ink };
   const sub: TextStyle = { ...(type.body as unknown as TextStyle), color: t.colors.inkSoft };
 
@@ -329,7 +339,7 @@ export default function AddTask() {
             onPress={() => a.onAddAndStart(targetDate)}
           />
           <AppButton
-            label="Add to today"
+            label={addCtaLabel}
             variant="ghost"
             fullWidth
             disabled={!a.canSubmit}
