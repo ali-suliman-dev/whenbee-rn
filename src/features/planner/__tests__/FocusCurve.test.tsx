@@ -24,3 +24,16 @@ test('locked variant renders Svg', () => {
   );
   expect(UNSAFE_getByType(Svg)).toBeTruthy();
 });
+
+it('renders Hi/Low Y labels when yAxis is set', () => {
+  const { getByText } = render(
+    <FocusCurve scoreByBin={SCORE_BY_BIN} variant="learned" windowStartMin={810} windowEndMin={960} yAxis />,
+  );
+  expect(getByText('Hi')).toBeTruthy();
+  expect(getByText('Low')).toBeTruthy();
+});
+
+it('omits Y labels by default', () => {
+  const { queryByText } = render(<FocusCurve scoreByBin={SCORE_BY_BIN} variant="learned" />);
+  expect(queryByText('Hi')).toBeNull();
+});

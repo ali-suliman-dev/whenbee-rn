@@ -557,6 +557,9 @@ export const tokens = {
     axisH: 16,         // time-axis row height (pt)
     axisGap: 2,        // marginTop between SVG and axis row (pt)
     axisLabelW: 28,    // fixed width of each axis label (pt)
+    detailH: 140,      // taller SVG for the detail sheet
+    gridW: 1,          // horizontal gridline weight
+    yLabelW: 30,       // Y-axis gutter width (pt)
   },
 
   // Calendar strip geometry. All strip sizing in one place.
