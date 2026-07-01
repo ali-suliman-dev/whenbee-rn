@@ -1,4 +1,5 @@
 import { Pressable, View, type TextStyle, type ViewStyle } from 'react-native';
+import { useTranslation } from 'react-i18next';
 import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { AppText } from '@/src/components/AppText';
@@ -18,6 +19,7 @@ import { analytics } from '@/src/services/analytics';
 
 export function GuardrailLockedRow() {
   const t = useTheme();
+  const { t: tr } = useTranslation('settings');
 
   function openPaywall() {
     analytics.capture('guardrail_paywall', {});
@@ -46,17 +48,17 @@ export function GuardrailLockedRow() {
     <Pressable
       onPress={openPaywall}
       accessibilityRole="button"
-      accessibilityLabel="Hyperfocus check-in, Pro feature. Tap to learn more."
+      accessibilityLabel={tr('guardrail.lockedA11y')}
       style={row}
     >
       <Ionicons name="time-outline" size={t.iconSize.md} color={t.colors.inkSoft} />
       <View style={{ flex: 1, gap: t.space[0.5] }}>
-        <AppText style={titleStyle}>Hyperfocus check-in</AppText>
-        <AppText style={captionStyle}>A heads-up before a task eats your evening.</AppText>
+        <AppText style={titleStyle}>{tr('guardrail.title')}</AppText>
+        <AppText style={captionStyle}>{tr('guardrail.captionLocked')}</AppText>
       </View>
       <View style={valueRow}>
         <Ionicons name="lock-closed" size={t.iconSize.sm} color={t.colors.inkFaint} />
-        <AppText style={valueStyle}>2×</AppText>
+        <AppText style={valueStyle}>{tr('guardrail.lockedValue')}</AppText>
       </View>
     </Pressable>
   );

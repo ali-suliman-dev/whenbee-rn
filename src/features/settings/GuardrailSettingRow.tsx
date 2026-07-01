@@ -1,4 +1,5 @@
 import { View, type TextStyle, type ViewStyle } from 'react-native';
+import { useTranslation } from 'react-i18next';
 import { Ionicons } from '@expo/vector-icons';
 import { Chip } from '@/src/components/Chip';
 import { AppText } from '@/src/components/AppText';
@@ -17,15 +18,21 @@ import type { GuardrailMultiple } from '@/src/domain/types';
 // live nudge itself. No-guilt: this only chooses when the gentle nudge fires.
 // ──────────────────────────────────────────────────────────────────────────────
 
-const OPTIONS: { value: GuardrailMultiple; label: string }[] = [
-  { value: 'off', label: 'Off' },
-  { value: '1.5x', label: '1.5×' },
-  { value: '2x', label: '2×' },
-  { value: '3x', label: '3×' },
-];
+const OPTION_VALUES: GuardrailMultiple[] = ['off', '1.5x', '2x', '3x'];
 
 export function GuardrailSettingRow() {
   const t = useTheme();
+  const { t: tr } = useTranslation('settings');
+  const OPTION_LABEL: Record<GuardrailMultiple, string> = {
+    off: tr('guardrail.options.off'),
+    '1.5x': tr('guardrail.options.oneAndHalfX'),
+    '2x': tr('guardrail.options.twoX'),
+    '3x': tr('guardrail.options.threeX'),
+  };
+  const OPTIONS: { value: GuardrailMultiple; label: string }[] = OPTION_VALUES.map((value) => ({
+    value,
+    label: OPTION_LABEL[value],
+  }));
   const hyperfocusGuard = useSettingsStore((s) => s.hyperfocusGuard);
   const setHyperfocusGuard = useSettingsStore((s) => s.setHyperfocusGuard);
 
@@ -54,8 +61,8 @@ export function GuardrailSettingRow() {
       <View style={{ flexDirection: 'row', alignItems: 'center', gap: t.space[3] }}>
         <Ionicons name="hourglass-outline" size={t.iconSize.md} color={t.colors.inkSoft} />
         <View style={{ gap: t.space[0.5] }}>
-          <AppText style={titleStyle}>Hyperfocus check-in</AppText>
-          <AppText style={captionStyle}>A gentle nudge when a task runs long.</AppText>
+          <AppText style={titleStyle}>{tr('guardrail.title')}</AppText>
+          <AppText style={captionStyle}>{tr('guardrail.captionFree')}</AppText>
         </View>
       </View>
       <View style={options}>

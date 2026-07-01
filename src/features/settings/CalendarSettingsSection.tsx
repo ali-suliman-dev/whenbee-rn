@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
 import { Alert, View, Switch, Pressable, ActivityIndicator, type TextStyle, type ViewStyle } from 'react-native';
+import { useTranslation } from 'react-i18next';
 import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { AppText } from '@/src/components/AppText';
@@ -38,6 +39,7 @@ interface CalendarRow {
 
 export function CalendarSettingsSection() {
   const t = useTheme();
+  const { t: tr } = useTranslation('settings');
 
   const showEvents = useSettingsStore((s) => s.calendar.showEvents);
   const enabledCalendarIds = useSettingsStore((s) => s.calendar.enabledCalendarIds);
@@ -105,15 +107,15 @@ export function CalendarSettingsSection() {
       if (!next) {
         // Turning OFF — confirm, then delete all Whenbee events and clear db links.
         Alert.alert(
-          'Remove plan from calendar?',
-          "This removes all events Whenbee added to its own calendar. Your other calendars aren't touched.",
+          tr('calendar.export.removeConfirmTitle'),
+          tr('calendar.export.removeConfirmMessage'),
           [
             {
-              text: 'Keep events',
+              text: tr('calendar.export.removeConfirmKeep'),
               style: 'cancel',
             },
             {
-              text: 'Remove and turn off',
+              text: tr('calendar.export.removeConfirmConfirm'),
               style: 'destructive',
               onPress: async () => {
                 if (whenbeeCalendarId !== null) {
@@ -144,7 +146,7 @@ export function CalendarSettingsSection() {
       setWhenbeeCalendarId(calId);
       setExportEnabled(true);
     },
-    [whenbeeCalendarId, setExportEnabled, setWhenbeeCalendarId],
+    [whenbeeCalendarId, setExportEnabled, setWhenbeeCalendarId, tr],
   );
 
   function openExportPaywall() {
@@ -195,7 +197,7 @@ export function CalendarSettingsSection() {
 
   return (
     <View style={{ gap: t.space[3] }}>
-      <AppText variant="label">Calendar</AppText>
+      <AppText variant="label">{tr('calendar.label')}</AppText>
 
       <View style={card}>
         {/* Master toggle row */}
@@ -206,24 +208,20 @@ export function CalendarSettingsSection() {
             color={t.colors.inkSoft}
           />
           <View style={{ flex: 1, gap: t.space[0.5] }}>
-            <AppText style={titleStyle}>Show calendar events</AppText>
-            <AppText style={noteStyle}>
-              Events appear read-only and count toward your honest-day capacity.
-            </AppText>
+            <AppText style={titleStyle}>{tr('calendar.showEvents.title')}</AppText>
+            <AppText style={noteStyle}>{tr('calendar.showEvents.note')}</AppText>
           </View>
           <Switch
             value={showEvents}
             onValueChange={handleMasterToggle}
             trackColor={{ true: t.colors.primary, false: t.colors.hairline }}
-            accessibilityLabel="Show calendar events"
+            accessibilityLabel={tr('calendar.showEvents.a11y')}
           />
         </View>
 
         {/* Access-denied hint */}
         {accessDenied ? (
-          <AppText style={hintStyle}>
-            Calendar access is off. Open iOS Settings → Whenbee → Calendar to allow it.
-          </AppText>
+          <AppText style={hintStyle}>{tr('calendar.accessDeniedHint')}</AppText>
         ) : null}
 
         {/* Per-calendar list */}
@@ -245,7 +243,10 @@ export function CalendarSettingsSection() {
                     onPress={() => toggleCalendar(cal.id)}
                     accessibilityRole="checkbox"
                     accessibilityState={{ checked: isEnabled }}
-                    accessibilityLabel={`${cal.title}, ${isEnabled ? 'visible' : 'hidden'}`}
+                    accessibilityLabel={tr(
+                      isEnabled ? 'calendar.calendarRow.a11yVisible' : 'calendar.calendarRow.a11yHidden',
+                      { title: cal.title },
+                    )}
                   >
                     {({ pressed }) => (
                       <View style={[row, { opacity: pressed ? t.opacity.pressed : 1 }]}>
@@ -293,26 +294,22 @@ export function CalendarSettingsSection() {
               importantForAccessibility="no"
             />
             <View style={{ flex: 1, gap: t.space[0.5] }}>
-              <AppText style={titleStyle}>Add plan to a Whenbee calendar</AppText>
+              <AppText style={titleStyle}>{tr('calendar.export.title')}</AppText>
               {exportEnabled ? (
                 <AppText style={noteStyle} testID="export-contract-copy">
-                  Whenbee uses its own calendar. Turning this off removes those events.
+                  {tr('calendar.export.noteOn')}
                 </AppText>
               ) : (
-                <AppText style={noteStyle}>
-                  After you run {'"'}Plan my day{'"'}, the schedule goes straight to your calendar.
-                </AppText>
+                <AppText style={noteStyle}>{tr('calendar.export.noteOff')}</AppText>
               )}
             </View>
             <Switch
               value={exportEnabled}
               onValueChange={handleExportToggle}
               trackColor={{ true: t.colors.primary, false: t.colors.hairline }}
-              accessibilityLabel={
-                exportEnabled
-                  ? 'Add plan to a Whenbee calendar, currently on. Turning this off removes those events.'
-                  : 'Add plan to a Whenbee calendar, currently off'
-              }
+              accessibilityLabel={tr(
+                exportEnabled ? 'calendar.export.a11yOn' : 'calendar.export.a11yOff',
+              )}
               accessibilityRole="switch"
               accessibilityState={{ checked: exportEnabled }}
             />
@@ -320,9 +317,7 @@ export function CalendarSettingsSection() {
 
           {/* Write-access denied hint */}
           {exportWriteDenied ? (
-            <AppText style={hintStyle}>
-              Calendar access is off. Go to iOS Settings, then Whenbee, then Calendar to allow it.
-            </AppText>
+            <AppText style={hintStyle}>{tr('calendar.export.writeDeniedHint')}</AppText>
           ) : null}
         </View>
       ) : (
@@ -331,7 +326,7 @@ export function CalendarSettingsSection() {
         <Pressable
           onPress={openExportPaywall}
           accessibilityRole="button"
-          accessibilityLabel="Add plan to a Whenbee calendar — Pro feature. Tap to upgrade."
+          accessibilityLabel={tr('calendar.export.lockedA11y')}
         >
           {({ pressed }) => (
             <View style={[card, row, { opacity: pressed ? t.opacity.pressed : 1 }]}>
@@ -344,16 +339,14 @@ export function CalendarSettingsSection() {
               />
               <View style={{ flex: 1, gap: t.space[0.5] }}>
                 <AppText style={{ ...(type.bodySmBold as unknown as TextStyle), color: t.colors.inkFaint }}>
-                  Add plan to a Whenbee calendar
+                  {tr('calendar.export.title')}
                 </AppText>
-                <AppText style={noteStyle}>
-                  After you run {'"'}Plan my day{'"'}, the schedule goes straight to your calendar.
-                </AppText>
+                <AppText style={noteStyle}>{tr('calendar.export.noteOff')}</AppText>
               </View>
               <View style={{ flexDirection: 'row', alignItems: 'center', gap: t.space[1] }}>
                 <Ionicons name="lock-closed" size={t.iconSize.sm} color={t.colors.inkFaint} accessibilityElementsHidden importantForAccessibility="no" />
                 <AppText style={{ ...(type.caption as unknown as TextStyle), color: t.colors.inkFaint }}>
-                  Pro
+                  {tr('calendar.export.proLabel')}
                 </AppText>
               </View>
             </View>

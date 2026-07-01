@@ -1,0 +1,249 @@
+{
+  "soundOptions": {
+    "honey": "Honey",
+    "default": "Default",
+    "none": "None"
+  },
+  "restoreMessage": {
+    "success": "Pro restored.",
+    "none": "No earlier purchase found.",
+    "error": "Couldn't reach the store — try again."
+  },
+  "reminderDenied": "Allow notifications in iOS Settings to get reminders.",
+  "dismissA11y": "Dismiss",
+  "proSection": {
+    "label": "Whenbee Pro",
+    "title": "Make my whole day honest",
+    "noteOn": "Map your real buffers onto today's calendar.",
+    "noteOff": "Auto-pad your calendar with your real buffers.",
+    "a11yOn": "Make my whole day honest",
+    "a11yOff": "Go Pro and make your whole day honest"
+  },
+  "appearance": {
+    "label": "Appearance",
+    "modes": {
+      "system": "system",
+      "light": "light",
+      "dark": "dark"
+    }
+  },
+  "yourWhenbee": {
+    "label": "Your Whenbee",
+    "categories": {
+      "title": "Categories",
+      "note": "{{count}} tracked"
+    },
+    "nameInput": {
+      "a11y": "Your name",
+      "placeholder": "Tell Whenbee your name"
+    },
+    "retakeQuiz": {
+      "title": "Re-take time-style quiz",
+      "note": "Update your time-personality seed.",
+      "a11y": "Re-take time-style quiz"
+    },
+    "nameCompanion": {
+      "title": "Name your Whenbee",
+      "note": "Give your companion a name."
+    }
+  },
+  "notifications": {
+    "label": "Notifications",
+    "reminders": {
+      "title": "Reminders",
+      "note": "Pings for honest finish, start-by nudges, and more.",
+      "a11y": "Reminders"
+    },
+    "honestReached": {
+      "title": "Honest finish reached",
+      "note": "A ping when your honest estimate is up.",
+      "a11y": "Honest finish reached"
+    },
+    "startBy": {
+      "title": "Start-by nudge",
+      "note": "A reminder when it's time to begin your next task.",
+      "a11y": "Start-by nudge"
+    },
+    "mondayReview": {
+      "title": "Monday review",
+      "note": "A gentle nudge when your honest week is ready. Off by default.",
+      "a11y": "Monday review"
+    },
+    "quietHours": {
+      "title": "Quiet hours",
+      "note": "Suppress notifications during sleep or focus windows.",
+      "a11y": "Quiet hours",
+      "from": "From  {{time}}",
+      "fromNote": "Quiet window starts",
+      "fromA11y": "Quiet hours start time",
+      "until": "Until  {{time}}",
+      "untilNote": "Quiet window ends",
+      "untilA11y": "Quiet hours end time"
+    },
+    "sound": {
+      "title": "Sound",
+      "note": "Tone played when a notification fires."
+    },
+    "dailyCheckin": {
+      "title": "Daily check-in",
+      "note": "Puts a line on Today that nudges you to log one thing, then checks off once you do. Skip a day and nothing breaks.",
+      "a11y": "Daily check-in"
+    },
+    "quickStart": {
+      "title": "Tap to start again",
+      "note": "A row of tasks you run often, up top on Today — one tap re-runs them. Turn off for a cleaner screen.",
+      "a11y": "Tap to start again"
+    }
+  },
+  "scheduling": {
+    "label": "Scheduling",
+    "endOfDay": {
+      "title": "End of day",
+      "noteOn": "Your day winds down around {{time}}",
+      "noteOff": "Off",
+      "a11yOn": "End of day, currently {{time}}. Tap to change.",
+      "a11yOff": "End of day, off",
+      "switchA11y": "End of day"
+    }
+  },
+  "calendar": {
+    "label": "Calendar",
+    "showEvents": {
+      "title": "Show calendar events",
+      "note": "Events appear read-only and count toward your honest-day capacity.",
+      "a11y": "Show calendar events"
+    },
+    "accessDeniedHint": "Calendar access is off. Open iOS Settings → Whenbee → Calendar to allow it.",
+    "calendarRow": {
+      "a11yVisible": "{{title}}, visible",
+      "a11yHidden": "{{title}}, hidden"
+    },
+    "export": {
+      "title": "Add plan to a Whenbee calendar",
+      "noteOn": "Whenbee uses its own calendar. Turning this off removes those events.",
+      "noteOff": "After you run \"Plan my day\", the schedule goes straight to your calendar.",
+      "a11yOn": "Add plan to a Whenbee calendar, currently on. Turning this off removes those events.",
+      "a11yOff": "Add plan to a Whenbee calendar, currently off",
+      "writeDeniedHint": "Calendar access is off. Go to iOS Settings, then Whenbee, then Calendar to allow it.",
+      "removeConfirmTitle": "Remove plan from calendar?",
+      "removeConfirmMessage": "This removes all events Whenbee added to its own calendar. Your other calendars aren't touched.",
+      "removeConfirmKeep": "Keep events",
+      "removeConfirmConfirm": "Remove and turn off",
+      "lockedA11y": "Add plan to a Whenbee calendar — Pro feature. Tap to upgrade.",
+      "proLabel": "Pro"
+    }
+  },
+  "data": {
+    "label": "Your data",
+    "exportReport": {
+      "title": "Export a report",
+      "note": "A clean PDF of your real time data to keep or share with a coach or doctor."
+    },
+    "privacy": {
+      "title": "Privacy",
+      "note": "What stays on your phone."
+    }
+  },
+  "presence": {
+    "label": "Presence",
+    "title": "Keep your task on screen",
+    "note": "Your next task and its honest finish stay visible, even when Whenbee is closed.",
+    "widgetHelpButton": "How to add the widget",
+    "availableCaption": "Available on the App Store build.",
+    "ringOnCaption": "Ring is on. Your honest finish shows on the Lock Screen while the timer runs."
+  },
+  "widgetHelpAlert": {
+    "title": "How to add the widget",
+    "message": "Long-press your Home Screen, tap +, search Whenbee, then choose \"Next task\"."
+  },
+  "account": {
+    "label": "Account",
+    "manageSubscription": {
+      "title": "Manage subscription",
+      "note": "Change your plan or cancel in the App Store."
+    },
+    "restorePurchases": {
+      "title": "Restore purchases",
+      "note": "Paid before? Bring your Pro access back."
+    }
+  },
+  "dangerZone": {
+    "label": "Danger zone",
+    "resetProgress": {
+      "title": "Reset progress",
+      "note": "Forget what it learned, keep your setup."
+    },
+    "eraseEverything": {
+      "title": "Erase everything",
+      "note": "Wipe the app and start the welcome over."
+    }
+  },
+  "developer": {
+    "label": "Developer",
+    "unlockPro": {
+      "title": "Unlock Pro (testing)",
+      "note": "Flip the Pro entitlement to preview every gated screen. For testing — leave off in normal use.",
+      "a11y": "Unlock Pro (testing)"
+    },
+    "seedDemo": {
+      "title": "Seed demo data",
+      "note": "Lay down ~2 months of logs across four categories so every Pro surface has something to show. Sim-only — resets the demo categories each run."
+    }
+  },
+  "toasts": {
+    "resetDone": "Reset done. Fresh slate.",
+    "seeded": "Seeded {{count}} logs across 2 months."
+  },
+  "confirmSheets": {
+    "resetProgress": {
+      "title": "Reset your progress?",
+      "bullet1": "Clears every logged time and what Whenbee learned.",
+      "bullet2": "Keeps your categories, look, and reminders.",
+      "bullet3": "Your Whenbee keeps its name and just starts growing again.",
+      "confirmLabel": "Reset progress"
+    },
+    "eraseEverything": {
+      "title": "Erase everything?",
+      "bullet1": "Deletes all of it: tasks, learning, categories, settings.",
+      "bullet2": "You'll start from the welcome screen, like a fresh install.",
+      "bullet3": "Pro isn't stored here, so 'Restore purchases' brings it back.",
+      "confirmLabel": "Erase everything"
+    }
+  },
+  "dayEndModal": {
+    "title": "When does your day wind down?",
+    "doneButton": "Done"
+  },
+  "quietHoursModal": {
+    "fromTitle": "Quiet from",
+    "untilTitle": "Quiet until",
+    "doneButton": "Done"
+  },
+  "guardrail": {
+    "title": "Hyperfocus check-in",
+    "captionLocked": "A heads-up before a task eats your evening.",
+    "captionFree": "A gentle nudge when a task runs long.",
+    "lockedA11y": "Hyperfocus check-in, Pro feature. Tap to learn more.",
+    "lockedValue": "2×",
+    "options": {
+      "off": "Off",
+      "oneAndHalfX": "1.5×",
+      "twoX": "2×",
+      "threeX": "3×"
+    }
+  },
+  "stripSwitcher": {
+    "label": "Calendar style",
+    "segment": {
+      "label": "Segment",
+      "note": "Sliding chip on a track"
+    },
+    "lens": {
+      "label": "Lens",
+      "note": "Selected day grows"
+    },
+    "fallbackNote": "Switches the Today strip",
+    "tabA11y": "{{label}} calendar style",
+    "caption": "{{note}}. Switches the Today strip instantly."
+  }
+}

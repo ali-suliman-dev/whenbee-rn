@@ -1,6 +1,7 @@
 import { useCallback, useState, type ReactNode } from 'react';
 import { Alert, Modal, View, Text, Pressable, Switch, ScrollView, TextInput, type ViewStyle, type TextStyle } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useTranslation } from 'react-i18next';
 import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { Screen } from '@/src/components/Screen';
@@ -37,19 +38,7 @@ import { seedDemoData } from '@/src/features/dev/seedDemoData';
 
 const modes: ColorModePref[] = ['system', 'light', 'dark'];
 
-const SOUND_OPTIONS: { value: 'honey' | 'default' | 'none'; label: string }[] = [
-  { value: 'honey', label: 'Honey' },
-  { value: 'default', label: 'Default' },
-  { value: 'none', label: 'None' },
-];
-
-const RESTORE_MESSAGE: Record<RestoreOutcome, string> = {
-  success: 'Pro restored.',
-  none: 'No earlier purchase found.',
-  error: "Couldn't reach the store — try again.",
-};
-
-const REMINDER_DENIED = 'Allow notifications in iOS Settings to get reminders.';
+const SOUND_VALUES: ('honey' | 'default' | 'none')[] = ['honey', 'default', 'none'];
 
 type IconName = keyof typeof Ionicons.glyphMap;
 
@@ -135,6 +124,7 @@ function SettingRow({
 
 export default function Settings() {
   const t = useTheme();
+  const { t: tr } = useTranslation('settings');
   const insets = useSafeAreaInsets();
   const { colorMode, setColorMode } = useSettingsStore();
   const displayName = useSettingsStore((s) => s.displayName);
@@ -176,6 +166,18 @@ export default function Settings() {
   const { resetting, resetProgress, eraseEverything } = useAccountReset();
   const { isPresenceAvailable, handlePresenceCta } = usePresenceSection();
 
+  const SOUND_OPTIONS: { value: 'honey' | 'default' | 'none'; label: string }[] = SOUND_VALUES.map(
+    (value) => ({ value, label: tr(`soundOptions.${value}`) }),
+  );
+
+  const RESTORE_MESSAGE: Record<RestoreOutcome, string> = {
+    success: tr('restoreMessage.success'),
+    none: tr('restoreMessage.none'),
+    error: tr('restoreMessage.error'),
+  };
+
+  const REMINDER_DENIED = tr('reminderDenied');
+
   const [toastMsg, setToastMsg] = useState('');
   const [toastVisible, setToastVisible] = useState(false);
   const [sheet, setSheet] = useState<null | 'progress' | 'erase'>(null);
@@ -213,14 +215,11 @@ export default function Settings() {
   async function handleResetProgress() {
     setSheet(null);
     await resetProgress();
-    showToast('Reset done. Fresh slate.');
+    showToast(tr('toasts.resetDone'));
   }
 
   function handleWidgetHelp() {
-    Alert.alert(
-      'How to add the widget',
-      'Long-press your Home Screen, tap +, search Whenbee, then choose "Next task".',
-    );
+    Alert.alert(tr('widgetHelpAlert.title'), tr('widgetHelpAlert.message'));
   }
 
   async function handleEraseEverything() {
@@ -234,7 +233,7 @@ export default function Settings() {
     setSeeding(true);
     try {
       const n = await seedDemoData();
-      showToast(`Seeded ${n} logs across 2 months.`);
+      showToast(tr('toasts.seeded', { count: n }));
     } finally {
       setSeeding(false);
     }
@@ -251,33 +250,33 @@ export default function Settings() {
         }}
       >
         <View style={{ gap: t.space[3] }}>
-          <AppText variant="label">Whenbee Pro</AppText>
+          <AppText variant="label">{tr('proSection.label')}</AppText>
           {isPro ? (
             <SettingRow
               icon="time-outline"
               tint={t.colors.accent}
-              title="Make my whole day honest"
-              note="Map your real buffers onto today's calendar."
+              title={tr('proSection.title')}
+              note={tr('proSection.noteOn')}
               onPress={openHonestDay}
-              accessibilityLabel="Make my whole day honest"
+              accessibilityLabel={tr('proSection.a11yOn')}
             />
           ) : (
             <ProUpsellCard
-              title="Make my whole day honest"
-              note="Auto-pad your calendar with your real buffers."
+              title={tr('proSection.title')}
+              note={tr('proSection.noteOff')}
               onPress={openPaywall}
-              accessibilityLabel="Go Pro and make your whole day honest"
+              accessibilityLabel={tr('proSection.a11yOff')}
             />
           )}
         </View>
 
         <View style={{ gap: t.space[3] }}>
-          <AppText variant="label">Appearance</AppText>
+          <AppText variant="label">{tr('appearance.label')}</AppText>
           <View style={{ flexDirection: 'row', gap: t.space[2] }}>
             {modes.map((m) => (
               <Chip
                 key={m}
-                label={m}
+                label={tr(`appearance.modes.${m}`)}
                 icon={<AppearanceGlyph kind={m} selected={colorMode === m} size={t.iconSize.md} />}
                 selected={colorMode === m}
                 onPress={() => setColorMode(m)}
@@ -291,11 +290,11 @@ export default function Settings() {
         <StripVariantSwitcher />
 
         <View style={{ gap: t.space[3] }}>
-          <AppText variant="label">Your Whenbee</AppText>
+          <AppText variant="label">{tr('yourWhenbee.label')}</AppText>
           <SettingRow
             icon="albums-outline"
-            title="Categories"
-            note={`${categoryCount} tracked`}
+            title={tr('yourWhenbee.categories.title')}
+            note={tr('yourWhenbee.categories.note', { count: categoryCount })}
             onPress={() => router.push('/categories')}
           />
           <View
@@ -315,8 +314,8 @@ export default function Settings() {
           >
             <Ionicons name="person-outline" size={t.iconSize.md} color={t.colors.inkSoft} />
             <TextInput
-              accessibilityLabel="Your name"
-              placeholder="Tell Whenbee your name"
+              accessibilityLabel={tr('yourWhenbee.nameInput.a11y')}
+              placeholder={tr('yourWhenbee.nameInput.placeholder')}
               placeholderTextColor={t.colors.inkFaint}
               value={displayName ?? ''}
               onChangeText={(text) => setDisplayName(text || undefined)}
@@ -331,33 +330,33 @@ export default function Settings() {
           </View>
           <SettingRow
             icon="time-outline"
-            title="Re-take time-style quiz"
-            note="Update your time-personality seed."
+            title={tr('yourWhenbee.retakeQuiz.title')}
+            note={tr('yourWhenbee.retakeQuiz.note')}
             onPress={() => router.push('/(modals)/archetype-quiz')}
-            accessibilityLabel="Re-take time-style quiz"
+            accessibilityLabel={tr('yourWhenbee.retakeQuiz.a11y')}
           />
           <SettingRow
             icon="happy-outline"
-            title="Name your Whenbee"
-            note="Give your companion a name."
+            title={tr('yourWhenbee.nameCompanion.title')}
+            note={tr('yourWhenbee.nameCompanion.note')}
             onPress={() => router.push('/(modals)/companion')}
           />
         </View>
 
         <View style={{ gap: t.space[3] }}>
-          <AppText variant="label">Notifications</AppText>
+          <AppText variant="label">{tr('notifications.label')}</AppText>
 
           {/* Master reminders toggle */}
           <SettingRow
             icon="notifications-outline"
-            title="Reminders"
-            note="Pings for honest finish, start-by nudges, and more."
+            title={tr('notifications.reminders.title')}
+            note={tr('notifications.reminders.note')}
             trailing={
               <Switch
                 value={remindersEnabled}
                 onValueChange={handleToggleReminders}
                 trackColor={{ true: t.colors.primary, false: t.colors.hairline }}
-                accessibilityLabel="Reminders"
+                accessibilityLabel={tr('notifications.reminders.a11y')}
               />
             }
           />
@@ -367,41 +366,41 @@ export default function Settings() {
             <>
               <SettingRow
                 icon="checkmark-circle-outline"
-                title="Honest finish reached"
-                note="A ping when your honest estimate is up."
+                title={tr('notifications.honestReached.title')}
+                note={tr('notifications.honestReached.note')}
                 trailing={
                   <Switch
                     value={honestReachedEnabled}
                     onValueChange={setHonestReachedEnabled}
                     trackColor={{ true: t.colors.primary, false: t.colors.hairline }}
-                    accessibilityLabel="Honest finish reached"
+                    accessibilityLabel={tr('notifications.honestReached.a11y')}
                   />
                 }
               />
               <SettingRow
                 icon="arrow-forward-circle-outline"
-                title="Start-by nudge"
-                note="A reminder when it's time to begin your next task."
+                title={tr('notifications.startBy.title')}
+                note={tr('notifications.startBy.note')}
                 trailing={
                   <Switch
                     value={startByEnabled}
                     onValueChange={setStartByEnabled}
                     trackColor={{ true: t.colors.primary, false: t.colors.hairline }}
-                    accessibilityLabel="Start-by nudge"
+                    accessibilityLabel={tr('notifications.startBy.a11y')}
                   />
                 }
               />
               {isPro ? (
                 <SettingRow
                   icon="leaf-outline"
-                  title="Monday review"
-                  note="A gentle nudge when your honest week is ready. Off by default."
+                  title={tr('notifications.mondayReview.title')}
+                  note={tr('notifications.mondayReview.note')}
                   trailing={
                     <Switch
                       value={reviewNotifyEnabled}
                       onValueChange={handleToggleReviewNotify}
                       trackColor={{ true: t.colors.primary, false: t.colors.hairline }}
-                      accessibilityLabel="Monday review"
+                      accessibilityLabel={tr('notifications.mondayReview.a11y')}
                     />
                   }
                 />
@@ -413,14 +412,14 @@ export default function Settings() {
               {/* Quiet hours — toggle + tappable boundary rows when enabled */}
               <SettingRow
                 icon="moon-outline"
-                title="Quiet hours"
-                note="Suppress notifications during sleep or focus windows."
+                title={tr('notifications.quietHours.title')}
+                note={tr('notifications.quietHours.note')}
                 trailing={
                   <Switch
                     value={quietHours.enabled}
                     onValueChange={(v) => updateQuietHours({ enabled: v })}
                     trackColor={{ true: t.colors.primary, false: t.colors.hairline }}
-                    accessibilityLabel="Quiet hours"
+                    accessibilityLabel={tr('notifications.quietHours.a11y')}
                   />
                 }
               />
@@ -428,17 +427,21 @@ export default function Settings() {
                 <>
                   <SettingRow
                     icon="time-outline"
-                    title={`From  ${formatClockMeridiem(dayEndEpochFor(Date.now(), quietHours.startMin))}`}
-                    note="Quiet window starts"
+                    title={tr('notifications.quietHours.from', {
+                      time: formatClockMeridiem(dayEndEpochFor(Date.now(), quietHours.startMin)),
+                    })}
+                    note={tr('notifications.quietHours.fromNote')}
                     onPress={openQuietStart}
-                    accessibilityLabel="Quiet hours start time"
+                    accessibilityLabel={tr('notifications.quietHours.fromA11y')}
                   />
                   <SettingRow
                     icon="time-outline"
-                    title={`Until  ${formatClockMeridiem(dayEndEpochFor(Date.now(), quietHours.endMin))}`}
-                    note="Quiet window ends"
+                    title={tr('notifications.quietHours.until', {
+                      time: formatClockMeridiem(dayEndEpochFor(Date.now(), quietHours.endMin)),
+                    })}
+                    note={tr('notifications.quietHours.untilNote')}
                     onPress={openQuietEnd}
-                    accessibilityLabel="Quiet hours end time"
+                    accessibilityLabel={tr('notifications.quietHours.untilA11y')}
                   />
                 </>
               ) : null}
@@ -465,7 +468,7 @@ export default function Settings() {
                         color: t.colors.ink,
                       }}
                     >
-                      Sound
+                      {tr('notifications.sound.title')}
                     </AppText>
                     <AppText
                       style={{
@@ -473,7 +476,7 @@ export default function Settings() {
                         color: t.colors.inkSoft,
                       }}
                     >
-                      Tone played when a notification fires.
+                      {tr('notifications.sound.note')}
                     </AppText>
                   </View>
                 </View>
@@ -494,14 +497,14 @@ export default function Settings() {
           {/* Daily check-in — not gated by remindersEnabled */}
           <SettingRow
             icon="sparkles-outline"
-            title="Daily check-in"
-            note="Puts a line on Today that nudges you to log one thing, then checks off once you do. Skip a day and nothing breaks."
+            title={tr('notifications.dailyCheckin.title')}
+            note={tr('notifications.dailyCheckin.note')}
             trailing={
               <Switch
                 value={dailyRitualEnabled}
                 onValueChange={setDailyRitualEnabled}
                 trackColor={{ true: t.colors.primary, false: t.colors.hairline }}
-                accessibilityLabel="Daily check-in"
+                accessibilityLabel={tr('notifications.dailyCheckin.a11y')}
               />
             }
           />
@@ -509,37 +512,41 @@ export default function Settings() {
           {/* Quick-start chips — the "Tap to start again" row on Today */}
           <SettingRow
             icon="repeat-outline"
-            title="Tap to start again"
-            note="A row of tasks you run often, up top on Today — one tap re-runs them. Turn off for a cleaner screen."
+            title={tr('notifications.quickStart.title')}
+            note={tr('notifications.quickStart.note')}
             trailing={
               <Switch
                 value={quickStartEnabled}
                 onValueChange={setQuickStartEnabled}
                 trackColor={{ true: t.colors.primary, false: t.colors.hairline }}
-                accessibilityLabel="Tap to start again"
+                accessibilityLabel={tr('notifications.quickStart.a11y')}
               />
             }
           />
         </View>
 
         <View style={{ gap: t.space[3] }}>
-          <AppText variant="label">Scheduling</AppText>
+          <AppText variant="label">{tr('scheduling.label')}</AppText>
           <SettingRow
             icon="moon-outline"
-            title="End of day"
-            note={dayEndEnabled ? `Your day winds down around ${dayEndLabel}` : 'Off'}
+            title={tr('scheduling.endOfDay.title')}
+            note={
+              dayEndEnabled
+                ? tr('scheduling.endOfDay.noteOn', { time: dayEndLabel })
+                : tr('scheduling.endOfDay.noteOff')
+            }
             onPress={dayEndEnabled ? openDayEnd : undefined}
             accessibilityLabel={
               dayEndEnabled
-                ? `End of day, currently ${dayEndLabel}. Tap to change.`
-                : 'End of day, off'
+                ? tr('scheduling.endOfDay.a11yOn', { time: dayEndLabel })
+                : tr('scheduling.endOfDay.a11yOff')
             }
             trailing={
               <Switch
                 value={dayEndEnabled}
                 onValueChange={setDayEndEnabled}
                 trackColor={{ true: t.colors.primary, false: t.colors.hairline }}
-                accessibilityLabel="End of day"
+                accessibilityLabel={tr('scheduling.endOfDay.switchA11y')}
               />
             }
           />
@@ -548,23 +555,23 @@ export default function Settings() {
         <CalendarSettingsSection />
 
         <View style={{ gap: t.space[3] }}>
-          <AppText variant="label">Your data</AppText>
+          <AppText variant="label">{tr('data.label')}</AppText>
           <SettingRow
             icon="document-text-outline"
-            title="Export a report"
-            note="A clean PDF of your real time data to keep or share with a coach or doctor."
+            title={tr('data.exportReport.title')}
+            note={tr('data.exportReport.note')}
             onPress={() => router.push('/(modals)/report')}
           />
           <SettingRow
             icon="lock-closed-outline"
-            title="Privacy"
-            note="What stays on your phone."
+            title={tr('data.privacy.title')}
+            note={tr('data.privacy.note')}
             onPress={() => router.push('/privacy')}
           />
         </View>
 
         <View style={{ gap: t.space[3] }}>
-          <AppText variant="label">Presence</AppText>
+          <AppText variant="label">{tr('presence.label')}</AppText>
 
           <View
             style={{
@@ -581,7 +588,7 @@ export default function Settings() {
                 color: t.colors.ink,
               }}
             >
-              Keep your task on screen
+              {tr('presence.title')}
             </AppText>
             <AppText
               style={{
@@ -589,12 +596,12 @@ export default function Settings() {
                 color: t.colors.inkSoft,
               }}
             >
-              Your next task and its honest finish stay visible, even when Whenbee is closed.
+              {tr('presence.note')}
             </AppText>
 
             {isPresenceAvailable ? (
               <AppButton
-                label="How to add the widget"
+                label={tr('presence.widgetHelpButton')}
                 onPress={handleWidgetHelp}
                 variant="ghost"
               />
@@ -605,7 +612,7 @@ export default function Settings() {
                   color: t.colors.inkSoft,
                 }}
               >
-                Available on the App Store build.
+                {tr('presence.availableCaption')}
               </AppText>
             )}
 
@@ -618,26 +625,26 @@ export default function Settings() {
                   color: t.colors.inkSoft,
                 }}
               >
-                Ring is on. Your honest finish shows on the Lock Screen while the timer runs.
+                {tr('presence.ringOnCaption')}
               </AppText>
             </ProGate>
           </View>
         </View>
 
         <View style={{ gap: t.space[3] }}>
-          <AppText variant="label">Account</AppText>
+          <AppText variant="label">{tr('account.label')}</AppText>
           {isPro ? (
             <SettingRow
               icon="card-outline"
-              title="Manage subscription"
-              note="Change your plan or cancel in the App Store."
+              title={tr('account.manageSubscription.title')}
+              note={tr('account.manageSubscription.note')}
               onPress={manageSubscription}
             />
           ) : null}
           <SettingRow
             icon="refresh-outline"
-            title="Restore purchases"
-            note="Paid before? Bring your Pro access back."
+            title={tr('account.restorePurchases.title')}
+            note={tr('account.restorePurchases.note')}
             onPress={handleRestore}
             disabled={restoring}
           />
@@ -645,20 +652,20 @@ export default function Settings() {
 
         <View style={{ gap: t.space[3] }}>
           <AppText variant="label" style={{ color: t.colors.danger }}>
-            Danger zone
+            {tr('dangerZone.label')}
           </AppText>
           <SettingRow
             leading={<DataResetGlyph kind="progress" size={t.iconSize.md} />}
-            title="Reset progress"
-            note="Forget what it learned, keep your setup."
+            title={tr('dangerZone.resetProgress.title')}
+            note={tr('dangerZone.resetProgress.note')}
             tint={t.colors.accent}
             onPress={() => setSheet('progress')}
             disabled={resetting}
           />
           <SettingRow
             leading={<DataResetGlyph kind="erase" size={t.iconSize.md} />}
-            title="Erase everything"
-            note="Wipe the app and start the welcome over."
+            title={tr('dangerZone.eraseEverything.title')}
+            note={tr('dangerZone.eraseEverything.note')}
             tint={t.colors.danger}
             onPress={() => setSheet('erase')}
             disabled={resetting}
@@ -666,25 +673,25 @@ export default function Settings() {
         </View>
 
         <View style={{ gap: t.space[3] }}>
-          <AppText variant="label">Developer</AppText>
+          <AppText variant="label">{tr('developer.label')}</AppText>
           <SettingRow
             icon="construct-outline"
-            title="Unlock Pro (testing)"
-            note="Flip the Pro entitlement to preview every gated screen. For testing — leave off in normal use."
+            title={tr('developer.unlockPro.title')}
+            note={tr('developer.unlockPro.note')}
             trailing={
               <Switch
                 value={isPro}
                 onValueChange={setPro}
                 trackColor={{ true: t.colors.primary, false: t.colors.hairline }}
-                accessibilityLabel="Unlock Pro (testing)"
+                accessibilityLabel={tr('developer.unlockPro.a11y')}
               />
             }
           />
           {__DEV__ && (
             <SettingRow
               icon="flask-outline"
-              title="Seed demo data"
-              note="Lay down ~2 months of logs across four categories so every Pro surface has something to show. Sim-only — resets the demo categories each run."
+              title={tr('developer.seedDemo.title')}
+              note={tr('developer.seedDemo.note')}
               onPress={handleSeedDemo}
               disabled={seeding}
             />
@@ -696,13 +703,13 @@ export default function Settings() {
         visible={sheet === 'progress'}
         tone="caution"
         glyphKind="progress"
-        title="Reset your progress?"
+        title={tr('confirmSheets.resetProgress.title')}
         bullets={[
-          'Clears every logged time and what Whenbee learned.',
-          'Keeps your categories, look, and reminders.',
-          'Your Whenbee keeps its name and just starts growing again.',
+          tr('confirmSheets.resetProgress.bullet1'),
+          tr('confirmSheets.resetProgress.bullet2'),
+          tr('confirmSheets.resetProgress.bullet3'),
         ]}
-        confirmLabel="Reset progress"
+        confirmLabel={tr('confirmSheets.resetProgress.confirmLabel')}
         onConfirm={handleResetProgress}
         onCancel={() => setSheet(null)}
       />
@@ -710,13 +717,13 @@ export default function Settings() {
         visible={sheet === 'erase'}
         tone="danger"
         glyphKind="erase"
-        title="Erase everything?"
+        title={tr('confirmSheets.eraseEverything.title')}
         bullets={[
-          'Deletes all of it: tasks, learning, categories, settings.',
-          "You'll start from the welcome screen, like a fresh install.",
-          "Pro isn't stored here, so 'Restore purchases' brings it back.",
+          tr('confirmSheets.eraseEverything.bullet1'),
+          tr('confirmSheets.eraseEverything.bullet2'),
+          tr('confirmSheets.eraseEverything.bullet3'),
         ]}
-        confirmLabel="Erase everything"
+        confirmLabel={tr('confirmSheets.eraseEverything.confirmLabel')}
         onConfirm={handleEraseEverything}
         onCancel={() => setSheet(null)}
       />
@@ -730,7 +737,7 @@ export default function Settings() {
         <View style={{ flex: 1, justifyContent: 'flex-end' }}>
           <Pressable
             style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: t.colors.scrim }}
-            accessibilityLabel="Dismiss"
+            accessibilityLabel={tr('dismissA11y')}
             onPress={closeDayEnd}
           />
           <View
@@ -746,14 +753,14 @@ export default function Settings() {
             }}
           >
             <AppText variant="title" style={{ color: t.colors.ink }}>
-              When does your day wind down?
+              {tr('dayEndModal.title')}
             </AppText>
             <FinishTimeWheel
               showModes={false}
               valueMs={dayEndEpochFor(Date.now(), dayEndMin)}
               onChange={(ms) => saveDayEnd(ms)}
             />
-            <AppButton label="Done" onPress={closeDayEnd} variant="amber" fullWidth />
+            <AppButton label={tr('dayEndModal.doneButton')} onPress={closeDayEnd} variant="amber" fullWidth />
           </View>
         </View>
       </Modal>
@@ -768,7 +775,7 @@ export default function Settings() {
         <View style={{ flex: 1, justifyContent: 'flex-end' }}>
           <Pressable
             style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: t.colors.scrim }}
-            accessibilityLabel="Dismiss"
+            accessibilityLabel={tr('dismissA11y')}
             onPress={closeQuietEditor}
           />
           <View
@@ -784,7 +791,7 @@ export default function Settings() {
             }}
           >
             <AppText variant="title" style={{ color: t.colors.ink }}>
-              {editingBoundary === 'start' ? 'Quiet from' : 'Quiet until'}
+              {editingBoundary === 'start' ? tr('quietHoursModal.fromTitle') : tr('quietHoursModal.untilTitle')}
             </AppText>
             <FinishTimeWheel
               showModes={false}
@@ -796,7 +803,7 @@ export default function Settings() {
                 if (editingBoundary !== null) saveQuietBoundary(editingBoundary, ms);
               }}
             />
-            <AppButton label="Done" onPress={closeQuietEditor} variant="amber" fullWidth />
+            <AppButton label={tr('quietHoursModal.doneButton')} onPress={closeQuietEditor} variant="amber" fullWidth />
           </View>
         </View>
       </Modal>
