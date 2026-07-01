@@ -1,5 +1,6 @@
 import { useCallback } from 'react';
 import { View, type ViewStyle } from 'react-native';
+import { useTranslation } from 'react-i18next';
 import Svg, { Defs, RadialGradient, Stop, Path, G } from 'react-native-svg';
 import Animated, {
   cancelAnimation,
@@ -56,6 +57,7 @@ function rayWedges(count: number, fill: string, opacity: number, opacityAlt: num
 
 export function ArchetypeCrest({ beeSize }: { beeSize?: number }) {
   const t = useTheme();
+  const { t: tr } = useTranslation('onboarding');
   const reduced = useReducedMotion();
 
   const w = t.reveal.crestW;
@@ -115,7 +117,7 @@ export function ArchetypeCrest({ beeSize }: { beeSize?: number }) {
   const coinSlot: ViewStyle = { position: 'absolute', top: coinTop, right: coinRight };
 
   return (
-    <View style={container} accessibilityRole="image" accessibilityLabel="Your time-personality crest">
+    <View style={container} accessibilityRole="image" accessibilityLabel={tr('archetypeCrest.accessibilityLabel')}>
       {/* (1) Amber sunburst behind the bee — warm radiance, slow turn. The radial
           keeps the core clear (bee not washed) and fades to transparent at the rim,
           so it dissolves into the card gradient with no halo. */}

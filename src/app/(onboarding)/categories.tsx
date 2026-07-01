@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { View, TextInput, Pressable, Keyboard, type ViewStyle } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
+import { useTranslation } from 'react-i18next';
 import { Screen } from '@/src/components/Screen';
 import { AppText } from '@/src/components/AppText';
 import { AppButton } from '@/src/components/AppButton';
@@ -15,26 +16,29 @@ import { StepProgress } from '@/src/features/onboarding/StepProgress';
 import { onboardingStepIndex, ONBOARDING_TOTAL } from '@/src/features/onboarding/onboardingFlow';
 import { Reveal } from '@/src/features/onboarding/Reveal';
 import {
-  ONBOARDING_CATEGORIES,
+  getOnboardingCategories,
   slugify,
   MAX_CUSTOM_NAME,
 } from '@/src/features/onboarding/categories';
 
 export default function Categories() {
   const t = useTheme();
+  const { t: tr } = useTranslation('onboarding');
   const insets = useSafeAreaInsets();
   const { picked, isPicked, togglePick, trackCategoriesCommitted } = useOnboarding();
   const [adding, setAdding] = useState(false);
   const [draft, setDraft] = useState('');
 
   const canContinue = picked.length >= 1;
+  const onboardingCategories = getOnboardingCategories(tr);
 
   // Count-aware nudge: encourage one or two more early, then affirm once there's
   // plenty — so "one more" never lingers after the grid is full.
   function pickedLine(n: number): string {
-    if (n >= 3) return `${n} picked. That's plenty to learn from.`;
-    const more = n === 1 ? 'A couple more' : 'One more';
-    return `${n} picked. ${more} and I'll learn your pace faster.`;
+    if (n >= 3) return tr('categories.pickedLine.plenty', { count: n });
+    return n === 1
+      ? tr('categories.pickedLine.coupleMore', { count: n })
+      : tr('categories.pickedLine.oneMore', { count: n });
   }
 
   function commitCustom() {
@@ -48,7 +52,7 @@ export default function Categories() {
   }
 
   // Custom picks that aren't part of the seed grid, so they render as their own chips.
-  const seedIds = new Set(ONBOARDING_CATEGORIES.map((c) => c.id));
+  const seedIds = new Set(onboardingCategories.map((c) => c.id));
   const customPicks = picked.filter((p) => !seedIds.has(p.id));
 
   const inputChip: ViewStyle = {
@@ -81,18 +85,18 @@ export default function Categories() {
               letterSpacing: -0.6,
             }}
           >
-            Where does time slip most?
+            {tr('categories.title')}
           </AppText>
         </Reveal>
         <Reveal index={1}>
           <AppText variant="body" style={{ color: t.colors.inkSoft }}>
-            {"Pick a few. I'll sharpen your honest number here first."}
+            {tr('categories.subtitle')}
           </AppText>
         </Reveal>
 
         <Reveal index={2}>
           <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: t.space[2] }}>
-            {ONBOARDING_CATEGORIES.map((cat) => (
+            {onboardingCategories.map((cat) => (
               <Chip
                 key={cat.id}
                 label={cat.name}
@@ -118,11 +122,11 @@ export default function Categories() {
                   onChangeText={setDraft}
                   onSubmitEditing={commitCustom}
                   onBlur={commitCustom}
-                  placeholder="Name it…"
+                  placeholder={tr('categories.namePlaceholder')}
                   placeholderTextColor={t.colors.inkSoft}
                   maxLength={MAX_CUSTOM_NAME}
                   returnKeyType="done"
-                  accessibilityLabel="New category name"
+                  accessibilityLabel={tr('categories.nameAccessibilityLabel')}
                   style={{
                     flex: 1,
                     fontSize: t.fontSize.sm,
@@ -132,7 +136,7 @@ export default function Categories() {
                 />
               </View>
             ) : (
-              <Chip label="Add your own" variant="add" onPress={() => setAdding(true)} />
+              <Chip label={tr('categories.addYourOwn')} variant="add" onPress={() => setAdding(true)} />
             )}
           </View>
         </Reveal>
@@ -150,7 +154,7 @@ export default function Categories() {
 
       <Reveal index={3} style={{ paddingTop: t.space[4] }}>
         <AppButton
-          label="Continue →"
+          label={tr('categories.continueCta')}
           fullWidth
           disabled={!canContinue}
           onPress={() => {

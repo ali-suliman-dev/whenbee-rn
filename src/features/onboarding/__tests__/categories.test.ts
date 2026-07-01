@@ -1,4 +1,6 @@
-import { slugify, ONBOARDING_CATEGORIES } from '../categories';
+import { slugify, getOnboardingCategories } from '../categories';
+
+const identityT = ((key: string) => key) as Parameters<typeof getOnboardingCategories>[0];
 
 describe('slugify', () => {
   it('lowercases and underscores non-alphanumerics', () => {
@@ -16,9 +18,9 @@ describe('slugify', () => {
   });
 });
 
-describe('ONBOARDING_CATEGORIES', () => {
+describe('getOnboardingCategories', () => {
   it('offers the six seed categories with the spec ids', () => {
-    expect(ONBOARDING_CATEGORIES.map((c) => c.id)).toEqual([
+    expect(getOnboardingCategories(identityT).map((c) => c.id)).toEqual([
       'getting_ready',
       'cleaning',
       'admin',

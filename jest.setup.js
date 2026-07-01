@@ -2,6 +2,21 @@
 const matchers = require('@testing-library/react-native/matchers');
 expect.extend(matchers);
 
+// i18next must be initialized before any component using `useTranslation` renders,
+// or react-i18next falls back to echoing the raw key. Real resources, real English
+// fallback — every test sees production copy, not translation keys.
+//
+// Required LAZILY (inside beforeAll, not at this file's top level): this setup
+// file loads before a test file's own `jest.mock(...)` calls take effect, so an
+// eager top-level require here would cache `src/i18n/detectLanguage` (and its
+// `expo-localization` import) against the REAL module — permanently poisoning
+// any test that later mocks `expo-localization` (see detectLanguage.test.ts).
+// A lazy require resolves after the test file's mocks are already registered.
+beforeAll(async () => {
+  const { initI18n } = require('./src/i18n');
+  await initI18n();
+});
+
 jest.mock('expo-sqlite/kv-store', () => {
   const m = new Map();
   return { Storage: {

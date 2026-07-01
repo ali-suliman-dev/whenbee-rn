@@ -10,6 +10,7 @@ import Animated, {
 } from 'react-native-reanimated';
 import Svg, { Defs, LinearGradient, RadialGradient, Stop, Rect } from 'react-native-svg';
 import { useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useTheme } from '@/src/theme/useTheme';
 import { type } from '@/src/theme/typography';
 import { AppButton } from '@/src/components/AppButton';
@@ -53,6 +54,7 @@ export function ArchetypeReveal({
   onContinue,
 }: ArchetypeRevealProps): React.JSX.Element {
   const t = useTheme();
+  const { t: tr } = useTranslation('onboarding');
   const reduced = useReducedMotion();
 
   // The gradient is drawn by an SVG overlay. react-native-svg percentage sizing
@@ -81,7 +83,7 @@ export function ArchetypeReveal({
   // One-pass diagonal light sweep glancing across the card on reveal (0→1 progress).
   const sweep = useSharedValue(reduced ? 1 : 0);
   // The echo line is derived once; pure so it can't throw.
-  const echoLine = `From your answers: ${buildRevealEcho(quizAnswers)}`;
+  const echoLine = tr('archetypeReveal.echoLine', { echo: buildRevealEcho(quizAnswers) });
 
   useEffect(() => {
     if (reduced) return;
@@ -252,7 +254,7 @@ export function ArchetypeReveal({
         <Animated.View style={crestStyle}>
           <ArchetypeCrest />
         </Animated.View>
-        <Animated.Text style={[eyebrowStyle, eyebrowAnim]}>YOUR TIME PERSONALITY</Animated.Text>
+        <Animated.Text style={[eyebrowStyle, eyebrowAnim]}>{tr('archetypeReveal.eyebrow')}</Animated.Text>
         <Animated.Text style={[echoStyle, echoAnim]}>{echoLine}</Animated.Text>
         <Animated.Text style={[titleStyle, titleAnim]}>{title}</Animated.Text>
         <Animated.View style={[statBlock, statAnim]}>
@@ -260,18 +262,18 @@ export function ArchetypeReveal({
             <Text style={multStyle}>{multiplier.toFixed(1)}</Text>
             <Text style={multX}>×</Text>
           </View>
-          <Text style={multCaption}>your guess, on average</Text>
+          <Text style={multCaption}>{tr('archetypeReveal.multCaption')}</Text>
         </Animated.View>
         <Animated.Text style={[blurbStyle, blurbAnim]}>{blurb}</Animated.Text>
       </Animated.View>
 
       <Animated.Text style={[noteStyle, noteAnim]}>
-        A first read from your answers. Every task you time makes it sharper — and your type can move as your numbers do.
+        {tr('archetypeReveal.note')}
       </Animated.Text>
 
       <View style={{ flex: 1 }} />
 
-      <AppButton label="Sharpen it on my tasks →" variant="indigo" fullWidth onPress={onContinue} />
+      <AppButton label={tr('archetypeReveal.cta')} variant="indigo" fullWidth onPress={onContinue} />
     </View>
   );
 }

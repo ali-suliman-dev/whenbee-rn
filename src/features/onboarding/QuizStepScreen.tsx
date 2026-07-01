@@ -2,6 +2,7 @@ import { useEffect, useRef } from 'react';
 import { View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
+import { useTranslation } from 'react-i18next';
 import { Screen } from '@/src/components/Screen';
 import { OnboardingBackdrop } from '@/src/components/OnboardingBackdrop';
 import { AppText } from '@/src/components/AppText';
@@ -13,7 +14,7 @@ import { usePersonalize } from '@/src/features/onboarding/usePersonalize';
 import { StepProgress } from '@/src/features/onboarding/StepProgress';
 import { ONBOARDING_TOTAL, QUIZ_BASE } from '@/src/features/onboarding/onboardingFlow';
 import { QuizOption } from './QuizOption';
-import { QUIZ_QUESTIONS, QUIZ_SUBTEXT } from './quizQuestions';
+import { getQuizQuestions, getQuizSubtext } from './quizQuestions';
 import type { QuizAnswers } from '@/src/engine';
 
 // ──────────────────────────────────────────────────────────────────────────────
@@ -27,13 +28,15 @@ import type { QuizAnswers } from '@/src/engine';
 
 export function QuizStepScreen({ step }: { step: number }): React.JSX.Element | null {
   const t = useTheme();
+  const { t: tr } = useTranslation('onboarding');
   const insets = useSafeAreaInsets();
   const quizAnswers = useOnboardingStore((s) => s.quizAnswers);
   const setQuizAnswer = useOnboardingStore((s) => s.setQuizAnswer);
   const { trackQuizSkipped, trackQuizStarted } = usePersonalize();
 
-  const question = QUIZ_QUESTIONS[step];
-  const isLast = step === QUIZ_QUESTIONS.length - 1;
+  const quizQuestions = getQuizQuestions(tr);
+  const question = quizQuestions[step];
+  const isLast = step === quizQuestions.length - 1;
 
   useEffect(() => {
     if (!question) router.replace('/(onboarding)/quiz/0');
@@ -76,7 +79,7 @@ export function QuizStepScreen({ step }: { step: number }): React.JSX.Element | 
 
       {/* Skip lives quietly at the top, just under the progress bar. */}
       <View style={{ flexDirection: 'row', justifyContent: 'flex-end' }}>
-        <AppButton label="Skip to my type" variant="ghost" size="xs" onPress={skip} />
+        <AppButton label={tr('quiz.skip')} variant="ghost" size="xs" onPress={skip} />
       </View>
 
       <View style={{ flex: 1, paddingTop: t.space[2] }}>
@@ -97,7 +100,7 @@ export function QuizStepScreen({ step }: { step: number }): React.JSX.Element | 
             variant="body"
             style={{ color: t.colors.inkSoft, textAlign: 'center', maxWidth: t.size.shareCard }}
           >
-            {QUIZ_SUBTEXT}
+            {getQuizSubtext(tr)}
           </AppText>
         </View>
 
@@ -142,7 +145,7 @@ export function QuizStepScreen({ step }: { step: number }): React.JSX.Element | 
 
         {/* Only the Next button at the bottom — full width, the standard CTA. */}
         <AppButton
-          label="Next →"
+          label={tr('quiz.next')}
           variant="indigo"
           fullWidth
           disabled={!hasAnswer}

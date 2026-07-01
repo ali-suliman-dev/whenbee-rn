@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { View, TextInput, KeyboardAvoidingView, Platform } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
+import { useTranslation } from 'react-i18next';
 import { Screen } from '@/src/components/Screen';
 import { AppText } from '@/src/components/AppText';
 import { AppButton } from '@/src/components/AppButton';
@@ -17,18 +18,22 @@ import { StepProgress } from '@/src/features/onboarding/StepProgress';
 import { onboardingStepIndex, ONBOARDING_TOTAL } from '@/src/features/onboarding/onboardingFlow';
 import { Reveal } from '@/src/features/onboarding/Reveal';
 import { MAX_CUSTOM_NAME } from '@/src/features/onboarding/categories';
+import type { TFunction } from 'i18next';
 
 // Raw (now) → Honest (goal) look-ahead. Not a setup wall — a goal preview.
-const MASTERY_TRAIL = [
-  { label: 'Raw', state: 'now' as const },
-  { label: 'Setting', state: 'ahead' as const },
-  { label: 'Ripening', state: 'ahead' as const },
-  { label: 'Thickening', state: 'ahead' as const },
-  { label: 'Honest', state: 'ahead' as const },
-];
+function masteryTrail(tr: TFunction<'onboarding'>) {
+  return [
+    { label: tr('ready.trail.raw'), state: 'now' as const },
+    { label: tr('ready.trail.setting'), state: 'ahead' as const },
+    { label: tr('ready.trail.ripening'), state: 'ahead' as const },
+    { label: tr('ready.trail.thickening'), state: 'ahead' as const },
+    { label: tr('ready.trail.honest'), state: 'ahead' as const },
+  ];
+}
 
 export default function Ready() {
   const t = useTheme();
+  const { t: tr } = useTranslation('onboarding');
   const insets = useSafeAreaInsets();
   const { complete } = useOnboarding();
   const { saveName } = usePersonalize();
@@ -57,7 +62,7 @@ export default function Ready() {
                 letterSpacing: -0.6,
               }}
             >
-              One tap to start. One tap to ripen.
+              {tr('ready.title')}
             </AppText>
           </Reveal>
           <Reveal index={1}>
@@ -65,8 +70,7 @@ export default function Ready() {
               variant="body"
               style={{ color: t.colors.inkSoft, lineHeight: t.fontSize.base * 1.5 }}
             >
-              From your first guess, I&apos;ll show honest times. Each task you log
-              makes them sharper, and I&apos;ll never scold you for a gap.
+              {tr('ready.subtitle')}
             </AppText>
           </Reveal>
 
@@ -77,9 +81,9 @@ export default function Ready() {
                 variant="label"
                 style={{ marginBottom: t.space[3], color: t.colors.inkSoft }}
               >
-                Where you&apos;re headed
+                {tr('ready.trailLabel')}
               </AppText>
-              <HoneyTrail nodes={MASTERY_TRAIL} lively />
+              <HoneyTrail nodes={masteryTrail(tr)} lively />
               {/* Trail legend: accuracy is monotonic, no guilt/streak. */}
               <AppText
                 style={{
@@ -88,7 +92,7 @@ export default function Ready() {
                   marginTop: t.space[3],
                 }}
               >
-                Your accuracy ripens as you log. It only ever ripens — no streak to break.
+                {tr('ready.trailCaption')}
               </AppText>
             </Card>
           </Reveal>
@@ -99,7 +103,7 @@ export default function Ready() {
             <OnboardingFooterCard
               glyph={<ReasonGlyph kind="pulled" active={false} ambient size={t.iconSize.lg} />}
             >
-              Empty days are fine. Forgot to time something? Add it in one tap.
+              {tr('ready.footer')}
             </OnboardingFooterCard>
           </Reveal>
 
@@ -114,23 +118,23 @@ export default function Ready() {
                     fontWeight: t.fontWeight.medium as '500',
                   }}
                 >
-                  Anything I should call you?
+                  {tr('ready.nicknameLabel')}
                 </AppText>
                 <AppText
                   style={{ fontSize: t.fontSize.xs, color: t.colors.inkFaint }}
                 >
-                  optional
+                  {tr('ready.nicknameOptional')}
                 </AppText>
               </View>
               <TextInput
                 value={nickname}
                 onChangeText={setNickname}
                 onSubmitEditing={() => {/* save happens on CTA */}}
-                placeholder="Your nickname"
+                placeholder={tr('ready.nicknamePlaceholder')}
                 placeholderTextColor={t.colors.inkFaint}
                 maxLength={MAX_CUSTOM_NAME}
                 returnKeyType="done"
-                accessibilityLabel="Your nickname"
+                accessibilityLabel={tr('ready.nicknameAccessibilityLabel')}
                 style={{
                   height: t.size.control.md,
                   fontSize: t.fontSize.base,
@@ -146,7 +150,7 @@ export default function Ready() {
         </View>
 
         <Reveal index={5} style={{ paddingTop: t.space[4] }}>
-          <AppButton label="Time my first thing →" fullWidth onPress={timeFirstThing} />
+          <AppButton label={tr('ready.cta')} fullWidth onPress={timeFirstThing} />
         </Reveal>
         <View style={{ height: insets.bottom }} />
       </KeyboardAvoidingView>

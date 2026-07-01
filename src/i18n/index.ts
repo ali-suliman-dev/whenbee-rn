@@ -15,7 +15,7 @@ export const initI18n = async (): Promise<void> => {
       fallbackLng: FALLBACK_LANG,
       supportedLngs: SUPPORTED_LANGS as unknown as string[],
       defaultNS: 'common',
-      ns: ['common'], // extend as namespaces are added.
+      ns: ['common', 'onboarding'], // extend as namespaces are added.
       interpolation: { escapeValue: false }, // RN has no XSS; i18next default escapes.
       returnNull: false,
     });
