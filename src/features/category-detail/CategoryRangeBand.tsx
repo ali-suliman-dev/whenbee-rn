@@ -9,6 +9,7 @@ import Animated, {
   withDelay,
   withTiming,
 } from 'react-native-reanimated';
+import { useTranslation } from 'react-i18next';
 import { useTheme } from '@/src/theme/useTheme';
 import { type } from '@/src/theme/typography';
 import type { CalibrationConfidence, HonestRange } from '@/src/domain/types';
@@ -31,6 +32,7 @@ export function CategoryRangeBand({
   range, point, confidence, isPro, priorRange, onUnlockPress,
 }: Props) {
   const t = useTheme();
+  const { t: tr } = useTranslation('categoryDetail');
   const reduceMotion = useReducedMotion();
   const { at } = makeBandDomain(range);
 
@@ -122,7 +124,7 @@ export function CategoryRangeBand({
         ) : (
           <View style={lockRow}>
             <Ionicons name="lock-closed" size={t.iconSize.xs} color={t.colors.primary} />
-            <Text style={pillText}>Pro</Text>
+            <Text style={pillText}>{tr('rangeBand.proLabel')}</Text>
           </View>
         )}
       </View>
@@ -140,7 +142,7 @@ export function CategoryRangeBand({
           {isPro || !onUnlockPress ? (
             calloutInner
           ) : (
-            <Pressable onPress={onUnlockPress} accessibilityRole="button" accessibilityLabel="Unlock where tasks land with Pro" hitSlop={t.size.hitSlop}>
+            <Pressable onPress={onUnlockPress} accessibilityRole="button" accessibilityLabel={tr('rangeBand.unlockLabel')} hitSlop={t.size.hitSlop}>
               {calloutInner}
             </Pressable>
           )}

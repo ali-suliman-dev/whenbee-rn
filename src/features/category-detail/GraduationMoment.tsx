@@ -10,6 +10,7 @@ import Animated, {
   withTiming,
 } from 'react-native-reanimated';
 import Svg, { Polygon, Path } from 'react-native-svg';
+import { useTranslation } from 'react-i18next';
 import { AppText } from '@/src/components/AppText';
 import { AppButton } from '@/src/components/AppButton';
 import { useTheme } from '@/src/theme/useTheme';
@@ -73,6 +74,7 @@ export function GraduationMoment({
   onDone: () => void;
 }) {
   const t = useTheme();
+  const { t: tr } = useTranslation('categoryDetail');
   const reducedMotion = useReducedMotion();
 
   // count → climbing integer; appear → card settle; fill → honey bar 0→1.
@@ -107,7 +109,7 @@ export function GraduationMoment({
   });
 
   const showProof = typeof multiplier === 'number' && typeof sampleSize === 'number';
-  const runsLabel = typeof sampleSize === 'number' ? `${sampleSize}` : 'enough';
+  const runsLabel = typeof sampleSize === 'number' ? `${sampleSize}` : tr('graduation.runsFallback');
 
   // Content fades in (opacity only — never a slide). CTA is exempt (buttons appear
   // at full opacity, never animated in).
@@ -198,7 +200,7 @@ export function GraduationMoment({
 
   return (
     <Modal transparent animationType="fade" onRequestClose={onDone} statusBarTranslucent>
-      <Pressable style={scrim} onPress={onDone} accessibilityRole="button" accessibilityLabel="Dismiss">
+      <Pressable style={scrim} onPress={onDone} accessibilityRole="button" accessibilityLabel={tr('graduation.dismissLabel')}>
         {/* Neutral cool darken behind — solid color, never samples the warm content
             (a blur here smears the amber-heavy screen into a red wash). Flat card on top. */}
         <View style={[StyleSheet.absoluteFill, { backgroundColor: t.colors.scrimStrong }]} pointerEvents="none" />
@@ -206,7 +208,7 @@ export function GraduationMoment({
           <Animated.View style={[card, cardAnim]} accessibilityViewIsModal>
             <View style={headGroup}>
               <Animated.View entering={fade(120)}>
-                <AppText style={eyebrow}>CALIBRATION COMPLETE</AppText>
+                <AppText style={eyebrow}>{tr('graduation.eyebrow')}</AppText>
               </Animated.View>
               <View style={numberRow}>
                 <AnimatedTextInput
@@ -219,7 +221,7 @@ export function GraduationMoment({
                   style={numberStyle}
                   animatedProps={numberProps}
                 />
-                <AppText style={unitStyle}>min</AppText>
+                <AppText style={unitStyle}>{tr('graduation.unit')}</AppText>
               </View>
             </View>
 
@@ -240,23 +242,23 @@ export function GraduationMoment({
               <AppText
                 style={title}
                 accessibilityRole="header"
-                accessibilityLabel={`Now an honest number. About ${honestMinutes} minutes.`}
+                accessibilityLabel={tr('graduation.titleAccessibilityLabel', { minutes: honestMinutes })}
               >
-                This number&apos;s honest now
+                {tr('graduation.title')}
               </AppText>
-              <AppText style={sub}>The learning bar filled — {runsLabel} real runs in.</AppText>
+              <AppText style={sub}>{tr('graduation.sub', { runs: runsLabel })}</AppText>
             </Animated.View>
 
             {showProof ? (
               <Animated.View entering={fade(300)} style={chip}>
-                <AppText style={chipText}>{sampleSize} real runs</AppText>
+                <AppText style={chipText}>{tr('graduation.proofRuns', { count: sampleSize })}</AppText>
                 <View style={chipDot} />
                 <AppText style={chipMult}>{multiplier.toFixed(1)}×</AppText>
               </Animated.View>
             ) : null}
 
             <View style={ctaWrap}>
-              <AppButton label="Nice" variant="amber" onPress={onDone} fullWidth />
+              <AppButton label={tr('graduation.cta')} variant="amber" onPress={onDone} fullWidth />
             </View>
           </Animated.View>
         </Animated.View>

@@ -1,0 +1,149 @@
+{
+  "screen": {
+    "backLabel": "Tillbaka",
+    "crumb": "Kategoriinsikter",
+    "toastAdaptSet": "Anpassning inställd på {{label}}",
+    "toastResetDone": "Börja om — din honung finns kvar",
+    "resetConfirm": {
+      "copy": "Återställ inlärningen för den här kategorin? Börja om — din honung finns kvar.",
+      "keepLabel": "Behåll inlärningen för den här kategorin",
+      "keep": "Behåll den",
+      "confirmLabel": "Bekräfta återställning av kategorins inlärning",
+      "confirm": "Återställ"
+    },
+    "resetLink": "Återställ inlärningen för den här kategorin",
+    "loading": "Läser dina mönster…"
+  },
+  "categoriesList": {
+    "lead": "Uppgifterna som Whenbee lär sig åt dig. Byt namn på vad som helst, eller ta bort det du inte längre gör. Tidigare loggar finns kvar ändå.",
+    "nameLabel": "Kategorinamn, {{name}}",
+    "stopTrackingLabel": "Sluta spåra {{name}}",
+    "newPlaceholder": "Namnge den…",
+    "newNameLabel": "Nytt kategorinamn",
+    "addChip": "+ Ny kategori"
+  },
+  "adaptSegment": {
+    "title": "Justera hur jag lär mig",
+    "options": {
+      "steady": "Stadig",
+      "balanced": "Balanserad",
+      "reactive": "Reaktiv"
+    },
+    "optionLabel": "Inlärningsläget {{label}}",
+    "hints": {
+      "steady": "<em>Långsam att ändras</em>. Den lutar sig mot din <em>hela historik</em>, så den passar när ditt tempo håller sig <em>jämnt</em>.",
+      "balanced": "Standardinställningen. En <em>rättvis mix</em> av din historik och dina <em>senaste körningar</em>.",
+      "reactive": "<em>Kommer ikapp snabbt</em> när ditt tempo <em>ändras</em>, till exempel efter ny medicin, en tuff natt eller en ny rutin."
+    }
+  },
+  "ahaCard": {
+    "badgeLabel": "aha",
+    "dismissLabel": "Stäng upptäckten",
+    "body_one": "Baserat på din senaste {{count}} avklarade {{categoryName}}-uppgift ligger du på ungefär {{multiplier}}×. Ingen skuld — din hjärna tänker snabbt, det är utförandet som tar längre tid.",
+    "body_other": "Baserat på dina {{count}} senaste avklarade {{categoryName}}-uppgifter ligger du på ungefär {{multiplier}}×. Ingen skuld — din hjärna tänker snabbt, det är utförandet som tar längre tid."
+  },
+  "rangeBand": {
+    "proLabel": "Pro",
+    "unlockLabel": "Lås upp var uppgifter hamnar med Pro"
+  },
+  "goalCard": {
+    "eyebrow": "MÅL",
+    "eyebrowReached": "MÅL · UPPNÅTT",
+    "withinChip": "inom {{band}}%",
+    "notEnough": {
+      "headline": "Några loggar till så kan du sikta här",
+      "sub": "{{n}} av {{min}} loggade"
+    },
+    "picker": {
+      "headline": "Välj hur nära du vill sikta",
+      "sub": "Du landar inom <strong>±{{band}}%</strong> nu — varje val är snävare.",
+      "presetWithin": "inom",
+      "drawerCaption": "sikta på att landa inom",
+      "endSpotOn": "exakt rätt",
+      "endNow": "±{{band}}% nu",
+      "notNow": "Inte nu",
+      "setGoal": "Sätt mål"
+    },
+    "reached": {
+      "headline": "Du klarade det",
+      "sub": "Dina {{categoryName}}-uppskattningar landade inom {{band}}%.",
+      "subCompact": "Uppnått — inom {{band}}%.",
+      "keep": "Jag är nöjd här",
+      "aimTighter": "Sikta snävare"
+    },
+    "active": {
+      "headline": "Närmar sig",
+      "bestSoFar": "Bäst hittills <strong>±{{band}}%</strong>",
+      "etaTail": " · ungefär <strong>{{eta}} loggar</strong> till ±{{band}}%",
+      "etaFallback": " · fortsätt logga, det snävas till",
+      "leverLabel": "Din största hävstång",
+      "leverText": "Din miss vid <strong>{{worstValue}}</strong> är störst — täta till den först."
+    },
+    "empty": {
+      "accessibilityLabel": "Sätt ett mål — jag coachar dig dit",
+      "headline": "Sätt ett mål så coachar jag dig dit",
+      "sub": "Du landar inom ±{{band}}% nu — sikta snävare."
+    }
+  },
+  "goalLocked": {
+    "eyebrow": "MÅL",
+    "proLabel": "PRO",
+    "headline": "Sätt ett mål så coachar jag dig dit",
+    "sub": "Talet att gissa på, din största miss, hur nära du är.",
+    "accessibilityLabel": "Sätt ett mål för den här kategorin med Pro — jag coachar dig dit"
+  },
+  "graduation": {
+    "eyebrow": "KALIBRERING KLAR",
+    "unit": "min",
+    "title": "Det här talet är ärligt nu",
+    "titleAccessibilityLabel": "Nu ett ärligt tal. Cirka {{minutes}} minuter.",
+    "sub": "Inlärningsstapeln fylldes — {{runs}} riktiga körningar bakom.",
+    "runsFallback": "tillräckligt",
+    "proofRuns": "{{count}} riktiga körningar",
+    "dismissLabel": "Stäng",
+    "cta": "Toppen"
+  },
+  "honestCard": {
+    "tierMeaning": {
+      "raw": "lär bara känna ditt tempo",
+      "setting": "skärper fortfarande ditt tempo"
+    },
+    "eyebrowRange": "DITT ÄRLIGA INTERVALL",
+    "narrowed": "<strong>Snävades in från {{low}}–{{high}}</strong> när du loggade.",
+    "metaGuess": " din gissning",
+    "metaSeal": "ärligt nu"
+  },
+  "maturityMeter": {
+    "settled": "Några körningar till så stabiliseras det till ett tal.",
+    "runsLeft_one": "<strong>{{count}} körning till</strong> skärper det till ett tal",
+    "runsLeft_other": "<strong>{{count}} körningar till</strong> skärper det till ett tal"
+  },
+  "proHonestWeekTease": {
+    "peekLabel": "Din ärliga vecka · 15–21 juni",
+    "proLabel": "Pro",
+    "eyebrow": "Whenbee Pro",
+    "heading": "Din ärliga vecka, varje söndag.",
+    "body": "Se var timmarna verkligen tog vägen — planera nästa vecka utifrån sanningen, inte en gissning.",
+    "cta": "Starta min ärliga vecka",
+    "trust": "Avsluta när du vill · lärs på enheten"
+  },
+  "recentList": {
+    "header": "Senaste uppgifter",
+    "empty": "Inga avklarade uppgifter än — de dyker upp när du loggar dem.",
+    "guessed": "gissade {{estimate}}",
+    "took": "tog {{actual}}"
+  },
+  "trendChart": {
+    "header": "Kalibreringstrend",
+    "periodPill": "Senaste 30 dagarna",
+    "caption": {
+      "stabilizing": "Din multiplikator stabiliseras — bra självinsikt.",
+      "steady": "Stabilt och jämnt — ditt tempo är förutsägbart här."
+    },
+    "empty": "Inte tillräckligt med loggar än — din trend visas efter några till.",
+    "daysAgo": "{{days}} dagar sedan",
+    "halfDaysAgo": "{{days}} dagar",
+    "now": "nu",
+    "axisIdeal": "ideal"
+  }
+}

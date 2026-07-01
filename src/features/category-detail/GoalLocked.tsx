@@ -1,6 +1,7 @@
 import { View, Pressable, type ViewStyle, type TextStyle } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
+import { useTranslation } from 'react-i18next';
 import { Card } from '@/src/components/Card';
 import { AppText } from '@/src/components/AppText';
 import { useTheme } from '@/src/theme/useTheme';
@@ -22,6 +23,7 @@ import { analytics } from '@/src/services/analytics';
  *  depth, like CoinBadge / CoinHex). Display-only. */
 function ProCoinPill() {
   const t = useTheme();
+  const { t: tr } = useTranslation('categoryDetail');
   const edge = t.burst.coinEdge;
   const wrap: ViewStyle = { paddingBottom: edge };
   const edgeBase: ViewStyle = {
@@ -54,7 +56,7 @@ function ProCoinPill() {
       <View style={edgeBase} />
       <View style={face}>
         <Ionicons name="lock-closed" size={t.iconSize.xs} color={t.colors.onAmber} />
-        <AppText style={label}>PRO</AppText>
+        <AppText style={label}>{tr('goalLocked.proLabel')}</AppText>
       </View>
     </View>
   );
@@ -62,6 +64,7 @@ function ProCoinPill() {
 
 export function GoalLocked({ categoryId }: { categoryId: string }) {
   const t = useTheme();
+  const { t: tr } = useTranslation('categoryDetail');
 
   const headerRow: ViewStyle = {
     flexDirection: 'row',
@@ -116,18 +119,18 @@ export function GoalLocked({ categoryId }: { categoryId: string }) {
     <Pressable
       onPress={openPaywall}
       accessibilityRole="button"
-      accessibilityLabel="Set a goal for this category with Pro — Whenbee coaches you to it"
+      accessibilityLabel={tr('goalLocked.accessibilityLabel')}
     >
       <Card style={{ gap: t.space[3] }}>
         <View style={headerRow}>
-          <AppText style={eyebrow}>GOAL</AppText>
+          <AppText style={eyebrow}>{tr('goalLocked.eyebrow')}</AppText>
           <ProCoinPill />
         </View>
         <View style={titleRow}>
-          <AppText style={headline}>Set a target and I&apos;ll coach you there</AppText>
+          <AppText style={headline}>{tr('goalLocked.headline')}</AppText>
           <Ionicons name="chevron-forward" size={t.iconSize.sm} color={t.colors.inkSoft} />
         </View>
-        <AppText style={sub}>The number to guess, your biggest miss, how close you are.</AppText>
+        <AppText style={sub}>{tr('goalLocked.sub')}</AppText>
         <View style={track}>
           <View style={fill} />
           <View style={tick} />

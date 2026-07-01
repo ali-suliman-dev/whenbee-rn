@@ -8,6 +8,7 @@ import {
   type ViewStyle,
   type TextStyle,
 } from 'react-native';
+import { useTranslation } from 'react-i18next';
 import { router, useLocalSearchParams } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { Screen } from '@/src/components/Screen';
@@ -39,6 +40,7 @@ import { TIERS } from '@/src/engine';
 
 export default function CategoryDetailScreen() {
   const t = useTheme();
+  const { t: tr } = useTranslation('categoryDetail');
   const { category } = useLocalSearchParams<{ category: string }>();
   const categoryId = category ?? '';
   const {
@@ -63,14 +65,14 @@ export default function CategoryDetailScreen() {
 
   function handleSetAdapt(speed: 'steady' | 'balanced' | 'reactive') {
     setAdaptSpeed(speed);
-    const label = speed.charAt(0).toUpperCase() + speed.slice(1);
-    showToast(`Adaptation set to ${label}`);
+    const label = tr(`adaptSegment.options.${speed}`);
+    showToast(tr('screen.toastAdaptSet', { label }));
   }
 
   async function handleReset() {
     await resetCategory();
     setConfirming(false);
-    showToast('Start fresh — your honey stays');
+    showToast(tr('screen.toastResetDone'));
   }
 
   const nextTierIdx = detail ? TIERS.indexOf(detail.tier) + 1 : -1;
@@ -84,12 +86,12 @@ export default function CategoryDetailScreen() {
           <Pressable
             onPress={() => router.back()}
             accessibilityRole="button"
-            accessibilityLabel="Back"
+            accessibilityLabel={tr('screen.backLabel')}
             hitSlop={t.size.hitSlop}
             style={styles(t).crumb}
           >
             <Ionicons name="chevron-back" size={t.iconSize.md} color={t.colors.inkSoft} />
-            <Text style={styles(t).crumbText}>Category insights</Text>
+            <Text style={styles(t).crumbText}>{tr('screen.crumb')}</Text>
           </Pressable>
           <View style={styles(t).titleRow}>
             <Text style={styles(t).h2} numberOfLines={1}>{detail?.categoryName ?? ' '}</Text>
@@ -166,24 +168,24 @@ export default function CategoryDetailScreen() {
               {confirming ? (
                 <View style={{ gap: t.space[3] }}>
                   <Text style={styles(t).resetConfirmCopy}>
-                    Reset this category&apos;s learning? Start fresh — your honey stays.
+                    {tr('screen.resetConfirm.copy')}
                   </Text>
                   <View style={styles(t).resetActions}>
                     <Pressable
                       onPress={() => setConfirming(false)}
                       accessibilityRole="button"
-                      accessibilityLabel="Keep this category's learning"
+                      accessibilityLabel={tr('screen.resetConfirm.keepLabel')}
                       style={styles(t).resetCancel}
                     >
-                      <Text style={styles(t).resetCancelText}>Keep it</Text>
+                      <Text style={styles(t).resetCancelText}>{tr('screen.resetConfirm.keep')}</Text>
                     </Pressable>
                     <Pressable
                       onPress={handleReset}
                       accessibilityRole="button"
-                      accessibilityLabel="Confirm reset category learning"
+                      accessibilityLabel={tr('screen.resetConfirm.confirmLabel')}
                       style={styles(t).resetConfirm}
                     >
-                      <Text style={styles(t).resetConfirmText}>Reset</Text>
+                      <Text style={styles(t).resetConfirmText}>{tr('screen.resetConfirm.confirm')}</Text>
                     </Pressable>
                   </View>
                 </View>
@@ -191,18 +193,18 @@ export default function CategoryDetailScreen() {
                 <Pressable
                   onPress={() => setConfirming(true)}
                   accessibilityRole="button"
-                  accessibilityLabel="Reset this category's learning"
+                  accessibilityLabel={tr('screen.resetLink')}
                   style={styles(t).resetLink}
                 >
                   <Ionicons name="refresh-outline" size={16} color={t.colors.inkSoft} />
-                  <Text style={styles(t).resetLinkText}>Reset this category&apos;s learning</Text>
+                  <Text style={styles(t).resetLinkText}>{tr('screen.resetLink')}</Text>
                 </Pressable>
               )}
             </View>
           </ScrollView>
         ) : (
           <View style={styles(t).loading}>
-            <Text style={styles(t).loadingText}>Reading your patterns…</Text>
+            <Text style={styles(t).loadingText}>{tr('screen.loading')}</Text>
           </View>
         )}
 
