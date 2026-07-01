@@ -19,6 +19,14 @@
     "a11yOn": "Make my whole day honest",
     "a11yOff": "Go Pro and make your whole day honest"
   },
+  "language": {
+    "title": "Language",
+    "system": "System default",
+    "en": "English",
+    "sv": "Svenska",
+    "sheetTitle": "Choose your language",
+    "rowA11y": "Language, currently {{name}}"
+  },
   "appearance": {
     "label": "Appearance",
     "modes": {

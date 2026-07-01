@@ -19,6 +19,14 @@
     "a11yOn": "Gör hela min dag ärlig",
     "a11yOff": "Uppgradera till Pro och gör hela din dag ärlig"
   },
+  "language": {
+    "title": "Språk",
+    "system": "Systemstandard",
+    "en": "English",
+    "sv": "Svenska",
+    "sheetTitle": "Välj språk",
+    "rowA11y": "Språk, för närvarande {{name}}"
+  },
   "appearance": {
     "label": "Utseende",
     "modes": {

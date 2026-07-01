@@ -34,6 +34,7 @@ import { GuardrailSettingRow } from '@/src/features/settings/GuardrailSettingRow
 import { GuardrailLockedRow } from '@/src/features/settings/GuardrailLockedRow';
 import { CalendarSettingsSection } from '@/src/features/settings/CalendarSettingsSection';
 import { StripVariantSwitcher } from '@/src/features/settings/StripVariantSwitcher';
+import { LanguagePicker } from '@/src/features/settings/LanguagePicker';
 import { seedDemoData } from '@/src/features/dev/seedDemoData';
 
 const modes: ColorModePref[] = ['system', 'light', 'dark'];
@@ -283,6 +284,10 @@ export default function Settings() {
               />
             ))}
           </View>
+        </View>
+
+        <View style={{ gap: t.space[3] }}>
+          <LanguagePicker />
         </View>
 
         {/* TEMP A/B — calendar-strip design switcher. Remove after the decision
