@@ -1,4 +1,5 @@
 import { View, Text, type ViewStyle, type TextStyle } from 'react-native';
+import { useTranslation } from 'react-i18next';
 import { useTheme } from '@/src/theme/useTheme';
 import { type } from '@/src/theme/typography';
 import { HonestNumber } from '@/src/components/HonestNumber';
@@ -12,6 +13,7 @@ import type { YouVsPastCard } from './usePatterns';
 
 export function YouVsPast({ card }: { card: YouVsPastCard }) {
   const t = useTheme();
+  const { t: tr } = useTranslation('patterns');
 
   const columns: ViewStyle = { flexDirection: 'row', alignItems: 'flex-end', gap: t.space[6] };
   const col: ViewStyle = { gap: t.space[1] };
@@ -20,23 +22,28 @@ export function YouVsPast({ card }: { card: YouVsPastCard }) {
 
   const improving = card.delta > 0;
   const summary = improving
-    ? `That's ${card.delta} points sharper than when you started. Nice work.`
-    : 'Right where you started — and steady reads are a real skill.';
+    ? tr('youVsPast.summary.improving', { delta: card.delta })
+    : tr('youVsPast.summary.steady');
 
   // dismissId: encodes the exact accuracy pair so a meaningfully different reading
   // (either score changes by a point) produces a new id and shows again.
   const dismissId = `you-vs-past:${card.earlyAccuracy}:${card.recentAccuracy}`;
 
   return (
-    <PatternCard eyebrow="YOU, THEN VS NOW" icon="trending-up-outline" dismissLabel="Hide your progress" dismissId={dismissId}>
+    <PatternCard
+      eyebrow={tr('youVsPast.eyebrow')}
+      icon="trending-up-outline"
+      dismissLabel={tr('youVsPast.dismissLabel')}
+      dismissId={dismissId}
+    >
       <View style={columns}>
         <View style={col}>
-          <Text style={label}>At first</Text>
-          <HonestNumber size="big" tone="ink" value={`${card.earlyAccuracy}`} unit="%" />
+          <Text style={label}>{tr('youVsPast.atFirst')}</Text>
+          <HonestNumber size="big" tone="ink" value={`${card.earlyAccuracy}`} unit={tr('youVsPast.unit')} />
         </View>
         <View style={col}>
-          <Text style={label}>Lately</Text>
-          <HonestNumber size="big" tone={improving ? 'indigo' : 'ink'} value={`${card.recentAccuracy}`} unit="%" />
+          <Text style={label}>{tr('youVsPast.lately')}</Text>
+          <HonestNumber size="big" tone={improving ? 'indigo' : 'ink'} value={`${card.recentAccuracy}`} unit={tr('youVsPast.unit')} />
         </View>
       </View>
       <Text style={note}>{summary}</Text>

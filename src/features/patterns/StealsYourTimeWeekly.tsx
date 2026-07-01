@@ -1,4 +1,5 @@
 import { View, Text, type ViewStyle, type TextStyle } from 'react-native';
+import { useTranslation } from 'react-i18next';
 import { useTheme } from '@/src/theme/useTheme';
 import { type } from '@/src/theme/typography';
 import { reasonPhrase } from '@/src/engine';
@@ -17,6 +18,7 @@ const MAX_ROWS = 4;
 
 export function StealsYourTimeWeekly({ insights }: { insights: ReasonInsight[] }) {
   const t = useTheme();
+  const { t: tr } = useTranslation('patterns');
   if (insights.length < 2) return null;
 
   const rows = insights.slice(0, MAX_ROWS);
@@ -31,7 +33,12 @@ export function StealsYourTimeWeekly({ insights }: { insights: ReasonInsight[] }
   const dismissId = `steals-weekly:${rows.map((r) => `${r.categoryId}-${r.reason}`).join('|')}`;
 
   return (
-    <PatternCard eyebrow="THIS WEEK'S PATTERN" icon="albums-outline" dismissLabel="Hide this week's pattern" dismissId={dismissId}>
+    <PatternCard
+      eyebrow={tr('stealsYourTimeWeekly.eyebrow')}
+      icon="albums-outline"
+      dismissLabel={tr('stealsYourTimeWeekly.dismissLabel')}
+      dismissId={dismissId}
+    >
       <View style={list}>
         {rows.map((r) => (
           <View key={r.categoryId} style={row}>

@@ -1,4 +1,5 @@
 import { View, Text, type ViewStyle, type TextStyle } from 'react-native';
+import { useTranslation } from 'react-i18next';
 import { useTheme } from '@/src/theme/useTheme';
 import { type } from '@/src/theme/typography';
 import { niceAxis } from '@/src/lib/chartAxis';
@@ -16,6 +17,7 @@ import type { YouVsPastCard } from './usePatterns';
 
 export function ProgressChart({ trend, fallback }: { trend: AccuracyTrend | null; fallback: YouVsPastCard | null }) {
   const t = useTheme();
+  const { t: tr } = useTranslation('patterns');
 
   const points = trend?.points ?? (fallback ? [fallback.earlyAccuracy, fallback.recentAccuracy] : null);
   const deltaPts = trend?.deltaPts ?? fallback?.delta ?? 0;
@@ -23,7 +25,10 @@ export function ProgressChart({ trend, fallback }: { trend: AccuracyTrend | null
   const up = deltaPts > 0;
 
   const axis = niceAxis(points, { step: 5, clampMin: 0, clampMax: 100, minSpanSteps: 4 });
-  const xLabels = points.length > 2 ? ['early', 'midway', 'now'] : ['early', 'now'];
+  const xLabels =
+    points.length > 2
+      ? [tr('progressChart.axis.early'), tr('progressChart.axis.midway'), tr('progressChart.axis.now')]
+      : [tr('progressChart.axis.early'), tr('progressChart.axis.now')];
 
   const cardStyle: ViewStyle = {
     backgroundColor: t.colors.surface,
@@ -50,12 +55,14 @@ export function ProgressChart({ trend, fallback }: { trend: AccuracyTrend | null
   return (
     <View style={cardStyle}>
       <View style={top}>
-        <Text style={eyebrow}>ACCURACY OVER TIME</Text>
+        <Text style={eyebrow}>{tr('progressChart.eyebrow')}</Text>
         <View style={pill}>
-          <Text style={pillText}>{up ? `+${deltaPts}% accuracy` : 'steady'}</Text>
+          <Text style={pillText}>
+            {up ? tr('progressChart.pill.accuracy', { delta: deltaPts }) : tr('progressChart.pill.steady')}
+          </Text>
         </View>
       </View>
-      <Text style={titleStyle}>{up ? 'Getting more accurate' : 'Holding steady'}</Text>
+      <Text style={titleStyle}>{up ? tr('progressChart.title.up') : tr('progressChart.title.steady')}</Text>
 
       <AxisLineChart
         values={points}
@@ -66,7 +73,7 @@ export function ProgressChart({ trend, fallback }: { trend: AccuracyTrend | null
       />
 
       <Text style={contextLine}>
-        {up ? 'Your guesses and actual time are aligning.' : 'Your reads are consistent.'}
+        {up ? tr('progressChart.context.up') : tr('progressChart.context.steady')}
       </Text>
     </View>
   );

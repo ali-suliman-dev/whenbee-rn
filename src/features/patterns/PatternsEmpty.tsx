@@ -1,5 +1,6 @@
 import { View, Text, type ViewStyle, type TextStyle } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { useTranslation } from 'react-i18next';
 import { useTheme } from '@/src/theme/useTheme';
 import { type } from '@/src/theme/typography';
 
@@ -11,6 +12,7 @@ import { type } from '@/src/theme/typography';
 
 export function PatternsEmpty() {
   const t = useTheme();
+  const { t: tr } = useTranslation('patterns');
 
   const wrap: ViewStyle = { alignItems: 'center', gap: t.space[3], paddingHorizontal: t.space[4], paddingTop: t.space[16] };
   const disc: ViewStyle = {
@@ -29,11 +31,8 @@ export function PatternsEmpty() {
       <View style={disc}>
         <Ionicons name="sparkles-outline" size={t.iconSize.lg} color={t.colors.primary} />
       </View>
-      <Text style={title}>Your patterns are on the way</Text>
-      <Text style={body}>
-        Time a few tasks and this is where you&apos;ll meet your time personality, your sharpest
-        category, and the surprises worth noticing.
-      </Text>
+      <Text style={title}>{tr('patternsEmpty.title')}</Text>
+      <Text style={body}>{tr('patternsEmpty.body')}</Text>
     </View>
   );
 }

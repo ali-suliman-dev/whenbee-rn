@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { View, Pressable, type ViewStyle, type TextStyle } from 'react-native';
 import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
+import { useTranslation } from 'react-i18next';
 import { useTheme } from '@/src/theme/useTheme';
 import { type } from '@/src/theme/typography';
 import { AppText } from '@/src/components/AppText';
@@ -27,6 +28,7 @@ import { useSettingsStore } from '@/src/stores/settingsStore';
 
 export function FocusPeakCard() {
   const t = useTheme();
+  const { t: tr } = useTranslation('patterns');
   const isPro = useEntitlement((s) => s.isPro);
   const win = useLearnedFocusWindow();
   const insights = useFocusInsights(win.startMin, win.endMin);
@@ -51,7 +53,7 @@ export function FocusPeakCard() {
   const Eyebrow = () => (
     <View style={{ flexDirection: 'row', alignItems: 'center', gap: t.space[1.5] }}>
       <Ionicons name="flash" size={t.iconSize.xs} color={t.colors.primary} />
-      <AppText style={eyebrow}>WHEN YOU&apos;RE SHARP</AppText>
+      <AppText style={eyebrow}>{tr('focusPeakCard.eyebrow')}</AppText>
     </View>
   );
 
@@ -61,14 +63,16 @@ export function FocusPeakCard() {
       <View style={card}>
         <Eyebrow />
         <FocusCurve scoreByBin={scoreByBin} variant="forming" yAxis />
-        <AppText style={title}>Learning your focus hours</AppText>
-        <AppText style={meta} testID="focus-maturity">{`${sampleCount} / ${FW_GATE_MIN_COMPLETED} sessions`}</AppText>
+        <AppText style={title}>{tr('focusPeakCard.forming.title')}</AppText>
+        <AppText style={meta} testID="focus-maturity">
+          {tr('focusPeakCard.forming.progress', { count: sampleCount, gate: FW_GATE_MIN_COMPLETED })}
+        </AppText>
         <AppButton
-          label="Set my hours myself"
+          label={tr('focusPeakCard.forming.setHoursCta')}
           variant="ghost"
           size="sm"
           onPress={() => setEditing(true)}
-          accessibilityLabel="Set focus window manually"
+          accessibilityLabel={tr('focusPeakCard.forming.setHoursA11y')}
         />
         <FocusWindowEditorSheet
           visible={editing}
@@ -86,11 +90,13 @@ export function FocusPeakCard() {
 
   const whyLead = insights ? whyNarrative(insights.peakMin) : '';
   const contrastAccent = insights?.contrast != null ? `${insights.contrast.toFixed(1)}×` : null;
-  const contrastRest = contrastAccent != null ? ' above your dip' : '';
+  const contrastRest = contrastAccent != null ? tr('focusPeakCard.contrastSuffix') : '';
 
   const weeks = Math.max(1, Math.round(win.distinctDays / 7));
   const footerMeta =
-    win.distinctDays >= 7 ? `${sampleCount} sessions · steady for ${weeks} weeks` : `${sampleCount} sessions · ${win.distinctDays} days`;
+    win.distinctDays >= 7
+      ? tr('focusPeakCard.personal.footerMetaWeeks', { count: sampleCount, weeks })
+      : tr('focusPeakCard.personal.footerMetaDays', { count: sampleCount, days: win.distinctDays });
 
   // ── locked (free + personal) ──
   if (!isPro) {
@@ -107,8 +113,8 @@ export function FocusPeakCard() {
     };
     const teaser =
       insights?.contrast != null
-        ? `We found your sharpest stretch — ${insights.contrast.toFixed(1)}× above your slump.`
-        : 'We found your sharpest stretch.';
+        ? tr('focusPeakCard.locked.teaserWithContrast', { contrast: insights.contrast.toFixed(1) })
+        : tr('focusPeakCard.locked.teaserDefault');
     return (
       <View style={card} testID="focus-locked-teaser">
         <Eyebrow />
@@ -119,13 +125,15 @@ export function FocusPeakCard() {
           </View>
         </View>
         <AppText style={body}>{teaser}</AppText>
-        <AppText style={meta}>{`Learned from ${sampleCount} sessions.`}</AppText>
+        <AppText style={meta}>{tr('focusPeakCard.locked.meta', { count: sampleCount })}</AppText>
         <Pressable
           onPress={() => router.push({ pathname: '/(modals)/paywall', params: { trigger: 'focus_window' } })}
           accessibilityRole="button"
-          accessibilityLabel="Unlock my focus window"
+          accessibilityLabel={tr('focusPeakCard.locked.unlockA11y')}
         >
-          <AppText style={{ ...(type.captionBold as TextStyle), color: t.colors.primary }}>Unlock my focus window ›</AppText>
+          <AppText style={{ ...(type.captionBold as TextStyle), color: t.colors.primary }}>
+            {tr('focusPeakCard.locked.unlockCta')}
+          </AppText>
         </Pressable>
       </View>
     );
@@ -136,7 +144,7 @@ export function FocusPeakCard() {
     <Pressable
       onPress={() => router.push('/(modals)/focus-window')}
       accessibilityRole="button"
-      accessibilityLabel="Open focus window detail"
+      accessibilityLabel={tr('focusPeakCard.personal.openA11y')}
     >
       <View style={card}>
         <Eyebrow />
@@ -165,7 +173,9 @@ export function FocusPeakCard() {
         ) : null}
         <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
           <AppText style={meta}>{footerMeta}</AppText>
-          <AppText style={{ ...(type.captionBold as TextStyle), color: t.colors.primary }}>Open ›</AppText>
+          <AppText style={{ ...(type.captionBold as TextStyle), color: t.colors.primary }}>
+            {tr('focusPeakCard.personal.open')}
+          </AppText>
         </View>
       </View>
     </Pressable>

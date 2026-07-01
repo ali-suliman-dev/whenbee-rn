@@ -1,4 +1,6 @@
 import { View, Text, type ViewStyle, type TextStyle } from 'react-native';
+import { useTranslation } from 'react-i18next';
+import type { TFunction } from 'i18next';
 import { useTheme } from '@/src/theme/useTheme';
 import { type } from '@/src/theme/typography';
 import { reasonPhrase } from '@/src/engine';
@@ -14,21 +16,30 @@ import { PatternCard } from './PatternCard';
 // insight to show.
 // ──────────────────────────────────────────────────────────────────────────────
 
-const WEEKDAYS = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'] as const;
+const WEEKDAY_SKEW_KEYS = [
+  'stealsYourTime.skew.weekday.sunday',
+  'stealsYourTime.skew.weekday.monday',
+  'stealsYourTime.skew.weekday.tuesday',
+  'stealsYourTime.skew.weekday.wednesday',
+  'stealsYourTime.skew.weekday.thursday',
+  'stealsYourTime.skew.weekday.friday',
+  'stealsYourTime.skew.weekday.saturday',
+] as const;
 
 /** A blame-free time/weekday tail for the detail line, or '' when there's no skew. */
-function skewSuffix(insight: ReasonInsight): string {
-  if (insight.timeSkew === 'afternoon') return ', mostly later in the day';
-  if (insight.timeSkew === 'morning') return ', mostly earlier in the day';
+function skewSuffix(tr: TFunction<'patterns'>, insight: ReasonInsight): string {
+  if (insight.timeSkew === 'afternoon') return tr('stealsYourTime.skew.afternoon');
+  if (insight.timeSkew === 'morning') return tr('stealsYourTime.skew.morning');
   if (insight.weekdaySkew !== null) {
-    const day = WEEKDAYS[insight.weekdaySkew];
-    if (day) return `, mostly on ${day}s`;
+    const key = WEEKDAY_SKEW_KEYS[insight.weekdaySkew];
+    if (key) return tr(key);
   }
   return '';
 }
 
 export function StealsYourTime({ insights }: { insights: ReasonInsight[] }) {
   const t = useTheme();
+  const { t: tr } = useTranslation('patterns');
   const top = insights[0];
   if (!top) return null;
 
@@ -38,9 +49,14 @@ export function StealsYourTime({ insights }: { insights: ReasonInsight[] }) {
   const block: ViewStyle = { gap: t.space[1.5] };
 
   const pct = Math.round(top.share * 100);
-  const headlineText = `Where ${top.categoryName}'s extra minutes go.`;
-  const detailText = `${pct}% of ${top.categoryName} overruns trace back to ${reasonPhrase(top.reason)}${skewSuffix(top)}.`;
-  const metaText = `Based on ${top.sampleCount} of ${top.totalOver} times you noted why · learned on-device`;
+  const headlineText = tr('stealsYourTime.headline', { category: top.categoryName });
+  const detailText = tr('stealsYourTime.detail', {
+    pct,
+    category: top.categoryName,
+    reason: reasonPhrase(top.reason),
+    skew: skewSuffix(tr, top),
+  });
+  const metaText = tr('stealsYourTime.meta', { sampleCount: top.sampleCount, totalOver: top.totalOver });
 
   // dismissId: categoryId + reason + sampleCount so a new data batch or new top
   // reason (genuinely-different insight) produces a fresh id and shows again.
@@ -48,9 +64,9 @@ export function StealsYourTime({ insights }: { insights: ReasonInsight[] }) {
 
   return (
     <PatternCard
-      eyebrow="WHAT STEALS YOUR TIME"
+      eyebrow={tr('stealsYourTime.eyebrow')}
       icon="hourglass-outline"
-      dismissLabel="Hide what steals your time"
+      dismissLabel={tr('stealsYourTime.dismissLabel')}
       dismissId={dismissId}
     >
       <View style={block}>

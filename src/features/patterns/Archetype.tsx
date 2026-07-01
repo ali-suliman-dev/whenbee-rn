@@ -2,6 +2,8 @@ import { useState } from 'react';
 import { View, Text, Pressable, Platform, type LayoutChangeEvent, type ViewStyle, type TextStyle } from 'react-native';
 import Svg, { Defs, LinearGradient, Stop, Rect } from 'react-native-svg';
 import { Ionicons } from '@expo/vector-icons';
+import { useTranslation } from 'react-i18next';
+import type { TFunction } from 'i18next';
 import { useTheme } from '@/src/theme/useTheme';
 import { type } from '@/src/theme/typography';
 import { AppButton } from '@/src/components/AppButton';
@@ -22,9 +24,9 @@ import type { ArchetypeCard, CalibrationMapRow } from './usePatterns';
 // ──────────────────────────────────────────────────────────────────────────────
 
 /** Honest, guilt-free one-liner under the hero multiplier. */
-function multiplierRead(m: number): string {
-  if (m <= 1.05) return 'right on your guess';
-  return 'longer than you guess';
+function multiplierRead(t: TFunction<'patterns'>, m: number): string {
+  if (m <= 1.05) return t('archetypeHero.multiplierRead.close');
+  return t('archetypeHero.multiplierRead.longer');
 }
 
 export function ArchetypeHero({
@@ -36,6 +38,7 @@ export function ArchetypeHero({
   calibrationMap?: CalibrationMapRow[];
 }) {
   const t = useTheme();
+  const { t: tr } = useTranslation('patterns');
   // Measure the card so the gradient SVG gets an explicit viewBox + size — without
   // it react-native-svg renders a hard vertical seam (see svg-fullbleed-seam memory).
   const [size, setSize] = useState({ w: 0, h: 0 });
@@ -132,15 +135,18 @@ export function ArchetypeHero({
           </Svg>
         ) : null}
 
-        <Text style={eyebrow}>YOUR TIME PERSONALITY</Text>
+        <Text style={eyebrow}>{tr('archetypeHero.eyebrow')}</Text>
         <Text style={titleStyle}>{archTitle}</Text>
 
         <View style={heroRow}>
-          <Text style={heroNum} accessibilityLabel={`${averageMultiplier.toFixed(1)} times`}>
+          <Text
+            style={heroNum}
+            accessibilityLabel={tr('archetypeHero.heroAccessibilityLabel', { value: averageMultiplier.toFixed(1) })}
+          >
             {averageMultiplier.toFixed(1)}
             <Text style={heroX}>×</Text>
           </Text>
-          <Text style={heroRead}>{multiplierRead(averageMultiplier)}</Text>
+          <Text style={heroRead}>{multiplierRead(tr, averageMultiplier)}</Text>
         </View>
 
         {supporting.length > 0 ? (
@@ -159,7 +165,7 @@ export function ArchetypeHero({
 
       <Pressable style={shareBtn} onPress={archetypeShare.onShare} accessibilityRole="button">
         <Ionicons name="share-outline" size={t.iconSize.xs} color={t.colors.ink} />
-        <Text style={shareLabel}>Share my archetype</Text>
+        <Text style={shareLabel}>{tr('archetypeHero.shareLabel')}</Text>
       </Pressable>
 
       {/* Off-screen capture card — react-native-view-shot only; never visible. */}
@@ -175,6 +181,7 @@ export function ArchetypeHero({
 
 export function ArchetypePlaceholder({ onTakeQuiz }: { onTakeQuiz: () => void }) {
   const t = useTheme();
+  const { t: tr } = useTranslation('patterns');
   const cardStyle: ViewStyle = {
     borderRadius: t.radii.sheet,
     borderCurve: 'continuous',
@@ -187,11 +194,11 @@ export function ArchetypePlaceholder({ onTakeQuiz }: { onTakeQuiz: () => void })
   const bodyStyle: TextStyle = { ...(type.body as unknown as TextStyle), color: t.colors.inkSoft };
   return (
     <View style={cardStyle}>
-      <Text style={eyebrowStyle}>YOUR TIME PERSONALITY</Text>
-      <Text style={titleStyle}>Meet your time personality</Text>
-      <Text style={bodyStyle}>Answer a few quick questions, or keep logging and I&apos;ll figure it out.</Text>
+      <Text style={eyebrowStyle}>{tr('archetypeHero.eyebrow')}</Text>
+      <Text style={titleStyle}>{tr('archetypeHero.placeholder.title')}</Text>
+      <Text style={bodyStyle}>{tr('archetypeHero.placeholder.body')}</Text>
       <View style={{ alignSelf: 'flex-start', marginTop: t.space[2] }}>
-        <AppButton label="Take the 20-sec quiz" variant="ghost" size="md" onPress={onTakeQuiz} />
+        <AppButton label={tr('archetypeHero.placeholder.cta')} variant="ghost" size="md" onPress={onTakeQuiz} />
       </View>
     </View>
   );

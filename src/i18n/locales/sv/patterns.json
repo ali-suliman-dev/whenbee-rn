@@ -1,0 +1,300 @@
+{
+  "accuracyCorrelations": {
+    "eyebrow": "NÄR DU ÄR SOM SKARPAST",
+    "dismissLabel": "Dölj när du är som skarpast",
+    "headline": {
+      "time": "Dina gissningar ligger närmast under {{label}}.",
+      "day": "{{label}} är din skarpaste dag."
+    },
+    "detail": {
+      "time": "Cirka {{betterAccuracy}}% träffsäkert under {{betterLabel}}, jämfört med {{worseAccuracy}}% under {{worseLabel}}.",
+      "day": "Cirka {{betterAccuracy}}% träffsäkert på {{betterLabel}}, jämfört med {{worseAccuracy}}% på {{worseLabel}}."
+    },
+    "meta": "Baserat på {{count}} loggar · lärt på enheten"
+  },
+  "accuracyCorrelationsLocked": {
+    "eyebrow": "WHENBEE PRO",
+    "headline": "Lär känna dina skarpaste timmar.",
+    "sub": "Vissa timmar läser du tiden bättre än andra. Se exakt när — och när det är läge att lägga till lite marginal.",
+    "cta": "Visa min rytm"
+  },
+  "archetypeHero": {
+    "eyebrow": "DIN TIDSPERSONLIGHET",
+    "multiplierRead": {
+      "close": "precis som du gissade",
+      "longer": "längre än du gissade"
+    },
+    "heroAccessibilityLabel": "{{value}} gånger",
+    "shareLabel": "Dela min personlighet",
+    "placeholder": {
+      "title": "Möt din tidspersonlighet",
+      "body": "Svara på några snabba frågor, eller fortsätt logga så listar jag ut det.",
+      "cta": "Ta det 20-sekunders testet"
+    }
+  },
+  "biggestSurprise": {
+    "eyebrow": "VECKANS ÖVERRASKNING",
+    "dismissLabel": "Dölj veckans överraskning",
+    "headline": {
+      "longer": "{{category}} drog ut mest på tiden den här veckan.",
+      "early": "{{category}} blev klar tidigt den här veckan."
+    },
+    "detail": "Du gissade {{estimateMin}} min och det tog {{actualMin}}. Värt en mental notering till nästa gång."
+  },
+  "honestMap": {
+    "readiness": {
+      "none": "Dina områden håller fortfarande på att sätta sig. Några loggar till så skärps siffrorna.",
+      "one": "Ett område läser ärligt nu. Resten hänger med.",
+      "all": "Alla områden läser ärligt nu. Dina siffror är dina.",
+      "some": "{{count}} av dina områden läser ärligt nu."
+    },
+    "dial": {
+      "accessibilityLabel": "{{category}} tillförlitlighet: {{confidence}}, {{lit}} av 3"
+    },
+    "confidence": {
+      "raw": "rå",
+      "setting": "sätter sig",
+      "honest": "ärlig"
+    },
+    "sub": "kör {{multiplier}}× · {{confidence}}",
+    "guess": "mot {{guessMin}} gissad",
+    "unit": "m"
+  },
+  "contextCorrelations": {
+    "eyebrow": "VAD SOM PÅVERKAR DIN TRÄFFSÄKERHET",
+    "dismissLabel": "Dölj vad som påverkar din träffsäkerhet",
+    "noun": {
+      "energy": "energi",
+      "sleep": "sömn",
+      "meds": "mediciner"
+    },
+    "valueLabel": {
+      "energy": "{{value}}-energi"
+    },
+    "headline": "Dina {{value}}-pass ligger närmast.",
+    "detail": "Cirka {{bestAccuracy}}% träffsäkert på {{bestValue}}-pass, jämfört med {{worstAccuracy}}% på {{worstValue}}-pass.",
+    "meta": "Baserat på {{noun}} du noterat över {{count}} pass · lärt på enheten"
+  },
+  "contextCorrelationsLocked": {
+    "eyebrow": "WHENBEE PRO",
+    "headline": "Hitta vad som påverkar din träffsäkerhet.",
+    "sub": "När du noterar din energi efter ett pass är det en ledtråd. Pro läser tillbaka den: om lågenergidagar kastar av dina uppskattningar.",
+    "cta": "Visa mönstret"
+  },
+  "driftNote": {
+    "eyebrow": "TAKTSKIFTE",
+    "dismissLabel": "Dölj den här taktnotisen",
+    "lead": {
+      "slower": "tar längre tid på sistone",
+      "faster": "går snabbare på sistone"
+    },
+    "body": "<bold>{{categoryName}}</bold> {{lead}} — den brukade köra {{early}}×, nu närmare {{recent}}×. Dina ärliga siffror följer redan med."
+  },
+  "focusPeakCard": {
+    "eyebrow": "NÄR DU ÄR SKARP",
+    "forming": {
+      "title": "Lär mig dina fokustimmar",
+      "progress": "{{count}} / {{gate}} pass",
+      "setHoursCta": "Ställ in mina timmar själv",
+      "setHoursA11y": "Ställ in fokusfönster manuellt"
+    },
+    "locked": {
+      "teaserWithContrast": "Vi hittade ditt skarpaste pass — {{contrast}}× över din dipp.",
+      "teaserDefault": "Vi hittade ditt skarpaste pass.",
+      "meta": "Lärt från {{count}} pass.",
+      "unlockA11y": "Lås upp mitt fokusfönster",
+      "unlockCta": "Lås upp mitt fokusfönster ›"
+    },
+    "personal": {
+      "openA11y": "Öppna detaljer för fokusfönster",
+      "footerMetaWeeks": "{{count}} pass · stabilt i {{weeks}} veckor",
+      "footerMetaDays": "{{count}} pass · {{days}} dagar",
+      "open": "Öppna ›"
+    },
+    "contrastSuffix": " över din dipp"
+  },
+  "patternsEmpty": {
+    "title": "Dina mönster är på väg",
+    "body": "Ta tiden på några uppgifter, så är det här du möter din tidspersonlighet, din skarpaste kategori och överraskningarna värda att lägga märke till."
+  },
+  "patternsSegment": {
+    "numbers": "Siffror",
+    "insights": "Insikter",
+    "correlations": "Samband"
+  },
+  "planExperiment": {
+    "eyebrow": "PLAN VS KÖRA PÅ KÄNN",
+    "dismissLabel": "Dölj planexperimentet",
+    "headline": {
+      "planWins": "Att köra timern håller dig skarpare.",
+      "gutWins": "Du läser tiden bra utan timern."
+    },
+    "supporting": {
+      "planWins": "Tidtagna uppgifter ligger {{timedPct}}% träffsäkert jämfört med {{retroPct}}% när de loggas i efterhand.",
+      "gutWins": "Uppgifter loggade i efterhand ligger {{retroPct}}% träffsäkert jämfört med {{timedPct}}% när de tidtas. Ärligt talat — din magkänsla klarar sig bra här."
+    },
+    "note_one": "Baserat på {{timedCount}} tidtagen och {{retroCount}} loggad i efterhand uppgift.",
+    "note_other": "Baserat på {{timedCount}} tidtagna och {{retroCount}} loggade i efterhand uppgifter.",
+    "pending": {
+      "body": "Några fler tidtagna och några loggade i efterhand, så ser du om timern gör dig skarpare. Ingen brådska."
+    }
+  },
+  "predictionCard": {
+    "eyebrow": "VAD DU KAN FÖRVÄNTA DIG",
+    "dismissLabel": "Dölj förutsägelsen",
+    "lead": "En typisk {{category}}-uppgift tar vanligtvis",
+    "multNote": "cirka {{multiplier}}× din gissning",
+    "note_one": "Från din senaste {{count}} uppgift, för en 15-minutersgissning.",
+    "note_other": "Från dina senaste {{count}} uppgifter, för en 15-minutersgissning.",
+    "unit": "min"
+  },
+  "proTeaserCard": {
+    "proPill": "Pro",
+    "footer": "Avbryt när som helst · lärt på enheten"
+  },
+  "progressChart": {
+    "eyebrow": "TRÄFFSÄKERHET ÖVER TID",
+    "pill": {
+      "accuracy": "+{{delta}}% träffsäkerhet",
+      "steady": "stabilt"
+    },
+    "title": {
+      "up": "Blir mer träffsäker",
+      "steady": "Håller stadigt"
+    },
+    "axis": {
+      "early": "tidigt",
+      "midway": "halvvägs",
+      "now": "nu"
+    },
+    "context": {
+      "up": "Dina gissningar och den faktiska tiden närmar sig varandra.",
+      "steady": "Dina läsningar är konsekventa."
+    }
+  },
+  "stealsYourTime": {
+    "eyebrow": "VAD SOM STJÄL DIN TID",
+    "dismissLabel": "Dölj vad som stjäl din tid",
+    "headline": "Vart {{category}}s extra minuter tar vägen.",
+    "detail": "{{pct}}% av {{category}}-överdragen går tillbaka till {{reason}}{{skew}}.",
+    "meta": "Baserat på {{sampleCount}} av {{totalOver}} gånger du noterat varför · lärt på enheten",
+    "skew": {
+      "morning": ", mest tidigare på dagen",
+      "afternoon": ", mest senare på dagen",
+      "weekday": {
+        "sunday": ", mest på söndagar",
+        "monday": ", mest på måndagar",
+        "tuesday": ", mest på tisdagar",
+        "wednesday": ", mest på onsdagar",
+        "thursday": ", mest på torsdagar",
+        "friday": ", mest på fredagar",
+        "saturday": ", mest på lördagar"
+      }
+    }
+  },
+  "stealsYourTimeLocked": {
+    "eyebrow": "WHENBEE PRO",
+    "headline": "Se var din tid verkligen tar vägen.",
+    "sub": "Varje gång du noterar varför en uppgift drog ut på tiden är det en ledtråd. Pro läser tillbaka dem: orsaken bakom dina överdrag, per kategori.",
+    "cta": "Visa mig orsaken"
+  },
+  "stealsYourTimeWeekly": {
+    "eyebrow": "VECKANS MÖNSTER",
+    "dismissLabel": "Dölj veckans mönster"
+  },
+  "youVsPast": {
+    "eyebrow": "DU, DÅ JÄMFÖRT MED NU",
+    "dismissLabel": "Dölj dina framsteg",
+    "atFirst": "I början",
+    "lately": "På sistone",
+    "summary": {
+      "improving": "Det är {{delta}} poäng skarpare än när du började. Bra jobbat.",
+      "steady": "Precis där du började — och stabila läsningar är en riktig färdighet."
+    },
+    "unit": "%"
+  },
+  "archetypeStats": {
+    "tracked": {
+      "label": "Loggat",
+      "value_one": "{{count}} uppgift",
+      "value_other": "{{count}} uppgifter"
+    },
+    "mostAccurate": { "label": "Mest träffsäker" },
+    "runsLongest": { "label": "Tar längst tid" }
+  },
+  "archetypeTraits": {
+    "runsLabel": "Kör",
+    "runsValue": "{{multiplier}}× längre",
+    "midTaskLabel": "Mitt i uppgiften",
+    "sharpestLabel": "Skarpast",
+    "mid": {
+      "track": "Håller sig på spåret",
+      "rabbit": "Faller ner i kaninhål"
+    },
+    "focus": {
+      "morning": "Morgnar",
+      "evening": "Kvällar",
+      "varies": "Varierar"
+    }
+  },
+  "focusCopy": {
+    "whyNarrative": {
+      "early": "Du startar skarpt och tappar fart efter lunch",
+      "midday": "Du hittar din rytm runt lunchtid",
+      "afternoon": "Morgnarna värms upp långsamt — du toppar efter lunch",
+      "evening": "Du är en sen brinnare — du toppar på kvällen"
+    }
+  },
+  "archetype": {
+    "steadyReader": {
+      "title": "Den stadiga läsaren",
+      "blurb": "Dina gissningar ligger nära verkligheten. Ovanligt sällsynt."
+    },
+    "gentleOptimist": {
+      "title": "Den milda optimisten",
+      "blurb": "Du lutar åt hoppfullt, men hinner mestadels ikapp. Lite marginal räcker."
+    },
+    "sprintOptimist": {
+      "title": "Sprintoptimisten",
+      "blurb": "Ditt sinne rör sig snabbt; utförandet tar lite längre tid. Nu vet du hur mycket."
+    },
+    "dreamer": {
+      "title": "Drömmaren",
+      "blurb": "Stora planer, generösa tidsramar. Dina ärliga siffror håller dem på jorden."
+    }
+  },
+  "ripeningPro": {
+    "ripening": {
+      "eyebrow": "Pro · mognar",
+      "pillPrefix": "Mognar vid",
+      "title": "Ditt ärliga intervall",
+      "sub": "Intervallet Whenbee kommer visa dig — när den har sett tillräckligt av din tajmning för att betyda något.",
+      "settling": "Sätter sig fortfarande…",
+      "footer": "Varje uppgift du loggar skärper tyst intervallet. Inget att hålla jämna steg med."
+    },
+    "reveal": {
+      "eyebrow": "Pro · klar",
+      "pill": "Klar",
+      "headline": "Ditt intervall blev just ärligt.",
+      "sub": "Whenbee har sett tillräckligt av din tajmning. Pro-funktionerna nedan har nu riktiga data att jobba med — inga gissningar.",
+      "cta": "Se vad Pro tillför",
+      "escape": "Ta en snabb titt först"
+    },
+    "featureLabel": {
+      "confidenceBand": "Ärligt intervall",
+      "stealsYourTime": "Vad som stjäl din tid",
+      "accuracyCorrelations": "När du är som skarpast",
+      "contextCorrelations": "Vad som påverkar din träffsäkerhet",
+      "dayCapacity": "Dagskapacitetskoll",
+      "honestWeek": "Ärlig veckoöversikt",
+      "honestMonth": "Ärlig månadsöversikt"
+    },
+    "featureList": {
+      "readyStatus": "Klar"
+    },
+    "card": {
+      "honeyPct": "{{pct}}% honung",
+      "logsToNext": "~{{count}} loggar kvar"
+    }
+  }
+}
