@@ -4,7 +4,7 @@ import { useCalibrationStore, type PatternsData } from '@/src/stores/calibration
 import { useEntitlement } from '@/src/features/paywall/useEntitlement';
 import { kv } from '@/src/lib/kv';
 
-// FocusPatternsCard (now mounted on this screen) calls useLearnedFocusWindow,
+// FocusPeakCard (the pinned focus card on this screen) calls useLearnedFocusWindow,
 // which loads focus events from calibrationStore via expo-sqlite. Stub it so the
 // screen tests don't hit the sqlite path — the card's own tests cover its states.
 jest.mock('@/src/features/planner/useLearnedFocusWindow', () => ({
@@ -24,6 +24,14 @@ jest.mock('@/src/features/planner/useLearnedFocusWindow', () => ({
 // (uses Modal + FinishTimeWheel with native scroll) to keep the screen test lean.
 jest.mock('@/src/features/planner/FocusWindowEditorSheet', () => ({
   FocusWindowEditorSheet: () => null,
+}));
+
+// FocusPeakCard (now the pinned card) also calls useFocusInsights, which reads
+// focus events via calibrationStore.loadFocusEvents. Stub it the same way as
+// useLearnedFocusWindow so the screen tests don't depend on the sqlite path —
+// the card's own states are covered by FocusPeakCard.test.tsx.
+jest.mock('@/src/features/patterns/useFocusInsights', () => ({
+  useFocusInsights: () => null,
 }));
 
 // Mock expo-router: useFocusEffect runs the callback once (mirrors an immediate
@@ -188,6 +196,19 @@ describe('Patterns screen — segment routing', () => {
     // Switch to Insights tab — hero must still be present
     fireEvent.press(screen.getByRole('tab', { name: 'Insights' }));
     expect(screen.getByText('YOUR TIME PERSONALITY')).toBeOnTheScreen();
+  });
+
+  it('pins the focus card outside the Numbers tab content', async () => {
+    render(<Patterns />);
+    await waitFor(() => {
+      expect(screen.getByText('Your numbers')).toBeOnTheScreen();
+    });
+    // Pinned on the default (Numbers) tab.
+    expect(screen.getByText("WHEN YOU'RE SHARP")).toBeOnTheScreen();
+
+    // Still pinned after switching off Numbers — never buried inside a segment.
+    fireEvent.press(screen.getByRole('tab', { name: 'Correlations' }));
+    expect(screen.getByText("WHEN YOU'RE SHARP")).toBeOnTheScreen();
   });
 
   it('numbers tab (default) shows progress, not correlations content', async () => {

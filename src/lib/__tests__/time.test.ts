@@ -6,6 +6,9 @@ import {
   isOverrun,
   startOfLocalDay,
   dayEndEpochFor,
+  formatClockMin,
+  formatWindowRange,
+  setClockHour12,
 } from '@/src/lib/time';
 
 // Build a deterministic local epoch from explicit Y/M/D h:m so the formatted
@@ -129,5 +132,34 @@ describe('dayEndEpochFor', () => {
   });
   it('1439 minutes equals 23:59 local', () => {
     expect(dayEndEpochFor(noon, 1439)).toBe(startOfLocalDay(noon) + 1439 * 60_000);
+  });
+});
+
+describe('formatClockMin', () => {
+  afterEach(() => setClockHour12(true)); // restore default
+  it('formats 12h with no leading zero', () => {
+    setClockHour12(true);
+    expect(formatClockMin(90)).toBe('1:30');     // 01:30
+    expect(formatClockMin(810)).toBe('1:30');    // 13:30
+    expect(formatClockMin(0)).toBe('12:00');     // midnight
+    expect(formatClockMin(720)).toBe('12:00');   // noon
+  });
+  it('formats 24h zero-padded', () => {
+    expect(formatClockMin(810, false)).toBe('13:30');
+    expect(formatClockMin(90, false)).toBe('01:30');
+    expect(formatClockMin(0, false)).toBe('00:00');
+  });
+});
+
+describe('formatWindowRange', () => {
+  it('12h same half → one trailing meridiem', () => {
+    expect(formatWindowRange(810, 960, true)).toBe('1:30 – 4:00 pm');
+    expect(formatWindowRange(540, 660, true)).toBe('9:00 – 11:00 am');
+  });
+  it('12h crossing noon → two meridiems', () => {
+    expect(formatWindowRange(690, 780, true)).toBe('11:30 am – 1:00 pm');
+  });
+  it('24h → no meridiem', () => {
+    expect(formatWindowRange(810, 960, false)).toBe('13:30 – 16:00');
   });
 });

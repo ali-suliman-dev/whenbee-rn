@@ -1,5 +1,5 @@
 import { View, type ViewStyle, type TextStyle } from 'react-native';
-import Svg, { Path, Circle, Rect, Defs, LinearGradient, Stop } from 'react-native-svg';
+import Svg, { Path, Circle, Rect, Defs, LinearGradient, Stop, Text as SvgText } from 'react-native-svg';
 import Animated, { FadeIn, ReduceMotion } from 'react-native-reanimated';
 import { useTheme } from '@/src/theme/useTheme';
 import { AppText } from '@/src/components/AppText';
@@ -24,6 +24,14 @@ export interface FocusCurveProps {
   variant: 'forming' | 'learned' | 'locked';
   windowStartMin?: number;
   windowEndMin?: number;
+  yAxis?: boolean;
+  peakLabel?: string;
+  /** Rendered SVG height (pt). Defaults to t.focusCurve.viewH. The internal
+   *  viewBox stays viewW×viewH so path math is unchanged — the SVG scales. */
+  height?: number;
+  /** When provided, positions the peak dot + label at this minute instead of
+   *  the curve's internal normalized argmax (e.g. the engine's eligible-bin peak). */
+  peakMin?: number;
 }
 
 const FW_WAKING_START_MIN = 300;  // 05:00
@@ -37,9 +45,36 @@ const AXIS_LABELS = ['6a', '9a', '12p', '3p', '6p', '9p'];
 
 const ENTER = FadeIn.duration(tokens.motion.base).reduceMotion(ReduceMotion.System);
 
-export function FocusCurve({ scoreByBin, variant, windowStartMin, windowEndMin }: FocusCurveProps) {
+export function FocusCurve({
+  scoreByBin,
+  variant,
+  windowStartMin,
+  windowEndMin,
+  yAxis = false,
+  peakLabel,
+  height,
+  peakMin,
+}: FocusCurveProps) {
   const t = useTheme();
-  const { viewH, viewW, strokeW, dotR, bandOpacity, areaOpacity, yPad, yBase, dash, axisH, axisGap, axisLabelW } = t.focusCurve;
+  const {
+    viewH,
+    viewW,
+    strokeW,
+    dotR,
+    bandOpacity,
+    areaOpacity,
+    yPad,
+    yBase,
+    dash,
+    axisH,
+    axisGap,
+    axisLabelW,
+    gridW,
+    yLabelW,
+    peakLabelGap,
+    peakLabelMinY,
+  } = t.focusCurve;
+  const svgHeight = height ?? viewH;
 
   // x maps bin index → SVG x coordinate
   const x = (i: number) => (i / (BIN_COUNT - 1)) * viewW;
@@ -55,7 +90,8 @@ export function FocusCurve({ scoreByBin, variant, windowStartMin, windowEndMin }
   const curvePath = scores.map((v, i) => `${i === 0 ? 'M' : 'L'} ${x(i)} ${y(v)}`).join(' ');
   const areaPath = `${curvePath} L${lastX},${viewH} L${firstX},${viewH} Z`;
 
-  // Peak dot position (argmax)
+  // Peak dot position: use the explicit peakMin (engine's eligible-bin peak)
+  // when provided, otherwise fall back to the curve's own argmax.
   let peakIdx = 0;
   let peakScore = -1;
   for (let i = 0; i < scores.length; i++) {
@@ -63,6 +99,11 @@ export function FocusCurve({ scoreByBin, variant, windowStartMin, windowEndMin }
       peakScore = scores[i] ?? 0;
       peakIdx = i;
     }
+  }
+  if (peakMin !== undefined) {
+    const bin = Math.round((peakMin - FW_WAKING_START_MIN) / 30);
+    peakIdx = Math.min(BIN_COUNT - 1, Math.max(0, bin));
+    peakScore = scores[peakIdx] ?? 0;
   }
   const peakX = x(peakIdx);
   const peakY = y(peakScore);
@@ -104,12 +145,12 @@ export function FocusCurve({ scoreByBin, variant, windowStartMin, windowEndMin }
     width: axisLabelW,
   };
 
-  return (
-    <Animated.View entering={ENTER} style={containerStyle}>
+  const plot = (
+    <>
       <Svg
         viewBox={`0 0 ${viewW} ${viewH}`}
         width="100%"
-        height={viewH}
+        height={svgHeight}
         accessibilityRole="image"
         accessibilityLabel="Focus window curve"
       >
@@ -121,6 +162,11 @@ export function FocusCurve({ scoreByBin, variant, windowStartMin, windowEndMin }
             </LinearGradient>
           )}
         </Defs>
+
+        {/* Gridlines (opt-in via yAxis) */}
+        {yAxis && [yBase, viewH / 2, viewH - yPad].map((gy, i) => (
+          <Path key={`grid-${i}`} d={`M0 ${gy} L${viewW} ${gy}`} stroke={t.colors.hairline} strokeWidth={gridW} />
+        ))}
 
         {/* Window band (learned only) */}
         {showBand && (
@@ -162,6 +208,20 @@ export function FocusCurve({ scoreByBin, variant, windowStartMin, windowEndMin }
             fill={t.colors.primary}
           />
         )}
+
+        {/* Peak label (opt-in via peakLabel) */}
+        {showPeak && peakLabel ? (
+          <SvgText
+            x={peakX}
+            y={Math.max(peakLabelMinY, peakY - dotR - peakLabelGap)}
+            fill={t.colors.primary}
+            fontSize={t.fontSize.micro}
+            fontWeight="700"
+            textAnchor="middle"
+          >
+            {peakLabel}
+          </SvgText>
+        ) : null}
       </Svg>
 
       {/* Time-axis labels */}
@@ -179,6 +239,22 @@ export function FocusCurve({ scoreByBin, variant, windowStartMin, windowEndMin }
             );
           })}
         </View>
+      )}
+    </>
+  );
+
+  return (
+    <Animated.View entering={ENTER} style={containerStyle}>
+      {yAxis ? (
+        <View style={{ flexDirection: 'row', gap: t.space[2] }}>
+          <View style={{ width: yLabelW, height: svgHeight, justifyContent: 'space-between', alignItems: 'flex-end' }}>
+            <AppText style={{ fontSize: t.fontSize.micro, color: t.colors.inkFaint }}>Hi</AppText>
+            <AppText style={{ fontSize: t.fontSize.micro, color: t.colors.inkFaint }}>Low</AppText>
+          </View>
+          <View style={{ flex: 1 }}>{plot}</View>
+        </View>
+      ) : (
+        plot
       )}
     </Animated.View>
   );
