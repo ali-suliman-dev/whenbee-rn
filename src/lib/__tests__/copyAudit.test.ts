@@ -1,6 +1,7 @@
 import { readFileSync, readdirSync } from 'node:fs';
 import { join, relative, sep } from 'node:path';
 import { execFileSync } from 'node:child_process';
+import { resources, SUPPORTED_LANGS } from '../../i18n/resources';
 
 // ──────────────────────────────────────────────────────────────────────────────
 // copyAudit — a durable guardrail for Whenbee's "no guilt, ever" product invariant.
@@ -137,6 +138,43 @@ describe('no-guilt copy audit', () => {
           while ((m = re.exec(line)) !== null) {
             if (rule.allowNegated && negatedBefore(line, m.index)) continue;
             hits.push(`${rel}:${n} — ${rule.name}: …${line.trim().slice(0, 80)}…`);
+          }
+        }
+      }
+    }
+    expect(hits).toEqual([]);
+  });
+});
+
+// ──────────────────────────────────────────────────────────────────────────────
+// Cross-locale copy audit — the same guilt/shame banlist applied to every
+// translated string in `resources`, for every supported language. A guilt word
+// smuggled into a translation (e.g. Swedish) must fail the same way an English
+// source-file hit does.
+// ──────────────────────────────────────────────────────────────────────────────
+
+const flattenLocaleValues = (obj: Record<string, unknown>, prefix = ''): [string, string][] =>
+  Object.entries(obj).flatMap(([k, v]) => {
+    const path = `${prefix}${k}`;
+    if (v !== null && typeof v === 'object') {
+      return flattenLocaleValues(v as Record<string, unknown>, `${path}.`);
+    }
+    return typeof v === 'string' ? ([[path, v]] as [string, string][]) : [];
+  });
+
+describe('locale copy is guilt-free', () => {
+  it('contains no banned guilt/shame mechanics in any translated string', () => {
+    const hits: string[] = [];
+    for (const lang of SUPPORTED_LANGS) {
+      for (const [ns, values] of Object.entries(resources[lang])) {
+        for (const [key, value] of flattenLocaleValues(values as Record<string, unknown>)) {
+          for (const rule of BANNED) {
+            const re = new RegExp(rule.pattern.source, 'gi');
+            let m: RegExpExecArray | null;
+            while ((m = re.exec(value)) !== null) {
+              if (rule.allowNegated && negatedBefore(value, m.index)) continue;
+              hits.push(`${lang}/${ns}.${key} — ${rule.name}: "${value}"`);
+            }
           }
         }
       }
