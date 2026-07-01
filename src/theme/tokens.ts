@@ -619,6 +619,28 @@ export const tokens = {
     },
   },
 
+  // Weekly/Monthly Review card visualization geometry (ForwardActionCard rail/pipe
+  // + BiggestSurpriseRitualCard real-values range band) — one group so neither
+  // card inlines a raw px. Rail: a small SVG viewBox (railViewW×railViewH) draws a
+  // planned→goal pipe; railInsetL/railGoalInset keep the solid start and the honey
+  // goal node inset from the SVG edges so the goal node never overhangs the card;
+  // the dashed honey top-up stops at goalX − goalNodeR so the node caps the dash.
+  // Band: every marker x is computed from the MEASURED guess/real values (nothing
+  // fabricated). Inside a bandHeight-tall relative block: the track sits at
+  // bandTrackTop (height bandTrackH); the ghostly dotted guess guide runs from
+  // bandGuideTop down to the track bottom (bandTrackTop + bandTrackH, derived at
+  // render so it always touches); the honey real-dot (bandDotSize) sits on the
+  // track. bandFallbackBarH sizes the thin-history two-number compare bars.
+  reviewViz: {
+    railViewW: 296, railViewH: 21, railY: 9, railInsetL: 8, railGoalInset: 10,
+    pipeStroke: 3, pipeDash: '2 8', planNodeR: 4.5, planNodeStroke: 2, goalNodeR: 6,
+    bandHeight: 42, bandTrackTop: 28, bandTrackH: 10,
+    bandCaretTop: 16, bandCaretW: 5, bandCaretH: 6,
+    bandGuideTop: 22, bandGuideW: 1, bandGuideDash: '1 3',
+    bandDotSize: 14, bandDotTop: 26, bandDotBorder: 2,
+    bandFallbackBarH: 56,
+  },
+
   // ── brand illustration palette ──────────────────────────────────────────────
   // Fixed art colors for the Whenbee mascot (BeeMascot). Brand art does NOT recolor
   // by mode — a mascot reads as the SAME bee in light and dark, the way a logo does.

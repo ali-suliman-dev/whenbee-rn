@@ -1,14 +1,18 @@
-import { View, Text, StyleSheet, Platform } from 'react-native';
+import { useCallback, useState } from 'react';
+import { View, Text, StyleSheet, type LayoutChangeEvent, type TextStyle } from 'react-native';
+import Svg, { Line } from 'react-native-svg';
 import { Card } from '@/src/components/Card';
 import { useTheme } from '@/src/theme/useTheme';
+import { type } from '@/src/theme/typography';
 import type { ReviewBiggestSurprise, ConfidenceBand } from '@/src/domain/types';
 
 // ──────────────────────────────────────────────────────────────────────────────
-// BiggestSurpriseRitualCard — replaces the bare Patterns BiggestSurprise with a
-// ritual-aware version: when there is enough history (≥5 logs) it overlays the
-// guess + actual onto an 80% confidence band so the user sees how this week's
-// outlier compares to their own past range. Falls back to a simple two-bar
-// layout when the band isn't earned yet.
+// BiggestSurpriseRitualCard — a ritual-aware version of the Patterns
+// BiggestSurprise: when there is enough history (≥5 logs) it plots the week's
+// outlier on the user's own 80% confidence band using ONLY measured numbers —
+// the band low/high, the guess (a ghostly dotted marker) and the real value (a
+// solid honey dot on the track). Nothing is fabricated. Falls back to a plain
+// two-number compare when the band isn't earned yet.
 // ──────────────────────────────────────────────────────────────────────────────
 
 interface Props {
@@ -17,202 +21,267 @@ interface Props {
   loggedCount: number;
 }
 
+/** Minimum separation (in % of the track) between the guess and real FLAG
+ *  labels before they're nudged apart so the text never overlaps. The markers
+ *  themselves (caret, dot, guide) always stay on their true value positions. */
+const FLAG_MIN_GAP_PCT = 18;
+
+const clampPct = (v: number) => Math.min(Math.max(v, 4), 96);
+
 export function BiggestSurpriseRitualCard({ surprise, band, loggedCount }: Props) {
   const t = useTheme();
+  const rv = t.reviewViz;
+
+  // Flag labels are centered on their value via translateX(-width/2). RN
+  // transforms don't take percentages, so each flag is measured on layout and
+  // held at opacity 0 until its width is known (no left-anchored first-frame
+  // flash). Hooks are declared before the `!band` early return so hook order is
+  // stable across renders.
+  const [guessFlagW, setGuessFlagW] = useState(0);
+  const [realFlagW, setRealFlagW] = useState(0);
+  const onGuessFlagLayout = useCallback((e: LayoutChangeEvent) => {
+    setGuessFlagW(e.nativeEvent.layout.width);
+  }, []);
+  const onRealFlagLayout = useCallback((e: LayoutChangeEvent) => {
+    setRealFlagW(e.nativeEvent.layout.width);
+  }, []);
 
   const ratio =
     surprise.estimateMin > 0 ? (surprise.actualMin / surprise.estimateMin).toFixed(1) : '—';
 
   const styles = StyleSheet.create({
-    eyebrow: {
-      fontSize: 10,
-      fontWeight: '700',
-      color: t.colors.inkFaint,
-      letterSpacing: 1.2,
-      marginBottom: t.space[1],
+    container: { gap: t.space[3] },
+    headerGroup: { gap: t.space[1] },
+    eyebrow: { ...type.eyebrow, color: t.colors.inkSoft },
+    heading: { ...type.body, color: t.colors.inkSoft },
+    categoryName: { fontFamily: 'Jakarta-ExtraBold', color: t.colors.ink },
+    desc: { ...type.bodySm, color: t.colors.inkSoft },
+    descInk: { fontFamily: 'Jakarta-ExtraBold', color: t.colors.ink },
+    descAmber: { ...type.bodySmBold, color: t.colors.amberText },
+    bottomRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
+    chip: {
+      backgroundColor: t.colors.accentChip,
+      borderRadius: t.radii.sm,
+      paddingHorizontal: t.space[2],
+      paddingVertical: t.space[1],
     },
-    heading: { fontSize: 15, color: t.colors.inkSoft, marginBottom: t.space[3] },
-    categoryName: { fontWeight: '700', color: t.colors.ink },
-    fallbackRow: { flexDirection: 'row', gap: t.space[2], marginBottom: t.space[3] },
+    chipText: { ...type.caption, color: t.colors.inkSoft },
+    chipRatio: { ...(type.numCaption as unknown as TextStyle), color: t.colors.amberText },
+    logCount: { ...type.caption, color: t.colors.inkFaint },
+    logCountNum: { ...(type.numCaption as unknown as TextStyle), color: t.colors.inkFaint },
+    // Fallback (thin history) — a plain two-number compare. Both numbers are
+    // real (guess vs real), sized in proportion; neutral base, honey on real.
+    fallbackRow: { flexDirection: 'row', gap: t.space[2] },
     fallbackBar: {
       flex: 1,
-      height: 40,
+      height: rv.bandFallbackBarH,
       borderRadius: t.radii.sm,
       justifyContent: 'center',
       alignItems: 'center',
     },
-    fallbackLabel: { fontSize: 12, fontWeight: '700' },
-    bandContainer: { height: 58, marginBottom: t.space[3], position: 'relative' },
-    rangeRow: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 4 },
-    rangeLabel: { fontSize: 10, color: t.colors.inkFaint, fontWeight: '600' },
-    pill: {
+    fallbackGuessBar: { backgroundColor: t.colors.surfaceSunken },
+    fallbackRealBar: { backgroundColor: t.colors.accent },
+    fallbackGuessLabel: { ...type.caption, color: t.colors.inkSoft },
+    fallbackRealLabel: { ...type.captionBold, color: t.colors.onAmber },
+    // Real-values range band
+    band: { height: rv.bandHeight, position: 'relative' },
+    flag: { ...(type.numMicro as unknown as TextStyle), position: 'absolute', top: 0 },
+    flagGuess: { color: t.colors.inkFaint },
+    flagReal: { color: t.colors.amberText },
+    caret: {
       position: 'absolute',
-      top: 14,
+      top: rv.bandCaretTop,
+      width: 0,
+      height: 0,
+      borderLeftWidth: rv.bandCaretW,
+      borderRightWidth: rv.bandCaretW,
+      borderTopWidth: rv.bandCaretH,
+      borderLeftColor: 'transparent',
+      borderRightColor: 'transparent',
+      borderTopColor: t.colors.inkSoft,
+    },
+    guide: { position: 'absolute', top: rv.bandGuideTop, left: 0, right: 0 },
+    track: {
+      position: 'absolute',
       left: 0,
       right: 0,
-      height: 28,
-      borderRadius: t.radii.sm,
-      backgroundColor: 'rgba(238,174,77,0.07)',
-      borderWidth: 1,
-      borderColor: 'rgba(238,174,77,0.14)',
+      top: rv.bandTrackTop,
+      height: rv.bandTrackH,
+      borderRadius: t.radii.full,
+      backgroundColor: t.colors.surfaceSunken,
     },
-    description: { fontSize: 13, color: t.colors.inkSoft, marginBottom: t.space[3] },
-    amberInline: { color: t.colors.amberText, fontWeight: '700' },
-    bottomRow: {
-      flexDirection: 'row',
-      alignItems: 'center',
-      justifyContent: 'space-between',
+    dot: {
+      position: 'absolute',
+      top: rv.bandDotTop,
+      width: rv.bandDotSize,
+      height: rv.bandDotSize,
+      borderRadius: t.radii.full,
+      backgroundColor: t.colors.accent,
+      borderWidth: rv.bandDotBorder,
+      borderColor: t.colors.surface,
     },
-    chip: {
-      backgroundColor: 'rgba(238,174,77,0.15)',
-      borderRadius: t.radii.sm,
-      paddingHorizontal: t.space[2],
-      paddingVertical: 4,
-    },
-    chipText: { fontSize: 13, color: t.colors.amberText, fontWeight: '700' },
-    logCount: { fontSize: 11, color: t.colors.inkFaint },
+    axisRow: { flexDirection: 'row', justifyContent: 'space-between' },
+    axisLabel: { ...(type.numMicro as unknown as TextStyle), color: t.colors.inkFaint },
   });
 
   if (!band) {
-    // Fallback: simple two-bar layout when history is thin
     const total = surprise.estimateMin + surprise.actualMin;
     const guessFlex = total > 0 ? surprise.estimateMin / total : 0.5;
     const realFlex = total > 0 ? surprise.actualMin / total : 0.5;
     return (
       <Card tone="flat">
-        <Text style={styles.eyebrow}>YOUR BIGGEST SURPRISE</Text>
-        <Text style={styles.heading}>
-          <Text style={styles.categoryName}>{surprise.categoryName}</Text>
-          {' — biggest drift this week'}
-        </Text>
-        <View style={styles.fallbackRow}>
-          <View
-            style={[
-              styles.fallbackBar,
-              { flex: guessFlex, backgroundColor: 'rgba(255,255,255,0.10)' },
-            ]}
-          >
-            <Text style={[styles.fallbackLabel, { color: t.colors.inkSoft }]}>
-              {surprise.estimateMin}m guess
+        <View style={styles.container}>
+          <View style={styles.headerGroup}>
+            <Text style={styles.eyebrow}>YOUR BIGGEST SURPRISE</Text>
+            <Text style={styles.heading}>
+              <Text style={styles.categoryName}>{surprise.categoryName}</Text>
+              {' — biggest drift this week'}
             </Text>
           </View>
-          <View
-            style={[
-              styles.fallbackBar,
-              { flex: realFlex, backgroundColor: 'rgba(238,174,77,0.22)' },
-            ]}
-          >
-            <Text style={[styles.fallbackLabel, { color: t.colors.amberText }]}>
-              {surprise.actualMin}m real
+          <View style={styles.fallbackRow}>
+            <View style={[styles.fallbackBar, styles.fallbackGuessBar, { flex: guessFlex }]}>
+              <Text style={styles.fallbackGuessLabel} numberOfLines={1}>
+                {surprise.estimateMin}m guess
+              </Text>
+            </View>
+            <View style={[styles.fallbackBar, styles.fallbackRealBar, { flex: realFlex }]}>
+              <Text style={styles.fallbackRealLabel} numberOfLines={1}>
+                {surprise.actualMin}m real
+              </Text>
+            </View>
+          </View>
+          <View style={styles.bottomRow}>
+            <View style={styles.chip}>
+              <Text style={styles.chipText}>
+                <Text style={styles.chipRatio}>{ratio}×</Text>
+                {' your read'}
+              </Text>
+            </View>
+            <Text style={styles.logCount}>
+              <Text style={styles.logCountNum}>{loggedCount}</Text>
+              {' logs'}
             </Text>
           </View>
-        </View>
-        <View style={styles.bottomRow}>
-          <View style={styles.chip}>
-            <Text style={styles.chipText}>{ratio}× your read</Text>
-          </View>
-          <Text style={styles.logCount}>{loggedCount} logs</Text>
         </View>
       </Card>
     );
   }
 
-  // Band viz — overlay guess tick + real dot on the 10th–90th percentile range
   const range = band.highMin - band.lowMin;
-  const clamp = (v: number) => Math.min(Math.max(v, 5), 95);
-  const guessPct = range > 0 ? clamp(((surprise.estimateMin - band.lowMin) / range) * 100) : 50;
-  const realPct = range > 0 ? clamp(((surprise.actualMin - band.lowMin) / range) * 100) : 50;
+  const guessPct = range > 0 ? clampPct(((surprise.estimateMin - band.lowMin) / range) * 100) : 50;
+  const realPct = range > 0 ? clampPct(((surprise.actualMin - band.lowMin) / range) * 100) : 50;
 
-  const insideRange = surprise.estimateMin >= band.lowMin && surprise.estimateMin <= band.highMin;
-  const descSuffix = insideRange ? ' Past your guess — inside your range.' : ' Past your guess.';
+  // Flag anchors follow the true values, nudged apart only when the labels
+  // would collide. The markers (caret/dot/guide) keep the true pcts.
+  let guessFlagPct = guessPct;
+  let realFlagPct = realPct;
+  if (Math.abs(realPct - guessPct) < FLAG_MIN_GAP_PCT) {
+    const mid = (guessPct + realPct) / 2;
+    const half = FLAG_MIN_GAP_PCT / 2;
+    const guessIsLeft = guessPct <= realPct;
+    guessFlagPct = clampPct(mid + (guessIsLeft ? -half : half));
+    realFlagPct = clampPct(mid + (guessIsLeft ? half : -half));
+  }
+
+  const guideHeight = rv.bandTrackTop + rv.bandTrackH - rv.bandGuideTop;
+  const insideRange = surprise.actualMin >= band.lowMin && surprise.actualMin <= band.highMin;
 
   return (
     <Card tone="flat">
-      <Text style={styles.eyebrow}>YOUR BIGGEST SURPRISE</Text>
-      <Text style={styles.heading}>
-        <Text style={styles.categoryName}>{surprise.categoryName}</Text>
-        {' — biggest drift this week'}
-      </Text>
-      <View style={styles.bandContainer}>
-        <View style={styles.rangeRow}>
-          <Text style={styles.rangeLabel}>{band.lowMin}m</Text>
-          <Text style={styles.rangeLabel}>{band.highMin}m</Text>
+      <View style={styles.container}>
+        <View style={styles.headerGroup}>
+          <Text style={styles.eyebrow}>YOUR BIGGEST SURPRISE</Text>
+          <Text style={styles.heading}>
+            <Text style={styles.categoryName}>{surprise.categoryName}</Text>
+            {' — biggest drift this week'}
+          </Text>
         </View>
-        <View style={styles.pill} />
-        {/* Guess tick */}
-        <View
-          style={{
-            position: 'absolute',
-            top: 14,
-            height: 28,
-            width: 2,
-            backgroundColor: 'rgba(255,255,255,0.28)',
-            left: `${guessPct}%` as `${number}%`,
-          }}
-        />
-        {/* Real dot */}
-        <View
-          style={{
-            position: 'absolute',
-            top: 14 + (28 - 20) / 2,
-            width: 20,
-            height: 20,
-            borderRadius: 10,
-            backgroundColor: t.colors.accent,
-            left: `${realPct}%` as `${number}%`,
-            transform: [{ translateX: -10 }],
-            ...Platform.select({
-              ios: {
-                shadowColor: t.colors.accent,
-                shadowOpacity: 0.5,
-                shadowRadius: 4,
-                shadowOffset: { width: 0, height: 2 },
-              },
-              android: { elevation: 4 },
-            }),
-          }}
-        />
-        {/* Labels below the band */}
-        <View style={{ position: 'absolute', bottom: 0, left: 0, right: 0 }}>
+
+        <View style={styles.band}>
           <Text
-            style={{
-              position: 'absolute',
-              left: `${guessPct}%` as `${number}%`,
-              fontSize: 9,
-              color: t.colors.inkFaint,
-              fontWeight: '700',
-              transform: [{ translateX: -20 }],
-            }}
+            onLayout={onGuessFlagLayout}
+            style={[
+              styles.flag,
+              styles.flagGuess,
+              {
+                left: `${guessFlagPct}%`,
+                transform: [{ translateX: -guessFlagW / 2 }],
+                opacity: guessFlagW > 0 ? 1 : 0,
+              },
+            ]}
           >
             {surprise.estimateMin}m guess
           </Text>
           <Text
-            style={{
-              position: 'absolute',
-              left: `${realPct}%` as `${number}%`,
-              fontSize: 9,
-              color: t.colors.amberText,
-              fontWeight: '700',
-              transform: [{ translateX: -15 }],
-            }}
+            onLayout={onRealFlagLayout}
+            style={[
+              styles.flag,
+              styles.flagReal,
+              {
+                left: `${realFlagPct}%`,
+                transform: [{ translateX: -realFlagW / 2 }],
+                opacity: realFlagW > 0 ? 1 : 0,
+              },
+            ]}
           >
             {surprise.actualMin}m real
           </Text>
+          <View
+            style={[
+              styles.caret,
+              { left: `${guessPct}%`, transform: [{ translateX: -rv.bandCaretW }] },
+            ]}
+          />
+          <View style={styles.track} />
+          <Svg width="100%" height={guideHeight} style={styles.guide}>
+            <Line
+              x1={`${guessPct}%`}
+              y1={0}
+              x2={`${guessPct}%`}
+              y2={guideHeight}
+              stroke={t.colors.inkFaint}
+              strokeWidth={rv.bandGuideW}
+              strokeDasharray={rv.bandGuideDash}
+            />
+          </Svg>
+          <View
+            style={[
+              styles.dot,
+              { left: `${realPct}%`, transform: [{ translateX: -rv.bandDotSize / 2 }] },
+            ]}
+          />
         </View>
-      </View>
-      <Text style={styles.description}>
-        Your real <Text style={{ color: t.colors.ink }}>{surprise.categoryName}</Text> time lands{' '}
-        <Text style={styles.amberInline}>
-          {band.lowMin}–{band.highMin}m
-        </Text>{' '}
-        80% of the time.
-        {descSuffix}
-      </Text>
-      <View style={styles.bottomRow}>
-        <View style={styles.chip}>
-          <Text style={styles.chipText}>{ratio}× your read</Text>
+
+        <View style={styles.axisRow}>
+          <Text style={styles.axisLabel}>{band.lowMin}m</Text>
+          <Text style={styles.axisLabel}>{band.highMin}m</Text>
         </View>
-        <Text style={styles.logCount}>{loggedCount} logs</Text>
+
+        <Text style={styles.desc}>
+          {'Your real '}
+          <Text style={styles.descInk}>{surprise.categoryName}</Text>
+          {' time lands '}
+          <Text style={styles.descAmber}>
+            {band.lowMin}–{band.highMin}m
+          </Text>
+          {' 80% of the time — it came in at '}
+          <Text style={styles.descAmber}>{surprise.actualMin}m</Text>
+          {`, past your ${surprise.estimateMin}m guess`}
+          {insideRange ? ' but inside your range.' : ', beyond your usual range.'}
+        </Text>
+
+        <View style={styles.bottomRow}>
+          <View style={styles.chip}>
+            <Text style={styles.chipText}>
+              <Text style={styles.chipRatio}>{ratio}×</Text>
+              {' your read'}
+            </Text>
+          </View>
+          <Text style={styles.logCount}>
+            <Text style={styles.logCountNum}>{loggedCount}</Text>
+            {' logs'}
+          </Text>
+        </View>
       </View>
     </Card>
   );
