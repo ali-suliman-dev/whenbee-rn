@@ -68,16 +68,16 @@
   .rcap{position:absolute;top:0;font-size:10px;font-weight:700;color:var(--amberText);white-space:nowrap;transform:translateX(-50%);}
 
   /* ── Card 2 · HISTOGRAM — roomier ── */
-  .hist{position:relative;padding-top:30px;}
-  .bars{display:flex;align-items:flex-end;gap:6px;height:56px;}
-  .bwrap{flex:1;display:flex;align-items:flex-end;height:100%;}
-  .hbar{width:100%;border-radius:3px 3px 0 0;background:var(--nightSoft);}
-  .hbar.hot{background:var(--accent);}
-  .gcaret{position:absolute;top:20px;width:0;height:0;border-left:5px solid transparent;border-right:5px solid transparent;border-top:6px solid var(--inkSoft);transform:translateX(-5px);}
-  .gguide{position:absolute;top:28px;height:58px;border-left:1px dotted var(--inkFaint);transform:translateX(-0.5px);}
-  .gflag{position:absolute;top:0;font-size:10px;font-weight:700;color:var(--inkFaint);white-space:nowrap;transform:translateX(-50%);}
-  .axis{display:flex;justify-content:space-between;margin-top:12px;}
-  .axis span{font-size:10px;color:var(--inkFaint);font-weight:600;}
+  /* real-values range band — only measured numbers, nothing fabricated */
+  .band{position:relative;height:42px;}
+  .bflag{position:absolute;top:0;font-size:10px;font-weight:700;white-space:nowrap;transform:translateX(-50%);}
+  .bflag.guess{color:var(--inkFaint);} .bflag.real{color:var(--amberText);}
+  .bcaret{position:absolute;top:16px;width:0;height:0;border-left:5px solid transparent;border-right:5px solid transparent;border-top:6px solid var(--inkSoft);transform:translateX(-5px);}
+  .btrack{position:absolute;left:0;right:0;top:28px;height:10px;border-radius:var(--rFull);background:var(--surfaceSunken);}
+  .bguide{position:absolute;top:22px;height:16px;border-left:1px dotted var(--inkFaint);transform:translateX(-0.5px);}
+  .bdot{position:absolute;top:26px;width:14px;height:14px;border-radius:50%;background:var(--accent);border:2px solid var(--surface);transform:translateX(-7px);}
+  .baxis{display:flex;justify-content:space-between;margin-top:8px;}
+  .baxis span{font-size:10px;color:var(--inkFaint);font-weight:600;}
 </style>
 </head>
 <body>
@@ -147,21 +147,16 @@
     <div class="card">
       <div class="eb soft">Your biggest surprise</div>
       <div class="heading"><b>Errands</b> — biggest drift this week</div>
-      <div class="hist">
-        <div class="bars">
-          <div class="bwrap"><div class="hbar" style="height:30%"></div></div>
-          <div class="bwrap"><div class="hbar" style="height:26%"></div></div>
-          <div class="bwrap"><div class="hbar" style="height:38%"></div></div>
-          <div class="bwrap"><div class="hbar" style="height:55%"></div></div>
-          <div class="bwrap"><div class="hbar" style="height:82%"></div></div>
-          <div class="bwrap"><div class="hbar hot" style="height:100%"></div></div>
-        </div>
-        <div class="gguide" style="left:14.6%"></div>
-        <div class="gcaret" style="left:14.6%"></div>
-        <div class="gflag" style="left:14.6%"><span class="num">38m</span> guess</div>
-        <div class="axis"><span class="num">32m</span><span class="num">73m</span></div>
+      <div class="band">
+        <div class="bflag guess" style="left:14.6%"><span class="num">38m</span> guess</div>
+        <div class="bcaret" style="left:14.6%"></div>
+        <div class="bflag real" style="left:87.8%"><span class="num">68m</span> real</div>
+        <div class="btrack"></div>
+        <div class="bguide" style="left:14.6%"></div>
+        <div class="bdot" style="left:87.8%"></div>
       </div>
-      <div class="desc">Your real <span class="cat">Errands</span> time piles up near <span class="am num">68m</span> — past your <span class="num">38m</span> guess, inside your <span class="am num">32–73m</span> range.</div>
+      <div class="baxis"><span class="num">32m</span><span class="num">73m</span></div>
+      <div class="desc">Your real <span class="cat">Errands</span> time lands <span class="am num">32–73m</span> 80% of the time — it came in at <span class="am num">68m</span>, past your <span class="num">38m</span> guess but inside your range.</div>
       <div class="bottom"><div class="chip"><span class="t"><span class="num">1.8×</span> your read</span></div><div class="logs"><span class="num">64</span> logs</div></div>
     </div>
 

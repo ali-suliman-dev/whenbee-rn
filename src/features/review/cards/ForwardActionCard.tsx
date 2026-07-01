@@ -31,12 +31,15 @@ export function ForwardActionCard({ action }: Props) {
 
   // Pipe geometry — solid (planned) then dashed honey (top-up) to the goal
   // node, which is inset from the SVG's right edge so it never overhangs the
-  // card.
+  // card. The dash stops at the node's left edge (goalX − goalNodeR) so the
+  // honey node caps the dash rather than sitting on top of it.
   const goalX = rv.railViewW - rv.railGoalInset;
+  const dashEndX = goalX - rv.goalNodeR;
   const recommended = action.recommendedMin > 0 ? action.recommendedMin : action.plannedMin || 1;
   const splitFrac = Math.min(Math.max(action.plannedMin / recommended, 0), 1);
   const splitX = rv.railInsetL + splitFrac * (goalX - rv.railInsetL);
-  const captionLeftPct = ((splitX + goalX) / 2 / rv.railViewW) * 100;
+  // Caption centers over the dashed top-up's midpoint (split → dash end).
+  const captionLeftPct = ((splitX + dashEndX) / 2 / rv.railViewW) * 100;
 
   const styles = StyleSheet.create({
     container: { gap: t.space[3] },
@@ -88,6 +91,7 @@ export function ForwardActionCard({ action }: Props) {
                 {
                   left: `${captionLeftPct}%`,
                   transform: [{ translateX: -captionWidth / 2 }],
+                  opacity: captionWidth > 0 ? 1 : 0,
                 },
               ]}
             >
@@ -112,7 +116,7 @@ export function ForwardActionCard({ action }: Props) {
               <Line
                 x1={splitX}
                 y1={rv.railY}
-                x2={goalX}
+                x2={dashEndX}
                 y2={rv.railY}
                 stroke={t.colors.accent}
                 strokeWidth={rv.pipeStroke}

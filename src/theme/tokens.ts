@@ -620,20 +620,25 @@ export const tokens = {
   },
 
   // Weekly/Monthly Review card visualization geometry (ForwardActionCard rail/pipe
-  // + BiggestSurpriseRitualCard histogram) — kept in one group so neither card
-  // inlines a raw px. Rail: a small SVG viewBox (railViewW×railViewH) draws a
+  // + BiggestSurpriseRitualCard real-values range band) — one group so neither
+  // card inlines a raw px. Rail: a small SVG viewBox (railViewW×railViewH) draws a
   // planned→goal pipe; railInsetL/railGoalInset keep the solid start and the honey
-  // goal node inset from the SVG edges so the goal node never overhangs the card.
-  // Histogram: histTopPad reserves the lane above the bars for the guess flag +
-  // caret; histCaretTop/histGuideTop position the caret and the dotted guess-line
-  // start within that lane (the dotted line's height is derived at render time as
-  // histTopPad + histBarHeight - histGuideTop, so it always reaches the bars'
-  // baseline exactly, whatever the geometry).
+  // goal node inset from the SVG edges so the goal node never overhangs the card;
+  // the dashed honey top-up stops at goalX − goalNodeR so the node caps the dash.
+  // Band: every marker x is computed from the MEASURED guess/real values (nothing
+  // fabricated). Inside a bandHeight-tall relative block: the track sits at
+  // bandTrackTop (height bandTrackH); the ghostly dotted guess guide runs from
+  // bandGuideTop down to the track bottom (bandTrackTop + bandTrackH, derived at
+  // render so it always touches); the honey real-dot (bandDotSize) sits on the
+  // track. bandFallbackBarH sizes the thin-history two-number compare bars.
   reviewViz: {
     railViewW: 296, railViewH: 21, railY: 9, railInsetL: 8, railGoalInset: 10,
     pipeStroke: 3, pipeDash: '2 8', planNodeR: 4.5, planNodeStroke: 2, goalNodeR: 6,
-    histBarHeight: 56, histBarRadius: 3, histCaretW: 5, histCaretH: 6, histDotW: 1,
-    histDotDash: '1 3', histTopPad: 30, histCaretTop: 20, histGuideTop: 28,
+    bandHeight: 42, bandTrackTop: 28, bandTrackH: 10,
+    bandCaretTop: 16, bandCaretW: 5, bandCaretH: 6,
+    bandGuideTop: 22, bandGuideW: 1, bandGuideDash: '1 3',
+    bandDotSize: 14, bandDotTop: 26, bandDotBorder: 2,
+    bandFallbackBarH: 56,
   },
 
   // ── brand illustration palette ──────────────────────────────────────────────

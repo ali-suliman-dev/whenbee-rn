@@ -7,11 +7,12 @@ import { type } from '@/src/theme/typography';
 import type { ReviewBiggestSurprise, ConfidenceBand } from '@/src/domain/types';
 
 // ──────────────────────────────────────────────────────────────────────────────
-// BiggestSurpriseRitualCard — replaces the bare Patterns BiggestSurprise with a
-// ritual-aware version: when there is enough history (≥5 logs) it plots the
-// week's outlier as a small distribution histogram across the user's own 80%
-// confidence band, with a dotted guess marker anchored on the time axis. Falls
-// back to a simple two-bar layout when the band isn't earned yet.
+// BiggestSurpriseRitualCard — a ritual-aware version of the Patterns
+// BiggestSurprise: when there is enough history (≥5 logs) it plots the week's
+// outlier on the user's own 80% confidence band using ONLY measured numbers —
+// the band low/high, the guess (a ghostly dotted marker) and the real value (a
+// solid honey dot on the track). Nothing is fabricated. Falls back to a plain
+// two-number compare when the band isn't earned yet.
 // ──────────────────────────────────────────────────────────────────────────────
 
 interface Props {
@@ -20,23 +21,29 @@ interface Props {
   loggedCount: number;
 }
 
-/** Bin count for the illustrative distribution shape. Not real per-bin log
- *  counts (the domain model only gives us the band + one outlier), so the
- *  shape is a deterministic decay from the bin holding the real value — it
- *  conveys "your time clusters near here", not a literal frequency count. */
-const HIST_BINS = 6;
+/** Minimum separation (in % of the track) between the guess and real FLAG
+ *  labels before they're nudged apart so the text never overlaps. The markers
+ *  themselves (caret, dot, guide) always stay on their true value positions. */
+const FLAG_MIN_GAP_PCT = 18;
+
+const clampPct = (v: number) => Math.min(Math.max(v, 4), 96);
 
 export function BiggestSurpriseRitualCard({ surprise, band, loggedCount }: Props) {
   const t = useTheme();
   const rv = t.reviewViz;
 
-  // The guess flag centers over guessPct — measured on layout, since RN
-  // transforms don't support percentage translateX (see ForwardActionCard's
-  // overflow caption for the same technique). Hoisted above the `!band` early
-  // return so hook order never changes between renders.
-  const [flagWidth, setFlagWidth] = useState(0);
-  const onFlagLayout = useCallback((e: LayoutChangeEvent) => {
-    setFlagWidth(e.nativeEvent.layout.width);
+  // Flag labels are centered on their value via translateX(-width/2). RN
+  // transforms don't take percentages, so each flag is measured on layout and
+  // held at opacity 0 until its width is known (no left-anchored first-frame
+  // flash). Hooks are declared before the `!band` early return so hook order is
+  // stable across renders.
+  const [guessFlagW, setGuessFlagW] = useState(0);
+  const [realFlagW, setRealFlagW] = useState(0);
+  const onGuessFlagLayout = useCallback((e: LayoutChangeEvent) => {
+    setGuessFlagW(e.nativeEvent.layout.width);
+  }, []);
+  const onRealFlagLayout = useCallback((e: LayoutChangeEvent) => {
+    setRealFlagW(e.nativeEvent.layout.width);
   }, []);
 
   const ratio =
@@ -62,49 +69,58 @@ export function BiggestSurpriseRitualCard({ surprise, band, loggedCount }: Props
     chipRatio: { ...(type.numCaption as unknown as TextStyle), color: t.colors.amberText },
     logCount: { ...type.caption, color: t.colors.inkFaint },
     logCountNum: { ...(type.numCaption as unknown as TextStyle), color: t.colors.inkFaint },
-    // Fallback (thin history) layout — a plain two-bar guess/real compare.
+    // Fallback (thin history) — a plain two-number compare. Both numbers are
+    // real (guess vs real), sized in proportion; neutral base, honey on real.
     fallbackRow: { flexDirection: 'row', gap: t.space[2] },
     fallbackBar: {
       flex: 1,
-      height: rv.histBarHeight,
+      height: rv.bandFallbackBarH,
       borderRadius: t.radii.sm,
       justifyContent: 'center',
       alignItems: 'center',
     },
-    fallbackGuessBar: { backgroundColor: t.colors.nightSoft },
+    fallbackGuessBar: { backgroundColor: t.colors.surfaceSunken },
     fallbackRealBar: { backgroundColor: t.colors.accent },
     fallbackGuessLabel: { ...type.caption, color: t.colors.inkSoft },
     fallbackRealLabel: { ...type.captionBold, color: t.colors.onAmber },
-    histBlock: { paddingTop: rv.histTopPad, position: 'relative' },
-    flag: { ...(type.numMicro as unknown as TextStyle), position: 'absolute', top: 0, color: t.colors.inkFaint },
+    // Real-values range band
+    band: { height: rv.bandHeight, position: 'relative' },
+    flag: { ...(type.numMicro as unknown as TextStyle), position: 'absolute', top: 0 },
+    flagGuess: { color: t.colors.inkFaint },
+    flagReal: { color: t.colors.amberText },
     caret: {
       position: 'absolute',
-      top: rv.histCaretTop,
+      top: rv.bandCaretTop,
       width: 0,
       height: 0,
-      borderLeftWidth: rv.histCaretW,
-      borderRightWidth: rv.histCaretW,
-      borderTopWidth: rv.histCaretH,
+      borderLeftWidth: rv.bandCaretW,
+      borderRightWidth: rv.bandCaretW,
+      borderTopWidth: rv.bandCaretH,
       borderLeftColor: 'transparent',
       borderRightColor: 'transparent',
       borderTopColor: t.colors.inkSoft,
     },
-    guide: { position: 'absolute', top: rv.histGuideTop, left: 0, right: 0 },
-    barsRow: {
-      flexDirection: 'row',
-      alignItems: 'flex-end',
-      gap: t.space[1.5],
-      height: rv.histBarHeight,
+    guide: { position: 'absolute', top: rv.bandGuideTop, left: 0, right: 0 },
+    track: {
+      position: 'absolute',
+      left: 0,
+      right: 0,
+      top: rv.bandTrackTop,
+      height: rv.bandTrackH,
+      borderRadius: t.radii.full,
+      backgroundColor: t.colors.surfaceSunken,
     },
-    barWrap: { flex: 1 },
-    bar: {
-      width: '100%',
-      borderTopLeftRadius: rv.histBarRadius,
-      borderTopRightRadius: rv.histBarRadius,
-      backgroundColor: t.colors.nightSoft,
+    dot: {
+      position: 'absolute',
+      top: rv.bandDotTop,
+      width: rv.bandDotSize,
+      height: rv.bandDotSize,
+      borderRadius: t.radii.full,
+      backgroundColor: t.colors.accent,
+      borderWidth: rv.bandDotBorder,
+      borderColor: t.colors.surface,
     },
-    barHot: { backgroundColor: t.colors.accent },
-    axisRow: { flexDirection: 'row', justifyContent: 'space-between', marginTop: t.space[3] },
+    axisRow: { flexDirection: 'row', justifyContent: 'space-between' },
     axisLabel: { ...(type.numMicro as unknown as TextStyle), color: t.colors.inkFaint },
   });
 
@@ -152,19 +168,23 @@ export function BiggestSurpriseRitualCard({ surprise, band, loggedCount }: Props
   }
 
   const range = band.highMin - band.lowMin;
-  const clampPct = (v: number) => Math.min(Math.max(v, 4), 96);
   const guessPct = range > 0 ? clampPct(((surprise.estimateMin - band.lowMin) / range) * 100) : 50;
-  const realPct =
-    range > 0 ? Math.min(Math.max(((surprise.actualMin - band.lowMin) / range) * 100, 0), 100) : 50;
-  const hotBinIndex = Math.min(Math.max(Math.floor((realPct / 100) * HIST_BINS), 0), HIST_BINS - 1);
+  const realPct = range > 0 ? clampPct(((surprise.actualMin - band.lowMin) / range) * 100) : 50;
 
-  const bins = Array.from({ length: HIST_BINS }, (_, i) => {
-    const distance = Math.abs(i - hotBinIndex);
-    const heightFrac = Math.max(0.22, 1 - distance * 0.22);
-    return { isHot: i === hotBinIndex, height: heightFrac * rv.histBarHeight };
-  });
+  // Flag anchors follow the true values, nudged apart only when the labels
+  // would collide. The markers (caret/dot/guide) keep the true pcts.
+  let guessFlagPct = guessPct;
+  let realFlagPct = realPct;
+  if (Math.abs(realPct - guessPct) < FLAG_MIN_GAP_PCT) {
+    const mid = (guessPct + realPct) / 2;
+    const half = FLAG_MIN_GAP_PCT / 2;
+    const guessIsLeft = guessPct <= realPct;
+    guessFlagPct = clampPct(mid + (guessIsLeft ? -half : half));
+    realFlagPct = clampPct(mid + (guessIsLeft ? half : -half));
+  }
 
-  const guideHeight = rv.histTopPad + rv.histBarHeight - rv.histGuideTop;
+  const guideHeight = rv.bandTrackTop + rv.bandTrackH - rv.bandGuideTop;
+  const insideRange = surprise.actualMin >= band.lowMin && surprise.actualMin <= band.highMin;
 
   return (
     <Card tone="flat">
@@ -177,22 +197,42 @@ export function BiggestSurpriseRitualCard({ surprise, band, loggedCount }: Props
           </Text>
         </View>
 
-        <View style={styles.histBlock}>
+        <View style={styles.band}>
           <Text
-            onLayout={onFlagLayout}
+            onLayout={onGuessFlagLayout}
             style={[
               styles.flag,
-              { left: `${guessPct}%`, transform: [{ translateX: -flagWidth / 2 }] },
+              styles.flagGuess,
+              {
+                left: `${guessFlagPct}%`,
+                transform: [{ translateX: -guessFlagW / 2 }],
+                opacity: guessFlagW > 0 ? 1 : 0,
+              },
             ]}
           >
             {surprise.estimateMin}m guess
           </Text>
+          <Text
+            onLayout={onRealFlagLayout}
+            style={[
+              styles.flag,
+              styles.flagReal,
+              {
+                left: `${realFlagPct}%`,
+                transform: [{ translateX: -realFlagW / 2 }],
+                opacity: realFlagW > 0 ? 1 : 0,
+              },
+            ]}
+          >
+            {surprise.actualMin}m real
+          </Text>
           <View
             style={[
               styles.caret,
-              { left: `${guessPct}%`, transform: [{ translateX: -rv.histCaretW }] },
+              { left: `${guessPct}%`, transform: [{ translateX: -rv.bandCaretW }] },
             ]}
           />
+          <View style={styles.track} />
           <Svg width="100%" height={guideHeight} style={styles.guide}>
             <Line
               x1={`${guessPct}%`}
@@ -200,35 +240,34 @@ export function BiggestSurpriseRitualCard({ surprise, band, loggedCount }: Props
               x2={`${guessPct}%`}
               y2={guideHeight}
               stroke={t.colors.inkFaint}
-              strokeWidth={rv.histDotW}
-              strokeDasharray={rv.histDotDash}
+              strokeWidth={rv.bandGuideW}
+              strokeDasharray={rv.bandGuideDash}
             />
           </Svg>
-          <View style={styles.barsRow}>
-            {bins.map((bin, i) => (
-              <View key={i} style={styles.barWrap}>
-                <View style={[styles.bar, bin.isHot && styles.barHot, { height: bin.height }]} />
-              </View>
-            ))}
-          </View>
-          <View style={styles.axisRow}>
-            <Text style={styles.axisLabel}>{band.lowMin}m</Text>
-            <Text style={styles.axisLabel}>{band.highMin}m</Text>
-          </View>
+          <View
+            style={[
+              styles.dot,
+              { left: `${realPct}%`, transform: [{ translateX: -rv.bandDotSize / 2 }] },
+            ]}
+          />
+        </View>
+
+        <View style={styles.axisRow}>
+          <Text style={styles.axisLabel}>{band.lowMin}m</Text>
+          <Text style={styles.axisLabel}>{band.highMin}m</Text>
         </View>
 
         <Text style={styles.desc}>
           {'Your real '}
           <Text style={styles.descInk}>{surprise.categoryName}</Text>
-          {' time piles up near '}
-          <Text style={styles.descAmber}>{surprise.actualMin}m</Text>
-          {' — past your '}
-          {surprise.estimateMin}
-          {'m guess, inside your '}
+          {' time lands '}
           <Text style={styles.descAmber}>
             {band.lowMin}–{band.highMin}m
           </Text>
-          {' range.'}
+          {' 80% of the time — it came in at '}
+          <Text style={styles.descAmber}>{surprise.actualMin}m</Text>
+          {`, past your ${surprise.estimateMin}m guess`}
+          {insideRange ? ' but inside your range.' : ', beyond your usual range.'}
         </Text>
 
         <View style={styles.bottomRow}>
