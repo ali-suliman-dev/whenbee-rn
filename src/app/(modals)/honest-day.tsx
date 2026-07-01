@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { ScrollView, View } from 'react-native';
 import { router } from 'expo-router';
+import { useTranslation } from 'react-i18next';
 import { Screen } from '@/src/components/Screen';
 import { ScreenHeader } from '@/src/components/ScreenHeader';
 import { AppText } from '@/src/components/AppText';
@@ -20,12 +21,13 @@ import { useHonestDay } from '@/src/features/calendar/useHonestDay';
 function NotPro() {
   // Defensive fallback only — the Whenbee CTA already routes non-Pro users to the
   // paywall. If they land here anyway, send them on rather than show the feature.
+  const { t: tr } = useTranslation('calendar');
   return (
     <Screen>
       <View style={{ paddingTop: 24, gap: 16 }}>
-        <AppText variant="title">Padding your calendar is a Pro feature</AppText>
+        <AppText variant="title">{tr('notPro.title')}</AppText>
         <AppButton
-          label="See what Pro unlocks"
+          label={tr('notPro.cta')}
           variant="amber"
           onPress={() =>
             router.replace({ pathname: '/(modals)/paywall', params: { trigger: 'make_day_honest' } })
@@ -38,6 +40,7 @@ function NotPro() {
 
 function HonestDayContent() {
   const t = useTheme();
+  const { t: tr } = useTranslation('calendar');
   const { status, result, apply } = useHonestDay();
   const [applying, setApplying] = useState(false);
 
@@ -57,32 +60,21 @@ function HonestDayContent() {
         contentContainerStyle={{ gap: t.space[5], paddingTop: t.space[4], paddingBottom: t.space[12] }}
         showsVerticalScrollIndicator={false}
       >
-        <ScreenHeader
-          title="Pad my calendar"
-          subtitle="Your real buffers, mapped onto today. Nothing changes until you tap apply."
-        />
+        <ScreenHeader title={tr('screen.title')} subtitle={tr('screen.subtitle')} />
 
-        {status === 'loading' ? (
-          <AppText variant="body">Reading today&apos;s plan…</AppText>
-        ) : null}
+        {status === 'loading' ? <AppText variant="body">{tr('screen.loading')}</AppText> : null}
 
         {status === 'denied' ? (
           <View style={{ gap: t.space[4] }}>
-            <AppText variant="body">
-              Whenbee needs calendar access to pad your calendar. You can turn it on in Settings
-              whenever you&apos;re ready.
-            </AppText>
-            <AppButton label="Maybe later" variant="ghost" onPress={() => router.back()} />
+            <AppText variant="body">{tr('screen.denied')}</AppText>
+            <AppButton label={tr('screen.maybeLater')} variant="ghost" onPress={() => router.back()} />
           </View>
         ) : null}
 
         {status === 'empty' ? (
           <View style={{ gap: t.space[4] }}>
-            <AppText variant="body">
-              Today&apos;s calendar is clear. Add a few events and come back — the padding will be
-              waiting.
-            </AppText>
-            <AppButton label="Done" variant="ghost" onPress={() => router.back()} />
+            <AppText variant="body">{tr('screen.empty')}</AppText>
+            <AppButton label={tr('screen.done')} variant="ghost" onPress={() => router.back()} />
           </View>
         ) : null}
 
