@@ -26,6 +26,8 @@ import Animated, {
 import { haptics } from '@/src/lib/haptics';
 import { useTheme, type Theme } from '@/src/theme/useTheme';
 
+import { useLocalizedFormat } from '@/src/i18n/useLocalizedFormat';
+
 import { useCalendarStripData, WEEK_STARTS_ON, type CalendarStripData } from './useCalendarStripData';
 import { WeekPager } from './WeekPager';
 import { dayCells, formatA11yLabel, weekFor, type DayCell } from './weekDays';
@@ -45,6 +47,7 @@ const LensCell = memo(function LensCell({
   cell, col, cellWidth, selCol, reducedMotion, onPress,
 }: CellProps) {
   const t = useTheme();
+  const fmt = useLocalizedFormat();
   const L = t.strip.lens;
   const press = useSharedValue(1);
 
@@ -102,7 +105,7 @@ const LensCell = memo(function LensCell({
       onPressIn={onPressIn}
       onPressOut={onPressOut}
       accessibilityRole="button"
-      accessibilityLabel={formatA11yLabel(cell.key)}
+      accessibilityLabel={formatA11yLabel(cell.key, fmt.fullDate)}
       accessibilityState={{ selected: cell.isSelected }}
       style={{ width: cellWidth }}
     >

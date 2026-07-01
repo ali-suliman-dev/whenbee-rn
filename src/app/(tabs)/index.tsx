@@ -46,14 +46,14 @@ import { useEntitlement } from '@/src/features/paywall/useEntitlement';
 import { useScheduledRoutines } from '@/src/features/today/useScheduledRoutines';
 import { ScheduledRoutineBlock } from '@/src/features/today/ScheduledRoutineBlock';
 import { useDayPlan } from '@/src/features/today/useDayPlan';
+import { useLocalizedFormat } from '@/src/i18n/useLocalizedFormat';
 
 // Date label for a day-key, e.g. "Fri · Jun 12" — the day + date, no clock.
-function dateLabel(key: string): string {
+// `fmt` comes from `useLocalizedFormat()` in the caller — locale-aware, hoisted.
+function dateLabel(key: string, fmt: ReturnType<typeof useLocalizedFormat>): string {
   const [y, m, d] = key.split('-').map(Number) as [number, number, number];
   const date = new Date(y, m - 1, d);
-  const day = date.toLocaleDateString('en-US', { weekday: 'short' });
-  const monthDay = date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
-  return `${day} · ${monthDay}`;
+  return `${fmt.weekdayShort(date)} · ${fmt.monthDay(date)}`;
 }
 
 /** Full weekday name for the header title when a non-today day is selected. */
@@ -168,7 +168,8 @@ export default function Today() {
   // Only shown on today/future days (past days use DayRecapCard).
   const { blocks: scheduledRoutineBlocks } = useScheduledRoutines(selectedDate);
   const headerTitle = selectedDate === today ? 'Today' : weekdayName(selectedDate);
-  const headerSubtitle = dateLabel(selectedDate);
+  const fmt = useLocalizedFormat();
+  const headerSubtitle = dateLabel(selectedDate, fmt);
 
   // Reset to List whenever the selected day changes — prevents being stranded
   // in a stale Timeline from a previous day's plan.

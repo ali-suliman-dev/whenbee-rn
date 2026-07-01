@@ -3,5 +3,6 @@
   "cancel": "Cancel",
   "done": "Done",
   "edit": "Edit",
-  "delete": "Delete"
+  "delete": "Delete",
+  "duration": { "h": "{{count}}h", "m": "{{count}}m" }
 }

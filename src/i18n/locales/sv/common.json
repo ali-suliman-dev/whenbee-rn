@@ -3,5 +3,6 @@
   "cancel": "Avbryt",
   "done": "Klar",
   "edit": "Redigera",
-  "delete": "Ta bort"
+  "delete": "Ta bort",
+  "duration": { "h": "{{count}} tim", "m": "{{count}} min" }
 }

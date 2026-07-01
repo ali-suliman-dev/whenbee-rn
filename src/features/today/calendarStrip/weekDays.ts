@@ -33,11 +33,16 @@ const WEEKDAY_LABELS: readonly string[] = [
 
 // ─── formatA11yLabel ───────────────────────────────────────────────────────────
 
-/** Formats a day-key as "Weekday Month DD" for a11y labels (e.g. "Wednesday June 24"). */
-export function formatA11yLabel(key: string): string {
+/**
+ * Formats a day-key as "Weekday Month DD" for a11y labels (e.g. "Wednesday June 24").
+ * `fullDate` is a locale-aware formatter (see `makeFormatters`/`useLocalizedFormat`
+ * in `src/i18n`) threaded in from the calling component — this file stays pure
+ * and never imports i18n directly.
+ */
+export function formatA11yLabel(key: string, fullDate: (d: Date) => string): string {
   const [y, m, d] = key.split('-').map(Number) as [number, number, number];
   const date = new Date(y, m - 1, d);
-  return date.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' });
+  return fullDate(date);
 }
 
 // ─── weekFor ──────────────────────────────────────────────────────────────────

@@ -37,7 +37,9 @@ import { useDayTasksStore } from '@/src/stores/dayTasksStore';
 import { useEntitlement } from '@/src/features/paywall/useEntitlement';
 import { useTheme } from '@/src/theme/useTheme';
 import { AppText } from '@/src/components/AppText';
-import { formatClock, formatClockMeridiem, fmtHm } from '@/src/lib/time';
+import { useTranslation } from 'react-i18next';
+import { formatClock, formatClockMeridiem } from '@/src/lib/time';
+import { formatDuration } from '@/src/i18n/formatDuration';
 import type { PlanTimelineItem, PlanVerdict } from '@/src/domain/types';
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -117,7 +119,9 @@ function RowContent({
   focusBandActive: boolean;
 }) {
   const t = useTheme();
+  const { t: translate } = useTranslation();
   const durationMin = Math.round((item.endAt - item.startAt) / 60_000);
+  const durationLabel = formatDuration(durationMin, translate);
 
   // Shared geometry so task + event clocks line up to the same x.
   const clockWidth = t.space[10]; // fits "21:00" at mono xs without clipping
@@ -191,7 +195,7 @@ function RowContent({
         <AppText style={labelStyle} numberOfLines={1}>
           {item.label}
         </AppText>
-        <AppText style={tagStyle}>{fmtHm(durationMin)}</AppText>
+        <AppText style={tagStyle}>{durationLabel}</AppText>
       </View>
     );
   }
@@ -231,13 +235,13 @@ function RowContent({
       style={row}
       accessible
       accessibilityRole="text"
-      accessibilityLabel={`${item.label}, starts ${formatClock(item.startAt)}, ${fmtHm(durationMin)}`}
+      accessibilityLabel={`${item.label}, starts ${formatClock(item.startAt)}, ${durationLabel}`}
     >
       <AppText style={clockStyle}>{formatClock(item.startAt)}</AppText>
       <AppText style={labelStyle} numberOfLines={2}>
         {item.label}
       </AppText>
-      <AppText style={durationStyle}>{fmtHm(durationMin)}</AppText>
+      <AppText style={durationStyle}>{durationLabel}</AppText>
     </View>
   );
 }

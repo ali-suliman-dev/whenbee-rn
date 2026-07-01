@@ -22,6 +22,8 @@ import Animated, {
 import { haptics } from '@/src/lib/haptics';
 import { useTheme, type Theme } from '@/src/theme/useTheme';
 
+import { useLocalizedFormat } from '@/src/i18n/useLocalizedFormat';
+
 import { useCalendarStripData, WEEK_STARTS_ON, type CalendarStripData } from './useCalendarStripData';
 import { WeekPager } from './WeekPager';
 import { dayCells, formatA11yLabel, weekFor, type DayCell } from './weekDays';
@@ -41,6 +43,7 @@ const SegmentCell = memo(function SegmentCell({
   cell, col, cellWidth, selCol, reducedMotion, onPress,
 }: CellProps) {
   const t = useTheme();
+  const fmt = useLocalizedFormat();
   const seg = t.strip.segment;
   const press = useSharedValue(1);
 
@@ -92,7 +95,7 @@ const SegmentCell = memo(function SegmentCell({
       onPressIn={onPressIn}
       onPressOut={onPressOut}
       accessibilityRole="button"
-      accessibilityLabel={formatA11yLabel(cell.key)}
+      accessibilityLabel={formatA11yLabel(cell.key, fmt.fullDate)}
       accessibilityState={{ selected: cell.isSelected }}
       style={{ width: cellWidth }}
     >

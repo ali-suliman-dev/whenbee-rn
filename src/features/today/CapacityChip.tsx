@@ -5,9 +5,10 @@ import Animated, { useReducedMotion, withTiming, useSharedValue, useAnimatedStyl
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '@/src/theme/useTheme';
 import { type } from '@/src/theme/typography';
+import { useTranslation } from 'react-i18next';
 import type { DayCapacityResult } from '@/src/features/today/useDayCapacity';
 import { useEntitlement } from '@/src/features/paywall/useEntitlement';
-import { fmtHm } from '@/src/lib/time';
+import { formatDuration } from '@/src/i18n/formatDuration';
 
 // ──────────────────────────────────────────────────────────────────────────────
 // CapacityChip — the quiet "Honest Day" capacity read on Today.
@@ -40,6 +41,7 @@ export interface CapacityChipProps {
 
 export function CapacityChip({ weekdayLabel = 'Today', cap }: CapacityChipProps): React.ReactElement | null {
   const t = useTheme();
+  const { t: translate } = useTranslation();
   const reduced = useReducedMotion();
 
   // Pure presentational — caller owns the useDayCapacity() call.
@@ -306,7 +308,7 @@ export function CapacityChip({ weekdayLabel = 'Today', cap }: CapacityChipProps)
         <Pressable
           testID="capacity-chip-collapsed"
           accessibilityRole="button"
-          accessibilityLabel={`Honest day ${fmtHm(taskMin + eventMin)} ${verdictSuffix()}. Tap to ${expanded ? 'collapse' : 'expand'}.`}
+          accessibilityLabel={`Honest day ${formatDuration(taskMin + eventMin, translate)} ${verdictSuffix()}. Tap to ${expanded ? 'collapse' : 'expand'}.`}
           accessibilityState={{ expanded }}
           onPress={handleToggle}
           style={{ flex: 1 }}
@@ -319,7 +321,7 @@ export function CapacityChip({ weekdayLabel = 'Today', cap }: CapacityChipProps)
 
             {/* "Honest day Xh Ym" */}
             <Text style={chipLabel} numberOfLines={1}>
-              Honest day {fmtHm(taskMin + eventMin)}{' '}
+              Honest day {formatDuration(taskMin + eventMin, translate)}{' '}
               <Text style={verdictSuffixStyle}>{verdictSuffix()}</Text>
             </Text>
 
@@ -360,12 +362,12 @@ export function CapacityChip({ weekdayLabel = 'Today', cap }: CapacityChipProps)
           <View style={legendRow}>
             <View style={legendItem}>
               <View style={legendDot(t.colors.primary)} />
-              <Text style={legendText}>tasks {fmtHm(taskMin)}</Text>
+              <Text style={legendText}>tasks {formatDuration(taskMin, translate)}</Text>
             </View>
             {eventMin > 0 && (
               <View style={legendItem}>
                 <View style={legendDot(t.colors.accent)} />
-                <Text style={legendText}>meetings {fmtHm(eventMin)}</Text>
+                <Text style={legendText}>meetings {formatDuration(eventMin, translate)}</Text>
               </View>
             )}
           </View>
@@ -389,7 +391,7 @@ export function CapacityChip({ weekdayLabel = 'Today', cap }: CapacityChipProps)
           <View style={footerDivider} />
           <View style={toolbarRow}>
             <Text style={openLabel}>
-              <Text style={openValue}>{fmtHm(openMin)}</Text> open
+              <Text style={openValue}>{formatDuration(openMin, translate)}</Text> open
             </Text>
 
             <Pressable
