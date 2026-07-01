@@ -84,14 +84,19 @@ test('renders null after the window end time has passed', () => {
 test('Pro: renders the times and "hard tasks" copy', () => {
   mockIsPro = true;
   jest.mocked(useLearnedFocusWindow).mockReturnValue(PERSONAL_WINDOW);
-  const { getByText, queryByText } = render(
+  const { toJSON, queryByText } = render(
     <TodayFocusHook nowMs={NOW_BEFORE_WINDOW_END} />,
   );
-  // The insight text must include the time range
-  expect(getByText(/9:00am/i)).toBeTruthy();
-  expect(getByText(/11:00am/i)).toBeTruthy();
+  // Copy splits across nested <AppText> nodes (lead / range / suffix), so assert on
+  // the flattened tree. formatWindowRange collapses same-meridiem → "9:00 – 11:00 am".
+  const json = JSON.stringify(toJSON());
+  expect(json).toContain('Sharpest');
+  expect(json).toContain('9:00');
+  expect(json).toContain('11:00');
   // Must include "hard tasks" — regression for the render gate
-  expect(getByText(/hard tasks/i)).toBeTruthy();
+  expect(json).toContain('hard tasks');
+  // Single collapsed meridiem — the old per-bound "13:30pm" bug is gone
+  expect(json).not.toMatch(/\d{1,2}:\d{2}(am|pm)/i);
   // Must NOT show the Pro pill (already Pro)
   expect(queryByText(/\bPro\b/)).toBeNull();
 });
