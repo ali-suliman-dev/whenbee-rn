@@ -12,6 +12,19 @@ expect.extend(matchers);
 // `expo-localization` import) against the REAL module — permanently poisoning
 // any test that later mocks `expo-localization` (see detectLanguage.test.ts).
 // A lazy require resolves after the test file's mocks are already registered.
+// expo-localization's native module import (requireNativeModule) runs at
+// import time and throws in suites where the native-module shim is disturbed
+// (e.g. src/services/__tests__/notifications, liveActivity) — even though
+// those suites never touch i18n themselves, the global `initI18n()` beforeAll
+// below pulls detectLanguage.ts -> expo-localization eagerly. Mock it globally
+// so no suite ever hits the native binding. Per-file mocks (e.g.
+// detectLanguage.test.ts) still take effect for their own file — jest applies
+// the closest/most specific mock.
+jest.mock('expo-localization', () => ({
+  getLocales: () => [{ languageCode: 'en', languageTag: 'en-US', regionCode: 'US' }],
+  getCalendars: () => [{ uses24hourClock: false }],
+}));
+
 beforeAll(async () => {
   const { initI18n } = require('./src/i18n');
   await initI18n();
