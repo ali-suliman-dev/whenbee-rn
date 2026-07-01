@@ -118,6 +118,42 @@ describe('guessCategory with context', () => {
   });
 });
 
+describe('guessCategory locale-aware built-in tier (B5)', () => {
+  it('defaults to English when lang is omitted (unchanged behavior)', () => {
+    expect(guessCategory('reply to that email')).toBe('admin');
+  });
+
+  it('guesses the same built-in category from a Swedish title as its English equivalent', () => {
+    expect(guessCategory('reply to that email', { lang: 'en' })).toBe('admin');
+    expect(guessCategory('svara på det mejlet', { lang: 'sv' })).toBe('admin');
+  });
+
+  it('maps Swedish cooking text to cooking, matching the English guess', () => {
+    expect(guessCategory('cook dinner')).toBe('cooking');
+    expect(guessCategory('laga middag ikväll', { lang: 'sv' })).toBe('cooking');
+  });
+
+  it('maps Swedish cleaning text to cleaning, matching the English guess', () => {
+    expect(guessCategory('clean the kitchen')).toBe('cleaning');
+    expect(guessCategory('städa köket', { lang: 'sv' })).toBe('cleaning');
+  });
+
+  it('maps Swedish grooming text to getting_ready', () => {
+    expect(guessCategory('duscha och klä på sig', { lang: 'sv' })).toBe('getting_ready');
+  });
+
+  it('does not apply the English table to Swedish text', () => {
+    // "städa köket" contains no English built-in keyword stems, so without a
+    // Swedish table it would incorrectly return null instead of 'cleaning'.
+    expect(guessCategory('städa köket', { lang: 'en' })).toBeNull();
+  });
+
+  it('skips the built-in tier entirely for a locale with no table (never a wrong-language guess)', () => {
+    expect(guessCategory('laga middag ikväll', { lang: 'de' })).toBeNull();
+    expect(guessCategory('reply to that email', { lang: 'de' })).toBeNull();
+  });
+});
+
 describe('bankAssociation', () => {
   it('increments the count for each content stem under the chosen category', () => {
     const map = bankAssociation({}, 'fold the laundry', 'cleaning', 1);
