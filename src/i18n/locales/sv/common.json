@@ -4,5 +4,7 @@
   "done": "Klar",
   "edit": "Redigera",
   "delete": "Ta bort",
-  "duration": { "h": "{{count}} tim", "m": "{{count}} min" }
+  "duration": { "h": "{{count}} tim", "m": "{{count}} min" },
+  "toTier": " till {{tier}}",
+  "fullyRipened": "Helt mogen"
 }

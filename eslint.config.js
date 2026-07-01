@@ -1,6 +1,7 @@
 const expo = require('eslint-config-expo/flat');
 const prettier = require('eslint-config-prettier');
 const i18next = require('eslint-plugin-i18next');
+const i18nextDefaults = require('eslint-plugin-i18next/lib/options/defaults');
 
 module.exports = [
   ...expo,
@@ -31,24 +32,40 @@ module.exports = [
     },
   },
   {
-    // i18n regression guard (A3): wired for the string-extraction sweep (A4).
-    // Rule is `off` here on purpose — the repo runs `eslint . --max-warnings=0`,
-    // and turning this to `warn`/`error` globally today floods ~427 warnings
-    // across every not-yet-extracted screen/component, which would fail CI on
-    // untouched code. A4 flips this to `warn` (then `error`) PER SURFACE as each
-    // directory's strings are extracted to `t(...)` calls — e.g. narrow `files`
-    // to `src/features/today/**/*.tsx` once Today is done, and so on, until the
-    // full `src/app/**`, `src/components/**`, `src/features/**` scope below is
-    // clean, at which point this block's severity can go straight to `warn`.
+    // i18n regression guard (A4): every remaining hardcoded JSX-text literal in
+    // app/components/features has been extracted to `t(...)` calls (21 i18next
+    // namespaces, en+sv parity — see src/i18n/locales/). The rule is now `error`
+    // tree-wide so a future PR can't silently reintroduce a hardcoded string.
+    //
+    // `words.exclude` starts from the plugin's own defaults (punctuation-only,
+    // ALL_CAPS/_-only, html entities, emoji-only) and adds a short, deliberate
+    // allowlist of genuinely non-translatable strings found in the tree-wide
+    // census: the brand name ("Whenbee" is never translated — see BrandLockup),
+    // decorative glyphs used as pips/marks (✦ ⬡ ✓), and short unit/pill tokens
+    // rendered next to numbers (`m` minutes suffix, `now` pill, the `m →`
+    // guess-vs-honest arrow in report rows). These are formatting, not copy.
+    //
+    // Known-minor i18n gap (flagged for final review, not fixed here): the `m`
+    // minute suffix and similar short unit/pill words are ignored at the lint
+    // level rather than localized — acceptable for now, revisit before ship.
     files: ['src/app/**/*.tsx', 'src/components/**/*.tsx', 'src/features/**/*.tsx'],
+    ignores: ['**/__tests__/**', '**/*.test.tsx'],
     plugins: { i18next },
     rules: {
       'i18next/no-literal-string': [
-        'off',
+        'error',
         {
           mode: 'jsx-text-only',
           'should-validate-template': false,
           callees: { exclude: ['t', 'i18n', 'require', 'useTheme'] },
+          words: {
+            exclude: [
+              ...i18nextDefaults.words.exclude,
+              'Whenbee',
+              '(?:✦|⬡|✓)',
+              '(?:m\\s*→?|now|x)',
+            ],
+          },
         },
       ],
     },

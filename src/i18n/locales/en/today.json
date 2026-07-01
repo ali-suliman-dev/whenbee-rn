@@ -215,5 +215,16 @@
   },
   "headerRing": {
     "a11y": "Whenbee, honey tier {{tier}}. Tap to open your honeycomb."
+  },
+  "postStopCapture": {
+    "headline": "What did you work on?",
+    "subline": "Sort it so it sharpens your estimates.",
+    "taskNameLabel": "Task name (optional)",
+    "categoryLabel": "Category",
+    "savingHint": "Saving teaches your honest pace.",
+    "skipForNow": "Skip for now"
+  },
+  "quickTaskChips": {
+    "tapToStartAgain": "Tap to start again"
   }
 }

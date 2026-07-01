@@ -4,5 +4,7 @@
   "done": "Done",
   "edit": "Edit",
   "delete": "Delete",
-  "duration": { "h": "{{count}}h", "m": "{{count}}m" }
+  "duration": { "h": "{{count}}h", "m": "{{count}}m" },
+  "toTier": " to {{tier}}",
+  "fullyRipened": "Fully ripened"
 }

@@ -215,5 +215,16 @@
   },
   "headerRing": {
     "a11y": "Whenbee, honungsnivå {{tier}}. Tryck för att öppna din honungskaka."
+  },
+  "postStopCapture": {
+    "headline": "Vad jobbade du med?",
+    "subline": "Sortera in det så skärper det dina uppskattningar.",
+    "taskNameLabel": "Uppgiftsnamn (valfritt)",
+    "categoryLabel": "Kategori",
+    "savingHint": "Att spara lär appen ditt ärliga tempo.",
+    "skipForNow": "Hoppa över för nu"
+  },
+  "quickTaskChips": {
+    "tapToStartAgain": "Tryck för att starta igen"
   }
 }
