@@ -3,6 +3,7 @@
 // and degrades to a no-op session so callers never crash.
 
 import { requireOptionalNativeModule } from 'expo';
+import { Platform } from 'react-native';
 import { isExpoGo } from '@/src/lib/isExpoGo';
 import type {
   ExpoSpeechRecognitionModule as ExpoSpeechRecognitionModuleValue,
@@ -50,7 +51,40 @@ export const requestSpeechPermission = async (): Promise<boolean> => {
   return result.granted;
 };
 
-export const startSpeech = (handlers: SpeechHandlers): SpeechSession => {
+export const speechPlatform = (): 'ios' | 'android' | 'unsupported' => {
+  if (isExpoGo || !ExpoSpeechRecognitionModule) return 'unsupported';
+  return Platform.OS === 'ios' ? 'ios' : Platform.OS === 'android' ? 'android' : 'unsupported';
+};
+
+export interface SupportedSpeechLocales {
+  locales: string[];
+  installedLocales: string[];
+}
+
+export const getSupportedSpeechLocales = async (): Promise<SupportedSpeechLocales> => {
+  if (isExpoGo || !ExpoSpeechRecognitionModule) return { locales: [], installedLocales: [] };
+  try {
+    const r = await ExpoSpeechRecognitionModule.getSupportedLocales({});
+    return { locales: r.locales ?? [], installedLocales: r.installedLocales ?? [] };
+  } catch {
+    return { locales: [], installedLocales: [] };
+  }
+};
+
+export const downloadOfflineModel = async (locale: string): Promise<boolean> => {
+  if (isExpoGo || !ExpoSpeechRecognitionModule) return false;
+  try {
+    const r = await ExpoSpeechRecognitionModule.androidTriggerOfflineModelDownload({ locale });
+    return r.status === 'download_success' || r.status === 'opened_dialog';
+  } catch {
+    return false;
+  }
+};
+
+export const startSpeech = (
+  handlers: SpeechHandlers,
+  opts: { lang: string; requiresOnDevice: boolean },
+): SpeechSession => {
   if (isExpoGo || !ExpoSpeechRecognitionModule) {
     handlers.onError('expo-go-unsupported');
     return NOOP_SESSION;
@@ -75,9 +109,9 @@ export const startSpeech = (handlers: SpeechHandlers): SpeechSession => {
   ];
 
   speech.start({
-    lang: 'en-US',
+    lang: opts.lang,
     interimResults: true,
-    requiresOnDeviceRecognition: true,
+    requiresOnDeviceRecognition: opts.requiresOnDevice,
     addsPunctuation: true,
     continuous: false,
   });

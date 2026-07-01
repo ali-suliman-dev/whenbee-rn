@@ -46,22 +46,26 @@ export const useVoiceCapture = (onDraft: (d: ParsedTaskDraft) => void): VoiceCap
     }
     setPartial('');
     setStatus('listening');
-    sessionRef.current = startSpeech({
-      onPartial: setPartial,
-      onFinal: (text) => {
-        sessionRef.current?.stop();
-        sessionRef.current = null;
-        setPartial('');
-        setStatus('idle');
-        void structureSpokenTask(text).then((draft) => {
-          if (draft.title.length > 0) onDraft(draft);
-        });
+    // TODO(B2): resolve capability + locale
+    sessionRef.current = startSpeech(
+      {
+        onPartial: setPartial,
+        onFinal: (text) => {
+          sessionRef.current?.stop();
+          sessionRef.current = null;
+          setPartial('');
+          setStatus('idle');
+          void structureSpokenTask(text).then((draft) => {
+            if (draft.title.length > 0) onDraft(draft);
+          });
+        },
+        onError: () => stop(),
+        onEnd: () => {
+          if (sessionRef.current) stop();
+        },
       },
-      onError: () => stop(),
-      onEnd: () => {
-        if (sessionRef.current) stop();
-      },
-    });
+      { lang: 'en-US', requiresOnDevice: true },
+    );
   }, [onDraft, stop]);
 
   return { status, partial, start, stop };

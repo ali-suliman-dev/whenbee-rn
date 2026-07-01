@@ -80,6 +80,10 @@ jest.mock('expo-speech-recognition', () => ({
     start: jest.fn(),
     stop: jest.fn(),
     addListener: jest.fn(() => ({ remove: jest.fn() })),
+    getSupportedLocales: jest.fn(() => Promise.resolve({ locales: [], installedLocales: [] })),
+    androidTriggerOfflineModelDownload: jest.fn(() =>
+      Promise.resolve({ status: 'download_success' }),
+    ),
   },
 }));
 
