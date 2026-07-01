@@ -1,6 +1,7 @@
 import { View, Pressable, type ViewStyle, type TextStyle } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
+import { useTranslation } from 'react-i18next';
 import { AppText } from '@/src/components/AppText';
 import { useTheme } from '@/src/theme/useTheme';
 import { type } from '@/src/theme/typography';
@@ -16,10 +17,9 @@ import { analytics } from '@/src/services/analytics';
 // reactCompiler + nativewind drop function-form Pressable styles).
 // ──────────────────────────────────────────────────────────────────────────────
 
-const CAPTION = 'See the range your tasks land in, and watch it tighten.';
-
 export function HonestBandLockedTeaser() {
   const t = useTheme();
+  const { t: tr } = useTranslation('shared');
 
   const openPaywall = () => {
     analytics.capture('honest_range_locked_tap', { surface: 'category_detail' });
@@ -79,20 +79,20 @@ export function HonestBandLockedTeaser() {
     <Pressable
       onPress={openPaywall}
       accessibilityRole="button"
-      accessibilityLabel="Unlock the honest range with Pro."
+      accessibilityLabel={tr('honestBandLockedTeaser.unlockA11y')}
     >
       <View style={container}>
         <View style={headerRow}>
           <Ionicons name="lock-closed" size={t.iconSize.sm} color={t.colors.inkSoft} />
-          <AppText style={label}>Honest range</AppText>
+          <AppText style={label}>{tr('honestBandLockedTeaser.label')}</AppText>
           <View style={chip}>
-            <AppText style={chipText}>Pro</AppText>
+            <AppText style={chipText}>{tr('honestBandLockedTeaser.proTag')}</AppText>
           </View>
         </View>
         <View style={track}>
           <View style={ghost} pointerEvents="none" />
         </View>
-        <AppText style={caption}>{CAPTION}</AppText>
+        <AppText style={caption}>{tr('honestBandLockedTeaser.caption')}</AppText>
       </View>
     </Pressable>
   );

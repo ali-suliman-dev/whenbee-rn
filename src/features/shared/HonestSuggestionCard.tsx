@@ -2,6 +2,7 @@ import { useEffect, useRef } from 'react';
 import { View, Pressable, type TextStyle, type ViewStyle } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
+import { useTranslation } from 'react-i18next';
 import { AppText } from '@/src/components/AppText';
 import { HonestBand } from '@/src/components/HonestBand';
 import { useEntitlement } from '@/src/features/paywall/useEntitlement';
@@ -44,6 +45,7 @@ export function HonestSuggestionCard({
   preEstimate?: boolean;
 }) {
   const t = useTheme();
+  const { t: tr } = useTranslation('shared');
   const isPro = useEntitlement((s) => s.isPro);
   const delta = honestMinutes - guessMinutes;
 
@@ -132,17 +134,28 @@ export function HonestSuggestionCard({
 
   const a11yLabel = (() => {
     if (showProBand && range) {
-      return `Honest range ${range.lowMinutes} to ${range.highMinutes} minutes${confidence === 'setting' ? ', still learning' : ''}.`;
+      return confidence === 'setting'
+        ? tr('honestSuggestionCard.a11y.honestRangeLearning', {
+            low: range.lowMinutes,
+            high: range.highMinutes,
+          })
+        : tr('honestSuggestionCard.a11y.honestRange', {
+            low: range.lowMinutes,
+            high: range.highMinutes,
+          });
     }
     if (showRoughly && range) {
-      return `Still learning. Roughly ${range.lowMinutes} to ${range.highMinutes} minutes.`;
+      return tr('honestSuggestionCard.a11y.roughly', {
+        low: range.lowMinutes,
+        high: range.highMinutes,
+      });
     }
     const base =
       delta > 0
-        ? `Honest estimate about ${honestMinutes} minutes, ${delta} more than your guess`
-        : `Honest estimate about ${honestMinutes} minutes`;
+        ? tr('honestSuggestionCard.a11y.honestAboutDelta', { minutes: honestMinutes, delta })
+        : tr('honestSuggestionCard.a11y.honestAbout', { minutes: honestMinutes });
     if (preEstimate && !hasBand) {
-      return `${base}, starting estimate, sharpens as you log`;
+      return tr('honestSuggestionCard.a11y.startingSuffix', { base });
     }
     return base;
   })();
@@ -154,7 +167,7 @@ export function HonestSuggestionCard({
       </View>
       <View style={content}>
         <View style={line}>
-          <AppText style={lead}>Honestly</AppText>
+          <AppText style={lead}>{tr('honestSuggestionCard.lead')}</AppText>
           {showProBand && range ? (
             <>
               <AppText style={num}>
@@ -164,13 +177,16 @@ export function HonestSuggestionCard({
               {confidence === 'setting' ? (
                 <>
                   <AppText style={dot}>·</AppText>
-                  <AppText style={learningSuffix}>still learning</AppText>
+                  <AppText style={learningSuffix}>{tr('honestSuggestionCard.stillLearning')}</AppText>
                 </>
               ) : null}
             </>
           ) : showRoughly && range ? (
             <AppText style={roughly}>
-              Still learning — roughly {range.lowMinutes}–{range.highMinutes}m
+              {tr('honestSuggestionCard.roughly', {
+                low: range.lowMinutes,
+                high: range.highMinutes,
+              })}
             </AppText>
           ) : (
             <>
@@ -180,7 +196,7 @@ export function HonestSuggestionCard({
                 <>
                   <AppText style={dot}>·</AppText>
                   <AppText style={more}>+{delta}m</AppText>
-                  <AppText style={moreMuted}> more</AppText>
+                  <AppText style={moreMuted}>{tr('honestSuggestionCard.more')}</AppText>
                 </>
               ) : null}
               {/* Free, learning surface: the locked-bracket teaser (no real numbers). */}
@@ -188,11 +204,11 @@ export function HonestSuggestionCard({
                 <Pressable
                   onPress={openPaywall}
                   accessibilityRole="button"
-                  accessibilityLabel="Unlock the honest range with Pro."
+                  accessibilityLabel={tr('honestSuggestionCard.unlockA11y')}
                 >
                   <View style={lockRow}>
                     <Ionicons name="code-outline" size={t.iconSize.xs} color={t.colors.inkFaint} />
-                    <AppText style={lockLabel}>Range</AppText>
+                    <AppText style={lockLabel}>{tr('honestSuggestionCard.range')}</AppText>
                   </View>
                 </Pressable>
               ) : null}
@@ -212,7 +228,7 @@ export function HonestSuggestionCard({
         {reasonNote ? (
           <AppText style={noteText}>{reasonNote}</AppText>
         ) : preEstimate ? (
-          <AppText style={noteText}>Starting estimate · sharpens as you log</AppText>
+          <AppText style={noteText}>{tr('honestSuggestionCard.startingEstimate')}</AppText>
         ) : null}
       </View>
     </View>

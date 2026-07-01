@@ -7,6 +7,7 @@ import Animated, {
   withTiming,
 } from 'react-native-reanimated';
 import Svg, { Circle } from 'react-native-svg';
+import { useTranslation } from 'react-i18next';
 import { AppButton } from './AppButton';
 import { AppText } from './AppText';
 import { useTheme } from '@/src/theme/useTheme';
@@ -44,6 +45,7 @@ const AnimatedCircle = Animated.createAnimatedComponent(Circle);
 
 export function PresenceRingTeaser({ onCtaPress }: { onCtaPress: () => void }) {
   const t = useTheme();
+  const { t: tr } = useTranslation('shared');
   const reducedMotion = useReducedMotion();
 
   // 0→DEMO_FILL, one-time on mount. Under ReduceMotion, start at the final state.
@@ -142,16 +144,14 @@ export function PresenceRingTeaser({ onCtaPress }: { onCtaPress: () => void }) {
 
         {/* Value statement */}
         <View style={textBlock}>
-          <AppText style={bodyStyle}>
-            Watch the ring fill toward your real finish on the Lock Screen.
-          </AppText>
+          <AppText style={bodyStyle}>{tr('presenceRingTeaser.body')}</AppText>
         </View>
       </View>
 
       {/* Primary CTA */}
       <View style={{ marginTop: t.space[3] }}>
         <AppButton
-          label="Unlock the honest ring"
+          label={tr('presenceRingTeaser.cta')}
           onPress={onCtaPress}
           variant="amber"
           fullWidth

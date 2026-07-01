@@ -32,6 +32,12 @@ import enReward from './locales/en/reward.json';
 import svReward from './locales/sv/reward.json';
 import enCalendar from './locales/en/calendar.json';
 import svCalendar from './locales/sv/calendar.json';
+import enShared from './locales/en/shared.json';
+import svShared from './locales/sv/shared.json';
+import enLegal from './locales/en/legal.json';
+import svLegal from './locales/sv/legal.json';
+import enCategories from './locales/en/categories.json';
+import svCategories from './locales/sv/categories.json';
 // NOTE: as each namespace is added in later tasks, import it here for both langs.
 
 export const SUPPORTED_LANGS = ['en', 'sv'] as const;
@@ -57,6 +63,9 @@ export const resources = {
     planner: enPlanner,
     reward: enReward,
     calendar: enCalendar,
+    shared: enShared,
+    legal: enLegal,
+    categories: enCategories,
   },
   sv: {
     common: svCommon,
@@ -76,6 +85,9 @@ export const resources = {
     planner: svPlanner,
     reward: svReward,
     calendar: svCalendar,
+    shared: svShared,
+    legal: svLegal,
+    categories: svCategories,
   },
 } as const;
 

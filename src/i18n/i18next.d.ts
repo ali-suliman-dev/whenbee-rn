@@ -16,6 +16,9 @@ import type whenbee from './locales/en/whenbee.json';
 import type planner from './locales/en/planner.json';
 import type reward from './locales/en/reward.json';
 import type calendar from './locales/en/calendar.json';
+import type shared from './locales/en/shared.json';
+import type legal from './locales/en/legal.json';
+import type categories from './locales/en/categories.json';
 
 declare module 'i18next' {
   interface CustomTypeOptions {
@@ -38,6 +41,9 @@ declare module 'i18next' {
       planner: typeof planner;
       reward: typeof reward;
       calendar: typeof calendar;
+      shared: typeof shared;
+      legal: typeof legal;
+      categories: typeof categories;
       // add each namespace here as it is created (Task A4).
     };
   }
