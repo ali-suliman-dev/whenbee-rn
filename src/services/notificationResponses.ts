@@ -7,6 +7,7 @@
 import { analytics } from '@/src/services/analytics';
 import { scheduleTimerDone, scheduleStartBy } from '@/src/services/timerNotifications';
 import { ACTION } from '@/src/services/notificationCategories';
+import i18n from '@/src/i18n';
 
 export interface NotificationResponseLike {
   actionIdentifier: string;
@@ -20,7 +21,7 @@ export async function handleNotificationResponse(res: NotificationResponseLike):
   switch (res.actionIdentifier) {
     case ACTION.EXTEND_10: {
       if (res.data.kind === 'honest') {
-        const label = String(res.data.label ?? 'this');
+        const label = String(res.data.label ?? i18n.t('notifications:fallbackTaskLabel'));
         const startedAt = Number(res.data.startedAt ?? Date.now());
         const honestMin = Number(res.data.honestMin ?? 0) + 10;
         await scheduleTimerDone({ label, startedAt, honestMin });
@@ -29,7 +30,7 @@ export async function handleNotificationResponse(res: NotificationResponseLike):
     }
     case ACTION.SNOOZE_15: {
       if (res.data.kind === 'honest') {
-        const label = String(res.data.label ?? 'this');
+        const label = String(res.data.label ?? i18n.t('notifications:fallbackTaskLabel'));
         // Re-anchor so the next ping is ~15 min from now: startedAt = now, honestMin = 15.
         await scheduleTimerDone({ label, startedAt: Date.now(), honestMin: 15 });
       }
@@ -37,7 +38,7 @@ export async function handleNotificationResponse(res: NotificationResponseLike):
     }
     case ACTION.SNOOZE_5: {
       if (res.data.kind === 'startBy') {
-        const firstTaskLabel = String(res.data.firstTaskLabel ?? 'this');
+        const firstTaskLabel = String(res.data.firstTaskLabel ?? i18n.t('notifications:fallbackTaskLabel'));
         const deadlineMs = Number(res.data.deadlineMs ?? Date.now());
         await scheduleStartBy({ startByMs: Date.now() + 5 * 60_000, firstTaskLabel, deadlineMs });
       }

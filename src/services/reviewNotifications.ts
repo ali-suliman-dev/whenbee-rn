@@ -3,6 +3,7 @@ import { isExpoGo } from '@/src/lib/isExpoGo';
 import { kv } from '@/src/lib/kv';
 import { useSettingsStore } from '@/src/stores/settingsStore';
 import { CAT, THREAD, resolveNotificationSound } from '@/src/services/notificationCategories';
+import i18n from '@/src/i18n';
 import type { NotificationContentInput } from 'expo-notifications';
 
 /** expo-notifications' types omit threadIdentifier (iOS grouping) even though the
@@ -88,8 +89,8 @@ export async function scheduleWeeklyReview(periodId: string): Promise<void> {
   try {
     await cancelWeeklyReview();
     const notifContent: NotificationContentInputWithThread = {
-      title: 'Your honest week is ready',
-      body: "Your week in honest numbers, whenever you've got a minute.",
+      title: i18n.t('notifications:review.title'),
+      body: i18n.t('notifications:review.body'),
       sound: resolveNotificationSound(useSettingsStore.getState().notificationSound),
       categoryIdentifier: CAT.REVIEW,
       threadIdentifier: THREAD.REVIEW,

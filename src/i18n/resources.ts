@@ -12,6 +12,8 @@ import enAddTask from './locales/en/addTask.json';
 import svAddTask from './locales/sv/addTask.json';
 import enTimer from './locales/en/timer.json';
 import svTimer from './locales/sv/timer.json';
+import enNotifications from './locales/en/notifications.json';
+import svNotifications from './locales/sv/notifications.json';
 // NOTE: as each namespace is added in later tasks, import it here for both langs.
 
 export const SUPPORTED_LANGS = ['en', 'sv'] as const;
@@ -27,6 +29,7 @@ export const resources = {
     today: enToday,
     addTask: enAddTask,
     timer: enTimer,
+    notifications: enNotifications,
   },
   sv: {
     common: svCommon,
@@ -36,6 +39,7 @@ export const resources = {
     today: svToday,
     addTask: svAddTask,
     timer: svTimer,
+    notifications: svNotifications,
   },
 } as const;
 

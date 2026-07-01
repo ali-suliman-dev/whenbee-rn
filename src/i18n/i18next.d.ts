@@ -6,6 +6,7 @@ import type settings from './locales/en/settings.json';
 import type today from './locales/en/today.json';
 import type addTask from './locales/en/addTask.json';
 import type timer from './locales/en/timer.json';
+import type notifications from './locales/en/notifications.json';
 
 declare module 'i18next' {
   interface CustomTypeOptions {
@@ -18,6 +19,7 @@ declare module 'i18next' {
       today: typeof today;
       addTask: typeof addTask;
       timer: typeof timer;
+      notifications: typeof notifications;
       // add each namespace here as it is created (Task A4).
     };
   }

@@ -1,6 +1,7 @@
 import { requireOptionalNativeModule } from 'expo-modules-core';
 import { isExpoGo } from '@/src/lib/isExpoGo';
 import { kv } from '@/src/lib/kv';
+import i18n from '@/src/i18n';
 
 // ──────────────────────────────────────────────────────────────────────────────
 // routineNotifications — start-by alerts for scheduled routines (Pro).
@@ -104,7 +105,7 @@ export async function scheduleRoutineAlerts(
       const id = await N.scheduleNotificationAsync({
         content: {
           title: routine.name,
-          body: `Start ${routine.name} now to finish on time.`,
+          body: i18n.t('notifications:routine.body', { name: routine.name }),
         },
         trigger: {
           type: N.SchedulableTriggerInputTypes.WEEKLY,

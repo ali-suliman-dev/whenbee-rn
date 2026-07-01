@@ -1,0 +1,43 @@
+{
+  "fallbackTaskLabel": "this",
+  "timerDone": {
+    "calibratedTitle": "You're near the finish",
+    "calibratedBody": "This is about when {{label}} usually wraps. Log it when you're done.",
+    "uncalibratedTitle": "Time check for {{label}}",
+    "uncalibratedBody": "This was your estimate for {{label}}. Log it whenever you wrap."
+  },
+  "startBy": {
+    "title": "Start by {{time}}",
+    "body": "Start {{label}} now and you'll finish by {{deadline}}."
+  },
+  "guard": {
+    "title": "Still on {{label}}?",
+    "body": "You've been at it about {{minutes}} minutes. No pressure, just a nudge."
+  },
+  "review": {
+    "title": "Your honest week is ready",
+    "body": "Your week in honest numbers, whenever you've got a minute."
+  },
+  "routine": {
+    "body": "Start {{name}} now to finish on time."
+  },
+  "categories": {
+    "honest": {
+      "log": "Log it",
+      "extend10": "+10 min",
+      "snooze15": "Snooze 15m"
+    },
+    "startBy": {
+      "start": "Start now",
+      "snooze5": "Snooze 5m"
+    },
+    "guard": {
+      "ok": "I'm good",
+      "wrap": "Wrap up"
+    },
+    "review": {
+      "open": "Open review",
+      "evening": "This evening"
+    }
+  }
+}
