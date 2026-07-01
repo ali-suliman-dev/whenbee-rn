@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { router } from 'expo-router';
+import { useTranslation } from 'react-i18next';
 import { useRewardStore } from '@/src/stores/rewardStore';
 import { useCalibrationStore } from '@/src/stores/calibrationStore';
 import { haptics } from '@/src/services/haptics';
@@ -60,9 +61,6 @@ export interface RewardView {
   onBackToToday: () => void;
 }
 
-const RITUAL_DEFAULT = 'One honest log a day. No streak to keep.';
-const RITUAL_SEAL = 'New honest cell. Nothing to keep up.';
-
 // The reason chips appear only when the run diverged from the guess enough to be
 // worth a why. |ratio − 1| > 0.25 → roughly a quarter over or under. Below that,
 // the gap is noise and the chips would just nag, so they stay hidden.
@@ -77,6 +75,7 @@ function reasonDirectionFor(actualMin: number, guessMin: number): RunDirection |
 }
 
 export function useReward(): RewardView {
+  const { t } = useTranslation('reward');
   const actualMin = useRewardStore((s) => s.actualMin);
   const guessMin = useRewardStore((s) => s.guessMin);
   const category = useRewardStore((s) => s.category);
@@ -141,7 +140,7 @@ export function useReward(): RewardView {
       multiplier: 0,
       sealed: false,
       capEyebrow: null,
-      ritualLine: RITUAL_DEFAULT,
+      ritualLine: t('ritual.default'),
       eventId: null,
       reasonDirection: null,
       result: null,
@@ -174,8 +173,8 @@ export function useReward(): RewardView {
     honeyPct: Math.round(result.sharpness),
     multiplier: result.multiplier,
     sealed,
-    capEyebrow: result.leveledUp ? `${result.tierAfter} cell sealed` : null,
-    ritualLine: sealed ? RITUAL_SEAL : RITUAL_DEFAULT,
+    capEyebrow: result.leveledUp ? t('capSealed', { tier: result.tierAfter }) : null,
+    ritualLine: sealed ? t('ritual.sealed') : t('ritual.default'),
     eventId: result.eventId,
     reasonDirection: reasonDirectionFor(actualMin, guessMin),
     result,

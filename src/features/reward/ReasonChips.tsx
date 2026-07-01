@@ -4,6 +4,7 @@ import { useCalibrationStore } from '@/src/stores/calibrationStore';
 import { type } from '@/src/theme/typography';
 import { useTheme } from '@/src/theme/useTheme';
 import { useEffect, useRef, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { View, type TextStyle, type ViewStyle } from 'react-native';
 import Animated, { FadeIn, FadeInDown, useReducedMotion } from 'react-native-reanimated';
 import { ReasonGlyph, type ReasonGlyphKind } from './ReasonGlyph';
@@ -22,32 +23,33 @@ import type { RunDirection } from './useReward';
 // exits stay open — choosing is skippable, and leaving without a pick is fine.
 // ──────────────────────────────────────────────────────────────────────────────
 
+type ReasonLabelKey =
+  | 'reason.over.interrupted'
+  | 'reason.over.underestimated'
+  | 'reason.over.contextSwitch'
+  | 'reason.under.focused'
+  | 'reason.under.overestimated';
+
 interface ReasonOption {
   /** Stable analytics/storage value — never localized. */
   value: string;
-  /** What the user reads. */
-  label: string;
+  /** Key into the `reward` namespace for what the user reads. */
+  labelKey: ReasonLabelKey;
   /** A refined leading illustration — turns a gray pill into something fun to tap. */
   glyph: ReasonGlyphKind;
 }
-
-const OVER_HEADER = 'Where did the time go?';
-const UNDER_HEADER = 'What made it quick?';
-// Warm, honest closure after a tap — no overclaim (the tag is side-channel data),
-// no blame. Just acknowledges the note landed.
-const CONFIRM_HEADER = 'Good to know.';
 
 // Neutral, kind framings. Over-run owns the "took longer" reasons; under-run the
 // "went faster" ones. No "you got distracted / you failed" — only curiosity. A
 // leading illustration makes each one scannable and inviting to press.
 const OVER_OPTIONS: readonly ReasonOption[] = [
-  { value: 'interrupted', label: 'Paused', glyph: 'interrupted' },
-  { value: 'underestimated', label: 'Grew', glyph: 'bigger' },
-  { value: 'context_switch', label: 'Pulled', glyph: 'pulled' },
+  { value: 'interrupted', labelKey: 'reason.over.interrupted', glyph: 'interrupted' },
+  { value: 'underestimated', labelKey: 'reason.over.underestimated', glyph: 'bigger' },
+  { value: 'context_switch', labelKey: 'reason.over.contextSwitch', glyph: 'pulled' },
 ];
 const UNDER_OPTIONS: readonly ReasonOption[] = [
-  { value: 'focused', label: 'Flow', glyph: 'zone' },
-  { value: 'overestimated', label: 'Fast', glyph: 'smaller' },
+  { value: 'focused', labelKey: 'reason.under.focused', glyph: 'zone' },
+  { value: 'overestimated', labelKey: 'reason.under.overestimated', glyph: 'smaller' },
 ];
 
 // Chips land after the payoff card's reveal (t.motion.draw), then ping in
@@ -64,10 +66,11 @@ export function ReasonChips({
   category: string;
 }) {
   const t = useTheme();
+  const { t: tr } = useTranslation('reward');
   const reducedMotion = useReducedMotion();
   const setReason = useCalibrationStore((s) => s.setReason);
 
-  const header = direction === 'over' ? OVER_HEADER : UNDER_HEADER;
+  const header = tr(direction === 'over' ? 'reason.overHeader' : 'reason.underHeader');
   const options = direction === 'over' ? OVER_OPTIONS : UNDER_OPTIONS;
 
   const [selected, setSelected] = useState<string | null>(null);
@@ -117,7 +120,7 @@ export function ReasonChips({
     justifyContent: 'center',
   };
   // Header swaps to a warm confirm once a reason is tagged — closure on the tap.
-  const headerText = selected ? CONFIRM_HEADER : header;
+  const headerText = selected ? tr('reason.confirmHeader') : header;
 
   return (
     <View style={wrap}>
@@ -144,7 +147,7 @@ export function ReasonChips({
             }
           >
             <Chip
-              label={opt.label}
+              label={tr(opt.labelKey)}
               icon={<ReasonGlyph kind={opt.glyph} active={selected === opt.value} />}
               selected={selected === opt.value}
               style={{ flex: 1 }}

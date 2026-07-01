@@ -1,0 +1,67 @@
+{
+  "headlines": {
+    "timed": [
+      "Loggat. Snyggt.",
+      "Det är det ärliga talet.",
+      "Fångade den. Bra.",
+      "Ännu en, loggad."
+    ],
+    "retro": "Ikapp. Tack."
+  },
+  "capSealed": "{{tier}}-cell förseglad",
+  "ritual": {
+    "default": "En ärlig loggning om dagen. Ingen svit att hålla i.",
+    "sealed": "Ny ärlig cell. Inget att hålla igång."
+  },
+  "goalFeedback": {
+    "headline": {
+      "tightestWeek": "Den hamnade inom {{band}} % — din tightaste denna vecka.",
+      "tighterThanUsual": "Den hamnade inom {{band}} % — tightare än vanligt.",
+      "typical": "Den hamnade inom {{band}} %."
+    },
+    "caption": "mot ditt mål på ±{{band}} %"
+  },
+  "notifSoftAsk": {
+    "body": "Vill du ha en mild påminnelse när en timer tar slut? Inga sviter, inget tjat — bara det ärliga talet när det gäller.",
+    "accept": "Låter bra",
+    "decline": "Inte nu"
+  },
+  "energy": {
+    "options": {
+      "low": "Låg",
+      "ok": "OK",
+      "high": "Hög"
+    },
+    "noted": "Noterat.",
+    "prompt": "Energi under passet? (valfritt)"
+  },
+  "reason": {
+    "overHeader": "Vart tog tiden vägen?",
+    "underHeader": "Vad gjorde det snabbt?",
+    "confirmHeader": "Bra att veta.",
+    "over": {
+      "interrupted": "Pausad",
+      "underestimated": "Växte",
+      "contextSwitch": "Distraherad"
+    },
+    "under": {
+      "focused": "Flow",
+      "overestimated": "Snabbt"
+    }
+  },
+  "screen": {
+    "empty": {
+      "title": "Inget att fira än",
+      "subtitle": "Logga något så mognar honungen här."
+    },
+    "backToToday": "Tillbaka till idag",
+    "tookEyebrow": "DET TOG FAKTISKT",
+    "honeyLabel": "HONUNG",
+    "delta": {
+      "over": "{{count}} min över din gissning",
+      "under": "{{count}} min under din gissning",
+      "equal": "exakt din gissning"
+    },
+    "seeYourBee": "Se ditt bi"
+  }
+}

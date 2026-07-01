@@ -12,6 +12,7 @@ import { useReward } from '@/src/features/reward/useReward';
 import { type } from '@/src/theme/typography';
 import { useTheme } from '@/src/theme/useTheme';
 import { useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Pressable, ScrollView, Text, View, type TextStyle, type ViewStyle } from 'react-native';
 import Animated, {
   useAnimatedStyle,
@@ -36,6 +37,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 export default function Reward() {
   const t = useTheme();
+  const { t: tr } = useTranslation('reward');
   const r = useReward();
   const insets = useSafeAreaInsets();
   const reducedMotion = useReducedMotion();
@@ -81,11 +83,11 @@ export default function Reward() {
     return (
       <Screen>
         <View style={fallbackCenter}>
-          <AppText style={headlineText}>Nothing to celebrate yet</AppText>
-          <Text style={subText}>Log something and the honey will ripen here.</Text>
+          <AppText style={headlineText}>{tr('screen.empty.title')}</AppText>
+          <Text style={subText}>{tr('screen.empty.subtitle')}</Text>
         </View>
         <View style={{ paddingBottom: insets.bottom + t.space[4] }}>
-          <AppButton label="Back to today" variant="ghost" fullWidth onPress={r.onBackToToday} />
+          <AppButton label={tr('screen.backToToday')} variant="ghost" fullWidth onPress={r.onBackToToday} />
         </View>
       </Screen>
     );
@@ -187,10 +189,10 @@ export default function Reward() {
   // Neutral, glanceable delta — replaces the old gray "you guessed…" sentence.
   const deltaLabel =
     r.deltaDirection === 'over'
-      ? `${r.deltaMin} min over your guess`
+      ? tr('screen.delta.over', { count: r.deltaMin })
       : r.deltaDirection === 'under'
-        ? `${r.deltaMin} min under your guess`
-        : 'right on your guess';
+        ? tr('screen.delta.under', { count: r.deltaMin })
+        : tr('screen.delta.equal');
 
   return (
     <Screen>
@@ -204,7 +206,7 @@ export default function Reward() {
 
         {/* Zone 2 — hero stat (the single biggest element) */}
         <Animated.View style={[heroBlock, heroAnim]}>
-          <Text style={tookEyebrow}>IT REALLY TOOK</Text>
+          <Text style={tookEyebrow}>{tr('screen.tookEyebrow')}</Text>
           <HonestNumber
             size="lg"
             tone="ink"
@@ -223,7 +225,7 @@ export default function Reward() {
         <View style={payoffCard}>
           <View style={honeyHeaderRow}>
             <View style={honeyLabelRow}>
-              <Text style={honeyLabel}>HONEY</Text>
+              <Text style={honeyLabel}>{tr('screen.honeyLabel')}</Text>
               <Text style={honeyMultiplier}>
                 · {r.multiplier.toFixed(1)}
                 <Text style={honeyMultiplierUnit}>×</Text>
@@ -265,14 +267,14 @@ export default function Reward() {
             action + a quiet text exit, with a generous bottom margin. */}
         <View style={ctaBlock}>
           <Text style={ritualText}>{r.ritualLine}</Text>
-          <AppButton label="See your bee" variant="indigo" fullWidth onPress={r.onSeeWhenbee} />
+          <AppButton label={tr('screen.seeYourBee')} variant="indigo" fullWidth onPress={r.onSeeWhenbee} />
           <Pressable
             accessibilityRole="button"
-            accessibilityLabel="Back to today"
+            accessibilityLabel={tr('screen.backToToday')}
             onPress={r.onBackToToday}
             style={quietExit}
           >
-            <AppText style={quietExitText}>Back to today</AppText>
+            <AppText style={quietExitText}>{tr('screen.backToToday')}</AppText>
           </Pressable>
         </View>
       </ScrollView>

@@ -14,6 +14,7 @@ import type review from './locales/en/review.json';
 import type routines from './locales/en/routines.json';
 import type whenbee from './locales/en/whenbee.json';
 import type planner from './locales/en/planner.json';
+import type reward from './locales/en/reward.json';
 
 declare module 'i18next' {
   interface CustomTypeOptions {
@@ -34,6 +35,7 @@ declare module 'i18next' {
       routines: typeof routines;
       whenbee: typeof whenbee;
       planner: typeof planner;
+      reward: typeof reward;
       // add each namespace here as it is created (Task A4).
     };
   }
