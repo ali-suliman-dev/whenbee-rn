@@ -13,6 +13,7 @@ import React, { useCallback } from 'react';
 import { Pressable, Text } from 'react-native';
 import Animated, { useAnimatedStyle, useSharedValue, withTiming } from 'react-native-reanimated';
 import { Ionicons } from '@expo/vector-icons';
+import { useTranslation } from 'react-i18next';
 
 import { haptics } from '@/src/lib/haptics';
 import { useTheme } from '@/src/theme/useTheme';
@@ -26,6 +27,7 @@ interface PlanMyDayButtonProps {
 
 export function PlanMyDayButton({ onPress, isPro, label }: PlanMyDayButtonProps) {
   const t = useTheme();
+  const { t: tr } = useTranslation('today');
   const scale = useSharedValue(1);
 
   const aStyle = useAnimatedStyle(() => ({ transform: [{ scale: scale.value }] }));
@@ -49,7 +51,7 @@ export function PlanMyDayButton({ onPress, isPro, label }: PlanMyDayButtonProps)
       onPressIn={onPressIn}
       onPressOut={onPressOut}
       accessibilityRole="button"
-      accessibilityLabel={isPro ? label : `${label} — Pro feature`}
+      accessibilityLabel={isPro ? label : tr('planMyDayButton.proSuffixA11y', { label })}
       hitSlop={8}
     >
       <Animated.View

@@ -13,26 +13,27 @@ import { useState } from 'react';
 import { View, Text, Pressable, type ViewStyle, type TextStyle } from 'react-native';
 import Animated, { FadeIn } from 'react-native-reanimated';
 import { Ionicons } from '@expo/vector-icons';
+import { useTranslation } from 'react-i18next';
 import { useTheme } from '@/src/theme/useTheme';
 import { type } from '@/src/theme/typography';
 import { haptics } from '@/src/lib/haptics';
-import { weekdayOf } from '@/src/lib/day';
+import { useLocalizedFormat } from '@/src/i18n/useLocalizedFormat';
 import { TaskRow } from './TaskRow';
 import type { TodayRow } from './useToday';
 import type { DayRecap } from './useDayRecap';
 
-const SHORT_WEEKDAY = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'] as const;
-const SHORT_MONTH = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'] as const;
-function shortWeekday(key: string): string {
-  return SHORT_WEEKDAY[weekdayOf(key)] ?? key;
+function dateOf(key: string): Date {
+  const [y, m, d] = key.split('-').map(Number) as [number, number, number];
+  return new Date(y, m - 1, d);
+}
+
+/** Short weekday, e.g. "Tue" — locale-aware. */
+function shortWeekday(key: string, fmt: ReturnType<typeof useLocalizedFormat>): string {
+  return fmt.weekdayShort(dateOf(key));
 }
 /** "Tue · Jun 23" — a dated header so the card reads as a record of a real day. */
-function datedLabel(key: string): string {
-  const parts = key.split('-').map(Number);
-  const month = parts[1];
-  const day = parts[2];
-  if (month === undefined || day === undefined) return shortWeekday(key);
-  return `${shortWeekday(key)} · ${SHORT_MONTH[month - 1] ?? ''} ${day}`;
+function datedLabel(key: string, fmt: ReturnType<typeof useLocalizedFormat>): string {
+  return `${fmt.weekdayShort(dateOf(key))} · ${fmt.monthDay(dateOf(key))}`;
 }
 
 // ──────────────────────────────────────────────────────────────────────────────
@@ -91,10 +92,12 @@ export interface DayRecapCardProps {
 
 export function DayRecapCard({ recap, rows }: DayRecapCardProps) {
   const t = useTheme();
+  const { t: tr } = useTranslation('today');
+  const fmt = useLocalizedFormat();
   const [expanded, setExpanded] = useState(false);
 
-  const dayLabel = shortWeekday(recap.date);
-  const headerLabel = datedLabel(recap.date);
+  const dayLabel = shortWeekday(recap.date, fmt);
+  const headerLabel = datedLabel(recap.date, fmt);
   const vsSign = recap.vsGuessMin >= 0 ? '+' : '';
   // Ran-under-guess reads as a quiet positive (no guilt either way); ran-over stays
   // neutral ink. Never red, never a score.
@@ -179,16 +182,16 @@ export function DayRecapCard({ recap, rows }: DayRecapCardProps) {
 
       {/* Stats — three equal columns, value over label */}
       <View style={statsRow}>
-        <StatColumn value={`${recap.doneCount} of ${recap.plannedCount}`} label="done" />
-        <StatColumn value={`${recap.realFocusMin}m`} label="real focus" />
-        <StatColumn value={`${vsSign}${recap.vsGuessMin}m`} label="vs your guess" tone={vsTone} />
+        <StatColumn value={tr('dayRecap.stats.doneValue', { done: recap.doneCount, planned: recap.plannedCount })} label={tr('dayRecap.stats.doneLabel')} />
+        <StatColumn value={tr('dayRecap.stats.realFocusValue', { count: recap.realFocusMin })} label={tr('dayRecap.stats.realFocusLabel')} />
+        <StatColumn value={`${vsSign}${recap.vsGuessMin}m`} label={tr('dayRecap.stats.vsGuessLabel')} tone={vsTone} />
       </View>
 
       {/* Empty past day: quiet single-line, no toggle needed */}
       {isEmpty ? (
         <>
           <View style={divider} />
-          <Text style={emptyText}>Nothing logged that day</Text>
+          <Text style={emptyText}>{tr('dayRecap.nothingLogged')}</Text>
         </>
       ) : (
         <>
@@ -199,11 +202,14 @@ export function DayRecapCard({ recap, rows }: DayRecapCardProps) {
             onPress={toggle}
             accessibilityRole="button"
             accessibilityState={{ expanded }}
-            accessibilityLabel={`All tasks · ${dayLabel}. ${expanded ? 'Tap to collapse.' : 'Tap to expand.'}`}
+            accessibilityLabel={tr('dayRecap.allTasksA11y', {
+              day: dayLabel,
+              action: expanded ? tr('dayRecap.collapseAction') : tr('dayRecap.expandAction'),
+            })}
             hitSlop={t.size.hitSlop}
             style={disclosure}
           >
-            <Text style={disclosureLabel}>ALL TASKS · {dayLabel.toUpperCase()}</Text>
+            <Text style={disclosureLabel}>{tr('dayRecap.allTasksHeader', { day: dayLabel.toUpperCase() })}</Text>
             <Ionicons
               name={expanded ? 'chevron-up' : 'chevron-down'}
               size={t.iconSize.sm}

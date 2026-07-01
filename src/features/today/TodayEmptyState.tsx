@@ -1,4 +1,5 @@
 import { View, Text, type ViewStyle, type TextStyle } from 'react-native';
+import { useTranslation } from 'react-i18next';
 import { AppButton } from '@/src/components/AppButton';
 import { useTheme } from '@/src/theme/useTheme';
 import { type } from '@/src/theme/typography';
@@ -27,25 +28,30 @@ interface TodayEmptyStateProps {
 
 export function TodayEmptyState({ variant, weekday, onPrimary, onLog }: TodayEmptyStateProps) {
   const t = useTheme();
+  const { t: tr } = useTranslation('today');
   const isFirstRun = variant === 'first-run';
   const isFuture = variant === 'future';
 
-  const eyebrowText = isFirstRun ? null : isFuture ? null : 'Nothing on yet';
+  const eyebrowText = isFirstRun ? null : isFuture ? null : tr('emptyState.eyebrow');
 
   const lead = isFirstRun
-    ? 'Time your first thing'
+    ? tr('emptyState.firstRun.lead')
     : isFuture
-      ? `${weekday ?? 'That day'}'s wide open`
-      : "What's on today?";
+      ? tr('emptyState.future.lead', { weekday: weekday ?? tr('emptyState.future.fallbackWeekday') })
+      : tr('emptyState.daily.lead');
 
   const sub = isFirstRun
-    ? "Guess how long it'll take, hit start, and I'll show you the honest number."
+    ? tr('emptyState.firstRun.sub')
     : isFuture
-      ? "Add what future-you should tackle — it carries over free if life happens."
-      : "Add a task and I'll show its honest finish, plus whether the day actually fits.";
+      ? tr('emptyState.future.sub')
+      : tr('emptyState.daily.sub');
 
-  const primaryLabel = isFirstRun ? 'Start now' : isFuture ? 'Plan ahead' : 'Plan a task';
-  const chipLabel = isFirstRun ? 'Already finished something? Log it' : 'Or log something you finished';
+  const primaryLabel = isFirstRun
+    ? tr('emptyState.firstRun.primary')
+    : isFuture
+      ? tr('emptyState.future.primary')
+      : tr('emptyState.daily.primary');
+  const chipLabel = isFirstRun ? tr('emptyState.firstRun.chip') : tr('emptyState.daily.chip');
 
   const block: ViewStyle = { alignItems: 'center', gap: t.space[2], marginTop: t.space[8] };
   const eyebrow: TextStyle = { ...(type.eyebrow as unknown as TextStyle), color: t.colors.inkSoft };

@@ -1,4 +1,5 @@
 import { View, Text, Pressable, Linking, type ViewStyle, type TextStyle } from 'react-native';
+import { useTranslation } from 'react-i18next';
 import { useTheme } from '@/src/theme/useTheme';
 import { type } from '@/src/theme/typography';
 import type { CalendarEvent } from '@/src/services/calendar';
@@ -55,6 +56,7 @@ export function CalendarOverlaySection({
   allDayEvents,
 }: CalendarOverlaySectionProps): React.ReactElement | null {
   const t = useTheme();
+  const { t: tr } = useTranslation('today');
 
   const hasAny = events.length > 0 || allDayEvents.length > 0;
   if (!hasAny) return null;
@@ -104,17 +106,20 @@ export function CalendarOverlaySection({
 
   return (
     <View style={sectionWrap}>
-      <Text style={eyebrow}>Calendar</Text>
+      <Text style={eyebrow}>{tr('calendarOverlay.eyebrow')}</Text>
 
       {/* Timed event rows. Calendar events can have an empty title (busy blocks,
           some accounts) — fall back to "Busy" so the row never renders blank. */}
       {events.map((evt) => {
-        const title = evt.title?.trim() || 'Busy';
+        const title = evt.title?.trim() || tr('calendarOverlay.busyFallback');
         return (
           <Pressable
             key={evt.id}
             accessibilityRole="button"
-            accessibilityLabel={`${title}, ${fmtRange(evt.startMs, evt.endMs)}, open in Calendar`}
+            accessibilityLabel={tr('calendarOverlay.eventA11y', {
+              title,
+              range: fmtRange(evt.startMs, evt.endMs),
+            })}
             onPress={() => openInCalendar(evt.startMs)}
           >
             <View style={rowWrap}>
@@ -131,7 +136,7 @@ export function CalendarOverlaySection({
       {allDayEvents.length > 0 && (
         <View style={allDayWrap}>
           <Text style={allDayText}>
-            All day: {allDayEvents.map((e) => e.title).join(', ')}
+            {tr('calendarOverlay.allDay', { list: allDayEvents.map((e) => e.title).join(', ') })}
           </Text>
         </View>
       )}

@@ -1,6 +1,8 @@
 // src/features/today/calendarStrip/__tests__/weekDays.test.ts
 import { weekFor, dayCells } from '../weekDays';
 
+const enWeekdayShort = (d: Date) => new Intl.DateTimeFormat('en', { weekday: 'short' }).format(d);
+
 describe('weekFor', () => {
   test('Mon-start: 2026-06-24 (Wed) → 2026-06-22..2026-06-28', () => {
     const keys = weekFor('2026-06-24', 1);
@@ -41,7 +43,7 @@ describe('dayCells', () => {
   const WEEK_MON = weekFor('2026-06-24', 1); // Mon 22..Sun 28
 
   test('isToday and isSelected flag the right cells', () => {
-    const cells = dayCells(WEEK_MON, '2026-06-24', '2026-06-24', new Set());
+    const cells = dayCells(WEEK_MON, '2026-06-24', '2026-06-24', new Set(), enWeekdayShort);
     const todayCell = cells.find((c) => c.key === '2026-06-24');
     expect(todayCell?.isToday).toBe(true);
     expect(todayCell?.isSelected).toBe(true);
@@ -52,7 +54,7 @@ describe('dayCells', () => {
   });
 
   test('isSelected differs from isToday when selection != today', () => {
-    const cells = dayCells(WEEK_MON, '2026-06-24', '2026-06-25', new Set());
+    const cells = dayCells(WEEK_MON, '2026-06-24', '2026-06-25', new Set(), enWeekdayShort);
     const todayCell = cells.find((c) => c.key === '2026-06-24');
     expect(todayCell?.isToday).toBe(true);
     expect(todayCell?.isSelected).toBe(false);
@@ -64,7 +66,7 @@ describe('dayCells', () => {
 
   test('hasTasks is true only for keys in the set', () => {
     const tasksSet = new Set(['2026-06-22', '2026-06-26']);
-    const cells = dayCells(WEEK_MON, '2026-06-24', '2026-06-24', tasksSet);
+    const cells = dayCells(WEEK_MON, '2026-06-24', '2026-06-24', tasksSet, enWeekdayShort);
     expect(cells.find((c) => c.key === '2026-06-22')?.hasTasks).toBe(true);
     expect(cells.find((c) => c.key === '2026-06-26')?.hasTasks).toBe(true);
     expect(cells.find((c) => c.key === '2026-06-23')?.hasTasks).toBe(false);
@@ -72,13 +74,13 @@ describe('dayCells', () => {
   });
 
   test('dayNum is the day-of-month as string', () => {
-    const cells = dayCells(WEEK_MON, '2026-06-24', '2026-06-24', new Set());
+    const cells = dayCells(WEEK_MON, '2026-06-24', '2026-06-24', new Set(), enWeekdayShort);
     expect(cells.find((c) => c.key === '2026-06-22')?.dayNum).toBe('22');
     expect(cells.find((c) => c.key === '2026-06-28')?.dayNum).toBe('28');
   });
 
   test('weekdayLabel is a short string for Mon and Wed', () => {
-    const cells = dayCells(WEEK_MON, '2026-06-24', '2026-06-24', new Set());
+    const cells = dayCells(WEEK_MON, '2026-06-24', '2026-06-24', new Set(), enWeekdayShort);
     const monCell = cells.find((c) => c.key === '2026-06-22');
     const wedCell = cells.find((c) => c.key === '2026-06-24');
     // Labels should be short (1-3 chars) and consistent
@@ -89,7 +91,7 @@ describe('dayCells', () => {
   });
 
   test('produces exactly 7 cells matching the input keys', () => {
-    const cells = dayCells(WEEK_MON, '2026-06-24', '2026-06-24', new Set());
+    const cells = dayCells(WEEK_MON, '2026-06-24', '2026-06-24', new Set(), enWeekdayShort);
     expect(cells).toHaveLength(7);
     cells.forEach((cell, i) => {
       expect(cell.key).toBe(WEEK_MON[i]);

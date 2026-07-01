@@ -8,6 +8,7 @@ import Animated, {
   runOnJS,
 } from 'react-native-reanimated';
 import { Ionicons } from '@expo/vector-icons';
+import { useTranslation } from 'react-i18next';
 import { Card } from '@/src/components/Card';
 import { HonestNumber } from '@/src/components/HonestNumber';
 import { AppButton } from '@/src/components/AppButton';
@@ -50,6 +51,7 @@ export function FocusCard({
   isExiting = false,
 }: FocusCardProps) {
   const t = useTheme();
+  const { t: tr } = useTranslation('today');
   const { width: screenWidth } = useWindowDimensions();
 
   // Mirror TaskRow's departure: slide left off-screen, then commit the delete on
@@ -124,7 +126,7 @@ export function FocusCard({
       <Card tone="raised" style={{ gap: t.space[4] }}>
         <View style={header}>
           <View style={{ flex: 1, gap: t.space[1.5] }}>
-            <Text style={eyebrow}>NEXT · {categoryLabel.toUpperCase()}</Text>
+            <Text style={eyebrow}>{tr('focusCard.eyebrow', { category: categoryLabel.toUpperCase() })}</Text>
             <Text style={title} numberOfLines={1}>
               {taskTitle}
             </Text>
@@ -142,14 +144,14 @@ export function FocusCard({
 
         <View style={contextRow}>
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: t.space[1] }}>
-            <Text style={guessLabel}>guessed {summary.guessMinutes}</Text>
-            {delta > 0 ? <Text style={learnedText}>+ {delta} learned</Text> : null}
+            <Text style={guessLabel}>{tr('focusCard.guessed', { count: summary.guessMinutes })}</Text>
+            {delta > 0 ? <Text style={learnedText}>{tr('focusCard.learned', { count: delta })}</Text> : null}
           </View>
-          <Text style={finishLabel}>done {finishClock}</Text>
+          <Text style={finishLabel}>{tr('focusCard.done', { time: finishClock })}</Text>
         </View>
 
         <AppButton
-          label="Start"
+          label={tr('focusCard.startButton')}
           variant="indigo"
           depth="shallow"
           fullWidth

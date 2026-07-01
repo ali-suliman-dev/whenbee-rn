@@ -39,10 +39,12 @@ export interface CapacityChipProps {
 }
 
 
-export function CapacityChip({ weekdayLabel = 'Today', cap }: CapacityChipProps): React.ReactElement | null {
+export function CapacityChip({ weekdayLabel, cap }: CapacityChipProps): React.ReactElement | null {
   const t = useTheme();
   const { t: translate } = useTranslation();
+  const { t: tr } = useTranslation('today');
   const reduced = useReducedMotion();
+  const resolvedWeekdayLabel = weekdayLabel ?? tr('capacityChip.todayLabel');
 
   // Pure presentational — caller owns the useDayCapacity() call.
   const { status, load, events, isPro: isProCap } = cap;
@@ -92,7 +94,7 @@ export function CapacityChip({ weekdayLabel = 'Today', cap }: CapacityChipProps)
       <Pressable
         testID="capacity-teaser"
         accessibilityRole="button"
-        accessibilityLabel={`See if ${weekdayLabel} will fit — Pro feature`}
+        accessibilityLabel={tr('capacityChip.teaserA11y', { weekday: resolvedWeekdayLabel })}
         onPress={() =>
           router.push({ pathname: '/(modals)/paywall', params: { trigger: 'day_capacity' } })
         }
@@ -100,10 +102,10 @@ export function CapacityChip({ weekdayLabel = 'Today', cap }: CapacityChipProps)
         <View style={teaserWrap}>
           <Ionicons name="flash" size={t.iconSize.sm} color={t.colors.amberText} />
           <Text style={teaserText}>
-            See if {weekdayLabel} will fit
+            {tr('capacityChip.teaserText', { weekday: resolvedWeekdayLabel })}
           </Text>
           <View style={pill}>
-            <Text style={pillText}>Pro</Text>
+            <Text style={pillText}>{tr('capacityChip.proPill')}</Text>
           </View>
         </View>
       </Pressable>
@@ -118,10 +120,10 @@ export function CapacityChip({ weekdayLabel = 'Today', cap }: CapacityChipProps)
 
   // Verdict suffix copy — amber-only, no red, no guilt
   function verdictSuffix(): string {
-    if (verdict === 'comfortable') return '· fits';
-    if (verdict === 'snug') return '· snug';
+    if (verdict === 'comfortable') return tr('capacityChip.verdict.fits');
+    if (verdict === 'snug') return tr('capacityChip.verdict.snug');
     const overH = Math.max(1, Math.round(overByMin / 60));
-    return `· ~${overH}h heavy`;
+    return tr('capacityChip.verdict.heavy', { count: overH });
   }
 
   // Amber tint only on 'over'
@@ -308,7 +310,11 @@ export function CapacityChip({ weekdayLabel = 'Today', cap }: CapacityChipProps)
         <Pressable
           testID="capacity-chip-collapsed"
           accessibilityRole="button"
-          accessibilityLabel={`Honest day ${formatDuration(taskMin + eventMin, translate)} ${verdictSuffix()}. Tap to ${expanded ? 'collapse' : 'expand'}.`}
+          accessibilityLabel={tr('capacityChip.collapsedA11y', {
+            duration: formatDuration(taskMin + eventMin, translate),
+            verdict: verdictSuffix(),
+            action: expanded ? tr('capacityChip.collapseAction') : tr('capacityChip.expandAction'),
+          })}
           accessibilityState={{ expanded }}
           onPress={handleToggle}
           style={{ flex: 1 }}
@@ -321,7 +327,7 @@ export function CapacityChip({ weekdayLabel = 'Today', cap }: CapacityChipProps)
 
             {/* "Honest day Xh Ym" */}
             <Text style={chipLabel} numberOfLines={1}>
-              Honest day {formatDuration(taskMin + eventMin, translate)}{' '}
+              {tr('capacityChip.honestDayPrefix', { duration: formatDuration(taskMin + eventMin, translate) })}{' '}
               <Text style={verdictSuffixStyle}>{verdictSuffix()}</Text>
             </Text>
 
@@ -337,7 +343,7 @@ export function CapacityChip({ weekdayLabel = 'Today', cap }: CapacityChipProps)
         {/* × dismiss for the session — one home, beside the chevron */}
         <Pressable
           accessibilityRole="button"
-          accessibilityLabel="Dismiss capacity chip"
+          accessibilityLabel={tr('capacityChip.dismissA11y')}
           onPress={() => setDismissed(true)}
           hitSlop={t.size.hitSlop}
           style={xButton}
@@ -362,12 +368,12 @@ export function CapacityChip({ weekdayLabel = 'Today', cap }: CapacityChipProps)
           <View style={legendRow}>
             <View style={legendItem}>
               <View style={legendDot(t.colors.primary)} />
-              <Text style={legendText}>tasks {formatDuration(taskMin, translate)}</Text>
+              <Text style={legendText}>{tr('capacityChip.legendTasks', { duration: formatDuration(taskMin, translate) })}</Text>
             </View>
             {eventMin > 0 && (
               <View style={legendItem}>
                 <View style={legendDot(t.colors.accent)} />
-                <Text style={legendText}>meetings {formatDuration(eventMin, translate)}</Text>
+                <Text style={legendText}>{tr('capacityChip.legendMeetings', { duration: formatDuration(eventMin, translate) })}</Text>
               </View>
             )}
           </View>
@@ -375,14 +381,14 @@ export function CapacityChip({ weekdayLabel = 'Today', cap }: CapacityChipProps)
           {/* Over: calm amber nudge — no red, no guilt */}
           {isOver && (
             <Text style={overCopy}>
-              ~{Math.max(1, Math.round(overByMin / 60))}h heavy — move one?
+              {tr('capacityChip.overCopy', { count: Math.max(1, Math.round(overByMin / 60)) })}
             </Text>
           )}
 
           {/* Calendar nudge for denied/off Pro users */}
           {showNudge && (
             <Text style={nudgeText}>
-              Turn on calendar in Settings to count meetings
+              {tr('capacityChip.calendarNudge')}
             </Text>
           )}
 
@@ -391,18 +397,18 @@ export function CapacityChip({ weekdayLabel = 'Today', cap }: CapacityChipProps)
           <View style={footerDivider} />
           <View style={toolbarRow}>
             <Text style={openLabel}>
-              <Text style={openValue}>{formatDuration(openMin, translate)}</Text> open
+              <Text style={openValue}>{formatDuration(openMin, translate)}</Text> {tr('capacityChip.openSuffix')}
             </Text>
 
             <Pressable
               accessibilityRole="link"
-              accessibilityLabel="Pad my calendar — add honest buffers to today's events"
+              accessibilityLabel={tr('capacityChip.padCalendarA11y')}
               onPress={() => router.push({ pathname: '/(modals)/honest-day' })}
               hitSlop={t.size.hitSlop}
             >
               <View style={padPill}>
                 <Ionicons name="calendar-outline" size={t.iconSize.sm} color={t.colors.primary} />
-                <Text style={padPillText}>Pad calendar</Text>
+                <Text style={padPillText}>{tr('capacityChip.padCalendarPill')}</Text>
               </View>
             </Pressable>
           </View>

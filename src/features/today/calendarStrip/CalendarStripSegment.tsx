@@ -154,11 +154,12 @@ interface WeekPageProps {
 
 const SegmentWeekPage = memo(function SegmentWeekPage({ anchor, data }: WeekPageProps) {
   const t = useTheme();
+  const fmt = useLocalizedFormat();
   const seg = t.strip.segment;
   const { today, selectedDate, datesSet, pageWidth, reducedMotion, handleSelectDate } = data;
 
   const cellWidth = pageWidth / 7;
-  const cells = dayCells(weekFor(anchor, WEEK_STARTS_ON), today, selectedDate, datesSet);
+  const cells = dayCells(weekFor(anchor, WEEK_STARTS_ON), today, selectedDate, datesSet, fmt.weekdayShort);
   const selectedCol = cells.findIndex((c) => c.isSelected); // -1 if selected elsewhere
 
   const selCol = useSharedValue(selectedCol);
