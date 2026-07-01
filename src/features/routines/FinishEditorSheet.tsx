@@ -7,6 +7,7 @@
 import { type ReactElement } from 'react';
 import { StyleSheet, View, Pressable, type ViewStyle, type TextStyle } from 'react-native';
 import Animated, { FadeIn, ReduceMotion } from 'react-native-reanimated';
+import { useTranslation } from 'react-i18next';
 import { useTheme } from '@/src/theme/useTheme';
 import { type } from '@/src/theme/typography';
 import { tokens } from '@/src/theme/tokens';
@@ -45,6 +46,7 @@ export function FinishEditorSheet({
   onClose,
 }: FinishEditorSheetProps): ReactElement | null {
   const t = useTheme();
+  const { t: tr } = useTranslation('routines');
 
   if (!visible) return null;
 
@@ -73,17 +75,17 @@ export function FinishEditorSheet({
       <Pressable
         style={StyleSheet.absoluteFillObject}
         onPress={onClose}
-        accessibilityLabel="Dismiss"
+        accessibilityLabel={tr('finishSheet.dismissA11y')}
       />
       <View style={sheet}>
         <SheetGrabber />
-        <AppText style={titleStyle}>Finish by</AppText>
+        <AppText style={titleStyle}>{tr('finishSheet.title')}</AppText>
         <FinishTimeWheel valueMs={valueMs} mode="be done by" showModes={false} onChange={onChange} />
         <View style={{ flexDirection: 'row', justifyContent: 'flex-end', gap: t.space[2] }}>
           {valueMs !== null ? (
-            <AppButton label="Clear" variant="ghost" size="2xs" onPress={onClear} />
+            <AppButton label={tr('finishSheet.clear')} variant="ghost" size="2xs" onPress={onClear} />
           ) : null}
-          <AppButton label="Done" variant="indigo" size="2xs" onPress={onClose} />
+          <AppButton label={tr('finishSheet.done')} variant="indigo" size="2xs" onPress={onClose} />
         </View>
       </View>
     </Animated.View>

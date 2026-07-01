@@ -2,6 +2,7 @@ import { useMemo, useReducer } from 'react';
 import { Ionicons } from '@expo/vector-icons';
 import { Pressable, ScrollView, View, type ViewStyle, type TextStyle } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useTranslation } from 'react-i18next';
 import { useTheme } from '@/src/theme/useTheme';
 import { type } from '@/src/theme/typography';
 import { AppButton } from '@/src/components/AppButton';
@@ -30,6 +31,7 @@ function sheetReducer(_state: SheetState, next: SheetState): SheetState {
 
 export function RoutineBuildView({ onDone, onBack }: { onDone: () => void; onBack: () => void }) {
   const t = useTheme();
+  const { t: tr } = useTranslation('routines');
   const insets = useSafeAreaInsets();
 
   const draft = useRoutinesStore((s) => s.draft);
@@ -133,21 +135,21 @@ export function RoutineBuildView({ onDone, onBack }: { onDone: () => void; onBac
           onPress={onBack}
           hitSlop={t.size.hitSlop}
           accessibilityRole="button"
-          accessibilityLabel="Back to routines"
+          accessibilityLabel={tr('build.backA11y')}
           style={backRow}
         >
           <Ionicons name="chevron-back" size={t.iconSize.md} color={t.colors.inkSoft} />
-          <AppText style={backLabel}>Routines</AppText>
+          <AppText style={backLabel}>{tr('build.back')}</AppText>
         </Pressable>
 
         {/* Name = the routine title — labelled + underlined so it reads as a field */}
         <View style={{ gap: t.space[1] }}>
-          <AppText style={fieldLabel}>Routine name</AppText>
+          <AppText style={fieldLabel}>{tr('build.nameLabel')}</AppText>
           <TaskTitleField
             variant="underline"
             value={draft.name}
             onChangeText={setName}
-            placeholder="Name this routine"
+            placeholder={tr('build.namePlaceholder')}
             returnKeyType="done"
             textStyle={nameStyle}
             containerStyle={nameField}
@@ -169,7 +171,7 @@ export function RoutineBuildView({ onDone, onBack }: { onDone: () => void; onBac
       <View style={dock}>
         <View style={{ flex: 1 }}>
           <AppButton
-            label="＋ Step"
+            label={tr('build.addStep')}
             variant="ghost"
             size="2xs"
             fullWidth
@@ -178,7 +180,7 @@ export function RoutineBuildView({ onDone, onBack }: { onDone: () => void; onBac
         </View>
         <View style={{ flex: 1 }}>
           <AppButton
-            label="Save"
+            label={tr('build.save')}
             variant="indigo"
             size="2xs"
             fullWidth
@@ -187,7 +189,7 @@ export function RoutineBuildView({ onDone, onBack }: { onDone: () => void; onBac
               void saveDraft().then(onDone);
             }}
             accessibilityLabel={
-              canSave ? 'Save routine' : 'Add a name and at least one step to save'
+              canSave ? tr('build.saveA11y') : tr('build.saveDisabledA11y')
             }
           />
         </View>

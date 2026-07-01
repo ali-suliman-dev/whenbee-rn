@@ -2,6 +2,7 @@ import { useEffect, useRef } from 'react';
 import { ScrollView, View, Pressable, type ViewStyle, type TextStyle } from 'react-native';
 import Animated, { FadeIn, ReduceMotion } from 'react-native-reanimated';
 import { Ionicons } from '@expo/vector-icons';
+import { useTranslation } from 'react-i18next';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTheme } from '@/src/theme/useTheme';
 import { tokens } from '@/src/theme/tokens';
@@ -33,6 +34,7 @@ function clockFor(minuteOfDay: number): string {
 
 function StepChip({ count }: { count: number }) {
   const t = useTheme();
+  const { t: tr } = useTranslation('routines');
   const chip: ViewStyle = {
     backgroundColor: t.colors.surfaceSunken,
     borderRadius: t.radii.sm,
@@ -42,13 +44,14 @@ function StepChip({ count }: { count: number }) {
   const text: TextStyle = { ...(type.micro as unknown as TextStyle), color: t.colors.inkSoft };
   return (
     <View style={chip}>
-      <AppText style={text}>{count === 1 ? '1 step' : `${count} steps`}</AppText>
+      <AppText style={text}>{tr('list.stepCount', { count })}</AppText>
     </View>
   );
 }
 
 function RoutineCard({ model, onOpen }: { model: RoutineCardModel; onOpen: (id: string) => void }) {
   const t = useTheme();
+  const { t: tr } = useTranslation('routines');
   const headRow: ViewStyle = { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: t.space[2] };
   const name: TextStyle = { ...(type.bodyLg as unknown as TextStyle), color: t.colors.ink, flex: 1 };
   const totalRow: ViewStyle = { flexDirection: 'row', alignItems: 'baseline', gap: t.space[2], flexWrap: 'wrap' };
@@ -61,7 +64,7 @@ function RoutineCard({ model, onOpen }: { model: RoutineCardModel; onOpen: (id: 
       <Pressable
         onPress={() => onOpen(model.routineId)}
         accessibilityRole="button"
-        accessibilityLabel={`Open ${model.name}`}
+        accessibilityLabel={tr('list.openRoutineA11y', { name: model.name })}
       >
         <Card style={{ gap: t.space[1.5] }}>
           <View style={headRow}>
@@ -71,13 +74,13 @@ function RoutineCard({ model, onOpen }: { model: RoutineCardModel; onOpen: (id: 
             <StepChip count={model.stepCount} />
           </View>
           <View style={totalRow}>
-            <AppText style={total}>{model.summary.honestTotalMin} min</AppText>
+            <AppText style={total}>{tr('list.totalMinutes', { count: model.summary.honestTotalMin })}</AppText>
             <AppText style={basis}>{model.summary.label}</AppText>
           </View>
           {model.doneByMinuteOfDay !== null ? (
             <View style={startByRow}>
               <Ionicons name="time-outline" size={t.iconSize.sm} color={t.colors.inkSoft} />
-              <AppText style={basis}>Start by {clockFor(model.doneByMinuteOfDay)}</AppText>
+              <AppText style={basis}>{tr('list.startBy', { time: clockFor(model.doneByMinuteOfDay) })}</AppText>
             </View>
           ) : null}
         </Card>
@@ -93,6 +96,7 @@ function RoutineCard({ model, onOpen }: { model: RoutineCardModel; onOpen: (id: 
 
 function ExampleCard({ onTryExample }: { onTryExample: () => void }) {
   const t = useTheme();
+  const { t: tr } = useTranslation('routines');
   const card: ViewStyle = {
     backgroundColor: t.colors.surface,
     borderWidth: t.borderWidth.card,
@@ -119,11 +123,11 @@ function ExampleCard({ onTryExample }: { onTryExample: () => void }) {
           {EXAMPLE_ROUTINE.steps.map((s) => s.label).join(' · ')}
         </AppText>
         <AppButton
-          label="Try it"
+          label={tr('list.tryIt')}
           variant="secondary"
           fullWidth
           onPress={onTryExample}
-          accessibilityLabel={`Try the ${EXAMPLE_ROUTINE.name} example`}
+          accessibilityLabel={tr('list.tryExampleA11y', { name: EXAMPLE_ROUTINE.name })}
         />
       </View>
     </Animated.View>
@@ -147,6 +151,7 @@ export function RoutinesList({
   nowMs?: number;
 }) {
   const t = useTheme();
+  const { t: tr } = useTranslation('routines');
   const insets = useSafeAreaInsets();
   const { summaries } = useRoutines(nowMs !== undefined ? { nowMs } : {});
 
@@ -167,9 +172,7 @@ export function RoutinesList({
     >
       {summaries.length === 0 ? (
         <>
-          <AppText style={introText}>
-            A guided sequence that runs on a timer — it tells you what to do now, then moves you on.
-          </AppText>
+          <AppText style={introText}>{tr('list.intro')}</AppText>
           <ExampleCard onTryExample={onTryExample} />
         </>
       ) : (
@@ -177,7 +180,7 @@ export function RoutinesList({
       )}
 
       <AppButton
-        label="New routine"
+        label={tr('list.newRoutine')}
         variant="secondary"
         fullWidth
         onPress={onNew}

@@ -1,5 +1,6 @@
 import Animated, { FadeIn, ReduceMotion } from 'react-native-reanimated';
 import { View, type TextStyle } from 'react-native';
+import { useTranslation } from 'react-i18next';
 import { useTheme } from '@/src/theme/useTheme';
 import { type } from '@/src/theme/typography';
 import { AppText } from '@/src/components/AppText';
@@ -9,15 +10,16 @@ const ENTER = FadeIn.duration(tokens.motion.fast).reduceMotion(ReduceMotion.Syst
 
 export function AnimatedHonestTotal({ minutes }: { minutes: number }) {
   const t = useTheme();
+  const { t: tr } = useTranslation('routines');
   const num: TextStyle = { ...(type.honestNumberMd as unknown as TextStyle), color: t.colors.ink };
   const caption: TextStyle = { ...(type.caption as unknown as TextStyle), color: t.colors.inkSoft };
   return (
     <View style={{ gap: t.space[0.5] }}>
       {/* keyed so the number opacity-crossfades when the total changes; opacity only */}
       <Animated.View key={minutes} entering={ENTER}>
-        <AppText style={num}>About {minutes} min</AppText>
+        <AppText style={num}>{tr('total.value', { count: minutes })}</AppText>
       </Animated.View>
-      <AppText style={caption}>including the in-between time</AppText>
+      <AppText style={caption}>{tr('total.caption')}</AppText>
     </View>
   );
 }
