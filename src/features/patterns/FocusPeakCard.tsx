@@ -120,14 +120,13 @@ export function FocusPeakCard() {
         </View>
         <AppText style={body}>{teaser}</AppText>
         <AppText style={meta}>{`Learned from ${sampleCount} sessions.`}</AppText>
-        <AppButton
-          label="Unlock my focus window"
-          variant="indigo"
-          size="md"
-          fullWidth
+        <Pressable
           onPress={() => router.push({ pathname: '/(modals)/paywall', params: { trigger: 'focus_window' } })}
+          accessibilityRole="button"
           accessibilityLabel="Unlock my focus window"
-        />
+        >
+          <AppText style={{ ...(type.captionBold as TextStyle), color: t.colors.primary }}>Unlock my focus window ›</AppText>
+        </Pressable>
       </View>
     );
   }

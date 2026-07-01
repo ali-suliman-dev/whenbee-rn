@@ -33,10 +33,11 @@ it('Pro personal with null contrast: why-line drops the ratio clause', () => {
   expect(queryByText(/× above your dip/)).toBeNull();
 });
 
-it('free + personal: shows exactly one Unlock CTA, no exact window', () => {
+it('free + personal: shows a quiet Unlock link (no filled CTA), no exact window', () => {
   (useLearnedFocusWindow as jest.Mock).mockReturnValue(personal);
   (useEntitlement as unknown as jest.Mock).mockReturnValue(false);
   const { getByText, queryByText } = render(<FocusPeakCard />);
-  expect(getByText('Unlock my focus window')).toBeTruthy();
+  expect(getByText('Unlock my focus window ›')).toBeTruthy();
+  expect(queryByText('Unlock my focus window')).toBeNull();
   expect(queryByText('1:30 – 4:00 pm')).toBeNull();
 });
