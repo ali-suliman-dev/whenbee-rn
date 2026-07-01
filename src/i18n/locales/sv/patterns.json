@@ -78,7 +78,7 @@
   "contextCorrelationsLocked": {
     "eyebrow": "WHENBEE PRO",
     "headline": "Hitta vad som påverkar din träffsäkerhet.",
-    "sub": "När du noterar din energi efter ett pass är det en ledtråd. Pro läser tillbaka den: om lågenergidagar kastar av dina uppskattningar.",
+    "sub": "När du noterar din energi efter ett pass är det en ledtråd. Pro läser tillbaka den: om lågenergidagar kastar av dina gissningar.",
     "cta": "Visa mönstret"
   },
   "driftNote": {
@@ -247,7 +247,7 @@
   },
   "archetype": {
     "steadyReader": {
-      "title": "Den stadiga läsaren",
+      "title": "Den stadiga tidsläsaren",
       "blurb": "Dina gissningar ligger nära verkligheten. Ovanligt sällsynt."
     },
     "gentleOptimist": {
@@ -256,7 +256,7 @@
     },
     "sprintOptimist": {
       "title": "Sprintoptimisten",
-      "blurb": "Ditt sinne rör sig snabbt; utförandet tar lite längre tid. Nu vet du hur mycket."
+      "blurb": "Ditt sinne rör sig snabbt; själva görandet tar lite längre. Nu vet du hur mycket."
     },
     "dreamer": {
       "title": "Drömmaren",

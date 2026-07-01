@@ -4,7 +4,7 @@
     "calibratedTitle": "Du är snart klar",
     "calibratedBody": "Nu är det ungefär när {{label}} brukar bli klart. Logga det när du är klar.",
     "uncalibratedTitle": "Tidscheck för {{label}}",
-    "uncalibratedBody": "Det här var din uppskattning för {{label}}. Logga det när du är klar."
+    "uncalibratedBody": "Det här var din gissning för {{label}}. Logga det när du är klar."
   },
   "startBy": {
     "title": "Börja senast {{time}}",

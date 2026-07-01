@@ -2,14 +2,14 @@
   "welcome": {
     "titlePrefix": "Du är inte lat. Du är en ",
     "titleEmphasis": "tidsoptimist.",
-    "subtitle": "Jag lär mig hur lång tid saker faktiskt tar för dig och visar sedan det ärliga tidsestimatet. Inga fler planer byggda på gissningar.",
+    "subtitle": "Jag lär mig hur lång tid saker faktiskt tar för dig och visar sedan det ärliga talet. Inga fler planer byggda på gissningar.",
     "overflowLabel": "Hur lång tid det faktiskt tar",
     "footer": "Inget konto, ingen e-post. Allt stannar på den här telefonen.",
     "cta": "Kom igång →"
   },
   "categories": {
     "title": "Var försvinner tiden mest?",
-    "subtitle": "Välj några. Jag skärper ditt ärliga tidsestimat här först.",
+    "subtitle": "Välj några. Jag skärper ditt ärliga tal här först.",
     "namePlaceholder": "Namnge den…",
     "nameAccessibilityLabel": "Nytt kategorinamn",
     "addYourOwn": "Lägg till egen",
@@ -74,7 +74,7 @@
     "title": "Ett tryck för att starta. Ett tryck för att mogna.",
     "subtitle": "Från din första gissning visar jag ärliga tider. Varje uppgift du loggar gör dem skarpare, och jag skäller aldrig på dig för ett glapp.",
     "trailLabel": "Vart du är på väg",
-    "trailCaption": "Din träffsäkerhet mognar allt eftersom du loggar. Den blir bara bättre — ingen svit att bryta.",
+    "trailCaption": "Din träffsäkerhet mognar allt eftersom du loggar. Den blir bara bättre — ingen räcka att bryta.",
     "trail": {
       "raw": "Rå",
       "setting": "Sätter sig",
@@ -101,7 +101,7 @@
   },
   "archetype": {
     "steady": {
-      "title": "Den stabila tidsläsaren",
+      "title": "Den stadiga tidsläsaren",
       "blurb": "Dina gissningar ligger redan nära verkligheten. Jag skärper det här med varje uppgift du loggar."
     },
     "gentle": {
@@ -114,7 +114,7 @@
     },
     "dreamer": {
       "title": "Drömmaren",
-      "blurb": "Stora planer, generösa tidsramar. Dina ärliga tider håller dem jordnära."
+      "blurb": "Stora planer, generösa tidsramar. Dina ärliga siffror håller dem på jorden."
     }
   },
   "stepProgress": {

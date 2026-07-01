@@ -10,7 +10,7 @@
   },
   "capSealed": "{{tier}}-cell förseglad",
   "ritual": {
-    "default": "En ärlig loggning om dagen. Ingen svit att hålla i.",
+    "default": "En ärlig loggning om dagen. Ingen räcka att hålla i.",
     "sealed": "Ny ärlig cell. Inget att hålla igång."
   },
   "goalFeedback": {
@@ -22,7 +22,7 @@
     "caption": "mot ditt mål på ±{{band}} %"
   },
   "notifSoftAsk": {
-    "body": "Vill du ha en mild påminnelse när en timer tar slut? Inga sviter, inget tjat — bara det ärliga talet när det gäller.",
+    "body": "Vill du ha en mild påminnelse när en timer tar slut? Inga räckor, inget tjat — bara det ärliga talet när det gäller.",
     "accept": "Låter bra",
     "decline": "Inte nu"
   },

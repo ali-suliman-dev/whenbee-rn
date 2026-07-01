@@ -66,7 +66,7 @@
     },
     "reached": {
       "headline": "Du klarade det",
-      "sub": "Dina {{categoryName}}-uppskattningar landade inom {{band}}%.",
+      "sub": "Dina {{categoryName}}-gissningar landade inom {{band}}%.",
       "subCompact": "Uppnått — inom {{band}}%.",
       "keep": "Jag är nöjd här",
       "aimTighter": "Sikta snävare"

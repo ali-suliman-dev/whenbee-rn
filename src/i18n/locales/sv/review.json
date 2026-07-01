@@ -31,8 +31,8 @@
   },
   "accuracyRead": { "eyebrow": "HUR DINA GISSNINGAR TRÄFFADE" },
   "accuracyLine": {
-    "sharper": "Dina uppskattningar blev lite skarpare.",
-    "looser": "Uppskattningarna blev lite lösare. Det är bara data, ingen dom.",
+    "sharper": "Dina gissningar blev lite skarpare.",
+    "looser": "Gissningarna blev lite lösare. Det är bara data, ingen dom.",
     "steady": "Stabil vecka. Dina bedömningar höll."
   },
   "sharpestPhrase": {
