@@ -226,5 +226,10 @@
   },
   "quickTaskChips": {
     "tapToStartAgain": "Tap to start again"
+  },
+  "greeting": {
+    "morning": "Good morning",
+    "afternoon": "Good afternoon",
+    "evening": "Good evening"
   }
 }

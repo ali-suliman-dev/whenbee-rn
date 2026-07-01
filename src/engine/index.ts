@@ -34,7 +34,8 @@ export {
 export type { CompanionStage, CompanionCapability, DriftHealth } from './companion';
 export { seedMultiplierFor, provisionalArchetypeMultiplier, buildRevealEcho } from './archetypeSeed';
 export type { QuizAnswers } from './archetypeSeed';
-export { greetingFor } from './greeting';
+export { greetingFor, greetingPart } from './greeting';
+export type { GreetingPart } from './greeting';
 export {
   accuracyToErrorBand, errorBandToAccuracy, goalProgress, isGoalMet,
   reconcileGoal, canSetGoal, presetsForAccuracy, recommendedPreset,
