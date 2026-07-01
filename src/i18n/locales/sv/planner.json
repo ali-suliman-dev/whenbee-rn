@@ -1,0 +1,28 @@
+{
+  "durationWheel": {
+    "a11y": "Längd i minuter"
+  },
+  "finishTimeWheel": {
+    "modes": {
+      "leaveBy": "gå senast",
+      "beDoneBy": "klar senast",
+      "beAt": "vara där senast"
+    },
+    "hourA11y": "Timme",
+    "minuteA11y": "Minut"
+  },
+  "focusCurve": {
+    "a11y": "Fokusfönsterkurva",
+    "axisHigh": "Hög",
+    "axisLow": "Låg"
+  },
+  "editorSheet": {
+    "dismissA11y": "Stäng",
+    "startPrompt": "När börjar ditt fokusfönster?",
+    "endPrompt": "Och när slutar det?",
+    "endHint": "Välj en tid efter starten.",
+    "next": "Nästa",
+    "saveWindow": "Spara fönster",
+    "cancel": "Avbryt"
+  }
+}

@@ -1,0 +1,28 @@
+{
+  "durationWheel": {
+    "a11y": "Duration in minutes"
+  },
+  "finishTimeWheel": {
+    "modes": {
+      "leaveBy": "leave by",
+      "beDoneBy": "be done by",
+      "beAt": "be at"
+    },
+    "hourA11y": "Hour",
+    "minuteA11y": "Minute"
+  },
+  "focusCurve": {
+    "a11y": "Focus window curve",
+    "axisHigh": "Hi",
+    "axisLow": "Low"
+  },
+  "editorSheet": {
+    "dismissA11y": "Dismiss",
+    "startPrompt": "When does your focus window start?",
+    "endPrompt": "And when does it end?",
+    "endHint": "Pick a time after it starts.",
+    "next": "Next",
+    "saveWindow": "Save window",
+    "cancel": "Cancel"
+  }
+}

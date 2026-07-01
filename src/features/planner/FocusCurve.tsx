@@ -1,4 +1,5 @@
 import { View, type ViewStyle, type TextStyle } from 'react-native';
+import { useTranslation } from 'react-i18next';
 import Svg, { Path, Circle, Rect, Defs, LinearGradient, Stop, Text as SvgText } from 'react-native-svg';
 import Animated, { FadeIn, ReduceMotion } from 'react-native-reanimated';
 import { useTheme } from '@/src/theme/useTheme';
@@ -56,6 +57,7 @@ export function FocusCurve({
   peakMin,
 }: FocusCurveProps) {
   const t = useTheme();
+  const { t: tr } = useTranslation('planner');
   const {
     viewH,
     viewW,
@@ -152,7 +154,7 @@ export function FocusCurve({
         width="100%"
         height={svgHeight}
         accessibilityRole="image"
-        accessibilityLabel="Focus window curve"
+        accessibilityLabel={tr('focusCurve.a11y')}
       >
         <Defs>
           {showArea && (
@@ -248,8 +250,12 @@ export function FocusCurve({
       {yAxis ? (
         <View style={{ flexDirection: 'row', gap: t.space[2] }}>
           <View style={{ width: yLabelW, height: svgHeight, justifyContent: 'space-between', alignItems: 'flex-end' }}>
-            <AppText style={{ fontSize: t.fontSize.micro, color: t.colors.inkFaint }}>Hi</AppText>
-            <AppText style={{ fontSize: t.fontSize.micro, color: t.colors.inkFaint }}>Low</AppText>
+            <AppText style={{ fontSize: t.fontSize.micro, color: t.colors.inkFaint }}>
+              {tr('focusCurve.axisHigh')}
+            </AppText>
+            <AppText style={{ fontSize: t.fontSize.micro, color: t.colors.inkFaint }}>
+              {tr('focusCurve.axisLow')}
+            </AppText>
           </View>
           <View style={{ flex: 1 }}>{plot}</View>
         </View>

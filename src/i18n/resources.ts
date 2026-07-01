@@ -26,6 +26,8 @@ import enRoutines from './locales/en/routines.json';
 import svRoutines from './locales/sv/routines.json';
 import enWhenbee from './locales/en/whenbee.json';
 import svWhenbee from './locales/sv/whenbee.json';
+import enPlanner from './locales/en/planner.json';
+import svPlanner from './locales/sv/planner.json';
 // NOTE: as each namespace is added in later tasks, import it here for both langs.
 
 export const SUPPORTED_LANGS = ['en', 'sv'] as const;
@@ -48,6 +50,7 @@ export const resources = {
     review: enReview,
     routines: enRoutines,
     whenbee: enWhenbee,
+    planner: enPlanner,
   },
   sv: {
     common: svCommon,
@@ -64,6 +67,7 @@ export const resources = {
     review: svReview,
     routines: svRoutines,
     whenbee: svWhenbee,
+    planner: svPlanner,
   },
 } as const;
 

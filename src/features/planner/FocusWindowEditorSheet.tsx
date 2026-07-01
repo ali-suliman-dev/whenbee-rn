@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Modal, Pressable, View, type ViewStyle, type TextStyle } from 'react-native';
+import { useTranslation } from 'react-i18next';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Animated, {
   useAnimatedStyle,
@@ -56,6 +57,7 @@ export function FocusWindowEditorSheet({
   onCancel,
 }: FocusWindowEditorSheetProps) {
   const t = useTheme();
+  const { t: tr } = useTranslation('planner');
   const insets = useSafeAreaInsets();
   const reduced = useReducedMotion();
 
@@ -135,12 +137,12 @@ export function FocusWindowEditorSheet({
             scrimStyle,
           ]}
         >
-          <Pressable style={{ flex: 1 }} accessibilityLabel="Dismiss" onPress={onCancel} />
+          <Pressable style={{ flex: 1 }} accessibilityLabel={tr('editorSheet.dismissA11y')} onPress={onCancel} />
         </Animated.View>
 
         <Animated.View style={[sheet, sheetStyle]}>
           <AppText style={heading}>
-            {isStart ? 'When does your focus window start?' : 'And when does it end?'}
+            {isStart ? tr('editorSheet.startPrompt') : tr('editorSheet.endPrompt')}
           </AppText>
 
           {isStart ? (
@@ -159,24 +161,24 @@ export function FocusWindowEditorSheet({
                 onChange={(ms) => setDraftEndMin(msToMin(ms))}
               />
               {!canConfirmEnd ? (
-                <AppText style={hint}>Pick a time after it starts.</AppText>
+                <AppText style={hint}>{tr('editorSheet.endHint')}</AppText>
               ) : null}
             </>
           )}
 
           <View style={{ gap: t.space[2] }}>
             {isStart ? (
-              <AppButton label="Next" variant="indigo" fullWidth onPress={handleNext} />
+              <AppButton label={tr('editorSheet.next')} variant="indigo" fullWidth onPress={handleNext} />
             ) : (
               <AppButton
-                label="Save window"
+                label={tr('editorSheet.saveWindow')}
                 variant="indigo"
                 fullWidth
                 disabled={!canConfirmEnd}
                 onPress={handleConfirm}
               />
             )}
-            <AppButton label="Cancel" variant="ghost" fullWidth onPress={onCancel} />
+            <AppButton label={tr('editorSheet.cancel')} variant="ghost" fullWidth onPress={onCancel} />
           </View>
         </Animated.View>
       </View>
