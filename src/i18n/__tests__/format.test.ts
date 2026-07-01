@@ -13,4 +13,14 @@ describe('makeFormatters', () => {
     const f = makeFormatters('sv-SE');
     expect(f.weekdayShort(d).toLowerCase()).toContain('mån');
   });
+
+  it('formats fullDate for en-US', () => {
+    const f = makeFormatters('en-US');
+    const expected = new Intl.DateTimeFormat('en-US', {
+      weekday: 'long',
+      month: 'long',
+      day: 'numeric',
+    }).format(d);
+    expect(f.fullDate(d)).toBe(expected);
+  });
 });

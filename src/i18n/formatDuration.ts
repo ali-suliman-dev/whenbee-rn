@@ -6,19 +6,12 @@ export const durationParts = (totalMin: number): { h: number; m: number } => {
   return { h: Math.floor(mins / 60), m: mins % 60 };
 };
 
-/** Narrowed shape for a namespace-prefixed, count-interpolated `t` call.
- *  The generated `ParseKeys` overloads only cover the single default
- *  namespace ('common'), so a `"common:key"`-prefixed call needs this local
- *  cast rather than widening `TFunction` itself. */
-type NsCountTranslate = (key: `common:duration.${'h' | 'm'}`, opts: { count: number }) => string;
-
 /** Localized compact duration ("1h 15m"). Unit words come from the translator,
  *  never hardcoded. Mirrors the old fmtHm() shape. */
 export const formatDuration = (totalMin: number, t: TFunction): string => {
   const { h, m } = durationParts(totalMin);
-  const translate = t as unknown as NsCountTranslate;
-  const hs = translate('common:duration.h', { count: h });
-  const ms = translate('common:duration.m', { count: m });
+  const hs = t('duration.h', { count: h });
+  const ms = t('duration.m', { count: m });
   if (h > 0 && m > 0) return `${hs} ${ms}`;
   if (h > 0) return hs;
   return ms;

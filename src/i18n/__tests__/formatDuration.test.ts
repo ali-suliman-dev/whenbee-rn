@@ -2,8 +2,8 @@ import { durationParts, formatDuration } from '../formatDuration';
 
 const t = ((key: string, opts?: { count?: number }) => {
   const n = opts?.count ?? 0;
-  if (key === 'common:duration.h') return `${n}h`;
-  if (key === 'common:duration.m') return `${n}m`;
+  if (key === 'duration.h') return `${n}h`;
+  if (key === 'duration.m') return `${n}m`;
   return key;
 }) as unknown as import('i18next').TFunction;
 
