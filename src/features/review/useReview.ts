@@ -1,5 +1,6 @@
 import { useCallback, useRef, useState } from 'react';
 import { useFocusEffect } from 'expo-router';
+import i18n from '@/src/i18n';
 import {
   resolveWeekPeriod,
   resolveMonthPeriod,
@@ -53,9 +54,9 @@ function logsInWindow(logs: PatternLog[], period: ReviewPeriod): PatternLog[] {
 function accuracyLineFor(windowData: PatternsData): string | null {
   const yp = deriveYouVsPast(windowData);
   if (!yp) return null;
-  if (yp.delta > 2) return 'Your estimates got a little sharper.';
-  if (yp.delta < -2) return 'Estimates ran a bit looser. That is just data, not a verdict.';
-  return 'Steady week. Your reads held.';
+  if (yp.delta > 2) return i18n.t('review:accuracyLine.sharper');
+  if (yp.delta < -2) return i18n.t('review:accuracyLine.looser');
+  return i18n.t('review:accuracyLine.steady');
 }
 
 /** A short "you're sharpest in the …" phrase from the strongest accuracy
@@ -64,8 +65,8 @@ function sharpestPhraseFor(correlations: AccuracyCorrelation[]): string | null {
   const top = correlations[0];
   if (!top) return null;
   return top.dimension === 'time'
-    ? `You were sharpest in the ${top.betterLabel}.`
-    : `${top.betterLabel} was your sharpest day.`;
+    ? i18n.t('review:sharpestPhrase.time', { label: top.betterLabel })
+    : i18n.t('review:sharpestPhrase.day', { label: top.betterLabel });
 }
 
 /** Per-category clamped ratios within the window (oldest → newest) for tightening. */

@@ -1,4 +1,5 @@
 import { View, Text, StyleSheet } from 'react-native';
+import { useTranslation } from 'react-i18next';
 import { Card } from '@/src/components/Card';
 import { useTheme } from '@/src/theme/useTheme';
 import type { ReviewSummary } from '@/src/domain/types';
@@ -14,6 +15,7 @@ interface Props {
 
 export function WeekReadCard({ summary }: Props) {
   const t = useTheme();
+  const { t: tt } = useTranslation('review');
   const wr = summary.weekRead;
   if (!wr) return null;
 
@@ -27,9 +29,9 @@ export function WeekReadCard({ summary }: Props) {
   const weekdayAvg = weekdayTotal / 5;
   const weekendAvg = weekendTotal / 2;
   const hasVariance = weekdayAvg > weekendAvg * 1.5 && weekendAvg < weekdayAvg * 0.7;
-  const caption = hasVariance ? 'Weekdays sharpest · weekend light' : null;
+  const caption = hasVariance ? tt('weekRead.varianceCaption') : null;
 
-  const days = ['M', 'T', 'W', 'T', 'F', 'S', 'S'] as const;
+  const days = tt('weekRead.dayLetters', { returnObjects: true }) as readonly string[];
 
   const styles = StyleSheet.create({
     verdict: { fontSize: 26, fontWeight: '700', color: t.colors.ink, marginBottom: t.space[1] },
@@ -46,8 +48,9 @@ export function WeekReadCard({ summary }: Props) {
     <Card tone="flat">
       <Text style={styles.verdict}>{wr.verdict}</Text>
       <Text style={styles.subtitle}>
-        {wr.areasClose} of {wr.areasTotal} areas landed close.{' '}
-        <Text style={styles.logCount}>{summary.loggedCount}</Text> logs.
+        {tt('weekRead.subtitlePrefix', { close: wr.areasClose, total: wr.areasTotal })}{' '}
+        <Text style={styles.logCount}>{summary.loggedCount}</Text>
+        {tt('weekRead.subtitleSuffix')}
       </Text>
       <View style={styles.sparkline}>
         {wr.dailyLogCounts.map((count, i) => {

@@ -20,6 +20,8 @@ import enVoice from './locales/en/voice.json';
 import svVoice from './locales/sv/voice.json';
 import enCategoryDetail from './locales/en/categoryDetail.json';
 import svCategoryDetail from './locales/sv/categoryDetail.json';
+import enReview from './locales/en/review.json';
+import svReview from './locales/sv/review.json';
 // NOTE: as each namespace is added in later tasks, import it here for both langs.
 
 export const SUPPORTED_LANGS = ['en', 'sv'] as const;
@@ -39,6 +41,7 @@ export const resources = {
     patterns: enPatterns,
     voice: enVoice,
     categoryDetail: enCategoryDetail,
+    review: enReview,
   },
   sv: {
     common: svCommon,
@@ -52,6 +55,7 @@ export const resources = {
     patterns: svPatterns,
     voice: svVoice,
     categoryDetail: svCategoryDetail,
+    review: svReview,
   },
 } as const;
 

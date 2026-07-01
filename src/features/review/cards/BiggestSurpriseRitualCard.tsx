@@ -1,4 +1,5 @@
 import { View, Text, StyleSheet, Platform } from 'react-native';
+import { Trans, useTranslation } from 'react-i18next';
 import { Card } from '@/src/components/Card';
 import { useTheme } from '@/src/theme/useTheme';
 import type { ReviewBiggestSurprise, ConfidenceBand } from '@/src/domain/types';
@@ -19,6 +20,7 @@ interface Props {
 
 export function BiggestSurpriseRitualCard({ surprise, band, loggedCount }: Props) {
   const t = useTheme();
+  const { t: tt } = useTranslation('review');
 
   const ratio =
     surprise.estimateMin > 0 ? (surprise.actualMin / surprise.estimateMin).toFixed(1) : '—';
@@ -80,10 +82,10 @@ export function BiggestSurpriseRitualCard({ surprise, band, loggedCount }: Props
     const realFlex = total > 0 ? surprise.actualMin / total : 0.5;
     return (
       <Card tone="flat">
-        <Text style={styles.eyebrow}>YOUR BIGGEST SURPRISE</Text>
+        <Text style={styles.eyebrow}>{tt('biggestSurprise.eyebrow')}</Text>
         <Text style={styles.heading}>
           <Text style={styles.categoryName}>{surprise.categoryName}</Text>
-          {' — biggest drift this week'}
+          {tt('biggestSurprise.headingSuffix')}
         </Text>
         <View style={styles.fallbackRow}>
           <View
@@ -93,7 +95,7 @@ export function BiggestSurpriseRitualCard({ surprise, band, loggedCount }: Props
             ]}
           >
             <Text style={[styles.fallbackLabel, { color: t.colors.inkSoft }]}>
-              {surprise.estimateMin}m guess
+              {tt('biggestSurprise.guessLabel', { min: surprise.estimateMin })}
             </Text>
           </View>
           <View
@@ -103,15 +105,15 @@ export function BiggestSurpriseRitualCard({ surprise, band, loggedCount }: Props
             ]}
           >
             <Text style={[styles.fallbackLabel, { color: t.colors.amberText }]}>
-              {surprise.actualMin}m real
+              {tt('biggestSurprise.realLabel', { min: surprise.actualMin })}
             </Text>
           </View>
         </View>
         <View style={styles.bottomRow}>
           <View style={styles.chip}>
-            <Text style={styles.chipText}>{ratio}× your read</Text>
+            <Text style={styles.chipText}>{tt('biggestSurprise.ratioChip', { ratio })}</Text>
           </View>
-          <Text style={styles.logCount}>{loggedCount} logs</Text>
+          <Text style={styles.logCount}>{tt('biggestSurprise.logCount', { count: loggedCount })}</Text>
         </View>
       </Card>
     );
@@ -124,19 +126,19 @@ export function BiggestSurpriseRitualCard({ surprise, band, loggedCount }: Props
   const realPct = range > 0 ? clamp(((surprise.actualMin - band.lowMin) / range) * 100) : 50;
 
   const insideRange = surprise.estimateMin >= band.lowMin && surprise.estimateMin <= band.highMin;
-  const descSuffix = insideRange ? ' Past your guess — inside your range.' : ' Past your guess.';
+  const descSuffix = tt(insideRange ? 'biggestSurprise.suffixInside' : 'biggestSurprise.suffixOutside');
 
   return (
     <Card tone="flat">
-      <Text style={styles.eyebrow}>YOUR BIGGEST SURPRISE</Text>
+      <Text style={styles.eyebrow}>{tt('biggestSurprise.eyebrow')}</Text>
       <Text style={styles.heading}>
         <Text style={styles.categoryName}>{surprise.categoryName}</Text>
-        {' — biggest drift this week'}
+        {tt('biggestSurprise.headingSuffix')}
       </Text>
       <View style={styles.bandContainer}>
         <View style={styles.rangeRow}>
-          <Text style={styles.rangeLabel}>{band.lowMin}m</Text>
-          <Text style={styles.rangeLabel}>{band.highMin}m</Text>
+          <Text style={styles.rangeLabel}>{tt('biggestSurprise.minutesLabel', { min: band.lowMin })}</Text>
+          <Text style={styles.rangeLabel}>{tt('biggestSurprise.minutesLabel', { min: band.highMin })}</Text>
         </View>
         <View style={styles.pill} />
         {/* Guess tick */}
@@ -184,7 +186,7 @@ export function BiggestSurpriseRitualCard({ surprise, band, loggedCount }: Props
               transform: [{ translateX: -20 }],
             }}
           >
-            {surprise.estimateMin}m guess
+            {tt('biggestSurprise.guessLabel', { min: surprise.estimateMin })}
           </Text>
           <Text
             style={{
@@ -196,23 +198,27 @@ export function BiggestSurpriseRitualCard({ surprise, band, loggedCount }: Props
               transform: [{ translateX: -15 }],
             }}
           >
-            {surprise.actualMin}m real
+            {tt('biggestSurprise.realLabel', { min: surprise.actualMin })}
           </Text>
         </View>
       </View>
       <Text style={styles.description}>
-        Your real <Text style={{ color: t.colors.ink }}>{surprise.categoryName}</Text> time lands{' '}
-        <Text style={styles.amberInline}>
-          {band.lowMin}–{band.highMin}m
-        </Text>{' '}
-        80% of the time.
+        <Trans
+          t={tt}
+          i18nKey="biggestSurprise.description"
+          values={{ category: surprise.categoryName, low: band.lowMin, high: band.highMin }}
+          components={[
+            <Text key="0" style={{ color: t.colors.ink }} />,
+            <Text key="1" style={styles.amberInline} />,
+          ]}
+        />
         {descSuffix}
       </Text>
       <View style={styles.bottomRow}>
         <View style={styles.chip}>
-          <Text style={styles.chipText}>{ratio}× your read</Text>
+          <Text style={styles.chipText}>{tt('biggestSurprise.ratioChip', { ratio })}</Text>
         </View>
-        <Text style={styles.logCount}>{loggedCount} logs</Text>
+        <Text style={styles.logCount}>{tt('biggestSurprise.logCount', { count: loggedCount })}</Text>
       </View>
     </Card>
   );

@@ -1,4 +1,5 @@
 import { View, Text, StyleSheet } from 'react-native';
+import { Trans, useTranslation } from 'react-i18next';
 import { Card } from '@/src/components/Card';
 import { useTheme } from '@/src/theme/useTheme';
 import type { ForwardAction } from '@/src/domain/types';
@@ -15,6 +16,7 @@ interface Props {
 
 export function ForwardActionCard({ action }: Props) {
   const t = useTheme();
+  const { t: tt } = useTranslation('review');
   const total = action.plannedMin + action.overflowMin;
   const plannedFlex = total > 0 ? action.plannedMin / total : 0.5;
   const overflowFlex = total > 0 ? action.overflowMin / total : 0.5;
@@ -57,27 +59,30 @@ export function ForwardActionCard({ action }: Props) {
 
   return (
     <Card tone="flat">
-      <Text style={styles.eyebrow}>ONE THING TO TRY</Text>
+      <Text style={styles.eyebrow}>{tt('forwardAction.eyebrow')}</Text>
       <Text style={styles.heading}>
         <Text style={styles.categoryName}>{action.categoryName}</Text>
-        {' keeps running over.'}
+        {tt('forwardAction.headingSuffix')}
       </Text>
       <View style={styles.barRow}>
         <View style={[styles.plannedSeg, { flex: plannedFlex }]}>
           <Text style={styles.plannedText} numberOfLines={1}>
-            {action.plannedMin}m planned
+            {tt('forwardAction.plannedLabel', { min: action.plannedMin })}
           </Text>
         </View>
         <View style={[styles.overflowSeg, { flex: overflowFlex }]}>
           <Text style={styles.overflowText} numberOfLines={1}>
-            +{action.overflowMin}m overflow
+            {tt('forwardAction.overflowLabel', { min: action.overflowMin })}
           </Text>
         </View>
       </View>
       <Text style={styles.recommendation}>
-        Build in{' '}
-        <Text style={styles.recommendedMin}>~{action.recommendedMin}m</Text>
-        {' next week and the overflow disappears.'}
+        <Trans
+          t={tt}
+          i18nKey="forwardAction.recommendation"
+          values={{ min: action.recommendedMin }}
+          components={[<Text key="0" style={styles.recommendedMin} />]}
+        />
       </Text>
     </Card>
   );

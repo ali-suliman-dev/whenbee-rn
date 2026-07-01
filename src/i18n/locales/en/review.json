@@ -1,0 +1,85 @@
+{
+  "eyebrow": { "week": "YOUR HONEST WEEK", "month": "YOUR HONEST MONTH" },
+  "ritualCard": {
+    "quietRow": { "week": "Your honest week", "month": "Your honest month" },
+    "openQuietLabel": "Open {{label}}",
+    "readyHeadline": {
+      "week": "Your honest week is ready.",
+      "month": "Your honest month is ready."
+    },
+    "lead": "Seven days are in. Here is where your time actually went.",
+    "openCta": { "week": "Open your week", "month": "Open your month" },
+    "openReadyLabel": {
+      "week": "Open your honest week",
+      "month": "Open your honest month"
+    }
+  },
+  "locked": {
+    "withheld": {
+      "week": "Your week is ready. See where your time went, what tightened, and what steals your time.",
+      "month": "Your month is ready. See where your time went, what tightened, and what steals your time."
+    },
+    "unlockCta": "Unlock with Pro",
+    "footnote": "Cancel anytime · learned on-device"
+  },
+  "cover": {
+    "leadWeek": "Seven days are in. Here is where your time actually went.",
+    "leadMonth": "A month is in. Here is where your time actually went.",
+    "loggedSummary_one": "{{count}} task · {{logged}} logged",
+    "loggedSummary_other": "{{count}} tasks · {{logged}} logged",
+    "emptyLead": "Nothing logged this time. No problem — the next one is always open."
+  },
+  "accuracyRead": { "eyebrow": "HOW YOUR GUESSES LANDED" },
+  "accuracyLine": {
+    "sharper": "Your estimates got a little sharper.",
+    "looser": "Estimates ran a bit looser. That is just data, not a verdict.",
+    "steady": "Steady week. Your reads held."
+  },
+  "sharpestPhrase": {
+    "time": "You were sharpest in the {{label}}.",
+    "day": "{{label}} was your sharpest day."
+  },
+  "forwardAction": {
+    "eyebrow": "ONE THING TO TRY",
+    "headingSuffix": " keeps running over.",
+    "plannedLabel": "{{min}}m planned",
+    "overflowLabel": "+{{min}}m overflow",
+    "recommendation": "Build in <0>~{{min}}m</0> next week and the overflow disappears."
+  },
+  "tightened": {
+    "eyebrow": "WHAT TIGHTENED",
+    "closerChip": "closer",
+    "detail": "From about {{early}}× toward {{recent}}× your guess."
+  },
+  "biggestSurprise": {
+    "eyebrow": "YOUR BIGGEST SURPRISE",
+    "headingSuffix": " — biggest drift this week",
+    "guessLabel": "{{min}}m guess",
+    "realLabel": "{{min}}m real",
+    "minutesLabel": "{{min}}m",
+    "ratioChip": "{{ratio}}× your read",
+    "logCount": "{{count}} logs",
+    "description": "Your real <0>{{category}}</0> time lands <1>{{low}}–{{high}}m</1> 80% of the time.",
+    "suffixInside": " Past your guess — inside your range.",
+    "suffixOutside": " Past your guess."
+  },
+  "weekRead": {
+    "subtitlePrefix": "{{close}} of {{total}} areas landed close.",
+    "subtitleSuffix": " logs.",
+    "varianceCaption": "Weekdays sharpest · weekend light",
+    "dayLetters": ["M", "T", "W", "T", "F", "S", "S"]
+  },
+  "reflection": { "eyebrow": "ONE TO SIT WITH" },
+  "retro": {
+    "heading": "How long did it really take?",
+    "sub": "A rough number is plenty.",
+    "whatWasItLabel": "WHAT WAS IT?",
+    "titlePlaceholder": "e.g. Tidied the kitchen",
+    "titleA11y": "What was it",
+    "categoryLabel": "CATEGORY",
+    "yourGuessLabel": "YOUR GUESS",
+    "actualLabel": "WHAT IT REALLY TOOK",
+    "saveCta": "Save & ripen",
+    "saveHint": "+1 nectar · ripens your honey a little"
+  }
+}

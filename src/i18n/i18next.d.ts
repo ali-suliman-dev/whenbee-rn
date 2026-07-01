@@ -10,6 +10,7 @@ import type notifications from './locales/en/notifications.json';
 import type patterns from './locales/en/patterns.json';
 import type voice from './locales/en/voice.json';
 import type categoryDetail from './locales/en/categoryDetail.json';
+import type review from './locales/en/review.json';
 
 declare module 'i18next' {
   interface CustomTypeOptions {
@@ -26,6 +27,7 @@ declare module 'i18next' {
       patterns: typeof patterns;
       voice: typeof voice;
       categoryDetail: typeof categoryDetail;
+      review: typeof review;
       // add each namespace here as it is created (Task A4).
     };
   }

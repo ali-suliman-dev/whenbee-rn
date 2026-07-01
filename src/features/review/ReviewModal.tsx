@@ -3,6 +3,7 @@ import { ScrollView } from 'react-native';
 import Animated, { FadeInDown, useReducedMotion } from 'react-native-reanimated';
 import { router } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useTranslation } from 'react-i18next';
 import { Screen } from '@/src/components/Screen';
 import { SheetGrabber } from '@/src/components/SheetGrabber';
 import { AppButton } from '@/src/components/AppButton';
@@ -37,6 +38,7 @@ type ReviewSource = 'card' | 'notification' | 'manual';
 
 export function ReviewModal({ source = 'card' }: { source?: ReviewSource }) {
   const t = useTheme();
+  const { t: tt } = useTranslation('common');
   const insets = useSafeAreaInsets();
   const reduced = useReducedMotion();
   const { summary, markSeen } = useReview();
@@ -151,7 +153,7 @@ export function ReviewModal({ source = 'card' }: { source?: ReviewSource }) {
         {/* 8 · Closing reflection (always present). */}
         {Card(<ReflectionCard question={summary.reflection} />)}
 
-        <AppButton label="Done" variant="amber" size="lg" fullWidth onPress={complete} />
+        <AppButton label={tt('done')} variant="amber" size="lg" fullWidth onPress={complete} />
       </ScrollView>
     </Screen>
   );
