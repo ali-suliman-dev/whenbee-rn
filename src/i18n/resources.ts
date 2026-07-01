@@ -16,6 +16,8 @@ import enNotifications from './locales/en/notifications.json';
 import svNotifications from './locales/sv/notifications.json';
 import enPatterns from './locales/en/patterns.json';
 import svPatterns from './locales/sv/patterns.json';
+import enVoice from './locales/en/voice.json';
+import svVoice from './locales/sv/voice.json';
 // NOTE: as each namespace is added in later tasks, import it here for both langs.
 
 export const SUPPORTED_LANGS = ['en', 'sv'] as const;
@@ -33,6 +35,7 @@ export const resources = {
     timer: enTimer,
     notifications: enNotifications,
     patterns: enPatterns,
+    voice: enVoice,
   },
   sv: {
     common: svCommon,
@@ -44,6 +47,7 @@ export const resources = {
     timer: svTimer,
     notifications: svNotifications,
     patterns: svPatterns,
+    voice: svVoice,
   },
 } as const;
 

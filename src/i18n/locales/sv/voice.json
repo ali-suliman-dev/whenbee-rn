@@ -1,0 +1,9 @@
+{
+  "micButton": {
+    "speakA11y": "Säg din uppgift"
+  },
+  "listeningSheet": {
+    "listening": "Lyssnar…",
+    "stop": "Stopp"
+  }
+}

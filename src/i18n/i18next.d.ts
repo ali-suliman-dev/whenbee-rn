@@ -8,6 +8,7 @@ import type addTask from './locales/en/addTask.json';
 import type timer from './locales/en/timer.json';
 import type notifications from './locales/en/notifications.json';
 import type patterns from './locales/en/patterns.json';
+import type voice from './locales/en/voice.json';
 
 declare module 'i18next' {
   interface CustomTypeOptions {
@@ -22,6 +23,7 @@ declare module 'i18next' {
       timer: typeof timer;
       notifications: typeof notifications;
       patterns: typeof patterns;
+      voice: typeof voice;
       // add each namespace here as it is created (Task A4).
     };
   }
