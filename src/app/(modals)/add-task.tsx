@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { View, Text, TextInput, Pressable, ScrollView, KeyboardAvoidingView, Platform, ActionSheetIOS, type ViewStyle, type TextStyle } from 'react-native';
 import { router, useLocalSearchParams } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
+import { useTranslation } from 'react-i18next';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Screen } from '@/src/components/Screen';
 import { AppButton } from '@/src/components/AppButton';
@@ -17,6 +18,7 @@ import { HonestSuggestionCard } from '@/src/features/shared/HonestSuggestionCard
 import { GoalCoachCard } from '@/src/features/add-task/GoalCoachCard';
 import { useDayTasksStore } from '@/src/stores/dayTasksStore';
 import { toLocalDayKey, addDays, weekdayOf } from '@/src/lib/day';
+import i18n from '@/src/i18n';
 
 // ──────────────────────────────────────────────────────────────────────────────
 // Add Task (Screen 10, formSheet) — add an ad-hoc task and surface the honest
@@ -26,29 +28,33 @@ import { toLocalDayKey, addDays, weekdayOf } from '@/src/lib/day';
 // Actions gate gently on title + category (no scold).
 // ──────────────────────────────────────────────────────────────────────────────
 
-// Short weekday labels for the date picker sheet.
-const WEEKDAY_SHORT = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'] as const;
+/** Short weekday labels for the date picker sheet (module-scope — read the raw
+ *  i18n instance, not a hook, since these helpers run outside a component). */
+function weekdayShort(): readonly string[] {
+  return i18n.t('addTask:weekdayShort', { returnObjects: true }) as readonly string[];
+}
 
 /** Human label for a day option in the picker. */
 function dayLabel(key: string, offsetFromToday: number): string {
-  if (offsetFromToday === 0) return 'Today';
-  if (offsetFromToday === 1) return 'Tomorrow';
-  return WEEKDAY_SHORT[weekdayOf(key)] ?? key;
+  if (offsetFromToday === 0) return i18n.t('addTask:day.today');
+  if (offsetFromToday === 1) return i18n.t('addTask:day.tomorrow');
+  return weekdayShort()[weekdayOf(key)] ?? key;
 }
 
 /** Header label showing which day the task will be added to. */
 function targetDayLabel(targetDate: string | null, today: string): string {
-  if (targetDate === null) return 'No day yet';
-  if (targetDate === today) return 'Today';
+  if (targetDate === null) return i18n.t('addTask:day.noDayYet');
+  if (targetDate === today) return i18n.t('addTask:day.today');
   const offset = Math.round(
     (new Date(targetDate).getTime() - new Date(today).getTime()) / 86400000,
   );
-  if (offset === 1) return 'Tomorrow';
-  return WEEKDAY_SHORT[weekdayOf(targetDate)] ?? targetDate;
+  if (offset === 1) return i18n.t('addTask:day.tomorrow');
+  return weekdayShort()[weekdayOf(targetDate)] ?? targetDate;
 }
 
 export default function AddTask() {
   const t = useTheme();
+  const { t: tr } = useTranslation('addTask');
   const insets = useSafeAreaInsets();
   const toastDismissMs = t.motion.pulse; // let the toast land before the sheet closes
   // Arrived from the trio mic quick-action → title pre-filled from the transcript.
@@ -79,10 +85,10 @@ export default function AddTask() {
       key: addDays(today, i),
       label: dayLabel(addDays(today, i), i),
     }));
-    const options = [...days.map((d) => d.label), 'No day yet', 'Cancel'];
+    const options = [...days.map((d) => d.label), tr('day.noDayYet'), tr('datePicker.cancel')];
     ActionSheetIOS.showActionSheetWithOptions(
       {
-        title: 'When should this happen?',
+        title: tr('datePicker.sheetTitle'),
         options,
         cancelButtonIndex: options.length - 1,
       },
@@ -118,10 +124,10 @@ export default function AddTask() {
   // weekday/"Tomorrow".
   const addCtaLabel =
     targetDate === null
-      ? 'Add to shelf'
+      ? tr('cta.addToShelf')
       : targetDate === today
-      ? 'Add to today'
-      : `Add to ${targetDayLabel(targetDate, today)}`;
+      ? tr('cta.addToToday')
+      : tr('cta.addToDay', { day: targetDayLabel(targetDate, today) });
 
   const heading: TextStyle = { ...(type.subtitle as unknown as TextStyle), color: t.colors.ink };
   const sub: TextStyle = { ...(type.body as unknown as TextStyle), color: t.colors.inkSoft };
@@ -216,36 +222,36 @@ export default function AddTask() {
 
           <View style={{ gap: t.space[2] }}>
             <View style={targetRow}>
-              <Text style={targetLabel} accessibilityLabel={`Adding to ${targetDayLabel(targetDate, today)}`}>
-                {`Adding to ${targetDayLabel(targetDate, today)}`}
+              <Text style={targetLabel} accessibilityLabel={tr('header.addingTo', { day: targetDayLabel(targetDate, today) })}>
+                {tr('header.addingTo', { day: targetDayLabel(targetDate, today) })}
               </Text>
               <Pressable
                 onPress={openDatePicker}
                 accessibilityRole="button"
-                accessibilityLabel="Change target day"
+                accessibilityLabel={tr('header.changeDayA11y')}
                 hitSlop={t.size.hitSlop}
               >
                 <View style={dateChip}>
                   <Text style={dateChipText}>
-                    {targetDate === null ? 'No day yet' : targetDayLabel(targetDate, today)}
+                    {targetDate === null ? tr('day.noDayYet') : targetDayLabel(targetDate, today)}
                   </Text>
                   <Ionicons name="chevron-down" size={t.iconSize.xs} color={t.colors.inkSoft} />
                 </View>
               </Pressable>
             </View>
-            <Text style={heading}>New task</Text>
-            <Text style={sub}>What are you working on?</Text>
+            <Text style={heading}>{tr('header.title')}</Text>
+            <Text style={sub}>{tr('header.subtitle')}</Text>
           </View>
 
           <View style={{ gap: t.space[2] }}>
-            <Text style={fieldLabel}>TASK</Text>
+            <Text style={fieldLabel}>{tr('taskField.label')}</Text>
             <TaskTitleField
               variant="boxed"
               value={a.title}
               onChangeText={a.setTitle}
-              placeholder="e.g. Reply to that email"
+              placeholder={tr('taskField.placeholder')}
               returnKeyType="done"
-              accessibilityLabel="Task title"
+              accessibilityLabel={tr('taskField.a11y')}
               // Title's already filled when spoken — don't grab focus over the
               // keyboard so the user can go straight to the guess field.
               autoFocus={!spokenTitle}
@@ -253,7 +259,7 @@ export default function AddTask() {
           </View>
 
           <View style={{ gap: t.space[2] }}>
-            <Text style={fieldLabel}>CATEGORY</Text>
+            <Text style={fieldLabel}>{tr('categoryField.label')}</Text>
             <CategoryChips
               categories={a.categories}
               value={a.category}
@@ -266,7 +272,9 @@ export default function AddTask() {
               <View style={guessHint}>
                 <Ionicons name="bulb-outline" size={t.iconSize.sm} color={t.colors.primary} />
                 <Text style={guessHintText}>
-                  Guessed {a.categories.find((c) => c.id === a.guessedCategory)?.name} · tap to change
+                  {tr('categoryField.guessedHint', {
+                    category: a.categories.find((c) => c.id === a.guessedCategory)?.name,
+                  })}
                 </Text>
               </View>
             ) : null}
@@ -277,16 +285,16 @@ export default function AddTask() {
                   value={newCategory}
                   onChangeText={setNewCategory}
                   onSubmitEditing={confirmNewCategory}
-                  placeholder="Name a new category"
+                  placeholder={tr('categoryField.newCategoryPlaceholder')}
                   placeholderTextColor={t.colors.inkSoft}
                   autoFocus
                   returnKeyType="done"
-                  accessibilityLabel="New category name"
+                  accessibilityLabel={tr('categoryField.newCategoryA11y')}
                 />
                 <Pressable
                   onPress={confirmNewCategory}
                   accessibilityRole="button"
-                  accessibilityLabel="Add category"
+                  accessibilityLabel={tr('categoryField.addCategoryA11y')}
                   hitSlop={6}
                   style={confirmCatBtn}
                 >
@@ -301,7 +309,7 @@ export default function AddTask() {
           </View>
 
           <View style={{ gap: t.space[2] }}>
-            <Text style={fieldLabel}>YOUR GUESS</Text>
+            <Text style={fieldLabel}>{tr('guessField.label')}</Text>
             <TimeField value={a.guessMin} onChange={a.setGuessMin} />
           </View>
 
@@ -332,7 +340,7 @@ export default function AddTask() {
         {/* Pinned CTA footer — sits in the lower-third thumb zone, rises with keyboard */}
         <View style={footerStyle}>
           <AppButton
-            label="Add & start timer"
+            label={tr('cta.addAndStart')}
             variant="indigo"
             fullWidth
             disabled={!a.canSubmit}
@@ -351,10 +359,10 @@ export default function AddTask() {
       <Toast
         message={
           targetDate === null
-            ? 'Saved to shelf'
+            ? tr('toast.savedToShelf')
             : targetDate === today
-            ? 'Added to today'
-            : `Added to ${targetDayLabel(targetDate, today)}`
+            ? tr('toast.addedToToday')
+            : tr('toast.addedToDay', { day: targetDayLabel(targetDate, today) })
         }
         visible={toastVisible}
       />

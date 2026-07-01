@@ -1,0 +1,54 @@
+{
+  "weekdayShort": ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"],
+  "day": {
+    "today": "Today",
+    "tomorrow": "Tomorrow",
+    "noDayYet": "No day yet"
+  },
+  "datePicker": {
+    "sheetTitle": "When should this happen?",
+    "cancel": "Cancel"
+  },
+  "header": {
+    "addingTo": "Adding to {{day}}",
+    "changeDayA11y": "Change target day",
+    "title": "New task",
+    "subtitle": "What are you working on?"
+  },
+  "taskField": {
+    "label": "TASK",
+    "placeholder": "e.g. Reply to that email",
+    "a11y": "Task title"
+  },
+  "categoryField": {
+    "label": "CATEGORY",
+    "guessedHint": "Guessed {{category}} · tap to change",
+    "newCategoryPlaceholder": "Name a new category",
+    "newCategoryA11y": "New category name",
+    "addCategoryA11y": "Add category"
+  },
+  "guessField": {
+    "label": "YOUR GUESS"
+  },
+  "cta": {
+    "addAndStart": "Add & start timer",
+    "addToShelf": "Add to shelf",
+    "addToToday": "Add to today",
+    "addToDay": "Add to {{day}}"
+  },
+  "toast": {
+    "savedToShelf": "Saved to shelf",
+    "addedToToday": "Added to today",
+    "addedToDay": "Added to {{day}}"
+  },
+  "goalCoach": {
+    "a11y": "Goal coach: aim within {{band}} percent",
+    "eyebrow": "GOAL · COACH",
+    "targetBadge": "within ±{{band}}%",
+    "lineWithLever": "{{lever}} run longest for you on {{category}} — <bold>~{{honest}}m</bold> keeps you inside <bold>±{{band}}%</bold>.",
+    "lineNoLever": "<bold>~{{honest}}m</bold> keeps you inside <bold>±{{band}}%</bold>.",
+    "useMinutesA11y": "Use {{count}} minutes",
+    "useButton": "Use {{count}}m",
+    "keepLabel": "or keep {{count}}m"
+  }
+}

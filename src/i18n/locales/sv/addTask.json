@@ -1,0 +1,54 @@
+{
+  "weekdayShort": ["Sön", "Mån", "Tis", "Ons", "Tor", "Fre", "Lör"],
+  "day": {
+    "today": "Idag",
+    "tomorrow": "Imorgon",
+    "noDayYet": "Ingen dag än"
+  },
+  "datePicker": {
+    "sheetTitle": "När ska det här hända?",
+    "cancel": "Avbryt"
+  },
+  "header": {
+    "addingTo": "Läggs till {{day}}",
+    "changeDayA11y": "Byt måldag",
+    "title": "Ny uppgift",
+    "subtitle": "Vad jobbar du med?"
+  },
+  "taskField": {
+    "label": "UPPGIFT",
+    "placeholder": "t.ex. Svara på det där mejlet",
+    "a11y": "Uppgiftens titel"
+  },
+  "categoryField": {
+    "label": "KATEGORI",
+    "guessedHint": "Gissade {{category}} · tryck för att ändra",
+    "newCategoryPlaceholder": "Namnge en ny kategori",
+    "newCategoryA11y": "Nytt kategorinamn",
+    "addCategoryA11y": "Lägg till kategori"
+  },
+  "guessField": {
+    "label": "DIN GISSNING"
+  },
+  "cta": {
+    "addAndStart": "Lägg till & starta timer",
+    "addToShelf": "Lägg till i hyllan",
+    "addToToday": "Lägg till idag",
+    "addToDay": "Lägg till {{day}}"
+  },
+  "toast": {
+    "savedToShelf": "Sparad i hyllan",
+    "addedToToday": "Tillagd idag",
+    "addedToDay": "Tillagd {{day}}"
+  },
+  "goalCoach": {
+    "a11y": "Målcoach: sikta inom {{band}} procent",
+    "eyebrow": "MÅL · COACH",
+    "targetBadge": "inom ±{{band}}%",
+    "lineWithLever": "{{lever}} tar längst tid för dig inom {{category}} — <bold>~{{honest}}m</bold> håller dig inom <bold>±{{band}}%</bold>.",
+    "lineNoLever": "<bold>~{{honest}}m</bold> håller dig inom <bold>±{{band}}%</bold>.",
+    "useMinutesA11y": "Använd {{count}} minuter",
+    "useButton": "Använd {{count}}m",
+    "keepLabel": "eller behåll {{count}}m"
+  }
+}
