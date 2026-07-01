@@ -1,5 +1,6 @@
 import { useCallback, useRef, useState } from 'react';
 import { View, Pressable, Alert, type ViewStyle, type TextStyle } from 'react-native';
+import { useTranslation } from 'react-i18next';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
@@ -58,6 +59,7 @@ function str(v: string | string[] | undefined, fallback: string): string {
 
 export default function Timer() {
   const t = useTheme();
+  const { t: tr } = useTranslation('timer');
   const insets = useSafeAreaInsets();
   const reducedMotion = useReducedMotion();
   const params = useLocalSearchParams<{
@@ -76,7 +78,7 @@ export default function Timer() {
   // suggestedHonestMin = the honest number the user SAW; defaults to estimateMin
   // (which IS the honest number from Today/Add-Task when not passed separately).
   const suggestedHonestMin = num(params.suggestedHonestMin, estimateMin);
-  const label = str(params.label, 'Focus session');
+  const label = str(params.label, tr('defaultTaskLabel'));
   const category = str(params.category, 'getting_ready');
   const taskId = Array.isArray(params.taskId) ? params.taskId[0] : params.taskId;
 
@@ -163,13 +165,13 @@ export default function Timer() {
   const handleCaptureSave = useCallback(async () => {
     // Pass label + category directly as overrides — the store is already cleared by
     // onFreezeForCapture at this point; overrides bypass the cleared state entirely.
-    const finalLabel = capturedLabel.trim() || 'Focus session';
+    const finalLabel = capturedLabel.trim() || tr('defaultTaskLabel');
     const finalCategory = capturedCategory ?? categories[0]?.id ?? 'admin';
     // Teach the categorizer this title→category link so future guesses sharpen.
     if (capturedLabel.trim()) bankVocab(capturedLabel.trim(), finalCategory);
     setShowCaptureSheet(false);
     await timer.onStopAndLog(finalLabel, finalCategory);
-  }, [capturedLabel, capturedCategory, categories, bankVocab, timer]);
+  }, [capturedLabel, capturedCategory, categories, bankVocab, timer, tr]);
 
   const handleCaptureSkip = useCallback(async () => {
     setShowCaptureSheet(false);
@@ -202,11 +204,11 @@ export default function Timer() {
 
   function confirmAbandon() {
     Alert.alert(
-      'Abandon this task?',
-      'No guilt — it just won’t count toward your honey.',
+      tr('abandonConfirm.title'),
+      tr('abandonConfirm.message'),
       [
-        { text: 'Keep timing', style: 'cancel' },
-        { text: 'Abandon', style: 'destructive', onPress: () => void timer.onAbandon() },
+        { text: tr('abandonConfirm.keepTiming'), style: 'cancel' },
+        { text: tr('abandonConfirm.abandon'), style: 'destructive', onPress: () => void timer.onAbandon() },
       ],
     );
   }
@@ -289,7 +291,7 @@ export default function Timer() {
           <Pressable
             onPress={minimize}
             accessibilityRole="button"
-            accessibilityLabel="Minimize timer"
+            accessibilityLabel={tr('minimizeA11y')}
             style={closeBtn}
             hitSlop={8}
           >
@@ -298,7 +300,7 @@ export default function Timer() {
 
           <View style={eyebrowRow}>
             <Animated.View style={[liveDot, dotStyle]} />
-            <AppText style={eyebrowText}>Timing now</AppText>
+            <AppText style={eyebrowText}>{tr('eyebrow')}</AppText>
           </View>
 
           <View style={{ width: t.size.control.sm, height: t.size.control.sm }} />
@@ -314,10 +316,10 @@ export default function Timer() {
           />
 
           <View style={reframeRow}>
-            <AppText style={reframeStrong}>guessed {guessRounded}m</AppText>
+            <AppText style={reframeStrong}>{tr('reframe.guessed', { count: guessRounded })}</AppText>
             <AppText style={reframeSoft}>→</AppText>
-            <AppText style={reframeSoft}>honest</AppText>
-            <AppText style={reframeHonest}>~{honestRounded}m</AppText>
+            <AppText style={reframeSoft}>{tr('reframe.honestLabel')}</AppText>
+            <AppText style={reframeHonest}>{tr('reframe.honestValue', { count: honestRounded })}</AppText>
           </View>
 
           <View style={taskBlock}>
@@ -354,7 +356,7 @@ export default function Timer() {
             <Pressable
               onPress={confirmAbandon}
               accessibilityRole="button"
-              accessibilityLabel="Abandon task"
+              accessibilityLabel={tr('abandonA11y')}
               style={abandonBtn}
               hitSlop={8}
             >
@@ -363,7 +365,7 @@ export default function Timer() {
 
             <View style={{ flex: 1 }}>
               <AppButton
-                label="Stop & log"
+                label={tr('stopAndLog')}
                 variant="indigo"
                 size="md"
                 fullWidth

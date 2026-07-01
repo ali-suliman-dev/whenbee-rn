@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { type TextStyle, type ViewStyle, View } from 'react-native';
+import { useTranslation } from 'react-i18next';
 import {
   useDerivedValue,
   useAnimatedReaction,
@@ -33,6 +34,7 @@ export function PaceLabel({
   estimateSec: number;
 }) {
   const t = useTheme();
+  const { t: tr } = useTranslation('timer');
   const [phase, setPhase] = useState<Phase>('under');
   const [overMin, setOverMin] = useState(0);
 
@@ -76,9 +78,9 @@ export function PaceLabel({
   };
 
   let copy: string;
-  if (isOver) copy = `+${overMin} over your guess — that's ok, now we know`;
-  else if (phase === 'closing') copy = 'Closing in on your guess… that’s fine';
-  else copy = 'On track — you’ve got time';
+  if (isOver) copy = tr('pace.over', { count: overMin });
+  else if (phase === 'closing') copy = tr('pace.closing');
+  else copy = tr('pace.onTrack');
 
   return (
     <View style={wrap} accessibilityLiveRegion="polite">

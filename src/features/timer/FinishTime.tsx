@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { View, type TextStyle, type ViewStyle } from 'react-native';
+import { useTranslation } from 'react-i18next';
 import {
   useDerivedValue,
   useAnimatedReaction,
@@ -57,6 +58,7 @@ export function FinishTime({
   isPro?: boolean;
 }) {
   const t = useTheme();
+  const { t: tr } = useTranslation('timer');
   const [over, setOver] = useState(false);
   // Re-projected finish minute (epoch ms, floored to the current minute of now).
   const [reprojectClock, setReprojectClock] = useState(finishClock);
@@ -134,22 +136,24 @@ export function FinishTime({
   };
 
   const a11yRange = range
-    ? `Honest finish range ${finishLowClock} to ${finishHighClock}${confidence === 'setting' ? ', still learning' : ''}.`
+    ? confidence === 'setting'
+      ? tr('finish.rangeA11yLearning', { low: finishLowClock, high: finishHighClock })
+      : tr('finish.rangeA11y', { low: finishLowClock, high: finishHighClock })
     : undefined;
 
   return (
     <View style={wrap}>
       <View style={row}>
-        <AppText style={labelStyle}>Started {startedClock}</AppText>
+        <AppText style={labelStyle}>{tr('finish.started', { clock: startedClock })}</AppText>
         <AppText style={labelStyle}>·</AppText>
         {over ? (
-          <AppText style={overStyle}>now finishing ~{reprojectClock}</AppText>
+          <AppText style={overStyle}>{tr('finish.reprojecting', { clock: reprojectClock })}</AppText>
         ) : showRange && range ? (
           <AppText style={rangeStyle} accessibilityLabel={a11yRange}>
-            Done {finishLowClock}–{finishHighClock}
+            {tr('finish.rangeDone', { low: finishLowClock, high: finishHighClock })}
           </AppText>
         ) : (
-          <AppText style={labelStyle}>Done ~{finishClock}</AppText>
+          <AppText style={labelStyle}>{tr('finish.pointDone', { clock: finishClock })}</AppText>
         )}
       </View>
       {showRange && range ? (
