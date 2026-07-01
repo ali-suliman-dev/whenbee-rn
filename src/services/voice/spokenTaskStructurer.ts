@@ -11,7 +11,10 @@ const INSTRUCTIONS =
   'Rewrite the user’s spoken note into a single short task. Start with a verb, ' +
   'imperative mood, at most 6 words, no preamble or filler. Return only the task title.';
 
-export const structureSpokenTask = async (transcript: string): Promise<ParsedTaskDraft> => {
+export const structureSpokenTask = async (
+  transcript: string,
+  lang: string,
+): Promise<ParsedTaskDraft> => {
   const llmResult = await getOnDeviceLlm().structure<{ title: string }>({
     instructions: INSTRUCTIONS,
     prompt: transcript,
@@ -22,5 +25,5 @@ export const structureSpokenTask = async (transcript: string): Promise<ParsedTas
   if (llmTitle.length > 0) {
     return { title: llmTitle, rawTranscript: transcript, source: 'appleLLM' };
   }
-  return parseSpokenTask(transcript); // Tier-1 fallback (source: 'rules')
+  return parseSpokenTask(transcript, lang); // Tier-1 fallback (source: 'rules')
 };

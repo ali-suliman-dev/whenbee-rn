@@ -76,7 +76,7 @@ describe('useVoiceCapture', () => {
       await handlers!.onFinal('i need to email sarah');
     });
 
-    expect(mockStructure).toHaveBeenCalledWith('i need to email sarah');
+    expect(mockStructure).toHaveBeenCalledWith('i need to email sarah', 'en');
     expect(onDraft).toHaveBeenCalledWith(expect.objectContaining({ title: 'Email Sarah' }));
     expect(result.current.status).toBe('idle');
   });

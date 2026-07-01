@@ -85,8 +85,7 @@ export const useVoiceCapture = (onDraft: (d: ParsedTaskDraft) => void): VoiceCap
           sessionRef.current = null;
           setPartial('');
           setStatus('idle');
-          // TODO(B3): pass i18n.language once structureSpokenTask is localized
-          void structureSpokenTask(text).then((draft) => {
+          void structureSpokenTask(text, i18n.language).then((draft) => {
             if (draft.title.length > 0) onDraft(draft);
           });
         },
