@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { View, Text, ScrollView, Pressable, type ViewStyle, type TextStyle } from 'react-native';
 import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
+import { useTranslation } from 'react-i18next';
 import { Screen } from '@/src/components/Screen';
 import { AppButton } from '@/src/components/AppButton';
 import { SheetGrabber } from '@/src/components/SheetGrabber';
@@ -62,6 +63,7 @@ function findFounderPackage(packages: readonly Package[]): Package | null {
 
 export function Paywall({ trigger, readiness = 'pre' }: { trigger?: string; readiness?: Readiness }) {
   const t = useTheme();
+  const { t: tr } = useTranslation('paywall');
   const purchase = useEntitlement((s) => s.purchase);
   const restore = useEntitlement((s) => s.restore);
   const { status, offering } = useOfferings();
@@ -117,7 +119,7 @@ export function Paywall({ trigger, readiness = 'pre' }: { trigger?: string; read
       router.back();
     } catch {
       analytics.capture('purchase', { plan, price: 0, result: 'error' });
-      setError("That didn't go through. No charge was made — give it another try.");
+      setError(tr('plans.purchaseError'));
     } finally {
       setBusy(false);
     }
@@ -132,10 +134,10 @@ export function Paywall({ trigger, readiness = 'pre' }: { trigger?: string; read
       const isPro = useEntitlement.getState().isPro;
       analytics.capture('restore_purchases', { result: isPro ? 'success' : 'none' });
       if (isPro) router.back();
-      else setError('No earlier purchase found on this Apple ID.');
+      else setError(tr('plans.restoreNone'));
     } catch {
       analytics.capture('restore_purchases', { result: 'error' });
-      setError("Couldn't reach the store. Try again in a moment.");
+      setError(tr('plans.restoreError'));
     } finally {
       setBusy(false);
     }
@@ -149,10 +151,10 @@ export function Paywall({ trigger, readiness = 'pre' }: { trigger?: string; read
   // CTA label tracks the selection: trial verb for subs, one-time verb for lifetime.
   const ctaLabel =
     selected?.duration === 'lifetime'
-      ? `Unlock Pro — ${selected.priceString}`
-      : 'Try 7 days free';
+      ? tr('plans.ctaUnlock', { price: selected.priceString })
+      : tr('plans.ctaTrial');
 
-  const copy = copyFor(resolvedTrigger, readiness);
+  const copy = copyFor(tr, resolvedTrigger, readiness);
   const showTimeline = selected ? selected.duration !== 'lifetime' : true;
 
   const heading: TextStyle = { ...(type.title as unknown as TextStyle), color: t.colors.ink };
@@ -214,11 +216,9 @@ export function Paywall({ trigger, readiness = 'pre' }: { trigger?: string; read
 
         {/* Plans — store-priced, three states. */}
         {status === 'loading' ? (
-          <Text style={[sub, { textAlign: 'center' }]}>Loading plans…</Text>
+          <Text style={[sub, { textAlign: 'center' }]}>{tr('plans.loading')}</Text>
         ) : status === 'unavailable' || !offering ? (
-          <Text style={[sub, { textAlign: 'center' }]}>
-            Plans are not available right now. Check your connection and reopen this screen.
-          </Text>
+          <Text style={[sub, { textAlign: 'center' }]}>{tr('plans.unavailable')}</Text>
         ) : (
           <>
             {showFounderReserve && founderPkg ? (
@@ -236,52 +236,50 @@ export function Paywall({ trigger, readiness = 'pre' }: { trigger?: string; read
             {error ? <Text style={errorText}>{error}</Text> : null}
 
             <AppButton
-              label={busy ? 'One moment…' : ctaLabel}
+              label={busy ? tr('plans.ctaBusy') : ctaLabel}
               variant="amber"
               fullWidth
               disabled={busy || !selected}
               onPress={handleBuy}
             />
 
-            <Text style={fineText}>
-              No charge today. We will remind you before the trial ends. Cancel anytime. On-device and private.
-            </Text>
+            <Text style={fineText}>{tr('plans.finePrint')}</Text>
 
             <View style={linkRow}>
               <Pressable
                 onPress={handleRestore}
                 accessibilityRole="button"
-                accessibilityLabel="Restore purchases"
+                accessibilityLabel={tr('plans.restoreLinkA11y')}
                 accessibilityState={{ disabled: busy }}
                 disabled={busy}
               >
-                <Text style={linkText}>Restore</Text>
+                <Text style={linkText}>{tr('plans.restoreLink')}</Text>
               </Pressable>
               <Pressable
                 onPress={handleManage}
                 accessibilityRole="button"
-                accessibilityLabel="Manage your subscription"
+                accessibilityLabel={tr('plans.manageLinkA11y')}
               >
-                <Text style={linkText}>Manage subscription</Text>
+                <Text style={linkText}>{tr('plans.manageLink')}</Text>
               </Pressable>
             </View>
 
             {/* Calibration is free forever — the real no-card trial. */}
             <View style={freeStrip}>
               <Text style={freeStripText}>
-                <Text style={freeStripStrong}>Calibration stays free, always.</Text> No card, no renewal — that is your real trial. Pro just adds the payoff.
+                <Text style={freeStripStrong}>{tr('plans.freeStripBold')}</Text> {tr('plans.freeStripRest')}
               </Text>
             </View>
 
             {/* One honest line. No fabricated numbers. */}
             <View style={proofRow}>
               <Ionicons name="heart-outline" size={t.iconSize.sm} color={t.colors.accent} />
-              <Text style={proofText}>Built by people who are late to everything. It is the tool we needed first.</Text>
+              <Text style={proofText}>{tr('plans.trustLine')}</Text>
             </View>
           </>
         )}
 
-        {isExpoGo ? <Text style={fineText}>Running in Expo Go — purchases are simulated.</Text> : null}
+        {isExpoGo ? <Text style={fineText}>{tr('plans.expoGoNotice')}</Text> : null}
       </ScrollView>
     </Screen>
   );

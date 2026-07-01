@@ -1,4 +1,5 @@
 import { View, Text, type ViewStyle, type TextStyle } from 'react-native';
+import { useTranslation } from 'react-i18next';
 import { useTheme } from '@/src/theme/useTheme';
 import { type } from '@/src/theme/typography';
 
@@ -9,14 +10,11 @@ import { type } from '@/src/theme/typography';
 // t.borderWidth.thin = 0 in this project; t.borderWidth.chip (1pt) used instead.
 // ──────────────────────────────────────────────────────────────────────────────
 
-const STEPS = [
-  { head: 'Today', desc: 'Full Pro, free' },
-  { head: 'Day 5', desc: 'We remind you' },
-  { head: 'Day 7', desc: 'Trial ends' },
-] as const;
+const STEP_KEYS = ['today', 'day5', 'day7'] as const;
 
 export function TrialTimeline() {
   const t = useTheme();
+  const { t: tr } = useTranslation('paywall');
   const headStyle: TextStyle = { ...(type.caption as unknown as TextStyle), color: t.colors.ink, fontFamily: 'Jakarta-Bold' };
   const descStyle: TextStyle = { ...(type.caption as unknown as TextStyle), color: t.colors.inkSoft };
   const dotBase: ViewStyle = {
@@ -25,8 +23,8 @@ export function TrialTimeline() {
   };
   return (
     <View style={{ flexDirection: 'row', gap: t.space[2] }}>
-      {STEPS.map((s, i) => (
-        <View key={s.head} style={{ flex: 1, gap: t.space[1.5] }}>
+      {STEP_KEYS.map((key, i) => (
+        <View key={key} style={{ flex: 1, gap: t.space[1.5] }}>
           <View
             style={[
               dotBase,
@@ -35,8 +33,8 @@ export function TrialTimeline() {
                 : { backgroundColor: t.colors.surfaceRaised, borderColor: t.colors.inkFaint },
             ]}
           />
-          <Text style={headStyle}>{s.head}</Text>
-          <Text style={descStyle}>{s.desc}</Text>
+          <Text style={headStyle}>{tr(`trialTimeline.${key}.head`)}</Text>
+          <Text style={descStyle}>{tr(`trialTimeline.${key}.desc`)}</Text>
         </View>
       ))}
     </View>

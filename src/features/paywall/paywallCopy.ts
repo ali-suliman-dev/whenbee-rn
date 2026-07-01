@@ -1,3 +1,5 @@
+import type { TFunction } from 'i18next';
+
 // ──────────────────────────────────────────────────────────────────────────────
 // paywallCopy — the adaptive top map. Pure data + pure functions (no React/RN).
 // The paywall arrives from ~15 different gates; the eyebrow/title/sub + which proof
@@ -5,6 +7,11 @@
 // always relevant to what the user tapped — never a generic calendar pitch for a
 // goals gate. The 5-row bundle stack itself is fixed (STACK_ROWS); only its lead
 // row floats. No guilt language, no fabricated proof.
+//
+// Copy is localized: both `copyFor` and `getStackRows` are built from a `t`
+// function rather than hardcoded strings, since this module has no React context
+// of its own. Call sites hold a `useTranslation('paywall')` instance and pass its
+// `t` through (see `quizQuestions.ts` for the same pattern in onboarding).
 // ──────────────────────────────────────────────────────────────────────────────
 
 export type Trigger =
@@ -44,37 +51,16 @@ export interface StackRow {
   desc: string;
 }
 
-// Fixed bundle — five grouped rows covering all of Pro. Default order; the lead row floats up.
-export const STACK_ROWS: readonly StackRow[] = [
-  {
-    key: 'calendar',
-    title: 'Honest calendar & capacity',
-    desc: 'Every event padded with your real buffers. See what the day can actually hold — and plan around your sharpest hours.',
-  },
-  {
-    key: 'coach',
-    title: 'Routines & goal coach',
-    desc: 'Recurring chains learn their honest length. Set an accuracy aim per category and get help at guess-time, with an ETA to your goal.',
-  },
-  {
-    key: 'insight',
-    title: 'Sharper self-insight',
-    desc: "What steals your time, when you're most accurate, and what context costs you — the patterns your logs already hold.",
-  },
-  {
-    key: 'review',
-    title: 'Your week, reviewed',
-    desc: 'A calm weekly & monthly recap, long-range history, and a clean PDF or one-tap share — made on your phone, never sent without you.',
-  },
-  {
-    key: 'presence',
-    title: 'Always there',
-    desc: "Live timer and finish-time on your lock screen, plus a gentle nudge when you've run well past your guess.",
-  },
-] as const;
-
-const EYEBROW = 'WHENBEE PRO';
-const HONEST_TITLE = 'Your numbers are real now.';
+/** Fixed bundle — five grouped rows covering all of Pro. Default order; the lead row floats up. */
+export function getStackRows(t: TFunction<'paywall'>): readonly StackRow[] {
+  return [
+    { key: 'calendar', title: t('stack.calendar.title'), desc: t('stack.calendar.desc') },
+    { key: 'coach', title: t('stack.coach.title'), desc: t('stack.coach.desc') },
+    { key: 'insight', title: t('stack.insight.title'), desc: t('stack.insight.desc') },
+    { key: 'review', title: t('stack.review.title'), desc: t('stack.review.desc') },
+    { key: 'presence', title: t('stack.presence.title'), desc: t('stack.presence.desc') },
+  ] as const;
+}
 
 interface TriggerCopy {
   title: string;
@@ -83,94 +69,80 @@ interface TriggerCopy {
   lead: StackKey;
 }
 
-const MAP: Record<Trigger, TriggerCopy> = {
-  make_day_honest: {
-    title: 'Your real day, before you live it.',
-    sub: 'You did the logging — Whenbee knows how your days actually run. Pro carries those real numbers into everything you plan.',
-    proof: 'calendar', lead: 'calendar',
-  },
-  calendar_export: {
-    title: 'Your real day, before you live it.',
-    sub: 'You did the logging — Whenbee knows how your days actually run. Pro carries those real numbers into everything you plan.',
-    proof: 'calendar', lead: 'calendar',
-  },
-  day_capacity: {
-    title: 'Know what the day can hold.',
-    sub: 'Before you say yes to one more thing, see whether it actually fits your real hours.',
-    proof: 'calendar', lead: 'calendar',
-  },
-  goals: {
-    title: 'You set the aim. Now get a coach.',
-    sub: 'Pick an accuracy goal for any category. Whenbee coaches you at guess-time and shows your ETA to hitting it.',
-    proof: 'coach', lead: 'coach',
-  },
-  routines: {
-    title: 'Set it once. It remembers the honest length.',
-    sub: 'Your morning routine takes 50 minutes, not 20. Pro learns the whole chain and tells you when to actually start.',
-    proof: 'coach', lead: 'coach',
-  },
-  steals_your_time: {
-    title: 'See exactly what steals your time.',
-    sub: "Your logs already hold the pattern — when you slip, what context costs you, and the hours you're sharpest. Pro reads it back.",
-    proof: 'insight', lead: 'insight',
-  },
-  focus_window: {
-    title: 'Plan around your sharpest hours.',
-    sub: 'Whenbee learns when your estimates land tight and when they slip — so you can put the hard work where it fits.',
-    proof: 'insight', lead: 'insight',
-  },
-  honest_range: {
-    title: 'How sure is that number?',
-    sub: 'Pro shows the confidence band around your honest estimate — and watches it narrow as you calibrate.',
-    proof: 'insight', lead: 'insight',
-  },
-  review_ritual: {
-    title: 'See exactly what steals your time.',
-    sub: "Your logs already hold the pattern — when you slip, what context costs you, and the hours you're sharpest. Pro reads it back.",
-    proof: 'insight', lead: 'review',
-  },
-  pdf_export: {
-    title: 'Hand someone your honest numbers.',
-    sub: 'A clean weekly or monthly report — made on your phone, shared only when you choose.',
-    proof: 'none', lead: 'review',
-  },
-  hyperfocus_guard: {
-    title: 'Whenbee stays with you while you work.',
-    sub: "Your live timer and honest finish-time on the lock screen, plus a gentle nudge when you've run well past your guess.",
-    proof: 'none', lead: 'presence',
-  },
-  persistent_presence: {
-    title: 'Whenbee stays with you while you work.',
-    sub: "Your live timer and honest finish-time on the lock screen, plus a gentle nudge when you've run well past your guess.",
-    proof: 'none', lead: 'presence',
-  },
-  settings_upgrade: {
-    title: 'Everything your honest numbers can do.',
-    sub: 'You did the logging. Pro puts those real numbers to work everywhere you plan.',
-    proof: 'calendar', lead: 'calendar',
-  },
-  pro_reveal: {
-    title: 'Everything your honest numbers can do.',
-    sub: 'You did the logging. Pro puts those real numbers to work everywhere you plan.',
-    proof: 'calendar', lead: 'calendar',
-  },
-  pro_preview: {
-    title: 'Everything your honest numbers can do.',
-    sub: 'You did the logging. Pro puts those real numbers to work everywhere you plan.',
-    proof: 'calendar', lead: 'calendar',
-  },
-};
-
-const HONEST_SUB =
-  'You did the logging — Whenbee knows how your days actually run. Now let Pro put those real numbers to work everywhere you plan.';
+function triggerMap(t: TFunction<'paywall'>): Record<Trigger, TriggerCopy> {
+  return {
+    make_day_honest: {
+      title: t('triggers.makeDayHonest.title'), sub: t('triggers.makeDayHonest.sub'),
+      proof: 'calendar', lead: 'calendar',
+    },
+    calendar_export: {
+      title: t('triggers.calendarExport.title'), sub: t('triggers.calendarExport.sub'),
+      proof: 'calendar', lead: 'calendar',
+    },
+    day_capacity: {
+      title: t('triggers.dayCapacity.title'), sub: t('triggers.dayCapacity.sub'),
+      proof: 'calendar', lead: 'calendar',
+    },
+    goals: {
+      title: t('triggers.goals.title'), sub: t('triggers.goals.sub'),
+      proof: 'coach', lead: 'coach',
+    },
+    routines: {
+      title: t('triggers.routines.title'), sub: t('triggers.routines.sub'),
+      proof: 'coach', lead: 'coach',
+    },
+    steals_your_time: {
+      title: t('triggers.stealsYourTime.title'), sub: t('triggers.stealsYourTime.sub'),
+      proof: 'insight', lead: 'insight',
+    },
+    focus_window: {
+      title: t('triggers.focusWindow.title'), sub: t('triggers.focusWindow.sub'),
+      proof: 'insight', lead: 'insight',
+    },
+    honest_range: {
+      title: t('triggers.honestRange.title'), sub: t('triggers.honestRange.sub'),
+      proof: 'insight', lead: 'insight',
+    },
+    review_ritual: {
+      title: t('triggers.reviewRitual.title'), sub: t('triggers.reviewRitual.sub'),
+      proof: 'insight', lead: 'review',
+    },
+    pdf_export: {
+      title: t('triggers.pdfExport.title'), sub: t('triggers.pdfExport.sub'),
+      proof: 'none', lead: 'review',
+    },
+    hyperfocus_guard: {
+      title: t('triggers.hyperfocusGuard.title'), sub: t('triggers.hyperfocusGuard.sub'),
+      proof: 'none', lead: 'presence',
+    },
+    persistent_presence: {
+      title: t('triggers.persistentPresence.title'), sub: t('triggers.persistentPresence.sub'),
+      proof: 'none', lead: 'presence',
+    },
+    settings_upgrade: {
+      title: t('triggers.settingsUpgrade.title'), sub: t('triggers.settingsUpgrade.sub'),
+      proof: 'calendar', lead: 'calendar',
+    },
+    pro_reveal: {
+      title: t('triggers.proReveal.title'), sub: t('triggers.proReveal.sub'),
+      proof: 'calendar', lead: 'calendar',
+    },
+    pro_preview: {
+      title: t('triggers.proPreview.title'), sub: t('triggers.proPreview.sub'),
+      proof: 'calendar', lead: 'calendar',
+    },
+  };
+}
 
 export function copyFor(
+  t: TFunction<'paywall'>,
   trigger: Trigger,
   readiness: 'pre' | 'honest',
 ): { eyebrow: string; title: string; sub: string; proof: ProofKind; lead: StackKey } {
-  const base = MAP[trigger];
+  const base = triggerMap(t)[trigger];
+  const eyebrow = t('eyebrow');
   if (readiness === 'honest') {
-    return { eyebrow: EYEBROW, title: HONEST_TITLE, sub: HONEST_SUB, proof: base.proof, lead: base.lead };
+    return { eyebrow, title: t('honest.title'), sub: t('honest.sub'), proof: base.proof, lead: base.lead };
   }
-  return { eyebrow: EYEBROW, title: base.title, sub: base.sub, proof: base.proof, lead: base.lead };
+  return { eyebrow, title: base.title, sub: base.sub, proof: base.proof, lead: base.lead };
 }

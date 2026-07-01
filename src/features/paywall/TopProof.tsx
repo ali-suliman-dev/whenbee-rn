@@ -1,4 +1,5 @@
 import { View, Text, type ViewStyle, type TextStyle } from 'react-native';
+import { useTranslation } from 'react-i18next';
 import { Card } from '@/src/components/Card';
 import { useTheme } from '@/src/theme/useTheme';
 import { type } from '@/src/theme/typography';
@@ -38,8 +39,9 @@ function MiniBars({ caption }: { caption: string }) {
 }
 
 export function TopProof({ kind }: { kind: ProofKind }) {
+  const { t } = useTranslation('paywall');
   if (kind === 'calendar') return <BeforeAfterHero />;
-  if (kind === 'coach') return <MiniBars caption="On track — about 2 weeks to your goal." />;
-  if (kind === 'insight') return <MiniBars caption="Mornings land tight. Late afternoons slip." />;
+  if (kind === 'coach') return <MiniBars caption={t('topProof.coachCaption')} />;
+  if (kind === 'insight') return <MiniBars caption={t('topProof.insightCaption')} />;
   return null;
 }

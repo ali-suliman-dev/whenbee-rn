@@ -1,6 +1,7 @@
 import 'i18next';
 import type common from './locales/en/common.json';
 import type onboarding from './locales/en/onboarding.json';
+import type paywall from './locales/en/paywall.json';
 
 declare module 'i18next' {
   interface CustomTypeOptions {
@@ -8,6 +9,7 @@ declare module 'i18next' {
     resources: {
       common: typeof common;
       onboarding: typeof onboarding;
+      paywall: typeof paywall;
       // add each namespace here as it is created (Task A4).
     };
   }

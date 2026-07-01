@@ -1,4 +1,5 @@
 import { View, Text, type ViewStyle, type TextStyle } from 'react-native';
+import { useTranslation } from 'react-i18next';
 import { Card } from '@/src/components/Card';
 import { useTheme } from '@/src/theme/useTheme';
 import { type } from '@/src/theme/typography';
@@ -30,6 +31,7 @@ const HONEST_PAD = [0.34, 0.26] as const; // the buffer Whenbee adds (amber)
 
 export function BeforeAfterHero() {
   const t = useTheme();
+  const { t: tr } = useTranslation('paywall');
 
   const colLabel: TextStyle = { ...(type.eyebrow as unknown as TextStyle), color: t.colors.inkSoft };
   const colLabelAfter: TextStyle = { ...colLabel, color: t.colors.amberText };
@@ -57,7 +59,7 @@ export function BeforeAfterHero() {
       <View style={columns}>
         {/* Your plan — packs tight, then spills past the day. */}
         <View style={column}>
-          <Text style={colLabel}>YOUR PLAN</Text>
+          <Text style={colLabel}>{tr('beforeAfter.planLabel')}</Text>
           <View style={stack}>
             {PLAN_BLOCKS.map((w, i) => (
               <View key={`p${i}`} style={[slot, { width: `${w * 100}%`, backgroundColor: t.colors.inkFaint }]} />
@@ -69,30 +71,30 @@ export function BeforeAfterHero() {
               />
             ))}
           </View>
-          <Text style={note}>Crashes 5:00. Runs over.</Text>
+          <Text style={note}>{tr('beforeAfter.planNote')}</Text>
         </View>
 
         {/* Honest day — real time (indigo) + the buffer Whenbee adds (amber). */}
         <View style={column}>
-          <Text style={colLabelAfter}>HONEST DAY</Text>
+          <Text style={colLabelAfter}>{tr('beforeAfter.honestLabel')}</Text>
           <View style={stack}>
             <View style={[slot, { width: `${HONEST_REAL[0] * 100}%`, backgroundColor: t.colors.primary }]} />
             <View style={[slot, { width: `${HONEST_PAD[0] * 100}%`, backgroundColor: t.colors.accent }]} />
             <View style={[slot, { width: `${HONEST_REAL[1] * 100}%`, backgroundColor: t.colors.primary }]} />
             <View style={[slot, { width: `${HONEST_PAD[1] * 100}%`, backgroundColor: t.colors.accent }]} />
           </View>
-          <Text style={noteAfter}>Ends 7:10. It fits.</Text>
+          <Text style={noteAfter}>{tr('beforeAfter.honestNote')}</Text>
         </View>
       </View>
 
       <View style={legend}>
         <View style={legendItem}>
           <View style={[swatch, { backgroundColor: t.colors.primary }]} />
-          <Text style={legendText}>your real time</Text>
+          <Text style={legendText}>{tr('beforeAfter.legendReal')}</Text>
         </View>
         <View style={legendItem}>
           <View style={[swatch, { backgroundColor: t.colors.accent }]} />
-          <Text style={legendText}>the buffer Whenbee adds</Text>
+          <Text style={legendText}>{tr('beforeAfter.legendBuffer')}</Text>
         </View>
       </View>
     </Card>
