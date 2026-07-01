@@ -26,6 +26,16 @@ export const type = {
   captionBold: { fontFamily: 'Jakarta-Bold', fontSize: fs.caption, lineHeight: 18 },
   micro: { fontFamily: 'Jakarta-Regular', fontSize: fs.micro, lineHeight: 16 },
   eyebrow: { fontFamily: 'Jakarta-Bold', fontSize: fs.xs, lineHeight: 14, letterSpacing: 2, textTransform: 'uppercase' as const },
+  // Tiny (10px) word-part label — the rail/histogram axis + plan/goal/guess
+  // labels ("planned", "guess", "38m"/"73m" axis ends). Semibold for legibility
+  // at this size against the faint numeric neighbour it usually sits beside.
+  labelXs: { fontFamily: 'Jakarta-SemiBold', fontSize: fs.xs, lineHeight: 14 },
+  // Tiny (10px) tabular numeral — the bold number embedded inside a `labelXs`
+  // span (e.g. the "38" in "38m planned", the "+30" in "+30m").
+  numMicro: { fontFamily: 'Inter-Bold', fontSize: fs.xs, lineHeight: 14, letterSpacing: 0, fontVariant: ['tabular-nums'] as const },
+  // Caption-sized (12px) tabular numeral — the bold number embedded inside a
+  // `caption`/`bodySm` span (e.g. "1.8×" in the ratio chip, "64" in "64 logs").
+  numCaption: { fontFamily: 'Inter-Bold', fontSize: fs.caption, lineHeight: 18, letterSpacing: -0.2, fontVariant: ['tabular-nums'] as const },
   timerNumeral: { fontFamily: 'Inter-SemiBold', fontSize: fs.timer, lineHeight: 78, letterSpacing: -2.3, fontVariant: ['tabular-nums'] as const },
   timerClock: { fontFamily: 'Inter-SemiBold', fontSize: fs.timerClock, lineHeight: 70, letterSpacing: -1.5, fontVariant: ['tabular-nums'] as const },
   honestNumberLg: { fontFamily: 'Inter-Bold', fontSize: fs.honestLg, lineHeight: 38, letterSpacing: -0.9, fontVariant: ['tabular-nums'] as const },

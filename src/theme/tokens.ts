@@ -619,6 +619,23 @@ export const tokens = {
     },
   },
 
+  // Weekly/Monthly Review card visualization geometry (ForwardActionCard rail/pipe
+  // + BiggestSurpriseRitualCard histogram) — kept in one group so neither card
+  // inlines a raw px. Rail: a small SVG viewBox (railViewW×railViewH) draws a
+  // planned→goal pipe; railInsetL/railGoalInset keep the solid start and the honey
+  // goal node inset from the SVG edges so the goal node never overhangs the card.
+  // Histogram: histTopPad reserves the lane above the bars for the guess flag +
+  // caret; histCaretTop/histGuideTop position the caret and the dotted guess-line
+  // start within that lane (the dotted line's height is derived at render time as
+  // histTopPad + histBarHeight - histGuideTop, so it always reaches the bars'
+  // baseline exactly, whatever the geometry).
+  reviewViz: {
+    railViewW: 296, railViewH: 21, railY: 9, railInsetL: 8, railGoalInset: 10,
+    pipeStroke: 3, pipeDash: '2 8', planNodeR: 4.5, planNodeStroke: 2, goalNodeR: 6,
+    histBarHeight: 56, histBarRadius: 3, histCaretW: 5, histCaretH: 6, histDotW: 1,
+    histDotDash: '1 3', histTopPad: 30, histCaretTop: 20, histGuideTop: 28,
+  },
+
   // ── brand illustration palette ──────────────────────────────────────────────
   // Fixed art colors for the Whenbee mascot (BeeMascot). Brand art does NOT recolor
   // by mode — a mascot reads as the SAME bee in light and dark, the way a logo does.
