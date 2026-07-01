@@ -5,5 +5,19 @@
   "listeningSheet": {
     "listening": "Listening…",
     "stop": "Stop"
+  },
+  "networkConsent": {
+    "title": "Use online recognition?",
+    "body": "Offline voice isn't available for this language on this device yet, so your words would be sent to Apple or Google to turn into text. Nothing else about your day leaves your phone.",
+    "confirm": "Use online recognition",
+    "cancel": "Not now",
+    "dismissA11y": "Close"
+  },
+  "download": {
+    "title": "Download offline voice?",
+    "body": "Add this language's offline voice model so recognition can run right on your device.",
+    "cta": "Download",
+    "cancel": "Not now",
+    "dismissA11y": "Close"
   }
 }

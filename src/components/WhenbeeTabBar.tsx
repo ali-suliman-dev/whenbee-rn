@@ -14,6 +14,7 @@ import { TabIcon, type TabIconName } from './TabIcon';
 import { TabBarAddButton, type AddButtonConfig } from './TabBarAddButton';
 import { QuickActionArc } from './quick/QuickActionArc';
 import { ListeningSheet } from './voice/ListeningSheet';
+import { NetworkSttConsentSheet, DownloadModelPrompt } from './voice/NetworkSttConsentSheet';
 import { router } from 'expo-router';
 import { useTimerStore } from '@/src/stores/timerStore';
 import { useVoiceQuickAdd } from '@/src/features/voice/useVoiceQuickAdd';
@@ -209,6 +210,16 @@ export function WhenbeeTabBar({ state, descriptors, navigation }: BottomTabBarPr
           visible={voiceQuickAdd.status === 'listening'}
           partial={voiceQuickAdd.partial}
           onStop={voiceQuickAdd.stop}
+        />
+        <NetworkSttConsentSheet
+          visible={voiceQuickAdd.status === 'needsNetworkConsent'}
+          onConfirm={voiceQuickAdd.confirmNetworkConsent}
+          onCancel={voiceQuickAdd.stop}
+        />
+        <DownloadModelPrompt
+          visible={voiceQuickAdd.status === 'needsDownload'}
+          onDownload={voiceQuickAdd.triggerDownload}
+          onCancel={voiceQuickAdd.stop}
         />
       </>
     );
