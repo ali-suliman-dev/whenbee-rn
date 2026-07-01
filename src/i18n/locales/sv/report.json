@@ -1,0 +1,64 @@
+{
+  "screenTitle": "Exportera en rapport",
+  "close": "Stäng",
+  "timeWindow": "TIDSFÖNSTER",
+  "window": {
+    "last30": "Senaste 30 dagarna",
+    "last90": "Senaste 90 dagarna",
+    "allTime": "Totalt"
+  },
+  "includesLine": "Innehåller din träffsäkerhet, hur lång tid saker faktiskt tar dig per kategori, och dina största överraskningar.",
+  "createPdf": "Skapa PDF",
+  "building": "Bygger din rapport…",
+  "madeOnPhone": "Skapad på din telefon. Inget lämnar din enhet om du inte delar det.",
+  "errorLine": "Kunde inte skapa rapporten just nu. Försök igen?",
+  "thin": {
+    "heading": "Inte tillräckligt loggad tid än",
+    "body": "En rapport blir användbar efter cirka sex avslutade uppgifter i det här fönstret. Prova \"Totalt\", eller kom tillbaka efter några till.",
+    "useAllTime": "Använd totalt"
+  },
+  "locked": {
+    "heading": "Ta med dina ärliga siffror till nästa möte",
+    "body": "Gör det Whenbee har lärt sig om din tid till en ren PDF du kan ge till en coach, terapeut eller läkare.",
+    "unlock": "Lås upp rapportexport",
+    "onYourPhone": "På din telefon. Inget laddas upp."
+  },
+  "pdf": {
+    "title": "Tidsrapport",
+    "subline": "Skapad {{date}} · {{window}}",
+    "preparedBy": "Förberedd av Whenbee för {{name}}s data",
+    "eyebrowAccuracy": "Träffsäkerhet",
+    "accuracyDefinition": "Hur nära dina tidsgissningar landade verkligheten, i genomsnitt.",
+    "glance": {
+      "tasksLogged": "Loggade uppgifter",
+      "categoriesTracked": "Spårade kategorier",
+      "steadiestCategory": "Jämnaste kategori",
+      "none": "—"
+    },
+    "biasTable": {
+      "heading": "Hur lång tid saker faktiskt tar dig",
+      "category": "Kategori",
+      "logs": "Loggar",
+      "youGuess": "Du gissar",
+      "reallyTakes": "Det tar faktiskt",
+      "bias": "Avvikelse"
+    },
+    "omitted_one": "{{count}} kategori till håller fortfarande på att stabiliseras och lämnades utanför.",
+    "omitted_other": "{{count}} kategorier till håller fortfarande på att stabiliseras och lämnades utanför.",
+    "surprises": {
+      "heading": "Största överraskningarna",
+      "line": "gissade {{estimate}} min, tog {{actual}} min"
+    },
+    "sharpest": {
+      "heading": "När dina gissningar träffar närmast"
+    },
+    "footer": {
+      "left": "Whenbee · personlig tidsrapport",
+      "disclaimer": "Det här är personliga uppskattningar, inte ett kliniskt mått."
+    }
+  },
+  "sharpestNote": {
+    "time": "Dina gissningar träffar närmast under {{label}}.",
+    "day": "Dina gissningar träffar närmast under {{label}}."
+  }
+}

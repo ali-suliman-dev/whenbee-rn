@@ -38,6 +38,8 @@ import enLegal from './locales/en/legal.json';
 import svLegal from './locales/sv/legal.json';
 import enCategories from './locales/en/categories.json';
 import svCategories from './locales/sv/categories.json';
+import enReport from './locales/en/report.json';
+import svReport from './locales/sv/report.json';
 // NOTE: as each namespace is added in later tasks, import it here for both langs.
 
 export const SUPPORTED_LANGS = ['en', 'sv'] as const;
@@ -66,6 +68,7 @@ export const resources = {
     shared: enShared,
     legal: enLegal,
     categories: enCategories,
+    report: enReport,
   },
   sv: {
     common: svCommon,
@@ -88,6 +91,7 @@ export const resources = {
     shared: svShared,
     legal: svLegal,
     categories: svCategories,
+    report: svReport,
   },
 } as const;
 

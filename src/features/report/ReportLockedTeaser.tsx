@@ -3,6 +3,7 @@ import { View, Text, Pressable, ScrollView, type TextStyle } from 'react-native'
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
+import { useTranslation } from 'react-i18next';
 import { Screen } from '@/src/components/Screen';
 import { AppText } from '@/src/components/AppText';
 import { AppButton } from '@/src/components/AppButton';
@@ -21,10 +22,10 @@ import type { ReportWindow } from './reportModel';
 // Pro CTA. No countdown, no fake scarcity (this audience punishes it).
 // ──────────────────────────────────────────────────────────────────────────────
 
-function CloseButton({ onPress }: { onPress: () => void }) {
+function CloseButton({ onPress, label }: { onPress: () => void; label: string }) {
   const t = useTheme();
   return (
-    <Pressable onPress={onPress} hitSlop={t.size.hitSlop} accessibilityRole="button" accessibilityLabel="Close">
+    <Pressable onPress={onPress} hitSlop={t.size.hitSlop} accessibilityRole="button" accessibilityLabel={label}>
       <View
         style={{
           width: t.size.control.sm,
@@ -43,6 +44,7 @@ function CloseButton({ onPress }: { onPress: () => void }) {
 
 export function ReportLockedTeaser() {
   const t = useTheme();
+  const { t: tr } = useTranslation('report');
   const insets = useSafeAreaInsets();
   // "All time" gives the fullest preview from whatever the user has logged.
   const [windowKind] = useState<ReportWindow['kind']>('all');
@@ -77,9 +79,9 @@ export function ReportLockedTeaser() {
         }}
       >
         <AppText variant="display" style={{ color: t.colors.ink }}>
-          Export a report
+          {tr('screenTitle')}
         </AppText>
-        <CloseButton onPress={() => router.back()} />
+        <CloseButton onPress={() => router.back()} label={tr('close')} />
       </View>
 
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: t.space[8] }}>
@@ -108,17 +110,14 @@ export function ReportLockedTeaser() {
         ) : null}
 
         <View style={{ marginTop: t.space[5], gap: t.space[2] }}>
-          <Text style={headingStyle}>Take your honest numbers to your next appointment</Text>
-          <Text style={bodyStyle}>
-            Turn what Whenbee learned about your time into a clean PDF you can hand to a coach,
-            therapist, or doctor.
-          </Text>
+          <Text style={headingStyle}>{tr('locked.heading')}</Text>
+          <Text style={bodyStyle}>{tr('locked.body')}</Text>
         </View>
       </ScrollView>
 
       <View style={{ paddingBottom: insets.bottom + t.space[3], paddingTop: t.space[2], gap: t.space[2] }}>
-        <AppButton label="Unlock report export" variant="indigo" fullWidth onPress={onUnlock} />
-        <Text style={microStyle}>On your phone. Nothing uploads.</Text>
+        <AppButton label={tr('locked.unlock')} variant="indigo" fullWidth onPress={onUnlock} />
+        <Text style={microStyle}>{tr('locked.onYourPhone')}</Text>
       </View>
     </Screen>
   );

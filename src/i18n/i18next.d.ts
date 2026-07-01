@@ -19,6 +19,7 @@ import type calendar from './locales/en/calendar.json';
 import type shared from './locales/en/shared.json';
 import type legal from './locales/en/legal.json';
 import type categories from './locales/en/categories.json';
+import type report from './locales/en/report.json';
 
 declare module 'i18next' {
   interface CustomTypeOptions {
@@ -44,6 +45,7 @@ declare module 'i18next' {
       shared: typeof shared;
       legal: typeof legal;
       categories: typeof categories;
+      report: typeof report;
       // add each namespace here as it is created (Task A4).
     };
   }
