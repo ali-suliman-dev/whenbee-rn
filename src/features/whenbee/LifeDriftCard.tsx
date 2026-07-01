@@ -6,6 +6,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import { Pressable, Text, View, type TextStyle, type ViewStyle } from 'react-native';
 import Animated, { useAnimatedStyle, useSharedValue, withTiming } from 'react-native-reanimated';
+import { useTranslation } from 'react-i18next';
 import type { BlindSpot } from './useWhenbeeHub';
 
 // ──────────────────────────────────────────────────────────────────────────────
@@ -31,6 +32,7 @@ export function LifeDriftCard({
   onDismiss: () => void;
 }) {
   const t = useTheme();
+  const { t: tr } = useTranslation('whenbee');
   const who = companionName ?? 'Whenbee';
   const area = blindSpot?.name ?? null;
 
@@ -100,11 +102,11 @@ export function LifeDriftCard({
             <Ionicons name="refresh-outline" size={t.iconSize.sm} color={t.colors.ink} />
           </View>
           <View style={titleCol}>
-            <Text style={eyebrow}>DRIFT CHECK</Text>
-            <Text style={title}>Life shifts, so does your timing</Text>
+            <Text style={eyebrow}>{tr('driftCheck.eyebrow')}</Text>
+            <Text style={title}>{tr('driftCheck.title')}</Text>
           </View>
         </View>
-        <Text style={body}>A few honest logs and {who} catches back up to you.</Text>
+        <Text style={body}>{tr('driftCheck.body', { name: who })}</Text>
       </View>
 
       <View style={actionRow}>
@@ -118,10 +120,12 @@ export function LifeDriftCard({
           }
           hitSlop={t.size.hitSlop}
           accessibilityRole="button"
-          accessibilityLabel={area ? `Re-check ${area}` : 'Keep logging'}
+          accessibilityLabel={area ? tr('driftCheck.recheckArea', { area }) : tr('driftCheck.keepLogging')}
         >
           <Animated.View style={[pill, pillStyle]}>
-            <Text style={pillText}>{area ? `Re-check ${area}` : 'Keep logging'}</Text>
+            <Text style={pillText}>
+              {area ? tr('driftCheck.recheckArea', { area }) : tr('driftCheck.keepLogging')}
+            </Text>
             {area ? (
               <Ionicons name="arrow-forward" size={t.iconSize.xs} color={t.colors.primary} />
             ) : null}
@@ -131,10 +135,10 @@ export function LifeDriftCard({
           onPress={onDismiss}
           hitSlop={t.size.hitSlop}
           accessibilityRole="button"
-          accessibilityLabel="Not now"
+          accessibilityLabel={tr('driftCheck.notNow')}
           style={dismiss}
         >
-          <Text style={dismissText}>Not now</Text>
+          <Text style={dismissText}>{tr('driftCheck.notNow')}</Text>
         </Pressable>
       </View>
     </Card>

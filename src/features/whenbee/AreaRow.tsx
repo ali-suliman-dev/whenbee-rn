@@ -2,6 +2,7 @@ import { type } from '@/src/theme/typography';
 import { useTheme } from '@/src/theme/useTheme';
 import { Ionicons } from '@expo/vector-icons';
 import { Pressable, Text, View, type TextStyle, type ViewStyle } from 'react-native';
+import { useTranslation } from 'react-i18next';
 
 // One merged row per tracked category: name · inline honey bar (sharpness) ·
 // learned multiplier · chevron → the category page. Replaces both the separate
@@ -18,6 +19,7 @@ export function AreaRow({
   onPress: () => void;
 }) {
   const t = useTheme();
+  const { t: tr } = useTranslation('whenbee');
   const fill = Math.max(0, Math.min(100, sharpness));
 
   const row: ViewStyle = {
@@ -61,7 +63,11 @@ export function AreaRow({
   };
 
   return (
-    <Pressable onPress={onPress} accessibilityRole="button" accessibilityLabel={`${name} insights`}>
+    <Pressable
+      onPress={onPress}
+      accessibilityRole="button"
+      accessibilityLabel={tr('areaRow.a11y', { name })}
+    >
       <View style={row}>
         <Text style={nameText}>{name}</Text>
         <View style={track}>

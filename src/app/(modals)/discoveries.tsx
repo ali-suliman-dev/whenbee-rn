@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { View, Text, type TextStyle } from 'react-native';
+import { useTranslation } from 'react-i18next';
 import { Screen } from '@/src/components/Screen';
 import { SheetGrabber } from '@/src/components/SheetGrabber';
 import { DiscoveriesGallery } from '@/src/features/whenbee/DiscoveriesGallery';
@@ -16,6 +17,7 @@ import type { Discovery } from '@/src/domain/types';
 
 export default function DiscoveriesRoute() {
   const t = useTheme();
+  const { t: tr } = useTranslation('whenbee');
   const loadDiscoveries = useCalibrationStore((s) => s.loadDiscoveries);
   const [discoveries, setDiscoveries] = useState<Discovery[]>([]);
 
@@ -36,9 +38,9 @@ export default function DiscoveriesRoute() {
     <Screen>
       <SheetGrabber />
       <View style={{ paddingTop: t.space[6], paddingBottom: t.space[4] }}>
-        <Text style={heading}>Things you’ve learned</Text>
+        <Text style={heading}>{tr('discoveriesRoute.heading')}</Text>
         {discoveries.length > 0 ? (
-          <Text style={sub}>{discoveries.length} truths Whenbee found in your tracking</Text>
+          <Text style={sub}>{tr('discoveriesRoute.sub', { count: discoveries.length })}</Text>
         ) : null}
       </View>
       <DiscoveriesGallery discoveries={discoveries} />

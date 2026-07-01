@@ -12,6 +12,7 @@ import type voice from './locales/en/voice.json';
 import type categoryDetail from './locales/en/categoryDetail.json';
 import type review from './locales/en/review.json';
 import type routines from './locales/en/routines.json';
+import type whenbee from './locales/en/whenbee.json';
 
 declare module 'i18next' {
   interface CustomTypeOptions {
@@ -30,6 +31,7 @@ declare module 'i18next' {
       categoryDetail: typeof categoryDetail;
       review: typeof review;
       routines: typeof routines;
+      whenbee: typeof whenbee;
       // add each namespace here as it is created (Task A4).
     };
   }
