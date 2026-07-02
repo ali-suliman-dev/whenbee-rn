@@ -90,10 +90,28 @@ class WhenbeePresenceModule : Module() {
       PresenceNotifier.clearTimer(context)
       lastLabel = null; lastFinish = null; lastProRich = false
     }
+
+    // Home-screen widget: JS writes the presentation-ready snapshot, native renders it.
+    // Stored under the shared prefs file (key "widget"); the write then rebuilds every
+    // placed widget instance so the surface reflects the latest next-task immediately.
+    Function("writeWidgetSnapshot") { json: String ->
+      PresenceNotifier.prefs(context).edit().putString(KEY_WIDGET, json).apply()
+      NextTaskWidgetProvider.updateAll(context)
+    }
+
+    Function("clearWidgetSnapshot") {
+      PresenceNotifier.prefs(context).edit().remove(KEY_WIDGET).apply()
+      NextTaskWidgetProvider.updateAll(context)
+    }
   }
 
   // Retained so a foreground overrun update can re-post with the original label/finish.
   private var lastLabel: String? = null
   private var lastFinish: Double? = null
   private var lastProRich: Boolean = false
+
+  private companion object {
+    // Key under the shared prefs file (PresenceNotifier.prefs) for the widget snapshot.
+    const val KEY_WIDGET = "widget"
+  }
 }
