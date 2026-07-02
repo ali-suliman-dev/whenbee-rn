@@ -1,6 +1,5 @@
 package expo.modules.whenbeepresence
 
-import android.app.Notification
 import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.content.Context
@@ -48,7 +47,7 @@ class WhenbeePresenceModule : Module() {
     // (status-bar chip). Reflection-guarded so the module compiles/runs on older devices.
     if (Build.VERSION.SDK_INT >= 36 && isProRich) {
       try {
-        val m = NotificationCompat.Builder::class.java.getMethod("requestPromotedOngoing", Boolean::class.javaPrimitiveType)
+        val m = NotificationCompat.Builder::class.java.getMethod("setRequestPromotedOngoing", Boolean::class.javaPrimitiveType)
         m.invoke(builder, true)
       } catch (_: Throwable) { /* not available → plain ongoing notification */ }
     }
@@ -78,7 +77,7 @@ class WhenbeePresenceModule : Module() {
 
     Function("stopTimerNotification") {
       NotificationManagerCompat.from(context).cancel(NOTIFICATION_ID)
-      lastLabel = null; lastFinish = null
+      lastLabel = null; lastFinish = null; lastProRich = false
     }
   }
 

@@ -19,5 +19,8 @@ android {
 }
 
 dependencies {
-  implementation "androidx.core:core-ktx:1.13.1"
+  // 1.17.0 is the first STABLE androidx.core that ships
+  // NotificationCompat.Builder.setRequestPromotedOngoing (Android 16 "Live Updates").
+  // Targets API 36, matching the app's compileSdk/targetSdk 36.
+  implementation "androidx.core:core-ktx:1.17.0"
 }
