@@ -9,8 +9,13 @@ const attrs: LiveActivityAttributes = { taskLabel: 'Write', finishEpoch: 3700, s
 
 function makeDeps(overrides: Partial<AndroidPresenceDeps> = {}): jest.Mocked<AndroidPresenceDeps> {
   return {
-    saveSnapshot: jest.fn(), clearSnapshot: jest.fn(), renderWidget: jest.fn(),
-    notif: { startTimerNotification: jest.fn(), updateTimerNotification: jest.fn(), stopTimerNotification: jest.fn() },
+    notif: {
+      writeWidgetSnapshot: jest.fn(),
+      clearWidgetSnapshot: jest.fn(),
+      startTimerNotification: jest.fn(),
+      updateTimerNotification: jest.fn(),
+      stopTimerNotification: jest.fn(),
+    },
     ...overrides,
   } as jest.Mocked<AndroidPresenceDeps>;
 }
@@ -19,18 +24,16 @@ test('isStub is false — Android presence is a real surface', () => {
   expect(createAndroidPresence(makeDeps()).isStub).toBe(false);
 });
 
-test('writeSnapshot persists then re-renders the widget', () => {
+test('writeSnapshot forwards a JSON-serialized snapshot to the native widget writer', () => {
   const deps = makeDeps();
   createAndroidPresence(deps).writeSnapshot(snapshot);
-  expect(deps.saveSnapshot).toHaveBeenCalledWith(snapshot);
-  expect(deps.renderWidget).toHaveBeenCalledTimes(1);
+  expect(deps.notif!.writeWidgetSnapshot).toHaveBeenCalledWith(JSON.stringify(snapshot));
 });
 
-test('clearSnapshot clears store then re-renders the empty widget', () => {
+test('clearSnapshot forwards to the native widget clearer', () => {
   const deps = makeDeps();
   createAndroidPresence(deps).clearSnapshot();
-  expect(deps.clearSnapshot).toHaveBeenCalledTimes(1);
-  expect(deps.renderWidget).toHaveBeenCalledTimes(1);
+  expect(deps.notif!.clearWidgetSnapshot).toHaveBeenCalledTimes(1);
 });
 
 test('startLiveActivity forwards attrs to the native notification', () => {
@@ -51,13 +54,27 @@ test('endLiveActivity stops the notification', () => {
   expect(deps.notif!.stopTimerNotification).toHaveBeenCalledTimes(1);
 });
 
-test('notification calls no-op safely when the native module is absent', () => {
+test('every call no-ops safely when the native module is absent', () => {
   const deps = makeDeps({ notif: null });
   const p = createAndroidPresence(deps);
-  expect(() => { p.startLiveActivity(attrs); p.updateLiveActivity({ isOverrun: true }); p.endLiveActivity(); }).not.toThrow();
+  expect(() => {
+    p.writeSnapshot(snapshot);
+    p.clearSnapshot();
+    p.startLiveActivity(attrs);
+    p.updateLiveActivity({ isOverrun: true });
+    p.endLiveActivity();
+  }).not.toThrow();
 });
 
 test('a throwing dep never escapes writeSnapshot', () => {
-  const deps = makeDeps({ saveSnapshot: jest.fn(() => { throw new Error('kv down'); }) });
+  const deps = makeDeps({
+    notif: {
+      writeWidgetSnapshot: jest.fn(() => { throw new Error('binder down'); }),
+      clearWidgetSnapshot: jest.fn(),
+      startTimerNotification: jest.fn(),
+      updateTimerNotification: jest.fn(),
+      stopTimerNotification: jest.fn(),
+    },
+  });
   expect(() => createAndroidPresence(deps).writeSnapshot(snapshot)).not.toThrow();
 });

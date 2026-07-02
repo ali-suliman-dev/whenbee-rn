@@ -83,25 +83,6 @@
             "minSdkVersion": 24
           }
         }
-      ],
-      [
-        "react-native-android-widget",
-        {
-          "widgets": [
-            {
-              "name": "NextTask",
-              "label": "Whenbee — Next task",
-              "description": "Your next task and its honest finish time",
-              "minWidth": "110dp",
-              "minHeight": "110dp",
-              "targetCellWidth": 2,
-              "targetCellHeight": 2,
-              "resizeMode": "horizontal|vertical",
-              "previewImage": "./assets/widget-preview/next-task.png",
-              "updatePeriodMillis": 1800000
-            }
-          ]
-        }
       ]
     ],
     "experiments": {

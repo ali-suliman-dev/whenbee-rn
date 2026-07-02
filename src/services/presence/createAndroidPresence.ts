@@ -1,14 +1,14 @@
 // Pure, dependency-injected Android implementation of NativePresenceModule.
-// Widget writes go to the kv store + a widget re-render; the running-timer
-// "Live Activity" maps onto the native ongoing-notification module. Every method
-// is best-effort — a presence failure must never reach the core loop.
+// Every call forwards to the native WhenbeePresence module — the home-screen
+// widget is a real RemoteViews surface it paints directly, and the running-timer
+// "Live Activity" maps onto its ongoing-notification API. Every method is
+// best-effort — a presence failure must never reach the core loop.
 import type { NativePresenceModule, WidgetSnapshot, LiveActivityAttributes } from '@/src/services/liveActivity';
 
 export interface AndroidPresenceDeps {
-  saveSnapshot: (snapshot: WidgetSnapshot) => void;
-  clearSnapshot: () => void;
-  renderWidget: () => void;
   notif: {
+    writeWidgetSnapshot: (json: string) => void;
+    clearWidgetSnapshot: () => void;
     startTimerNotification: (attrs: Record<string, unknown>) => void;
     updateTimerNotification: (state: Record<string, unknown>) => void;
     stopTimerNotification: () => void;
@@ -27,15 +27,8 @@ export function createAndroidPresence(deps: AndroidPresenceDeps): NativePresence
   return {
     isStub: false,
     writeSnapshot: (snapshot: WidgetSnapshot) =>
-      swallow(() => {
-        deps.saveSnapshot(snapshot);
-        deps.renderWidget();
-      }),
-    clearSnapshot: () =>
-      swallow(() => {
-        deps.clearSnapshot();
-        deps.renderWidget();
-      }),
+      swallow(() => deps.notif?.writeWidgetSnapshot(JSON.stringify(snapshot))),
+    clearSnapshot: () => swallow(() => deps.notif?.clearWidgetSnapshot()),
     startLiveActivity: (attributes: LiveActivityAttributes) =>
       swallow(() => deps.notif?.startTimerNotification({ ...attributes })),
     updateLiveActivity: (state: { isOverrun: boolean }) =>

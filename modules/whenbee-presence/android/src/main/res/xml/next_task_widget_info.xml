@@ -8,4 +8,5 @@
     android:widgetCategory="home_screen"
     android:previewImage="@drawable/nexttask_preview"
     android:initialLayout="@layout/widget_next_task"
-    android:updatePeriodMillis="1800000" />
+    android:updatePeriodMillis="1800000"
+    android:description="@string/widget_description" />
