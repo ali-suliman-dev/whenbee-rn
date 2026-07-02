@@ -1052,3 +1052,52 @@ git commit -m "docs(android-presence): document the Android widget + live notifi
 
 Unlike iOS (where the widget + Live Activity are stripped from the free-team build and need a **paid** Apple Developer account), **every** Android piece here runs on a personal debug/release APK on your Pixel — no Google Play account, no paid membership, no server. You'll add the widget from the launcher's widget picker and watch the ongoing timer notification tick live. The Android-16 promoted "Live Update" status-bar chip (the closest analog to the iOS Dynamic Island / Live Activity) is visible on your Pixel 10 Pro specifically because it's on API 36.
 ```
+
+---
+
+# ADDENDUM (2026-07-03): Native widget pivot + native overrun fix
+
+Device verification on the Pixel 10 Pro (Android 16 / API 36) found: the live-timer **notification works**, but (1) overrun display is wrong because the JS `setTimeout` flip is frozen while the app is backgrounded, and (2) `react-native-android-widget@0.20.3` renders a **blank** widget on API 36 (its headless JS render task never runs) and crashes internally on remove. Decision: fix overrun **natively**, and replace the JS widget library with a **native RemoteViews `AppWidgetProvider`** housed in the existing `modules/whenbee-presence` Expo module.
+
+**New shared state:** a single SharedPreferences file `"<pkg>.presence"` holds two keys — `"timer"` (the running-timer JSON: taskLabel, finishEpoch, isProRich) and `"widget"` (the WidgetSnapshot JSON). Both the notification's alarm receiver and the widget provider read from it, so presence survives process death.
+
+## Task G1: Native overrun flip (AlarmManager) + persisted notification state
+
+**Files:** `modules/whenbee-presence/android/src/main/java/expo/modules/whenbeepresence/WhenbeePresenceModule.kt` (modify), new `TimerAlarmReceiver.kt`, module `AndroidManifest.xml` (create — declare the receiver + `USE_EXACT_ALARM`).
+
+- On `startTimerNotification`: persist `{taskLabel, finishEpoch, isProRich}` to SharedPreferences key `"timer"`, post the ongoing chronometer notification (as today), AND schedule an exact alarm (`AlarmManager.setExactAndAllowWhileIdle`, `USE_EXACT_ALARM`) at `finishEpoch*1000` with a `PendingIntent` to `TimerAlarmReceiver`.
+- `TimerAlarmReceiver.onReceive`: read `"timer"` from SharedPreferences; if present, re-post the SAME notification id with `isOverrun=true` (count-up chronometer). This fires even when the app is backgrounded/killed — the fix for the lock-screen case.
+- `stopTimerNotification`: cancel the alarm (same PendingIntent), cancel the notification, clear the `"timer"` key.
+- `updateTimerNotification` (JS path) stays as a harmless foreground fast-path; both routes re-post idempotently.
+- Extract the notification-building into a shared function usable by both the module and the receiver (put it in a `PresenceNotifier` object or the receiver calls back into a static builder). Keep the chronometer polarity from Task 6.
+- Manifest: the module's `AndroidManifest.xml` declares `<receiver android:name=".TimerAlarmReceiver" android:exported="false"/>` and `<uses-permission android:name="android.permission.USE_EXACT_ALARM"/>`.
+
+**Verify:** `./gradlew :whenbee-presence:compileReleaseKotlin` BUILD SUCCESSFUL.
+
+## Task G2: Native RemoteViews widget (provider + layout + snapshot store + update trigger)
+
+**Files (all under `modules/whenbee-presence/android/`):** `WhenbeePresenceModule.kt` (add `writeWidgetSnapshot(json)` + `clearWidgetSnapshot()`), new `NextTaskWidgetProvider.kt` (`AppWidgetProvider`), `src/main/res/layout/widget_next_task.xml`, `src/main/res/xml/next_task_widget_info.xml` (appwidget-provider), `src/main/res/drawable/*` (preview + bar assets), `src/main/res/values/strings.xml` (widget label/description), `AndroidManifest.xml` (declare the widget receiver + `APPWIDGET_UPDATE` intent-filter + provider meta-data), module `build.gradle` (no new deps — RemoteViews is in the framework; androidx.core already present).
+
+- `writeWidgetSnapshot(json)`: store JSON under SharedPreferences key `"widget"`, then `AppWidgetManager.getInstance(ctx).getAppWidgetIds(ComponentName(ctx, NextTaskWidgetProvider))` → `notifyAppWidgetViewDataChanged`/`updateAppWidget` (rebuild RemoteViews). `clearWidgetSnapshot()`: remove the key + update (empty state).
+- `NextTaskWidgetProvider.onUpdate`/`onReceive(APPWIDGET_UPDATE)`: read `"widget"` JSON → build `RemoteViews(pkg, R.layout.widget_next_task)`: set task label, "Honest finish H:MM" (drop prefix when `now-updatedAtEpoch > 6h`), toggle the Pro fill bar width by `arcFraction(updatedAtEpoch, honestFinishEpoch, now)` (port the formula into Kotlin with a comment pointing at `src/engine/presence.ts` — same single-source mirror pattern as the Swift copy), empty state "No task queued" when no snapshot. Set the Start view's `setOnClickPendingIntent` to a `PendingIntent.getActivity` with `Intent(ACTION_VIEW, Uri.parse(startDeepLink ?: "whenbee://timer"))`.
+- Layout `widget_next_task.xml`: dark surface (`#1F2130`), rounded bg drawable, wordmark row, label (maxLines 2), finish caption, Start chip, and a 2-view fill-bar (track + fill) whose fill weight is set from arcFraction. Colors mirror `src/theme/tokens.ts` (accent `#EEAE4D`, ink `#F4F1EA`, inkSoft `#ADA9B5`, surfaceSunken `#15161F`).
+- Manifest: `<receiver android:name=".NextTaskWidgetProvider" android:exported="true"> <intent-filter><action android:name="android.appwidget.action.APPWIDGET_UPDATE"/></intent-filter> <meta-data android:name="android.appwidget.provider" android:resource="@xml/next_task_widget_info"/> </receiver>`. The provider xml sets `minWidth/minHeight 110dp`, `targetCellWidth/Height 2`, `resizeMode`, `previewImage`, `initialLayout=@layout/widget_next_task`, `updatePeriodMillis 1800000`, `widgetCategory home_screen`.
+
+**Verify:** compile; prebuild merges the module manifest so the app manifest gains the `.NextTaskWidgetProvider` receiver.
+
+## Task G3: Rewire JS to the native module; remove react-native-android-widget
+
+**Files:** `src/services/presence/createAndroidPresence.ts` + its test (modify), `src/services/presence/androidPresence.android.ts` (modify), delete `src/widgets/NextTaskWidget.tsx`, `src/widgets/widgetTaskHandler.ts`, `src/widgets/widgetSnapshotStore.ts` (+ its test) and `src/widgets/widgetTheme.ts`, `index.js` (remove the widget registration), `app.json` (remove the `react-native-android-widget` plugin entry), `package.json` (remove the dep via `npm uninstall react-native-android-widget`).
+
+- `AndroidPresenceDeps` becomes `{ notif }` where the native `notif` module now also exposes `writeWidgetSnapshot(json: string)` and `clearWidgetSnapshot()`. Factory: `writeSnapshot(s)` → `notif?.writeWidgetSnapshot(JSON.stringify(s))`; `clearSnapshot()` → `notif?.clearWidgetSnapshot()`; start/update/end unchanged. Keep the `swallow` guards and the `notif===null` no-op tests; drop the `saveSnapshot`/`renderWidget` deps and their tests, add `writeWidgetSnapshot`/`clearWidgetSnapshot` forwarding tests.
+- `androidPresence.android.ts`: drop the `react-native-android-widget` import, the `renderCurrentWidget`, and `widgetSnapshotStore`/`NextTaskWidget` imports; build deps solely from `requireOptionalNativeModule('WhenbeePresence')`.
+- `index.js`: remove the whole `if (Platform.OS === 'android') { registerWidgetTaskHandler … }` block (revert to just `import 'expo-router/entry'`; keep `package.json` `main` as `index.js` or revert to `expo-router/entry` — either works, simplest is to revert `main` to `expo-router/entry` and delete `index.js`).
+- `app.json`: remove the `["react-native-android-widget", {…}]` plugin entry. Keep the Android permissions and build props.
+
+**Verify:** `npm run lint && npm run typecheck && npm test` all green; `grep -r react-native-android-widget src app.json package.json` returns nothing.
+
+## Task G4: Device build + verify on the Pixel
+
+- Clean prebuild + `assembleRelease` from the worktree (clear `~/.tmp/metro-cache` first — the known worktree gotcha), install, launch.
+- Widget: on Today with a task queued (fires `publishWidgetSnapshot` → native `writeWidgetSnapshot` → widget repaints), add the widget from the launcher → it shows the task + honest finish + Start (+ Pro bar). Tapping Start opens the timer.
+- Overrun: start a timer, lock the phone, let it pass the honest finish → the notification flips to count-up (over-by) via the native alarm, NOT a negative countdown.
