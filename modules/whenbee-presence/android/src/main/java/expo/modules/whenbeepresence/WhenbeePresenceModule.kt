@@ -1,58 +1,53 @@
 package expo.modules.whenbeepresence
 
-import android.app.NotificationChannel
-import android.app.NotificationManager
+import android.app.AlarmManager
+import android.app.PendingIntent
 import android.content.Context
-import android.os.Build
-import androidx.core.app.NotificationCompat
-import androidx.core.app.NotificationManagerCompat
+import android.content.Intent
 import expo.modules.kotlin.modules.Module
 import expo.modules.kotlin.modules.ModuleDefinition
 
-// Android analog of the iOS Live Activity. An ONGOING notification whose countdown
-// is ticked by the system chronometer (no foreground service, no background JS),
-// progressively enhanced to an Android-16 promoted "Live Update" via ProgressStyle.
+// Android analog of the iOS Live Activity. An ONGOING notification whose countdown is ticked
+// by the system chronometer (no foreground service, no background JS). The count-up "overrun"
+// flip is driven NATIVELY by an exact AlarmManager alarm (see TimerAlarmReceiver) so it works
+// even while the app is backgrounded/killed and JS setTimeout is frozen.
 class WhenbeePresenceModule : Module() {
   private val context: Context
     get() = requireNotNull(appContext.reactContext) { "React context unavailable" }
 
-  private fun ensureChannel() {
-    val mgr = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
-    if (mgr.getNotificationChannel(CHANNEL_ID) == null) {
-      val channel = NotificationChannel(CHANNEL_ID, "Running timer", NotificationManager.IMPORTANCE_LOW).apply {
-        description = "Shows your live timer while a task is running"
-        setShowBadge(false)
+  private fun alarmPendingIntent(): PendingIntent {
+    val intent = Intent(context, TimerAlarmReceiver::class.java)
+    return PendingIntent.getBroadcast(
+      context,
+      PresenceNotifier.ALARM_REQUEST_CODE,
+      intent,
+      PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT,
+    )
+  }
+
+  private fun scheduleOverrunAlarm(finishMs: Long) {
+    val mgr = context.getSystemService(Context.ALARM_SERVICE) as AlarmManager
+    val pi = alarmPendingIntent()
+    // USE_EXACT_ALARM is auto-granted for timer/alarm apps on API 33+, so no runtime request.
+    // Guard the older-API path where the app may lack exact-alarm permission → fall back to an
+    // inexact allow-while-idle alarm rather than crashing with SecurityException.
+    val canExact = if (android.os.Build.VERSION.SDK_INT >= 31) mgr.canScheduleExactAlarms() else true
+    try {
+      if (canExact) {
+        mgr.setExactAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, finishMs, pi)
+      } else {
+        mgr.setAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, finishMs, pi)
       }
-      mgr.createNotificationChannel(channel)
+    } catch (_: SecurityException) {
+      mgr.setAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, finishMs, pi)
     }
   }
 
-  private fun postNotification(label: String, finishEpochSec: Double, isOverrun: Boolean, isProRich: Boolean) {
-    ensureChannel()
-    val finishMs = (finishEpochSec * 1000).toLong()
-
-    val builder = NotificationCompat.Builder(context, CHANNEL_ID)
-      .setSmallIcon(context.applicationInfo.icon)
-      .setContentTitle(label)
-      .setContentText(if (isOverrun) "Over your honest finish" else "Running — honest finish shown")
-      .setOngoing(true)
-      .setOnlyAlertOnce(true)
-      .setUsesChronometer(true)
-      // Count DOWN to the honest finish; once overrun, count UP from it (+MM:SS).
-      .setChronometerCountDown(!isOverrun)
-      .setWhen(finishMs)
-      .setShowWhen(true)
-
-    // Android 16 (API 36) promoted ongoing "Live Update" — the real Live Activity analog
-    // (status-bar chip). Reflection-guarded so the module compiles/runs on older devices.
-    if (Build.VERSION.SDK_INT >= 36 && isProRich) {
-      try {
-        val m = NotificationCompat.Builder::class.java.getMethod("setRequestPromotedOngoing", Boolean::class.javaPrimitiveType)
-        m.invoke(builder, true)
-      } catch (_: Throwable) { /* not available → plain ongoing notification */ }
-    }
-
-    NotificationManagerCompat.from(context).notify(NOTIFICATION_ID, builder.build())
+  private fun cancelOverrunAlarm() {
+    val mgr = context.getSystemService(Context.ALARM_SERVICE) as AlarmManager
+    val pi = alarmPendingIntent()
+    mgr.cancel(pi)
+    pi.cancel()
   }
 
   override fun definition() = ModuleDefinition {
@@ -64,30 +59,41 @@ class WhenbeePresenceModule : Module() {
       val label = attrs["taskLabel"] as? String ?: return@Function
       val finish = (attrs["finishEpoch"] as? Number)?.toDouble() ?: return@Function
       val proRich = attrs["isProRich"] as? Boolean ?: false
-      postNotification(label, finish, isOverrun = false, isProRich = proRich)
+
+      // Persist for the background alarm, and keep the in-memory fast path.
+      PresenceNotifier.saveTimer(context, label, finish, proRich)
       lastLabel = label; lastFinish = finish; lastProRich = proRich
+
+      val finishMs = (finish * 1000).toLong()
+      if (finishMs <= System.currentTimeMillis()) {
+        // Honest finish already passed — post overrun now, no alarm to schedule.
+        PresenceNotifier.post(context, label, finish, isOverrun = true, isProRich = proRich)
+      } else {
+        PresenceNotifier.post(context, label, finish, isOverrun = false, isProRich = proRich)
+        scheduleOverrunAlarm(finishMs)
+      }
     }
 
     Function("updateTimerNotification") { state: Map<String, Any?> ->
+      // Harmless foreground fast-path: idempotently re-post from the retained/persisted state.
       val overrun = state["isOverrun"] as? Boolean ?: false
-      val label = lastLabel ?: return@Function
-      val finish = lastFinish ?: return@Function
-      postNotification(label, finish, isOverrun = overrun, isProRich = lastProRich)
+      val persisted = PresenceNotifier.readTimer(context)
+      val label = lastLabel ?: persisted?.label ?: return@Function
+      val finish = lastFinish ?: persisted?.finishEpochSec ?: return@Function
+      val proRich = lastProRich || (persisted?.isProRich ?: false)
+      PresenceNotifier.post(context, label, finish, isOverrun = overrun, isProRich = proRich)
     }
 
     Function("stopTimerNotification") {
-      NotificationManagerCompat.from(context).cancel(NOTIFICATION_ID)
+      cancelOverrunAlarm()
+      PresenceNotifier.cancel(context)
+      PresenceNotifier.clearTimer(context)
       lastLabel = null; lastFinish = null; lastProRich = false
     }
   }
 
-  // Retained so an overrun update can re-post with the original label/finish.
+  // Retained so a foreground overrun update can re-post with the original label/finish.
   private var lastLabel: String? = null
   private var lastFinish: Double? = null
   private var lastProRich: Boolean = false
-
-  companion object {
-    private const val CHANNEL_ID = "whenbee.timer"
-    private const val NOTIFICATION_ID = 4711
-  }
 }

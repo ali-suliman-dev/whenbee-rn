@@ -1,0 +1,13 @@
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    package="expo.modules.whenbeepresence">
+
+    <!-- Auto-granted for timer/alarm apps on API 33+ — no runtime request needed.
+         Lets the exact overrun alarm fire while the app is backgrounded/killed. -->
+    <uses-permission android:name="android.permission.USE_EXACT_ALARM" />
+
+    <application>
+        <receiver
+            android:name=".TimerAlarmReceiver"
+            android:exported="false" />
+    </application>
+</manifest>
