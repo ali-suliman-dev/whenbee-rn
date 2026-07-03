@@ -41,6 +41,7 @@ import { useDayRecap } from '@/src/features/today/useDayRecap';
 import { CapacityChip } from '@/src/features/today/CapacityChip';
 import { CalendarOverlaySection } from '@/src/features/today/CalendarOverlaySection';
 import { useDayCapacity } from '@/src/features/today/useDayCapacity';
+import { useCapacityWidgetPublisher } from '@/src/features/today/useCapacityWidgetPublisher';
 import { DayTimeline } from '@/src/features/today/DayTimeline';
 import { useEntitlement } from '@/src/features/paywall/useEntitlement';
 import { useScheduledRoutines } from '@/src/features/today/useScheduledRoutines';
@@ -383,6 +384,10 @@ export default function Today() {
   // Day capacity — single call here so CapacityChip and CalendarOverlaySection
   // share the same resolved events (avoids double calendar fetches).
   const cap = useDayCapacity();
+  // Keeps the "Does Today Fit?" Home-screen widget (Pro) live off the same
+  // resolved capacity read above — never recomputes it. See
+  // useCapacityWidgetPublisher for the Pro-gate-at-source rule.
+  useCapacityWidgetPublisher(cap);
 
   const sectionLabel: TextStyle = {
     ...(type.eyebrow as unknown as TextStyle),

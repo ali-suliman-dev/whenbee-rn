@@ -9,6 +9,33 @@
 
 import { getNativePresence } from '@/src/services/liveActivity';
 
+/**
+ * "Does Today Fit?" widget payload — Pro. Mapped 1:1 from the engine's
+ * `DayLoadResult` (see `src/engine/honestDayLoad.ts`), never recomputed here.
+ * `slackMin`/`overByMin` are mutually exclusive: `slackMin` is the leftover
+ * shown when the day fits ('comfortable'/'snug'), `overByMin` is set when it
+ * doesn't ('over') — the other is 0 in each case.
+ */
+export interface CapacityWidgetData {
+  verdict: 'comfortable' | 'snug' | 'over';
+  /** Leftover minutes (load.openMin) when verdict is 'comfortable'/'snug'; 0 when 'over'. */
+  slackMin: number;
+  /** Minutes over the waking window when verdict is 'over'; 0 otherwise. */
+  overByMin: number;
+  updatedAtEpoch: number;
+  isPro: true;
+}
+
+/**
+ * Locked sentinel published for free users — the ONLY shape a non-Pro payload
+ * may take. Pro-gate-at-source: no verdict, no minutes, nothing that reveals
+ * the user's real day-load position. The native widget renders its own
+ * locked/teaser state off `isPro: false` alone.
+ */
+export interface LockedCapacityWidgetData {
+  isPro: false;
+}
+
 /** Publish a JSON-serializable payload under `key` for a Home-screen widget to read. */
 export function publishWidgetData(key: string, payload: unknown): void {
   try {
