@@ -136,7 +136,9 @@ export function AppButton({
 
   const wrapper: ViewStyle = {
     alignSelf: fullWidth ? 'stretch' : 'flex-start',
-    opacity: disabled ? t.opacity.disabled : 1,
+    // NB: disabled dimming lives on the pill FACE (pillContainer), never here.
+    // Parent opacity group-composites the whole subtree — the solid coin-edge
+    // would wash out and stop reading as a raised edge (Android especially).
     // Reserve the depth so a filled pill's edge doesn't overlap siblings. Ghost
     // is flat, so it claims no extra bottom space (keeps it aligned with a filled
     // sibling: the filled pill's reserved EDGE matches the ghost border thickness).
@@ -161,6 +163,9 @@ export function AppButton({
     borderRadius: t.radii.md,
     borderCurve: 'continuous',
     backgroundColor: bg[resolved],
+    // Disabled dims the FACE only; the edge behind stays fully solid so the
+    // button keeps its depth while reading as muted/inactive.
+    opacity: disabled ? t.opacity.disabled : 1,
     alignItems: 'center',
     justifyContent: 'center',
     flexDirection: 'row',
