@@ -85,6 +85,8 @@ function ViewToggle({ viewMode, onSelect, onTimelineGated, isPro }: ViewTogglePr
     minHeight: t.size.control.sm,
     backgroundColor: t.colors.surfaceSunken,
     borderRadius: t.radii.full,
+    // Android squares rounded corners on press-layer promotion — pin the clip.
+    overflow: 'hidden' as const,
     padding: 3,
     alignSelf: 'flex-start' as const,
   };
@@ -94,6 +96,7 @@ function ViewToggle({ viewMode, onSelect, onTimelineGated, isPro }: ViewTogglePr
       paddingHorizontal: t.space[4],
       paddingVertical: t.space[2],
       borderRadius: t.radii.full,
+      overflow: 'hidden' as const,
       backgroundColor: active ? t.colors.surface : 'transparent',
     };
   }

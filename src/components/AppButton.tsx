@@ -166,6 +166,9 @@ export function AppButton({
     // Disabled dims the FACE only; the edge behind stays fully solid so the
     // button keeps its depth while reading as muted/inactive.
     opacity: disabled ? t.opacity.disabled : 1,
+    // Android drops the corner clip on press-layer promotion, squaring the pill.
+    // overflow:hidden pins the rounded clip. (Edge is a sibling, not clipped.)
+    overflow: 'hidden',
     alignItems: 'center',
     justifyContent: 'center',
     flexDirection: 'row',
