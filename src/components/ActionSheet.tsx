@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Modal, Pressable, View, type ViewStyle, type TextStyle } from 'react-native';
+import { Modal, Pressable, ScrollView, useWindowDimensions, View, type ViewStyle, type TextStyle } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Animated, {
   Easing,
@@ -46,6 +46,7 @@ export function ActionSheet({
   const t = useTheme();
   const insets = useSafeAreaInsets();
   const reduced = useReducedMotion();
+  const { height: screenH } = useWindowDimensions();
   const [pressed, setPressed] = useState<number | null>(null);
 
   const progress = useSharedValue(0); // 0 hidden → 1 shown
@@ -104,7 +105,7 @@ export function ActionSheet({
   const rowLabel = (destructive?: boolean): TextStyle => ({
     fontSize: t.fontSize.md,
     fontWeight: t.fontWeight.semibold as TextStyle['fontWeight'],
-    color: destructive ? t.colors.danger : t.colors.ink,
+    color: destructive ? t.colors.danger : t.colors.ink, // audit-ok: destructive
     textAlign: 'center',
   });
 
@@ -125,7 +126,12 @@ export function ActionSheet({
 
           {title ? <AppText variant="caption" style={titleStyle}>{title}</AppText> : null}
 
-          <View>
+          <ScrollView
+            style={{ maxHeight: screenH * 0.5 }}
+            contentContainerStyle={{ flexGrow: 1 }}
+            showsVerticalScrollIndicator={false}
+            bounces={false}
+          >
             {items.map((item, i) => (
               <Pressable
                 key={item.label}
@@ -140,7 +146,7 @@ export function ActionSheet({
                 </View>
               </Pressable>
             ))}
-          </View>
+          </ScrollView>
 
           <Pressable
             accessibilityRole="button"
