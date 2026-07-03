@@ -16,7 +16,9 @@ class WhenbeePresenceModule : Module() {
     get() = requireNotNull(appContext.reactContext) { "React context unavailable" }
 
   private fun alarmPendingIntent(): PendingIntent {
-    val intent = Intent(context, TimerAlarmReceiver::class.java)
+    // Tag the overrun alarm with its action so TimerAlarmReceiver routes it as the finish-flip
+    // (and not as a visual progress tick).
+    val intent = Intent(context, TimerAlarmReceiver::class.java).setAction(TimerAlarmReceiver.ACTION_OVERRUN)
     return PendingIntent.getBroadcast(
       context,
       PresenceNotifier.ALARM_REQUEST_CODE,
@@ -73,6 +75,12 @@ class WhenbeePresenceModule : Module() {
       } else {
         PresenceNotifier.post(context, label, finish, isOverrun = false, isProRich = proRich)
         scheduleOverrunAlarm(finishMs)
+        // Advance the manual ProgressStyle bar over time (the chronometer already ticks the
+        // countdown). This only matters on API 36+, where ProgressStyle renders — skip the
+        // repeating wakeups below that, where the fallback determinate bar is a static best-effort.
+        if (android.os.Build.VERSION.SDK_INT >= 36) {
+          TimerAlarmReceiver.scheduleProgress(context)
+        }
       }
     }
 
@@ -84,10 +92,13 @@ class WhenbeePresenceModule : Module() {
       val finish = lastFinish ?: persisted?.finishEpochSec ?: return@Function
       val proRich = lastProRich || (persisted?.isProRich ?: false)
       PresenceNotifier.post(context, label, finish, isOverrun = overrun, isProRich = proRich)
+      // A foreground flip to overrun means the bar is full — stop advancing it.
+      if (overrun) TimerAlarmReceiver.cancelProgress(context)
     }
 
     Function("stopTimerNotification") {
       cancelOverrunAlarm()
+      TimerAlarmReceiver.cancelProgress(context)
       PresenceNotifier.cancel(context)
       PresenceNotifier.clearTimer(context)
       lastLabel = null; lastStart = null; lastFinish = null; lastProRich = false

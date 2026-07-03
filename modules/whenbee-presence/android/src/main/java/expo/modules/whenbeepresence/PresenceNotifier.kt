@@ -10,7 +10,6 @@ import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
 import org.json.JSONObject
 import java.util.Date
-import kotlin.math.ceil
 
 // Shared, static-callable builder for the running-timer notification.
 // Called from BOTH the Expo module (foreground) AND TimerAlarmReceiver (background/killed),
@@ -29,6 +28,9 @@ object PresenceNotifier {
 
   private const val KEY_TIMER = "timer"
   const val ALARM_REQUEST_CODE = 4711
+  // Separate request code so the repeating visual progress alarm is a DISTINCT PendingIntent
+  // from the one-shot overrun-flip alarm (cancelling one must never cancel the other).
+  const val PROGRESS_REQUEST_CODE = 4712
 
   // First API level where the promoted "Live Update" chip + ProgressStyle actually render.
   private const val PROMOTED_API = 36
@@ -112,8 +114,14 @@ object PresenceNotifier {
     if (Build.VERSION.SDK_INT >= PROMOTED_API) {
       // Android 16 Live Update: promote to the status-bar chip + pinned lock-screen row.
       builder.setRequestPromotedOngoing(true)
-      // ≤7-char glanceable chip text: remaining minutes while running, "over" past finish.
-      builder.setShortCriticalText(if (isOverrun) "over" else remainingShort(finishMs, now))
+      // Chip text policy: while RUNNING, DON'T set shortCriticalText — an unset short text lets
+      // the promoted chip fall back to the live count-down chronometer, which ticks MM:SS
+      // (seconds included) instead of the minutes-only "5m" label. On OVERRUN the chronometer
+      // counts UP (a growing "time since finish"), which reads oddly in a glanceable chip, so we
+      // pin a short "over" there instead. (Body content text stays "Finish H:mm" / "Over · …".)
+      if (isOverrun) {
+        builder.setShortCriticalText("over")
+      }
       // ProgressStyle needs at least one segment to define the track length (0..100 here).
       val progressStyle = NotificationCompat.ProgressStyle()
         .addProgressSegment(NotificationCompat.ProgressStyle.Segment(100))
@@ -139,13 +147,6 @@ object PresenceNotifier {
     if (total <= 0L) return 0
     val elapsed = now - startMs
     return (elapsed.toDouble() / total.toDouble() * 100.0).toInt().coerceIn(0, 100)
-  }
-
-  // Whole minutes remaining, ceil'd and clamped ≥0, e.g. "5m" (≤7 chars for the chip).
-  private fun remainingShort(finishMs: Long, now: Long): String {
-    val remMs = finishMs - now
-    val mins = if (remMs <= 0L) 0 else ceil(remMs / 60000.0).toInt()
-    return "${mins.coerceAtLeast(0)}m"
   }
 
   data class TimerState(
