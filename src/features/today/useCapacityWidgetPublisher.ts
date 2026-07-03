@@ -18,6 +18,13 @@ const CAPACITY_WIDGET_KEY = 'capacity';
  * Today tab screen), passing its result straight through — mirrors how
  * `useWidgetPublisher` is mounted from `useToday`.
  *
+ * Capacity is meaningful from queued tasks alone — calendar only enriches it.
+ * Calendar is opt-in, so a Pro user with it off (or never granted) is the
+ * COMMON case, and `useDayCapacity` still returns a valid task-only `load` for
+ * `status: 'off'` / `'denied'`. Publish from `load` whenever it exists,
+ * regardless of status — only fall back to clearing the widget if `load` is
+ * genuinely absent (not currently reachable, but the type allows it).
+ *
  * Pro-gate-at-source (hard product invariant): a free user's payload is ALWAYS
  * the locked sentinel `{ isPro: false }` — no verdict, no slack, no overBy.
  * Never widen this to "isPro:false + neutral numbers"; that still leaks the
@@ -27,7 +34,7 @@ const CAPACITY_WIDGET_KEY = 'capacity';
  * caller, since this sits in the Today render path.
  */
 export function useCapacityWidgetPublisher(cap: DayCapacityResult): void {
-  const { status, load, isPro } = cap;
+  const { load, isPro } = cap;
 
   useEffect(() => {
     try {
@@ -36,7 +43,7 @@ export function useCapacityWidgetPublisher(cap: DayCapacityResult): void {
         publishWidgetData(CAPACITY_WIDGET_KEY, locked);
         return;
       }
-      if (status !== 'ready' || load === null) {
+      if (load === null) {
         clearWidgetData(CAPACITY_WIDGET_KEY);
         return;
       }
@@ -52,5 +59,5 @@ export function useCapacityWidgetPublisher(cap: DayCapacityResult): void {
     } catch {
       // best-effort; a widget write must never break the Today render path
     }
-  }, [status, load, isPro]);
+  }, [load, isPro]);
 }

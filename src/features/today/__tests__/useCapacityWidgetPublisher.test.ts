@@ -89,25 +89,37 @@ describe('useCapacityWidgetPublisher', () => {
     expect(payload).not.toHaveProperty('overByMin');
   });
 
-  it('clears the widget when Pro but no data is ready yet (loading)', () => {
-    const cap = makeCap({ status: 'loading' });
+  it('clears the widget when Pro but load is genuinely absent (defensive, not currently reachable)', () => {
+    const cap = makeCap({ status: 'loading', load: null });
     renderHook(() => useCapacityWidgetPublisher(cap));
     expect(mockClear).toHaveBeenCalledWith('capacity');
     expect(mockPublish).not.toHaveBeenCalled();
   });
 
-  it('clears the widget when Pro but calendar access was denied', () => {
-    const cap = makeCap({ status: 'denied', load: null });
+  it('publishes the task-only load when calendar access was denied (widget stays live)', () => {
+    const cap = makeCap({
+      status: 'denied',
+      load: makeLoad({ verdict: 'comfortable', openMin: 200, overByMin: 0 }),
+    });
     renderHook(() => useCapacityWidgetPublisher(cap));
-    expect(mockClear).toHaveBeenCalledWith('capacity');
-    expect(mockPublish).not.toHaveBeenCalled();
+    expect(mockPublish).toHaveBeenCalledWith(
+      'capacity',
+      expect.objectContaining({ verdict: 'comfortable', slackMin: 200, overByMin: 0, isPro: true }),
+    );
+    expect(mockClear).not.toHaveBeenCalled();
   });
 
-  it('clears the widget when Pro but calendar is off and load is null', () => {
-    const cap = makeCap({ status: 'off', load: null });
+  it('publishes the task-only load when calendar is toggled off (the common Pro case)', () => {
+    const cap = makeCap({
+      status: 'off',
+      load: makeLoad({ verdict: 'over', openMin: 0, overByMin: 30 }),
+    });
     renderHook(() => useCapacityWidgetPublisher(cap));
-    expect(mockClear).toHaveBeenCalledWith('capacity');
-    expect(mockPublish).not.toHaveBeenCalled();
+    expect(mockPublish).toHaveBeenCalledWith(
+      'capacity',
+      expect.objectContaining({ verdict: 'over', slackMin: 0, overByMin: 30, isPro: true }),
+    );
+    expect(mockClear).not.toHaveBeenCalled();
   });
 
   it('republishes when the load result changes', () => {
