@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Simple picker-preview tile for the widget: dark rounded surface + accent dot + bars. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="110dp"
+    android:height="110dp"
+    android:viewportWidth="110"
+    android:viewportHeight="110">
+    <path
+        android:pathData="M8,8 h94 a12,12 0 0 1 12,12 v70 a12,12 0 0 1 -12,12 h-94 a12,12 0 0 1 -12,-12 v-70 a12,12 0 0 1 12,-12 z"
+        android:fillColor="#1F2130" />
+    <path
+        android:pathData="M18,24 m-4,0 a4,4 0 1,0 8,0 a4,4 0 1,0 -8,0"
+        android:fillColor="#EEAE4D" />
+    <path
+        android:pathData="M28,20 h44 v8 h-44 z"
+        android:fillColor="#ADA9B5" />
+    <path
+        android:pathData="M18,44 h74 v10 h-74 z"
+        android:fillColor="#F4F1EA" />
+    <path
+        android:pathData="M18,62 h50 v7 h-50 z"
+        android:fillColor="#EEAE4D" />
+    <path
+        android:pathData="M18,80 h76 v6 h-76 z"
+        android:fillColor="#15161F" />
+    <path
+        android:pathData="M18,80 h44 v6 h-44 z"
+        android:fillColor="#EEAE4D" />
+</vector>

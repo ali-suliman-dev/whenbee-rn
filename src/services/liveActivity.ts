@@ -16,8 +16,10 @@
 // ──────────────────────────────────────────────────────────────────────────────
 
 import { requireOptionalNativeModule } from 'expo-modules-core';
+import { Platform } from 'react-native';
 import { analytics } from '@/src/services/analytics';
 import { isExpoGo } from '@/src/lib/isExpoGo';
+import { loadAndroidPresence } from '@/src/services/presence/androidPresence';
 
 /** App Group id — MUST match `kAppGroupId` in targets/widget/SharedStore.swift. */
 export const APP_GROUP_ID = 'group.com.whenbee.app';
@@ -101,9 +103,12 @@ export function resolveNativePresence(
   return loadNative() ?? stub;
 }
 
-// Probe for the native module the same defensive way timerNotifications does:
-// a binary built before the module was linked must degrade to a clean no-op.
+// Probe for the native module the same defensive way timerNotifications does.
+// Android resolves a JS-backed adapter (widget + ongoing notification); iOS/other
+// resolve the native WhenbeePresence module. A binary built before either was
+// linked degrades to a clean no-op stub upstream.
 function loadNativePresence(): NativePresenceModule | null {
+  if (Platform.OS === 'android') return loadAndroidPresence();
   const native = requireOptionalNativeModule<NativePresenceModule>(NATIVE_MODULE_NAME);
   return native ?? null;
 }

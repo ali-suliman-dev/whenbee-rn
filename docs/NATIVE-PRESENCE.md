@@ -95,3 +95,124 @@ requires a re-run:
 ```bash
 npx expo prebuild --clean
 ```
+
+---
+
+# Android presence (native — built)
+
+The iOS sections above describe WidgetKit + ActivityKit. **Android presence is a
+separate, fully-native implementation** that ships the same two surfaces — a
+home-screen widget and a persistent live-timer notification — reusing the entire
+JS bridge unchanged. It needs **no paid developer account** (unlike iOS): a personal
+debug/release APK on a physical device or emulator shows everything.
+
+## Where it lives
+
+Everything Android-native is in the **`modules/whenbee-presence/android/`** Expo module
+(autolinked; its `AndroidManifest.xml` merges the receivers/permissions into the app):
+
+| Piece | File | Role |
+|---|---|---|
+| Native module | `WhenbeePresenceModule.kt` | Exposes JS Functions: `writeWidgetSnapshot`, `clearWidgetSnapshot`, `startTimerNotification`, `updateTimerNotification`, `stopTimerNotification`; schedules the overrun + progress alarms |
+| Notification builder | `PresenceNotifier.kt` | The single shared builder (used by the module **and** the alarm receiver) — channel, promoted ProgressStyle, chronometer |
+| Alarm receiver | `TimerAlarmReceiver.kt` | Fires the overrun flip (`ACTION_OVERRUN`) and the periodic progress re-post (`ACTION_PROGRESS`), driven off persisted state so it works after process death |
+| Widget provider | `NextTaskWidgetProvider.kt` | `AppWidgetProvider` — reads the snapshot from SharedPreferences, builds the RemoteViews |
+| Widget layout / res | `res/layout/widget_next_task.xml`, `res/xml/next_task_widget_info.xml`, `res/drawable/*`, `res/values/strings.xml` | RemoteViews layout + widget metadata |
+
+**JS side (shared with iOS, unchanged):** `src/services/liveActivity.ts` resolves a
+`NativePresenceModule`. On Android it resolves via `src/services/presence/androidPresence.android.ts`
+→ `createAndroidPresence(...)` (a pure, unit-tested factory) → the native `WhenbeePresence`
+module. Call sites (`useToday.ts` widget snapshot, `useTimer.ts` timer start/overrun/stop)
+never change per platform.
+
+**Shared data:** one SharedPreferences file `"<packageName>.presence"` with two keys —
+`"timer"` (running-timer JSON: taskLabel / finishEpoch / startEpoch / isProRich) and
+`"widget"` (the `WidgetSnapshot` JSON). Both alarms and the widget provider read it, so
+presence survives process death. `arcFraction` is mirrored in Kotlin from
+`src/engine/presence.ts` (same single-source pattern as the Swift copy).
+
+## Home-screen widget
+
+- **Native RemoteViews `AppWidgetProvider`** — works on **API 24+**. We deliberately do
+  **not** use `react-native-android-widget`: on Android 16 its headless JS render never
+  runs (blank widget) and it NPEs internally on remove. It was removed; do not reintroduce it.
+- **RemoteViews only supports a whitelist of views** (FrameLayout, LinearLayout,
+  RelativeLayout, GridLayout, TextView, ImageView, ImageButton, Button, ProgressBar,
+  Chronometer, ViewFlipper, …). A **bare `<View>`** (e.g. a weighted spacer) is *not*
+  supported and makes the launcher show **"Can't load widget"** — use a `FrameLayout`
+  spacer instead. Prefer concrete styles over `?android:attr/...` theme refs (they resolve
+  against the launcher's theme).
+- **Data flow:** JS `publishWidgetSnapshot` → `writeSnapshot` → native
+  `writeWidgetSnapshot(json)` stores the `"widget"` key and calls
+  `AppWidgetManager.updateAppWidget(...)`. The provider renders label + "Honest finish
+  H:MM" (drops the prefix when the snapshot is >6h stale), a Start chip (deep link
+  `whenbee://timer?...` via a `PendingIntent`), and a Pro-only fill bar (a horizontal
+  `ProgressBar` set to `arcFraction*1000`, since RemoteViews has no layout-weight setter).
+- The widget renders its **empty state immediately on add** (no JS dependency); it
+  populates once the app writes a snapshot (Today with a queued task).
+
+## Persistent live-timer notification (the Android "Live Activity")
+
+The genuine analog of an iOS Live Activity / Dynamic Island on Android 16 is a
+**promoted "Live Update" notification**. Key facts (all verified against the official
+Android 16 docs):
+
+- **Promotion = the status-bar chip near the clock + pinned/prominent lock-screen
+  presence.** It requires **all** of: `setRequestPromotedOngoing(true)`, the
+  `POST_PROMOTED_NOTIFICATIONS` permission, `setOngoing(true)`, a `contentTitle`, a
+  channel importance above MIN, not colorized/group-summary, and a **system style**
+  (Standard / BigText / Call / **ProgressStyle** / Metric).
+- **HARD CONSTRAINT: promotion forbids custom RemoteViews.** Any `setCustomContentView`
+  silently disqualifies the notification (it drops to a normal grouped notification —
+  no chip, not pinned). So you **cannot** have a big custom-drawn timer number *and* the
+  promoted chip in one notification. We use `ProgressStyle` + the system chronometer, and
+  the "big number" lives on the home-screen **widget** instead.
+- **Live countdown = the system chronometer** — `setUsesChronometer(true)` +
+  `setChronometerCountDown(true)` + `setWhen(finishMs)` (must be a **future** time or the
+  system skips updates). The OS ticks it with **no app process** running. On overrun the
+  native alarm re-posts with `setChronometerCountDown(false)` so it counts **up**.
+- **Seconds in the chip:** the chip shows *either* `setShortCriticalText` (≤7 chars, e.g.
+  "5m", minutes only) *or* the live chronometer (MM:SS, with seconds) — **not both**. To
+  show seconds in the chip we do **not** set `setShortCriticalText` on the running
+  notification, so the chronometer drives the chip.
+- **The ProgressStyle bar does NOT auto-advance** — `setProgress(...)` is manual. To make
+  it fill toward the finish, the module schedules a **self-rescheduling inexact
+  AlarmManager re-post (~45s, `ACTION_PROGRESS`)** that recomputes progress from
+  `startEpoch → finishEpoch` and re-posts with `setOnlyAlertOnce(true)` (no re-buzz). It
+  stops on `stopTimerNotification`, at overrun, or when finish has passed (set to full).
+  The chronometer countdown stays smooth regardless (system-driven).
+- **Overrun flip is native, not JS.** A JS `setTimeout` freezes when the app is
+  backgrounded/locked — exactly when you're watching the lock screen. So the flip is an
+  **exact AlarmManager** (`setExactAndAllowWhileIdle`, `USE_EXACT_ALARM` [+
+  `SCHEDULE_EXACT_ALARM` for API 31/32]) at `finishMs` → `TimerAlarmReceiver` (`ACTION_OVERRUN`)
+  → re-post as overrun. It fires even if the app is dead. `TimerAlarmReceiver` routes by
+  intent action (overrun vs progress) and reads the persisted `"timer"` state.
+
+### Minimum Android version / graceful degradation
+
+| Android | What the user gets |
+|---|---|
+| **16+ (API 36, e.g. Pixel 10)** | Full: promoted chip near the clock, pinned lock screen, ProgressStyle bar advancing toward finish, live MM:SS chronometer, native overrun flip |
+| **7–15 (API 24–35)** | Graceful fallback: a plain **ongoing chronometer notification** (live countdown still ticks) — **no chip, not pinned** (the promoted "Live Update" API simply doesn't exist before Android 16). Promotion setters no-op; ProgressStyle is skipped |
+| **< 7 (< API 24)** | Below the app's `minSdkVersion` (24) — N/A |
+
+- The promoted APIs (`setRequestPromotedOngoing`, `NotificationCompat.ProgressStyle`,
+  `setShortCriticalText`) require **androidx.core 1.17.0**, which we pin (bumped app-wide;
+  gradle resolves highest, no `strictly`/`force` conflicts). `setChronometerCountDown`
+  itself is API 24+, so the countdown works across the whole supported range.
+
+## Build & verify on a device
+
+- Use the `whenbee-device` skill (`build-and-launch-android.sh`): prebuild → Release
+  `assembleRelease` (bundled JS, no Metro) → `adb install` → launch. No Google Play
+  account needed.
+- **Worktree gotcha:** if the JS bundle step (`createBundleReleaseJsAndAssets`) fails with
+  `Unable to resolve module …`, the worktree `node_modules` is missing hoisted deps or the
+  global Metro cache is stale → `npm ci` in the worktree **and** `rm -rf ~/.tmp/metro-cache`,
+  then rebuild.
+- **Manual checks:** widget → long-press home → Widgets → *Whenbee — Next task* → drop it
+  out (loads immediately; populates once Today has a queued task). Notification → start a
+  timer → chip near the clock ticking MM:SS + pinned lock screen + a bar advancing toward
+  the finish; lock the phone, pass the honest finish → flips to "over" counting up.
+- **Native/config changes** (module Kotlin, `AndroidManifest.xml`, `res/*`, `app.json`
+  plugins/permissions) require `npx expo prebuild --clean -p android` before rebuilding.
