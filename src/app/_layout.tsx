@@ -27,13 +27,14 @@ SplashScreen.preventAutoHideAsync();
 // nested stack on Android, so a nested one silently falls back to a full-screen
 // card that slides in from the side. On the root stack, Android renders it as a
 // Material bottom sheet — slides up from the bottom and drags down to dismiss,
-// matching iOS. `[1]` = one full-height detent; the corner radius rounds the top.
+// matching iOS. `[0.9]` stops short of the top so the previous screen peeks
+// through and it clearly reads as a drawer; the corner radius rounds the top.
 function useSheetScreenOptions(): ComponentProps<typeof Stack.Screen>['options'] {
   const t = useTheme();
   return {
     presentation: 'formSheet',
     headerShown: false,
-    sheetAllowedDetents: [1],
+    sheetAllowedDetents: [0.9],
     sheetCornerRadius: t.radii.sheet,
     gestureEnabled: true,
   };
