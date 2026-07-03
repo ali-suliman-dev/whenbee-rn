@@ -18,6 +18,8 @@ import type { NativePresenceModule, WidgetSnapshot } from '../liveActivity';
 function fakeNative(): NativePresenceModule {
   return {
     isStub: false,
+    writeWidgetData: jest.fn(),
+    clearWidgetData: jest.fn(),
     writeSnapshot: jest.fn(),
     clearSnapshot: jest.fn(),
     startLiveActivity: jest.fn(),

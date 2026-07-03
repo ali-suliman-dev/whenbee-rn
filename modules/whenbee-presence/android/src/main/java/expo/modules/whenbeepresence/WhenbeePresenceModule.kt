@@ -104,17 +104,39 @@ class WhenbeePresenceModule : Module() {
       lastLabel = null; lastStart = null; lastFinish = null; lastProRich = false
     }
 
-    // Home-screen widget: JS writes the presentation-ready snapshot, native renders it.
-    // Stored under the shared prefs file (key "widget"); the write then rebuilds every
-    // placed widget instance so the surface reflects the latest next-task immediately.
+    // Generic keyed widget write: JS writes a presentation-ready payload for any widget,
+    // native stores it (WidgetDataStore, key "widget.<key>") then rebuilds the matching
+    // provider so that surface reflects the latest data immediately. Later tasks add more
+    // keys; an unknown key stores the payload but has no provider to refresh yet.
+    Function("writeWidgetData") { key: String, json: String ->
+      WidgetDataStore.write(context, key, json)
+      refreshWidget(key)
+    }
+
+    Function("clearWidgetData") { key: String ->
+      WidgetDataStore.clear(context, key)
+      refreshWidget(key)
+    }
+
+    // Back-compat: the next-task snapshot is one keyed slice. Kept so any caller still
+    // invoking these keeps working; both delegate to the generic path above.
     Function("writeWidgetSnapshot") { json: String ->
-      PresenceNotifier.prefs(context).edit().putString(KEY_WIDGET, json).apply()
-      NextTaskWidgetProvider.updateAll(context)
+      WidgetDataStore.write(context, KEY_NEXT_TASK, json)
+      refreshWidget(KEY_NEXT_TASK)
     }
 
     Function("clearWidgetSnapshot") {
-      PresenceNotifier.prefs(context).edit().remove(KEY_WIDGET).apply()
-      NextTaskWidgetProvider.updateAll(context)
+      WidgetDataStore.clear(context, KEY_NEXT_TASK)
+      refreshWidget(KEY_NEXT_TASK)
+    }
+  }
+
+  // Rebuild the widget provider that owns this key. Only "nextTask" maps to a provider
+  // for now; other keys are stored but have no-op refresh until their provider lands.
+  private fun refreshWidget(key: String) {
+    when (key) {
+      KEY_NEXT_TASK -> NextTaskWidgetProvider.updateAll(context)
+      else -> Unit
     }
   }
 
@@ -125,7 +147,7 @@ class WhenbeePresenceModule : Module() {
   private var lastProRich: Boolean = false
 
   private companion object {
-    // Key under the shared prefs file (PresenceNotifier.prefs) for the widget snapshot.
-    const val KEY_WIDGET = "widget"
+    // WidgetDataStore key for the next-task widget snapshot.
+    const val KEY_NEXT_TASK = "nextTask"
   }
 }

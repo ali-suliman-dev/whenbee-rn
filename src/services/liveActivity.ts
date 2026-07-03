@@ -74,6 +74,10 @@ export interface LiveActivityAttributes {
  */
 export interface NativePresenceModule {
   isStub: boolean;
+  /** Generic keyed widget write — each widget owns its own slice (see `WidgetDataStore`). */
+  writeWidgetData: (key: string, json: string) => void;
+  /** Generic keyed widget clear. */
+  clearWidgetData: (key: string) => void;
   writeSnapshot: (snapshot: WidgetSnapshot) => void;
   clearSnapshot: () => void;
   startLiveActivity: (attributes: LiveActivityAttributes) => void;
@@ -83,6 +87,8 @@ export interface NativePresenceModule {
 
 const stub: NativePresenceModule = {
   isStub: true,
+  writeWidgetData: () => {},
+  clearWidgetData: () => {},
   writeSnapshot: () => {},
   clearSnapshot: () => {},
   startLiveActivity: () => {},
