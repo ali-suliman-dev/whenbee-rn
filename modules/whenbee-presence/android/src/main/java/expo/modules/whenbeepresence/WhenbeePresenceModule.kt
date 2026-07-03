@@ -137,6 +137,7 @@ class WhenbeePresenceModule : Module() {
     when (key) {
       KEY_NEXT_TASK -> NextTaskWidgetProvider.updateAll(context)
       KEY_CAPACITY -> DoesTodayFitWidgetProvider.updateAll(context)
+      KEY_BIAS -> YourBiasWidgetProvider.updateAll(context)
       else -> Unit
     }
   }
@@ -152,5 +153,7 @@ class WhenbeePresenceModule : Module() {
     const val KEY_NEXT_TASK = "nextTask"
     // WidgetDataStore key for the "Does Today Fit?" capacity widget payload.
     const val KEY_CAPACITY = "capacity"
+    // WidgetDataStore key for the "Your Bias" widget payload.
+    const val KEY_BIAS = "bias"
   }
 }

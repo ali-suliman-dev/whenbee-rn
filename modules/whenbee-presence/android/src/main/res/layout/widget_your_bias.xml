@@ -1,0 +1,92 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- "Your Bias" Home-screen widget (Pro). Presentation-only: renders the BiasWidgetData
+     snapshot JS wrote (useBiasWidgetPublisher -> key "bias"). The widget never derives bias.
+     Colors mirror src/theme/tokens.ts (dark surface). RemoteViews-safe views only.
+     Text color + size on yb_value / yb_tier are overridden per-state in the provider. -->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/yb_root"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:background="@drawable/widget_bg"
+    android:padding="14dp">
+
+    <!-- Wordmark row -->
+    <LinearLayout
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center_vertical">
+
+        <ImageView
+            android:layout_width="7dp"
+            android:layout_height="7dp"
+            android:layout_marginEnd="6dp"
+            android:src="@drawable/widget_wordmark_dot"
+            android:contentDescription="@null" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/widget_wordmark"
+            android:textColor="#ADA9B5"
+            android:textSize="11sp"
+            android:letterSpacing="0.04"
+            android:textStyle="bold" />
+    </LinearLayout>
+
+    <!-- Top spacer so the bias block sits optically centred in the tile. -->
+    <FrameLayout
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1" />
+
+    <!-- Category title ("Deep Work"). Quiet label above the hero number.
+         Visible only in the Pro+data state. -->
+    <TextView
+        android:id="@+id/yb_category"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:maxLines="1"
+        android:ellipsize="end"
+        android:text="@string/your_bias_locked"
+        android:textColor="#F4F1EA"
+        android:textSize="13sp"
+        android:textStyle="bold"
+        android:visibility="gone" />
+
+    <!-- Hero value line. Pre-formatted multiplierText verbatim ("1.4× over") in the data
+         state; "Your bias" (locked) or "Keep logging to learn your bias." (empty) otherwise.
+         Color + size set per-state in the provider. -->
+    <TextView
+        android:id="@+id/yb_value"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="2dp"
+        android:maxLines="2"
+        android:ellipsize="end"
+        android:text="@string/your_bias_locked"
+        android:textColor="#F4F1EA"
+        android:textSize="20sp"
+        android:textStyle="bold" />
+
+    <!-- Caption. Tier mark ("Ripening", inkSoft) in the data state; "Pro" (accent) when
+         locked; hidden in the empty state. -->
+    <TextView
+        android:id="@+id/yb_tier"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="4dp"
+        android:maxLines="1"
+        android:ellipsize="end"
+        android:text="@string/your_bias_pro"
+        android:textColor="#EEAE4D"
+        android:textSize="13sp"
+        android:textStyle="bold" />
+
+    <!-- Bottom spacer balances the top spacer to keep the block centred. -->
+    <FrameLayout
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1" />
+</LinearLayout>

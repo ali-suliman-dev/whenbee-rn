@@ -16,4 +16,11 @@
     <string name="does_today_fit_over_caption">A little tight today</string>
     <string name="does_today_fit_locked">Does today fit?</string>
     <string name="does_today_fit_pro">Pro</string>
+
+    <!-- "Your Bias" widget (Pro) -->
+    <string name="your_bias_label">Whenbee — Your bias</string>
+    <string name="your_bias_description">Your most-off category and how far your guesses run, learned from your own timing.</string>
+    <string name="your_bias_locked">Your bias</string>
+    <string name="your_bias_pro">Pro</string>
+    <string name="your_bias_empty">Keep logging to learn your bias.</string>
 </resources>
