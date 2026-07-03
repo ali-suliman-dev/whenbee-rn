@@ -60,20 +60,26 @@
         android:textStyle="bold" />
 
     <!-- Pro fill bar — a horizontal ProgressBar; fraction set via setProgressBar().
-         Hidden entirely for free/empty. -->
+         Hidden entirely for free/empty. Concrete framework horizontal style
+         (@android:style/Widget.ProgressBar.Horizontal) instead of the theme attr
+         ?android:attr/progressBarStyleHorizontal, so it resolves without depending
+         on the launcher host theme; visuals come from our own progressDrawable. -->
     <ProgressBar
         android:id="@+id/widget_bar"
-        style="?android:attr/progressBarStyleHorizontal"
+        style="@android:style/Widget.ProgressBar.Horizontal"
         android:layout_width="match_parent"
         android:layout_height="6dp"
         android:layout_marginTop="10dp"
         android:max="1000"
         android:progress="0"
+        android:indeterminate="false"
         android:progressDrawable="@drawable/widget_bar"
         android:visibility="gone" />
 
-    <!-- Spacer pushes the Start chip to the bottom -->
-    <View
+    <!-- Spacer pushes the Start chip to the bottom. Must be a RemoteViews-supported
+         container (FrameLayout) — a bare <View> is NOT in the RemoteViews class list
+         and makes the launcher fail to inflate the widget ("Can't load widget"). -->
+    <FrameLayout
         android:layout_width="match_parent"
         android:layout_height="0dp"
         android:layout_weight="1" />

@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Custom content view for the ongoing running-timer notification.
+     Used with NotificationCompat.DecoratedCustomViewStyle so the system still draws the
+     small icon + app-name header; this view fills the content body. Timer-forward layout:
+     a small muted status line on top, the live Chronometer big and bold beneath it.
+     RemoteViews-supported views only (LinearLayout, TextView, Chronometer). -->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:paddingTop="2dp"
+    android:paddingBottom="2dp">
+
+    <!-- Small muted status line: "Running · finish 7:10" / "Over · finish was 7:10" -->
+    <TextView
+        android:id="@+id/notif_status"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:maxLines="1"
+        android:ellipsize="end"
+        android:text=""
+        android:textColor="#ADA9B5"
+        android:textSize="12sp" />
+
+    <!-- The live timer — the main element. The SYSTEM ticks it (setChronometer),
+         counts down to finish while running, counts up after finish on overrun. -->
+    <Chronometer
+        android:id="@+id/notif_timer"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="2dp"
+        android:textColor="#F4F1EA"
+        android:textSize="33sp"
+        android:textStyle="bold" />
+</LinearLayout>

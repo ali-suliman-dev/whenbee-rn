@@ -4,10 +4,13 @@ import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.content.Context
 import android.content.SharedPreferences
-import android.os.Build
+import android.os.SystemClock
+import android.text.format.DateFormat
+import android.widget.RemoteViews
 import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
 import org.json.JSONObject
+import java.util.Date
 
 // Shared, static-callable builder for the running-timer notification.
 // Called from BOTH the Expo module (foreground) AND TimerAlarmReceiver (background/killed),
@@ -61,30 +64,49 @@ object PresenceNotifier {
     }
   }
 
+  // NOTE: `isProRich` is retained on the signature (callers still pass it) but is no longer
+  // used to request the Android 16 promoted ongoing "Live Update" chip. That promoted mode is
+  // INCOMPATIBLE with a custom content view — the platform rejects a promoted ongoing
+  // notification that supplies its own RemoteViews — and the founder wants the timer-forward
+  // custom layout to win. See the tradeoff note in post() below.
+  @Suppress("UNUSED_PARAMETER")
   fun post(context: Context, label: String, finishEpochSec: Double, isOverrun: Boolean, isProRich: Boolean) {
     ensureChannel(context)
     val finishMs = (finishEpochSec * 1000).toLong()
 
+    // Custom, timer-forward content view: small muted status line on top, big live timer below.
+    val remoteViews = RemoteViews(context.packageName, R.layout.notif_running)
+
+    // Status line uses the device-local finish clock (respects the user's 12/24h setting).
+    val finishClock = DateFormat.getTimeFormat(context).format(Date(finishMs))
+    val status =
+      if (isOverrun) "Over · finish was $finishClock" else "Running · finish $finishClock"
+    remoteViews.setTextViewText(R.id.notif_status, status)
+
+    // Overrun tints the timer amber; running keeps it bone-white. Chronometer is a TextView,
+    // so setTextColor is a valid RemoteViews remote method.
+    remoteViews.setTextColor(R.id.notif_timer, if (isOverrun) 0xFFEEAE4D.toInt() else 0xFFF4F1EA.toInt())
+
+    // Base = elapsed-realtime instant that maps to the honest finish. The SYSTEM ticks the
+    // Chronometer from this base, so it keeps counting even when backgrounded/locked and JS is
+    // frozen: counts DOWN to finish while running, counts UP from it once overrun.
+    val base = SystemClock.elapsedRealtime() + (finishMs - System.currentTimeMillis())
+    remoteViews.setChronometerCountDown(R.id.notif_timer, !isOverrun)
+    remoteViews.setChronometer(R.id.notif_timer, base, null, true)
+
     val builder = NotificationCompat.Builder(context, CHANNEL_ID)
       .setSmallIcon(context.applicationInfo.icon)
-      .setContentTitle(label)
-      .setContentText(if (isOverrun) "Over your honest finish" else "Running — honest finish shown")
+      .setStyle(NotificationCompat.DecoratedCustomViewStyle())
+      .setCustomContentView(remoteViews)
       .setOngoing(true)
       .setOnlyAlertOnce(true)
-      .setUsesChronometer(true)
-      // Count DOWN to the honest finish; once overrun, count UP from it (+MM:SS).
-      .setChronometerCountDown(!isOverrun)
-      .setWhen(finishMs)
-      .setShowWhen(true)
 
-    // Android 16 (API 36) promoted ongoing "Live Update" — the real Live Activity analog
-    // (status-bar chip). Reflection-guarded so the module compiles/runs on older devices.
-    if (Build.VERSION.SDK_INT >= 36 && isProRich) {
-      try {
-        val m = NotificationCompat.Builder::class.java.getMethod("setRequestPromotedOngoing", Boolean::class.javaPrimitiveType)
-        m.invoke(builder, true)
-      } catch (_: Throwable) { /* not available → plain ongoing notification */ }
-    }
+    // TRADEOFF: we deliberately do NOT call setRequestPromotedOngoing (Android 16 API 36 "Live
+    // Update" status-bar chip) here. A promoted ongoing notification may not carry a custom
+    // content view — the platform rejects the combination — and the founder wants the big
+    // timer-forward custom layout. To revert to the promoted chip, drop setCustomContentView +
+    // DecoratedCustomViewStyle and re-add the reflection-guarded setRequestPromotedOngoing call
+    // (see git history for the previous standard-template implementation).
 
     NotificationManagerCompat.from(context).notify(NOTIFICATION_ID, builder.build())
   }
