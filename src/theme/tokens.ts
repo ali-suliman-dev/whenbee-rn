@@ -1,3 +1,4 @@
+import { Platform } from 'react-native';
 import { Easing } from 'react-native-reanimated';
 
 // ──────────────────────────────────────────────────────────────────────────────
@@ -84,7 +85,9 @@ export const tokens = {
     crumb: 9, micro: 10, caption: 12, bodySm: 14, bodyLg: 16, titleSm: 18, subtitle: 22, title: 26, honestLg: 36, honest: 40, honestHero: 46, timerClock: 64, timer: 78,
   },
   fontWeight: { regular: '400', medium: '500', semibold: '600', bold: '700' },
-  fontFamily: { ui: 'System', mono: 'Menlo' },
+  // `Menlo` is Apple-only — on Android an unknown family renders nothing, so the
+  // mono text (Start-by clock, plan rail) vanishes. Fall back to Android's mono.
+  fontFamily: { ui: 'System', mono: Platform.select({ ios: 'Menlo', default: 'monospace' }) as string },
   lineHeight: { tight: 1.15, normal: 1.4, relaxed: 1.6 },
   // Tracking — negative values tighten display headings so they feel intentional
   // rather than loose. `tight` is the standard display-headline tightening.
