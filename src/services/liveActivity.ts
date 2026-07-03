@@ -120,7 +120,12 @@ function loadNativePresence(): NativePresenceModule | null {
 }
 
 let cached: NativePresenceModule | null = null;
-function getNativePresence(): NativePresenceModule {
+/**
+ * Resolve (and cache) the native presence module. Exported so other guarded
+ * presence bridges (e.g. `services/presence/widgetData.ts`) can reuse the same
+ * resolved module instead of duplicating the Expo-Go / Android / stub probe.
+ */
+export function getNativePresence(): NativePresenceModule {
   if (!cached) cached = resolveNativePresence(isExpoGo, loadNativePresence);
   return cached;
 }

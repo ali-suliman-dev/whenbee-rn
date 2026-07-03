@@ -3,12 +3,11 @@ import { useFocusEffect } from 'expo-router';
 import { useCalibrationStore } from '@/src/stores/calibrationStore';
 import { useDayTasksStore } from '@/src/stores/dayTasksStore';
 import { useTimerStore } from '@/src/stores/timerStore';
-import { resolveSuggestion, priorFor, CATEGORY_NAMES, type CompanionStage } from '@/src/engine';
+import { resolveSuggestion, priorFor, type CompanionStage } from '@/src/engine';
 import { analytics } from '@/src/services/analytics';
-import { formatClock, projectedFinish } from '@/src/lib/time';
 import { toLocalDayKey } from '@/src/lib/day';
-import { publishWidgetSnapshot, clearWidgetSnapshot } from '@/src/services/liveActivity';
-import { useEntitlement } from '@/src/features/paywall/useEntitlement';
+import { categoryName } from '@/src/features/today/categoryName';
+import { useWidgetPublisher } from '@/src/features/today/useWidgetPublisher';
 import type { CalibrationSummary } from '@/src/domain/types';
 import type { DayTask } from '@/src/engine/daySelectors';
 
@@ -56,19 +55,6 @@ interface UseTodayResult {
   hasEverLogged: boolean;
   /** True when the focus task's honest number is based on the population prior (cold, n < 3). */
   focusPreEstimate: boolean;
-}
-
-/** Title-case a custom-category slug (e.g. "deep_work" → "Deep Work"). */
-function titleCaseSlug(slug: string): string {
-  return slug
-    .split(/[_\-\s]+/)
-    .filter(Boolean)
-    .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
-    .join(' ');
-}
-
-function categoryName(id: string): string {
-  return CATEGORY_NAMES[id] ?? titleCaseSlug(id);
 }
 
 export function useToday(): UseTodayResult {
@@ -176,28 +162,11 @@ export function useToday(): UseTodayResult {
 
   // Publish the next-task snapshot to the Home-screen widget. The honest finish
   // is "now + honest minutes" — the time the focus task would honestly wrap if
-  // started now (the same number Today shows). No-op in Expo Go / tests.
+  // started now (the same number Today shows). Reactive to timer/entitlement/
+  // mEffective too, so e.g. a purchase lights the widget immediately. No-op in
+  // Expo Go / tests. See useWidgetPublisher for the full trigger set.
   const honestMin = summary?.honestMinutes ?? null;
-  useEffect(() => {
-    const now = Date.now();
-    const epoch = Math.round(now / 1000);
-    // No next task: clear to the quiet empty widget.
-    if (!focus || honestMin === null) {
-      clearWidgetSnapshot();
-      return;
-    }
-    const honestFinishEpoch = Math.round(projectedFinish(now, honestMin) / 1000);
-    publishWidgetSnapshot({
-      nextTaskLabel: focus.label,
-      category: categoryName(focus.category),
-      honestFinishClock: formatClock(projectedFinish(now, honestMin)),
-      startDeepLink: `whenbee://timer?taskId=${focus.id}`,
-      updatedAtEpoch: epoch,
-      honestFinishEpoch,
-      // Read non-reactively: a widget write must not re-render Today on entitlement change.
-      isPro: useEntitlement.getState().isPro,
-    });
-  }, [focus, honestMin]);
+  useWidgetPublisher({ focus, honestMin });
 
   return {
     focus,
