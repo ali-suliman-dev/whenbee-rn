@@ -90,7 +90,7 @@ export function ReviewModal({ source = 'card' }: { source?: ReviewSource }) {
 
   if (!summary) {
     return (
-      <Screen>
+      <Screen edges={['left', 'right']}>
         <SheetGrabber />
       </Screen>
     );
