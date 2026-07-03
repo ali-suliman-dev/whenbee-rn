@@ -188,10 +188,14 @@ export function RunningFocusCard({ categoryName }: RunningFocusCardProps) {
 
         <GapLine guessMin={guessMin} honestMin={honestMin} elapsedSec={elapsedSec} />
 
-        <View style={labelsRow}>
-          <Text style={guessLabel}>guessed {guessMin} min</Text>
-          <Text style={planLabel}>plan ~{honestMin} min</Text>
-        </View>
+        {/* Quick-start sessions have no guess/plan (both 0) — the "guessed 0 / plan
+            ~0" pair is meaningless noise there, so drop it. */}
+        {!isQuickStart ? (
+          <View style={labelsRow}>
+            <Text style={guessLabel}>guessed {guessMin} min</Text>
+            <Text style={planLabel}>plan ~{honestMin} min</Text>
+          </View>
+        ) : null}
       </Card>
     </AnimatedPressable>
   );
