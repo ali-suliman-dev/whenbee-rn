@@ -504,20 +504,30 @@ export function useTimer(params: TimerParams): UseTimerResult {
     void cancelTimerDone();
     void cancelGuardCheckIn();
     endFinishTimeActivity();
-    const adaptSpeed: AdaptSpeed =
-      useCategoriesStore.getState().categories.find((c) => c.id === category)?.adaptSpeed ??
-      'balanced';
-    // Logged for self-awareness but excluded from the model (engine drops it).
-    await applyLog({
-      category,
-      estimateMin: guessMin,
-      actualMin: 0,
-      status: 'abandoned',
-      source: 'timed',
-      adaptSpeed,
-      label,
-      startedAt: startedAtRef.current ?? undefined,
-    });
+    // A quick-start session has no category to attach an abandoned log to, and
+    // abandoned logs are excluded from the model anyway — so the log is only
+    // best-effort self-awareness history. NEVER let it block teardown: a
+    // quick-start abandon must still stop the timer (cancel, above) and close
+    // the drawer (dismiss, below), exactly like a normal task.
+    if (category) {
+      const adaptSpeed: AdaptSpeed =
+        useCategoriesStore.getState().categories.find((c) => c.id === category)?.adaptSpeed ??
+        'balanced';
+      try {
+        await applyLog({
+          category,
+          estimateMin: guessMin,
+          actualMin: 0,
+          status: 'abandoned',
+          source: 'timed',
+          adaptSpeed,
+          label,
+          startedAt: startedAtRef.current ?? undefined,
+        });
+      } catch {
+        // History log is best-effort; teardown + dismiss must still happen.
+      }
+    }
     router.dismiss();
   }, [cancel, applyLog, category, guessMin, label, clearOverrunTimer]);
 
