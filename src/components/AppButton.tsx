@@ -163,16 +163,14 @@ export function AppButton({
     borderRadius: t.radii.md,
     borderCurve: 'continuous',
     backgroundColor: bg[resolved],
-    // Disabled dims the FACE only; the edge behind stays fully solid so the
-    // button keeps its depth while reading as muted/inactive.
-    opacity: disabled ? t.opacity.disabled : 1,
+    // Disabled keeps the FACE and edge fully solid/opaque (a real raised coin
+    // edge) — only the LABEL mutes. Never put opacity on the face or wrapper:
+    // it composites the whole pill and the edge stops reading as an edge.
     // Android drops the corner clip on press-layer promotion, squaring the pill.
     // overflow:hidden pins the rounded clip. (Edge is a sibling, not clipped.)
     overflow: 'hidden',
     alignItems: 'center',
     justifyContent: 'center',
-    flexDirection: 'row',
-    gap: t.space[2],
     paddingHorizontal: padX,
     // Ghost reads as a flat outlined control — hairline border, no depth.
     ...(isGhost ? { borderWidth: t.borderWidth.hairline, borderColor: t.colors.border } : null),
@@ -193,18 +191,28 @@ export function AppButton({
       {/* Solid colored depth edge behind FILLED pills only */}
       {isGhost ? null : <View style={edgeBase} />}
 
-      {/* Pill surface */}
+      {/* Pill surface (face + edge stay fully solid) */}
       <Animated.View style={[pillContainer, pillStyle]}>
-        {icon ?? null}
-        <AppText
+        {/* Only the CONTENT dims when disabled — face + coin edge stay opaque. */}
+        <View
           style={{
-            fontSize: labelSize,
-            fontWeight: t.fontWeight.bold as TextStyle['fontWeight'],
-            color: fg[resolved],
+            flexDirection: 'row',
+            alignItems: 'center',
+            gap: t.space[2],
+            opacity: disabled ? t.opacity.disabled : 1,
           }}
         >
-          {label}
-        </AppText>
+          {icon ?? null}
+          <AppText
+            style={{
+              fontSize: labelSize,
+              fontWeight: t.fontWeight.bold as TextStyle['fontWeight'],
+              color: fg[resolved],
+            }}
+          >
+            {label}
+          </AppText>
+        </View>
       </Animated.View>
     </Pressable>
   );
