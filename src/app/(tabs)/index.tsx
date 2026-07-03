@@ -1,4 +1,4 @@
-import { View, Text, Pressable, ScrollView, ActionSheetIOS, type TextStyle } from 'react-native';
+import { View, Text, Pressable, ScrollView, type TextStyle } from 'react-native';
 import { useState, useCallback, useEffect, useRef } from 'react';
 import { router } from 'expo-router';
 import Animated, { FadeIn } from 'react-native-reanimated';
@@ -22,6 +22,7 @@ import { TodayEmptyState } from '@/src/features/today/TodayEmptyState';
 import { RetroLogChip } from '@/src/features/today/RetroLogChip';
 import { QuickTaskChips } from '@/src/components/quick/QuickTaskChips';
 import { SwitchTaskSheet } from '@/src/features/today/SwitchTaskSheet';
+import { ActionSheet, type ActionSheetItem } from '@/src/components/ActionSheet';
 import { useCategoriesStore } from '@/src/stores/categoriesStore';
 import { useCalibrationStore } from '@/src/stores/calibrationStore';
 import { useTimerStore } from '@/src/stores/timerStore';
@@ -207,6 +208,9 @@ export default function Today() {
   const [peekFirstRow] = useState(() => kv.getString('today.seenSwipeHint') == null);
   const markSwipeHintSeen = useCallback(() => kv.set('today.seenSwipeHint', '1'), []);
   const [deletingId, setDeletingId] = useState<string | null>(null);
+  // Cross-platform row menus (ActionSheetIOS is iOS-only → crashes Android).
+  const [rowActions, setRowActions] = useState<{ id: string; label: string } | null>(null);
+  const [dayPickerId, setDayPickerId] = useState<string | null>(null);
   const [showCoachMark, setShowCoachMark] = useState(
     () => kv.getString('today.seenCoachMarkV1') == null,
   );
@@ -282,44 +286,23 @@ export default function Today() {
     void removeTask(id).then(() => useDayTasksStore.getState().loadShelf());
     setDeletingId(null);
   }
-  function showDayPicker(id: string) {
-    // Build next 7 days as labels for pick-a-day (tomorrow through +7).
+  // Next 7 days (tomorrow through +7) as pick-a-day menu items.
+  function dayPickerItems(id: string): ActionSheetItem[] {
     const today = toLocalDayKey(Date.now());
     const WEEKDAY_LABELS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'] as const;
-    const days = Array.from({ length: 7 }, (_, i) => {
+    return Array.from({ length: 7 }, (_, i) => {
       const key = addDays(today, i + 1);
       const label = i === 0 ? 'Tomorrow' : WEEKDAY_LABELS[weekdayOf(key)] ?? key;
-      return { key, label };
+      return { label, onPress: () => void useDayTasksStore.getState().moveTask(id, key) };
     });
-    ActionSheetIOS.showActionSheetWithOptions(
-      {
-        title: 'Pick a day',
-        options: [...days.map((d) => d.label), 'Cancel'],
-        cancelButtonIndex: days.length,
-      },
-      (i) => {
-        if (i < days.length) {
-          const day = days[i];
-          if (day) void useDayTasksStore.getState().moveTask(id, day.key);
-        }
-      },
-    );
+  }
+
+  function showDayPicker(id: string) {
+    setDayPickerId(id);
   }
 
   function promptRowActions(id: string, label: string) {
-    ActionSheetIOS.showActionSheetWithOptions(
-      {
-        title: label,
-        options: ['Move to tomorrow', 'Pick a day…', 'Remove', 'Cancel'],
-        destructiveButtonIndex: 2,
-        cancelButtonIndex: 3,
-      },
-      (i) => {
-        if (i === 0) void useDayTasksStore.getState().moveToTomorrow(id);
-        else if (i === 1) showDayPicker(id);
-        else if (i === 2) setDeletingId(id);
-      },
-    );
+    setRowActions({ id, label });
   }
 
   function navigateToTimer(row: TodayRow) {
@@ -663,6 +646,28 @@ export default function Today() {
         startingLabel={pendingRow?.label ?? ''}
         onConfirm={confirmSwitch}
         onCancel={cancelSwitch}
+      />
+
+      <ActionSheet
+        visible={rowActions !== null}
+        title={rowActions?.label}
+        onCancel={() => setRowActions(null)}
+        items={
+          rowActions
+            ? [
+                { label: 'Move to tomorrow', onPress: () => void useDayTasksStore.getState().moveToTomorrow(rowActions.id) },
+                { label: 'Pick a day…', onPress: () => showDayPicker(rowActions.id) },
+                { label: 'Remove', destructive: true, onPress: () => setDeletingId(rowActions.id) },
+              ]
+            : []
+        }
+      />
+
+      <ActionSheet
+        visible={dayPickerId !== null}
+        title="Pick a day"
+        onCancel={() => setDayPickerId(null)}
+        items={dayPickerId ? dayPickerItems(dayPickerId) : []}
       />
     </Screen>
   );
