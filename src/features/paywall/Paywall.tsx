@@ -183,7 +183,7 @@ export function Paywall({ trigger, readiness = 'pre' }: { trigger?: string; read
   const freeStripStrong: TextStyle = { fontFamily: 'Jakarta-Bold' };
 
   return (
-    <Screen>
+    <Screen edges={['left', 'right']}>
       <ScrollView
         contentContainerStyle={{ gap: t.space[5], paddingTop: t.space[3], paddingBottom: t.space[8] }}
         showsVerticalScrollIndicator={false}

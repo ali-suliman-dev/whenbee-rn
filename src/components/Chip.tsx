@@ -157,6 +157,8 @@ export function Chip({
     gap: t.space[1],
     borderRadius: t.radii.full,
     borderCurve: 'continuous',
+    // Android squares rounded corners on press-layer promotion — pin the clip.
+    overflow: 'hidden',
     paddingHorizontal: t.space[4],
     paddingVertical: t.space[2.5],
     ...(isAdd
