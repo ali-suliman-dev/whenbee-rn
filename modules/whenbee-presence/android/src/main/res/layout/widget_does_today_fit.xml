@@ -1,0 +1,89 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- "Does Today Fit?" Home-screen widget (Pro). Presentation-only: renders the
+     CapacityWidgetData snapshot JS wrote (useCapacityWidgetPublisher.ts -> key "capacity").
+     Colors mirror src/theme/tokens.ts (dark surface). RemoteViews-safe views only. -->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/dtf_root"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:background="@drawable/widget_bg"
+    android:padding="14dp">
+
+    <!-- Wordmark row -->
+    <LinearLayout
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center_vertical">
+
+        <ImageView
+            android:layout_width="7dp"
+            android:layout_height="7dp"
+            android:layout_marginEnd="6dp"
+            android:src="@drawable/widget_wordmark_dot"
+            android:contentDescription="@null" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/widget_wordmark"
+            android:textColor="#ADA9B5"
+            android:textSize="11sp"
+            android:letterSpacing="0.04"
+            android:textStyle="bold" />
+    </LinearLayout>
+
+    <!-- Spacer above the verdict block so it sits optically centred in the tile. -->
+    <FrameLayout
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1" />
+
+    <!-- Verdict main line ("Your day fits" / "Runs ~25m long" / "Does today fit?") -->
+    <TextView
+        android:id="@+id/dtf_verdict"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:maxLines="2"
+        android:ellipsize="end"
+        android:text="@string/does_today_fit_locked"
+        android:textColor="#F4F1EA"
+        android:textSize="18sp"
+        android:textStyle="bold" />
+
+    <!-- Caption ("~40 min slack" / "Pro"). Accent; hidden for none. -->
+    <TextView
+        android:id="@+id/dtf_caption"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="3dp"
+        android:maxLines="1"
+        android:ellipsize="end"
+        android:text="@string/does_today_fit_pro"
+        android:textColor="#EEAE4D"
+        android:textSize="13sp"
+        android:textStyle="bold" />
+
+    <!-- Capacity bar — a horizontal ProgressBar; fill set via setProgressBar().
+         Hidden entirely for the locked/free state (no marker leaks). Concrete framework
+         horizontal style so it resolves without depending on the launcher host theme;
+         visuals come from our own progressDrawable. -->
+    <ProgressBar
+        android:id="@+id/dtf_bar"
+        style="@android:style/Widget.ProgressBar.Horizontal"
+        android:layout_width="match_parent"
+        android:layout_height="6dp"
+        android:layout_marginTop="11dp"
+        android:max="1000"
+        android:progress="0"
+        android:indeterminate="false"
+        android:progressDrawable="@drawable/widget_bar"
+        android:visibility="gone" />
+
+    <!-- Bottom spacer balances the top spacer to keep the block centred. -->
+    <FrameLayout
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1" />
+</LinearLayout>

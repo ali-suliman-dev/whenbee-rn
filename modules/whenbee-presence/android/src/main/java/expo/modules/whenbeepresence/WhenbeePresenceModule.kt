@@ -136,6 +136,7 @@ class WhenbeePresenceModule : Module() {
   private fun refreshWidget(key: String) {
     when (key) {
       KEY_NEXT_TASK -> NextTaskWidgetProvider.updateAll(context)
+      KEY_CAPACITY -> DoesTodayFitWidgetProvider.updateAll(context)
       else -> Unit
     }
   }
@@ -149,5 +150,7 @@ class WhenbeePresenceModule : Module() {
   private companion object {
     // WidgetDataStore key for the next-task widget snapshot.
     const val KEY_NEXT_TASK = "nextTask"
+    // WidgetDataStore key for the "Does Today Fit?" capacity widget payload.
+    const val KEY_CAPACITY = "capacity"
   }
 }

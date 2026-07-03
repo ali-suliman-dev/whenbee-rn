@@ -5,4 +5,15 @@
     <string name="widget_wordmark">Whenbee</string>
     <string name="widget_empty">No task queued</string>
     <string name="widget_start">Start</string>
+
+    <!-- "Does Today Fit?" widget (Pro) -->
+    <string name="does_today_fit_label">Whenbee — Does today fit?</string>
+    <string name="does_today_fit_description">See at a glance whether today\'s plan fits your day, with the slack or overage.</string>
+    <string name="does_today_fit_fits">Your day fits</string>
+    <string name="does_today_fit_fits_caption">Room to spare</string>
+    <string name="does_today_fit_slack">%1$s slack</string>
+    <string name="does_today_fit_over">Runs %1$s long</string>
+    <string name="does_today_fit_over_caption">A little tight today</string>
+    <string name="does_today_fit_locked">Does today fit?</string>
+    <string name="does_today_fit_pro">Pro</string>
 </resources>
