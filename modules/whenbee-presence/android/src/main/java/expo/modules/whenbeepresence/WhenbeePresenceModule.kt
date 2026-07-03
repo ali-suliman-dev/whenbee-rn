@@ -58,11 +58,13 @@ class WhenbeePresenceModule : Module() {
     Function("startTimerNotification") { attrs: Map<String, Any?> ->
       val label = attrs["taskLabel"] as? String ?: return@Function
       val finish = (attrs["finishEpoch"] as? Number)?.toDouble() ?: return@Function
+      // startEpoch drives the progress bar; fall back to "now" if a caller omits it.
+      val start = (attrs["startEpoch"] as? Number)?.toDouble() ?: (System.currentTimeMillis() / 1000.0)
       val proRich = attrs["isProRich"] as? Boolean ?: false
 
       // Persist for the background alarm, and keep the in-memory fast path.
-      PresenceNotifier.saveTimer(context, label, finish, proRich)
-      lastLabel = label; lastFinish = finish; lastProRich = proRich
+      PresenceNotifier.saveTimer(context, label, start, finish, proRich)
+      lastLabel = label; lastStart = start; lastFinish = finish; lastProRich = proRich
 
       val finishMs = (finish * 1000).toLong()
       if (finishMs <= System.currentTimeMillis()) {
@@ -88,7 +90,7 @@ class WhenbeePresenceModule : Module() {
       cancelOverrunAlarm()
       PresenceNotifier.cancel(context)
       PresenceNotifier.clearTimer(context)
-      lastLabel = null; lastFinish = null; lastProRich = false
+      lastLabel = null; lastStart = null; lastFinish = null; lastProRich = false
     }
 
     // Home-screen widget: JS writes the presentation-ready snapshot, native renders it.
@@ -107,6 +109,7 @@ class WhenbeePresenceModule : Module() {
 
   // Retained so a foreground overrun update can re-post with the original label/finish.
   private var lastLabel: String? = null
+  private var lastStart: Double? = null
   private var lastFinish: Double? = null
   private var lastProRich: Boolean = false
 
