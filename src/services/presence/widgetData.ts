@@ -36,6 +36,30 @@ export interface LockedCapacityWidgetData {
   isPro: false;
 }
 
+/**
+ * "Your Bias" widget payload — Pro. Mapped from `pickTopBias`'s `TopBias`
+ * (see `src/engine/widgetBias.ts`) — the selector never runs in here, only
+ * formatting. `multiplierText` is JS-formatted once so the native side never
+ * has to reimplement the ">1 = over, <1 = under" rule (e.g. `1.4× over`,
+ * `0.8× under`).
+ */
+export interface BiasWidgetData {
+  categoryLabel: string;
+  multiplierText: string;
+  tier: string;
+  updatedAtEpoch: number;
+  isPro: true;
+}
+
+/**
+ * Locked sentinel published for free users — the ONLY shape a non-Pro "Your
+ * Bias" payload may take. Pro-gate-at-source: no category, no multiplier,
+ * no tier. The native widget renders its own locked teaser off `isPro: false`.
+ */
+export interface LockedBiasWidgetData {
+  isPro: false;
+}
+
 /** Publish a JSON-serializable payload under `key` for a Home-screen widget to read. */
 export function publishWidgetData(key: string, payload: unknown): void {
   try {
