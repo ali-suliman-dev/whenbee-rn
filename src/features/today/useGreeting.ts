@@ -1,14 +1,16 @@
-import { greetingFor } from '@/src/engine';
+import { useTranslation } from 'react-i18next';
+import { greetingPart } from '@/src/engine';
 import { useSettingsStore } from '@/src/stores/settingsStore';
 
 // Home greeting. Reads the local hour (clock lives here, not the engine) and the
-// optional display name. When a name is set it shows in every greeting; with no
-// name it falls back to the bare salutation.
-
-/** Greeting split into its muted lead ("Good evening") and the optional name,
- *  so the UI can weight the name distinctly from the salutation. */
+// optional display name. The engine only supplies the pure time-of-day bucket
+// (morning/afternoon/evening); the actual copy is localized here via the `today`
+// i18n namespace so it renders in the user's language. The name is kept as a
+// separate field (not baked into `lead`) so the UI can weight it distinctly.
 export function useGreeting(): { lead: string; name?: string } {
+  const { t } = useTranslation('today');
   const name = useSettingsStore((s) => s.displayName);
-  const lead = greetingFor(new Date().getHours());
+  const part = greetingPart(new Date().getHours());
+  const lead = t(`greeting.${part}`);
   return name ? { lead, name } : { lead };
 }

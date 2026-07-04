@@ -1,5 +1,6 @@
 import { useCallback, useEffect } from 'react';
 import { View, Text, type ViewStyle, type TextStyle } from 'react-native';
+import { useTranslation } from 'react-i18next';
 import { router, useFocusEffect } from 'expo-router';
 import { AppButton } from '@/src/components/AppButton';
 import { AppText } from '@/src/components/AppText';
@@ -43,6 +44,7 @@ import { LifeDriftCard } from './LifeDriftCard';
 
 export function WhenbeeHub() {
   const t = useTheme();
+  const { t: tr } = useTranslation('whenbee');
   const vm = useWhenbeeHub();
   const categories = useCategoriesStore((s) => s.categories);
   const stats = useCalibrationStore((s) => s.statsByCategory);
@@ -117,11 +119,16 @@ export function WhenbeeHub() {
 
   // Four key features shown in the card; waitLabels are honest, no-guilt.
   const { perFeatureReady } = vm.proReadiness;
+  const soonWait = tr('hub.ripeningWait.soon');
   const ripeningFeatures = [
-    { id: 'confidence-band' as const, ready: perFeatureReady['confidence-band'], waitLabel: 'soon' },
-    { id: 'steals-your-time' as const, ready: perFeatureReady['steals-your-time'], waitLabel: 'soon' },
-    { id: 'day-capacity' as const, ready: perFeatureReady['day-capacity'], waitLabel: 'soon' },
-    { id: 'honest-week' as const, ready: perFeatureReady['honest-week'], waitLabel: 'about a week' },
+    { id: 'confidence-band' as const, ready: perFeatureReady['confidence-band'], waitLabel: soonWait },
+    { id: 'steals-your-time' as const, ready: perFeatureReady['steals-your-time'], waitLabel: soonWait },
+    { id: 'day-capacity' as const, ready: perFeatureReady['day-capacity'], waitLabel: soonWait },
+    {
+      id: 'honest-week' as const,
+      ready: perFeatureReady['honest-week'],
+      waitLabel: tr('hub.ripeningWait.aboutAWeek'),
+    },
   ];
 
   return (
@@ -149,8 +156,8 @@ export function WhenbeeHub() {
       {/* DISCOVERIES zone — shown once any aha card has been banked */}
       {vm.discoveryCount > 0 ? (
         <View style={zoneWrap}>
-          <Text style={zoneLabel}>Discoveries</Text>
-          <Text style={zoneExplain}>surprising truths about how long things take</Text>
+          <Text style={zoneLabel}>{tr('hub.discoveries.label')}</Text>
+          <Text style={zoneExplain}>{tr('hub.discoveries.explain')}</Text>
           <DiscoveriesPreviewCard
             discoveries={vm.discoveries}
             discoveryCount={vm.discoveryCount}
@@ -171,8 +178,8 @@ export function WhenbeeHub() {
       {/* YOUR AREAS zone */}
       {categories.length > 0 ? (
         <View style={areasZone}>
-          <Text style={zoneLabel}>Your areas</Text>
-          <Text style={zoneExplain}>fill = how honest your guesses are · tap to tune</Text>
+          <Text style={zoneLabel}>{tr('hub.areas.label')}</Text>
+          <Text style={zoneExplain}>{tr('hub.areas.explain')}</Text>
           <View style={{ gap: t.space[2] }}>
             {categories.map((cat) => (
               <AreaRow
@@ -186,18 +193,18 @@ export function WhenbeeHub() {
           </View>
         </View>
       ) : (
-        <AppText variant="caption">Track a few tasks and your areas will appear here.</AppText>
+        <AppText variant="caption">{tr('hub.areas.empty')}</AppText>
       )}
 
       {/* CTA — first-log prompt or day-honest shortcut */}
       {isEmpty ? (
         <View>
-          <AppButton label="Log your first task" variant="amber" fullWidth onPress={logFirst} />
-          <Text style={ctaSub}>Honest-day planning unlocks once your honey sets.</Text>
+          <AppButton label={tr('hub.cta.logFirst')} variant="amber" fullWidth onPress={logFirst} />
+          <Text style={ctaSub}>{tr('hub.cta.logFirstSub')}</Text>
         </View>
       ) : isPro ? (
         <AppButton
-          label="Make my whole day honest"
+          label={tr('hub.cta.dayHonest')}
           variant="amber"
           fullWidth
           onPress={openDayHonest}

@@ -7,6 +7,7 @@ import Animated, {
   useSharedValue,
   withTiming,
 } from 'react-native-reanimated';
+import { useTranslation } from 'react-i18next';
 import { useTheme } from '@/src/theme/useTheme';
 import { type } from '@/src/theme/typography';
 import { AppText } from './AppText';
@@ -26,6 +27,7 @@ export function OverflowBar({
   honestMin: number;
 }) {
   const t = useTheme();
+  const { t: tr } = useTranslation('shared');
   const reduced = useReducedMotion();
   const pct = Math.max(0, Math.min(1, guessMin / honestMin));
   const fill = useSharedValue(reduced ? 1 : 0);
@@ -58,10 +60,10 @@ export function OverflowBar({
         }}
       >
         <AppText variant="caption" style={{ color: t.colors.inkSoft }}>
-          {`${guessMin}m`}
+          {tr('overflowBar.minutesShort', { minutes: guessMin })}
         </AppText>
         <AppText style={[(type.bigNumber as unknown as TextStyle), { color: t.colors.accent }]}>
-          {`${honestMin}m`}
+          {tr('overflowBar.minutesShort', { minutes: honestMin })}
         </AppText>
       </View>
 
@@ -90,7 +92,7 @@ export function OverflowBar({
         }}
       >
         <AppText variant="caption" style={{ color: t.colors.inkSoft }}>
-          you guessed
+          {tr('overflowBar.guessed')}
         </AppText>
         <Animated.Text
           entering={reduced ? undefined : FadeIn.duration(t.motion.base).delay(t.motion.honeyFill)}
@@ -100,7 +102,7 @@ export function OverflowBar({
             color: t.colors.accent,
           }}
         >
-          {`+${honestMin - guessMin} min reality`}
+          {tr('overflowBar.realityDelta', { delta: honestMin - guessMin })}
         </Animated.Text>
       </View>
 
@@ -112,7 +114,7 @@ export function OverflowBar({
           marginTop: t.space[2],
         }}
       >
-        An example — yours come from your own timers.
+        {tr('overflowBar.example')}
       </AppText>
     </View>
   );

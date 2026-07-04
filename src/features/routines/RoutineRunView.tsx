@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { ScrollView, View, type ViewStyle, type TextStyle } from 'react-native';
 import { useReducedMotion } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useTranslation } from 'react-i18next';
 import { useTheme } from '@/src/theme/useTheme';
 import { type } from '@/src/theme/typography';
 import { AppText } from '@/src/components/AppText';
@@ -55,6 +56,7 @@ function formatRemaining(remainingSec: number): string {
 
 export function RoutineRunView() {
   const t = useTheme();
+  const { t: tr } = useTranslation('routines');
   const insets = useSafeAreaInsets();
   const reducedMotion = useReducedMotion();
 
@@ -132,7 +134,7 @@ export function RoutineRunView() {
     return (
       <View style={{ flex: 1, justifyContent: 'center', padding: t.space[5] }}>
         <AppText style={{ ...(type.body as unknown as TextStyle), color: t.colors.inkSoft }}>
-          Picked up where you stopped — nothing lost.
+          {tr('run.resumed')}
         </AppText>
       </View>
     );
@@ -175,16 +177,16 @@ export function RoutineRunView() {
         <View>
           <AppText style={header}>{routine.routine.name}</AppText>
           <AppText style={headerMeta}>
-            {doneCount} of {total} done
+            {tr('run.progress', { done: doneCount, total })}
           </AppText>
         </View>
         <AppButton
-          label="Stop"
+          label={tr('run.stop')}
           variant="ghost"
           size="xs"
           onPress={() => { void abandonRun(); }}
-          accessibilityLabel="Stop routine"
-          accessibilityHint="Ends the run and discards progress for this session"
+          accessibilityLabel={tr('run.stopA11y')}
+          accessibilityHint={tr('run.stopHintA11y')}
         />
       </View>
 
@@ -264,6 +266,7 @@ function StepCard({
   onSkip: () => void;
 }) {
   const t = useTheme();
+  const { t: tr } = useTranslation('routines');
   const isNow = status === 'running';
 
   const card: ViewStyle = {
@@ -293,8 +296,8 @@ function StepCard({
       <AppText style={titleStyle} numberOfLines={1}>{label}</AppText>
       <AppText style={catStyle} numberOfLines={1}>
         {category}
-        {status === 'done' && actualMin !== undefined ? ` · ${actualMin}m` : ''}
-        {status === 'skipped' ? ' · skipped' : ''}
+        {status === 'done' && actualMin !== undefined ? ` · ${tr('run.actualMinutes', { count: actualMin })}` : ''}
+        {status === 'skipped' ? ` · ${tr('run.skippedMeta')}` : ''}
       </AppText>
       {isNow ? (
         <>
@@ -302,8 +305,8 @@ function StepCard({
             style={timerStyle}
             accessibilityLabel={
               remainingSec >= 0
-                ? `${Math.floor(remainingSec / 60)} minutes ${remainingSec % 60} seconds remaining`
-                : `${Math.floor(-remainingSec / 60)} minutes ${(-remainingSec) % 60} seconds over`
+                ? tr('run.remainingA11y', { min: Math.floor(remainingSec / 60), sec: remainingSec % 60 })
+                : tr('run.overA11y', { min: Math.floor(-remainingSec / 60), sec: (-remainingSec) % 60 })
             }
             accessibilityLiveRegion="polite"
           >
@@ -311,20 +314,20 @@ function StepCard({
           </AppText>
           <View style={{ flexDirection: 'row', gap: t.space[2] }}>
             <AppButton
-              label="Done"
+              label={tr('run.done')}
               variant="indigo"
               size="sm"
               onPress={onDone}
-              accessibilityLabel="Mark step done"
-              accessibilityHint="Records your time and moves to the next step"
+              accessibilityLabel={tr('run.doneStepA11y')}
+              accessibilityHint={tr('run.doneStepHintA11y')}
             />
             <AppButton
-              label="Skip"
+              label={tr('run.skip')}
               variant="ghost"
               size="sm"
               onPress={onSkip}
-              accessibilityLabel="Skip this step"
-              accessibilityHint="Skips to the next step without recording time"
+              accessibilityLabel={tr('run.skipA11y')}
+              accessibilityHint={tr('run.skipHintA11y')}
             />
           </View>
         </>
@@ -345,6 +348,7 @@ function RunRecap({
   onFinish: () => void;
 }) {
   const t = useTheme();
+  const { t: tr } = useTranslation('routines');
   const card: ViewStyle = {
     backgroundColor: t.colors.surface,
     borderWidth: t.borderWidth.card,
@@ -360,13 +364,13 @@ function RunRecap({
   // either way — amber accent only, never red. (Spec §10.)
   const ranLong = actualMin > honestMin;
   const text = ranLong
-    ? `${name} took ${actualMin} min this time. I'll update the start-by so it's more accurate next week.`
-    : `${name} done in ${actualMin} min — right on track. I'll keep that in mind for next time.`;
+    ? tr('run.recapLong', { name, actual: actualMin })
+    : tr('run.recapOnTime', { name, actual: actualMin });
 
   return (
     <View style={card}>
       <AppText style={body}>{text}</AppText>
-      <AppButton label="Done" variant="indigo" fullWidth onPress={onFinish} />
+      <AppButton label={tr('run.done')} variant="indigo" fullWidth onPress={onFinish} />
     </View>
   );
 }

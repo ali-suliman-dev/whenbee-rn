@@ -1,0 +1,44 @@
+{
+  "overflowBar": {
+    "guessed": "you guessed",
+    "minutesShort": "{{minutes}}m",
+    "realityDelta": "+{{delta}} min reality",
+    "example": "An example — yours come from your own timers."
+  },
+  "presenceRingTeaser": {
+    "body": "Watch the ring fill toward your real finish on the Lock Screen.",
+    "cta": "Unlock the honest ring"
+  },
+  "proUpsellCard": {
+    "tag": "Pro"
+  },
+  "shareableCard": {
+    "footer": "Made with Whenbee · learned on-device",
+    "finishBy": "to finish by {{time}}",
+    "archetypeEyebrow": "MY TIME ARCHETYPE",
+    "averageMultiplier": "On average my tasks run {{multiplier}}× my first guess."
+  },
+  "honestBandLockedTeaser": {
+    "caption": "See the range your tasks land in, and watch it tighten.",
+    "label": "Honest range",
+    "proTag": "Pro",
+    "unlockA11y": "Unlock the honest range with Pro."
+  },
+  "honestSuggestionCard": {
+    "lead": "Honestly",
+    "stillLearning": "still learning",
+    "roughly": "Still learning — roughly {{low}}–{{high}}m",
+    "more": " more",
+    "range": "Range",
+    "startingEstimate": "Starting estimate · sharpens as you log",
+    "unlockA11y": "Unlock the honest range with Pro.",
+    "a11y": {
+      "honestRange": "Honest range {{low}} to {{high}} minutes.",
+      "honestRangeLearning": "Honest range {{low}} to {{high}} minutes, still learning.",
+      "roughly": "Still learning. Roughly {{low}} to {{high}} minutes.",
+      "honestAbout": "Honest estimate about {{minutes}} minutes",
+      "honestAboutDelta": "Honest estimate about {{minutes}} minutes, {{delta}} more than your guess",
+      "startingSuffix": "{{base}}, starting estimate, sharpens as you log"
+    }
+  }
+}

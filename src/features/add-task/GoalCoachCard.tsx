@@ -1,5 +1,6 @@
 import { View, Pressable, type ViewStyle, type TextStyle } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { Trans, useTranslation } from 'react-i18next';
 import { AppText } from '@/src/components/AppText';
 import { useTheme } from '@/src/theme/useTheme';
 import { type } from '@/src/theme/typography';
@@ -37,6 +38,7 @@ export function GoalCoachCard({
   onApply: () => void;
 }) {
   const t = useTheme();
+  const { t: tr } = useTranslation('addTask');
   const alreadyInside = honestMinutes === guessMinutes;
 
   const card: ViewStyle = {
@@ -101,11 +103,11 @@ export function GoalCoachCard({
   }
 
   return (
-    <View style={card} accessibilityLabel={`Goal coach: aim within ${targetBand} percent`}>
+    <View style={card} accessibilityLabel={tr('goalCoach.a11y', { band: targetBand })}>
       <View style={headRow}>
-        <AppText style={eyebrow}>GOAL · COACH</AppText>
+        <AppText style={eyebrow}>{tr('goalCoach.eyebrow')}</AppText>
         <View style={chip}>
-          <AppText style={chipText}>within ±{targetBand}%</AppText>
+          <AppText style={chipText}>{tr('goalCoach.targetBadge', { band: targetBand })}</AppText>
         </View>
       </View>
 
@@ -114,9 +116,12 @@ export function GoalCoachCard({
           <Ionicons name="bulb-outline" size={t.iconSize.sm} color={t.colors.amberText} />
         </View>
         <AppText style={line}>
-          {worstValue ? `${cap(worstValue)} run longest for you on ${categoryName} — ` : ''}
-          <AppText style={strong}>~{honestMinutes}m</AppText> keeps you inside{' '}
-          <AppText style={strong}>±{targetBand}%</AppText>.
+          <Trans
+            t={tr}
+            i18nKey={worstValue ? 'goalCoach.lineWithLever' : 'goalCoach.lineNoLever'}
+            values={{ lever: worstValue ? cap(worstValue) : undefined, category: categoryName, honest: honestMinutes, band: targetBand }}
+            components={{ bold: <AppText style={strong} /> }}
+          />
         </AppText>
       </View>
 
@@ -125,16 +130,16 @@ export function GoalCoachCard({
           <Pressable
             onPress={apply}
             accessibilityRole="button"
-            accessibilityLabel={`Use ${honestMinutes} minutes`}
+            accessibilityLabel={tr('goalCoach.useMinutesA11y', { count: honestMinutes })}
             style={coinWrap}
           >
             <View style={coinEdge} />
             <View style={coinFace}>
               <Ionicons name="arrow-down" size={t.iconSize.xs} color={t.colors.onAmber} />
-              <AppText style={coinText}>Use {honestMinutes}m</AppText>
+              <AppText style={coinText}>{tr('goalCoach.useButton', { count: honestMinutes })}</AppText>
             </View>
           </Pressable>
-          <AppText style={keep}>or keep {guessMinutes}m</AppText>
+          <AppText style={keep}>{tr('goalCoach.keepLabel', { count: guessMinutes })}</AppText>
         </View>
       ) : null}
     </View>

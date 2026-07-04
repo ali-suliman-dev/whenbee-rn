@@ -1,7 +1,14 @@
 import { render, fireEvent } from '@testing-library/react-native';
+import i18n from '@/src/i18n';
 import { RipeningProCard } from '../RipeningProCard';
 import { RIPENING_COPY, REVEAL_COPY } from '../copy';
 import type { ProFeatureId } from '@/src/engine';
+
+const t = i18n.getFixedT('en', 'patterns');
+// NOTE: RIPENING_COPY/REVEAL_COPY are called lazily (not at module scope) since
+// i18n isn't initialized until jest.setup's beforeAll runs.
+const ripeningCopy = () => RIPENING_COPY(t);
+const revealCopy = () => REVEAL_COPY(t);
 
 const base = {
   honeyPct: 30,
@@ -17,11 +24,11 @@ it('ripening state shows the settling copy and no CTA', () => {
     <RipeningProCard {...base} pitchUnlocked={false} />,
   );
   // RipeningBand renders the settling label
-  expect(getByText(RIPENING_COPY.settling)).toBeTruthy();
+  expect(getByText(ripeningCopy().settling)).toBeTruthy();
   // Card renders its own footer copy
-  expect(getByText(RIPENING_COPY.footer)).toBeTruthy();
+  expect(getByText(ripeningCopy().footer)).toBeTruthy();
   // No CTA button in ripening state
-  expect(queryByText(REVEAL_COPY.cta)).toBeNull();
+  expect(queryByText(revealCopy().cta)).toBeNull();
 });
 
 it('reveal state shows the headline and fires onSeePro', () => {
@@ -34,8 +41,8 @@ it('reveal state shows the headline and fires onSeePro', () => {
       onSeePro={onSeePro}
     />,
   );
-  expect(getByText(REVEAL_COPY.headline)).toBeTruthy();
-  fireEvent.press(getByText(REVEAL_COPY.cta));
+  expect(getByText(revealCopy().headline)).toBeTruthy();
+  fireEvent.press(getByText(revealCopy().cta));
   expect(onSeePro).toHaveBeenCalled();
 });
 
@@ -49,6 +56,6 @@ it('reveal state fires onPreview when escape link is pressed', () => {
       onPreview={onPreview}
     />,
   );
-  fireEvent.press(getByText(REVEAL_COPY.escape));
+  fireEvent.press(getByText(revealCopy().escape));
   expect(onPreview).toHaveBeenCalled();
 });

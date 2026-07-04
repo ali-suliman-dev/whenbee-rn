@@ -1,5 +1,6 @@
 import { useCallback, useRef, useState } from 'react';
 import { useFocusEffect } from 'expo-router';
+import i18n from '@/src/i18n';
 import {
   clampRatio,
   PERSONAL_MIN_LOGS,
@@ -165,21 +166,14 @@ function ratiosOf(logs: PatternLog[]): number[] {
  * Thresholds and titles MUST stay in sync with `rungFor` in usePersonalize.ts.
  */
 function archetypeFor(avg: number, provisional: boolean): ArchetypeCard {
-  let title: string;
-  let blurb: string;
-  if (avg < 1.3) {
-    title = 'The Steady Reader';
-    blurb = 'Your guesses land close to reality. Quietly rare.';
-  } else if (avg < 1.8) {
-    title = 'The Gentle Optimist';
-    blurb = 'You lean hopeful, then mostly catch up. A little padding does it.';
-  } else if (avg < 2.6) {
-    title = 'The Sprint Optimist';
-    blurb = 'Your mind moves fast; the doing takes a touch longer. Now you know by how much.';
-  } else {
-    title = 'The Dreamer';
-    blurb = 'Big plans, generous timelines. Your honest numbers keep them grounded.';
-  }
+  let key: 'steadyReader' | 'gentleOptimist' | 'sprintOptimist' | 'dreamer';
+  if (avg < 1.3) key = 'steadyReader';
+  else if (avg < 1.8) key = 'gentleOptimist';
+  else if (avg < 2.6) key = 'sprintOptimist';
+  else key = 'dreamer';
+
+  const title = i18n.t(`patterns:archetype.${key}.title`);
+  const blurb = i18n.t(`patterns:archetype.${key}.blurb`);
   return { title, blurb, averageMultiplier: avg, provisional };
 }
 

@@ -1,5 +1,6 @@
 import { View, Text, type ViewStyle, type TextStyle } from 'react-native';
 import Svg, { Path } from 'react-native-svg';
+import { useTranslation } from 'react-i18next';
 import { useTheme } from '@/src/theme/useTheme';
 import { type } from '@/src/theme/typography';
 import type { ProFeatureId } from '@/src/engine';
@@ -45,6 +46,7 @@ function CheckIcon({ size, color }: { size: number; color: string }) {
 
 export function FeatureReadinessList({ items }: FeatureReadinessListProps) {
   const t = useTheme();
+  const { t: tr } = useTranslation('patterns');
 
   // Container: all rows with gap between them, single spacing axis
   const container: ViewStyle = { gap: t.space[2.5] };
@@ -113,11 +115,11 @@ export function FeatureReadinessList({ items }: FeatureReadinessListProps) {
           )}
 
           <Text style={item.ready ? labelReady : labelRipening}>
-            {featureLabel(item.id)}
+            {featureLabel(tr, item.id)}
           </Text>
 
           {item.ready ? (
-            <Text style={statusReady}>Ready</Text>
+            <Text style={statusReady}>{tr('ripeningPro.featureList.readyStatus')}</Text>
           ) : item.waitLabel ? (
             <Text style={statusRipening}>{item.waitLabel}</Text>
           ) : null}

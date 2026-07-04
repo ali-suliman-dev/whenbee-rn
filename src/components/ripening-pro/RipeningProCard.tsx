@@ -6,6 +6,7 @@ import Animated, {
   withTiming,
   useReducedMotion,
 } from 'react-native-reanimated';
+import { useTranslation } from 'react-i18next';
 import { useTheme } from '@/src/theme/useTheme';
 import { type } from '@/src/theme/typography';
 import { HoneyBar } from '@/src/features/reward/HoneyBar';
@@ -53,6 +54,7 @@ export function RipeningProCard({
   onPreview,
 }: RipeningProCardProps) {
   const t = useTheme();
+  const { t: tr } = useTranslation('patterns');
   const reducedMotion = useReducedMotion();
 
   // Vertical travel for reveal entrance — token t.space[2.5] = 10pt (calm settle, not a pop).
@@ -186,13 +188,15 @@ export function RipeningProCard({
   };
 
   // ── pill label ────────────────────────────────────────────────────────────
+  const ripeningCopy = RIPENING_COPY(tr);
+  const revealCopy = REVEAL_COPY(tr);
   const pillLabel = pitchUnlocked
-    ? `${REVEAL_COPY.pill} ✦`
+    ? `${revealCopy.pill} ✦`
     : nextTierName != null
-      ? `${RIPENING_COPY.pillPrefix} ${nextTierName}`
-      : RIPENING_COPY.pillPrefix;
+      ? `${ripeningCopy.pillPrefix} ${nextTierName}`
+      : ripeningCopy.pillPrefix;
 
-  const eyebrow = pitchUnlocked ? REVEAL_COPY.eyebrow : RIPENING_COPY.eyebrow;
+  const eyebrow = pitchUnlocked ? revealCopy.eyebrow : ripeningCopy.eyebrow;
 
   return (
     <View style={card}>
@@ -214,8 +218,8 @@ export function RipeningProCard({
         <Animated.View style={[{ gap: t.space[3] }, revealStyle]}>
           {/* Headline + sub */}
           <View style={{ gap: t.space[1] }}>
-            <Text style={headlineText}>{REVEAL_COPY.headline}</Text>
-            <Text style={subText}>{REVEAL_COPY.sub}</Text>
+            <Text style={headlineText}>{revealCopy.headline}</Text>
+            <Text style={subText}>{revealCopy.sub}</Text>
           </View>
 
           {/* Ripening band (revealed) — no fabricated tick labels. */}
@@ -228,13 +232,13 @@ export function RipeningProCard({
           {/* Amber coin-edge CTA */}
           <Pressable onPress={onSeePro} accessibilityRole="button">
             <View style={ctaInner}>
-              <Text style={ctaText}>{REVEAL_COPY.cta}</Text>
+              <Text style={ctaText}>{revealCopy.cta}</Text>
             </View>
           </Pressable>
 
           {/* Escape hatch */}
           <Pressable onPress={onPreview} accessibilityRole="link">
-            <Text style={escapeText}>{REVEAL_COPY.escape}</Text>
+            <Text style={escapeText}>{revealCopy.escape}</Text>
           </Pressable>
         </Animated.View>
       ) : (
@@ -242,8 +246,8 @@ export function RipeningProCard({
         <>
           {/* Title + sub */}
           <View style={{ gap: t.space[1] }}>
-            <Text style={titleText}>{RIPENING_COPY.title}</Text>
-            <Text style={subText}>{RIPENING_COPY.sub}</Text>
+            <Text style={titleText}>{ripeningCopy.title}</Text>
+            <Text style={subText}>{ripeningCopy.sub}</Text>
           </View>
 
           {/* Settling band */}
@@ -253,13 +257,13 @@ export function RipeningProCard({
           <View style={{ gap: t.space[1] }}>
             <HoneyBar pct={honeyPct} />
             <View style={metaRow}>
-              <Text style={metaText}>{honeyPct}% honey</Text>
-              <Text style={metaText}>~{logsToNext} more logs</Text>
+              <Text style={metaText}>{tr('ripeningPro.card.honeyPct', { pct: honeyPct })}</Text>
+              <Text style={metaText}>{tr('ripeningPro.card.logsToNext', { count: logsToNext })}</Text>
             </View>
           </View>
 
           {/* Footer — no CTA */}
-          <Text style={footerText}>{RIPENING_COPY.footer}</Text>
+          <Text style={footerText}>{ripeningCopy.footer}</Text>
         </>
       )}
     </View>

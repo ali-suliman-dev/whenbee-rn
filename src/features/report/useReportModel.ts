@@ -1,5 +1,6 @@
 import { useCallback, useRef, useState } from 'react';
 import { useFocusEffect } from 'expo-router';
+import i18n from '@/src/i18n';
 import {
   clampRatio,
   honestNumber,
@@ -80,11 +81,11 @@ export interface BuildReportModelResult {
 function windowFor(kind: ReportWindow['kind'], nowMs: number): ReportWindow {
   switch (kind) {
     case '30d':
-      return { kind, sinceMs: nowMs - 30 * DAY_MS, label: 'Last 30 days' };
+      return { kind, sinceMs: nowMs - 30 * DAY_MS, label: i18n.t('report:window.last30') };
     case '90d':
-      return { kind, sinceMs: nowMs - 90 * DAY_MS, label: 'Last 90 days' };
+      return { kind, sinceMs: nowMs - 90 * DAY_MS, label: i18n.t('report:window.last90') };
     case 'all':
-      return { kind, sinceMs: null, label: 'All time' };
+      return { kind, sinceMs: null, label: i18n.t('report:window.allTime') };
   }
 }
 
@@ -97,7 +98,9 @@ function sharpestNoteFrom(samples: AccuracySample[]): string | null {
   const correlations = correlateAccuracy(samples);
   const top = correlations[0];
   if (!top) return null;
-  return `Your estimates land closest on ${top.betterLabel}.`;
+  return top.dimension === 'time'
+    ? i18n.t('report:sharpestNote.time', { label: top.betterLabel })
+    : i18n.t('report:sharpestNote.day', { label: top.betterLabel });
 }
 
 /**

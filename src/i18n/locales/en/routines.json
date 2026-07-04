@@ -1,0 +1,83 @@
+{
+  "list": {
+    "stepCount_one": "1 step",
+    "stepCount_other": "{{count}} steps",
+    "openRoutineA11y": "Open {{name}}",
+    "totalMinutes": "{{count}} min",
+    "startBy": "Start by {{time}}",
+    "intro": "A guided sequence that runs on a timer — it tells you what to do now, then moves you on.",
+    "tryIt": "Try it",
+    "tryExampleA11y": "Try the {{name}} example",
+    "newRoutine": "New routine"
+  },
+  "locked": {
+    "sampleName": "Morning routine",
+    "sampleSteps": ["Shower", "Get dressed", "Breakfast", "Pack up"],
+    "sampleTotalMinutes": "{{count}} min",
+    "sampleStartBy": "Start by {{time}}",
+    "body": "Save your morning once. Whenbee learns how long the whole thing really takes, so \"start by\" is a number you can trust.",
+    "cta": "See Whenbee Pro"
+  },
+  "build": {
+    "backA11y": "Back to routines",
+    "back": "Routines",
+    "nameLabel": "Routine name",
+    "namePlaceholder": "Name this routine",
+    "addStep": "＋ Step",
+    "save": "Save",
+    "saveA11y": "Save routine",
+    "saveDisabledA11y": "Add a name and at least one step to save"
+  },
+  "rail": {
+    "start": "start",
+    "doneBy": "done by",
+    "setFinishTime": "＋ set a finish time",
+    "doneByA11y": "Done by {{time}}",
+    "setFinishTimeA11y": "Set a finish time",
+    "breather": "+{{count}}m in-between",
+    "addStepTail": "＋ add step",
+    "addStepA11y": "Add a step",
+    "remove": "Remove",
+    "removeA11y": "Remove {{label}}",
+    "editA11y": "Edit {{label}}",
+    "honestMinutes": "{{count}}m honest"
+  },
+  "run": {
+    "resumed": "Picked up where you stopped — nothing lost.",
+    "progress": "{{done}} of {{total}} done",
+    "stop": "Stop",
+    "stopA11y": "Stop routine",
+    "stopHintA11y": "Ends the run and discards progress for this session",
+    "done": "Done",
+    "doneStepA11y": "Mark step done",
+    "doneStepHintA11y": "Records your time and moves to the next step",
+    "skip": "Skip",
+    "skipA11y": "Skip this step",
+    "skipHintA11y": "Skips to the next step without recording time",
+    "actualMinutes": "{{count}}m",
+    "skippedMeta": "skipped",
+    "remainingA11y": "{{min}} minutes {{sec}} seconds remaining",
+    "overA11y": "{{min}} minutes {{sec}} seconds over",
+    "recapLong": "{{name}} took {{actual}} min this time. I'll update the start-by so it's more accurate next week.",
+    "recapOnTime": "{{name}} done in {{actual}} min — right on track. I'll keep that in mind for next time."
+  },
+  "finishSheet": {
+    "dismissA11y": "Dismiss",
+    "title": "Finish by",
+    "clear": "Clear",
+    "done": "Done"
+  },
+  "stepSheet": {
+    "dismissA11y": "Dismiss",
+    "titleAdd": "Add a step",
+    "titleEdit": "Edit step",
+    "namePlaceholder": "Step name",
+    "cancel": "Cancel",
+    "submitAdd": "Add step",
+    "submitEdit": "Save step"
+  },
+  "total": {
+    "value": "About {{count}} min",
+    "caption": "including the in-between time"
+  }
+}

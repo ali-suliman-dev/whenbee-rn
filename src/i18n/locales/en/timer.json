@@ -1,0 +1,42 @@
+{
+  "eyebrow": "Timing now",
+  "defaultTaskLabel": "Focus session",
+  "minimizeA11y": "Minimize timer",
+  "abandonA11y": "Abandon task",
+  "reframe": {
+    "guessed": "guessed {{count}}m",
+    "honestLabel": "honest",
+    "honestValue": "~{{count}}m"
+  },
+  "stopAndLog": "Stop & log",
+  "abandonConfirm": {
+    "title": "Abandon this task?",
+    "message": "No guilt — it just won’t count toward your honey.",
+    "keepTiming": "Keep timing",
+    "abandon": "Abandon"
+  },
+  "finish": {
+    "started": "Started {{clock}}",
+    "reprojecting": "now finishing ~{{clock}}",
+    "rangeDone": "Done {{low}}–{{high}}",
+    "pointDone": "Done ~{{clock}}",
+    "rangeA11y": "Honest finish range {{low}} to {{high}}.",
+    "rangeA11yLearning": "Honest finish range {{low}} to {{high}}, still learning."
+  },
+  "ring": {
+    "a11y_one": "Timer running. Honest target about {{count}} minute. Elapsed time is shown in the center.",
+    "a11y_other": "Timer running. Honest target about {{count}} minutes. Elapsed time is shown in the center."
+  },
+  "guardrail": {
+    "heading": "Still on this?",
+    "body_one": "You’ve been on “{{taskLabel}}” for {{count}} minute. Still the right thing, or want to surface?",
+    "body_other": "You’ve been on “{{taskLabel}}” for {{count}} minutes. Still the right thing, or want to surface?",
+    "keepGoing": "Keep going",
+    "wrapUp": "Wrap up"
+  },
+  "pace": {
+    "over": "+{{count}} over your guess — that's ok, now we know",
+    "closing": "Closing in on your guess… that’s fine",
+    "onTrack": "On track — you’ve got time"
+  }
+}

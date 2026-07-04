@@ -5,6 +5,7 @@ import Animated, {
   useDerivedValue,
   type SharedValue,
 } from 'react-native-reanimated';
+import { useTranslation } from 'react-i18next';
 import { useTheme } from '@/src/theme/useTheme';
 import { type } from '@/src/theme/typography';
 import { AnimatedNumeral } from './AnimatedNumeral';
@@ -42,6 +43,7 @@ export function TimerRing({
   guessMin: number;
 }) {
   const t = useTheme();
+  const { t: tr } = useTranslation('timer');
   const indigo = t.colors.primary;
   const amber = t.colors.accent;
 
@@ -108,7 +110,7 @@ export function TimerRing({
     <View
       style={stage}
       accessibilityRole="timer"
-      accessibilityLabel={`Timer running. Honest target about ${targetMin} ${targetMin === 1 ? 'minute' : 'minutes'}. Elapsed time is shown in the center.`}
+      accessibilityLabel={tr('ring.a11y', { count: targetMin })}
     >
       <Svg width={SIZE} height={SIZE} accessible={false}>
         {/* Track ring (hairline) */}

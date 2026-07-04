@@ -1,0 +1,93 @@
+{
+  "tiers": {
+    "raw": "Raw",
+    "setting": "Setting",
+    "ripening": "Ripening",
+    "thickening": "Thickening",
+    "honest": "Honest"
+  },
+  "ring": {
+    "stage": {
+      "raw": "Just getting started",
+      "setting": "Getting sharper",
+      "ripening": "Landing closer",
+      "thickening": "You know your timing",
+      "honest": "Plans match reality"
+    },
+    "sealed": "Honeycomb sealed ✦",
+    "logsToNext_one": "~{{count}} log to {{tier}}",
+    "logsToNext_other": "~{{count}} logs to {{tier}}"
+  },
+  "hub": {
+    "discoveries": {
+      "label": "Discoveries",
+      "explain": "surprising truths about how long things take"
+    },
+    "areas": {
+      "label": "Your areas",
+      "explain": "fill = how honest your guesses are · tap to tune",
+      "empty": "Track a few tasks and your areas will appear here."
+    },
+    "cta": {
+      "logFirst": "Log your first task",
+      "logFirstSub": "Honest-day planning unlocks once your honey sets.",
+      "dayHonest": "Make my whole day honest"
+    },
+    "ripeningWait": {
+      "soon": "soon",
+      "aboutAWeek": "about a week"
+    }
+  },
+  "areaRow": {
+    "a11y": "{{name}} insights"
+  },
+  "blindSpot": {
+    "eyebrow": "STILL LEARNING",
+    "body": "A few honest logs and this number gets sharper.",
+    "a11y": "Calibrate {{name}} next"
+  },
+  "driftCheck": {
+    "eyebrow": "DRIFT CHECK",
+    "title": "Life shifts, so does your timing",
+    "body": "A few honest logs and {{name}} catches back up to you.",
+    "recheckArea": "Re-check {{area}}",
+    "keepLogging": "Keep logging",
+    "notNow": "Not now"
+  },
+  "discoveries": {
+    "gallery": {
+      "emptyTitle": "Nothing here yet — and that's fine.",
+      "emptyBody": "Discoveries show up as Whenbee learns your patterns, usually after about five logs in an area. Keep tracking and they'll start landing here.",
+      "direction": {
+        "longer": "longer",
+        "faster": "faster"
+      },
+      "dirLabel": {
+        "longer": "LONGER",
+        "faster": "FASTER"
+      },
+      "proofLonger": "You plan 15m · really runs ~{{minutes}}m",
+      "proofFaster": "You plan 15m · really only ~{{minutes}}m",
+      "a11y": "{{category}} runs {{times}} times {{direction}} — {{proof}}"
+    },
+    "preview": {
+      "eyebrow": "LATEST DISCOVERY",
+      "banked": "{{count}} banked",
+      "moreCount": "+{{count}} more",
+      "seeAll": "See all {{count}}",
+      "a11y": "See all {{count}} things you've learned",
+      "sentenceLonger": "You plan 15 minutes — it really takes about {{minutes}}.",
+      "sentenceFaster": "You plan 15 minutes — it really takes only about {{minutes}}."
+    }
+  },
+  "companion": {
+    "namePrompt": "Give your companion a name, if you like. You can change it any time.",
+    "namePlaceholder": "e.g. Buzz",
+    "nameA11y": "Companion name",
+    "save": "Save"
+  },
+  "discoveriesRoute": {
+    "heading": "Things you’ve learned",
+    "sub": "{{count}} truths Whenbee found in your tracking"
+  }
+}

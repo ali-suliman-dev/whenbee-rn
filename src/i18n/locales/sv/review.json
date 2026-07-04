@@ -1,0 +1,93 @@
+{
+  "eyebrow": { "week": "DIN ÄRLIGA VECKA", "month": "DIN ÄRLIGA MÅNAD" },
+  "ritualCard": {
+    "quietRow": { "week": "Din ärliga vecka", "month": "Din ärliga månad" },
+    "openQuietLabel": "Öppna {{label}}",
+    "readyHeadline": {
+      "week": "Din ärliga vecka är klar.",
+      "month": "Din ärliga månad är klar."
+    },
+    "lead": "Sju dagar är loggade. Här är vart din tid faktiskt gick.",
+    "openCta": { "week": "Öppna din vecka", "month": "Öppna din månad" },
+    "openReadyLabel": {
+      "week": "Öppna din ärliga vecka",
+      "month": "Öppna din ärliga månad"
+    }
+  },
+  "locked": {
+    "withheld": {
+      "week": "Din vecka är klar. Se vart din tid gick, vad som stramades åt och vad som stjäl din tid.",
+      "month": "Din månad är klar. Se vart din tid gick, vad som stramades åt och vad som stjäl din tid."
+    },
+    "unlockCta": "Lås upp med Pro",
+    "footnote": "Avsluta när som helst · lärs in på enheten"
+  },
+  "cover": {
+    "leadWeek": "Sju dagar är loggade. Här är vart din tid faktiskt gick.",
+    "leadMonth": "En månad är loggad. Här är vart din tid faktiskt gick.",
+    "loggedSummary_one": "{{count}} uppgift · {{logged}} loggat",
+    "loggedSummary_other": "{{count}} uppgifter · {{logged}} loggat",
+    "emptyLead": "Inget loggat den här gången. Inga problem — nästa tillfälle är alltid öppet."
+  },
+  "accuracyRead": { "eyebrow": "HUR DINA GISSNINGAR TRÄFFADE" },
+  "accuracyLine": {
+    "sharper": "Dina gissningar blev lite skarpare.",
+    "looser": "Gissningarna blev lite lösare. Det är bara data, ingen dom.",
+    "steady": "Stabil vecka. Dina bedömningar höll."
+  },
+  "sharpestPhrase": {
+    "time": "Du var som skarpast under {{label}}.",
+    "day": "{{label}} var din skarpaste dag."
+  },
+  "forwardAction": {
+    "eyebrow": "EN SAK ATT PROVA",
+    "headingSuffix": " fortsätter dra över tiden.",
+    "minutesLabel": "{{min}} min",
+    "overflowCaption": "+{{min}} min",
+    "plannedSuffix": " planerat",
+    "giveItPrefix": "avsätt ",
+    "amountApprox": "~{{min}} min",
+    "descPrefix": "Lägg in ",
+    "descSuffix": " nästa vecka så försvinner överskottet."
+  },
+  "tightened": {
+    "eyebrow": "VAD SOM STRAMADES ÅT",
+    "closerChip": "närmare",
+    "detail": "Från ungefär {{early}}× mot {{recent}}× din gissning."
+  },
+  "biggestSurprise": {
+    "eyebrow": "DIN STÖRSTA ÖVERRASKNING",
+    "headingSuffix": " — störst avvikelse den här veckan",
+    "guessLabel": "{{min}} min gissat",
+    "realLabel": "{{min}} min verkligt",
+    "minutesLabel": "{{min}} min",
+    "rangeLabel": "{{low}}–{{high}} min",
+    "yourReadSuffix": " din gissning",
+    "logsSuffix": " loggar",
+    "descPrefix": "Din verkliga ",
+    "descMiddle": "-tid hamnar på ",
+    "descAfterRange": " 80 % av gångerna — den blev ",
+    "descGuessSuffix": ", mer än din gissning på {{min}} min",
+    "descInsideSuffix": " men inom ditt intervall.",
+    "descOutsideSuffix": ", utanför ditt vanliga intervall."
+  },
+  "weekRead": {
+    "subtitlePrefix": "{{close}} av {{total}} områden landade nära.",
+    "subtitleSuffix": " loggar.",
+    "varianceCaption": "Skarpast på vardagar · lugnare helg",
+    "dayLetters": ["M", "T", "O", "T", "F", "L", "S"]
+  },
+  "reflection": { "eyebrow": "EN SAK ATT FUNDERA PÅ" },
+  "retro": {
+    "heading": "Hur lång tid tog det egentligen?",
+    "sub": "Ett ungefärligt tal räcker gott.",
+    "whatWasItLabel": "VAD VAR DET?",
+    "titlePlaceholder": "t.ex. Städade köket",
+    "titleA11y": "Vad var det",
+    "categoryLabel": "KATEGORI",
+    "yourGuessLabel": "DIN GISSNING",
+    "actualLabel": "VAD DET FAKTISKT TOG",
+    "saveCta": "Spara och mogna",
+    "saveHint": "+1 nektar · mognar din honung lite grann"
+  }
+}

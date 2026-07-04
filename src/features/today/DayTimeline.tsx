@@ -29,6 +29,8 @@ import Animated, {
   useReducedMotion,
 } from 'react-native-reanimated';
 import { Ionicons } from '@expo/vector-icons';
+import { useTranslation } from 'react-i18next';
+import type { TFunction } from 'i18next';
 import { useDayPlan } from './useDayPlan';
 import { useLearnedFocusWindow } from '@/src/features/planner/useLearnedFocusWindow';
 import { useDayTasksStore } from '@/src/stores/dayTasksStore';
@@ -36,7 +38,8 @@ import { useEntitlement } from '@/src/features/paywall/useEntitlement';
 import { useTheme } from '@/src/theme/useTheme';
 import { AppText } from '@/src/components/AppText';
 import { ActionSheet, type ActionSheetItem } from '@/src/components/ActionSheet';
-import { formatClock, formatClockMeridiem, fmtHm } from '@/src/lib/time';
+import { formatClock, formatClockMeridiem } from '@/src/lib/time';
+import { formatDuration } from '@/src/i18n/formatDuration';
 import type { PlanTimelineItem, PlanVerdict } from '@/src/domain/types';
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -70,17 +73,16 @@ function overlapsWindow(
  * Derives the label text for an overflow verdict — calm, no guilt.
  * Uses conversion-psychology: name the gap, offer a calm path forward.
  */
-function overflowLabel(verdict: PlanVerdict): string {
+function overflowLabel(verdict: PlanVerdict, tr: TFunction<'today'>): string {
   if (verdict.kind === 'cut-one') {
-    return `This won't all fit today — move "${verdict.cut.label}" to tomorrow?`;
+    return tr('dayTimeline.overflow.cutOne', { label: verdict.cut.label });
   }
   if (verdict.kind === 'multi-cut') {
-    const count = verdict.cuts.length;
-    return `${count} tasks won't fit today — move them to tomorrow?`;
+    return tr('dayTimeline.overflow.multiCut', { count: verdict.cuts.length });
   }
   if (verdict.kind === 'push-deadline') {
     const feasibleStr = formatClockMeridiem(verdict.feasibleDeadline);
-    return `You'd need until ${feasibleStr} to fit everything — move one to tomorrow?`;
+    return tr('dayTimeline.overflow.pushDeadline', { time: feasibleStr });
   }
   return '';
 }
@@ -116,7 +118,10 @@ function RowContent({
   focusBandActive: boolean;
 }) {
   const t = useTheme();
+  const { t: translate } = useTranslation();
+  const { t: tr } = useTranslation('today');
   const durationMin = Math.round((item.endAt - item.startAt) / 60_000);
+  const durationLabel = formatDuration(durationMin, translate);
 
   // Shared geometry so task + event clocks line up to the same x.
   const clockWidth = t.space[10]; // fits "21:00" at mono xs without clipping
@@ -181,8 +186,12 @@ function RowContent({
         testID={`timeline-event-${item.id}`}
         accessible
         accessibilityRole="text"
-        accessibilityLabel={`Meeting: ${item.label}, ${formatClock(item.startAt)} to ${formatClock(item.endAt)}`}
-        accessibilityHint="Read-only calendar event"
+        accessibilityLabel={tr('dayTimeline.meetingA11y', {
+          label: item.label,
+          start: formatClock(item.startAt),
+          end: formatClock(item.endAt),
+        })}
+        accessibilityHint={tr('dayTimeline.meetingA11yHint')}
       >
         <View style={tickStyle} />
         <AppText style={clockStyle}>{formatClock(item.startAt)}</AppText>
@@ -190,7 +199,7 @@ function RowContent({
         <AppText style={labelStyle} numberOfLines={1}>
           {item.label}
         </AppText>
-        <AppText style={tagStyle}>{fmtHm(durationMin)}</AppText>
+        <AppText style={tagStyle}>{durationLabel}</AppText>
       </View>
     );
   }
@@ -230,13 +239,17 @@ function RowContent({
       style={row}
       accessible
       accessibilityRole="text"
-      accessibilityLabel={`${item.label}, starts ${formatClock(item.startAt)}, ${fmtHm(durationMin)}`}
+      accessibilityLabel={tr('dayTimeline.taskA11y', {
+        label: item.label,
+        start: formatClock(item.startAt),
+        duration: durationLabel,
+      })}
     >
       <AppText style={clockStyle}>{formatClock(item.startAt)}</AppText>
       <AppText style={labelStyle} numberOfLines={2}>
         {item.label}
       </AppText>
-      <AppText style={durationStyle}>{fmtHm(durationMin)}</AppText>
+      <AppText style={durationStyle}>{durationLabel}</AppText>
     </View>
   );
 }
@@ -250,8 +263,9 @@ function OverflowBanner({
   onMove: (id: string) => void;
 }) {
   const t = useTheme();
+  const { t: tr } = useTranslation('today');
   const cutId = firstCutId(verdict);
-  const labelText = overflowLabel(verdict);
+  const labelText = overflowLabel(verdict, tr);
 
   if (!labelText) return null;
 
@@ -298,11 +312,11 @@ function OverflowBanner({
           testID="timeline-move-action"
           onPress={() => onMove(cutId)}
           accessibilityRole="button"
-          accessibilityLabel="Move task to tomorrow"
+          accessibilityLabel={tr('dayTimeline.moveTaskA11y')}
           hitSlop={t.size.hitSlop}
         >
           <View style={moveButtonOuter}>
-            <AppText style={moveButtonText}>Move</AppText>
+            <AppText style={moveButtonText}>{tr('dayTimeline.moveButton')}</AppText>
           </View>
         </Pressable>
       ) : null}
@@ -322,16 +336,19 @@ function DoneByChip({
   onSelect: (m: number | null) => void;
 }) {
   const t = useTheme();
+  const { t: tr } = useTranslation('today');
   const [pickerOpen, setPickerOpen] = useState(false);
 
   const label = useMemo(() => {
-    if (doneByMin === null) return 'Set done-by time';
+    if (doneByMin === null) return tr('dayTimeline.doneBy.setTime');
     // Compute epoch from LOCAL midnight of today so formatClock reflects
     // the correct local time regardless of UTC offset.
     const localMidnight = new Date();
     localMidnight.setHours(0, 0, 0, 0);
-    return `Done by ${formatClock(localMidnight.getTime() + doneByMin * 60_000)}`;
-  }, [doneByMin]);
+    return tr('dayTimeline.doneBy.label', {
+      time: formatClock(localMidnight.getTime() + doneByMin * 60_000),
+    });
+  }, [doneByMin, tr]);
 
   const chipStyle: ViewStyle = {
     flexDirection: 'row',
@@ -375,7 +392,7 @@ function DoneByChip({
         onPress={() => setPickerOpen(true)}
         accessibilityRole="button"
         accessibilityLabel={label}
-        accessibilityHint="Tap to change your done-by target time"
+        accessibilityHint={tr('dayTimeline.doneBy.hint')}
       >
         <View style={chipStyle}>
           <AppText style={textStyle}>{label}</AppText>
@@ -384,7 +401,7 @@ function DoneByChip({
 
       <ActionSheet
         visible={pickerOpen}
-        title="Done by"
+        title={tr('dayTimeline.doneBy.sheetTitle')}
         items={timeOptions}
         onCancel={() => setPickerOpen(false)}
       />
@@ -402,6 +419,7 @@ function DoneByChip({
  */
 export function DayTimeline() {
   const t = useTheme();
+  const { t: tr } = useTranslation('today');
   const reducedMotion = useReducedMotion();
 
   // ── Pro guard (defence-in-depth — should be unreachable for free users) ──
@@ -489,7 +507,7 @@ export function DayTimeline() {
       <View style={headerStyle}>
         {'startBy' in plan.verdict && plan.verdict.startBy ? (
           <AppText style={startByStyle}>
-            Start by {formatClock(plan.verdict.startBy)}
+            {tr('dayTimeline.startBy', { time: formatClock(plan.verdict.startBy) })}
           </AppText>
         ) : (
           <View />

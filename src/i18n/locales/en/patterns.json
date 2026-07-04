@@ -1,0 +1,300 @@
+{
+  "accuracyCorrelations": {
+    "eyebrow": "WHEN YOU'RE SHARPEST",
+    "dismissLabel": "Hide when you're sharpest",
+    "headline": {
+      "time": "Your estimates land closest in the {{label}}.",
+      "day": "{{label}} is your sharpest day."
+    },
+    "detail": {
+      "time": "About {{betterAccuracy}}% accurate in the {{betterLabel}}, vs {{worseAccuracy}}% in the {{worseLabel}}.",
+      "day": "About {{betterAccuracy}}% accurate on {{betterLabel}}, vs {{worseAccuracy}}% on {{worseLabel}}."
+    },
+    "meta": "Based on {{count}} logs · learned on-device"
+  },
+  "accuracyCorrelationsLocked": {
+    "eyebrow": "WHENBEE PRO",
+    "headline": "Know your sharpest hours.",
+    "sub": "Some hours you read time better than others. See exactly when — and when to leave a little more buffer.",
+    "cta": "Reveal my rhythm"
+  },
+  "archetypeHero": {
+    "eyebrow": "YOUR TIME PERSONALITY",
+    "multiplierRead": {
+      "close": "right on your guess",
+      "longer": "longer than you guess"
+    },
+    "heroAccessibilityLabel": "{{value}} times",
+    "shareLabel": "Share my archetype",
+    "placeholder": {
+      "title": "Meet your time personality",
+      "body": "Answer a few quick questions, or keep logging and I'll figure it out.",
+      "cta": "Take the 20-sec quiz"
+    }
+  },
+  "biggestSurprise": {
+    "eyebrow": "THIS WEEK'S SURPRISE",
+    "dismissLabel": "Hide this week's surprise",
+    "headline": {
+      "longer": "{{category}} stretched the most this week.",
+      "early": "{{category}} wrapped up early this week."
+    },
+    "detail": "You guessed {{estimateMin}} min and it took {{actualMin}}. Worth a mental note for next time."
+  },
+  "honestMap": {
+    "readiness": {
+      "none": "Your areas are still settling. A few more logs and the numbers sharpen.",
+      "one": "One area reads honest now. The rest are catching up.",
+      "all": "Every area reads honest now. Your numbers are yours.",
+      "some": "{{count}} of your areas read honest now."
+    },
+    "dial": {
+      "accessibilityLabel": "{{category}} readiness: {{confidence}}, {{lit}} of 3"
+    },
+    "confidence": {
+      "raw": "raw",
+      "setting": "setting",
+      "honest": "honest"
+    },
+    "sub": "runs {{multiplier}}× · {{confidence}}",
+    "guess": "vs {{guessMin}} guess",
+    "unit": "m"
+  },
+  "contextCorrelations": {
+    "eyebrow": "WHAT MOVES YOUR ACCURACY",
+    "dismissLabel": "Hide what moves your accuracy",
+    "noun": {
+      "energy": "energy",
+      "sleep": "sleep",
+      "meds": "meds"
+    },
+    "valueLabel": {
+      "energy": "{{value}}-energy"
+    },
+    "headline": "Your {{value}} sessions land closest.",
+    "detail": "About {{bestAccuracy}}% accurate on {{bestValue}} sessions, vs {{worstAccuracy}}% on {{worstValue}} ones.",
+    "meta": "Based on the {{noun}} you noted across {{count}} sessions · learned on-device"
+  },
+  "contextCorrelationsLocked": {
+    "eyebrow": "WHENBEE PRO",
+    "headline": "Find what moves your accuracy.",
+    "sub": "When you note your energy after a session, that's a clue. Pro reads it back: whether low-energy days throw your estimates off.",
+    "cta": "Reveal the pattern"
+  },
+  "driftNote": {
+    "eyebrow": "PACE SHIFT",
+    "dismissLabel": "Hide this drift note",
+    "lead": {
+      "slower": "is taking longer lately",
+      "faster": "is moving quicker lately"
+    },
+    "body": "<bold>{{categoryName}}</bold> {{lead}} — it used to run {{early}}×, now nearer {{recent}}×. Your honest numbers already follow along."
+  },
+  "focusPeakCard": {
+    "eyebrow": "WHEN YOU'RE SHARP",
+    "forming": {
+      "title": "Learning your focus hours",
+      "progress": "{{count}} / {{gate}} sessions",
+      "setHoursCta": "Set my hours myself",
+      "setHoursA11y": "Set focus window manually"
+    },
+    "locked": {
+      "teaserWithContrast": "We found your sharpest stretch — {{contrast}}× above your slump.",
+      "teaserDefault": "We found your sharpest stretch.",
+      "meta": "Learned from {{count}} sessions.",
+      "unlockA11y": "Unlock my focus window",
+      "unlockCta": "Unlock my focus window ›"
+    },
+    "personal": {
+      "openA11y": "Open focus window detail",
+      "footerMetaWeeks": "{{count}} sessions · steady for {{weeks}} weeks",
+      "footerMetaDays": "{{count}} sessions · {{days}} days",
+      "open": "Open ›"
+    },
+    "contrastSuffix": " above your dip"
+  },
+  "patternsEmpty": {
+    "title": "Your patterns are on the way",
+    "body": "Time a few tasks and this is where you'll meet your time personality, your sharpest category, and the surprises worth noticing."
+  },
+  "patternsSegment": {
+    "numbers": "Numbers",
+    "insights": "Insights",
+    "correlations": "Correlations"
+  },
+  "planExperiment": {
+    "eyebrow": "PLAN VS WING IT",
+    "dismissLabel": "Hide the plan experiment",
+    "headline": {
+      "planWins": "Running the timer keeps you sharper.",
+      "gutWins": "You read time fine without the timer."
+    },
+    "supporting": {
+      "planWins": "Timed tasks land {{timedPct}}% accurate vs {{retroPct}}% when logged after.",
+      "gutWins": "Logged-after tasks land {{retroPct}}% accurate vs {{timedPct}}% when timed. Honestly — your gut does well here."
+    },
+    "note_one": "Based on {{timedCount}} timed and {{retroCount}} logged-after task.",
+    "note_other": "Based on {{timedCount}} timed and {{retroCount}} logged-after tasks.",
+    "pending": {
+      "body": "A few more timed and a few logged-after tasks and you'll see whether the timer makes you sharper. No rush."
+    }
+  },
+  "predictionCard": {
+    "eyebrow": "WHAT TO EXPECT",
+    "dismissLabel": "Hide the prediction",
+    "lead": "A typical {{category}} task usually runs",
+    "multNote": "about {{multiplier}}× your guess",
+    "note_one": "From your last {{count}} task, for a 15-min guess.",
+    "note_other": "From your last {{count}} tasks, for a 15-min guess.",
+    "unit": "min"
+  },
+  "proTeaserCard": {
+    "proPill": "Pro",
+    "footer": "Cancel anytime · learned on-device"
+  },
+  "progressChart": {
+    "eyebrow": "ACCURACY OVER TIME",
+    "pill": {
+      "accuracy": "+{{delta}}% accuracy",
+      "steady": "steady"
+    },
+    "title": {
+      "up": "Getting more accurate",
+      "steady": "Holding steady"
+    },
+    "axis": {
+      "early": "early",
+      "midway": "midway",
+      "now": "now"
+    },
+    "context": {
+      "up": "Your guesses and actual time are aligning.",
+      "steady": "Your reads are consistent."
+    }
+  },
+  "stealsYourTime": {
+    "eyebrow": "WHAT STEALS YOUR TIME",
+    "dismissLabel": "Hide what steals your time",
+    "headline": "Where {{category}}'s extra minutes go.",
+    "detail": "{{pct}}% of {{category}} overruns trace back to {{reason}}{{skew}}.",
+    "meta": "Based on {{sampleCount}} of {{totalOver}} times you noted why · learned on-device",
+    "skew": {
+      "morning": ", mostly earlier in the day",
+      "afternoon": ", mostly later in the day",
+      "weekday": {
+        "sunday": ", mostly on Sundays",
+        "monday": ", mostly on Mondays",
+        "tuesday": ", mostly on Tuesdays",
+        "wednesday": ", mostly on Wednesdays",
+        "thursday": ", mostly on Thursdays",
+        "friday": ", mostly on Fridays",
+        "saturday": ", mostly on Saturdays"
+      }
+    }
+  },
+  "stealsYourTimeLocked": {
+    "eyebrow": "WHENBEE PRO",
+    "headline": "See where your time really goes.",
+    "sub": "Every time you note why a task ran long, that's a clue. Pro reads them back: the cause behind your overruns, by category.",
+    "cta": "Show me the cause"
+  },
+  "stealsYourTimeWeekly": {
+    "eyebrow": "THIS WEEK'S PATTERN",
+    "dismissLabel": "Hide this week's pattern"
+  },
+  "youVsPast": {
+    "eyebrow": "YOU, THEN VS NOW",
+    "dismissLabel": "Hide your progress",
+    "atFirst": "At first",
+    "lately": "Lately",
+    "summary": {
+      "improving": "That's {{delta}} points sharper than when you started. Nice work.",
+      "steady": "Right where you started — and steady reads are a real skill."
+    },
+    "unit": "%"
+  },
+  "archetypeStats": {
+    "tracked": {
+      "label": "Tracked",
+      "value_one": "{{count}} task",
+      "value_other": "{{count}} tasks"
+    },
+    "mostAccurate": { "label": "Most accurate" },
+    "runsLongest": { "label": "Runs longest" }
+  },
+  "archetypeTraits": {
+    "runsLabel": "Runs",
+    "runsValue": "{{multiplier}}× long",
+    "midTaskLabel": "Mid-task",
+    "sharpestLabel": "Sharpest",
+    "mid": {
+      "track": "Stays on track",
+      "rabbit": "Falls down rabbit holes"
+    },
+    "focus": {
+      "morning": "Mornings",
+      "evening": "Evenings",
+      "varies": "Varies"
+    }
+  },
+  "focusCopy": {
+    "whyNarrative": {
+      "early": "You start sharp and fade after lunch",
+      "midday": "You hit your stride around midday",
+      "afternoon": "Mornings warm up slow — you peak after lunch",
+      "evening": "You're a slow burn — you peak in the evening"
+    }
+  },
+  "archetype": {
+    "steadyReader": {
+      "title": "The Steady Reader",
+      "blurb": "Your guesses land close to reality. Quietly rare."
+    },
+    "gentleOptimist": {
+      "title": "The Gentle Optimist",
+      "blurb": "You lean hopeful, then mostly catch up. A little padding does it."
+    },
+    "sprintOptimist": {
+      "title": "The Sprint Optimist",
+      "blurb": "Your mind moves fast; the doing takes a touch longer. Now you know by how much."
+    },
+    "dreamer": {
+      "title": "The Dreamer",
+      "blurb": "Big plans, generous timelines. Your honest numbers keep them grounded."
+    }
+  },
+  "ripeningPro": {
+    "ripening": {
+      "eyebrow": "Pro · ripening",
+      "pillPrefix": "Ripens at",
+      "title": "Your honest range",
+      "sub": "The range Whenbee will show you — once it has seen enough of your timing to mean something.",
+      "settling": "Still settling…",
+      "footer": "Each task you log quietly sharpens the range. Nothing to keep up with."
+    },
+    "reveal": {
+      "eyebrow": "Pro · ready",
+      "pill": "Ready",
+      "headline": "Your range just got honest.",
+      "sub": "Whenbee has seen enough of your timing. The Pro features below now have real data to work with — not guesses.",
+      "cta": "See what Pro adds",
+      "escape": "Take a quick look first"
+    },
+    "featureLabel": {
+      "confidenceBand": "Honest range",
+      "stealsYourTime": "What steals your time",
+      "accuracyCorrelations": "When you are sharpest",
+      "contextCorrelations": "What shifts your accuracy",
+      "dayCapacity": "Day capacity check",
+      "honestWeek": "Honest week review",
+      "honestMonth": "Honest month review"
+    },
+    "featureList": {
+      "readyStatus": "Ready"
+    },
+    "card": {
+      "honeyPct": "{{pct}}% honey",
+      "logsToNext": "~{{count}} more logs"
+    }
+  }
+}

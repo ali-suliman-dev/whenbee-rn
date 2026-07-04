@@ -1,0 +1,64 @@
+{
+  "screenTitle": "Export a report",
+  "close": "Close",
+  "timeWindow": "TIME WINDOW",
+  "window": {
+    "last30": "Last 30 days",
+    "last90": "Last 90 days",
+    "allTime": "All time"
+  },
+  "includesLine": "Includes your accuracy, how long things really take you per category, and your biggest surprises.",
+  "createPdf": "Create PDF",
+  "building": "Building your report…",
+  "madeOnPhone": "Made on your phone. Nothing leaves your device unless you share it.",
+  "errorLine": "Couldn't build the report just now. Try again?",
+  "thin": {
+    "heading": "Not enough logged time here yet",
+    "body": "A report gets useful after about six finished tasks in this window. Try \"All time\", or come back after a few more.",
+    "useAllTime": "Use all time"
+  },
+  "locked": {
+    "heading": "Take your honest numbers to your next appointment",
+    "body": "Turn what Whenbee learned about your time into a clean PDF you can hand to a coach, therapist, or doctor.",
+    "unlock": "Unlock report export",
+    "onYourPhone": "On your phone. Nothing uploads."
+  },
+  "pdf": {
+    "title": "Time report",
+    "subline": "Generated {{date}} · {{window}}",
+    "preparedBy": "Prepared by Whenbee for {{name}}'s data",
+    "eyebrowAccuracy": "Estimation accuracy",
+    "accuracyDefinition": "How close your time guesses landed to reality, on average.",
+    "glance": {
+      "tasksLogged": "Tasks logged",
+      "categoriesTracked": "Categories tracked",
+      "steadiestCategory": "Steadiest category",
+      "none": "—"
+    },
+    "biasTable": {
+      "heading": "How long things really take you",
+      "category": "Category",
+      "logs": "Logs",
+      "youGuess": "You guess",
+      "reallyTakes": "It really takes",
+      "bias": "Bias"
+    },
+    "omitted_one": "{{count}} more category is still settling and was left out.",
+    "omitted_other": "{{count}} more categories are still settling and were left out.",
+    "surprises": {
+      "heading": "Biggest surprises",
+      "line": "guessed {{estimate}}m, took {{actual}}m"
+    },
+    "sharpest": {
+      "heading": "When your estimates land closest"
+    },
+    "footer": {
+      "left": "Whenbee · personal time report",
+      "disclaimer": "These are personal estimates, not a clinical measure."
+    }
+  },
+  "sharpestNote": {
+    "time": "Your estimates land closest on {{label}}.",
+    "day": "Your estimates land closest on {{label}}."
+  }
+}

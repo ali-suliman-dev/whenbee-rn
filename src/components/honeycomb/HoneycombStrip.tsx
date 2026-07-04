@@ -1,5 +1,6 @@
 import { useEffect } from 'react';
 import { Pressable, View, Text, type ViewStyle, type TextStyle } from 'react-native';
+import { useTranslation } from 'react-i18next';
 import { Ionicons } from '@expo/vector-icons';
 import Svg, { Polygon } from 'react-native-svg';
 import Animated, {
@@ -95,6 +96,7 @@ interface HoneycombStripProps {
 
 export function HoneycombStrip({ cells, logs, onPress }: HoneycombStripProps) {
   const t = useTheme();
+  const { t: tr } = useTranslation('common');
   const reducedMotion = useReducedMotion();
 
   // Lead = the most-ripened category; it drives the band + next-tier line.
@@ -176,10 +178,10 @@ export function HoneycombStrip({ cells, logs, onPress }: HoneycombStripProps) {
               <Text style={countText}>
                 {remaining} {remaining === 1 ? 'log' : 'logs'}
               </Text>
-              <Text style={restText}> to {nextTier}</Text>
+              <Text style={restText}>{tr('toTier', { tier: nextTier })}</Text>
             </>
           ) : (
-            <Text style={cappedText}>Fully ripened</Text>
+            <Text style={cappedText}>{tr('fullyRipened')}</Text>
           )}
         </Text>
 

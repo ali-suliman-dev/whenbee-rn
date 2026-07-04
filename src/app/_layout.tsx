@@ -1,9 +1,11 @@
 import '../global.css';
-import { useEffect, type ComponentProps } from 'react';
+import { useEffect, useState, type ComponentProps } from 'react';
 import { AppState, Appearance } from 'react-native';
 import { Stack } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import { useFonts } from 'expo-font';
+import { I18nextProvider } from 'react-i18next';
+import i18n, { initI18n } from '@/src/i18n';
 import { AppProviders } from '@/src/providers/AppProviders';
 import { useTheme } from '@/src/theme/useTheme';
 import { useSettingsStore } from '@/src/stores/settingsStore';
@@ -143,6 +145,13 @@ export default function RootLayout() {
     }
   }, [fontsLoaded, fontError]);
 
+  // i18next init is synchronous work over bundled resources (no IO), so it folds
+  // into the existing fonts gate below rather than adding a second splash/spinner.
+  const [i18nReady, setI18nReady] = useState(false);
+  useEffect(() => {
+    void initI18n().then(() => setI18nReady(true));
+  }, []);
+
   // Restore a running timer that survived a full app close (the snapshot carries
   // wall-clock startedAt, so elapsed stays correct). Run once at boot.
   useEffect(() => {
@@ -164,13 +173,15 @@ export default function RootLayout() {
     return () => sub.remove();
   }, []);
 
-  if (!fontsLoaded && !fontError) {
+  if ((!fontsLoaded && !fontError) || !i18nReady) {
     return null;
   }
 
   return (
-    <AppProviders>
-      <RootNavigator />
-    </AppProviders>
+    <I18nextProvider i18n={i18n}>
+      <AppProviders>
+        <RootNavigator />
+      </AppProviders>
+    </I18nextProvider>
   );
 }

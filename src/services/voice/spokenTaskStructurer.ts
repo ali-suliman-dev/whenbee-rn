@@ -7,13 +7,27 @@ import type { ParsedTaskDraft } from '@/src/domain/types';
 import { getOnDeviceLlm } from '@/src/services/ai';
 import { parseSpokenTask } from '@/src/features/voice/parsing/spokenTaskParser';
 
-const INSTRUCTIONS =
+// Per-locale Tier-2 prompts for the on-device Apple LLM. These are model
+// instructions, not user-facing UI copy — they stay as in-file constants
+// rather than i18n JSON entries.
+const ENGLISH_INSTRUCTIONS =
   'Rewrite the user’s spoken note into a single short task. Start with a verb, ' +
   'imperative mood, at most 6 words, no preamble or filler. Return only the task title.';
 
-export const structureSpokenTask = async (transcript: string): Promise<ParsedTaskDraft> => {
+const INSTRUCTIONS: Record<string, string> = {
+  en: ENGLISH_INSTRUCTIONS,
+  sv:
+    'Skriv om användarens talade anteckning till en kort uppgift. Börja med ett verb, ' +
+    'imperativ, högst 6 ord, ingen inledning eller utfyllnad. Returnera endast uppgiftens titel.',
+};
+
+export const structureSpokenTask = async (
+  transcript: string,
+  lang: string,
+): Promise<ParsedTaskDraft> => {
+  const instructions = INSTRUCTIONS[lang] ?? ENGLISH_INSTRUCTIONS;
   const llmResult = await getOnDeviceLlm().structure<{ title: string }>({
-    instructions: INSTRUCTIONS,
+    instructions,
     prompt: transcript,
     schema: { title: { type: 'string', description: 'The rewritten imperative task title' } },
   });
@@ -22,5 +36,5 @@ export const structureSpokenTask = async (transcript: string): Promise<ParsedTas
   if (llmTitle.length > 0) {
     return { title: llmTitle, rawTranscript: transcript, source: 'appleLLM' };
   }
-  return parseSpokenTask(transcript); // Tier-1 fallback (source: 'rules')
+  return parseSpokenTask(transcript, lang); // Tier-1 fallback (source: 'rules')
 };

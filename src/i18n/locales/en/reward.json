@@ -1,0 +1,67 @@
+{
+  "headlines": {
+    "timed": [
+      "Logged. Nice one.",
+      "That's the honest number.",
+      "Caught it. Good.",
+      "That's one more, logged."
+    ],
+    "retro": "Caught up. Thank you."
+  },
+  "capSealed": "{{tier}} cell sealed",
+  "ritual": {
+    "default": "One honest log a day. No streak to keep.",
+    "sealed": "New honest cell. Nothing to keep up."
+  },
+  "goalFeedback": {
+    "headline": {
+      "tightestWeek": "That one landed within {{band}}% — your tightest this week.",
+      "tighterThanUsual": "That one landed within {{band}}% — tighter than usual.",
+      "typical": "That one landed within {{band}}%."
+    },
+    "caption": "toward your ±{{band}}% goal"
+  },
+  "notifSoftAsk": {
+    "body": "Want a gentle nudge when a timer ends? No streaks, no scolding — just the honest number when it counts.",
+    "accept": "Sounds good",
+    "decline": "Not now"
+  },
+  "energy": {
+    "options": {
+      "low": "Low",
+      "ok": "OK",
+      "high": "High"
+    },
+    "noted": "Noted.",
+    "prompt": "Energy this session? (optional)"
+  },
+  "reason": {
+    "overHeader": "Where did the time go?",
+    "underHeader": "What made it quick?",
+    "confirmHeader": "Good to know.",
+    "over": {
+      "interrupted": "Paused",
+      "underestimated": "Grew",
+      "contextSwitch": "Pulled"
+    },
+    "under": {
+      "focused": "Flow",
+      "overestimated": "Fast"
+    }
+  },
+  "screen": {
+    "empty": {
+      "title": "Nothing to celebrate yet",
+      "subtitle": "Log something and the honey will ripen here."
+    },
+    "backToToday": "Back to today",
+    "tookEyebrow": "IT REALLY TOOK",
+    "honeyLabel": "HONEY",
+    "delta": {
+      "over": "{{count}} min over your guess",
+      "under": "{{count}} min under your guess",
+      "equal": "right on your guess"
+    },
+    "seeYourBee": "See your bee"
+  }
+}

@@ -1,6 +1,7 @@
 import { Pressable, View, Text, type ViewStyle, type TextStyle } from 'react-native';
 import Animated, { useSharedValue, useAnimatedStyle, withTiming } from 'react-native-reanimated';
 import { router } from 'expo-router';
+import { useTranslation } from 'react-i18next';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '@/src/theme/useTheme';
 import { type } from '@/src/theme/typography';
@@ -44,6 +45,7 @@ const AnimatedView = Animated.createAnimatedComponent(View);
 
 export function TodayFocusHook({ nowMs }: TodayFocusHookProps): React.ReactElement | null {
   const t = useTheme();
+  const { t: tr } = useTranslation('today');
   const isPro = useEntitlement((s) => s.isPro);
   const window = useLearnedFocusWindow(nowMs);
   const windowEndMin = useSettingsStore((s) => s.windowEndMin);
@@ -87,8 +89,8 @@ export function TodayFocusHook({ nowMs }: TodayFocusHookProps): React.ReactEleme
     isPro && startMin !== null && endMin !== null ? formatWindowRange(startMin, endMin) : null;
   const a11yLabel =
     rangeText !== null
-      ? `Sharpest ${rangeText} — your window for hard tasks`
-      : 'Your focus window is ready — upgrade to Pro to see your sharpest hours';
+      ? tr('focusHook.proA11y', { range: rangeText })
+      : tr('focusHook.freeA11y');
 
   // ── styles (mirror CapacityChip: disc + bodySm + one line) ─────────────────
   const rowStyle: ViewStyle = {
@@ -155,17 +157,17 @@ export function TodayFocusHook({ nowMs }: TodayFocusHookProps): React.ReactEleme
           </View>
           {rangeText !== null ? (
             <AppText style={insightStyle} numberOfLines={1}>
-              <AppText style={leadStyle}>Sharpest</AppText>
+              <AppText style={leadStyle}>{tr('focusHook.sharpestLead')}</AppText>
               {` ${rangeText} `}
-              <AppText style={suffixStyle}>· hard tasks</AppText>
+              <AppText style={suffixStyle}>{tr('focusHook.hardTasksSuffix')}</AppText>
             </AppText>
           ) : (
             <>
               <AppText style={insightStyle} numberOfLines={1}>
-                Your focus window is ready
+                {tr('focusHook.freeInsight')}
               </AppText>
               <View style={pillStyle}>
-                <Text style={pillTextStyle}>Pro</Text>
+                <Text style={pillTextStyle}>{tr('focusHook.proPill')}</Text>
               </View>
             </>
           )}

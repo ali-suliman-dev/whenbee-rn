@@ -1,5 +1,7 @@
 import { useMemo } from 'react';
 import { Pressable, View, Text, type ViewStyle, type TextStyle } from 'react-native';
+import { useTranslation } from 'react-i18next';
+import type { TFunction } from 'i18next';
 import { useTheme } from '@/src/theme/useTheme';
 import { type } from '@/src/theme/typography';
 import { haptics } from '@/src/lib/haptics';
@@ -22,22 +24,17 @@ import type { Offering, Package, PackageDuration } from '@/src/services/purchase
 
 const ORDER: PackageDuration[] = ['yearly', 'lifetime', 'monthly'];
 
-const TITLE: Record<PackageDuration, string> = {
-  yearly: 'Yearly',
-  lifetime: 'Lifetime',
-  monthly: 'Monthly',
-  other: 'Plan',
-};
+/** Localized plan title per duration. `other` never surfaces in `ORDER` today. */
+function titleFor(tr: TFunction<'paywall'>, duration: PackageDuration): string {
+  return tr(`planPicker.title.${duration}`);
+}
 
-// Plain-language note under each plan title. No guilt, no fake urgency.
-const NOTE: Record<PackageDuration, string> = {
-  yearly: '7-day free trial, then billed yearly',
-  lifetime: 'Pay once. No subscription, ever.',
-  monthly: '7-day free trial, then billed monthly',
-  other: '',
-};
-
-const FALLBACK_SAVINGS = 'Save 42%';
+/** Plain-language note under each plan title. No guilt, no fake urgency.
+ * `other` (e.g. weekly) is dropped by `ORDER` before rendering and has no copy. */
+function noteFor(tr: TFunction<'paywall'>, duration: PackageDuration): string {
+  if (duration === 'other') return '';
+  return tr(`planPicker.note.${duration}`);
+}
 
 /** Pull the first numeric value out of a localized price string (e.g. "USD 12,50" → 12.5). */
 function parsePrice(priceString: string): number | null {
@@ -49,14 +46,18 @@ function parsePrice(priceString: string): number | null {
 }
 
 /** Savings of yearly vs 12× monthly, as "Save N%", or the labeled fallback. */
-function savingsLabel(yearly: Package | undefined, monthly: Package | undefined): string {
+function savingsLabel(
+  tr: TFunction<'paywall'>,
+  yearly: Package | undefined,
+  monthly: Package | undefined,
+): string {
   const y = yearly ? parsePrice(yearly.priceString) : null;
   const m = monthly ? parsePrice(monthly.priceString) : null;
-  if (y == null || m == null) return FALLBACK_SAVINGS;
+  if (y == null || m == null) return tr('planPicker.savingsFallback');
   const annualized = m * 12;
-  if (annualized <= y) return FALLBACK_SAVINGS;
+  if (annualized <= y) return tr('planPicker.savingsFallback');
   const pct = Math.round((1 - y / annualized) * 100);
-  return `Save ${pct}%`;
+  return tr('planPicker.savingsLabel', { pct });
 }
 
 /** Per-month equivalent of the yearly price (e.g. "≈ $2.92 / mo"), or null if unparseable.
@@ -103,6 +104,7 @@ export function PlanPicker({
   onSelect: (pkg: Package) => void;
 }) {
   const t = useTheme();
+  const { t: tr } = useTranslation('paywall');
 
   // Order the offering's packages into the hero → lifetime → monthly sequence,
   // dropping any duration we don't surface (e.g. weekly/"other").
@@ -114,7 +116,7 @@ export function PlanPicker({
 
   const yearly = ordered.find((p) => p.duration === 'yearly');
   const monthly = ordered.find((p) => p.duration === 'monthly');
-  const savings = savingsLabel(yearly, monthly);
+  const savings = savingsLabel(tr, yearly, monthly);
   const perMonth = perMonthLabel(yearly);
 
   const titleStyle: TextStyle = { ...(type.bodyLg as unknown as TextStyle), color: t.colors.ink };
@@ -170,19 +172,23 @@ export function PlanPicker({
             }}
             accessibilityRole="radio"
             accessibilityState={{ selected, checked: selected }}
-            accessibilityLabel={`${TITLE[pkg.duration]}, ${NOTE[pkg.duration]}, ${pkg.priceString}`}
+            accessibilityLabel={tr('planPicker.accessibilityLabel', {
+              title: titleFor(tr, pkg.duration),
+              note: noteFor(tr, pkg.duration),
+              price: pkg.priceString,
+            })}
             style={row}
           >
             <View style={{ flex: 1, gap: t.space[0.5] }}>
               <View style={{ flexDirection: 'row', alignItems: 'center', gap: t.space[2] }}>
-                <Text style={titleStyle}>{TITLE[pkg.duration]}</Text>
+                <Text style={titleStyle}>{titleFor(tr, pkg.duration)}</Text>
                 {isHero ? (
                   <View style={badge}>
                     <Text style={badgeText}>{savings.toUpperCase()}</Text>
                   </View>
                 ) : null}
               </View>
-              <Text style={noteStyle}>{NOTE[pkg.duration]}</Text>
+              <Text style={noteStyle}>{noteFor(tr, pkg.duration)}</Text>
             </View>
             <View style={{ alignItems: 'flex-end', gap: t.space[0.5] }}>
               <Text style={priceStyle}>{pkg.priceString}</Text>

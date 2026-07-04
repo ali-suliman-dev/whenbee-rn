@@ -1,0 +1,44 @@
+{
+  "overflowBar": {
+    "guessed": "du gissade",
+    "minutesShort": "{{minutes}} min",
+    "realityDelta": "+{{delta}} min verklighet",
+    "example": "Ett exempel — dina egna siffror kommer från dina timers."
+  },
+  "presenceRingTeaser": {
+    "body": "Se ringen fyllas mot din verkliga sluttid på låsskärmen.",
+    "cta": "Lås upp den ärliga ringen"
+  },
+  "proUpsellCard": {
+    "tag": "Pro"
+  },
+  "shareableCard": {
+    "footer": "Skapad med Whenbee · lärt på enheten",
+    "finishBy": "klar senast {{time}}",
+    "archetypeEyebrow": "MIN TIDSPERSONLIGHET",
+    "averageMultiplier": "I snitt tar dina uppgifter {{multiplier}}× din första gissning."
+  },
+  "honestBandLockedTeaser": {
+    "caption": "Se intervallet dina uppgifter hamnar i, och se det bli smalare.",
+    "label": "Ärligt intervall",
+    "proTag": "Pro",
+    "unlockA11y": "Lås upp det ärliga intervallet med Pro."
+  },
+  "honestSuggestionCard": {
+    "lead": "Ärligt",
+    "stillLearning": "lär sig fortfarande",
+    "roughly": "Lär sig fortfarande — ungefär {{low}}–{{high}} min",
+    "more": " mer",
+    "range": "Intervall",
+    "startingEstimate": "Startuppskattning · blir skarpare när du loggar",
+    "unlockA11y": "Lås upp det ärliga intervallet med Pro.",
+    "a11y": {
+      "honestRange": "Ärligt intervall {{low}} till {{high}} minuter.",
+      "honestRangeLearning": "Ärligt intervall {{low}} till {{high}} minuter, lär sig fortfarande.",
+      "roughly": "Lär sig fortfarande. Ungefär {{low}} till {{high}} minuter.",
+      "honestAbout": "Ärlig uppskattning cirka {{minutes}} minuter",
+      "honestAboutDelta": "Ärlig uppskattning cirka {{minutes}} minuter, {{delta}} mer än din gissning",
+      "startingSuffix": "{{base}}, startuppskattning, blir skarpare när du loggar"
+    }
+  }
+}

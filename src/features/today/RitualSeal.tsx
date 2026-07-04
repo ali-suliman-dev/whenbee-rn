@@ -12,6 +12,7 @@ import Animated, {
   interpolate,
 } from 'react-native-reanimated';
 import Svg, { Path, Rect, Circle, G, Defs, ClipPath, RadialGradient, Stop } from 'react-native-svg';
+import { useTranslation } from 'react-i18next';
 import { useTheme } from '@/src/theme/useTheme';
 import { useAmbientMotion } from '@/src/hooks/useAmbientMotion';
 import { type } from '@/src/theme/typography';
@@ -46,6 +47,7 @@ export function RitualSeal({
   size?: number;
 }) {
   const t = useTheme();
+  const { t: tr } = useTranslation('today');
   const reduced = useReducedMotion();
   const m = t.motion.seal;
   const e = t.motion.easing;
@@ -133,7 +135,7 @@ export function RitualSeal({
       onPress={onLog}
       accessibilityRole="button"
       accessibilityLabel={
-        done ? 'Logged one honest thing today.' : 'Log one honest thing today. Skipping is fine.'
+        done ? tr('ritualSeal.doneA11y') : tr('ritualSeal.pendingA11y')
       }
     >
       <View style={row}>
@@ -184,7 +186,7 @@ export function RitualSeal({
             </G>
           ))}
         </Svg>
-        <Text style={label}>{done ? "Today's honey set ✦" : 'Log one honest thing'}</Text>
+        <Text style={label}>{done ? tr('ritualSeal.doneLabel') : tr('ritualSeal.pendingLabel')}</Text>
       </View>
     </Pressable>
   );

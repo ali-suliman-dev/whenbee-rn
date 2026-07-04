@@ -1,4 +1,5 @@
 import { Text, type TextStyle } from 'react-native';
+import { Trans, useTranslation } from 'react-i18next';
 import { useTheme } from '@/src/theme/useTheme';
 import { type } from '@/src/theme/typography';
 import { PatternCard } from './PatternCard';
@@ -24,12 +25,13 @@ import type { DriftAlertCard } from './usePatterns';
 
 export function DriftNote({ card }: { card: DriftAlertCard }) {
   const t = useTheme();
+  const { t: tr } = useTranslation('patterns');
   const { categoryId, categoryName, earlyMultiplier, recentMultiplier, slowerLately } = card;
 
   const body: TextStyle = { ...(type.bodySm as unknown as TextStyle), color: t.colors.ink };
   const name: TextStyle = { ...(type.bodySmBold as unknown as TextStyle), color: t.colors.amberText };
 
-  const lead = slowerLately ? 'is taking longer lately' : 'is moving quicker lately';
+  const lead = tr(slowerLately ? 'driftNote.lead.slower' : 'driftNote.lead.faster');
 
   // Bucket the delta to 0.1 steps so minor float oscillations don't re-show
   // the card, but a real shift in magnitude produces a new id.
@@ -39,10 +41,24 @@ export function DriftNote({ card }: { card: DriftAlertCard }) {
   const dismissId = `drift:${categoryId}:${direction}:${magBucket}`;
 
   return (
-    <PatternCard eyebrow="PACE SHIFT" icon="trending-up-outline" dismissLabel="Hide this drift note" dismissId={dismissId}>
+    <PatternCard
+      eyebrow={tr('driftNote.eyebrow')}
+      icon="trending-up-outline"
+      dismissLabel={tr('driftNote.dismissLabel')}
+      dismissId={dismissId}
+    >
       <Text style={body}>
-        <Text style={name}>{categoryName}</Text> {lead} — it used to run {earlyMultiplier.toFixed(1)}×, now nearer{' '}
-        {recentMultiplier.toFixed(1)}×. Your honest numbers already follow along.
+        <Trans
+          i18nKey="driftNote.body"
+          ns="patterns"
+          values={{
+            categoryName,
+            lead,
+            early: earlyMultiplier.toFixed(1),
+            recent: recentMultiplier.toFixed(1),
+          }}
+          components={{ bold: <Text style={name} /> }}
+        />
       </Text>
     </PatternCard>
   );

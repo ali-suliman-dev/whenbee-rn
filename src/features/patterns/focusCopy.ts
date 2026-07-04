@@ -1,3 +1,5 @@
+import i18n from '@/src/i18n';
+
 // Shared "why" narrative copy for the focus-window card and detail sheet.
 // Peak bin → narrative bucket (Tier-1, derived from peak time only).
 //
@@ -5,8 +7,8 @@
 // contrast clause and a single closing period, so the sentence stays
 // grammatical whether or not the contrast clause is present.
 export function whyNarrative(peakMin: number): string {
-  if (peakMin < 660) return 'You start sharp and fade after lunch'; // before 11:00
-  if (peakMin < 780) return 'You hit your stride around midday'; // 11:00–13:00
-  if (peakMin < 1020) return 'Mornings warm up slow — you peak after lunch'; // 13:00–17:00
-  return "You're a slow burn — you peak in the evening"; // after 17:00
+  if (peakMin < 660) return i18n.t('patterns:focusCopy.whyNarrative.early'); // before 11:00
+  if (peakMin < 780) return i18n.t('patterns:focusCopy.whyNarrative.midday'); // 11:00–13:00
+  if (peakMin < 1020) return i18n.t('patterns:focusCopy.whyNarrative.afternoon'); // 13:00–17:00
+  return i18n.t('patterns:focusCopy.whyNarrative.evening'); // after 17:00
 }

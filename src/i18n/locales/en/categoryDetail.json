@@ -1,0 +1,149 @@
+{
+  "screen": {
+    "backLabel": "Back",
+    "crumb": "Category insights",
+    "toastAdaptSet": "Adaptation set to {{label}}",
+    "toastResetDone": "Start fresh — your honey stays",
+    "resetConfirm": {
+      "copy": "Reset this category's learning? Start fresh — your honey stays.",
+      "keepLabel": "Keep this category's learning",
+      "keep": "Keep it",
+      "confirmLabel": "Confirm reset category learning",
+      "confirm": "Reset"
+    },
+    "resetLink": "Reset this category's learning",
+    "loading": "Reading your patterns…"
+  },
+  "categoriesList": {
+    "lead": "The tasks Whenbee learns for you. Rename anything, or remove what you no longer do. Past logs stay either way.",
+    "nameLabel": "Category name, {{name}}",
+    "stopTrackingLabel": "Stop tracking {{name}}",
+    "newPlaceholder": "Name it…",
+    "newNameLabel": "New category name",
+    "addChip": "+ New category"
+  },
+  "adaptSegment": {
+    "title": "Tune how I learn",
+    "options": {
+      "steady": "Steady",
+      "balanced": "Balanced",
+      "reactive": "Reactive"
+    },
+    "optionLabel": "{{label}} learning mode",
+    "hints": {
+      "steady": "<em>Slow to change</em>. It leans on your <em>whole history</em>, so it fits when your pace stays <em>consistent</em>.",
+      "balanced": "The everyday setting. A <em>fair mix</em> of your history and your <em>recent runs</em>.",
+      "reactive": "<em>Catches up fast</em> when your pace <em>changes</em>, like after new meds, a rough night, or a new routine."
+    }
+  },
+  "ahaCard": {
+    "badgeLabel": "aha",
+    "dismissLabel": "Dismiss discovery",
+    "body_one": "Based on your last {{count}} completed {{categoryName}} task, you run about {{multiplier}}×. No guilt — your brain thinks fast, execution just takes longer.",
+    "body_other": "Based on your last {{count}} completed {{categoryName}} tasks, you run about {{multiplier}}×. No guilt — your brain thinks fast, execution just takes longer."
+  },
+  "rangeBand": {
+    "proLabel": "Pro",
+    "unlockLabel": "Unlock where tasks land with Pro"
+  },
+  "goalCard": {
+    "eyebrow": "GOAL",
+    "eyebrowReached": "GOAL · REACHED",
+    "withinChip": "within {{band}}%",
+    "notEnough": {
+      "headline": "A few more logs and you can aim here",
+      "sub": "{{n}} of {{min}} logged"
+    },
+    "picker": {
+      "headline": "Pick how close to aim",
+      "sub": "You land within <strong>±{{band}}%</strong> now — every choice is tighter.",
+      "presetWithin": "within",
+      "drawerCaption": "aim to land within",
+      "endSpotOn": "spot on",
+      "endNow": "±{{band}}% now",
+      "notNow": "Not now",
+      "setGoal": "Set goal"
+    },
+    "reached": {
+      "headline": "You did it",
+      "sub": "Your {{categoryName}} estimates landed within {{band}}%.",
+      "subCompact": "Reached — within {{band}}%.",
+      "keep": "I'm happy here",
+      "aimTighter": "Aim tighter"
+    },
+    "active": {
+      "headline": "Closing in",
+      "bestSoFar": "Best so far <strong>±{{band}}%</strong>",
+      "etaTail": " · about <strong>{{eta}} logs</strong> to ±{{band}}%",
+      "etaFallback": " · keep logging, it tightens",
+      "leverLabel": "Your biggest lever",
+      "leverText": "Your <strong>{{worstValue}}</strong> miss widest — tighten those first."
+    },
+    "empty": {
+      "accessibilityLabel": "Set a goal — Whenbee coaches you there",
+      "headline": "Set a target and I'll coach you there",
+      "sub": "You land within ±{{band}}% now — aim tighter."
+    }
+  },
+  "goalLocked": {
+    "eyebrow": "GOAL",
+    "proLabel": "PRO",
+    "headline": "Set a target and I'll coach you there",
+    "sub": "The number to guess, your biggest miss, how close you are.",
+    "accessibilityLabel": "Set a goal for this category with Pro — Whenbee coaches you to it"
+  },
+  "graduation": {
+    "eyebrow": "CALIBRATION COMPLETE",
+    "unit": "min",
+    "title": "This number's honest now",
+    "titleAccessibilityLabel": "Now an honest number. About {{minutes}} minutes.",
+    "sub": "The learning bar filled — {{runs}} real runs in.",
+    "runsFallback": "enough",
+    "proofRuns": "{{count}} real runs",
+    "dismissLabel": "Dismiss",
+    "cta": "Nice"
+  },
+  "honestCard": {
+    "tierMeaning": {
+      "raw": "just getting to know your pace",
+      "setting": "still sharpening your pace"
+    },
+    "eyebrowRange": "YOUR HONEST RANGE",
+    "narrowed": "<strong>Tightened from {{low}}–{{high}}</strong> as you logged.",
+    "metaGuess": " your guess",
+    "metaSeal": "honest now"
+  },
+  "maturityMeter": {
+    "settled": "A few more runs and this settles to one number.",
+    "runsLeft_one": "<strong>{{count}} more run</strong> sharpen this to one number",
+    "runsLeft_other": "<strong>{{count}} more runs</strong> sharpen this to one number"
+  },
+  "proHonestWeekTease": {
+    "peekLabel": "Your Honest Week · Jun 15–21",
+    "proLabel": "Pro",
+    "eyebrow": "Whenbee Pro",
+    "heading": "Your Honest Week, every Sunday.",
+    "body": "See where the hours really went — plan next week from the truth, not a guess.",
+    "cta": "Start my Honest Week",
+    "trust": "Cancel anytime · learned on-device"
+  },
+  "recentList": {
+    "header": "Recent tasks",
+    "empty": "No completed tasks here yet — they'll show up as you log them.",
+    "guessed": "guessed {{estimate}}",
+    "took": "took {{actual}}"
+  },
+  "trendChart": {
+    "header": "Calibration trend",
+    "periodPill": "Last 30 days",
+    "caption": {
+      "stabilizing": "Your multiplier is stabilizing — good self-awareness.",
+      "steady": "Steady and consistent — your pace is predictable here."
+    },
+    "empty": "Not enough logs yet — your trend appears after a few more.",
+    "daysAgo": "{{days}}d ago",
+    "halfDaysAgo": "{{days}}d",
+    "now": "now",
+    "axisIdeal": "ideal"
+  }
+}

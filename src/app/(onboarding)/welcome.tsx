@@ -2,6 +2,7 @@ import { useEffect, useRef } from 'react';
 import { View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
+import { useTranslation } from 'react-i18next';
 import { Screen } from '@/src/components/Screen';
 import { AppText } from '@/src/components/AppText';
 import { AppButton } from '@/src/components/AppButton';
@@ -18,6 +19,7 @@ import { Reveal } from '@/src/features/onboarding/Reveal';
 
 export default function Welcome() {
   const t = useTheme();
+  const { t: tr } = useTranslation('onboarding');
   const insets = useSafeAreaInsets();
   const { trackWelcomeShown } = useOnboarding();
   // once-guard: fires exactly once per mount regardless of StrictMode double-invoke
@@ -44,7 +46,7 @@ export default function Welcome() {
               letterSpacing: -0.75,
             }}
           >
-            You&apos;re not lazy. You&apos;re a{' '}
+            {tr('welcome.titlePrefix')}
             <AppText
               style={{
                 fontSize: t.fontSize['2xl'],
@@ -54,7 +56,7 @@ export default function Welcome() {
                 letterSpacing: -0.75,
               }}
             >
-              time optimist.
+              {tr('welcome.titleEmphasis')}
             </AppText>
           </AppText>
         </Reveal>
@@ -63,13 +65,13 @@ export default function Welcome() {
             variant="body"
             style={{ color: t.colors.inkSoft, lineHeight: t.fontSize.base * 1.5 }}
           >
-            I learn how long things really take you, then show you the honest number. No more planning around a guess.
+            {tr('welcome.subtitle')}
           </AppText>
         </Reveal>
 
         <Reveal index={3}>
           <AppText variant="label" style={{ color: t.colors.inkSoft }}>
-            How long it really takes
+            {tr('welcome.overflowLabel')}
           </AppText>
         </Reveal>
         <Reveal index={4}>
@@ -80,13 +82,13 @@ export default function Welcome() {
 
         <Reveal index={5}>
           <OnboardingFooterCard glyph={<LockGlyph />}>
-            No account, no email. Everything stays on this phone.
+            {tr('welcome.footer')}
           </OnboardingFooterCard>
         </Reveal>
       </View>
       <Reveal index={6} style={{ paddingTop: t.space[4] }}>
         <AppButton
-          label="Get started →"
+          label={tr('welcome.cta')}
           fullWidth
           onPress={() => router.push('/(onboarding)/quiz/0')}
         />

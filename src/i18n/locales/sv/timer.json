@@ -1,0 +1,42 @@
+{
+  "eyebrow": "Tar tid nu",
+  "defaultTaskLabel": "Fokuspass",
+  "minimizeA11y": "Minimera timer",
+  "abandonA11y": "Avbryt uppgift",
+  "reframe": {
+    "guessed": "gissade {{count}} min",
+    "honestLabel": "ärligt",
+    "honestValue": "~{{count}} min"
+  },
+  "stopAndLog": "Stoppa & logga",
+  "abandonConfirm": {
+    "title": "Avbryta den här uppgiften?",
+    "message": "Ingen skuld — den räknas bara inte mot din honung.",
+    "keepTiming": "Fortsätt ta tid",
+    "abandon": "Avbryt"
+  },
+  "finish": {
+    "started": "Startade {{clock}}",
+    "reprojecting": "avslutar nu ~{{clock}}",
+    "rangeDone": "Klar {{low}}–{{high}}",
+    "pointDone": "Klar ~{{clock}}",
+    "rangeA11y": "Ärligt tidsspann {{low}} till {{high}}.",
+    "rangeA11yLearning": "Ärligt tidsspann {{low}} till {{high}}, lär sig fortfarande."
+  },
+  "ring": {
+    "a11y_one": "Timer igång. Ärligt mål cirka {{count}} minut. Förfluten tid visas i mitten.",
+    "a11y_other": "Timer igång. Ärligt mål cirka {{count}} minuter. Förfluten tid visas i mitten."
+  },
+  "guardrail": {
+    "heading": "Fortfarande med det här?",
+    "body_one": "Du har hållit på med “{{taskLabel}}” i {{count}} minut. Fortfarande rätt sak, eller vill du ta upp det?",
+    "body_other": "Du har hållit på med “{{taskLabel}}” i {{count}} minuter. Fortfarande rätt sak, eller vill du ta upp det?",
+    "keepGoing": "Fortsätt",
+    "wrapUp": "Runda av"
+  },
+  "pace": {
+    "over": "+{{count}} över din gissning — helt okej, nu vet vi",
+    "closing": "Närmar dig din gissning… helt okej",
+    "onTrack": "På rätt spår — du har gott om tid"
+  }
+}

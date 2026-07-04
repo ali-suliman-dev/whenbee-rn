@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { View, ScrollView, type ViewStyle, type TextStyle } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useTranslation } from 'react-i18next';
 import { Ionicons } from '@expo/vector-icons';
 import { Screen } from '@/src/components/Screen';
 import { SheetGrabber } from '@/src/components/SheetGrabber';
@@ -27,6 +28,7 @@ import { formatWindowRange, formatClockMin } from '@/src/lib/time';
 
 export default function FocusWindowDetail() {
   const t = useTheme();
+  const { t: tr } = useTranslation('planner');
   const insets = useSafeAreaInsets();
   const win = useLearnedFocusWindow();
   const ins = useFocusInsights(win.startMin, win.endMin);
@@ -78,7 +80,7 @@ export default function FocusWindowDetail() {
         <View style={{ alignItems: 'center', gap: t.space[3] }}>
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: t.space[1.5] }}>
             <Ionicons name="flash" size={t.iconSize.xs} color={t.colors.primary} />
-            <AppText style={{ ...(type.eyebrow as unknown as TextStyle), color: t.colors.primary }}>WHEN YOU&apos;RE SHARP</AppText>
+            <AppText style={{ ...(type.eyebrow as unknown as TextStyle), color: t.colors.primary }}>{tr('detail.eyebrow')}</AppText>
           </View>
           <AppText style={{ ...(type.honestNumberHero as unknown as TextStyle), color: t.colors.ink }}>
             {formatWindowRange(win.startMin, win.endMin)}
@@ -109,7 +111,7 @@ export default function FocusWindowDetail() {
 
         <AppButton label="Edit window" variant="ghost" size="md" fullWidth onPress={() => setEditing(true)} accessibilityLabel="Edit focus window" />
         <AppText style={{ ...(type.caption as unknown as TextStyle), color: t.colors.inkFaint, textAlign: 'center' }}>
-          Whenbee plans your day around this stretch.
+          {tr('detail.footer')}
         </AppText>
 
         <FocusWindowEditorSheet

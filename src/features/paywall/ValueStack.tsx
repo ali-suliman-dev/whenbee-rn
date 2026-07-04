@@ -1,9 +1,10 @@
 import { useMemo } from 'react';
 import { View, Text, type ViewStyle, type TextStyle } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { useTranslation } from 'react-i18next';
 import { useTheme } from '@/src/theme/useTheme';
 import { type } from '@/src/theme/typography';
-import { STACK_ROWS, type StackKey } from './paywallCopy';
+import { getStackRows, type StackKey } from './paywallCopy';
 
 // ──────────────────────────────────────────────────────────────────────────────
 // ValueStack — the fixed five-row bundle that represents all of Pro. The row whose
@@ -22,12 +23,14 @@ const ICON: Record<StackKey, keyof typeof Ionicons.glyphMap> = {
 
 export function ValueStack({ lead }: { lead: StackKey }) {
   const t = useTheme();
+  const { t: tr } = useTranslation('paywall');
 
   const rows = useMemo(() => {
-    const leadRow = STACK_ROWS.filter((r) => r.key === lead);
-    const rest = STACK_ROWS.filter((r) => r.key !== lead);
+    const stackRows = getStackRows(tr);
+    const leadRow = stackRows.filter((r) => r.key === lead);
+    const rest = stackRows.filter((r) => r.key !== lead);
     return [...leadRow, ...rest];
-  }, [lead]);
+  }, [lead, tr]);
 
   const tile: ViewStyle = {
     width: t.space[8],

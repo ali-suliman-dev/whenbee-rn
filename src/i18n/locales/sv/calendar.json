@@ -1,0 +1,31 @@
+{
+  "preview": {
+    "sectionLabel": "DIN ÄRLIGA DAG",
+    "endsPlanned": "slutar {{time}}",
+    "endsHonest": "slutar egentligen {{time}}",
+    "empty": "Inget i kalendern idag — lägg till en händelse så visas din ärliga dag här.",
+    "blockByBlock": "BLOCK FÖR BLOCK",
+    "apply": "Lägg till i min kalender",
+    "applying": "Lägger till…",
+    "notNow": "Inte nu",
+    "duration_one": "{{count}} min",
+    "duration_other": "{{count}} min"
+  },
+  "capacityNote": {
+    "accessibilityLabel": "Det här är en full dag. Att korta ner ett block ger tillbaka mest tid.",
+    "text": "Det är en full dag. Korta ner ett block så får resten plats att andas."
+  },
+  "screen": {
+    "title": "Fyll ut min kalender",
+    "subtitle": "Dina verkliga marginaler, mappade på dagens schema. Inget ändras förrän du trycker på verkställ.",
+    "loading": "Läser dagens plan…",
+    "denied": "Whenbee behöver tillgång till kalendern för att fylla ut den. Du kan aktivera det i Inställningar när du är redo.",
+    "maybeLater": "Kanske senare",
+    "empty": "Dagens kalender är tom. Lägg till några händelser och kom tillbaka — utfyllnaden väntar.",
+    "done": "Klar"
+  },
+  "notPro": {
+    "title": "Att fylla ut kalendern är en Pro-funktion",
+    "cta": "Se vad Pro låser upp"
+  }
+}

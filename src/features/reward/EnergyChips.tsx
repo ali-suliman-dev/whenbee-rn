@@ -5,6 +5,7 @@ import { useCalibrationStore } from '@/src/stores/calibrationStore';
 import { type } from '@/src/theme/typography';
 import { useTheme } from '@/src/theme/useTheme';
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { View, type TextStyle, type ViewStyle } from 'react-native';
 import Animated, { FadeInDown, useReducedMotion } from 'react-native-reanimated';
 import { EnergyGlyph, type EnergyKind } from './EnergyGlyph';
@@ -19,14 +20,17 @@ const ENTER_STAGGER = 70;
 // sessions your estimates run further off"). Tag once, then a calm acknowledgment.
 // ──────────────────────────────────────────────────────────────────────────────
 
-const OPTIONS: readonly { value: EnergyKind; label: string }[] = [
-  { value: 'low', label: 'Low' },
-  { value: 'ok', label: 'OK' },
-  { value: 'high', label: 'High' },
+type EnergyLabelKey = 'energy.options.low' | 'energy.options.ok' | 'energy.options.high';
+
+const OPTIONS: readonly { value: EnergyKind; labelKey: EnergyLabelKey }[] = [
+  { value: 'low', labelKey: 'energy.options.low' },
+  { value: 'ok', labelKey: 'energy.options.ok' },
+  { value: 'high', labelKey: 'energy.options.high' },
 ];
 
 export function EnergyChips({ eventId }: { eventId: string }) {
   const t = useTheme();
+  const { t: tr } = useTranslation('reward');
   const reducedMotion = useReducedMotion();
   const setContext = useCalibrationStore((s) => s.setContext);
   const [selected, setSelected] = useState<string | null>(null);
@@ -55,7 +59,7 @@ export function EnergyChips({ eventId }: { eventId: string }) {
 
   return (
     <View style={wrap}>
-      <AppText style={prompt}>{selected ? 'Noted.' : 'Energy this session? (optional)'}</AppText>
+      <AppText style={prompt}>{selected ? tr('energy.noted') : tr('energy.prompt')}</AppText>
       <View style={row}>
         {OPTIONS.map((o, i) => (
           <Animated.View
@@ -72,7 +76,7 @@ export function EnergyChips({ eventId }: { eventId: string }) {
             }
           >
             <Chip
-              label={o.label}
+              label={tr(o.labelKey)}
               icon={<EnergyGlyph kind={o.value} active={selected === o.value} />}
               selected={selected === o.value}
               style={{ flex: 1 }}

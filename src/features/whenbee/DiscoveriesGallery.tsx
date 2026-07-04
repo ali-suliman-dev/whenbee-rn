@@ -1,5 +1,6 @@
 import { memo } from 'react';
 import { View, Text, FlatList, type ViewStyle, type TextStyle, type ListRenderItem } from 'react-native';
+import { useTranslation } from 'react-i18next';
 import { useTheme } from '@/src/theme/useTheme';
 import { type } from '@/src/theme/typography';
 import type { Discovery } from '@/src/domain/types';
@@ -24,6 +25,7 @@ import {
 
 const DiscoveryCard = memo(function DiscoveryCard({ discovery }: { discovery: Discovery }) {
   const t = useTheme();
+  const { t: tr } = useTranslation('whenbee');
   const direction = discoveryDirection(discovery.multiplier);
   const tint = direction === 'longer' ? t.colors.accent : t.colors.success;
 
@@ -56,21 +58,26 @@ const DiscoveryCard = memo(function DiscoveryCard({ discovery }: { discovery: Di
     marginTop: t.space[0.5],
   };
 
-  const a11yLabel = `${categoryLabel(discovery.categoryId)} runs ${multiplierValue(discovery.multiplier)} times ${direction} — ${discoveryProof(discovery.honestForFifteen, direction)}`;
+  const a11yLabel = tr('discoveries.gallery.a11y', {
+    category: categoryLabel(discovery.categoryId),
+    times: multiplierValue(discovery.multiplier),
+    direction: tr(`discoveries.gallery.direction.${direction}`),
+    proof: discoveryProof(discovery.honestForFifteen, direction, tr),
+  });
 
   return (
     <View style={card} accessible accessibilityLabel={a11yLabel}>
       <DiscoveryHex direction={direction} size={t.discovery.hex} />
       <View style={meta}>
         <Text style={cat}>{categoryLabel(discovery.categoryId)}</Text>
-        <Text style={proof}>{discoveryProof(discovery.honestForFifteen, direction)}</Text>
+        <Text style={proof}>{discoveryProof(discovery.honestForFifteen, direction, tr)}</Text>
       </View>
       <View style={{ alignItems: 'flex-end' }}>
         <View style={{ flexDirection: 'row', alignItems: 'baseline' }}>
           <Text style={mult}>{multiplierValue(discovery.multiplier)}</Text>
           <Text style={times}>×</Text>
         </View>
-        <Text style={dir}>{dirLabel(direction)}</Text>
+        <Text style={dir}>{dirLabel(direction, tr)}</Text>
       </View>
     </View>
   );
@@ -86,16 +93,14 @@ function Separator() {
 
 function EmptyState() {
   const t = useTheme();
+  const { t: tr } = useTranslation('whenbee');
   const wrap: ViewStyle = { paddingTop: t.space[8], gap: t.space[2] };
   const title: TextStyle = { ...(type.subtitle as unknown as TextStyle), color: t.colors.ink };
   const body: TextStyle = { ...(type.body as unknown as TextStyle), color: t.colors.inkSoft };
   return (
     <View style={wrap}>
-      <Text style={title}>Nothing here yet — and that&apos;s fine.</Text>
-      <Text style={body}>
-        Discoveries show up as Whenbee learns your patterns, usually after about five logs in an area.
-        Keep tracking and they&apos;ll start landing here.
-      </Text>
+      <Text style={title}>{tr('discoveries.gallery.emptyTitle')}</Text>
+      <Text style={body}>{tr('discoveries.gallery.emptyBody')}</Text>
     </View>
   );
 }

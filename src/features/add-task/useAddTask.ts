@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { router } from 'expo-router';
+import i18n from '@/src/i18n';
 import { useCalibrationStore } from '@/src/stores/calibrationStore';
 import { useCategoriesStore } from '@/src/stores/categoriesStore';
 import { useDayTasksStore } from '@/src/stores/dayTasksStore';
@@ -84,6 +85,7 @@ export function useAddTask(initialTitle?: string): UseAddTaskResult {
       learned,
       namedCats: categories,
       availableIds: categories.map((c) => c.id),
+      lang: i18n.language,
     });
     setGuessedCategory(g);
     setCategoryState(g);

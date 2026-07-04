@@ -1,0 +1,43 @@
+{
+  "fallbackTaskLabel": "det här",
+  "timerDone": {
+    "calibratedTitle": "Du är snart klar",
+    "calibratedBody": "Nu är det ungefär när {{label}} brukar bli klart. Logga det när du är klar.",
+    "uncalibratedTitle": "Tidscheck för {{label}}",
+    "uncalibratedBody": "Det här var din gissning för {{label}}. Logga det när du är klar."
+  },
+  "startBy": {
+    "title": "Börja senast {{time}}",
+    "body": "Börja med {{label}} nu så hinner du klart till {{deadline}}."
+  },
+  "guard": {
+    "title": "Fortfarande med {{label}}?",
+    "body": "Du har hållit på i ungefär {{minutes}} minuter. Ingen press, bara en påminnelse."
+  },
+  "review": {
+    "title": "Din ärliga vecka är klar",
+    "body": "Din vecka i ärliga tal, när du har en minut över."
+  },
+  "routine": {
+    "body": "Börja med {{name}} nu för att bli klar i tid."
+  },
+  "categories": {
+    "honest": {
+      "log": "Logga",
+      "extend10": "+10 min",
+      "snooze15": "Snooza 15 min"
+    },
+    "startBy": {
+      "start": "Börja nu",
+      "snooze5": "Snooza 5 min"
+    },
+    "guard": {
+      "ok": "Allt bra",
+      "wrap": "Runda av"
+    },
+    "review": {
+      "open": "Öppna översikt",
+      "evening": "Ikväll"
+    }
+  }
+}

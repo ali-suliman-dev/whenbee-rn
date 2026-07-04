@@ -2,6 +2,7 @@ import { useEffect } from 'react';
 import { View, Text, Pressable, type ViewStyle, type TextStyle } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
+import { useTranslation } from 'react-i18next';
 import { Card } from '@/src/components/Card';
 import { useTheme } from '@/src/theme/useTheme';
 import { type } from '@/src/theme/typography';
@@ -25,6 +26,7 @@ export function ReviewRitualCard({
   isFresh: boolean;
 }) {
   const t = useTheme();
+  const { t: tt } = useTranslation('review');
   const isMonth = summary.period.kind === 'month';
 
   useEffect(() => {
@@ -41,15 +43,19 @@ export function ReviewRitualCard({
     router.push({ pathname: '/(modals)/review', params: { source: 'card' } });
   }
 
-  const periodWord = isMonth ? 'month' : 'week';
-  const quietRowText = isMonth ? 'Your honest month' : 'Your honest week';
+  const periodKey = isMonth ? 'month' : 'week';
+  const quietRowText = tt(`ritualCard.quietRow.${periodKey}`);
 
   // ── Quiet row (already opened this period) ──────────────────────────────────
   if (!isFresh) {
     const row: ViewStyle = { flexDirection: 'row', alignItems: 'center', gap: t.space[3] };
     const label: TextStyle = { ...(type.bodySmBold as unknown as TextStyle), color: t.colors.ink, flex: 1 };
     return (
-      <Pressable onPress={open} accessibilityRole="button" accessibilityLabel={`Open ${quietRowText}`}>
+      <Pressable
+        onPress={open}
+        accessibilityRole="button"
+        accessibilityLabel={tt('ritualCard.openQuietLabel', { label: quietRowText })}
+      >
         <Card tone="flat" style={row}>
           <Ionicons name="leaf-outline" size={t.iconSize.md} color={t.colors.inkSoft} />
           <Text style={label}>{quietRowText}</Text>
@@ -75,16 +81,20 @@ export function ReviewRitualCard({
   };
 
   return (
-    <Pressable onPress={open} accessibilityRole="button" accessibilityLabel={`Open your honest ${periodWord}`}>
+    <Pressable
+      onPress={open}
+      accessibilityRole="button"
+      accessibilityLabel={tt(`ritualCard.openReadyLabel.${periodKey}`)}
+    >
       <View style={envelope}>
         <View style={eyebrowRow}>
           <Ionicons name="mail-unread-outline" size={t.iconSize.sm} color={t.colors.accent} />
-          <Text style={eyebrow}>{isMonth ? 'YOUR HONEST MONTH' : 'YOUR HONEST WEEK'}</Text>
+          <Text style={eyebrow}>{tt(`eyebrow.${periodKey}`)}</Text>
         </View>
-        <Text style={headline}>Your honest {periodWord} is ready.</Text>
-        <Text style={lead}>Seven days are in. Here is where your time actually went.</Text>
+        <Text style={headline}>{tt(`ritualCard.readyHeadline.${periodKey}`)}</Text>
+        <Text style={lead}>{tt('ritualCard.lead')}</Text>
         <View style={ctaRow}>
-          <Text style={ctaText}>Open your {periodWord}</Text>
+          <Text style={ctaText}>{tt(`ritualCard.openCta.${periodKey}`)}</Text>
           <Ionicons name="arrow-forward" size={t.iconSize.xs} color={t.colors.amberText} />
         </View>
       </View>

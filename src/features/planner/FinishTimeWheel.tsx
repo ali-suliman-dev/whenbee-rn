@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { View, Text, type TextStyle, type ViewStyle } from 'react-native';
+import { useTranslation } from 'react-i18next';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import Animated, {
   useSharedValue,
@@ -39,6 +40,13 @@ const FLING_PROJECTION = 0.1;
 
 type DeadlineMode = 'leave by' | 'be done by' | 'be at';
 const MODES: DeadlineMode[] = ['leave by', 'be done by', 'be at'];
+
+/** Translation key (within the `planner` namespace) for each mode's chip label. */
+const MODE_LABEL_KEY = {
+  'leave by': 'finishTimeWheel.modes.leaveBy',
+  'be done by': 'finishTimeWheel.modes.beDoneBy',
+  'be at': 'finishTimeWheel.modes.beAt',
+} as const satisfies Record<DeadlineMode, string>;
 
 // ── helpers ───────────────────────────────────────────────────────────────────
 
@@ -236,6 +244,7 @@ export function FinishTimeWheel({
   showModes?: boolean;
 }) {
   const t = useTheme();
+  const { t: tr } = useTranslation('planner');
   const reducedMotion = useReducedMotion();
 
   // Resolve initial hour/minute from valueMs or default to next whole hour.
@@ -342,7 +351,12 @@ export function FinishTimeWheel({
       {showModes ? (
         <View style={chipRow}>
           {MODES.map((m) => (
-            <Chip key={m} label={m} selected={mode === m} onPress={() => handleModePress(m)} />
+            <Chip
+              key={m}
+              label={tr(MODE_LABEL_KEY[m])}
+              selected={mode === m}
+              onPress={() => handleModePress(m)}
+            />
           ))}
         </View>
       ) : null}
@@ -360,7 +374,7 @@ export function FinishTimeWheel({
             inkColor={t.colors.ink}
             inkFaintColor={t.colors.inkFaint}
             fontSize={t.fontSize.base}
-            accessibilityLabel="Hour"
+            accessibilityLabel={tr('finishTimeWheel.hourA11y')}
             accessibilityMin={0}
             accessibilityMax={23}
             accessibilityValue={HOURS[hIdx]?.value ?? 0}
@@ -378,7 +392,7 @@ export function FinishTimeWheel({
             inkColor={t.colors.ink}
             inkFaintColor={t.colors.inkFaint}
             fontSize={t.fontSize.base}
-            accessibilityLabel="Minute"
+            accessibilityLabel={tr('finishTimeWheel.minuteA11y')}
             accessibilityMin={0}
             accessibilityMax={55}
             accessibilityValue={MINUTES[mIdx]?.value ?? 0}

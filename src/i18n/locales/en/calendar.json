@@ -1,0 +1,31 @@
+{
+  "preview": {
+    "sectionLabel": "YOUR HONEST DAY",
+    "endsPlanned": "ends {{time}}",
+    "endsHonest": "really ends {{time}}",
+    "empty": "Nothing on the calendar today — add an event and your honest day shows up here.",
+    "blockByBlock": "BLOCK BY BLOCK",
+    "apply": "Apply to my calendar",
+    "applying": "Applying…",
+    "notNow": "Not now",
+    "duration_one": "{{count}} min",
+    "duration_other": "{{count}} min"
+  },
+  "capacityNote": {
+    "accessibilityLabel": "This is a full day. Trimming one block buys back the most time.",
+    "text": "That's a full day. Trim one block and the rest has room to breathe."
+  },
+  "screen": {
+    "title": "Pad my calendar",
+    "subtitle": "Your real buffers, mapped onto today. Nothing changes until you tap apply.",
+    "loading": "Reading today's plan…",
+    "denied": "Whenbee needs calendar access to pad your calendar. You can turn it on in Settings whenever you're ready.",
+    "maybeLater": "Maybe later",
+    "empty": "Today's calendar is clear. Add a few events and come back — the padding will be waiting.",
+    "done": "Done"
+  },
+  "notPro": {
+    "title": "Padding your calendar is a Pro feature",
+    "cta": "See what Pro unlocks"
+  }
+}

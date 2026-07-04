@@ -8,6 +8,7 @@ import {
 } from 'react-native';
 import Animated, { FadeInDown, useReducedMotion } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useTranslation } from 'react-i18next';
 import { useTheme } from '@/src/theme/useTheme';
 import { AppText } from '@/src/components/AppText';
 import { AppButton } from '@/src/components/AppButton';
@@ -52,6 +53,7 @@ export function PostStopCaptureSheet({
   onSkip,
 }: PostStopCaptureSheetProps) {
   const t = useTheme();
+  const { t: tr } = useTranslation('today');
   const insets = useSafeAreaInsets();
   const reducedMotion = useReducedMotion();
   const inputRef = useRef<TextInput>(null);
@@ -169,13 +171,13 @@ export function PostStopCaptureSheet({
 
         {/* Headline */}
         <View>
-          <AppText style={headlineStyle}>What did you work on?</AppText>
-          <AppText style={sublineStyle}>Sort it so it sharpens your estimates.</AppText>
+          <AppText style={headlineStyle}>{tr('postStopCapture.headline')}</AppText>
+          <AppText style={sublineStyle}>{tr('postStopCapture.subline')}</AppText>
         </View>
 
         {/* Name input (optional — user can skip) */}
         <View>
-          <AppText style={labelStyle}>Task name (optional)</AppText>
+          <AppText style={labelStyle}>{tr('postStopCapture.taskNameLabel')}</AppText>
           <TextInput
             ref={inputRef}
             style={inputStyle}
@@ -191,7 +193,7 @@ export function PostStopCaptureSheet({
 
         {/* Category chips */}
         <View>
-          <AppText style={labelStyle}>Category</AppText>
+          <AppText style={labelStyle}>{tr('postStopCapture.categoryLabel')}</AppText>
           <CategoryChips
             categories={categories}
             value={category}
@@ -201,7 +203,7 @@ export function PostStopCaptureSheet({
         </View>
 
         {/* Helper hint — muted caption above the CTA pair */}
-        <AppText style={helperStyle}>Saving teaches your honest pace.</AppText>
+        <AppText style={helperStyle}>{tr('postStopCapture.savingHint')}</AppText>
 
         {/* Save CTA */}
         {/* The AppButton label is the a11y text; it already has role="button". */}
@@ -221,7 +223,7 @@ export function PostStopCaptureSheet({
           hitSlop={t.size.hitSlop}
         >
           <View style={{ alignItems: 'center', paddingVertical: t.space[1] }}>
-            <AppText style={skipStyle}>Skip for now</AppText>
+            <AppText style={skipStyle}>{tr('postStopCapture.skipForNow')}</AppText>
           </View>
         </Pressable>
       </Animated.View>

@@ -1,0 +1,93 @@
+{
+  "tiers": {
+    "raw": "Rå",
+    "setting": "Stelnar",
+    "ripening": "Mognar",
+    "thickening": "Tjocknar",
+    "honest": "Ärlig"
+  },
+  "ring": {
+    "stage": {
+      "raw": "Precis kommit igång",
+      "setting": "Blir skarpare",
+      "ripening": "Landar närmare",
+      "thickening": "Du kan din tajmning",
+      "honest": "Planer stämmer med verkligheten"
+    },
+    "sealed": "Honungskaka förseglad ✦",
+    "logsToNext_one": "~{{count}} logg till {{tier}}",
+    "logsToNext_other": "~{{count}} loggar till {{tier}}"
+  },
+  "hub": {
+    "discoveries": {
+      "label": "Upptäckter",
+      "explain": "överraskande sanningar om hur lång tid saker tar"
+    },
+    "areas": {
+      "label": "Dina områden",
+      "explain": "fyllnad = hur ärliga dina gissningar är · tryck för att finjustera",
+      "empty": "Logga några uppgifter så dyker dina områden upp här."
+    },
+    "cta": {
+      "logFirst": "Logga din första uppgift",
+      "logFirstSub": "Ärlig-dag-planering låses upp när din honung stelnar.",
+      "dayHonest": "Gör hela min dag ärlig"
+    },
+    "ripeningWait": {
+      "soon": "snart",
+      "aboutAWeek": "cirka en vecka"
+    }
+  },
+  "areaRow": {
+    "a11y": "{{name}} insikter"
+  },
+  "blindSpot": {
+    "eyebrow": "FORTFARANDE LÄRANDE",
+    "body": "Några ärliga loggar till och den här siffran blir skarpare.",
+    "a11y": "Kalibrera {{name}} härnäst"
+  },
+  "driftCheck": {
+    "eyebrow": "AVDRIFTSKOLL",
+    "title": "Livet skiftar, det gör din tajmning också",
+    "body": "Några ärliga loggar och {{name}} hinner ikapp dig igen.",
+    "recheckArea": "Kolla om {{area}} igen",
+    "keepLogging": "Fortsätt logga",
+    "notNow": "Inte nu"
+  },
+  "discoveries": {
+    "gallery": {
+      "emptyTitle": "Inget här ännu — och det är helt okej.",
+      "emptyBody": "Upptäckter dyker upp när Whenbee lär sig dina mönster, oftast efter omkring fem loggar inom ett område. Fortsätt logga så börjar de landa här.",
+      "direction": {
+        "longer": "längre",
+        "faster": "snabbare"
+      },
+      "dirLabel": {
+        "longer": "LÄNGRE",
+        "faster": "SNABBARE"
+      },
+      "proofLonger": "Du planerar 15 min · tar i verkligheten ~{{minutes}} min",
+      "proofFaster": "Du planerar 15 min · tar i verkligheten bara ~{{minutes}} min",
+      "a11y": "{{category}} tar {{times}} gånger {{direction}} — {{proof}}"
+    },
+    "preview": {
+      "eyebrow": "SENASTE UPPTÄCKTEN",
+      "banked": "{{count}} sparade",
+      "moreCount": "+{{count}} till",
+      "seeAll": "Se alla {{count}}",
+      "a11y": "Se alla {{count}} saker du har lärt dig",
+      "sentenceLonger": "Du planerar 15 minuter — det tar i verkligheten omkring {{minutes}}.",
+      "sentenceFaster": "Du planerar 15 minuter — det tar i verkligheten bara omkring {{minutes}}."
+    }
+  },
+  "companion": {
+    "namePrompt": "Ge din följeslagare ett namn, om du vill. Du kan ändra det när som helst.",
+    "namePlaceholder": "t.ex. Surra",
+    "nameA11y": "Följeslagarens namn",
+    "save": "Spara"
+  },
+  "discoveriesRoute": {
+    "heading": "Saker du har lärt dig",
+    "sub": "{{count}} sanningar Whenbee hittade i din spårning"
+  }
+}

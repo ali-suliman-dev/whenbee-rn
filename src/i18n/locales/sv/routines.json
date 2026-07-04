@@ -1,0 +1,83 @@
+{
+  "list": {
+    "stepCount_one": "1 steg",
+    "stepCount_other": "{{count}} steg",
+    "openRoutineA11y": "Öppna {{name}}",
+    "totalMinutes": "{{count}} min",
+    "startBy": "Börja senast {{time}}",
+    "intro": "En guidad sekvens som körs på en timer — den säger vad du ska göra nu och för dig sedan vidare.",
+    "tryIt": "Prova",
+    "tryExampleA11y": "Prova exemplet {{name}}",
+    "newRoutine": "Ny rutin"
+  },
+  "locked": {
+    "sampleName": "Morgonrutin",
+    "sampleSteps": ["Dusch", "Klä på dig", "Frukost", "Packa väskan"],
+    "sampleTotalMinutes": "{{count}} min",
+    "sampleStartBy": "Börja senast {{time}}",
+    "body": "Spara din morgon en gång. Whenbee lär sig hur lång tid det hela faktiskt tar, så \"börja senast\" blir ett tal du kan lita på.",
+    "cta": "Se Whenbee Pro"
+  },
+  "build": {
+    "backA11y": "Tillbaka till rutiner",
+    "back": "Rutiner",
+    "nameLabel": "Rutinens namn",
+    "namePlaceholder": "Namnge den här rutinen",
+    "addStep": "＋ Steg",
+    "save": "Spara",
+    "saveA11y": "Spara rutin",
+    "saveDisabledA11y": "Lägg till ett namn och minst ett steg för att spara"
+  },
+  "rail": {
+    "start": "start",
+    "doneBy": "klart senast",
+    "setFinishTime": "＋ ange en sluttid",
+    "doneByA11y": "Klart senast {{time}}",
+    "setFinishTimeA11y": "Ange en sluttid",
+    "breather": "+{{count}} min mellanrum",
+    "addStepTail": "＋ lägg till steg",
+    "addStepA11y": "Lägg till ett steg",
+    "remove": "Ta bort",
+    "removeA11y": "Ta bort {{label}}",
+    "editA11y": "Redigera {{label}}",
+    "honestMinutes": "{{count}} min ärligt"
+  },
+  "run": {
+    "resumed": "Fortsatte där du slutade — inget gick förlorat.",
+    "progress": "{{done}} av {{total}} klara",
+    "stop": "Stoppa",
+    "stopA11y": "Stoppa rutinen",
+    "stopHintA11y": "Avslutar körningen och tar bort förloppet för det här passet",
+    "done": "Klar",
+    "doneStepA11y": "Markera steget som klart",
+    "doneStepHintA11y": "Registrerar din tid och går vidare till nästa steg",
+    "skip": "Hoppa över",
+    "skipA11y": "Hoppa över det här steget",
+    "skipHintA11y": "Går vidare till nästa steg utan att registrera tid",
+    "actualMinutes": "{{count}} min",
+    "skippedMeta": "hoppade över",
+    "remainingA11y": "{{min}} minuter {{sec}} sekunder kvar",
+    "overA11y": "{{min}} minuter {{sec}} sekunder över",
+    "recapLong": "{{name}} tog {{actual}} min den här gången. Jag uppdaterar \"börja senast\" så det stämmer bättre nästa vecka.",
+    "recapOnTime": "{{name}} klar på {{actual}} min — precis som väntat. Jag har det i åtanke till nästa gång."
+  },
+  "finishSheet": {
+    "dismissA11y": "Stäng",
+    "title": "Klar senast",
+    "clear": "Rensa",
+    "done": "Klar"
+  },
+  "stepSheet": {
+    "dismissA11y": "Stäng",
+    "titleAdd": "Lägg till ett steg",
+    "titleEdit": "Redigera steg",
+    "namePlaceholder": "Steg-namn",
+    "cancel": "Avbryt",
+    "submitAdd": "Lägg till steg",
+    "submitEdit": "Spara steg"
+  },
+  "total": {
+    "value": "Cirka {{count}} min",
+    "caption": "inklusive tiden mellan stegen"
+  }
+}

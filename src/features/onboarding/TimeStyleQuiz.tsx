@@ -1,12 +1,13 @@
 import { useState } from 'react';
 import { Pressable, View, type TextStyle, type ViewStyle } from 'react-native';
 import Animated, { FadeInDown, useReducedMotion } from 'react-native-reanimated';
+import { useTranslation } from 'react-i18next';
 import { Chip } from '@/src/components/Chip';
 import { AppText } from '@/src/components/AppText';
 import { useTheme } from '@/src/theme/useTheme';
 import type { QuizAnswers } from '@/src/engine';
 import { ArchetypeQuizGlyph } from './ArchetypeQuizGlyph';
-import { QUIZ_QUESTIONS } from './quizQuestions';
+import { getQuizQuestions } from './quizQuestions';
 
 // ──────────────────────────────────────────────────────────────────────────────
 // TimeStyleQuiz — 2–3 question illustrated chip flow.
@@ -20,11 +21,6 @@ import { QUIZ_QUESTIONS } from './quizQuestions';
 // exiting = SIGABRT). Reduced-motion guard: entering is set to undefined.
 // ──────────────────────────────────────────────────────────────────────────────
 
-// Question content is the single source in quizQuestions.ts, shared with the
-// onboarding per-step screen (QuizStepScreen). This modal renders the same set as
-// a chip flow; it ignores the per-question `layout` hint.
-const QUESTIONS = QUIZ_QUESTIONS;
-
 // Per-chip stagger delay matches the onboarding enterStagger budget (t.motion.enterStagger).
 // The cascade stays within ~500ms for liveliness.
 
@@ -36,6 +32,7 @@ export function TimeStyleQuiz({
   onSkip: () => void;
 }): React.JSX.Element | null {
   const t = useTheme();
+  const { t: tr } = useTranslation('onboarding');
   const reducedMotion = useReducedMotion();
 
   // Collected answers — only pace is required; mid + focus are optional.
@@ -43,6 +40,10 @@ export function TimeStyleQuiz({
   // Which question index is currently shown (0-based).
   const [step, setStep] = useState(0);
 
+  // Question content is the single source in quizQuestions.ts, shared with the
+  // onboarding per-step screen (QuizStepScreen). This modal renders the same set as
+  // a chip flow; it ignores the per-question `layout` hint.
+  const QUESTIONS = getQuizQuestions(tr);
   const currentQuestion = QUESTIONS[step];
 
   function choose(key: keyof QuizAnswers, value: string) {
@@ -154,7 +155,7 @@ export function TimeStyleQuiz({
           accessibilityState={{ disabled: !hasPace }}
           hitSlop={t.size.hitSlop}
         >
-          <AppText style={ctaStyle}>See my type</AppText>
+          <AppText style={ctaStyle}>{tr('quiz.seeMyType')}</AppText>
         </Pressable>
 
         <Pressable
@@ -162,7 +163,7 @@ export function TimeStyleQuiz({
           accessibilityRole="button"
           hitSlop={t.size.hitSlop}
         >
-          <AppText style={skipStyle}>Skip</AppText>
+          <AppText style={skipStyle}>{tr('quiz.skipShort')}</AppText>
         </Pressable>
       </View>
     </View>

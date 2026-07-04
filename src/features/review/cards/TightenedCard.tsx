@@ -1,5 +1,6 @@
 import { View, Text, type ViewStyle, type TextStyle } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { useTranslation } from 'react-i18next';
 import { Card } from '@/src/components/Card';
 import { useTheme } from '@/src/theme/useTheme';
 import { type } from '@/src/theme/typography';
@@ -14,6 +15,7 @@ import type { TightenedRow } from '@/src/domain/types';
 
 export function TightenedCard({ rows }: { rows: TightenedRow[] }) {
   const t = useTheme();
+  const { t: tt } = useTranslation('review');
   if (rows.length === 0) return null;
 
   const eyebrow: TextStyle = { ...(type.eyebrow as unknown as TextStyle), color: t.colors.amberText };
@@ -37,7 +39,7 @@ export function TightenedCard({ rows }: { rows: TightenedRow[] }) {
     <Card tone="flat" style={{ gap: t.space[3] }}>
       <View style={eyebrowRow}>
         <Ionicons name="trending-down" size={t.iconSize.sm} color={t.colors.accent} />
-        <Text style={eyebrow}>WHAT TIGHTENED</Text>
+        <Text style={eyebrow}>{tt('tightened.eyebrow')}</Text>
       </View>
       <View style={{ gap: t.space[3] }}>
         {rows.map((r) => (
@@ -46,11 +48,14 @@ export function TightenedCard({ rows }: { rows: TightenedRow[] }) {
               <Text style={name}>{r.categoryName}</Text>
               <View style={chip}>
                 <Ionicons name="arrow-down" size={t.iconSize.xs} color={t.colors.accent} />
-                <Text style={chipText}>closer</Text>
+                <Text style={chipText}>{tt('tightened.closerChip')}</Text>
               </View>
             </View>
             <Text style={detail}>
-              From about {r.earlyMultiplier.toFixed(1)}× toward {r.recentMultiplier.toFixed(1)}× your guess.
+              {tt('tightened.detail', {
+                early: r.earlyMultiplier.toFixed(1),
+                recent: r.recentMultiplier.toFixed(1),
+              })}
             </Text>
           </View>
         ))}

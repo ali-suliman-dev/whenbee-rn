@@ -1,13 +1,15 @@
 import { type } from '@/src/theme/typography';
 import { useTheme } from '@/src/theme/useTheme';
 import { Text, View, type TextStyle, type ViewStyle } from 'react-native';
+import { useTranslation } from 'react-i18next';
 import { ringCopy } from './ringCopy';
 
 // Compact 2-line tier badge under the honey ring. Line 1: tier word + overall %.
 // Line 2: per-stage human line + soft "logs to next" (or the sealed hold state).
 export function RingBadge({ sharpness }: { sharpness: number }) {
   const t = useTheme();
-  const c = ringCopy(sharpness);
+  const { t: tr } = useTranslation('whenbee');
+  const c = ringCopy(sharpness, tr);
 
   const wrap: ViewStyle = {
     alignSelf: 'center',

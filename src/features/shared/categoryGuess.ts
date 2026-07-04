@@ -10,6 +10,7 @@
 // (tracked) id; anything unrecognised returns null so the picker shows no pre-selection.
 // ──────────────────────────────────────────────────────────────────────────────
 
+import type { AppLang } from '@/src/i18n/resources';
 import type { PickerCategory } from './CategoryChips';
 
 /** Seed ids the heuristic is allowed to guess, in tie-break priority order. */
@@ -20,6 +21,20 @@ const GUESS_KEYWORDS: readonly (readonly [string, readonly string[]])[] = [
   ['cooking', ['cook', 'cooking', 'dinner', 'lunch', 'breakfast', 'meal', 'recipe', 'bake', 'baking', 'food']],
   ['creative', ['write', 'writing', 'draft', 'blog', 'essay', 'article', 'journal', 'design', 'sketch', 'paint', 'draw', 'edit', 'editing', 'create', 'creative', 'brainstorm']],
   ['getting_ready', ['shower', 'dress', 'dressed', 'ready', 'makeup', 'hair', 'brush', 'teeth', 'getting']],
+];
+
+/**
+ * Swedish built-in keywords, mirroring the SAME id set as `GUESS_KEYWORDS`
+ * (email folds into `admin`, writing folds into `creative` — matching the
+ * English shape exactly so tier-3 behaves consistently across locales).
+ */
+const SV_GUESS_KEYWORDS: readonly (readonly [string, readonly string[]])[] = [
+  ['admin', ['mejl', 'mejla', 'mejlar', 'mejlat', 'inkorg', 'svara', 'svar', 'post', 'e-post', 'räkning', 'räkningar', 'betala', 'faktura', 'fakturor', 'blankett', 'blanketter', 'skatt', 'skatter', 'bank', 'bankärende', 'möte', 'boka', 'bokning', 'försäkring', 'förnya', 'admin', 'pappersarbete', 'konto', 'lösenord']],
+  ['errands', ['ärende', 'ärenden', 'handla', 'shoppa', 'affär', 'affären', 'köpa', 'hämta', 'apotek', 'marknad', 'paket', 'retur', 'returnera', 'posta']],
+  ['cleaning', ['städa', 'städning', 'städ', 'tvätt', 'tvätta', 'disk', 'diska', 'dammsuga', 'dammsugning', 'skura', 'sopa', 'damma', 'rensa']],
+  ['cooking', ['laga', 'lagar', 'matlagning', 'middag', 'lunch', 'frukost', 'måltid', 'recept', 'baka', 'bakning', 'mat', 'koka']],
+  ['creative', ['skriva', 'skriv', 'skrivande', 'utkast', 'blogg', 'uppsats', 'artikel', 'dagbok', 'designa', 'design', 'skissa', 'måla', 'rita', 'redigera', 'redigering', 'skapa', 'kreativ', 'brainstorma']],
+  ['getting_ready', ['dusch', 'duscha', 'kläder', 'klä', 'redo', 'smink', 'sminka', 'hår', 'borsta', 'tänder', 'ordna', 'morgonrutin']],
 ];
 
 /** Filler words that carry no category signal — dropped before matching/banking. */
@@ -50,7 +65,9 @@ function stem(word: string): string {
 export function tokenizeStems(title: string): string[] {
   return title
     .toLowerCase()
-    .split(/[^a-z0-9]+/)
+    // Includes åäö so Swedish words (e.g. "städa", "köket") aren't shredded
+    // into ASCII fragments — a no-op for pure-ASCII (English) titles.
+    .split(/[^a-z0-9åäö]+/)
     .filter(Boolean)
     .filter((w) => !STOPWORDS.has(w))
     .map(stem)
@@ -69,11 +86,27 @@ export interface GuessContext {
   namedCats?: readonly { id: string; name: string }[];
   /** Ids the picker is currently showing; a guess outside this set is dropped. */
   availableIds?: readonly string[];
+  /** Active app language for the built-in keyword tier (tier 3). Defaults to 'en'.
+   *  Typically an `AppLang` ('en' | 'sv'), but accepts any string so an
+   *  unrecognised/unsupported locale falls through cleanly rather than being a
+   *  type error — a lang with no built-in table skips tier 3 entirely rather
+   *  than matching against the wrong language's keywords. */
+  lang?: AppLang | (string & {});
 }
 
 /** Built-in keywords, pre-stemmed once so title stems match inflected keywords. */
 const STEMMED_KEYWORDS: readonly (readonly [string, ReadonlySet<string>])[] =
   GUESS_KEYWORDS.map(([id, kws]) => [id, new Set(kws.map(stem))] as const);
+
+const SV_STEMMED_KEYWORDS: readonly (readonly [string, ReadonlySet<string>])[] =
+  SV_GUESS_KEYWORDS.map(([id, kws]) => [id, new Set(kws.map(stem))] as const);
+
+/** Built-in keyword table selected per locale. A lang absent here (or mapped to
+ *  `undefined`) means tier 3 is skipped for that locale. */
+const BUILTIN_KEYWORDS_BY_LANG: Partial<Record<string, readonly (readonly [string, ReadonlySet<string>])[]>> = {
+  en: STEMMED_KEYWORDS,
+  sv: SV_STEMMED_KEYWORDS,
+};
 
 /**
  * Best-effort category id for a title, or null. Resolves by strict tiers:
@@ -128,10 +161,14 @@ export function guessCategory(title: string, ctx: GuessContext = {}): string | n
     if (best) return best.id;
   }
 
-  // Tier 3 — built-in keyword list (stemmed).
+  // Tier 3 — built-in keyword list (stemmed), selected by locale. A locale with
+  // no built-in table (not just 'en'/'sv') skips this tier rather than
+  // matching the wrong language's keywords.
+  const builtinKeywords = BUILTIN_KEYWORDS_BY_LANG[ctx.lang ?? 'en'];
+  if (!builtinKeywords) return null;
   let bestId: string | null = null;
   let bestScore = 0;
-  for (const [id, kwSet] of STEMMED_KEYWORDS) {
+  for (const [id, kwSet] of builtinKeywords) {
     if (!ok(id)) continue;
     let score = 0;
     for (const s of stemSet) if (kwSet.has(s)) score += 1;

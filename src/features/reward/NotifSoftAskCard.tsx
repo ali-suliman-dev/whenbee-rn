@@ -8,6 +8,7 @@ import { useNotifSoftAsk } from '@/src/features/notifications/useNotifSoftAsk';
 import { type } from '@/src/theme/typography';
 import { useTheme } from '@/src/theme/useTheme';
 import { useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Text, View, type TextStyle, type ViewStyle } from 'react-native';
 import Animated, {
   useAnimatedStyle,
@@ -28,6 +29,7 @@ import Animated, {
 
 export function NotifSoftAskCard() {
   const t = useTheme();
+  const { t: tr } = useTranslation('reward');
   const { show, onAccept, onDecline } = useNotifSoftAsk();
   const reducedMotion = useReducedMotion();
 
@@ -66,14 +68,11 @@ export function NotifSoftAskCard() {
   return (
     <Animated.View style={animStyle}>
       <View style={card}>
-        <Text style={bodyText}>
-          Want a gentle nudge when a timer ends? No streaks, no scolding — just the honest
-          number when it counts.
-        </Text>
+        <Text style={bodyText}>{tr('notifSoftAsk.body')}</Text>
         <View style={buttonRow}>
           <View style={{ flex: 1 }}>
             <AppButton
-              label="Sounds good"
+              label={tr('notifSoftAsk.accept')}
               variant="amber"
               fullWidth
               onPress={() => { void onAccept(); }}
@@ -81,7 +80,7 @@ export function NotifSoftAskCard() {
           </View>
           <View style={{ flex: 1 }}>
             <AppButton
-              label="Not now"
+              label={tr('notifSoftAsk.decline')}
               variant="ghost"
               fullWidth
               onPress={onDecline}

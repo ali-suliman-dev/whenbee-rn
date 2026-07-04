@@ -2,6 +2,7 @@ import { useEffect } from 'react';
 import { View, Text, type ViewStyle, type TextStyle } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
+import { useTranslation } from 'react-i18next';
 import { Card } from '@/src/components/Card';
 import { AppButton } from '@/src/components/AppButton';
 import { useTheme } from '@/src/theme/useTheme';
@@ -19,8 +20,9 @@ import type { ReviewPeriod } from '@/src/domain/types';
 
 export function ReviewRitualLocked({ period }: { period: ReviewPeriod }) {
   const t = useTheme();
+  const { t: tt } = useTranslation('review');
   const isMonth = period.kind === 'month';
-  const periodWord = isMonth ? 'month' : 'week';
+  const periodKey = isMonth ? 'month' : 'week';
 
   useEffect(() => {
     analytics.capture('review_card_shown', {
@@ -51,17 +53,17 @@ export function ReviewRitualLocked({ period }: { period: ReviewPeriod }) {
     <Card tone="flat" style={{ gap: t.space[3] }}>
       <View style={eyebrowRow}>
         <Ionicons name="leaf-outline" size={t.iconSize.sm} color={t.colors.accent} />
-        <Text style={eyebrow}>{isMonth ? 'YOUR HONEST MONTH' : 'YOUR HONEST WEEK'}</Text>
+        <Text style={eyebrow}>{tt(`eyebrow.${periodKey}`)}</Text>
       </View>
       <Text style={label}>{period.label}</Text>
       <View style={previewWrap}>
         <Text style={withheld} numberOfLines={2}>
-          Your {periodWord} is ready. See where your time went, what tightened, and what steals your time.
+          {tt(`locked.withheld.${periodKey}`)}
         </Text>
         <View style={scrim} pointerEvents="none" />
       </View>
-      <AppButton label="Unlock with Pro" variant="amber" size="lg" fullWidth onPress={openPaywall} />
-      <Text style={foot}>Cancel anytime · learned on-device</Text>
+      <AppButton label={tt('locked.unlockCta')} variant="amber" size="lg" fullWidth onPress={openPaywall} />
+      <Text style={foot}>{tt('locked.footnote')}</Text>
     </Card>
   );
 }

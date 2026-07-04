@@ -1,0 +1,52 @@
+import 'i18next';
+import type common from './locales/en/common.json';
+import type onboarding from './locales/en/onboarding.json';
+import type paywall from './locales/en/paywall.json';
+import type settings from './locales/en/settings.json';
+import type today from './locales/en/today.json';
+import type addTask from './locales/en/addTask.json';
+import type timer from './locales/en/timer.json';
+import type notifications from './locales/en/notifications.json';
+import type patterns from './locales/en/patterns.json';
+import type voice from './locales/en/voice.json';
+import type categoryDetail from './locales/en/categoryDetail.json';
+import type review from './locales/en/review.json';
+import type routines from './locales/en/routines.json';
+import type whenbee from './locales/en/whenbee.json';
+import type planner from './locales/en/planner.json';
+import type reward from './locales/en/reward.json';
+import type calendar from './locales/en/calendar.json';
+import type shared from './locales/en/shared.json';
+import type legal from './locales/en/legal.json';
+import type categories from './locales/en/categories.json';
+import type report from './locales/en/report.json';
+
+declare module 'i18next' {
+  interface CustomTypeOptions {
+    defaultNS: 'common';
+    resources: {
+      common: typeof common;
+      onboarding: typeof onboarding;
+      paywall: typeof paywall;
+      settings: typeof settings;
+      today: typeof today;
+      addTask: typeof addTask;
+      timer: typeof timer;
+      notifications: typeof notifications;
+      patterns: typeof patterns;
+      voice: typeof voice;
+      categoryDetail: typeof categoryDetail;
+      review: typeof review;
+      routines: typeof routines;
+      whenbee: typeof whenbee;
+      planner: typeof planner;
+      reward: typeof reward;
+      calendar: typeof calendar;
+      shared: typeof shared;
+      legal: typeof legal;
+      categories: typeof categories;
+      report: typeof report;
+      // add each namespace here as it is created (Task A4).
+    };
+  }
+}

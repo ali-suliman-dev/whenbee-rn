@@ -1,0 +1,236 @@
+{
+  "tiers": {
+    "raw": "Raw",
+    "setting": "Setting",
+    "ripening": "Ripening",
+    "thickening": "Thickening",
+    "honest": "Honest"
+  },
+  "header": {
+    "todayTitle": "Today",
+    "settingsA11y": "Settings"
+  },
+  "viewToggle": {
+    "list": "List",
+    "listA11y": "List view",
+    "timeline": "Timeline",
+    "timelineA11y": "Timeline view",
+    "timelineProA11y": "Timeline view — Pro feature"
+  },
+  "planMyDay": {
+    "plan": "Plan my day",
+    "replan": "Re-plan"
+  },
+  "sections": {
+    "todaysRoutines": "TODAY'S ROUTINES",
+    "upNext": "UP NEXT"
+  },
+  "retroChip": {
+    "label": "Finished? Log it. Ripens your honey."
+  },
+  "switchSheetFallback": {
+    "currentTask": "current task"
+  },
+  "focusCardWrap": {
+    "longPressA11y": "{{label}}. Long-press to delete."
+  },
+  "actions": {
+    "tomorrow": "Tomorrow",
+    "pickDayTitle": "Pick a day",
+    "cancel": "Cancel",
+    "moveToTomorrow": "Move to tomorrow",
+    "pickADay": "Pick a day…",
+    "remove": "Remove"
+  },
+  "calendarOverlay": {
+    "eyebrow": "Calendar",
+    "busyFallback": "Busy",
+    "eventA11y": "{{title}}, {{range}}, open in Calendar",
+    "allDay": "All day: {{list}}"
+  },
+  "capacityChip": {
+    "todayLabel": "Today",
+    "teaserA11y": "See if {{weekday}} will fit — Pro feature",
+    "teaserText": "See if {{weekday}} will fit",
+    "proPill": "Pro",
+    "verdict": {
+      "fits": "· fits",
+      "snug": "· snug",
+      "heavy": "· ~{{count}}h heavy"
+    },
+    "collapsedA11y": "Honest day {{duration}} {{verdict}}. Tap to {{action}}.",
+    "collapseAction": "collapse",
+    "expandAction": "expand",
+    "honestDayPrefix": "Honest day {{duration}}",
+    "dismissA11y": "Dismiss capacity chip",
+    "legendTasks": "tasks {{duration}}",
+    "legendMeetings": "meetings {{duration}}",
+    "overCopy": "~{{count}}h heavy — move one?",
+    "calendarNudge": "Turn on calendar in Settings to count meetings",
+    "openSuffix": "open",
+    "padCalendarA11y": "Pad my calendar — add honest buffers to today's events",
+    "padCalendarPill": "Pad calendar"
+  },
+  "dayRecap": {
+    "stats": {
+      "doneValue": "{{done}} of {{planned}}",
+      "doneLabel": "done",
+      "realFocusValue": "{{count}}m",
+      "realFocusLabel": "real focus",
+      "vsGuessLabel": "vs your guess"
+    },
+    "nothingLogged": "Nothing logged that day",
+    "allTasksA11y": "All tasks · {{day}}. {{action}}",
+    "collapseAction": "Tap to collapse.",
+    "expandAction": "Tap to expand.",
+    "allTasksHeader": "ALL TASKS · {{day}}"
+  },
+  "dayTimeline": {
+    "overflow": {
+      "cutOne": "This won't all fit today — move \"{{label}}\" to tomorrow?",
+      "multiCut_one": "{{count}} task won't fit today — move them to tomorrow?",
+      "multiCut_other": "{{count}} tasks won't fit today — move them to tomorrow?",
+      "pushDeadline": "You'd need until {{time}} to fit everything — move one to tomorrow?"
+    },
+    "meetingA11y": "Meeting: {{label}}, {{start}} to {{end}}",
+    "meetingA11yHint": "Read-only calendar event",
+    "taskA11y": "{{label}}, starts {{start}}, {{duration}}",
+    "moveTaskA11y": "Move task to tomorrow",
+    "moveButton": "Move",
+    "startBy": "Start by {{time}}",
+    "doneBy": {
+      "setTime": "Set done-by time",
+      "label": "Done by {{time}}",
+      "cancel": "Cancel",
+      "sheetTitle": "Done by",
+      "sheetMessage": "When do you want to be done today?",
+      "hint": "Tap to change your done-by target time"
+    }
+  },
+  "doneSection": {
+    "header": "DONE TODAY · {{count}}",
+    "headerA11y_one": "Done today, {{count}} task. {{action}}",
+    "headerA11y_other": "Done today, {{count}} tasks. {{action}}",
+    "collapseAction": "Tap to collapse.",
+    "expandAction": "Tap to expand."
+  },
+  "focusCard": {
+    "eyebrow": "NEXT · {{category}}",
+    "guessed": "guessed {{count}}",
+    "learned": "+ {{count}} learned",
+    "done": "done {{time}}",
+    "startButton": "Start"
+  },
+  "honeycombStrip": {
+    "title": "Your honeycomb",
+    "a11y": "Your honeycomb — {{pct}}% honey, tier {{tier}}, {{logs}} logs",
+    "subline_one": "{{pct}}% honey · {{count}} log",
+    "subline_other": "{{pct}}% honey · {{count}} logs",
+    "nextLine_one": "{{count}} log to {{tier}}",
+    "nextLine_other": "{{count}} logs to {{tier}}"
+  },
+  "planMyDayButton": {
+    "proSuffixA11y": "{{label}} — Pro feature"
+  },
+  "ritualSeal": {
+    "doneA11y": "Logged one honest thing today.",
+    "pendingA11y": "Log one honest thing today. Skipping is fine.",
+    "doneLabel": "Today's honey set ✦",
+    "pendingLabel": "Log one honest thing"
+  },
+  "runningFocusCard": {
+    "fallbackLabel": "Timing now",
+    "aTask": "a task",
+    "a11y": "Timing {{label}}, {{elapsed}} elapsed of about {{honestMin}} minutes. Tap to reopen.",
+    "eyebrow": "NOW · {{category}}",
+    "elapsedHeader": "ELAPSED",
+    "guessed": "guessed {{count}} min",
+    "plan": "plan ~{{count}} min"
+  },
+  "scheduledRoutine": {
+    "minutesSuffix": "{{count}}m",
+    "headerA11y": "{{name}}, {{minutes}} minutes{{startBy}}. {{action}} steps.",
+    "startByA11y": ", start by {{time}}",
+    "startBySuffix": "· start by {{time}}",
+    "collapseAction": "Collapse",
+    "expandAction": "Expand",
+    "runA11y": "Run {{name}}",
+    "runHint": "Starts the guided timer sequence"
+  },
+  "shelfSection": {
+    "summaryA11y_one": "No day yet, {{count}} task",
+    "summaryA11y_other": "No day yet, {{count}} tasks",
+    "headerA11y": "No day yet · {{count}}. {{action}}",
+    "header": "No day yet · {{count}}",
+    "collapseAction": "Collapse",
+    "expandAction": "Expand"
+  },
+  "switchSheet": {
+    "title": "Switch tasks?",
+    "body": "<bold>{{leaving}}</bold> won't log. No guilt. <bold>{{starting}}</bold> starts fresh.",
+    "confirmButton": "Yes, switch",
+    "cancelButton": "Keep going",
+    "dismissA11y": "Dismiss"
+  },
+  "taskRow": {
+    "carriedFrom": "· from {{day}}",
+    "tookPrefix": "took ",
+    "min": "min",
+    "guessed": "guessed {{count}}",
+    "swipeCoachMark": "← swipe to remove",
+    "moveA11y": "Move {{title}} to tomorrow",
+    "tomorrow": "Tomorrow",
+    "deleteA11y": "Delete {{title}}",
+    "remove": "Remove",
+    "startA11y": "{{title}}, {{category}}, plan for {{honestMin}} minutes, you guessed {{guessMin}}. Tap to start.",
+    "titleCategoryA11y": "{{title}}, {{category}}"
+  },
+  "emptyState": {
+    "eyebrow": "Nothing on yet",
+    "firstRun": {
+      "lead": "Time your first thing",
+      "sub": "Guess how long it'll take, hit start, and I'll show you the honest number.",
+      "primary": "Start now",
+      "chip": "Already finished something? Log it"
+    },
+    "daily": {
+      "lead": "What's on today?",
+      "sub": "Add a task and I'll show its honest finish, plus whether the day actually fits.",
+      "primary": "Plan a task",
+      "chip": "Or log something you finished"
+    },
+    "future": {
+      "lead": "{{weekday}}'s wide open",
+      "sub": "Add what future-you should tackle — it carries over free if life happens.",
+      "primary": "Plan ahead",
+      "fallbackWeekday": "That day"
+    }
+  },
+  "focusHook": {
+    "proA11y": "Sharpest {{range}} — your window for hard tasks",
+    "freeA11y": "Your focus window is ready — upgrade to Pro to see your sharpest hours",
+    "sharpestLead": "Sharpest",
+    "hardTasksSuffix": "· hard tasks",
+    "freeInsight": "Your focus window is ready",
+    "proPill": "Pro"
+  },
+  "headerRing": {
+    "a11y": "Whenbee, honey tier {{tier}}. Tap to open your honeycomb."
+  },
+  "postStopCapture": {
+    "headline": "What did you work on?",
+    "subline": "Sort it so it sharpens your estimates.",
+    "taskNameLabel": "Task name (optional)",
+    "categoryLabel": "Category",
+    "savingHint": "Saving teaches your honest pace.",
+    "skipForNow": "Skip for now"
+  },
+  "quickTaskChips": {
+    "tapToStartAgain": "Tap to start again"
+  },
+  "greeting": {
+    "morning": "Good morning",
+    "afternoon": "Good afternoon",
+    "evening": "Good evening"
+  }
+}

@@ -1,0 +1,21 @@
+{
+  "lead": "Exactly what Whenbee keeps on your phone, and what it never sends anywhere.",
+  "points": {
+    "onDevice": {
+      "title": "It stays on this phone",
+      "body": "Your tasks, the times you log, and the multipliers Whenbee works out from them live in a database on your device. They are never uploaded."
+    },
+    "noAccount": {
+      "title": "No account, no email",
+      "body": "You didn't sign up for anything, so there's no profile of you on a server somewhere. Nothing ties your data to your name."
+    },
+    "analytics": {
+      "title": "Anonymous crash and usage counts",
+      "body": "To find bugs and see which screens get used, Whenbee sends anonymous events — taps and crashes, never your task names, times, or categories."
+    },
+    "calendar": {
+      "title": "Your calendar, read on request",
+      "body": "Honest-Day reads your calendar only when you open it, and writes a padded block back only after you confirm. Nothing is sent anywhere."
+    }
+  }
+}

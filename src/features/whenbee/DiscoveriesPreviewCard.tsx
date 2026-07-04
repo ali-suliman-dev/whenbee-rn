@@ -4,6 +4,7 @@ import { useTheme } from '@/src/theme/useTheme';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import { Pressable, Text, View, type TextStyle, type ViewStyle } from 'react-native';
+import { useTranslation } from 'react-i18next';
 import {
   categoryLabel,
   discoveryDirection,
@@ -29,6 +30,7 @@ export function DiscoveriesPreviewCard({
   discoveryCount: number;
 }) {
   const t = useTheme();
+  const { t: tr } = useTranslation('whenbee');
   const latest = discoveries[0];
   if (!latest) return null;
 
@@ -103,12 +105,12 @@ export function DiscoveriesPreviewCard({
     <Pressable
       onPress={open}
       accessibilityRole="button"
-      accessibilityLabel={`See all ${discoveryCount} things you've learned`}
+      accessibilityLabel={tr('discoveries.preview.a11y', { count: discoveryCount })}
     >
       <View style={cardWrap}>
         <View style={eyebrowRow}>
-          <Text style={eyebrowLab}>LATEST DISCOVERY</Text>
-          <Text style={pill}>{discoveryCount} banked</Text>
+          <Text style={eyebrowLab}>{tr('discoveries.preview.eyebrow')}</Text>
+          <Text style={pill}>{tr('discoveries.preview.banked', { count: discoveryCount })}</Text>
         </View>
 
         {/* Sibling-Text hero so RNTL getByText('2.3') works without matching '2.3×' */}
@@ -117,12 +119,16 @@ export function DiscoveriesPreviewCard({
           <Text style={heroX}>×</Text>
         </View>
         <Text style={cat}>{categoryLabel(latest.categoryId)}</Text>
-        <Text style={sentence}>{discoverySentence(latest.honestForFifteen, direction)}</Text>
+        <Text style={sentence}>{discoverySentence(latest.honestForFifteen, direction, tr)}</Text>
 
         <View style={footer}>
-          {moreCount > 0 ? <Text style={moreTxt}>+{moreCount} more</Text> : <View />}
+          {moreCount > 0 ? (
+            <Text style={moreTxt}>{tr('discoveries.preview.moreCount', { count: moreCount })}</Text>
+          ) : (
+            <View />
+          )}
           <View style={seeAll}>
-            <Text style={seeTxt}>See all {discoveryCount}</Text>
+            <Text style={seeTxt}>{tr('discoveries.preview.seeAll', { count: discoveryCount })}</Text>
             <Ionicons name="chevron-forward" size={t.iconSize.sm} color={t.colors.primary} />
           </View>
         </View>

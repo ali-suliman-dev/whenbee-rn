@@ -11,6 +11,7 @@ import Svg, {
   Stop,
   Text as SvgText,
 } from 'react-native-svg';
+import { useTranslation } from 'react-i18next';
 import { AppButton } from '@/src/components/AppButton';
 import { useTheme } from '@/src/theme/useTheme';
 import { type } from '@/src/theme/typography';
@@ -41,6 +42,7 @@ const BARS_MAX = 50; // tallest bar height
 
 export function ProHonestWeekTease() {
   const t = useTheme();
+  const { t: tr } = useTranslation('categoryDetail');
 
   function openPaywall() {
     analytics.capture('honest_range_locked_tap', { surface: 'category_detail' });
@@ -119,7 +121,7 @@ export function ProHonestWeekTease() {
           </Defs>
           <G filter="url(#peekBlur)">
             <SvgText x={PEEK_PAD} y={20} fontSize={13} fontFamily="Jakarta-Medium" fill={t.colors.inkFaint}>
-              Your Honest Week · Jun 15–21
+              {tr('proHonestWeekTease.peekLabel')}
             </SvgText>
             {GHOST_BARS.map((h, i) => {
               const barH = h * BARS_MAX;
@@ -140,20 +142,18 @@ export function ProHonestWeekTease() {
         </Svg>
         <View style={lockBadge}>
           <Ionicons name="lock-closed" size={t.iconSize.xs} color={t.colors.onAmber} />
-          <Text style={lockText}>Pro</Text>
+          <Text style={lockText}>{tr('proHonestWeekTease.proLabel')}</Text>
         </View>
       </View>
 
       <View style={{ gap: t.space[2] }}>
-        <Text style={eyebrow}>Whenbee Pro</Text>
-        <Text style={heading}>Your Honest Week, every Sunday.</Text>
-        <Text style={body}>
-          See where the hours really went — plan next week from the truth, not a guess.
-        </Text>
+        <Text style={eyebrow}>{tr('proHonestWeekTease.eyebrow')}</Text>
+        <Text style={heading}>{tr('proHonestWeekTease.heading')}</Text>
+        <Text style={body}>{tr('proHonestWeekTease.body')}</Text>
       </View>
 
-      <AppButton variant="amber" fullWidth label="Start my Honest Week" onPress={openPaywall} />
-      <Text style={trust}>Cancel anytime · learned on-device</Text>
+      <AppButton variant="amber" fullWidth label={tr('proHonestWeekTease.cta')} onPress={openPaywall} />
+      <Text style={trust}>{tr('proHonestWeekTease.trust')}</Text>
     </View>
   );
 }

@@ -1,5 +1,6 @@
 import { View, Text, type ViewStyle, type TextStyle } from 'react-native';
 import Svg, { Line } from 'react-native-svg';
+import { useTranslation } from 'react-i18next';
 import { useTheme } from '@/src/theme/useTheme';
 import { type } from '@/src/theme/typography';
 import { niceAxis } from '@/src/lib/chartAxis';
@@ -21,6 +22,7 @@ const DAY = 86_400_000; // loggedAt (createdAt) is epoch milliseconds
 
 export function TrendChart({ trend }: { trend: TrendSeries }) {
   const t = useTheme();
+  const { t: tr } = useTranslation('categoryDetail');
 
   const header: TextStyle = { ...(type.heading as unknown as TextStyle), color: t.colors.ink };
   const headerRow: ViewStyle = { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' };
@@ -37,8 +39,8 @@ export function TrendChart({ trend }: { trend: TrendSeries }) {
   const hasTrend = points.length >= MIN_POINTS;
   const captionText =
     trend.caption === 'stabilizing'
-      ? 'Your multiplier is stabilizing — good self-awareness.'
-      : 'Steady and consistent — your pace is predictable here.';
+      ? tr('trendChart.caption.stabilizing')
+      : tr('trendChart.caption.steady');
 
   let body: React.ReactNode;
   if (!hasTrend) {
@@ -68,9 +70,7 @@ export function TrendChart({ trend }: { trend: TrendSeries }) {
             />
           </Svg>
         </View>
-        <Text style={[caption, { textAlign: 'center' }]}>
-          Not enough logs yet — your trend appears after a few more.
-        </Text>
+        <Text style={[caption, { textAlign: 'center' }]}>{tr('trendChart.empty')}</Text>
       </View>
     );
   } else {
@@ -84,8 +84,12 @@ export function TrendChart({ trend }: { trend: TrendSeries }) {
         values={values}
         axis={axis}
         formatY={(v) => `${v.toFixed(1)}×`}
-        xLabels={[`${days}d ago`, `${Math.round(days / 2)}d`, 'now']}
-        referenceLine={{ value: 1, label: 'ideal' }}
+        xLabels={[
+          tr('trendChart.daysAgo', { days }),
+          tr('trendChart.halfDaysAgo', { days: Math.round(days / 2) }),
+          tr('trendChart.now'),
+        ]}
+        referenceLine={{ value: 1, label: tr('trendChart.axisIdeal') }}
         valueDecimals={2}
         valueSuffix="×"
       />
@@ -95,9 +99,9 @@ export function TrendChart({ trend }: { trend: TrendSeries }) {
   return (
     <View style={{ gap: t.space[3] }}>
       <View style={headerRow}>
-        <Text style={header}>Calibration trend</Text>
+        <Text style={header}>{tr('trendChart.header')}</Text>
         <View style={pill}>
-          <Text style={pillText}>Last 30 days</Text>
+          <Text style={pillText}>{tr('trendChart.periodPill')}</Text>
         </View>
       </View>
       {body}

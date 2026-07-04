@@ -11,6 +11,7 @@ import Animated, {
   useReducedMotion,
 } from 'react-native-reanimated';
 import { router } from 'expo-router';
+import { useTranslation } from 'react-i18next';
 import { useAmbientMotion } from '@/src/hooks/useAmbientMotion';
 import { Card } from '@/src/components/Card';
 import { useTheme } from '@/src/theme/useTheme';
@@ -43,6 +44,7 @@ const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 
 export function RunningFocusCard({ categoryName }: RunningFocusCardProps) {
   const t = useTheme();
+  const { t: tr } = useTranslation('today');
   const reduced = useReducedMotion();
 
   const isRunning = useTimerStore((s) => s.isRunning);
@@ -108,7 +110,7 @@ export function RunningFocusCard({ categoryName }: RunningFocusCardProps) {
       pathname: '/(modals)/timer',
       params: {
         ...(taskId ? { taskId } : null),
-        label: taskLabel || 'Timing now',
+        label: taskLabel || tr('runningFocusCard.fallbackLabel'),
         category: category ?? 'getting_ready',
         estimateMin: String(estimateMin),
         guessMin: String(guessMin),
@@ -166,7 +168,11 @@ export function RunningFocusCard({ categoryName }: RunningFocusCardProps) {
       onPressIn={pressIn}
       onPressOut={pressOut}
       accessibilityRole="button"
-      accessibilityLabel={`Timing ${taskLabel ?? 'a task'}, ${clockLabel(elapsedSec)} elapsed of about ${honestMin} minutes. Tap to reopen.`}
+      accessibilityLabel={tr('runningFocusCard.a11y', {
+        label: taskLabel ?? tr('runningFocusCard.aTask'),
+        elapsed: clockLabel(elapsedSec),
+        honestMin,
+      })}
       style={pressStyle}
     >
       <Card tone="raised" style={{ gap: t.space[4] }}>
@@ -174,14 +180,14 @@ export function RunningFocusCard({ categoryName }: RunningFocusCardProps) {
           <View style={{ flex: 1, gap: t.space[1.5] }}>
             <View style={eyebrowRow}>
               <Animated.View style={[dot, pulseStyle]} />
-              <Text style={eyebrow}>NOW · {categoryLabel.toUpperCase()}</Text>
+              <Text style={eyebrow}>{tr('runningFocusCard.eyebrow', { category: categoryLabel.toUpperCase() })}</Text>
             </View>
             <Text style={title} numberOfLines={1}>
-              {taskLabel || 'Timing now'}
+              {taskLabel || tr('runningFocusCard.fallbackLabel')}
             </Text>
           </View>
           <View style={rightCol}>
-            <Text style={miniHdr}>ELAPSED</Text>
+            <Text style={miniHdr}>{tr('runningFocusCard.elapsedHeader')}</Text>
             <Text style={clock}>{clockLabel(elapsedSec)}</Text>
           </View>
         </View>
@@ -192,8 +198,8 @@ export function RunningFocusCard({ categoryName }: RunningFocusCardProps) {
             ~0" pair is meaningless noise there, so drop it. */}
         {!isQuickStart ? (
           <View style={labelsRow}>
-            <Text style={guessLabel}>guessed {guessMin} min</Text>
-            <Text style={planLabel}>plan ~{honestMin} min</Text>
+            <Text style={guessLabel}>{tr('runningFocusCard.guessed', { count: guessMin })}</Text>
+            <Text style={planLabel}>{tr('runningFocusCard.plan', { count: honestMin })}</Text>
           </View>
         ) : null}
       </Card>

@@ -9,6 +9,7 @@ import {
   type TextStyle,
 } from 'react-native';
 import Animated, { Easing, useAnimatedStyle, useSharedValue, withTiming } from 'react-native-reanimated';
+import { useTranslation } from 'react-i18next';
 import { useTheme } from '@/src/theme/useTheme';
 import { type } from '@/src/theme/typography';
 
@@ -30,12 +31,6 @@ import { type } from '@/src/theme/typography';
 /** The three Patterns tabs. */
 export type PatternsTab = 'numbers' | 'insights' | 'correlations';
 
-const OPTIONS: { value: PatternsTab; label: string }[] = [
-  { value: 'numbers', label: 'Numbers' },
-  { value: 'insights', label: 'Insights' },
-  { value: 'correlations', label: 'Correlations' },
-];
-
 interface PatternsSegmentProps {
   value: PatternsTab;
   onChange: (tab: PatternsTab) => void;
@@ -43,6 +38,12 @@ interface PatternsSegmentProps {
 
 export function PatternsSegment({ value, onChange }: PatternsSegmentProps) {
   const t = useTheme();
+  const { t: tr } = useTranslation('patterns');
+  const OPTIONS: { value: PatternsTab; label: string }[] = [
+    { value: 'numbers', label: tr('patternsSegment.numbers') },
+    { value: 'insights', label: tr('patternsSegment.insights') },
+    { value: 'correlations', label: tr('patternsSegment.correlations') },
+  ];
   // Inner track padding — must match space[1] (4pt) so the pill insets correctly.
   const PAD = t.space[1];
   const index = Math.max(0, OPTIONS.findIndex((o) => o.value === value));

@@ -2,6 +2,34 @@
 const matchers = require('@testing-library/react-native/matchers');
 expect.extend(matchers);
 
+// i18next must be initialized before any component using `useTranslation` renders,
+// or react-i18next falls back to echoing the raw key. Real resources, real English
+// fallback — every test sees production copy, not translation keys.
+//
+// Required LAZILY (inside beforeAll, not at this file's top level): this setup
+// file loads before a test file's own `jest.mock(...)` calls take effect, so an
+// eager top-level require here would cache `src/i18n/detectLanguage` (and its
+// `expo-localization` import) against the REAL module — permanently poisoning
+// any test that later mocks `expo-localization` (see detectLanguage.test.ts).
+// A lazy require resolves after the test file's mocks are already registered.
+// expo-localization's native module import (requireNativeModule) runs at
+// import time and throws in suites where the native-module shim is disturbed
+// (e.g. src/services/__tests__/notifications, liveActivity) — even though
+// those suites never touch i18n themselves, the global `initI18n()` beforeAll
+// below pulls detectLanguage.ts -> expo-localization eagerly. Mock it globally
+// so no suite ever hits the native binding. Per-file mocks (e.g.
+// detectLanguage.test.ts) still take effect for their own file — jest applies
+// the closest/most specific mock.
+jest.mock('expo-localization', () => ({
+  getLocales: () => [{ languageCode: 'en', languageTag: 'en-US', regionCode: 'US' }],
+  getCalendars: () => [{ uses24hourClock: false }],
+}));
+
+beforeAll(async () => {
+  const { initI18n } = require('./src/i18n');
+  await initI18n();
+});
+
 jest.mock('expo-sqlite/kv-store', () => {
   const m = new Map();
   return { Storage: {
@@ -52,6 +80,10 @@ jest.mock('expo-speech-recognition', () => ({
     start: jest.fn(),
     stop: jest.fn(),
     addListener: jest.fn(() => ({ remove: jest.fn() })),
+    getSupportedLocales: jest.fn(() => Promise.resolve({ locales: [], installedLocales: [] })),
+    androidTriggerOfflineModelDownload: jest.fn(() =>
+      Promise.resolve({ status: 'download_success' }),
+    ),
   },
 }));
 

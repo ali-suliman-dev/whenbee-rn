@@ -1,0 +1,123 @@
+{
+  "welcome": {
+    "titlePrefix": "You're not lazy. You're a ",
+    "titleEmphasis": "time optimist.",
+    "subtitle": "I learn how long things really take you, then show you the honest number. No more planning around a guess.",
+    "overflowLabel": "How long it really takes",
+    "footer": "No account, no email. Everything stays on this phone.",
+    "cta": "Get started →"
+  },
+  "categories": {
+    "title": "Where does time slip most?",
+    "subtitle": "Pick a few. I'll sharpen your honest number here first.",
+    "namePlaceholder": "Name it…",
+    "nameAccessibilityLabel": "New category name",
+    "addYourOwn": "Add your own",
+    "pickedLine": {
+      "plenty": "{{count}} picked. That's plenty to learn from.",
+      "coupleMore": "{{count}} picked. A couple more and I'll learn your pace faster.",
+      "oneMore": "{{count}} picked. One more and I'll learn your pace faster."
+    },
+    "continueCta": "Continue →",
+    "seed": {
+      "gettingReady": "Getting ready",
+      "cleaning": "Cleaning",
+      "admin": "Admin & email",
+      "errands": "Errands",
+      "cooking": "Cooking",
+      "outTheDoor": "Out the door"
+    }
+  },
+  "quiz": {
+    "subtext": "No right answer here. Pick what's true most days, and I'll learn from it.",
+    "skip": "Skip to my type",
+    "next": "Next →",
+    "seeMyType": "See my type",
+    "skipShort": "Skip",
+    "questions": {
+      "pace": {
+        "prompt": "When you plan your day, things usually take…",
+        "options": {
+          "about": "About right",
+          "bit": "A bit longer",
+          "lot": "A lot longer",
+          "lose": "I lose track"
+        }
+      },
+      "mid": {
+        "prompt": "Mid-task, you usually…",
+        "options": {
+          "track": "Stay on track",
+          "rabbit": "Fall down rabbit holes"
+        }
+      },
+      "sink": {
+        "prompt": "Where does time run away from you most?",
+        "options": {
+          "meetings": "Meetings",
+          "chores": "Chores",
+          "errands": "Errands",
+          "deepwork": "Deep work"
+        }
+      },
+      "focus": {
+        "prompt": "You focus best…",
+        "options": {
+          "morning": "Mornings",
+          "evening": "Evenings",
+          "varies": "It varies"
+        }
+      }
+    }
+  },
+  "ready": {
+    "title": "One tap to start. One tap to ripen.",
+    "subtitle": "From your first guess, I'll show honest times. Each task you log makes them sharper, and I'll never scold you for a gap.",
+    "trailLabel": "Where you're headed",
+    "trailCaption": "Your accuracy ripens as you log. It only ever ripens — no streak to break.",
+    "trail": {
+      "raw": "Raw",
+      "setting": "Setting",
+      "ripening": "Ripening",
+      "thickening": "Thickening",
+      "honest": "Honest"
+    },
+    "footer": "Empty days are fine. Forgot to time something? Add it in one tap.",
+    "nicknameLabel": "Anything I should call you?",
+    "nicknameOptional": "optional",
+    "nicknamePlaceholder": "Your nickname",
+    "nicknameAccessibilityLabel": "Your nickname",
+    "cta": "Time my first thing →"
+  },
+  "archetypeCrest": {
+    "accessibilityLabel": "Your time-personality crest"
+  },
+  "archetypeReveal": {
+    "eyebrow": "YOUR TIME PERSONALITY",
+    "echoLine": "From your answers: {{echo}}",
+    "multCaption": "your guess, on average",
+    "note": "A first read from your answers. Every task you time makes it sharper — and your type can move as your numbers do.",
+    "cta": "Sharpen it on my tasks →"
+  },
+  "archetype": {
+    "steady": {
+      "title": "The Steady Reader",
+      "blurb": "Your guesses already land close to reality. I'll sharpen this with every task you log."
+    },
+    "gentle": {
+      "title": "The Gentle Optimist",
+      "blurb": "You lean hopeful, then mostly catch up. A little padding does it."
+    },
+    "sprint": {
+      "title": "The Sprint Optimist",
+      "blurb": "Your mind moves fast; the doing takes a touch longer. Now you know by how much."
+    },
+    "dreamer": {
+      "title": "The Dreamer",
+      "blurb": "Big plans, generous timelines. Your honest numbers keep them grounded."
+    }
+  },
+  "stepProgress": {
+    "accessibilityLabel": "Step {{current}} of {{total}}"
+  }
+}
