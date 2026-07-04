@@ -25,7 +25,7 @@
         "monochromeImage": "./assets/images/android-icon-monochrome.png"
       },
       "predictiveBackGestureEnabled": false,
-      "versionCode": 2,
+      "versionCode": 3,
       "permissions": [
         "android.permission.POST_NOTIFICATIONS",
         "android.permission.POST_PROMOTED_NOTIFICATIONS"
