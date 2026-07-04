@@ -49,6 +49,7 @@ import { useEntitlement } from '@/src/features/paywall/useEntitlement';
 import { useScheduledRoutines } from '@/src/features/today/useScheduledRoutines';
 import { ScheduledRoutineBlock } from '@/src/features/today/ScheduledRoutineBlock';
 import { useDayPlan } from '@/src/features/today/useDayPlan';
+import { useStartByReminder } from '@/src/features/today/useStartByReminder';
 
 // Date label for a day-key, e.g. "Fri · Jun 12" — the day + date, no clock.
 function dateLabel(key: string): string {
@@ -189,6 +190,10 @@ export default function Today() {
   // Day plan — consumed here only for the export wire; DayTimeline re-reads it
   // internally. We call the hook once so the plan is available in handlePlanMyDay.
   const { plan: dayPlan } = useDayPlan();
+
+  // Fire the opt-in "start by" reminder off the live plan (no-op unless both the
+  // reminders + start-by toggles are on and the start-by is still in the future).
+  useStartByReminder(dayPlan);
 
   // Recap for past days — null when today or future.
   const recap = useDayRecap();
@@ -443,7 +448,7 @@ export default function Today() {
               and only once the day has tasks; an empty day has no load to weigh.
               Passes the pre-resolved cap result so the chip skips its own fetch. */}
           {!isPastDay && totalCount > 0 ? (
-            <CapacityChip weekdayLabel={headerTitle} cap={cap} />
+            <CapacityChip cap={cap} />
           ) : null}
 
           {/* Daily ritual (opt-in) lived in the honey HUD footer; the HUD is gone,
