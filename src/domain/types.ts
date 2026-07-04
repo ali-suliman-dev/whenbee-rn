@@ -231,6 +231,10 @@ export interface CategoryGoal {
 /** Hyperfocus guardrail trigger multiple of the honest number, or off. */
 export type GuardrailMultiple = 'off' | '1.5x' | '2x' | '3x';
 
+/** Free forgot-to-stop protection preset — how soon Whenbee steps in past the
+ *  honest number. Maps to a multiple in the engine. Default 'balanced'. */
+export type ForgotStepIn = 'room' | 'balanced' | 'early';
+
 // ── Voice intake ────────────────────────────────────────────────────────────
 
 /** Where a spoken task's structuring came from. */
