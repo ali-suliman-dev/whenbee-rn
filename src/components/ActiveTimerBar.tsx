@@ -48,14 +48,18 @@ export function ActiveTimerBar() {
 
   if (!isRunning || startedAt === null) return null;
 
+  const elapsedMin = Math.floor(elapsedSec / 60);
+  const isOver = suggestedHonestMin > 0 && elapsedMin >= suggestedHonestMin;
+  const overMin = isOver ? Math.max(0, elapsedMin - suggestedHonestMin) : 0;
+
   const bar: ViewStyle = {
     flexDirection: 'row',
     alignItems: 'center',
     gap: t.space[3],
     alignSelf: 'stretch',
-    backgroundColor: t.colors.surface,
+    backgroundColor: isOver ? t.colors.accentSoft : t.colors.surface,
     borderWidth: t.borderWidth.hairline,
-    borderColor: t.colors.border,
+    borderColor: isOver ? t.colors.accentEdge : t.colors.border,
     borderRadius: t.radii.full,
     borderCurve: 'continuous',
     paddingHorizontal: t.space[4],
@@ -65,13 +69,17 @@ export function ActiveTimerBar() {
     width: t.space[2],
     height: t.space[2],
     borderRadius: t.radii.full,
-    backgroundColor: t.colors.primary,
+    backgroundColor: isOver ? t.colors.accent : t.colors.primary,
   };
   const labelStyle: TextStyle = { ...(type.bodySm as unknown as TextStyle), color: t.colors.ink, flex: 1 };
   const elapsedStyle: TextStyle = {
     ...(type.bodySm as unknown as TextStyle),
-    color: t.colors.inkSoft,
+    color: isOver ? t.colors.amberText : t.colors.inkSoft,
     fontVariant: ['tabular-nums'],
+  };
+  const overStyle: TextStyle = {
+    ...(type.caption as unknown as TextStyle),
+    color: t.colors.amberText,
   };
 
   function reopen() {
@@ -94,7 +102,9 @@ export function ActiveTimerBar() {
     <Pressable
       onPress={reopen}
       accessibilityRole="button"
-      accessibilityLabel={`Timing now: ${taskLabel ?? 'a task'}, ${elapsedLabel(elapsedSec)} elapsed. Tap to reopen.`}
+      accessibilityLabel={`Timing now: ${taskLabel ?? 'a task'}, ${elapsedLabel(elapsedSec)} elapsed${
+        isOver ? `, ${overMin} minutes over your honest estimate` : ''
+      }. Tap to reopen.`}
       style={bar}
     >
       <View style={dot} />
@@ -102,7 +112,8 @@ export function ActiveTimerBar() {
         {taskLabel || 'Timing now'}
       </AppText>
       <AppText style={elapsedStyle}>{elapsedLabel(elapsedSec)}</AppText>
-      <Ionicons name="chevron-forward" size={t.iconSize.sm} color={t.colors.inkSoft} />
+      {isOver ? <AppText style={overStyle}>{`+${overMin}m over`}</AppText> : null}
+      <Ionicons name="chevron-forward" size={t.iconSize.sm} color={isOver ? t.colors.accentEdge : t.colors.inkSoft} />
     </Pressable>
   );
 }
