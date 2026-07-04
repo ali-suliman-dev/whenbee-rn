@@ -1,7 +1,9 @@
 import { useEffect, useMemo, useState } from 'react';
 import { View, Text, ScrollView, Pressable, type ViewStyle, type TextStyle } from 'react-native';
 import { router } from 'expo-router';
+import * as WebBrowser from 'expo-web-browser';
 import { Ionicons } from '@expo/vector-icons';
+import { LEGAL } from '@/src/lib/legal';
 import { Screen } from '@/src/components/Screen';
 import { AppButton } from '@/src/components/AppButton';
 import { SheetGrabber } from '@/src/components/SheetGrabber';
@@ -165,6 +167,10 @@ export function Paywall({ trigger, readiness = 'pre' }: { trigger?: string; read
 
   const proofRow: ViewStyle = { flexDirection: 'row', alignItems: 'center', gap: t.space[2] };
   const linkRow: ViewStyle = { flexDirection: 'row', justifyContent: 'center', gap: t.space[6] };
+  // Apple 3.1.2: a functional Terms + Privacy link must sit on the buy screen.
+  const legalRow: ViewStyle = { flexDirection: 'row', justifyContent: 'center', alignItems: 'center', gap: t.space[1.5], flexWrap: 'wrap' };
+  const legalMuted: TextStyle = { ...(type.caption as unknown as TextStyle), color: t.colors.inkFaint };
+  const legalLink: TextStyle = { ...(type.caption as unknown as TextStyle), color: t.colors.primary };
   const eyebrowChip: ViewStyle = {
     alignSelf: 'flex-start',
     flexDirection: 'row', alignItems: 'center', gap: t.space[1.5],
@@ -183,7 +189,7 @@ export function Paywall({ trigger, readiness = 'pre' }: { trigger?: string; read
   const freeStripStrong: TextStyle = { fontFamily: 'Jakarta-Bold' };
 
   return (
-    <Screen edges={['left', 'right']}>
+    <Screen edges={['left', 'right']} horizontalPadding={false}>
       <ScrollView
         contentContainerStyle={{ gap: t.space[5], paddingTop: t.space[3], paddingBottom: t.space[8] }}
         showsVerticalScrollIndicator={false}
@@ -263,6 +269,26 @@ export function Paywall({ trigger, readiness = 'pre' }: { trigger?: string; read
                 accessibilityLabel="Manage your subscription"
               >
                 <Text style={linkText}>Manage subscription</Text>
+              </Pressable>
+            </View>
+
+            {/* Terms + Privacy — required on the buy screen (Apple 3.1.2). */}
+            <View style={legalRow}>
+              <Text style={legalMuted}>Subscriptions renew until cancelled.</Text>
+              <Pressable
+                onPress={() => WebBrowser.openBrowserAsync(LEGAL.termsUrl)}
+                accessibilityRole="link"
+                accessibilityLabel="Terms of Use"
+              >
+                <Text style={legalLink}>Terms</Text>
+              </Pressable>
+              <Text style={legalMuted}>·</Text>
+              <Pressable
+                onPress={() => WebBrowser.openBrowserAsync(LEGAL.privacyUrl)}
+                accessibilityRole="link"
+                accessibilityLabel="Privacy Policy"
+              >
+                <Text style={legalLink}>Privacy</Text>
               </Pressable>
             </View>
 

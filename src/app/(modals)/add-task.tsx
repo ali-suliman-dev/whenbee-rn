@@ -204,7 +204,7 @@ export default function AddTask() {
   return (
     // Drawer sits below the status bar already — no top safe-area inset, or the
     // sheet gets a large empty gap above its content on Android.
-    <Screen edges={['left', 'right']}>
+    <Screen edges={['left', 'right']} horizontalPadding={false}>
       <KeyboardAvoidingView
         style={{ flex: 1 }}
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}

@@ -555,7 +555,9 @@ export const tokens = {
     bandOpacity: 0.5,  // window band fill opacity
     areaOpacity: 0.18, // gradient area fill alpha
     yPad: 4,           // lower y inset: y(v) = viewH - v*(viewH-yBase) - yPad
-    yBase: 8,          // upper y inset: headroom above peak
+    yBase: 26,         // upper y inset: reserved headroom so the peak sits below
+                       // the top gridline, leaving room for the peak label above the dot
+    gridTop: 6,        // y of the topmost gridline (frames the headroom band)
     dash: '4 4',       // strokeDasharray for the 'forming' dashed curve
     axisH: 16,         // time-axis row height (pt)
     axisGap: 2,        // marginTop between SVG and axis row (pt)
@@ -563,8 +565,8 @@ export const tokens = {
     detailH: 140,      // taller SVG for the detail sheet
     gridW: 1,          // horizontal gridline weight
     yLabelW: 30,       // Y-axis gutter width (pt)
-    peakLabelGap: 4,   // vertical gap between the peak dot and its label
-    peakLabelMinY: 10, // minimum y for the peak label (keeps it off the top edge)
+    peakLabelGap: 5,   // vertical gap between the peak dot and its label
+    peakLabelMinY: 9,  // minimum y for the peak label (keeps it off the top edge)
   },
 
   // Calendar strip geometry. All strip sizing in one place.

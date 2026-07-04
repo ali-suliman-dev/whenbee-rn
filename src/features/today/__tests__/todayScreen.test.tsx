@@ -211,14 +211,15 @@ describe('Today screen', () => {
     expect(screen.queryByText("What's on today?")).toBeNull();
   });
 
-  it('renders the capacity chip teaser on today (free user)', () => {
+  it('renders the free task-only capacity verdict line on today (free user)', () => {
     // selectedDate is today (set in beforeEach). The chip only weighs a day that
     // has tasks, so seed one.
     const task = makeQueued({ id: 'c1', label: 'Leave for work', category: 'getting_ready', guessMin: 15 });
     useDayTasksStore.setState({ dayTasks: [task], selectFocusTask: () => task });
     render(<Today />);
-    // Free user sees the "will fit" teaser from CapacityChip.
-    expect(screen.getByTestId('capacity-teaser')).toBeOnTheScreen();
+    // Free user now sees the real honest verdict line (capacity is free), not a teaser.
+    expect(screen.getByTestId('capacity-free')).toBeOnTheScreen();
+    expect(screen.getByText(/honest day/i)).toBeOnTheScreen();
   });
 
   it('renders the capacity chip collapsed for a Pro user on today', () => {
@@ -240,7 +241,7 @@ describe('Today screen', () => {
     // No tasks → nothing to weigh, so the chip stays hidden even on today.
     useDayTasksStore.setState({ dayTasks: [], selectFocusTask: () => null });
     render(<Today />);
-    expect(screen.queryByTestId('capacity-teaser')).toBeNull();
+    expect(screen.queryByTestId('capacity-free')).toBeNull();
     expect(screen.queryByTestId('capacity-chip-collapsed')).toBeNull();
   });
 
@@ -253,7 +254,7 @@ describe('Today screen', () => {
     });
     render(<Today />);
     expect(screen.queryByTestId('capacity-chip-collapsed')).toBeNull();
-    expect(screen.queryByTestId('capacity-teaser')).toBeNull();
+    expect(screen.queryByTestId('capacity-free')).toBeNull();
   });
 
   it('leads up-next rows with the honest estimate and supports with the guess', async () => {

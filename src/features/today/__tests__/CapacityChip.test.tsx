@@ -59,9 +59,10 @@ function setupPro(loadOverrides: Partial<DayLoadResult> = {}): DayCapacityResult
   return makeCap(loadOverrides);
 }
 
-function setupFree(): DayCapacityResult {
+function setupFree(loadOverrides: Partial<DayLoadResult> = {}): DayCapacityResult {
   mockIsPro = false;
-  return makeCap({}, { status: 'off', isPro: false });
+  // Free users have no calendar → task-only load (eventMin 0).
+  return makeCap({ eventMin: 0, ...loadOverrides }, { status: 'off', isPro: false });
 }
 
 // ── Tests ────────────────────────────────────────────────────────────────────
@@ -113,51 +114,38 @@ describe('CapacityChip — Pro ready', () => {
   });
 });
 
-describe('CapacityChip — Free user', () => {
-  it('renders the teaser "will fit"', () => {
+describe('CapacityChip — Free user (task-only verdict)', () => {
+  it('renders the honest task-only verdict line ("Honest day … · fits")', () => {
     render(<CapacityChip cap={setupFree()} />);
-    expect(screen.getByText(/will fit/i)).toBeOnTheScreen();
+    expect(screen.getByTestId('capacity-free')).toBeOnTheScreen();
+    expect(screen.getByText(/honest day/i)).toBeOnTheScreen();
+    expect(screen.getByText(/fits/i)).toBeOnTheScreen();
   });
 
-  it('renders the "Pro" pill', () => {
-    render(<CapacityChip cap={setupFree()} />);
-    expect(screen.getByText('Pro')).toBeOnTheScreen();
+  it('renders "snug" when the task-only verdict is snug', () => {
+    render(<CapacityChip cap={setupFree({ verdict: 'snug' })} />);
+    expect(screen.getByText(/snug/i)).toBeOnTheScreen();
   });
 
-  it('does NOT render the honest-day number text', () => {
-    render(<CapacityChip cap={setupFree()} />);
-    // The chip text should NOT contain "Honest day" or the time display (e.g. "2h")
-    expect(screen.queryByTestId('capacity-chip-collapsed')).toBeNull();
+  it('renders "heavy — move" when over, never "overdue"/"behind"/"failed"', () => {
+    render(<CapacityChip cap={setupFree({ verdict: 'over', overByMin: 75 })} />);
+    expect(screen.getByText(/heavy/i)).toBeOnTheScreen();
+    expect(screen.getByText(/move/i)).toBeOnTheScreen();
+    expect(screen.queryByText(/overdue/i)).toBeNull();
+    expect(screen.queryByText(/behind/i)).toBeNull();
+    expect(screen.queryByText(/failed/i)).toBeNull();
   });
 
-  it('does NOT render the bar/legend container', () => {
+  it('does NOT render the calendar bar or the "Pad calendar" write action', () => {
     render(<CapacityChip cap={setupFree()} />);
     expect(screen.queryByTestId('capacity-bar')).toBeNull();
-    expect(screen.queryByText(/free/i)).toBeNull();
-  });
-
-  it('does NOT render the "Pad calendar" write action (Pro-only write surface)', () => {
-    render(<CapacityChip cap={setupFree()} />);
     expect(screen.queryByText(/pad calendar/i)).toBeNull();
   });
 
-  it('does NOT render any capacity number in the accessible output', () => {
-    render(<CapacityChip cap={setupFree()} />);
-    // The collapsed chip with testID "capacity-chip-collapsed" must be absent
-    expect(screen.queryByTestId('capacity-chip-collapsed')).toBeNull();
-    // "Honest day" prefix must not appear (the number is right after it)
+  it('renders nothing on an empty day (no queued tasks)', () => {
+    render(<CapacityChip cap={setupFree({ taskMin: 0 })} />);
+    expect(screen.queryByTestId('capacity-free')).toBeNull();
     expect(screen.queryByText(/honest day/i)).toBeNull();
-  });
-
-  it('routes to paywall with day_capacity trigger on press', () => {
-    const { router } = jest.requireMock('expo-router') as { router: { push: jest.Mock } };
-    render(<CapacityChip cap={setupFree()} />);
-    const teaser = screen.getByTestId('capacity-teaser');
-    fireEvent.press(teaser);
-    expect(router.push).toHaveBeenCalledWith({
-      pathname: '/(modals)/paywall',
-      params: { trigger: 'day_capacity' },
-    });
   });
 });
 

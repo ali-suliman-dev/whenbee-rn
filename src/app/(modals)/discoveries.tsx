@@ -33,7 +33,7 @@ export default function DiscoveriesRoute() {
   const sub: TextStyle = { ...(type.bodySm as unknown as TextStyle), color: t.colors.inkSoft, marginTop: t.space[1] };
 
   return (
-    <Screen edges={['left', 'right']}>
+    <Screen edges={['left', 'right']} horizontalPadding={false}>
       <SheetGrabber />
       <View style={{ paddingTop: t.space[6], paddingBottom: t.space[4] }}>
         <Text style={heading}>Things you’ve learned</Text>

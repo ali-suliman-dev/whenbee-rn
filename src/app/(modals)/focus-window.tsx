@@ -69,9 +69,9 @@ export default function FocusWindowDetail() {
     : `Your last ${win.sampleCount} sessions agree, and it has held for ${weeks} weeks.`;
 
   return (
-    <Screen edges={['left', 'right']}>
+    <Screen edges={['left', 'right']} horizontalPadding={false}>
       <ScrollView
-        contentContainerStyle={{ paddingHorizontal: t.space[5], paddingBottom: insets.bottom + t.space[6], gap: t.space[5] }}
+        contentContainerStyle={{ paddingBottom: insets.bottom + t.space[6], gap: t.space[5] }}
         showsVerticalScrollIndicator={false}
       >
         <SheetGrabber />
@@ -80,7 +80,7 @@ export default function FocusWindowDetail() {
             <Ionicons name="flash" size={t.iconSize.xs} color={t.colors.primary} />
             <AppText style={{ ...(type.eyebrow as unknown as TextStyle), color: t.colors.primary }}>WHEN YOU&apos;RE SHARP</AppText>
           </View>
-          <AppText style={{ ...(type.honestNumberHero as unknown as TextStyle), color: t.colors.ink }}>
+          <AppText style={{ ...(type.honestNumberHero as unknown as TextStyle), color: t.colors.ink, textAlign: 'center' }}>
             {formatWindowRange(win.startMin, win.endMin)}
           </AppText>
         </View>

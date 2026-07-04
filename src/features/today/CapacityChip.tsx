@@ -19,16 +19,15 @@ import { fmtHm } from '@/src/lib/time';
 //   · denied/off: task-only load + calm "Turn on calendar in Settings" affordance
 //   · "Pad my calendar" quiet link → /(modals)/honest-day (the WRITE surface)
 //
-// Free: frosted teaser "See if {day} will fit" + "Pro" pill → paywall.
-//   NEVER renders the number, bar, or legend for free users (position gated too).
+// Free: the honest task-only verdict as a calm one-liner ("Honest day Xh Ym ·
+//   fits | snug | ~Nh heavy — move one?"). No meetings, no bar, no "Pad calendar"
+//   — those are the Pro upgrade. Amber-never-red on 'over'. Nothing on an empty day.
 //
 // Constraints: tokens only; reactCompiler Pressable gotcha (visual on inner View);
 // reduced-motion → instant; no bounce/translate-in; amber-only verdict.
 // ──────────────────────────────────────────────────────────────────────────────
 
 export interface CapacityChipProps {
-  /** Label for "today" vs a named day — e.g. "Today" or "Thursday". Defaults "Today". */
-  weekdayLabel?: string;
   /**
    * Resolved capacity result from the parent screen. Required — the chip is a
    * pure presentational component; the caller (index.tsx) owns the single
@@ -38,7 +37,7 @@ export interface CapacityChipProps {
 }
 
 
-export function CapacityChip({ weekdayLabel = 'Today', cap }: CapacityChipProps): React.ReactElement | null {
+export function CapacityChip({ cap }: CapacityChipProps): React.ReactElement | null {
   const t = useTheme();
   const reduced = useReducedMotion();
 
@@ -58,53 +57,70 @@ export function CapacityChip({ weekdayLabel = 'Today', cap }: CapacityChipProps)
 
   if (dismissed) return null;
 
-  // ── FREE PATH — teaser only (gate the number + bar position) ───────────────
+  // ── FREE PATH — the honest task-only capacity verdict (no calendar) ─────────
+  // Free users get the real "will my day fit?" read from their planned tasks:
+  // task minutes vs the waking window, as a calm one-liner. No meetings, no bar,
+  // no "Pad calendar" (those are the Pro upgrade, rendered below). Amber-never-red
+  // on 'over'. An empty day (no queued tasks) says nothing at all.
   if (!isPro2) {
-    const teaserWrap: ViewStyle = {
+    if (!load || load.taskMin === 0) return null;
+
+    const isOverFree = load.verdict === 'over';
+    const freeSuffixCopy =
+      load.verdict === 'comfortable'
+        ? '· fits'
+        : load.verdict === 'snug'
+          ? '· snug'
+          : `· ~${Math.max(1, Math.round(load.overByMin / 60))}h heavy — move one?`;
+
+    const freeWrap: ViewStyle = {
       flexDirection: 'row',
       alignItems: 'center',
-      backgroundColor: t.colors.surfaceSunken,
+      backgroundColor: t.colors.surface,
       borderRadius: t.radii.card,
       borderCurve: 'continuous',
-      paddingHorizontal: t.space[4],
+      paddingLeft: t.space[4],
+      paddingRight: t.space[2],
       paddingVertical: t.space[2.5],
       gap: t.space[2],
     };
-    const teaserText: TextStyle = {
+    const freeDisc: ViewStyle = {
+      width: t.capacity.iconDisc,
+      height: t.capacity.iconDisc,
+      borderRadius: t.radii.full,
+      backgroundColor: t.colors.accentChip,
+      alignItems: 'center',
+      justifyContent: 'center',
+    };
+    const freeLabel: TextStyle = {
       ...(type.bodySm as unknown as TextStyle),
-      color: t.colors.inkSoft,
+      color: t.colors.ink,
       flex: 1,
     };
-    const pill: ViewStyle = {
-      backgroundColor: t.colors.accentChip,
-      borderRadius: t.radii.full,
-      paddingHorizontal: t.capacity.pillPadX,
-      paddingVertical: t.space[0.5],
-    };
-    const pillText: TextStyle = {
-      ...(type.captionBold as unknown as TextStyle),
-      color: t.colors.amberText,
+    const freeSuffixStyle: TextStyle = {
+      ...(type.bodySm as unknown as TextStyle),
+      color: isOverFree ? t.colors.amberText : t.colors.inkSoft,
     };
 
     return (
-      <Pressable
-        testID="capacity-teaser"
-        accessibilityRole="button"
-        accessibilityLabel={`See if ${weekdayLabel} will fit — Pro feature`}
-        onPress={() =>
-          router.push({ pathname: '/(modals)/paywall', params: { trigger: 'day_capacity' } })
-        }
-      >
-        <View style={teaserWrap}>
-          <Ionicons name="flash" size={t.iconSize.sm} color={t.colors.amberText} />
-          <Text style={teaserText}>
-            See if {weekdayLabel} will fit
-          </Text>
-          <View style={pill}>
-            <Text style={pillText}>Pro</Text>
-          </View>
+      <View style={freeWrap} testID="capacity-free">
+        <View style={freeDisc}>
+          <Ionicons name="flash" size={t.iconSize.xs} color={t.colors.amberText} />
         </View>
-      </Pressable>
+        <Text style={freeLabel} numberOfLines={1}>
+          Honest day {fmtHm(load.taskMin)}{' '}
+          <Text style={freeSuffixStyle}>{freeSuffixCopy}</Text>
+        </Text>
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel="Dismiss capacity"
+          onPress={() => setDismissed(true)}
+          hitSlop={t.size.hitSlop}
+          style={{ paddingRight: t.space[2], paddingVertical: t.space[1] }}
+        >
+          <Ionicons name="close" size={t.iconSize.xs} color={t.colors.inkFaint} />
+        </Pressable>
+      </View>
     );
   }
 

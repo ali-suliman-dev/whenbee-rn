@@ -38,7 +38,7 @@ export default function ArchetypeQuizModal() {
   }
 
   return (
-    <Screen edges={['left', 'right']}>
+    <Screen edges={['left', 'right']} horizontalPadding={false}>
       <SheetGrabber />
       <View style={{ flex: 1, gap: t.space[4], paddingTop: t.space[3] }}>
         {reveal === null ? (
