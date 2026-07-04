@@ -148,6 +148,11 @@ export function useTimer(params: TimerParams): UseTimerResult {
   const stop = useTimerStore((s) => s.stop);
   const cancel = useTimerStore((s) => s.cancel);
   const isQuickStart = useTimerStore((s) => s.isQuickStart);
+  // Reactive: observe the store's own startedAt so the screen tears down cleanly if
+  // the session is cleared EXTERNALLY (useForgotCheck.stopSilently on unlock past
+  // the close threshold) — the captured startedAtRef + frame callback would
+  // otherwise keep ticking a zombie sheet over the recovery card. See the effect below.
+  const storeStartedAt = useTimerStore((s) => s.startedAt);
   const applyLog = useCalibrationStore((s) => s.applyLog);
 
   // ATTACH vs RESTART: if a session is already running for THIS task (reopened from
@@ -163,6 +168,16 @@ export function useTimer(params: TimerParams): UseTimerResult {
   const startedFresh = useRef(false);
   const overrunTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const startedAtRef = useRef<number | null>(null);
+  // Set true the instant THIS screen initiates a stop (Stop & log / Abandon /
+  // freeze-for-capture), BEFORE it clears the store. The external-clear reaction
+  // below reads it to distinguish "we stopped" from "the store was cleared out from
+  // under us" (e.g. useForgotCheck's stopSilently on unlock past the close
+  // threshold). Prevents the recovery flow from also writing a fake/double log.
+  const stoppingLocallyRef = useRef(false);
+  // Flips true once this session is observed live in the store, so the reaction
+  // treats startedAt→null as a genuine external clear (not the pre-start() mount
+  // race where the store hasn't been written yet).
+  const sessionActiveRef = useRef(false);
   // once-guards for the first-task activation events (fire at most once per session,
   // guarding against StrictMode double-invoke and any edge-case re-renders).
   const firstTaskStartedFiredRef = useRef(false);
@@ -324,7 +339,7 @@ export function useTimer(params: TimerParams): UseTimerResult {
   const elapsedSec = useSharedValue(0);
   const overProgress = useSharedValue(0);
 
-  useFrameCallback(() => {
+  const frameCallback = useFrameCallback(() => {
     'worklet';
     // Active seconds = wall time since start, minus any paused span. The Timer
     // screen has no pause UI in this cut, so pausedAccum stays 0; reading it from
@@ -359,6 +374,37 @@ export function useTimer(params: TimerParams): UseTimerResult {
   // path). The timer is NOT stopped on unmount — only on explicit stop/abandon —
   // but if a new sheet instance mounts it will schedule its own flip.
   useEffect(() => () => clearOverrunTimer(), [clearOverrunTimer]);
+
+  // ── External-clear teardown (zombie-sheet guard) ────────────────────────────
+  // The clock is driven off the captured startedAtRef + a self-arming frame
+  // callback, so the sheet keeps ticking even after the STORE session is cleared.
+  // If that clear came from OUTSIDE this screen — useForgotCheck.stopSilently()
+  // firing on unlock past the close threshold — the running sheet would occlude the
+  // recovery ForgotCard and its "Stop & log" would train a fake 1-min completion
+  // AND double-log a session already parked for recovery. React to the store's own
+  // startedAt: once we've seen this session live, a transition to null that we did
+  // NOT initiate (stoppingLocallyRef unset) means an external clear → stop ticking,
+  // cancel this session's pings, and dismiss WITHOUT logging (the ForgotCard owns
+  // the recovery log).
+  useEffect(() => {
+    if (storeStartedAt !== null) {
+      sessionActiveRef.current = true;
+      return;
+    }
+    // startedAt is null. Ignore the pre-start() mount race (never went live) and any
+    // clear WE initiated (normal Stop/Abandon/capture — they own their own teardown).
+    if (!sessionActiveRef.current || stoppingLocallyRef.current) return;
+    frameCallback.setActive(false);
+    clearOverrunTimer();
+    void cancelTimerDone();
+    void cancelGuardCheckIn();
+    endFinishTimeActivity();
+    // Do NOT applyLog here — the ForgotCard writes the recovery log on the user's
+    // choice. Consistent with onAbandon/minimize, dismiss the modal route.
+    router.dismiss();
+    // frameCallback + clearOverrunTimer are stable; react only to startedAt changes.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [storeStartedAt]);
 
   // ── Hyperfocus guardrail — foreground driver ────────────────────────────────
   // Fire EXACTLY ONCE the moment elapsed crosses the armed threshold, mirroring the
@@ -398,6 +444,9 @@ export function useTimer(params: TimerParams): UseTimerResult {
   );
 
   const onStopAndLog = useCallback(async (labelOverride?: string, categoryOverride?: string) => {
+    // Mark BEFORE clearing the store so the external-clear reaction treats the
+    // upcoming stop()/reward-nav as ours (no dismiss, no fake log).
+    stoppingLocallyRef.current = true;
     clearOverrunTimer();
     // For quick-start sessions the clock was already frozen by onFreezeForCapture
     // before the capture sheet was shown. Use the pre-computed value; for normal
@@ -494,6 +543,10 @@ export function useTimer(params: TimerParams): UseTimerResult {
    * Only the quick-start capture sheet calls this; normal timers skip it.
    */
   const onFreezeForCapture = useCallback((): { actualMin: number } => {
+    // The quick-start capture flow clears the store here, then keeps this screen
+    // mounted while the capture sheet resolves — mark local so the external-clear
+    // reaction doesn't mistake that for a forgot-close and dismiss mid-capture.
+    stoppingLocallyRef.current = true;
     const result = stop(Date.now());
     frozenActualMinRef.current = result.actualMin;
     void cancelTimerDone();
@@ -503,6 +556,9 @@ export function useTimer(params: TimerParams): UseTimerResult {
   }, [stop]);
 
   const onAbandon = useCallback(async () => {
+    // Mark BEFORE cancel() clears the store so the external-clear reaction stays out
+    // of the way — onAbandon already dismisses the route itself.
+    stoppingLocallyRef.current = true;
     clearOverrunTimer();
     cancel();
     void cancelTimerDone();
