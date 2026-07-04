@@ -94,7 +94,7 @@ export function ForgotCard(): React.JSX.Element | null {
       accessibilityViewIsModal={false}
       accessibilityLiveRegion="polite"
     >
-      <AppText style={heading}>{`Closed “${pending.taskLabel}” while you were away`}</AppText>
+      <AppText style={heading}>{`Wrapped up “${pending.taskLabel}” while you were away`}</AppText>
       <AppText style={body}>
         {seen
           ? 'When did you actually finish?'
@@ -126,10 +126,10 @@ export function ForgotCard(): React.JSX.Element | null {
       </View>
       <Pressable
         accessibilityRole="button"
-        accessibilityLabel="Skip logging this session"
+        accessibilityLabel="Not sure yet — skip logging this session"
         onPress={() => void write(pending.recoveredActualMin, 'partial')}
       >
-        <AppText style={[skip, { textAlign: 'center' }]}>Skip</AppText>
+        <AppText style={[skip, { textAlign: 'center' }]}>Not sure yet</AppText>
       </Pressable>
     </Animated.View>
   );
