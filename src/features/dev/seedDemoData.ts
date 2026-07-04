@@ -65,9 +65,10 @@ interface DemoCategory {
   labels: string[];
 }
 
-// Four categories. "Getting ready" and "Admin" are the requested two; "Deep work"
+// Five categories. "Getting ready" and "Admin" are the requested two; "Deep work"
 // and "Errands" round out the set with a long-task and a mid-task profile so the
-// day-capacity and correlations views have variety. Biases are deliberately
+// day-capacity and correlations views have variety; "Workout" is a deliberately
+// thin 3-log category to show an early-stage, barely-calibrated profile. Biases are
 // distinct and consistent enough to climb the honey tiers and trip a Discovery.
 const DEMO_CATEGORIES: DemoCategory[] = [
   {
@@ -105,6 +106,17 @@ const DEMO_CATEGORIES: DemoCategory[] = [
     bias: 1.5,
     count: 17,
     labels: ['Groceries', 'Post office', 'Pharmacy run'],
+  },
+  // A fresh, barely-calibrated category: only 3 logs, so it reads as early-stage
+  // (low sharpness / early honey) next to the mature four above.
+  {
+    id: 'workout',
+    name: 'Workout',
+    adaptSpeed: 'balanced',
+    estimateMin: 45,
+    bias: 1.3,
+    count: 3,
+    labels: ['Gym session', 'Evening run', 'Home workout'],
   },
 ];
 
