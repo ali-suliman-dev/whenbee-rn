@@ -9,6 +9,7 @@ import type { PendingAutoClose } from '@/src/domain/types';
 const pending: PendingAutoClose = {
   taskLabel: 'Deep work', category: 'Work', guessMin: 40, honestMin: 50,
   startedAt: 0, elapsedMin: 300, recoveredActualMin: 50,
+  taskId: 'task-42', estimateMin: 45, pausedAccumMs: 120_000,
 };
 
 describe('ForgotCard', () => {
@@ -50,7 +51,15 @@ describe('ForgotCard', () => {
     const { getByText } = render(<ForgotCard />);
     fireEvent.press(getByText(/still going/i));
     await waitFor(() => {
-      expect(reopen).toHaveBeenCalled();
+      // Reopen must carry the ORIGINAL taskId (+ real estimate + prior paused time)
+      // so a planned Today task keeps its linkage and is marked done on final stop.
+      expect(reopen).toHaveBeenCalledWith(
+        expect.objectContaining({
+          taskId: 'task-42',
+          estimateMin: 45,
+          pausedAccumMs: 120_000,
+        }),
+      );
       expect(apply).not.toHaveBeenCalled();
       expect(useForgotStore.getState().pending).toBeNull();
     });

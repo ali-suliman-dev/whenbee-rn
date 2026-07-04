@@ -92,6 +92,8 @@ interface TimerState {
     taskId: string | null;
     suggestedHonestMin: number;
     isQuickStart: boolean;
+    /** Prior accumulated paused-span ms; defaults to 0 (fresh, no pauses). */
+    pausedAccumMs?: number;
   }) => void;
 }
 
@@ -280,7 +282,9 @@ export const useTimerStore = create<TimerState>((set, get) => ({
       category: snapshot.category,
       estimateMin: snapshot.estimateMin,
       startedAt: snapshot.startedAt,
-      pausedAccumMs: 0,
+      // Preserve any paused time from before the session was forgotten so those
+      // minutes aren't recounted as active on resume. Defaults to 0.
+      pausedAccumMs: snapshot.pausedAccumMs ?? 0,
       pausedAt: null,
       isRunning: true,
       guessMin: snapshot.guessMin,

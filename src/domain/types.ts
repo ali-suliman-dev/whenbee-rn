@@ -248,6 +248,19 @@ export interface PendingAutoClose {
   elapsedMin: number;
   /** Predicted honest finish, rounded — the default recovered duration. */
   recoveredActualMin: number;
+  /**
+   * The Today/plan task this session was linked to, or null for an ad-hoc session.
+   * Carried so a "still going" reopen keeps the linkage (the task gets marked done
+   * on final stop instead of silently orphaned).
+   */
+  taskId: string | null;
+  /** The ring target (honest suggestion the timer fills toward) at start. */
+  estimateMin: number;
+  /**
+   * Accumulated paused-span milliseconds at detection. Carried so a reopen resumes
+   * with the prior paused time intact instead of recounting those minutes as active.
+   */
+  pausedAccumMs: number;
 }
 
 // ── Voice intake ────────────────────────────────────────────────────────────

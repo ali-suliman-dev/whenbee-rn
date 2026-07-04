@@ -58,12 +58,13 @@ export function ForgotCard(): React.JSX.Element | null {
     useTimerStore.getState().reopen({
       taskLabel: pending.taskLabel,
       category: pending.category,
-      estimateMin: pending.honestMin,
+      estimateMin: pending.estimateMin,
       startedAt: pending.startedAt,
       guessMin: pending.guessMin,
-      taskId: null,
+      taskId: pending.taskId,
       suggestedHonestMin: pending.honestMin,
       isQuickStart: false,
+      pausedAccumMs: pending.pausedAccumMs,
     });
     useSettingsStore.getState().markForgotProtectSeen();
     clear();

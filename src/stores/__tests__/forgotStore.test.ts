@@ -9,6 +9,9 @@ const sample: PendingAutoClose = {
   startedAt: 1_000_000,
   elapsedMin: 300,
   recoveredActualMin: 50,
+  taskId: null,
+  estimateMin: 50,
+  pausedAccumMs: 0,
 };
 
 describe('forgotStore', () => {

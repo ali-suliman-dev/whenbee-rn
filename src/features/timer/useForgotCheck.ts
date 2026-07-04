@@ -3,6 +3,7 @@ import { AppState } from 'react-native';
 import { useTimerStore } from '@/src/stores/timerStore';
 import { useSettingsStore } from '@/src/stores/settingsStore';
 import { useForgotStore } from '@/src/stores/forgotStore';
+import { cancelTimerDone, cancelGuardCheckIn } from '@/src/services/timerNotifications';
 import { autoCloseDecision } from '@/src/engine';
 import type { ForgotStepIn, PendingAutoClose } from '@/src/domain/types';
 
@@ -55,6 +56,9 @@ export function evaluateForgotten(input: {
     startedAt: snap.startedAt,
     elapsedMin,
     recoveredActualMin,
+    taskId: snap.taskId,
+    estimateMin: snap.estimateMin,
+    pausedAccumMs: snap.pausedAccumMs,
   };
 }
 
@@ -69,8 +73,12 @@ export function useForgotCheck(): void {
       const stepIn = useSettingsStore.getState().forgotStepIn;
       const pending = evaluateForgotten({ snap: snap as Snap, nowMs: Date.now(), stepIn });
       if (pending === null) return;
-      // Stop the runaway now; the ForgotCard writes the recovery log.
+      // Stop the runaway now; the ForgotCard writes the recovery log. Cancel this
+      // session's scheduled pings here (feature layer) — mirrors the other stop
+      // paths in useTimer; keeps the store free of a service-layer notification dep.
       useTimerStore.getState().stopSilently();
+      void cancelTimerDone();
+      void cancelGuardCheckIn();
       useForgotStore.getState().setPending(pending);
     };
     run(); // boot / mount
