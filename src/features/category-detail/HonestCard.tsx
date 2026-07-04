@@ -1,22 +1,21 @@
 import { View, Text, type ViewStyle, type TextStyle } from 'react-native';
-import { router } from 'expo-router';
 import { HonestNumber } from '@/src/components/HonestNumber';
 import { HoneyHex } from '@/src/components/HoneyHex';
 import { useTheme } from '@/src/theme/useTheme';
 import { type } from '@/src/theme/typography';
-import { analytics } from '@/src/services/analytics';
 import type { CalibrationConfidence, HonestRange } from '@/src/domain/types';
-import { CategoryRangeBand } from './CategoryRangeBand';
 import { MaturityMeter } from './MaturityMeter';
 import { maturityMeter } from './maturity';
 
 // ──────────────────────────────────────────────────────────────────────────────
 // HonestCard — the category hero. While learning, the honest RANGE is the hero:
-// a tier-meaning pill, the range number, a living band (segment + caret callout),
-// and a two-row honey-cell maturity meter. Once honest it becomes a subtle hero:
-// a faint honey-wash card carrying the single number, the multiplier as a quiet
-// chip, and a honey-sealed affirmation. Range numbers + band are free; the precise
-// convergence tick is the Pro layer (spec 03 §9). No guilt, amber never red.
+// a plain-language tier meaning, the range number, and a two-row honey-cell
+// maturity meter. The abstract range band was removed (2026-07-04) — it restated
+// the number a second time and read as noise; the "where you land" it carried is
+// now one honest line, gated so free users never see the Pro convergence point.
+// Once honest it becomes a subtle hero: the single number, the multiplier as a
+// quiet chip, and a honey-sealed affirmation. Range numbers are free; the precise
+// convergence point (~13) is the Pro layer (spec 03 §9). No guilt, amber never red.
 // ──────────────────────────────────────────────────────────────────────────────
 
 interface HonestCardProps {
@@ -48,22 +47,20 @@ export function HonestCard({
   const t = useTheme();
   const showRange = confidence !== undefined && confidence !== 'honest' && range != null;
 
-  const tierRow: ViewStyle = { flexDirection: 'row', alignItems: 'center', gap: t.space[2] };
-  const pill: ViewStyle = {
-    flexDirection: 'row', alignItems: 'center', gap: t.space[1.5],
-    backgroundColor: t.colors.accentSoft, borderRadius: t.radii.full,
-    paddingHorizontal: t.space[3], paddingVertical: t.space[1],
-  };
-  const pillHex: ViewStyle = {
-    width: t.space[2], height: t.space[2], borderRadius: t.radii.sm, backgroundColor: t.brand.honeyFill,
-  };
-  const pillText: TextStyle = { ...(type.captionBold as unknown as TextStyle), color: t.colors.amberText };
-  const meaning: TextStyle = { ...(type.caption as unknown as TextStyle), color: t.colors.inkSoft, flex: 1 };
+  // The tier pill lives in the screen header now; the hero keeps only the
+  // plain-language meaning as a quiet lead line under the title.
+  const meaning: TextStyle = { ...(type.caption as unknown as TextStyle), color: t.colors.inkSoft };
 
   const heroBlock: ViewStyle = { gap: t.space[2] };
   const eyebrow: TextStyle = { ...(type.eyebrow as unknown as TextStyle), color: t.colors.inkSoft };
   const numberRow: ViewStyle = { flexDirection: 'row', alignItems: 'flex-end', gap: t.space[3], flexWrap: 'wrap' };
   const reasonNoteText: TextStyle = { ...(type.caption as unknown as TextStyle), color: t.colors.inkFaint };
+  // The honest "where you land" line (Pro, ≥ setting): descriptive, no guilt, the
+  // ~point in amber so the paid number reads as the payoff.
+  const landLine: TextStyle = { ...(type.body as unknown as TextStyle), color: t.colors.inkSoft, marginTop: t.space[2] };
+  const landPoint: TextStyle = {
+    color: t.colors.accent, fontFamily: 'Inter-Bold', fontVariant: ['tabular-nums'],
+  };
   const narrowCaption: TextStyle = { ...(type.bodySm as unknown as TextStyle), color: t.colors.inkSoft, marginTop: t.space[6] };
   const strong: TextStyle = { color: t.colors.ink, fontFamily: 'Jakarta-Bold' };
 
@@ -86,38 +83,27 @@ export function HonestCard({
     firstHonestRange.highMinutes - firstHonestRange.lowMinutes >
       range.highMinutes - range.lowMinutes;
 
-  const openPaywall = () => {
-    analytics.capture('honest_range_locked_tap', { surface: 'category_detail' });
-    router.push({ pathname: '/(modals)/paywall', params: { trigger: 'honest_range' } });
-  };
+  // The convergence point ("~13") is Pro-gated while learning, and only asserted
+  // once there's enough signal ('setting', not 'raw') — a point from 1–2 logs
+  // would overclaim. Free never sees it (the Pro-week card is the one anchor).
+  const showPoint = isPro && confidence === 'setting';
 
   if (showRange && range) {
-    // ── Learning state — the honest RANGE is the hero (unchanged) ──
+    // ── Learning state — the honest RANGE is the hero (band removed 2026-07-04) ──
     return (
       <View style={{ gap: t.space[4] }}>
-        {tier ? (
-          <View style={tierRow}>
-            <View style={pill}>
-              <View style={pillHex} />
-              <Text style={pillText}>{tier}</Text>
-            </View>
-            <Text style={meaning}>{TIER_MEANING[learningTier]}</Text>
-          </View>
-        ) : null}
+        {tier ? <Text style={meaning}>{TIER_MEANING[learningTier]}</Text> : null}
 
         <View style={heroBlock}>
           <Text style={eyebrow}>YOUR HONEST RANGE</Text>
           <View style={numberRow}>
             <HonestNumber size="xl" tone="ink" value={`${range.lowMinutes}–${range.highMinutes}`} unit="min" />
           </View>
-          <CategoryRangeBand
-            range={range}
-            point={honestMinutes}
-            confidence={confidence ?? 'setting'}
-            isPro={isPro}
-            priorRange={firstHonestRange}
-            onUnlockPress={openPaywall}
-          />
+          {showPoint ? (
+            <Text style={landLine}>
+              Most tasks land near <Text style={landPoint}>~{honestMinutes} min</Text>.
+            </Text>
+          ) : null}
           {narrowed && firstHonestRange ? (
             <Text style={narrowCaption}>
               <Text style={strong}>Tightened from {firstHonestRange.lowMinutes}–{firstHonestRange.highMinutes}</Text>
