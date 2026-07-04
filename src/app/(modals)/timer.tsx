@@ -22,6 +22,7 @@ import { useTimer } from '@/src/features/timer/useTimer';
 import { TimerRing } from '@/src/features/timer/TimerRing';
 import { PaceLabel } from '@/src/features/timer/PaceLabel';
 import { FinishTime } from '@/src/features/timer/FinishTime';
+import { InfoRow, LedgerValue } from '@/src/features/timer/InfoRow';
 import { GuardrailCheckIn } from '@/src/features/timer/GuardrailCheckIn';
 import { PostStopCaptureSheet } from '@/src/components/quick/PostStopCaptureSheet';
 import { guessCategory } from '@/src/features/shared/categoryGuess';
@@ -247,23 +248,14 @@ export default function Timer() {
   };
   const eyebrowText: TextStyle = { ...(type.eyebrow as TextStyle), color: t.colors.inkSoft };
 
-  // guess → honest reframe (honest number in amber — the optimistic real target).
-  const reframeRow: ViewStyle = {
-    flexDirection: 'row',
-    alignItems: 'baseline',
-    gap: t.space[1.5],
-    marginTop: t.space[4],
-  };
-  const reframeStrong: TextStyle = { ...(type.bodySm as TextStyle), color: t.colors.ink };
-  const reframeSoft: TextStyle = { ...(type.bodySm as TextStyle), color: t.colors.inkSoft };
-  const reframeHonest: TextStyle = { ...(type.bodySm as TextStyle), color: t.colors.accent };
-
-  const taskBlock: ViewStyle = { alignItems: 'center', gap: t.space[2], marginTop: t.space[6] };
+  // Task title — bonded directly under the ring, then the info-row ledger below it.
   const taskName: TextStyle = {
     ...(type.subtitle as TextStyle),
     color: t.colors.ink,
     textAlign: 'center',
+    marginTop: t.space[2.5],
   };
+  const ledger: ViewStyle = { width: '100%', marginTop: t.space[8] };
 
   const abandonBtn: ViewStyle = {
     width: t.size.control.lg,
@@ -306,7 +298,7 @@ export default function Timer() {
           <View style={{ width: t.size.control.sm, height: t.size.control.sm }} />
         </View>
 
-        {/* Middle: ring · reframe · task/finish */}
+        {/* Middle: ring · title · info-row ledger */}
         <View style={{ alignItems: 'center' }}>
           <TimerRing
             elapsedSec={timer.elapsedSec}
@@ -315,15 +307,14 @@ export default function Timer() {
             guessMin={timer.guessMin}
           />
 
-          <View style={reframeRow}>
-            <AppText style={reframeStrong}>guessed {guessRounded}m</AppText>
-            <AppText style={reframeSoft}>→</AppText>
-            <AppText style={reframeSoft}>honest</AppText>
-            <AppText style={reframeHonest}>~{honestRounded}m</AppText>
-          </View>
+          <AppText style={taskName}>{label}</AppText>
 
-          <View style={taskBlock}>
-            <AppText style={taskName}>{label}</AppText>
+          <View style={ledger}>
+            <InfoRow first label="Guess → Honest">
+              <LedgerValue>{guessRounded}m</LedgerValue>
+              <LedgerValue faint> → </LedgerValue>
+              <LedgerValue amber>~{honestRounded}m</LedgerValue>
+            </InfoRow>
             <FinishTime
               elapsedSec={timer.elapsedSec}
               estimateSec={timer.estimateSec}

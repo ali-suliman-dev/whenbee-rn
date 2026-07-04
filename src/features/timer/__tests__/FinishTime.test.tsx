@@ -1,9 +1,11 @@
 /**
  * B-Task 2 / B-Task 3 — the running timer's finish surface (Surface C).
  *
- * Pro + still-learning + a range → "Done {low}–{high}" + the slim HonestBand,
+ * FinishTime renders the STARTED + FINISH ledger rows. The "~" lives in the
+ * "Finish ~" row label, so the value is a bare clock ("9:48"). Pro + still-
+ * learning + a range → the FINISH value is "{low}–{high}" + the slim HonestBand,
  * and a single honest_range_shown { surface: 'timer' }. Free users, a settled
- * ('honest') category, or a missing range keep the point "Done ~{finish}". The
+ * ('honest') category, or a missing range keep the point value "{finish}". The
  * overrun reprojection is untouched by this surface.
  */
 
@@ -41,7 +43,7 @@ describe('FinishTime — Surface C (Pro honest range)', () => {
         range={{ lowMinutes: 42, highMinutes: 57 }}
       />,
     );
-    expect(screen.getByText('Done ~9:48')).toBeOnTheScreen();
+    expect(screen.getByText('9:48')).toBeOnTheScreen();
     expect(mockCapture).not.toHaveBeenCalled();
   });
 
@@ -62,8 +64,8 @@ describe('FinishTime — Surface C (Pro honest range)', () => {
     expect(
       screen.getByLabelText(`Honest finish range ${low} to ${high}, still learning.`),
     ).toBeOnTheScreen();
-    // The point finish (with its ~) is gone.
-    expect(screen.queryByText('Done ~9:48')).toBeNull();
+    // The point finish clock is gone (the range replaced it).
+    expect(screen.queryByText('9:48')).toBeNull();
   });
 
   it('fires honest_range_shown { surface: timer } once for a Pro learning session', () => {
@@ -93,14 +95,15 @@ describe('FinishTime — Surface C (Pro honest range)', () => {
         range={{ lowMinutes: 42, highMinutes: 57 }}
       />,
     );
-    expect(screen.getByText('Done ~9:48')).toBeOnTheScreen();
-    expect(screen.queryByText('Done 9:42–9:57')).toBeNull();
+    expect(screen.getByText('9:48')).toBeOnTheScreen();
+    // No range shown once settled → its a11y label is absent.
+    expect(screen.queryByLabelText(/Honest finish range/)).toBeNull();
     expect(mockCapture).not.toHaveBeenCalled();
   });
 
   it('keeps the point finish when there is no range (cold/unknown category)', () => {
     render(<FinishTime {...base} isPro confidence="raw" range={null} />);
-    expect(screen.getByText('Done ~9:48')).toBeOnTheScreen();
+    expect(screen.getByText('9:48')).toBeOnTheScreen();
     expect(mockCapture).not.toHaveBeenCalled();
   });
 });

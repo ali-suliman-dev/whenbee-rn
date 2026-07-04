@@ -36,6 +36,10 @@ export const type = {
   // Caption-sized (12px) tabular numeral — the bold number embedded inside a
   // `caption`/`bodySm` span (e.g. "1.8×" in the ratio chip, "64" in "64 logs").
   numCaption: { fontFamily: 'Inter-Bold', fontSize: fs.caption, lineHeight: 18, letterSpacing: -0.2, fontVariant: ['tabular-nums'] as const },
+  // Base-sized (14px) tabular numeral — the value in the Live-Timer info-row
+  // ledger ("5m → ~5m", "13:50"). SemiBold so clocks/durations read as data and
+  // stay column-aligned against their muted `labelXs` row label.
+  numLedger: { fontFamily: 'Inter-SemiBold', fontSize: fs.base, lineHeight: 18, letterSpacing: -0.2, fontVariant: ['tabular-nums'] as const },
   timerNumeral: { fontFamily: 'Inter-SemiBold', fontSize: fs.timer, lineHeight: 78, letterSpacing: -2.3, fontVariant: ['tabular-nums'] as const },
   timerClock: { fontFamily: 'Inter-SemiBold', fontSize: fs.timerClock, lineHeight: 70, letterSpacing: -1.5, fontVariant: ['tabular-nums'] as const },
   honestNumberLg: { fontFamily: 'Inter-Bold', fontSize: fs.honestLg, lineHeight: 38, letterSpacing: -0.9, fontVariant: ['tabular-nums'] as const },
