@@ -3,13 +3,10 @@ import { useTimerStore } from '@/src/stores/timerStore';
 import { useEntitlement } from '@/src/features/paywall/useEntitlement';
 import { useCalibrationStore } from '@/src/stores/calibrationStore';
 import { formatClock, projectedFinish } from '@/src/lib/time';
-import { publishWidgetData, clearWidgetData } from '@/src/services/presence/widgetData';
+import { publishWidgetSnapshot, clearWidgetSnapshot } from '@/src/services/liveActivity';
 import { categoryName } from '@/src/features/today/categoryName';
 import type { WidgetSnapshot } from '@/src/services/liveActivity';
 import type { DayTask } from '@/src/engine/daySelectors';
-
-/** Key the Home-screen widget reads the next-task snapshot from. */
-const NEXT_TASK_WIDGET_KEY = 'nextTask';
 
 interface UseWidgetPublisherArgs {
   /** The task Today is currently focused on, or null when the day is empty/done. */
@@ -39,7 +36,7 @@ export function useWidgetPublisher({ focus, honestMin }: UseWidgetPublisherArgs)
   useEffect(() => {
     try {
       if (!focus || honestMin === null) {
-        clearWidgetData(NEXT_TASK_WIDGET_KEY);
+        clearWidgetSnapshot();
         return;
       }
       const now = Date.now();
@@ -53,7 +50,7 @@ export function useWidgetPublisher({ focus, honestMin }: UseWidgetPublisherArgs)
         honestFinishEpoch: Math.round(finishAt / 1000),
         isPro,
       };
-      publishWidgetData(NEXT_TASK_WIDGET_KEY, snapshot);
+      publishWidgetSnapshot(snapshot);
     } catch {
       // best-effort; a widget write must never break the Today render path
     }

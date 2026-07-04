@@ -3,16 +3,16 @@ import { useWidgetPublisher } from '../useWidgetPublisher';
 import { useTimerStore } from '@/src/stores/timerStore';
 import { useEntitlement } from '@/src/features/paywall/useEntitlement';
 import { useCalibrationStore } from '@/src/stores/calibrationStore';
-import { publishWidgetData, clearWidgetData } from '@/src/services/presence/widgetData';
+import { publishWidgetSnapshot, clearWidgetSnapshot } from '@/src/services/liveActivity';
 import type { DayTask } from '@/src/engine/daySelectors';
 
-jest.mock('@/src/services/presence/widgetData', () => ({
-  publishWidgetData: jest.fn(),
-  clearWidgetData: jest.fn(),
+jest.mock('@/src/services/liveActivity', () => ({
+  publishWidgetSnapshot: jest.fn(),
+  clearWidgetSnapshot: jest.fn(),
 }));
 
-const mockPublish = publishWidgetData as jest.Mock;
-const mockClear = clearWidgetData as jest.Mock;
+const mockPublish = publishWidgetSnapshot as jest.Mock;
+const mockClear = clearWidgetSnapshot as jest.Mock;
 
 const T0 = 1_700_000_000_000;
 
@@ -46,20 +46,19 @@ beforeEach(() => {
 describe('useWidgetPublisher', () => {
   it('clears the widget when there is no focus task', () => {
     renderHook(() => useWidgetPublisher({ focus: null, honestMin: null }));
-    expect(mockClear).toHaveBeenCalledWith('nextTask');
+    expect(mockClear).toHaveBeenCalled();
     expect(mockPublish).not.toHaveBeenCalled();
   });
 
   it('clears the widget when focus exists but honestMin is null', () => {
     renderHook(() => useWidgetPublisher({ focus: makeFocus(), honestMin: null }));
-    expect(mockClear).toHaveBeenCalledWith('nextTask');
+    expect(mockClear).toHaveBeenCalled();
     expect(mockPublish).not.toHaveBeenCalled();
   });
 
   it('publishes on initial mount with a focus + honestMin', () => {
     renderHook(() => useWidgetPublisher({ focus: makeFocus(), honestMin: 30 }));
     expect(mockPublish).toHaveBeenCalledWith(
-      'nextTask',
       expect.objectContaining({ nextTaskLabel: 'Write report' }),
     );
   });
@@ -72,7 +71,6 @@ describe('useWidgetPublisher', () => {
     mockPublish.mockClear();
     rerender({ focus: makeFocus({ id: 'task-2', label: 'Different task' }) });
     expect(mockPublish).toHaveBeenCalledWith(
-      'nextTask',
       expect.objectContaining({ nextTaskLabel: 'Different task' }),
     );
   });
@@ -100,7 +98,7 @@ describe('useWidgetPublisher', () => {
     mockPublish.mockClear();
     useEntitlement.setState({ isPro: true });
     rerender({});
-    const [, payload] = mockPublish.mock.calls[0] as [string, { isPro: boolean }];
+    const [payload] = mockPublish.mock.calls[0] as [{ isPro: boolean }];
     expect(payload.isPro).toBe(true);
   });
 
