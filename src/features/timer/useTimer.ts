@@ -34,7 +34,7 @@ import {
 } from '@/src/services/liveActivity';
 import { shouldSuppressHonestBanner, guardCollidesWithHonest, honestReachedFireMs } from '@/src/lib/notifyTiming';
 import { useEntitlement } from '@/src/features/paywall/useEntitlement';
-import { guardrailThresholdMin, confidenceFor, honestRangeFor } from '@/src/engine';
+import { guardrailThresholdMin, nudgeThresholdMin, confidenceFor, honestRangeFor } from '@/src/engine';
 import type { AdaptSpeed, CalibrationConfidence, HonestRange } from '@/src/domain/types';
 
 // ──────────────────────────────────────────────────────────────────────────────
@@ -243,18 +243,22 @@ export function useTimer(params: TimerParams): UseTimerResult {
       updateFinishTimeActivity({ isOverrun: true });
     }, delay);
 
-    // Hyperfocus guardrail (Pro, opt-in): arm at session start. Non-reactive reads —
-    // this effect runs once. Gate on Pro + the setting; a session that already nudged
-    // (resumed after a kill) never re-arms. The foreground threshold is stashed in a
-    // ref regardless of reminders; the BACKGROUND ping rides the same reminders gate
-    // the "estimate is up" ping uses (notifications are opt-in).
+    // Gentle nudge / hyperfocus guardrail: arm at session start. Non-reactive reads —
+    // this effect runs once. A session that already nudged (resumed after a kill)
+    // never re-arms. Pro's hyperfocusGuard (when not 'off') wins — it's the earlier,
+    // user-chosen multiple; otherwise every user (free included) gets the gentle
+    // forgot-to-stop nudge at the forgotStepIn preset. The foreground threshold is
+    // stashed in a ref regardless of reminders; the BACKGROUND ping rides the same
+    // reminders gate the "estimate is up" ping uses (notifications are opt-in).
     const guardSetting = useSettingsStore.getState().hyperfocusGuard;
     const guardPro = useEntitlement.getState().isPro;
+    const stepIn = useSettingsStore.getState().forgotStepIn;
     const alreadyNudged = useTimerStore.getState().guardNudged;
-    const guardThresholdMin =
-      guardPro && !alreadyNudged
+    const guardThresholdMin = alreadyNudged
+      ? null
+      : guardPro && guardSetting !== 'off'
         ? guardrailThresholdMin({ honestMin: suggestedHonestMin, setting: guardSetting })
-        : null;
+        : nudgeThresholdMin({ honestMin: suggestedHonestMin, stepIn });
     if (guardThresholdMin != null) {
       analytics.capture('guardrail_armed', {
         setting: guardSetting,
