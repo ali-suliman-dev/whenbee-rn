@@ -1,8 +1,12 @@
 import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
 import { zustandKv } from '@/src/lib/kv';
-import { DEFAULT_DAY_END_MIN, DEFAULT_GUARDRAIL } from '@/src/engine/constants';
-import type { GuardrailMultiple } from '@/src/domain/types';
+import {
+  DEFAULT_DAY_END_MIN,
+  DEFAULT_GUARDRAIL,
+  DEFAULT_FORGOT_STEP_IN,
+} from '@/src/engine/constants';
+import type { GuardrailMultiple, ForgotStepIn } from '@/src/domain/types';
 import type { QuietHours } from '@/src/lib/notifyTiming';
 import {
   type StripVariant,
@@ -102,6 +106,14 @@ interface SettingsState {
    *  the gentle check-in is opt-in and Pro-only. Reads the model, trains nothing. */
   hyperfocusGuard: GuardrailMultiple;
   setHyperfocusGuard: (v: GuardrailMultiple) => void;
+  /** Free forgot-to-stop protection preset — how soon Whenbee steps in. On by
+   *  default ('balanced'). Distinct from the Pro hyperfocusGuard. */
+  forgotStepIn: ForgotStepIn;
+  setForgotStepIn: (v: ForgotStepIn) => void;
+  /** True once the auto-close has acted at least once (drives the one-time
+   *  contextual explainer). */
+  forgotProtectSeen: boolean;
+  markForgotProtectSeen: () => void;
   /** Whether the end-of-day feature is active. On by default. */
   dayEndEnabled: boolean;
   setDayEndEnabled: (v: boolean) => void;
@@ -173,6 +185,10 @@ export const useSettingsStore = create<SettingsState>()(
         }),
       hyperfocusGuard: DEFAULT_GUARDRAIL,
       setHyperfocusGuard: (hyperfocusGuard) => set({ hyperfocusGuard }),
+      forgotStepIn: DEFAULT_FORGOT_STEP_IN,
+      setForgotStepIn: (forgotStepIn) => set({ forgotStepIn }),
+      forgotProtectSeen: false,
+      markForgotProtectSeen: () => set({ forgotProtectSeen: true }),
       dayEndEnabled: true,
       setDayEndEnabled: (dayEndEnabled) => set({ dayEndEnabled }),
       calendar: DEFAULT_CALENDAR,
@@ -205,6 +221,8 @@ export const useSettingsStore = create<SettingsState>()(
           windowStartMin: null,
           windowEndMin: null,
           hyperfocusGuard: DEFAULT_GUARDRAIL,
+          forgotStepIn: DEFAULT_FORGOT_STEP_IN,
+          forgotProtectSeen: false,
           focusWindowUserSet: false,
           focusShownStartMin: null,
           focusShownEndMin: null,
