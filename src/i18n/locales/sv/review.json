@@ -42,9 +42,13 @@
   "forwardAction": {
     "eyebrow": "EN SAK ATT PROVA",
     "headingSuffix": " fortsätter dra över tiden.",
-    "plannedLabel": "{{min}} min planerat",
-    "overflowLabel": "+{{min}} min över",
-    "recommendation": "Lägg in <0>~{{min}} min</0> nästa vecka så försvinner överskottet."
+    "minutesLabel": "{{min}} min",
+    "overflowCaption": "+{{min}} min",
+    "plannedSuffix": " planerat",
+    "giveItPrefix": "avsätt ",
+    "amountApprox": "~{{min}} min",
+    "descPrefix": "Lägg in ",
+    "descSuffix": " nästa vecka så försvinner överskottet."
   },
   "tightened": {
     "eyebrow": "VAD SOM STRAMADES ÅT",
@@ -57,11 +61,15 @@
     "guessLabel": "{{min}} min gissat",
     "realLabel": "{{min}} min verkligt",
     "minutesLabel": "{{min}} min",
-    "ratioChip": "{{ratio}}× din gissning",
-    "logCount": "{{count}} loggar",
-    "description": "Din verkliga <0>{{category}}</0>-tid hamnar på <1>{{low}}–{{high}} min</1> 80 % av gångerna.",
-    "suffixInside": " Mer än din gissning — inom ditt intervall.",
-    "suffixOutside": " Mer än din gissning."
+    "rangeLabel": "{{low}}–{{high}} min",
+    "yourReadSuffix": " din gissning",
+    "logsSuffix": " loggar",
+    "descPrefix": "Din verkliga ",
+    "descMiddle": "-tid hamnar på ",
+    "descAfterRange": " 80 % av gångerna — den blev ",
+    "descGuessSuffix": ", mer än din gissning på {{min}} min",
+    "descInsideSuffix": " men inom ditt intervall.",
+    "descOutsideSuffix": ", utanför ditt vanliga intervall."
   },
   "weekRead": {
     "subtitlePrefix": "{{close}} av {{total}} områden landade nära.",

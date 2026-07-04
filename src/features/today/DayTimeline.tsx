@@ -16,10 +16,8 @@
  * inner View, Pressable is a bare touch wrapper.
  */
 
-import React, { useCallback, useMemo } from 'react';
+import React, { useCallback, useMemo, useState } from 'react';
 import {
-  ActionSheetIOS,
-  Platform,
   Pressable,
   ScrollView,
   View,
@@ -39,6 +37,7 @@ import { useDayTasksStore } from '@/src/stores/dayTasksStore';
 import { useEntitlement } from '@/src/features/paywall/useEntitlement';
 import { useTheme } from '@/src/theme/useTheme';
 import { AppText } from '@/src/components/AppText';
+import { ActionSheet, type ActionSheetItem } from '@/src/components/ActionSheet';
 import { formatClock, formatClockMeridiem } from '@/src/lib/time';
 import { formatDuration } from '@/src/i18n/formatDuration';
 import type { PlanTimelineItem, PlanVerdict } from '@/src/domain/types';
@@ -338,6 +337,7 @@ function DoneByChip({
 }) {
   const t = useTheme();
   const { t: tr } = useTranslation('today');
+  const [pickerOpen, setPickerOpen] = useState(false);
 
   const label = useMemo(() => {
     if (doneByMin === null) return tr('dayTimeline.doneBy.setTime');
@@ -357,6 +357,8 @@ function DoneByChip({
     paddingHorizontal: t.space[2],
     paddingVertical: t.space[1],
     borderRadius: t.radii.full,
+    // Android squares rounded corners on press-layer promotion — pin the clip.
+    overflow: 'hidden',
     backgroundColor: t.colors.primaryWash,
     borderWidth: t.borderWidth.chip,
     borderColor: t.colors.primarySoft,
@@ -371,51 +373,39 @@ function DoneByChip({
 
   // Build a list of half-hour options across the full 24h day so any finish time
   // is reachable (stable — depends on nothing).
-  const timeOptions = useMemo(() => {
-    const opts: { label: string; min: number }[] = [];
+  const timeOptions = useMemo<ActionSheetItem[]>(() => {
+    const opts: ActionSheetItem[] = [];
     for (let h = 0; h <= 23; h++) {
       for (const m of [0, 30]) {
         const min = h * 60 + m;
         const d = new Date();
         d.setHours(h, m, 0, 0);
-        opts.push({ label: formatClockMeridiem(d.getTime()), min });
+        opts.push({ label: formatClockMeridiem(d.getTime()), onPress: () => onSelect(min) });
       }
     }
     return opts;
-  }, []);
-
-  const handlePress = useCallback(() => {
-    if (Platform.OS === 'ios') {
-      ActionSheetIOS.showActionSheetWithOptions(
-        {
-          options: [...timeOptions.map((o) => o.label), tr('dayTimeline.doneBy.cancel')],
-          cancelButtonIndex: timeOptions.length,
-          title: tr('dayTimeline.doneBy.sheetTitle'),
-          message: tr('dayTimeline.doneBy.sheetMessage'),
-        },
-        (idx) => {
-          if (idx < timeOptions.length) {
-            const opt = timeOptions[idx];
-            if (opt !== undefined) onSelect(opt.min);
-          }
-        },
-      );
-    }
-    // Android: a future improvement can show a modal picker; for now the chip
-    // shows the current value and this is a no-op to avoid a native dep.
-  }, [timeOptions, onSelect, tr]);
+  }, [onSelect]);
 
   return (
-    <Pressable
-      onPress={handlePress}
-      accessibilityRole="button"
-      accessibilityLabel={label}
-      accessibilityHint={tr('dayTimeline.doneBy.hint')}
-    >
-      <View style={chipStyle}>
-        <AppText style={textStyle}>{label}</AppText>
-      </View>
-    </Pressable>
+    <>
+      <Pressable
+        onPress={() => setPickerOpen(true)}
+        accessibilityRole="button"
+        accessibilityLabel={label}
+        accessibilityHint={tr('dayTimeline.doneBy.hint')}
+      >
+        <View style={chipStyle}>
+          <AppText style={textStyle}>{label}</AppText>
+        </View>
+      </Pressable>
+
+      <ActionSheet
+        visible={pickerOpen}
+        title={tr('dayTimeline.doneBy.sheetTitle')}
+        items={timeOptions}
+        onCancel={() => setPickerOpen(false)}
+      />
+    </>
   );
 }
 

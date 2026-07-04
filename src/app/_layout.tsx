@@ -1,5 +1,5 @@
 import '../global.css';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, type ComponentProps } from 'react';
 import { AppState, Appearance } from 'react-native';
 import { Stack } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
@@ -24,8 +24,27 @@ SplashScreen.preventAutoHideAsync();
 // Navigator lives in its own component so it can read the theme and apply it to
 // the (otherwise native-default white) Settings header in dark mode. Swipe-back
 // is enabled stack-wide so every pushed screen is dismissible by gesture.
+// A real bottom-sheet drawer. Registered on the ROOT stack (never a nested
+// (modals) stack): react-native-screens does NOT support `formSheet` inside a
+// nested stack on Android, so a nested one silently falls back to a full-screen
+// card that slides in from the side. On the root stack, Android renders it as a
+// Material bottom sheet — slides up from the bottom and drags down to dismiss,
+// matching iOS. `[0.9]` stops short of the top so the previous screen peeks
+// through and it clearly reads as a drawer; the corner radius rounds the top.
+function useSheetScreenOptions(): ComponentProps<typeof Stack.Screen>['options'] {
+  const t = useTheme();
+  return {
+    presentation: 'formSheet',
+    headerShown: false,
+    sheetAllowedDetents: [0.9],
+    sheetCornerRadius: t.radii.sheet,
+    gestureEnabled: true,
+  };
+}
+
 function RootNavigator() {
   const t = useTheme();
+  const sheet = useSheetScreenOptions();
 
   // Keep the NATIVE appearance trait in sync with the in-app preference. Theming
   // is otherwise JS-only (tokens), so native views — the SwiftUI guess wheel, and
@@ -88,7 +107,22 @@ function RootNavigator() {
           headerShadowVisible: false,
         }}
       />
-      <Stack.Screen name="(modals)" options={{ presentation: 'modal' }} />
+      {/* Modal routes live directly on the root stack (no nested (modals)
+          navigator) so Android renders formSheet as a real draggable sheet.
+          These slide up from the bottom and drag down to dismiss. reward +
+          report stay full-screen (celebration / export experiences). */}
+      <Stack.Screen name="(modals)/add-task" options={sheet} />
+      <Stack.Screen name="(modals)/retro" options={sheet} />
+      <Stack.Screen name="(modals)/paywall" options={sheet} />
+      <Stack.Screen name="(modals)/honest-day" options={sheet} />
+      <Stack.Screen name="(modals)/companion" options={sheet} />
+      <Stack.Screen name="(modals)/discoveries" options={sheet} />
+      <Stack.Screen name="(modals)/archetype-quiz" options={sheet} />
+      <Stack.Screen name="(modals)/review" options={sheet} />
+      <Stack.Screen name="(modals)/focus-window" options={sheet} />
+      <Stack.Screen name="(modals)/timer" options={sheet} />
+      <Stack.Screen name="(modals)/reward" options={{ presentation: 'fullScreenModal', headerShown: false }} />
+      <Stack.Screen name="(modals)/report" options={{ presentation: 'fullScreenModal', headerShown: false }} />
     </Stack>
   );
 }

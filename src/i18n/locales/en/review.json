@@ -42,9 +42,13 @@
   "forwardAction": {
     "eyebrow": "ONE THING TO TRY",
     "headingSuffix": " keeps running over.",
-    "plannedLabel": "{{min}}m planned",
-    "overflowLabel": "+{{min}}m overflow",
-    "recommendation": "Build in <0>~{{min}}m</0> next week and the overflow disappears."
+    "minutesLabel": "{{min}}m",
+    "overflowCaption": "+{{min}}m",
+    "plannedSuffix": " planned",
+    "giveItPrefix": "give it ",
+    "amountApprox": "~{{min}}m",
+    "descPrefix": "Plan ",
+    "descSuffix": " next week and the overflow disappears."
   },
   "tightened": {
     "eyebrow": "WHAT TIGHTENED",
@@ -57,11 +61,15 @@
     "guessLabel": "{{min}}m guess",
     "realLabel": "{{min}}m real",
     "minutesLabel": "{{min}}m",
-    "ratioChip": "{{ratio}}× your read",
-    "logCount": "{{count}} logs",
-    "description": "Your real <0>{{category}}</0> time lands <1>{{low}}–{{high}}m</1> 80% of the time.",
-    "suffixInside": " Past your guess — inside your range.",
-    "suffixOutside": " Past your guess."
+    "rangeLabel": "{{low}}–{{high}}m",
+    "yourReadSuffix": " your read",
+    "logsSuffix": " logs",
+    "descPrefix": "Your real ",
+    "descMiddle": " time lands ",
+    "descAfterRange": " 80% of the time — it came in at ",
+    "descGuessSuffix": ", past your {{min}}m guess",
+    "descInsideSuffix": " but inside your range.",
+    "descOutsideSuffix": ", beyond your usual range."
   },
   "weekRead": {
     "subtitlePrefix": "{{close}} of {{total}} areas landed close.",

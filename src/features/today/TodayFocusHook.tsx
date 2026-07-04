@@ -2,10 +2,11 @@ import { Pressable, View, Text, type ViewStyle, type TextStyle } from 'react-nat
 import Animated, { useSharedValue, useAnimatedStyle, withTiming } from 'react-native-reanimated';
 import { router } from 'expo-router';
 import { useTranslation } from 'react-i18next';
+import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '@/src/theme/useTheme';
 import { type } from '@/src/theme/typography';
 import { AppText } from '@/src/components/AppText';
-import { formatClockMeridiem } from '@/src/lib/time';
+import { formatWindowRange } from '@/src/lib/time';
 import { useEntitlement } from '@/src/features/paywall/useEntitlement';
 import { useLearnedFocusWindow } from '@/src/features/planner/useLearnedFocusWindow';
 import { useSettingsStore } from '@/src/stores/settingsStore';
@@ -22,7 +23,12 @@ import { useSettingsStore } from '@/src/stores/settingsStore';
 // Previously gate 3 required ≥1 queued task; that created a confusing gap where
 // calibrated users with a clear day saw nothing. Removed in Phase 5 Task A1.
 //
-// Pro: "◑ Sharpest {start}–{end} · your window for hard tasks" → Patterns tab
+// One-line chip, mirroring CapacityChip: ◑ contrast glyph in a 20px indigo disc +
+// bodySm + numberOfLines=1. Indigo disc separates Focus (Pro/brand) from the amber
+// Honest-day chip.
+//
+// Pro: "◑ Sharpest {range} · hard tasks" → Patterns tab. {range} via formatWindowRange
+//      (respects 12/24h, single collapsed meridiem — e.g. "1:30 – 4:00 pm").
 // Free: teaser "Your focus window is ready" + Pro pill → paywall (focus_window)
 //        NEVER shows the actual times for free users (position-gated too)
 //
@@ -33,13 +39,6 @@ import { useSettingsStore } from '@/src/stores/settingsStore';
 
 export interface TodayFocusHookProps {
   nowMs: number;
-}
-
-/** Minutes-after-midnight → meridiem clock string, e.g. "9:00am". */
-function clockFor(min: number): string {
-  const d = new Date();
-  d.setHours(Math.floor(min / 60), min % 60, 0, 0);
-  return formatClockMeridiem(d.getTime());
 }
 
 const AnimatedView = Animated.createAnimatedComponent(View);
@@ -86,31 +85,45 @@ export function TodayFocusHook({ nowMs }: TodayFocusHookProps): React.ReactEleme
   };
 
   // ── a11y label ───────────────────────────────────────────────────────────
+  const rangeText =
+    isPro && startMin !== null && endMin !== null ? formatWindowRange(startMin, endMin) : null;
   const a11yLabel =
-    isPro && startMin !== null && endMin !== null
-      ? tr('focusHook.proA11y', { start: clockFor(startMin), end: clockFor(endMin) })
+    rangeText !== null
+      ? tr('focusHook.proA11y', { range: rangeText })
       : tr('focusHook.freeA11y');
 
-  // ── styles ────────────────────────────────────────────────────────────────
+  // ── styles (mirror CapacityChip: disc + bodySm + one line) ─────────────────
   const rowStyle: ViewStyle = {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
     backgroundColor: t.colors.surface,
     borderRadius: t.radii.card,
     borderCurve: 'continuous',
     paddingHorizontal: t.space[4],
-    paddingVertical: t.space[3],
-    gap: t.space[3],
+    paddingVertical: t.space[2.5],
+    gap: t.space[2],
   };
 
   const leftStyle: ViewStyle = { flex: 1, flexDirection: 'row', alignItems: 'center', gap: t.space[2] };
 
+  // ◑ contrast glyph in a 20px indigo disc — separates Focus (Pro/brand) from the
+  // amber Honest-day chip; replaces the raw "◑" text glyph.
+  const discStyle: ViewStyle = {
+    width: t.capacity.iconDisc,
+    height: t.capacity.iconDisc,
+    borderRadius: t.radii.full,
+    backgroundColor: t.colors.primaryChip,
+    alignItems: 'center',
+    justifyContent: 'center',
+  };
+
   const insightStyle: TextStyle = {
-    ...(type.body as unknown as TextStyle),
+    ...(type.bodySm as unknown as TextStyle),
     color: t.colors.ink,
     flex: 1,
   };
+  const leadStyle: TextStyle = { ...insightStyle, fontFamily: 'Jakarta-Bold', flex: undefined };
+  const suffixStyle: TextStyle = { ...insightStyle, color: t.colors.inkSoft, flex: undefined };
 
   const chevronStyle: TextStyle = {
     fontSize: t.fontSize.lg,
@@ -139,13 +152,20 @@ export function TodayFocusHook({ nowMs }: TodayFocusHookProps): React.ReactEleme
     >
       <AnimatedView style={[rowStyle, pressedStyle]}>
         <View style={leftStyle}>
-          {isPro && startMin !== null && endMin !== null ? (
-            <AppText style={insightStyle}>
-              {tr('focusHook.proInsight', { start: clockFor(startMin), end: clockFor(endMin) })}
+          <View style={discStyle}>
+            <Ionicons name="contrast" size={t.iconSize.xs} color={t.colors.primary} />
+          </View>
+          {rangeText !== null ? (
+            <AppText style={insightStyle} numberOfLines={1}>
+              <AppText style={leadStyle}>{tr('focusHook.sharpestLead')}</AppText>
+              {` ${rangeText} `}
+              <AppText style={suffixStyle}>{tr('focusHook.hardTasksSuffix')}</AppText>
             </AppText>
           ) : (
             <>
-              <AppText style={insightStyle}>{tr('focusHook.freeInsight')}</AppText>
+              <AppText style={insightStyle} numberOfLines={1}>
+                {tr('focusHook.freeInsight')}
+              </AppText>
               <View style={pillStyle}>
                 <Text style={pillTextStyle}>{tr('focusHook.proPill')}</Text>
               </View>

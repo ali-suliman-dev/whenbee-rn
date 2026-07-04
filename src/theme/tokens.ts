@@ -1,3 +1,4 @@
+import { Platform } from 'react-native';
 import { Easing } from 'react-native-reanimated';
 
 // ──────────────────────────────────────────────────────────────────────────────
@@ -84,7 +85,9 @@ export const tokens = {
     crumb: 9, micro: 10, caption: 12, bodySm: 14, bodyLg: 16, titleSm: 18, subtitle: 22, title: 26, honestLg: 36, honest: 40, honestHero: 46, timerClock: 64, timer: 78,
   },
   fontWeight: { regular: '400', medium: '500', semibold: '600', bold: '700' },
-  fontFamily: { ui: 'System', mono: 'Menlo' },
+  // `Menlo` is Apple-only — on Android an unknown family renders nothing, so the
+  // mono text (Start-by clock, plan rail) vanishes. Fall back to Android's mono.
+  fontFamily: { ui: 'System', mono: Platform.select({ ios: 'Menlo', default: 'monospace' }) as string },
   lineHeight: { tight: 1.15, normal: 1.4, relaxed: 1.6 },
   // Tracking — negative values tighten display headings so they feel intentional
   // rather than loose. `tight` is the standard display-headline tightening.
@@ -617,6 +620,28 @@ export const tokens = {
       chipShadowOpacity: 0.4, // iOS shadow alpha; android → elevation 2
       pressScale: 0.97,
     },
+  },
+
+  // Weekly/Monthly Review card visualization geometry (ForwardActionCard rail/pipe
+  // + BiggestSurpriseRitualCard real-values range band) — one group so neither
+  // card inlines a raw px. Rail: a small SVG viewBox (railViewW×railViewH) draws a
+  // planned→goal pipe; railInsetL/railGoalInset keep the solid start and the honey
+  // goal node inset from the SVG edges so the goal node never overhangs the card;
+  // the dashed honey top-up stops at goalX − goalNodeR so the node caps the dash.
+  // Band: every marker x is computed from the MEASURED guess/real values (nothing
+  // fabricated). Inside a bandHeight-tall relative block: the track sits at
+  // bandTrackTop (height bandTrackH); the ghostly dotted guess guide runs from
+  // bandGuideTop down to the track bottom (bandTrackTop + bandTrackH, derived at
+  // render so it always touches); the honey real-dot (bandDotSize) sits on the
+  // track. bandFallbackBarH sizes the thin-history two-number compare bars.
+  reviewViz: {
+    railViewW: 296, railViewH: 21, railY: 9, railInsetL: 8, railGoalInset: 10,
+    pipeStroke: 3, pipeDash: '2 8', planNodeR: 4.5, planNodeStroke: 2, goalNodeR: 6,
+    bandHeight: 42, bandTrackTop: 28, bandTrackH: 10,
+    bandCaretTop: 16, bandCaretW: 5, bandCaretH: 6,
+    bandGuideTop: 22, bandGuideW: 1, bandGuideDash: '1 3',
+    bandDotSize: 14, bandDotTop: 26, bandDotBorder: 2,
+    bandFallbackBarH: 56,
   },
 
   // ── brand illustration palette ──────────────────────────────────────────────

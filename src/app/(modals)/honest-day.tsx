@@ -23,7 +23,7 @@ function NotPro() {
   // paywall. If they land here anyway, send them on rather than show the feature.
   const { t: tr } = useTranslation('calendar');
   return (
-    <Screen>
+    <Screen edges={['left', 'right']}>
       <View style={{ paddingTop: 24, gap: 16 }}>
         <AppText variant="title">{tr('notPro.title')}</AppText>
         <AppButton
@@ -55,7 +55,7 @@ function HonestDayContent() {
   }
 
   return (
-    <Screen>
+    <Screen edges={['left', 'right']}>
       <ScrollView
         contentContainerStyle={{ gap: t.space[5], paddingTop: t.space[4], paddingBottom: t.space[12] }}
         showsVerticalScrollIndicator={false}

@@ -1,0 +1,102 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Next-task Home-screen widget. Presentation-only: renders the snapshot JS wrote
+     (see WhenbeePresenceModule.writeWidgetSnapshot / src/services/liveActivity.ts).
+     Colors mirror src/theme/tokens.ts (dark surface). -->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:background="@drawable/widget_bg"
+    android:padding="14dp">
+
+    <!-- Wordmark row -->
+    <LinearLayout
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center_vertical">
+
+        <ImageView
+            android:layout_width="7dp"
+            android:layout_height="7dp"
+            android:layout_marginEnd="6dp"
+            android:src="@drawable/widget_wordmark_dot"
+            android:contentDescription="@null" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/widget_wordmark"
+            android:textColor="#ADA9B5"
+            android:textSize="11sp"
+            android:letterSpacing="0.04"
+            android:textStyle="bold" />
+    </LinearLayout>
+
+    <!-- Task label -->
+    <TextView
+        android:id="@+id/widget_label"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="8dp"
+        android:maxLines="2"
+        android:ellipsize="end"
+        android:text="@string/widget_empty"
+        android:textColor="#F4F1EA"
+        android:textSize="16sp"
+        android:textStyle="bold" />
+
+    <!-- Honest-finish caption -->
+    <TextView
+        android:id="@+id/widget_finish"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="3dp"
+        android:maxLines="1"
+        android:ellipsize="end"
+        android:text=""
+        android:textColor="#EEAE4D"
+        android:textSize="13sp"
+        android:textStyle="bold" />
+
+    <!-- Pro fill bar — a horizontal ProgressBar; fraction set via setProgressBar().
+         Hidden entirely for free/empty. Concrete framework horizontal style
+         (@android:style/Widget.ProgressBar.Horizontal) instead of the theme attr
+         ?android:attr/progressBarStyleHorizontal, so it resolves without depending
+         on the launcher host theme; visuals come from our own progressDrawable. -->
+    <ProgressBar
+        android:id="@+id/widget_bar"
+        style="@android:style/Widget.ProgressBar.Horizontal"
+        android:layout_width="match_parent"
+        android:layout_height="6dp"
+        android:layout_marginTop="10dp"
+        android:max="1000"
+        android:progress="0"
+        android:indeterminate="false"
+        android:progressDrawable="@drawable/widget_bar"
+        android:visibility="gone" />
+
+    <!-- Spacer pushes the Start chip to the bottom. Must be a RemoteViews-supported
+         container (FrameLayout) — a bare <View> is NOT in the RemoteViews class list
+         and makes the launcher fail to inflate the widget ("Can't load widget"). -->
+    <FrameLayout
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1" />
+
+    <!-- One-tap Start chip -->
+    <TextView
+        android:id="@+id/widget_start"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="10dp"
+        android:background="@drawable/widget_start_chip"
+        android:paddingLeft="16dp"
+        android:paddingRight="16dp"
+        android:paddingTop="7dp"
+        android:paddingBottom="7dp"
+        android:text="@string/widget_start"
+        android:textColor="#FFFFFF"
+        android:textSize="13sp"
+        android:textStyle="bold" />
+</LinearLayout>

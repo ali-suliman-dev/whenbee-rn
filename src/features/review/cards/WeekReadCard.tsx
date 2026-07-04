@@ -34,10 +34,16 @@ export function WeekReadCard({ summary }: Props) {
   const days = tt('weekRead.dayLetters', { returnObjects: true }) as readonly string[];
 
   const styles = StyleSheet.create({
-    verdict: { fontSize: 26, fontWeight: '700', color: t.colors.ink, marginBottom: t.space[1] },
-    subtitle: { fontSize: 14, color: t.colors.inkSoft, marginBottom: t.space[5] },
+    // One gap-based rhythm per axis (no mixed gap + margin): a clearly bigger
+    // gap separates the verdict block from the chart block; each block groups
+    // its own two lines/rows with a small, tight gap.
+    container: { gap: t.space[5] },
+    verdictGroup: { gap: t.space[1.5] },
+    chartGroup: { gap: t.space[2] },
+    verdict: { fontSize: 26, fontWeight: '700', color: t.colors.ink },
+    subtitle: { fontSize: 14, color: t.colors.inkSoft },
     logCount: { fontWeight: '700', color: t.colors.amberText },
-    sparkline: { flexDirection: 'row', alignItems: 'flex-end', gap: 3, marginBottom: t.space[2] },
+    sparkline: { flexDirection: 'row', alignItems: 'flex-end', gap: 3 },
     barWrapper: { flex: 1, alignItems: 'center', gap: 4 },
     bar: { width: '100%', borderRadius: 3 },
     dayLabel: { fontSize: 8, color: t.colors.inkFaint, fontWeight: '600' },
@@ -46,25 +52,31 @@ export function WeekReadCard({ summary }: Props) {
 
   return (
     <Card tone="flat">
-      <Text style={styles.verdict}>{wr.verdict}</Text>
-      <Text style={styles.subtitle}>
-        {tt('weekRead.subtitlePrefix', { close: wr.areasClose, total: wr.areasTotal })}{' '}
-        <Text style={styles.logCount}>{summary.loggedCount}</Text>
-        {tt('weekRead.subtitleSuffix')}
-      </Text>
-      <View style={styles.sparkline}>
-        {wr.dailyLogCounts.map((count, i) => {
-          const height = count > 0 ? Math.max(8, Math.round((count / maxCount) * 44)) : 4;
-          const barColor = count > 0 ? t.colors.accent : 'rgba(255,255,255,0.10)';
-          return (
-            <View key={i} style={styles.barWrapper}>
-              <View style={[styles.bar, { height, backgroundColor: barColor }]} />
-              <Text style={styles.dayLabel}>{days[i]}</Text>
-            </View>
-          );
-        })}
+      <View style={styles.container}>
+        <View style={styles.verdictGroup}>
+          <Text style={styles.verdict}>{wr.verdict}</Text>
+          <Text style={styles.subtitle}>
+            {tt('weekRead.subtitlePrefix', { close: wr.areasClose, total: wr.areasTotal })}{' '}
+            <Text style={styles.logCount}>{summary.loggedCount}</Text>
+            {tt('weekRead.subtitleSuffix')}
+          </Text>
+        </View>
+        <View style={styles.chartGroup}>
+          <View style={styles.sparkline}>
+            {wr.dailyLogCounts.map((count, i) => {
+              const height = count > 0 ? Math.max(8, Math.round((count / maxCount) * 44)) : 4;
+              const barColor = count > 0 ? t.colors.accent : 'rgba(255,255,255,0.10)';
+              return (
+                <View key={i} style={styles.barWrapper}>
+                  <View style={[styles.bar, { height, backgroundColor: barColor }]} />
+                  <Text style={styles.dayLabel}>{days[i]}</Text>
+                </View>
+              );
+            })}
+          </View>
+          {caption ? <Text style={styles.caption}>{caption}</Text> : null}
+        </View>
       </View>
-      {caption ? <Text style={styles.caption}>{caption}</Text> : null}
     </Card>
   );
 }

@@ -1,0 +1,173 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Review cards — final (rail + histogram)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Inter:wght@600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#14151D; --surface:#1F2130; --surfaceSunken:#15161F;
+    --hairline:rgba(255,255,255,0.08); --border:rgba(255,255,255,0.14);
+    --ink:#F4F1EA; --inkSoft:#ADA9B5; --inkFaint:rgba(244,241,234,0.40);
+    --primary:#8275F0;
+    --accent:#EEAE4D; --amberText:#EEAE4D; --accentSoft:rgba(238,174,77,0.18);
+    --accentChip:#2E2A20;
+    --nightSoft:#2C2E40;
+    --rCard:16px; --rMd:12px; --rSm:8px; --rFull:999px;
+    --ui:'Plus Jakarta Sans',system-ui,sans-serif; --num:'Inter',system-ui,sans-serif;
+  }
+  *{box-sizing:border-box;margin:0;padding:0;}
+  body{background:#0d0e14;font-family:var(--ui);color:var(--ink);-webkit-font-smoothing:antialiased;padding:30px 0 60px;}
+  .stage{display:flex;gap:40px;justify-content:center;align-items:flex-start;flex-wrap:wrap;}
+  .colwrap{display:flex;flex-direction:column;align-items:center;}
+  .optlabel{color:var(--ink);font-size:13px;font-weight:800;margin-bottom:12px;}
+  .phone{width:360px;background:var(--bg);border-radius:28px;padding:10px 16px 26px;border:1px solid rgba(255,255,255,0.06);box-shadow:0 20px 60px rgba(0,0,0,.5);}
+  .grab{width:36px;height:5px;border-radius:999px;background:var(--border);margin:4px auto 16px;}
+  .deck{display:flex;flex-direction:column;gap:12px;}
+
+  .card{background:var(--surface);border:1px solid var(--hairline);border-radius:var(--rCard);padding:16px;display:flex;flex-direction:column;gap:14px;}
+  .num{font-family:var(--num);font-variant-numeric:tabular-nums;}
+  .eb{font-size:10px;font-weight:700;letter-spacing:2px;text-transform:uppercase;}
+  .eb.amber{color:var(--amberText);} .eb.indigo{color:var(--primary);} .eb.soft{color:var(--inkSoft);}
+  .heading{font-weight:400;font-size:16px;line-height:22px;color:var(--inkSoft);}
+  .heading b{font-weight:800;color:var(--ink);}
+  .desc{font-size:12px;line-height:20px;color:var(--inkSoft);font-weight:500;}
+  .desc .cat{color:var(--ink);font-weight:700;} .desc .am{color:var(--amberText);font-weight:700;}
+  .bottom{display:flex;align-items:center;justify-content:space-between;}
+  .chip{border-radius:var(--rSm);padding:5px 10px;background:var(--accentChip);}
+  .chip .t{font-size:12px;font-weight:700;color:var(--inkSoft);} .chip .t .num{font-size:13px;color:var(--amberText);}
+  .logs{font-size:11px;color:var(--inkFaint);}
+
+  /* ── WeekRead — de-jammed (grouped, gap-only) ── */
+  .verdict{font-family:var(--ui);font-weight:800;font-size:24px;line-height:28px;color:var(--ink);letter-spacing:-.4px;}
+  .subtle{font-size:13px;line-height:18px;color:var(--inkSoft);} .subtle .am{color:var(--amberText);font-weight:700;}
+  .grp{display:flex;flex-direction:column;}
+  .chartgrp{display:flex;flex-direction:column;gap:8px;}
+  .spark{display:flex;align-items:flex-end;gap:5px;height:52px;}
+  .sb{flex:1;border-radius:3px;background:var(--accent);}
+  .sday{display:flex;gap:5px;} .sday span{flex:1;text-align:center;font-size:9px;color:var(--inkFaint);font-weight:600;}
+
+  .headline{font-weight:700;font-size:16px;line-height:22px;color:var(--ink);}
+  .trow{display:flex;align-items:center;gap:12px;}
+  .tname{flex:1;font-weight:700;font-size:16px;color:var(--ink);}
+  .tchip{display:flex;align-items:center;gap:4px;background:var(--accentSoft);padding:3px 8px;border-radius:var(--rFull);}
+  .tchip .t{font-size:12px;font-weight:700;color:var(--amberText);}
+  .italic{font-style:italic;font-size:14px;line-height:22px;color:var(--inkSoft);}
+
+  /* ── Card 1 · RAIL / PIPE ── */
+  .rail{position:relative;margin:14px 0 10px;}
+  .rail svg{display:block;margin-top:16px;}
+  .rlabels{display:flex;justify-content:space-between;}
+  .rlab{font-size:10px;font-weight:600;color:var(--inkFaint);white-space:nowrap;}
+  .rlab .num{font-weight:700;}
+  .rlab.plan .num{color:var(--ink);}
+  .rlab.goal{text-align:right;} .rlab.goal .num{color:var(--amberText);}
+  .rcap{position:absolute;top:0;font-size:10px;font-weight:700;color:var(--amberText);white-space:nowrap;transform:translateX(-50%);}
+
+  /* ── Card 2 · HISTOGRAM — roomier ── */
+  /* real-values range band — only measured numbers, nothing fabricated */
+  .band{position:relative;height:42px;}
+  .bflag{position:absolute;top:0;font-size:10px;font-weight:700;white-space:nowrap;transform:translateX(-50%);}
+  .bflag.guess{color:var(--inkFaint);} .bflag.real{color:var(--amberText);}
+  .bcaret{position:absolute;top:16px;width:0;height:0;border-left:5px solid transparent;border-right:5px solid transparent;border-top:6px solid var(--inkSoft);transform:translateX(-5px);}
+  .btrack{position:absolute;left:0;right:0;top:28px;height:10px;border-radius:var(--rFull);background:var(--surfaceSunken);}
+  .bguide{position:absolute;top:22px;height:16px;border-left:1px dotted var(--inkFaint);transform:translateX(-0.5px);}
+  .bdot{position:absolute;top:26px;width:14px;height:14px;border-radius:50%;background:var(--accent);border:2px solid var(--surface);transform:translateX(-7px);}
+  .baxis{display:flex;justify-content:space-between;margin-top:8px;}
+  .baxis span{font-size:10px;color:var(--inkFaint);font-weight:600;}
+</style>
+</head>
+<body>
+<div class="stage">
+ <div class="colwrap">
+  <div class="optlabel">Final · rail pipe + histogram · honey on time-over</div>
+  <div class="phone"><div class="grab"></div><div class="deck">
+
+    <!-- WeekRead (de-jammed) -->
+    <div class="card">
+      <div class="grp" style="gap:6px">
+        <div class="verdict">A fairly honest week.</div>
+        <div class="subtle">3 of 5 areas landed close. <span class="am num">64</span> logs.</div>
+      </div>
+      <div class="chartgrp">
+        <div class="spark">
+          <div class="sb" style="height:40%"></div><div class="sb" style="height:70%"></div>
+          <div class="sb" style="height:55%"></div><div class="sb" style="height:100%"></div>
+          <div class="sb" style="height:80%"></div><div class="sb" style="height:20%;background:var(--nightSoft)"></div>
+          <div class="sb" style="height:18%;background:var(--nightSoft)"></div>
+        </div>
+        <div class="sday"><span>M</span><span>T</span><span>W</span><span>T</span><span>F</span><span>S</span><span>S</span></div>
+      </div>
+    </div>
+
+    <!-- Accuracy -->
+    <div class="card">
+      <div class="eb indigo">How your guesses landed</div>
+      <div class="headline">You guess a little low most weeks — sharpest on short tasks.</div>
+      <div class="desc">Your reads are tightest between 9 and 11am.</div>
+    </div>
+
+    <!-- Card 1 · RAIL PIPE -->
+    <div class="card">
+      <div class="eb amber">One thing to try</div>
+      <div class="heading"><b>Errands</b> keeps running over.</div>
+      <div class="rail">
+        <svg width="100%" height="21" viewBox="0 0 296 21" preserveAspectRatio="xMidYMid meet" style="display:block">
+          <!-- solid planned pipe -->
+          <line x1="8" y1="9" x2="159" y2="9" stroke="var(--inkSoft)" stroke-width="3" stroke-linecap="round"/>
+          <!-- dashed honey top-up -->
+          <line x1="159" y1="9" x2="278" y2="9" stroke="var(--accent)" stroke-width="3" stroke-linecap="round" stroke-dasharray="2 8"/>
+          <!-- plan-end node (hollow) -->
+          <circle cx="159" cy="9" r="4.5" fill="var(--surface)" stroke="var(--inkSoft)" stroke-width="2"/>
+          <!-- goal node (honey) -->
+          <circle cx="286" cy="9" r="6" fill="var(--accent)"/>
+        </svg>
+        <div class="rcap" style="left:73.8%">+30m</div>
+        <div class="rlabels">
+          <div class="rlab plan"><span class="num">38m</span> planned</div>
+          <div class="rlab goal">give it <span class="num">~70m</span></div>
+        </div>
+      </div>
+      <div class="desc">Plan <span class="am num">~70m</span> next week and the overflow disappears.</div>
+    </div>
+
+    <!-- Tightened -->
+    <div class="card">
+      <div class="trow" style="gap:8px"><span style="color:var(--accent);font-size:14px">↘</span><div class="eb amber">What tightened</div></div>
+      <div class="grp" style="gap:4px">
+        <div class="trow"><div class="tname">Deep work</div><div class="tchip"><span class="t">↓ closer</span></div></div>
+        <div class="desc">From about <span class="num">2.1×</span> toward <span class="num">1.6×</span> your guess.</div>
+      </div>
+    </div>
+
+    <!-- Card 2 · HISTOGRAM (roomier) -->
+    <div class="card">
+      <div class="eb soft">Your biggest surprise</div>
+      <div class="heading"><b>Errands</b> — biggest drift this week</div>
+      <div class="band">
+        <div class="bflag guess" style="left:14.6%"><span class="num">38m</span> guess</div>
+        <div class="bcaret" style="left:14.6%"></div>
+        <div class="bflag real" style="left:87.8%"><span class="num">68m</span> real</div>
+        <div class="btrack"></div>
+        <div class="bguide" style="left:14.6%"></div>
+        <div class="bdot" style="left:87.8%"></div>
+      </div>
+      <div class="baxis"><span class="num">32m</span><span class="num">73m</span></div>
+      <div class="desc">Your real <span class="cat">Errands</span> time lands <span class="am num">32–73m</span> 80% of the time — it came in at <span class="am num">68m</span>, past your <span class="num">38m</span> guess but inside your range.</div>
+      <div class="bottom"><div class="chip"><span class="t"><span class="num">1.8×</span> your read</span></div><div class="logs"><span class="num">64</span> logs</div></div>
+    </div>
+
+    <!-- Reflection -->
+    <div class="card">
+      <div class="eb indigo">One to sit with</div>
+      <div class="italic">Which task surprised you most — and did it feel worth the time?</div>
+    </div>
+
+  </div></div>
+ </div>
+</div>
+</body>
+</html>

@@ -207,9 +207,10 @@
     }
   },
   "focusHook": {
-    "proA11y": "Skarpast fönster {{start}} till {{end}} — ditt fönster för svåra uppgifter",
+    "proA11y": "Skarpast {{range}} — ditt fönster för svåra uppgifter",
     "freeA11y": "Ditt fokusfönster är klart — uppgradera till Pro för att se dina skarpaste timmar",
-    "proInsight": "◑ Skarpast {{start}}–{{end}} · ditt fönster för svåra uppgifter",
+    "sharpestLead": "Skarpast",
+    "hardTasksSuffix": "· svåra uppgifter",
     "freeInsight": "Ditt fokusfönster är klart",
     "proPill": "Pro"
   },

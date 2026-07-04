@@ -32,7 +32,7 @@ export default function Retro() {
   };
 
   return (
-    <Screen>
+    <Screen edges={['left', 'right']}>
       <ScrollView
         contentContainerStyle={{ gap: t.space[5], paddingTop: t.space[3], paddingBottom: t.space[6] }}
         showsVerticalScrollIndicator={false}

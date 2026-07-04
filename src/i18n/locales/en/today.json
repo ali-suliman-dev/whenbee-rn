@@ -207,9 +207,10 @@
     }
   },
   "focusHook": {
-    "proA11y": "Sharpest window {{start}} to {{end}} — your window for hard tasks",
+    "proA11y": "Sharpest {{range}} — your window for hard tasks",
     "freeA11y": "Your focus window is ready — upgrade to Pro to see your sharpest hours",
-    "proInsight": "◑ Sharpest {{start}}–{{end}} · your window for hard tasks",
+    "sharpestLead": "Sharpest",
+    "hardTasksSuffix": "· hard tasks",
     "freeInsight": "Your focus window is ready",
     "proPill": "Pro"
   },

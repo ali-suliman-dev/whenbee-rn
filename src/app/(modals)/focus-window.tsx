@@ -71,7 +71,7 @@ export default function FocusWindowDetail() {
     : `Your last ${win.sampleCount} sessions agree, and it has held for ${weeks} weeks.`;
 
   return (
-    <Screen>
+    <Screen edges={['left', 'right']}>
       <ScrollView
         contentContainerStyle={{ paddingHorizontal: t.space[5], paddingBottom: insets.bottom + t.space[6], gap: t.space[5] }}
         showsVerticalScrollIndicator={false}

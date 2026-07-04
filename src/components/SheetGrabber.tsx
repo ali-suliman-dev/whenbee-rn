@@ -1,4 +1,4 @@
-import { View, type ViewStyle } from 'react-native';
+import { Platform, View, type ViewStyle } from 'react-native';
 import { useTheme } from '@/src/theme/useTheme';
 
 // ──────────────────────────────────────────────────────────────────────────────
@@ -12,6 +12,9 @@ const HANDLE_H = 5;
 
 export function SheetGrabber() {
   const t = useTheme();
+  // Android draws its own Material bottom-sheet chrome and the drawer already
+  // stops short of the top, so the custom handle is redundant noise there.
+  if (Platform.OS === 'android') return null;
 
   const handle: ViewStyle = {
     width: HANDLE_W,

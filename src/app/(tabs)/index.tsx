@@ -1,4 +1,4 @@
-import { View, Text, Pressable, ScrollView, ActionSheetIOS, type TextStyle } from 'react-native';
+import { View, Text, Pressable, ScrollView, type TextStyle } from 'react-native';
 import { useState, useCallback, useEffect, useRef } from 'react';
 import { router } from 'expo-router';
 import Animated, { FadeIn } from 'react-native-reanimated';
@@ -23,6 +23,7 @@ import { TodayEmptyState } from '@/src/features/today/TodayEmptyState';
 import { RetroLogChip } from '@/src/features/today/RetroLogChip';
 import { QuickTaskChips } from '@/src/components/quick/QuickTaskChips';
 import { SwitchTaskSheet } from '@/src/features/today/SwitchTaskSheet';
+import { ActionSheet, type ActionSheetItem } from '@/src/components/ActionSheet';
 import { useCategoriesStore } from '@/src/stores/categoriesStore';
 import { useCalibrationStore } from '@/src/stores/calibrationStore';
 import { useTimerStore } from '@/src/stores/timerStore';
@@ -85,6 +86,8 @@ function ViewToggle({ viewMode, onSelect, onTimelineGated, isPro }: ViewTogglePr
     minHeight: t.size.control.sm,
     backgroundColor: t.colors.surfaceSunken,
     borderRadius: t.radii.full,
+    // Android squares rounded corners on press-layer promotion — pin the clip.
+    overflow: 'hidden' as const,
     padding: 3,
     alignSelf: 'flex-start' as const,
   };
@@ -94,6 +97,7 @@ function ViewToggle({ viewMode, onSelect, onTimelineGated, isPro }: ViewTogglePr
       paddingHorizontal: t.space[4],
       paddingVertical: t.space[2],
       borderRadius: t.radii.full,
+      overflow: 'hidden' as const,
       backgroundColor: active ? t.colors.surface : 'transparent',
     };
   }
@@ -210,6 +214,9 @@ export default function Today() {
   const [peekFirstRow] = useState(() => kv.getString('today.seenSwipeHint') == null);
   const markSwipeHintSeen = useCallback(() => kv.set('today.seenSwipeHint', '1'), []);
   const [deletingId, setDeletingId] = useState<string | null>(null);
+  // Cross-platform row menus (ActionSheetIOS is iOS-only → crashes Android).
+  const [rowActions, setRowActions] = useState<{ id: string; label: string } | null>(null);
+  const [dayPickerId, setDayPickerId] = useState<string | null>(null);
   const [showCoachMark, setShowCoachMark] = useState(
     () => kv.getString('today.seenCoachMarkV1') == null,
   );
@@ -285,49 +292,23 @@ export default function Today() {
     void removeTask(id).then(() => useDayTasksStore.getState().loadShelf());
     setDeletingId(null);
   }
-  function showDayPicker(id: string) {
-    // Build next 7 days as labels for pick-a-day (tomorrow through +7).
+  // Next 7 days (tomorrow through +7) as pick-a-day menu items.
+  function dayPickerItems(id: string): ActionSheetItem[] {
     const today = toLocalDayKey(Date.now());
-    const days = Array.from({ length: 7 }, (_, i) => {
+    return Array.from({ length: 7 }, (_, i) => {
       const key = addDays(today, i + 1);
       const [y, m, d] = key.split('-').map(Number) as [number, number, number];
       const label = i === 0 ? tr('actions.tomorrow') : fmt.weekdayShort(new Date(y, m - 1, d));
-      return { key, label };
+      return { label, onPress: () => void useDayTasksStore.getState().moveTask(id, key) };
     });
-    ActionSheetIOS.showActionSheetWithOptions(
-      {
-        title: tr('actions.pickDayTitle'),
-        options: [...days.map((d) => d.label), tr('actions.cancel')],
-        cancelButtonIndex: days.length,
-      },
-      (i) => {
-        if (i < days.length) {
-          const day = days[i];
-          if (day) void useDayTasksStore.getState().moveTask(id, day.key);
-        }
-      },
-    );
+  }
+
+  function showDayPicker(id: string) {
+    setDayPickerId(id);
   }
 
   function promptRowActions(id: string, label: string) {
-    ActionSheetIOS.showActionSheetWithOptions(
-      {
-        title: label,
-        options: [
-          tr('actions.moveToTomorrow'),
-          tr('actions.pickADay'),
-          tr('actions.remove'),
-          tr('actions.cancel'),
-        ],
-        destructiveButtonIndex: 2,
-        cancelButtonIndex: 3,
-      },
-      (i) => {
-        if (i === 0) void useDayTasksStore.getState().moveToTomorrow(id);
-        else if (i === 1) showDayPicker(id);
-        else if (i === 2) setDeletingId(id);
-      },
-    );
+    setRowActions({ id, label });
   }
 
   function navigateToTimer(row: TodayRow) {
@@ -671,6 +652,28 @@ export default function Today() {
         startingLabel={pendingRow?.label ?? ''}
         onConfirm={confirmSwitch}
         onCancel={cancelSwitch}
+      />
+
+      <ActionSheet
+        visible={rowActions !== null}
+        title={rowActions?.label}
+        onCancel={() => setRowActions(null)}
+        items={
+          rowActions
+            ? [
+                { label: tr('actions.moveToTomorrow'), onPress: () => void useDayTasksStore.getState().moveToTomorrow(rowActions.id) },
+                { label: tr('actions.pickADay'), onPress: () => showDayPicker(rowActions.id) },
+                { label: tr('actions.remove'), destructive: true, onPress: () => setDeletingId(rowActions.id) },
+              ]
+            : []
+        }
+      />
+
+      <ActionSheet
+        visible={dayPickerId !== null}
+        title={tr('actions.pickDayTitle')}
+        onCancel={() => setDayPickerId(null)}
+        items={dayPickerId ? dayPickerItems(dayPickerId) : []}
       />
     </Screen>
   );
