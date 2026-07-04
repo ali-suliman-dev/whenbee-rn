@@ -28,6 +28,8 @@ export type { AccuracyTrend } from './accuracyTrend';
 export { correlateContext } from './context';
 export type { ContextSample, ContextCorrelation } from './context';
 export { confidenceFor, honestRangeFor, quantile, reservePriceVisible } from './confidence';
+export { pickTopBias } from './widgetBias';
+export type { BiasStat, TopBias } from './widgetBias';
 export {
   companionStageFor, capabilityFor, keeperReached, driftHealthFromRecent, COMPANION_KEEPER_QUOTA,
 } from './companion';

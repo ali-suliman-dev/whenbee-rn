@@ -74,6 +74,10 @@ export interface LiveActivityAttributes {
  */
 export interface NativePresenceModule {
   isStub: boolean;
+  /** Generic keyed widget write — each widget owns its own slice (see `WidgetDataStore`). */
+  writeWidgetData: (key: string, json: string) => void;
+  /** Generic keyed widget clear. */
+  clearWidgetData: (key: string) => void;
   writeSnapshot: (snapshot: WidgetSnapshot) => void;
   clearSnapshot: () => void;
   startLiveActivity: (attributes: LiveActivityAttributes) => void;
@@ -83,6 +87,8 @@ export interface NativePresenceModule {
 
 const stub: NativePresenceModule = {
   isStub: true,
+  writeWidgetData: () => {},
+  clearWidgetData: () => {},
   writeSnapshot: () => {},
   clearSnapshot: () => {},
   startLiveActivity: () => {},
@@ -114,7 +120,12 @@ function loadNativePresence(): NativePresenceModule | null {
 }
 
 let cached: NativePresenceModule | null = null;
-function getNativePresence(): NativePresenceModule {
+/**
+ * Resolve (and cache) the native presence module. Exported so other guarded
+ * presence bridges (e.g. `services/presence/widgetData.ts`) can reuse the same
+ * resolved module instead of duplicating the Expo-Go / Android / stub probe.
+ */
+export function getNativePresence(): NativePresenceModule {
   if (!cached) cached = resolveNativePresence(isExpoGo, loadNativePresence);
   return cached;
 }

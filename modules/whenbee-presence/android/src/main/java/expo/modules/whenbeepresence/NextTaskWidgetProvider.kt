@@ -12,7 +12,7 @@ import org.json.JSONObject
 
 // Native Home-screen widget (RemoteViews). Replaces the broken JS widget library.
 // It is presentation-only: it renders the snapshot the JS layer already computed and
-// stored (see WhenbeePresenceModule.writeWidgetSnapshot -> SharedPreferences key "widget",
+// stored (see WhenbeePresenceModule.writeWidgetData -> WidgetDataStore key "nextTask",
 // written from src/services/liveActivity.ts). The widget never does calibration math.
 class NextTaskWidgetProvider : AppWidgetProvider() {
 
@@ -27,7 +27,7 @@ class NextTaskWidgetProvider : AppWidgetProvider() {
   }
 
   companion object {
-    private const val KEY_WIDGET = "widget"
+    private const val WIDGET_KEY = "nextTask"
     // Seconds after which a snapshot is "stale": drop the confident "Honest finish"
     // prefix and show the bare clock. Mirrors kStaleSeconds / SharedStore.staleSeconds.
     private const val STALE_SECONDS = 6 * 3600
@@ -121,7 +121,7 @@ class NextTaskWidgetProvider : AppWidgetProvider() {
     }
 
     private fun readSnapshot(context: Context): WidgetSnapshot? {
-      val raw = PresenceNotifier.prefs(context).getString(KEY_WIDGET, null) ?: return null
+      val raw = WidgetDataStore.read(context, WIDGET_KEY) ?: return null
       return try {
         val json = JSONObject(raw)
         WidgetSnapshot(
