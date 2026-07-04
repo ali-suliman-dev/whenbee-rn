@@ -1,0 +1,214 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Honest Range — redesign options</title>
+<style>
+  /* ── Real Whenbee dark tokens (src/theme/tokens.ts → colors.dark) ── */
+  :root{
+    --bg:#14151D; --surface:#1F2130; --raised:#292B3C; --sunken:#15161F;
+    --hairline:rgba(255,255,255,0.08); --border:rgba(255,255,255,0.14);
+    --ink:#F4F1EA; --inkSoft:#ADA9B5; --inkFaint:rgba(244,241,234,0.40);
+    --primary:#8275F0; --primarySoft:rgba(130,117,240,0.22);
+    --accent:#EEAE4D; --accentEdge:#C68A30; --accentSoft:rgba(238,174,77,0.18);
+    --honeyFill:#F5C03F; --honeyWash:#2B2620; --accentChip:#2E2A20; --amberText:#EEAE4D;
+    /* readable amber fill for a band (solid, not 18% mud) */
+    --fill:rgba(238,174,77,0.55);
+    --sp1:4px; --sp2:8px; --sp3:12px; --sp4:16px; --sp6:24px; --sp8:32px;
+    --mono:ui-monospace,"SF Mono",Menlo,monospace;
+    --sans:-apple-system,"Segoe UI",Inter,system-ui,sans-serif;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{background:#0b0c11;color:var(--ink);font-family:var(--sans);-webkit-font-smoothing:antialiased;padding:40px 24px 80px;line-height:1.4}
+  .head{max-width:1180px;margin:0 auto 32px}
+  h1{font-size:22px;font-weight:800;letter-spacing:-0.02em}
+  .sub{color:var(--inkSoft);font-size:14px;margin-top:6px;max-width:760px}
+  .grid{max-width:1180px;margin:0 auto;display:grid;grid-template-columns:repeat(auto-fill,minmax(340px,1fr));gap:24px}
+  .card{background:var(--bg);border:1px solid var(--hairline);border-radius:22px;padding:26px 24px 28px;display:flex;flex-direction:column}
+  .card.bad{border-color:rgba(238,90,90,0.28)}
+  .card.reco{border-color:rgba(238,174,77,0.45)}
+  .tag{font-size:11px;font-weight:700;letter-spacing:0.14em;text-transform:uppercase;color:var(--inkFaint);display:flex;align-items:center;gap:8px}
+  .tag .dot{width:7px;height:7px;border-radius:50%;background:var(--inkFaint)}
+  .tag.bad .dot{background:#EE5A5A} .tag.bad{color:#EE5A5A}
+  .tag.reco .dot{background:var(--accent)} .tag.reco{color:var(--accent)}
+  .name{font-size:17px;font-weight:700;margin:10px 0 3px;letter-spacing:-0.01em}
+  .why{font-size:13px;color:var(--inkSoft);min-height:34px}
+  .stage{margin-top:22px;padding-top:4px}
+  /* shared hero bits */
+  .eyebrow{font-size:11px;font-weight:700;letter-spacing:0.16em;color:var(--inkFaint)}
+  .num{font-family:var(--sans);font-weight:800;font-size:46px;letter-spacing:-0.03em;line-height:1;display:flex;align-items:flex-end;gap:10px;margin-top:12px}
+  .num .unit{font-size:19px;font-weight:600;color:var(--inkSoft);margin-bottom:4px;letter-spacing:0}
+  .foot{font-size:13.5px;color:var(--inkSoft);margin-top:18px}
+  .foot b{color:var(--ink);font-weight:700}
+  .footq{font-size:12px;color:var(--inkFaint);margin-top:5px}
+  .amber{color:var(--accent)}
+  /* ── CURRENT (broken) reproduction ── */
+  .c-track{position:relative;height:16px;border-radius:99px;background:var(--sunken);margin-top:34px}
+  .c-seg{position:absolute;top:0;bottom:0;left:22%;width:40%;background:var(--accentSoft);border-radius:99px}
+  .c-tick{position:absolute;top:-2px;bottom:-2px;left:41%;width:3px;margin-left:-1.5px;border-radius:99px;background:var(--accentEdge)}
+  .c-pin{position:absolute;left:41%;top:-30px;transform:translateX(-50%);display:flex;flex-direction:column;align-items:center}
+  .c-pill{background:var(--honeyFill);border-radius:99px;min-width:26px;height:16px}
+  .c-tri{width:0;height:0;border-left:5px solid transparent;border-right:5px solid transparent;border-top:6px solid var(--honeyFill);margin-top:-1px}
+  .c-ends{position:relative;height:16px;margin-top:12px;font-size:13px;color:var(--inkSoft);font-variant-numeric:tabular-nums}
+  .c-ends span{position:absolute;transform:translateX(-50%)}
+  /* ── B: clean range bar ── */
+  .b-wrap{margin-top:30px}
+  .b-caplbl{position:relative;height:16px}
+  .b-caplbl .p{position:absolute;left:52%;transform:translateX(-50%);font-size:12.5px;font-weight:700;color:var(--accent);font-variant-numeric:tabular-nums}
+  .b-track{position:relative;height:10px;border-radius:99px;background:var(--sunken);margin-top:5px;overflow:hidden}
+  .b-fill{position:absolute;top:0;bottom:0;left:18%;width:64%;background:linear-gradient(90deg,rgba(238,174,77,0.42),rgba(238,174,77,0.62));border-radius:99px}
+  .b-pt{position:absolute;top:-3px;bottom:-3px;left:52%;width:2px;margin-left:-1px;background:var(--accent);border-radius:2px}
+  .b-ends{position:relative;height:16px;margin-top:9px;font-size:12.5px;color:var(--inkSoft);font-variant-numeric:tabular-nums}
+  .b-ends .lo{position:absolute;left:18%;transform:translateX(-50%)}
+  .b-ends .hi{position:absolute;left:82%;transform:translateX(-50%)}
+  /* ── D: editorial ruler / bracket ── */
+  .d-wrap{margin-top:34px;position:relative;height:44px}
+  .d-base{position:absolute;left:6%;right:6%;top:22px;height:1px;background:var(--border)}
+  .d-serif{position:absolute;top:14px;width:1px;height:16px;background:var(--border)}
+  .d-serif.l{left:18%} .d-serif.r{left:82%}
+  .d-dot{position:absolute;top:17px;left:52%;width:9px;height:9px;margin-left:-4.5px;border-radius:50%;background:var(--accent);box-shadow:0 0 0 4px rgba(238,174,77,0.14)}
+  .d-pt{position:absolute;top:-2px;left:52%;transform:translateX(-50%);font-size:12.5px;font-weight:700;color:var(--accent);font-variant-numeric:tabular-nums}
+  .d-lo,.d-hi{position:absolute;top:30px;font-size:12.5px;color:var(--inkSoft);font-variant-numeric:tabular-nums}
+  .d-lo{left:18%;transform:translateX(-50%)} .d-hi{left:82%;transform:translateX(-50%)}
+  /* ── A: real landings dot-plot ── */
+  .a-wrap{margin-top:30px;position:relative;height:52px}
+  .a-band{position:absolute;left:18%;width:64%;top:16px;height:20px;background:var(--accentSoft);border-radius:6px}
+  .a-axis{position:absolute;left:6%;right:6%;top:36px;height:1px;background:var(--hairline)}
+  .a-dot{position:absolute;top:22px;width:7px;height:7px;border-radius:50%;background:var(--accent);margin-left:-3.5px;opacity:0.9}
+  .a-med{position:absolute;top:12px;bottom:14px;left:52%;width:2px;margin-left:-1px;background:var(--ink);opacity:0.85}
+  .a-cap{font-size:12px;color:var(--inkFaint);margin-top:8px}
+  /* ── C: density heat bar ── */
+  .h-wrap{margin-top:32px}
+  .h-track{height:22px;border-radius:8px;background:var(--sunken);position:relative;overflow:hidden}
+  .h-heat{position:absolute;inset:0;background:radial-gradient(ellipse 42% 140% at 52% 50%,rgba(238,174,77,0.78),rgba(238,174,77,0.30) 46%,rgba(238,174,77,0.06) 74%,transparent 86%)}
+  .h-pt{position:absolute;top:-6px;left:52%;transform:translateX(-50%);font-size:12.5px;font-weight:700;color:var(--accent)}
+  .h-ends{display:flex;justify-content:space-between;margin-top:9px;font-size:12.5px;color:var(--inkSoft);font-variant-numeric:tabular-nums;padding:0 4%}
+  .note{max-width:1180px;margin:36px auto 0;font-size:13px;color:var(--inkSoft);border-top:1px solid var(--hairline);padding-top:20px}
+  .note b{color:var(--ink)}
+  .legend{display:flex;gap:16px;flex-wrap:wrap;margin-top:10px;font-size:12px;color:var(--inkFaint)}
+</style>
+</head>
+<body>
+  <div class="head">
+    <h1>Honest Range — redesign options</h1>
+    <p class="sub">Category-detail hero (<code>CategoryRangeBand</code>). Real dark-mode tokens. Each card shows the same data (range 5–20, converges ~13) so you compare the treatment, not the numbers. Recommendation at the bottom.</p>
+  </div>
+
+  <div class="grid">
+
+    <!-- CURRENT -->
+    <div class="card bad">
+      <div class="tag bad"><span class="dot"></span>Current · the problem</div>
+      <div class="name">The teardrop band</div>
+      <div class="why">Muddy 18%-amber fill on black, a floaty lollipop marker, padded domain that hides the real width.</div>
+      <div class="stage">
+        <div class="eyebrow">YOUR HONEST RANGE</div>
+        <div class="num">5–20<span class="unit">min</span></div>
+        <div class="c-track">
+          <div class="c-seg"></div>
+          <div class="c-tick"></div>
+          <div class="c-pin"><div class="c-pill"></div><div class="c-tri"></div></div>
+        </div>
+        <div class="c-ends"><span style="left:22%">5</span><span style="left:62%">20</span></div>
+      </div>
+    </div>
+
+    <!-- OPTION 0 -->
+    <div class="card">
+      <div class="tag"><span class="dot"></span>Option 0 · Kill the band</div>
+      <div class="name">Number + one honest line</div>
+      <div class="why">No illustration to get wrong. The band's only real info folded into one sentence. Best for the FREE / learning case.</div>
+      <div class="stage">
+        <div class="eyebrow">YOUR HONEST RANGE</div>
+        <div class="num">5–20<span class="unit">min</span></div>
+        <div class="foot">Most tasks land near <b class="amber">13 min</b>.</div>
+        <div class="footq">Sharpens as you log — 4 more runs to a single number.</div>
+      </div>
+    </div>
+
+    <!-- OPTION B -->
+    <div class="card reco">
+      <div class="tag reco"><span class="dot"></span>Option B · recommended band</div>
+      <div class="name">Clean range bar</div>
+      <div class="why">Solid readable fill, point marker fused INTO the bar (no balloon), ends labelled at the fill edges. One object, no dead space.</div>
+      <div class="stage">
+        <div class="eyebrow">YOUR HONEST RANGE</div>
+        <div class="num">5–20<span class="unit">min</span></div>
+        <div class="b-wrap">
+          <div class="b-caplbl"><span class="p">~13</span></div>
+          <div class="b-track"><div class="b-fill"></div><div class="b-pt"></div></div>
+          <div class="b-ends"><span class="lo">5</span><span class="hi">20</span></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- OPTION D -->
+    <div class="card">
+      <div class="tag"><span class="dot"></span>Option D · editorial</div>
+      <div class="name">Ruler &amp; dot</div>
+      <div class="why">Emil-quiet: a 1px baseline with end serifs, one dot on where you land. Premium, hairline, zero fill mud.</div>
+      <div class="stage">
+        <div class="eyebrow">YOUR HONEST RANGE</div>
+        <div class="num">5–20<span class="unit">min</span></div>
+        <div class="d-wrap">
+          <div class="d-base"></div>
+          <div class="d-serif l"></div><div class="d-serif r"></div>
+          <div class="d-dot"></div><div class="d-pt">~13</div>
+          <div class="d-lo">5</div><div class="d-hi">20</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- OPTION A -->
+    <div class="card">
+      <div class="tag"><span class="dot"></span>Option A · richest</div>
+      <div class="name">Where your runs landed</div>
+      <div class="why">Real dots for each logged run + a soft range + the median line. The one option that adds info the number can't. Needs per-run durations passed in.</div>
+      <div class="stage">
+        <div class="eyebrow">YOUR HONEST RANGE</div>
+        <div class="num">5–20<span class="unit">min</span></div>
+        <div class="a-wrap">
+          <div class="a-band"></div>
+          <div class="a-axis"></div>
+          <div class="a-med"></div>
+          <div class="a-dot" style="left:24%"></div>
+          <div class="a-dot" style="left:34%"></div>
+          <div class="a-dot" style="left:44%"></div>
+          <div class="a-dot" style="left:50%"></div>
+          <div class="a-dot" style="left:52%"></div>
+          <div class="a-dot" style="left:58%"></div>
+          <div class="a-dot" style="left:68%"></div>
+          <div class="a-dot" style="left:78%"></div>
+        </div>
+        <div class="a-cap">Your 8 runs · most cluster near 13 min</div>
+      </div>
+    </div>
+
+    <!-- OPTION C -->
+    <div class="card">
+      <div class="tag"><span class="dot"></span>Option C · atmospheric</div>
+      <div class="name">Landing heat</div>
+      <div class="why">The bar glows densest where you land, fades to the edges — the shape IS the marker. Only honest if we compute density from real logs.</div>
+      <div class="stage">
+        <div class="eyebrow">YOUR HONEST RANGE</div>
+        <div class="num">5–20<span class="unit">min</span></div>
+        <div class="h-wrap">
+          <div class="h-pt" style="position:relative;height:14px"><span style="position:absolute;left:52%;transform:translateX(-50%)">~13</span></div>
+          <div class="h-track"><div class="h-heat"></div></div>
+          <div class="h-ends"><span>5</span><span>20</span></div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <div class="note">
+    <b>My read:</b> the band is only worth keeping if it carries the point (~13) and the tightening story. For <b>free/learning</b> users (no point, no history) that's just a bar restating the number with an upsell over it → ship <b>Option 0</b>. For <b>Pro</b> (point + "tightened from 10–55") the band earns its place → <b>Option B</b> is the safe, legible win; <b>Option D</b> if you want quieter/more premium; <b>Option A</b> is the ceiling but costs a data wiring (pass per-run durations).
+    <div class="legend">
+      <span>Recommend: <b style="color:var(--accent)">Option 0 (free) + Option B (Pro)</b></span>
+      <span>All values from src/theme/tokens.ts · colors.dark</span>
+    </div>
+  </div>
+</body>
+</html>
