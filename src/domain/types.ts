@@ -235,6 +235,21 @@ export type GuardrailMultiple = 'off' | '1.5x' | '2x' | '3x';
  *  honest number. Maps to a multiple in the engine. Default 'balanced'. */
 export type ForgotStepIn = 'room' | 'balanced' | 'early';
 
+/** A forgotten running session detected on foreground, parked for recovery.
+ *  Only ever built for a CATEGORIZED session (category non-null). */
+export interface PendingAutoClose {
+  taskLabel: string;
+  category: string;
+  guessMin: number;
+  /** The honest number the user saw — the recovery default. */
+  honestMin: number;
+  startedAt: number;
+  /** Runaway elapsed active minutes at detection (display only, never trained). */
+  elapsedMin: number;
+  /** Predicted honest finish, rounded — the default recovered duration. */
+  recoveredActualMin: number;
+}
+
 // ── Voice intake ────────────────────────────────────────────────────────────
 
 /** Where a spoken task's structuring came from. */

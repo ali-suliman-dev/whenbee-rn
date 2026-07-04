@@ -78,6 +78,21 @@ interface TimerState {
    * Go and when no Activity exists.
    */
   reconcilePresenceOnBoot: () => void;
+  /** Read the persisted running snapshot without mutating state (foreground check). */
+  peekPersisted: () => PersistedTimer | null;
+  /** Stop the runaway without logging — the ForgotCard writes the recovery log. */
+  stopSilently: () => void;
+  /** Restore a running session at its ORIGINAL startedAt (the "still going" path). */
+  reopen: (snapshot: {
+    taskLabel: string;
+    category: string | null;
+    estimateMin: number;
+    startedAt: number;
+    guessMin: number;
+    taskId: string | null;
+    suggestedHonestMin: number;
+    isQuickStart: boolean;
+  }) => void;
 }
 
 const CLEARED = {
@@ -241,5 +256,40 @@ export const useTimerStore = create<TimerState>((set, get) => ({
     } catch {
       clearPersisted();
     }
+  },
+
+  peekPersisted: () => {
+    const raw = kv.getString(ACTIVE_TIMER_KEY);
+    if (raw === null) return null;
+    try {
+      return JSON.parse(raw) as PersistedTimer;
+    } catch {
+      return null;
+    }
+  },
+
+  stopSilently: () => {
+    set({ ...CLEARED });
+    clearPersisted();
+    endFinishTimeActivity();
+  },
+
+  reopen: (snapshot) => {
+    set({
+      taskLabel: snapshot.taskLabel,
+      category: snapshot.category,
+      estimateMin: snapshot.estimateMin,
+      startedAt: snapshot.startedAt,
+      pausedAccumMs: 0,
+      pausedAt: null,
+      isRunning: true,
+      guessMin: snapshot.guessMin,
+      taskId: snapshot.taskId,
+      suggestedHonestMin: snapshot.suggestedHonestMin,
+      isQuickStart: snapshot.isQuickStart,
+      // Re-arm the nudge for the reopened session.
+      guardNudged: false,
+    });
+    persistRunning(get());
   },
 }));
