@@ -37,6 +37,11 @@ function useSheetScreenOptions(): ComponentProps<typeof Stack.Screen>['options']
     sheetAllowedDetents: [0.9],
     sheetCornerRadius: t.radii.sheet,
     gestureEnabled: true,
+    // The native formSheet host view defaults to white; it shows through wherever
+    // the JS content doesn't paint (below a short list → a white gap under the
+    // dark sheet). Paint the native container the theme bg so the sheet is one
+    // continuous colour top to bottom.
+    contentStyle: { backgroundColor: t.colors.bg },
   };
 }
 
