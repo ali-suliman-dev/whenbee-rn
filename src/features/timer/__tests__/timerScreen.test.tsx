@@ -123,11 +123,16 @@ describe('Live Timer screen', () => {
     expect(applyLog).not.toHaveBeenCalled();
   });
 
-  it('renders the task name and the guess→honest reframe (honest = amber number)', () => {
+  it('renders the task title and the guess→honest info-row (honest = amber value)', () => {
     render(<Timer />);
     expect(screen.getByText('Leave for work')).toBeOnTheScreen();
-    expect(screen.getByText('guessed 15m')).toBeOnTheScreen();
+    // Info-row ledger: label + tabular value spans (honest "~28m" is amber).
+    expect(screen.getByText('Guess → Honest')).toBeOnTheScreen();
+    expect(screen.getByText('15m')).toBeOnTheScreen();
     expect(screen.getByText('~28m')).toBeOnTheScreen();
+    // Finish row is present (Started/Finish clocks are dynamic, so assert labels).
+    expect(screen.getByText('Started')).toBeOnTheScreen();
+    expect(screen.getByText('Finish ~')).toBeOnTheScreen();
   });
 
   it('Stop & log: applyLog completed/timed with the GUESS (not honest), hands off, navigates to reward', async () => {
