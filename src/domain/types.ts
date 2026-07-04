@@ -231,6 +231,38 @@ export interface CategoryGoal {
 /** Hyperfocus guardrail trigger multiple of the honest number, or off. */
 export type GuardrailMultiple = 'off' | '1.5x' | '2x' | '3x';
 
+/** Free forgot-to-stop protection preset — how soon Whenbee steps in past the
+ *  honest number. Maps to a multiple in the engine. Default 'balanced'. */
+export type ForgotStepIn = 'room' | 'balanced' | 'early';
+
+/** A forgotten running session detected on foreground, parked for recovery.
+ *  Only ever built for a CATEGORIZED session (category non-null). */
+export interface PendingAutoClose {
+  taskLabel: string;
+  category: string;
+  guessMin: number;
+  /** The honest number the user saw — the recovery default. */
+  honestMin: number;
+  startedAt: number;
+  /** Runaway elapsed active minutes at detection (display only, never trained). */
+  elapsedMin: number;
+  /** Predicted honest finish, rounded — the default recovered duration. */
+  recoveredActualMin: number;
+  /**
+   * The Today/plan task this session was linked to, or null for an ad-hoc session.
+   * Carried so a "still going" reopen keeps the linkage (the task gets marked done
+   * on final stop instead of silently orphaned).
+   */
+  taskId: string | null;
+  /** The ring target (honest suggestion the timer fills toward) at start. */
+  estimateMin: number;
+  /**
+   * Accumulated paused-span milliseconds at detection. Carried so a reopen resumes
+   * with the prior paused time intact instead of recounting those minutes as active.
+   */
+  pausedAccumMs: number;
+}
+
 // ── Voice intake ────────────────────────────────────────────────────────────
 
 /** Where a spoken task's structuring came from. */

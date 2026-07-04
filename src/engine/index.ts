@@ -50,6 +50,7 @@ export type { PostLogQuality, PostLogInput } from './postLogQuality';
 export { focusWindowMinutes, fitFocusWindow, promoteIntoWindow } from './focusWindow';
 export type { FocusWindowTask, FocusWindowInput } from './focusWindow';
 export { guardrailFactor, guardrailThresholdMin } from './guardrail';
+export { nudgeThresholdMin, closeThresholdMin, autoCloseDecision } from './autoClose';
 export { reportAccuracy, reportAccuracySpark, topSurprises, steadiestCategory } from './report';
 export type { ReportEventInput, ReportSurprise } from './report';
 export { stepHonestMinutes, routineHonestTotal, routineBasis, distributeRoutineRun } from './routine';
