@@ -70,6 +70,7 @@ export function FocusCurve({
     axisGap,
     axisLabelW,
     gridW,
+    gridTop,
     yLabelW,
     peakLabelGap,
     peakLabelMinY,
@@ -163,10 +164,13 @@ export function FocusCurve({
           )}
         </Defs>
 
-        {/* Gridlines (opt-in via yAxis) */}
-        {yAxis && [yBase, viewH / 2, viewH - yPad].map((gy, i) => (
-          <Path key={`grid-${i}`} d={`M0 ${gy} L${viewW} ${gy}`} stroke={t.colors.hairline} strokeWidth={gridW} />
-        ))}
+        {/* Gridlines (opt-in via yAxis): 4 evenly-spaced lines from the top
+            headroom band down to the baseline, so the peak sits framed below the
+            top line with room for its label above the dot. */}
+        {yAxis && [0, 1, 2, 3].map((i) => {
+          const gy = gridTop + ((viewH - yPad - gridTop) * i) / 3;
+          return <Path key={`grid-${i}`} d={`M0 ${gy} L${viewW} ${gy}`} stroke={t.colors.hairline} strokeWidth={gridW} />;
+        })}
 
         {/* Window band (learned only) */}
         {showBand && (
