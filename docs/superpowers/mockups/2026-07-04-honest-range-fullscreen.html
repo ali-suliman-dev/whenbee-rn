@@ -1,0 +1,283 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Honest Range — full screen · 0 / B / R3</title>
+<style>
+  :root{
+    --bg:#14151D; --surface:#1F2130; --raised:#292B3C; --raisedEdge:#1B1C27; --sunken:#15161F;
+    --hairline:rgba(255,255,255,0.08); --border:rgba(255,255,255,0.14); --divider:rgba(0,0,0,0.32);
+    --ink:#F4F1EA; --inkSoft:#ADA9B5; --inkFaint:rgba(244,241,234,0.40);
+    --primary:#8275F0; --primaryEdge:#6B5BE6; --primarySoft:rgba(130,117,240,0.22); --primaryChip:rgba(130,117,240,0.20);
+    --accent:#EEAE4D; --accentEdge:#C68A30; --accentSoft:rgba(238,174,77,0.18); --accentChip:#2E2A20;
+    --honeyFill:#F5C03F; --honeyWash:#2B2620; --amberText:#EEAE4D; --onAmber:#20233A; --onIndigo:#14151D;
+    --sans:-apple-system,"Segoe UI",Inter,system-ui,sans-serif;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{background:#0b0c11;color:var(--ink);font-family:var(--sans);-webkit-font-smoothing:antialiased;padding:40px 24px 90px;line-height:1.42}
+  .head{max-width:1300px;margin:0 auto 30px}
+  h1{font-size:22px;font-weight:800;letter-spacing:-0.02em}
+  .sub{color:var(--inkSoft);font-size:14px;margin-top:6px;max-width:880px}
+  .row{max-width:1300px;margin:0 auto;display:grid;grid-template-columns:repeat(3,1fr);gap:30px}
+  .col{display:flex;flex-direction:column}
+  .cap{margin:0 0 14px 2px}
+  .cap .k{font-size:11px;font-weight:700;letter-spacing:0.14em;text-transform:uppercase;color:var(--inkFaint);display:flex;align-items:center;gap:8px}
+  .cap .k .dot{width:7px;height:7px;border-radius:50%;background:var(--inkFaint)}
+  .cap.reco .k{color:var(--accent)} .cap.reco .k .dot{background:var(--accent)}
+  .cap .n{font-size:16px;font-weight:700;margin-top:6px;letter-spacing:-0.01em}
+  .cap .w{font-size:12.5px;color:var(--inkSoft);margin-top:3px}
+
+  /* phone */
+  .phone{background:var(--bg);border:1px solid var(--hairline);border-radius:28px;padding:20px 20px 26px;display:flex;flex-direction:column;gap:22px}
+  /* header */
+  .crumb{display:flex;align-items:center;gap:5px;color:var(--inkSoft);font-size:12.5px;font-weight:700}
+  .crumb .cv{font-size:16px;line-height:1}
+  .titlerow{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-top:10px}
+  .h2{font-size:26px;font-weight:800;letter-spacing:-0.02em;color:var(--ink)}
+  .tpill{display:inline-flex;align-items:center;gap:7px;background:var(--accentChip);border-radius:99px;padding:6px 12px;flex:none}
+  .hexS{width:11px;height:12px;background:var(--honeyFill);clip-path:polygon(50% 0,100% 25%,100% 75%,50% 100%,0 75%,0 25%)}
+  .tpill span{font-size:12px;font-weight:700;color:var(--amberText)}
+  .meaning{font-size:13px;color:var(--inkSoft);margin-top:6px}
+
+  /* hero shared */
+  .eyebrow{font-size:11px;font-weight:700;letter-spacing:0.16em;color:var(--inkFaint)}
+  .num{font-weight:800;font-size:46px;letter-spacing:-0.03em;line-height:1;display:flex;align-items:flex-end;gap:10px;margin-top:12px}
+  .num .unit{font-size:19px;font-weight:600;color:var(--inkSoft);margin-bottom:4px}
+  .amber{color:var(--accent)}
+  .hero{display:flex;flex-direction:column}
+  /* maturity meter */
+  .meter{margin-top:26px}
+  .pips{display:flex;gap:6px}
+  .pip{width:16px;height:15px;clip-path:polygon(25% 0,75% 0,100% 50%,75% 100%,25% 100%,0 50%)}
+  .pip.on{background:var(--honeyFill)} .pip.off{background:var(--raised)}
+  .mcap{font-size:13.5px;color:var(--inkSoft);margin-top:11px}
+  .mcap b{color:var(--ink);font-weight:700}
+  /* opt0 line */
+  .line0{font-size:15px;color:var(--inkSoft);margin-top:18px}
+  .line0 b{color:var(--ink);font-weight:700}
+  /* opt B band */
+  .b-caplbl{position:relative;height:15px;margin-top:28px}
+  .b-caplbl .p{position:absolute;left:52%;transform:translateX(-50%);font-size:12.5px;font-weight:700;color:var(--accent)}
+  .b-track{position:relative;height:10px;border-radius:99px;background:var(--sunken);margin-top:5px;overflow:hidden}
+  .b-fill{position:absolute;top:0;bottom:0;left:18%;width:64%;background:linear-gradient(90deg,rgba(238,174,77,0.42),rgba(238,174,77,0.62));border-radius:99px}
+  .b-pt{position:absolute;top:-3px;bottom:-3px;left:52%;width:2px;margin-left:-1px;background:var(--accent);border-radius:2px}
+  .b-ends{position:relative;height:15px;margin-top:9px;font-size:12.5px;color:var(--inkSoft)}
+  .b-ends .lo{position:absolute;left:18%;transform:translateX(-50%)}
+  .b-ends .hi{position:absolute;left:82%;transform:translateX(-50%)}
+  /* R3 split */
+  .split{display:flex;margin-top:18px;border:1px solid var(--hairline);border-radius:16px;overflow:hidden}
+  .split .st{flex:1;padding:15px 18px}
+  .split .st + .st{border-left:1px solid var(--hairline)}
+  .split .stl{font-size:10.5px;font-weight:700;letter-spacing:0.12em;text-transform:uppercase;color:var(--inkFaint)}
+  .split .stv{font-size:28px;font-weight:800;letter-spacing:-0.02em;margin-top:8px;line-height:1}
+  .split .stv .u{font-size:14px;font-weight:600;color:var(--inkSoft)}
+  .split .st.hi .stv{color:var(--accent)} .split .st.hi .stv .u{color:var(--amberText)}
+
+  /* ── below-hero shared blocks ── */
+  .section{display:flex;flex-direction:column}
+  .shead{font-size:16px;font-weight:700;color:var(--ink)}
+  .divider{height:1px;background:var(--divider)}
+
+  /* pro tease */
+  .pro{position:relative;background:var(--raised);border-radius:20px;padding:16px;overflow:hidden;display:flex;flex-direction:column;gap:12px}
+  .pro::before{content:"";position:absolute;inset:0;background:linear-gradient(150deg,rgba(255,255,255,0.12),rgba(255,255,255,0.04) 30%,transparent 55%);pointer-events:none}
+  .peek{position:relative;background:var(--sunken);border-radius:12px;height:92px;overflow:hidden;display:flex;align-items:flex-end;gap:9px;padding:12px}
+  .peek .bars{position:absolute;inset:0;display:flex;align-items:flex-end;gap:9px;padding:12px;filter:blur(4px);opacity:0.85}
+  .peek .bar{flex:1;background:var(--accent);border-radius:3px 3px 0 0}
+  .lockb{position:absolute;top:9px;right:9px;display:inline-flex;align-items:center;gap:5px;background:var(--accent);border-radius:99px;padding:3px 9px;z-index:2}
+  .lockb span{font-size:11px;font-weight:700;color:var(--onAmber)}
+  .pro .eb{font-size:11px;font-weight:700;letter-spacing:0.16em;color:var(--amberText)}
+  .pro .ph{font-size:16.5px;font-weight:700;color:var(--ink);margin-top:2px}
+  .pro .pb{font-size:13px;color:var(--inkSoft)}
+  .cta{position:relative;padding-bottom:3px}
+  .cta .edge{position:absolute;left:0;right:0;top:3px;bottom:0;background:var(--accentEdge);border-radius:12px}
+  .cta .face{position:relative;background:var(--accent);border-radius:12px;text-align:center;padding:12px;font-size:15px;font-weight:700;color:var(--onAmber)}
+  .trust{font-size:11.5px;color:var(--inkFaint);text-align:center}
+
+  /* aha */
+  .aha{background:var(--raised);border-left:3px solid var(--primary);border-radius:14px;padding:16px;display:flex;flex-direction:column;gap:9px}
+  .aha .top{display:flex;align-items:center;justify-content:space-between}
+  .aha .badge{display:inline-flex;align-items:center;gap:5px;background:var(--primarySoft);border-radius:99px;padding:3px 10px;font-size:11px;font-weight:700;color:var(--primary);letter-spacing:0.06em}
+  .aha .x{color:var(--inkSoft);font-size:16px}
+  .aha .hl{font-size:16.5px;font-weight:700;color:var(--ink);letter-spacing:-0.01em}
+  .aha .bd{font-size:13px;color:var(--inkSoft)}
+
+  /* recent */
+  .rec{display:flex;flex-direction:column;gap:13px}
+  .rrow{display:flex;flex-direction:column;gap:6px}
+  .rlab{display:flex;align-items:center;justify-content:space-between}
+  .rlab .g{font-size:13.5px;color:var(--ink)}
+  .rlab .g .ar{color:var(--inkFaint);margin:0 4px}
+  .rlab .rt{font-size:13.5px;font-weight:700;font-variant-numeric:tabular-nums}
+  .rtrack{height:6px;border-radius:3px;background:var(--hairline);overflow:hidden}
+  .rfill{height:6px;border-radius:3px}
+
+  /* trend */
+  .trend{background:var(--surface);border-radius:18px;padding:16px;display:flex;flex-direction:column;gap:12px}
+  .trend .th{display:flex;align-items:center;justify-content:space-between}
+  .trend .tp{background:var(--sunken);border-radius:99px;padding:3px 9px;font-size:10.5px;color:var(--inkSoft)}
+  .trend svg{width:100%;height:112px;display:block}
+  .trend .tc{font-size:12.5px;color:var(--inkSoft)}
+
+  /* goal locked */
+  .goal{background:var(--surface);border-radius:18px;padding:16px;display:flex;flex-direction:column;gap:12px}
+  .goal .eb{font-size:11px;font-weight:700;letter-spacing:0.16em;color:var(--inkSoft)}
+  .goal .tr{display:flex;align-items:center;justify-content:space-between;gap:10px}
+  .goal .hl{font-size:15.5px;font-weight:700;color:var(--ink);flex:1}
+  .pcoin{position:relative;padding-bottom:3px;flex:none}
+  .pcoin .edge{position:absolute;left:0;right:0;top:3px;bottom:0;background:var(--accentEdge);border-radius:99px}
+  .pcoin .face{position:relative;display:inline-flex;align-items:center;gap:4px;background:var(--accent);border-radius:99px;padding:3px 11px;font-size:11px;font-weight:700;color:var(--onAmber);letter-spacing:0.04em}
+  .gtrack{position:relative;height:6px;border-radius:99px;background:var(--sunken)}
+  .gfill{position:absolute;left:0;top:0;bottom:0;width:52%;border-radius:99px;background:var(--inkFaint)}
+  .gtick{position:absolute;top:-4px;bottom:-4px;left:52%;width:3px;border-radius:99px;background:var(--honeyFill);opacity:0.5}
+  .goal .sb{font-size:13px;color:var(--inkSoft)}
+
+  /* adapt segment */
+  .adapt{display:flex;flex-direction:column;gap:12px}
+  .seg{position:relative;display:flex;background:var(--surface);border-radius:99px;padding:4px}
+  .seg .opt{flex:1;text-align:center;padding:9px 0;font-size:13.5px;font-weight:600;color:var(--inkSoft);z-index:2;border-radius:99px}
+  .seg .opt.active{color:var(--ink)}
+  .seg .glide{position:absolute;top:4px;bottom:4px;left:33.33%;width:33.33%;transform:translateX(-1px);background:var(--primaryChip);border-radius:99px;box-shadow:0 3px 8px rgba(130,117,240,0.30)}
+  .hint{font-size:12.5px;color:var(--inkSoft)} .hint b{color:var(--ink);font-weight:600}
+
+  /* reset */
+  .reset{align-self:center;display:inline-flex;align-items:center;gap:8px;background:var(--surface);border-radius:99px;padding:11px 18px;font-size:13.5px;color:var(--inkSoft)}
+</style>
+</head>
+<body>
+  <div class="head">
+    <h1>Honest Range — the whole category screen · 0 / B / R3</h1>
+    <p class="sub">Three full category-detail screens (free user). Everything below the hero is the real screen — Pro-week tease, aha discovery, recent receipts, calibration trend, goal coach (locked), “tune how I learn”, reset. Only the hero treatment differs. One refinement applied to all three: the duplicate tier pill in the hero is gone (the header already carries it); its plain-language meaning moves under the title.</p>
+  </div>
+
+  <div class="row">
+    <!-- ============ OPTION 0 ============ -->
+    <div class="col">
+      <div class="cap reco"><div class="k"><span class="dot"></span>Option 0 · recommended</div><div class="n">Number + one honest line</div><div class="w">Band gone. Range hero, “where you land” in one sentence.</div></div>
+      <div class="phone">
+        <div>
+          <div class="crumb"><span class="cv">‹</span>Category insights</div>
+          <div class="titlerow"><div class="h2">Deep work</div><div class="tpill"><div class="hexS"></div><span>Setting</span></div></div>
+          <div class="meaning">still sharpening your pace</div>
+        </div>
+        <div class="hero">
+          <div class="eyebrow">YOUR HONEST RANGE</div>
+          <div class="num">5–20<span class="unit">min</span></div>
+          <div class="line0">Most tasks land near <b class="amber">13 min</b>.</div>
+          <div class="meter"><div class="pips"><i class="pip on"></i><i class="pip on"></i><i class="pip off"></i><i class="pip off"></i><i class="pip off"></i><i class="pip off"></i></div><div class="mcap"><b>4 more runs</b> sharpen this to one number.</div></div>
+        </div>
+        <div class="below"></div>
+      </div>
+    </div>
+
+    <!-- ============ OPTION B ============ -->
+    <div class="col">
+      <div class="cap"><div class="k"><span class="dot"></span>Option B</div><div class="n">Clean range bar</div><div class="w">The band, fixed — solid fill, point fused in, no balloon.</div></div>
+      <div class="phone">
+        <div>
+          <div class="crumb"><span class="cv">‹</span>Category insights</div>
+          <div class="titlerow"><div class="h2">Deep work</div><div class="tpill"><div class="hexS"></div><span>Setting</span></div></div>
+          <div class="meaning">still sharpening your pace</div>
+        </div>
+        <div class="hero">
+          <div class="eyebrow">YOUR HONEST RANGE</div>
+          <div class="num">5–20<span class="unit">min</span></div>
+          <div class="b-caplbl"><span class="p">~13</span></div>
+          <div class="b-track"><div class="b-fill"></div><div class="b-pt"></div></div>
+          <div class="b-ends"><span class="lo">5</span><span class="hi">20</span></div>
+          <div class="meter"><div class="pips"><i class="pip on"></i><i class="pip on"></i><i class="pip off"></i><i class="pip off"></i><i class="pip off"></i><i class="pip off"></i></div><div class="mcap"><b>4 more runs</b> sharpen this to one number.</div></div>
+        </div>
+        <div class="below"></div>
+      </div>
+    </div>
+
+    <!-- ============ OPTION R3 ============ -->
+    <div class="col">
+      <div class="cap"><div class="k"><span class="dot"></span>R3 · band-less</div><div class="n">Two-stat split</div><div class="w">Typical + range as two clean cells. Glanceable, zero viz.</div></div>
+      <div class="phone">
+        <div>
+          <div class="crumb"><span class="cv">‹</span>Category insights</div>
+          <div class="titlerow"><div class="h2">Deep work</div><div class="tpill"><div class="hexS"></div><span>Setting</span></div></div>
+          <div class="meaning">still sharpening your pace</div>
+        </div>
+        <div class="hero">
+          <div class="eyebrow">YOUR HONEST TIME</div>
+          <div class="split"><div class="st hi"><div class="stl">Typical</div><div class="stv">13<span class="u">m</span></div></div><div class="st"><div class="stl">Range</div><div class="stv">5–20<span class="u">m</span></div></div></div>
+          <div class="meter"><div class="pips"><i class="pip on"></i><i class="pip on"></i><i class="pip off"></i><i class="pip off"></i><i class="pip off"></i><i class="pip off"></i></div><div class="mcap"><b>4 more runs</b> sharpen this to one number.</div></div>
+        </div>
+        <div class="below"></div>
+      </div>
+    </div>
+  </div>
+
+<script>
+  // The real screen below the hero — identical across all three columns.
+  const below = `
+    <div class="pro">
+      <div class="peek">
+        <div class="bars"><i class="bar" style="height:58%"></i><i class="bar" style="height:82%"></i><i class="bar" style="height:44%"></i><i class="bar" style="height:96%"></i><i class="bar" style="height:68%"></i><i class="bar" style="height:52%"></i><i class="bar" style="height:40%"></i></div>
+        <div class="lockb">🔒<span>Pro</span></div>
+      </div>
+      <div>
+        <div class="eb">HONEST WEEK</div>
+        <div class="ph">See where your week really went</div>
+      </div>
+      <div class="pb">Your calibrated hours, totalled — the weekly review that shows the week you actually had, not the one you planned.</div>
+      <div class="cta"><div class="edge"></div><div class="face">Unlock Pro</div></div>
+      <div class="trust">Cancel anytime · everything stays on your device</div>
+    </div>
+
+    <div class="aha">
+      <div class="top"><div class="badge">✦ aha</div><div class="x">×</div></div>
+      <div class="hl">You run deep work ~1.9× longer than you guess.</div>
+      <div class="bd">Based on your last 8 completed deep work tasks, you run about 1.9×. No guilt — your brain thinks fast, execution just takes longer.</div>
+    </div>
+
+    <div class="rec section">
+      <div class="shead" style="margin-bottom:14px">Recent tasks</div>
+      <div class="rrow"><div class="rlab"><div class="g">guessed 15<span class="ar">→</span>took 30</div><div class="rt" style="color:var(--accent)">2.0×</div></div><div class="rtrack"><div class="rfill" style="width:50%;background:var(--accent)"></div></div></div>
+      <div class="rrow" style="margin-top:13px"><div class="rlab"><div class="g">guessed 20<span class="ar">→</span>took 26</div><div class="rt" style="color:var(--accent)">1.3×</div></div><div class="rtrack"><div class="rfill" style="width:77%;background:var(--accent)"></div></div></div>
+      <div class="rrow" style="margin-top:13px"><div class="rlab"><div class="g">guessed 30<span class="ar">→</span>took 24</div><div class="rt" style="color:var(--primary)">0.8×</div></div><div class="rtrack"><div class="rfill" style="width:100%;background:var(--primary)"></div></div></div>
+    </div>
+
+    <div class="divider"></div>
+
+    <div class="trend">
+      <div class="th"><div class="shead">Calibration trend</div><div class="tp">Last 30 days</div></div>
+      <svg viewBox="0 0 300 112" preserveAspectRatio="none">
+        <line x1="34" y1="16" x2="300" y2="16" stroke="rgba(255,255,255,0.06)"/>
+        <line x1="34" y1="54" x2="300" y2="54" stroke="rgba(255,255,255,0.06)"/>
+        <line x1="34" y1="92" x2="300" y2="92" stroke="var(--primary)" stroke-dasharray="4 4" stroke-opacity="0.5"/>
+        <text x="0" y="20" fill="rgba(244,241,234,0.4)" font-size="10">2.2×</text>
+        <text x="0" y="58" fill="rgba(244,241,234,0.4)" font-size="10">1.6×</text>
+        <text x="0" y="96" fill="rgba(244,241,234,0.4)" font-size="10">1.0×</text>
+        <polyline points="46,24 96,34 146,44 196,52 246,60 292,66" fill="none" stroke="var(--accent)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+        <circle cx="292" cy="66" r="3.5" fill="var(--accent)"/>
+      </svg>
+      <div class="tc">Your multiplier is stabilizing — good self-awareness.</div>
+    </div>
+
+    <div class="divider"></div>
+
+    <div class="goal">
+      <div class="eb">GOAL</div>
+      <div class="tr"><div class="hl">Aim for a tighter number — I'll coach you there.</div><div class="pcoin"><div class="edge"></div><div class="face">🔒 PRO</div></div></div>
+      <div class="gtrack"><div class="gfill"></div><div class="gtick"></div></div>
+      <div class="sb">Set a target pace and I'll nudge each guess toward it, run by run.</div>
+    </div>
+
+    <div class="divider"></div>
+
+    <div class="adapt">
+      <div class="shead">Tune how I learn</div>
+      <div class="seg"><div class="glide"></div><div class="opt">Steady</div><div class="opt active">Balanced</div><div class="opt">Reactive</div></div>
+      <div class="hint">The everyday setting. A <b>fair mix</b> of your history and your <b>recent runs</b>.</div>
+    </div>
+
+    <div class="reset">↻ Reset this category's learning</div>
+  `;
+  document.querySelectorAll('.below').forEach(el => el.outerHTML = below);
+</script>
+</body>
+</html>
