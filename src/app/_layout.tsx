@@ -1,6 +1,7 @@
 import '../global.css';
 import { useEffect, type ComponentProps } from 'react';
-import { AppState, Appearance } from 'react-native';
+import { AppState, Appearance, View } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Stack } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import { useFonts } from 'expo-font';
@@ -12,6 +13,8 @@ import { useDayTasksStore } from '@/src/stores/dayTasksStore';
 import { setClockHour12 } from '@/src/lib/time';
 import { prefers24Hour } from '@/src/lib/clockPrefs';
 import { useNotificationSetup } from '@/src/features/notifications/useNotificationSetup';
+import { useForgotCheck } from '@/src/features/timer/useForgotCheck';
+import { ForgotCard } from '@/src/features/timer/ForgotCard';
 
 // Match every clock readout (Started/Done, planner, calendar) to the device's
 // "24-Hour Time" toggle. Read once at module load — it's a synchronous native const.
@@ -53,8 +56,39 @@ function useSheetScreenOptions(): ComponentProps<typeof Stack.Screen>['options']
     // the JS content doesn't paint (below a short list → a white gap under the
     // dark sheet). Paint the native container the theme bg so the sheet is one
     // continuous colour top to bottom.
-    contentStyle: { backgroundColor: t.colors.bg, paddingHorizontal: t.space[5] },
+    contentStyle: { backgroundColor: t.colors.bg },
   };
+}
+
+// Overlay host for the forgot-to-stop recovery card. Sits above the navigator so
+// it can appear over any screen; `pointerEvents="box-none"` lets touches pass
+// through the empty space and only the card itself (once rendered) is tappable.
+// Bottom-pinned content must add the safe-area inset or it sits under the home
+// indicator — see the footers/tab-bar gotcha. `useForgotCheck()` itself is
+// mounted in `RootLayout` (not here) so its effect runs after the boot effects
+// that restore the timer snapshot — child effects fire before a parent's own,
+// so hosting the hook in this sibling component would run it too early.
+function ForgotOverlay() {
+  const insets = useSafeAreaInsets();
+  const t = useTheme();
+
+  return (
+    <View
+      pointerEvents="box-none"
+      style={{
+        position: 'absolute',
+        left: 0,
+        right: 0,
+        top: 0,
+        bottom: 0,
+        justifyContent: 'flex-end',
+        paddingBottom: insets.bottom + t.space[4],
+        paddingHorizontal: t.space[4],
+      }}
+    >
+      <ForgotCard />
+    </View>
+  );
 }
 
 function RootNavigator() {
@@ -170,6 +204,12 @@ export default function RootLayout() {
     store.reconcilePresenceOnBoot();
   }, []);
 
+  // Detect a session that ran past the honest number while the app was away and
+  // auto-close it into `forgotStore`. Must run after `resumeFromKv` above so the
+  // restored snapshot exists to evaluate — hooks in one component fire their
+  // effects in declaration order, so this call stays below the boot effect.
+  useForgotCheck();
+
   // Boot the day-tasks store and refresh "today" when the app returns to the
   // foreground (handles the midnight boundary: the selected day re-points to the
   // new calendar date without user action).
@@ -188,6 +228,7 @@ export default function RootLayout() {
   return (
     <AppProviders>
       <RootNavigator />
+      <ForgotOverlay />
     </AppProviders>
   );
 }

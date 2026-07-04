@@ -28,6 +28,10 @@ type EventSource = 'today' | 'fab' | 'addtask' | 'timed' | 'retro';
  *  stays dependency-free. Matches `GuardrailMultiple`. */
 type GuardrailSetting = 'off' | '1.5x' | '2x' | '3x';
 
+/** Forgot-to-stop step-in preset, mirrored locally so analytics stays
+ *  dependency-free. Matches `ForgotStepIn`. */
+type ForgotStepInSetting = 'room' | 'balanced' | 'early';
+
 /** Map of every analytics event to its props shape (the type contract). */
 export interface AppEventProps {
   // ── Lifecycle (kept; aliases of §2 app_installed / onboarding_completed) ──────
@@ -188,6 +192,9 @@ export interface AppEventProps {
   guardrail_resolved: { action: 'keep_going' | 'wrap_up'; elapsed_min: number };
   guardrail_setting_changed: { from: GuardrailSetting; to: GuardrailSetting };
   guardrail_paywall: Record<string, never>;
+
+  // ── Forgot-to-stop preset (free) ──────────────────────────────────────────────
+  forgot_step_in_changed: { from: ForgotStepInSetting; to: ForgotStepInSetting };
 
   // ── Focus-window planner (Pro) ────────────────────────────────────────────────
   focus_window_viewed: { verdict: 'fits' | 'spills' | 'unset'; fit_count: number; total_count: number; window_min: number; is_pro: boolean };

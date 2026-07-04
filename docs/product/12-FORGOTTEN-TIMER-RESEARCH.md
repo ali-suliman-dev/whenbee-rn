@@ -2,6 +2,14 @@
 
 Session 1 · 2026-07-04 · area: the "I forgot to stop the timer" problem
 
+> **Shipped (P0) — 2026-07-04.** The free safety net (#7 forgot-card, #8 overrun-amber,
+> #5 recovery presets, #10 train-guard) plus the #2/#6/#4/#9 auto-close + learned nudge
+> landed on branch `worktree-feat+forgot-timer-autoclose`. Spec:
+> [`docs/superpowers/specs/2026-07-04-forgotten-timer-autoclose-design.md`](../superpowers/specs/2026-07-04-forgotten-timer-autoclose-design.md).
+> Plan: [`docs/superpowers/plans/2026-07-04-forgotten-timer-autoclose.md`](../superpowers/plans/2026-07-04-forgotten-timer-autoclose.md).
+> On-device end-to-end flow (runaway → auto-stop → recovery card) still needs a device verify pass.
+> iOS Live Activity + native background close (#1 P2) is a separate, paid-account-gated plan.
+
 > Founder's problem, verbatim: *"The top problem for this app is I forget to stop
 > the timer. Phone on silent, I don't feel the notification / vibration. I'm
 > elsewhere."* Wanted: (1) a friendly, non-negative over-guess notification,

@@ -1,5 +1,5 @@
 // Calibration engine constants. PURE TS — no RN/Expo/clock.
-import type { AdaptSpeed, GuardrailMultiple, Tier } from '../domain/types';
+import type { AdaptSpeed, GuardrailMultiple, Tier, ForgotStepIn } from '../domain/types';
 
 export const RATIO_FLOOR = 1 / 6; // clamp so one disaster can't poison the model
 export const RATIO_CEIL = 6;
@@ -127,6 +127,19 @@ export const GUARDRAIL_FACTORS = { '1.5x': 1.5, '2x': 2, '3x': 3 } as const;
 export const DEFAULT_GUARDRAIL: GuardrailMultiple = 'off';
 /** Never fire a nudge before this many elapsed minutes, regardless of factor. */
 export const GUARDRAIL_MIN_THRESHOLD_MIN = 25;
+
+// ── Forgot-to-stop protection (free safety net) ──────────────────────────────
+/** Nudge multiple of the honest number per preset. Auto-close follows a grace
+ *  window later. 'early' is the earliest, 'room' the most forgiving. */
+export const FORGOT_STEP_IN_FACTORS: Record<ForgotStepIn, number> = {
+  room: 2,
+  balanced: 1.5,
+  early: 1.25,
+};
+/** Default on a fresh install — the free net is ON by default. */
+export const DEFAULT_FORGOT_STEP_IN: ForgotStepIn = 'balanced';
+/** Minutes of continued no-interaction past the nudge before auto-close. */
+export const FORGOT_GRACE_MIN = 20;
 
 // ── Focus-window planner (Pro) ────────────────────────────────────────────────
 // No tight-ratio threshold: the verdict is binary (everything fits, or something
