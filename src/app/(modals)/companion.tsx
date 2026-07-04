@@ -68,7 +68,7 @@ export default function CompanionRoute() {
   };
 
   return (
-    <Screen edges={['left', 'right']}>
+    <Screen edges={['left', 'right']} horizontalPadding={false}>
       <SheetGrabber />
       <View style={{ gap: t.space[6], paddingTop: t.space[6] }}>
         <WhenbeeAvatar

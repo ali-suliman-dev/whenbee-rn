@@ -90,14 +90,14 @@ export function ReviewModal({ source = 'card' }: { source?: ReviewSource }) {
 
   if (!summary) {
     return (
-      <Screen edges={['left', 'right']}>
+      <Screen edges={['left', 'right']} horizontalPadding={false}>
         <SheetGrabber />
       </Screen>
     );
   }
 
   return (
-    <Screen edges={['left', 'right']}>
+    <Screen edges={['left', 'right']} horizontalPadding={false}>
       <ScrollView
         contentContainerStyle={{
           gap: t.space[4],

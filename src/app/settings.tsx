@@ -2,7 +2,9 @@ import { useCallback, useState, type ReactNode } from 'react';
 import { Alert, Modal, View, Text, Pressable, Switch, ScrollView, TextInput, type ViewStyle, type TextStyle } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
+import * as WebBrowser from 'expo-web-browser';
 import { Ionicons } from '@expo/vector-icons';
+import { LEGAL } from '@/src/lib/legal';
 import { Screen } from '@/src/components/Screen';
 import { AppText } from '@/src/components/AppText';
 import { AppButton } from '@/src/components/AppButton';
@@ -560,6 +562,12 @@ export default function Settings() {
             title="Privacy"
             note="What stays on your phone."
             onPress={() => router.push('/privacy')}
+          />
+          <SettingRow
+            icon="document-outline"
+            title="Terms of Use"
+            note="The plain-language agreement for using Whenbee."
+            onPress={() => WebBrowser.openBrowserAsync(LEGAL.termsUrl)}
           />
         </View>
 

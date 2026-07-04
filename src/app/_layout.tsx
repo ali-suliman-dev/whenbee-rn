@@ -19,6 +19,18 @@ setClockHour12(!prefers24Hour());
 
 SplashScreen.preventAutoHideAsync();
 
+// Anchor the root stack to (tabs). Modal routes ((modals)/*) are presented on
+// THIS stack as `formSheet`. Without an anchor, loading a modal route directly —
+// a deep link, or a Metro/JS reload while a sheet is open — rebuilds the nav
+// state with the modal as the ONLY screen: the background is wiped, so the
+// sheet has nothing behind it and no dismiss target → the user is locked in.
+// The anchor guarantees (tabs) is always placed beneath, so every sheet stays
+// draggable-to-dismiss and returns to the tabs. See expo-router "Handle
+// deep-linked modals".
+export const unstable_settings = {
+  initialRouteName: '(tabs)',
+};
+
 // Navigator lives in its own component so it can read the theme and apply it to
 // the (otherwise native-default white) Settings header in dark mode. Swipe-back
 // is enabled stack-wide so every pushed screen is dismissible by gesture.
@@ -34,14 +46,14 @@ function useSheetScreenOptions(): ComponentProps<typeof Stack.Screen>['options']
   return {
     presentation: 'formSheet',
     headerShown: false,
-    sheetAllowedDetents: [0.9],
+    sheetAllowedDetents: [0.95],
     sheetCornerRadius: t.radii.sheet,
     gestureEnabled: true,
     // The native formSheet host view defaults to white; it shows through wherever
     // the JS content doesn't paint (below a short list → a white gap under the
     // dark sheet). Paint the native container the theme bg so the sheet is one
     // continuous colour top to bottom.
-    contentStyle: { backgroundColor: t.colors.bg },
+    contentStyle: { backgroundColor: t.colors.bg, paddingHorizontal: t.space[5] },
   };
 }
 

@@ -276,7 +276,7 @@ export default function Timer() {
   return (
     // Drawer sits below the status bar — drop the top inset so the timer doesn't
     // get a large empty gap above the ✕/controls on Android.
-    <Screen edges={['left', 'right']}>
+    <Screen edges={['left', 'right']} horizontalPadding={false}>
       <View style={{ flex: 1, justifyContent: 'space-between' }}>
         {/* Top row: ✕ minimize · eyebrow · spacer */}
         <View style={topRow}>
