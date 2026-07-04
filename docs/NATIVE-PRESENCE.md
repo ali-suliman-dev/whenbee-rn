@@ -216,3 +216,30 @@ Android 16 docs):
   the finish; lock the phone, pass the honest finish → flips to "over" counting up.
 - **Native/config changes** (module Kotlin, `AndroidManifest.xml`, `res/*`, `app.json`
   plugins/permissions) require `npx expo prebuild --clean -p android` before rebuilding.
+
+---
+
+# Android widget family (built)
+
+Beyond the single "next task" widget, Android now ships a small **family** of native RemoteViews widgets, all in the `modules/whenbee-presence` module, fed by a generalized keyed store. Approved lineup + reasoning: `docs/product/12-WIDGET-STRATEGY.md`.
+
+## Keyed write path
+`WhenbeePresenceModule.writeWidgetData(key, json)` / `clearWidgetData(key)` store JSON under SharedPreferences `"<pkg>.presence"` key `"widget.<key>"` (via `WidgetDataStore`), then refresh the matching provider (`when(key)`). Keys: `nextTask`, `capacity`, `bias`. JS side: `publishWidgetData(key, payload)` / `clearWidgetData(key)` in `src/services/presence/widgetData.ts`; per-widget publisher hooks under `src/features/today/` mounted in `src/app/(tabs)/index.tsx`. (`writeSnapshot`/`clearSnapshot` remain as back-compat aliases → `writeWidgetData('nextTask', …)`.)
+
+| Widget | Free/Pro | Provider | Payload (key) | Publisher | Update triggers |
+|---|---|---|---|---|---|
+| **Honest Finish** ("Next task") | FREE | `NextTaskWidgetProvider` | `WidgetSnapshot` (`nextTask`) | `useWidgetPublisher` | focus task, honestMin, timer start/stop, isPro, focus-category mEffective |
+| **Does Today Fit?** | PRO | `DoesTodayFitWidgetProvider` | `CapacityWidgetData` (`capacity`) | `useCapacityWidgetPublisher` (reuses `useDayCapacity`/`honestDayLoad`) | task add/remove/complete, day select, dayEnd, calendar, isPro |
+| **Your Bias** | PRO | `YourBiasWidgetProvider` | `BiasWidgetData` (`bias`) | `useBiasWidgetPublisher` (`pickTopBias`) | calibration stats change, isPro |
+
+**Pro gating (both Pro widgets):** gated at the SOURCE — a free user's published payload is exactly `{ isPro:false }` (no numbers, no category), and the native provider's locked branch renders a quiet "…— Pro" state with NO value and NO bar/marker (gates value AND position, per the pro-gate-leak rule). Deep links: Honest Finish/Does-Today-Fit → `whenbee://today`, Your Bias → `whenbee://patterns`, locked → `whenbee://paywall`. No red anywhere (no-guilt): capacity "over" uses ink/accent.
+
+**Live-updating:** the Honest Finish widget now republishes on all the triggers above (was previously only `[focus, honestMin]` — which is why it looked frozen). Android's 30-min background floor still applies when the app isn't open; live freshness comes from in-app republishes.
+
+## Remaining widgets — NOT built yet (future)
+Per `docs/product/12-WIDGET-STRATEGY.md` (approved lineup), still to build:
+- **W1 Live Focus** — SHIPPED on Android already (the promoted live-timer notification / "Live Update"); iOS = existing `FinishTimeActivity`.
+- **W5 One-Tap Guess** (Tier 2, free) — a small quick-add widget (AppIntent → new-guess sheet). Not built.
+- **W6 Accuracy Trend** (Tier 3, Pro) — guess-vs-actual sparkline, "getting sharper". Not built.
+- **W7 Honest Week** (Tier 3, Pro) — week strip planned-honest vs actual; leans on the Pro Honest Review. Not built.
+- **iOS parity for the whole family** — WidgetKit versions of Honest Finish / Does-Today-Fit / Your-Bias in `targets/widget/` (SwiftUI). Deferred: needs a **paid Apple team** to device-test. The iOS `WidgetSnapshot`/`SharedStore.swift` must stay in sync if the shared payloads change.
