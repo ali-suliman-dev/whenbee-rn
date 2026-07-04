@@ -30,6 +30,7 @@ import { usePresenceSection } from '@/src/features/settings/usePresenceSection';
 import { ProGate } from '@/src/features/paywall/ProGate';
 import { PresenceRingTeaser } from '@/src/components/PresenceRingTeaser';
 import { GuardrailSettingRow } from '@/src/features/settings/GuardrailSettingRow';
+import { ForgotStepInRow } from '@/src/features/settings/ForgotStepInRow';
 import { GuardrailLockedRow } from '@/src/features/settings/GuardrailLockedRow';
 import { CalendarSettingsSection } from '@/src/features/settings/CalendarSettingsSection';
 import { StripVariantSwitcher } from '@/src/features/settings/StripVariantSwitcher';
@@ -406,6 +407,7 @@ export default function Settings() {
                   }
                 />
               ) : null}
+              <ForgotStepInRow />
               <ProGate fallback={<GuardrailLockedRow />}>
                 <GuardrailSettingRow />
               </ProGate>
