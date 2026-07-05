@@ -13,9 +13,9 @@ import { type } from '@/src/theme/typography';
 // ──────────────────────────────────────────────────────────────────────────────
 // PaceLabel — the no-guilt pace pill pinned above the controls.
 //
-//   under  → "On track — you've got time"          (soft-indigo pill)
-//   ≤3 min → "Closing in on your guess… that's fine" (soft-indigo pill)
-//   over   → "+N over your guess — that's ok, now we know" (soft-amber pill)
+//   under  → "You've got time"                (soft-indigo pill)
+//   ≤3 min → "Almost at your guess"           (soft-indigo pill)
+//   over   → "N over your guess — now you know" (soft-amber pill)
 //
 // It reads elapsedSec on the UI thread but only sets React state when the *phase*
 // (or the over-amount) actually changes — NOT every second. So the second-by-
@@ -76,9 +76,9 @@ export function PaceLabel({
   };
 
   let copy: string;
-  if (isOver) copy = `+${overMin} over your guess — that's ok, now we know`;
-  else if (phase === 'closing') copy = 'Closing in on your guess… that’s fine';
-  else copy = 'On track — you’ve got time';
+  if (isOver) copy = overMin > 0 ? `${overMin}m over your guess — now you know` : 'Past your guess — now you know';
+  else if (phase === 'closing') copy = 'Almost at your guess';
+  else copy = 'You’ve got time';
 
   return (
     <View style={wrap} accessibilityLiveRegion="polite">
