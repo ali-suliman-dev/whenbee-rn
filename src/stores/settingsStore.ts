@@ -68,7 +68,7 @@ interface SettingsState {
   /** Gentle "one honest thing a day" line on Today. Off by default; no streak, no guilt. */
   dailyRitualEnabled: boolean;
   setDailyRitualEnabled: (v: boolean) => void;
-  /** "Tap to start again" quick-start chips on Today (repeat tasks you've run before). On by default. */
+  /** "Tap to start again" quick-start chips on Today (repeat tasks you've run before). Off by default. */
   quickStartEnabled: boolean;
   setQuickStartEnabled: (v: boolean) => void;
   /** Optional nickname for greetings/companion lines. No name = greeting only. */
@@ -155,7 +155,7 @@ export const useSettingsStore = create<SettingsState>()(
       setNotificationSound: (notificationSound) => set({ notificationSound }),
       dailyRitualEnabled: false,
       setDailyRitualEnabled: (dailyRitualEnabled) => set({ dailyRitualEnabled }),
-      quickStartEnabled: true,
+      quickStartEnabled: false,
       setQuickStartEnabled: (quickStartEnabled) => set({ quickStartEnabled }),
       displayName: undefined,
       setDisplayName: (displayName) => set({ displayName: displayName?.trim() ? displayName.trim() : undefined }),
@@ -213,7 +213,7 @@ export const useSettingsStore = create<SettingsState>()(
           colorMode: 'system',
           remindersEnabled: false,
           dailyRitualEnabled: false,
-          quickStartEnabled: true,
+          quickStartEnabled: false,
           displayName: undefined,
           archetypeSeed: undefined,
           dayEndMin: DEFAULT_DAY_END_MIN,
