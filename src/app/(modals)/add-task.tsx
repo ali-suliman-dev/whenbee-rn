@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { View, Text, TextInput, Pressable, ScrollView, KeyboardAvoidingView, Platform, ActionSheetIOS, type ViewStyle, type TextStyle } from 'react-native';
+import { View, Text, TextInput, Pressable, ScrollView, KeyboardAvoidingView, Platform, ActionSheetIOS, useWindowDimensions, type ViewStyle, type TextStyle } from 'react-native';
 import { router, useLocalSearchParams } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -50,6 +50,7 @@ function targetDayLabel(targetDate: string | null, today: string): string {
 export default function AddTask() {
   const t = useTheme();
   const insets = useSafeAreaInsets();
+  const { height: winH } = useWindowDimensions();
   const toastDismissMs = t.motion.pulse; // let the toast land before the sheet closes
   // Arrived from the trio mic quick-action → title pre-filled from the transcript.
   const { title: spokenTitle } = useLocalSearchParams<{ title?: string }>();
@@ -205,8 +206,13 @@ export default function AddTask() {
     // Drawer sits below the status bar already — no top safe-area inset, or the
     // sheet gets a large empty gap above its content on Android.
     <Screen edges={['left', 'right']} horizontalPadding={false}>
+      {/* react-native-screens' formSheet collapses a flex:1 child to its content
+          height, so the ScrollView+footer stack sits high with dead space below and
+          the CTA floats mid-sheet. Anchor to the sheet's own height (0.95 detent) so
+          the footer pins to the bottom; behavior='padding' still lifts it over the
+          keyboard. */}
       <KeyboardAvoidingView
-        style={{ flex: 1 }}
+        style={{ flex: 1, minHeight: winH * 0.95 - insets.bottom }}
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
       >
         <ScrollView

@@ -55,8 +55,12 @@ function useSheetScreenOptions(): ComponentProps<typeof Stack.Screen>['options']
     // The native formSheet host view defaults to white; it shows through wherever
     // the JS content doesn't paint (below a short list → a white gap under the
     // dark sheet). Paint the native container the theme bg so the sheet is one
-    // continuous colour top to bottom.
-    contentStyle: { backgroundColor: t.colors.bg },
+    // continuous colour top to bottom. paddingHorizontal supplies the side
+    // gutters for EVERY sheet uniformly (scroll content AND pinned footers) —
+    // sheet screens pass horizontalPadding={false} to <Screen> and take their
+    // gutters from here, because react-native-screens silently drops the LEFT
+    // padding of a padded JS child inside a native sheet. See Screen.tsx.
+    contentStyle: { backgroundColor: t.colors.bg, paddingHorizontal: t.space[5] },
   };
 }
 
