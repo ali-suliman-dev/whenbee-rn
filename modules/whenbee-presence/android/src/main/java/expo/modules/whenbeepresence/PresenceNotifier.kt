@@ -2,8 +2,11 @@ package expo.modules.whenbeepresence
 
 import android.app.NotificationChannel
 import android.app.NotificationManager
+import android.app.PendingIntent
 import android.content.Context
+import android.content.Intent
 import android.content.SharedPreferences
+import android.net.Uri
 import android.os.Build
 import android.text.format.DateFormat
 import androidx.core.app.NotificationCompat
@@ -23,8 +26,19 @@ import java.util.Date
 // ProgressStyle calls are simply skipped and the user gets a plain ongoing chronometer
 // notification (graceful fallback), since these APIs only do anything on API 36+.
 object PresenceNotifier {
-  const val CHANNEL_ID = "whenbee.timer"
+  // v2: IMPORTANCE_DEFAULT (was LOW). A LOW channel lands the timer in the lock screen's
+  // SILENT bucket, which the system collapses to a bare app icon — so the promoted Live
+  // Update never pins as a card there. DEFAULT keeps it out of the silent bucket (it pins
+  // on the lock screen) while sound stays off (setSound(null) below), so nothing beeps.
+  // A channel's importance is locked once created, so raising it needs a NEW id.
+  const val CHANNEL_ID = "whenbee.timer.v2"
+  private const val LEGACY_CHANNEL_ID = "whenbee.timer"
   const val NOTIFICATION_ID = 4711
+
+  // Brand accents (mirror src/theme/tokens.ts). Indigo while running, amber on overrun —
+  // tints the app-name row + small icon so the presence reads as Whenbee, not a system chip.
+  private const val COLOR_INDIGO = 0xFF6B5BE6.toInt()
+  private const val COLOR_AMBER = 0xFFEEAE4D.toInt()
 
   private const val KEY_TIMER = "timer"
   const val ALARM_REQUEST_CODE = 4711
@@ -73,13 +87,39 @@ object PresenceNotifier {
 
   fun ensureChannel(context: Context) {
     val mgr = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+    // Retire the old LOW channel so it doesn't linger in the user's notification settings.
+    if (mgr.getNotificationChannel(LEGACY_CHANNEL_ID) != null) {
+      mgr.deleteNotificationChannel(LEGACY_CHANNEL_ID)
+    }
     if (mgr.getNotificationChannel(CHANNEL_ID) == null) {
-      val channel = NotificationChannel(CHANNEL_ID, "Running timer", NotificationManager.IMPORTANCE_LOW).apply {
-        description = "Shows your live timer while a task is running"
+      val channel = NotificationChannel(CHANNEL_ID, "Running timer", NotificationManager.IMPORTANCE_DEFAULT).apply {
+        description = "Shows your live timer on the lock screen while a task is running"
         setShowBadge(false)
+        // Silent: DEFAULT importance pins on the lock screen, but the timer must never beep
+        // on start or on each progress re-post.
+        setSound(null, null)
+        enableVibration(false)
+        // Show full content on the lock screen (the label + finish time), not "contents hidden".
+        lockscreenVisibility = NotificationCompat.VISIBILITY_PUBLIC
       }
       mgr.createNotificationChannel(channel)
     }
+  }
+
+  // Deep link that opens the running-timer screen. `action=stop` tells the screen to stop +
+  // log immediately (one tap from the lock screen); no action just opens it.
+  private fun openTimerPendingIntent(context: Context, stop: Boolean): PendingIntent {
+    val uri = "whenbee:///(modals)/timer" + if (stop) "?action=stop" else ""
+    val intent = Intent(Intent.ACTION_VIEW, Uri.parse(uri)).apply {
+      setPackage(context.packageName)
+      addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_SINGLE_TOP)
+    }
+    return PendingIntent.getActivity(
+      context,
+      if (stop) 1 else 0,
+      intent,
+      PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT,
+    )
   }
 
   // Builds + posts the running-timer notification. Signature is unchanged so both callers
@@ -100,6 +140,14 @@ object PresenceNotifier {
       .setOngoing(true)
       .setOnlyAlertOnce(true)
       .setCategory(NotificationCompat.CATEGORY_STOPWATCH)
+      // Accent tint only. NEVER setColorized(true): a colorized notification is
+      // DISQUALIFIED from promotion (Android 16 rule), which kills the status-bar chip
+      // (drops to a bare icon) and the pinned lock-screen card. setColor is fine.
+      .setColor(if (isOverrun) COLOR_AMBER else COLOR_INDIGO)
+      .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
+      .setContentIntent(openTimerPendingIntent(context, stop = false)) // tap body → open timer
+      // Stop from the lock screen — opens the timer already asking to stop + log.
+      .addAction(android.R.drawable.ic_menu_close_clear_cancel, "Stop & log", openTimerPendingIntent(context, stop = true))
       .setShowWhen(true)
       .setWhen(finishMs) // future while running → chronometer counts down to it; past → counts up
       .setUsesChronometer(true)

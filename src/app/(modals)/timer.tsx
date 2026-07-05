@@ -1,5 +1,5 @@
-import { useCallback, useRef, useState } from 'react';
-import { View, Pressable, Alert, type ViewStyle, type TextStyle } from 'react-native';
+import { useCallback, useEffect, useRef, useState } from 'react';
+import { View, Pressable, Alert, useWindowDimensions, type ViewStyle, type TextStyle } from 'react-native';
 import { router, useLocalSearchParams } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
@@ -27,6 +27,8 @@ import { GuardrailCheckIn } from '@/src/features/timer/GuardrailCheckIn';
 import { PostStopCaptureSheet } from '@/src/components/quick/PostStopCaptureSheet';
 import { guessCategory } from '@/src/features/shared/categoryGuess';
 import { usePickerCategories } from '@/src/features/shared/CategoryChips';
+import { useTimerStore } from '@/src/stores/timerStore';
+import { handlePresenceStop } from '@/src/features/timer/stopPresenceSession';
 import { useCalibrationStore } from '@/src/stores/calibrationStore';
 import { useVocabStore } from '@/src/stores/vocabStore';
 import { useEntitlement } from '@/src/features/paywall/useEntitlement';
@@ -58,8 +60,40 @@ function str(v: string | string[] | undefined, fallback: string): string {
 }
 
 export default function Timer() {
+  const { action } = useLocalSearchParams<{ action?: string }>();
+  // Presence "Stop & log" + guardrail "Wrap up" open this route with action=stop.
+  // They carry NO session context, so the stop must run off the STORE — and must
+  // NOT mount TimerScreen/useTimer, which (with empty params) would restart a fresh
+  // session and log ~0 elapsed against the wrong category. Route to a bare handler.
+  if (action === 'stop') return <PresenceStopHandler />;
+  return <TimerScreen />;
+}
+
+// Bare handler for the presence stop action: no ring, no useTimer. Waits for the
+// store session (restoring from KV on cold boot), stops + logs it from store
+// context, then routes to the reward / capture as appropriate.
+function PresenceStopHandler() {
+  const t = useTheme();
+  const isRunning = useTimerStore((s) => s.isRunning);
+  const doneRef = useRef(false);
+
+  useEffect(() => {
+    if (doneRef.current) return;
+    // Cold boot: the running session is in KV, not memory yet — restore it.
+    if (!useTimerStore.getState().isRunning) useTimerStore.getState().resumeFromKv();
+    const s = useTimerStore.getState();
+    if (!s.isRunning || s.startedAt === null) return; // nothing to stop (yet)
+    doneRef.current = true;
+    void handlePresenceStop();
+  }, [isRunning]);
+
+  return <View style={{ flex: 1, backgroundColor: t.colors.bg }} />;
+}
+
+function TimerScreen() {
   const t = useTheme();
   const insets = useSafeAreaInsets();
+  const { height: winH } = useWindowDimensions();
   const reducedMotion = useReducedMotion();
   const params = useLocalSearchParams<{
     taskId?: string;
@@ -277,7 +311,11 @@ export default function Timer() {
     // Drawer sits below the status bar — drop the top inset so the timer doesn't
     // get a large empty gap above the ✕/controls on Android.
     <Screen edges={['left', 'right']} horizontalPadding={false}>
-      <View style={{ flex: 1, justifyContent: 'space-between' }}>
+      {/* react-native-screens' formSheet collapses a flex:1 child to its content
+          height, so space-between can't push the controls to the bottom (they'd
+          float mid-sheet with dead space below). Anchor the column to the sheet's
+          own height (0.95 detent) so the ring centres and the controls pin low. */}
+      <View style={{ minHeight: winH * 0.95 - insets.bottom, flex: 1, justifyContent: 'space-between' }}>
         {/* Top row: ✕ minimize · eyebrow · spacer */}
         <View style={topRow}>
           <Pressable

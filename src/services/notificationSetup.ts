@@ -25,9 +25,14 @@ function getModule(): NotificationsModule | null {
 /** Foreground navigation for the buttons that open the app. */
 function navigateForAction(actionIdentifier: string, _data: Record<string, unknown>): void {
   switch (actionIdentifier) {
-    case ACTION.LOG:
     case ACTION.WRAP:
-      router.push('/(tabs)'); // Today, where logging/wrap-up lives
+      // Hyperfocus-guardrail "Wrap up" must STOP + LOG the running timer, not just
+      // open Today (which left it running — read as "did nothing / reset"). Route
+      // through the timer screen's stop flow so it logs the session and shows reward.
+      router.push('/(modals)/timer?action=stop');
+      return;
+    case ACTION.LOG:
+      router.push('/(tabs)'); // Today, where logging lives
       return;
     case ACTION.START:
       router.push('/(tabs)'); // Today → start the planned task
