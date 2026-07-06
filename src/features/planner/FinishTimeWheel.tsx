@@ -106,7 +106,7 @@ function ColumnWheel({
   selectedIndex: number;
   onIndexChange: (idx: number) => void;
   itemHeight: number;
-  spring: { damping: number; stiffness: number };
+  spring: { damping: number; stiffness: number; overshootClamping?: boolean };
   inkColor: string;
   inkFaintColor: string;
   fontSize: number;
@@ -356,7 +356,7 @@ export function FinishTimeWheel({
             selectedIndex={hIdx}
             onIndexChange={handleHourChange}
             itemHeight={itemHeight}
-            spring={t.motion.spring}
+            spring={t.motion.wheelSnap}
             inkColor={t.colors.ink}
             inkFaintColor={t.colors.inkFaint}
             fontSize={t.fontSize.base}
@@ -374,7 +374,7 @@ export function FinishTimeWheel({
             selectedIndex={mIdx}
             onIndexChange={handleMinuteChange}
             itemHeight={itemHeight}
-            spring={t.motion.spring}
+            spring={t.motion.wheelSnap}
             inkColor={t.colors.ink}
             inkFaintColor={t.colors.inkFaint}
             fontSize={t.fontSize.base}

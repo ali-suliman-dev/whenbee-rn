@@ -81,7 +81,7 @@ export function TimeField({
   const itemHeight = t.size.control.sm; // 36 — keeps a 5-row wheel compact.
   const wheelHeight = itemHeight * VISIBLE_ITEMS;
   const pad = ((VISIBLE_ITEMS - 1) / 2) * itemHeight; // centres the first/last row.
-  const spring = t.motion.spring;
+  const spring = t.motion.wheelSnap;
 
   const initialIndex = indexOfValue(value);
   const translateY = useSharedValue(-initialIndex * itemHeight);
