@@ -1,5 +1,6 @@
 import { requireOptionalNativeModule } from 'expo-modules-core';
 import { isExpoGo } from '@/src/lib/isExpoGo';
+import { withLock } from '@/src/lib/asyncLock';
 import { kv } from '@/src/lib/kv';
 import { useSettingsStore } from '@/src/stores/settingsStore';
 import { CAT, THREAD, resolveNotificationSound } from '@/src/services/notificationCategories';
@@ -82,37 +83,38 @@ export async function ensureReviewNotificationPermission(opts?: { provisional?: 
  * `lastNotifiedPeriodId` so we never stack duplicate weekly schedules). No-op
  * without the native module.
  */
-export async function scheduleWeeklyReview(periodId: string): Promise<void> {
-  const N = getModule();
-  if (!N) return;
-  try {
-    await cancelWeeklyReview();
-    const notifContent: NotificationContentInputWithThread = {
-      title: 'Your honest week is ready',
-      body: "Your week in honest numbers, whenever you've got a minute.",
-      sound: resolveNotificationSound(useSettingsStore.getState().notificationSound),
-      categoryIdentifier: CAT.REVIEW,
-      threadIdentifier: THREAD.REVIEW,
-      data: { kind: 'review' },
-    };
-    const id = await N.scheduleNotificationAsync({
-      content: notifContent,
-      trigger: {
-        type: N.SchedulableTriggerInputTypes.WEEKLY,
-        weekday: MONDAY,
-        hour: REVIEW_HOUR,
-        minute: REVIEW_MINUTE,
-      },
-    });
-    kv.set(REVIEW_NOTIF_ID_KEY, id);
-    kv.set(REVIEW_LAST_NOTIFIED_KEY, periodId);
-  } catch {
-    // best-effort; a failed schedule must never block the toggle.
-  }
+export function scheduleWeeklyReview(periodId: string): Promise<void> {
+  return withLock(REVIEW_NOTIF_ID_KEY, async () => {
+    const N = getModule();
+    if (!N) return;
+    try {
+      await cancelWeeklyReviewInner();
+      const notifContent: NotificationContentInputWithThread = {
+        title: 'Your honest week is ready',
+        body: "Your week in honest numbers, whenever you've got a minute.",
+        sound: resolveNotificationSound(useSettingsStore.getState().notificationSound),
+        categoryIdentifier: CAT.REVIEW,
+        threadIdentifier: THREAD.REVIEW,
+        data: { kind: 'review' },
+      };
+      const id = await N.scheduleNotificationAsync({
+        content: notifContent,
+        trigger: {
+          type: N.SchedulableTriggerInputTypes.WEEKLY,
+          weekday: MONDAY,
+          hour: REVIEW_HOUR,
+          minute: REVIEW_MINUTE,
+        },
+      });
+      kv.set(REVIEW_NOTIF_ID_KEY, id);
+      kv.set(REVIEW_LAST_NOTIFIED_KEY, periodId);
+    } catch {
+      // best-effort; a failed schedule must never block the toggle.
+    }
+  });
 }
 
-/** Cancel the scheduled Monday review nudge, if any. */
-export async function cancelWeeklyReview(): Promise<void> {
+async function cancelWeeklyReviewInner(): Promise<void> {
   const N = getModule();
   if (!N) return;
   try {
@@ -124,4 +126,9 @@ export async function cancelWeeklyReview(): Promise<void> {
   } catch {
     // best-effort
   }
+}
+
+/** Cancel the scheduled Monday review nudge, if any. */
+export function cancelWeeklyReview(): Promise<void> {
+  return withLock(REVIEW_NOTIF_ID_KEY, cancelWeeklyReviewInner);
 }

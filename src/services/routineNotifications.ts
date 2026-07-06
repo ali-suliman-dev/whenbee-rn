@@ -1,5 +1,6 @@
 import { requireOptionalNativeModule } from 'expo-modules-core';
 import { isExpoGo } from '@/src/lib/isExpoGo';
+import { withLock } from '@/src/lib/asyncLock';
 import { kv } from '@/src/lib/kv';
 
 // ──────────────────────────────────────────────────────────────────────────────
@@ -80,53 +81,51 @@ export interface RoutineAlertArgs {
  * Weekday mapping: 0–6 (Sun=0) → 1–7 (Sun=1), matching the expo-notifications
  * WEEKLY trigger convention (iOS-compatible).
  */
-export async function scheduleRoutineAlerts(
+export function scheduleRoutineAlerts(
   routine: RoutineAlertArgs,
   startByMinuteOfDay: number,
 ): Promise<void> {
-  // Always cancel stale alerts first (even if we won't reschedule), so a user
-  // who disables alerts doesn't keep receiving stale ones.
-  await cancelRoutineAlerts(routine.id);
+  return withLock(routineAlertsKey(routine.id), async () => {
+    // Always cancel stale alerts first (even if we won't reschedule), so a user
+    // who disables alerts doesn't keep receiving stale ones.
+    await cancelRoutineAlertsInner(routine.id);
 
-  const N = getModule();
-  if (!N) return;
-  if (!routine.alertEnabled || routine.scheduleDays.length === 0) return;
+    const N = getModule();
+    if (!N) return;
+    if (!routine.alertEnabled || routine.scheduleDays.length === 0) return;
 
-  try {
-    const alertMinute = Math.max(0, startByMinuteOfDay - routine.alertLeadMin);
-    const hour = Math.floor(alertMinute / 60);
-    const minute = alertMinute % 60;
+    try {
+      const alertMinute = Math.max(0, startByMinuteOfDay - routine.alertLeadMin);
+      const hour = Math.floor(alertMinute / 60);
+      const minute = alertMinute % 60;
 
-    const ids: string[] = [];
-    for (const day of routine.scheduleDays) {
-      // expo-notifications WEEKLY trigger: weekday 1 = Sunday … 7 = Saturday
-      const weekday = day + 1;
-      const id = await N.scheduleNotificationAsync({
-        content: {
-          title: routine.name,
-          body: `Start ${routine.name} now to finish on time.`,
-        },
-        trigger: {
-          type: N.SchedulableTriggerInputTypes.WEEKLY,
-          weekday,
-          hour,
-          minute,
-        },
-      });
-      ids.push(id);
+      const ids: string[] = [];
+      for (const day of routine.scheduleDays) {
+        // expo-notifications WEEKLY trigger: weekday 1 = Sunday … 7 = Saturday
+        const weekday = day + 1;
+        const id = await N.scheduleNotificationAsync({
+          content: {
+            title: routine.name,
+            body: `Start ${routine.name} now to finish on time.`,
+          },
+          trigger: {
+            type: N.SchedulableTriggerInputTypes.WEEKLY,
+            weekday,
+            hour,
+            minute,
+          },
+        });
+        ids.push(id);
+      }
+
+      kv.set(routineAlertsKey(routine.id), JSON.stringify(ids));
+    } catch {
+      // best-effort; a failed schedule must never block saving a routine
     }
-
-    kv.set(routineAlertsKey(routine.id), JSON.stringify(ids));
-  } catch {
-    // best-effort; a failed schedule must never block saving a routine
-  }
+  });
 }
 
-/**
- * Cancel all scheduled alerts for a routine (reads ids from kv then cancels each).
- * No-op without the native module or when no ids are stored.
- */
-export async function cancelRoutineAlerts(routineId: string): Promise<void> {
+async function cancelRoutineAlertsInner(routineId: string): Promise<void> {
   const N = getModule();
   if (!N) return;
   try {
@@ -140,4 +139,12 @@ export async function cancelRoutineAlerts(routineId: string): Promise<void> {
   } catch {
     // best-effort
   }
+}
+
+/**
+ * Cancel all scheduled alerts for a routine (reads ids from kv then cancels each).
+ * No-op without the native module or when no ids are stored.
+ */
+export function cancelRoutineAlerts(routineId: string): Promise<void> {
+  return withLock(routineAlertsKey(routineId), () => cancelRoutineAlertsInner(routineId));
 }

@@ -1,5 +1,6 @@
 import { requireOptionalNativeModule } from 'expo-modules-core';
 import { isExpoGo } from '@/src/lib/isExpoGo';
+import { withLock } from '@/src/lib/asyncLock';
 import { kv } from '@/src/lib/kv';
 import { formatClock } from '@/src/lib/time';
 import { useSettingsStore } from '@/src/stores/settingsStore';
@@ -97,50 +98,51 @@ export async function ensureNotificationPermission(opts?: { provisional?: boolea
  * framed as calm data. timeSensitive so it surfaces through Focus. Actionable via
  * the WB_HONEST_REACHED category. Cancels any prior one; skips if already past.
  */
-export async function scheduleTimerDone(opts: {
+export function scheduleTimerDone(opts: {
   label: string;
   startedAt: number;
   honestMin: number;
   hasCalibration?: boolean;
 }): Promise<void> {
-  const N = getModule();
-  if (!N) return;
-  try {
-    await cancelTimerDone();
-    const fireMs = honestReachedFireMs(opts.startedAt, opts.honestMin);
-    const secondsFromNow = Math.round((fireMs - Date.now()) / 1000);
-    if (secondsFromNow <= 0) return;
-    const calibrated = opts.hasCalibration ?? true;
-    const content = calibrated
-      ? {
-          title: "You're near the finish",
-          body: `This is about when ${opts.label} usually wraps. Log it when you're done.`,
-        }
-      : {
-          title: `Time check for ${opts.label}`,
-          body: `This was your estimate for ${opts.label}. Log it whenever you wrap.`,
-        };
-    const sound = resolveNotificationSound(useSettingsStore.getState().notificationSound);
-    const notifContent: NotificationContentInputWithThread = {
-      ...content,
-      sound,
-      interruptionLevel: 'timeSensitive',
-      categoryIdentifier: CAT.HONEST,
-      threadIdentifier: THREAD.TIMER,
-      data: { kind: 'honest', label: opts.label, startedAt: opts.startedAt, honestMin: opts.honestMin },
-    };
-    const id = await N.scheduleNotificationAsync({
-      content: notifContent,
-      trigger: { type: N.SchedulableTriggerInputTypes.TIME_INTERVAL, seconds: secondsFromNow },
-    });
-    kv.set(NOTIF_ID_KEY, id);
-  } catch {
-    // best-effort; a failed schedule must never block the timer
-  }
+  return withLock(NOTIF_ID_KEY, async () => {
+    const N = getModule();
+    if (!N) return;
+    try {
+      await cancelTimerDoneInner();
+      const fireMs = honestReachedFireMs(opts.startedAt, opts.honestMin);
+      const secondsFromNow = Math.round((fireMs - Date.now()) / 1000);
+      if (secondsFromNow <= 0) return;
+      const calibrated = opts.hasCalibration ?? true;
+      const content = calibrated
+        ? {
+            title: "You're near the finish",
+            body: `This is about when ${opts.label} usually wraps. Log it when you're done.`,
+          }
+        : {
+            title: `Time check for ${opts.label}`,
+            body: `This was your estimate for ${opts.label}. Log it whenever you wrap.`,
+          };
+      const sound = resolveNotificationSound(useSettingsStore.getState().notificationSound);
+      const notifContent: NotificationContentInputWithThread = {
+        ...content,
+        sound,
+        interruptionLevel: 'timeSensitive',
+        categoryIdentifier: CAT.HONEST,
+        threadIdentifier: THREAD.TIMER,
+        data: { kind: 'honest', label: opts.label, startedAt: opts.startedAt, honestMin: opts.honestMin },
+      };
+      const id = await N.scheduleNotificationAsync({
+        content: notifContent,
+        trigger: { type: N.SchedulableTriggerInputTypes.TIME_INTERVAL, seconds: secondsFromNow },
+      });
+      kv.set(NOTIF_ID_KEY, id);
+    } catch {
+      // best-effort; a failed schedule must never block the timer
+    }
+  });
 }
 
-/** Cancel the scheduled "estimate is up" notification, if any. */
-export async function cancelTimerDone(): Promise<void> {
+async function cancelTimerDoneInner(): Promise<void> {
   const N = getModule();
   if (!N) return;
   try {
@@ -154,45 +156,51 @@ export async function cancelTimerDone(): Promise<void> {
   }
 }
 
+/** Cancel the scheduled "estimate is up" notification, if any. */
+export function cancelTimerDone(): Promise<void> {
+  return withLock(NOTIF_ID_KEY, cancelTimerDoneInner);
+}
+
 /**
  * G17 — schedule the "start by" nudge for an active Start-By plan: fires at the
  * plan's start-by time so the user starts getting ready in time to hit the
  * deadline honestly. Cancels any prior one first; skips silently if start-by is
  * already past. No-op without the native module.
  */
-export async function scheduleStartBy(opts: {
+export function scheduleStartBy(opts: {
   startByMs: number;
   firstTaskLabel: string;
   deadlineMs: number;
 }): Promise<void> {
-  const N = getModule();
-  if (!N) return;
-  try {
-    await cancelStartBy();
-    const secondsFromNow = Math.round((opts.startByMs - Date.now()) / 1000);
-    if (secondsFromNow <= 0) return;
-    const sound = resolveNotificationSound(useSettingsStore.getState().notificationSound);
-    const notifContent: NotificationContentInputWithThread = {
-      title: `Start by ${formatClock(opts.startByMs)}`,
-      body: `Start ${opts.firstTaskLabel} now and you'll finish by ${formatClock(opts.deadlineMs)}.`,
-      sound,
-      interruptionLevel: 'timeSensitive',
-      categoryIdentifier: CAT.START_BY,
-      threadIdentifier: THREAD.PLAN,
-      data: { kind: 'startBy', startByMs: opts.startByMs, firstTaskLabel: opts.firstTaskLabel, deadlineMs: opts.deadlineMs },
-    };
-    const id = await N.scheduleNotificationAsync({
-      content: notifContent,
-      trigger: { type: N.SchedulableTriggerInputTypes.TIME_INTERVAL, seconds: secondsFromNow },
-    });
-    kv.set(STARTBY_ID_KEY, id);
-  } catch {
-    // best-effort; a failed schedule must never block saving a plan
-  }
+  return withLock(STARTBY_ID_KEY, async () => {
+    const N = getModule();
+    if (!N) return;
+    try {
+      await cancelStartByInner();
+      const secondsFromNow = Math.round((opts.startByMs - Date.now()) / 1000);
+      if (secondsFromNow <= 0) return;
+      const sound = resolveNotificationSound(useSettingsStore.getState().notificationSound);
+      const notifContent: NotificationContentInputWithThread = {
+        title: `Start by ${formatClock(opts.startByMs)}`,
+        body: `Start ${opts.firstTaskLabel} now and you'll finish by ${formatClock(opts.deadlineMs)}.`,
+        sound,
+        interruptionLevel: 'timeSensitive',
+        categoryIdentifier: CAT.START_BY,
+        threadIdentifier: THREAD.PLAN,
+        data: { kind: 'startBy', startByMs: opts.startByMs, firstTaskLabel: opts.firstTaskLabel, deadlineMs: opts.deadlineMs },
+      };
+      const id = await N.scheduleNotificationAsync({
+        content: notifContent,
+        trigger: { type: N.SchedulableTriggerInputTypes.TIME_INTERVAL, seconds: secondsFromNow },
+      });
+      kv.set(STARTBY_ID_KEY, id);
+    } catch {
+      // best-effort; a failed schedule must never block saving a plan
+    }
+  });
 }
 
-/** Cancel the scheduled "start by" notification, if any. */
-export async function cancelStartBy(): Promise<void> {
+async function cancelStartByInner(): Promise<void> {
   const N = getModule();
   if (!N) return;
   try {
@@ -206,6 +214,11 @@ export async function cancelStartBy(): Promise<void> {
   }
 }
 
+/** Cancel the scheduled "start by" notification, if any. */
+export function cancelStartBy(): Promise<void> {
+  return withLock(STARTBY_ID_KEY, cancelStartByInner);
+}
+
 /**
  * Hyperfocus guardrail (Pro) — schedule one soft "still on this?" check-in at
  * start + thresholdMin, so a backgrounded/closed session still gets the single,
@@ -213,41 +226,42 @@ export async function cancelStartBy(): Promise<void> {
  * time is already past. No-op without the native module. No-guilt: amber tone in
  * copy only, never a countdown, fires once per session. Quiet-hours aware.
  */
-export async function scheduleGuardCheckIn(opts: {
+export function scheduleGuardCheckIn(opts: {
   label: string;
   startedAt: number;
   thresholdMin: number;
 }): Promise<void> {
-  const N = getModule();
-  if (!N) return;
-  try {
-    await cancelGuardCheckIn();
-    const desiredMs = opts.startedAt + opts.thresholdMin * 60_000;
-    const quiet = useSettingsStore.getState().quietHours;
-    const fireMs = nextAllowedFireMs(desiredMs, quiet, Date.now());
-    const secondsFromNow = Math.round((fireMs - Date.now()) / 1000);
-    if (secondsFromNow <= 0) return;
-    const sound = resolveNotificationSound(useSettingsStore.getState().notificationSound);
-    const notifContent: NotificationContentInputWithThread = {
-      title: `Still on ${opts.label}?`,
-      body: `You've been at it about ${opts.thresholdMin} minutes. No pressure, just a nudge.`,
-      sound,
-      categoryIdentifier: CAT.GUARD,
-      threadIdentifier: THREAD.GUARD,
-      data: { kind: 'guard', label: opts.label, thresholdMin: opts.thresholdMin },
-    };
-    const id = await N.scheduleNotificationAsync({
-      content: notifContent,
-      trigger: { type: N.SchedulableTriggerInputTypes.TIME_INTERVAL, seconds: secondsFromNow },
-    });
-    kv.set(GUARD_ID_KEY, id);
-  } catch {
-    // best-effort; a failed schedule must never block the timer
-  }
+  return withLock(GUARD_ID_KEY, async () => {
+    const N = getModule();
+    if (!N) return;
+    try {
+      await cancelGuardCheckInInner();
+      const desiredMs = opts.startedAt + opts.thresholdMin * 60_000;
+      const quiet = useSettingsStore.getState().quietHours;
+      const fireMs = nextAllowedFireMs(desiredMs, quiet, Date.now());
+      const secondsFromNow = Math.round((fireMs - Date.now()) / 1000);
+      if (secondsFromNow <= 0) return;
+      const sound = resolveNotificationSound(useSettingsStore.getState().notificationSound);
+      const notifContent: NotificationContentInputWithThread = {
+        title: `Still on ${opts.label}?`,
+        body: `You've been at it about ${opts.thresholdMin} minutes. No pressure, just a nudge.`,
+        sound,
+        categoryIdentifier: CAT.GUARD,
+        threadIdentifier: THREAD.GUARD,
+        data: { kind: 'guard', label: opts.label, thresholdMin: opts.thresholdMin },
+      };
+      const id = await N.scheduleNotificationAsync({
+        content: notifContent,
+        trigger: { type: N.SchedulableTriggerInputTypes.TIME_INTERVAL, seconds: secondsFromNow },
+      });
+      kv.set(GUARD_ID_KEY, id);
+    } catch {
+      // best-effort; a failed schedule must never block the timer
+    }
+  });
 }
 
-/** Cancel the scheduled guardrail check-in notification, if any. */
-export async function cancelGuardCheckIn(): Promise<void> {
+async function cancelGuardCheckInInner(): Promise<void> {
   const N = getModule();
   if (!N) return;
   try {
@@ -259,4 +273,9 @@ export async function cancelGuardCheckIn(): Promise<void> {
   } catch {
     // best-effort
   }
+}
+
+/** Cancel the scheduled guardrail check-in notification, if any. */
+export function cancelGuardCheckIn(): Promise<void> {
+  return withLock(GUARD_ID_KEY, cancelGuardCheckInInner);
 }
