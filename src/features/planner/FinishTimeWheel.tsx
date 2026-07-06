@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { View, Text, type TextStyle, type ViewStyle } from 'react-native';
+import { View, Text, Pressable, type TextStyle, type ViewStyle } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import Animated, {
   useSharedValue,
@@ -9,21 +10,38 @@ import Animated, {
   withSpring,
   runOnJS,
   useReducedMotion,
+  FadeIn,
+  ReduceMotion,
 } from 'react-native-reanimated';
 import { haptics } from '@/src/lib/haptics';
 import { useTheme } from '@/src/theme/useTheme';
 import { Chip } from '@/src/components/Chip';
 import { clampWheelIndex, WheelRow, WHEEL_SIDE_PEEK } from './wheelShared';
+import {
+  bufferFromHourMinute,
+  bufferToHourMinute,
+  formatBuffer,
+  popDigit,
+  pushDigit,
+} from './timeKeypad';
 
 // ──────────────────────────────────────────────────────────────────────────────
 // FinishTimeWheel — two-column HH : MM pan-wheel for picking a deadline time.
 //
 // Layout:
-//   [mode chips]   leave by / be done by / be at
-//   [HH wheel] : [MM wheel]
+//   [mode chips]   leave by / be done by / be at        (showModes)
+//   [HH:MM readout]                                      (editable — tap to type)
+//   [HH wheel] : [MM wheel]   ⇄   [numeric keypad]
 //
 // Hours column: 0–23, step 1.
-// Minutes column: 0–55, step 5.
+// Minutes column: step 5 by default; step 1 when `editable` so the wheel can land
+// on the exact minute the keypad can type (otherwise switching back to the wheel
+// would snap 47 → 45 and silently clobber a typed value).
+//
+// `editable` adds a large tappable readout above the wheel. Tapping it crossfades
+// the wheel into an iOS-style numeric keypad (opacity only — no slide/bounce, and
+// `entering`-only so a conditionally-unmounted view never triggers the Fabric
+// exiting-animation crash). Digit-entry logic lives in the pure `timeKeypad`.
 //
 // Both columns share the same wheel physics as DurationWheel (and TimeField):
 // Reanimated Pan, fling-project, spring-snap, light haptic on row crossing.
@@ -32,7 +50,7 @@ import { clampWheelIndex, WheelRow, WHEEL_SIDE_PEEK } from './wheelShared';
 // `valueMs` drives the wheels externally; null → defaults to the next whole hour.
 // ──────────────────────────────────────────────────────────────────────────────
 
-const MINUTE_STEP = 5;
+const DEFAULT_MINUTE_STEP = 5;
 const FLING_PROJECTION = 0.1;
 
 // ── mode chip labels ──────────────────────────────────────────────────────────
@@ -49,18 +67,20 @@ function hoursData(): { value: number; label: string }[] {
   }));
 }
 
-function minutesData(): { value: number; label: string }[] {
+function minutesData(step: number): { value: number; label: string }[] {
   const items = [];
-  for (let m = 0; m < 60; m += MINUTE_STEP) {
+  for (let m = 0; m < 60; m += step) {
     items.push({ value: m, label: String(m).padStart(2, '0') });
   }
   return items;
 }
 
 const HOURS = hoursData();
-const MINUTES = minutesData();
 const HOUR_COUNT = HOURS.length; // 24
-const MIN_COUNT = MINUTES.length; // 12
+
+function pad2(n: number): string {
+  return String(n).padStart(2, '0');
+}
 
 /** Epoch ms for hour:minute on the calendar day of `baseMs`. */
 function todayAt(hour: number, minute: number, baseMs: number): number {
@@ -69,20 +89,20 @@ function todayAt(hour: number, minute: number, baseMs: number): number {
   return d.getTime();
 }
 
-/** Extract { hour, minute } from epoch ms. Minutes are snapped to MINUTE_STEP. */
-function decompose(ms: number): { hour: number; minute: number } {
+/** Extract { hour, minute } from epoch ms. Minutes are snapped to `step`. */
+function decompose(ms: number, step: number): { hour: number; minute: number } {
   const d = new Date(ms);
-  const minute = Math.round(d.getMinutes() / MINUTE_STEP) * MINUTE_STEP;
-  return { hour: d.getHours(), minute: minute >= 60 ? 55 : minute };
+  const minute = Math.round(d.getMinutes() / step) * step;
+  return { hour: d.getHours(), minute: minute >= 60 ? 60 - step : minute };
 }
 
 function hourIndex(hour: number): number {
   return clampWheelIndex(hour, HOUR_COUNT);
 }
 
-function minuteIndex(minute: number): number {
-  const idx = MINUTES.findIndex((m) => m.value === minute);
-  return idx >= 0 ? idx : clampWheelIndex(Math.round(minute / MINUTE_STEP), MIN_COUNT);
+function minuteIndex(minute: number, minutes: { value: number }[], step: number): number {
+  const idx = minutes.findIndex((m) => m.value === minute);
+  return idx >= 0 ? idx : clampWheelIndex(Math.round(minute / step), minutes.length);
 }
 
 // ── column wheel (hours or minutes) ──────────────────────────────────────────
@@ -216,6 +236,61 @@ function ColumnWheel({
   );
 }
 
+// ── numeric keypad (editable mode) ────────────────────────────────────────────
+
+const KEYS: (string | null)[] = ['1', '2', '3', '4', '5', '6', '7', '8', '9', null, '0', '⌫'];
+
+function Keypad({ onDigit, onBackspace }: { onDigit: (d: string) => void; onBackspace: () => void }) {
+  const t = useTheme();
+
+  const key: ViewStyle = {
+    height: t.size.control.md,
+    borderRadius: t.radii.md,
+    borderCurve: 'continuous',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: t.colors.surfaceSunken,
+  };
+  const keyText: TextStyle = {
+    fontFamily: 'Inter-Medium',
+    fontSize: t.fontSize.lg,
+    color: t.colors.ink,
+    fontVariant: ['tabular-nums'],
+  };
+
+  return (
+    <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: t.space[2] }}>
+      {KEYS.map((k, i) => {
+        // 3-per-row grid: each cell is a third of the width minus the two gaps.
+        const cell: ViewStyle = { width: `${100 / 3}%`, paddingHorizontal: t.space[1] };
+        if (k === null) return <View key={`gap-${i}`} style={cell} />;
+        const isBack = k === '⌫';
+        return (
+          <View key={k} style={cell}>
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel={isBack ? 'Delete' : `Digit ${k}`}
+              onPress={() => {
+                haptics.light();
+                if (isBack) onBackspace();
+                else onDigit(k);
+              }}
+            >
+              <View style={[key, isBack ? { backgroundColor: 'transparent' } : null]}>
+                {isBack ? (
+                  <Ionicons name="backspace-outline" size={t.iconSize.md} color={t.colors.inkSoft} />
+                ) : (
+                  <Text style={keyText}>{k}</Text>
+                )}
+              </View>
+            </Pressable>
+          </View>
+        );
+      })}
+    </View>
+  );
+}
+
 // ── main component ────────────────────────────────────────────────────────────
 
 export function FinishTimeWheel({
@@ -224,6 +299,7 @@ export function FinishTimeWheel({
   onChange,
   nowMs,
   showModes = true,
+  editable = false,
 }: {
   /** Selected deadline as epoch ms. If null/undefined, defaults to the next whole hour. */
   valueMs: number | null;
@@ -234,9 +310,16 @@ export function FinishTimeWheel({
   nowMs?: number;
   /** When false, hide the mode chip row so the wheel is a plain time picker. Default true. */
   showModes?: boolean;
+  /** Add a large tappable readout that flips the wheel into a type-any-minute keypad. */
+  editable?: boolean;
 }) {
   const t = useTheme();
   const reducedMotion = useReducedMotion();
+
+  // Editable mode lets the keypad type any minute, so the wheel must step by 1 to
+  // land on it exactly; otherwise a typed 47 snaps back to 45 on the wheel.
+  const minuteStep = editable ? 1 : DEFAULT_MINUTE_STEP;
+  const minutes = useMemo(() => minutesData(minuteStep), [minuteStep]);
 
   // Resolve initial hour/minute from valueMs or default to next whole hour.
   const defaultMs = useMemo(() => {
@@ -248,29 +331,33 @@ export function FinishTimeWheel({
   }, []);
 
   const resolved = valueMs ?? defaultMs;
-  const initial = useMemo(() => decompose(resolved), [resolved]);
+  const initial = useMemo(() => decompose(resolved, minuteStep), [resolved, minuteStep]);
 
   const [hIdx, setHIdx] = useState(() => hourIndex(initial.hour));
-  const [mIdx, setMIdx] = useState(() => minuteIndex(initial.minute));
+  const [mIdx, setMIdx] = useState(() => minuteIndex(initial.minute, minutes, minuteStep));
+
+  // Keypad (editable) state: whether the keypad is showing + the digit buffer.
+  const [typing, setTyping] = useState(false);
+  const [buffer, setBuffer] = useState('');
 
   // When valueMs changes externally, sync indices.
   const prevMs = useRef(resolved);
   useEffect(() => {
     if (valueMs === null || valueMs === prevMs.current) return;
     prevMs.current = valueMs;
-    const dec = decompose(valueMs);
+    const dec = decompose(valueMs, minuteStep);
     setHIdx(hourIndex(dec.hour));
-    setMIdx(minuteIndex(dec.minute));
-  }, [valueMs]);
+    setMIdx(minuteIndex(dec.minute, minutes, minuteStep));
+  }, [valueMs, minuteStep, minutes]);
 
   const emitChange = useCallback(
     (newHIdx: number, newMIdx: number, newMode: DeadlineMode) => {
       const h = HOURS[newHIdx]?.value ?? 0;
-      const m = MINUTES[newMIdx]?.value ?? 0;
+      const m = minutes[newMIdx]?.value ?? 0;
       // I3: use injected nowMs so todayAt anchors to the right calendar day.
       onChange(todayAt(h, m, nowMs ?? Date.now()), newMode);
     },
-    [onChange, nowMs],
+    [onChange, nowMs, minutes],
   );
 
   const handleHourChange = useCallback(
@@ -296,6 +383,54 @@ export function FinishTimeWheel({
     },
     [emitChange, hIdx, mIdx],
   );
+
+  // Current hour/minute values (for the readout + keypad seed).
+  const curHour = HOURS[hIdx]?.value ?? 0;
+  const curMin = minutes[mIdx]?.value ?? 0;
+
+  // Commit a keypad buffer: update the wheel indices AND emit. Kept in sync so
+  // toggling back to the wheel shows the typed time.
+  const commitBuffer = useCallback(
+    (next: string) => {
+      const hm = bufferToHourMinute(next);
+      if (hm === null) return;
+      const newHIdx = hourIndex(hm.hour);
+      const newMIdx = minuteIndex(hm.minute, minutes, minuteStep);
+      setHIdx(newHIdx);
+      setMIdx(newMIdx);
+      emitChange(newHIdx, newMIdx, mode);
+    },
+    [emitChange, minutes, minuteStep, mode],
+  );
+
+  const handleDigit = useCallback(
+    (d: string) => {
+      setBuffer((prev) => {
+        const next = pushDigit(prev, d);
+        // Rejected (would be an invalid time) — leave the buffer untouched, quietly.
+        if (next === prev) return prev;
+        commitBuffer(next);
+        return next;
+      });
+    },
+    [commitBuffer],
+  );
+
+  const handleBackspace = useCallback(() => {
+    setBuffer((prev) => {
+      const next = popDigit(prev);
+      commitBuffer(next);
+      return next;
+    });
+  }, [commitBuffer]);
+
+  const toggleTyping = useCallback(() => {
+    haptics.selection();
+    setTyping((wasTyping) => {
+      if (!wasTyping) setBuffer(bufferFromHourMinute({ hour: curHour, minute: curMin }));
+      return !wasTyping;
+    });
+  }, [curHour, curMin]);
 
   const itemHeight = t.size.wheelRow; // 32pt — tight rows, matches DurationWheel
   // Centre row + a half-row peek each side (scroll cue) — compact, not 3 full rows.
@@ -336,6 +471,59 @@ export function FinishTimeWheel({
     marginBottom: t.space[3],
   };
 
+  const readoutText: TextStyle = {
+    fontFamily: 'Inter-Bold',
+    fontSize: t.fontSize.honestHero, // 46
+    letterSpacing: t.letterSpacing.tight,
+    color: t.colors.ink,
+    fontVariant: ['tabular-nums'],
+  };
+
+  const readoutDisplay = typing ? formatBuffer(buffer) : `${pad2(curHour)}:${pad2(curMin)}`;
+
+  const enter = FadeIn.duration(t.motion.fast).reduceMotion(ReduceMotion.System);
+
+  const dualWheel = (
+    <View style={{ position: 'relative' }}>
+      <View style={highlight} pointerEvents="none" />
+      <View style={row}>
+        <ColumnWheel
+          data={HOURS}
+          selectedIndex={hIdx}
+          onIndexChange={handleHourChange}
+          itemHeight={itemHeight}
+          spring={t.motion.spring}
+          inkColor={t.colors.ink}
+          inkFaintColor={t.colors.inkFaint}
+          fontSize={t.fontSize.base}
+          accessibilityLabel="Hour"
+          accessibilityMin={0}
+          accessibilityMax={23}
+          accessibilityValue={curHour}
+          reducedMotion={reducedMotion}
+        />
+
+        <Text style={separator}>:</Text>
+
+        <ColumnWheel
+          data={minutes}
+          selectedIndex={mIdx}
+          onIndexChange={handleMinuteChange}
+          itemHeight={itemHeight}
+          spring={t.motion.spring}
+          inkColor={t.colors.ink}
+          inkFaintColor={t.colors.inkFaint}
+          fontSize={t.fontSize.base}
+          accessibilityLabel="Minute"
+          accessibilityMin={0}
+          accessibilityMax={59}
+          accessibilityValue={curMin}
+          reducedMotion={reducedMotion}
+        />
+      </View>
+    </View>
+  );
+
   return (
     <View>
       {/* Mode chips */}
@@ -347,45 +535,43 @@ export function FinishTimeWheel({
         </View>
       ) : null}
 
-      {/* Dual wheel */}
-      <View style={{ position: 'relative' }}>
-        <View style={highlight} pointerEvents="none" />
-        <View style={row}>
-          <ColumnWheel
-            data={HOURS}
-            selectedIndex={hIdx}
-            onIndexChange={handleHourChange}
-            itemHeight={itemHeight}
-            spring={t.motion.spring}
-            inkColor={t.colors.ink}
-            inkFaintColor={t.colors.inkFaint}
-            fontSize={t.fontSize.base}
-            accessibilityLabel="Hour"
-            accessibilityMin={0}
-            accessibilityMax={23}
-            accessibilityValue={HOURS[hIdx]?.value ?? 0}
-            reducedMotion={reducedMotion}
-          />
+      {/* Editable: tappable readout above the wheel/keypad */}
+      {editable ? (
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel={`Edit time, currently ${pad2(curHour)}:${pad2(curMin)}`}
+          accessibilityHint={typing ? 'Show the time wheel' : 'Type an exact time'}
+          onPress={toggleTyping}
+        >
+          <View
+            style={{
+              flexDirection: 'row',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: t.space[2],
+              paddingVertical: t.space[6],
+            }}
+          >
+            <Text style={readoutText}>{readoutDisplay}</Text>
+            <Ionicons
+              name={typing ? 'chevron-up' : 'keypad-outline'}
+              size={t.iconSize.sm}
+              color={t.colors.inkFaint}
+            />
+          </View>
+        </Pressable>
+      ) : null}
 
-          <Text style={separator}>:</Text>
-
-          <ColumnWheel
-            data={MINUTES}
-            selectedIndex={mIdx}
-            onIndexChange={handleMinuteChange}
-            itemHeight={itemHeight}
-            spring={t.motion.spring}
-            inkColor={t.colors.ink}
-            inkFaintColor={t.colors.inkFaint}
-            fontSize={t.fontSize.base}
-            accessibilityLabel="Minute"
-            accessibilityMin={0}
-            accessibilityMax={55}
-            accessibilityValue={MINUTES[mIdx]?.value ?? 0}
-            reducedMotion={reducedMotion}
-          />
-        </View>
-      </View>
+      {/* Wheel ⇄ keypad. entering-only crossfade (no exiting → no Fabric crash). */}
+      {editable && typing ? (
+        <Animated.View key="keypad" entering={enter}>
+          <Keypad onDigit={handleDigit} onBackspace={handleBackspace} />
+        </Animated.View>
+      ) : (
+        <Animated.View key="wheel" entering={editable ? enter : undefined}>
+          {dualWheel}
+        </Animated.View>
+      )}
     </View>
   );
 }

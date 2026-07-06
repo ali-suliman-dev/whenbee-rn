@@ -64,7 +64,11 @@ export function FinishEditorSheet({
     paddingBottom: t.space[6],
     gap: t.space[4],
   };
-  const titleStyle: TextStyle = { ...(type.subtitle as unknown as TextStyle), color: t.colors.ink };
+  // Quiet 12px label — the big tappable readout inside the wheel is the hero now.
+  const titleStyle: TextStyle = {
+    ...(type.caption as unknown as TextStyle),
+    color: t.colors.inkSoft,
+  };
 
   // ─── Render ─────────────────────────────────────────────────────────────────
 
@@ -78,7 +82,13 @@ export function FinishEditorSheet({
       <View style={sheet}>
         <SheetGrabber />
         <AppText style={titleStyle}>Finish by</AppText>
-        <FinishTimeWheel valueMs={valueMs} mode="be done by" showModes={false} onChange={onChange} />
+        <FinishTimeWheel
+          valueMs={valueMs}
+          mode="be done by"
+          showModes={false}
+          editable
+          onChange={onChange}
+        />
         <View style={{ flexDirection: 'row', justifyContent: 'flex-end', gap: t.space[2] }}>
           {valueMs !== null ? (
             <AppButton label="Clear" variant="ghost" size="2xs" onPress={onClear} />
