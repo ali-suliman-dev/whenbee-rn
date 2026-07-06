@@ -59,3 +59,24 @@ test('removeTask still removes the task from dayTasks', async () => {
 
   expect(store.getState().dayTasks.find((t) => t.id === task.id)).toBeUndefined();
 });
+
+test('removeTask does NOT cancel the start-by reminder for a non-queued (completed) task', async () => {
+  const { store } = freshStore();
+  await store.getState().init(NOW);
+  const task = await store.getState().addTask({
+    label: 'Write',
+    category: 'deep-work',
+    guessMin: 60,
+    nowMs: NOW,
+  });
+
+  await store.getState().completeTask(task.id, { completedAt: NOW, actualMin: 55, nowMs: NOW });
+
+  // Isolate the assertion to removeTask's own effect, independent of
+  // whatever completeTask itself may or may not call.
+  (cancelStartBy as jest.Mock).mockClear();
+
+  await store.getState().removeTask(task.id, NOW);
+
+  expect(cancelStartBy).not.toHaveBeenCalled();
+});
