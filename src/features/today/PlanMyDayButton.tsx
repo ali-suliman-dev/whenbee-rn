@@ -68,7 +68,7 @@ export function PlanMyDayButton({ onPress, isPro, label }: PlanMyDayButtonProps)
           aStyle,
         ]}
       >
-        <Ionicons name="sparkles" size={t.iconSize.sm} color={t.colors.primary} />
+        <Ionicons name="map-outline" size={t.iconSize.sm} color={t.colors.primary} />
         <Text
           numberOfLines={1}
           style={{

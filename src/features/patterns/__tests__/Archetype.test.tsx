@@ -39,6 +39,6 @@ it('surfaces LEARNED stats from the calibration map even with no quiz answers', 
 it('renders the placeholder invite with a quiz CTA', () => {
   const onTakeQuiz = jest.fn();
   const { getByText } = render(<ArchetypePlaceholder onTakeQuiz={onTakeQuiz} />);
-  fireEvent.press(getByText(/take the 20-sec quiz/i));
+  fireEvent.press(getByText(/take the quiz/i));
   expect(onTakeQuiz).toHaveBeenCalled();
 });

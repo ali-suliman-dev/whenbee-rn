@@ -27,7 +27,7 @@ export function PatternsEmpty() {
   return (
     <View style={wrap}>
       <View style={disc}>
-        <Ionicons name="sparkles-outline" size={t.iconSize.lg} color={t.colors.primary} />
+        <Ionicons name="analytics-outline" size={t.iconSize.lg} color={t.colors.primary} />
       </View>
       <Text style={title}>Your patterns are on the way</Text>
       <Text style={body}>
