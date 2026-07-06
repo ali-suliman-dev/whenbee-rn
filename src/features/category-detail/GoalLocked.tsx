@@ -3,6 +3,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import { Card } from '@/src/components/Card';
 import { AppText } from '@/src/components/AppText';
+import { ProCoinPill } from '@/src/components/ProCoinPill';
 import { useTheme } from '@/src/theme/useTheme';
 import { type } from '@/src/theme/typography';
 import { analytics } from '@/src/services/analytics';
@@ -12,53 +13,11 @@ import { analytics } from '@/src/services/analytics';
 // 2026-06-26-goal-coach §Locked). Sells the verb ("I'll coach you there"), never
 // the user's real numbers: a greyed teaser track at a fixed illustrative fraction
 // with a honey target tick (no amber data, no real %). The Pro affordance is a
-// coin-edge PRO pill (the app's coin language). Tapping opens the paywall with the
-// `goals` trigger and fires `goal_paywall`. The Pressable is a bare touch wrapper;
-// visuals live on the inner Card (RN reactCompiler + nativewind drop function-form
-// Pressable styles).
+// coin-edge PRO pill (the app's coin language, see ProCoinPill). Tapping opens
+// the paywall with the `goals` trigger and fires `goal_paywall`. The Pressable
+// is a bare touch wrapper; visuals live on the inner Card (RN reactCompiler +
+// nativewind drop function-form Pressable styles).
 // ──────────────────────────────────────────────────────────────────────────────
-
-/** A small tactile "PRO" coin pill — honey face on a darker amber edge (coin-edge
- *  depth, like CoinBadge / CoinHex). Display-only. */
-function ProCoinPill() {
-  const t = useTheme();
-  const edge = t.burst.coinEdge;
-  const wrap: ViewStyle = { paddingBottom: edge };
-  const edgeBase: ViewStyle = {
-    position: 'absolute',
-    left: 0,
-    right: 0,
-    top: edge,
-    bottom: 0,
-    borderRadius: t.radii.full,
-    borderCurve: 'continuous',
-    backgroundColor: t.colors.accentEdge,
-  };
-  const face: ViewStyle = {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: t.space[1],
-    backgroundColor: t.colors.accent,
-    borderRadius: t.radii.full,
-    borderCurve: 'continuous',
-    paddingHorizontal: t.space[2.5],
-    paddingVertical: t.space[0.5],
-  };
-  const label: TextStyle = {
-    ...(type.captionBold as unknown as TextStyle),
-    color: t.colors.onAmber,
-    letterSpacing: 0.3,
-  };
-  return (
-    <View style={wrap}>
-      <View style={edgeBase} />
-      <View style={face}>
-        <Ionicons name="lock-closed" size={t.iconSize.xs} color={t.colors.onAmber} />
-        <AppText style={label}>PRO</AppText>
-      </View>
-    </View>
-  );
-}
 
 export function GoalLocked({ categoryId }: { categoryId: string }) {
   const t = useTheme();

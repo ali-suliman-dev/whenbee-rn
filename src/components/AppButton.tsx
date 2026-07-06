@@ -46,6 +46,7 @@ export function AppButton({
   variant = 'indigo',
   size = 'md',
   depth = 'standard',
+  tone = 'surface',
   disabled = false,
   fullWidth = false,
   icon,
@@ -59,6 +60,10 @@ export function AppButton({
   size?: Size;
   /** Coin-edge depth for FILLED variants. `shallow` = a thinner, calmer edge. */
   depth?: 'standard' | 'shallow';
+  /** GHOST-only face color. `sunken` reads as an inset dark tile — use when the
+   *  button sits directly on a card whose bg is `colors.surface` (the default
+   *  ghost face), where the two would otherwise be indistinguishable. */
+  tone?: 'surface' | 'sunken';
   disabled?: boolean;
   fullWidth?: boolean;
   icon?: ReactNode;
@@ -95,7 +100,7 @@ export function AppButton({
   const bg: Record<NewVariant, string> = {
     indigo: t.colors.primary,
     amber: t.colors.accent,
-    ghost: t.colors.surface,
+    ghost: tone === 'sunken' ? t.colors.surfaceSunken : t.colors.surface,
     danger: t.colors.danger,
   };
   const fg: Record<NewVariant, string> = {
