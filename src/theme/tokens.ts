@@ -183,6 +183,10 @@ export const tokens = {
     arcIn: 1000, arcOut: 840,
     // Shared physics — deduped from AppButton + FAB.
     spring: { damping: 13, stiffness: 340 },
+    // Wheel-picker row snap. Overshoot-clamped + higher damping than `spring`
+    // so the drum settles onto a row without the jiggle/bounce that an
+    // underdamped spring produces. Smooth ease-out settle, no wobble.
+    wheelSnap: { damping: 22, stiffness: 220, overshootClamping: true },
     // Named curves — declared once, not re-typed per file.
     easing: { standard: Easing.bezier(0.4, 0, 0.2, 1), calm: Easing.inOut(Easing.sin), honey: Easing.bezier(0.22, 1, 0.36, 1), premium: Easing.bezier(0.4, 0, 0.2, 1), out: Easing.bezier(0.23, 1, 0.32, 1) },
   },
