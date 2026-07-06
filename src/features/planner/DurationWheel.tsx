@@ -88,7 +88,7 @@ export function DurationWheel({
   // Centre row + a half-row peek each side (scroll cue) — compact, not 3 full rows.
   const pad = itemHeight * WHEEL_SIDE_PEEK;
   const wheelHeight = itemHeight * (1 + 2 * WHEEL_SIDE_PEEK);
-  const spring = t.motion.spring;
+  const spring = t.motion.wheelSnap;
 
   const initialIndex = indexOfValue(valueMin);
   const translateY = useSharedValue(-initialIndex * itemHeight);

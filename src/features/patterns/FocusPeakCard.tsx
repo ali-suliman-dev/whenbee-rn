@@ -6,6 +6,8 @@ import { useTheme } from '@/src/theme/useTheme';
 import { type } from '@/src/theme/typography';
 import { AppText } from '@/src/components/AppText';
 import { AppButton } from '@/src/components/AppButton';
+import { ProCoinPill } from '@/src/components/ProCoinPill';
+import { HoneyPips } from '@/src/features/category-detail/HoneyPips';
 import { formatWindowRange } from '@/src/lib/time';
 import { FW_GATE_MIN_COMPLETED } from '@/src/engine/constants';
 import { useEntitlement } from '@/src/features/paywall/useEntitlement';
@@ -57,16 +59,30 @@ export function FocusPeakCard() {
 
   // ── forming ──
   if (basis === 'prior') {
+    const clampedCount = Math.min(sampleCount, FW_GATE_MIN_COMPLETED);
+    const countHead: TextStyle = { ...(type.bodyLg as TextStyle), fontWeight: t.fontWeight.bold as TextStyle['fontWeight'] };
+    const headerRow: ViewStyle = { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' };
     return (
       <View style={card}>
-        <Eyebrow />
+        <View style={headerRow}>
+          <Eyebrow />
+          {isPro ? null : <ProCoinPill icon="ribbon" />}
+        </View>
         <FocusCurve scoreByBin={scoreByBin} variant="forming" yAxis />
         <AppText style={title}>Learning your focus hours</AppText>
-        <AppText style={meta} testID="focus-maturity">{`${sampleCount} / ${FW_GATE_MIN_COMPLETED} sessions`}</AppText>
+        <AppText testID="focus-maturity">
+          <AppText style={{ ...countHead, color: t.colors.inkSoft }}>{sampleCount}</AppText>
+          <AppText style={{ ...countHead, color: t.colors.inkFaint }}>{`/${FW_GATE_MIN_COMPLETED}`}</AppText>
+          <AppText style={{ ...(type.body as TextStyle), color: t.colors.inkFaint }}> sessions</AppText>
+        </AppText>
+        <HoneyPips filled={clampedCount} total={FW_GATE_MIN_COMPLETED} tone="sunken" />
+        <AppText style={body}>Log {FW_GATE_MIN_COMPLETED} timed sessions and I&apos;ll reveal your sharpest hours.</AppText>
         <AppButton
           label="Set my hours myself"
           variant="ghost"
-          size="sm"
+          tone="sunken"
+          size="md"
+          fullWidth
           onPress={() => setEditing(true)}
           accessibilityLabel="Set focus window manually"
         />

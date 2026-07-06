@@ -8,31 +8,7 @@
     android:layout_height="match_parent"
     android:orientation="vertical"
     android:background="@drawable/widget_bg"
-    android:padding="14dp">
-
-    <!-- Wordmark row -->
-    <LinearLayout
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:orientation="horizontal"
-        android:gravity="center_vertical">
-
-        <ImageView
-            android:layout_width="7dp"
-            android:layout_height="7dp"
-            android:layout_marginEnd="6dp"
-            android:src="@drawable/widget_wordmark_dot"
-            android:contentDescription="@null" />
-
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="@string/widget_wordmark"
-            android:textColor="#ADA9B5"
-            android:textSize="11sp"
-            android:letterSpacing="0.04"
-            android:textStyle="bold" />
-    </LinearLayout>
+    android:padding="12dp">
 
     <!-- Spacer above the verdict block so it sits optically centred in the tile. -->
     <FrameLayout
@@ -57,7 +33,7 @@
         android:id="@+id/dtf_caption"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginTop="3dp"
+        android:layout_marginTop="4dp"
         android:maxLines="1"
         android:ellipsize="end"
         android:text="@string/does_today_fit_pro"
@@ -74,7 +50,7 @@
         style="@android:style/Widget.ProgressBar.Horizontal"
         android:layout_width="match_parent"
         android:layout_height="6dp"
-        android:layout_marginTop="11dp"
+        android:layout_marginTop="12dp"
         android:max="1000"
         android:progress="0"
         android:indeterminate="false"

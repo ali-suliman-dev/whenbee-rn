@@ -126,7 +126,7 @@ function ColumnWheel({
   selectedIndex: number;
   onIndexChange: (idx: number) => void;
   itemHeight: number;
-  spring: { damping: number; stiffness: number };
+  spring: { damping: number; stiffness: number; overshootClamping?: boolean };
   inkColor: string;
   inkFaintColor: string;
   fontSize: number;

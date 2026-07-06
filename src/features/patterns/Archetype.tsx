@@ -185,13 +185,23 @@ export function ArchetypePlaceholder({ onTakeQuiz }: { onTakeQuiz: () => void })
   const eyebrowStyle: TextStyle = { ...(type.eyebrow as unknown as TextStyle), color: t.colors.accent };
   const titleStyle: TextStyle = { ...(type.subtitle as unknown as TextStyle), color: t.colors.ink };
   const bodyStyle: TextStyle = { ...(type.body as unknown as TextStyle), color: t.colors.inkSoft };
+  const hintStyle: TextStyle = { ...(type.caption as unknown as TextStyle), color: t.colors.inkSoft };
+  const ctaRow: ViewStyle = {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginTop: t.space[2],
+  };
   return (
     <View style={cardStyle}>
       <Text style={eyebrowStyle}>YOUR TIME PERSONALITY</Text>
       <Text style={titleStyle}>Meet your time personality</Text>
-      <Text style={bodyStyle}>Answer a few quick questions, or keep logging and I&apos;ll figure it out.</Text>
-      <View style={{ alignSelf: 'flex-start', marginTop: t.space[2] }}>
-        <AppButton label="Take the 20-sec quiz" variant="ghost" size="md" onPress={onTakeQuiz} />
+      <Text style={bodyStyle}>
+        A 20-second quiz names it now — or keep logging and I&apos;ll figure it out.
+      </Text>
+      <View style={ctaRow}>
+        <AppButton label="Take the quiz" variant="indigo" size="sm" onPress={onTakeQuiz} />
+        <Text style={hintStyle}>~20 sec</Text>
       </View>
     </View>
   );
