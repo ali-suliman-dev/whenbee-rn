@@ -14,6 +14,7 @@ import type { Task } from '@/src/domain/types';
 import { kv } from '@/src/lib/kv';
 import { syncDayPlanToCalendar } from '@/src/services/calendarExport';
 import { getCalendar } from '@/src/services/calendar';
+import { cancelStartBy } from '@/src/services/timerNotifications';
 import { useSettingsStore } from '@/src/stores/settingsStore';
 import { useEntitlement } from '@/src/features/paywall/useEntitlement';
 
@@ -334,6 +335,11 @@ export function makeDayTasksStore(deps: Deps): UseBoundStore<StoreApi<DayTasksSt
       }
 
       await repo.remove(id);
+      // The deleted task may have had a scheduled "start by" reminder — cancel it
+      // now so the OS never fires a notification for a task that no longer
+      // exists. The Today screen's effect re-schedules a fresh one from the
+      // reloaded plan below if the day still has tasks.
+      await cancelStartBy();
       const today = toLocalDayKey(nowMs ?? Date.now());
       await Promise.all([
         loadDayAndDots(get().selectedDate, today).then((d) => set(d)),
