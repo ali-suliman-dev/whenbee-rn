@@ -35,7 +35,7 @@ import { useDayTasksStore } from '@/src/stores/dayTasksStore';
 import { useEntitlement } from '@/src/features/paywall/useEntitlement';
 import { useTheme } from '@/src/theme/useTheme';
 import { AppText } from '@/src/components/AppText';
-import { ActionSheet, type ActionSheetItem } from '@/src/components/ActionSheet';
+import { FinishEditorSheet } from '@/src/features/routines/FinishEditorSheet';
 import { formatClock, formatClockMeridiem, fmtHm } from '@/src/lib/time';
 import type { PlanTimelineItem, PlanVerdict } from '@/src/domain/types';
 
@@ -324,8 +324,8 @@ function OverflowBanner({
 }
 
 /**
- * The "done by" header chip. Taps open a time-picker ActionSheet (iOS) or a
- * simple list of hour options on Android — no native DateTimePicker dep required.
+ * The "done by" header chip. Taps open the FinishTimeWheel sheet — a two-column
+ * HH:MM wheel that also flips into a tap-to-type keypad for typing any minute.
  */
 function DoneByChip({
   doneByMin,
@@ -337,14 +337,18 @@ function DoneByChip({
   const t = useTheme();
   const [pickerOpen, setPickerOpen] = useState(false);
 
+  // Epoch from LOCAL midnight of today so formatClock/FinishTimeWheel reflect
+  // the correct local time regardless of UTC offset.
+  const localMidnightMs = useMemo(() => {
+    const d = new Date();
+    d.setHours(0, 0, 0, 0);
+    return d.getTime();
+  }, []);
+
   const label = useMemo(() => {
     if (doneByMin === null) return 'Set done-by time';
-    // Compute epoch from LOCAL midnight of today so formatClock reflects
-    // the correct local time regardless of UTC offset.
-    const localMidnight = new Date();
-    localMidnight.setHours(0, 0, 0, 0);
-    return `Done by ${formatClock(localMidnight.getTime() + doneByMin * 60_000)}`;
-  }, [doneByMin]);
+    return `Done by ${formatClock(localMidnightMs + doneByMin * 60_000)}`;
+  }, [doneByMin, localMidnightMs]);
 
   const chipStyle: ViewStyle = {
     flexDirection: 'row',
@@ -367,20 +371,14 @@ function DoneByChip({
     fontWeight: t.fontWeight.medium as TextStyle['fontWeight'],
   };
 
-  // Build a list of half-hour options across the full 24h day so any finish time
-  // is reachable (stable — depends on nothing).
-  const timeOptions = useMemo<ActionSheetItem[]>(() => {
-    const opts: ActionSheetItem[] = [];
-    for (let h = 0; h <= 23; h++) {
-      for (const m of [0, 30]) {
-        const min = h * 60 + m;
-        const d = new Date();
-        d.setHours(h, m, 0, 0);
-        opts.push({ label: formatClockMeridiem(d.getTime()), onPress: () => onSelect(min) });
-      }
-    }
-    return opts;
-  }, [onSelect]);
+  const valueMs = doneByMin === null ? null : localMidnightMs + doneByMin * 60_000;
+
+  const handleChange = useCallback(
+    (ms: number) => {
+      onSelect(Math.round((ms - localMidnightMs) / 60_000));
+    },
+    [onSelect, localMidnightMs],
+  );
 
   return (
     <>
@@ -395,11 +393,15 @@ function DoneByChip({
         </View>
       </Pressable>
 
-      <ActionSheet
+      <FinishEditorSheet
         visible={pickerOpen}
-        title="Done by"
-        items={timeOptions}
-        onCancel={() => setPickerOpen(false)}
+        valueMs={valueMs}
+        onChange={handleChange}
+        onClear={() => {
+          onSelect(null);
+          setPickerOpen(false);
+        }}
+        onClose={() => setPickerOpen(false)}
       />
     </>
   );
