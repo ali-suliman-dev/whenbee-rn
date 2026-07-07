@@ -63,9 +63,10 @@ class WhenbeePresenceModule : Module() {
       // startEpoch drives the progress bar; fall back to "now" if a caller omits it.
       val start = (attrs["startEpoch"] as? Number)?.toDouble() ?: (System.currentTimeMillis() / 1000.0)
       val proRich = attrs["isProRich"] as? Boolean ?: false
+      val guessFinish = (attrs["guessFinishEpoch"] as? Number)?.toDouble() ?: 0.0
 
       // Persist for the background alarm, and keep the in-memory fast path.
-      PresenceNotifier.saveTimer(context, label, start, finish, proRich)
+      PresenceNotifier.saveTimer(context, label, start, finish, proRich, guessFinish)
       lastLabel = label; lastStart = start; lastFinish = finish; lastProRich = proRich
 
       val finishMs = (finish * 1000).toLong()
