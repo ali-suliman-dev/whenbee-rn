@@ -358,13 +358,28 @@ export default function Settings() {
           <SettingRow
             icon="notifications-outline"
             title="Reminders"
-            note="Pings for honest finish, start-by nudges, and more."
+            note="Pings for honest finish and more."
             trailing={
               <Switch
                 value={remindersEnabled}
                 onValueChange={handleToggleReminders}
                 trackColor={{ true: t.colors.primary, false: t.colors.hairline }}
                 accessibilityLabel="Reminders"
+              />
+            }
+          />
+
+          {/* Start-by nudge — plan-owned, independent of the master. Always visible. */}
+          <SettingRow
+            icon="arrow-forward-circle-outline"
+            title="Start-by nudge"
+            note="A reminder when it's time to begin. Also toggled from your day plan."
+            trailing={
+              <Switch
+                value={startByEnabled}
+                onValueChange={setStartByEnabled}
+                trackColor={{ true: t.colors.primary, false: t.colors.hairline }}
+                accessibilityLabel="Start-by nudge"
               />
             }
           />
@@ -382,19 +397,6 @@ export default function Settings() {
                     onValueChange={setHonestReachedEnabled}
                     trackColor={{ true: t.colors.primary, false: t.colors.hairline }}
                     accessibilityLabel="Honest finish reached"
-                  />
-                }
-              />
-              <SettingRow
-                icon="arrow-forward-circle-outline"
-                title="Start-by nudge"
-                note="A reminder when it's time to begin your next task."
-                trailing={
-                  <Switch
-                    value={startByEnabled}
-                    onValueChange={setStartByEnabled}
-                    trackColor={{ true: t.colors.primary, false: t.colors.hairline }}
-                    accessibilityLabel="Start-by nudge"
                   />
                 }
               />

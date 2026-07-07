@@ -20,11 +20,12 @@ beforeEach(() => {
 });
 
 describe('Settings — Notifications section', () => {
-  it('hides per-type sub-rows when remindersEnabled is false', () => {
+  it('hides per-type sub-rows when remindersEnabled is false, but Start-by nudge stays visible', () => {
     // After reset(), remindersEnabled is false.
-    const { queryByLabelText } = render(<Settings />);
+    const { queryByLabelText, getByLabelText } = render(<Settings />);
     expect(queryByLabelText('Honest finish reached')).toBeNull();
-    expect(queryByLabelText('Start-by nudge')).toBeNull();
+    // Start-by nudge is plan-owned and independent of the master — always visible.
+    expect(getByLabelText('Start-by nudge')).toBeTruthy();
   });
 
   it('shows per-type sub-rows when remindersEnabled is true', () => {
@@ -42,8 +43,8 @@ describe('Settings — Notifications section', () => {
     expect(useSettingsStore.getState().honestReachedEnabled).toBe(false);
   });
 
-  it('toggling Start-by nudge calls setStartByEnabled', () => {
-    useSettingsStore.setState({ remindersEnabled: true, startByEnabled: true });
+  it('toggling Start-by nudge calls setStartByEnabled independently of remindersEnabled', () => {
+    useSettingsStore.setState({ remindersEnabled: false, startByEnabled: true });
     const { getByLabelText } = render(<Settings />);
     const sw = getByLabelText('Start-by nudge');
     fireEvent(sw, 'valueChange', false);
