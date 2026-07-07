@@ -249,6 +249,7 @@ export const tokens = {
       // ── utility ──
       scrim: 'rgba(20,21,29,0.45)', // modal/sheet overlay
       scrimStrong: 'rgba(16,17,24,0.58)', // darken layer over a BlurView backdrop (focal reward modal)
+      scrimOverlay: 'rgba(14,16,34,0.62)', // cool blue-leaning dim behind a focal recovery card (ForgotCard)
       shadowSoft: 'rgba(32,35,58,0.12)',
       // Inverse pill (toasts) — always the OPPOSITE of the mode so it pops:
       // light mode → dark pill + warm-white text.
@@ -331,6 +332,7 @@ export const tokens = {
       // ── utility ──
       scrim: 'rgba(10,11,16,0.60)',
       scrimStrong: 'rgba(12,13,20,0.78)', // cool darken layer over a BlurView backdrop — heavy enough to mute warm content bleed (focal reward modal)
+      scrimOverlay: 'rgba(9,11,26,0.76)', // cool blue-leaning dim behind a focal recovery card (ForgotCard)
       shadowSoft: 'rgba(0,0,0,0.45)',
       // dark mode → light pill + dark text, so the toast reads against the deep bg.
       inverseSurface: '#ECE8DE',

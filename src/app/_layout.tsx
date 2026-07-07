@@ -1,7 +1,6 @@
 import '../global.css';
 import { useEffect, type ComponentProps } from 'react';
 import { AppState, Appearance, View } from 'react-native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import * as SplashScreen from 'expo-splash-screen';
@@ -74,22 +73,13 @@ function useSheetScreenOptions(): ComponentProps<typeof Stack.Screen>['options']
 // that restore the timer snapshot — child effects fire before a parent's own,
 // so hosting the hook in this sibling component would run it too early.
 function ForgotOverlay() {
-  const insets = useSafeAreaInsets();
-  const t = useTheme();
-
+  // Passthrough full-screen host — ForgotCard renders its own scrim + bottom
+  // card and owns all layout (so the scrim can reach the screen edges). box-none
+  // lets taps through the empty space until the card (and its scrim) mount.
   return (
     <View
       pointerEvents="box-none"
-      style={{
-        position: 'absolute',
-        left: 0,
-        right: 0,
-        top: 0,
-        bottom: 0,
-        justifyContent: 'flex-end',
-        paddingBottom: insets.bottom + t.space[4],
-        paddingHorizontal: t.space[4],
-      }}
+      style={{ position: 'absolute', left: 0, right: 0, top: 0, bottom: 0 }}
     >
       <ForgotCard />
     </View>
