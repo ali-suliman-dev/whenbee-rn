@@ -34,6 +34,10 @@ jest.mock('@/src/features/planner/useLearnedFocusWindow', () => ({
   useLearnedFocusWindow: jest.fn(),
 }));
 
+jest.mock('@/src/features/today/useStartByToggle', () => ({
+  useStartByToggle: () => ({ enabled: false, toggle: jest.fn() }),
+}));
+
 jest.mock('@/src/theme/useColorMode', () => ({
   useColorMode: () => 'light',
 }));
@@ -377,5 +381,25 @@ describe('DayTimeline — Pro guard', () => {
     render(<DayTimeline />);
     expect(screen.queryByTestId('timeline-overflow-banner')).toBeNull();
     expect(screen.queryByText('Write report')).toBeNull();
+  });
+});
+
+// ═════════════════════════════════════════════════════════════════════════════
+// Test 8 — PlanReminderChip renders in the planned header when startBy is set
+// ═════════════════════════════════════════════════════════════════════════════
+
+describe('DayTimeline — plan reminder chip', () => {
+  beforeEach(() => {
+    mockUseDayPlan.mockReturnValue({
+      plan: makeFitsPlan(),
+      status: 'ready',
+      doneByMin: 1080,
+      setDoneBy: mockSetDoneBy,
+    });
+  });
+
+  it('renders the reminder chip in the planned header', () => {
+    render(<DayTimeline />);
+    expect(screen.getByTestId('plan-reminder-chip')).toBeOnTheScreen();
   });
 });

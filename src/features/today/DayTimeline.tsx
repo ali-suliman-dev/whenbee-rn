@@ -30,6 +30,7 @@ import Animated, {
 } from 'react-native-reanimated';
 import { Ionicons } from '@expo/vector-icons';
 import { useDayPlan } from './useDayPlan';
+import { PlanReminderChip } from './PlanReminderChip';
 import { useLearnedFocusWindow } from '@/src/features/planner/useLearnedFocusWindow';
 import { useDayTasksStore } from '@/src/stores/dayTasksStore';
 import { useEntitlement } from '@/src/features/paywall/useEntitlement';
@@ -473,6 +474,11 @@ export function DayTimeline() {
     fontFamily: t.fontFamily.mono,
   };
 
+  const reminderChipWrapStyle: ViewStyle = {
+    paddingHorizontal: t.space[3],
+    paddingBottom: t.space[2],
+  };
+
   const scrollStyle: ViewStyle = {
     flex: 1,
   };
@@ -510,6 +516,13 @@ export function DayTimeline() {
           <View />
         )}
         <DoneByChip doneByMin={doneByMin} onSelect={setDoneBy} />
+      </View>
+
+      {/* Start-by reminder chip */}
+      <View style={reminderChipWrapStyle}>
+        <PlanReminderChip
+          startByClock={plan.startBy ? formatClockMeridiem(plan.startBy) : null}
+        />
       </View>
 
       {/* Overflow banner */}
