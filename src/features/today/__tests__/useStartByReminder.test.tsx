@@ -7,8 +7,10 @@ jest.mock('@/src/services/timerNotifications', () => ({
   scheduleStartBy: (o: unknown) => mockSchedule(o),
   cancelStartBy: () => mockCancel(),
 }));
+let mockDayTasks: unknown[] = [];
 jest.mock('@/src/stores/dayTasksStore', () => ({
-  useDayTasksStore: (selector: (s: { dayTasks: unknown[] }) => unknown) => selector({ dayTasks: [] }),
+  useDayTasksStore: (selector: (s: { dayTasks: unknown[] }) => unknown) =>
+    selector({ dayTasks: mockDayTasks }),
 }));
 
 /* eslint-disable import/first */
@@ -34,6 +36,7 @@ function makePlan(startBy: number, opts?: { firstLabel?: string; deadline?: numb
 
 beforeEach(() => {
   jest.clearAllMocks();
+  mockDayTasks = [];
   useSettingsStore.setState({ remindersEnabled: true, startByEnabled: true });
 });
 
@@ -53,6 +56,23 @@ describe('useStartByReminder', () => {
       honestMin: 55,
     });
     expect(mockCancel).not.toHaveBeenCalled();
+  });
+
+  it('joins the timeline task back to the source task for category/guessMin when it matches', () => {
+    mockDayTasks = [{ id: 't1', guessMin: 30, category: 'deep_work' }];
+    const plan = makePlan(1_000_000, { firstLabel: 'Ship PR', deadline: 4_600_000 });
+    renderHook(() => useStartByReminder(plan));
+
+    expect(mockSchedule).toHaveBeenCalledTimes(1);
+    expect(mockSchedule).toHaveBeenCalledWith({
+      startByMs: 1_000_000,
+      firstTaskLabel: 'Ship PR',
+      deadlineMs: 4_600_000,
+      taskId: 't1',
+      category: 'deep_work',
+      guessMin: 30,
+      honestMin: 55,
+    });
   });
 
   it('cancels and never schedules when master reminders are off', () => {

@@ -46,7 +46,7 @@ export function useWidgetPublisher({ focus, honestMin }: UseWidgetPublisherArgs)
         nextTaskLabel: focus.label,
         category: categoryName(focus.category),
         honestFinishClock: formatClockMeridiem(finishAt),
-        guessClock: formatClockMeridiem(guessAt),
+        guessClock: honestMin === focus.guessMin ? '' : formatClockMeridiem(guessAt),
         startDeepLink: `whenbee://timer?taskId=${focus.id}`,
         updatedAtEpoch: Math.round(now / 1000),
         honestFinishEpoch: Math.round(finishAt / 1000),

@@ -246,7 +246,8 @@ export function useTimer(params: TimerParams): UseTimerResult {
       taskLabel: label,
       finishEpoch: Math.round(projectedFinish(startedAt, suggestedHonestMin) / 1000),
       startEpoch: Math.round(startedAt / 1000),
-      guessFinishEpoch: Math.round(projectedFinish(startedAt, guessMin) / 1000),
+      guessFinishEpoch:
+        guessMin === suggestedHonestMin ? 0 : Math.round(projectedFinish(startedAt, guessMin) / 1000),
       isProRich: useEntitlement.getState().isPro,
     });
     // Schedule the overrun flip for when wall-clock crosses the honest finish.
