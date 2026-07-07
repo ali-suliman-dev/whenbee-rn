@@ -41,10 +41,12 @@ export function useWidgetPublisher({ focus, honestMin }: UseWidgetPublisherArgs)
       }
       const now = Date.now();
       const finishAt = projectedFinish(now, honestMin);
+      const guessAt = projectedFinish(now, focus.guessMin);
       const snapshot: WidgetSnapshot = {
         nextTaskLabel: focus.label,
         category: categoryName(focus.category),
         honestFinishClock: formatClockMeridiem(finishAt),
+        guessClock: honestMin === focus.guessMin ? '' : formatClockMeridiem(guessAt),
         startDeepLink: `whenbee://timer?taskId=${focus.id}`,
         updatedAtEpoch: Math.round(now / 1000),
         honestFinishEpoch: Math.round(finishAt / 1000),

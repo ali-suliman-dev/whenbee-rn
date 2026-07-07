@@ -33,6 +33,7 @@ const VALID_SNAPSHOT: WidgetSnapshot = {
   nextTaskLabel: 'x',
   category: 'c',
   honestFinishClock: '7:10',
+  guessClock: '6:30',
   startDeepLink: 'whenbee://timer',
   updatedAtEpoch: 1000,
   honestFinishEpoch: 2000,

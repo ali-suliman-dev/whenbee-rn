@@ -39,7 +39,19 @@ export async function handleNotificationResponse(res: NotificationResponseLike):
       if (res.data.kind === 'startBy') {
         const firstTaskLabel = String(res.data.firstTaskLabel ?? 'this');
         const deadlineMs = Number(res.data.deadlineMs ?? Date.now());
-        await scheduleStartBy({ startByMs: Date.now() + 5 * 60_000, firstTaskLabel, deadlineMs });
+        const taskId = typeof res.data.taskId === 'string' ? res.data.taskId : null;
+        const category = typeof res.data.category === 'string' ? res.data.category : undefined;
+        const guessMin = Number.isFinite(Number(res.data.guessMin)) ? Number(res.data.guessMin) : undefined;
+        const honestMin = Number.isFinite(Number(res.data.honestMin)) ? Number(res.data.honestMin) : undefined;
+        await scheduleStartBy({
+          startByMs: Date.now() + 5 * 60_000,
+          firstTaskLabel,
+          deadlineMs,
+          taskId,
+          category,
+          guessMin,
+          honestMin,
+        });
       }
       return;
     }

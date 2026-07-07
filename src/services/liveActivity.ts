@@ -42,6 +42,10 @@ export interface WidgetSnapshot {
   category: string;
   /** Honest finish as a wall-clock string already formatted by JS, e.g. "7:10". */
   honestFinishClock: string;
+  /** Projected finish at the ORIGINAL guess, JS-formatted wall-clock (e.g. "3:50").
+   *  '' when unknown. The widget shows it as a quiet "guessed …" row under the
+   *  honest hero — the guess-vs-honest pairing only Whenbee can show. */
+  guessClock: string;
   /** Deep link the widget's one-tap Start button opens, e.g. "whenbee://timer?taskId=1". */
   startDeepLink: string;
   /** Unix seconds when this was written (lets the widget detect a stale snapshot). */
@@ -62,6 +66,9 @@ export interface LiveActivityAttributes {
   finishEpoch: number;
   /** Unix seconds when the timer started; the ring fills from here to finishEpoch. */
   startEpoch: number;
+  /** Unix seconds of the projected finish at the ORIGINAL guess. The Android
+   *  notification appends "· guessed <clock>"; 0 = unknown → no guess suffix. */
+  guessFinishEpoch: number;
   /** Whether to start the rich (ring + accents) Live Activity. Decided in JS at
    *  start time from the entitlement; the live countdown digits stay free either way. */
   isProRich: boolean;

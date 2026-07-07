@@ -55,12 +55,20 @@ object PresenceNotifier {
   // Persist the running-timer state so a background alarm can rebuild the notification.
   // startEpochSec is stored so post() (and the background alarm) can compute the elapsed
   // fraction for the progress bar without JS being alive.
-  fun saveTimer(context: Context, label: String, startEpochSec: Double, finishEpochSec: Double, isProRich: Boolean) {
+  fun saveTimer(
+    context: Context,
+    label: String,
+    startEpochSec: Double,
+    finishEpochSec: Double,
+    isProRich: Boolean,
+    guessFinishEpochSec: Double = 0.0,
+  ) {
     val json = JSONObject()
       .put("taskLabel", label)
       .put("startEpoch", startEpochSec)
       .put("finishEpoch", finishEpochSec)
       .put("isProRich", isProRich)
+      .put("guessFinishEpoch", guessFinishEpochSec)
     prefs(context).edit().putString(KEY_TIMER, json.toString()).apply()
   }
 
@@ -79,6 +87,7 @@ object PresenceNotifier {
         startEpochSec = if (json.has("startEpoch")) json.getDouble("startEpoch") else Double.NaN,
         finishEpochSec = json.getDouble("finishEpoch"),
         isProRich = json.optBoolean("isProRich", false),
+        guessFinishEpochSec = json.optDouble("guessFinishEpoch", 0.0),
       )
     } catch (_: Throwable) {
       null
@@ -132,11 +141,15 @@ object PresenceNotifier {
 
     // Device-local finish clock (respects the user's 12/24h setting).
     val clock = DateFormat.getTimeFormat(context).format(Date(finishMs))
+    val guessSec = readTimer(context)?.guessFinishEpochSec ?: 0.0
+    val guessSuffix = if (guessSec > 0.0)
+      " · guessed " + DateFormat.getTimeFormat(context).format(Date((guessSec * 1000).toLong()))
+    else ""
 
     val builder = NotificationCompat.Builder(context, CHANNEL_ID)
       .setSmallIcon(context.applicationInfo.icon)
       .setContentTitle(label) // required for promotion
-      .setContentText(if (isOverrun) "Over · finish was $clock" else "Finish $clock")
+      .setContentText((if (isOverrun) "Over · honest finish was $clock" else "Finish $clock") + guessSuffix)
       .setOngoing(true)
       .setOnlyAlertOnce(true)
       .setCategory(NotificationCompat.CATEGORY_STOPWATCH)
@@ -202,5 +215,6 @@ object PresenceNotifier {
     val startEpochSec: Double,
     val finishEpochSec: Double,
     val isProRich: Boolean,
+    val guessFinishEpochSec: Double,
   )
 }

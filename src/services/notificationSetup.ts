@@ -8,6 +8,7 @@ import { isExpoGo } from '@/src/lib/isExpoGo';
 import { router } from 'expo-router';
 import { registerNotificationCategories, ACTION } from '@/src/services/notificationCategories';
 import { handleNotificationResponse } from '@/src/services/notificationResponses';
+import { buildStartByTimerRoute } from '@/src/services/notificationRoutes';
 
 type NotificationsModule = typeof import('expo-notifications');
 
@@ -23,7 +24,7 @@ function getModule(): NotificationsModule | null {
 }
 
 /** Foreground navigation for the buttons that open the app. */
-function navigateForAction(actionIdentifier: string, _data: Record<string, unknown>): void {
+function navigateForAction(actionIdentifier: string, data: Record<string, unknown>): void {
   switch (actionIdentifier) {
     case ACTION.WRAP:
       // Hyperfocus-guardrail "Wrap up" must STOP + LOG the running timer, not just
@@ -34,9 +35,13 @@ function navigateForAction(actionIdentifier: string, _data: Record<string, unkno
     case ACTION.LOG:
       router.push('/(tabs)'); // Today, where logging lives
       return;
-    case ACTION.START:
-      router.push('/(tabs)'); // Today → start the planned task
+    case ACTION.START: {
+      // Start the planned task's timer and land on the overlay. Falls back to
+      // Today only if the reminder payload lacks the data to start a timer.
+      const route = buildStartByTimerRoute(data);
+      router.push(route ?? '/(tabs)');
       return;
+    }
     case ACTION.REVIEW_OPEN:
       router.push('/(tabs)/patterns'); // review surface
       return;

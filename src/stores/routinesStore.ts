@@ -412,6 +412,9 @@ export const useRoutinesStore = create<RoutinesState>()(
             taskLabel: `${loaded.routine.name} · ${firstStep.label}`,
             finishEpoch,
             startEpoch: Math.round(now / 1000),
+            // A routine has no separate original-guess vs honest projection, so pass 0
+            // (= unknown) — the notification then shows no redundant "guessed" suffix.
+            guessFinishEpoch: 0,
             isProRich: false, // entitlement not imported here; the device LA picks it up
           });
         }

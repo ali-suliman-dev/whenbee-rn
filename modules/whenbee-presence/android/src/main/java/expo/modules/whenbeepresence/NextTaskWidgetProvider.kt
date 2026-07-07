@@ -79,12 +79,22 @@ class NextTaskWidgetProvider : AppWidgetProvider() {
         // Empty state — no task queued.
         views.setTextViewText(R.id.widget_label, context.getString(R.string.widget_empty))
         views.setTextViewText(R.id.widget_hero, "")
+        views.setTextViewText(R.id.widget_guess, "")
+        views.setViewVisibility(R.id.widget_honestly, android.view.View.GONE)
+        views.setViewVisibility(R.id.widget_guess, android.view.View.GONE)
         views.setOnClickPendingIntent(R.id.widget_start, startPendingIntent(context, null))
         return views
       }
 
       views.setTextViewText(R.id.widget_label, snapshot.label)
+      views.setViewVisibility(R.id.widget_honestly, android.view.View.VISIBLE)
       views.setTextViewText(R.id.widget_hero, heroClockSpan(snapshot.honestFinishClock))
+      if (snapshot.guessClock.isBlank()) {
+        views.setViewVisibility(R.id.widget_guess, android.view.View.GONE)
+      } else {
+        views.setViewVisibility(R.id.widget_guess, android.view.View.VISIBLE)
+        views.setTextViewText(R.id.widget_guess, "guessed ${snapshot.guessClock}")
+      }
       views.setOnClickPendingIntent(R.id.widget_start, startPendingIntent(context, snapshot.startDeepLink))
       return views
     }
@@ -111,6 +121,7 @@ class NextTaskWidgetProvider : AppWidgetProvider() {
         WidgetSnapshot(
           label = json.optString("nextTaskLabel", ""),
           honestFinishClock = json.optString("honestFinishClock", ""),
+          guessClock = json.optString("guessClock", ""),
           startDeepLink = json.optString("startDeepLink", "whenbee://timer"),
           updatedAtEpoch = json.optDouble("updatedAtEpoch", 0.0),
           honestFinishEpoch = if (json.has("honestFinishEpoch") && !json.isNull("honestFinishEpoch"))
@@ -126,6 +137,7 @@ class NextTaskWidgetProvider : AppWidgetProvider() {
     private data class WidgetSnapshot(
       val label: String,
       val honestFinishClock: String,
+      val guessClock: String,
       val startDeepLink: String,
       val updatedAtEpoch: Double,
       val honestFinishEpoch: Double?,
