@@ -4,6 +4,8 @@ import {
   TextInput,
   Pressable,
   Keyboard,
+  KeyboardAvoidingView,
+  Platform,
   ScrollView,
   type ViewStyle,
   type TextStyle,
@@ -135,6 +137,10 @@ export default function Categories() {
 
   return (
     <Screen edges={['left', 'right']}>
+      <KeyboardAvoidingView
+        style={{ flex: 1 }}
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+      >
       <ScrollView
         keyboardShouldPersistTaps="handled"
         contentContainerStyle={{ gap: t.space[3], paddingTop: t.space[4], paddingBottom: insets.bottom + t.space[6] }}
@@ -188,6 +194,7 @@ export default function Categories() {
           </View>
         )}
       </ScrollView>
+      </KeyboardAvoidingView>
     </Screen>
   );
 }

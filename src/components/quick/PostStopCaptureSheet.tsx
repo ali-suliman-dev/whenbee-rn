@@ -6,7 +6,12 @@ import {
   type ViewStyle,
   type TextStyle,
 } from 'react-native';
-import Animated, { FadeInDown, useReducedMotion } from 'react-native-reanimated';
+import Animated, {
+  FadeInDown,
+  useAnimatedKeyboard,
+  useAnimatedStyle,
+  useReducedMotion,
+} from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTheme } from '@/src/theme/useTheme';
 import { AppText } from '@/src/components/AppText';
@@ -55,6 +60,14 @@ export function PostStopCaptureSheet({
   const insets = useSafeAreaInsets();
   const reducedMotion = useReducedMotion();
   const inputRef = useRef<TextInput>(null);
+
+  // The sheet is absolute-positioned at the bottom (not a modal), so a
+  // KeyboardAvoidingView can't lift it — track the keyboard height directly and
+  // translate the sheet up by it so the name field + CTAs clear the keyboard.
+  const keyboard = useAnimatedKeyboard();
+  const keyboardLift = useAnimatedStyle(() => ({
+    transform: [{ translateY: -keyboard.height.get() }],
+  }));
 
   // Category picker data + frequency sort hints (same approach as AddTask).
   const categories = usePickerCategories();
@@ -155,9 +168,9 @@ export function PostStopCaptureSheet({
       {/* Scrim — non-interactive (tapping it does nothing; user must choose Save or Skip) */}
       <View style={scrimStyle} pointerEvents="none" />
 
-      {/* Sheet — slides up from the bottom, entering-only */}
+      {/* Sheet — slides up from the bottom, entering-only. Lifts with the keyboard. */}
       <Animated.View
-        style={sheetStyle}
+        style={[sheetStyle, keyboardLift]}
         entering={reducedMotion ? undefined : FadeInDown.duration(t.motion.sheet)}
         accessibilityViewIsModal
         accessibilityLabel="Name this task"

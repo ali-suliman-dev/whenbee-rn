@@ -1,5 +1,13 @@
 import { useState } from 'react';
-import { View, TextInput, Pressable, Keyboard, type ViewStyle } from 'react-native';
+import {
+  View,
+  TextInput,
+  Pressable,
+  Keyboard,
+  KeyboardAvoidingView,
+  Platform,
+  type ViewStyle,
+} from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import { Screen } from '@/src/components/Screen';
@@ -65,6 +73,10 @@ export default function Categories() {
 
   return (
     <Screen backdrop={<OnboardingBackdrop />}>
+      <KeyboardAvoidingView
+        style={{ flex: 1 }}
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+      >
       <StepProgress current={onboardingStepIndex('categories')} total={ONBOARDING_TOTAL} />
       {/* Tapping anywhere outside the inline "+ New" input dismisses the keyboard. */}
       <Pressable
@@ -160,6 +172,7 @@ export default function Categories() {
         />
       </Reveal>
       <View style={{ height: insets.bottom }} />
+      </KeyboardAvoidingView>
     </Screen>
   );
 }

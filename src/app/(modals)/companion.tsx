@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { View, TextInput, type TextStyle, type ViewStyle } from 'react-native';
+import { KeyboardAvoidingView, Platform, View, TextInput, type TextStyle, type ViewStyle } from 'react-native';
 import { router } from 'expo-router';
 import { Screen } from '@/src/components/Screen';
 import { AppText } from '@/src/components/AppText';
@@ -69,6 +69,10 @@ export default function CompanionRoute() {
 
   return (
     <Screen edges={['left', 'right']} horizontalPadding={false}>
+      <KeyboardAvoidingView
+        style={{ flex: 1 }}
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+      >
       <SheetGrabber />
       <View style={{ gap: t.space[6], paddingTop: t.space[6] }}>
         <WhenbeeAvatar
@@ -97,6 +101,7 @@ export default function CompanionRoute() {
 
         <AppButton label="Save" variant="indigo" fullWidth onPress={save} />
       </View>
+      </KeyboardAvoidingView>
     </Screen>
   );
 }

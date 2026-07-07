@@ -1,5 +1,5 @@
 import { useCallback, useState, type ReactNode } from 'react';
-import { Alert, Modal, View, Text, Pressable, Switch, ScrollView, TextInput, type ViewStyle, type TextStyle } from 'react-native';
+import { Alert, KeyboardAvoidingView, Modal, Platform, View, Text, Pressable, Switch, ScrollView, TextInput, type ViewStyle, type TextStyle } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import * as WebBrowser from 'expo-web-browser';
@@ -245,6 +245,10 @@ export default function Settings() {
 
   return (
     <Screen edges={['left', 'right']}>
+      <KeyboardAvoidingView
+        style={{ flex: 1 }}
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+      >
       <ScrollView
         showsVerticalScrollIndicator={false}
         contentContainerStyle={{
@@ -701,6 +705,7 @@ export default function Settings() {
           )}
         </View>
       </ScrollView>
+      </KeyboardAvoidingView>
 
       <ConfirmSheet
         visible={sheet === 'progress'}
