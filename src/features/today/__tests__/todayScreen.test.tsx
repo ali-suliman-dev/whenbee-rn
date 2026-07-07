@@ -150,6 +150,7 @@ beforeEach(() => {
     selectedDate: FIXED_TODAY,
     selectFocusTask: () => null,
     loadShelf: async () => {},
+    dayMeta: null,
   });
   useCalibrationStore.setState({
     logs: 0,
@@ -322,20 +323,34 @@ describe('List ⇄ Timeline toggle (B3)', () => {
     expect(screen.queryByTestId('view-toggle-timeline')).toBeNull();
   });
 
-  it('Pro: tapping "Plan my day" calls markPlanned and switches viewMode to timeline', () => {
+  it('Pro: tapping "Plan my day" in the Timeline empty state calls markPlanned', () => {
     useEntitlement.setState({ isPro: true });
     seedTodayWithTask();
+    useDayTasksStore.setState({ viewMode: 'timeline', dayMeta: { doneByMin: null, planComputedAt: null } });
     const { getByTestId } = render(<Today />);
     fireEvent.press(getByTestId('plan-my-day-btn'));
-    expect(useDayTasksStore.getState().viewMode).toBe('timeline');
+    expect(useDayTasksStore.getState().markPlanned).toHaveBeenCalled();
   });
 
-  it('Pro: renders DayTimeline when viewMode is timeline', () => {
+  it('Pro: shows TimelineEmptyState (not DayTimeline) when viewMode is timeline and the day is unplanned', () => {
     useEntitlement.setState({ isPro: true });
     seedTodayWithTask();
-    useDayTasksStore.setState({ viewMode: 'timeline' });
+    useDayTasksStore.setState({ viewMode: 'timeline', dayMeta: { doneByMin: null, planComputedAt: null } });
+    render(<Today />);
+    expect(screen.queryByTestId('day-timeline-root')).toBeNull();
+    expect(screen.getByText('No plan for today yet')).toBeOnTheScreen();
+  });
+
+  it('Pro: renders DayTimeline when viewMode is timeline and the day is planned', () => {
+    useEntitlement.setState({ isPro: true });
+    seedTodayWithTask();
+    useDayTasksStore.setState({
+      viewMode: 'timeline',
+      dayMeta: { doneByMin: null, planComputedAt: T0 },
+    });
     render(<Today />);
     expect(screen.getByTestId('day-timeline-root')).toBeOnTheScreen();
+    expect(screen.queryByText('No plan for today yet')).toBeNull();
   });
 
   it('shows the list body (UP NEXT) when viewMode is list', () => {
@@ -398,25 +413,10 @@ describe('C1 — Pro gate: Plan-my-day + Timeline', () => {
   });
 
   // ── Free user ──────────────────────────────────────────────────────────────
-
-  it('free: tapping "Plan my day" routes to paywall with trigger=plan_my_day', () => {
-    useEntitlement.setState({ isPro: false });
-    seedTodayWithTask();
-    const { getByTestId } = render(<Today />);
-    fireEvent.press(getByTestId('plan-my-day-btn'));
-    expect(router.push).toHaveBeenCalledWith({
-      pathname: '/(modals)/paywall',
-      params: { trigger: 'plan_my_day' },
-    });
-  });
-
-  it('free: tapping "Plan my day" does NOT switch viewMode to timeline', () => {
-    useEntitlement.setState({ isPro: false });
-    seedTodayWithTask();
-    const { getByTestId } = render(<Today />);
-    fireEvent.press(getByTestId('plan-my-day-btn'));
-    expect(useDayTasksStore.getState().viewMode).toBe('list');
-  });
+  // The "Plan my day" action now lives inside the Timeline lens (TimelineEmptyState),
+  // which itself only renders when `viewMode === 'timeline' && isPro` — so a free
+  // user can never reach it. Their only path into the gate is the Timeline toggle
+  // pill (covered below), which is what routes them to the paywall.
 
   it('free: DayTimeline is NOT rendered even when viewMode is timeline', () => {
     useEntitlement.setState({ isPro: false });
@@ -441,21 +441,25 @@ describe('C1 — Pro gate: Plan-my-day + Timeline', () => {
 
   // ── Pro user ───────────────────────────────────────────────────────────────
 
-  it('Pro: tapping "Plan my day" flips to Timeline, does NOT route to paywall', () => {
+  it('Pro: tapping "Plan my day" in the Timeline empty state does NOT route to paywall', () => {
     useEntitlement.setState({ isPro: true });
     seedTodayWithTask();
+    useDayTasksStore.setState({ viewMode: 'timeline', dayMeta: { doneByMin: null, planComputedAt: null } });
     const { getByTestId } = render(<Today />);
     fireEvent.press(getByTestId('plan-my-day-btn'));
     expect(router.push).not.toHaveBeenCalledWith(
       expect.objectContaining({ pathname: '/(modals)/paywall' }),
     );
-    expect(useDayTasksStore.getState().viewMode).toBe('timeline');
+    expect(useDayTasksStore.getState().markPlanned).toHaveBeenCalled();
   });
 
-  it('Pro: DayTimeline renders when viewMode is timeline', () => {
+  it('Pro: DayTimeline renders when viewMode is timeline and the day is planned', () => {
     useEntitlement.setState({ isPro: true });
     seedTodayWithTask();
-    useDayTasksStore.setState({ viewMode: 'timeline' });
+    useDayTasksStore.setState({
+      viewMode: 'timeline',
+      dayMeta: { doneByMin: null, planComputedAt: T0 },
+    });
     render(<Today />);
     expect(screen.getByTestId('day-timeline-root')).toBeOnTheScreen();
   });

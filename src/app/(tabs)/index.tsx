@@ -35,7 +35,7 @@ import { useFocusedValue } from '@/src/hooks/useFocusedValue';
 import { useGreeting } from '@/src/features/today/useGreeting';
 import { TodayFocusHook } from '@/src/features/today/TodayFocusHook';
 import { CalendarStrip } from '@/src/features/today/calendarStrip/CalendarStrip';
-import { PlanMyDayButton } from '@/src/features/today/PlanMyDayButton';
+import { TimelineEmptyState } from '@/src/features/today/TimelineEmptyState';
 import { ShelfSection } from '@/src/features/today/ShelfSection';
 import { DayRecapCard } from '@/src/features/today/DayRecapCard';
 import { useDayRecap } from '@/src/features/today/useDayRecap';
@@ -166,6 +166,7 @@ export default function Today() {
   const viewMode = useDayTasksStore((s) => s.viewMode);
   const setViewMode = useDayTasksStore((s) => s.setViewMode);
   const markPlanned = useDayTasksStore((s) => s.markPlanned);
+  const planComputedAt = useDayTasksStore((s) => s.dayMeta?.planComputedAt ?? null);
   const isPro = useEntitlement((s) => s.isPro);
   const today = toLocalDayKey(Date.now());
   const isPastDay = compareDayKeys(selectedDate, today) < 0;
@@ -535,38 +536,29 @@ export default function Today() {
               Past days use DayRecapCard above and never show the planner lens. */}
           {!isPastDay ? (
             <>
-              {/* Control row: List ⇄ Timeline segmented control (left) + the
-                  "Plan my day" action (right edge). Only once the day has tasks —
-                  there's nothing to switch lenses on or plan when it's empty. The
-                  action persists across both lenses — label swaps to "Re-plan" in
-                  Timeline so the planner can be re-run in place after the list changes. */}
+              {/* Control row: List ⇄ Timeline segmented control. Only once the day
+                  has tasks — there's nothing to switch lenses on when it's empty.
+                  The "Plan my day" action now lives inside the Timeline lens itself
+                  (TimelineEmptyState) rather than competing here. */}
               {totalCount > 0 ? (
-                <View
-                  style={{
-                    flexDirection: 'row',
-                    justifyContent: 'space-between',
-                    alignItems: 'center',
-                    gap: t.space[3],
-                  }}
-                >
-                  <ViewToggle
-                    viewMode={viewMode}
-                    onSelect={handleViewSelect}
-                    onTimelineGated={handleTimelineGated}
-                    isPro={isPro}
-                  />
-                  <PlanMyDayButton
-                    onPress={handlePlanMyDay}
-                    isPro={isPro}
-                    label={viewMode === 'timeline' ? 'Re-plan' : 'Plan my day'}
-                  />
-                </View>
+                <ViewToggle
+                  viewMode={viewMode}
+                  onSelect={handleViewSelect}
+                  onTimelineGated={handleTimelineGated}
+                  isPro={isPro}
+                />
               ) : null}
 
               {viewMode === 'timeline' && isPro ? (
-                /* Timeline lens — Pro only; DayTimeline is self-contained (reads useDayPlan). */
+                /* Timeline lens — Pro only; DayTimeline is self-contained (reads useDayPlan).
+                   Before the day has a plan, TimelineEmptyState owns the "Plan my day"
+                   action in place; DayTimeline replaces it once planComputedAt is stamped. */
                 <Animated.View entering={FadeIn.duration(t.motion.base)}>
-                  <DayTimeline />
+                  {planComputedAt === null ? (
+                    <TimelineEmptyState onPlan={handlePlanMyDay} isPro={isPro} />
+                  ) : (
+                    <DayTimeline />
+                  )}
                 </Animated.View>
               ) : (
                 /* List lens — the existing task list + calendar overlay. */

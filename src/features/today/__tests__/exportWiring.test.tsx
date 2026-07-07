@@ -186,14 +186,22 @@ const WHENBEE_CAL_ID = 'whenbee-cal-abc';
 /** Spy on syncExportForSelectedDay via getState. */
 let syncExportSpy: jest.SpyInstance;
 
-/** Seed the store with today's date + a task + Plan-my-day actions. */
+/**
+ * Seed the store with today's date + a task + Plan-my-day actions.
+ *
+ * The "Plan my day" button now lives inside the Timeline lens's empty state
+ * (TimelineEmptyState) rather than the toggle row, so these tests seed
+ * viewMode: 'timeline' with an unplanned dayMeta to reach it — mirroring the
+ * real path (tap Timeline pill → see the empty state → tap Plan my day).
+ */
 function seedToday() {
   const task = makeQueued({ id: 'task-1', label: 'Deep work', category: 'work', guessMin: 30 });
   useDayTasksStore.setState({
     dayTasks: [task],
     shelfTasks: [],
     selectedDate: FIXED_TODAY,
-    viewMode: 'list',
+    viewMode: 'timeline',
+    dayMeta: { doneByMin: null, planComputedAt: null },
     selectFocusTask: () => null,
     loadShelf: async () => {},
     setViewMode: jest.fn((m: 'list' | 'timeline') =>
@@ -295,7 +303,10 @@ describe('C1 — export wiring: Plan-my-day → syncExportForSelectedDay', () =>
     expect(syncExportSpy).not.toHaveBeenCalled();
   });
 
-  it('free user: tapping "Plan my day" routes to paywall, no calendar sync', async () => {
+  it('free user: tapping the Timeline pill routes to paywall, no calendar sync', async () => {
+    // A free user can never reach the "Plan my day" button — the Timeline lens
+    // (and its TimelineEmptyState) only renders when isPro is true. Their only
+    // path into the gate is the Timeline toggle pill itself.
     useEntitlement.setState({ isPro: false });
     useSettingsStore.setState({
       calendar: {
@@ -306,11 +317,12 @@ describe('C1 — export wiring: Plan-my-day → syncExportForSelectedDay', () =>
       },
     });
     seedToday();
+    useDayTasksStore.setState({ viewMode: 'list' });
 
     const { getByTestId } = render(<Today />);
 
     await act(async () => {
-      fireEvent.press(getByTestId('plan-my-day-btn'));
+      fireEvent.press(getByTestId('view-toggle-timeline'));
     });
 
     expect(router.push).toHaveBeenCalledWith({
