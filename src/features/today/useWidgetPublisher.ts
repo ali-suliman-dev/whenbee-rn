@@ -2,7 +2,7 @@ import { useEffect } from 'react';
 import { useTimerStore } from '@/src/stores/timerStore';
 import { useEntitlement } from '@/src/features/paywall/useEntitlement';
 import { useCalibrationStore } from '@/src/stores/calibrationStore';
-import { formatClock, projectedFinish } from '@/src/lib/time';
+import { formatClockMeridiem, projectedFinish } from '@/src/lib/time';
 import { publishWidgetSnapshot, clearWidgetSnapshot } from '@/src/services/liveActivity';
 import { categoryName } from '@/src/features/today/categoryName';
 import type { WidgetSnapshot } from '@/src/services/liveActivity';
@@ -44,7 +44,7 @@ export function useWidgetPublisher({ focus, honestMin }: UseWidgetPublisherArgs)
       const snapshot: WidgetSnapshot = {
         nextTaskLabel: focus.label,
         category: categoryName(focus.category),
-        honestFinishClock: formatClock(finishAt),
+        honestFinishClock: formatClockMeridiem(finishAt),
         startDeepLink: `whenbee://timer?taskId=${focus.id}`,
         updatedAtEpoch: Math.round(now / 1000),
         honestFinishEpoch: Math.round(finishAt / 1000),

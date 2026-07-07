@@ -3,6 +3,7 @@ import { useEffect, type ComponentProps } from 'react';
 import { AppState, Appearance, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Stack } from 'expo-router';
+import { StatusBar } from 'expo-status-bar';
 import * as SplashScreen from 'expo-splash-screen';
 import { useFonts } from 'expo-font';
 import { AppProviders } from '@/src/providers/AppProviders';
@@ -181,6 +182,13 @@ function RootNavigator() {
 }
 
 export default function RootLayout() {
+  // System status bar (clock/battery/signal icons) has no relation to app
+  // theme tokens — it's a separate native surface with its own icon-color
+  // setting. Nothing mounted a <StatusBar> before, so Android kept whatever
+  // fixed default the native template shipped with (light icons), which read
+  // as invisible on light mode. Drive it from the same theme mode so icons
+  // stay dark-on-light / light-on-dark like everything else.
+  const statusBarTheme = useTheme();
   const [fontsLoaded, fontError] = useFonts({
     'Jakarta-Regular':   require('../assets/fonts/PlusJakartaSans-Regular.ttf'),
     'Jakarta-Medium':    require('../assets/fonts/PlusJakartaSans-Medium.ttf'),
@@ -231,6 +239,7 @@ export default function RootLayout() {
 
   return (
     <AppProviders>
+      <StatusBar style={statusBarTheme.mode === 'dark' ? 'light' : 'dark'} />
       <RootNavigator />
       <ForgotOverlay />
     </AppProviders>

@@ -138,20 +138,24 @@ function RowContent({
     const row: ViewStyle = {
       flexDirection: 'row',
       alignItems: 'center',
-      gap: t.space[2],
+      // Same gap as the task row below — the tick + this gap must sum to the
+      // same inset as the task row's edge pill + its gap, or event/task clocks
+      // drift apart on the x-axis (see clockWidth comment above).
+      gap: t.space[3],
       paddingVertical: t.space[2],
       paddingHorizontal: t.space[3],
       minHeight: t.size.control.sm,
-      position: 'relative',
     };
-    // Dotted "external" tick in the left padding — keeps clocks aligned (absolute).
+    // Dotted "external" tick — a real flex sibling (not an absolute-positioned
+    // overlay measured with `top:'50%'`/negative marginTop). That hack centered
+    // against the row's border-box, ignoring how alignItems:'center' centers
+    // every other child against the padding box, and its `left` ignored the
+    // row's own paddingHorizontal — both caused the visible left-edge drift.
+    // Same width as the task row's edge pill (t.row.edgeW) so both row kinds
+    // share the same left inset.
     const tickStyle: ViewStyle = {
-      position: 'absolute',
-      left: t.space[0.5],
-      top: '50%',
-      width: 2.5,
+      width: t.row.edgeW,
       height: 14,
-      marginTop: -7,
       borderRadius: t.radii.full,
       backgroundColor: t.colors.inkFaint,
       opacity: 0.7,
@@ -203,9 +207,17 @@ function RowContent({
     paddingVertical: t.space[2],
     paddingHorizontal: t.space[3],
     minHeight: t.size.control.md,
-    ...(focusBandActive
-      ? { borderLeftWidth: t.row.edgeW, borderLeftColor: t.colors.primary }
-      : {}),
+  };
+  // Fixed-size pill, not a border — a border-box left border spans the row's
+  // full height (border-box model) instead of the intended short accent mark,
+  // and only existing when active shifts every other row's content left by
+  // edgeW. Always occupy the slot (transparent when inactive) so clock/label/
+  // duration stay pixel-aligned across every row regardless of focusBandActive.
+  const edgeStyle: ViewStyle = {
+    width: t.row.edgeW,
+    height: t.row.edgeH,
+    borderRadius: t.radii.full,
+    backgroundColor: focusBandActive ? t.colors.primary : 'transparent',
   };
   const clockStyle: TextStyle = {
     fontFamily: t.fontFamily.mono,
@@ -232,6 +244,7 @@ function RowContent({
       accessibilityRole="text"
       accessibilityLabel={`${item.label}, starts ${formatClock(item.startAt)}, ${fmtHm(durationMin)}`}
     >
+      <View style={edgeStyle} />
       <AppText style={clockStyle}>{formatClock(item.startAt)}</AppText>
       <AppText style={labelStyle} numberOfLines={2}>
         {item.label}

@@ -14,10 +14,12 @@ export function RetroLogChip({ label, onPress }: { label: string; onPress: () =>
     alignItems: 'center',
     gap: t.space[3],
     alignSelf: 'stretch',
-    // Quiet secondary affordance — standard surface keeps it light and part of the
-    // page rather than recessed below the focal data cards above. Differentiate by
-    // fill, not an edge (no border, matching the rest of the cards).
-    backgroundColor: t.colors.surface,
+    // Quiet secondary affordance — recedes rather than competing with the focal
+    // cards above. `surface` alone reads the same lift as those cards in both
+    // modes; `surfaceSunken` in dark mode actually sinks it below the page (near
+    // bg), while light mode keeps `surface` — already the lightest step above
+    // the cream bg.
+    backgroundColor: t.mode === 'dark' ? t.colors.surfaceSunken : t.colors.surface,
     borderWidth: t.borderWidth.card,
     borderColor: t.colors.hairline,
     borderRadius: t.radii.card,

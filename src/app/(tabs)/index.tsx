@@ -651,7 +651,7 @@ export default function Today() {
 
           {totalCount === 0 && !isTimerRunning ? null : (
             <RetroLogChip
-              label="Finished? Log it. Ripens your honey."
+              label="Finished something else? Log it too"
               onPress={() => router.push('/(modals)/retro')}
             />
           )}

@@ -153,27 +153,13 @@ export function CapacityChip({ cap }: CapacityChipProps): React.ReactElement | n
     overflow: 'hidden',
   };
 
-  // Header row holds the toggle (flex:1) and the × dismiss side by side, so × is a
-  // distinct tap target beside the chevron — not orphaned at the card's bottom-left.
-  const headerRow: ViewStyle = {
-    flexDirection: 'row',
-    alignItems: 'center',
-  };
-
   const collapsedRow: ViewStyle = {
     flexDirection: 'row',
     alignItems: 'center',
     gap: t.space[2],
     paddingLeft: t.space[4],
-    paddingRight: t.space[2],
-    paddingVertical: t.space[2.5],
-  };
-
-  // × dismiss sits at the header's right edge, vertically centered on the row.
-  const xButton: ViewStyle = {
-    paddingVertical: t.space[2.5],
     paddingRight: t.space[4],
-    paddingLeft: t.space[1],
+    paddingVertical: t.space[2.5],
   };
 
   const iconDisc: ViewStyle = {
@@ -290,20 +276,29 @@ export function CapacityChip({ cap }: CapacityChipProps): React.ReactElement | n
     fontVariant: ['tabular-nums'],
   };
 
-  // "Pad calendar" — the one Pro action. A tinted pill (NOT filled indigo) so it
-  // never competes with the screen's primary CTA → the honest-day write surface.
-  const padPill: ViewStyle = {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: t.space[1.5],
-    backgroundColor: t.colors.primaryChip,
-    borderRadius: t.radii.full,
-    paddingHorizontal: t.space[3],
-    paddingVertical: t.space[1.5],
-  };
-  const padPillText: TextStyle = {
+  // "Pad calendar" — the one Pro action. Plain text (no pill fill, no icon) so
+  // it reads as a footer link, not another button competing with the screen's
+  // primary CTA → the honest-day write surface. Sits right of "Hide this",
+  // distinguished from it by color alone (indigo vs faint gray).
+  const padLinkText: TextStyle = {
     ...(type.captionBold as unknown as TextStyle),
     color: t.colors.primary,
+  };
+
+  // "Hide this" — the session dismiss, moved out of the header entirely. It used
+  // to sit beside the chevron as a ×, which put two different-outcome controls
+  // (expand vs. permanently dismiss) at the same spot the thumb lands right
+  // after expanding — an easy mis-tap. Living here means it's only reachable
+  // after the user has actually seen the expanded content.
+  const rightActions: ViewStyle = {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: t.space[4],
+  };
+  const hideLinkText: TextStyle = {
+    ...(type.caption as unknown as TextStyle),
+    color: t.colors.inkFaint,
+    fontWeight: t.fontWeight.semibold as TextStyle['fontWeight'],
   };
 
   // Calendar settings nudge (denied / off with events)
@@ -317,48 +312,34 @@ export function CapacityChip({ cap }: CapacityChipProps): React.ReactElement | n
 
   return (
     <View style={chipWrap}>
-      {/* ── Header: toggle (flex:1) + × dismiss beside the chevron ── */}
-      <View style={headerRow}>
-        <Pressable
-          testID="capacity-chip-collapsed"
-          accessibilityRole="button"
-          accessibilityLabel={`Honest day ${fmtHm(taskMin + eventMin)} ${verdictSuffix()}. Tap to ${expanded ? 'collapse' : 'expand'}.`}
-          accessibilityState={{ expanded }}
-          onPress={handleToggle}
-          style={{ flex: 1 }}
-        >
-          <View style={collapsedRow}>
-            {/* ⚡ icon disc */}
-            <View style={iconDisc}>
-              <Ionicons name="flash" size={t.iconSize.xs} color={t.colors.amberText} />
-            </View>
-
-            {/* "Honest day Xh Ym" */}
-            <Text style={chipLabel} numberOfLines={1}>
-              Honest day {fmtHm(taskMin + eventMin)}{' '}
-              <Text style={verdictSuffixStyle}>{verdictSuffix()}</Text>
-            </Text>
-
-            {/* Chevron — flips when expanded */}
-            <Ionicons
-              name={expanded ? 'chevron-up' : 'chevron-down'}
-              size={t.iconSize.xs}
-              color={t.colors.inkFaint}
-            />
+      {/* ── Header: toggle only — no dismiss up here (moved to the footer) ── */}
+      <Pressable
+        testID="capacity-chip-collapsed"
+        accessibilityRole="button"
+        accessibilityLabel={`Honest day ${fmtHm(taskMin + eventMin)} ${verdictSuffix()}. Tap to ${expanded ? 'collapse' : 'expand'}.`}
+        accessibilityState={{ expanded }}
+        onPress={handleToggle}
+      >
+        <View style={collapsedRow}>
+          {/* ⚡ icon disc */}
+          <View style={iconDisc}>
+            <Ionicons name="flash" size={t.iconSize.xs} color={t.colors.amberText} />
           </View>
-        </Pressable>
 
-        {/* × dismiss for the session — one home, beside the chevron */}
-        <Pressable
-          accessibilityRole="button"
-          accessibilityLabel="Dismiss capacity chip"
-          onPress={() => setDismissed(true)}
-          hitSlop={t.size.hitSlop}
-          style={xButton}
-        >
-          <Ionicons name="close" size={t.iconSize.xs} color={t.colors.inkFaint} />
-        </Pressable>
-      </View>
+          {/* "Honest day Xh Ym" */}
+          <Text style={chipLabel} numberOfLines={1}>
+            Honest day {fmtHm(taskMin + eventMin)}{' '}
+            <Text style={verdictSuffixStyle}>{verdictSuffix()}</Text>
+          </Text>
+
+          {/* Chevron — flips when expanded */}
+          <Ionicons
+            name={expanded ? 'chevron-up' : 'chevron-down'}
+            size={t.iconSize.xs}
+            color={t.colors.inkFaint}
+          />
+        </View>
+      </Pressable>
 
       {/* ── Expanded content (opacity-only fade; no slide-in) ── */}
       {expanded && (
@@ -408,17 +389,25 @@ export function CapacityChip({ cap }: CapacityChipProps): React.ReactElement | n
               <Text style={openValue}>{fmtHm(openMin)}</Text> open
             </Text>
 
-            <Pressable
-              accessibilityRole="link"
-              accessibilityLabel="Pad my calendar — add honest buffers to today's events"
-              onPress={() => router.push({ pathname: '/(modals)/honest-day' })}
-              hitSlop={t.size.hitSlop}
-            >
-              <View style={padPill}>
-                <Ionicons name="calendar-outline" size={t.iconSize.sm} color={t.colors.primary} />
-                <Text style={padPillText}>Pad calendar</Text>
-              </View>
-            </Pressable>
+            <View style={rightActions}>
+              <Pressable
+                accessibilityRole="button"
+                accessibilityLabel="Hide the Honest Day chip for this session"
+                onPress={() => setDismissed(true)}
+                hitSlop={t.size.hitSlop}
+              >
+                <Text style={hideLinkText}>Hide this</Text>
+              </Pressable>
+
+              <Pressable
+                accessibilityRole="link"
+                accessibilityLabel="Pad my calendar — add honest buffers to today's events"
+                onPress={() => router.push({ pathname: '/(modals)/honest-day' })}
+                hitSlop={t.size.hitSlop}
+              >
+                <Text style={padLinkText}>Pad calendar</Text>
+              </Pressable>
+            </View>
           </View>
         </Animated.View>
       )}
