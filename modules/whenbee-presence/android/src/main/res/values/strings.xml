@@ -6,6 +6,7 @@
     <string name="widget_next_up">Next up</string>
     <string name="widget_empty">No task queued</string>
     <string name="widget_start">Start</string>
+    <string name="widget_honestly">Honestly</string>
 
     <!-- "Does Today Fit?" widget (Pro) -->
     <string name="does_today_fit_label">Whenbee — Does today fit?</string>
