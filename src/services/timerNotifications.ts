@@ -171,6 +171,10 @@ export function scheduleStartBy(opts: {
   startByMs: number;
   firstTaskLabel: string;
   deadlineMs: number;
+  taskId?: string | null;
+  category?: string;
+  guessMin?: number;
+  honestMin?: number;
 }): Promise<void> {
   return withLock(STARTBY_ID_KEY, async () => {
     const N = getModule();
@@ -187,7 +191,16 @@ export function scheduleStartBy(opts: {
         interruptionLevel: 'timeSensitive',
         categoryIdentifier: CAT.START_BY,
         threadIdentifier: THREAD.PLAN,
-        data: { kind: 'startBy', startByMs: opts.startByMs, firstTaskLabel: opts.firstTaskLabel, deadlineMs: opts.deadlineMs },
+        data: {
+          kind: 'startBy',
+          startByMs: opts.startByMs,
+          firstTaskLabel: opts.firstTaskLabel,
+          deadlineMs: opts.deadlineMs,
+          taskId: opts.taskId ?? null,
+          category: opts.category ?? null,
+          guessMin: opts.guessMin ?? null,
+          honestMin: opts.honestMin ?? null,
+        },
       };
       const id = await N.scheduleNotificationAsync({
         content: notifContent,

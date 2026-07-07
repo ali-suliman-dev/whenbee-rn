@@ -1,6 +1,7 @@
 // Layer rule: this hook reads a store + a service only; no direct db imports.
 import { useEffect } from 'react';
 import { useSettingsStore } from '@/src/stores/settingsStore';
+import { useDayTasksStore } from '@/src/stores/dayTasksStore';
 import { scheduleStartBy, cancelStartBy } from '@/src/services/timerNotifications';
 import type { PlanResult } from '@/src/domain/types';
 
@@ -16,23 +17,43 @@ import type { PlanResult } from '@/src/domain/types';
 //
 // Opt-in twice over: master `remindersEnabled` (off by default) AND the per-type
 // `startByEnabled`. Keyed on primitive values (start-by ms, first-task label,
-// deadline ms) so it only re-schedules when the moment actually moves — not on
-// every clock tick that recomputes `plan` into a new object.
+// deadline ms, plus the joined task's id/category/guess/honest minutes) so it
+// only re-schedules when the moment actually moves — not on every clock tick
+// that recomputes `plan` into a new object.
 // ──────────────────────────────────────────────────────────────────────────────
 export function useStartByReminder(plan: PlanResult | null): void {
   const remindersEnabled = useSettingsStore((s) => s.remindersEnabled);
   const startByEnabled = useSettingsStore((s) => s.startByEnabled);
+  const dayTasks = useDayTasksStore((s) => s.dayTasks);
 
   const enabled = remindersEnabled && startByEnabled;
   const startByMs = plan?.startBy ?? null;
-  const firstTaskLabel = plan?.timeline.find((i) => i.kind === 'task')?.label ?? null;
+  const firstTask = plan?.timeline.find((i) => i.kind === 'task') ?? null;
+  const firstTaskLabel = firstTask?.label ?? null;
   const deadlineMs = plan ? plan.timeline.reduce((max, i) => Math.max(max, i.endAt), 0) : null;
+
+  // Honest estimate the plan used for this block = its duration in minutes.
+  const honestMin = firstTask ? Math.round((firstTask.endAt - firstTask.startAt) / 60000) : null;
+  // Join the timeline item's id back to the source task for guess + category.
+  const sourceTask = firstTask ? (dayTasks.find((t) => t.id === firstTask.id) ?? null) : null;
+  const taskId = firstTask?.id ?? null;
+  const guessMin = sourceTask?.guessMin ?? null;
+  const category = sourceTask?.category ?? null;
 
   useEffect(() => {
     if (!enabled || startByMs === null || firstTaskLabel === null || deadlineMs === null) {
       void cancelStartBy();
       return;
     }
-    void scheduleStartBy({ startByMs, firstTaskLabel, deadlineMs });
-  }, [enabled, startByMs, firstTaskLabel, deadlineMs]);
+    void scheduleStartBy({
+      startByMs,
+      firstTaskLabel,
+      deadlineMs,
+      taskId,
+      category: category ?? undefined,
+      guessMin: guessMin ?? undefined,
+      honestMin: honestMin ?? undefined,
+    });
+    // Keyed on primitives so it only re-schedules when a value actually moves.
+  }, [enabled, startByMs, firstTaskLabel, deadlineMs, taskId, category, guessMin, honestMin]);
 }

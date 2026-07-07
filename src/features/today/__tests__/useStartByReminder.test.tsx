@@ -7,6 +7,9 @@ jest.mock('@/src/services/timerNotifications', () => ({
   scheduleStartBy: (o: unknown) => mockSchedule(o),
   cancelStartBy: () => mockCancel(),
 }));
+jest.mock('@/src/stores/dayTasksStore', () => ({
+  useDayTasksStore: (selector: (s: { dayTasks: unknown[] }) => unknown) => selector({ dayTasks: [] }),
+}));
 
 /* eslint-disable import/first */
 import { useStartByReminder } from '../useStartByReminder';
@@ -44,6 +47,10 @@ describe('useStartByReminder', () => {
       startByMs: 1_000_000,
       firstTaskLabel: 'Ship PR',
       deadlineMs: 4_600_000,
+      taskId: 't1',
+      category: undefined,
+      guessMin: undefined,
+      honestMin: 55,
     });
     expect(mockCancel).not.toHaveBeenCalled();
   });
