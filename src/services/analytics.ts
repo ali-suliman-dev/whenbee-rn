@@ -171,6 +171,8 @@ export interface AppEventProps {
   calendar_padded: { events_count: number; day_end_shift_min: number };
   reminder_enabled: Record<string, never>;
   reminder_disabled: Record<string, never>;
+  startby_reminder_enabled: Record<string, never>;
+  startby_reminder_disabled: Record<string, never>;
   notification_action: { category: string; action: string };
   notification_permission: { tier: 'provisional' | 'full' | 'denied' };
   quiet_hours_toggled: { enabled: boolean };
