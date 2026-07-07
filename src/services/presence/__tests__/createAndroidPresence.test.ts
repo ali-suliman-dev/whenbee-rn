@@ -6,7 +6,9 @@ const snapshot: WidgetSnapshot = {
   guessClock: '6:30',
   startDeepLink: 'whenbee://timer?taskId=1', updatedAtEpoch: 1000, honestFinishEpoch: 3700, isPro: true,
 };
-const attrs: LiveActivityAttributes = { taskLabel: 'Write', finishEpoch: 3700, startEpoch: 1000, isProRich: true };
+const attrs: LiveActivityAttributes = {
+  taskLabel: 'Write', finishEpoch: 3700, startEpoch: 1000, guessFinishEpoch: 3400, isProRich: true,
+};
 
 function makeDeps(overrides: Partial<AndroidPresenceDeps> = {}): jest.Mocked<AndroidPresenceDeps> {
   return {

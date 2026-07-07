@@ -66,6 +66,9 @@ export interface LiveActivityAttributes {
   finishEpoch: number;
   /** Unix seconds when the timer started; the ring fills from here to finishEpoch. */
   startEpoch: number;
+  /** Unix seconds of the projected finish at the ORIGINAL guess. The Android
+   *  notification appends "· guessed <clock>"; 0 = unknown → no guess suffix. */
+  guessFinishEpoch: number;
   /** Whether to start the rich (ring + accents) Live Activity. Decided in JS at
    *  start time from the entitlement; the live countdown digits stay free either way. */
   isProRich: boolean;
