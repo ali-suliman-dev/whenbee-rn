@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Play triangle for the Honest Finish widget's start button. colors.onIndigo (dark
+     mode) fill — dark text/icon reads on the lighter dark-mode indigo fill. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="14dp"
+    android:height="14dp"
+    android:viewportWidth="24"
+    android:viewportHeight="24">
+    <path
+        android:pathData="M6 4 L20 12 L6 20 Z"
+        android:fillColor="#14151D" />
+</vector>

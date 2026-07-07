@@ -5,8 +5,12 @@ import android.appwidget.AppWidgetManager
 import android.appwidget.AppWidgetProvider
 import android.content.Context
 import android.content.Intent
+import android.graphics.Color
 import android.net.Uri
-import android.view.View
+import android.text.SpannableString
+import android.text.Spanned
+import android.text.style.ForegroundColorSpan
+import android.text.style.RelativeSizeSpan
 import android.widget.RemoteViews
 import org.json.JSONObject
 
@@ -28,24 +32,30 @@ class NextTaskWidgetProvider : AppWidgetProvider() {
 
   companion object {
     private const val WIDGET_KEY = "nextTask"
-    // Seconds after which a snapshot is "stale": drop the confident "Honest finish"
-    // prefix and show the bare clock. Mirrors kStaleSeconds / SharedStore.staleSeconds.
-    private const val STALE_SECONDS = 6 * 3600
+
+    // colors.inkSoft (dark) — the meridiem suffix is de-emphasized, never amber:
+    // amber is reserved for the one CTA (the play button), not label text.
+    private val COLOR_INK_SOFT = Color.parseColor("#ADA9B5")
 
     /**
-     * Fraction [0,1] of the way from `updatedAt` to `finish` at `now`.
-     * Kotlin port of arcFraction() in src/engine/presence.ts (also mirrored in
-     * targets/widget/SharedStore.swift). Keep all three in sync.
-     * Negative span -> 0, zero span -> 1 (no divide-by-zero), past finish -> 1.
+     * Splits a trailing "am"/"pm" off a formatClockMeridiem() string (e.g. "5:42pm")
+     * into a SpannableString with the meridiem shrunk + colored inkSoft and
+     * uppercased, so it reads as a quiet unit next to the ink-white hero time, not
+     * a same-size sibling. Falls back to plain text (no span) for 24h-format
+     * clocks, which carry no meridiem.
      */
-    fun arcFraction(updatedAt: Double, finish: Double, now: Double): Double {
-      val span = finish - updatedAt
-      if (span < 0) return 0.0
-      if (span == 0.0) return 1.0
-      val elapsed = now - updatedAt
-      if (elapsed <= 0) return 0.0
-      if (elapsed >= span) return 1.0
-      return elapsed / span
+    fun heroClockSpan(clock: String): CharSequence {
+      val match = Regex("(?i)^(.*\\d)(am|pm)$").find(clock) ?: return clock
+      val (time, meridiem) = match.destructured
+      val text = "$time ${meridiem.uppercase()}"
+      // Span starts at the space itself (not after it) — otherwise the space
+      // renders at full hero size (27sp) and reads as a huge gap between the
+      // time and the meridiem instead of a couple of pixels.
+      val start = time.length
+      return SpannableString(text).apply {
+        setSpan(ForegroundColorSpan(COLOR_INK_SOFT), start, text.length, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
+        setSpan(RelativeSizeSpan(0.45f), start, text.length, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
+      }
     }
 
     /** Trigger a rebuild of every placed instance of the widget. */
@@ -68,39 +78,13 @@ class NextTaskWidgetProvider : AppWidgetProvider() {
       if (snapshot == null || snapshot.label.isBlank()) {
         // Empty state — no task queued.
         views.setTextViewText(R.id.widget_label, context.getString(R.string.widget_empty))
-        views.setTextViewText(R.id.widget_finish, "")
-        views.setViewVisibility(R.id.widget_finish, View.GONE)
-        views.setViewVisibility(R.id.widget_bar, View.GONE)
+        views.setTextViewText(R.id.widget_hero, "")
         views.setOnClickPendingIntent(R.id.widget_start, startPendingIntent(context, null))
         return views
       }
 
       views.setTextViewText(R.id.widget_label, snapshot.label)
-
-      // Drop the "Honest finish " prefix once the snapshot is stale (> 6h old).
-      val nowSec = System.currentTimeMillis() / 1000.0
-      val isStale = nowSec - snapshot.updatedAtEpoch > STALE_SECONDS
-      val finishText =
-        if (isStale) snapshot.honestFinishClock
-        else "Honest finish " + snapshot.honestFinishClock
-      views.setTextViewText(R.id.widget_finish, finishText)
-      views.setViewVisibility(R.id.widget_finish, View.VISIBLE)
-
-      // Pro fill bar: only when isPro and we have a finish epoch to compute against.
-      // RemoteViews has no layout-weight setter, so the fraction is shown via a
-      // horizontal ProgressBar (max 1000) — robust on every API level from minSdk 24.
-      if (snapshot.isPro && snapshot.honestFinishEpoch != null) {
-        val fraction = arcFraction(
-          snapshot.updatedAtEpoch,
-          snapshot.honestFinishEpoch,
-          nowSec,
-        )
-        views.setProgressBar(R.id.widget_bar, 1000, (fraction * 1000).toInt(), false)
-        views.setViewVisibility(R.id.widget_bar, View.VISIBLE)
-      } else {
-        views.setViewVisibility(R.id.widget_bar, View.GONE)
-      }
-
+      views.setTextViewText(R.id.widget_hero, heroClockSpan(snapshot.honestFinishClock))
       views.setOnClickPendingIntent(R.id.widget_start, startPendingIntent(context, snapshot.startDeepLink))
       return views
     }

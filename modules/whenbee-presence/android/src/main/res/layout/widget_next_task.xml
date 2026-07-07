@@ -1,7 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Next-task Home-screen widget. Presentation-only: renders the snapshot JS wrote
-     (see WhenbeePresenceModule.writeWidgetSnapshot / src/services/liveActivity.ts).
-     Colors mirror src/theme/tokens.ts (dark surface). -->
+<!-- Honest Finish (next-task) Home-screen widget. Presentation-only: renders the
+     snapshot JS wrote (see WhenbeePresenceModule.writeWidgetSnapshot /
+     src/services/liveActivity.ts). Colors mirror src/theme/tokens.ts (dark surface).
+     Hero-clock layout: eyebrow + title up top, honest-finish time as the hero
+     (mono, ink white — meridiem colored inkSoft in code, never amber: amber is
+     reserved for the one CTA), flat square play button bottom-right. -->
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
@@ -9,49 +12,31 @@
     android:background="@drawable/widget_bg"
     android:padding="12dp">
 
+    <!-- Eyebrow -->
+    <TextView
+        android:id="@+id/widget_eyebrow"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="@string/widget_next_up"
+        android:textColor="#ADA9B5"
+        android:textSize="10.5sp"
+        android:letterSpacing="0.03"
+        android:textStyle="bold" />
+
     <!-- Task label -->
     <TextView
         android:id="@+id/widget_label"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
+        android:layout_marginTop="1dp"
         android:maxLines="2"
         android:ellipsize="end"
         android:text="@string/widget_empty"
         android:textColor="#F4F1EA"
-        android:textSize="16sp"
+        android:textSize="14sp"
         android:textStyle="bold" />
 
-    <!-- Honest-finish caption -->
-    <TextView
-        android:id="@+id/widget_finish"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="4dp"
-        android:maxLines="1"
-        android:ellipsize="end"
-        android:text=""
-        android:textColor="#EEAE4D"
-        android:textSize="13sp"
-        android:textStyle="bold" />
-
-    <!-- Pro fill bar — a horizontal ProgressBar; fraction set via setProgressBar().
-         Hidden entirely for free/empty. Concrete framework horizontal style
-         (@android:style/Widget.ProgressBar.Horizontal) instead of the theme attr
-         ?android:attr/progressBarStyleHorizontal, so it resolves without depending
-         on the launcher host theme; visuals come from our own progressDrawable. -->
-    <ProgressBar
-        android:id="@+id/widget_bar"
-        style="@android:style/Widget.ProgressBar.Horizontal"
-        android:layout_width="match_parent"
-        android:layout_height="6dp"
-        android:layout_marginTop="10dp"
-        android:max="1000"
-        android:progress="0"
-        android:indeterminate="false"
-        android:progressDrawable="@drawable/widget_bar"
-        android:visibility="gone" />
-
-    <!-- Spacer pushes the Start chip to the bottom. Must be a RemoteViews-supported
+    <!-- Spacer pushes the hero row to the bottom. Must be a RemoteViews-supported
          container (FrameLayout) — a bare <View> is NOT in the RemoteViews class list
          and makes the launcher fail to inflate the widget ("Can't load widget"). -->
     <FrameLayout
@@ -59,19 +44,39 @@
         android:layout_height="0dp"
         android:layout_weight="1" />
 
-    <!-- One-tap Start chip -->
-    <TextView
-        android:id="@+id/widget_start"
-        android:layout_width="wrap_content"
+    <!-- Hero row: honest-finish clock (hero) + flat play button -->
+    <LinearLayout
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginTop="10dp"
-        android:background="@drawable/widget_start_chip"
-        android:paddingLeft="16dp"
-        android:paddingRight="16dp"
-        android:paddingTop="7dp"
-        android:paddingBottom="7dp"
-        android:text="@string/widget_start"
-        android:textColor="#FFFFFF"
-        android:textSize="13sp"
-        android:textStyle="bold" />
+        android:orientation="horizontal"
+        android:gravity="bottom">
+
+        <TextView
+            android:id="@+id/widget_hero"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:maxLines="1"
+            android:ellipsize="end"
+            android:text=""
+            android:textColor="#F4F1EA"
+            android:fontFamily="monospace"
+            android:textSize="27sp"
+            android:textStyle="bold" />
+
+        <FrameLayout
+            android:id="@+id/widget_start"
+            android:layout_width="32dp"
+            android:layout_height="32dp"
+            android:background="@drawable/widget_play_button">
+
+            <ImageView
+                android:layout_width="14dp"
+                android:layout_height="14dp"
+                android:layout_gravity="center"
+                android:layout_marginStart="1dp"
+                android:src="@drawable/ic_widget_play"
+                android:contentDescription="@string/widget_start" />
+        </FrameLayout>
+    </LinearLayout>
 </LinearLayout>

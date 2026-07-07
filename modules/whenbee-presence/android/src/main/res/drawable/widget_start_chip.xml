@@ -1,7 +1,0 @@
-<?xml version="1.0" encoding="utf-8"?>
-<!-- One-tap Start chip — filled indigo primary (colors.primary #6B5BE6). -->
-<shape xmlns:android="http://schemas.android.com/apk/res/android"
-    android:shape="rectangle">
-    <solid android:color="#6B5BE6" />
-    <corners android:radius="14dp" />
-</shape>
