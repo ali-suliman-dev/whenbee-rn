@@ -608,6 +608,14 @@ export default function Today() {
                     </View>
                   ) : null}
 
+                  {/* Read-only calendar overlay — Pro + showEvents only (cap returns []
+                      for free users so this naturally renders nothing for them).
+                      Sits ABOVE Done today so finished work always reads last. */}
+                  <CalendarOverlaySection
+                    events={cap.events}
+                    allDayEvents={cap.allDayEvents}
+                  />
+
                   {done.length > 0 ? (
                     <DoneSection
                       rows={done}
@@ -618,13 +626,6 @@ export default function Today() {
                       onCoachMarkDismiss={dismissCoachMark}
                     />
                   ) : null}
-
-                  {/* Read-only calendar overlay — Pro + showEvents only (cap returns []
-                      for free users so this naturally renders nothing for them). */}
-                  <CalendarOverlaySection
-                    events={cap.events}
-                    allDayEvents={cap.allDayEvents}
-                  />
                 </Animated.View>
               )}
             </>
