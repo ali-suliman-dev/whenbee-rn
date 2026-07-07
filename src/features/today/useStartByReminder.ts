@@ -15,18 +15,18 @@ import type { PlanResult } from '@/src/domain/types';
 // already in the past — so a same-day plan whose start has passed simply clears
 // any stale notification instead of firing late.
 //
-// Opt-in twice over: master `remindersEnabled` (off by default) AND the per-type
-// `startByEnabled`. Keyed on primitive values (start-by ms, first-task label,
-// deadline ms, plus the joined task's id/category/guess/honest minutes) so it
-// only re-schedules when the moment actually moves — not on every clock tick
-// that recomputes `plan` into a new object.
+// Opt-in via `startByEnabled` alone (default off) — the plan surface owns this
+// reminder; the global reminders master no longer gates it. Keyed on primitive
+// values (start-by ms, first-task label, deadline ms, plus the joined task's
+// id/category/guess/honest minutes) so it only re-schedules when the moment
+// actually moves — not on every clock tick that recomputes `plan` into a new
+// object.
 // ──────────────────────────────────────────────────────────────────────────────
 export function useStartByReminder(plan: PlanResult | null): void {
-  const remindersEnabled = useSettingsStore((s) => s.remindersEnabled);
   const startByEnabled = useSettingsStore((s) => s.startByEnabled);
   const dayTasks = useDayTasksStore((s) => s.dayTasks);
 
-  const enabled = remindersEnabled && startByEnabled;
+  const enabled = startByEnabled;
   const startByMs = plan?.startBy ?? null;
   const firstTask = plan?.timeline.find((i) => i.kind === 'task') ?? null;
   const firstTaskLabel = firstTask?.label ?? null;

@@ -9,7 +9,7 @@ describe('settingsStore — notification keys', () => {
     expect(s.quietHours).toEqual({ enabled: true, startMin: 1260, endMin: 480 });
     expect(s.notificationSound).toBe('default');
     expect(s.honestReachedEnabled).toBe(true);
-    expect(s.startByEnabled).toBe(true);
+    expect(s.startByEnabled).toBe(false);
   });
 
   it('sets and resets quiet hours + sound + per-type toggles', () => {
