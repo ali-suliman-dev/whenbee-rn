@@ -250,6 +250,17 @@ export const useSettingsStore = create<SettingsState>()(
           calendar: { ...DEFAULT_CALENDAR, ...(p?.calendar ?? {}) },
         };
       },
+      // v1: startByEnabled flipped its default from true to false when start-by
+      // notifications were decoupled from the master reminders toggle. Pre-v1
+      // blobs may carry a persisted `true` from the old default — force it back
+      // to opt-out so existing users aren't silently enrolled in a notification
+      // they never asked for. Every other field passes through untouched.
+      version: 1,
+      migrate: (persisted, version) => {
+        const p = (persisted ?? {}) as Partial<SettingsState>;
+        if (version < 1) return { ...p, startByEnabled: false };
+        return p;
+      },
     },
   ),
 );

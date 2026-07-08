@@ -14,9 +14,18 @@ jest.mock('expo-router', () => ({
   useFocusEffect: (cb: () => void | (() => void)) => cb(),
 }));
 
+const mockEnsurePermission = jest.fn(() => Promise.resolve(true));
+const mockCancelStartBy = jest.fn(() => Promise.resolve());
+jest.mock('@/src/services/timerNotifications', () => ({
+  ...jest.requireActual('@/src/services/timerNotifications'),
+  ensureNotificationPermission: () => mockEnsurePermission(),
+  cancelStartBy: () => mockCancelStartBy(),
+}));
+
 beforeEach(() => {
   useSettingsStore.getState().reset();
   jest.clearAllMocks();
+  mockEnsurePermission.mockImplementation(() => Promise.resolve(true));
 });
 
 describe('Settings — Notifications section', () => {
@@ -43,12 +52,38 @@ describe('Settings — Notifications section', () => {
     expect(useSettingsStore.getState().honestReachedEnabled).toBe(false);
   });
 
-  it('toggling Start-by nudge calls setStartByEnabled independently of remindersEnabled', () => {
+  it('toggling Start-by nudge off works independently of remindersEnabled', async () => {
     useSettingsStore.setState({ remindersEnabled: false, startByEnabled: true });
     const { getByLabelText } = render(<Settings />);
     const sw = getByLabelText('Start-by nudge');
-    fireEvent(sw, 'valueChange', false);
+    await act(async () => {
+      fireEvent(sw, 'valueChange', false);
+    });
     expect(useSettingsStore.getState().startByEnabled).toBe(false);
+  });
+
+  it('turning Start-by nudge on requests permission and flips the flag when granted', async () => {
+    mockEnsurePermission.mockImplementation(() => Promise.resolve(true));
+    useSettingsStore.setState({ startByEnabled: false });
+    const { getByLabelText } = render(<Settings />);
+    const sw = getByLabelText('Start-by nudge');
+    await act(async () => {
+      fireEvent(sw, 'valueChange', true);
+    });
+    expect(mockEnsurePermission).toHaveBeenCalled();
+    expect(useSettingsStore.getState().startByEnabled).toBe(true);
+  });
+
+  it('turning Start-by nudge on stays off and toasts when permission is denied', async () => {
+    mockEnsurePermission.mockImplementation(() => Promise.resolve(false));
+    useSettingsStore.setState({ startByEnabled: false });
+    const { getByLabelText, queryByText } = render(<Settings />);
+    const sw = getByLabelText('Start-by nudge');
+    await act(async () => {
+      fireEvent(sw, 'valueChange', true);
+    });
+    expect(useSettingsStore.getState().startByEnabled).toBe(false);
+    expect(queryByText('Allow notifications in iOS Settings to get reminders.')).toBeTruthy();
   });
 
   it('toggling Quiet hours switch updates the store', () => {
