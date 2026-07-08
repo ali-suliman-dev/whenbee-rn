@@ -76,7 +76,7 @@ describe('(modals)/plan', () => {
     mockUseDayPlan.mockReturnValue({ plan: makePlan(startBy), status: 'ready', doneByMin: 780, setDoneBy: jest.fn() });
     render(<PlanRoute />);
     expect(screen.getByTestId('plan-doneby-pill')).toBeOnTheScreen();
-    expect(screen.getByTestId('plan-nudge-pill')).toBeOnTheScreen();
+    expect(screen.getByTestId('plan-nudge-row')).toBeOnTheScreen();
     expect(screen.getByText('Nudge')).toBeOnTheScreen();
   });
 
@@ -98,7 +98,7 @@ describe('(modals)/plan', () => {
     expect(mockToggleNudge).toHaveBeenCalledWith(true);
   });
 
-  it('renders a justified start-by/finish-by line at equal font size', () => {
+  it('renders the start-by · finish times line with equal-size clocks', () => {
     const startBy = new Date(2026, 5, 24, 9, 0, 0).getTime(); // 9:00 AM local
     const doneByMin = 1080; // 18:00 local
     mockUseDayPlan.mockReturnValue({
@@ -109,22 +109,27 @@ describe('(modals)/plan', () => {
     });
     render(<PlanRoute />);
 
-    const startByNode = screen.getByText(`Start by ${formatClock(startBy)}`);
+    // The summary line lives in the footer now (title stays clean). Scope every
+    // lookup to it so the Done-by pill's own clock can't be mistaken for the
+    // finish clock.
+    const line = screen.getByTestId('plan-times-line');
+    expect(within(line).getByText('Start by')).toBeOnTheScreen();
+    expect(within(line).getByText('finish')).toBeOnTheScreen();
+
     const localMidnight = new Date(startBy);
     localMidnight.setHours(0, 0, 0, 0);
     const finishAt = localMidnight.getTime() + doneByMin * 60_000;
-    const finishByNode = screen.getByText(`finish by ${formatClock(finishAt)}`);
 
-    expect(startByNode).toBeOnTheScreen();
-    expect(finishByNode).toBeOnTheScreen();
+    const startClock = within(line).getByText(formatClock(startBy));
+    const finishClock = within(line).getByText(formatClock(finishAt));
 
-    const startSize = Array.isArray(startByNode.props.style)
-      ? startByNode.props.style.find((s: { fontSize?: number }) => s?.fontSize)?.fontSize
-      : startByNode.props.style?.fontSize;
-    const finishSize = Array.isArray(finishByNode.props.style)
-      ? finishByNode.props.style.find((s: { fontSize?: number }) => s?.fontSize)?.fontSize
-      : finishByNode.props.style?.fontSize;
-    expect(startSize).toBe(finishSize);
+    const sizeOf = (node: { props: { style?: unknown } }): number | undefined => {
+      const style = node.props.style;
+      return Array.isArray(style)
+        ? style.find((s: { fontSize?: number }) => s?.fontSize)?.fontSize
+        : (style as { fontSize?: number } | undefined)?.fontSize;
+    };
+    expect(sizeOf(startClock)).toBe(sizeOf(finishClock));
   });
 
   it('dismisses on Done', () => {
