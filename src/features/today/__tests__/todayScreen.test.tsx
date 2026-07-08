@@ -277,10 +277,10 @@ describe('Today screen', () => {
 });
 
 // ─────────────────────────────────────────────────────────────────────────────
-// B3 — List ⇄ Timeline toggle + "Plan my day"
+// Option 1 — Today is list-only; "Plan my day" opens the plan sheet
 // ─────────────────────────────────────────────────────────────────────────────
 
-describe('List ⇄ Timeline toggle (B3)', () => {
+describe('Today is list-only (Option 1)', () => {
   function seedTodayWithTask() {
     const task = makeQueued({
       id: 't1',
@@ -292,86 +292,56 @@ describe('List ⇄ Timeline toggle (B3)', () => {
       dayTasks: [task],
       shelfTasks: [],
       selectedDate: new Date().toISOString().slice(0, 10),
-      viewMode: 'list',
+      dayMeta: null,
       selectFocusTask: () => task,
       loadShelf: async () => {},
-      setViewMode: jest.fn((m: 'list' | 'timeline') =>
-        useDayTasksStore.setState({ viewMode: m }),
-      ),
       markPlanned: jest.fn(async () => {}),
     });
   }
 
-  it('shows the List/Timeline toggle on today (not a past day)', () => {
+  it('never shows a List/Timeline segmented control on today', () => {
     seedTodayWithTask();
-    render(<Today />);
-    expect(screen.getByTestId('view-toggle-list')).toBeOnTheScreen();
-    expect(screen.getByTestId('view-toggle-timeline')).toBeOnTheScreen();
-  });
-
-  it('does NOT show the toggle on a past day', () => {
-    useDayTasksStore.setState({
-      selectedDate: '2023-11-13',
-      dayTasks: [],
-      viewMode: 'list',
-      selectFocusTask: () => null,
-      loadShelf: async () => {},
-    });
     render(<Today />);
     expect(screen.queryByTestId('view-toggle-list')).toBeNull();
     expect(screen.queryByTestId('view-toggle-timeline')).toBeNull();
   });
 
-  it('Pro: tapping "Plan my day" calls markPlanned and switches viewMode to timeline', () => {
+  it('does NOT show a Plan my day entry on a past day', () => {
+    useDayTasksStore.setState({
+      selectedDate: '2023-11-13',
+      dayTasks: [],
+      dayMeta: null,
+      selectFocusTask: () => null,
+      loadShelf: async () => {},
+    });
+    render(<Today />);
+    expect(screen.queryByTestId('plan-button')).toBeNull();
+  });
+
+  it('Pro: tapping "Plan my day" calls markPlanned and opens the plan sheet', () => {
     useEntitlement.setState({ isPro: true });
     seedTodayWithTask();
     const { getByTestId } = render(<Today />);
-    fireEvent.press(getByTestId('plan-my-day-btn'));
-    expect(useDayTasksStore.getState().viewMode).toBe('timeline');
+    fireEvent.press(getByTestId('plan-button'));
+    expect(useDayTasksStore.getState().markPlanned).toHaveBeenCalledTimes(1);
+    expect(router.push).toHaveBeenCalledWith('/(modals)/plan');
   });
 
-  it('Pro: renders DayTimeline when viewMode is timeline', () => {
-    useEntitlement.setState({ isPro: true });
+  it('always shows the list body (UP NEXT), never the Timeline lens', () => {
     seedTodayWithTask();
-    useDayTasksStore.setState({ viewMode: 'timeline' });
-    render(<Today />);
-    expect(screen.getByTestId('day-timeline-root')).toBeOnTheScreen();
-  });
-
-  it('shows the list body (UP NEXT) when viewMode is list', () => {
-    seedTodayWithTask();
-    useDayTasksStore.setState({ viewMode: 'list' });
     const task = makeQueued({ id: 'u1', label: 'Review PR', category: 'work', guessMin: 20 });
     useDayTasksStore.setState({ dayTasks: [task], selectFocusTask: () => null });
     render(<Today />);
-    // UP NEXT section header visible in list mode
     expect(screen.queryByTestId('day-timeline-root')).toBeNull();
     expect(screen.getByText('UP NEXT')).toBeOnTheScreen();
-  });
-
-  it('Pro: tapping Timeline toggle switches viewMode to timeline', () => {
-    useEntitlement.setState({ isPro: true });
-    seedTodayWithTask();
-    const { getByTestId } = render(<Today />);
-    fireEvent.press(getByTestId('view-toggle-timeline'));
-    expect(useDayTasksStore.getState().viewMode).toBe('timeline');
-  });
-
-  it('tapping List toggle from timeline switches back to list', () => {
-    useEntitlement.setState({ isPro: true });
-    seedTodayWithTask();
-    useDayTasksStore.setState({ viewMode: 'timeline' });
-    const { getByTestId } = render(<Today />);
-    fireEvent.press(getByTestId('view-toggle-list'));
-    expect(useDayTasksStore.getState().viewMode).toBe('list');
   });
 });
 
 // ─────────────────────────────────────────────────────────────────────────────
-// C1 — Pro gate: Plan-my-day + Timeline are Pro
+// C1 — Pro gate: Plan-my-day
 // ─────────────────────────────────────────────────────────────────────────────
 
-describe('C1 — Pro gate: Plan-my-day + Timeline', () => {
+describe('C1 — Pro gate: Plan-my-day', () => {
   function seedTodayWithTask() {
     const task = makeQueued({
       id: 'c1',
@@ -383,12 +353,9 @@ describe('C1 — Pro gate: Plan-my-day + Timeline', () => {
       dayTasks: [task],
       shelfTasks: [],
       selectedDate: new Date().toISOString().slice(0, 10),
-      viewMode: 'list',
+      dayMeta: null,
       selectFocusTask: () => task,
       loadShelf: async () => {},
-      setViewMode: jest.fn((m: 'list' | 'timeline') =>
-        useDayTasksStore.setState({ viewMode: m }),
-      ),
       markPlanned: jest.fn(async () => {}),
     });
   }
@@ -403,60 +370,31 @@ describe('C1 — Pro gate: Plan-my-day + Timeline', () => {
     useEntitlement.setState({ isPro: false });
     seedTodayWithTask();
     const { getByTestId } = render(<Today />);
-    fireEvent.press(getByTestId('plan-my-day-btn'));
+    fireEvent.press(getByTestId('plan-button'));
     expect(router.push).toHaveBeenCalledWith({
       pathname: '/(modals)/paywall',
       params: { trigger: 'plan_my_day' },
     });
   });
 
-  it('free: tapping "Plan my day" does NOT switch viewMode to timeline', () => {
+  it('free: tapping "Plan my day" does NOT open the plan sheet', () => {
     useEntitlement.setState({ isPro: false });
     seedTodayWithTask();
     const { getByTestId } = render(<Today />);
-    fireEvent.press(getByTestId('plan-my-day-btn'));
-    expect(useDayTasksStore.getState().viewMode).toBe('list');
-  });
-
-  it('free: DayTimeline is NOT rendered even when viewMode is timeline', () => {
-    useEntitlement.setState({ isPro: false });
-    seedTodayWithTask();
-    // Manually put the store into timeline mode — simulates a stale session state.
-    useDayTasksStore.setState({ viewMode: 'timeline' });
-    render(<Today />);
-    expect(screen.queryByTestId('day-timeline-root')).toBeNull();
-  });
-
-  it('free: tapping Timeline toggle routes to paywall, does not flip viewMode', () => {
-    useEntitlement.setState({ isPro: false });
-    seedTodayWithTask();
-    const { getByTestId } = render(<Today />);
-    fireEvent.press(getByTestId('view-toggle-timeline'));
-    expect(router.push).toHaveBeenCalledWith({
-      pathname: '/(modals)/paywall',
-      params: { trigger: 'plan_my_day' },
-    });
-    expect(useDayTasksStore.getState().viewMode).toBe('list');
+    fireEvent.press(getByTestId('plan-button'));
+    expect(router.push).not.toHaveBeenCalledWith('/(modals)/plan');
   });
 
   // ── Pro user ───────────────────────────────────────────────────────────────
 
-  it('Pro: tapping "Plan my day" flips to Timeline, does NOT route to paywall', () => {
+  it('Pro: tapping "Plan my day" opens the plan sheet, does NOT route to paywall', () => {
     useEntitlement.setState({ isPro: true });
     seedTodayWithTask();
     const { getByTestId } = render(<Today />);
-    fireEvent.press(getByTestId('plan-my-day-btn'));
+    fireEvent.press(getByTestId('plan-button'));
     expect(router.push).not.toHaveBeenCalledWith(
       expect.objectContaining({ pathname: '/(modals)/paywall' }),
     );
-    expect(useDayTasksStore.getState().viewMode).toBe('timeline');
-  });
-
-  it('Pro: DayTimeline renders when viewMode is timeline', () => {
-    useEntitlement.setState({ isPro: true });
-    seedTodayWithTask();
-    useDayTasksStore.setState({ viewMode: 'timeline' });
-    render(<Today />);
-    expect(screen.getByTestId('day-timeline-root')).toBeOnTheScreen();
+    expect(router.push).toHaveBeenCalledWith('/(modals)/plan');
   });
 });

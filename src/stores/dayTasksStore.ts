@@ -30,6 +30,13 @@ export interface PlannedExportTask {
 const MIGRATED_FLAG = 'tasks-migrated-v1';
 const LEGACY_KV_KEY = 'today-tasks'; // the old persist() store key
 
+/** kv key for the "this day has a manual drag order" flag — keyed per day so
+ *  reordering one day never affects another. Value is the literal string '1';
+ *  absence (or any other value) means "no manual order, planner may reshuffle". */
+function manualOrderKvKey(date: string): string {
+  return `plan-manual-order:${date}`;
+}
+
 // ---------------------------------------------------------------------------
 // Public types
 // ---------------------------------------------------------------------------
@@ -40,6 +47,12 @@ export interface DayTasksState {
   dayTasks: DayTask[];
   /** Day-level planning metadata for the currently selected date. Null until loaded. */
   dayMeta: { doneByMin: number | null; planComputedAt: number | null } | null;
+  /**
+   * Whether the selected date has a user-set manual drag order. When true,
+   * useDayPlan sorts queued tasks by orderIndex and skips the deep-first
+   * orderForFocus reshuffle. Persisted per-day via kv (see manualOrderKvKey).
+   */
+  hasManualOrder: boolean;
   /** Sorted YYYY-MM-DD keys of all queued-task planned dates — powers calendar dot hints. */
   datesWithTasks: string[];
   /** Tasks with no planned date (shelf / "no day yet"). Populated by loadShelf(). */
@@ -67,6 +80,12 @@ export interface DayTasksState {
   moveTask: (id: string, toDate: string | null, nowMs?: number) => Promise<void>;
   removeTask: (id: string, nowMs?: number) => Promise<void>;
   promoteToFocus: (id: string, nowMs?: number) => Promise<void>;
+  /**
+   * Persist a user-driven drag order for the selected date: assigns ascending
+   * orderIndex to `orderedIds` in the given order, then marks the day as
+   * having a manual order (see `hasManualOrder`) so the planner honors it.
+   */
+  reorderTasks: (orderedIds: string[], nowMs?: number) => Promise<void>;
   /** Move a task to tomorrow (today + 1). Convenience over moveTask. */
   moveToTomorrow: (id: string, nowMs?: number) => Promise<void>;
   selectFocusTask: () => DayTask | null;
@@ -196,6 +215,7 @@ export function makeDayTasksStore(deps: Deps): UseBoundStore<StoreApi<DayTasksSt
     viewMode: 'list',
     dayTasks: [],
     dayMeta: null,
+    hasManualOrder: false,
     datesWithTasks: [],
     shelfTasks: [],
     loading: false,
@@ -235,6 +255,7 @@ export function makeDayTasksStore(deps: Deps): UseBoundStore<StoreApi<DayTasksSt
       set({
         ...dayAndDots,
         dayMeta: dayMetaRow,
+        hasManualOrder: kvGet(manualOrderKvKey(today)) === '1',
         shelfTasks: shelfRaw.map((t) => ({ ...t, carriedFrom: null })),
         loading: false,
       });
@@ -246,7 +267,12 @@ export function makeDayTasksStore(deps: Deps): UseBoundStore<StoreApi<DayTasksSt
         loadDayAndDots(date, today),
         loadDayMeta(date),
       ]);
-      set({ selectedDate: date, ...dayAndDots, dayMeta: dayMetaRow });
+      set({
+        selectedDate: date,
+        ...dayAndDots,
+        dayMeta: dayMetaRow,
+        hasManualOrder: kvGet(manualOrderKvKey(date)) === '1',
+      });
     },
 
     async goToToday(nowMs) {
@@ -255,7 +281,12 @@ export function makeDayTasksStore(deps: Deps): UseBoundStore<StoreApi<DayTasksSt
         loadDayAndDots(today, today),
         loadDayMeta(today),
       ]);
-      set({ selectedDate: today, ...dayAndDots, dayMeta: dayMetaRow });
+      set({
+        selectedDate: today,
+        ...dayAndDots,
+        dayMeta: dayMetaRow,
+        hasManualOrder: kvGet(manualOrderKvKey(today)) === '1',
+      });
     },
 
     setViewMode(m) {
@@ -362,6 +393,23 @@ export function makeDayTasksStore(deps: Deps): UseBoundStore<StoreApi<DayTasksSt
       await repo.update(id, { orderIndex: minOrder - 1 });
       const today = toLocalDayKey(nowMs ?? Date.now());
       set(await loadDayAndDots(get().selectedDate, today));
+    },
+
+    async reorderTasks(orderedIds, nowMs) {
+      if (orderedIds.length === 0) return;
+      // Ascending orderIndex from a stable base so the given order is preserved
+      // relative to itself; unrelated tasks (other days) are untouched.
+      const base = nowMs ?? Date.now();
+      await Promise.all(
+        orderedIds.map((id, idx) => repo.update(id, { orderIndex: base + idx })),
+      );
+      const { selectedDate } = get();
+      kvSet(manualOrderKvKey(selectedDate), '1');
+      const today = toLocalDayKey(nowMs ?? Date.now());
+      set({
+        ...(await loadDayAndDots(selectedDate, today)),
+        hasManualOrder: true,
+      });
     },
 
     async moveToTomorrow(id, nowMs) {

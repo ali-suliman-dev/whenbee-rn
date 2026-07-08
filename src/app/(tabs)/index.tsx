@@ -1,5 +1,5 @@
 import { View, Text, Pressable, ScrollView, type TextStyle } from 'react-native';
-import { useState, useCallback, useEffect, useRef } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { router } from 'expo-router';
 import Animated, { FadeIn } from 'react-native-reanimated';
 import { haptics } from '@/src/lib/haptics';
@@ -27,7 +27,7 @@ import { useCategoriesStore } from '@/src/stores/categoriesStore';
 import { useCalibrationStore } from '@/src/stores/calibrationStore';
 import { useTimerStore } from '@/src/stores/timerStore';
 import { useSettingsStore } from '@/src/stores/settingsStore';
-import { projectedFinish, formatClockMeridiem } from '@/src/lib/time';
+import { projectedFinish, formatClockMeridiem, formatClock } from '@/src/lib/time';
 import { useDayTasksStore } from '@/src/stores/dayTasksStore';
 import { toLocalDayKey, addDays, weekdayOf, compareDayKeys } from '@/src/lib/day';
 import { kv } from '@/src/lib/kv';
@@ -35,7 +35,7 @@ import { useFocusedValue } from '@/src/hooks/useFocusedValue';
 import { useGreeting } from '@/src/features/today/useGreeting';
 import { TodayFocusHook } from '@/src/features/today/TodayFocusHook';
 import { CalendarStrip } from '@/src/features/today/calendarStrip/CalendarStrip';
-import { PlanMyDayButton } from '@/src/features/today/PlanMyDayButton';
+import { PlanButton } from '@/src/features/today/PlanButton';
 import { ShelfSection } from '@/src/features/today/ShelfSection';
 import { DayRecapCard } from '@/src/features/today/DayRecapCard';
 import { useDayRecap } from '@/src/features/today/useDayRecap';
@@ -44,7 +44,6 @@ import { CalendarOverlaySection } from '@/src/features/today/CalendarOverlaySect
 import { useDayCapacity } from '@/src/features/today/useDayCapacity';
 import { useCapacityWidgetPublisher } from '@/src/features/today/useCapacityWidgetPublisher';
 import { useBiasWidgetPublisher } from '@/src/features/today/useBiasWidgetPublisher';
-import { DayTimeline } from '@/src/features/today/DayTimeline';
 import { useEntitlement } from '@/src/features/paywall/useEntitlement';
 import { useScheduledRoutines } from '@/src/features/today/useScheduledRoutines';
 import { ScheduledRoutineBlock } from '@/src/features/today/ScheduledRoutineBlock';
@@ -67,88 +66,6 @@ function weekdayName(key: string): string {
   return WEEKDAY_NAMES[weekdayOf(key)] ?? 'Today';
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// ViewToggle — segmented List ⇄ Timeline control
-// ─────────────────────────────────────────────────────────────────────────────
-
-interface ViewToggleProps {
-  viewMode: 'list' | 'timeline';
-  onSelect: (m: 'list' | 'timeline') => void;
-  /** Called instead of onSelect('timeline') when the user is on the free tier. */
-  onTimelineGated?: () => void;
-  isPro: boolean;
-}
-
-function ViewToggle({ viewMode, onSelect, onTimelineGated, isPro }: ViewToggleProps) {
-  const t = useTheme();
-
-  const trackStyle = {
-    flexDirection: 'row' as const,
-    alignItems: 'center' as const,
-    minHeight: t.size.control.sm,
-    backgroundColor: t.colors.surfaceSunken,
-    borderRadius: t.radii.full,
-    // Android squares rounded corners on press-layer promotion — pin the clip.
-    overflow: 'hidden' as const,
-    padding: 3,
-    alignSelf: 'flex-start' as const,
-  };
-
-  function pillStyle(active: boolean) {
-    return {
-      paddingHorizontal: t.space[4],
-      paddingVertical: t.space[2],
-      borderRadius: t.radii.full,
-      overflow: 'hidden' as const,
-      backgroundColor: active ? t.colors.surface : 'transparent',
-    };
-  }
-
-  function labelStyle(active: boolean): TextStyle {
-    return {
-      fontSize: t.fontSize.sm,
-      fontWeight: active ? t.fontWeight.semibold : t.fontWeight.regular,
-      color: active ? t.colors.ink : t.colors.inkSoft,
-      fontFamily: t.fontFamily.ui,
-    };
-  }
-
-  return (
-    <View style={trackStyle} accessibilityRole="tablist">
-      <Pressable
-        testID="view-toggle-list"
-        onPress={() => onSelect('list')}
-        accessibilityRole="tab"
-        accessibilityLabel="List view"
-        accessibilityState={{ selected: viewMode === 'list' }}
-        hitSlop={4}
-      >
-        <View style={pillStyle(viewMode === 'list')}>
-          <Text style={labelStyle(viewMode === 'list')}>List</Text>
-        </View>
-      </Pressable>
-      <Pressable
-        testID="view-toggle-timeline"
-        onPress={() => {
-          if (!isPro) {
-            onTimelineGated?.();
-          } else {
-            onSelect('timeline');
-          }
-        }}
-        accessibilityRole="tab"
-        accessibilityLabel={isPro ? 'Timeline view' : 'Timeline view — Pro feature'}
-        accessibilityState={{ selected: viewMode === 'timeline' }}
-        hitSlop={4}
-      >
-        <View style={pillStyle(viewMode === 'timeline')}>
-          <Text style={labelStyle(viewMode === 'timeline')}>Timeline</Text>
-        </View>
-      </Pressable>
-    </View>
-  );
-}
-
 export default function Today() {
   const t = useTheme();
   const {
@@ -163,8 +80,7 @@ export default function Today() {
     hasEverLogged,
   } = useToday();
   const selectedDate = useDayTasksStore((s) => s.selectedDate);
-  const viewMode = useDayTasksStore((s) => s.viewMode);
-  const setViewMode = useDayTasksStore((s) => s.setViewMode);
+  const dayMeta = useDayTasksStore((s) => s.dayMeta);
   const markPlanned = useDayTasksStore((s) => s.markPlanned);
   const isPro = useEntitlement((s) => s.isPro);
   const today = toLocalDayKey(Date.now());
@@ -177,19 +93,9 @@ export default function Today() {
   const headerTitle = selectedDate === today ? 'Today' : weekdayName(selectedDate);
   const headerSubtitle = dateLabel(selectedDate);
 
-  // Reset to List whenever the selected day changes — prevents being stranded
-  // in a stale Timeline from a previous day's plan.
-  const prevSelectedDate = useRef(selectedDate);
-  useEffect(() => {
-    if (prevSelectedDate.current !== selectedDate) {
-      prevSelectedDate.current = selectedDate;
-      setViewMode('list');
-    }
-  }, [selectedDate, setViewMode]);
-
-  // Day plan — consumed here only for the export wire; DayTimeline re-reads it
-  // internally. We call the hook once so the plan is available in handlePlanMyDay.
-  const { plan: dayPlan } = useDayPlan();
+  // Day plan — read here for the plan-entry strip + the export wire. DayTimeline
+  // re-reads it inside the sheet.
+  const { plan: dayPlan, status: planStatus } = useDayPlan();
 
   // Fire the opt-in "start by" reminder off the live plan (no-op unless both the
   // reminders + start-by toggles are on and the start-by is still in the future).
@@ -230,9 +136,9 @@ export default function Today() {
     kv.set('today.seenCoachMarkV1', '1');
   }, []);
 
-  // "Plan my day" — Pro feature. Free users are routed to the paywall.
-  // Pro users: stamps planComputedAt, syncs the timed plan to the Whenbee calendar
-  // (fire-and-forget, guarded inside the store action), then cross-fades to Timeline.
+  // "Plan my day" — Pro feature. Free users → paywall. Pro users: stamp
+  // planComputedAt, run the calendar-export wire (guarded), then open the plan
+  // sheet. Today itself never flips a view — the plan is a thing the user summoned.
   const handlePlanMyDay = useCallback(() => {
     haptics.light();
     if (!isPro) {
@@ -240,23 +146,18 @@ export default function Today() {
       return;
     }
     void markPlanned();
-    setViewMode('timeline');
 
-    // Export wire (C1 / B2): if the calendar export is on, push the computed
-    // timed plan to the Whenbee calendar. The store action is fully guarded
-    // (isExpoGo + Pro + exportEnabled + whenbeeCalendarId) so this is safe to
-    // call unconditionally — it's a no-op when any guard fails.
-    //
-    // We build PlannedExportTask from the plan's 'task' timeline items.
-    // calendarEventId comes from the store's dayTasks (the db source of truth).
+    // Export wire (C1 / B2): when calendar export is on, push the computed timed
+    // plan to the Whenbee calendar. The store action is fully guarded (isExpoGo +
+    // Pro + exportEnabled + whenbeeCalendarId), so this is safe to call
+    // unconditionally — a no-op when any guard fails.
     if (dayPlan !== null) {
       const { exportEnabled } = useSettingsStore.getState().calendar;
       if (exportEnabled) {
         const currentDayTasks = useDayTasksStore.getState().dayTasks;
         const calEventIdByTaskId = new Map(
-          currentDayTasks.map((t) => [t.id, t.calendarEventId ?? null]),
+          currentDayTasks.map((task) => [task.id, task.calendarEventId ?? null]),
         );
-
         const timedTasks = dayPlan.timeline
           .filter((item) => item.kind === 'task')
           .map((item) => ({
@@ -266,27 +167,12 @@ export default function Today() {
             endMs: item.endAt,
             calendarEventId: calEventIdByTaskId.get(item.id) ?? null,
           }));
-
         void useDayTasksStore.getState().syncExportForSelectedDay(timedTasks);
       }
     }
-  }, [isPro, markPlanned, setViewMode, dayPlan]);
 
-  // Toggle between list and timeline views.
-  // Free users tapping Timeline hit the paywall gate via onTimelineGated.
-  const handleViewSelect = useCallback(
-    (m: 'list' | 'timeline') => {
-      haptics.light();
-      setViewMode(m);
-    },
-    [setViewMode],
-  );
-
-  // Called from ViewToggle when a free user taps the Timeline pill.
-  const handleTimelineGated = useCallback(() => {
-    haptics.light();
-    router.push({ pathname: '/(modals)/paywall', params: { trigger: 'plan_my_day' } });
-  }, []);
+    router.push('/(modals)/plan');
+  }, [isPro, markPlanned, dayPlan]);
 
   // The done-list coach-mark auto-dismiss now lives in DoneSection (it only runs
   // once the list is expanded, so a collapsed list never burns the one-shot).
@@ -390,6 +276,11 @@ export default function Today() {
     color: t.colors.inkSoft,
     marginTop: t.space[1],
   };
+
+  // Plan entry: a plan exists for the selected day when it was computed AND the
+  // engine currently resolves a ready plan. PlanButton mirrors this glanceable state.
+  const hasPlan = dayMeta?.planComputedAt != null && planStatus === 'ready';
+  const startByClock = hasPlan && dayPlan ? formatClock(dayPlan.startBy, false) : null;
 
   return (
     <Screen>
@@ -531,103 +422,86 @@ export default function Today() {
             </>
           )}
 
-          {/* List ⇄ Timeline toggle + day body — only on today/future days.
-              Past days use DayRecapCard above and never show the planner lens. */}
+          {/* Plan entry + day body — only on today/future days. Past days use
+              DayRecapCard above and never show the planner. */}
           {!isPastDay ? (
             <>
-              {/* Control row: List ⇄ Timeline segmented control (left) + the
-                  "Plan my day" action (right edge). Only once the day has tasks —
-                  there's nothing to switch lenses on or plan when it's empty. The
-                  action persists across both lenses — label swaps to "Re-plan" in
-                  Timeline so the planner can be re-run in place after the list changes. */}
-              {totalCount > 0 ? (
-                <View
-                  style={{
-                    flexDirection: 'row',
-                    justifyContent: 'space-between',
-                    alignItems: 'center',
-                    gap: t.space[3],
-                  }}
-                >
-                  <ViewToggle
-                    viewMode={viewMode}
-                    onSelect={handleViewSelect}
-                    onTimelineGated={handleTimelineGated}
-                    isPro={isPro}
-                  />
-                  <PlanMyDayButton
-                    onPress={handlePlanMyDay}
-                    isPro={isPro}
-                    label={viewMode === 'timeline' ? 'Re-plan' : 'Plan my day'}
-                  />
-                </View>
-              ) : null}
+              {/* List body — the task list + calendar overlay (the only lens now). */}
+              <Animated.View entering={FadeIn.duration(t.motion.base)}>
+                {/* Scheduled routine blocks — Pro, derived read (no DB rows). */}
+                {isPro && scheduledRoutineBlocks.length > 0 ? (
+                  <View style={{ gap: t.space[2], marginBottom: t.space[2] }}>
+                    <Text style={sectionLabel}>{"TODAY'S ROUTINES"}</Text>
+                    {scheduledRoutineBlocks.map((block) => (
+                      <ScheduledRoutineBlock key={block.routineId} block={block} />
+                    ))}
+                  </View>
+                ) : null}
 
-              {viewMode === 'timeline' && isPro ? (
-                /* Timeline lens — Pro only; DayTimeline is self-contained (reads useDayPlan). */
-                <Animated.View entering={FadeIn.duration(t.motion.base)}>
-                  <DayTimeline />
-                </Animated.View>
-              ) : (
-                /* List lens — the existing task list + calendar overlay. */
-                <Animated.View entering={FadeIn.duration(t.motion.base)}>
-                  {/* Scheduled routine blocks — one per routine scheduled for
-                      this weekday. Derived read: no task rows written to the DB.
-                      Each block is collapsible and has a "Run" affordance. Only
-                      shown for Pro users on today/future days (isPastDay is
-                      already guarded by the outer !isPastDay condition). */}
-                  {isPro && scheduledRoutineBlocks.length > 0 ? (
-                    <View style={{ gap: t.space[2], marginBottom: t.space[2] }}>
-                      <Text style={sectionLabel}>{"TODAY'S ROUTINES"}</Text>
-                      {scheduledRoutineBlocks.map((block) => (
-                        <ScheduledRoutineBlock key={block.routineId} block={block} />
-                      ))}
-                    </View>
-                  ) : null}
-
-                  {upNext.length > 0 ? (
-                    <View style={{ gap: t.space[2] }}>
+                {upNext.length > 0 ? (
+                  <View style={{ gap: t.space[2] }}>
+                    <View
+                      style={{
+                        flexDirection: 'row',
+                        alignItems: 'center',
+                        justifyContent: 'space-between',
+                      }}
+                    >
                       <Text style={sectionLabel}>UP NEXT</Text>
-                      {upNext.map((row, idx) => (
-                        <TaskRow
-                          key={row.id}
-                          title={row.label}
-                          categoryLabel={row.categoryLabel}
-                          guessMin={row.guessMin}
-                          honestMin={row.honestMin}
-                          carriedFrom={row.carriedFrom}
-                          onPress={() => startRow(row)}
-                          onDelete={() => deleteTask(row.id)}
-                          onLongPress={() => promptRowActions(row.id, row.label)}
-                          onMove={() => void useDayTasksStore.getState().moveToTomorrow(row.id)}
-                          peekHint={peekFirstRow && idx === 0}
-                          onPeeked={markSwipeHintSeen}
-                          isExiting={deletingId === row.id}
+                      {totalCount > 0 ? (
+                        <PlanButton
+                          hasPlan={hasPlan}
+                          startByClock={startByClock}
+                          onPress={
+                            hasPlan
+                              ? () => {
+                                  haptics.light();
+                                  router.push('/(modals)/plan');
+                                }
+                              : handlePlanMyDay
+                          }
                         />
-                      ))}
+                      ) : null}
                     </View>
-                  ) : null}
+                    {upNext.map((row, idx) => (
+                      <TaskRow
+                        key={row.id}
+                        title={row.label}
+                        categoryLabel={row.categoryLabel}
+                        guessMin={row.guessMin}
+                        honestMin={row.honestMin}
+                        carriedFrom={row.carriedFrom}
+                        onPress={() => startRow(row)}
+                        onDelete={() => deleteTask(row.id)}
+                        onLongPress={() => promptRowActions(row.id, row.label)}
+                        onMove={() => void useDayTasksStore.getState().moveToTomorrow(row.id)}
+                        peekHint={peekFirstRow && idx === 0}
+                        onPeeked={markSwipeHintSeen}
+                        isExiting={deletingId === row.id}
+                      />
+                    ))}
+                  </View>
+                ) : null}
 
-                  {/* Read-only calendar overlay — Pro + showEvents only (cap returns []
-                      for free users so this naturally renders nothing for them).
-                      Sits ABOVE Done today so finished work always reads last. */}
-                  <CalendarOverlaySection
-                    events={cap.events}
-                    allDayEvents={cap.allDayEvents}
+                {/* Read-only calendar overlay — Pro + showEvents only (cap returns []
+                    for free users so this naturally renders nothing for them).
+                    Sits above Done so finished work reads last. */}
+                <CalendarOverlaySection
+                  events={cap.events}
+                  allDayEvents={cap.allDayEvents}
+                />
+
+                {done.length > 0 ? (
+                  <DoneSection
+                    rows={done}
+                    deletingId={deletingId}
+                    onDelete={deleteTask}
+                    onLongPress={promptRowActions}
+                    showCoachMark={showCoachMark}
+                    onCoachMarkDismiss={dismissCoachMark}
                   />
-
-                  {done.length > 0 ? (
-                    <DoneSection
-                      rows={done}
-                      deletingId={deletingId}
-                      onDelete={deleteTask}
-                      onLongPress={promptRowActions}
-                      showCoachMark={showCoachMark}
-                      onCoachMarkDismiss={dismissCoachMark}
-                    />
-                  ) : null}
-                </Animated.View>
-              )}
+                ) : null}
+              </Animated.View>
             </>
           ) : null}
 

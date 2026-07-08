@@ -323,3 +323,36 @@ test('B1: goToToday loads dayMeta for today', async () => {
   const meta = store.getState().dayMeta;
   expect(meta?.doneByMin).toBe(16 * 60);
 });
+
+// ── Task 4A: reorderTasks + manual-order flag ─────────────────────────────────
+
+test('reorderTasks assigns ascending orderIndex in the given order and sets hasManualOrder', async () => {
+  const { store } = freshStore();
+  await store.getState().init(NOW);
+  const a = await store.getState().addTask({ label: 'A', category: 'admin', guessMin: 10, nowMs: NOW });
+  const b = await store.getState().addTask({ label: 'B', category: 'admin', guessMin: 10, nowMs: NOW + 1 });
+
+  expect(store.getState().hasManualOrder).toBe(false);
+  await store.getState().reorderTasks([b.id, a.id], NOW + 100);
+
+  const byId = new Map(store.getState().dayTasks.map((t) => [t.id, t]));
+  expect(byId.get(b.id)!.orderIndex).toBeLessThan(byId.get(a.id)!.orderIndex);
+  expect(store.getState().hasManualOrder).toBe(true);
+  expect(store.getState().dayTasks.map((t) => t.id)).toEqual([b.id, a.id]);
+});
+
+test('reorderTasks manual-order flag is keyed per day and persists across selectDate/goToToday', async () => {
+  const { store } = freshStore();
+  await store.getState().init(NOW);
+  const a = await store.getState().addTask({ label: 'A', category: 'admin', guessMin: 10, nowMs: NOW });
+  const b = await store.getState().addTask({ label: 'B', category: 'admin', guessMin: 10, nowMs: NOW + 1 });
+  await store.getState().reorderTasks([b.id, a.id], NOW + 100);
+
+  // A different day has no manual order.
+  await store.getState().selectDate('2026-06-25');
+  expect(store.getState().hasManualOrder).toBe(false);
+
+  // Returning to today re-reads the persisted flag.
+  await store.getState().goToToday(NOW);
+  expect(store.getState().hasManualOrder).toBe(true);
+});

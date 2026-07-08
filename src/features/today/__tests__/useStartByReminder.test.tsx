@@ -75,12 +75,13 @@ describe('useStartByReminder', () => {
     });
   });
 
-  it('cancels and never schedules when master reminders are off', () => {
+  it('schedules start-by on startByEnabled alone, ignoring the master', () => {
     useSettingsStore.setState({ remindersEnabled: false, startByEnabled: true });
-    renderHook(() => useStartByReminder(makePlan(1_000_000)));
+    const plan = makePlan(1_000_000, { firstLabel: 'Ship PR', deadline: 4_600_000 });
+    renderHook(() => useStartByReminder(plan));
 
-    expect(mockSchedule).not.toHaveBeenCalled();
-    expect(mockCancel).toHaveBeenCalledTimes(1);
+    expect(mockSchedule).toHaveBeenCalledTimes(1);
+    expect(mockCancel).not.toHaveBeenCalled();
   });
 
   it('cancels when the start-by toggle is off', () => {

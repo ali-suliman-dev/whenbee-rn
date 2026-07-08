@@ -118,6 +118,7 @@ beforeEach(() => {
     selectedDate: SELECTED_DATE,
     dayTasks: [],
     dayMeta: null,
+    hasManualOrder: false,
     setDoneBy: jest.fn(),
   });
 
@@ -269,6 +270,53 @@ describe('useDayPlan', () => {
       for (const item of taskItems) {
         expect(item.endAt).toBeLessThanOrEqual(deadline);
       }
+    });
+  });
+
+  // ── Task 4B: manual order feeds the planner (skips orderForFocus reshuffle) ──
+  describe('manual order', () => {
+    // Two light (non-deep) tasks so orderForFocus's deep-first partition is a
+    // no-op (stable identity) regardless of the focus window — isolating the
+    // hasManualOrder branch as the only thing that can change the order.
+    // dayTasks array order is [t1, t2] but orderIndex is reversed (t2 < t1).
+    function makeReversedOrderTasks(): DayTask[] {
+      return [
+        { ...makeQueued({ id: 't1', label: 'First in array', category: 'admin', guessMin: 20 }), orderIndex: 2 },
+        { ...makeQueued({ id: 't2', label: 'Second in array', category: 'admin', guessMin: 20 }), orderIndex: 1 },
+      ];
+    }
+
+    it('without the manual-order flag, keeps array order (orderForFocus identity for two light tasks)', async () => {
+      useDayTasksStore.setState({
+        selectedDate: SELECTED_DATE,
+        dayTasks: makeReversedOrderTasks(),
+        dayMeta: null,
+        hasManualOrder: false,
+        setDoneBy: jest.fn(),
+      });
+
+      const { result } = renderHook(() => useDayPlan(NOW_BEFORE_WAKING));
+      await act(async () => {});
+
+      const taskItems = result.current.plan?.timeline.filter((i) => i.kind === 'task') ?? [];
+      expect(taskItems.map((i) => i.label)).toEqual(['First in array', 'Second in array']);
+    });
+
+    it('with the manual-order flag, sorts by orderIndex and skips the reshuffle', async () => {
+      useDayTasksStore.setState({
+        selectedDate: SELECTED_DATE,
+        dayTasks: makeReversedOrderTasks(),
+        dayMeta: null,
+        hasManualOrder: true,
+        setDoneBy: jest.fn(),
+      });
+
+      const { result } = renderHook(() => useDayPlan(NOW_BEFORE_WAKING));
+      await act(async () => {});
+
+      const taskItems = result.current.plan?.timeline.filter((i) => i.kind === 'task') ?? [];
+      // orderIndex order is t2 (1) then t1 (2) — the reverse of array order.
+      expect(taskItems.map((i) => i.label)).toEqual(['Second in array', 'First in array']);
     });
   });
 

@@ -25,9 +25,10 @@ jest.mock('@/src/features/today/useDayPlan', () => ({
 }));
 
 const mockMoveToTomorrow = jest.fn();
+const mockReorderTasks = jest.fn();
 jest.mock('@/src/stores/dayTasksStore', () => ({
   useDayTasksStore: (selector: (s: any) => any) =>
-    selector({ moveToTomorrow: mockMoveToTomorrow }),
+    selector({ moveToTomorrow: mockMoveToTomorrow, reorderTasks: mockReorderTasks }),
 }));
 
 jest.mock('@/src/features/planner/useLearnedFocusWindow', () => ({
@@ -215,6 +216,43 @@ describe('DayTimeline — fits plan', () => {
 });
 
 // ═════════════════════════════════════════════════════════════════════════════
+// Task 4C — drag-to-reorder: only task rows get a grip; renders inside the
+// ReorderableList without crashing. The drag GESTURE itself can't be driven
+// from a unit test (no real touch/pan simulation here) — this only asserts
+// the render seam (grip present/absent) and that the component mounts under
+// the real react-native-reorderable-list + GestureHandler stack. The actual
+// drag feel needs on-device verification.
+// ═════════════════════════════════════════════════════════════════════════════
+
+describe('DayTimeline — drag-to-reorder grip', () => {
+  beforeEach(() => {
+    mockUseDayPlan.mockReturnValue({
+      plan: makeFitsPlan(),
+      status: 'ready',
+      doneByMin: 1080,
+      setDoneBy: mockSetDoneBy,
+    });
+  });
+
+  it('renders a drag handle on the task row', () => {
+    render(<DayTimeline />);
+    expect(screen.getByTestId('timeline-drag-handle-task-1')).toBeOnTheScreen();
+  });
+
+  it('does NOT render a drag handle on event or breather rows', () => {
+    render(<DayTimeline />);
+    expect(screen.queryByTestId('timeline-drag-handle-event-1')).toBeNull();
+    expect(screen.queryByTestId('timeline-drag-handle-breather-1')).toBeNull();
+  });
+
+  it('mounts the reorderable list without crashing (full timeline: task + breather + event)', () => {
+    render(<DayTimeline />);
+    expect(screen.getByText('Write report')).toBeOnTheScreen();
+    expect(screen.getByText('Team standup')).toBeOnTheScreen();
+  });
+});
+
+// ═════════════════════════════════════════════════════════════════════════════
 // Test 2 — personal focus window → focus band renders
 // ═════════════════════════════════════════════════════════════════════════════
 
@@ -339,6 +377,32 @@ describe('DayTimeline — DoneByChip local-time label', () => {
     localMidnight.setHours(0, 0, 0, 0);
     const expectedTime = formatClock(localMidnight.getTime() + 1080 * 60_000);
     expect(screen.getByText(`Done by ${expectedTime}`)).toBeOnTheScreen();
+  });
+});
+
+// ═════════════════════════════════════════════════════════════════════════════
+// Test 8 — hideHeader: header block suppressed, rows still render
+// ═════════════════════════════════════════════════════════════════════════════
+
+describe('DayTimeline — hideHeader', () => {
+  beforeEach(() => {
+    mockUseDayPlan.mockReturnValue({
+      plan: makeFitsPlan(),
+      status: 'ready',
+      doneByMin: 1080,
+      setDoneBy: mockSetDoneBy,
+    });
+  });
+
+  it('renders no "Start by" header when hideHeader is true, but still renders task rows', () => {
+    render(<DayTimeline hideHeader />);
+    expect(screen.queryByText(/Start by/)).toBeNull();
+    expect(screen.getByText('Write report')).toBeOnTheScreen();
+  });
+
+  it('renders the "Start by" header by default (hideHeader omitted)', () => {
+    render(<DayTimeline />);
+    expect(screen.getByText(/Start by/)).toBeOnTheScreen();
   });
 });
 

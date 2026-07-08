@@ -69,6 +69,7 @@ export function useDayPlan(nowMs?: number): UseDayPlanResult {
   const selectedDate = useDayTasksStore((s) => s.selectedDate);
   const dayTasks = useDayTasksStore((s) => s.dayTasks);
   const dayMeta = useDayTasksStore((s) => s.dayMeta);
+  const hasManualOrder = useDayTasksStore((s) => s.hasManualOrder);
   const storeSetDoneBy = useDayTasksStore((s) => s.setDoneBy);
 
   // ── Calibration stats ────────────────────────────────────────────────────────
@@ -104,17 +105,23 @@ export function useDayPlan(nowMs?: number): UseDayPlanResult {
     });
   }, [queuedTasks, statsByCategory]);
 
-  // ── Focus-aware ordering ──────────────────────────────────────────────────
-  // isDeep: honestMin >= guessMin * 1.3 (the engine estimates the task is a real
-  // time sink — at least 30% over the user's guess). Deep tasks surface first so
-  // the backward pass tends to place them in the focus window.
+  // ── Ordering: manual drag order wins, else focus-aware ordering ───────────
+  // When the day has a user-set manual order (Task 4: drag-to-reorder), honor
+  // it verbatim (sorted by orderIndex) and SKIP the deep-first reshuffle below
+  // — the user has already decided the sequence.
+  // Otherwise: isDeep = honestMin >= guessMin * 1.3 (the engine estimates the
+  // task is a real time sink — at least 30% over the user's guess). Deep tasks
+  // surface first so the backward pass tends to place them in the focus window.
   const orderedResolved = useMemo(() => {
+    if (hasManualOrder) {
+      return resolvedTasks.slice().sort((a, b) => a.task.orderIndex - b.task.orderIndex);
+    }
     return orderForFocus(resolvedTasks, {
       focusWindowStartMin: focusWindow.startMin,
       focusWindowEndMin: focusWindow.endMin,
       isDeep: (r) => r.honestMin >= r.task.guessMin * 1.3,
     });
-  }, [resolvedTasks, focusWindow.startMin, focusWindow.endMin]);
+  }, [resolvedTasks, hasManualOrder, focusWindow.startMin, focusWindow.endMin]);
 
   // ── Build PlanTaskInput[] ─────────────────────────────────────────────────
   const planTasks = useMemo((): PlanTaskInput[] => {

@@ -28,6 +28,7 @@ import { useDayEndSetting } from '@/src/features/settings/useDayEndSetting';
 import { useQuietHours } from '@/src/features/settings/useQuietHours';
 import { useNotificationSound } from '@/src/features/settings/useNotificationSound';
 import { useAccountReset } from '@/src/features/settings/useAccountReset';
+import { useStartByToggle } from '@/src/features/today/useStartByToggle';
 import { usePresenceSection } from '@/src/features/settings/usePresenceSection';
 import { ProGate } from '@/src/features/paywall/ProGate';
 import { PresenceRingTeaser } from '@/src/components/PresenceRingTeaser';
@@ -155,7 +156,7 @@ export default function Settings() {
   const honestReachedEnabled = useSettingsStore((s) => s.honestReachedEnabled);
   const setHonestReachedEnabled = useSettingsStore((s) => s.setHonestReachedEnabled);
   const startByEnabled = useSettingsStore((s) => s.startByEnabled);
-  const setStartByEnabled = useSettingsStore((s) => s.setStartByEnabled);
+  const { toggle: toggleStartBy } = useStartByToggle();
   const {
     quietHours,
     update: updateQuietHours,
@@ -210,6 +211,11 @@ export default function Settings() {
 
   async function handleToggleReviewNotify(next: boolean) {
     const ok = await toggleReviewNotify(next);
+    if (next && !ok) showToast(REMINDER_DENIED);
+  }
+
+  async function handleToggleStartBy(next: boolean) {
+    const ok = await toggleStartBy(next);
     if (next && !ok) showToast(REMINDER_DENIED);
   }
 
@@ -358,13 +364,28 @@ export default function Settings() {
           <SettingRow
             icon="notifications-outline"
             title="Reminders"
-            note="Pings for honest finish, start-by nudges, and more."
+            note="Pings for honest finish and more."
             trailing={
               <Switch
                 value={remindersEnabled}
                 onValueChange={handleToggleReminders}
                 trackColor={{ true: t.colors.primary, false: t.colors.hairline }}
                 accessibilityLabel="Reminders"
+              />
+            }
+          />
+
+          {/* Start-by nudge — plan-owned, independent of the master. Always visible. */}
+          <SettingRow
+            icon="arrow-forward-circle-outline"
+            title="Start-by nudge"
+            note="A reminder when it's time to begin. Also toggled from your day plan."
+            trailing={
+              <Switch
+                value={startByEnabled}
+                onValueChange={handleToggleStartBy}
+                trackColor={{ true: t.colors.primary, false: t.colors.hairline }}
+                accessibilityLabel="Start-by nudge"
               />
             }
           />
@@ -382,19 +403,6 @@ export default function Settings() {
                     onValueChange={setHonestReachedEnabled}
                     trackColor={{ true: t.colors.primary, false: t.colors.hairline }}
                     accessibilityLabel="Honest finish reached"
-                  />
-                }
-              />
-              <SettingRow
-                icon="arrow-forward-circle-outline"
-                title="Start-by nudge"
-                note="A reminder when it's time to begin your next task."
-                trailing={
-                  <Switch
-                    value={startByEnabled}
-                    onValueChange={setStartByEnabled}
-                    trackColor={{ true: t.colors.primary, false: t.colors.hairline }}
-                    accessibilityLabel="Start-by nudge"
                   />
                 }
               />

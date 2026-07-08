@@ -16,10 +16,9 @@
  * inner View, Pressable is a bare touch wrapper.
  */
 
-import React, { useCallback, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   Pressable,
-  ScrollView,
   View,
   type TextStyle,
   type ViewStyle,
@@ -28,7 +27,13 @@ import Animated, {
   FadeIn,
   useReducedMotion,
 } from 'react-native-reanimated';
-import { Ionicons } from '@expo/vector-icons';
+import ReorderableList, {
+  reorderItems,
+  useReorderableDrag,
+  type ReorderableListReorderEvent,
+  type ReorderableListRenderItemInfo,
+} from 'react-native-reorderable-list';
+import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { useDayPlan } from './useDayPlan';
 import { useLearnedFocusWindow } from '@/src/features/planner/useLearnedFocusWindow';
 import { useDayTasksStore } from '@/src/stores/dayTasksStore';
@@ -95,6 +100,15 @@ function firstCutId(verdict: PlanVerdict): string | null {
   return null;
 }
 
+/** Stable id-string of a timeline's task order — the reorder identity we compare
+ *  the optimistic override against (see the optimistic-reorder block below). */
+function taskOrderKey(items: readonly PlanTimelineItem[]): string {
+  return items
+    .filter((i) => i.kind === 'task')
+    .map((i) => i.id)
+    .join('|');
+}
+
 // ─────────────────────────────────────────────────────────────────────────────
 // Sub-components
 // ─────────────────────────────────────────────────────────────────────────────
@@ -111,9 +125,12 @@ function firstCutId(verdict: PlanVerdict): string | null {
 function RowContent({
   item,
   focusBandActive,
+  onDragHandleLongPress,
 }: {
   item: PlanTimelineItem;
   focusBandActive: boolean;
+  /** Present only for task rows — long-press on the grip starts the drag. */
+  onDragHandleLongPress?: () => void;
 }) {
   const t = useTheme();
   const durationMin = Math.round((item.endAt - item.startAt) / 60_000);
@@ -199,7 +216,8 @@ function RowContent({
     );
   }
 
-  // task
+  // task — a draggable "card": a darker recessed fill + rounded inset so it reads
+  // as a movable item distinct from the read-only event rows (which stay flat).
   const row: ViewStyle = {
     flexDirection: 'row',
     alignItems: 'center',
@@ -207,6 +225,11 @@ function RowContent({
     paddingVertical: t.space[2],
     paddingHorizontal: t.space[3],
     minHeight: t.size.control.md,
+    backgroundColor: t.colors.taskCardBg,
+    borderRadius: t.radii.md,
+    borderCurve: 'continuous',
+    marginHorizontal: t.space[2],
+    marginVertical: t.space[0.5],
   };
   // Fixed-size pill, not a border — a border-box left border spans the row's
   // full height (border-box model) instead of the intended short accent mark,
@@ -222,7 +245,10 @@ function RowContent({
   const clockStyle: TextStyle = {
     fontFamily: t.fontFamily.mono,
     fontSize: t.fontSize.xs,
-    color: t.colors.primary,
+    fontWeight: t.fontWeight.bold as TextStyle['fontWeight'],
+    // Brighter indigo than the base primary — Android's `monospace` family
+    // ignores the bold weight, so emphasis comes from the colour on that OS.
+    color: t.colors.primaryBright,
     width: clockWidth,
     flexShrink: 0,
   };
@@ -244,6 +270,22 @@ function RowContent({
       accessibilityRole="text"
       accessibilityLabel={`${item.label}, starts ${formatClock(item.startAt)}, ${fmtHm(durationMin)}`}
     >
+      {onDragHandleLongPress ? (
+        <Pressable
+          testID={`timeline-drag-handle-${item.id}`}
+          onLongPress={onDragHandleLongPress}
+          accessibilityRole="button"
+          accessibilityLabel={`Reorder ${item.label}`}
+          accessibilityHint="Long-press and drag to reorder this task"
+          hitSlop={t.size.hitSlop}
+        >
+          <MaterialCommunityIcons
+            name="drag-vertical"
+            size={t.iconSize.md}
+            color={t.colors.inkSoft}
+          />
+        </Pressable>
+      ) : null}
       <View style={edgeStyle} />
       <AppText style={clockStyle}>{formatClock(item.startAt)}</AppText>
       <AppText style={labelStyle} numberOfLines={2}>
@@ -411,11 +453,20 @@ function DoneByChip({
 // Main component
 // ─────────────────────────────────────────────────────────────────────────────
 
+export interface DayTimelineProps {
+  /**
+   * Skip rendering the internal start-by/done-by header block — rows only.
+   * The plan sheet (`(modals)/plan.tsx`) owns that header itself so it can
+   * pad it below the grabber and pair it with a justified finish-by clock.
+   */
+  hideHeader?: boolean;
+}
+
 /**
  * DayTimeline — self-contained; reads useDayPlan internally.
  * The parent screen just renders `<DayTimeline />`.
  */
-export function DayTimeline() {
+export function DayTimeline({ hideHeader = false }: DayTimelineProps = {}) {
   const t = useTheme();
   const reducedMotion = useReducedMotion();
 
@@ -426,6 +477,28 @@ export function DayTimeline() {
   const { plan, status, doneByMin, setDoneBy } = useDayPlan();
   const focusWindow = useLearnedFocusWindow();
   const moveToTomorrow = useDayTasksStore((s) => s.moveToTomorrow);
+  const reorderTasks = useDayTasksStore((s) => s.reorderTasks);
+
+  // ── Optimistic reorder order (kills the drop "flash") ─────────────────────
+  // On drop, react-native-reorderable-list expects the list `data` to reflect
+  // the new order immediately. Ours comes from useDayPlan, which only updates
+  // AFTER reorderTasks persists + the store reloads + the engine re-derives — so
+  // without this the dropped row snaps back to its old slot and jumps once the
+  // async round-trip lands (the visible flash). We hold the just-dropped order
+  // locally and render it instantly; the persist runs in the background. The
+  // override clears once the real plan's task order catches up to ours — compared
+  // by a stable id STRING, never the plan object: useDayPlan recomputes a fresh
+  // plan every render off Date.now(), so a ref check would clear the override the
+  // very next frame and the flash would come back.
+  const [optimisticTimeline, setOptimisticTimeline] = useState<PlanTimelineItem[] | null>(null);
+  const displayTimeline = optimisticTimeline ?? plan?.timeline ?? null;
+  const planOrderKey = plan ? taskOrderKey(plan.timeline) : '';
+  const optimisticOrderKey = optimisticTimeline ? taskOrderKey(optimisticTimeline) : null;
+  useEffect(() => {
+    if (optimisticOrderKey !== null && optimisticOrderKey === planOrderKey) {
+      setOptimisticTimeline(null);
+    }
+  }, [optimisticOrderKey, planOrderKey]);
 
   const showFocusBand = focusWindow.basis === 'personal';
 
@@ -435,6 +508,65 @@ export function DayTimeline() {
       void moveToTomorrow(id);
     },
     [moveToTomorrow],
+  );
+
+  // ── Drag-to-reorder handler ────────────────────────────────────────────────
+  // The list's `data` is the FULL timeline (task/event/breather, mixed) so
+  // fixed event/breather anchors visually make room during a drag like any
+  // other row. Only 'task' rows can INITIATE a drag (see TimelineRow's grip),
+  // so `from` is always a task index; `to` may land anywhere in the mixed
+  // array. We don't persist the reordered mixed array — we derive the new
+  // TASK-id order from it (ignoring event/breather positions, which the
+  // planner recomputes from anchors on the next render) and hand that to the
+  // store; useDayPlan then re-derives the real timeline positions.
+  const handleReorder = useCallback(
+    ({ from, to }: ReorderableListReorderEvent) => {
+      const current = displayTimeline;
+      if (!current) return;
+      const reordered = reorderItems(current, from, to);
+      // Show the new order instantly — no wait for the async store round-trip…
+      setOptimisticTimeline(reordered);
+      // …then persist. useDayPlan re-derives the real clocks; once its task order
+      // matches this one, the effect above drops the override seamlessly.
+      const taskIds = reordered.filter((item) => item.kind === 'task').map((item) => item.id);
+      void reorderTasks(taskIds);
+    },
+    [displayTimeline, reorderTasks],
+  );
+
+  // ── Enter animation for rows ──────────────────────────────────────────────
+  // Opacity-only fade-in (no translate-in per project hard rules) — but ONLY on
+  // the first mount. react-native-reorderable-list swaps its whole `data` array
+  // on a drop, which re-mounts cells and REPLAYS a per-row `entering` animation —
+  // that replay is the "flash" on reorder. We let the fade play once, then drop
+  // the entering prop so a reorder just glides (the library animates the move).
+  const [entrancesDone, setEntrancesDone] = useState(false);
+  useEffect(() => {
+    // Upper bound for the initial staggered fade to finish (base + a few steps).
+    const id = setTimeout(() => setEntrancesDone(true), t.motion.base + 12 * t.motion.stagger);
+    return () => clearTimeout(id);
+  }, [t.motion.base, t.motion.stagger]);
+  const enterAnim = reducedMotion || entrancesDone ? undefined : FadeIn.duration(t.motion.base);
+
+  // ── Row renderer ──────────────────────────────────────────────────────────
+  const renderItem = useCallback(
+    ({ item, index }: ReorderableListRenderItemInfo<PlanTimelineItem>) => (
+      <TimelineRow
+        item={item}
+        index={index}
+        enterAnim={enterAnim}
+        focusBandActive={
+          showFocusBand &&
+          overlapsWindow(
+            epochToLocalMin(item.startAt),
+            epochToLocalMin(item.endAt),
+            focusWindow.startMin,
+            focusWindow.endMin,
+          )
+        }
+      />
+    ),
+    [enterAnim, showFocusBand, focusWindow.startMin, focusWindow.endMin],
   );
 
   // ── Empty state ───────────────────────────────────────────────────────────
@@ -492,25 +624,21 @@ export function DayTimeline() {
     pointerEvents: 'none' as ViewStyle['pointerEvents'],
   };
 
-  // ── Enter animation for rows ──────────────────────────────────────────────
-  // Opacity-only fade-in (no translate-in per project hard rules).
-  const enterAnim = reducedMotion
-    ? undefined
-    : FadeIn.duration(t.motion.base);
-
   return (
     <View style={containerStyle}>
       {/* Header: start-by clock + done-by chip */}
-      <View style={headerStyle}>
-        {'startBy' in plan.verdict && plan.verdict.startBy ? (
-          <AppText style={startByStyle}>
-            Start by {formatClock(plan.verdict.startBy)}
-          </AppText>
-        ) : (
-          <View />
-        )}
-        <DoneByChip doneByMin={doneByMin} onSelect={setDoneBy} />
-      </View>
+      {!hideHeader ? (
+        <View style={headerStyle}>
+          {'startBy' in plan.verdict && plan.verdict.startBy ? (
+            <AppText style={startByStyle}>
+              Start by {formatClock(plan.verdict.startBy)}
+            </AppText>
+          ) : (
+            <View />
+          )}
+          <DoneByChip doneByMin={doneByMin} onSelect={setDoneBy} />
+        </View>
+      ) : null}
 
       {/* Overflow banner */}
       {showOverflow ? (
@@ -520,37 +648,23 @@ export function DayTimeline() {
         />
       ) : null}
 
-      {/* Timeline rows */}
-      <ScrollView
+      {/* Timeline rows — a reorderable FlatList. Only task rows expose a grip
+          (see RowContent) that starts a drag via long-press; event/breather
+          rows have no grip and never initiate one. */}
+      <ReorderableList
+        data={displayTimeline ?? plan.timeline}
+        keyExtractor={(item) => item.id}
+        renderItem={renderItem}
+        onReorder={handleReorder}
         style={scrollStyle}
+        contentContainerStyle={timelineContainerStyle}
         showsVerticalScrollIndicator={false}
         contentInsetAdjustmentBehavior="automatic"
-      >
-        <View style={timelineContainerStyle}>
-          {/* Focus band — only personal, only behind the list */}
-          {showFocusBand ? (
-            <FocusBandOverlay bandStyle={focusBandStyle} />
-          ) : null}
-
-          {plan.timeline.map((item, idx) => (
-            <TimelineRow
-              key={item.id}
-              item={item}
-              index={idx}
-              enterAnim={enterAnim}
-              focusBandActive={
-                showFocusBand &&
-                overlapsWindow(
-                  epochToLocalMin(item.startAt),
-                  epochToLocalMin(item.endAt),
-                  focusWindow.startMin,
-                  focusWindow.endMin,
-                )
-              }
-            />
-          ))}
-        </View>
-      </ScrollView>
+        ListHeaderComponent={
+          // Focus band — only personal, only behind the list
+          showFocusBand ? <FocusBandOverlay bandStyle={focusBandStyle} /> : null
+        }
+      />
     </View>
   );
 }
@@ -587,6 +701,10 @@ interface TimelineRowProps {
 
 function TimelineRow({ item, index, enterAnim, focusBandActive }: TimelineRowProps) {
   const t = useTheme();
+  // Hooks are unconditional (rules-of-hooks) — every row gets a drag trigger,
+  // but only 'task' rows render the grip that wires it up (see RowContent),
+  // so event/breather rows can never initiate a drag.
+  const drag = useReorderableDrag();
 
   // Stagger per row — subtle, within budget
   const staggeredAnim = enterAnim
@@ -595,7 +713,11 @@ function TimelineRow({ item, index, enterAnim, focusBandActive }: TimelineRowPro
 
   return (
     <Animated.View entering={staggeredAnim} style={{ zIndex: 1 }}>
-      <RowContent item={item} focusBandActive={focusBandActive} />
+      <RowContent
+        item={item}
+        focusBandActive={focusBandActive}
+        onDragHandleLongPress={item.kind === 'task' ? drag : undefined}
+      />
     </Animated.View>
   );
 }

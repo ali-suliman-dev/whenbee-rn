@@ -147,7 +147,7 @@ export const useSettingsStore = create<SettingsState>()(
       setRemindersEnabled: (remindersEnabled) => set({ remindersEnabled }),
       honestReachedEnabled: true,
       setHonestReachedEnabled: (honestReachedEnabled) => set({ honestReachedEnabled }),
-      startByEnabled: true,
+      startByEnabled: false,
       setStartByEnabled: (startByEnabled) => set({ startByEnabled }),
       quietHours: { enabled: true, startMin: 1260, endMin: 480 },
       setQuietHours: (quietHours) => set({ quietHours }),
@@ -229,7 +229,7 @@ export const useSettingsStore = create<SettingsState>()(
           focusLastMoveAtMs: null,
           calendar: DEFAULT_CALENDAR,
           honestReachedEnabled: true,
-          startByEnabled: true,
+          startByEnabled: false,
           quietHours: { enabled: true, startMin: 1260, endMin: 480 },
           notificationSound: 'default',
           stripVariant: DEFAULT_STRIP_VARIANT,
@@ -238,6 +238,16 @@ export const useSettingsStore = create<SettingsState>()(
     {
       name: 'settings',
       storage: createJSONStorage(() => zustandKv),
+      version: 1,
+      // v0 → v1: startByEnabled's default flipped true→false. Pre-v1 blobs may
+      // carry a persisted `true` from the old default; force it off so existing
+      // users aren't silently opted into start-by notifications. All other
+      // fields pass through untouched.
+      migrate: (persisted, version) => {
+        const p = (persisted ?? {}) as Partial<SettingsState>;
+        if (version < 1) return { ...p, startByEnabled: false };
+        return p;
+      },
       // Deep-backfill the calendar slice so that pre-Phase-7 persisted blobs
       // (which only have showEvents/enabledCalendarIds) rehydrate the new export
       // fields as their defaults instead of `undefined`, which would violate the
