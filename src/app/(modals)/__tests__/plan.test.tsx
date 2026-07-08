@@ -77,7 +77,7 @@ describe('(modals)/plan', () => {
     render(<PlanRoute />);
     expect(screen.getByTestId('plan-doneby-pill')).toBeOnTheScreen();
     expect(screen.getByTestId('plan-nudge-row')).toBeOnTheScreen();
-    expect(screen.getByText('Nudge')).toBeOnTheScreen();
+    expect(screen.getByText('Nudge me to start')).toBeOnTheScreen();
   });
 
   it('opens the same done-by picker DoneByChip uses on Done-by pill press', () => {

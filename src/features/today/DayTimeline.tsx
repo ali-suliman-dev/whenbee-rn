@@ -33,7 +33,7 @@ import ReorderableList, {
   type ReorderableListReorderEvent,
   type ReorderableListRenderItemInfo,
 } from 'react-native-reorderable-list';
-import { Ionicons } from '@expo/vector-icons';
+import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { useDayPlan } from './useDayPlan';
 import { useLearnedFocusWindow } from '@/src/features/planner/useLearnedFocusWindow';
 import { useDayTasksStore } from '@/src/stores/dayTasksStore';
@@ -207,7 +207,8 @@ function RowContent({
     );
   }
 
-  // task
+  // task — a draggable "card": a darker recessed fill + rounded inset so it reads
+  // as a movable item distinct from the read-only event rows (which stay flat).
   const row: ViewStyle = {
     flexDirection: 'row',
     alignItems: 'center',
@@ -215,6 +216,11 @@ function RowContent({
     paddingVertical: t.space[2],
     paddingHorizontal: t.space[3],
     minHeight: t.size.control.md,
+    backgroundColor: t.colors.taskCardBg,
+    borderRadius: t.radii.md,
+    borderCurve: 'continuous',
+    marginHorizontal: t.space[2],
+    marginVertical: t.space[0.5],
   };
   // Fixed-size pill, not a border — a border-box left border spans the row's
   // full height (border-box model) instead of the intended short accent mark,
@@ -230,6 +236,7 @@ function RowContent({
   const clockStyle: TextStyle = {
     fontFamily: t.fontFamily.mono,
     fontSize: t.fontSize.xs,
+    fontWeight: t.fontWeight.bold as TextStyle['fontWeight'],
     color: t.colors.primary,
     width: clockWidth,
     flexShrink: 0,
@@ -261,7 +268,11 @@ function RowContent({
           accessibilityHint="Long-press and drag to reorder this task"
           hitSlop={t.size.hitSlop}
         >
-          <Ionicons name="reorder-three-outline" size={t.iconSize.sm} color={t.colors.inkFaint} />
+          <MaterialCommunityIcons
+            name="drag-vertical"
+            size={t.iconSize.md}
+            color={t.colors.inkSoft}
+          />
         </Pressable>
       ) : null}
       <View style={edgeStyle} />

@@ -110,52 +110,39 @@ export default function PlanRoute() {
   const timesNumStyle: TextStyle = { ...(type.numCaption as unknown as TextStyle) };
   const timesSepStyle: TextStyle = { fontSize: t.fontSize.caption, color: t.colors.inkFaint };
 
-  // Bottom controls — divider, the times line, then one row: a wide neutral
-  // Done-by pill (hairline outline — recedes behind the Done CTA) + a plain
-  // Settings-style Nudge row (label + native switch), then the CTA.
+  // Bottom controls — divider, the times line, then two stacked full-width
+  // Settings-style cells (hairline outline, so they recede behind the Done CTA):
+  // a Done-by picker cell + a Nudge toggle cell, then the CTA. Stacked (not
+  // side-by-side) so each stays a legible, comfortably-tall tap target on Android
+  // — the earlier one-row layout collapsed the Done-by cell's height there.
   const dividerStyle: ViewStyle = {
     borderTopWidth: t.borderWidth.hairline,
     borderTopColor: t.colors.hairline,
   };
-  const controlsRowStyle: ViewStyle = {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: t.space[3],
+  const controlsColStyle: ViewStyle = {
+    gap: t.space[2.5],
   };
-  const doneByPillStyle: ViewStyle = {
-    flex: 1,
+  const cellStyle: ViewStyle = {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: t.space[2],
+    gap: t.space[2.5],
     paddingHorizontal: t.space[3],
     paddingVertical: t.space[2.5],
+    minHeight: t.size.control.md,
     borderRadius: t.radii.md,
     borderCurve: 'continuous',
-    borderWidth: t.borderWidth.chip,
-    borderColor: t.colors.border,
+    backgroundColor: t.colors.surfaceRaised,
   };
-  const doneByLabelStyle: TextStyle = {
+  const cellLabelStyle: TextStyle = {
     flex: 1,
-    fontSize: t.fontSize.caption,
+    fontSize: t.fontSize.bodySm,
     fontWeight: t.fontWeight.medium as TextStyle['fontWeight'],
-    color: t.colors.inkSoft,
+    color: t.colors.ink,
     fontFamily: t.fontFamily.ui,
   };
   const doneByClockStyle: TextStyle = {
     color: t.colors.ink,
     fontWeight: t.fontWeight.semibold as TextStyle['fontWeight'],
-  };
-  const nudgeRowStyle: ViewStyle = {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: t.space[2],
-    flexShrink: 0,
-  };
-  const nudgeLabelStyle: TextStyle = {
-    fontSize: t.fontSize.bodySm,
-    fontWeight: t.fontWeight.medium as TextStyle['fontWeight'],
-    color: t.colors.ink,
-    fontFamily: t.fontFamily.ui,
   };
 
   return (
@@ -183,7 +170,7 @@ export default function PlanRoute() {
         {/* DayTimeline owns the scroll + timeline rows; its own start-by/done-by
             header is hidden here since the sheet renders the clock line above. It
             returns null when the day has no plan or the user isn't Pro. */}
-        <View style={{ flex: 1 }}>
+        <View style={{ flex: 1, marginTop: t.space[3] }}>
           <DayTimeline hideHeader />
         </View>
 
@@ -217,46 +204,43 @@ export default function PlanRoute() {
             </View>
           ) : null}
 
-          <View style={controlsRowStyle}>
+          <View style={controlsColStyle}>
             <Pressable
               testID="plan-doneby-pill"
               onPress={openDoneByPicker}
               accessibilityRole="button"
-              accessibilityLabel={doneByClock ? `Done by ${doneByClock}` : 'Set done-by time'}
-              accessibilityHint="Tap to change your done-by target time"
-              style={{ flex: 1 }}
+              accessibilityLabel={doneByClock ? `Done by ${doneByClock}` : 'Set a finish time'}
+              accessibilityHint="Tap to change your finish-by target time"
             >
-              <View style={doneByPillStyle}>
-                <Ionicons name="time-outline" size={t.iconSize.sm} color={t.colors.inkFaint} />
-                <Text style={doneByLabelStyle} numberOfLines={1}>
-                  {doneByClock ? (
-                    <>
-                      Done by <Text style={doneByClockStyle}>{doneByClock}</Text>
-                    </>
-                  ) : (
-                    'Set done-by'
-                  )}
-                </Text>
+              <View style={cellStyle}>
+                <Ionicons name="time-outline" size={t.iconSize.md} color={t.colors.inkSoft} />
+                {doneByClock ? (
+                  <Text style={cellLabelStyle} numberOfLines={1}>
+                    Done by <Text style={doneByClockStyle}>{doneByClock}</Text>
+                  </Text>
+                ) : (
+                  <Text style={cellLabelStyle} numberOfLines={1}>
+                    Set a finish time
+                  </Text>
+                )}
                 <Ionicons name="chevron-forward" size={t.iconSize.sm} color={t.colors.inkFaint} />
               </View>
             </Pressable>
 
-            {/* Plain Settings-style row — the native Switch is the sole
-                interactive element (a wrapping Pressable would double-toggle). */}
-            <View testID="plan-nudge-row" style={nudgeRowStyle}>
+            {/* Plain Settings-style cell — the native Switch is the sole
+                interactive element (a wrapping Pressable would double-toggle) and
+                keeps its stock platform appearance on iOS + Android. */}
+            <View testID="plan-nudge-row" style={cellStyle}>
               <Ionicons
                 name={nudgeEnabled ? 'notifications' : 'notifications-outline'}
-                size={t.iconSize.sm}
+                size={t.iconSize.md}
                 color={t.colors.inkSoft}
               />
-              <Text style={nudgeLabelStyle}>Nudge</Text>
+              <Text style={cellLabelStyle}>Nudge me to start</Text>
               <Switch
                 testID="plan-nudge-switch"
                 value={nudgeEnabled}
                 onValueChange={(v) => void toggleNudge(v)}
-                trackColor={{ true: t.colors.primary, false: t.colors.hairline }}
-                thumbColor={t.colors.surface}
-                ios_backgroundColor={t.colors.hairline}
                 accessibilityLabel={
                   nudgeEnabled
                     ? `Start nudge on${startByLabel ? `, ${startByLabel}` : ''}. Tap to turn off.`

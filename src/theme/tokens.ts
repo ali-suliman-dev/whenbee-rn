@@ -201,6 +201,7 @@ export const tokens = {
       surfaceRaised: '#FFFFFF', // focal card (pair with soft shadow)
       surfaceRaisedEdge: '#DAD3EC', // coin-edge under a raised NEUTRAL surface (tactile option tiles)
       surfaceSunken: '#F1EEFB', // wells / inset tracks
+      taskCardBg: '#E9E4F6', // recessed fill for draggable plan task rows (distinct from event rows)
       // surfaceSunken: '#E4DEF7', // wells / inset tracks
       // surfaceSunken: '#ECE8DE', // wells / inset tracks
       hairline: '#DAD5C9', // 1px internal dividers (reads at 3:1 non-text)
@@ -285,6 +286,7 @@ export const tokens = {
       surfaceRaised: '#292B3C',
       surfaceRaisedEdge: '#1B1C27', // coin-edge under a raised NEUTRAL surface (tactile option tiles)
       surfaceSunken: '#15161F',
+      taskCardBg: '#0F1016', // darker fill for draggable plan task rows (distinct from event rows)
       hairline: 'rgba(255,255,255,0.08)', // internal dividers only
       border: 'rgba(255,255,255,0.14)', // cards that must read
       divider: 'rgba(0,0,0,0.32)', // section separator — a darker recessed line on the deep bg
