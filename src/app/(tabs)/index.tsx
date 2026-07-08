@@ -27,7 +27,7 @@ import { useCategoriesStore } from '@/src/stores/categoriesStore';
 import { useCalibrationStore } from '@/src/stores/calibrationStore';
 import { useTimerStore } from '@/src/stores/timerStore';
 import { useSettingsStore } from '@/src/stores/settingsStore';
-import { projectedFinish, formatClockMeridiem, startOfLocalDay } from '@/src/lib/time';
+import { projectedFinish, formatClockMeridiem, formatClock } from '@/src/lib/time';
 import { useDayTasksStore } from '@/src/stores/dayTasksStore';
 import { toLocalDayKey, addDays, weekdayOf, compareDayKeys } from '@/src/lib/day';
 import { kv } from '@/src/lib/kv';
@@ -35,8 +35,7 @@ import { useFocusedValue } from '@/src/hooks/useFocusedValue';
 import { useGreeting } from '@/src/features/today/useGreeting';
 import { TodayFocusHook } from '@/src/features/today/TodayFocusHook';
 import { CalendarStrip } from '@/src/features/today/calendarStrip/CalendarStrip';
-import { PlanMyDayButton } from '@/src/features/today/PlanMyDayButton';
-import { PlanStrip } from '@/src/features/today/PlanStrip';
+import { PlanButton } from '@/src/features/today/PlanButton';
 import { ShelfSection } from '@/src/features/today/ShelfSection';
 import { DayRecapCard } from '@/src/features/today/DayRecapCard';
 import { useDayRecap } from '@/src/features/today/useDayRecap';
@@ -83,7 +82,6 @@ export default function Today() {
   const selectedDate = useDayTasksStore((s) => s.selectedDate);
   const dayMeta = useDayTasksStore((s) => s.dayMeta);
   const markPlanned = useDayTasksStore((s) => s.markPlanned);
-  const reminderOn = useSettingsStore((s) => s.startByEnabled);
   const isPro = useEntitlement((s) => s.isPro);
   const today = toLocalDayKey(Date.now());
   const isPastDay = compareDayKeys(selectedDate, today) < 0;
@@ -280,12 +278,9 @@ export default function Today() {
   };
 
   // Plan entry: a plan exists for the selected day when it was computed AND the
-  // engine currently resolves a ready plan. The strip mirrors its glanceable state.
+  // engine currently resolves a ready plan. PlanButton mirrors this glanceable state.
   const hasPlan = dayMeta?.planComputedAt != null && planStatus === 'ready';
-  const doneByClock =
-    dayPlan && dayMeta?.doneByMin != null
-      ? formatClockMeridiem(startOfLocalDay(Date.now()) + dayMeta.doneByMin * 60_000)
-      : null;
+  const startByClock = hasPlan && dayPlan ? formatClock(dayPlan.startBy, false) : null;
 
   return (
     <Screen>
@@ -431,25 +426,6 @@ export default function Today() {
               DayRecapCard above and never show the planner. */}
           {!isPastDay ? (
             <>
-              {/* Plan entry: once the day has tasks, either the glanceable PlanStrip
-                  (a plan exists → tap to reopen the sheet) or a single secondary
-                  "Plan my day" action. There's nothing to plan on an empty day. */}
-              {totalCount > 0 ? (
-                hasPlan && dayPlan ? (
-                  <PlanStrip
-                    startByClock={formatClockMeridiem(dayPlan.startBy)}
-                    doneByClock={doneByClock}
-                    reminderOn={reminderOn}
-                    onPress={() => {
-                      haptics.light();
-                      router.push('/(modals)/plan');
-                    }}
-                  />
-                ) : (
-                  <PlanMyDayButton onPress={handlePlanMyDay} isPro={isPro} label="Plan my day" />
-                )
-              ) : null}
-
               {/* List body — the task list + calendar overlay (the only lens now). */}
               <Animated.View entering={FadeIn.duration(t.motion.base)}>
                 {/* Scheduled routine blocks — Pro, derived read (no DB rows). */}
@@ -464,7 +440,29 @@ export default function Today() {
 
                 {upNext.length > 0 ? (
                   <View style={{ gap: t.space[2] }}>
-                    <Text style={sectionLabel}>UP NEXT</Text>
+                    <View
+                      style={{
+                        flexDirection: 'row',
+                        alignItems: 'center',
+                        justifyContent: 'space-between',
+                      }}
+                    >
+                      <Text style={sectionLabel}>UP NEXT</Text>
+                      {totalCount > 0 ? (
+                        <PlanButton
+                          hasPlan={hasPlan}
+                          startByClock={startByClock}
+                          onPress={
+                            hasPlan
+                              ? () => {
+                                  haptics.light();
+                                  router.push('/(modals)/plan');
+                                }
+                              : handlePlanMyDay
+                          }
+                        />
+                      ) : null}
+                    </View>
                     {upNext.map((row, idx) => (
                       <TaskRow
                         key={row.id}

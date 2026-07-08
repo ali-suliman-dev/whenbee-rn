@@ -257,7 +257,7 @@ describe('C1 — export wiring: Plan-my-day → syncExportForSelectedDay', () =>
     const { getByTestId } = render(<Today />);
 
     await act(async () => {
-      fireEvent.press(getByTestId('plan-my-day-btn'));
+      fireEvent.press(getByTestId('plan-button'));
     });
 
     expect(syncExportSpy).toHaveBeenCalledTimes(1);
@@ -289,7 +289,7 @@ describe('C1 — export wiring: Plan-my-day → syncExportForSelectedDay', () =>
     const { getByTestId } = render(<Today />);
 
     await act(async () => {
-      fireEvent.press(getByTestId('plan-my-day-btn'));
+      fireEvent.press(getByTestId('plan-button'));
     });
 
     expect(syncExportSpy).not.toHaveBeenCalled();
@@ -310,7 +310,7 @@ describe('C1 — export wiring: Plan-my-day → syncExportForSelectedDay', () =>
     const { getByTestId } = render(<Today />);
 
     await act(async () => {
-      fireEvent.press(getByTestId('plan-my-day-btn'));
+      fireEvent.press(getByTestId('plan-button'));
     });
 
     expect(router.push).toHaveBeenCalledWith({
@@ -336,7 +336,7 @@ describe('C1 — export wiring: Plan-my-day → syncExportForSelectedDay', () =>
     const { getByTestId } = render(<Today />);
 
     await act(async () => {
-      fireEvent.press(getByTestId('plan-my-day-btn'));
+      fireEvent.press(getByTestId('plan-button'));
     });
 
     expect(syncExportSpy).not.toHaveBeenCalled();
@@ -361,7 +361,7 @@ describe('[WRITE-SAFETY] C1 — export wiring write-safety', () => {
     const { getByTestId } = render(<Today />);
 
     await act(async () => {
-      fireEvent.press(getByTestId('plan-my-day-btn'));
+      fireEvent.press(getByTestId('plan-button'));
     });
 
     expect(syncExportSpy).toHaveBeenCalledTimes(1);
@@ -390,7 +390,7 @@ describe('[WRITE-SAFETY] C1 — export wiring write-safety', () => {
     const { getByTestId } = render(<Today />);
 
     await act(async () => {
-      fireEvent.press(getByTestId('plan-my-day-btn'));
+      fireEvent.press(getByTestId('plan-button'));
     });
 
     expect(syncExportSpy).not.toHaveBeenCalled();

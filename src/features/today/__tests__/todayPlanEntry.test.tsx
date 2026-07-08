@@ -1,7 +1,7 @@
 // src/features/today/__tests__/todayPlanEntry.test.tsx
 //
 // Option 1: Today is list-only. This focused harness covers the plan-entry
-// wiring — the PlanStrip vs. the single "Plan my day" button, and the
+// wiring — the compact PlanButton's planned vs. unplanned label, and the
 // handlePlanMyDay → sheet route. A separate file from todayScreen.test.tsx
 // because it needs a configurable useDayPlan mock (that file hard-codes an
 // empty plan).
@@ -75,22 +75,21 @@ beforeEach(() => {
 });
 
 describe('Today plan entry (Option 1)', () => {
-  it('shows the PlanStrip and no segmented control once a plan exists', () => {
+  it('shows the compact PlanButton with the start-by clock (24-h) and no segmented control once a plan exists', () => {
     const startBy = new Date(2026, 5, 24, 12, 35, 0).getTime();
     useDayTasksStore.setState({ dayTasks: [makeQueued('a')], dayMeta: { doneByMin: 780, planComputedAt: FIXED_NOW } });
     mockUseDayPlan.mockReturnValue({ plan: makePlan(startBy), status: 'ready', doneByMin: 780, setDoneBy: jest.fn() });
     render(<Today />);
-    expect(screen.getByText('Start by 12:35pm')).toBeOnTheScreen();
-    expect(screen.getByText('done by 1:00pm')).toBeOnTheScreen();
+    expect(screen.getByText('plan 12:35')).toBeOnTheScreen();
     expect(screen.queryByTestId('view-toggle-timeline')).toBeNull();
     expect(screen.queryByTestId('view-toggle-list')).toBeNull();
   });
 
-  it('shows a single Plan my day button (no strip) when tasks exist but no plan yet', () => {
+  it('shows the PlanButton reading "plan my day" when tasks exist but no plan yet', () => {
     useDayTasksStore.setState({ dayTasks: [makeQueued('b')], dayMeta: null });
     render(<Today />);
-    expect(screen.getByTestId('plan-my-day-btn')).toBeOnTheScreen();
-    expect(screen.queryByTestId('plan-strip')).toBeNull();
+    expect(screen.getByTestId('plan-button')).toBeOnTheScreen();
+    expect(screen.getByText('plan my day')).toBeOnTheScreen();
     expect(screen.queryByTestId('view-toggle-timeline')).toBeNull();
   });
 
@@ -98,7 +97,7 @@ describe('Today plan entry (Option 1)', () => {
     useEntitlement.setState({ isPro: false });
     useDayTasksStore.setState({ dayTasks: [makeQueued('c')], dayMeta: null });
     render(<Today />);
-    fireEvent.press(screen.getByTestId('plan-my-day-btn'));
+    fireEvent.press(screen.getByTestId('plan-button'));
     expect(router.push).toHaveBeenCalledWith({ pathname: '/(modals)/paywall', params: { trigger: 'plan_my_day' } });
   });
 
@@ -107,7 +106,7 @@ describe('Today plan entry (Option 1)', () => {
     useEntitlement.setState({ isPro: true });
     useDayTasksStore.setState({ dayTasks: [makeQueued('d')], dayMeta: null, markPlanned });
     render(<Today />);
-    fireEvent.press(screen.getByTestId('plan-my-day-btn'));
+    fireEvent.press(screen.getByTestId('plan-button'));
     expect(markPlanned).toHaveBeenCalledTimes(1);
     expect(router.push).toHaveBeenCalledWith('/(modals)/plan');
   });

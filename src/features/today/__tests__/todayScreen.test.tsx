@@ -315,15 +315,14 @@ describe('Today is list-only (Option 1)', () => {
       loadShelf: async () => {},
     });
     render(<Today />);
-    expect(screen.queryByTestId('plan-my-day-btn')).toBeNull();
-    expect(screen.queryByTestId('plan-strip')).toBeNull();
+    expect(screen.queryByTestId('plan-button')).toBeNull();
   });
 
   it('Pro: tapping "Plan my day" calls markPlanned and opens the plan sheet', () => {
     useEntitlement.setState({ isPro: true });
     seedTodayWithTask();
     const { getByTestId } = render(<Today />);
-    fireEvent.press(getByTestId('plan-my-day-btn'));
+    fireEvent.press(getByTestId('plan-button'));
     expect(useDayTasksStore.getState().markPlanned).toHaveBeenCalledTimes(1);
     expect(router.push).toHaveBeenCalledWith('/(modals)/plan');
   });
@@ -371,7 +370,7 @@ describe('C1 — Pro gate: Plan-my-day', () => {
     useEntitlement.setState({ isPro: false });
     seedTodayWithTask();
     const { getByTestId } = render(<Today />);
-    fireEvent.press(getByTestId('plan-my-day-btn'));
+    fireEvent.press(getByTestId('plan-button'));
     expect(router.push).toHaveBeenCalledWith({
       pathname: '/(modals)/paywall',
       params: { trigger: 'plan_my_day' },
@@ -382,7 +381,7 @@ describe('C1 — Pro gate: Plan-my-day', () => {
     useEntitlement.setState({ isPro: false });
     seedTodayWithTask();
     const { getByTestId } = render(<Today />);
-    fireEvent.press(getByTestId('plan-my-day-btn'));
+    fireEvent.press(getByTestId('plan-button'));
     expect(router.push).not.toHaveBeenCalledWith('/(modals)/plan');
   });
 
@@ -392,7 +391,7 @@ describe('C1 — Pro gate: Plan-my-day', () => {
     useEntitlement.setState({ isPro: true });
     seedTodayWithTask();
     const { getByTestId } = render(<Today />);
-    fireEvent.press(getByTestId('plan-my-day-btn'));
+    fireEvent.press(getByTestId('plan-button'));
     expect(router.push).not.toHaveBeenCalledWith(
       expect.objectContaining({ pathname: '/(modals)/paywall' }),
     );
