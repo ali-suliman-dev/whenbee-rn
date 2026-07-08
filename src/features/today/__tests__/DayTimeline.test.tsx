@@ -25,9 +25,10 @@ jest.mock('@/src/features/today/useDayPlan', () => ({
 }));
 
 const mockMoveToTomorrow = jest.fn();
+const mockReorderTasks = jest.fn();
 jest.mock('@/src/stores/dayTasksStore', () => ({
   useDayTasksStore: (selector: (s: any) => any) =>
-    selector({ moveToTomorrow: mockMoveToTomorrow }),
+    selector({ moveToTomorrow: mockMoveToTomorrow, reorderTasks: mockReorderTasks }),
 }));
 
 jest.mock('@/src/features/planner/useLearnedFocusWindow', () => ({
@@ -211,6 +212,43 @@ describe('DayTimeline — fits plan', () => {
   it('does NOT render an overflow banner when verdict is fits', () => {
     render(<DayTimeline />);
     expect(screen.queryByTestId('timeline-overflow-banner')).toBeNull();
+  });
+});
+
+// ═════════════════════════════════════════════════════════════════════════════
+// Task 4C — drag-to-reorder: only task rows get a grip; renders inside the
+// ReorderableList without crashing. The drag GESTURE itself can't be driven
+// from a unit test (no real touch/pan simulation here) — this only asserts
+// the render seam (grip present/absent) and that the component mounts under
+// the real react-native-reorderable-list + GestureHandler stack. The actual
+// drag feel needs on-device verification.
+// ═════════════════════════════════════════════════════════════════════════════
+
+describe('DayTimeline — drag-to-reorder grip', () => {
+  beforeEach(() => {
+    mockUseDayPlan.mockReturnValue({
+      plan: makeFitsPlan(),
+      status: 'ready',
+      doneByMin: 1080,
+      setDoneBy: mockSetDoneBy,
+    });
+  });
+
+  it('renders a drag handle on the task row', () => {
+    render(<DayTimeline />);
+    expect(screen.getByTestId('timeline-drag-handle-task-1')).toBeOnTheScreen();
+  });
+
+  it('does NOT render a drag handle on event or breather rows', () => {
+    render(<DayTimeline />);
+    expect(screen.queryByTestId('timeline-drag-handle-event-1')).toBeNull();
+    expect(screen.queryByTestId('timeline-drag-handle-breather-1')).toBeNull();
+  });
+
+  it('mounts the reorderable list without crashing (full timeline: task + breather + event)', () => {
+    render(<DayTimeline />);
+    expect(screen.getByText('Write report')).toBeOnTheScreen();
+    expect(screen.getByText('Team standup')).toBeOnTheScreen();
   });
 });
 

@@ -87,5 +87,28 @@ jest.mock('react-native-reanimated', () => {
   if (!Reanimated.addWhitelistedNativeProps) {
     Reanimated.addWhitelistedNativeProps = () => {};
   }
+  // react-native-reorderable-list composes its internal scroll handler with an
+  // optional caller-provided one via useComposedEventHandler; the bundled mock
+  // doesn't implement it. A no-op stub is sufficient — no scroll events fire
+  // under jsdom/react-test-renderer, so this is a UI-thread driver with no JS
+  // effect under test (same rationale as the other stubs above).
+  if (!Reanimated.useComposedEventHandler) {
+    Reanimated.useComposedEventHandler = () => null;
+  }
+  // react-native-reorderable-list wires its FlatList ref through useAnimatedRef
+  // and calls it as a function (`flatListRef(value)`) to attach the node. The
+  // bundled mock's useAnimatedRef returns a plain `{ current: null }` object
+  // (not callable) — real Reanimated returns a callable ref-function with a
+  // `.current` property. Override unconditionally to match that shape.
+  // Measurement (`measure(flatListRef)`) only ever runs inside runOnUI, which
+  // the mock already no-ops, so a real layout measurement is never needed
+  // under test.
+  Reanimated.useAnimatedRef = () => {
+    const ref = (node) => {
+      ref.current = node;
+    };
+    ref.current = null;
+    return ref;
+  };
   return Reanimated;
 });
