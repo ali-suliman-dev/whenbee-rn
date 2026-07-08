@@ -246,7 +246,9 @@ function RowContent({
     fontFamily: t.fontFamily.mono,
     fontSize: t.fontSize.xs,
     fontWeight: t.fontWeight.bold as TextStyle['fontWeight'],
-    color: t.colors.primary,
+    // Brighter indigo than the base primary — Android's `monospace` family
+    // ignores the bold weight, so emphasis comes from the colour on that OS.
+    color: t.colors.primaryBright,
     width: clockWidth,
     flexShrink: 0,
   };
@@ -533,8 +535,18 @@ export function DayTimeline({ hideHeader = false }: DayTimelineProps = {}) {
   );
 
   // ── Enter animation for rows ──────────────────────────────────────────────
-  // Opacity-only fade-in (no translate-in per project hard rules).
-  const enterAnim = reducedMotion ? undefined : FadeIn.duration(t.motion.base);
+  // Opacity-only fade-in (no translate-in per project hard rules) — but ONLY on
+  // the first mount. react-native-reorderable-list swaps its whole `data` array
+  // on a drop, which re-mounts cells and REPLAYS a per-row `entering` animation —
+  // that replay is the "flash" on reorder. We let the fade play once, then drop
+  // the entering prop so a reorder just glides (the library animates the move).
+  const [entrancesDone, setEntrancesDone] = useState(false);
+  useEffect(() => {
+    // Upper bound for the initial staggered fade to finish (base + a few steps).
+    const id = setTimeout(() => setEntrancesDone(true), t.motion.base + 12 * t.motion.stagger);
+    return () => clearTimeout(id);
+  }, [t.motion.base, t.motion.stagger]);
+  const enterAnim = reducedMotion || entrancesDone ? undefined : FadeIn.duration(t.motion.base);
 
   // ── Row renderer ──────────────────────────────────────────────────────────
   const renderItem = useCallback(

@@ -216,6 +216,7 @@ export const tokens = {
 
       // ── accents (indigo hero / amber true accent) ──
       primary: '#6B5BE6',
+      primaryBright: '#5A4BD4', // higher-emphasis indigo for small mono data (plan clocks) on light
       primaryEdge: '#463B9E',
       primarySoft: '#E4E0FA', // low-emphasis indigo fill
       primaryWash: '#EFEDFC', // faintest indigo tint — lighter than primarySoft, still reads off white
@@ -299,6 +300,7 @@ export const tokens = {
 
       // ── accents ──
       primary: '#8275F0',
+      primaryBright: '#B3A7FF', // higher-emphasis indigo for small mono data (plan clocks) on dark
       primaryEdge: '#6B5BE6',
       // Ordered to mirror the light set's primary* keys (parity test: light/dark
       // share identical key order). Values are unchanged.
