@@ -50,8 +50,6 @@ export function PlanStrip({ startByClock, doneByClock, reminderOn, onPress }: Pl
     backgroundColor: t.colors.surface,
     borderRadius: t.radii.md,
     borderCurve: 'continuous',
-    borderWidth: t.borderWidth.hairline,
-    borderColor: t.colors.hairline,
   };
   const strongText: TextStyle = {
     fontSize: t.fontSize.sm,
@@ -79,7 +77,7 @@ export function PlanStrip({ startByClock, doneByClock, reminderOn, onPress }: Pl
       onPressOut={onPressOut}
       accessibilityRole="button"
       accessibilityLabel={a11yLabel}
-      hitSlop={4}
+      hitSlop={t.size.hitSlop}
     >
       <Animated.View style={[stripStyle, aStyle]}>
         <Ionicons name="map-outline" size={t.iconSize.sm} color={t.colors.primary} />
