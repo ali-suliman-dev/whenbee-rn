@@ -66,7 +66,7 @@ export function CalendarOverlaySection({
   };
 
   const eyebrow: TextStyle = {
-    ...(type.eyebrow as unknown as TextStyle),
+    ...(type.eyebrowSm as unknown as TextStyle),
     color: t.colors.inkFaint,
   };
 

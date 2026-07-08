@@ -16,6 +16,7 @@ import { Screen } from '@/src/components/Screen';
 import { SheetGrabber } from '@/src/components/SheetGrabber';
 import { AppButton } from '@/src/components/AppButton';
 import { AppText } from '@/src/components/AppText';
+import { ConfirmSheet } from '@/src/components/ConfirmSheet';
 import { useTheme } from '@/src/theme/useTheme';
 import { type } from '@/src/theme/typography';
 import { DayTimeline } from '@/src/features/today/DayTimeline';
@@ -23,6 +24,7 @@ import { useDayPlan } from '@/src/features/today/useDayPlan';
 import { useStartByToggle } from '@/src/features/today/useStartByToggle';
 import { FinishEditorSheet } from '@/src/features/routines/FinishEditorSheet';
 import { formatClock } from '@/src/lib/time';
+import { useDayTasksStore } from '@/src/stores/dayTasksStore';
 
 // ──────────────────────────────────────────────────────────────────────────────
 // Plan sheet (Option 1) — the day plan the user summoned, fully contained. It
@@ -43,6 +45,7 @@ export default function PlanRoute() {
   const { plan, doneByMin, setDoneBy } = useDayPlan();
   const startByLabel = plan ? formatClock(plan.startBy) : null;
   const [doneByPickerOpen, setDoneByPickerOpen] = useState(false);
+  const [clearConfirmOpen, setClearConfirmOpen] = useState(false);
 
   // Finish-by clock: prefer the user's done-by target (local midnight of the
   // plan's own day + doneByMin) since that's the deadline they're planning
@@ -91,7 +94,36 @@ export default function PlanRoute() {
   // controls row below) — no outer Pressable, or a tap would double-toggle.
   const { enabled: nudgeEnabled, toggle: toggleNudge } = useStartByToggle();
 
+  // Clear plan — a plan-only reset (start time, finish, nudge, hand-sorted
+  // order). The queued tasks themselves are untouched; see clearPlan in
+  // dayTasksStore. Confirmed via the app's styled ConfirmSheet (never a native
+  // Alert) so a reset feels considered and on-theme, matching Settings.
+  const handleClearConfirm = useCallback(() => {
+    setClearConfirmOpen(false);
+    void (async () => {
+      await useDayTasksStore.getState().clearPlan();
+      await toggleNudge(false);
+      router.back();
+    })();
+  }, [toggleNudge]);
+
   const heading: TextStyle = { ...(type.subtitle as unknown as TextStyle), color: t.colors.ink };
+  const headerRow: ViewStyle = {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  };
+  const clearButtonStyle: ViewStyle = {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: t.space[1],
+  };
+  const clearLabelStyle: TextStyle = {
+    fontFamily: t.fontFamily.ui,
+    fontWeight: t.fontWeight.medium as TextStyle['fontWeight'],
+    fontSize: t.fontSize.bodySm,
+    color: t.colors.danger, // audit-ok: destructive — the Clear-plan reset action
+  };
 
   // Quiet start-by/finish-by summary line — words muted, clocks are the data
   // (start amber = the one time you act on, finish ink = the boundary). Tabular
@@ -163,8 +195,26 @@ export default function PlanRoute() {
       >
         <SheetGrabber />
 
-        <View style={{ paddingTop: t.space[5], paddingBottom: t.space[3] }}>
+        <View style={[headerRow, { paddingTop: t.space[5], paddingBottom: t.space[3] }]}>
           <AppText style={heading}>Today&apos;s plan</AppText>
+          {plan != null ? (
+            <Pressable
+              testID="plan-clear-button"
+              onPress={() => setClearConfirmOpen(true)}
+              accessibilityRole="button"
+              accessibilityLabel="Clear plan"
+              hitSlop={t.size.hitSlop}
+            >
+              <View style={clearButtonStyle}>
+                <Ionicons
+                  name="refresh-outline"
+                  size={t.iconSize.sm}
+                  color={t.colors.danger} // audit-ok: destructive — the Clear-plan reset action
+                />
+                <Text style={clearLabelStyle}>Clear</Text>
+              </View>
+            </Pressable>
+          ) : null}
         </View>
 
         {/* DayTimeline owns the scroll + timeline rows; its own start-by/done-by
@@ -260,6 +310,21 @@ export default function PlanRoute() {
         onChange={handleDoneByChange}
         onClear={clearDoneBy}
         onClose={closeDoneByPicker}
+      />
+
+      <ConfirmSheet
+        visible={clearConfirmOpen}
+        tone="danger"
+        glyphKind="progress"
+        title="Clear today's plan?"
+        bullets={[
+          'Removes your start time, finish and nudge',
+          'Clears any hand-sorted order',
+          'Your tasks stay in the queue',
+        ]}
+        confirmLabel="Clear plan"
+        onConfirm={handleClearConfirm}
+        onCancel={() => setClearConfirmOpen(false)}
       />
     </Screen>
   );

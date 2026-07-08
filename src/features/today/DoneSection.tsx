@@ -59,7 +59,7 @@ export function DoneSection({
     paddingVertical: t.space[2],
   };
   const label: TextStyle = {
-    ...(type.eyebrow as unknown as TextStyle),
+    ...(type.eyebrowSm as unknown as TextStyle),
     color: t.colors.inkSoft,
   };
 

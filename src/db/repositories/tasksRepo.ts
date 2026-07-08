@@ -19,8 +19,9 @@ export interface TasksRepo {
   complete(id: string, opts: { completedAt: number; actualMin?: number }): Promise<void>;
   getDayMeta(date: string): Promise<DayMeta | null>;
   setDoneBy(date: string, doneByMin: number | null): Promise<void>;
-  /** Stamp planComputedAt for the given date (creates the meta row if absent). */
-  setPlanComputedAt(date: string, planComputedAt: number): Promise<void>;
+  /** Stamp planComputedAt for the given date (creates the meta row if absent).
+   *  Pass null to clear it (used by the plan-sheet "Clear" reset). */
+  setPlanComputedAt(date: string, planComputedAt: number | null): Promise<void>;
   /** Distinct plannedDates of all queued tasks — used to populate calendar dot hints. */
   dates(): Promise<string[]>;
   /** All tasks that currently have a non-null calendarEventId — used to bulk-clear
