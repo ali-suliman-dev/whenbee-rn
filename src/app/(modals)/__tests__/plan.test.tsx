@@ -8,6 +8,11 @@ import type { PlanResult } from '@/src/domain/types';
 
 jest.mock('expo-router', () => ({ router: { back: jest.fn() } }));
 
+const mockClearPlan = jest.fn().mockResolvedValue(undefined);
+jest.mock('@/src/stores/dayTasksStore', () => ({
+  useDayTasksStore: { getState: jest.fn(() => ({ clearPlan: mockClearPlan })) },
+}));
+
 // DayTimeline pulls the native calendar + engine planner — stub it to a marker.
 jest.mock('@/src/features/today/DayTimeline', () => {
   const React = jest.requireActual<typeof import('react')>('react');
@@ -28,6 +33,33 @@ jest.mock('@/src/features/routines/FinishEditorSheet', () => {
   };
 });
 
+// ConfirmSheet renders a Modal with its own reanimated/insets deps — stub it to
+// a visibility marker plus a Pressable that fires onConfirm, so the confirm flow
+// can be driven without the native sheet. Its full behavior is covered by
+// ConfirmSheet's own tests.
+jest.mock('@/src/components/ConfirmSheet', () => {
+  const React = jest.requireActual<typeof import('react')>('react');
+  const { Text, Pressable } = jest.requireActual<typeof import('react-native')>('react-native');
+  return {
+    ConfirmSheet: ({
+      visible,
+      title,
+      onConfirm,
+    }: {
+      visible: boolean;
+      title: string;
+      onConfirm: () => void;
+    }) =>
+      visible
+        ? React.createElement(
+            Pressable,
+            { testID: 'confirm-sheet-confirm', onPress: onConfirm },
+            React.createElement(Text, null, title),
+          )
+        : null,
+  };
+});
+
 jest.mock('@/src/features/today/useDayPlan');
 const mockUseDayPlan = jest.mocked(useDayPlan);
 
@@ -41,6 +73,7 @@ function makePlan(startBy: number): PlanResult {
 
 beforeEach(() => {
   mockUseStartByToggle.mockReturnValue({ enabled: false, toggle: mockToggleNudge });
+  mockClearPlan.mockClear();
 });
 
 afterEach(() => jest.clearAllMocks());
@@ -137,5 +170,39 @@ describe('(modals)/plan', () => {
     render(<PlanRoute />);
     fireEvent.press(screen.getByText('Done'));
     expect(router.back).toHaveBeenCalledTimes(1);
+  });
+
+  describe('Clear plan', () => {
+    it('shows the Clear control when a plan exists', () => {
+      mockUseDayPlan.mockReturnValue({ plan: makePlan(Date.now()), status: 'ready', doneByMin: null, setDoneBy: jest.fn() });
+      render(<PlanRoute />);
+      expect(screen.getByTestId('plan-clear-button')).toBeOnTheScreen();
+    });
+
+    it('hides the Clear control when there is no plan', () => {
+      mockUseDayPlan.mockReturnValue({ plan: null, status: 'empty', doneByMin: null, setDoneBy: jest.fn() });
+      render(<PlanRoute />);
+      expect(screen.queryByTestId('plan-clear-button')).toBeNull();
+    });
+
+    it('opens the ConfirmSheet on Clear press, then clears the plan, turns off the nudge, and dismisses on confirm', async () => {
+      mockUseDayPlan.mockReturnValue({ plan: makePlan(Date.now()), status: 'ready', doneByMin: null, setDoneBy: jest.fn() });
+      render(<PlanRoute />);
+
+      // Sheet hidden until the trigger is pressed.
+      expect(screen.queryByTestId('confirm-sheet-confirm')).toBeNull();
+      fireEvent.press(screen.getByTestId('plan-clear-button'));
+      expect(screen.getByTestId('confirm-sheet-confirm')).toBeOnTheScreen();
+
+      fireEvent.press(screen.getByTestId('confirm-sheet-confirm'));
+
+      // Flush the async confirm handler.
+      await Promise.resolve();
+      await Promise.resolve();
+
+      expect(mockClearPlan).toHaveBeenCalledTimes(1);
+      expect(mockToggleNudge).toHaveBeenCalledWith(false);
+      expect(router.back).toHaveBeenCalledTimes(1);
+    });
   });
 });

@@ -272,7 +272,7 @@ export default function Today() {
   useBiasWidgetPublisher();
 
   const sectionLabel: TextStyle = {
-    ...(type.eyebrow as unknown as TextStyle),
+    ...(type.eyebrowSm as unknown as TextStyle),
     color: t.colors.inkSoft,
     marginTop: t.space[1],
   };
@@ -447,7 +447,7 @@ export default function Today() {
                         justifyContent: 'space-between',
                       }}
                     >
-                      <Text style={sectionLabel}>UP NEXT</Text>
+                      <Text style={sectionLabel}>TASKS</Text>
                       {totalCount > 0 ? (
                         <PlanButton
                           hasPlan={hasPlan}

@@ -26,6 +26,11 @@ export const type = {
   captionBold: { fontFamily: 'Jakarta-Bold', fontSize: fs.caption, lineHeight: 18 },
   micro: { fontFamily: 'Jakarta-Regular', fontSize: fs.micro, lineHeight: 16 },
   eyebrow: { fontFamily: 'Jakarta-Bold', fontSize: fs.xs, lineHeight: 14, letterSpacing: 2, textTransform: 'uppercase' as const },
+  // One step smaller than `eyebrow` — the Today screen's four section labels
+  // (TASKS, DONE TODAY, Calendar, TODAY'S ROUTINES). Tracking is tightened
+  // (not kept at eyebrow's 2px) because wide letter-spacing at a smaller size
+  // inflates perceived size back toward eyebrow's footprint.
+  eyebrowSm: { fontFamily: 'Jakarta-Bold', fontSize: fs.crumb, lineHeight: 13, letterSpacing: 1.2, textTransform: 'uppercase' as const },
   // Tiny (10px) word-part label — the rail/histogram axis + plan/goal/guess
   // labels ("planned", "guess", "38m"/"73m" axis ends). Semibold for legibility
   // at this size against the faint numeric neighbour it usually sits beside.

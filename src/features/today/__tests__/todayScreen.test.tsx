@@ -327,13 +327,13 @@ describe('Today is list-only (Option 1)', () => {
     expect(router.push).toHaveBeenCalledWith('/(modals)/plan');
   });
 
-  it('always shows the list body (UP NEXT), never the Timeline lens', () => {
+  it('always shows the list body (TASKS), never the Timeline lens', () => {
     seedTodayWithTask();
     const task = makeQueued({ id: 'u1', label: 'Review PR', category: 'work', guessMin: 20 });
     useDayTasksStore.setState({ dayTasks: [task], selectFocusTask: () => null });
     render(<Today />);
     expect(screen.queryByTestId('day-timeline-root')).toBeNull();
-    expect(screen.getByText('UP NEXT')).toBeOnTheScreen();
+    expect(screen.getByText('TASKS')).toBeOnTheScreen();
   });
 });
 

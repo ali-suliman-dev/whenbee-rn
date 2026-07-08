@@ -80,16 +80,16 @@ describe('Today plan entry (Option 1)', () => {
     useDayTasksStore.setState({ dayTasks: [makeQueued('a')], dayMeta: { doneByMin: 780, planComputedAt: FIXED_NOW } });
     mockUseDayPlan.mockReturnValue({ plan: makePlan(startBy), status: 'ready', doneByMin: 780, setDoneBy: jest.fn() });
     render(<Today />);
-    expect(screen.getByText('plan 12:35')).toBeOnTheScreen();
+    expect(screen.getByText('12:35')).toBeOnTheScreen();
     expect(screen.queryByTestId('view-toggle-timeline')).toBeNull();
     expect(screen.queryByTestId('view-toggle-list')).toBeNull();
   });
 
-  it('shows the PlanButton reading "plan my day" when tasks exist but no plan yet', () => {
+  it('shows the PlanButton reading "Plan" when tasks exist but no plan yet', () => {
     useDayTasksStore.setState({ dayTasks: [makeQueued('b')], dayMeta: null });
     render(<Today />);
     expect(screen.getByTestId('plan-button')).toBeOnTheScreen();
-    expect(screen.getByText('plan my day')).toBeOnTheScreen();
+    expect(screen.getByText('Plan')).toBeOnTheScreen();
     expect(screen.queryByTestId('view-toggle-timeline')).toBeNull();
   });
 

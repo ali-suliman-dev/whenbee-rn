@@ -66,6 +66,13 @@ export interface DayTasksState {
   setDoneBy: (min: number | null) => Promise<void>;
   /** Stamp planComputedAt = now for the selected date (called when a plan is triggered). */
   markPlanned: (nowMs?: number) => Promise<void>;
+  /**
+   * Plan-only reset for the selected date (the plan sheet's "Clear" action):
+   * nulls planComputedAt and doneByMin, and drops the manual drag order. The
+   * day's queued tasks are untouched — clearing wipes plan scaffolding, not
+   * the task list.
+   */
+  clearPlan: () => Promise<void>;
   addTask: (input: {
     label: string;
     category: string;
@@ -303,6 +310,17 @@ export function makeDayTasksStore(deps: Deps): UseBoundStore<StoreApi<DayTasksSt
       const { selectedDate } = get();
       await repo.setPlanComputedAt(selectedDate, nowMs ?? Date.now());
       set({ dayMeta: await loadDayMeta(selectedDate) });
+    },
+
+    async clearPlan() {
+      const { selectedDate } = get();
+      // Sequential, not Promise.all: both calls read-modify-write the same
+      // dayMeta row (getDayMeta → upsertDayMeta), so running them concurrently
+      // races — whichever read wins re-writes the other's stale field back.
+      await repo.setPlanComputedAt(selectedDate, null);
+      await repo.setDoneBy(selectedDate, null);
+      kvSet(manualOrderKvKey(selectedDate), '0');
+      set({ dayMeta: await loadDayMeta(selectedDate), hasManualOrder: false });
     },
 
     async addTask({ label, category, guessMin, date, nowMs }) {
