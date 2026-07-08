@@ -21,6 +21,12 @@ expo-env.d.ts
 # Metro
 .metro-health-check*
 
+# Gradle build cache
+.gradle/
+
+# Netlify
+.netlify/
+
 # debug
 npm-debug.*
 yarn-debug.*
