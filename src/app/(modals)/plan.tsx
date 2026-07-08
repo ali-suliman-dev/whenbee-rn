@@ -1,5 +1,13 @@
 import { useCallback, useMemo, useState } from 'react';
-import { Pressable, Text, View, useWindowDimensions, type TextStyle, type ViewStyle } from 'react-native';
+import {
+  Pressable,
+  Switch,
+  Text,
+  View,
+  useWindowDimensions,
+  type TextStyle,
+  type ViewStyle,
+} from 'react-native';
 import { router } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
@@ -78,11 +86,9 @@ export default function PlanRoute() {
 
   // Nudge toggle — the shared start-by reminder hook, rendered as a neutral
   // inline pill here (the shared PlanReminderChip component stays untouched for
-  // other surfaces).
+  // other surfaces). The native Switch IS the interactive element (see the
+  // controls row below) — no outer Pressable, or a tap would double-toggle.
   const { enabled: nudgeEnabled, toggle: toggleNudge } = useStartByToggle();
-  const onToggleNudge = useCallback(() => {
-    void toggleNudge(!nudgeEnabled);
-  }, [nudgeEnabled, toggleNudge]);
 
   const heading: TextStyle = { ...(type.subtitle as unknown as TextStyle), color: t.colors.ink };
 
@@ -94,12 +100,14 @@ export default function PlanRoute() {
     paddingTop: t.space[2],
   };
   const startByLineStyle: TextStyle = {
-    fontSize: type.body.fontSize,
+    fontSize: t.fontSize.sm,
+    fontWeight: t.fontWeight.bold as TextStyle['fontWeight'],
     color: t.colors.accent,
     fontFamily: t.fontFamily.mono,
   };
   const finishByLineStyle: TextStyle = {
-    fontSize: type.body.fontSize,
+    fontSize: t.fontSize.sm,
+    fontWeight: t.fontWeight.bold as TextStyle['fontWeight'],
     color: t.colors.inkSoft,
     fontFamily: t.fontFamily.mono,
   };
@@ -131,21 +139,6 @@ export default function PlanRoute() {
     color: t.colors.inkSoft,
     fontFamily: t.fontFamily.ui,
   };
-  const toggleTrackStyle: ViewStyle = {
-    width: t.space[6],
-    height: t.space[4],
-    borderRadius: t.radii.full,
-    backgroundColor: nudgeEnabled ? t.colors.accent : t.colors.hairline,
-    alignItems: nudgeEnabled ? 'flex-end' : 'flex-start',
-    justifyContent: 'center',
-    paddingHorizontal: t.space[0.5],
-  };
-  const toggleKnobStyle: ViewStyle = {
-    width: t.space[3],
-    height: t.space[3],
-    borderRadius: t.radii.full,
-    backgroundColor: t.colors.surface,
-  };
 
   return (
     // Sheet host already sits below the status bar — no top inset (avoids a gap on
@@ -157,7 +150,7 @@ export default function PlanRoute() {
       <View style={{ flex: 1, minHeight: winH * 0.95 - insets.bottom }}>
         <SheetGrabber />
 
-        <View style={{ paddingTop: t.space[2.5], paddingBottom: t.space[3] }}>
+        <View style={{ paddingTop: t.space[5], paddingBottom: t.space[3] }}>
           <AppText style={heading}>Today&apos;s plan</AppText>
 
           {/* Justified start-by/finish-by clocks — the sheet owns this line now;
@@ -186,7 +179,7 @@ export default function PlanRoute() {
             dividerStyle,
             {
               paddingTop: t.space[3],
-              paddingBottom: insets.bottom + t.space[3],
+              paddingBottom: insets.bottom + t.space[5],
               gap: t.space[3],
             },
           ]}
@@ -198,6 +191,7 @@ export default function PlanRoute() {
               accessibilityRole="button"
               accessibilityLabel={doneByClock ? `Done by ${doneByClock}` : 'Set done-by time'}
               accessibilityHint="Tap to change your done-by target time"
+              style={{ flex: 1 }}
             >
               <View style={pillStyle}>
                 <Text style={pillLabelStyle} numberOfLines={1}>
@@ -206,17 +200,9 @@ export default function PlanRoute() {
               </View>
             </Pressable>
 
-            <Pressable
-              testID="plan-nudge-pill"
-              onPress={onToggleNudge}
-              accessibilityRole="switch"
-              accessibilityState={{ checked: nudgeEnabled }}
-              accessibilityLabel={
-                nudgeEnabled
-                  ? `Start nudge on${startByClock ? `, ${startByClock}` : ''}. Tap to turn off.`
-                  : 'Start nudge off. Tap to turn on.'
-              }
-            >
+            {/* Plain View, not a Pressable — the native Switch below is the sole
+                interactive element. A wrapping Pressable would double-toggle. */}
+            <View testID="plan-nudge-pill" style={{ flex: 1 }}>
               <View style={pillStyle}>
                 <Ionicons
                   name={nudgeEnabled ? 'notifications' : 'notifications-outline'}
@@ -224,11 +210,21 @@ export default function PlanRoute() {
                   color={t.colors.inkSoft}
                 />
                 <Text style={pillLabelStyle}>Nudge</Text>
-                <View style={toggleTrackStyle}>
-                  <View style={toggleKnobStyle} />
-                </View>
+                <Switch
+                  testID="plan-nudge-switch"
+                  value={nudgeEnabled}
+                  onValueChange={(v) => void toggleNudge(v)}
+                  trackColor={{ true: t.colors.accent, false: t.colors.hairline }}
+                  thumbColor={t.colors.surface}
+                  ios_backgroundColor={t.colors.hairline}
+                  accessibilityLabel={
+                    nudgeEnabled
+                      ? `Start nudge on${startByClock ? `, ${startByClock}` : ''}. Tap to turn off.`
+                      : 'Start nudge off. Tap to turn on.'
+                  }
+                />
               </View>
-            </Pressable>
+            </View>
           </View>
 
           <AppButton label="Done" variant="indigo" fullWidth onPress={() => router.back()} />

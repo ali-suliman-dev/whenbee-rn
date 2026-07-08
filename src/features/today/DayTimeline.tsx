@@ -263,12 +263,6 @@ function RowContent({
       accessibilityRole="text"
       accessibilityLabel={`${item.label}, starts ${formatClock(item.startAt)}, ${fmtHm(durationMin)}`}
     >
-      <View style={edgeStyle} />
-      <AppText style={clockStyle}>{formatClock(item.startAt)}</AppText>
-      <AppText style={labelStyle} numberOfLines={2}>
-        {item.label}
-      </AppText>
-      <AppText style={durationStyle}>{fmtHm(durationMin)}</AppText>
       {onDragHandleLongPress ? (
         <Pressable
           testID={`timeline-drag-handle-${item.id}`}
@@ -281,6 +275,12 @@ function RowContent({
           <AppText style={gripStyle}>⋮⋮</AppText>
         </Pressable>
       ) : null}
+      <View style={edgeStyle} />
+      <AppText style={clockStyle}>{formatClock(item.startAt)}</AppText>
+      <AppText style={labelStyle} numberOfLines={2}>
+        {item.label}
+      </AppText>
+      <AppText style={durationStyle}>{fmtHm(durationMin)}</AppText>
     </View>
   );
 }

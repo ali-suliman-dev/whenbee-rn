@@ -77,7 +77,7 @@ describe('(modals)/plan', () => {
     const startBy = new Date(2026, 5, 24, 12, 35, 0).getTime();
     mockUseDayPlan.mockReturnValue({ plan: makePlan(startBy), status: 'ready', doneByMin: 780, setDoneBy: jest.fn() });
     render(<PlanRoute />);
-    fireEvent.press(screen.getByTestId('plan-nudge-pill'));
+    fireEvent(screen.getByTestId('plan-nudge-switch'), 'valueChange', true);
     expect(mockToggleNudge).toHaveBeenCalledWith(true);
   });
 
