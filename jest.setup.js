@@ -1,4 +1,10 @@
 /* eslint-disable no-undef */
+// Mocks the native RNGestureHandlerModule so any real GestureHandlerRootView
+// (e.g. the plan sheet, FinishEditorSheet) can mount under jest without
+// invoking a native install() call. Required as soon as gesture-handler is
+// imported anywhere in the tree, so it must load before test files render.
+require('react-native-gesture-handler/jestSetup');
+
 const matchers = require('@testing-library/react-native/matchers');
 expect.extend(matchers);
 

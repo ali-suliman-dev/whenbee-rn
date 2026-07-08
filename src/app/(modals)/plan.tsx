@@ -10,6 +10,7 @@ import {
 } from 'react-native';
 import { router } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { Ionicons } from '@expo/vector-icons';
 import { Screen } from '@/src/components/Screen';
 import { SheetGrabber } from '@/src/components/SheetGrabber';
@@ -100,13 +101,13 @@ export default function PlanRoute() {
     paddingTop: t.space[2],
   };
   const startByLineStyle: TextStyle = {
-    fontSize: t.fontSize.sm,
+    fontSize: t.fontSize.xs,
     fontWeight: t.fontWeight.bold as TextStyle['fontWeight'],
     color: t.colors.accent,
     fontFamily: t.fontFamily.mono,
   };
   const finishByLineStyle: TextStyle = {
-    fontSize: t.fontSize.sm,
+    fontSize: t.fontSize.xs,
     fontWeight: t.fontWeight.bold as TextStyle['fontWeight'],
     color: t.colors.inkSoft,
     fontFamily: t.fontFamily.mono,
@@ -146,8 +147,16 @@ export default function PlanRoute() {
     <Screen edges={['left', 'right']} horizontalPadding={false}>
       {/* react-native-screens' formSheet collapses a flex:1 child to its content
           height, floating pinned controls mid-sheet with dead space below. Anchor
-          the column to the sheet's 0.95 detent so DayTimeline fills and Done pins. */}
-      <View style={{ flex: 1, minHeight: winH * 0.95 - insets.bottom }}>
+          the column to the sheet's 0.95 detent so DayTimeline fills and Done pins.
+
+          The formSheet is its own native container, separate from the app-root
+          GestureHandlerRootView — react-native-reorderable-list's drag pans
+          never fire inside it unless this content re-establishes its own
+          gesture root (same fix as FinishEditorSheet's Modal). */}
+      <GestureHandlerRootView
+        testID="plan-gesture-root"
+        style={{ flex: 1, minHeight: winH * 0.95 - insets.bottom }}
+      >
         <SheetGrabber />
 
         <View style={{ paddingTop: t.space[5], paddingBottom: t.space[3] }}>
@@ -214,7 +223,7 @@ export default function PlanRoute() {
                   testID="plan-nudge-switch"
                   value={nudgeEnabled}
                   onValueChange={(v) => void toggleNudge(v)}
-                  trackColor={{ true: t.colors.accent, false: t.colors.hairline }}
+                  trackColor={{ true: t.colors.primary, false: t.colors.hairline }}
                   thumbColor={t.colors.surface}
                   ios_backgroundColor={t.colors.hairline}
                   accessibilityLabel={
@@ -229,7 +238,7 @@ export default function PlanRoute() {
 
           <AppButton label="Done" variant="indigo" fullWidth onPress={() => router.back()} />
         </View>
-      </View>
+      </GestureHandlerRootView>
 
       <FinishEditorSheet
         visible={doneByPickerOpen}

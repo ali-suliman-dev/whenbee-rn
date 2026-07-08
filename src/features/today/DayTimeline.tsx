@@ -245,17 +245,6 @@ function RowContent({
     color: t.colors.inkSoft,
     flexShrink: 0,
   };
-  // Grip affordance — long-press starts the drag (see useReorderableDrag in
-  // TimelineRow). A separate hit target from the row itself so a stray
-  // long-press elsewhere on the row (or the sheet's own gestures) never
-  // starts a drag by accident.
-  const gripStyle: TextStyle = {
-    fontSize: t.fontSize.sm,
-    lineHeight: t.fontSize.sm,
-    color: t.colors.inkFaint,
-    letterSpacing: -2,
-    flexShrink: 0,
-  };
   return (
     <View
       style={row}
@@ -272,7 +261,7 @@ function RowContent({
           accessibilityHint="Long-press and drag to reorder this task"
           hitSlop={t.size.hitSlop}
         >
-          <AppText style={gripStyle}>⋮⋮</AppText>
+          <Ionicons name="reorder-three-outline" size={t.iconSize.sm} color={t.colors.inkFaint} />
         </Pressable>
       ) : null}
       <View style={edgeStyle} />

@@ -1,4 +1,4 @@
-import { render, screen, fireEvent } from '@testing-library/react-native';
+import { render, screen, fireEvent, within } from '@testing-library/react-native';
 import { router } from 'expo-router';
 import PlanRoute from '@/src/app/(modals)/plan';
 import { useDayPlan } from '@/src/features/today/useDayPlan';
@@ -52,6 +52,23 @@ describe('(modals)/plan', () => {
     render(<PlanRoute />);
     expect(screen.getByText("Today's plan")).toBeOnTheScreen();
     expect(screen.getByTestId('day-timeline-root')).toBeOnTheScreen();
+  });
+
+  // The formSheet is a separate native container from the app-root
+  // GestureHandlerRootView, so react-native-reorderable-list's drag pans
+  // (inside DayTimeline) never fire unless the sheet's own content re-
+  // establishes a gesture root. Assert it wraps the grabber/header/timeline/
+  // footer so dragging works on device (the drag gesture itself can't be
+  // unit-tested — see DayTimeline.test.tsx's grip-only coverage).
+  it('wraps the sheet content in its own GestureHandlerRootView', () => {
+    const startBy = new Date(2026, 5, 24, 12, 35, 0).getTime();
+    mockUseDayPlan.mockReturnValue({ plan: makePlan(startBy), status: 'ready', doneByMin: 780, setDoneBy: jest.fn() });
+    render(<PlanRoute />);
+    const root = screen.getByTestId('plan-gesture-root');
+    expect(root).toBeOnTheScreen();
+    expect(within(root).getByTestId('day-timeline-root')).toBeOnTheScreen();
+    expect(within(root).getByText("Today's plan")).toBeOnTheScreen();
+    expect(within(root).getByText('Done')).toBeOnTheScreen();
   });
 
   it('renders a neutral Done-by control and a Nudge toggle in the footer', () => {
