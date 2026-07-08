@@ -191,7 +191,7 @@ export default function PlanRoute() {
           {plan && startByLabel ? (
             <View style={timesLineStyle} testID="plan-times-line">
               <Text style={timesWordStyle}>Start by</Text>
-              <Text style={[timesNumStyle, { color: t.colors.accent }]}>{startByLabel}</Text>
+              <Text style={[timesNumStyle, { color: t.colors.ink }]}>{startByLabel}</Text>
               {finishAtMs !== null ? (
                 <>
                   <Text style={timesSepStyle}>·</Text>
