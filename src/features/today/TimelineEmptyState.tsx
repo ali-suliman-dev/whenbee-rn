@@ -35,7 +35,7 @@ export function TimelineEmptyState({ onPlan, isPro }: TimelineEmptyStateProps) {
           fontFamily: t.fontFamily.ui,
         }}
       >
-        No plan for today yet
+        No plan yet
       </Text>
       <Text
         style={{

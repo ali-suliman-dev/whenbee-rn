@@ -238,6 +238,17 @@ export const useSettingsStore = create<SettingsState>()(
     {
       name: 'settings',
       storage: createJSONStorage(() => zustandKv),
+      version: 1,
+      // v0 -> v1: `startByEnabled` defaulted to true for new installs; the default
+      // flipped to false (opt-in). Existing persisted blobs (version < 1) may carry
+      // the stale `true`, which would silently turn on start-by nudges without the
+      // permission prompt. Force it false so every pre-existing install re-opts-in
+      // via the visible chip/Settings row.
+      migrate: (persisted, version) => {
+        const p = (persisted ?? {}) as Partial<SettingsState>;
+        if (version < 1) return { ...p, startByEnabled: false };
+        return p;
+      },
       // Deep-backfill the calendar slice so that pre-Phase-7 persisted blobs
       // (which only have showEvents/enabledCalendarIds) rehydrate the new export
       // fields as their defaults instead of `undefined`, which would violate the

@@ -20,6 +20,37 @@ describe('settingsStore displayName + archetype seed', () => {
   });
 });
 
+describe('settingsStore persist migration (startByEnabled opt-out)', () => {
+  it('migrates a pre-v1 persisted blob with startByEnabled:true to false', async () => {
+    const { migrate } = useSettingsStore.persist.getOptions();
+    expect(migrate).toBeDefined();
+    const migrated = (await migrate?.({ startByEnabled: true }, 0)) as { startByEnabled: boolean };
+    expect(migrated.startByEnabled).toBe(false);
+  });
+
+  it('preserves other persisted fields untouched during migration', async () => {
+    const { migrate } = useSettingsStore.persist.getOptions();
+    const migrated = (await migrate?.(
+      { startByEnabled: true, displayName: 'Ali', dayEndMin: 500 },
+      0,
+    )) as { startByEnabled: boolean; displayName: string; dayEndMin: number };
+    expect(migrated.startByEnabled).toBe(false);
+    expect(migrated.displayName).toBe('Ali');
+    expect(migrated.dayEndMin).toBe(500);
+  });
+
+  it('is a no-op for an already-current (version 1) persisted blob', async () => {
+    const { migrate } = useSettingsStore.persist.getOptions();
+    const migrated = (await migrate?.({ startByEnabled: true }, 1)) as { startByEnabled: boolean };
+    expect(migrated.startByEnabled).toBe(true);
+  });
+
+  it('a fresh store (no persisted state) defaults startByEnabled to false', () => {
+    useSettingsStore.getState().reset();
+    expect(useSettingsStore.getState().startByEnabled).toBe(false);
+  });
+});
+
 describe('settingsStore dayEndMin', () => {
   beforeEach(() => useSettingsStore.getState().reset());
 

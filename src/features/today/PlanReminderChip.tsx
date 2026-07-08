@@ -57,7 +57,7 @@ export function PlanReminderChip({ startByClock }: PlanReminderChipProps) {
           ? `Start reminder on, ${startByClock}. Tap to turn off.`
           : 'Start reminder off. Tap to turn on.'
       }
-      hitSlop={6}
+      hitSlop={t.space[1.5]}
     >
       <Animated.View
         style={[
@@ -98,7 +98,7 @@ export function PlanReminderChip({ startByClock }: PlanReminderChipProps) {
             backgroundColor: enabled ? t.colors.accent : t.colors.hairline,
             alignItems: enabled ? 'flex-end' : 'flex-start',
             justifyContent: 'center',
-            paddingHorizontal: 2,
+            paddingHorizontal: t.space[0.5],
           }}
         >
           <View

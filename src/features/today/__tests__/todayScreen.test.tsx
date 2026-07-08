@@ -338,7 +338,7 @@ describe('List ⇄ Timeline toggle (B3)', () => {
     useDayTasksStore.setState({ viewMode: 'timeline', dayMeta: { doneByMin: null, planComputedAt: null } });
     render(<Today />);
     expect(screen.queryByTestId('day-timeline-root')).toBeNull();
-    expect(screen.getByText('No plan for today yet')).toBeOnTheScreen();
+    expect(screen.getByText('No plan yet')).toBeOnTheScreen();
   });
 
   it('Pro: renders DayTimeline when viewMode is timeline and the day is planned', () => {
@@ -350,7 +350,7 @@ describe('List ⇄ Timeline toggle (B3)', () => {
     });
     render(<Today />);
     expect(screen.getByTestId('day-timeline-root')).toBeOnTheScreen();
-    expect(screen.queryByText('No plan for today yet')).toBeNull();
+    expect(screen.queryByText('No plan yet')).toBeNull();
   });
 
   it('shows the list body (UP NEXT) when viewMode is list', () => {
