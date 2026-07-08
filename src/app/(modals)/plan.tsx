@@ -1,4 +1,5 @@
-import { View, useWindowDimensions, type TextStyle } from 'react-native';
+import { useMemo } from 'react';
+import { View, useWindowDimensions, type TextStyle, type ViewStyle } from 'react-native';
 import { router } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Screen } from '@/src/components/Screen';
@@ -10,7 +11,7 @@ import { type } from '@/src/theme/typography';
 import { DayTimeline } from '@/src/features/today/DayTimeline';
 import { PlanReminderChip } from '@/src/features/today/PlanReminderChip';
 import { useDayPlan } from '@/src/features/today/useDayPlan';
-import { formatClockMeridiem } from '@/src/lib/time';
+import { formatClock, formatClockMeridiem } from '@/src/lib/time';
 
 // ──────────────────────────────────────────────────────────────────────────────
 // Plan sheet (Option 1) — the day plan the user summoned, fully contained. It
@@ -26,11 +27,47 @@ export default function PlanRoute() {
   const { height: winH } = useWindowDimensions();
 
   // DayTimeline re-reads the plan itself; we read it here only to hand the chip
-  // the start-by clock (epoch → the user's meridiem format).
-  const { plan } = useDayPlan();
+  // the start-by clock (epoch → the user's meridiem format) and to render our
+  // own justified start-by/finish-by header line above it.
+  const { plan, doneByMin } = useDayPlan();
   const startByClock = plan ? formatClockMeridiem(plan.startBy) : null;
 
+  // Finish-by clock: prefer the user's done-by target (local midnight of the
+  // plan's own day + doneByMin) since that's the deadline they're planning
+  // against; fall back to the plan's own last placed block when no target is
+  // set yet, so the line still reads something real rather than nothing.
+  const finishAtMs = useMemo(() => {
+    if (!plan) return null;
+    if (doneByMin !== null) {
+      const localMidnight = new Date(plan.startBy);
+      localMidnight.setHours(0, 0, 0, 0);
+      return localMidnight.getTime() + doneByMin * 60_000;
+    }
+    if (plan.timeline.length > 0) {
+      return Math.max(...plan.timeline.map((item) => item.endAt));
+    }
+    return null;
+  }, [plan, doneByMin]);
+
   const heading: TextStyle = { ...(type.subtitle as unknown as TextStyle), color: t.colors.ink };
+
+  // Justified start-by/finish-by line beneath the title.
+  const clockRowStyle: ViewStyle = {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingTop: t.space[2],
+  };
+  const startByLineStyle: TextStyle = {
+    fontSize: type.body.fontSize,
+    color: t.colors.accent,
+    fontFamily: t.fontFamily.mono,
+  };
+  const finishByLineStyle: TextStyle = {
+    fontSize: type.body.fontSize,
+    color: t.colors.inkSoft,
+    fontFamily: t.fontFamily.mono,
+  };
 
   return (
     // Sheet host already sits below the status bar — no top inset (avoids a gap on
@@ -42,14 +79,27 @@ export default function PlanRoute() {
       <View style={{ flex: 1, minHeight: winH * 0.95 - insets.bottom }}>
         <SheetGrabber />
 
-        <View style={{ paddingTop: t.space[2], paddingBottom: t.space[3] }}>
+        <View style={{ paddingTop: t.space[2.5], paddingBottom: t.space[3] }}>
           <AppText style={heading}>Today&apos;s plan</AppText>
+
+          {/* Justified start-by/finish-by clocks — the sheet owns this line now;
+              DayTimeline's own header is hidden below (hideHeader) to avoid a
+              duplicate start-by row. */}
+          {plan && startByClock ? (
+            <View style={clockRowStyle}>
+              <AppText style={startByLineStyle}>Start by {formatClock(plan.startBy)}</AppText>
+              {finishAtMs !== null ? (
+                <AppText style={finishByLineStyle}>finish by {formatClock(finishAtMs)}</AppText>
+              ) : null}
+            </View>
+          ) : null}
         </View>
 
-        {/* DayTimeline owns its own scroll + start-by/done-by header; it returns
-            null when the day has no plan or the user isn't Pro. */}
+        {/* DayTimeline owns the scroll + timeline rows; its own start-by/done-by
+            header is hidden here since the sheet renders the clock line above. It
+            returns null when the day has no plan or the user isn't Pro. */}
         <View style={{ flex: 1 }}>
-          <DayTimeline />
+          <DayTimeline hideHeader />
         </View>
 
         {/* Reminder control + dismiss, pinned above the home indicator. */}

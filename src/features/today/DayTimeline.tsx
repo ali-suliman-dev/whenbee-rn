@@ -411,11 +411,20 @@ function DoneByChip({
 // Main component
 // ─────────────────────────────────────────────────────────────────────────────
 
+export interface DayTimelineProps {
+  /**
+   * Skip rendering the internal start-by/done-by header block — rows only.
+   * The plan sheet (`(modals)/plan.tsx`) owns that header itself so it can
+   * pad it below the grabber and pair it with a justified finish-by clock.
+   */
+  hideHeader?: boolean;
+}
+
 /**
  * DayTimeline — self-contained; reads useDayPlan internally.
  * The parent screen just renders `<DayTimeline />`.
  */
-export function DayTimeline() {
+export function DayTimeline({ hideHeader = false }: DayTimelineProps = {}) {
   const t = useTheme();
   const reducedMotion = useReducedMotion();
 
@@ -501,16 +510,18 @@ export function DayTimeline() {
   return (
     <View style={containerStyle}>
       {/* Header: start-by clock + done-by chip */}
-      <View style={headerStyle}>
-        {'startBy' in plan.verdict && plan.verdict.startBy ? (
-          <AppText style={startByStyle}>
-            Start by {formatClock(plan.verdict.startBy)}
-          </AppText>
-        ) : (
-          <View />
-        )}
-        <DoneByChip doneByMin={doneByMin} onSelect={setDoneBy} />
-      </View>
+      {!hideHeader ? (
+        <View style={headerStyle}>
+          {'startBy' in plan.verdict && plan.verdict.startBy ? (
+            <AppText style={startByStyle}>
+              Start by {formatClock(plan.verdict.startBy)}
+            </AppText>
+          ) : (
+            <View />
+          )}
+          <DoneByChip doneByMin={doneByMin} onSelect={setDoneBy} />
+        </View>
+      ) : null}
 
       {/* Overflow banner */}
       {showOverflow ? (

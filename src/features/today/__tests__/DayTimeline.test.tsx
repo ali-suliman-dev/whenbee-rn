@@ -343,6 +343,32 @@ describe('DayTimeline — DoneByChip local-time label', () => {
 });
 
 // ═════════════════════════════════════════════════════════════════════════════
+// Test 8 — hideHeader: header block suppressed, rows still render
+// ═════════════════════════════════════════════════════════════════════════════
+
+describe('DayTimeline — hideHeader', () => {
+  beforeEach(() => {
+    mockUseDayPlan.mockReturnValue({
+      plan: makeFitsPlan(),
+      status: 'ready',
+      doneByMin: 1080,
+      setDoneBy: mockSetDoneBy,
+    });
+  });
+
+  it('renders no "Start by" header when hideHeader is true, but still renders task rows', () => {
+    render(<DayTimeline hideHeader />);
+    expect(screen.queryByText(/Start by/)).toBeNull();
+    expect(screen.getByText('Write report')).toBeOnTheScreen();
+  });
+
+  it('renders the "Start by" header by default (hideHeader omitted)', () => {
+    render(<DayTimeline />);
+    expect(screen.getByText(/Start by/)).toBeOnTheScreen();
+  });
+});
+
+// ═════════════════════════════════════════════════════════════════════════════
 // Test 7 — Pro guard: renders nothing when isPro is false
 // ═════════════════════════════════════════════════════════════════════════════
 

@@ -2,6 +2,7 @@ import { render, screen, fireEvent } from '@testing-library/react-native';
 import { router } from 'expo-router';
 import PlanRoute from '@/src/app/(modals)/plan';
 import { useDayPlan } from '@/src/features/today/useDayPlan';
+import { formatClock } from '@/src/lib/time';
 import type { PlanResult } from '@/src/domain/types';
 
 jest.mock('expo-router', () => ({ router: { back: jest.fn() } }));
@@ -47,6 +48,35 @@ describe('(modals)/plan', () => {
     mockUseDayPlan.mockReturnValue({ plan: null, status: 'empty', doneByMin: null, setDoneBy: jest.fn() });
     render(<PlanRoute />);
     expect(screen.getByTestId('plan-reminder-chip')).toHaveTextContent('no-clock');
+  });
+
+  it('renders a justified start-by/finish-by line at equal font size', () => {
+    const startBy = new Date(2026, 5, 24, 9, 0, 0).getTime(); // 9:00 AM local
+    const doneByMin = 1080; // 18:00 local
+    mockUseDayPlan.mockReturnValue({
+      plan: makePlan(startBy),
+      status: 'ready',
+      doneByMin,
+      setDoneBy: jest.fn(),
+    });
+    render(<PlanRoute />);
+
+    const startByNode = screen.getByText(`Start by ${formatClock(startBy)}`);
+    const localMidnight = new Date(startBy);
+    localMidnight.setHours(0, 0, 0, 0);
+    const finishAt = localMidnight.getTime() + doneByMin * 60_000;
+    const finishByNode = screen.getByText(`finish by ${formatClock(finishAt)}`);
+
+    expect(startByNode).toBeOnTheScreen();
+    expect(finishByNode).toBeOnTheScreen();
+
+    const startSize = Array.isArray(startByNode.props.style)
+      ? startByNode.props.style.find((s: { fontSize?: number }) => s?.fontSize)?.fontSize
+      : startByNode.props.style?.fontSize;
+    const finishSize = Array.isArray(finishByNode.props.style)
+      ? finishByNode.props.style.find((s: { fontSize?: number }) => s?.fontSize)?.fontSize
+      : finishByNode.props.style?.fontSize;
+    expect(startSize).toBe(finishSize);
   });
 
   it('dismisses on Done', () => {
