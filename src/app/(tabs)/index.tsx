@@ -175,6 +175,19 @@ export default function Today() {
     router.push('/(modals)/plan');
   }, [isPro, markPlanned, dayPlan]);
 
+  // Opening an already-computed plan is still a Pro surface — a churned
+  // ex-Pro user (planned earlier today while Pro, then downgraded) must be
+  // routed to the paywall here too, not just gated by DayTimeline's child
+  // guard. Belt-and-suspenders: this is the entry point.
+  const openPlanScreen = useCallback(() => {
+    haptics.light();
+    if (!isPro) {
+      router.push({ pathname: '/(modals)/paywall', params: { trigger: 'plan_my_day' } });
+      return;
+    }
+    router.push('/(modals)/plan');
+  }, [isPro]);
+
   // The done-list coach-mark auto-dismiss now lives in DoneSection (it only runs
   // once the list is expanded, so a collapsed list never burns the one-shot).
   function deleteTask(id: string) {
@@ -428,14 +441,7 @@ export default function Today() {
                   hasPlan={planComputedAt !== null}
                   startByClock={dayPlan?.startBy ? formatClockMeridiem(dayPlan.startBy) : null}
                   reminderOn={startByEnabled}
-                  onPress={
-                    planComputedAt !== null
-                      ? () => {
-                          haptics.light();
-                          router.push('/(modals)/plan');
-                        }
-                      : handlePlanMyDay
-                  }
+                  onPress={planComputedAt !== null ? openPlanScreen : handlePlanMyDay}
                 />
               ) : null}
 

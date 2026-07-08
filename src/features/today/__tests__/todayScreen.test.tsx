@@ -369,4 +369,30 @@ describe('C1 — Pro gate: Plan my day', () => {
     expect(markPlanned).toHaveBeenCalled();
     expect(router.push).toHaveBeenCalledWith('/(modals)/plan');
   });
+
+  // Churned ex-Pro: the day was planned earlier while Pro (dayMeta.planComputedAt
+  // is stamped), then the subscription lapsed the same day. The entry-card tap
+  // for the already-planned state must re-check isPro at the point of opening —
+  // it must not rely solely on DayTimeline's child-level guard.
+  it('planned but no longer Pro: tapping the entry routes to the paywall, not the plan route', () => {
+    useEntitlement.setState({ isPro: false });
+    seedTodayWithTask();
+    useDayTasksStore.setState({ dayMeta: { doneByMin: null, planComputedAt: 123 } });
+    const { getByTestId } = render(<Today />);
+    fireEvent.press(getByTestId('plan-entry-card'));
+    expect(router.push).toHaveBeenCalledWith({
+      pathname: '/(modals)/paywall',
+      params: { trigger: 'plan_my_day' },
+    });
+    expect(router.push).not.toHaveBeenCalledWith('/(modals)/plan');
+  });
+
+  it('Pro + planned: tapping the entry opens the plan route directly', () => {
+    useEntitlement.setState({ isPro: true });
+    seedTodayWithTask();
+    useDayTasksStore.setState({ dayMeta: { doneByMin: null, planComputedAt: 123 } });
+    const { getByTestId } = render(<Today />);
+    fireEvent.press(getByTestId('plan-entry-card'));
+    expect(router.push).toHaveBeenCalledWith('/(modals)/plan');
+  });
 });
