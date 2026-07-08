@@ -14,9 +14,21 @@ jest.mock('expo-router', () => ({
   useFocusEffect: (cb: () => void | (() => void)) => cb(),
 }));
 
+// Start-by nudge now routes through useStartByToggle, which gates ON via
+// ensureNotificationPermission before flipping the store. Mock it so ON/denied
+// paths are deterministic instead of falling through to the native-module-absent
+// no-op (always false) that the real implementation returns in unit tests.
+const mockEnsurePermission = jest.fn(() => Promise.resolve(true));
+jest.mock('@/src/services/timerNotifications', () => ({
+  ensureNotificationPermission: () => mockEnsurePermission(),
+  cancelStartBy: () => Promise.resolve(),
+  cancelTimerDone: () => Promise.resolve(),
+}));
+
 beforeEach(() => {
   useSettingsStore.getState().reset();
   jest.clearAllMocks();
+  mockEnsurePermission.mockImplementation(() => Promise.resolve(true));
 });
 
 describe('Settings — Notifications section', () => {
@@ -43,12 +55,37 @@ describe('Settings — Notifications section', () => {
     expect(useSettingsStore.getState().honestReachedEnabled).toBe(false);
   });
 
-  it('toggling Start-by nudge calls setStartByEnabled independently of remindersEnabled', () => {
+  it('toggling Start-by nudge off flips the store independently of remindersEnabled', async () => {
     useSettingsStore.setState({ remindersEnabled: false, startByEnabled: true });
     const { getByLabelText } = render(<Settings />);
     const sw = getByLabelText('Start-by nudge');
-    fireEvent(sw, 'valueChange', false);
+    await act(async () => {
+      fireEvent(sw, 'valueChange', false);
+    });
     expect(useSettingsStore.getState().startByEnabled).toBe(false);
+  });
+
+  it('toggling Start-by nudge on requests permission and flips the store when granted', async () => {
+    mockEnsurePermission.mockImplementation(() => Promise.resolve(true));
+    useSettingsStore.setState({ remindersEnabled: false, startByEnabled: false });
+    const { getByLabelText } = render(<Settings />);
+    const sw = getByLabelText('Start-by nudge');
+    await act(async () => {
+      fireEvent(sw, 'valueChange', true);
+    });
+    expect(useSettingsStore.getState().startByEnabled).toBe(true);
+  });
+
+  it('toggling Start-by nudge on shows a toast and leaves it off when permission is denied', async () => {
+    mockEnsurePermission.mockImplementation(() => Promise.resolve(false));
+    useSettingsStore.setState({ remindersEnabled: false, startByEnabled: false });
+    const { getByLabelText, queryByText } = render(<Settings />);
+    const sw = getByLabelText('Start-by nudge');
+    await act(async () => {
+      fireEvent(sw, 'valueChange', true);
+    });
+    expect(useSettingsStore.getState().startByEnabled).toBe(false);
+    expect(queryByText('Allow notifications in iOS Settings to get reminders.')).toBeTruthy();
   });
 
   it('toggling Quiet hours switch updates the store', () => {

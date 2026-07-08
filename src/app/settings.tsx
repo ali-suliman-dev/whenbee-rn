@@ -28,6 +28,7 @@ import { useDayEndSetting } from '@/src/features/settings/useDayEndSetting';
 import { useQuietHours } from '@/src/features/settings/useQuietHours';
 import { useNotificationSound } from '@/src/features/settings/useNotificationSound';
 import { useAccountReset } from '@/src/features/settings/useAccountReset';
+import { useStartByToggle } from '@/src/features/today/useStartByToggle';
 import { usePresenceSection } from '@/src/features/settings/usePresenceSection';
 import { ProGate } from '@/src/features/paywall/ProGate';
 import { PresenceRingTeaser } from '@/src/components/PresenceRingTeaser';
@@ -155,7 +156,7 @@ export default function Settings() {
   const honestReachedEnabled = useSettingsStore((s) => s.honestReachedEnabled);
   const setHonestReachedEnabled = useSettingsStore((s) => s.setHonestReachedEnabled);
   const startByEnabled = useSettingsStore((s) => s.startByEnabled);
-  const setStartByEnabled = useSettingsStore((s) => s.setStartByEnabled);
+  const { toggle: toggleStartBy } = useStartByToggle();
   const {
     quietHours,
     update: updateQuietHours,
@@ -210,6 +211,11 @@ export default function Settings() {
 
   async function handleToggleReviewNotify(next: boolean) {
     const ok = await toggleReviewNotify(next);
+    if (next && !ok) showToast(REMINDER_DENIED);
+  }
+
+  async function handleToggleStartBy(next: boolean) {
+    const ok = await toggleStartBy(next);
     if (next && !ok) showToast(REMINDER_DENIED);
   }
 
@@ -377,7 +383,7 @@ export default function Settings() {
             trailing={
               <Switch
                 value={startByEnabled}
-                onValueChange={setStartByEnabled}
+                onValueChange={handleToggleStartBy}
                 trackColor={{ true: t.colors.primary, false: t.colors.hairline }}
                 accessibilityLabel="Start-by nudge"
               />
