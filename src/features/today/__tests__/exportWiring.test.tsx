@@ -39,15 +39,6 @@ afterAll(() => {
 
 // ── Component mocks ───────────────────────────────────────────────────────────
 
-// DayTimeline is self-contained; stub it so it doesn't pull in native calendar.
-jest.mock('@/src/features/today/DayTimeline', () => {
-  const React = jest.requireActual<typeof import('react')>('react');
-  const { Text } = jest.requireActual<typeof import('react-native')>('react-native');
-  return {
-    DayTimeline: () => React.createElement(Text, { testID: 'day-timeline-root' }, 'DayTimeline'),
-  };
-});
-
 // useDayCapacity pulls native calendar — stub it.
 jest.mock('@/src/features/today/useDayCapacity');
 const mockUseDayCapacity = jest.mocked(useDayCapacity);
@@ -257,7 +248,7 @@ describe('C1 — export wiring: Plan-my-day → syncExportForSelectedDay', () =>
     const { getByTestId } = render(<Today />);
 
     await act(async () => {
-      fireEvent.press(getByTestId('plan-my-day-btn'));
+      fireEvent.press(getByTestId('plan-entry-card'));
     });
 
     expect(syncExportSpy).toHaveBeenCalledTimes(1);
@@ -289,7 +280,7 @@ describe('C1 — export wiring: Plan-my-day → syncExportForSelectedDay', () =>
     const { getByTestId } = render(<Today />);
 
     await act(async () => {
-      fireEvent.press(getByTestId('plan-my-day-btn'));
+      fireEvent.press(getByTestId('plan-entry-card'));
     });
 
     expect(syncExportSpy).not.toHaveBeenCalled();
@@ -310,7 +301,7 @@ describe('C1 — export wiring: Plan-my-day → syncExportForSelectedDay', () =>
     const { getByTestId } = render(<Today />);
 
     await act(async () => {
-      fireEvent.press(getByTestId('plan-my-day-btn'));
+      fireEvent.press(getByTestId('plan-entry-card'));
     });
 
     expect(router.push).toHaveBeenCalledWith({
@@ -336,7 +327,7 @@ describe('C1 — export wiring: Plan-my-day → syncExportForSelectedDay', () =>
     const { getByTestId } = render(<Today />);
 
     await act(async () => {
-      fireEvent.press(getByTestId('plan-my-day-btn'));
+      fireEvent.press(getByTestId('plan-entry-card'));
     });
 
     expect(syncExportSpy).not.toHaveBeenCalled();
@@ -361,7 +352,7 @@ describe('[WRITE-SAFETY] C1 — export wiring write-safety', () => {
     const { getByTestId } = render(<Today />);
 
     await act(async () => {
-      fireEvent.press(getByTestId('plan-my-day-btn'));
+      fireEvent.press(getByTestId('plan-entry-card'));
     });
 
     expect(syncExportSpy).toHaveBeenCalledTimes(1);
@@ -390,7 +381,7 @@ describe('[WRITE-SAFETY] C1 — export wiring write-safety', () => {
     const { getByTestId } = render(<Today />);
 
     await act(async () => {
-      fireEvent.press(getByTestId('plan-my-day-btn'));
+      fireEvent.press(getByTestId('plan-entry-card'));
     });
 
     expect(syncExportSpy).not.toHaveBeenCalled();
