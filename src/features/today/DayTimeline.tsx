@@ -16,7 +16,7 @@
  * inner View, Pressable is a bare touch wrapper.
  */
 
-import React, { useCallback, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   Pressable,
   View,
@@ -98,6 +98,15 @@ function firstCutId(verdict: PlanVerdict): string | null {
   if (verdict.kind === 'cut-one') return verdict.cut.id;
   if (verdict.kind === 'multi-cut') return verdict.cuts[0]?.id ?? null;
   return null;
+}
+
+/** Stable id-string of a timeline's task order — the reorder identity we compare
+ *  the optimistic override against (see the optimistic-reorder block below). */
+function taskOrderKey(items: readonly PlanTimelineItem[]): string {
+  return items
+    .filter((i) => i.kind === 'task')
+    .map((i) => i.id)
+    .join('|');
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -468,6 +477,27 @@ export function DayTimeline({ hideHeader = false }: DayTimelineProps = {}) {
   const moveToTomorrow = useDayTasksStore((s) => s.moveToTomorrow);
   const reorderTasks = useDayTasksStore((s) => s.reorderTasks);
 
+  // ── Optimistic reorder order (kills the drop "flash") ─────────────────────
+  // On drop, react-native-reorderable-list expects the list `data` to reflect
+  // the new order immediately. Ours comes from useDayPlan, which only updates
+  // AFTER reorderTasks persists + the store reloads + the engine re-derives — so
+  // without this the dropped row snaps back to its old slot and jumps once the
+  // async round-trip lands (the visible flash). We hold the just-dropped order
+  // locally and render it instantly; the persist runs in the background. The
+  // override clears once the real plan's task order catches up to ours — compared
+  // by a stable id STRING, never the plan object: useDayPlan recomputes a fresh
+  // plan every render off Date.now(), so a ref check would clear the override the
+  // very next frame and the flash would come back.
+  const [optimisticTimeline, setOptimisticTimeline] = useState<PlanTimelineItem[] | null>(null);
+  const displayTimeline = optimisticTimeline ?? plan?.timeline ?? null;
+  const planOrderKey = plan ? taskOrderKey(plan.timeline) : '';
+  const optimisticOrderKey = optimisticTimeline ? taskOrderKey(optimisticTimeline) : null;
+  useEffect(() => {
+    if (optimisticOrderKey !== null && optimisticOrderKey === planOrderKey) {
+      setOptimisticTimeline(null);
+    }
+  }, [optimisticOrderKey, planOrderKey]);
+
   const showFocusBand = focusWindow.basis === 'personal';
 
   // ── Overflow handler ──────────────────────────────────────────────────────
@@ -489,12 +519,17 @@ export function DayTimeline({ hideHeader = false }: DayTimelineProps = {}) {
   // store; useDayPlan then re-derives the real timeline positions.
   const handleReorder = useCallback(
     ({ from, to }: ReorderableListReorderEvent) => {
-      if (!plan) return;
-      const reordered = reorderItems(plan.timeline, from, to);
+      const current = displayTimeline;
+      if (!current) return;
+      const reordered = reorderItems(current, from, to);
+      // Show the new order instantly — no wait for the async store round-trip…
+      setOptimisticTimeline(reordered);
+      // …then persist. useDayPlan re-derives the real clocks; once its task order
+      // matches this one, the effect above drops the override seamlessly.
       const taskIds = reordered.filter((item) => item.kind === 'task').map((item) => item.id);
       void reorderTasks(taskIds);
     },
-    [plan, reorderTasks],
+    [displayTimeline, reorderTasks],
   );
 
   // ── Enter animation for rows ──────────────────────────────────────────────
@@ -605,7 +640,7 @@ export function DayTimeline({ hideHeader = false }: DayTimelineProps = {}) {
           (see RowContent) that starts a drag via long-press; event/breather
           rows have no grip and never initiate one. */}
       <ReorderableList
-        data={plan.timeline}
+        data={displayTimeline ?? plan.timeline}
         keyExtractor={(item) => item.id}
         renderItem={renderItem}
         onReorder={handleReorder}
