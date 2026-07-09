@@ -171,12 +171,10 @@ describe('edit mode', () => {
   test('Save patches via updateTask', async () => {
     render(<AddTask />);
     await screen.findByText('Edit task');
-    // Wait for the async prefill (title/category) to fully settle — findByText
-    // above can resolve on the very first synchronous render (the heading
-    // doesn't depend on the load), which is too early: the button's onPress
-    // wiring isn't reliably committed yet if the store's async load and the
-    // targetDate-adopt effect are still mid-flight. Polling for the loaded
-    // title value forces RTL to flush those pending updates before we press.
+    // In edit mode the fields load async (getTaskById), and Save is disabled until
+    // title+category are set (canSubmit). The heading renders on the first sync
+    // frame (it only reads isEditing), so we must wait for the loaded title before
+    // pressing Save — otherwise the press hits a still-disabled button (no-op).
     await screen.findByDisplayValue('Reply to Marcus');
     await act(async () => { fireEvent.press(screen.getByText('Save')); });
     expect(updateSpy).toHaveBeenCalledWith(

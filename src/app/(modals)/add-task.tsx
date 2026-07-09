@@ -354,12 +354,18 @@ export default function AddTask() {
         <View style={footerStyle}>
           {a.isEditing ? (
             <>
-              <AppButton label="Save" variant="indigo" fullWidth disabled={!a.canSubmit} onPress={handleSave} />
+              <AppButton
+                label="Save"
+                variant="indigo"
+                fullWidth
+                disabled={!a.canSubmit || a.loadedDate === undefined}
+                onPress={handleSave}
+              />
               <AppButton
                 label="Save & start"
                 variant="ghost"
                 fullWidth
-                disabled={!a.canSubmit}
+                disabled={!a.canSubmit || a.loadedDate === undefined}
                 onPress={() => void a.saveAndStart(targetDate)}
               />
             </>

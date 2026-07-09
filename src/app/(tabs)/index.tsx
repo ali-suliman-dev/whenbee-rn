@@ -129,9 +129,18 @@ export default function Today() {
     setShowLongPressHint(false);
     kv.set('today.seenLongPressHintV1', '1');
   }, []);
+  // Retire after one session: persist the flag the first time the hint shows, so
+  // a tap-only user who never long-presses still won't see it again next launch.
+  // It stays visible for the rest of THIS session (state is untouched) until an
+  // interaction dismisses it.
+  useEffect(() => {
+    if (showLongPressHint) kv.set('today.seenLongPressHintV1', '1');
+  }, [showLongPressHint]);
   const [deletingId, setDeletingId] = useState<string | null>(null);
   // Cross-platform row menus (ActionSheetIOS is iOS-only → crashes Android).
-  const [rowActions, setRowActions] = useState<{ id: string; label: string } | null>(null);
+  const [rowActions, setRowActions] = useState<{ id: string; label: string; done: boolean } | null>(
+    null,
+  );
   const [dayPickerId, setDayPickerId] = useState<string | null>(null);
   const [showCoachMark, setShowCoachMark] = useState(
     () => kv.getString('today.seenCoachMarkV1') == null,
@@ -203,8 +212,8 @@ export default function Today() {
     setDayPickerId(id);
   }
 
-  function promptRowActions(id: string, label: string) {
-    setRowActions({ id, label });
+  function promptRowActions(id: string, label: string, done = false) {
+    setRowActions({ id, label, done });
   }
 
   function navigateToTimer(row: TodayRow) {
@@ -508,7 +517,7 @@ export default function Today() {
                     rows={done}
                     deletingId={deletingId}
                     onDelete={deleteTask}
-                    onLongPress={promptRowActions}
+                    onLongPress={(id, label) => promptRowActions(id, label, true)}
                     showCoachMark={showCoachMark}
                     onCoachMarkDismiss={dismissCoachMark}
                   />
@@ -560,7 +569,7 @@ export default function Today() {
         items={
           rowActions
             ? [
-                ...(canEditRow(isTimerRunning, runningTaskId, rowActions.id)
+                ...(canEditRow(isTimerRunning, runningTaskId, rowActions.id, rowActions.done)
                   ? [{ label: 'Edit', onPress: () => editRow(rowActions.id) }]
                   : []),
                 { label: 'Move to tomorrow', onPress: () => void useDayTasksStore.getState().moveToTomorrow(rowActions.id) },
