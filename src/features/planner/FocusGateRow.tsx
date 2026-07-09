@@ -112,7 +112,7 @@ function DrawCheck({ size, color }: { size: number; color: string }) {
         d={CHECK_PATH}
         fill="none"
         stroke={color}
-        strokeWidth={2}
+        strokeWidth={t.focusLadder.strokeW}
         strokeLinecap="round"
         strokeLinejoin="round"
         strokeDasharray={CHECK_LEN}

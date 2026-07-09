@@ -55,6 +55,19 @@ const peakConfirming = {
   },
 };
 
+// Days done from distinct-day count alone, sessions still short (e.g. one
+// session/day for a week) — days must show DONE independent of the sessions
+// gate, not "upcoming" with a raw "6/5".
+const daysDoneSessionsShort = {
+  ...forming,
+  sampleCount: 8, distinctDays: 6,
+  gates: {
+    sessions: { have: 8, need: 15 },
+    days: { have: 6, need: 5 },
+    peak: { have: 0, need: 6, confirming: false },
+  },
+};
+
 beforeEach(() => {
   (useEntitlement as unknown as jest.Mock).mockReturnValue(true); // isPro selector
   (useFocusInsights as jest.Mock).mockReturnValue({ peakMin: 882, troughMin: 555, contrast: 2.3, accuracyBetterInWindow: true, durationLongerInWindow: true });
@@ -113,6 +126,19 @@ it('forming: sessions + days done, peak active → 2 of 3 unlocked, "Almost ther
   // peak gate active with its have/need + locks-in copy
   expect(getByText('/6')).toBeTruthy();
   expect(getByText('4 more sessions in your busiest stretch and your peak locks in.')).toBeTruthy();
+});
+
+it('forming: days done from distinct-day count alone, sessions still short → days row is DONE, not upcoming', () => {
+  (useLearnedFocusWindow as jest.Mock).mockReturnValue(daysDoneSessionsShort);
+  const { getByText, queryByText } = render(<FocusPeakCard />);
+  expect(getByText('1 of 3 unlocked')).toBeTruthy();
+  // days gate reads DONE ("6 ✓"), never the raw "6/5" ratio
+  expect(getByText('6 ✓')).toBeTruthy();
+  expect(queryByText('6/5')).toBeNull();
+  expect(queryByText('/5')).toBeNull();
+  // sessions gate is the active row (8/15)
+  expect(getByText('8')).toBeTruthy();
+  expect(getByText('/15')).toBeTruthy();
 });
 
 it('forming: peak confirming → settling copy, not a "to go" line', () => {

@@ -83,7 +83,7 @@ export function FocusPeakCard() {
     // Exactly one active row: the first gate (in order) that isn't done. When all
     // counts are met but the window is still confirming, the peak row stays active.
     const sessionsState: FocusGateState = sDone ? 'done' : 'active';
-    const daysState: FocusGateState = !sDone ? 'upcoming' : dDone ? 'done' : 'active';
+    const daysState: FocusGateState = dDone ? 'done' : !sDone ? 'upcoming' : 'active';
     const peakState: FocusGateState = sDone && dDone ? 'active' : 'upcoming';
 
     const sessionsCopy = sessionsGateCopy(gates.sessions.have, gates.sessions.need);

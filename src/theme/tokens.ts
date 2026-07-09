@@ -585,7 +585,8 @@ export const tokens = {
   //   markerIcon = the checkmark glyph size inside a completed marker
   //   ring       = the active marker's indigo ring width
   //   dot        = the active marker's centre "you are here" dot AND each progress pip diameter
-  focusLadder: { marker: 26, markerIcon: 14, ring: 2, dot: 6 },
+  //   strokeW    = the done marker's ✓ glyph stroke weight
+  focusLadder: { marker: 26, markerIcon: 14, ring: 2, dot: 6, strokeW: 2 },
 
   // Calendar strip geometry. All strip sizing in one place.
   //   rowPadV       vertical padding above/below the 7-cell row (inside the strip container)
