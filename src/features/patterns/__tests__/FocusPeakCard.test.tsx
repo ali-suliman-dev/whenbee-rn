@@ -42,7 +42,9 @@ const peakActive = {
   },
 };
 
-// All counts met but the window hasn't certified yet — peak is confirming.
+// All counts met but the window hasn't certified yet — peak is confirming
+// (still only 2 of 3 gates truly "unlocked"; the peak gate never counts as
+// unlocked while forming).
 const peakConfirming = {
   ...forming,
   sampleCount: 22, distinctDays: 8,
@@ -116,7 +118,7 @@ it('forming: sessions + days done, peak active → 2 of 3 unlocked, "Almost ther
 it('forming: peak confirming → settling copy, not a "to go" line', () => {
   (useLearnedFocusWindow as jest.Mock).mockReturnValue(peakConfirming);
   const { getByText, queryByText } = render(<FocusPeakCard />);
-  expect(getByText('3 of 3 unlocked')).toBeTruthy();
+  expect(getByText('2 of 3 unlocked')).toBeTruthy();
   expect(getByText('Confirming your peak — a session or two more will settle it.')).toBeTruthy();
   expect(queryByText(/your peak locks in/)).toBeNull();
 });

@@ -72,9 +72,12 @@ export function FocusPeakCard() {
     const { gates } = win;
     const sDone = gates.sessions.have >= gates.sessions.need;
     const dDone = gates.days.have >= gates.days.need;
-    const pCountMet = gates.peak.have >= gates.peak.need;
 
-    const unlocked = (sDone ? 1 : 0) + (dDone ? 1 : 0) + (pCountMet ? 1 : 0);
+    // Only two gates can genuinely clear while still in the forming (prior) branch —
+    // the peak gate never reaches "unlocked" here; it only truly unlocks when `basis`
+    // becomes 'personal', which leaves this branch entirely. Counting it as unlocked
+    // produced a contradiction: "3 of 3 unlocked" alongside "Confirming your peak".
+    const unlocked = (sDone ? 1 : 0) + (dDone ? 1 : 0);
     const gatesLeft = 3 - unlocked;
 
     // Exactly one active row: the first gate (in order) that isn't done. When all
