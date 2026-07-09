@@ -4,6 +4,10 @@ import type { AdaptSpeed, GuardrailMultiple, Tier, ForgotStepIn } from '../domai
 export const RATIO_FLOOR = 1 / 6; // clamp so one disaster can't poison the model
 export const RATIO_CEIL = 6;
 
+/** Single switch for the Live-Timer ring's amber honest-range straddle arc.
+ *  Flip to false to remove the whole arc (geometry + render) in one place. */
+export const TIMER_RANGE_ARC_ENABLED = true;
+
 export const BLEND_PSEUDO_COUNT = 4; // k pseudo-observations of the prior
 export const GLOBAL_PRIOR = 1.8; // fallback multiplier for new custom categories
 export const RECURRING_MIN_LOGS = 3; // below this, fall back to the category's M

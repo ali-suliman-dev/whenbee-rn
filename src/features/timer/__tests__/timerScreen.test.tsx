@@ -123,11 +123,12 @@ describe('Live Timer screen', () => {
     expect(applyLog).not.toHaveBeenCalled();
   });
 
-  it('renders the task title and the guess→honest info-row (honest = amber value)', () => {
+  it('renders the task title and the de-arrowed guess/honest ledger (honest = amber value)', () => {
     render(<Timer />);
     expect(screen.getByText('Leave for work')).toBeOnTheScreen();
-    // Info-row ledger: label + tabular value spans (honest "~28m" is amber).
-    expect(screen.getByText('Guess → Honest')).toBeOnTheScreen();
+    // Two separate ledger rows now — no arrow between them.
+    expect(screen.getByText('Your guess')).toBeOnTheScreen();
+    expect(screen.getByText('Honest')).toBeOnTheScreen();
     expect(screen.getByText('15m')).toBeOnTheScreen();
     expect(screen.getByText('~28m')).toBeOnTheScreen();
     // Finish row is present (Started/Finish clocks are dynamic, so assert labels).

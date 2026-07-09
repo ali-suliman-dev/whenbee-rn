@@ -62,6 +62,27 @@ export function formatWindowRange(startMin: number, endMin: number, hour12 = hou
   return ms === me ? `${s} – ${e} ${me}` : `${s} ${ms} – ${e} ${me}`;
 }
 
+/**
+ * The Live-Timer centre clock. Under an hour it reads `M:SS` (e.g. "1:05"); at an
+ * hour or more it switches to `H:MM` with an `h` separator ("1h05") so a long
+ * session can never be misread as minutes:seconds and "200:00" overflow is gone.
+ *
+ * Pure mirror of the TimerRing worklet — kept as a plain fn for test coverage and
+ * any non-animated caller. The worklet stays self-contained (a helper called
+ * inside a worklet needs a 'worklet' directive and can crash on Fabric).
+ */
+export function formatTimerClock(totalSeconds: number): string {
+  const total = Math.max(0, Math.floor(totalSeconds));
+  if (total >= 3600) {
+    const h = Math.floor(total / 3600);
+    const m = Math.floor((total % 3600) / 60);
+    return `${h}h${m < 10 ? '0' : ''}${m}`;
+  }
+  const m = Math.floor(total / 60);
+  const s = total % 60;
+  return `${m}:${s < 10 ? '0' : ''}${s}`;
+}
+
 /** "mm:ss" with a 2-digit second; minutes are not capped (e.g. "61:01"). */
 export function formatMmSs(totalSeconds: number): string {
   const whole = Math.max(0, Math.floor(totalSeconds));

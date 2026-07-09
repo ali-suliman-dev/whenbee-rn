@@ -4,8 +4,8 @@
 // reusing the app's category-guess + honest-estimate cascade. Two visual variants
 // match the existing screens (boxed: add-task/retro; underline: planner composer).
 
-import { useState } from 'react';
-import { TextInput, View, type TextStyle, type ViewStyle } from 'react-native';
+import { useEffect, useRef, useState } from 'react';
+import { Platform, TextInput, View, type TextStyle, type ViewStyle } from 'react-native';
 import { MicButton } from '@/src/components/voice/MicButton';
 import { ListeningSheet } from '@/src/components/voice/ListeningSheet';
 import { useVoiceCapture } from '@/src/features/voice/useVoiceCapture';
@@ -41,6 +41,17 @@ export const TaskTitleField = ({
 }: TaskTitleFieldProps) => {
   const t = useTheme();
   const [focused, setFocused] = useState(false);
+  const inputRef = useRef<TextInput>(null);
+
+  // Android formSheet IME quirk: `autoFocus` mounts the field focused but the soft
+  // keyboard often stays down inside a formSheet modal (the window isn't ready to
+  // show the IME at mount). An imperative focus after the sheet settles raises it.
+  // iOS raises the keyboard from `autoFocus` alone, so this is Android-only.
+  useEffect(() => {
+    if (!autoFocus || Platform.OS !== 'android') return;
+    const id = setTimeout(() => inputRef.current?.focus(), 350);
+    return () => clearTimeout(id);
+  }, [autoFocus]);
 
   const voice = useVoiceCapture((draft: ParsedTaskDraft) => onChangeText(draft.title));
 
@@ -77,6 +88,7 @@ export const TaskTitleField = ({
     <>
       <View style={[variant === 'boxed' ? boxed : underline, containerStyle]}>
         <TextInput
+          ref={inputRef}
           style={[text, textStyle]}
           value={value}
           onChangeText={onChangeText}

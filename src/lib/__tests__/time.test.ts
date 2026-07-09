@@ -1,5 +1,6 @@
 import {
   formatClock,
+  formatTimerClock,
   formatMmSs,
   projectedFinish,
   minutesLeft,
@@ -148,6 +149,23 @@ describe('formatClockMin', () => {
     expect(formatClockMin(810, false)).toBe('13:30');
     expect(formatClockMin(90, false)).toBe('01:30');
     expect(formatClockMin(0, false)).toBe('00:00');
+  });
+});
+
+describe('formatTimerClock', () => {
+  it('reads M:SS under an hour, zero-padding the seconds', () => {
+    expect(formatTimerClock(0)).toBe('0:00');
+    expect(formatTimerClock(65)).toBe('1:05');
+    expect(formatTimerClock(3599)).toBe('59:59');
+  });
+  it('switches to H:MM with an h separator at an hour and beyond', () => {
+    expect(formatTimerClock(3600)).toBe('1h00');
+    expect(formatTimerClock(3660)).toBe('1h01');
+    expect(formatTimerClock(7325)).toBe('2h02');
+  });
+  it('floors fractional seconds and never goes negative', () => {
+    expect(formatTimerClock(65.9)).toBe('1:05');
+    expect(formatTimerClock(-5)).toBe('0:00');
   });
 });
 
