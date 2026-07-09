@@ -5,7 +5,7 @@
 
 import { requireOptionalNativeModule } from 'expo-modules-core';
 import { isExpoGo } from '@/src/lib/isExpoGo';
-import { router } from 'expo-router';
+import { router, type Href } from 'expo-router';
 import { registerNotificationCategories, ACTION } from '@/src/services/notificationCategories';
 import { handleNotificationResponse } from '@/src/services/notificationResponses';
 import { buildStartByTimerRoute } from '@/src/services/notificationRoutes';
@@ -38,8 +38,10 @@ function navigateForAction(actionIdentifier: string, data: Record<string, unknow
     case ACTION.START: {
       // Start the planned task's timer and land on the overlay. Falls back to
       // Today only if the reminder payload lacks the data to start a timer.
+      // buildStartByTimerRoute stays expo-router-free (pure + unit-testable), so it
+      // returns a plain string; cast to Href here where router lives.
       const route = buildStartByTimerRoute(data);
-      router.push(route ?? '/(tabs)');
+      router.push((route ?? '/(tabs)') as Href);
       return;
     }
     case ACTION.REVIEW_OPEN:
