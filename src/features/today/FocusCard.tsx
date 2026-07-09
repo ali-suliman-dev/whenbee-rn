@@ -13,6 +13,7 @@ import { HonestNumber } from '@/src/components/HonestNumber';
 import { AppButton } from '@/src/components/AppButton';
 import { useTheme } from '@/src/theme/useTheme';
 import { type } from '@/src/theme/typography';
+import { formatHonestMinutes } from '@/src/lib/time';
 import { GapLine } from './GapLine';
 import type { CalibrationSummary } from '@/src/domain/types';
 
@@ -79,6 +80,9 @@ export function FocusCard({
   }, [isExiting]);
 
   const delta = summary.honestMinutes - summary.guessMinutes;
+  // Compact honest number: plain minutes under an hour, "Xh Ym" above — so a big
+  // value (e.g. 225 min → 3h 45m) reads clearly and doesn't crowd the task title.
+  const honestDisplay = formatHonestMinutes(summary.honestMinutes);
 
   const eyebrowText: TextStyle = {
     ...(type.eyebrow as unknown as TextStyle),
@@ -130,10 +134,10 @@ export function FocusCard({
             </Text>
           </View>
           <HonestNumber
-            size="md"
+            size="inline"
             tone="ink"
-            value={`~${summary.honestMinutes}`}
-            unit="min"
+            value={`~${honestDisplay.value}`}
+            unit={honestDisplay.unit}
             unitSize={t.fontSize.bodySm}
           />
         </View>

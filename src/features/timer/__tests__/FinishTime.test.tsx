@@ -3,10 +3,10 @@
  *
  * FinishTime renders the STARTED + FINISH ledger rows. The "~" lives in the
  * "Finish ~" row label, so the value is a bare clock ("9:48"). Pro + still-
- * learning + a range → the FINISH value is "{low}–{high}" + the slim HonestBand,
- * and a single honest_range_shown { surface: 'timer' }. Free users, a settled
- * ('honest') category, or a missing range keep the point value "{finish}". The
- * overrun reprojection is untouched by this surface.
+ * learning + a range → the FINISH value is "{low}–{high}" + a quiet "still
+ * learning" tag, and a single honest_range_shown { surface: 'timer' }. Free users,
+ * a settled ('honest') category, or a missing range keep the point value
+ * "{finish}". The overrun reprojection is untouched by this surface.
  */
 
 import { render, screen } from '@testing-library/react-native';
@@ -64,6 +64,8 @@ describe('FinishTime — Surface C (Pro honest range)', () => {
     expect(
       screen.getByLabelText(`Honest finish range ${low} to ${high}, still learning.`),
     ).toBeOnTheScreen();
+    // The quiet "still learning" tag rides beside the range.
+    expect(screen.getByText('still learning')).toBeOnTheScreen();
     // The point finish clock is gone (the range replaced it).
     expect(screen.queryByText('9:48')).toBeNull();
   });

@@ -57,8 +57,9 @@ export const tokens = {
   // even when in-app cards run borderless.
   borderWidth: { hairline: 0, thin: 0, thick: 2, card: 0, share: 1, chip: 1 },
 
-  // Replaces scattered 0.3 / 0.4 / 0.6 opacities.
-  opacity: { disabled: 0.4, pressed: 0.6, wash: 0.78 },
+  // Replaces scattered 0.3 / 0.4 / 0.6 opacities. `rangeArc` = the faint amber
+  // straddle arc on the Live-Timer ring marking the honest [low, high] spread.
+  opacity: { disabled: 0.4, pressed: 0.6, wash: 0.78, rangeArc: 0.5 },
 
   // Onboarding aurora glow opacities (mode-independent alphas; colours come from colors.primary/primaryEdge).
   gradients: { backdropTop: 0.22, backdropCorner: 0.16 },
@@ -82,7 +83,7 @@ export const tokens = {
   fontSize: {
     '2xs': 8, xs: 10, sm: 12, base: 14, md: 16, lg: 20, xl: 24, '2xl': 30, '3xl': 38,
     // finer steps the role scale needs
-    crumb: 9, micro: 10, caption: 12, bodySm: 14, bodyLg: 16, titleSm: 18, subtitle: 22, title: 26, honestLg: 36, honest: 40, honestHero: 46, timerClock: 64, timer: 78,
+    crumb: 9, micro: 10, caption: 12, bodySm: 14, bodyLg: 16, titleSm: 18, subtitle: 22, title: 26, honestCard: 32, honestLg: 36, honest: 40, honestHero: 46, timerClock: 64, timer: 78,
   },
   fontWeight: { regular: '400', medium: '500', semibold: '600', bold: '700' },
   // `Menlo` is Apple-only — on Android an unknown family renders nothing, so the
