@@ -9,7 +9,7 @@ import { AppButton } from '@/src/components/AppButton';
 import { ProCoinPill } from '@/src/components/ProCoinPill';
 import { HoneyPips } from '@/src/features/category-detail/HoneyPips';
 import { formatWindowRange } from '@/src/lib/time';
-import { FW_GATE_MIN_COMPLETED } from '@/src/engine/constants';
+import { FW_GATE_MIN_COMPLETED, FW_GATE_MIN_DISTINCT_DAYS } from '@/src/engine/constants';
 import { useEntitlement } from '@/src/features/paywall/useEntitlement';
 import { FocusCurve } from '@/src/features/planner/FocusCurve';
 import { FocusWindowEditorSheet } from '@/src/features/planner/FocusWindowEditorSheet';
@@ -59,9 +59,55 @@ export function FocusPeakCard() {
 
   // ── forming ──
   if (basis === 'prior') {
-    const clampedCount = Math.min(sampleCount, FW_GATE_MIN_COMPLETED);
     const countHead: TextStyle = { ...(type.bodyLg as TextStyle), fontWeight: t.fontWeight.bold as TextStyle['fontWeight'] };
     const headerRow: ViewStyle = { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' };
+
+    // The window unlocks on THREE gates, not one: enough sessions, enough distinct
+    // days, and a peak that clears significance. Show progress against the gate
+    // that's actually blocking — never keep asking for sessions once they're in.
+    const sessionsMet = sampleCount >= FW_GATE_MIN_COMPLETED;
+    const daysMet = win.distinctDays >= FW_GATE_MIN_DISTINCT_DAYS;
+
+    // Which meter (if any) to show below the curve.
+    const Meter = () => {
+      if (!sessionsMet) {
+        const filled = Math.min(sampleCount, FW_GATE_MIN_COMPLETED);
+        return (
+          <>
+            <AppText testID="focus-maturity">
+              <AppText style={{ ...countHead, color: t.colors.inkSoft }}>{sampleCount}</AppText>
+              <AppText style={{ ...countHead, color: t.colors.inkFaint }}>{`/${FW_GATE_MIN_COMPLETED}`}</AppText>
+              <AppText style={{ ...(type.body as TextStyle), color: t.colors.inkFaint }}> sessions</AppText>
+            </AppText>
+            <HoneyPips filled={filled} total={FW_GATE_MIN_COMPLETED} tone="sunken" />
+            <AppText style={body}>Log {FW_GATE_MIN_COMPLETED} timed sessions and I&apos;ll reveal your sharpest hours.</AppText>
+          </>
+        );
+      }
+      if (!daysMet) {
+        const filled = Math.min(win.distinctDays, FW_GATE_MIN_DISTINCT_DAYS);
+        return (
+          <>
+            <AppText testID="focus-maturity-days">
+              <AppText style={{ ...countHead, color: t.colors.inkSoft }}>{win.distinctDays}</AppText>
+              <AppText style={{ ...countHead, color: t.colors.inkFaint }}>{`/${FW_GATE_MIN_DISTINCT_DAYS}`}</AppText>
+              <AppText style={{ ...(type.body as TextStyle), color: t.colors.inkFaint }}> days</AppText>
+            </AppText>
+            <HoneyPips filled={filled} total={FW_GATE_MIN_DISTINCT_DAYS} tone="sunken" />
+            <AppText style={body}>
+              {sampleCount} sessions in — I just need them across {FW_GATE_MIN_DISTINCT_DAYS} different days to trust the peak.
+            </AppText>
+          </>
+        );
+      }
+      // Sessions and days both met, still no significant peak.
+      return (
+        <AppText style={body}>
+          Your hours look about even so far, so there&apos;s no clear peak yet. Keep logging and I&apos;ll flag one the moment it shows.
+        </AppText>
+      );
+    };
+
     return (
       <View style={card}>
         <View style={headerRow}>
@@ -70,13 +116,7 @@ export function FocusPeakCard() {
         </View>
         <FocusCurve scoreByBin={scoreByBin} variant="forming" yAxis />
         <AppText style={title}>Learning your focus hours</AppText>
-        <AppText testID="focus-maturity">
-          <AppText style={{ ...countHead, color: t.colors.inkSoft }}>{sampleCount}</AppText>
-          <AppText style={{ ...countHead, color: t.colors.inkFaint }}>{`/${FW_GATE_MIN_COMPLETED}`}</AppText>
-          <AppText style={{ ...(type.body as TextStyle), color: t.colors.inkFaint }}> sessions</AppText>
-        </AppText>
-        <HoneyPips filled={clampedCount} total={FW_GATE_MIN_COMPLETED} tone="sunken" />
-        <AppText style={body}>Log {FW_GATE_MIN_COMPLETED} timed sessions and I&apos;ll reveal your sharpest hours.</AppText>
+        <Meter />
         <AppButton
           label="Set my hours myself"
           variant="ghost"

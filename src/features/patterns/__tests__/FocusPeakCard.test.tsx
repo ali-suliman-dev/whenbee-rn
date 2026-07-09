@@ -62,3 +62,29 @@ it('forming + free: milestone shows the PRO coin pill (still gated)', () => {
   expect(getByText('3')).toBeTruthy();
   expect(getByText('PRO')).toBeTruthy();
 });
+
+// Sessions cleared (16 ≥ 15) but starts land on too few days → days is the real gate.
+// Copy must switch to a days meter, never keep saying "log 15 sessions".
+it('forming, sessions met but < 5 days: shows a days meter, not a sessions meter', () => {
+  (useLearnedFocusWindow as jest.Mock).mockReturnValue({
+    ...forming, sampleCount: 16, distinctDays: 2,
+  });
+  const { getByText, queryByText, getByTestId } = render(<FocusPeakCard />);
+  expect(getByTestId('focus-maturity-days')).toBeTruthy();
+  expect(getByText('2')).toBeTruthy();
+  expect(getByText('/5')).toBeTruthy();
+  expect(getByText(/across 5 different days/i)).toBeTruthy();
+  expect(queryByText(/Log 15 timed sessions/i)).toBeNull();
+});
+
+// Both gates cleared but no significant peak (permutation gate) → honest "even so far".
+it('forming, sessions + days met but no peak: shows the no-clear-peak copy, no meter', () => {
+  (useLearnedFocusWindow as jest.Mock).mockReturnValue({
+    ...forming, sampleCount: 20, distinctDays: 7,
+  });
+  const { getByText, queryByTestId, queryByText } = render(<FocusPeakCard />);
+  expect(getByText(/no clear peak yet/i)).toBeTruthy();
+  expect(queryByTestId('focus-maturity')).toBeNull();
+  expect(queryByTestId('focus-maturity-days')).toBeNull();
+  expect(queryByText(/Log 15 timed sessions/i)).toBeNull();
+});
