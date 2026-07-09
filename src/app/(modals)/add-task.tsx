@@ -14,6 +14,7 @@ import { useAddTask } from '@/src/features/add-task/useAddTask';
 import { CategoryChips } from '@/src/features/shared/CategoryChips';
 import { TimeField } from '@/src/features/shared/TimeField';
 import { HonestSuggestionCard } from '@/src/features/shared/HonestSuggestionCard';
+import { AntiChaseCoachCard } from '@/src/features/add-task/AntiChaseCoachCard';
 import { GoalCoachCard } from '@/src/features/add-task/GoalCoachCard';
 import { useDayTasksStore } from '@/src/stores/dayTasksStore';
 import { toLocalDayKey, addDays, weekdayOf } from '@/src/lib/day';
@@ -309,7 +310,7 @@ export default function AddTask() {
           </View>
 
           <View style={{ gap: t.space[2] }}>
-            <Text style={fieldLabel}>YOUR GUESS</Text>
+            <Text style={fieldLabel}>YOUR GUT GUESS</Text>
             <TimeField value={a.guessMin} onChange={a.setGuessMin} />
           </View>
 
@@ -320,8 +321,13 @@ export default function AddTask() {
               confidence={a.suggestion.confidence}
               range={a.suggestion.range}
               preEstimate={a.preEstimate}
+              categoryName={a.categories.find((c) => c.id === a.category)?.name}
             />
           ) : null}
+
+          {/* One-time anti-chase coach — appears under the honest card when the
+              user raises the guess toward/past the honest number. */}
+          {a.antiChaseVisible ? <AntiChaseCoachCard onDismiss={a.dismissAntiChase} /> : null}
 
           {/* Goal coach — only when this category has an active goal. A separate
               card below the honest card; ties the honest number to the goal. */}

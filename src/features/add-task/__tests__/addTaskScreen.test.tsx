@@ -74,13 +74,16 @@ describe('Add Task screen', () => {
   it('shows a live honest preview reflecting the cached multiplier', () => {
     render(<AddTask />);
     fireEvent.press(screen.getByText('Getting ready'));
-    // default guess 15 × cached 2.0 = round5(30) = 30; honey card shows the honest
-    // number as the hero on one line.
+    // default guess 15 × cached 2.0 = round5(30) = 30; the card reads as a calm,
+    // read-only forecast (trained state → "Usually, for you"), no delta/arrow.
     expect(screen.getByText('~30')).toBeOnTheScreen();
-    expect(screen.getByText('Honestly')).toBeOnTheScreen();
-    expect(screen.getByText('+15m')).toBeOnTheScreen();
+    expect(screen.getByText('Usually, for you')).toBeOnTheScreen();
+    expect(screen.getByText('you guessed 15m')).toBeOnTheScreen();
+    expect(screen.queryByText('+15m')).toBeNull();
     expect(
-      screen.getByLabelText('Honest estimate about 30 minutes, 15 more than your guess'),
+      screen.getByLabelText(
+        'Honest estimate about 30 minutes for tasks like this. Not a goal, just what tends to happen.',
+      ),
     ).toBeOnTheScreen();
   });
 

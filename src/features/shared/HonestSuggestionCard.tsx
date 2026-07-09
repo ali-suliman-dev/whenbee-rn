@@ -1,26 +1,25 @@
 import { useEffect, useRef } from 'react';
-import { View, Pressable, type TextStyle, type ViewStyle } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
-import { router } from 'expo-router';
+import { StyleSheet, View, type TextStyle, type ViewStyle } from 'react-native';
 import { AppText } from '@/src/components/AppText';
-import { HonestBand } from '@/src/components/HonestBand';
 import { useEntitlement } from '@/src/features/paywall/useEntitlement';
 import { useTheme } from '@/src/theme/useTheme';
 import { analytics } from '@/src/services/analytics';
 import type { CalibrationConfidence, HonestRange } from '@/src/domain/types';
 
 // ──────────────────────────────────────────────────────────────────────────────
-// HonestSuggestionCard — the live calibration payoff (Add Task / live banners).
+// HonestSuggestionCard — the live calibration read (Add Task / live banners).
 //
-// The honest number is the app's whole point, so it gets its OWN colour identity:
-// amber (the honey / ripen accent) — not the indigo the CTA + selections already
-// own. That split is what stops the screen reading as an indigo mush and gives it
-// a clean focal order: type → pick → see the honest number → act.
+// This is a FORECAST, not a target. The honest number used to read as "set your
+// wheel to this", so users dragged their own guess up to match it and the number
+// chased them higher (15 → 30 → 60 …). The fix is presentation: a calm, read-only,
+// past-tense description of what tasks like this tend to run — decoupled from the
+// guess, with no arrow, no "+X more", no upsell. The number wears amber (the honey
+// accent) because it's the one honest thing on the sheet; everything around it is
+// quiet ink so nothing reads as a call to action.
 //
-// Free users see the single honest POINT number (the core loop is never fogged).
-// Pro unlocks the RANGE the task tends to land in, drawn as a slim band that
-// narrows as the model learns them. Free users see a quiet locked-bracket
-// affordance that shows the SHAPE of the range without revealing their numbers.
+// Pre-data (a cold category on the population prior) shows a soft RANGE so it can
+// never look like a precise 2× target. Once the model has data, free users see the
+// single point; the tightening range stays a Pro payoff.
 // ──────────────────────────────────────────────────────────────────────────────
 
 export function HonestSuggestionCard({
@@ -30,191 +29,144 @@ export function HonestSuggestionCard({
   range,
   reasonNote,
   preEstimate,
+  categoryName,
 }: {
   honestMinutes: number;
   guessMinutes: number;
-  /** OPTIONAL. When omitted (live-guess banners), the tight line renders as before. */
+  /** OPTIONAL. Earned-Readiness of the category; drives the Pro range. */
   confidence?: CalibrationConfidence;
-  /** OPTIONAL band. Shown only with a non-honest confidence; else degrade to tight. */
+  /** OPTIONAL band the task tends to land in (low/high minutes). */
   range?: HonestRange | null;
-  /** OPTIONAL Pro-only B15 note. Display-only — a quiet second line under the
-   *  honest line; never changes the honest number or delta. */
+  /** OPTIONAL Pro-only B15 note. Display-only — a quiet extra line; never changes
+   *  the honest number. */
   reasonNote?: string;
-  /** OPTIONAL. When true and no reasonNote, shows the pre-estimate label. */
+  /** OPTIONAL. True while the estimate is still the population prior (cold category). */
   preEstimate?: boolean;
+  /** OPTIONAL category name — grounds the provenance line ("your last few X tasks"). */
+  categoryName?: string;
 }) {
   const t = useTheme();
   const isPro = useEntitlement((s) => s.isPro);
-  const delta = honestMinutes - guessMinutes;
 
-  // A learning surface (Add Task / live banner) passes a confidence; bare live-guess
-  // banners pass neither confidence nor range and keep their original shape.
-  const isLearningSurface = confidence !== undefined && range != null;
-  const hasBand = isLearningSurface && confidence !== 'honest';
-  // The drawn band track is Pro-only and shown once past the raw state (raw shows a
-  // "roughly" caption instead of a track, per the spec's states table).
-  const showProBand = hasBand && isPro && confidence !== 'raw';
-  const showRoughly = hasBand && isPro && confidence === 'raw';
+  // Pre-data everyone sees a soft range (never a precise target); post-data the
+  // tightening range is a Pro payoff, free sees the point. A settled ('honest')
+  // category resolves to a point for everyone.
+  const showRange =
+    range != null &&
+    (preEstimate || (isPro && confidence !== undefined && confidence !== 'honest'));
 
-  // Fire honest_range_shown once per distinct band the user looks at (debounced so
+  // Fire honest_range_shown once per distinct range the user looks at (debounced so
   // guess-dialing doesn't spam). Fire-and-forget; never throws into the loop.
   const lastShownRef = useRef<string | null>(null);
   useEffect(() => {
-    if (!hasBand || range == null || confidence === undefined) return;
+    if (!showRange || range == null) return;
     const width = range.highMinutes - range.lowMinutes;
-    const key = `${confidence}|${range.lowMinutes}|${range.highMinutes}|${isPro}`;
+    const key = `${confidence ?? 'raw'}|${range.lowMinutes}|${range.highMinutes}|${isPro}`;
     if (lastShownRef.current === key) return;
     lastShownRef.current = key;
     analytics.capture('honest_range_shown', {
       surface: 'add_task',
-      confidence,
+      confidence: confidence ?? 'raw',
       width_min: Math.round(width / 5) * 5,
       is_pro: isPro,
     });
-  }, [hasBand, range, confidence, isPro]);
+  }, [showRange, range, confidence, isPro]);
 
-  const openPaywall = () => {
-    analytics.capture('honest_range_locked_tap', { surface: 'add_task' });
-    router.push({ pathname: '/(modals)/paywall', params: { trigger: 'honest_range' } });
-  };
-
+  // ── styles ──
   const card: ViewStyle = {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: t.space[3],
-    backgroundColor: t.colors.accentSoft,
+    backgroundColor: t.colors.surface,
     borderRadius: t.radii.card,
     borderCurve: 'continuous',
-    paddingHorizontal: t.space[2],
-    paddingVertical: t.space[2],
+    paddingHorizontal: t.space[4],
+    paddingVertical: t.space[4],
+    gap: t.space[2],
   };
-  const coin: ViewStyle = {
-    width: t.space[8],
-    height: t.space[8],
-    borderRadius: t.radii.full,
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: t.colors.accentCoin,
+  const topRow: ViewStyle = {
+    flexDirection: 'row',
+    alignItems: 'baseline',
+    justifyContent: 'space-between',
   };
-  const content: ViewStyle = { flex: 1, gap: t.space[0.5] };
-  const line: ViewStyle = { flexDirection: 'row', alignItems: 'center', gap: t.space[1] };
-  const noteText: TextStyle = { fontSize: t.fontSize.sm, color: t.colors.inkSoft };
-  const lead: TextStyle = {
-    fontSize: t.fontSize.sm,
-    fontWeight: t.fontWeight.semibold as TextStyle['fontWeight'],
-    color: t.colors.inkSoft,
-    marginRight: t.space[1],
-  };
-  const num: TextStyle = {
-    fontSize: t.fontSize.sm,
+  const eyebrow: TextStyle = {
+    fontSize: t.fontSize.xs,
     fontWeight: t.fontWeight.bold as TextStyle['fontWeight'],
-    color: t.colors.accent,
+    letterSpacing: t.letterSpacing.wide,
+    textTransform: 'uppercase',
+    color: t.colors.inkSoft,
+  };
+  const guessNote: TextStyle = { fontSize: t.fontSize.xs, color: t.colors.inkFaint };
+  const headline: TextStyle = {
+    fontSize: t.fontSize.base,
+    fontWeight: t.fontWeight.semibold as TextStyle['fontWeight'],
+    color: t.colors.ink,
+    lineHeight: t.fontSize.base * t.lineHeight.normal,
+  };
+  const numberRow: ViewStyle = { flexDirection: 'row', alignItems: 'baseline', gap: t.space[2] };
+  const number: TextStyle = {
+    fontSize: t.fontSize.honestCard,
+    fontWeight: t.fontWeight.bold as TextStyle['fontWeight'],
+    // amberText reads AA in BOTH modes; the raw `accent` fails contrast on light.
+    color: t.colors.amberText,
+    fontVariant: ['tabular-nums'],
+    letterSpacing: t.letterSpacing.tight,
   };
   const unit: TextStyle = {
-    fontSize: t.fontSize.sm,
-    fontWeight: t.fontWeight.medium as TextStyle['fontWeight'],
+    fontSize: t.fontSize.md,
+    fontWeight: t.fontWeight.semibold as TextStyle['fontWeight'],
     color: t.colors.inkSoft,
   };
-  const dot: TextStyle = { fontSize: t.fontSize.sm, color: t.colors.inkFaint, marginHorizontal: t.space[1] };
-  const more: TextStyle = {
-    fontSize: t.fontSize.sm,
-    fontWeight: t.fontWeight.semibold as TextStyle['fontWeight'],
-    color: t.colors.accent,
+  const provenance: TextStyle = { fontSize: t.fontSize.sm, color: t.colors.inkSoft };
+  const noteText: TextStyle = { fontSize: t.fontSize.sm, color: t.colors.inkSoft };
+  const notGoal: TextStyle = {
+    fontSize: t.fontSize.xs,
+    color: t.colors.inkFaint,
+    lineHeight: t.fontSize.xs * t.lineHeight.normal,
+    marginTop: t.space[2],
+    paddingTop: t.space[2],
+    // A divider hairline (not a card border) — the borderWidth.hairline token is 0
+    // in this borderless-card system, so use the platform hairline like InfoRow.
+    borderTopWidth: StyleSheet.hairlineWidth,
+    borderTopColor: t.colors.hairline,
   };
-  const moreMuted: TextStyle = { fontSize: t.fontSize.sm, color: t.colors.inkSoft };
-  const learningSuffix: TextStyle = { fontSize: t.fontSize.sm, color: t.colors.inkSoft };
-  const roughly: TextStyle = { fontSize: t.fontSize.sm, color: t.colors.inkSoft };
-  // The locked bracket affordance — a faint bracket glyph + "Range" micro label.
-  // It communicates "there's a range here" without drawing the user's numbers.
-  const lockRow: ViewStyle = { flexDirection: 'row', alignItems: 'center', gap: t.space[0.5], marginLeft: t.space[1] };
-  const lockLabel: TextStyle = { fontSize: t.fontSize.xs, color: t.colors.inkFaint };
-  const bandRow: ViewStyle = { marginTop: t.space[1], paddingHorizontal: t.space[2] };
 
-  const a11yLabel = (() => {
-    if (showProBand && range) {
-      return `Honest range ${range.lowMinutes} to ${range.highMinutes} minutes${confidence === 'setting' ? ', still learning' : ''}.`;
-    }
-    if (showRoughly && range) {
-      return `Still learning. Roughly ${range.lowMinutes} to ${range.highMinutes} minutes.`;
-    }
-    const base =
-      delta > 0
-        ? `Honest estimate about ${honestMinutes} minutes, ${delta} more than your guess`
-        : `Honest estimate about ${honestMinutes} minutes`;
-    if (preEstimate && !hasBand) {
-      return `${base}, starting estimate, sharpens as you log`;
-    }
-    return base;
-  })();
+  const numberText = showRange && range
+    ? `~${range.lowMinutes}–${range.highMinutes}`
+    : `~${honestMinutes}`;
+
+  const provenanceText = preEstimate
+    ? 'a rough range from optimists like you · sharpens as you log'
+    : `from your last few ${categoryName?.toLowerCase() ?? 'similar'} tasks`;
+
+  const a11yLabel = showRange && range
+    ? `Tasks like this usually take ${range.lowMinutes} to ${range.highMinutes} minutes.`
+    : `Honest estimate about ${honestMinutes} minutes for tasks like this. Not a goal, just what tends to happen.`;
 
   return (
     <View style={card} accessibilityLabel={a11yLabel}>
-      <View style={coin}>
-        <Ionicons name="trending-up" size={t.iconSize.sm} color={t.colors.accent} />
+      <View style={topRow}>
+        <AppText style={eyebrow}>{preEstimate ? 'A starting hunch' : 'Usually, for you'}</AppText>
+        <AppText style={guessNote}>you guessed {guessMinutes}m</AppText>
       </View>
-      <View style={content}>
-        <View style={line}>
-          <AppText style={lead}>Honestly</AppText>
-          {showProBand && range ? (
-            <>
-              <AppText style={num}>
-                {range.lowMinutes}–{range.highMinutes}
-              </AppText>
-              <AppText style={unit}>m</AppText>
-              {confidence === 'setting' ? (
-                <>
-                  <AppText style={dot}>·</AppText>
-                  <AppText style={learningSuffix}>still learning</AppText>
-                </>
-              ) : null}
-            </>
-          ) : showRoughly && range ? (
-            <AppText style={roughly}>
-              Still learning — roughly {range.lowMinutes}–{range.highMinutes}m
-            </AppText>
-          ) : (
-            <>
-              <AppText style={num}>~{honestMinutes}</AppText>
-              <AppText style={unit}>m</AppText>
-              {delta > 0 ? (
-                <>
-                  <AppText style={dot}>·</AppText>
-                  <AppText style={more}>+{delta}m</AppText>
-                  <AppText style={moreMuted}> more</AppText>
-                </>
-              ) : null}
-              {/* Free, learning surface: the locked-bracket teaser (no real numbers). */}
-              {hasBand && !isPro ? (
-                <Pressable
-                  onPress={openPaywall}
-                  accessibilityRole="button"
-                  accessibilityLabel="Unlock the honest range with Pro."
-                >
-                  <View style={lockRow}>
-                    <Ionicons name="code-outline" size={t.iconSize.xs} color={t.colors.inkFaint} />
-                    <AppText style={lockLabel}>Range</AppText>
-                  </View>
-                </Pressable>
-              ) : null}
-            </>
-          )}
-        </View>
-        {showProBand && range ? (
-          <View style={bandRow}>
-            <HonestBand
-              range={range}
-              point={honestMinutes}
-              confidence={confidence ?? 'setting'}
-              height={t.progress.track}
-            />
-          </View>
-        ) : null}
-        {reasonNote ? (
-          <AppText style={noteText}>{reasonNote}</AppText>
-        ) : preEstimate ? (
-          <AppText style={noteText}>Starting estimate · sharpens as you log</AppText>
-        ) : null}
+
+      {preEstimate ? (
+        <AppText style={headline}>Tasks like this often run a bit longer than they feel.</AppText>
+      ) : null}
+
+      <View style={numberRow}>
+        <AppText style={number}>{numberText}</AppText>
+        <AppText style={unit}>min</AppText>
       </View>
+
+      <AppText style={provenance}>{provenanceText}</AppText>
+
+      {reasonNote ? <AppText style={noteText}>{reasonNote}</AppText> : null}
+
+      {/* The pre-data headline already carries the "not a goal" reframe, so the
+          divider line only shows once the category is trained. */}
+      {!preEstimate ? (
+        <AppText style={notGoal}>
+          Not a goal to hit — just what tends to happen. Keep guessing what feels right.
+        </AppText>
+      ) : null}
     </View>
   );
 }
