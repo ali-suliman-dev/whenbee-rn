@@ -304,6 +304,20 @@ export interface LearnFocusInput {
   seed?: number;
 }
 
+/** One milestone in the 3-gate focus-unlock ladder: `have` vs `need`. */
+export interface FocusGate {
+  have: number;
+  need: number;
+}
+
+/** The 3-gate focus-unlock ladder — sessions, distinct days, a significant peak bin. */
+export interface FocusGates {
+  sessions: FocusGate;
+  days: FocusGate;
+  /** `confirming` = all three counts met but the window still hasn't certified as `personal`. */
+  peak: FocusGate & { confirming: boolean };
+}
+
 export interface LearnedFocusWindow {
   startMin: number;
   endMin: number;
@@ -313,6 +327,7 @@ export interface LearnedFocusWindow {
   sampleCount: number;
   distinctDays: number;
   held: boolean;                      // true → hysteresis kept the shown window
+  gates: FocusGates;
 }
 
 // ── Focus-window planner (Pro) ────────────────────────────────────────────────

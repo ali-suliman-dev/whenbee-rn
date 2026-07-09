@@ -109,3 +109,45 @@ test('insufficient data → prior; rich peak → personal; deterministic; hyster
   expect(held.startMin).toBe(a.startMin);
   expect(held.endMin).toBe(a.endMin);
 });
+
+// ── Task 1 (focus-unlock ladder): gates on LearnedFocusWindow ────────────────
+
+test('gates: few signals reports raw have/need and no confirming peak', () => {
+  const events = [ev8(600, 20, 0), ev8(600, 20, 0, 1), ev8(600, 20, 1, 1)]; // 3 events, 2 distinct days
+  const w = learnFocusWindow({ events, fitByCategory: fit, shown: null });
+  expect(w.basis).toBe('prior');
+  expect(w.gates.sessions).toEqual({ have: 3, need: 15 });
+  expect(w.gates.days).toEqual({ have: 2, need: 5 });
+  expect(w.gates.peak.confirming).toBe(false);
+});
+
+test('gates: sessions+days met but flat/bimodal spread → prior, peak gate reflects coverage', () => {
+  const flatEvents: ReturnType<typeof ev8>[] = [];
+  for (let d = 0; d < 20; d++) for (const m of [360, 540, 720, 900, 1080]) flatEvents.push(ev8(m, 28, d));
+  const w = learnFocusWindow({ events: flatEvents, fitByCategory: fit, shown: null });
+  expect(w.basis).toBe('prior');
+  expect(w.gates.sessions.have).toBeGreaterThanOrEqual(15);
+  expect(w.gates.days.have).toBeGreaterThanOrEqual(5);
+  expect(w.gates.peak.need).toBe(6);
+  expect(w.gates.peak.confirming).toBe(w.gates.peak.have >= 6);
+});
+
+test('gates: a real personal window reports both counting gates met and confirming=false', () => {
+  const events: ReturnType<typeof ev8>[] = [];
+  for (let d = 0; d < 20; d++) { events.push(ev8(600, 14, d)); events.push(ev8(630, 16, d)); events.push(ev8(900, 30, d)); }
+  const w = learnFocusWindow({ events, fitByCategory: fit, shown: null });
+  expect(w.basis).toBe('personal');
+  expect(w.gates.sessions.have).toBeGreaterThanOrEqual(15);
+  expect(w.gates.days.have).toBeGreaterThanOrEqual(5);
+  expect(w.gates.peak.confirming).toBe(false); // never true on the personal return
+});
+
+test('gates: peak.have is the strongest (highest-shrunk) covered bin, not the most-populous one', () => {
+  const events: ReturnType<typeof ev8>[] = [];
+  // Bin A (minute 600): fewer events, but a strong consistent signal (honest >> actual).
+  for (let d = 0; d < 10; d++) events.push(ev8(600, 14, d));
+  // Bin B (minute 900, far away → bimodal): more events, but near-zero signal (honest ≈ actual).
+  for (let d = 100; d < 112; d++) events.push(ev8(900, 30, d));
+  const w = learnFocusWindow({ events, fitByCategory: fit, shown: null });
+  expect(w.gates.peak.have).toBe(10); // bin A's eventsCount, not bin B's 12
+});

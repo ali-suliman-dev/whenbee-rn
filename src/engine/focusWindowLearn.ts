@@ -1,7 +1,7 @@
 // Pure, deterministic focus-window learning engine. No Date.now(), no ambient
 // Math.random — all randomness is seeded via mulberry32. PURE TS only.
 import { affineHonestExact, type AffineFit } from './affine';
-import type { FocusEventInput, LearnFocusInput, LearnedFocusWindow } from '@/src/domain/types';
+import type { FocusEventInput, FocusGates, LearnFocusInput, LearnedFocusWindow } from '@/src/domain/types';
 import * as C from './constants';
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
@@ -193,17 +193,42 @@ function priorCurve(): number[] {
   return Array.from({ length: C.FW_BIN_COUNT }, (_, i) => Math.exp(-((i - peak) ** 2) / 50));
 }
 
+/** The eventsCount of the bin with the highest shrunk score among covered bins (0 if none). */
+function strongestCoveredBinEvents(scores: BinScores): number {
+  const { shrunk, eventsCount } = scores;
+  let bestIdx = -1;
+  for (let i = 0; i < shrunk.length; i++) {
+    if (eventsCount[i]! <= 0) continue;
+    if (bestIdx < 0 || shrunk[i]! > shrunk[bestIdx]!) bestIdx = i;
+  }
+  return bestIdx < 0 ? 0 : eventsCount[bestIdx]!;
+}
+
+/** Builds the 3-gate unlock ladder. `isPriorPath` marks whether this call is for the
+ *  `prior()` return (where a fully-met-but-uncertified peak reads as "confirming"). */
+function buildGates(signals: EventSignal[], distinctDays: number, scores: BinScores, isPriorPath: boolean): FocusGates {
+  const sessions = { have: signals.length, need: C.FW_GATE_MIN_COMPLETED };
+  const days = { have: distinctDays, need: C.FW_GATE_MIN_DISTINCT_DAYS };
+  const peakEvents = strongestCoveredBinEvents(scores);
+  const confirming = isPriorPath
+    && sessions.have >= sessions.need
+    && days.have >= days.need
+    && peakEvents >= C.FW_BIN_MIN_EVENTS;
+  return { sessions, days, peak: { have: peakEvents, need: C.FW_BIN_MIN_EVENTS, confirming } };
+}
+
 export function learnFocusWindow(input: LearnFocusInput): LearnedFocusWindow {
   const signals = buildSignals(input.events, input.fitByCategory);
   const distinctDays = new Set(signals.map((s) => s.dayKey)).size;
+  const scores = scoreBins(signals);
   const prior = (): LearnedFocusWindow => ({
     startMin: C.FW_PRIOR_WINDOW.startMin, endMin: C.FW_PRIOR_WINDOW.endMin,
     basis: 'prior', confidence: clamp(signals.length / C.FW_GATE_MIN_COMPLETED, 0, 0.9),
     scoreByBin: normalise(priorCurve()), sampleCount: signals.length, distinctDays, held: false,
+    gates: buildGates(signals, distinctDays, scores, true),
   });
 
   if (signals.length < C.FW_GATE_MIN_COMPLETED || distinctDays < C.FW_GATE_MIN_DISTINCT_DAYS) return prior();
-  const scores = scoreBins(signals);
   const candidate = selectWindow(scores);
   if (!candidate) return prior();
   const seed = input.seed && input.seed > 0
@@ -224,5 +249,6 @@ export function learnFocusWindow(input: LearnFocusInput): LearnedFocusWindow {
     startMin, endMin, basis: 'personal',
     confidence: clamp(distinctDays / 14, 0.3, 1),
     scoreByBin: normalise(scores.shrunk), sampleCount: signals.length, distinctDays, held,
+    gates: buildGates(signals, distinctDays, scores, false),
   };
 }
