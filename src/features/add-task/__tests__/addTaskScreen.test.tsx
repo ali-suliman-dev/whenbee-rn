@@ -13,6 +13,7 @@ jest.mock('expo-router', () => ({
     back: (...a: unknown[]) => mockBack(...a),
   },
   useLocalSearchParams: () => ({}),
+  useNavigation: () => ({ isFocused: () => true, addListener: () => () => {} }),
 }));
 
 // Capture tasks added via the async addTask mock so tests can assert on them.

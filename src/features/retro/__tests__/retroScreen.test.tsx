@@ -8,6 +8,7 @@ import type { LogResult } from '@/src/stores/calibrationStore';
 const mockReplace = jest.fn();
 jest.mock('expo-router', () => ({
   router: { replace: (...a: unknown[]) => mockReplace(...a) },
+  useNavigation: () => ({ isFocused: () => true, addListener: () => () => {} }),
 }));
 
 const okResult: LogResult = {

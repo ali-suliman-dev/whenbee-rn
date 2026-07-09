@@ -1,6 +1,7 @@
 import {
   formatClock,
   formatTimerClock,
+  formatHonestMinutes,
   formatMmSs,
   projectedFinish,
   minutesLeft,
@@ -166,6 +167,24 @@ describe('formatTimerClock', () => {
   it('floors fractional seconds and never goes negative', () => {
     expect(formatTimerClock(65.9)).toBe('1:05');
     expect(formatTimerClock(-5)).toBe('0:00');
+  });
+});
+
+describe('formatHonestMinutes', () => {
+  it('shows plain minutes with a "min" unit under an hour', () => {
+    expect(formatHonestMinutes(25)).toEqual({ value: '25', unit: 'min' });
+    expect(formatHonestMinutes(59)).toEqual({ value: '59', unit: 'min' });
+    expect(formatHonestMinutes(0)).toEqual({ value: '0', unit: 'min' });
+  });
+  it('switches to compact Xh Ym at an hour and beyond, with no unit', () => {
+    expect(formatHonestMinutes(60)).toEqual({ value: '1h' });
+    expect(formatHonestMinutes(115)).toEqual({ value: '1h 55m' });
+    expect(formatHonestMinutes(225)).toEqual({ value: '3h 45m' });
+    expect(formatHonestMinutes(120)).toEqual({ value: '2h' });
+  });
+  it('rounds fractional minutes and never goes negative', () => {
+    expect(formatHonestMinutes(24.6)).toEqual({ value: '25', unit: 'min' });
+    expect(formatHonestMinutes(-5)).toEqual({ value: '0', unit: 'min' });
   });
 });
 

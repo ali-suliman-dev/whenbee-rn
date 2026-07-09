@@ -83,6 +83,21 @@ export function formatTimerClock(totalSeconds: number): string {
   return `${m}:${s < 10 ? '0' : ''}${s}`;
 }
 
+/**
+ * Honest-number display for cards. Under an hour it's plain minutes with a "min"
+ * unit ("45" · "min"); at an hour or more it switches to compact "Xh Ym" ("3h 45m",
+ * or "3h" on the hour) so a big number like "225 min" reads clearly and takes less
+ * width beside a task title. Returns { value, unit } for <HonestNumber> — the unit
+ * is omitted in the hours form (the h/m carry it).
+ */
+export function formatHonestMinutes(minutes: number): { value: string; unit?: string } {
+  const m = Math.max(0, Math.round(minutes));
+  if (m < 60) return { value: `${m}`, unit: 'min' };
+  const h = Math.floor(m / 60);
+  const rem = m % 60;
+  return { value: rem === 0 ? `${h}h` : `${h}h ${rem}m` };
+}
+
 /** "mm:ss" with a 2-digit second; minutes are not capped (e.g. "61:01"). */
 export function formatMmSs(totalSeconds: number): string {
   const whole = Math.max(0, Math.floor(totalSeconds));

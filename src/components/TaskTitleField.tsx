@@ -4,12 +4,12 @@
 // reusing the app's category-guess + honest-estimate cascade. Two visual variants
 // match the existing screens (boxed: add-task/retro; underline: planner composer).
 
-import { useEffect, useRef, useState } from 'react';
+import { useRef, useState } from 'react';
 import { Platform, TextInput, View, type TextStyle, type ViewStyle } from 'react-native';
-import { useNavigation } from 'expo-router';
 import { MicButton } from '@/src/components/voice/MicButton';
 import { ListeningSheet } from '@/src/components/voice/ListeningSheet';
 import { useVoiceCapture } from '@/src/features/voice/useVoiceCapture';
+import { useIsScreenFocused } from '@/src/hooks/useIsScreenFocused';
 import { useTheme } from '@/src/theme/useTheme';
 import type { ParsedTaskDraft } from '@/src/domain/types';
 
@@ -43,35 +43,22 @@ export const TaskTitleField = ({
   const t = useTheme();
   const [focused, setFocused] = useState(false);
   const inputRef = useRef<TextInput>(null);
-  const navigation = useNavigation();
+  const screenFocused = useIsScreenFocused();
 
-  // Android formSheet IME quirk: focusing DURING the sheet's slide-up animation
-  // sets the cursor but the soft keyboard never rises — the sheet window isn't the
-  // active IME target yet, so the show-keyboard request is dropped. `autoFocus`
-  // (fires at mount) and any fixed timer both land mid-transition. The reliable
-  // signal is the screen's `transitionEnd` (native onAppear → the sheet has settled);
-  // focus there and the keyboard comes up. A timeout backs it up for any host that
-  // doesn't emit the event. iOS raises the keyboard from `autoFocus` alone.
-  useEffect(() => {
-    if (!autoFocus || Platform.OS !== 'android') return;
-    let done = false;
-    const focusNow = () => {
-      if (done) return;
-      done = true;
-      inputRef.current?.focus();
-    };
-    const nav = navigation as unknown as {
-      addListener: (type: string, cb: (e?: { data?: { closing?: boolean } }) => void) => () => void;
-    };
-    const unsub = nav.addListener('transitionEnd', (e) => {
-      if (!e?.data?.closing) focusNow();
-    });
-    const fallback = setTimeout(focusNow, 550);
-    return () => {
-      unsub();
-      clearTimeout(fallback);
-    };
-  }, [autoFocus, navigation]);
+  // Android formSheet keyboard: the sheet is presented in its OWN window (a native
+  // bottom-sheet dialog fragment). Focus fired while the sheet is sliding up — from
+  // `autoFocus`, a fixed timer, or even the transitionEnd/onAppear event — lands
+  // before that window owns IME focus, so Android drops the show-keyboard request
+  // (cursor appears, keyboard doesn't). No delay tuning wins this race. The reliable
+  // fix (react-native-screens #89) is to let `autoFocus` fire on a FRESH mount once
+  // the screen actually owns focus: remount the input when the screen focuses, and
+  // kick `.focus()` again on layout (after the native view attaches). iOS is fine
+  // from `autoFocus` alone, so this only re-keys on Android.
+  const androidAutoFocus = Platform.OS === 'android' && !!autoFocus;
+  const inputKey = androidAutoFocus && screenFocused ? 'focused' : 'idle';
+  const onFieldLayout = androidAutoFocus
+    ? () => requestAnimationFrame(() => inputRef.current?.focus())
+    : undefined;
 
   const voice = useVoiceCapture((draft: ParsedTaskDraft) => onChangeText(draft.title));
 
@@ -108,10 +95,12 @@ export const TaskTitleField = ({
     <>
       <View style={[variant === 'boxed' ? boxed : underline, containerStyle]}>
         <TextInput
+          key={inputKey}
           ref={inputRef}
           style={[text, textStyle]}
           value={value}
           onChangeText={onChangeText}
+          onLayout={onFieldLayout}
           placeholder={placeholder}
           placeholderTextColor={t.colors.inkFaint}
           autoFocus={autoFocus}

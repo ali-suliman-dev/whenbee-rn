@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { View, Text, TextInput, Pressable, ScrollView, KeyboardAvoidingView, Platform, ActionSheetIOS, useWindowDimensions, type ViewStyle, type TextStyle } from 'react-native';
+import { View, Text, TextInput, Pressable, ScrollView, KeyboardAvoidingView, Platform, useWindowDimensions, type ViewStyle, type TextStyle } from 'react-native';
 import { router, useLocalSearchParams } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -7,6 +7,7 @@ import { Screen } from '@/src/components/Screen';
 import { AppButton } from '@/src/components/AppButton';
 import { SheetGrabber } from '@/src/components/SheetGrabber';
 import { Toast } from '@/src/components/Toast';
+import { ActionSheet, type ActionSheetItem } from '@/src/components/ActionSheet';
 import { TaskTitleField } from '@/src/components/TaskTitleField';
 import { useTheme } from '@/src/theme/useTheme';
 import { type } from '@/src/theme/typography';
@@ -57,6 +58,7 @@ export default function AddTask() {
   const { title: spokenTitle } = useLocalSearchParams<{ title?: string }>();
   const a = useAddTask(spokenTitle);
   const [toastVisible, setToastVisible] = useState(false);
+  const [datePickerVisible, setDatePickerVisible] = useState(false);
   const [addingCategory, setAddingCategory] = useState(false);
   const [newCategory, setNewCategory] = useState('');
   const dismissTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -75,31 +77,16 @@ export default function AddTask() {
     };
   }, []);
 
-  function openDatePicker() {
-    // Build: Today, Tomorrow, next 5 weekdays, then "No day yet"
-    const days = Array.from({ length: 7 }, (_, i) => ({
-      key: addDays(today, i),
-      label: dayLabel(addDays(today, i), i),
-    }));
-    const options = [...days.map((d) => d.label), 'No day yet', 'Cancel'];
-    ActionSheetIOS.showActionSheetWithOptions(
-      {
-        title: 'When should this happen?',
-        options,
-        cancelButtonIndex: options.length - 1,
-      },
-      (idx) => {
-        if (idx < days.length) {
-          const chosen = days[idx];
-          if (chosen) setTargetDate(chosen.key);
-        } else if (idx === days.length) {
-          // "No day yet" — shelf
-          setTargetDate(null);
-        }
-        // last index = Cancel → no change
-      },
-    );
-  }
+  // Day options for the "when" picker: Today, Tomorrow, next 5 weekdays, then shelf.
+  // Rendered via the cross-platform <ActionSheet> — ActionSheetIOS is iOS-only and
+  // crashes on Android.
+  const dayPickerItems: ActionSheetItem[] = [
+    ...Array.from({ length: 7 }, (_, i) => {
+      const key = addDays(today, i);
+      return { label: dayLabel(key, i), onPress: () => setTargetDate(key) };
+    }),
+    { label: 'No day yet', onPress: () => setTargetDate(null) },
+  ];
 
   async function handleAddToToday() {
     const added = await a.addToToday(targetDate);
@@ -229,7 +216,7 @@ export default function AddTask() {
                 {`Adding to ${targetDayLabel(targetDate, today)}`}
               </Text>
               <Pressable
-                onPress={openDatePicker}
+                onPress={() => setDatePickerVisible(true)}
                 accessibilityRole="button"
                 accessibilityLabel="Change target day"
                 hitSlop={t.size.hitSlop}
@@ -371,6 +358,13 @@ export default function AddTask() {
             : `Added to ${targetDayLabel(targetDate, today)}`
         }
         visible={toastVisible}
+      />
+
+      <ActionSheet
+        visible={datePickerVisible}
+        title="When should this happen?"
+        items={dayPickerItems}
+        onCancel={() => setDatePickerVisible(false)}
       />
     </Screen>
   );
