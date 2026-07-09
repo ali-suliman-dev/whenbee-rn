@@ -1,22 +1,32 @@
+import { useState } from 'react';
 import { View, Text, Pressable, Linking, type ViewStyle, type TextStyle } from 'react-native';
+import Animated, { FadeIn } from 'react-native-reanimated';
+import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '@/src/theme/useTheme';
 import { type } from '@/src/theme/typography';
+import { haptics } from '@/src/lib/haptics';
 import type { CalendarEvent } from '@/src/services/calendar';
 
 // ──────────────────────────────────────────────────────────────────────────────
 // CalendarOverlaySection — read-only calendar events for the selected day.
 //
-// Renders when at least one timed or all-day event is present. Timed events
-// show title + clock range ("2:00–3:00 PM"). All-day events appear as a quiet
-// sub-line ("All day: Holiday, Offsite"). This section is display-only — it
-// never writes to the calendar. Pro users only (the caller gates visibility;
-// useDayCapacity returns [] for free users, so this naturally renders nothing).
+// Collapsed by default (mirrors DoneSection): the header is a 44pt toggle showing
+// "CALENDAR · N" + a chevron; tapping reveals the rows with an entering-only FadeIn
+// (no exit animation, per the Fabric exiting-crash invariant). Keeping it closed
+// keeps the Today screen quiet — calendar is context, not the day's work.
 //
-// Tap on a timed row: best-effort deep link to `calshow:<startMs>` (iOS opens
-// the Calendar app to that timestamp). If Linking.openURL rejects, the tap is
-// a no-op — nothing is written.
+// Each timed event is an agenda row: a left time-column (start clock + AM/PM) and a
+// thin rail, then the title + duration. This reads as a *scheduled block* — visually
+// distinct from the startable indigo task rows above, so it's never mistaken for a
+// Whenbee task. All-day events appear as a quiet "All day · …" sub-line and are
+// excluded from capacity math (that happens in useDayCapacity).
 //
-// All-day events are excluded from capacity math (that happens in useDayCapacity).
+// This section is display-only — it never writes to the calendar. Pro users only
+// (the caller gates visibility; useDayCapacity returns [] for free users, so this
+// naturally renders nothing).
+//
+// Tap on a timed row: best-effort deep link to `calshow:<startMs>` (iOS opens the
+// Calendar app to that timestamp). If Linking.openURL rejects, the tap is a no-op.
 // ──────────────────────────────────────────────────────────────────────────────
 
 export interface CalendarOverlaySectionProps {
@@ -36,9 +46,22 @@ function fmtTime(epochMs: number): string {
   return `${h12}:${min} ${meridiem}`;
 }
 
-/** "2:00 PM–3:00 PM" range string for a timed event. */
-function fmtRange(startMs: number, endMs: number): string {
-  return `${fmtTime(startMs)}–${fmtTime(endMs)}`;
+/** Split a start epoch into its clock ("1:30") and meridiem ("PM") for the time-column. */
+function fmtClock(epochMs: number): { clock: string; meridiem: string } {
+  const d = new Date(epochMs);
+  const h24 = d.getHours();
+  const min = d.getMinutes().toString().padStart(2, '0');
+  const h12 = h24 % 12 === 0 ? 12 : h24 % 12;
+  return { clock: `${h12}:${min}`, meridiem: h24 < 12 ? 'AM' : 'PM' };
+}
+
+/** Compact duration + end time, e.g. "1h 30m · until 3:00 PM" or "30m · until 4:30 PM". */
+function fmtDuration(startMs: number, endMs: number): string {
+  const totalMin = Math.max(0, Math.round((endMs - startMs) / 60000));
+  const h = Math.floor(totalMin / 60);
+  const m = totalMin % 60;
+  const dur = h > 0 ? (m > 0 ? `${h}h ${m}m` : `${h}h`) : `${m}m`;
+  return `${dur} · until ${fmtTime(endMs)}`;
 }
 
 /** Attempt to open the iOS Calendar app at a given epoch; silently no-ops if unavailable. */
@@ -55,86 +78,134 @@ export function CalendarOverlaySection({
   allDayEvents,
 }: CalendarOverlaySectionProps): React.ReactElement | null {
   const t = useTheme();
+  const [expanded, setExpanded] = useState(false);
 
-  const hasAny = events.length > 0 || allDayEvents.length > 0;
-  if (!hasAny) return null;
+  const count = events.length + allDayEvents.length;
+  if (count === 0) return null;
 
-  const sectionWrap: ViewStyle = {
-    gap: t.space[2.5],
-    marginTop: t.space[4],
-    marginBottom: t.space[2],
-  };
+  function toggle() {
+    haptics.light();
+    setExpanded((v) => !v);
+  }
 
-  const eyebrow: TextStyle = {
-    ...(type.eyebrowSm as unknown as TextStyle),
-    color: t.colors.inkFaint,
-  };
-
-  const rowWrap: ViewStyle = {
+  const header: ViewStyle = {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingVertical: t.space[1.5],
-    paddingHorizontal: t.space[3],
-    backgroundColor: t.colors.surfaceSunken,
-    borderRadius: t.radii.md,
+    paddingVertical: t.space[2],
+    marginTop: t.space[2],
+  };
+  const label: TextStyle = {
+    ...(type.eyebrowSm as unknown as TextStyle),
+    color: t.colors.inkSoft,
   };
 
+  const row: ViewStyle = {
+    flexDirection: 'row',
+    alignItems: 'stretch',
+    gap: t.space[3],
+    backgroundColor: t.colors.surface,
+    borderRadius: t.radii.card,
+    borderCurve: 'continuous',
+    paddingHorizontal: t.space[4],
+    paddingVertical: t.space[3],
+  };
+  const timeCol: ViewStyle = {
+    minWidth: t.size.calTimeCol,
+    justifyContent: 'center',
+  };
+  const clockText: TextStyle = {
+    fontFamily: 'Inter-Bold' as TextStyle['fontFamily'],
+    fontSize: t.fontSize.base,
+    color: t.colors.ink,
+    fontVariant: ['tabular-nums'],
+  };
+  const meridiemText: TextStyle = {
+    ...(type.caption as unknown as TextStyle),
+    fontSize: t.fontSize.xs,
+    color: t.colors.inkFaint,
+    marginTop: t.space[0.5],
+  };
+  const rail: ViewStyle = {
+    width: t.space[0.5],
+    borderRadius: t.radii.full,
+    backgroundColor: t.colors.inkFaint,
+  };
+  const body: ViewStyle = { flex: 1, justifyContent: 'center', gap: t.space[0.5] };
   const eventTitle: TextStyle = {
     ...(type.bodySm as unknown as TextStyle),
     color: t.colors.inkSoft,
-    flex: 1,
   };
-
-  const timeRange: TextStyle = {
+  const durationText: TextStyle = {
     ...(type.caption as unknown as TextStyle),
     color: t.colors.inkFaint,
-    marginLeft: t.space[2],
   };
-
-  const allDayWrap: ViewStyle = {
-    paddingVertical: t.space[1],
-    paddingHorizontal: t.space[3],
-  };
-
   const allDayText: TextStyle = {
     ...(type.caption as unknown as TextStyle),
     color: t.colors.inkFaint,
+    paddingHorizontal: t.space[4],
+    paddingTop: t.space[1],
   };
 
   return (
-    <View style={sectionWrap}>
-      <Text style={eyebrow}>Calendar</Text>
+    <View>
+      <Pressable
+        onPress={toggle}
+        accessibilityRole="button"
+        accessibilityState={{ expanded }}
+        accessibilityLabel={`Calendar, ${count} ${count === 1 ? 'event' : 'events'}. ${expanded ? 'Tap to collapse.' : 'Tap to expand.'}`}
+        hitSlop={t.size.hitSlop}
+        style={header}
+      >
+        <Text style={label}>CALENDAR · {count}</Text>
+        <Ionicons
+          name={expanded ? 'chevron-up' : 'chevron-down'}
+          size={t.iconSize.sm}
+          color={t.colors.inkSoft}
+        />
+      </Pressable>
 
-      {/* Timed event rows. Calendar events can have an empty title (busy blocks,
-          some accounts) — fall back to "Busy" so the row never renders blank. */}
-      {events.map((evt) => {
-        const title = evt.title?.trim() || 'Busy';
-        return (
-          <Pressable
-            key={evt.id}
-            accessibilityRole="button"
-            accessibilityLabel={`${title}, ${fmtRange(evt.startMs, evt.endMs)}, open in Calendar`}
-            onPress={() => openInCalendar(evt.startMs)}
-          >
-            <View style={rowWrap}>
-              <Text style={eventTitle} numberOfLines={1}>
-                {title}
-              </Text>
-              <Text style={timeRange}>{fmtRange(evt.startMs, evt.endMs)}</Text>
-            </View>
-          </Pressable>
-        );
-      })}
+      {expanded ? (
+        <Animated.View entering={FadeIn.duration(t.motion.base)} style={{ gap: t.space[2] }}>
+          {/* Timed event rows. Calendar events can have an empty title (busy blocks,
+              some accounts) — fall back to "Busy" so the row never renders blank. */}
+          {events.map((evt) => {
+            const title = evt.title?.trim() || 'Busy';
+            const { clock, meridiem } = fmtClock(evt.startMs);
+            return (
+              <Pressable
+                key={evt.id}
+                accessibilityRole="button"
+                accessibilityLabel={`${title}, ${clock} ${meridiem}, ${fmtDuration(evt.startMs, evt.endMs)}, open in Calendar`}
+                onPress={() => openInCalendar(evt.startMs)}
+              >
+                <View style={row}>
+                  <View style={timeCol}>
+                    <Text style={clockText}>{clock}</Text>
+                    <Text style={meridiemText}>{meridiem}</Text>
+                  </View>
+                  <View style={rail} />
+                  <View style={body}>
+                    <Text style={eventTitle} numberOfLines={1}>
+                      {title}
+                    </Text>
+                    <Text style={durationText} numberOfLines={1}>
+                      {fmtDuration(evt.startMs, evt.endMs)}
+                    </Text>
+                  </View>
+                </View>
+              </Pressable>
+            );
+          })}
 
-      {/* All-day events sub-line — excluded from capacity math */}
-      {allDayEvents.length > 0 && (
-        <View style={allDayWrap}>
-          <Text style={allDayText}>
-            All day: {allDayEvents.map((e) => e.title).join(', ')}
-          </Text>
-        </View>
-      )}
+          {/* All-day events sub-line — excluded from capacity math */}
+          {allDayEvents.length > 0 ? (
+            <Text style={allDayText}>
+              All day · {allDayEvents.map((e) => e.title?.trim() || 'Busy').join(', ')}
+            </Text>
+          ) : null}
+        </Animated.View>
+      ) : null}
     </View>
   );
 }

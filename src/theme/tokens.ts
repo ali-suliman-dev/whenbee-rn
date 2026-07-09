@@ -35,7 +35,7 @@ export const tokens = {
   // `hitSlop` = extra tap area added via the Pressable hitSlop prop so that small
   // touch targets (secondary buttons, skip links) comfortably meet the 44pt HIG
   // floor without visually enlarging the element.
-  size: { control: { xxs: 28, xs: 32, sm: 36, md: 44, lg: 52 }, coin: 40, wheelCol: 72, wheelRow: 32, shareCard: 340, timelineCol: 110, planCardMin: 70, gripW: 14, hitSlop: 8, sparkline: 32, honestBand: 180 },
+  size: { control: { xxs: 28, xs: 32, sm: 36, md: 44, lg: 52 }, coin: 40, wheelCol: 72, wheelRow: 32, shareCard: 340, timelineCol: 110, planCardMin: 70, calTimeCol: 52, gripW: 14, hitSlop: 8, sparkline: 32, honestBand: 180 },
 
   // Icon sizing scale — replaces inline 12/16/18/20/22/24/30 across the app.
   iconSize: { xs: 12, sm: 16, md: 20, lg: 24, xl: 32 },
