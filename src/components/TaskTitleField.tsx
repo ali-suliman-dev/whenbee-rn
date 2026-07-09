@@ -6,6 +6,7 @@
 
 import { useEffect, useRef, useState } from 'react';
 import { Platform, TextInput, View, type TextStyle, type ViewStyle } from 'react-native';
+import { useNavigation } from 'expo-router';
 import { MicButton } from '@/src/components/voice/MicButton';
 import { ListeningSheet } from '@/src/components/voice/ListeningSheet';
 import { useVoiceCapture } from '@/src/features/voice/useVoiceCapture';
@@ -42,16 +43,35 @@ export const TaskTitleField = ({
   const t = useTheme();
   const [focused, setFocused] = useState(false);
   const inputRef = useRef<TextInput>(null);
+  const navigation = useNavigation();
 
-  // Android formSheet IME quirk: `autoFocus` mounts the field focused but the soft
-  // keyboard often stays down inside a formSheet modal (the window isn't ready to
-  // show the IME at mount). An imperative focus after the sheet settles raises it.
-  // iOS raises the keyboard from `autoFocus` alone, so this is Android-only.
+  // Android formSheet IME quirk: focusing DURING the sheet's slide-up animation
+  // sets the cursor but the soft keyboard never rises — the sheet window isn't the
+  // active IME target yet, so the show-keyboard request is dropped. `autoFocus`
+  // (fires at mount) and any fixed timer both land mid-transition. The reliable
+  // signal is the screen's `transitionEnd` (native onAppear → the sheet has settled);
+  // focus there and the keyboard comes up. A timeout backs it up for any host that
+  // doesn't emit the event. iOS raises the keyboard from `autoFocus` alone.
   useEffect(() => {
     if (!autoFocus || Platform.OS !== 'android') return;
-    const id = setTimeout(() => inputRef.current?.focus(), 350);
-    return () => clearTimeout(id);
-  }, [autoFocus]);
+    let done = false;
+    const focusNow = () => {
+      if (done) return;
+      done = true;
+      inputRef.current?.focus();
+    };
+    const nav = navigation as unknown as {
+      addListener: (type: string, cb: (e?: { data?: { closing?: boolean } }) => void) => () => void;
+    };
+    const unsub = nav.addListener('transitionEnd', (e) => {
+      if (!e?.data?.closing) focusNow();
+    });
+    const fallback = setTimeout(focusNow, 550);
+    return () => {
+      unsub();
+      clearTimeout(fallback);
+    };
+  }, [autoFocus, navigation]);
 
   const voice = useVoiceCapture((draft: ParsedTaskDraft) => onChangeText(draft.title));
 
