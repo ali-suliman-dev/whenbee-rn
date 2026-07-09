@@ -23,6 +23,7 @@ import { RetroLogChip } from '@/src/features/today/RetroLogChip';
 import { QuickTaskChips } from '@/src/components/quick/QuickTaskChips';
 import { SwitchTaskSheet } from '@/src/features/today/SwitchTaskSheet';
 import { ActionSheet, type ActionSheetItem } from '@/src/components/ActionSheet';
+import { canEditRow } from '@/src/features/today/canEditRow';
 import { useCategoriesStore } from '@/src/stores/categoriesStore';
 import { useCalibrationStore } from '@/src/stores/calibrationStore';
 import { useTimerStore } from '@/src/stores/timerStore';
@@ -105,6 +106,7 @@ export default function Today() {
   const recap = useDayRecap();
 
   const isTimerRunning = useTimerStore((s) => s.isRunning);
+  const runningTaskId = useTimerStore((s) => s.taskId);
   const runningTaskLabel = useTimerStore((s) => s.taskLabel);
   const [pendingRow, setPendingRow] = useState<TodayRow | null>(null);
   const dailyRitualEnabled = useSettingsStore((s) => s.dailyRitualEnabled);
@@ -212,6 +214,11 @@ export default function Today() {
         guessMin: row.guessMin,
       },
     });
+  }
+
+  function editRow(id: string) {
+    haptics.light();
+    router.push({ pathname: '/(modals)/add-task', params: { editId: id } });
   }
 
   function startRow(row: TodayRow) {
@@ -548,6 +555,9 @@ export default function Today() {
         items={
           rowActions
             ? [
+                ...(canEditRow(isTimerRunning, runningTaskId, rowActions.id)
+                  ? [{ label: 'Edit', onPress: () => editRow(rowActions.id) }]
+                  : []),
                 { label: 'Move to tomorrow', onPress: () => void useDayTasksStore.getState().moveToTomorrow(rowActions.id) },
                 { label: 'Pick a day…', onPress: () => showDayPicker(rowActions.id) },
                 { label: 'Remove', destructive: true, onPress: () => setDeletingId(rowActions.id) },
