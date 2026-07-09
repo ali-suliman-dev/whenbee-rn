@@ -7,12 +7,13 @@ import type { Task } from '@/src/domain/types';
 
 const mockReplace = jest.fn();
 const mockBack = jest.fn();
+let mockParams: Record<string, string> = {};
 jest.mock('expo-router', () => ({
   router: {
     replace: (...a: unknown[]) => mockReplace(...a),
     back: (...a: unknown[]) => mockBack(...a),
   },
-  useLocalSearchParams: () => ({}),
+  useLocalSearchParams: () => mockParams,
 }));
 
 // Capture tasks added via the async addTask mock so tests can assert on them.
@@ -28,6 +29,7 @@ beforeEach(() => {
   nowSpy = jest.spyOn(Date, 'now').mockReturnValue(TODAY_MS);
   mockReplace.mockClear();
   mockBack.mockClear();
+  mockParams = {};
   capturedTasks = [];
 
   // Mock useDayTasksStore so addTask is async and returns a Task.
@@ -138,5 +140,48 @@ describe('Add Task screen', () => {
     });
     expect(mockReplace).not.toHaveBeenCalled();
     expect(capturedTasks).toHaveLength(0);
+  });
+});
+
+describe('edit mode', () => {
+  const editing: Task = {
+    id: 'edit-1', label: 'Reply to Marcus', category: 'admin', guessMin: 30,
+    plannedDate: '2026-06-24', status: 'queued', orderIndex: 1, doneByMin: null,
+    createdAt: 1, completedAt: null, actualMin: null, fromRoutineId: null, calendarEventId: null,
+  };
+  const updateSpy = jest.fn(async () => {});
+
+  beforeEach(() => {
+    mockParams = { editId: 'edit-1' };
+    useDayTasksStore.setState({
+      getTaskById: jest.fn(async () => editing),
+      updateTask: updateSpy,
+    } as unknown as Parameters<typeof useDayTasksStore.setState>[0]);
+    updateSpy.mockClear();
+  });
+  afterEach(() => { mockParams = {}; });
+
+  test('renders Edit-task chrome and prefilled title', async () => {
+    render(<AddTask />);
+    expect(await screen.findByText('Edit task')).toBeTruthy();
+    expect(screen.getByText('Save')).toBeTruthy();
+    expect(screen.getByDisplayValue('Reply to Marcus')).toBeTruthy();
+  });
+
+  test('Save patches via updateTask', async () => {
+    render(<AddTask />);
+    await screen.findByText('Edit task');
+    // Wait for the async prefill (title/category) to fully settle — findByText
+    // above can resolve on the very first synchronous render (the heading
+    // doesn't depend on the load), which is too early: the button's onPress
+    // wiring isn't reliably committed yet if the store's async load and the
+    // targetDate-adopt effect are still mid-flight. Polling for the loaded
+    // title value forces RTL to flush those pending updates before we press.
+    await screen.findByDisplayValue('Reply to Marcus');
+    await act(async () => { fireEvent.press(screen.getByText('Save')); });
+    expect(updateSpy).toHaveBeenCalledWith(
+      'edit-1',
+      expect.objectContaining({ label: 'Reply to Marcus', category: 'admin', guessMin: 30 }),
+    );
   });
 });
