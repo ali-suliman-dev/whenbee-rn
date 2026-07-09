@@ -52,6 +52,9 @@ interface TaskRowProps {
   isExiting?: boolean;
   /** Show "← swipe to remove" coach overlay (first done row, first session). */
   showCoachMark?: boolean;
+  /** Coach-mark text. Defaults to the swipe hint; the Today list passes the
+   *  long-press hint on the first queued row. */
+  coachLabel?: string;
   /** Called when the swipeable begins opening — parent dismisses the coach mark. */
   onCoachMarkDismiss?: () => void;
   /** Original plannedDate when this task carried over from a past day (e.g. '2026-06-22').
@@ -83,6 +86,7 @@ export function TaskRow({
   onPeeked,
   isExiting = false,
   showCoachMark = false,
+  coachLabel = '← swipe to remove',
   onCoachMarkDismiss,
   carriedFrom,
   onMove,
@@ -241,7 +245,7 @@ export function TaskRow({
     paddingHorizontal: t.space[2],
     paddingVertical: t.space[0.5],
   };
-  const coachLabel: TextStyle = {
+  const coachLabelStyle: TextStyle = {
     color: t.colors.inverseText,
     fontSize: t.fontSize.xs,
     fontWeight: t.fontWeight.bold as TextStyle['fontWeight'],
@@ -294,7 +298,7 @@ export function TaskRow({
       {showCoachMark ? (
         <Animated.View style={[coachWrap, markStyle]} pointerEvents="none">
           <View style={coachPill}>
-            <Text style={coachLabel}>← swipe to remove</Text>
+            <Text style={coachLabelStyle}>{coachLabel}</Text>
           </View>
         </Animated.View>
       ) : null}

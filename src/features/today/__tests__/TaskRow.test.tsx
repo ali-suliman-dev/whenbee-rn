@@ -134,4 +134,20 @@ describe('TaskRow', () => {
     );
     expect(screen.queryByText(/from/i)).toBeNull();
   });
+
+  test('renders a custom coach label when provided', () => {
+    render(
+      <TaskRow title="Reply" categoryLabel="Email" guessMin={30} honestMin={35}
+        onPress={() => {}} showCoachMark coachLabel="Press & hold for options" />,
+    );
+    expect(screen.getByText('Press & hold for options')).toBeTruthy();
+  });
+
+  test('defaults the coach label to the swipe hint', () => {
+    render(
+      <TaskRow title="Reply" categoryLabel="Email" guessMin={30} honestMin={35}
+        onPress={() => {}} showCoachMark />,
+    );
+    expect(screen.getByText('← swipe to remove')).toBeTruthy();
+  });
 });

@@ -120,11 +120,15 @@ export default function Today() {
     void useDayTasksStore.getState().loadShelf();
   }, [totalCount]);
 
-  // First-run peek: teach the hidden swipe once, then never again. The flag is
-  // burned only after the peek actually animates (see onPeeked below) — never on
-  // a bare mount — so the one-shot can't be spent without the user seeing it.
-  const [peekFirstRow] = useState(() => kv.getString('today.seenSwipeHint') == null);
-  const markSwipeHintSeen = useCallback(() => kv.set('today.seenSwipeHint', '1'), []);
+  // First-run coach: teach the long-press row-actions gesture once, then never
+  // again. Shown on the first queued row only.
+  const [showLongPressHint, setShowLongPressHint] = useState(
+    () => kv.getString('today.seenLongPressHintV1') == null,
+  );
+  const dismissLongPressHint = useCallback(() => {
+    setShowLongPressHint(false);
+    kv.set('today.seenLongPressHintV1', '1');
+  }, []);
   const [deletingId, setDeletingId] = useState<string | null>(null);
   // Cross-platform row menus (ActionSheetIOS is iOS-only → crashes Android).
   const [rowActions, setRowActions] = useState<{ id: string; label: string } | null>(null);
@@ -480,10 +484,11 @@ export default function Today() {
                         carriedFrom={row.carriedFrom}
                         onPress={() => startRow(row)}
                         onDelete={() => deleteTask(row.id)}
-                        onLongPress={() => promptRowActions(row.id, row.label)}
+                        onLongPress={() => { dismissLongPressHint(); promptRowActions(row.id, row.label); }}
                         onMove={() => void useDayTasksStore.getState().moveToTomorrow(row.id)}
-                        peekHint={peekFirstRow && idx === 0}
-                        onPeeked={markSwipeHintSeen}
+                        showCoachMark={showLongPressHint && idx === 0}
+                        coachLabel="Press & hold for options"
+                        onCoachMarkDismiss={dismissLongPressHint}
                         isExiting={deletingId === row.id}
                       />
                     ))}
