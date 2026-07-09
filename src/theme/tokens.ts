@@ -579,6 +579,14 @@ export const tokens = {
     peakLabelMinY: 9,  // minimum y for the peak label (keeps it off the top edge)
   },
 
+  // Focus-unlock ladder geometry (FocusGateRow). One place for the gate-marker
+  // disc + its glyph/ring/pip so the row inlines no raw px.
+  //   marker     = the round gate marker diameter (pt) — done ✓ / active ring / upcoming
+  //   markerIcon = the checkmark glyph size inside a completed marker
+  //   ring       = the active marker's indigo ring width
+  //   dot        = the active marker's centre "you are here" dot AND each progress pip diameter
+  focusLadder: { marker: 26, markerIcon: 14, ring: 2, dot: 6 },
+
   // Calendar strip geometry. All strip sizing in one place.
   //   rowPadV       vertical padding above/below the 7-cell row (inside the strip container)
   //   cellW         width of one day cell (7 cells fill the screen width; FlatList pages by screenWidth)

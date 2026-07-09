@@ -17,6 +17,11 @@ jest.mock('@/src/features/planner/useLearnedFocusWindow', () => ({
     distinctDays: 0,
     confidence: 0,
     held: false,
+    gates: {
+      sessions: { have: 0, need: 15 },
+      days: { have: 0, need: 5 },
+      peak: { have: 0, need: 6, confirming: false },
+    },
   }),
 }));
 

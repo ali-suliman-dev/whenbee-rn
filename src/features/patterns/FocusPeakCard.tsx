@@ -7,15 +7,25 @@ import { type } from '@/src/theme/typography';
 import { AppText } from '@/src/components/AppText';
 import { AppButton } from '@/src/components/AppButton';
 import { ProCoinPill } from '@/src/components/ProCoinPill';
-import { HoneyPips } from '@/src/features/category-detail/HoneyPips';
 import { formatWindowRange } from '@/src/lib/time';
-import { FW_GATE_MIN_COMPLETED } from '@/src/engine/constants';
 import { useEntitlement } from '@/src/features/paywall/useEntitlement';
 import { FocusCurve } from '@/src/features/planner/FocusCurve';
+import { FocusGateRow, type FocusGateState } from '@/src/features/planner/FocusGateRow';
+import { FocusRewardPreview } from '@/src/features/planner/FocusRewardPreview';
 import { FocusWindowEditorSheet } from '@/src/features/planner/FocusWindowEditorSheet';
 import { useLearnedFocusWindow } from '@/src/features/planner/useLearnedFocusWindow';
 import { useFocusInsights } from '@/src/features/patterns/useFocusInsights';
-import { whyNarrative } from '@/src/features/patterns/focusCopy';
+import {
+  whyNarrative,
+  sessionsGateCopy,
+  daysGateCopy,
+  peakGateCopy,
+  daysUpcomingCopy,
+  peakUpcomingCopy,
+  focusUnlockedTag,
+  focusRewardCaption,
+  FOCUS_GATE_LABELS,
+} from '@/src/features/patterns/focusCopy';
 import { useSettingsStore } from '@/src/stores/settingsStore';
 
 // ──────────────────────────────────────────────────────────────────────────────
@@ -57,26 +67,77 @@ export function FocusPeakCard() {
     </View>
   );
 
-  // ── forming ──
+  // ── forming — the 3-gate unlock ladder ──
   if (basis === 'prior') {
-    const clampedCount = Math.min(sampleCount, FW_GATE_MIN_COMPLETED);
-    const countHead: TextStyle = { ...(type.bodyLg as TextStyle), fontWeight: t.fontWeight.bold as TextStyle['fontWeight'] };
+    const { gates } = win;
+    const sDone = gates.sessions.have >= gates.sessions.need;
+    const dDone = gates.days.have >= gates.days.need;
+    const pCountMet = gates.peak.have >= gates.peak.need;
+
+    const unlocked = (sDone ? 1 : 0) + (dDone ? 1 : 0) + (pCountMet ? 1 : 0);
+    const gatesLeft = 3 - unlocked;
+
+    // Exactly one active row: the first gate (in order) that isn't done. When all
+    // counts are met but the window is still confirming, the peak row stays active.
+    const sessionsState: FocusGateState = sDone ? 'done' : 'active';
+    const daysState: FocusGateState = !sDone ? 'upcoming' : dDone ? 'done' : 'active';
+    const peakState: FocusGateState = sDone && dDone ? 'active' : 'upcoming';
+
+    const sessionsCopy = sessionsGateCopy(gates.sessions.have, gates.sessions.need);
+    const daysCopy =
+      daysState === 'upcoming'
+        ? daysUpcomingCopy(gates.days.have, gates.days.need)
+        : daysGateCopy(gates.days.have, gates.days.need);
+    const peakCopy =
+      peakState === 'upcoming'
+        ? peakUpcomingCopy(gates.peak.have, gates.peak.need)
+        : peakGateCopy(gates.peak.have, gates.peak.need, gates.peak.confirming);
+
+    const cardTitle = sDone && dDone ? 'Almost there' : 'Learning your focus hours';
+
+    const tagStyle: TextStyle = { ...(type.caption as unknown as TextStyle), color: t.colors.inkSoft };
     const headerRow: ViewStyle = { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' };
+    const tagCluster: ViewStyle = { flexDirection: 'row', alignItems: 'center', gap: t.space[2] };
+
     return (
       <View style={card}>
         <View style={headerRow}>
           <Eyebrow />
-          {isPro ? null : <ProCoinPill icon="ribbon" />}
+          <View style={tagCluster}>
+            <AppText style={tagStyle}>{focusUnlockedTag(unlocked)}</AppText>
+            {isPro ? null : <ProCoinPill icon="ribbon" />}
+          </View>
         </View>
-        <FocusCurve scoreByBin={scoreByBin} variant="forming" yAxis />
-        <AppText style={title}>Learning your focus hours</AppText>
-        <AppText testID="focus-maturity">
-          <AppText style={{ ...countHead, color: t.colors.inkSoft }}>{sampleCount}</AppText>
-          <AppText style={{ ...countHead, color: t.colors.inkFaint }}>{`/${FW_GATE_MIN_COMPLETED}`}</AppText>
-          <AppText style={{ ...(type.body as TextStyle), color: t.colors.inkFaint }}> sessions</AppText>
-        </AppText>
-        <HoneyPips filled={clampedCount} total={FW_GATE_MIN_COMPLETED} tone="sunken" />
-        <AppText style={body}>Log {FW_GATE_MIN_COMPLETED} timed sessions and I&apos;ll reveal your sharpest hours.</AppText>
+        <FocusRewardPreview scoreByBin={scoreByBin} caption={focusRewardCaption(gatesLeft)} />
+        <AppText style={title}>{cardTitle}</AppText>
+        <View>
+          <FocusGateRow
+            first
+            state={sessionsState}
+            label={FOCUS_GATE_LABELS.sessions}
+            valueText={sessionsCopy.valueText}
+            sub={sessionsCopy.sub}
+            pips={sessionsState === 'active' ? { filled: gates.sessions.have, total: gates.sessions.need } : undefined}
+          />
+          <FocusGateRow
+            state={daysState}
+            label={FOCUS_GATE_LABELS.days}
+            valueText={daysCopy.valueText}
+            sub={daysCopy.sub}
+            pips={daysState === 'active' ? { filled: gates.days.have, total: gates.days.need } : undefined}
+          />
+          <FocusGateRow
+            state={peakState}
+            label={FOCUS_GATE_LABELS.peak}
+            valueText={peakCopy.valueText}
+            sub={peakCopy.sub}
+            pips={
+              peakState === 'active' && !gates.peak.confirming
+                ? { filled: gates.peak.have, total: gates.peak.need }
+                : undefined
+            }
+          />
+        </View>
         <AppButton
           label="Set my hours myself"
           variant="ghost"
