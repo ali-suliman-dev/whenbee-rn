@@ -55,8 +55,9 @@ export default function AddTask() {
   const { height: winH } = useWindowDimensions();
   const toastDismissMs = t.motion.pulse; // let the toast land before the sheet closes
   // Arrived from the trio mic quick-action → title pre-filled from the transcript.
-  const { title: spokenTitle } = useLocalSearchParams<{ title?: string }>();
-  const a = useAddTask(spokenTitle);
+  // editId (from the queue's edit action) switches the hook + screen into edit mode.
+  const { title: spokenTitle, editId } = useLocalSearchParams<{ title?: string; editId?: string }>();
+  const a = useAddTask(spokenTitle, editId);
   const [toastVisible, setToastVisible] = useState(false);
   const [datePickerVisible, setDatePickerVisible] = useState(false);
   const [addingCategory, setAddingCategory] = useState(false);
@@ -70,6 +71,11 @@ export default function AddTask() {
     () => useDayTasksStore.getState().selectedDate,
   );
   const today = toLocalDayKey(Date.now());
+
+  // Edit mode: adopt the task's stored day once it loads (undefined = still loading).
+  useEffect(() => {
+    if (a.isEditing && a.loadedDate !== undefined) setTargetDate(a.loadedDate);
+  }, [a.isEditing, a.loadedDate]);
 
   useEffect(() => {
     return () => {
@@ -91,6 +97,13 @@ export default function AddTask() {
   async function handleAddToToday() {
     const added = await a.addToToday(targetDate);
     if (!added) return;
+    setToastVisible(true);
+    dismissTimer.current = setTimeout(() => router.back(), toastDismissMs);
+  }
+
+  async function handleSave() {
+    const ok = await a.save(targetDate);
+    if (!ok) return;
     setToastVisible(true);
     dismissTimer.current = setTimeout(() => router.back(), toastDismissMs);
   }
@@ -212,8 +225,8 @@ export default function AddTask() {
 
           <View style={{ gap: t.space[2] }}>
             <View style={targetRow}>
-              <Text style={targetLabel} accessibilityLabel={`Adding to ${targetDayLabel(targetDate, today)}`}>
-                {`Adding to ${targetDayLabel(targetDate, today)}`}
+              <Text style={targetLabel} accessibilityLabel={`${a.isEditing ? 'Scheduled for' : 'Adding to'} ${targetDayLabel(targetDate, today)}`}>
+                {`${a.isEditing ? 'Scheduled for' : 'Adding to'} ${targetDayLabel(targetDate, today)}`}
               </Text>
               <Pressable
                 onPress={() => setDatePickerVisible(true)}
@@ -229,8 +242,8 @@ export default function AddTask() {
                 </View>
               </Pressable>
             </View>
-            <Text style={heading}>New task</Text>
-            <Text style={sub}>What are you working on?</Text>
+            <Text style={heading}>{a.isEditing ? 'Edit task' : 'New task'}</Text>
+            <Text style={sub}>{a.isEditing ? 'Adjust the details.' : 'What are you working on?'}</Text>
           </View>
 
           <View style={{ gap: t.space[2] }}>
@@ -332,26 +345,49 @@ export default function AddTask() {
 
         {/* Pinned CTA footer — sits in the lower-third thumb zone, rises with keyboard */}
         <View style={footerStyle}>
-          <AppButton
-            label="Add & start timer"
-            variant="indigo"
-            fullWidth
-            disabled={!a.canSubmit}
-            onPress={() => a.onAddAndStart(targetDate)}
-          />
-          <AppButton
-            label={addCtaLabel}
-            variant="ghost"
-            fullWidth
-            disabled={!a.canSubmit}
-            onPress={handleAddToToday}
-          />
+          {a.isEditing ? (
+            <>
+              <AppButton
+                label="Save"
+                variant="indigo"
+                fullWidth
+                disabled={!a.canSubmit || a.loadedDate === undefined}
+                onPress={handleSave}
+              />
+              <AppButton
+                label="Save & start"
+                variant="ghost"
+                fullWidth
+                disabled={!a.canSubmit || a.loadedDate === undefined}
+                onPress={() => void a.saveAndStart(targetDate)}
+              />
+            </>
+          ) : (
+            <>
+              <AppButton
+                label="Add & start timer"
+                variant="indigo"
+                fullWidth
+                disabled={!a.canSubmit}
+                onPress={() => a.onAddAndStart(targetDate)}
+              />
+              <AppButton
+                label={addCtaLabel}
+                variant="ghost"
+                fullWidth
+                disabled={!a.canSubmit}
+                onPress={handleAddToToday}
+              />
+            </>
+          )}
         </View>
       </KeyboardAvoidingView>
 
       <Toast
         message={
-          targetDate === null
+          a.isEditing
+            ? 'Saved'
+            : targetDate === null
             ? 'Saved to shelf'
             : targetDate === today
             ? 'Added to today'

@@ -78,6 +78,32 @@ test('C1 regression: task planned yesterday, completed today → in today, not o
   expect(onYesterday).toBeUndefined();
 });
 
+test('updateTask patches an editable queued task and reload reflects it', async () => {
+  const { store } = freshStore();
+  await store.getState().init(NOW);
+  const task = await store.getState().addTask({ label: 'Draf', category: 'admin', guessMin: 20, nowMs: NOW });
+
+  await store.getState().updateTask(
+    task.id,
+    { label: 'Draft outline', category: 'deep-work', guessMin: 45 },
+    NOW,
+  );
+
+  const row = store.getState().dayTasks.find((t) => t.id === task.id);
+  expect(row?.label).toBe('Draft outline');
+  expect(row?.category).toBe('deep-work');
+  expect(row?.guessMin).toBe(45);
+  expect(row?.status).toBe('queued'); // never flipped to completed
+});
+
+test('getTaskById returns the stored task or null', async () => {
+  const { store } = freshStore();
+  await store.getState().init(NOW);
+  const task = await store.getState().addTask({ label: 'Gym', category: 'health', guessMin: 60, nowMs: NOW });
+  expect((await store.getState().getTaskById(task.id))?.label).toBe('Gym');
+  expect(await store.getState().getTaskById('nope')).toBeNull();
+});
+
 test('addTask returns the created task', async () => {
   const { store } = freshStore();
   await store.getState().init(NOW);

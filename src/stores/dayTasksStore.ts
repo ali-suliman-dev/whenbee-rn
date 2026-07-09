@@ -86,6 +86,18 @@ export interface DayTasksState {
   ) => Promise<void>;
   moveTask: (id: string, toDate: string | null, nowMs?: number) => Promise<void>;
   removeTask: (id: string, nowMs?: number) => Promise<void>;
+  /**
+   * Patch an editable QUEUED task (label/category/guess/day). Never touches a
+   * completed row's actual — the engine trains only on completed rows, so this
+   * cannot move a multiplier. Reloads the day + shelf so the UI reflects it.
+   */
+  updateTask: (
+    id: string,
+    patch: { label?: string; category?: string; guessMin?: number; plannedDate?: string | null },
+    nowMs?: number,
+  ) => Promise<void>;
+  /** Read a single task by id (edit-drawer prefill). Null when absent. */
+  getTaskById: (id: string) => Promise<Task | null>;
   promoteToFocus: (id: string, nowMs?: number) => Promise<void>;
   /**
    * Persist a user-driven drag order for the selected date: assigns ascending
@@ -400,6 +412,19 @@ export function makeDayTasksStore(deps: Deps): UseBoundStore<StoreApi<DayTasksSt
         loadDayAndDots(get().selectedDate, today).then((d) => set(d)),
         refreshShelf(),
       ]);
+    },
+
+    async updateTask(id, patch, nowMs) {
+      await repo.update(id, patch);
+      const today = toLocalDayKey(nowMs ?? Date.now());
+      await Promise.all([
+        loadDayAndDots(get().selectedDate, today).then((d) => set(d)),
+        refreshShelf(),
+      ]);
+    },
+
+    async getTaskById(id) {
+      return repo.get(id);
     },
 
     async promoteToFocus(id, nowMs) {

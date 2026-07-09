@@ -61,17 +61,31 @@ export interface UseAddTaskResult {
    *  the "Added to today" toast before dismissing.
    *  @param date - override the target date (default: store selectedDate). */
   addToToday: (date?: string | null) => Promise<boolean>;
+  /** True when this hook instance is editing an existing queued task
+   *  (a valid `editId` was passed in). */
+  isEditing: boolean;
+  /** The edited task's `plannedDate` once loaded — `undefined` until the
+   *  prefill read completes, `null` when the task is on the shelf. */
+  loadedDate: string | null | undefined;
+  /** Patches the edited task in place. Returns true on success so the screen
+   *  can show a toast and dismiss.
+   *  @param date - override the target date (default: the loaded plannedDate). */
+  save: (date?: string | null) => Promise<boolean>;
+  /** Patches the edited task, then routes to the timer with it pre-filled.
+   *  @param date - override the target date (default: the loaded plannedDate). */
+  saveAndStart: (date?: string | null) => Promise<void>;
 }
 
 const DEFAULT_GUESS = 15;
 /** Once-ever flag: the anti-chase coach has been shown. */
 const ANTI_CHASE_SEEN_KEY = 'coach.antiChase.seen';
 
-export function useAddTask(initialTitle?: string): UseAddTaskResult {
+export function useAddTask(initialTitle?: string, editId?: string): UseAddTaskResult {
   const hydrate = useCalibrationStore((s) => s.hydrate);
   const statsByCategory = useCalibrationStore((s) => s.statsByCategory);
   const loadGoalCoach = useCalibrationStore((s) => s.loadGoalCoach);
   const addTask = useDayTasksStore((s) => s.addTask);
+  const updateTask = useDayTasksStore((s) => s.updateTask);
   const addCategoryToStore = useCategoriesStore((s) => s.addCategory);
   const categories = usePickerCategories();
   const learned = useVocabStore((s) => s.map);
@@ -82,6 +96,8 @@ export function useAddTask(initialTitle?: string): UseAddTaskResult {
   const [guessedCategory, setGuessedCategory] = useState<string | null>(null);
   const [guessMin, setGuessMinState] = useState<number>(DEFAULT_GUESS);
   const [antiChaseVisible, setAntiChaseVisible] = useState(false);
+  const [isEditing] = useState(() => typeof editId === 'string' && editId.length > 0);
+  const [loadedDate, setLoadedDate] = useState<string | null | undefined>(undefined);
   // Flips once the user taps a chip — from then on we stop auto-guessing so a
   // manual pick is never silently overwritten as they keep editing the title.
   const manualRef = useRef(false);
@@ -108,6 +124,23 @@ export function useAddTask(initialTitle?: string): UseAddTaskResult {
     setTitle(initialTitle);
     // eslint-disable-next-line react-hooks/exhaustive-deps -- one-shot seed; setTitle is re-created each render and the ref guards re-entry
   }, [initialTitle]);
+
+  // Edit mode: hydrate the fields from the stored task exactly once. Sets manualRef
+  // so the title-driven category auto-guess never overwrites the stored category.
+  const editSeededRef = useRef(false);
+  useEffect(() => {
+    if (!isEditing || !editId || editSeededRef.current) return;
+    editSeededRef.current = true;
+    void useDayTasksStore.getState().getTaskById(editId).then((task) => {
+      if (!task) return;
+      manualRef.current = true;
+      setTitleState(task.label);
+      setGuessedCategory(null);
+      setCategoryState(task.category);
+      setGuessMinState(task.guessMin);
+      setLoadedDate(task.plannedDate);
+    });
+  }, [isEditing, editId]);
 
   // Any manual pick wins and clears the ✦ guess marker.
   const setCategory = (id: string) => {
@@ -241,6 +274,30 @@ export function useAddTask(initialTitle?: string): UseAddTaskResult {
     });
   };
 
+  const save = async (date?: string | null): Promise<boolean> => {
+    if (!isEditing || !editId || !canSubmit || category === null) return false;
+    const resolvedDate = date === undefined ? loadedDate ?? null : date;
+    await updateTask(editId, { label: title.trim(), category, guessMin, plannedDate: resolvedDate });
+    bank(title.trim(), category);
+    return true;
+  };
+
+  const saveAndStart = async (date?: string | null): Promise<void> => {
+    const ok = await save(date);
+    if (!ok || editId === undefined || suggestion === null) return;
+    router.replace({
+      pathname: '/(modals)/timer',
+      params: {
+        taskId: editId,
+        label: title.trim(),
+        category: category as string,
+        estimateMin: String(suggestion.honestMinutes),
+        guessMin: String(guessMin),
+        suggestedHonestMin: String(suggestion.honestMinutes),
+      },
+    });
+  };
+
   return {
     categories,
     title,
@@ -261,5 +318,9 @@ export function useAddTask(initialTitle?: string): UseAddTaskResult {
     canSubmit,
     onAddAndStart,
     addToToday,
+    isEditing,
+    loadedDate,
+    save,
+    saveAndStart,
   };
 }

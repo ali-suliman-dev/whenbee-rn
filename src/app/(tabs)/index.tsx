@@ -23,6 +23,7 @@ import { RetroLogChip } from '@/src/features/today/RetroLogChip';
 import { QuickTaskChips } from '@/src/components/quick/QuickTaskChips';
 import { SwitchTaskSheet } from '@/src/features/today/SwitchTaskSheet';
 import { ActionSheet, type ActionSheetItem } from '@/src/components/ActionSheet';
+import { canEditRow } from '@/src/features/today/canEditRow';
 import { useCategoriesStore } from '@/src/stores/categoriesStore';
 import { useCalibrationStore } from '@/src/stores/calibrationStore';
 import { useTimerStore } from '@/src/stores/timerStore';
@@ -105,6 +106,7 @@ export default function Today() {
   const recap = useDayRecap();
 
   const isTimerRunning = useTimerStore((s) => s.isRunning);
+  const runningTaskId = useTimerStore((s) => s.taskId);
   const runningTaskLabel = useTimerStore((s) => s.taskLabel);
   const [pendingRow, setPendingRow] = useState<TodayRow | null>(null);
   const dailyRitualEnabled = useSettingsStore((s) => s.dailyRitualEnabled);
@@ -118,14 +120,27 @@ export default function Today() {
     void useDayTasksStore.getState().loadShelf();
   }, [totalCount]);
 
-  // First-run peek: teach the hidden swipe once, then never again. The flag is
-  // burned only after the peek actually animates (see onPeeked below) — never on
-  // a bare mount — so the one-shot can't be spent without the user seeing it.
-  const [peekFirstRow] = useState(() => kv.getString('today.seenSwipeHint') == null);
-  const markSwipeHintSeen = useCallback(() => kv.set('today.seenSwipeHint', '1'), []);
+  // First-run coach: teach the long-press row-actions gesture once, then never
+  // again. Shown on the first queued row only.
+  const [showLongPressHint, setShowLongPressHint] = useState(
+    () => kv.getString('today.seenLongPressHintV1') == null,
+  );
+  const dismissLongPressHint = useCallback(() => {
+    setShowLongPressHint(false);
+    kv.set('today.seenLongPressHintV1', '1');
+  }, []);
+  // Retire after one session: persist the flag the first time the hint shows, so
+  // a tap-only user who never long-presses still won't see it again next launch.
+  // It stays visible for the rest of THIS session (state is untouched) until an
+  // interaction dismisses it.
+  useEffect(() => {
+    if (showLongPressHint) kv.set('today.seenLongPressHintV1', '1');
+  }, [showLongPressHint]);
   const [deletingId, setDeletingId] = useState<string | null>(null);
   // Cross-platform row menus (ActionSheetIOS is iOS-only → crashes Android).
-  const [rowActions, setRowActions] = useState<{ id: string; label: string } | null>(null);
+  const [rowActions, setRowActions] = useState<{ id: string; label: string; done: boolean } | null>(
+    null,
+  );
   const [dayPickerId, setDayPickerId] = useState<string | null>(null);
   const [showCoachMark, setShowCoachMark] = useState(
     () => kv.getString('today.seenCoachMarkV1') == null,
@@ -197,8 +212,8 @@ export default function Today() {
     setDayPickerId(id);
   }
 
-  function promptRowActions(id: string, label: string) {
-    setRowActions({ id, label });
+  function promptRowActions(id: string, label: string, done = false) {
+    setRowActions({ id, label, done });
   }
 
   function navigateToTimer(row: TodayRow) {
@@ -212,6 +227,11 @@ export default function Today() {
         guessMin: row.guessMin,
       },
     });
+  }
+
+  function editRow(id: string) {
+    haptics.light();
+    router.push({ pathname: '/(modals)/add-task', params: { editId: id } });
   }
 
   function startRow(row: TodayRow) {
@@ -473,10 +493,11 @@ export default function Today() {
                         carriedFrom={row.carriedFrom}
                         onPress={() => startRow(row)}
                         onDelete={() => deleteTask(row.id)}
-                        onLongPress={() => promptRowActions(row.id, row.label)}
+                        onLongPress={() => { dismissLongPressHint(); promptRowActions(row.id, row.label); }}
                         onMove={() => void useDayTasksStore.getState().moveToTomorrow(row.id)}
-                        peekHint={peekFirstRow && idx === 0}
-                        onPeeked={markSwipeHintSeen}
+                        showCoachMark={showLongPressHint && idx === 0}
+                        coachLabel="Press & hold for options"
+                        onCoachMarkDismiss={dismissLongPressHint}
                         isExiting={deletingId === row.id}
                       />
                     ))}
@@ -496,7 +517,7 @@ export default function Today() {
                     rows={done}
                     deletingId={deletingId}
                     onDelete={deleteTask}
-                    onLongPress={promptRowActions}
+                    onLongPress={(id, label) => promptRowActions(id, label, true)}
                     showCoachMark={showCoachMark}
                     onCoachMarkDismiss={dismissCoachMark}
                   />
@@ -548,6 +569,9 @@ export default function Today() {
         items={
           rowActions
             ? [
+                ...(canEditRow(isTimerRunning, runningTaskId, rowActions.id, rowActions.done)
+                  ? [{ label: 'Edit', onPress: () => editRow(rowActions.id) }]
+                  : []),
                 { label: 'Move to tomorrow', onPress: () => void useDayTasksStore.getState().moveToTomorrow(rowActions.id) },
                 { label: 'Pick a day…', onPress: () => showDayPicker(rowActions.id) },
                 { label: 'Remove', destructive: true, onPress: () => setDeletingId(rowActions.id) },
