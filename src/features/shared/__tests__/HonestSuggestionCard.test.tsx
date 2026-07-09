@@ -8,44 +8,71 @@ function setPro(isPro: boolean) {
 
 afterEach(() => setPro(false));
 
-describe('HonestSuggestionCard — pre-estimate label', () => {
-  it('shows the pre-estimate line when preEstimate and no reasonNote', () => {
-    const { queryByText } = render(
-      <HonestSuggestionCard honestMinutes={35} guessMinutes={15} preEstimate />,
-    );
-    expect(queryByText('Starting estimate · sharpens as you log')).toBeTruthy();
+describe('HonestSuggestionCard — pre-data (starting hunch)', () => {
+  it('shows the starting-hunch eyebrow, the reframe headline, and the soft-range provenance', () => {
+    render(<HonestSuggestionCard honestMinutes={35} guessMinutes={15} preEstimate />);
+    expect(screen.getByText('A starting hunch')).toBeOnTheScreen();
+    expect(screen.getByText('you guessed 15m')).toBeOnTheScreen();
+    expect(
+      screen.getByText('Tasks like this often run a bit longer than they feel.'),
+    ).toBeOnTheScreen();
+    expect(
+      screen.getByText('a rough range from optimists like you · sharpens as you log'),
+    ).toBeOnTheScreen();
+    // The pre-data headline carries the reframe, so the divider line is absent.
+    expect(
+      screen.queryByText(/Not a goal to hit/),
+    ).toBeNull();
   });
 
-  it('hides it once calibrated (preEstimate false)', () => {
-    const { queryByText } = render(
-      <HonestSuggestionCard honestMinutes={35} guessMinutes={15} preEstimate={false} />,
-    );
-    expect(queryByText('Starting estimate · sharpens as you log')).toBeNull();
-  });
-
-  it('reasonNote takes priority over the pre-estimate line', () => {
-    const { queryByText } = render(
+  it('shows a soft RANGE (not a precise point) pre-data when a range is present', () => {
+    render(
       <HonestSuggestionCard
         honestMinutes={35}
         guessMinutes={15}
         preEstimate
-        reasonNote="Afternoons run long"
+        range={{ lowMinutes: 25, highMinutes: 45 }}
       />,
     );
-    expect(queryByText('Starting estimate · sharpens as you log')).toBeNull();
-    expect(queryByText('Afternoons run long')).toBeTruthy();
+    expect(screen.getByText('~25–45')).toBeOnTheScreen();
+    expect(screen.queryByText('~35')).toBeNull();
   });
 });
 
-describe('HonestSuggestionCard — Pro-gated honest range', () => {
-  it('renders the tight line when no confidence/range is provided (live-guess banner)', () => {
-    render(<HonestSuggestionCard honestMinutes={25} guessMinutes={15} />);
+describe('HonestSuggestionCard — trained (usually, for you)', () => {
+  it('shows the point number, category-grounded provenance, and the not-a-goal line', () => {
+    render(
+      <HonestSuggestionCard
+        honestMinutes={25}
+        guessMinutes={15}
+        categoryName="Email"
+      />,
+    );
+    expect(screen.getByText('Usually, for you')).toBeOnTheScreen();
     expect(screen.getByText('~25')).toBeOnTheScreen();
-    expect(screen.getByText('+10m')).toBeOnTheScreen();
-    expect(screen.queryByText('still learning')).toBeNull();
+    expect(screen.getByText('min')).toBeOnTheScreen();
+    expect(screen.getByText('from your last few email tasks')).toBeOnTheScreen();
+    expect(
+      screen.getByText('Not a goal to hit — just what tends to happen. Keep guessing what feels right.'),
+    ).toBeOnTheScreen();
   });
 
-  it('shows the band + still-learning suffix for Pro when learning confidence + range given', () => {
+  it('falls back to "similar" when no category name is given', () => {
+    render(<HonestSuggestionCard honestMinutes={25} guessMinutes={15} />);
+    expect(screen.getByText('from your last few similar tasks')).toBeOnTheScreen();
+  });
+
+  it('no legacy delta / arrow / locked-range affordance', () => {
+    render(<HonestSuggestionCard honestMinutes={25} guessMinutes={15} />);
+    expect(screen.queryByText('+10m')).toBeNull();
+    expect(screen.queryByText(/more/)).toBeNull();
+    expect(screen.queryByText('Range')).toBeNull();
+    expect(screen.queryByText('→')).toBeNull();
+  });
+});
+
+describe('HonestSuggestionCard — Pro-gated tightening range', () => {
+  it('shows the range for Pro while the category is still learning', () => {
     setPro(true);
     render(
       <HonestSuggestionCard
@@ -53,15 +80,14 @@ describe('HonestSuggestionCard — Pro-gated honest range', () => {
         guessMinutes={15}
         confidence="setting"
         range={{ lowMinutes: 20, highMinutes: 30 }}
+        categoryName="Email"
       />,
     );
-    expect(screen.getByText('20–30')).toBeOnTheScreen();
-    expect(screen.getByText('still learning')).toBeOnTheScreen();
-    // The tight number is suppressed when the band shows.
+    expect(screen.getByText('~20–30')).toBeOnTheScreen();
     expect(screen.queryByText('~25')).toBeNull();
   });
 
-  it('hides the band from free users and shows the locked Range affordance instead', () => {
+  it('shows the point (never the range numbers) to free users, no upsell', () => {
     setPro(false);
     render(
       <HonestSuggestionCard
@@ -71,26 +97,12 @@ describe('HonestSuggestionCard — Pro-gated honest range', () => {
         range={{ lowMinutes: 20, highMinutes: 30 }}
       />,
     );
-    // Free users keep the point number; the real range numbers never leak.
     expect(screen.getByText('~25')).toBeOnTheScreen();
-    expect(screen.queryByText('20–30')).toBeNull();
-    expect(screen.getByText('Range')).toBeOnTheScreen();
+    expect(screen.queryByText('~20–30')).toBeNull();
+    expect(screen.queryByText('Range')).toBeNull();
   });
 
-  it('shows a roughly caption (no band) for Pro at the raw state', () => {
-    setPro(true);
-    render(
-      <HonestSuggestionCard
-        honestMinutes={25}
-        guessMinutes={15}
-        confidence="raw"
-        range={{ lowMinutes: 15, highMinutes: 40 }}
-      />,
-    );
-    expect(screen.getByText('Still learning — roughly 15–40m')).toBeOnTheScreen();
-  });
-
-  it('keeps the tight line when confidence is honest even if a range is passed', () => {
+  it('keeps the point once the category has settled (honest), even for Pro', () => {
     setPro(true);
     render(
       <HonestSuggestionCard
@@ -101,6 +113,19 @@ describe('HonestSuggestionCard — Pro-gated honest range', () => {
       />,
     );
     expect(screen.getByText('~25')).toBeOnTheScreen();
-    expect(screen.queryByText('still learning')).toBeNull();
+    expect(screen.queryByText('~20–30')).toBeNull();
+  });
+});
+
+describe('HonestSuggestionCard — reasonNote', () => {
+  it('renders a quiet extra line when a Pro reasonNote is present', () => {
+    render(
+      <HonestSuggestionCard
+        honestMinutes={25}
+        guessMinutes={15}
+        reasonNote="Afternoons run long"
+      />,
+    );
+    expect(screen.getByText('Afternoons run long')).toBeOnTheScreen();
   });
 });

@@ -342,15 +342,18 @@ function TimerScreen() {
             elapsedSec={timer.elapsedSec}
             overProgress={timer.overProgress}
             estimateSec={timer.estimateSec}
-            guessMin={timer.guessMin}
+            range={timer.range}
+            confidence={timer.confidence}
+            isPro={isPro}
           />
 
           <AppText style={taskName}>{label}</AppText>
 
           <View style={ledger}>
-            <InfoRow first label="Guess → Honest">
+            <InfoRow first label="Your guess">
               <LedgerValue>{guessRounded}m</LedgerValue>
-              <LedgerValue faint> → </LedgerValue>
+            </InfoRow>
+            <InfoRow label="Honest">
               <LedgerValue amber>~{honestRounded}m</LedgerValue>
             </InfoRow>
             <FinishTime

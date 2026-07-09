@@ -7,7 +7,9 @@ import { useVocabStore } from '@/src/stores/vocabStore';
 import { resolveSuggestion, priorFor } from '@/src/engine';
 import { usePickerCategories, type PickerCategory } from '@/src/features/shared/CategoryChips';
 import { guessCategory } from '@/src/features/shared/categoryGuess';
+import { shouldShowAntiChase } from '@/src/features/add-task/antiChase';
 import { analytics } from '@/src/services/analytics';
+import { kv } from '@/src/lib/kv';
 import type { CalibrationSummary } from '@/src/domain/types';
 
 // ──────────────────────────────────────────────────────────────────────────────
@@ -45,6 +47,11 @@ export interface UseAddTaskResult {
   goalCoach: { targetBand: number; worstValue: string | null } | null;
   /** Write the honest suggestion into the guess field (the coach "Use Xm" action). */
   applyHonest: () => void;
+  /** True while the once-ever anti-chase coach is showing (user raised the guess
+   *  toward/past the honest number). Dismissible; never fires again once seen. */
+  antiChaseVisible: boolean;
+  /** Dismiss the anti-chase coach for this session. */
+  dismissAntiChase: () => void;
   canSubmit: boolean;
   /** Adds the task and navigates to the timer.
    *  @param date - override the target date (default: store selectedDate). */
@@ -70,6 +77,8 @@ export interface UseAddTaskResult {
 }
 
 const DEFAULT_GUESS = 15;
+/** Once-ever flag: the anti-chase coach has been shown. */
+const ANTI_CHASE_SEEN_KEY = 'coach.antiChase.seen';
 
 export function useAddTask(initialTitle?: string, editId?: string): UseAddTaskResult {
   const hydrate = useCalibrationStore((s) => s.hydrate);
@@ -85,7 +94,8 @@ export function useAddTask(initialTitle?: string, editId?: string): UseAddTaskRe
   const [title, setTitleState] = useState('');
   const [category, setCategoryState] = useState<string | null>(null);
   const [guessedCategory, setGuessedCategory] = useState<string | null>(null);
-  const [guessMin, setGuessMin] = useState<number>(DEFAULT_GUESS);
+  const [guessMin, setGuessMinState] = useState<number>(DEFAULT_GUESS);
+  const [antiChaseVisible, setAntiChaseVisible] = useState(false);
   const [isEditing] = useState(() => typeof editId === 'string' && editId.length > 0);
   const [loadedDate, setLoadedDate] = useState<string | null | undefined>(undefined);
   // Flips once the user taps a chip — from then on we stop auto-guessing so a
@@ -127,7 +137,7 @@ export function useAddTask(initialTitle?: string, editId?: string): UseAddTaskRe
       setTitleState(task.label);
       setGuessedCategory(null);
       setCategoryState(task.category);
-      setGuessMin(task.guessMin);
+      setGuessMinState(task.guessMin);
       setLoadedDate(task.plannedDate);
     });
   }, [isEditing, editId]);
@@ -199,9 +209,27 @@ export function useAddTask(initialTitle?: string, editId?: string): UseAddTaskRe
     };
   }, [category, loadGoalCoach]);
 
+  // Wrapped guess setter — before applying the new value, check whether the user
+  // just raised their guess to/past the honest number (the chase move). If so, and
+  // they've never seen it, surface the one-time anti-chase coach and persist the
+  // once-ever flag. `applyHonest` (the goal-coach action) writes state directly so
+  // deliberately using the honest number never trips the coach.
+  const setGuessMin = (next: number) => {
+    const honest = suggestion?.honestMinutes ?? null;
+    if (honest !== null && !antiChaseVisible) {
+      const seen = kv.getString(ANTI_CHASE_SEEN_KEY) === '1';
+      if (shouldShowAntiChase({ prevGuess: guessMin, nextGuess: next, honestMinutes: honest, seen })) {
+        setAntiChaseVisible(true);
+        kv.set(ANTI_CHASE_SEEN_KEY, '1');
+      }
+    }
+    setGuessMinState(next);
+  };
+  const dismissAntiChase = () => setAntiChaseVisible(false);
+
   // The coach "Use Xm" action — write the honest suggestion into the guess field.
   const applyHonest = () => {
-    if (suggestion !== null) setGuessMin(suggestion.honestMinutes);
+    if (suggestion !== null) setGuessMinState(suggestion.honestMinutes);
   };
 
   const addCategory = (name: string): string => {
@@ -285,6 +313,8 @@ export function useAddTask(initialTitle?: string, editId?: string): UseAddTaskRe
     preEstimate: suggestion?.basis === 'prior',
     goalCoach,
     applyHonest,
+    antiChaseVisible,
+    dismissAntiChase,
     canSubmit,
     onAddAndStart,
     addToToday,
