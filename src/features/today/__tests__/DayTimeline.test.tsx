@@ -100,6 +100,11 @@ function makePriorFocusWindow(): LearnedFocusWindow {
     sampleCount: 0,
     distinctDays: 0,
     held: false,
+    gates: {
+      sessions: { have: 0, need: 15 },
+      days: { have: 0, need: 5 },
+      peak: { have: 0, need: 6, confirming: false },
+    },
   };
 }
 
@@ -113,6 +118,11 @@ function makePersonalFocusWindow(): LearnedFocusWindow {
     sampleCount: 12,
     distinctDays: 8,
     held: false,
+    gates: {
+      sessions: { have: 12, need: 15 },
+      days: { have: 8, need: 5 },
+      peak: { have: 6, need: 6, confirming: false },
+    },
   };
 }
 

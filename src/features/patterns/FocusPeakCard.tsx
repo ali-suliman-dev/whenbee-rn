@@ -7,15 +7,25 @@ import { type } from '@/src/theme/typography';
 import { AppText } from '@/src/components/AppText';
 import { AppButton } from '@/src/components/AppButton';
 import { ProCoinPill } from '@/src/components/ProCoinPill';
-import { HoneyPips } from '@/src/features/category-detail/HoneyPips';
 import { formatWindowRange } from '@/src/lib/time';
-import { FW_GATE_MIN_COMPLETED, FW_GATE_MIN_DISTINCT_DAYS } from '@/src/engine/constants';
 import { useEntitlement } from '@/src/features/paywall/useEntitlement';
 import { FocusCurve } from '@/src/features/planner/FocusCurve';
+import { FocusGateRow, type FocusGateState } from '@/src/features/planner/FocusGateRow';
+import { FocusRewardPreview } from '@/src/features/planner/FocusRewardPreview';
 import { FocusWindowEditorSheet } from '@/src/features/planner/FocusWindowEditorSheet';
 import { useLearnedFocusWindow } from '@/src/features/planner/useLearnedFocusWindow';
 import { useFocusInsights } from '@/src/features/patterns/useFocusInsights';
-import { whyNarrative } from '@/src/features/patterns/focusCopy';
+import {
+  whyNarrative,
+  sessionsGateCopy,
+  daysGateCopy,
+  peakGateCopy,
+  daysUpcomingCopy,
+  peakUpcomingCopy,
+  focusUnlockedTag,
+  focusRewardCaption,
+  FOCUS_GATE_LABELS,
+} from '@/src/features/patterns/focusCopy';
 import { useSettingsStore } from '@/src/stores/settingsStore';
 
 // ──────────────────────────────────────────────────────────────────────────────
@@ -57,66 +67,80 @@ export function FocusPeakCard() {
     </View>
   );
 
-  // ── forming ──
+  // ── forming — the 3-gate unlock ladder ──
   if (basis === 'prior') {
-    const countHead: TextStyle = { ...(type.bodyLg as TextStyle), fontWeight: t.fontWeight.bold as TextStyle['fontWeight'] };
+    const { gates } = win;
+    const sDone = gates.sessions.have >= gates.sessions.need;
+    const dDone = gates.days.have >= gates.days.need;
+
+    // Only two gates can genuinely clear while still in the forming (prior) branch —
+    // the peak gate never reaches "unlocked" here; it only truly unlocks when `basis`
+    // becomes 'personal', which leaves this branch entirely. Counting it as unlocked
+    // produced a contradiction: "3 of 3 unlocked" alongside "Confirming your peak".
+    const unlocked = (sDone ? 1 : 0) + (dDone ? 1 : 0);
+    const gatesLeft = 3 - unlocked;
+
+    // Exactly one active row: the first gate (in order) that isn't done. When all
+    // counts are met but the window is still confirming, the peak row stays active.
+    const sessionsState: FocusGateState = sDone ? 'done' : 'active';
+    const daysState: FocusGateState = dDone ? 'done' : !sDone ? 'upcoming' : 'active';
+    const peakState: FocusGateState = sDone && dDone ? 'active' : 'upcoming';
+
+    const sessionsCopy = sessionsGateCopy(gates.sessions.have, gates.sessions.need);
+    const daysCopy =
+      daysState === 'upcoming'
+        ? daysUpcomingCopy(gates.days.have, gates.days.need)
+        : daysGateCopy(gates.days.have, gates.days.need);
+    const peakCopy =
+      peakState === 'upcoming'
+        ? peakUpcomingCopy(gates.peak.have, gates.peak.need)
+        : peakGateCopy(gates.peak.have, gates.peak.need, gates.peak.confirming);
+
+    const cardTitle = sDone && dDone ? 'Almost there' : 'Learning your focus hours';
+
+    const tagStyle: TextStyle = { ...(type.caption as unknown as TextStyle), color: t.colors.inkSoft };
     const headerRow: ViewStyle = { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' };
-
-    // The window unlocks on THREE gates, not one: enough sessions, enough distinct
-    // days, and a peak that clears significance. Show progress against the gate
-    // that's actually blocking — never keep asking for sessions once they're in.
-    const sessionsMet = sampleCount >= FW_GATE_MIN_COMPLETED;
-    const daysMet = win.distinctDays >= FW_GATE_MIN_DISTINCT_DAYS;
-
-    // Which meter (if any) to show below the curve.
-    const Meter = () => {
-      if (!sessionsMet) {
-        const filled = Math.min(sampleCount, FW_GATE_MIN_COMPLETED);
-        return (
-          <>
-            <AppText testID="focus-maturity">
-              <AppText style={{ ...countHead, color: t.colors.inkSoft }}>{sampleCount}</AppText>
-              <AppText style={{ ...countHead, color: t.colors.inkFaint }}>{`/${FW_GATE_MIN_COMPLETED}`}</AppText>
-              <AppText style={{ ...(type.body as TextStyle), color: t.colors.inkFaint }}> sessions</AppText>
-            </AppText>
-            <HoneyPips filled={filled} total={FW_GATE_MIN_COMPLETED} tone="sunken" />
-            <AppText style={body}>Log {FW_GATE_MIN_COMPLETED} timed sessions and I&apos;ll reveal your sharpest hours.</AppText>
-          </>
-        );
-      }
-      if (!daysMet) {
-        const filled = Math.min(win.distinctDays, FW_GATE_MIN_DISTINCT_DAYS);
-        return (
-          <>
-            <AppText testID="focus-maturity-days">
-              <AppText style={{ ...countHead, color: t.colors.inkSoft }}>{win.distinctDays}</AppText>
-              <AppText style={{ ...countHead, color: t.colors.inkFaint }}>{`/${FW_GATE_MIN_DISTINCT_DAYS}`}</AppText>
-              <AppText style={{ ...(type.body as TextStyle), color: t.colors.inkFaint }}> days</AppText>
-            </AppText>
-            <HoneyPips filled={filled} total={FW_GATE_MIN_DISTINCT_DAYS} tone="sunken" />
-            <AppText style={body}>
-              {sampleCount} sessions in — I just need them across {FW_GATE_MIN_DISTINCT_DAYS} different days to trust the peak.
-            </AppText>
-          </>
-        );
-      }
-      // Sessions and days both met, still no significant peak.
-      return (
-        <AppText style={body}>
-          Your hours look about even so far, so there&apos;s no clear peak yet. Keep logging and I&apos;ll flag one the moment it shows.
-        </AppText>
-      );
-    };
+    const tagCluster: ViewStyle = { flexDirection: 'row', alignItems: 'center', gap: t.space[2] };
 
     return (
       <View style={card}>
         <View style={headerRow}>
           <Eyebrow />
-          {isPro ? null : <ProCoinPill icon="ribbon" />}
+          <View style={tagCluster}>
+            <AppText style={tagStyle}>{focusUnlockedTag(unlocked)}</AppText>
+            {isPro ? null : <ProCoinPill icon="ribbon" />}
+          </View>
         </View>
-        <FocusCurve scoreByBin={scoreByBin} variant="forming" yAxis />
-        <AppText style={title}>Learning your focus hours</AppText>
-        <Meter />
+        <FocusRewardPreview scoreByBin={scoreByBin} caption={focusRewardCaption(gatesLeft)} />
+        <AppText style={title}>{cardTitle}</AppText>
+        <View>
+          <FocusGateRow
+            first
+            state={sessionsState}
+            label={FOCUS_GATE_LABELS.sessions}
+            valueText={sessionsCopy.valueText}
+            sub={sessionsCopy.sub}
+            pips={sessionsState === 'active' ? { filled: gates.sessions.have, total: gates.sessions.need } : undefined}
+          />
+          <FocusGateRow
+            state={daysState}
+            label={FOCUS_GATE_LABELS.days}
+            valueText={daysCopy.valueText}
+            sub={daysCopy.sub}
+            pips={daysState === 'active' ? { filled: gates.days.have, total: gates.days.need } : undefined}
+          />
+          <FocusGateRow
+            state={peakState}
+            label={FOCUS_GATE_LABELS.peak}
+            valueText={peakCopy.valueText}
+            sub={peakCopy.sub}
+            pips={
+              peakState === 'active' && !gates.peak.confirming
+                ? { filled: gates.peak.have, total: gates.peak.need }
+                : undefined
+            }
+          />
+        </View>
         <AppButton
           label="Set my hours myself"
           variant="ghost"

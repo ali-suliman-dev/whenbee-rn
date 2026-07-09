@@ -39,6 +39,11 @@ const PRIOR_WINDOW = {
   sampleCount: 5,
   distinctDays: 3,
   held: false,
+  gates: {
+    sessions: { have: 5, need: 15 },
+    days: { have: 3, need: 5 },
+    peak: { have: 0, need: 6, confirming: false },
+  },
 };
 
 /** Personal window 9am–11am */
@@ -51,6 +56,11 @@ const PERSONAL_WINDOW = {
   sampleCount: 20,
   distinctDays: 12,
   held: false,
+  gates: {
+    sessions: { have: 20, need: 15 },
+    days: { have: 12, need: 5 },
+    peak: { have: 8, need: 6, confirming: false },
+  },
 };
 
 // nowMs = midnight (0) → minute-of-day = 0, well before 11am end

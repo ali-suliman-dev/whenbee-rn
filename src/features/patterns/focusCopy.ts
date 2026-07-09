@@ -10,3 +10,82 @@ export function whyNarrative(peakMin: number): string {
   if (peakMin < 1020) return 'Mornings warm up slow — you peak after lunch'; // 13:00–17:00
   return "You're a slow burn — you peak in the evening"; // after 17:00
 }
+
+// ──────────────────────────────────────────────────────────────────────────────
+// Focus-unlock ladder copy — the 3-gate "what's left" milestone card.
+//
+// Every helper is pure and returns plain, warm strings (no guilt, no streaks,
+// always "N to go" — never "not enough data"). Plurals are guarded so a single
+// remaining item never reads "1 more days".
+// ──────────────────────────────────────────────────────────────────────────────
+
+/** One gate's rendered value + sub-line. */
+export interface FocusGateCopy {
+  valueText: string;
+  sub: string;
+}
+
+/** "1 more day" vs "2 more days" — pluralise the noun by count. */
+function plural(count: number, singular: string): string {
+  return `${count} ${singular}${count === 1 ? '' : 's'}`;
+}
+
+/** Row labels for the three gates (kept beside their copy so they stay in sync). */
+export const FOCUS_GATE_LABELS = {
+  sessions: 'Timed sessions',
+  days: 'Different days',
+  peak: 'A clear peak',
+} as const;
+
+/** Gate 1 — enough timed sessions logged. */
+export function sessionsGateCopy(have: number, need: number): FocusGateCopy {
+  if (have >= need) {
+    return { valueText: `${have} ✓`, sub: 'Plenty logged for me to learn from.' };
+  }
+  return { valueText: `${have}/${need}`, sub: `${plural(need - have, 'more timed session')} to go.` };
+}
+
+/** Gate 2 — sessions spread across enough distinct days. */
+export function daysGateCopy(have: number, need: number): FocusGateCopy {
+  if (have >= need) {
+    return { valueText: `${have} ✓`, sub: `Spread over ${have} days — not a one-day fluke.` };
+  }
+  return { valueText: `${have}/${need}`, sub: `${plural(need - have, 'more day')} with a session logged.` };
+}
+
+/** Gate 3 — a clear peak in the busiest stretch. `confirming` = counts met but
+ *  the window hasn't certified yet, so it settles rather than dead-ends. */
+export function peakGateCopy(have: number, need: number, confirming: boolean): FocusGateCopy {
+  if (confirming) {
+    return {
+      valueText: `${need}/${need}`,
+      sub: 'Confirming your peak — a session or two more will settle it.',
+    };
+  }
+  return {
+    valueText: `${have}/${need}`,
+    sub: `${plural(need - have, 'more session')} in your busiest stretch and your peak locks in.`,
+  };
+}
+
+/** Gate 2 shown before it's the active step — quiet, forward-looking. */
+export function daysUpcomingCopy(have: number, need: number): FocusGateCopy {
+  return { valueText: `${have}/${need}`, sub: 'Next: a spread of different days.' };
+}
+
+/** Gate 3 shown before it's the active step — quiet, last in line. */
+export function peakUpcomingCopy(have: number, need: number): FocusGateCopy {
+  return { valueText: `${have}/${need}`, sub: 'Last: your busiest stretch stands out.' };
+}
+
+/** The right-aligned "N of 3 unlocked" progress tag. */
+export function focusUnlockedTag(unlocked: number): string {
+  return `${unlocked} of 3 unlocked`;
+}
+
+/** Caption under the frosted reward preview — pulls toward the finish. */
+export function focusRewardCaption(gatesLeft: number): string {
+  return gatesLeft > 1
+    ? 'Keep logging — your sharpest hours are forming.'
+    : 'One more signal reveals your sharpest hours.';
+}
