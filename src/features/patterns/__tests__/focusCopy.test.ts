@@ -103,20 +103,20 @@ describe('peakGateCopy', () => {
   it('active (not confirming): pluralises remaining peak sessions', () => {
     expect(peakGateCopy(2, 6, false)).toEqual({
       valueText: '2/6',
-      sub: '4 more sessions in your busiest stretch and your peak locks in.',
+      sub: '4 more sessions around your usual hours and your peak shows.',
     });
   });
 
   it('active: singular when one peak session remains', () => {
     expect(peakGateCopy(5, 6, false).sub).toBe(
-      '1 more session in your busiest stretch and your peak locks in.',
+      '1 more session around your usual hours and your peak shows.',
     );
   });
 
   it('confirming: full value, settling copy — never a "to go" line', () => {
     expect(peakGateCopy(8, 6, true)).toEqual({
       valueText: '6/6',
-      sub: 'Confirming your peak — a session or two more will settle it.',
+      sub: 'Almost — a session or two more and I lock your peak in.',
     });
   });
 });
@@ -132,7 +132,7 @@ describe('upcoming copy', () => {
   it('peak upcoming: muted, last in line', () => {
     expect(peakUpcomingCopy(0, 6)).toEqual({
       valueText: '0/6',
-      sub: 'Last: your busiest stretch stands out.',
+      sub: 'Last: I spot the hours you keep coming back to.',
     });
   });
 });

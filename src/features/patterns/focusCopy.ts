@@ -42,7 +42,10 @@ export function sessionsGateCopy(have: number, need: number): FocusGateCopy {
   if (have >= need) {
     return { valueText: `${have} ✓`, sub: 'Plenty logged for me to learn from.' };
   }
-  return { valueText: `${have}/${need}`, sub: `${plural(need - have, 'more timed session')} to go.` };
+  return {
+    valueText: `${have}/${need}`,
+    sub: `${plural(need - have, 'more timed session')} to go.`,
+  };
 }
 
 /** Gate 2 — sessions spread across enough distinct days. */
@@ -50,21 +53,27 @@ export function daysGateCopy(have: number, need: number): FocusGateCopy {
   if (have >= need) {
     return { valueText: `${have} ✓`, sub: `Spread over ${have} days — not a one-day fluke.` };
   }
-  return { valueText: `${have}/${need}`, sub: `${plural(need - have, 'more day')} with a session logged.` };
+  return {
+    valueText: `${have}/${need}`,
+    sub: `${plural(need - have, 'more day')} with a session logged.`,
+  };
 }
 
-/** Gate 3 — a clear peak in the busiest stretch. `confirming` = counts met but
- *  the window hasn't certified yet, so it settles rather than dead-ends. */
+/** Gate 3 — a clear peak forming in your most-used time of day. This one isn't a
+ *  chore you can aim at: the number counts sessions landing around the same hours,
+ *  and I certify the peak once they cluster. `confirming` = counts met but the
+ *  window hasn't certified yet, so it settles rather than dead-ends. When it does
+ *  clear, the card graduates into your real focus window — you never see "3/3" here. */
 export function peakGateCopy(have: number, need: number, confirming: boolean): FocusGateCopy {
   if (confirming) {
     return {
       valueText: `${need}/${need}`,
-      sub: 'Confirming your peak — a session or two more will settle it.',
+      sub: 'Almost — a session or two more and I lock your peak in.',
     };
   }
   return {
     valueText: `${have}/${need}`,
-    sub: `${plural(need - have, 'more session')} in your busiest stretch and your peak locks in.`,
+    sub: `${plural(need - have, 'more session')} around your usual hours and your peak shows.`,
   };
 }
 
@@ -73,9 +82,10 @@ export function daysUpcomingCopy(have: number, need: number): FocusGateCopy {
   return { valueText: `${have}/${need}`, sub: 'Next: a spread of different days.' };
 }
 
-/** Gate 3 shown before it's the active step — quiet, last in line. */
+/** Gate 3 shown before it's the active step — quiet, last in line. Framed as my
+ *  job (I watch for the pattern), not a task the user has to hit. */
 export function peakUpcomingCopy(have: number, need: number): FocusGateCopy {
-  return { valueText: `${have}/${need}`, sub: 'Last: your busiest stretch stands out.' };
+  return { valueText: `${have}/${need}`, sub: 'Last: I spot the hours you keep coming back to.' };
 }
 
 /** The right-aligned "N of 3 unlocked" progress tag. */

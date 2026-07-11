@@ -125,7 +125,7 @@ it('forming: sessions + days done, peak active → 2 of 3 unlocked, "Almost ther
   expect(getByText('6 ✓')).toBeTruthy();
   // peak gate active with its have/need + locks-in copy
   expect(getByText('/6')).toBeTruthy();
-  expect(getByText('4 more sessions in your busiest stretch and your peak locks in.')).toBeTruthy();
+  expect(getByText('4 more sessions around your usual hours and your peak shows.')).toBeTruthy();
 });
 
 it('forming: days done from distinct-day count alone, sessions still short → days row is DONE, not upcoming', () => {
@@ -145,6 +145,6 @@ it('forming: peak confirming → settling copy, not a "to go" line', () => {
   (useLearnedFocusWindow as jest.Mock).mockReturnValue(peakConfirming);
   const { getByText, queryByText } = render(<FocusPeakCard />);
   expect(getByText('2 of 3 unlocked')).toBeTruthy();
-  expect(getByText('Confirming your peak — a session or two more will settle it.')).toBeTruthy();
-  expect(queryByText(/your peak locks in/)).toBeNull();
+  expect(getByText('Almost — a session or two more and I lock your peak in.')).toBeTruthy();
+  expect(queryByText(/your peak shows/)).toBeNull();
 });
