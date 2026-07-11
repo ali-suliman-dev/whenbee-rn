@@ -50,7 +50,7 @@ export function ReviewRitualLocked({ period }: { period: ReviewPeriod }) {
   return (
     <Card tone="flat" style={{ gap: t.space[3] }}>
       <View style={eyebrowRow}>
-        <Ionicons name="leaf-outline" size={t.iconSize.sm} color={t.colors.accent} />
+        <Ionicons name="mail-unread-outline" size={t.iconSize.sm} color={t.colors.accent} />
         <Text style={eyebrow}>{isMonth ? 'YOUR HONEST MONTH' : 'YOUR HONEST WEEK'}</Text>
       </View>
       <Text style={label}>{period.label}</Text>
@@ -60,7 +60,7 @@ export function ReviewRitualLocked({ period }: { period: ReviewPeriod }) {
         </Text>
         <View style={scrim} pointerEvents="none" />
       </View>
-      <AppButton label="Unlock with Pro" variant="amber" size="lg" fullWidth onPress={openPaywall} />
+      <AppButton label="Unlock with Pro" variant="amber" size="md" fullWidth onPress={openPaywall} />
       <Text style={foot}>Cancel anytime · learned on-device</Text>
     </Card>
   );

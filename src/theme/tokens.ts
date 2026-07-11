@@ -664,6 +664,7 @@ export const tokens = {
     bandGuideTop: 22, bandGuideW: 1, bandGuideDash: '1 3',
     bandDotSize: 14, bandDotTop: 26, bandDotBorder: 2,
     bandFallbackBarH: 56,
+    meterH: 12, // "one thing to try" split-meter bar height (planned + top-up)
   },
 
   // ── brand illustration palette ──────────────────────────────────────────────

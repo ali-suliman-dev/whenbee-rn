@@ -62,6 +62,11 @@ export default function AddTask() {
   const [datePickerVisible, setDatePickerVisible] = useState(false);
   const [addingCategory, setAddingCategory] = useState(false);
   const [newCategory, setNewCategory] = useState('');
+  // Measured height of the pinned footer. The footer is an opaque absolute overlay
+  // (not a column sibling) so the native formSheet can never lay it over the scroll
+  // content; the scroll content reserves this height as bottom padding so its last
+  // row always clears the footer and the whole sheet stays scrollable.
+  const [footerH, setFooterH] = useState(0);
   const dismissTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Target date for the new task. Null = shelf (no day yet).
@@ -163,15 +168,6 @@ export default function AddTask() {
     color: t.colors.ink,
   };
 
-  // Quiet ✦ hint under the chips when the category was auto-guessed from the title.
-  const guessHint: ViewStyle = {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: t.space[1.5],
-    paddingHorizontal: t.space[1],
-  };
-  const guessHintText: TextStyle = { ...(type.micro as unknown as TextStyle), color: t.colors.inkSoft };
-
   // Inline "new category" row — appears under the chips when "+ New" is tapped.
   const newCatRow: ViewStyle = {
     flexDirection: 'row',
@@ -196,6 +192,11 @@ export default function AddTask() {
   };
 
   const footerStyle: ViewStyle = {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: t.colors.bg,
     borderTopWidth: t.borderWidth.hairline,
     borderTopColor: t.colors.hairline,
     paddingTop: t.space[3],
@@ -208,18 +209,27 @@ export default function AddTask() {
     // sheet gets a large empty gap above its content on Android.
     <Screen edges={['left', 'right']} horizontalPadding={false}>
       {/* react-native-screens' formSheet collapses a flex:1 child to its content
-          height, so the ScrollView+footer stack sits high with dead space below and
-          the CTA floats mid-sheet. Anchor to the sheet's own height (0.95 detent) so
-          the footer pins to the bottom; behavior='padding' still lifts it over the
-          keyboard. */}
+          height. A `minHeight` here only sets a floor, so once the content (honest
+          card + coaches) is taller than the sheet the column GROWS past the 0.95
+          detent — the flex:1 ScrollView then expands to fit instead of scrolling, and
+          the footer is pushed below the sheet where it can't be reached. A FIXED
+          height caps the column at the sheet, so the ScrollView is bounded and scrolls
+          while the footer stays pinned. behavior='padding' still lifts it over the
+          keyboard within that fixed frame. */}
       <KeyboardAvoidingView
-        style={{ flex: 1, minHeight: winH * 0.95 - insets.bottom }}
+        style={{ height: winH * 0.95 - insets.bottom }}
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
       >
         <ScrollView
           style={{ flex: 1 }}
-          contentContainerStyle={{ gap: t.space[5], paddingTop: t.space[3], paddingBottom: t.space[4] }}
+          contentContainerStyle={{
+            gap: t.space[5],
+            paddingTop: t.space[3],
+            // Reserve the pinned footer's height so the last row scrolls clear of it.
+            paddingBottom: t.space[4] + footerH,
+          }}
           showsVerticalScrollIndicator={false}
+          keyboardShouldPersistTaps="handled"
         >
           <SheetGrabber />
 
@@ -271,14 +281,6 @@ export default function AddTask() {
               guessedId={a.guessedCategory}
               usage={a.usage}
             />
-            {a.guessedCategory && a.category === a.guessedCategory ? (
-              <View style={guessHint}>
-                <Ionicons name="bulb-outline" size={t.iconSize.sm} color={t.colors.primary} />
-                <Text style={guessHintText}>
-                  Guessed {a.categories.find((c) => c.id === a.guessedCategory)?.name} · tap to change
-                </Text>
-              </View>
-            ) : null}
             {addingCategory ? (
               <View style={newCatRow}>
                 <TextInput
@@ -343,8 +345,13 @@ export default function AddTask() {
           ) : null}
         </ScrollView>
 
-        {/* Pinned CTA footer — sits in the lower-third thumb zone, rises with keyboard */}
-        <View style={footerStyle}>
+        {/* Pinned CTA footer — opaque absolute overlay in the lower-third thumb zone,
+            rises with keyboard. Absolute (not a column sibling) so the native sheet
+            can't render scroll content on top of it. */}
+        <View
+          style={footerStyle}
+          onLayout={(e) => setFooterH(e.nativeEvent.layout.height)}
+        >
           {a.isEditing ? (
             <>
               <AppButton

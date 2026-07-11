@@ -66,8 +66,11 @@ export function ReviewRitualCard({
   const lead: TextStyle = { ...(type.body as unknown as TextStyle), color: t.colors.inkSoft };
   const ctaRow: ViewStyle = { flexDirection: 'row', alignItems: 'center', gap: t.space[1.5] };
   const ctaText: TextStyle = { ...(type.bodySmBold as unknown as TextStyle), color: t.colors.amberText };
+  // Surface (not accentSoft) so the ready card sits on the same dark card
+  // colour as its siblings above (personality / when-you're-sharp) — the amber
+  // eyebrow, icon and CTA carry the "ready" warmth without a tinted surface.
   const envelope: ViewStyle = {
-    backgroundColor: t.colors.accentSoft,
+    backgroundColor: t.colors.surface,
     borderRadius: t.radii.card,
     borderCurve: 'continuous',
     padding: t.space[4],

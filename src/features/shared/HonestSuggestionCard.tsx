@@ -138,7 +138,7 @@ export function HonestSuggestionCard({
 
   const a11yLabel = showRange && range
     ? `Tasks like this usually take ${range.lowMinutes} to ${range.highMinutes} minutes.`
-    : `Honest estimate about ${honestMinutes} minutes for tasks like this. Not a goal, just what tends to happen.`;
+    : `Honest estimate about ${honestMinutes} minutes for tasks like this. Not a target, just what usually happens.`;
 
   return (
     <View style={card} accessibilityLabel={a11yLabel}>
@@ -164,7 +164,7 @@ export function HonestSuggestionCard({
           divider line only shows once the category is trained. */}
       {!preEstimate ? (
         <AppText style={notGoal}>
-          Not a goal to hit — just what tends to happen. Keep guessing what feels right.
+          Not a target. Just what usually happens. Keep guessing with your gut.
         </AppText>
       ) : null}
     </View>

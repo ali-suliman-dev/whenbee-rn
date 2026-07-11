@@ -83,6 +83,10 @@ export function BiggestSurpriseRitualCard({ surprise, band, loggedCount }: Props
     fallbackRealBar: { backgroundColor: t.colors.accent },
     fallbackGuessLabel: { ...type.caption, color: t.colors.inkSoft },
     fallbackRealLabel: { ...type.captionBold, color: t.colors.onAmber },
+    // Breathing room above/below the range illustration so it isn't pinned
+    // tight between the heading and the readout. Own padding (not a sibling
+    // margin) keeps the card on one gap-based rhythm.
+    vizBlock: { paddingVertical: t.space[2], gap: t.space[2] },
     // Real-values range band
     band: { height: rv.bandHeight, position: 'relative' },
     flag: { ...(type.numMicro as unknown as TextStyle), position: 'absolute', top: 0 },
@@ -197,64 +201,66 @@ export function BiggestSurpriseRitualCard({ surprise, band, loggedCount }: Props
           </Text>
         </View>
 
-        <View style={styles.band}>
-          <Text
-            onLayout={onGuessFlagLayout}
-            style={[
-              styles.flag,
-              styles.flagGuess,
-              {
-                left: `${guessFlagPct}%`,
-                transform: [{ translateX: -guessFlagW / 2 }],
-                opacity: guessFlagW > 0 ? 1 : 0,
-              },
-            ]}
-          >
-            {surprise.estimateMin}m guess
-          </Text>
-          <Text
-            onLayout={onRealFlagLayout}
-            style={[
-              styles.flag,
-              styles.flagReal,
-              {
-                left: `${realFlagPct}%`,
-                transform: [{ translateX: -realFlagW / 2 }],
-                opacity: realFlagW > 0 ? 1 : 0,
-              },
-            ]}
-          >
-            {surprise.actualMin}m real
-          </Text>
-          <View
-            style={[
-              styles.caret,
-              { left: `${guessPct}%`, transform: [{ translateX: -rv.bandCaretW }] },
-            ]}
-          />
-          <View style={styles.track} />
-          <Svg width="100%" height={guideHeight} style={styles.guide}>
-            <Line
-              x1={`${guessPct}%`}
-              y1={0}
-              x2={`${guessPct}%`}
-              y2={guideHeight}
-              stroke={t.colors.inkFaint}
-              strokeWidth={rv.bandGuideW}
-              strokeDasharray={rv.bandGuideDash}
+        <View style={styles.vizBlock}>
+          <View style={styles.band}>
+            <Text
+              onLayout={onGuessFlagLayout}
+              style={[
+                styles.flag,
+                styles.flagGuess,
+                {
+                  left: `${guessFlagPct}%`,
+                  transform: [{ translateX: -guessFlagW / 2 }],
+                  opacity: guessFlagW > 0 ? 1 : 0,
+                },
+              ]}
+            >
+              {surprise.estimateMin}m guess
+            </Text>
+            <Text
+              onLayout={onRealFlagLayout}
+              style={[
+                styles.flag,
+                styles.flagReal,
+                {
+                  left: `${realFlagPct}%`,
+                  transform: [{ translateX: -realFlagW / 2 }],
+                  opacity: realFlagW > 0 ? 1 : 0,
+                },
+              ]}
+            >
+              {surprise.actualMin}m real
+            </Text>
+            <View
+              style={[
+                styles.caret,
+                { left: `${guessPct}%`, transform: [{ translateX: -rv.bandCaretW }] },
+              ]}
             />
-          </Svg>
-          <View
-            style={[
-              styles.dot,
-              { left: `${realPct}%`, transform: [{ translateX: -rv.bandDotSize / 2 }] },
-            ]}
-          />
-        </View>
+            <View style={styles.track} />
+            <Svg width="100%" height={guideHeight} style={styles.guide}>
+              <Line
+                x1={`${guessPct}%`}
+                y1={0}
+                x2={`${guessPct}%`}
+                y2={guideHeight}
+                stroke={t.colors.inkFaint}
+                strokeWidth={rv.bandGuideW}
+                strokeDasharray={rv.bandGuideDash}
+              />
+            </Svg>
+            <View
+              style={[
+                styles.dot,
+                { left: `${realPct}%`, transform: [{ translateX: -rv.bandDotSize / 2 }] },
+              ]}
+            />
+          </View>
 
-        <View style={styles.axisRow}>
-          <Text style={styles.axisLabel}>{band.lowMin}m</Text>
-          <Text style={styles.axisLabel}>{band.highMin}m</Text>
+          <View style={styles.axisRow}>
+            <Text style={styles.axisLabel}>{band.lowMin}m</Text>
+            <Text style={styles.axisLabel}>{band.highMin}m</Text>
+          </View>
         </View>
 
         <Text style={styles.desc}>

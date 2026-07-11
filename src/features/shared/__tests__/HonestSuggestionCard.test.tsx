@@ -21,7 +21,7 @@ describe('HonestSuggestionCard — pre-data (starting hunch)', () => {
     ).toBeOnTheScreen();
     // The pre-data headline carries the reframe, so the divider line is absent.
     expect(
-      screen.queryByText(/Not a goal to hit/),
+      screen.queryByText(/Not a target/),
     ).toBeNull();
   });
 
@@ -53,7 +53,7 @@ describe('HonestSuggestionCard — trained (usually, for you)', () => {
     expect(screen.getByText('min')).toBeOnTheScreen();
     expect(screen.getByText('from your last few email tasks')).toBeOnTheScreen();
     expect(
-      screen.getByText('Not a goal to hit — just what tends to happen. Keep guessing what feels right.'),
+      screen.getByText('Not a target. Just what usually happens. Keep guessing with your gut.'),
     ).toBeOnTheScreen();
   });
 

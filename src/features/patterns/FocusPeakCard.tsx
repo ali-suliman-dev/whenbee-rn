@@ -98,8 +98,15 @@ export function FocusPeakCard() {
 
     const cardTitle = sDone && dDone ? 'Almost there' : 'Learning your focus hours';
 
-    const tagStyle: TextStyle = { ...(type.caption as unknown as TextStyle), color: t.colors.inkSoft };
-    const headerRow: ViewStyle = { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' };
+    const tagStyle: TextStyle = {
+      ...(type.caption as unknown as TextStyle),
+      color: t.colors.inkSoft,
+    };
+    const headerRow: ViewStyle = {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+    };
     const tagCluster: ViewStyle = { flexDirection: 'row', alignItems: 'center', gap: t.space[2] };
 
     return (
@@ -112,7 +119,12 @@ export function FocusPeakCard() {
           </View>
         </View>
         <FocusRewardPreview scoreByBin={scoreByBin} caption={focusRewardCaption(gatesLeft)} />
-        <AppText style={title}>{cardTitle}</AppText>
+        <View style={{ gap: t.space[1.5] }}>
+          <AppText style={title}>{cardTitle}</AppText>
+          <AppText style={body}>
+            Three signals and I can point you to the hours you focus best.
+          </AppText>
+        </View>
         <View>
           <FocusGateRow
             first
@@ -120,14 +132,22 @@ export function FocusPeakCard() {
             label={FOCUS_GATE_LABELS.sessions}
             valueText={sessionsCopy.valueText}
             sub={sessionsCopy.sub}
-            pips={sessionsState === 'active' ? { filled: gates.sessions.have, total: gates.sessions.need } : undefined}
+            pips={
+              sessionsState === 'active'
+                ? { filled: gates.sessions.have, total: gates.sessions.need }
+                : undefined
+            }
           />
           <FocusGateRow
             state={daysState}
             label={FOCUS_GATE_LABELS.days}
             valueText={daysCopy.valueText}
             sub={daysCopy.sub}
-            pips={daysState === 'active' ? { filled: gates.days.have, total: gates.days.need } : undefined}
+            pips={
+              daysState === 'active'
+                ? { filled: gates.days.have, total: gates.days.need }
+                : undefined
+            }
           />
           <FocusGateRow
             state={peakState}
@@ -170,7 +190,9 @@ export function FocusPeakCard() {
 
   const weeks = Math.max(1, Math.round(win.distinctDays / 7));
   const footerMeta =
-    win.distinctDays >= 7 ? `${sampleCount} sessions · steady for ${weeks} weeks` : `${sampleCount} sessions · ${win.distinctDays} days`;
+    win.distinctDays >= 7
+      ? `${sampleCount} sessions · steady for ${weeks} weeks`
+      : `${sampleCount} sessions · ${win.distinctDays} days`;
 
   // ── locked (free + personal) ──
   if (!isPro) {
@@ -194,18 +216,27 @@ export function FocusPeakCard() {
         <Eyebrow />
         <View>
           <FocusCurve scoreByBin={scoreByBin} variant="locked" yAxis />
-          <View style={frost} pointerEvents="none" importantForAccessibility="no" accessibilityElementsHidden>
+          <View
+            style={frost}
+            pointerEvents="none"
+            importantForAccessibility="no"
+            accessibilityElementsHidden
+          >
             <Ionicons name="lock-closed" size={t.iconSize.lg} color={t.colors.onIndigo} />
           </View>
         </View>
         <AppText style={body}>{teaser}</AppText>
         <AppText style={meta}>{`Learned from ${sampleCount} sessions.`}</AppText>
         <Pressable
-          onPress={() => router.push({ pathname: '/(modals)/paywall', params: { trigger: 'focus_window' } })}
+          onPress={() =>
+            router.push({ pathname: '/(modals)/paywall', params: { trigger: 'focus_window' } })
+          }
           accessibilityRole="button"
           accessibilityLabel="Unlock my focus window"
         >
-          <AppText style={{ ...(type.captionBold as TextStyle), color: t.colors.primary }}>Unlock my focus window ›</AppText>
+          <AppText style={{ ...(type.captionBold as TextStyle), color: t.colors.primary }}>
+            Unlock my focus window ›
+          </AppText>
         </Pressable>
       </View>
     );
@@ -220,7 +251,10 @@ export function FocusPeakCard() {
     >
       <View style={card}>
         <Eyebrow />
-        <AppText style={{ ...(type.honestNumberMd as unknown as TextStyle), color: t.colors.ink }} testID="focus-window-range">
+        <AppText
+          style={{ ...(type.honestNumberMd as unknown as TextStyle), color: t.colors.ink }}
+          testID="focus-window-range"
+        >
           {formatWindowRange(ws, we)}
         </AppText>
         <FocusCurve
@@ -236,16 +270,26 @@ export function FocusPeakCard() {
             {whyLead}
             {contrastAccent != null ? ', ' : ''}
             {contrastAccent != null ? (
-              <AppText style={{ ...(type.body as TextStyle), color: t.colors.accent, fontWeight: t.fontWeight.bold as TextStyle['fontWeight'] }}>
+              <AppText
+                style={{
+                  ...(type.body as TextStyle),
+                  color: t.colors.accent,
+                  fontWeight: t.fontWeight.bold as TextStyle['fontWeight'],
+                }}
+              >
                 {contrastAccent}
               </AppText>
             ) : null}
             {contrastRest}.
           </AppText>
         ) : null}
-        <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+        <View
+          style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}
+        >
           <AppText style={meta}>{footerMeta}</AppText>
-          <AppText style={{ ...(type.captionBold as TextStyle), color: t.colors.primary }}>Open ›</AppText>
+          <AppText style={{ ...(type.captionBold as TextStyle), color: t.colors.primary }}>
+            Open ›
+          </AppText>
         </View>
       </View>
     </Pressable>

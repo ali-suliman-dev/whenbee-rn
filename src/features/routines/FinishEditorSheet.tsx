@@ -82,7 +82,7 @@ export function FinishEditorSheet({
     paddingHorizontal: t.space[4],
     // Android renders no SheetGrabber, so add explicit top breathing room.
     paddingTop: t.space[6],
-    paddingBottom: t.space[8],
+    paddingBottom: t.space[10],
     gap: t.space[5],
   };
   // Extra air above and below the wheel — it's the hero, so give it its own room
@@ -128,7 +128,7 @@ export function FinishEditorSheet({
               {valueMs !== null ? (
                 <AppButton label="Clear" variant="ghost" size="2xs" onPress={onClear} />
               ) : null}
-              <AppButton label="Done" variant="indigo" size="2xs" onPress={onClose} />
+              <AppButton label="Done" variant="indigo" size="sm" onPress={onClose} />
             </View>
           </View>
         </Animated.View>
