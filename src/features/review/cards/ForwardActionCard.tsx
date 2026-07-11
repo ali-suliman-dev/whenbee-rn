@@ -1,6 +1,4 @@
-import { useCallback, useState } from 'react';
-import { View, Text, StyleSheet, type LayoutChangeEvent, type TextStyle } from 'react-native';
-import Svg, { Line, Circle } from 'react-native-svg';
+import { View, Text, StyleSheet, type TextStyle } from 'react-native';
 import { Card } from '@/src/components/Card';
 import { useTheme } from '@/src/theme/useTheme';
 import { type } from '@/src/theme/typography';
@@ -8,9 +6,11 @@ import type { ForwardAction } from '@/src/domain/types';
 
 // ──────────────────────────────────────────────────────────────────────────────
 // ForwardActionCard — a single, calm nudge derived from the biggest-surprise
-// category: draws the planned→goal span as a rail/pipe (solid = what's planned,
-// dashed honey = the top-up to add) and suggests a concrete buffer for next
-// week. No guilt — this is just what happened, and one thing to try.
+// category. The planned→goal span reads as one split meter: a solid neutral
+// zone (what's planned) butting straight into an amber zone (the top-up to add),
+// with the overflow amount called out above the amber. No nodes, no dashed pipe,
+// no measured floating label — the bar's two zones say "add this much" on sight.
+// No guilt — this is just what happened, and one thing to try.
 // ──────────────────────────────────────────────────────────────────────────────
 
 interface Props {
@@ -21,25 +21,11 @@ export function ForwardActionCard({ action }: Props) {
   const t = useTheme();
   const rv = t.reviewViz;
 
-  // The overflow caption centers over the dashed midpoint. RN transforms don't
-  // support percentage translateX (unlike CSS), so the label is measured on
-  // layout and shifted back by half its own rendered width.
-  const [captionWidth, setCaptionWidth] = useState(0);
-  const onCaptionLayout = useCallback((e: LayoutChangeEvent) => {
-    setCaptionWidth(e.nativeEvent.layout.width);
-  }, []);
-
-  // Pipe geometry — solid (planned) then dashed honey (top-up) to the goal
-  // node, which is inset from the SVG's right edge so it never overhangs the
-  // card. The dash stops at the node's left edge (goalX − goalNodeR) so the
-  // honey node caps the dash rather than sitting on top of it.
-  const goalX = rv.railViewW - rv.railGoalInset;
-  const dashEndX = goalX - rv.goalNodeR;
+  // Split point: how much of the goal is already planned. Clamped so a zero or
+  // over-plan never produces a negative/over-full segment.
   const recommended = action.recommendedMin > 0 ? action.recommendedMin : action.plannedMin || 1;
-  const splitFrac = Math.min(Math.max(action.plannedMin / recommended, 0), 1);
-  const splitX = rv.railInsetL + splitFrac * (goalX - rv.railInsetL);
-  // Caption centers over the dashed top-up's midpoint (split → dash end).
-  const captionLeftPct = ((splitX + dashEndX) / 2 / rv.railViewW) * 100;
+  const plannedFrac = Math.min(Math.max(action.plannedMin / recommended, 0), 1);
+  const topUpFrac = 1 - plannedFrac;
 
   const styles = StyleSheet.create({
     container: { gap: t.space[3] },
@@ -47,21 +33,33 @@ export function ForwardActionCard({ action }: Props) {
     eyebrow: { ...type.eyebrow, color: t.colors.amberText },
     heading: { ...type.body, color: t.colors.inkSoft },
     categoryName: { fontFamily: 'Jakarta-ExtraBold', color: t.colors.ink },
-    // Extra vertical breathing room around the pipe itself — its own padding,
-    // not a sibling margin, so the card keeps one gap-based rhythm overall.
-    railBlock: { paddingVertical: t.space[2] },
-    railInner: { position: 'relative' },
+    // Own vertical padding around the meter — keeps the card on one gap rhythm
+    // rather than mixing a sibling margin in.
+    meterBlock: { paddingVertical: t.space[2] },
+    meterInner: { position: 'relative' },
+    // The overflow call-out sits above the amber (right) zone. Right-anchored, so
+    // it needs no width measurement to center.
     overflowCaption: {
       ...(type.numMicro as unknown as TextStyle),
       position: 'absolute',
       top: 0,
+      right: 0,
       color: t.colors.amberText,
     },
-    svg: { marginTop: t.space[4] },
+    bar: {
+      flexDirection: 'row',
+      height: rv.meterH,
+      borderRadius: t.radii.full,
+      overflow: 'hidden',
+      backgroundColor: t.colors.surfaceSunken,
+      marginTop: t.space[4], // room for the overflow caption above
+    },
+    barPlanned: { backgroundColor: t.colors.inkSoft },
+    barTopUp: { backgroundColor: t.colors.accent },
     railLabels: {
       flexDirection: 'row',
       justifyContent: 'space-between',
-      marginTop: t.space[1.5],
+      marginTop: t.space[2],
     },
     labelPlan: { ...type.labelXs, color: t.colors.inkFaint },
     labelGoal: { ...type.labelXs, color: t.colors.inkFaint, textAlign: 'right' },
@@ -82,57 +80,13 @@ export function ForwardActionCard({ action }: Props) {
           </Text>
         </View>
 
-        <View style={styles.railBlock}>
-          <View style={styles.railInner}>
-            <Text
-              onLayout={onCaptionLayout}
-              style={[
-                styles.overflowCaption,
-                {
-                  left: `${captionLeftPct}%`,
-                  transform: [{ translateX: -captionWidth / 2 }],
-                  opacity: captionWidth > 0 ? 1 : 0,
-                },
-              ]}
-            >
-              +{action.overflowMin}m
-            </Text>
-            <Svg
-              width="100%"
-              height={rv.railViewH}
-              viewBox={`0 0 ${rv.railViewW} ${rv.railViewH}`}
-              preserveAspectRatio="xMidYMid meet"
-              style={styles.svg}
-            >
-              <Line
-                x1={rv.railInsetL}
-                y1={rv.railY}
-                x2={splitX}
-                y2={rv.railY}
-                stroke={t.colors.inkSoft}
-                strokeWidth={rv.pipeStroke}
-                strokeLinecap="round"
-              />
-              <Line
-                x1={splitX}
-                y1={rv.railY}
-                x2={dashEndX}
-                y2={rv.railY}
-                stroke={t.colors.accent}
-                strokeWidth={rv.pipeStroke}
-                strokeLinecap="round"
-                strokeDasharray={rv.pipeDash}
-              />
-              <Circle
-                cx={splitX}
-                cy={rv.railY}
-                r={rv.planNodeR}
-                fill={t.colors.surface}
-                stroke={t.colors.inkSoft}
-                strokeWidth={rv.planNodeStroke}
-              />
-              <Circle cx={goalX} cy={rv.railY} r={rv.goalNodeR} fill={t.colors.accent} />
-            </Svg>
+        <View style={styles.meterBlock}>
+          <View style={styles.meterInner}>
+            <Text style={styles.overflowCaption}>+{action.overflowMin}m</Text>
+            <View style={styles.bar}>
+              <View style={[styles.barPlanned, { flex: plannedFrac }]} />
+              <View style={[styles.barTopUp, { flex: topUpFrac }]} />
+            </View>
           </View>
           <View style={styles.railLabels}>
             <Text style={styles.labelPlan}>
