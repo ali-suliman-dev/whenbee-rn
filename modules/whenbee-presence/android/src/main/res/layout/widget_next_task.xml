@@ -2,9 +2,12 @@
 <!-- Honest Finish (next-task) Home-screen widget. Presentation-only: renders the
      snapshot JS wrote (see WhenbeePresenceModule.writeWidgetSnapshot /
      src/services/liveActivity.ts). Colors mirror src/theme/tokens.ts (dark surface).
-     Hero-clock layout: eyebrow + title up top, honest-finish time as the hero
+     Hero-clock layout: task title up top, honest-finish time as the hero
      (mono, ink white — meridiem colored inkSoft in code, never amber: amber is
-     reserved for the one CTA), flat square play button bottom-right. -->
+     reserved for the one CTA), flat square play button bottom-right.
+     No "Next up" eyebrow — the widget's identity (Honest Finish, a play button,
+     a finish time) already says this is the queued task, so the freed row goes to
+     the title (up to 3 lines, larger). -->
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
@@ -12,28 +15,17 @@
     android:background="@drawable/widget_bg"
     android:padding="12dp">
 
-    <!-- Eyebrow -->
-    <TextView
-        android:id="@+id/widget_eyebrow"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="@string/widget_next_up"
-        android:textColor="#ADA9B5"
-        android:textSize="10.5sp"
-        android:letterSpacing="0.03"
-        android:textStyle="bold" />
-
-    <!-- Task label -->
+    <!-- Task label — the hero of the top block now the eyebrow is gone. -->
     <TextView
         android:id="@+id/widget_label"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginTop="1dp"
-        android:maxLines="2"
+        android:maxLines="3"
         android:ellipsize="end"
         android:text="@string/widget_empty"
         android:textColor="#F4F1EA"
-        android:textSize="14sp"
+        android:textSize="15sp"
+        android:lineSpacingMultiplier="1.05"
         android:textStyle="bold" />
 
     <!-- Spacer pushes the hero row to the bottom. Must be a RemoteViews-supported

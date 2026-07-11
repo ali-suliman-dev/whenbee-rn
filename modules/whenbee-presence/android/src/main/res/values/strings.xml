@@ -3,7 +3,6 @@
     <string name="widget_label">Whenbee — Next task</string>
     <string name="widget_description">Your next task and its honest finish time, with a one-tap start.</string>
     <string name="widget_wordmark">Whenbee</string>
-    <string name="widget_next_up">Next up</string>
     <string name="widget_empty">No task queued</string>
     <string name="widget_start">Start</string>
     <string name="widget_honestly">Honestly</string>

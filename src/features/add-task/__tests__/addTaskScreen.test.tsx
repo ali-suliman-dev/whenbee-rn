@@ -85,7 +85,7 @@ describe('Add Task screen', () => {
     expect(screen.queryByText('+15m')).toBeNull();
     expect(
       screen.getByLabelText(
-        'Honest estimate about 30 minutes for tasks like this. Not a goal, just what tends to happen.',
+        'Honest estimate about 30 minutes for tasks like this. Not a target, just what usually happens.',
       ),
     ).toBeOnTheScreen();
   });

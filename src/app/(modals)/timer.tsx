@@ -342,9 +342,7 @@ function TimerScreen() {
             elapsedSec={timer.elapsedSec}
             overProgress={timer.overProgress}
             estimateSec={timer.estimateSec}
-            range={timer.range}
-            confidence={timer.confidence}
-            isPro={isPro}
+            guessMin={guessMin}
           />
 
           <AppText style={taskName}>{label}</AppText>
