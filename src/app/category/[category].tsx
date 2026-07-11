@@ -21,6 +21,7 @@ import { GraduationMoment } from '@/src/features/category-detail/GraduationMomen
 import { AhaCard } from '@/src/features/category-detail/AhaCard';
 import { AdaptSegment } from '@/src/features/category-detail/AdaptSegment';
 import { ProHonestWeekTease } from '@/src/features/category-detail/ProHonestWeekTease';
+import { ProHonestWeekLink } from '@/src/features/category-detail/ProHonestWeekLink';
 import { TrendChart } from '@/src/features/category-detail/TrendChart';
 import { RecentList } from '@/src/features/category-detail/RecentList';
 import { GoalCard } from '@/src/features/category-detail/GoalCard';
@@ -128,9 +129,9 @@ export default function CategoryDetailScreen() {
               firstHonestRange={detail.firstHonestRange}
             />
 
-            {/* 2 — Pro: the always-on payoff anchor (free users only; Pro users get
-                the live band inside the hero instead of a tease). */}
-            {!isPro ? <ProHonestWeekTease /> : null}
+            {/* 2 — Honest Week entry. Free users get the blurred upsell tease; Pro
+                users get a quiet always-on row into the weekly recap. */}
+            {!isPro ? <ProHonestWeekTease /> : <ProHonestWeekLink />}
 
             {/* 3 — The aha insight (when there's one worth surfacing). */}
             {detail.insight ? (
