@@ -51,7 +51,7 @@ export function ReviewRitualCard({
     return (
       <Pressable onPress={open} accessibilityRole="button" accessibilityLabel={`Open ${quietRowText}`}>
         <Card tone="flat" style={row}>
-          <Ionicons name="leaf-outline" size={t.iconSize.md} color={t.colors.inkSoft} />
+          <Ionicons name="mail-outline" size={t.iconSize.md} color={t.colors.inkSoft} />
           <Text style={label}>{quietRowText}</Text>
           <Ionicons name="chevron-forward" size={t.iconSize.sm} color={t.colors.inkSoft} />
         </Card>
