@@ -1,5 +1,17 @@
+import * as C from '../constants';
 import { mulberry32, percentile, buildSignals, scoreBins, selectWindow, passesPermutationGate } from '@/src/engine/focusWindowLearn';
 import { learnFocusWindow } from '@/src/engine';
+
+// ── Task 1: Bin geometry (reveal-early: coarser 60-min bins) ──────────────────
+
+describe('bin geometry (reveal-early: coarser 60-min bins)', () => {
+  it('keeps FW_BIN_COUNT an integer at the coarser bin width', () => {
+    expect(C.FW_BIN_MIN).toBe(60);
+    expect((C.FW_WAKING_END_MIN - C.FW_WAKING_START_MIN) / C.FW_BIN_MIN).toBe(19);
+    expect(Number.isInteger(C.FW_BIN_COUNT)).toBe(true);
+    expect(C.FW_BIN_COUNT).toBe(19);
+  });
+});
 
 // ── Task 3: PRNG + percentile helpers ────────────────────────────────────────
 
@@ -39,7 +51,7 @@ test('a single extreme event is pulled toward the global mean, not left at its r
   const events = [ev(420, 3, 0)]; // one very-fast event (s clamped high ≈ ln3)
   for (let d = 0; d < 12; d++) events.push(ev(600, 30, d)); // baseline cluster, s≈0
   const { shrunk } = scoreBins(buildSignals(events, fit));
-  const binAt = (m: number) => Math.round((m - 315) / 30);
+  const binAt = (m: number) => Math.round((m - 330) / 60);
   expect(shrunk[binAt(420)]!).toBeLessThan(0.6); // suppressed well below its raw clamped s≈1.1
 });
 
@@ -52,14 +64,14 @@ test('a single outlier fast event never manufactures a personal window (coverage
 
 // ── Task 6: Select window ─────────────────────────────────────────────────────
 
-const flat = { shrunk: new Array<number>(38).fill(0.1), eventsCount: new Array<number>(38).fill(8),
-  distinctDays: new Array<number>(38).fill(6), mean: 0.1, sd: 0.0 };
+const flat = { shrunk: new Array<number>(19).fill(0.1), eventsCount: new Array<number>(19).fill(8),
+  distinctDays: new Array<number>(19).fill(6), mean: 0.1, sd: 0.0 };
 const peak = (() => {
-  const shrunk = new Array<number>(38).fill(0); shrunk[10] = 0.9; shrunk[11] = 0.85; shrunk[12] = 0.8;
-  const eventsCount = new Array<number>(38).fill(0); const distinctDays = new Array<number>(38).fill(0);
-  [10, 11, 12].forEach((i) => { eventsCount[i] = 8; distinctDays[i] = 5; });
-  const mean = shrunk.reduce((a, b) => a + b, 0) / 38;
-  const sd = Math.sqrt(shrunk.reduce((a, b) => a + (b - mean) ** 2, 0) / 38);
+  const shrunk = new Array<number>(19).fill(0); shrunk[5] = 0.9; shrunk[6] = 0.85; shrunk[7] = 0.8;
+  const eventsCount = new Array<number>(19).fill(0); const distinctDays = new Array<number>(19).fill(0);
+  [5, 6, 7].forEach((i) => { eventsCount[i] = 8; distinctDays[i] = 5; });
+  const mean = shrunk.reduce((a, b) => a + b, 0) / 19;
+  const sd = Math.sqrt(shrunk.reduce((a, b) => a + (b - mean) ** 2, 0) / 19);
   return { shrunk, eventsCount, distinctDays, mean, sd };
 })();
 
@@ -71,7 +83,7 @@ test('flat day yields no window; a covered peak yields a window', () => {
 });
 
 test('an uncovered peak yields no window (coverage floor)', () => {
-  const s = { ...peak, eventsCount: new Array<number>(38).fill(2), distinctDays: new Array<number>(38).fill(2) };
+  const s = { ...peak, eventsCount: new Array<number>(19).fill(2), distinctDays: new Array<number>(19).fill(2) };
   expect(selectWindow(s)).toBeNull();
 });
 
@@ -101,7 +113,7 @@ test('insufficient data → prior; rich peak → personal; deterministic; hyster
   const b = learnFocusWindow({ events, fitByCategory: fit, shown: null });
   expect(a.basis).toBe('personal');
   expect(a).toEqual(b);                              // determinism
-  expect(a.scoreByBin).toHaveLength(38);
+  expect(a.scoreByBin).toHaveLength(19);
 
   // re-run with the just-learned window as "shown" recently → held, unchanged
   const held = learnFocusWindow({ events, fitByCategory: fit,
