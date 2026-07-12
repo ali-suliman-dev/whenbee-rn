@@ -2,11 +2,12 @@ import {
   whyNarrative,
   sessionsGateCopy,
   daysGateCopy,
-  peakGateCopy,
   daysUpcomingCopy,
-  peakUpcomingCopy,
   focusUnlockedTag,
   focusRewardCaption,
+  confidenceLabel,
+  coarseHintCopy,
+  FOCUS_GATE_LABELS,
 } from '../focusCopy';
 
 describe('whyNarrative', () => {
@@ -99,28 +100,6 @@ describe('daysGateCopy', () => {
   });
 });
 
-describe('peakGateCopy', () => {
-  it('active (not confirming): pluralises remaining peak sessions', () => {
-    expect(peakGateCopy(2, 6, false)).toEqual({
-      valueText: '2/6',
-      sub: '4 more sessions around your usual hours and your peak shows.',
-    });
-  });
-
-  it('active: singular when one peak session remains', () => {
-    expect(peakGateCopy(5, 6, false).sub).toBe(
-      '1 more session around your usual hours and your peak shows.',
-    );
-  });
-
-  it('confirming: full value, settling copy — never a "to go" line', () => {
-    expect(peakGateCopy(8, 6, true)).toEqual({
-      valueText: '6/6',
-      sub: 'Almost — a session or two more and I lock your peak in.',
-    });
-  });
-});
-
 describe('upcoming copy', () => {
   it('days upcoming: muted, no shame', () => {
     expect(daysUpcomingCopy(0, 5)).toEqual({
@@ -128,19 +107,29 @@ describe('upcoming copy', () => {
       sub: 'Next: a spread of different days.',
     });
   });
-
-  it('peak upcoming: muted, last in line', () => {
-    expect(peakUpcomingCopy(0, 6)).toEqual({
-      valueText: '0/6',
-      sub: 'Last: I spot the hours you keep coming back to.',
-    });
-  });
 });
 
-describe('focusUnlockedTag', () => {
-  it('counts unlocked gates out of three', () => {
-    expect(focusUnlockedTag(0)).toBe('0 of 3 unlocked');
-    expect(focusUnlockedTag(2)).toBe('2 of 3 unlocked');
+describe('focus copy (reveal-early)', () => {
+  it('tags progress out of two gates', () => {
+    expect(focusUnlockedTag(1)).toBe('1 of 2 unlocked');
+  });
+
+  it('has no peak gate label', () => {
+    expect(FOCUS_GATE_LABELS).toEqual({ sessions: 'Timed sessions', days: 'Different days' });
+    expect('peak' in FOCUS_GATE_LABELS).toBe(false);
+  });
+
+  it('labels each confidence tier without guilt', () => {
+    expect(confidenceLabel('low')).toBe('Still learning · sharpening');
+    expect(confidenceLabel('building')).toBe('Building · getting sharper');
+    expect(confidenceLabel('steady')).toBe('Steady · locked to your rhythm');
+  });
+
+  it('names the coarse block in the forming hint', () => {
+    expect(coarseHintCopy('Mornings')).toBe(
+      "Leaning toward mornings — keep timing and I'll sharpen it.",
+    );
+    expect(coarseHintCopy('')).toBe('');
   });
 });
 
