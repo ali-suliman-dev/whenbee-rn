@@ -112,7 +112,10 @@ export function FocusCurve({
     }
   }
   if (peakMin !== undefined) {
-    const bin = Math.round((peakMin - FW_WAKING_START_MIN) / FW_BIN_MIN);
+    // peakMin is a BIN-CENTER minute (engine adds FW_BIN_MIN/2), not a bin
+    // edge — floor(peakIdx + 0.5) recovers the exact bin index. Math.round
+    // would round the .5 up and land one bin (~1 hour) late.
+    const bin = Math.floor((peakMin - FW_WAKING_START_MIN) / FW_BIN_MIN);
     peakIdx = Math.min(FW_BIN_COUNT - 1, Math.max(0, bin));
     peakScore = scores[peakIdx] ?? 0;
   }
