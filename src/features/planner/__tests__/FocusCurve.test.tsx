@@ -1,5 +1,5 @@
 import { render } from '@testing-library/react-native';
-import Svg from 'react-native-svg';
+import Svg, { Line } from 'react-native-svg';
 import { FocusCurve } from '../FocusCurve';
 
 const SCORE_BY_BIN = Array.from({ length: 38 }, (_, i) => (i === 10 ? 1 : 0.3));
@@ -36,4 +36,16 @@ it('renders Hi/Low Y labels when yAxis is set', () => {
 it('omits Y labels by default', () => {
   const { queryByText } = render(<FocusCurve scoreByBin={SCORE_BY_BIN} variant="learned" />);
   expect(queryByText('Hi')).toBeNull();
+});
+
+test('coarse bandVariant renders dashed edge lines; precise (default) renders none', () => {
+  const { UNSAFE_queryAllByType, rerender } = render(
+    <FocusCurve scoreByBin={SCORE_BY_BIN} variant="learned" windowStartMin={600} windowEndMin={690} bandVariant="coarse" />
+  );
+  expect(UNSAFE_queryAllByType(Line)).toHaveLength(2);
+
+  rerender(
+    <FocusCurve scoreByBin={SCORE_BY_BIN} variant="learned" windowStartMin={600} windowEndMin={690} />
+  );
+  expect(UNSAFE_queryAllByType(Line)).toHaveLength(0);
 });

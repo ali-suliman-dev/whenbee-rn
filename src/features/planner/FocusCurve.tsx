@@ -1,5 +1,5 @@
 import { View, type ViewStyle, type TextStyle } from 'react-native';
-import Svg, { Path, Circle, Rect, Defs, LinearGradient, Stop, Text as SvgText } from 'react-native-svg';
+import Svg, { Path, Circle, Rect, Line, Defs, LinearGradient, Stop, Text as SvgText } from 'react-native-svg';
 import Animated, { FadeIn, ReduceMotion } from 'react-native-reanimated';
 import { useTheme } from '@/src/theme/useTheme';
 import { AppText } from '@/src/components/AppText';
@@ -32,6 +32,10 @@ export interface FocusCurveProps {
   /** When provided, positions the peak dot + label at this minute instead of
    *  the curve's internal normalized argmax (e.g. the engine's eligible-bin peak). */
   peakMin?: number;
+  /** Window band style. 'precise' (default) = the current solid band, unchanged.
+   *  'coarse' = a wider band (suggests the enclosing block, low-confidence reveal)
+   *  with dashed amber edge lines instead of a hard-edged fill. */
+  bandVariant?: 'coarse' | 'precise';
 }
 
 const FW_WAKING_START_MIN = 300;  // 05:00
@@ -54,6 +58,7 @@ export function FocusCurve({
   peakLabel,
   height,
   peakMin,
+  bandVariant = 'precise',
 }: FocusCurveProps) {
   const t = useTheme();
   const {
@@ -74,6 +79,9 @@ export function FocusCurve({
     yLabelW,
     peakLabelGap,
     peakLabelMinY,
+    coarseWidenPx,
+    dashEdge,
+    dashEdgeW,
   } = t.focusCurve;
   const svgHeight = height ?? viewH;
 
@@ -117,6 +125,10 @@ export function FocusCurve({
     const endBin = (windowEndMin - FW_WAKING_START_MIN) / 30;
     bandX1 = x(Math.max(0, startBin));
     bandX2 = x(Math.min(BIN_COUNT - 1, endBin));
+    if (bandVariant === 'coarse') {
+      bandX1 = Math.max(0, bandX1 - coarseWidenPx);
+      bandX2 = Math.min(viewW, bandX2 + coarseWidenPx);
+    }
   }
 
   // Stroke color + style per variant
@@ -182,6 +194,33 @@ export function FocusCurve({
             fill={t.colors.primaryWash}
             fillOpacity={bandOpacity}
           />
+        )}
+
+        {/* Coarse band edges — dashed amber lines signal a provisional,
+            not-yet-sharpened window (low-confidence reveal). */}
+        {showBand && bandVariant === 'coarse' && (
+          <>
+            <Line
+              x1={bandX1}
+              y1={0}
+              x2={bandX1}
+              y2={viewH}
+              stroke={t.colors.accent}
+              strokeWidth={dashEdgeW}
+              strokeDasharray={dashEdge}
+              strokeOpacity={t.opacity.rangeArc}
+            />
+            <Line
+              x1={bandX2}
+              y1={0}
+              x2={bandX2}
+              y2={viewH}
+              stroke={t.colors.accent}
+              strokeWidth={dashEdgeW}
+              strokeDasharray={dashEdge}
+              strokeOpacity={t.opacity.rangeArc}
+            />
+          </>
         )}
 
         {/* Area gradient fill (learned only) */}
