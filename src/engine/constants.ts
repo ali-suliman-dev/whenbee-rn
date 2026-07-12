@@ -189,6 +189,7 @@ export const FW_PRIOR_WINDOW = { startMin: 540, endMin: 690 } as const; // 09:00
 // ── Focus insights (detail-view "why" metrics) ───────────────────────────────
 export const FW_CONF_HIGH = 0.75;      // confidence ≥ → "High"
 export const FW_CONF_BUILDING = 0.5;   // confidence ≥ → "Building", else "Low"
+export const FW_CONF_DAY_WEIGHT = 0.55; // confidence blend: day-progress vs permutation strength
 export const FW_INSIGHT_MIN_EVENTS = 5; // min events on EACH side for accuracy/duration
 
 export const FW_CONTRAST_MAX = 9;       // display ceiling for the "N× sharper" ratio

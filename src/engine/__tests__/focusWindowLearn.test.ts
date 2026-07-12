@@ -1,6 +1,7 @@
 import * as C from '../constants';
-import { mulberry32, percentile, buildSignals, scoreBins, selectWindow, passesPermutationGate } from '@/src/engine/focusWindowLearn';
-import { learnFocusWindow } from '@/src/engine';
+import { mulberry32, percentile, buildSignals, scoreBins, selectWindow, permutationStrength } from '@/src/engine/focusWindowLearn';
+import { learnFocusWindow, peakBucketLabel } from '@/src/engine';
+import type { FocusEventInput } from '@/src/domain/types';
 
 // ── Task 1: Bin geometry (reveal-early: coarser 60-min bins) ──────────────────
 
@@ -55,11 +56,11 @@ test('a single extreme event is pulled toward the global mean, not left at its r
   expect(shrunk[binAt(420)]!).toBeLessThan(0.6); // suppressed well below its raw clamped s≈1.1
 });
 
-test('a single outlier fast event never manufactures a personal window (coverage + gate)', () => {
+test('a single outlier fast event never manufactures a revealed window (coverage + gate)', () => {
   const events: ReturnType<typeof ev>[] = [];
   for (let d = 0; d < 20; d++) for (const m of [360, 540, 720, 900, 1080]) events.push(ev(m, 28, d));
   events.push(ev(420, 3, 99)); // lone outlier, single day
-  expect(learnFocusWindow({ events, fitByCategory: fit, shown: null }).basis).toBe('prior');
+  expect(learnFocusWindow({ events, fitByCategory: fit, shown: null }).basis).toBe('forming');
 });
 
 // ── Task 6: Select window ─────────────────────────────────────────────────────
@@ -87,16 +88,16 @@ test('an uncovered peak yields no window (coverage floor)', () => {
   expect(selectWindow(s)).toBeNull();
 });
 
-// ── Task 7: Permutation gate ──────────────────────────────────────────────────
+// ── Task 7: Permutation strength ──────────────────────────────────────────────
 
-test('injected real peak passes the gate; pure spread of noise does not', () => {
+test('injected real peak has strong permutation significance; pure spread of noise does not', () => {
   const peakEvents = [];
   for (let d = 0; d < 20; d++) { peakEvents.push(ev(600, 15, d)); peakEvents.push(ev(900, 30, d)); }
-  expect(passesPermutationGate(buildSignals(peakEvents, fit), 1)).toBe(true);
+  expect(permutationStrength(buildSignals(peakEvents, fit), 1)).toBeGreaterThanOrEqual(C.FW_PERM_PCTL);
 
   const flatEvents = [];
   for (let d = 0; d < 20; d++) for (const m of [360, 540, 720, 900, 1080]) flatEvents.push(ev(m, 28, d));
-  expect(passesPermutationGate(buildSignals(flatEvents, fit), 1)).toBe(false);
+  expect(permutationStrength(buildSignals(flatEvents, fit), 1)).toBeLessThan(C.FW_PERM_PCTL);
 });
 
 // ── Task 8: Hysteresis + assemble learnFocusWindow ───────────────────────────
@@ -104,14 +105,14 @@ test('injected real peak passes the gate; pure spread of noise does not', () => 
 const ev8 = (min: number, actual: number, dayKey: number, ageDays = dayKey) =>
   ({ category: 'admin', status: 'completed' as const, estimateMin: 30, actualMin: actual, startLocalMinute: min, ageDays, dayKey });
 
-test('insufficient data → prior; rich peak → personal; deterministic; hysteresis holds', () => {
-  expect(learnFocusWindow({ events: [ev8(600, 20, 0)], fitByCategory: fit, shown: null }).basis).toBe('prior');
+test('insufficient data → forming; rich peak → revealed; deterministic; hysteresis holds', () => {
+  expect(learnFocusWindow({ events: [ev8(600, 20, 0)], fitByCategory: fit, shown: null }).basis).toBe('forming');
 
   const events = [];
   for (let d = 0; d < 20; d++) { events.push(ev8(600, 14, d)); events.push(ev8(630, 16, d)); events.push(ev8(900, 30, d)); }
   const a = learnFocusWindow({ events, fitByCategory: fit, shown: null });
   const b = learnFocusWindow({ events, fitByCategory: fit, shown: null });
-  expect(a.basis).toBe('personal');
+  expect(a.basis).toBe('revealed');
   expect(a).toEqual(b);                              // determinism
   expect(a.scoreByBin).toHaveLength(19);
 
@@ -122,44 +123,91 @@ test('insufficient data → prior; rich peak → personal; deterministic; hyster
   expect(held.endMin).toBe(a.endMin);
 });
 
-// ── Task 1 (focus-unlock ladder): gates on LearnedFocusWindow ────────────────
+// ── Task 1 (focus-unlock ladder): 2-gate ladder on LearnedFocusWindow ────────
 
-test('gates: few signals reports raw have/need and no confirming peak', () => {
+test('gates: few signals reports raw have/need, no peak gate on the shape', () => {
   const events = [ev8(600, 20, 0), ev8(600, 20, 0, 1), ev8(600, 20, 1, 1)]; // 3 events, 2 distinct days
   const w = learnFocusWindow({ events, fitByCategory: fit, shown: null });
-  expect(w.basis).toBe('prior');
+  expect(w.basis).toBe('forming');
   expect(w.gates.sessions).toEqual({ have: 3, need: 15 });
   expect(w.gates.days).toEqual({ have: 2, need: 5 });
-  expect(w.gates.peak.confirming).toBe(false);
+  // @ts-expect-error — the peak gate no longer exists on FocusGates
+  expect(w.gates.peak).toBeUndefined();
 });
 
-test('gates: sessions+days met but flat/bimodal spread → prior, peak gate reflects coverage', () => {
+test('gates: sessions+days met but flat/bimodal spread → forming, gates report both met', () => {
   const flatEvents: ReturnType<typeof ev8>[] = [];
   for (let d = 0; d < 20; d++) for (const m of [360, 540, 720, 900, 1080]) flatEvents.push(ev8(m, 28, d));
   const w = learnFocusWindow({ events: flatEvents, fitByCategory: fit, shown: null });
-  expect(w.basis).toBe('prior');
+  expect(w.basis).toBe('forming');
   expect(w.gates.sessions.have).toBeGreaterThanOrEqual(15);
   expect(w.gates.days.have).toBeGreaterThanOrEqual(5);
-  expect(w.gates.peak.need).toBe(6);
-  expect(w.gates.peak.confirming).toBe(w.gates.peak.have >= 6);
 });
 
-test('gates: a real personal window reports both counting gates met and confirming=false', () => {
+test('gates: a real revealed window reports both counting gates met', () => {
   const events: ReturnType<typeof ev8>[] = [];
   for (let d = 0; d < 20; d++) { events.push(ev8(600, 14, d)); events.push(ev8(630, 16, d)); events.push(ev8(900, 30, d)); }
   const w = learnFocusWindow({ events, fitByCategory: fit, shown: null });
-  expect(w.basis).toBe('personal');
+  expect(w.basis).toBe('revealed');
   expect(w.gates.sessions.have).toBeGreaterThanOrEqual(15);
   expect(w.gates.days.have).toBeGreaterThanOrEqual(5);
-  expect(w.gates.peak.confirming).toBe(false); // never true on the personal return
 });
 
-test('gates: peak.have is the strongest (highest-shrunk) covered bin, not the most-populous one', () => {
-  const events: ReturnType<typeof ev8>[] = [];
-  // Bin A (minute 600): fewer events, but a strong consistent signal (honest >> actual).
-  for (let d = 0; d < 10; d++) events.push(ev8(600, 14, d));
-  // Bin B (minute 900, far away → bimodal): more events, but near-zero signal (honest ≈ actual).
-  for (let d = 100; d < 112; d++) events.push(ev8(900, 30, d));
-  const w = learnFocusWindow({ events, fitByCategory: fit, shown: null });
-  expect(w.gates.peak.have).toBe(10); // bin A's eventsCount, not bin B's 12
+// ── Task 3 (reveal-early): reveal at 2 gates, grade by confidence tier ──────
+
+// Alternates a morning cluster (honest 36 >> actual 15 → a real signal) with an
+// afternoon baseline (honest === actual → no signal) so the two bins diverge
+// enough to clear FW_SD_MIN — a single-bin-only fixture is degenerate: its local
+// mean always equals the global mean, so scoreBins reports zero variance no
+// matter how large the honest/actual gap is.
+function morningEvents(count: number, days: number): FocusEventInput[] {
+  const out: FocusEventInput[] = [];
+  for (let i = 0; i < count; i++) {
+    const day = i % days;
+    const morning = i % 2 === 0;
+    out.push({
+      category: 'work',
+      estimateMin: 30,
+      actualMin: morning ? 15 : 36,     // morning: honest(36) >> actual(15); afternoon: honest === actual
+      status: 'completed',
+      startLocalMinute: morning ? 570 : 900, // 09:30 morning peak vs 15:00 afternoon baseline
+      ageDays: day,
+      dayKey: day,
+    });
+  }
+  return out;
+}
+const workFit = { work: { a: 0, b: 1.2 } };
+
+describe('reveal-early focus window', () => {
+  it('stays forming below the two gates, exposing only sessions + days', () => {
+    const w = learnFocusWindow({ events: morningEvents(8, 4), fitByCategory: workFit, shown: null });
+    expect(w.basis).toBe('forming');
+    expect(w.gates.sessions).toEqual({ have: 8, need: C.FW_GATE_MIN_COMPLETED });
+    expect(w.gates.days).toEqual({ have: 4, need: C.FW_GATE_MIN_DISTINCT_DAYS });
+    // @ts-expect-error — the peak gate no longer exists on FocusGates
+    expect(w.gates.peak).toBeUndefined();
+  });
+
+  it('reveals a window as soon as both gates clear, even at low confidence', () => {
+    const w = learnFocusWindow({ events: morningEvents(15, 5), fitByCategory: workFit, shown: null });
+    expect(w.basis).toBe('revealed');
+    expect(w.coarseBlockLabel).toBe('Mornings');
+    expect(['low', 'building', 'steady']).toContain(w.confidenceTier);
+    expect(w.startMin).toBeLessThan(w.endMin);
+  });
+
+  it('climbs to steady confidence with many distinct days', () => {
+    const w = learnFocusWindow({ events: morningEvents(60, 20), fitByCategory: workFit, shown: null });
+    expect(w.basis).toBe('revealed');
+    expect(w.confidence).toBeGreaterThanOrEqual(C.FW_CONF_HIGH);
+    expect(w.confidenceTier).toBe('steady');
+  });
+
+  it('buckets peak times into coarse blocks', () => {
+    expect(peakBucketLabel(540)).toBe('Mornings');    // 09:00
+    expect(peakBucketLabel(720)).toBe('Midday');      // 12:00
+    expect(peakBucketLabel(900)).toBe('Afternoons');  // 15:00
+    expect(peakBucketLabel(1080)).toBe('Evenings');   // 18:00
+  });
 });

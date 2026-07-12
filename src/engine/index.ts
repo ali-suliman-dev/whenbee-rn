@@ -66,10 +66,17 @@ export {
   REVIEW_REFLECTION_QUESTIONS,
 } from './review';
 export type { TightenedEntry, BuildReviewSummaryInput } from './review';
-export { learnFocusWindow } from './focusWindowLearn';
+export { learnFocusWindow, peakBucketLabel, permutationStrength } from './focusWindowLearn';
 export { computeFocusInsights, confidenceLabel } from './focusWindowInsights';
 export type { FocusInsights } from './focusWindowInsights';
-export type { LearnFocusInput, LearnedFocusWindow, FocusEventInput, FocusGate, FocusGates } from '@/src/domain/types';
+export type {
+  LearnFocusInput,
+  LearnedFocusWindow,
+  FocusEventInput,
+  FocusGate,
+  FocusGates,
+  FocusConfidenceTier,
+} from '@/src/domain/types';
 export { tasksForSelectedDay, type DayTask, type DaySelectorInput } from './daySelectors';
 export { honestDayLoad, type DayLoadInput, type DayLoadResult } from './honestDayLoad';
 export { planDayAroundAnchors } from './planDayAroundAnchors';
