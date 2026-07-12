@@ -4,6 +4,7 @@ import Animated, { FadeIn, ReduceMotion } from 'react-native-reanimated';
 import { useTheme } from '@/src/theme/useTheme';
 import { AppText } from '@/src/components/AppText';
 import { tokens } from '@/src/theme/tokens';
+import { FW_BIN_COUNT, FW_BIN_MIN, FW_WAKING_START_MIN, FW_WAKING_END_MIN } from '@/src/engine';
 
 // ──────────────────────────────────────────────────────────────────────────────
 // FocusCurve — SVG illustration of the user's learned focus window.
@@ -16,7 +17,11 @@ import { tokens } from '@/src/theme/tokens';
 //   locked   — solid primarySoft2 stroke, no band or axis labels.
 //              Parent overlays a frost scrim. Shown when learned but user is free.
 //
-// 38 bins span the waking range 05:00–24:00 (300–1440 min) at 30-min resolution.
+// FW_BIN_COUNT bins (from the engine) span the waking range FW_WAKING_START_MIN–
+// FW_WAKING_END_MIN at FW_BIN_MIN resolution. Bin i starts at
+// FW_WAKING_START_MIN + i * FW_BIN_MIN (mirrors engine/focusWindowLearn.ts's
+// binStartMin) — geometry here must stay derived from those constants, never
+// hardcoded, so the curve/band/peak always agree with the engine's bins.
 // ──────────────────────────────────────────────────────────────────────────────
 
 export interface FocusCurveProps {
@@ -38,10 +43,7 @@ export interface FocusCurveProps {
   bandVariant?: 'coarse' | 'precise';
 }
 
-const FW_WAKING_START_MIN = 300;  // 05:00
-const FW_WAKING_END_MIN = 1440;  // 24:00
 const FW_WAKING_RANGE = FW_WAKING_END_MIN - FW_WAKING_START_MIN; // 1140 min
-const BIN_COUNT = 38;
 
 // Time-axis labels: 6a/9a/12p/3p/6p/9p at hours 6,9,12,15,18,21
 const AXIS_HOURS = [6, 9, 12, 15, 18, 21];
@@ -86,16 +88,16 @@ export function FocusCurve({
   const svgHeight = height ?? viewH;
 
   // x maps bin index → SVG x coordinate
-  const x = (i: number) => (i / (BIN_COUNT - 1)) * viewW;
+  const x = (i: number) => (i / (FW_BIN_COUNT - 1)) * viewW;
   // y maps score [0,1] → SVG y coordinate (high score = low y = tall bar)
   const y = (v: number) => viewH - v * (viewH - yBase) - yPad;
 
-  // Guard: pad or trim scoreByBin to BIN_COUNT
-  const scores = Array.from({ length: BIN_COUNT }, (_, i) => scoreByBin[i] ?? 0);
+  // Guard: pad or trim scoreByBin to FW_BIN_COUNT
+  const scores = Array.from({ length: FW_BIN_COUNT }, (_, i) => scoreByBin[i] ?? 0);
 
   // Build the curve path
   const firstX = x(0);
-  const lastX = x(BIN_COUNT - 1);
+  const lastX = x(FW_BIN_COUNT - 1);
   const curvePath = scores.map((v, i) => `${i === 0 ? 'M' : 'L'} ${x(i)} ${y(v)}`).join(' ');
   const areaPath = `${curvePath} L${lastX},${viewH} L${firstX},${viewH} Z`;
 
@@ -110,8 +112,8 @@ export function FocusCurve({
     }
   }
   if (peakMin !== undefined) {
-    const bin = Math.round((peakMin - FW_WAKING_START_MIN) / 30);
-    peakIdx = Math.min(BIN_COUNT - 1, Math.max(0, bin));
+    const bin = Math.round((peakMin - FW_WAKING_START_MIN) / FW_BIN_MIN);
+    peakIdx = Math.min(FW_BIN_COUNT - 1, Math.max(0, bin));
     peakScore = scores[peakIdx] ?? 0;
   }
   const peakX = x(peakIdx);
@@ -121,10 +123,10 @@ export function FocusCurve({
   let bandX1 = 0;
   let bandX2 = 0;
   if (windowStartMin !== undefined && windowEndMin !== undefined) {
-    const startBin = (windowStartMin - FW_WAKING_START_MIN) / 30;
-    const endBin = (windowEndMin - FW_WAKING_START_MIN) / 30;
+    const startBin = (windowStartMin - FW_WAKING_START_MIN) / FW_BIN_MIN;
+    const endBin = (windowEndMin - FW_WAKING_START_MIN) / FW_BIN_MIN;
     bandX1 = x(Math.max(0, startBin));
-    bandX2 = x(Math.min(BIN_COUNT - 1, endBin));
+    bandX2 = x(Math.min(FW_BIN_COUNT - 1, endBin));
     if (bandVariant === 'coarse') {
       bandX1 = Math.max(0, bandX1 - coarseWidenPx);
       bandX2 = Math.min(viewW, bandX2 + coarseWidenPx);

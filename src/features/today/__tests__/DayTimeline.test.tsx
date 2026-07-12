@@ -11,6 +11,7 @@
 import React from 'react';
 import { render, screen, fireEvent } from '@testing-library/react-native';
 import * as Reanimated from 'react-native-reanimated';
+import { FW_BIN_COUNT } from '@/src/engine';
 import { DayTimeline } from '@/src/features/today/DayTimeline';
 import { useDayPlan } from '@/src/features/today/useDayPlan';
 import { useLearnedFocusWindow } from '@/src/features/planner/useLearnedFocusWindow';
@@ -98,7 +99,7 @@ function makeFormingFocusWindow(): LearnedFocusWindow {
     confidence: 0.3,
     confidenceTier: 'low',
     coarseBlockLabel: '',
-    scoreByBin: new Array(38).fill(0) as number[],
+    scoreByBin: new Array(FW_BIN_COUNT).fill(0) as number[],
     sampleCount: 0,
     distinctDays: 0,
     held: false,
@@ -117,7 +118,7 @@ function makeRevealedFocusWindow(): LearnedFocusWindow {
     confidence: 0.8,
     confidenceTier: 'steady',
     coarseBlockLabel: 'Mornings',
-    scoreByBin: new Array(38).fill(0.5) as number[],
+    scoreByBin: new Array(FW_BIN_COUNT).fill(0.5) as number[],
     sampleCount: 12,
     distinctDays: 8,
     held: false,

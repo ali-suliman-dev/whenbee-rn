@@ -1,4 +1,5 @@
 import React from 'react';
+import { FW_BIN_COUNT } from '@/src/engine';
 import { render, fireEvent } from '@testing-library/react-native';
 import { TodayFocusHook } from '../TodayFocusHook';
 import { useLearnedFocusWindow } from '@/src/features/planner/useLearnedFocusWindow';
@@ -37,7 +38,7 @@ const FORMING_WINDOW = {
   confidence: 0.3,
   confidenceTier: 'low' as const,
   coarseBlockLabel: '',
-  scoreByBin: new Array(38).fill(0.3),
+  scoreByBin: new Array(FW_BIN_COUNT).fill(0.3),
   sampleCount: 5,
   distinctDays: 3,
   held: false,
@@ -55,7 +56,7 @@ const REVEALED_WINDOW = {
   confidence: 0.8,
   confidenceTier: 'steady' as const,
   coarseBlockLabel: 'Mornings',
-  scoreByBin: new Array(38).fill(0.5),
+  scoreByBin: new Array(FW_BIN_COUNT).fill(0.5),
   sampleCount: 20,
   distinctDays: 12,
   held: false,

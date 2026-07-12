@@ -1,4 +1,5 @@
 import { render, screen, waitFor, fireEvent } from '@testing-library/react-native';
+import { FW_BIN_COUNT as mockFwBinCount } from '@/src/engine';
 import Patterns from '@/src/app/(tabs)/patterns';
 import { useCalibrationStore, type PatternsData } from '@/src/stores/calibrationStore';
 import { useEntitlement } from '@/src/features/paywall/useEntitlement';
@@ -12,7 +13,7 @@ jest.mock('@/src/features/planner/useLearnedFocusWindow', () => ({
     basis: 'forming' as const,
     startMin: 540,
     endMin: 690,
-    scoreByBin: Array(38).fill(0),
+    scoreByBin: Array(mockFwBinCount).fill(0),
     sampleCount: 0,
     distinctDays: 0,
     confidence: 0,

@@ -1,8 +1,9 @@
 import { render } from '@testing-library/react-native';
 import Svg, { Line } from 'react-native-svg';
+import { FW_BIN_COUNT } from '@/src/engine';
 import { FocusCurve } from '../FocusCurve';
 
-const SCORE_BY_BIN = Array.from({ length: 38 }, (_, i) => (i === 10 ? 1 : 0.3));
+const SCORE_BY_BIN = Array.from({ length: FW_BIN_COUNT }, (_, i) => (i === 10 ? 1 : 0.3));
 
 test('forming variant renders Svg', () => {
   const { UNSAFE_getByType } = render(

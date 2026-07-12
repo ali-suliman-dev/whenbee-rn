@@ -18,6 +18,16 @@ export interface FocusConfidenceMeterProps {
   fill: number; // 0–1
 }
 
+/** Honey/sharpness is monotonic (project invariant): the meter's animated
+ *  target must never retreat within a mounted session, even though the
+ *  underlying `permStrength` input can dip between renders. Clamp to the
+ *  running max. Exported so the invariant is unit-testable without going
+ *  through Reanimated's shared-value plumbing. */
+export function nextConfidenceFillTarget(currentTarget: number, incomingFill: number): number {
+  const clamped = Math.max(0, Math.min(1, incomingFill));
+  return Math.max(currentTarget, clamped);
+}
+
 export function FocusConfidenceMeter({ tier, fill }: FocusConfidenceMeterProps) {
   const t = useTheme();
   const reduced = useReducedMotion();
@@ -25,11 +35,12 @@ export function FocusConfidenceMeter({ tier, fill }: FocusConfidenceMeterProps) 
   const w = useSharedValue(reduced ? clamped : 0);
 
   useEffect(() => {
+    const target = nextConfidenceFillTarget(w.get(), clamped);
     if (reduced) {
-      w.set(clamped);
+      w.set(target);
       return;
     }
-    w.set(withTiming(clamped, { duration: t.motion.honeyFill, easing: Easing.out(Easing.cubic) }));
+    w.set(withTiming(target, { duration: t.motion.honeyFill, easing: Easing.out(Easing.cubic) }));
   }, [clamped, reduced, w, t.motion.honeyFill]);
 
   const fillStyle = useAnimatedStyle(() => ({ width: `${w.get() * 100}%` }));
@@ -51,7 +62,7 @@ export function FocusConfidenceMeter({ tier, fill }: FocusConfidenceMeterProps) 
     <View style={{ gap: t.space[1.5] }}>
       <AppText style={label}>{confidenceLabel(tier)}</AppText>
       <View style={track}>
-        <Animated.View style={[bar, fillStyle]} />
+        <Animated.View testID="focus-confidence-fill" style={[bar, fillStyle]} />
       </View>
     </View>
   );

@@ -2,13 +2,14 @@ import { render } from '@testing-library/react-native';
 import FocusWindowDetail from '../focus-window';
 import { useLearnedFocusWindow } from '@/src/features/planner/useLearnedFocusWindow';
 import { useFocusInsights } from '@/src/features/patterns/useFocusInsights';
+import { FW_BIN_COUNT } from '@/src/engine';
 
 jest.mock('@/src/features/planner/useLearnedFocusWindow');
 jest.mock('@/src/features/patterns/useFocusInsights');
 
 const win = { startMin: 810, endMin: 960, basis: 'revealed' as const, confidence: 0.8,
   confidenceTier: 'steady' as const, coarseBlockLabel: 'Afternoons',
-  scoreByBin: Array.from({ length: 38 }, (_, i) => (i === 19 ? 1 : 0.3)), sampleCount: 137, distinctDays: 21, held: false,
+  scoreByBin: Array.from({ length: FW_BIN_COUNT }, (_, i) => (i === 9 ? 1 : 0.3)), sampleCount: 137, distinctDays: 21, held: false,
   gates: { sessions: { have: 137, need: 15 }, days: { have: 21, need: 5 } } };
 
 beforeEach(() => (useLearnedFocusWindow as jest.Mock).mockReturnValue(win));
