@@ -9,18 +9,19 @@ import { kv } from '@/src/lib/kv';
 // screen tests don't hit the sqlite path — the card's own tests cover its states.
 jest.mock('@/src/features/planner/useLearnedFocusWindow', () => ({
   useLearnedFocusWindow: () => ({
-    basis: 'prior' as const,
+    basis: 'forming' as const,
     startMin: 540,
     endMin: 690,
     scoreByBin: Array(38).fill(0),
     sampleCount: 0,
     distinctDays: 0,
     confidence: 0,
+    confidenceTier: 'low' as const,
+    coarseBlockLabel: '',
     held: false,
     gates: {
       sessions: { have: 0, need: 15 },
       days: { have: 0, need: 5 },
-      peak: { have: 0, need: 6, confirming: false },
     },
   }),
 }));

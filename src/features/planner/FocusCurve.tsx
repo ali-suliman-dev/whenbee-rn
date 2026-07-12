@@ -10,7 +10,7 @@ import { tokens } from '@/src/theme/tokens';
 //
 // Variants:
 //   forming  — dashed primarySoft2 stroke, time-axis labels, NO band/peak dot.
-//              Shown while data accumulates (basis === 'prior').
+//              Shown while data accumulates (basis === 'forming').
 //   learned  — solid primary stroke + area gradient + window band + peak dot.
 //              Shown when the engine has a personal window.
 //   locked   — solid primarySoft2 stroke, no band or axis labels.

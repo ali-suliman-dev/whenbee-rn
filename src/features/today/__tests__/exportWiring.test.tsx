@@ -62,8 +62,10 @@ jest.mock('@/src/features/planner/useLearnedFocusWindow', () => ({
   useLearnedFocusWindow: () => ({
     startMin: 540,
     endMin: 690,
-    basis: 'prior' as const,
+    basis: 'forming' as const,
     confidence: 0.3,
+    confidenceTier: 'low' as const,
+    coarseBlockLabel: '',
     scoreByBin: new Array(38).fill(0.3),
     sampleCount: 0,
     distinctDays: 0,

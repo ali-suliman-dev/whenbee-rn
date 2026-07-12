@@ -6,8 +6,10 @@ import { useFocusInsights } from '@/src/features/patterns/useFocusInsights';
 jest.mock('@/src/features/planner/useLearnedFocusWindow');
 jest.mock('@/src/features/patterns/useFocusInsights');
 
-const win = { startMin: 810, endMin: 960, basis: 'personal' as const, confidence: 0.8,
-  scoreByBin: Array.from({ length: 38 }, (_, i) => (i === 19 ? 1 : 0.3)), sampleCount: 137, distinctDays: 21, held: false };
+const win = { startMin: 810, endMin: 960, basis: 'revealed' as const, confidence: 0.8,
+  confidenceTier: 'steady' as const, coarseBlockLabel: 'Afternoons',
+  scoreByBin: Array.from({ length: 38 }, (_, i) => (i === 19 ? 1 : 0.3)), sampleCount: 137, distinctDays: 21, held: false,
+  gates: { sessions: { have: 137, need: 15 }, days: { have: 21, need: 5 } } };
 
 beforeEach(() => (useLearnedFocusWindow as jest.Mock).mockReturnValue(win));
 
