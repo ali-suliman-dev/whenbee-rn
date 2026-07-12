@@ -90,12 +90,14 @@ function atTime(h: number, m: number): number {
 
 // ── Fixtures ──────────────────────────────────────────────────────────────────
 
-function makePriorFocusWindow(): LearnedFocusWindow {
+function makeFormingFocusWindow(): LearnedFocusWindow {
   return {
     startMin: 540,
     endMin: 720,
-    basis: 'prior',
+    basis: 'forming',
     confidence: 0.3,
+    confidenceTier: 'low',
+    coarseBlockLabel: '',
     scoreByBin: new Array(38).fill(0) as number[],
     sampleCount: 0,
     distinctDays: 0,
@@ -103,17 +105,18 @@ function makePriorFocusWindow(): LearnedFocusWindow {
     gates: {
       sessions: { have: 0, need: 15 },
       days: { have: 0, need: 5 },
-      peak: { have: 0, need: 6, confirming: false },
     },
   };
 }
 
-function makePersonalFocusWindow(): LearnedFocusWindow {
+function makeRevealedFocusWindow(): LearnedFocusWindow {
   return {
     startMin: 540,
     endMin: 720,
-    basis: 'personal',
+    basis: 'revealed',
     confidence: 0.8,
+    confidenceTier: 'steady',
+    coarseBlockLabel: 'Mornings',
     scoreByBin: new Array(38).fill(0.5) as number[],
     sampleCount: 12,
     distinctDays: 8,
@@ -121,7 +124,6 @@ function makePersonalFocusWindow(): LearnedFocusWindow {
     gates: {
       sessions: { have: 12, need: 15 },
       days: { have: 8, need: 5 },
-      peak: { have: 6, need: 6, confirming: false },
     },
   };
 }
@@ -190,7 +192,7 @@ function makeCutOnePlan(): PlanResult {
 
 beforeEach(() => {
   jest.clearAllMocks();
-  mockUseFocusWindow.mockReturnValue(makePriorFocusWindow());
+  mockUseFocusWindow.mockReturnValue(makeFormingFocusWindow());
   mockMoveToTomorrow.mockResolvedValue(undefined);
 });
 
@@ -263,10 +265,10 @@ describe('DayTimeline — drag-to-reorder grip', () => {
 });
 
 // ═════════════════════════════════════════════════════════════════════════════
-// Test 2 — personal focus window → focus band renders
+// Test 2 — revealed focus window → focus band renders
 // ═════════════════════════════════════════════════════════════════════════════
 
-describe('DayTimeline — focus band with personal window', () => {
+describe('DayTimeline — focus band with revealed window', () => {
   beforeEach(() => {
     mockUseDayPlan.mockReturnValue({
       plan: makeFitsPlan(),
@@ -274,20 +276,20 @@ describe('DayTimeline — focus band with personal window', () => {
       doneByMin: 1080,
       setDoneBy: mockSetDoneBy,
     });
-    mockUseFocusWindow.mockReturnValue(makePersonalFocusWindow());
+    mockUseFocusWindow.mockReturnValue(makeRevealedFocusWindow());
   });
 
-  it('renders the focus band element when basis is personal', () => {
+  it('renders the focus band element when basis is revealed', () => {
     render(<DayTimeline />);
     expect(screen.getByTestId('timeline-focus-band')).toBeOnTheScreen();
   });
 });
 
 // ═════════════════════════════════════════════════════════════════════════════
-// Test 3 — prior focus window → NO focus band
+// Test 3 — forming focus window → NO focus band
 // ═════════════════════════════════════════════════════════════════════════════
 
-describe('DayTimeline — no focus band when basis is prior', () => {
+describe('DayTimeline — no focus band when basis is forming', () => {
   beforeEach(() => {
     mockUseDayPlan.mockReturnValue({
       plan: makeFitsPlan(),
@@ -295,10 +297,10 @@ describe('DayTimeline — no focus band when basis is prior', () => {
       doneByMin: 1080,
       setDoneBy: mockSetDoneBy,
     });
-    mockUseFocusWindow.mockReturnValue(makePriorFocusWindow());
+    mockUseFocusWindow.mockReturnValue(makeFormingFocusWindow());
   });
 
-  it('does NOT render the focus band when basis is prior', () => {
+  it('does NOT render the focus band when basis is forming', () => {
     render(<DayTimeline />);
     expect(screen.queryByTestId('timeline-focus-band')).toBeNull();
   });

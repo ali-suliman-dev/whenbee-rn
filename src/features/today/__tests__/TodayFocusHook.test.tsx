@@ -30,11 +30,13 @@ jest.mock('@/src/stores/settingsStore', () => ({
 
 // ── fixtures ──────────────────────────────────────────────────────────────────
 
-const PRIOR_WINDOW = {
+const FORMING_WINDOW = {
   startMin: 540,
   endMin: 690,
-  basis: 'prior' as const,
+  basis: 'forming' as const,
   confidence: 0.3,
+  confidenceTier: 'low' as const,
+  coarseBlockLabel: '',
   scoreByBin: new Array(38).fill(0.3),
   sampleCount: 5,
   distinctDays: 3,
@@ -42,16 +44,17 @@ const PRIOR_WINDOW = {
   gates: {
     sessions: { have: 5, need: 15 },
     days: { have: 3, need: 5 },
-    peak: { have: 0, need: 6, confirming: false },
   },
 };
 
-/** Personal window 9am–11am */
-const PERSONAL_WINDOW = {
+/** Revealed window 9am–11am */
+const REVEALED_WINDOW = {
   startMin: 540, // 9:00 am
   endMin: 660,   // 11:00 am
-  basis: 'personal' as const,
+  basis: 'revealed' as const,
   confidence: 0.8,
+  confidenceTier: 'steady' as const,
+  coarseBlockLabel: 'Mornings',
   scoreByBin: new Array(38).fill(0.5),
   sampleCount: 20,
   distinctDays: 12,
@@ -59,7 +62,6 @@ const PERSONAL_WINDOW = {
   gates: {
     sessions: { have: 20, need: 15 },
     days: { have: 12, need: 5 },
-    peak: { have: 8, need: 6, confirming: false },
   },
 };
 
@@ -73,15 +75,15 @@ beforeEach(() => {
 
 // ── gate tests ────────────────────────────────────────────────────────────────
 
-test('renders null when window basis is prior (not personal)', () => {
-  jest.mocked(useLearnedFocusWindow).mockReturnValue(PRIOR_WINDOW);
+test('renders null when window basis is forming (not revealed)', () => {
+  jest.mocked(useLearnedFocusWindow).mockReturnValue(FORMING_WINDOW);
   const { toJSON } = render(<TodayFocusHook nowMs={NOW_BEFORE_WINDOW_END} />);
   expect(toJSON()).toBeNull();
 });
 
 test('renders null after the window end time has passed', () => {
-  jest.mocked(useLearnedFocusWindow).mockReturnValue(PERSONAL_WINDOW);
-  // PERSONAL_WINDOW endMin=660 (11am). Use a real Date at 11:05am so
+  jest.mocked(useLearnedFocusWindow).mockReturnValue(REVEALED_WINDOW);
+  // REVEALED_WINDOW endMin=660 (11am). Use a real Date at 11:05am so
   // minute-of-day = 665 > 660. No windowEndMin override in the mock.
   const today = new Date();
   today.setHours(11, 5, 0, 0);
@@ -93,7 +95,7 @@ test('renders null after the window end time has passed', () => {
 
 test('Pro: renders the times and "hard tasks" copy', () => {
   mockIsPro = true;
-  jest.mocked(useLearnedFocusWindow).mockReturnValue(PERSONAL_WINDOW);
+  jest.mocked(useLearnedFocusWindow).mockReturnValue(REVEALED_WINDOW);
   const { toJSON, queryByText } = render(
     <TodayFocusHook nowMs={NOW_BEFORE_WINDOW_END} />,
   );
@@ -113,7 +115,7 @@ test('Pro: renders the times and "hard tasks" copy', () => {
 
 test('Pro: tap routes to Patterns tab, not Plan', () => {
   mockIsPro = true;
-  jest.mocked(useLearnedFocusWindow).mockReturnValue(PERSONAL_WINDOW);
+  jest.mocked(useLearnedFocusWindow).mockReturnValue(REVEALED_WINDOW);
   const { getByRole } = render(<TodayFocusHook nowMs={NOW_BEFORE_WINDOW_END} />);
   fireEvent.press(getByRole('button'));
   expect(router.push).toHaveBeenCalledWith('/(tabs)/patterns');
@@ -126,7 +128,7 @@ test('Pro: tap routes to Patterns tab, not Plan', () => {
 
 test('Free: renders teaser copy without times', () => {
   mockIsPro = false;
-  jest.mocked(useLearnedFocusWindow).mockReturnValue(PERSONAL_WINDOW);
+  jest.mocked(useLearnedFocusWindow).mockReturnValue(REVEALED_WINDOW);
   const { getByText, queryByText } = render(
     <TodayFocusHook nowMs={NOW_BEFORE_WINDOW_END} />,
   );
@@ -141,7 +143,7 @@ test('Free: renders teaser copy without times', () => {
 
 test('Free: tap routes to paywall with trigger focus_window', () => {
   mockIsPro = false;
-  jest.mocked(useLearnedFocusWindow).mockReturnValue(PERSONAL_WINDOW);
+  jest.mocked(useLearnedFocusWindow).mockReturnValue(REVEALED_WINDOW);
   const { getByRole } = render(<TodayFocusHook nowMs={NOW_BEFORE_WINDOW_END} />);
   fireEvent.press(getByRole('button'));
   expect(router.push).toHaveBeenCalledWith({
@@ -153,21 +155,21 @@ test('Free: tap routes to paywall with trigger focus_window', () => {
 // ── Conditional-hooks regression: basis transition must not crash ─────────────
 //
 // Before the fix, useSharedValue / useAnimatedStyle were called AFTER the
-// `if (basis !== 'personal') return null` gate. When the same mounted instance
-// re-rendered with basis flipping 'prior'→'personal', React would throw
+// `if (basis !== 'revealed') return null` gate. When the same mounted instance
+// re-rendered with basis flipping 'forming'→'revealed', React would throw
 // "Rendered more hooks than during the previous render."
 // These tests verify that one mounted instance survives the transition cleanly.
 
-test('hooks-order regression: re-render prior→personal does not throw', () => {
-  // Start with a prior-basis window (gate 1 fires → returns null).
-  jest.mocked(useLearnedFocusWindow).mockReturnValue(PRIOR_WINDOW);
+test('hooks-order regression: re-render forming→revealed does not throw', () => {
+  // Start with a forming-basis window (gate 1 fires → returns null).
+  jest.mocked(useLearnedFocusWindow).mockReturnValue(FORMING_WINDOW);
   mockIsPro = true;
 
   const { rerender, toJSON } = render(<TodayFocusHook nowMs={NOW_BEFORE_WINDOW_END} />);
   expect(toJSON()).toBeNull(); // gate active, renders null
 
-  // Flip to personal — same mounted instance, should not throw.
-  jest.mocked(useLearnedFocusWindow).mockReturnValue(PERSONAL_WINDOW);
+  // Flip to revealed — same mounted instance, should not throw.
+  jest.mocked(useLearnedFocusWindow).mockReturnValue(REVEALED_WINDOW);
   expect(() => {
     rerender(<TodayFocusHook nowMs={NOW_BEFORE_WINDOW_END} />);
   }).not.toThrow();
@@ -177,8 +179,8 @@ test('hooks-order regression: re-render prior→personal does not throw', () => 
 });
 
 test('hooks-order regression: re-render before→after window-end does not throw', () => {
-  // Start: personal window, time is BEFORE end (gate 2 inactive).
-  jest.mocked(useLearnedFocusWindow).mockReturnValue(PERSONAL_WINDOW);
+  // Start: revealed window, time is BEFORE end (gate 2 inactive).
+  jest.mocked(useLearnedFocusWindow).mockReturnValue(REVEALED_WINDOW);
   mockIsPro = true;
 
   // Pin Date so minute-of-day = 0 (well before endMin 660).
@@ -202,10 +204,10 @@ test('hooks-order regression: re-render before→after window-end does not throw
 
 test('Free: full tree contains no clock time strings (Pro-gate regression)', () => {
   // Pin clock to a fixed instant so time-formatting is deterministic.
-  // PERSONAL_WINDOW: startMin=540 (9:00am), endMin=660 (11:00am).
+  // REVEALED_WINDOW: startMin=540 (9:00am), endMin=660 (11:00am).
   // If the gate leaks, those strings would appear in the rendered tree.
   mockIsPro = false;
-  jest.mocked(useLearnedFocusWindow).mockReturnValue(PERSONAL_WINDOW);
+  jest.mocked(useLearnedFocusWindow).mockReturnValue(REVEALED_WINDOW);
   const { toJSON } = render(<TodayFocusHook nowMs={NOW_BEFORE_WINDOW_END} />);
   const json = JSON.stringify(toJSON());
   // No meridiem clock patterns (e.g. "9:00am", "11:00am") should appear
@@ -219,7 +221,7 @@ test('Pro: the row renders visible text (regression for function-form Pressable 
   // silently renders nothing because it strips function-form styles. This test
   // asserts that the rendered tree actually contains a Text node (not null/empty).
   mockIsPro = true;
-  jest.mocked(useLearnedFocusWindow).mockReturnValue(PERSONAL_WINDOW);
+  jest.mocked(useLearnedFocusWindow).mockReturnValue(REVEALED_WINDOW);
   const { toJSON } = render(<TodayFocusHook nowMs={NOW_BEFORE_WINDOW_END} />);
   const json = JSON.stringify(toJSON());
   // A rendered tree with visible text nodes is not null and has children

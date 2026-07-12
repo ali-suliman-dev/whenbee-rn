@@ -500,7 +500,7 @@ export function DayTimeline({ hideHeader = false }: DayTimelineProps = {}) {
     }
   }, [optimisticOrderKey, planOrderKey]);
 
-  const showFocusBand = focusWindow.basis === 'personal';
+  const showFocusBand = focusWindow.basis === 'revealed';
 
   // ── Overflow handler ──────────────────────────────────────────────────────
   const handleMoveToTomorrow = useCallback(

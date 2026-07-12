@@ -57,8 +57,8 @@ export function TodayFocusHook({ nowMs }: TodayFocusHookProps): React.ReactEleme
 
   const { basis, startMin, endMin } = window;
 
-  // Gate 1: must have a learned personal window
-  if (basis !== 'personal') return null;
+  // Gate 1: must have a revealed personal window
+  if (basis !== 'revealed') return null;
 
   // Gate 2: must be before the window end
   const now = new Date(nowMs);
