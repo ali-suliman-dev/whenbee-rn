@@ -578,6 +578,9 @@ export const tokens = {
     yLabelW: 30,       // Y-axis gutter width (pt)
     peakLabelGap: 5,   // vertical gap between the peak dot and its label
     peakLabelMinY: 9,  // minimum y for the peak label (keeps it off the top edge)
+    coarseWidenPx: 24, // bandVariant="coarse": outward extension (SVG units, each side)
+    dashEdge: '3 3',   // bandVariant="coarse": strokeDasharray for the dashed edge lines
+    dashEdgeW: 2,      // bandVariant="coarse": dashed edge line stroke weight
   },
 
   // Focus-unlock ladder geometry (FocusGateRow). One place for the gate-marker

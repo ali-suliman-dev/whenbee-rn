@@ -304,26 +304,35 @@ export interface LearnFocusInput {
   seed?: number;
 }
 
-/** One milestone in the 3-gate focus-unlock ladder: `have` vs `need`. */
+/** One milestone in the 2-gate focus-unlock ladder: `have` vs `need`. */
 export interface FocusGate {
   have: number;
   need: number;
 }
 
-/** The 3-gate focus-unlock ladder — sessions, distinct days, a significant peak bin. */
+/** The 2-gate focus-unlock ladder — enough timed sessions, spread over enough days.
+ *  (The old "clear peak" gate is gone: precision is now graded by `confidenceTier`,
+ *  never gated.) */
 export interface FocusGates {
   sessions: FocusGate;
   days: FocusGate;
-  /** `confirming` = all three counts met but the window still hasn't certified as `personal`. */
-  peak: FocusGate & { confirming: boolean };
 }
+
+/** How sharp the revealed window is. Grades precision; never a lock. */
+export type FocusConfidenceTier = 'low' | 'building' | 'steady';
 
 export interface LearnedFocusWindow {
   startMin: number;
   endMin: number;
-  basis: 'personal' | 'prior';
-  confidence: number;                 // 0–1, for wording only (never shown as %)
-  scoreByBin: number[];               // 38 bins, normalised [0,1] for the curve
+  /** `forming` = 2 gates not yet met (the ladder). `revealed` = a window is shown,
+   *  precision graded by `confidenceTier`. */
+  basis: 'forming' | 'revealed';
+  confidence: number;                 // 0–1, meter fill + wording (never shown as %)
+  confidenceTier: FocusConfidenceTier;
+  /** Coarse time-of-day bucket ("Mornings" etc.) for the low-confidence reveal and
+   *  the forming hint. Empty string when no peak bucket is known yet. */
+  coarseBlockLabel: string;
+  scoreByBin: number[];               // 19 bins, normalised [0,1] for the curve
   sampleCount: number;
   distinctDays: number;
   held: boolean;                      // true → hysteresis kept the shown window

@@ -27,7 +27,7 @@ const FOCUS_SCAN_LIMIT = 500;
 /**
  * Returns the current learned (or prior-fallback) focus window.
  *
- * Side-effect: if `!focusWindowUserSet` and the engine returns a `personal`
+ * Side-effect: if `!focusWindowUserSet` and the engine returns a `revealed`
  * window that isn't `held`, calls `setLearnedFocusWindow` to persist it.
  *
  * @param nowMs - Epoch ms for the current moment. Defaults to `Date.now()`.
@@ -112,7 +112,7 @@ export function useLearnedFocusWindow(nowMs?: number): LearnedFocusWindow {
 
   // ── auto-persist effect ───────────────────────────────────────────────────────
   // Write the learned window into settingsStore when:
-  //   1. The engine gained enough data to say 'personal', AND
+  //   1. The engine gained enough data to say 'revealed', AND
   //   2. The user hasn't manually overridden their window, AND
   //   3. Hysteresis didn't hold the previous window (the window actually moved), AND
   //   4. The window values actually differ from what is already stored.
@@ -123,7 +123,7 @@ export function useLearnedFocusWindow(nowMs?: number): LearnedFocusWindow {
   useEffect(() => {
     if (
       !focusWindowUserSet &&
-      result.basis === 'personal' &&
+      result.basis === 'revealed' &&
       !result.held &&
       (result.startMin !== focusShownStartMin || result.endMin !== focusShownEndMin)
     ) {

@@ -8,6 +8,7 @@
 
 import { render, screen, fireEvent } from '@testing-library/react-native';
 import { router } from 'expo-router';
+import { FW_BIN_COUNT as mockFwBinCount } from '@/src/engine';
 import Today from '@/src/app/(tabs)/index';
 import { useDayTasksStore } from '@/src/stores/dayTasksStore';
 import { useCalibrationStore } from '@/src/stores/calibrationStore';
@@ -28,8 +29,9 @@ afterAll(() => { (Date.now as jest.Mock).mockRestore(); });
 jest.mock('@/src/features/today/calendarStrip/CalendarStrip', () => ({ CalendarStrip: () => null }));
 jest.mock('@/src/features/planner/useLearnedFocusWindow', () => ({
   useLearnedFocusWindow: () => ({
-    startMin: 540, endMin: 690, basis: 'prior' as const,
-    confidence: 0.3, scoreByBin: new Array(38).fill(0.3), sampleCount: 0, distinctDays: 0, held: false,
+    startMin: 540, endMin: 690, basis: 'forming' as const,
+    confidence: 0.3, confidenceTier: 'low' as const, coarseBlockLabel: '',
+    scoreByBin: new Array(mockFwBinCount).fill(0.3), sampleCount: 0, distinctDays: 0, held: false,
   }),
 }));
 jest.mock('@/src/features/today/useDayCapacity');

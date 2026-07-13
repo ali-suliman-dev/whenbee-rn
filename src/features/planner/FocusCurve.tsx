@@ -1,22 +1,27 @@
 import { View, type ViewStyle, type TextStyle } from 'react-native';
-import Svg, { Path, Circle, Rect, Defs, LinearGradient, Stop, Text as SvgText } from 'react-native-svg';
+import Svg, { Path, Circle, Rect, Line, Defs, LinearGradient, Stop, Text as SvgText } from 'react-native-svg';
 import Animated, { FadeIn, ReduceMotion } from 'react-native-reanimated';
 import { useTheme } from '@/src/theme/useTheme';
 import { AppText } from '@/src/components/AppText';
 import { tokens } from '@/src/theme/tokens';
+import { FW_BIN_COUNT, FW_BIN_MIN, FW_WAKING_START_MIN, FW_WAKING_END_MIN } from '@/src/engine';
 
 // ──────────────────────────────────────────────────────────────────────────────
 // FocusCurve — SVG illustration of the user's learned focus window.
 //
 // Variants:
 //   forming  — dashed primarySoft2 stroke, time-axis labels, NO band/peak dot.
-//              Shown while data accumulates (basis === 'prior').
+//              Shown while data accumulates (basis === 'forming').
 //   learned  — solid primary stroke + area gradient + window band + peak dot.
 //              Shown when the engine has a personal window.
 //   locked   — solid primarySoft2 stroke, no band or axis labels.
 //              Parent overlays a frost scrim. Shown when learned but user is free.
 //
-// 38 bins span the waking range 05:00–24:00 (300–1440 min) at 30-min resolution.
+// FW_BIN_COUNT bins (from the engine) span the waking range FW_WAKING_START_MIN–
+// FW_WAKING_END_MIN at FW_BIN_MIN resolution. Bin i starts at
+// FW_WAKING_START_MIN + i * FW_BIN_MIN (mirrors engine/focusWindowLearn.ts's
+// binStartMin) — geometry here must stay derived from those constants, never
+// hardcoded, so the curve/band/peak always agree with the engine's bins.
 // ──────────────────────────────────────────────────────────────────────────────
 
 export interface FocusCurveProps {
@@ -32,12 +37,13 @@ export interface FocusCurveProps {
   /** When provided, positions the peak dot + label at this minute instead of
    *  the curve's internal normalized argmax (e.g. the engine's eligible-bin peak). */
   peakMin?: number;
+  /** Window band style. 'precise' (default) = the current solid band, unchanged.
+   *  'coarse' = a wider band (suggests the enclosing block, low-confidence reveal)
+   *  with dashed amber edge lines instead of a hard-edged fill. */
+  bandVariant?: 'coarse' | 'precise';
 }
 
-const FW_WAKING_START_MIN = 300;  // 05:00
-const FW_WAKING_END_MIN = 1440;  // 24:00
 const FW_WAKING_RANGE = FW_WAKING_END_MIN - FW_WAKING_START_MIN; // 1140 min
-const BIN_COUNT = 38;
 
 // Time-axis labels: 6a/9a/12p/3p/6p/9p at hours 6,9,12,15,18,21
 const AXIS_HOURS = [6, 9, 12, 15, 18, 21];
@@ -54,6 +60,7 @@ export function FocusCurve({
   peakLabel,
   height,
   peakMin,
+  bandVariant = 'precise',
 }: FocusCurveProps) {
   const t = useTheme();
   const {
@@ -74,20 +81,23 @@ export function FocusCurve({
     yLabelW,
     peakLabelGap,
     peakLabelMinY,
+    coarseWidenPx,
+    dashEdge,
+    dashEdgeW,
   } = t.focusCurve;
   const svgHeight = height ?? viewH;
 
   // x maps bin index → SVG x coordinate
-  const x = (i: number) => (i / (BIN_COUNT - 1)) * viewW;
+  const x = (i: number) => (i / (FW_BIN_COUNT - 1)) * viewW;
   // y maps score [0,1] → SVG y coordinate (high score = low y = tall bar)
   const y = (v: number) => viewH - v * (viewH - yBase) - yPad;
 
-  // Guard: pad or trim scoreByBin to BIN_COUNT
-  const scores = Array.from({ length: BIN_COUNT }, (_, i) => scoreByBin[i] ?? 0);
+  // Guard: pad or trim scoreByBin to FW_BIN_COUNT
+  const scores = Array.from({ length: FW_BIN_COUNT }, (_, i) => scoreByBin[i] ?? 0);
 
   // Build the curve path
   const firstX = x(0);
-  const lastX = x(BIN_COUNT - 1);
+  const lastX = x(FW_BIN_COUNT - 1);
   const curvePath = scores.map((v, i) => `${i === 0 ? 'M' : 'L'} ${x(i)} ${y(v)}`).join(' ');
   const areaPath = `${curvePath} L${lastX},${viewH} L${firstX},${viewH} Z`;
 
@@ -102,8 +112,11 @@ export function FocusCurve({
     }
   }
   if (peakMin !== undefined) {
-    const bin = Math.round((peakMin - FW_WAKING_START_MIN) / 30);
-    peakIdx = Math.min(BIN_COUNT - 1, Math.max(0, bin));
+    // peakMin is a BIN-CENTER minute (engine adds FW_BIN_MIN/2), not a bin
+    // edge — floor(peakIdx + 0.5) recovers the exact bin index. Math.round
+    // would round the .5 up and land one bin (~1 hour) late.
+    const bin = Math.floor((peakMin - FW_WAKING_START_MIN) / FW_BIN_MIN);
+    peakIdx = Math.min(FW_BIN_COUNT - 1, Math.max(0, bin));
     peakScore = scores[peakIdx] ?? 0;
   }
   const peakX = x(peakIdx);
@@ -113,10 +126,14 @@ export function FocusCurve({
   let bandX1 = 0;
   let bandX2 = 0;
   if (windowStartMin !== undefined && windowEndMin !== undefined) {
-    const startBin = (windowStartMin - FW_WAKING_START_MIN) / 30;
-    const endBin = (windowEndMin - FW_WAKING_START_MIN) / 30;
+    const startBin = (windowStartMin - FW_WAKING_START_MIN) / FW_BIN_MIN;
+    const endBin = (windowEndMin - FW_WAKING_START_MIN) / FW_BIN_MIN;
     bandX1 = x(Math.max(0, startBin));
-    bandX2 = x(Math.min(BIN_COUNT - 1, endBin));
+    bandX2 = x(Math.min(FW_BIN_COUNT - 1, endBin));
+    if (bandVariant === 'coarse') {
+      bandX1 = Math.max(0, bandX1 - coarseWidenPx);
+      bandX2 = Math.min(viewW, bandX2 + coarseWidenPx);
+    }
   }
 
   // Stroke color + style per variant
@@ -182,6 +199,33 @@ export function FocusCurve({
             fill={t.colors.primaryWash}
             fillOpacity={bandOpacity}
           />
+        )}
+
+        {/* Coarse band edges — dashed amber lines signal a provisional,
+            not-yet-sharpened window (low-confidence reveal). */}
+        {showBand && bandVariant === 'coarse' && (
+          <>
+            <Line
+              x1={bandX1}
+              y1={0}
+              x2={bandX1}
+              y2={viewH}
+              stroke={t.colors.accent}
+              strokeWidth={dashEdgeW}
+              strokeDasharray={dashEdge}
+              strokeOpacity={t.opacity.rangeArc}
+            />
+            <Line
+              x1={bandX2}
+              y1={0}
+              x2={bandX2}
+              y2={viewH}
+              stroke={t.colors.accent}
+              strokeWidth={dashEdgeW}
+              strokeDasharray={dashEdge}
+              strokeOpacity={t.opacity.rangeArc}
+            />
+          </>
         )}
 
         {/* Area gradient fill (learned only) */}

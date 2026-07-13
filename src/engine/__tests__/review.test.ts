@@ -293,4 +293,52 @@ describe('buildReviewSummary', () => {
     expect(REVIEW_REFLECTION_QUESTIONS).toContain(a);
     expect(REVIEW_REFLECTION_QUESTIONS).toContain(b);
   });
+
+  it('names the strongest tightening in the reflection (data-specific)', () => {
+    const s = buildReviewSummary({
+      period: fixedPeriod,
+      loggedCount: 9,
+      loggedMinutes: 240,
+      accuracyLine: null,
+      sharpestPhrase: null,
+      tightenedEntries: [{ categoryId: 'admin', categoryName: 'Admin', ratios: [2.0, 2.0, 1.1, 1.1] }],
+      biggestSurprise: surprise,
+      weekRead: null,
+      forwardAction: null,
+      confidenceBand: null,
+    });
+    expect(s.reflection).toBe('Admin is quietly getting sharper. What changed?');
+  });
+
+  it('falls back to the biggest surprise when nothing tightened', () => {
+    const s = buildReviewSummary({
+      period: fixedPeriod,
+      loggedCount: 9,
+      loggedMinutes: 240,
+      accuracyLine: null,
+      sharpestPhrase: null,
+      tightenedEntries: [],
+      biggestSurprise: surprise,
+      weekRead: null,
+      forwardAction: null,
+      confidenceBand: null,
+    });
+    expect(s.reflection).toBe('Admin drifted the most this week. What was going on?');
+  });
+
+  it('ignores earned signals when there are no logs (stays generic)', () => {
+    const s = buildReviewSummary({
+      period: fixedPeriod,
+      loggedCount: 0,
+      loggedMinutes: 0,
+      accuracyLine: null,
+      sharpestPhrase: null,
+      tightenedEntries: [{ categoryId: 'admin', categoryName: 'Admin', ratios: [2.0, 2.0, 1.1, 1.1] }],
+      biggestSurprise: surprise,
+      weekRead: null,
+      forwardAction: null,
+      confidenceBand: null,
+    });
+    expect(REVIEW_REFLECTION_QUESTIONS).toContain(s.reflection);
+  });
 });

@@ -7,88 +7,82 @@ import { useEntitlement } from '@/src/features/paywall/useEntitlement';
 jest.mock('@/src/features/planner/useLearnedFocusWindow');
 jest.mock('@/src/features/patterns/useFocusInsights');
 jest.mock('@/src/features/paywall/useEntitlement');
+jest.mock('@/src/stores/settingsStore', () => ({
+  useSettingsStore: (sel: (s: Record<string, unknown>) => unknown) =>
+    sel({ windowStartMin: 540, windowEndMin: 1320, setFocusWindow: jest.fn(), colorMode: 'light' }),
+}));
 
-const personal = {
-  startMin: 810, endMin: 960, basis: 'personal' as const, confidence: 0.8,
-  scoreByBin: Array.from({ length: 38 }, (_, i) => (i === 19 ? 1 : 0.3)),
+// Revealed + steady confidence — the precise-window hero.
+const revealedSteady = {
+  startMin: 810, endMin: 960, basis: 'revealed' as const, confidence: 0.9,
+  confidenceTier: 'steady' as const, coarseBlockLabel: 'Afternoons',
+  scoreByBin: Array.from({ length: 19 }, (_, i) => (i === 9 ? 1 : 0.3)),
   sampleCount: 137, distinctDays: 21, held: false,
-  gates: {
-    sessions: { have: 137, need: 15 },
-    days: { have: 21, need: 5 },
-    peak: { have: 24, need: 6, confirming: false },
-  },
+  gates: { sessions: { have: 137, need: 15 }, days: { have: 21, need: 5 } },
 };
 
-// Early forming: only the sessions gate is active (0 of 3 unlocked).
+// Revealed but still low-confidence — coarse block reveal.
+const revealedLow = {
+  startMin: 480, endMin: 690, basis: 'revealed' as const, confidence: 0.4,
+  confidenceTier: 'low' as const, coarseBlockLabel: 'Mornings',
+  scoreByBin: Array(19).fill(0.5), sampleCount: 16, distinctDays: 5, held: false,
+  gates: { sessions: { have: 16, need: 15 }, days: { have: 5, need: 5 } },
+};
+
+// Forming: only the sessions gate is active (0 of 2 unlocked).
 const forming = {
-  startMin: 540, endMin: 720, basis: 'prior' as const, confidence: 0,
-  scoreByBin: Array.from({ length: 38 }, () => 0.3),
+  startMin: 540, endMin: 720, basis: 'forming' as const, confidence: 0,
+  confidenceTier: 'low' as const, coarseBlockLabel: '',
+  scoreByBin: Array.from({ length: 19 }, () => 0.3),
   sampleCount: 3, distinctDays: 2, held: false,
-  gates: {
-    sessions: { have: 3, need: 15 },
-    days: { have: 2, need: 5 },
-    peak: { have: 0, need: 6, confirming: false },
-  },
+  gates: { sessions: { have: 3, need: 15 }, days: { have: 2, need: 5 } },
 };
 
-// Sessions + days cleared, peak still counting up (2 of 3 unlocked).
-const peakActive = {
+// Forming with a leaning coarse block already known.
+const formingWithHint = {
   ...forming,
-  sampleCount: 18, distinctDays: 6,
-  gates: {
-    sessions: { have: 18, need: 15 },
-    days: { have: 6, need: 5 },
-    peak: { have: 2, need: 6, confirming: false },
-  },
+  coarseBlockLabel: 'Mornings',
 };
 
-// All counts met but the window hasn't certified yet — peak is confirming
-// (still only 2 of 3 gates truly "unlocked"; the peak gate never counts as
-// unlocked while forming).
-const peakConfirming = {
+// Sessions cleared, days still short (1 of 2 unlocked).
+const daysActive = {
   ...forming,
-  sampleCount: 22, distinctDays: 8,
-  gates: {
-    sessions: { have: 22, need: 15 },
-    days: { have: 8, need: 5 },
-    peak: { have: 9, need: 6, confirming: true },
-  },
-};
-
-// Days done from distinct-day count alone, sessions still short (e.g. one
-// session/day for a week) — days must show DONE independent of the sessions
-// gate, not "upcoming" with a raw "6/5".
-const daysDoneSessionsShort = {
-  ...forming,
-  sampleCount: 8, distinctDays: 6,
-  gates: {
-    sessions: { have: 8, need: 15 },
-    days: { have: 6, need: 5 },
-    peak: { have: 0, need: 6, confirming: false },
-  },
+  sampleCount: 16, distinctDays: 3,
+  gates: { sessions: { have: 16, need: 15 }, days: { have: 3, need: 5 } },
 };
 
 beforeEach(() => {
   (useEntitlement as unknown as jest.Mock).mockReturnValue(true); // isPro selector
-  (useFocusInsights as jest.Mock).mockReturnValue({ peakMin: 882, troughMin: 555, contrast: 2.3, accuracyBetterInWindow: true, durationLongerInWindow: true });
+  (useFocusInsights as jest.Mock).mockReturnValue({
+    peakMin: 882, troughMin: 555, contrast: 2.3, accuracyBetterInWindow: true, durationLongerInWindow: true,
+  });
 });
 
-it('Pro personal: shows window in user clock + why-line', () => {
-  (useLearnedFocusWindow as jest.Mock).mockReturnValue(personal);
+it('revealed + steady, Pro: shows window range in user clock + why-line + meter', () => {
+  (useLearnedFocusWindow as jest.Mock).mockReturnValue(revealedSteady);
   const { getByText } = render(<FocusPeakCard />);
   expect(getByText('1:30 – 4:00 pm')).toBeTruthy();
   expect(getByText(/peak after lunch/i)).toBeTruthy();
+  expect(getByText('Steady · locked to your rhythm')).toBeTruthy();
 });
 
-it('Pro personal with null contrast: why-line drops the ratio clause', () => {
-  (useLearnedFocusWindow as jest.Mock).mockReturnValue(personal);
+it('revealed + steady with null contrast: why-line drops the ratio clause', () => {
+  (useLearnedFocusWindow as jest.Mock).mockReturnValue(revealedSteady);
   (useFocusInsights as jest.Mock).mockReturnValue({ peakMin: 882, troughMin: 555, contrast: null, accuracyBetterInWindow: null, durationLongerInWindow: null });
   const { queryByText } = render(<FocusPeakCard />);
   expect(queryByText(/× above your dip/)).toBeNull();
 });
 
-it('free + personal: shows a quiet Unlock link (no filled CTA), no exact window', () => {
-  (useLearnedFocusWindow as jest.Mock).mockReturnValue(personal);
+it('revealed low: shows coarse block name + confidence label, not the precise window', () => {
+  (useLearnedFocusWindow as jest.Mock).mockReturnValue(revealedLow);
+  const { getByText, queryByText } = render(<FocusPeakCard />);
+  expect(getByText('Mornings')).toBeTruthy();
+  expect(getByText('Still learning · sharpening')).toBeTruthy();
+  expect(queryByText('Open ›')).toBeNull();
+});
+
+it('free + revealed: shows a quiet Unlock link (no filled CTA), no exact window', () => {
+  (useLearnedFocusWindow as jest.Mock).mockReturnValue(revealedSteady);
   (useEntitlement as unknown as jest.Mock).mockReturnValue(false);
   const { getByText, queryByText } = render(<FocusPeakCard />);
   expect(getByText('Unlock my focus window ›')).toBeTruthy();
@@ -96,55 +90,43 @@ it('free + personal: shows a quiet Unlock link (no filled CTA), no exact window'
   expect(queryByText('1:30 – 4:00 pm')).toBeNull();
 });
 
-it('forming + Pro: sessions gate active, 0 of 3 unlocked, no PRO badge', () => {
+it('forming: header has no unlocked tag; ladder shows two rungs + the tag', () => {
   (useLearnedFocusWindow as jest.Mock).mockReturnValue(forming);
-  const { getByText, queryByText } = render(<FocusPeakCard />);
-  expect(getByText('Learning your focus hours')).toBeTruthy();
-  expect(getByText('0 of 3 unlocked')).toBeTruthy();
-  expect(getByText('3')).toBeTruthy(); // sessions "3/15" numerator node
-  expect(getByText('/15')).toBeTruthy();
-  expect(getByText('12 more timed sessions to go.')).toBeTruthy();
+  const { getByText, queryAllByText } = render(<FocusPeakCard />);
+  expect(getByText('0 of 2 unlocked')).toBeTruthy();
+  expect(getByText('Timed sessions')).toBeTruthy();
+  expect(getByText('Different days')).toBeTruthy();
+  expect(queryAllByText(/of 3 unlocked/).length).toBe(0);
+});
+
+it('forming + Pro: no PRO badge in header', () => {
+  (useLearnedFocusWindow as jest.Mock).mockReturnValue(forming);
+  const { queryByText } = render(<FocusPeakCard />);
   expect(queryByText('PRO')).toBeNull();
 });
 
-it('forming + free: milestone shows the PRO coin pill (still gated)', () => {
+it('forming + free: header shows the PRO coin pill (still gated)', () => {
   (useLearnedFocusWindow as jest.Mock).mockReturnValue(forming);
   (useEntitlement as unknown as jest.Mock).mockReturnValue(false);
   const { getByText } = render(<FocusPeakCard />);
-  expect(getByText('3')).toBeTruthy();
   expect(getByText('PRO')).toBeTruthy();
 });
 
-it('forming: sessions + days done, peak active → 2 of 3 unlocked, "Almost there"', () => {
-  (useLearnedFocusWindow as jest.Mock).mockReturnValue(peakActive);
+it('forming with no coarse hint yet: falls back to the generic hint copy', () => {
+  (useLearnedFocusWindow as jest.Mock).mockReturnValue(forming);
   const { getByText } = render(<FocusPeakCard />);
-  expect(getByText('2 of 3 unlocked')).toBeTruthy();
-  expect(getByText('Almost there')).toBeTruthy();
-  // two cleared gates carry a check
-  expect(getByText('18 ✓')).toBeTruthy();
-  expect(getByText('6 ✓')).toBeTruthy();
-  // peak gate active with its have/need + locks-in copy
-  expect(getByText('/6')).toBeTruthy();
-  expect(getByText('4 more sessions around your usual hours and your peak shows.')).toBeTruthy();
+  expect(getByText("Keep timing and I'll find the hours you focus best.")).toBeTruthy();
 });
 
-it('forming: days done from distinct-day count alone, sessions still short → days row is DONE, not upcoming', () => {
-  (useLearnedFocusWindow as jest.Mock).mockReturnValue(daysDoneSessionsShort);
-  const { getByText, queryByText } = render(<FocusPeakCard />);
-  expect(getByText('1 of 3 unlocked')).toBeTruthy();
-  // days gate reads DONE ("6 ✓"), never the raw "6/5" ratio
-  expect(getByText('6 ✓')).toBeTruthy();
-  expect(queryByText('6/5')).toBeNull();
-  expect(queryByText('/5')).toBeNull();
-  // sessions gate is the active row (8/15)
-  expect(getByText('8')).toBeTruthy();
-  expect(getByText('/15')).toBeTruthy();
+it('forming with a leaning coarse block: shows the coarse hint line', () => {
+  (useLearnedFocusWindow as jest.Mock).mockReturnValue(formingWithHint);
+  const { getByText } = render(<FocusPeakCard />);
+  expect(getByText(/Leaning toward mornings/)).toBeTruthy();
 });
 
-it('forming: peak confirming → settling copy, not a "to go" line', () => {
-  (useLearnedFocusWindow as jest.Mock).mockReturnValue(peakConfirming);
-  const { getByText, queryByText } = render(<FocusPeakCard />);
-  expect(getByText('2 of 3 unlocked')).toBeTruthy();
-  expect(getByText('Almost — a session or two more and I lock your peak in.')).toBeTruthy();
-  expect(queryByText(/your peak shows/)).toBeNull();
+it('forming: sessions done, days active → 1 of 2 unlocked', () => {
+  (useLearnedFocusWindow as jest.Mock).mockReturnValue(daysActive);
+  const { getByText } = render(<FocusPeakCard />);
+  expect(getByText('1 of 2 unlocked')).toBeTruthy();
+  expect(getByText('16 ✓')).toBeTruthy();
 });

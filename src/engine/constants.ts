@@ -153,8 +153,8 @@ export const FORGOT_GRACE_MIN = 20;
 // ── Learned focus window (Pro) — spec 14 ──────────────────────────────────────
 export const FW_WAKING_START_MIN = 300;            // 05:00
 export const FW_WAKING_END_MIN = 1440;             // 24:00
-export const FW_BIN_MIN = 30;
-export const FW_BIN_COUNT = (FW_WAKING_END_MIN - FW_WAKING_START_MIN) / FW_BIN_MIN; // 38
+export const FW_BIN_MIN = 60;
+export const FW_BIN_COUNT = (FW_WAKING_END_MIN - FW_WAKING_START_MIN) / FW_BIN_MIN; // 19
 export const FW_S_CLAMP = Math.log(3);
 export const FW_MIN_ACTUAL_MIN = 3;
 export const FW_MIN_PLAUSIBLE_RATIO = 0.1;
@@ -189,6 +189,7 @@ export const FW_PRIOR_WINDOW = { startMin: 540, endMin: 690 } as const; // 09:00
 // ── Focus insights (detail-view "why" metrics) ───────────────────────────────
 export const FW_CONF_HIGH = 0.75;      // confidence ≥ → "High"
 export const FW_CONF_BUILDING = 0.5;   // confidence ≥ → "Building", else "Low"
+export const FW_CONF_DAY_WEIGHT = 0.55; // confidence blend: day-progress vs permutation strength
 export const FW_INSIGHT_MIN_EVENTS = 5; // min events on EACH side for accuracy/duration
 
 export const FW_CONTRAST_MAX = 9;       // display ceiling for the "N× sharper" ratio

@@ -14,7 +14,7 @@ import { useSettingsStore } from '@/src/stores/settingsStore';
 // TodayFocusHook — quiet one-line focus-window insight on the Today List.
 //
 // Render gates:
-//   1. basis === 'personal'  — engine has learned a real window
+//   1. basis === 'revealed'  — engine has learned a real window
 //   2. Current time is before the window end
 //
 // Gate 3 (queued tasks) is intentionally REMOVED: the insight is useful even
@@ -57,8 +57,8 @@ export function TodayFocusHook({ nowMs }: TodayFocusHookProps): React.ReactEleme
 
   const { basis, startMin, endMin } = window;
 
-  // Gate 1: must have a learned personal window
-  if (basis !== 'personal') return null;
+  // Gate 1: must have a revealed window
+  if (basis !== 'revealed') return null;
 
   // Gate 2: must be before the window end
   const now = new Date(nowMs);

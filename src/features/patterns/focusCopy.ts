@@ -1,3 +1,6 @@
+import type { FocusConfidenceTier } from '@/src/domain/types';
+import { peakBucketLabel } from '@/src/engine';
+
 // Shared "why" narrative copy for the focus-window card and detail sheet.
 // Peak bin → narrative bucket (Tier-1, derived from peak time only).
 //
@@ -30,11 +33,10 @@ function plural(count: number, singular: string): string {
   return `${count} ${singular}${count === 1 ? '' : 's'}`;
 }
 
-/** Row labels for the three gates (kept beside their copy so they stay in sync). */
+/** Row labels for the two gates (kept beside their copy so they stay in sync). */
 export const FOCUS_GATE_LABELS = {
   sessions: 'Timed sessions',
   days: 'Different days',
-  peak: 'A clear peak',
 } as const;
 
 /** Gate 1 — enough timed sessions logged. */
@@ -59,38 +61,14 @@ export function daysGateCopy(have: number, need: number): FocusGateCopy {
   };
 }
 
-/** Gate 3 — a clear peak forming in your most-used time of day. This one isn't a
- *  chore you can aim at: the number counts sessions landing around the same hours,
- *  and I certify the peak once they cluster. `confirming` = counts met but the
- *  window hasn't certified yet, so it settles rather than dead-ends. When it does
- *  clear, the card graduates into your real focus window — you never see "3/3" here. */
-export function peakGateCopy(have: number, need: number, confirming: boolean): FocusGateCopy {
-  if (confirming) {
-    return {
-      valueText: `${need}/${need}`,
-      sub: 'Almost — a session or two more and I lock your peak in.',
-    };
-  }
-  return {
-    valueText: `${have}/${need}`,
-    sub: `${plural(need - have, 'more session')} around your usual hours and your peak shows.`,
-  };
-}
-
 /** Gate 2 shown before it's the active step — quiet, forward-looking. */
 export function daysUpcomingCopy(have: number, need: number): FocusGateCopy {
   return { valueText: `${have}/${need}`, sub: 'Next: a spread of different days.' };
 }
 
-/** Gate 3 shown before it's the active step — quiet, last in line. Framed as my
- *  job (I watch for the pattern), not a task the user has to hit. */
-export function peakUpcomingCopy(have: number, need: number): FocusGateCopy {
-  return { valueText: `${have}/${need}`, sub: 'Last: I spot the hours you keep coming back to.' };
-}
-
-/** The right-aligned "N of 3 unlocked" progress tag. */
+/** The right-aligned "N of 2 unlocked" progress tag. */
 export function focusUnlockedTag(unlocked: number): string {
-  return `${unlocked} of 3 unlocked`;
+  return `${unlocked} of 2 unlocked`;
 }
 
 /** Caption under the frosted reward preview — pulls toward the finish. */
@@ -98,4 +76,26 @@ export function focusRewardCaption(gatesLeft: number): string {
   return gatesLeft > 1
     ? 'Keep logging — your sharpest hours are forming.'
     : 'One more signal reveals your sharpest hours.';
+}
+
+// ──────────────────────────────────────────────────────────────────────────────
+// Reveal-early copy: coarse block (forming), confidence tiers, 2-gate progress.
+// ──────────────────────────────────────────────────────────────────────────────
+
+/** Re-export so UI derives the block name from one place (the engine bucket). */
+export const coarseBlockLabel = peakBucketLabel;
+
+/** Confidence meter label per tier. No guilt: "learning → sharper → locked in". */
+export function confidenceLabel(tier: FocusConfidenceTier): string {
+  switch (tier) {
+    case 'low': return 'Still learning · sharpening';
+    case 'building': return 'Building · getting sharper';
+    case 'steady': return 'Steady · locked to your rhythm';
+  }
+}
+
+/** Forming-state hint — names the leaning block; my job to sharpen, not the user's. */
+export function coarseHintCopy(block: string): string {
+  if (!block) return '';
+  return `Leaning toward ${block.toLowerCase()} — keep timing and I'll sharpen it.`;
 }

@@ -120,6 +120,8 @@ export interface AppEventProps {
   };
   honest_range_locked_tap: { surface: 'add_task' | 'category_detail' };
   honest_range_narrowed: { was_width_min: number; now_width_min: number };
+  // Pro user opens the weekly recap from the category screen's Honest Week row.
+  honest_week_open: { surface: 'category_detail' };
 
   // ── Monetization ─────────────────────────────────────────────────────────────
   // Ripening Pro card impression events (WhenbeeHub, non-Pro path).

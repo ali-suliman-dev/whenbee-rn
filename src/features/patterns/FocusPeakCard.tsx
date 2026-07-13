@@ -10,6 +10,7 @@ import { ProCoinPill } from '@/src/components/ProCoinPill';
 import { formatWindowRange } from '@/src/lib/time';
 import { useEntitlement } from '@/src/features/paywall/useEntitlement';
 import { FocusCurve } from '@/src/features/planner/FocusCurve';
+import { FocusConfidenceMeter } from '@/src/features/planner/FocusConfidenceMeter';
 import { FocusGateRow, type FocusGateState } from '@/src/features/planner/FocusGateRow';
 import { FocusRewardPreview } from '@/src/features/planner/FocusRewardPreview';
 import { FocusWindowEditorSheet } from '@/src/features/planner/FocusWindowEditorSheet';
@@ -19,11 +20,10 @@ import {
   whyNarrative,
   sessionsGateCopy,
   daysGateCopy,
-  peakGateCopy,
   daysUpcomingCopy,
-  peakUpcomingCopy,
   focusUnlockedTag,
   focusRewardCaption,
+  coarseHintCopy,
   FOCUS_GATE_LABELS,
 } from '@/src/features/patterns/focusCopy';
 import { useSettingsStore } from '@/src/stores/settingsStore';
@@ -31,10 +31,11 @@ import { useSettingsStore } from '@/src/stores/settingsStore';
 // ──────────────────────────────────────────────────────────────────────────────
 // FocusPeakCard — the pinned, compact "When you're sharp" card on Patterns.
 //
-// Three mutually exclusive states:
-//   forming            (basis === 'prior')           — dashed curve + maturity progress
-//   locked (free)      (basis === 'personal' && !Pro) — frosted curve + teaser + Unlock CTA
-//   personal + Pro                                    — window range + curve + why-line, taps to detail
+// Mutually exclusive states:
+//   forming                (basis === 'forming')            — 2-gate unlock ladder
+//   revealed, low conf.    (basis === 'revealed', low)      — coarse block + coarse curve + meter
+//   revealed, Pro          (basis === 'revealed', !low)     — window range + precise curve + meter
+//   locked (free)          (basis === 'revealed' && !Pro)   — frosted curve + teaser + Unlock CTA
 // ──────────────────────────────────────────────────────────────────────────────
 
 export function FocusPeakCard() {
@@ -67,65 +68,56 @@ export function FocusPeakCard() {
     </View>
   );
 
-  // ── forming — the 3-gate unlock ladder ──
-  if (basis === 'prior') {
+  const headerRow: ViewStyle = {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  };
+
+  // ── forming — the 2-gate unlock ladder ──
+  if (basis === 'forming') {
     const { gates } = win;
     const sDone = gates.sessions.have >= gates.sessions.need;
     const dDone = gates.days.have >= gates.days.need;
 
-    // Only two gates can genuinely clear while still in the forming (prior) branch —
-    // the peak gate never reaches "unlocked" here; it only truly unlocks when `basis`
-    // becomes 'personal', which leaves this branch entirely. Counting it as unlocked
-    // produced a contradiction: "3 of 3 unlocked" alongside "Confirming your peak".
     const unlocked = (sDone ? 1 : 0) + (dDone ? 1 : 0);
-    const gatesLeft = 3 - unlocked;
+    const gatesLeft = 2 - unlocked;
 
-    // Exactly one active row: the first gate (in order) that isn't done. When all
-    // counts are met but the window is still confirming, the peak row stays active.
+    // Exactly one active row: the first gate (in order) that isn't done.
     const sessionsState: FocusGateState = sDone ? 'done' : 'active';
     const daysState: FocusGateState = dDone ? 'done' : !sDone ? 'upcoming' : 'active';
-    const peakState: FocusGateState = sDone && dDone ? 'active' : 'upcoming';
 
     const sessionsCopy = sessionsGateCopy(gates.sessions.have, gates.sessions.need);
     const daysCopy =
       daysState === 'upcoming'
         ? daysUpcomingCopy(gates.days.have, gates.days.need)
         : daysGateCopy(gates.days.have, gates.days.need);
-    const peakCopy =
-      peakState === 'upcoming'
-        ? peakUpcomingCopy(gates.peak.have, gates.peak.need)
-        : peakGateCopy(gates.peak.have, gates.peak.need, gates.peak.confirming);
 
     const cardTitle = sDone && dDone ? 'Almost there' : 'Learning your focus hours';
+    const hint = coarseHintCopy(win.coarseBlockLabel);
+    const hintText = hint || "Keep timing and I'll find the hours you focus best.";
 
     const tagStyle: TextStyle = {
       ...(type.caption as unknown as TextStyle),
       color: t.colors.inkSoft,
     };
-    const headerRow: ViewStyle = {
-      flexDirection: 'row',
-      alignItems: 'center',
-      justifyContent: 'space-between',
-    };
-    const tagCluster: ViewStyle = { flexDirection: 'row', alignItems: 'center', gap: t.space[2] };
+    const ladderHead: ViewStyle = { flexDirection: 'row', justifyContent: 'flex-end' };
 
     return (
       <View style={card}>
         <View style={headerRow}>
           <Eyebrow />
-          <View style={tagCluster}>
-            <AppText style={tagStyle}>{focusUnlockedTag(unlocked)}</AppText>
-            {isPro ? null : <ProCoinPill icon="ribbon" />}
-          </View>
+          {isPro ? null : <ProCoinPill icon="ribbon" />}
         </View>
         <FocusRewardPreview scoreByBin={scoreByBin} caption={focusRewardCaption(gatesLeft)} />
         <View style={{ gap: t.space[1.5] }}>
           <AppText style={title}>{cardTitle}</AppText>
-          <AppText style={body}>
-            Three signals and I can point you to the hours you focus best.
-          </AppText>
+          <AppText style={body}>{hintText}</AppText>
         </View>
         <View>
+          <View style={ladderHead}>
+            <AppText style={tagStyle}>{focusUnlockedTag(unlocked)}</AppText>
+          </View>
           <FocusGateRow
             first
             state={sessionsState}
@@ -146,17 +138,6 @@ export function FocusPeakCard() {
             pips={
               daysState === 'active'
                 ? { filled: gates.days.have, total: gates.days.need }
-                : undefined
-            }
-          />
-          <FocusGateRow
-            state={peakState}
-            label={FOCUS_GATE_LABELS.peak}
-            valueText={peakCopy.valueText}
-            sub={peakCopy.sub}
-            pips={
-              peakState === 'active' && !gates.peak.confirming
-                ? { filled: gates.peak.have, total: gates.peak.need }
                 : undefined
             }
           />
@@ -194,7 +175,7 @@ export function FocusPeakCard() {
       ? `${sampleCount} sessions · steady for ${weeks} weeks`
       : `${sampleCount} sessions · ${win.distinctDays} days`;
 
-  // ── locked (free + personal) ──
+  // ── locked (free + revealed) ──
   if (!isPro) {
     const frost: ViewStyle = {
       position: 'absolute',
@@ -242,7 +223,31 @@ export function FocusPeakCard() {
     );
   }
 
-  // ── personal + Pro ──
+  // ── revealed + Pro, low confidence — coarse block, not yet precise ──
+  if (win.confidenceTier === 'low') {
+    const blockLabel = win.coarseBlockLabel;
+    return (
+      <View style={card}>
+        <Eyebrow />
+        <View style={{ gap: t.space[1.5] }}>
+          <AppText style={title}>{blockLabel}</AppText>
+          <AppText style={meta}>{`around ${formatWindowRange(ws, we)}`}</AppText>
+        </View>
+        <FocusCurve
+          scoreByBin={scoreByBin}
+          variant="learned"
+          windowStartMin={ws}
+          windowEndMin={we}
+          peakMin={insights?.peakMin}
+          bandVariant="coarse"
+          yAxis
+        />
+        <FocusConfidenceMeter tier={win.confidenceTier} fill={win.confidence} />
+      </View>
+    );
+  }
+
+  // ── revealed + Pro, building/steady — precise window ──
   return (
     <Pressable
       onPress={() => router.push('/(modals)/focus-window')}
@@ -263,6 +268,7 @@ export function FocusPeakCard() {
           windowStartMin={ws}
           windowEndMin={we}
           peakMin={insights?.peakMin}
+          bandVariant="precise"
           yAxis
         />
         {whyLead ? (
@@ -283,6 +289,7 @@ export function FocusPeakCard() {
             {contrastRest}.
           </AppText>
         ) : null}
+        <FocusConfidenceMeter tier={win.confidenceTier} fill={win.confidence} />
         <View
           style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}
         >

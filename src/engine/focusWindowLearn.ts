@@ -157,20 +157,45 @@ export function selectWindow(scores: BinScores): WindowCandidate {
   return { startMin, endMin, peakIdx };
 }
 
-// ── Task 7: Permutation gate ──────────────────────────────────────────────────
+// ── Task 7: Permutation strength ──────────────────────────────────────────────
 
-export function passesPermutationGate(signals: EventSignal[], seed: number): boolean {
-  if (signals.length === 0) return false;
+/** Permutation strength ∈ [0,1] = share of null maxes strictly below the observed
+ *  max (i.e. 1 − p). Replaces the old boolean gate; feeds both the tier boundary
+ *  and the meter fill. Seeded — pure. */
+export function permutationStrength(signals: EventSignal[], seed: number): number {
+  if (signals.length === 0) return 0;
   const observed = Math.max(...scoreBins(signals).shrunk);
   const rand = mulberry32(seed);
   const positions = signals.map((s) => s.binPos);
-  const maxes: number[] = [];
+  let below = 0;
   for (let k = 0; k < C.FW_PERM_N; k++) {
     const shuffled = shuffleInPlace([...positions], rand);
     const permuted = signals.map((s, i) => ({ ...s, binPos: shuffled[i]! }));
-    maxes.push(Math.max(...scoreBins(permuted).shrunk));
+    if (Math.max(...scoreBins(permuted).shrunk) < observed) below++;
   }
-  return observed > percentile(maxes, C.FW_PERM_PCTL);
+  return below / C.FW_PERM_N;
+}
+
+/** Blend day-progress with significance strength (Q1=B): the meter reflects how
+ *  trustworthy the window is, not just elapsed days. */
+function blendConfidence(distinctDays: number, permStrength: number): number {
+  const dayProgress = clamp(distinctDays / 14, 0, 1);
+  return clamp(C.FW_CONF_DAY_WEIGHT * dayProgress + (1 - C.FW_CONF_DAY_WEIGHT) * permStrength, 0.3, 1);
+}
+
+/** Tier the meter/label off confidence + significance. Never gates the window. */
+function tierFor(confidence: number, significant: boolean): 'low' | 'building' | 'steady' {
+  if (confidence >= C.FW_CONF_HIGH) return 'steady';
+  if (significant && confidence >= C.FW_CONF_BUILDING) return 'building';
+  return 'low';
+}
+
+/** Coarse time-of-day bucket for the low-confidence reveal + forming hint. */
+export function peakBucketLabel(peakMin: number): string {
+  if (peakMin < 660) return 'Mornings';       // before 11:00
+  if (peakMin < 780) return 'Midday';         // 11:00–13:00
+  if (peakMin < 1020) return 'Afternoons';    // 13:00–17:00
+  return 'Evenings';                          // after 17:00
 }
 
 // ── Task 8: Hysteresis + assemble learnFocusWindow ───────────────────────────
@@ -193,50 +218,57 @@ function priorCurve(): number[] {
   return Array.from({ length: C.FW_BIN_COUNT }, (_, i) => Math.exp(-((i - peak) ** 2) / 50));
 }
 
-/** The eventsCount of the bin with the highest shrunk score among covered bins (0 if none). */
-function strongestCoveredBinEvents(scores: BinScores): number {
+/** Index of the covered bin with the highest shrunk score (−1 if none). */
+function strongestCoveredBinIndex(scores: BinScores): number {
   const { shrunk, eventsCount } = scores;
   let bestIdx = -1;
   for (let i = 0; i < shrunk.length; i++) {
     if (eventsCount[i]! <= 0) continue;
     if (bestIdx < 0 || shrunk[i]! > shrunk[bestIdx]!) bestIdx = i;
   }
-  return bestIdx < 0 ? 0 : eventsCount[bestIdx]!;
+  return bestIdx;
 }
 
-/** Builds the 3-gate unlock ladder. `isPriorPath` marks whether this call is for the
- *  `prior()` return (where a fully-met-but-uncertified peak reads as "confirming"). */
-function buildGates(signals: EventSignal[], distinctDays: number, scores: BinScores, isPriorPath: boolean): FocusGates {
-  const sessions = { have: signals.length, need: C.FW_GATE_MIN_COMPLETED };
-  const days = { have: distinctDays, need: C.FW_GATE_MIN_DISTINCT_DAYS };
-  const peakEvents = strongestCoveredBinEvents(scores);
-  const confirming = isPriorPath
-    && sessions.have >= sessions.need
-    && days.have >= days.need
-    && peakEvents >= C.FW_BIN_MIN_EVENTS;
-  return { sessions, days, peak: { have: peakEvents, need: C.FW_BIN_MIN_EVENTS, confirming } };
+/** Builds the 2-gate unlock ladder (sessions + distinct days). */
+function buildGates(signals: EventSignal[], distinctDays: number): FocusGates {
+  return {
+    sessions: { have: signals.length, need: C.FW_GATE_MIN_COMPLETED },
+    days: { have: distinctDays, need: C.FW_GATE_MIN_DISTINCT_DAYS },
+  };
 }
 
 export function learnFocusWindow(input: LearnFocusInput): LearnedFocusWindow {
   const signals = buildSignals(input.events, input.fitByCategory);
   const distinctDays = new Set(signals.map((s) => s.dayKey)).size;
   const scores = scoreBins(signals);
-  const prior = (): LearnedFocusWindow => ({
-    startMin: C.FW_PRIOR_WINDOW.startMin, endMin: C.FW_PRIOR_WINDOW.endMin,
-    basis: 'prior', confidence: clamp(signals.length / C.FW_GATE_MIN_COMPLETED, 0, 0.9),
-    scoreByBin: normalise(priorCurve()), sampleCount: signals.length, distinctDays, held: false,
-    gates: buildGates(signals, distinctDays, scores, true),
-  });
+  const gates = buildGates(signals, distinctDays);
 
-  if (signals.length < C.FW_GATE_MIN_COMPLETED || distinctDays < C.FW_GATE_MIN_DISTINCT_DAYS) return prior();
+  const forming = (): LearnedFocusWindow => {
+    // A faint coarse hint even while forming, if any covered peak bin exists.
+    const hintIdx = strongestCoveredBinIndex(scores);
+    const hintLabel = hintIdx >= 0 ? peakBucketLabel(binStartMin(hintIdx) + C.FW_BIN_MIN / 2) : '';
+    return {
+      startMin: C.FW_PRIOR_WINDOW.startMin, endMin: C.FW_PRIOR_WINDOW.endMin,
+      basis: 'forming', confidence: clamp(signals.length / C.FW_GATE_MIN_COMPLETED, 0, 0.9),
+      confidenceTier: 'low', coarseBlockLabel: hintLabel,
+      scoreByBin: normalise(priorCurve()), sampleCount: signals.length, distinctDays, held: false,
+      gates,
+    };
+  };
+
+  if (signals.length < C.FW_GATE_MIN_COMPLETED || distinctDays < C.FW_GATE_MIN_DISTINCT_DAYS) {
+    return forming();
+  }
   const candidate = selectWindow(scores);
-  if (!candidate) return prior();
+  if (!candidate) return forming(); // truly flat / spread-out — no window to reveal yet
+
   const seed = input.seed && input.seed > 0
     ? input.seed
     : (signals.length * 1000 + signals.reduce((a, s) => a + Math.round(s.binPos), 0)) >>> 0;
-  if (!passesPermutationGate(signals, seed)) return prior();
+  const permStrength = permutationStrength(signals, seed);
+  const significant = permStrength >= C.FW_PERM_PCTL;
 
-  // hysteresis
+  // hysteresis (unchanged)
   let startMin = candidate.startMin, endMin = candidate.endMin, held = false;
   if (input.shown) {
     const ov = overlapFrac(candidate.startMin, candidate.endMin, input.shown.startMin, input.shown.endMin);
@@ -245,10 +277,13 @@ export function learnFocusWindow(input: LearnFocusInput): LearnedFocusWindow {
     if (!(realShift && dwellOk)) { startMin = input.shown.startMin; endMin = input.shown.endMin; held = true; }
   }
 
+  const confidence = blendConfidence(distinctDays, permStrength);
+  const centerMin = binStartMin(candidate.peakIdx) + C.FW_BIN_MIN / 2;
   return {
-    startMin, endMin, basis: 'personal',
-    confidence: clamp(distinctDays / 14, 0.3, 1),
+    startMin, endMin, basis: 'revealed',
+    confidence, confidenceTier: tierFor(confidence, significant),
+    coarseBlockLabel: peakBucketLabel(centerMin),
     scoreByBin: normalise(scores.shrunk), sampleCount: signals.length, distinctDays, held,
-    gates: buildGates(signals, distinctDays, scores, false),
+    gates,
   };
 }

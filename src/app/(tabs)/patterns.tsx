@@ -48,7 +48,7 @@ export default function Patterns() {
   const reduced = useReducedMotion();
   const router = useRouter();
   const { view } = usePatterns();
-  const { summary: reviewSummary, period: reviewPeriod, isFresh: reviewFresh } = useReview();
+  const { summary: reviewSummary, period: reviewPeriod } = useReview();
   const { insights } = useReasonInsights();
   const { insights: contextInsights } = useContextInsights();
   const [tab, setTab] = useState<PatternsTab>('numbers');
@@ -173,7 +173,7 @@ export default function Patterns() {
             {/* 2 · REVIEW RITUAL — always pinned under hero */}
             <Animated.View entering={rise()}>
               <ProGate fallback={reviewSummary ? <ReviewRitualLocked period={reviewPeriod} /> : null}>
-                {reviewSummary ? <ReviewRitualCard summary={reviewSummary} isFresh={reviewFresh} /> : null}
+                {reviewSummary ? <ReviewRitualCard summary={reviewSummary} /> : null}
               </ProGate>
             </Animated.View>
 
