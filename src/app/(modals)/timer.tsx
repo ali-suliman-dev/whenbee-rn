@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { View, Pressable, Alert, useWindowDimensions, type ViewStyle, type TextStyle } from 'react-native';
-import { router, useLocalSearchParams } from 'expo-router';
+import { Redirect, router, useLocalSearchParams } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import Animated, {
@@ -28,6 +28,8 @@ import { PostStopCaptureSheet } from '@/src/components/quick/PostStopCaptureShee
 import { guessCategory } from '@/src/features/shared/categoryGuess';
 import { usePickerCategories } from '@/src/features/shared/CategoryChips';
 import { useTimerStore } from '@/src/stores/timerStore';
+import { resolveTimerRoute } from '@/src/features/timer/resolveTimerRoute';
+import type { ResolvedTimerRoute, TimerSessionParams } from '@/src/features/timer/resolveTimerRoute';
 import { handlePresenceStop } from '@/src/features/timer/stopPresenceSession';
 import { useCalibrationStore } from '@/src/stores/calibrationStore';
 import { useVocabStore } from '@/src/stores/vocabStore';
@@ -48,17 +50,6 @@ import { useEntitlement } from '@/src/features/paywall/useEntitlement';
 // falls back to estimateMin if Today/Add-Task didn't pass it).
 // ──────────────────────────────────────────────────────────────────────────────
 
-function num(v: string | string[] | undefined, fallback: number): number {
-  const raw = Array.isArray(v) ? v[0] : v;
-  const n = raw != null ? Number(raw) : NaN;
-  return Number.isFinite(n) ? n : fallback;
-}
-
-function str(v: string | string[] | undefined, fallback: string): string {
-  const raw = Array.isArray(v) ? v[0] : v;
-  return raw != null && raw.length > 0 ? raw : fallback;
-}
-
 export default function Timer() {
   const { action } = useLocalSearchParams<{ action?: string }>();
   // Presence "Stop & log" + guardrail "Wrap up" open this route with action=stop.
@@ -66,7 +57,49 @@ export default function Timer() {
   // NOT mount TimerScreen/useTimer, which (with empty params) would restart a fresh
   // session and log ~0 elapsed against the wrong category. Route to a bare handler.
   if (action === 'stop') return <PresenceStopHandler />;
-  return <TimerScreen />;
+  return <TimerGate />;
+}
+
+// Decides WHAT session the screen mounts with (attach to the running store
+// session vs start fresh from the route params vs redirect) — see
+// resolveTimerRoute for the contract. A bare deep link (presence-notification
+// body tap, widget, quick chips) must attach to the running session, never
+// restart it with placeholder params.
+function TimerGate() {
+  const t = useTheme();
+  const params = useLocalSearchParams<{
+    taskId?: string;
+    label?: string;
+    category?: string;
+    estimateMin?: string;
+    guessMin?: string;
+    suggestedHonestMin?: string;
+    quick?: string;
+  }>();
+  // Cold boot from a deep link: child screens mount BEFORE the root layout's
+  // resumeFromKv effect runs, so a session that survived a kill is still KV-only.
+  // Restore it in an effect (a store write during render would update components
+  // mounted underneath, which React forbids), showing one blank frame.
+  const [hydrated, setHydrated] = useState(
+    () => useTimerStore.getState().isRunning || useTimerStore.getState().peekPersisted() === null,
+  );
+  useEffect(() => {
+    if (hydrated) return;
+    if (!useTimerStore.getState().isRunning) useTimerStore.getState().resumeFromKv();
+    setHydrated(true);
+  }, [hydrated]);
+
+  // Freeze the decision at the first hydrated render — the screen must not
+  // remount with different params when the store clears on stop/abandon.
+  const resolvedRef = useRef<ResolvedTimerRoute | null>(null);
+  if (hydrated && resolvedRef.current === null) {
+    resolvedRef.current = resolveTimerRoute(params, useTimerStore.getState());
+  }
+  const resolved = resolvedRef.current;
+
+  if (resolved === null) return <View style={{ flex: 1, backgroundColor: t.colors.bg }} />;
+  if (resolved.kind === 'redirect-today') return <Redirect href="/(tabs)" />;
+  return <TimerScreen session={resolved.session} />;
 }
 
 // Bare handler for the presence stop action: no ring, no useTimer. Waits for the
@@ -82,7 +115,13 @@ function PresenceStopHandler() {
     // Cold boot: the running session is in KV, not memory yet — restore it.
     if (!useTimerStore.getState().isRunning) useTimerStore.getState().resumeFromKv();
     const s = useTimerStore.getState();
-    if (!s.isRunning || s.startedAt === null) return; // nothing to stop (yet)
+    if (!s.isRunning || s.startedAt === null) {
+      // Stale notification — the session already ended, nothing to stop. Land on
+      // Today instead of stranding the user on this blank screen.
+      doneRef.current = true;
+      router.replace('/(tabs)');
+      return;
+    }
     doneRef.current = true;
     void handlePresenceStop();
   }, [isRunning]);
@@ -90,34 +129,15 @@ function PresenceStopHandler() {
   return <View style={{ flex: 1, backgroundColor: t.colors.bg }} />;
 }
 
-function TimerScreen() {
+function TimerScreen({ session }: { session: TimerSessionParams }) {
   const t = useTheme();
   const insets = useSafeAreaInsets();
   const { height: winH } = useWindowDimensions();
   const reducedMotion = useReducedMotion();
-  const params = useLocalSearchParams<{
-    taskId?: string;
-    label?: string;
-    category?: string;
-    estimateMin?: string;
-    guessMin?: string;
-    suggestedHonestMin?: string;
-    quick?: string;
-  }>();
-
-  const estimateMin = num(params.estimateMin, 15);
-  // guessMin drives calibration; fall back to the honest estimate if absent.
-  const guessMin = num(params.guessMin, estimateMin);
-  // suggestedHonestMin = the honest number the user SAW; defaults to estimateMin
-  // (which IS the honest number from Today/Add-Task when not passed separately).
-  const suggestedHonestMin = num(params.suggestedHonestMin, estimateMin);
-  const label = str(params.label, 'Focus session');
-  const category = str(params.category, 'getting_ready');
-  const taskId = Array.isArray(params.taskId) ? params.taskId[0] : params.taskId;
-
-  // quick='1' signals that quickStart() was already called before navigation;
-  // the store has an isRunning quick-start session that should not be overwritten.
-  const isQuickNav = params.quick === '1';
+  // Everything session-shaped was resolved by TimerGate (attach-from-store vs
+  // fresh-from-params); this screen just runs it. isQuickNav means quickStart()
+  // already put an isRunning quick session in the store — do not overwrite it.
+  const { taskId, label, category, estimateMin, guessMin, suggestedHonestMin, isQuickNav } = session;
   const timer = useTimer({ taskId, label, category, estimateMin, guessMin, suggestedHonestMin, isQuickNav });
   // Pro gates Surface C — the honest finish RANGE. Free keeps the point finish.
   const isPro = useEntitlement((s) => s.isPro);

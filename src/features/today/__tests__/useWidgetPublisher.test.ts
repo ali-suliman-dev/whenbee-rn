@@ -63,6 +63,17 @@ describe('useWidgetPublisher', () => {
     );
   });
 
+  it('start deep link carries the FULL session context, not just the taskId', () => {
+    // A taskId-only link made the timer start with placeholder params (15 min
+    // 'Focus session' in 'getting_ready') — the widget must pass everything the
+    // timer needs to start THIS task correctly.
+    renderHook(() => useWidgetPublisher({ focus: makeFocus(), honestMin: 42 }));
+    const [payload] = mockPublish.mock.calls[0] as [{ startDeepLink: string }];
+    expect(payload.startDeepLink).toBe(
+      'whenbee://timer?taskId=task-1&label=Write%20report&category=admin&estimateMin=42&guessMin=30',
+    );
+  });
+
   it('republishes when focus changes', () => {
     const { rerender } = renderHook(
       ({ focus }: { focus: DayTask | null }) => useWidgetPublisher({ focus, honestMin: 30 }),

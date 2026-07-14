@@ -15,6 +15,7 @@ import { prefers24Hour } from '@/src/lib/clockPrefs';
 import { useNotificationSetup } from '@/src/features/notifications/useNotificationSetup';
 import { useForgotCheck } from '@/src/features/timer/useForgotCheck';
 import { ForgotCard } from '@/src/features/timer/ForgotCard';
+import { PendingTimerOpener } from '@/src/features/timer/PendingTimerOpener';
 
 // Match every clock readout (Started/Done, planner, calendar) to the device's
 // "24-Hour Time" toggle. Read once at module load — it's a synchronous native const.
@@ -105,6 +106,11 @@ function RootNavigator() {
   useNotificationSetup();
 
   return (
+    <>
+    {/* Completes cold-boot timer deep links (+native-intent parks them; a
+        post-boot push presents the formSheet where an initial-state restore
+        silently can't — see timerDeepLinkGate). */}
+    <PendingTimerOpener />
     <Stack
       screenOptions={{
         headerShown: false,
@@ -169,6 +175,7 @@ function RootNavigator() {
       <Stack.Screen name="(modals)/reward" options={{ presentation: 'fullScreenModal', headerShown: false }} />
       <Stack.Screen name="(modals)/report" options={{ presentation: 'fullScreenModal', headerShown: false }} />
     </Stack>
+    </>
   );
 }
 

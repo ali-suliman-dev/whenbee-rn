@@ -1,0 +1,136 @@
+// ──────────────────────────────────────────────────────────────────────────────
+// resolveTimerRoute — the attach-vs-fresh contract for the Timer modal, pure.
+//
+// The timer route is opened from many places with very different amounts of
+// context: in-app starters pass the full session params; the presence
+// notification's body tap and the quick-task chips pass NOTHING; the home-screen
+// widget passes only a taskId. The store is the source of truth for a RUNNING
+// session — route params only ever describe a session to START. Deciding which
+// one wins here (instead of inside the screen) is what stops a bare deep link
+// from silently overwriting a running timer with placeholder params, which reset
+// the clock and trained calibration on the wrong category (the presence-tap bug).
+//
+// Rules, in order:
+//   1. Running quick-start session + no explicit task params → attach as quick.
+//   2. Running session + (no explicit params, OR params describe the SAME task)
+//      → attach, with the session context read from the STORE (never defaults).
+//   3. Running session + explicit params for a DIFFERENT task → start that task
+//      (the user explicitly chose it — matches every in-app starter today).
+//   4. Nothing running + no explicit params + not a quick nav → nothing to show;
+//      send the user to Today instead of fabricating a placeholder session.
+//   5. Otherwise → fresh session from the route params.
+// ──────────────────────────────────────────────────────────────────────────────
+
+export interface TimerRouteParams {
+  taskId?: string | string[];
+  label?: string | string[];
+  category?: string | string[];
+  estimateMin?: string | string[];
+  guessMin?: string | string[];
+  suggestedHonestMin?: string | string[];
+  quick?: string | string[];
+}
+
+/** The slice of timer-store state the decision needs (structurally satisfied by
+ *  the real store's getState()). */
+export interface TimerStoreSnapshot {
+  isRunning: boolean;
+  startedAt: number | null;
+  isQuickStart: boolean;
+  taskId: string | null;
+  taskLabel: string | null;
+  category: string | null;
+  estimateMin: number;
+  guessMin: number;
+  suggestedHonestMin: number;
+}
+
+/** Fully-resolved session the Timer screen mounts with. */
+export interface TimerSessionParams {
+  taskId?: string;
+  label: string;
+  category: string;
+  estimateMin: number;
+  guessMin: number;
+  suggestedHonestMin: number;
+  isQuickNav: boolean;
+}
+
+export type ResolvedTimerRoute =
+  | { kind: 'session'; session: TimerSessionParams }
+  | { kind: 'redirect-today' };
+
+const FALLBACK_LABEL = 'Focus session';
+const FALLBACK_CATEGORY = 'getting_ready';
+const FALLBACK_ESTIMATE_MIN = 15;
+
+function first(v: string | string[] | undefined): string | undefined {
+  const raw = Array.isArray(v) ? v[0] : v;
+  return raw != null && raw.length > 0 ? raw : undefined;
+}
+
+function firstNum(v: string | string[] | undefined, fallback: number): number {
+  const raw = first(v);
+  const n = raw !== undefined ? Number(raw) : NaN;
+  return Number.isFinite(n) ? n : fallback;
+}
+
+function sessionFromParams(params: TimerRouteParams): TimerSessionParams {
+  const estimateMin = firstNum(params.estimateMin, FALLBACK_ESTIMATE_MIN);
+  return {
+    taskId: first(params.taskId),
+    label: first(params.label) ?? FALLBACK_LABEL,
+    category: first(params.category) ?? FALLBACK_CATEGORY,
+    estimateMin,
+    // guessMin drives calibration; falls back to the honest estimate. The honest
+    // number the user SAW defaults to estimateMin (which IS the honest number
+    // when Today/Add-Task didn't pass it separately).
+    guessMin: firstNum(params.guessMin, estimateMin),
+    suggestedHonestMin: firstNum(params.suggestedHonestMin, estimateMin),
+    isQuickNav: first(params.quick) === '1',
+  };
+}
+
+function sessionFromStore(store: TimerStoreSnapshot): TimerSessionParams {
+  return {
+    taskId: store.taskId ?? undefined,
+    label: store.taskLabel ?? FALLBACK_LABEL,
+    category: store.category ?? FALLBACK_CATEGORY,
+    estimateMin: store.estimateMin,
+    guessMin: store.guessMin,
+    suggestedHonestMin: store.suggestedHonestMin,
+    isQuickNav: false,
+  };
+}
+
+export function resolveTimerRoute(
+  params: TimerRouteParams,
+  store: TimerStoreSnapshot,
+): ResolvedTimerRoute {
+  const taskId = first(params.taskId);
+  const label = first(params.label);
+  const hasExplicitSession = taskId !== undefined || label !== undefined;
+  const isRunning = store.isRunning && store.startedAt !== null;
+
+  if (isRunning) {
+    if (store.isQuickStart) {
+      if (hasExplicitSession) return { kind: 'session', session: sessionFromParams(params) };
+      // Attach to the running quick session with the quick defaults (a quick
+      // session carries no label/estimate of its own — capture happens at stop).
+      return { kind: 'session', session: { ...sessionFromParams(params), isQuickNav: true } };
+    }
+    const sameTask =
+      taskId !== undefined
+        ? store.taskId === taskId
+        : label !== undefined
+          ? store.taskLabel === label
+          : true;
+    if (!hasExplicitSession || sameTask) {
+      return { kind: 'session', session: sessionFromStore(store) };
+    }
+    return { kind: 'session', session: sessionFromParams(params) };
+  }
+
+  if (!hasExplicitSession && first(params.quick) !== '1') return { kind: 'redirect-today' };
+  return { kind: 'session', session: sessionFromParams(params) };
+}

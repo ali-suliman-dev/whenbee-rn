@@ -47,7 +47,15 @@ export function useWidgetPublisher({ focus, honestMin }: UseWidgetPublisherArgs)
         category: categoryName(focus.category),
         honestFinishClock: formatClockMeridiem(finishAt),
         guessClock: honestMin === focus.guessMin ? '' : formatClockMeridiem(guessAt),
-        startDeepLink: `whenbee://timer?taskId=${focus.id}`,
+        // Full session context, not just the id: a taskId-only link would start
+        // the timer with placeholder params (wrong label/category/estimate).
+        // estimateMin is the honest ring target; guessMin drives calibration.
+        startDeepLink:
+          `whenbee://timer?taskId=${encodeURIComponent(focus.id)}` +
+          `&label=${encodeURIComponent(focus.label)}` +
+          `&category=${encodeURIComponent(focus.category)}` +
+          `&estimateMin=${Math.round(honestMin)}` +
+          `&guessMin=${Math.round(focus.guessMin)}`,
         updatedAtEpoch: Math.round(now / 1000),
         honestFinishEpoch: Math.round(finishAt / 1000),
         isPro,

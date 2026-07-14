@@ -20,6 +20,7 @@ import { useDayTasksStore } from '@/src/stores/dayTasksStore';
 import { useRewardStore } from '@/src/stores/rewardStore';
 import { useSettingsStore } from '@/src/stores/settingsStore';
 import { analytics } from '@/src/services/analytics';
+import { kv } from '@/src/lib/kv';
 import type { LogResult } from '@/src/stores/calibrationStore';
 
 // ── router + route params ─────────────────────────────────────────────────────
@@ -119,6 +120,10 @@ async function flushMicrotasks() {
 // ── setup / teardown ───────────────────────────────────────────────────────────
 
 function resetStores(lifetimeNectarAtStart: number, lifetimeNectarAfterLog: number) {
+  // Earlier tests start (and never stop) sessions, persisting a running snapshot
+  // to KV — the Timer gate would restore + attach to it instead of starting
+  // fresh. Each test begins with a clean slate.
+  kv.delete('whenbee.activeTimer');
   const mockApplyLog = jest.fn(async () => okResult);
   const mockLoadAtStart = jest.fn().mockResolvedValue(makeReclaimSummary(lifetimeNectarAtStart));
   // After stop the hook calls loadReclaimSummary again — return the post-log count.
