@@ -28,6 +28,9 @@ export function ManageAreaCard({
   const t = useTheme();
   const s = styles(t);
   const [confirm, setConfirm] = useState<'reset' | 'delete' | null>(null);
+  // Delete is a genuine destructive action, so red is intended here (not a guilt
+  // signal on a protected surface).
+  const dangerTint = t.colors.danger; // audit-ok: destructive
 
   return (
     <View style={s.card}>
@@ -54,7 +57,7 @@ export function ManageAreaCard({
           accessibilityLabel="Delete area"
           onPress={() => setConfirm('delete')}
         >
-          <Ionicons name="trash-outline" size={t.iconSize.sm} color={t.colors.danger} />
+          <Ionicons name="trash-outline" size={t.iconSize.sm} color={dangerTint} />
           <View style={s.rowText}>
             <Text style={[s.rowTitle, s.rowTitleDanger]}>Delete area</Text>
             <Text style={s.rowSub}>Removes this area and its data</Text>
@@ -128,7 +131,7 @@ function styles(t: ReturnType<typeof useTheme>) {
     rowDivider: { borderTopWidth: 1, borderTopColor: t.colors.hairline } as ViewStyle,
     rowText: { flex: 1 } as ViewStyle,
     rowTitle: { ...(type.body as TextStyle), color: t.colors.ink } as TextStyle,
-    rowTitleDanger: { color: t.colors.danger } as TextStyle,
+    rowTitleDanger: { color: t.colors.danger } as TextStyle, // audit-ok: destructive
     rowSub: { ...(type.caption as TextStyle), color: t.colors.inkFaint, marginTop: t.space[0.5] } as TextStyle,
   });
 }
