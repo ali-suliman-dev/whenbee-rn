@@ -51,6 +51,9 @@ export function createMemoryDatabase(): Database {
         if (row.category === categoryId) events.delete(id);
       }
     },
+    async deleteCategoryStat(categoryId: string): Promise<void> {
+      categoryStats.delete(categoryId);
+    },
     async listRecentEvents(limit: number): Promise<TaskEventRow[]> {
       return sortedEvents([...events.values()], limit);
     },

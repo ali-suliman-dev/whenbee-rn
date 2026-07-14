@@ -7,6 +7,8 @@ import type { CategoryStatRow, CompanionRow, ContextEventRow, ContextTagRow, Day
 export interface Database {
   getCategoryStat(categoryId: string): Promise<CategoryStatRow | null>;
   upsertCategoryStat(row: CategoryStatRow): Promise<void>;
+  /** Delete the single category_stats row for a category (no-op if absent). */
+  deleteCategoryStat(categoryId: string): Promise<void>;
 
   insertTaskEvent(row: TaskEventRow): Promise<void>;
   /** Newest first. */
