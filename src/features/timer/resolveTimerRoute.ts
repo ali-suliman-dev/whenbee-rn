@@ -14,8 +14,11 @@
 //   1. Running quick-start session + no explicit task params → attach as quick.
 //   2. Running session + (no explicit params, OR params describe the SAME task)
 //      → attach, with the session context read from the STORE (never defaults).
-//   3. Running session + explicit params for a DIFFERENT task → start that task
-//      (the user explicitly chose it — matches every in-app starter today).
+//   3. Running session (quick or not) + explicit params for a DIFFERENT task →
+//      confirm-switch. The running session won't log if the user proceeds, so
+//      this is a destructive action — surface it for confirmation instead of
+//      silently swapping (a quick session has no task identity of its own, so
+//      ANY explicit start while one runs counts as a different task).
 //   4. Nothing running + no explicit params + not a quick nav → nothing to show;
 //      send the user to Today instead of fabricating a placeholder session.
 //   5. Otherwise → fresh session from the route params.
@@ -58,11 +61,15 @@ export interface TimerSessionParams {
 
 export type ResolvedTimerRoute =
   | { kind: 'session'; session: TimerSessionParams }
+  | { kind: 'confirm-switch'; leavingLabel: string; startingLabel: string; session: TimerSessionParams }
   | { kind: 'redirect-today' };
 
 const FALLBACK_LABEL = 'Focus session';
 const FALLBACK_CATEGORY = 'getting_ready';
 const FALLBACK_ESTIMATE_MIN = 15;
+// A running quick session carries no label of its own (captured at stop) — this
+// stands in for "the thing currently running" in the confirm-switch copy.
+const RUNNING_FALLBACK_LABEL = 'your timer';
 
 function first(v: string | string[] | undefined): string | undefined {
   const raw = Array.isArray(v) ? v[0] : v;
@@ -114,10 +121,20 @@ export function resolveTimerRoute(
 
   if (isRunning) {
     if (store.isQuickStart) {
-      if (hasExplicitSession) return { kind: 'session', session: sessionFromParams(params) };
-      // Attach to the running quick session with the quick defaults (a quick
-      // session carries no label/estimate of its own — capture happens at stop).
-      return { kind: 'session', session: { ...sessionFromParams(params), isQuickNav: true } };
+      if (!hasExplicitSession) {
+        // Attach to the running quick session with the quick defaults (a quick
+        // session carries no label/estimate of its own — capture happens at stop).
+        return { kind: 'session', session: { ...sessionFromParams(params), isQuickNav: true } };
+      }
+      // A quick session has no task identity to compare against — any explicit
+      // start while it's running is a replace.
+      const session = sessionFromParams(params);
+      return {
+        kind: 'confirm-switch',
+        leavingLabel: store.taskLabel || RUNNING_FALLBACK_LABEL,
+        startingLabel: session.label,
+        session,
+      };
     }
     const sameTask =
       taskId !== undefined
@@ -128,7 +145,13 @@ export function resolveTimerRoute(
     if (!hasExplicitSession || sameTask) {
       return { kind: 'session', session: sessionFromStore(store) };
     }
-    return { kind: 'session', session: sessionFromParams(params) };
+    const session = sessionFromParams(params);
+    return {
+      kind: 'confirm-switch',
+      leavingLabel: store.taskLabel || RUNNING_FALLBACK_LABEL,
+      startingLabel: session.label,
+      session,
+    };
   }
 
   if (!hasExplicitSession && first(params.quick) !== '1') return { kind: 'redirect-today' };

@@ -74,13 +74,15 @@ describe('resolveTimerRoute', () => {
     expect(r.session.estimateMin).toBe(28);
   });
 
-  it('explicit params for a DIFFERENT task while one runs → fresh session from params (intentional restart)', () => {
+  it('explicit params for a DIFFERENT task while one runs → confirm-switch (destructive, must be confirmed)', () => {
     const r = resolveTimerRoute(
       { taskId: 'task-2', label: 'Write report', category: 'admin', estimateMin: '45', guessMin: '30' },
       runningTask,
     );
     expect(r).toEqual({
-      kind: 'session',
+      kind: 'confirm-switch',
+      leavingLabel: 'Leave for work',
+      startingLabel: 'Write report',
       session: {
         taskId: 'task-2',
         label: 'Write report',
@@ -91,6 +93,17 @@ describe('resolveTimerRoute', () => {
         isQuickNav: false,
       },
     });
+  });
+
+  it('confirm-switch leavingLabel falls back to a generic label when the running non-quick task has no store label', () => {
+    const runningTaskNoLabel: TimerStoreSnapshot = { ...runningTask, taskLabel: null };
+    const r = resolveTimerRoute(
+      { taskId: 'task-2', label: 'Write report', category: 'admin' },
+      runningTaskNoLabel,
+    );
+    expect(r.kind).toBe('confirm-switch');
+    if (r.kind !== 'confirm-switch') return;
+    expect(r.leavingLabel).toBe('your timer');
   });
 
   it('bare open while a QUICK session runs → attaches as quick nav (defaults, isQuickNav)', () => {
@@ -106,6 +119,36 @@ describe('resolveTimerRoute', () => {
     expect(r.kind).toBe('session');
     if (r.kind !== 'session') return;
     expect(r.session.isQuickNav).toBe(true);
+  });
+
+  it('running QUICK session + explicit params for a task → confirm-switch (quick sessions have no task identity)', () => {
+    const r = resolveTimerRoute(
+      { taskId: 'task-2', label: 'Write report', category: 'admin', estimateMin: '45', guessMin: '30' },
+      runningQuick,
+    );
+    expect(r).toEqual({
+      kind: 'confirm-switch',
+      leavingLabel: 'your timer',
+      startingLabel: 'Write report',
+      session: {
+        taskId: 'task-2',
+        label: 'Write report',
+        category: 'admin',
+        estimateMin: 45,
+        guessMin: 30,
+        suggestedHonestMin: 45,
+        isQuickNav: false,
+      },
+    });
+  });
+
+  it('running QUICK session + explicit label-only params → confirm-switch, leavingLabel from store when present', () => {
+    const runningQuickWithLabel: TimerStoreSnapshot = { ...runningQuick, taskLabel: 'Some quick thing' };
+    const r = resolveTimerRoute({ label: 'Write report' }, runningQuickWithLabel);
+    expect(r.kind).toBe('confirm-switch');
+    if (r.kind !== 'confirm-switch') return;
+    expect(r.leavingLabel).toBe('Some quick thing');
+    expect(r.startingLabel).toBe('Write report');
   });
 
   it('bare open with NOTHING running → redirect to Today (never fabricate a placeholder session)', () => {
