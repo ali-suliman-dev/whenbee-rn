@@ -1,5 +1,6 @@
 import { render, fireEvent } from '@testing-library/react-native';
 import { ManageAreaCard } from '@/src/features/category-detail/ManageAreaCard';
+import { ConfirmSheet } from '@/src/components/ConfirmSheet';
 
 const base = {
   categoryName: 'Cooking',
@@ -19,16 +20,22 @@ describe('ManageAreaCard', () => {
     expect(getByText('Delete area')).toBeTruthy();
   });
 
-  it('opens the delete confirm and fires onConfirmDelete', () => {
+  it('delete row opens the delete confirm; confirming fires onConfirmDelete once', () => {
     const onConfirmDelete = jest.fn();
-    const { getByLabelText, getAllByText } = render(
+    const utils = render(
       <ManageAreaCard {...base} canDelete onConfirmDelete={onConfirmDelete} />,
     );
-    fireEvent.press(getByLabelText('Delete area')); // opens ConfirmSheet
-    // "Delete area" labels both the row and the sheet's confirm button — the
-    // confirm button is the last match in render order.
-    const matches = getAllByText('Delete area');
-    fireEvent.press(matches[matches.length - 1]);
+    const deleteSheet = () =>
+      utils.UNSAFE_getAllByType(ConfirmSheet).find((n) => n.props.tone === 'danger');
+
+    // closed until the row is pressed — proves the row→sheet wiring
+    expect(deleteSheet()!.props.visible).toBe(false);
+    fireEvent.press(utils.getByLabelText('Delete area')); // the row
+    expect(deleteSheet()!.props.visible).toBe(true);
+
+    // confirming fires the callback exactly once
+    const confirmBtn = utils.getAllByText('Delete area').at(-1)!;
+    fireEvent.press(confirmBtn);
     expect(onConfirmDelete).toHaveBeenCalledTimes(1);
   });
 });
