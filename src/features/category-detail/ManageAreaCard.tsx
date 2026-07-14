@@ -128,7 +128,7 @@ function styles(t: ReturnType<typeof useTheme>) {
       paddingHorizontal: t.space[4],
       paddingVertical: t.space[3],
     } as ViewStyle,
-    rowDivider: { borderTopWidth: 1, borderTopColor: t.colors.hairline } as ViewStyle,
+    rowDivider: { borderTopWidth: StyleSheet.hairlineWidth, borderTopColor: t.colors.hairline } as ViewStyle,
     rowText: { flex: 1 } as ViewStyle,
     rowTitle: { ...(type.body as TextStyle), color: t.colors.ink } as TextStyle,
     rowTitleDanger: { color: t.colors.danger } as TextStyle, // audit-ok: destructive
