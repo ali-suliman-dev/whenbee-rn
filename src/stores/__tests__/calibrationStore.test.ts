@@ -764,3 +764,35 @@ describe('calibrationStore — funnel analytics (Task C.1)', () => {
     expect(props).toHaveProperty('tier_after');
   });
 });
+
+describe('calibrationStore — deleteCategory', () => {
+  it('removes the stat row, events, cache key, and goal', async () => {
+    const db = freshDb();
+
+    await db.upsertCategoryStat({
+      categoryId: 'cleaning', n: 5, logEwma: 0.7, mEffective: 2.4, sharpness: 60,
+      priorMult: priorFor('cleaning'), adaptSpeed: 'balanced', updatedAt: T0,
+      reclaimedMinutes: 0,
+      sw: 0, swx: 0, swy: 0, swxx: 0, swxy: 0,
+    });
+    await db.insertTaskEvent(seedEvent({ id: 'd1', createdAt: T0 }));
+    useCalibrationStore.setState({
+      statsByCategory: {
+        cleaning: { mEffective: 2.4, n: 5, sharpness: 60, tier: 'Ripening', fit: { a: 0, b: 2.4 } },
+      },
+    });
+    useCalibrationStore.getState().setGoal('cleaning', 20);
+    expect(useCalibrationStore.getState().loadGoal('cleaning')).not.toBeNull();
+
+    await useCalibrationStore.getState().deleteCategory('cleaning');
+
+    // raw stat row gone (distinct from reset, which upserts an n=0 row)
+    expect(await db.getCategoryStat('cleaning')).toBeNull();
+    // events gone
+    expect(await db.listEventsByCategory('cleaning', 30)).toHaveLength(0);
+    // cache key removed
+    expect(useCalibrationStore.getState().statsByCategory.cleaning).toBeUndefined();
+    // goal cleared
+    expect(useCalibrationStore.getState().loadGoal('cleaning')).toBeNull();
+  });
+});
