@@ -196,7 +196,7 @@ export function FocusPeakCard() {
       <View style={card} testID="focus-locked-teaser">
         <Eyebrow />
         <View>
-          <FocusCurve scoreByBin={scoreByBin} variant="locked" yAxis />
+          <FocusCurve scoreByBin={scoreByBin} variant="locked" grid />
           <View
             style={frost}
             pointerEvents="none"
@@ -227,23 +227,41 @@ export function FocusPeakCard() {
   if (win.confidenceTier === 'low') {
     const blockLabel = win.coarseBlockLabel;
     return (
-      <View style={card}>
-        <Eyebrow />
-        <View style={{ gap: t.space[1.5] }}>
-          <AppText style={title}>{blockLabel}</AppText>
-          <AppText style={meta}>{`around ${formatWindowRange(ws, we)}`}</AppText>
+      <Pressable
+        onPress={() => router.push('/(modals)/focus-window')}
+        accessibilityRole="button"
+        accessibilityLabel="Open focus window detail"
+      >
+        <View style={card}>
+          <Eyebrow />
+          <View style={{ gap: t.space[1.5] }}>
+            <AppText style={title}>{blockLabel}</AppText>
+            <AppText style={meta}>{`around ${formatWindowRange(ws, we)}`}</AppText>
+          </View>
+          <FocusCurve
+            scoreByBin={scoreByBin}
+            variant="learned"
+            windowStartMin={ws}
+            windowEndMin={we}
+            peakMin={insights?.peakMin}
+            bandVariant="coarse"
+            grid
+          />
+          <FocusConfidenceMeter tier={win.confidenceTier} fill={win.confidence} />
+          <View
+            style={{
+              flexDirection: 'row',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+            }}
+          >
+            <AppText style={meta}>{`${sampleCount} sessions · ${win.distinctDays} days`}</AppText>
+            <AppText style={{ ...(type.captionBold as TextStyle), color: t.colors.primary }}>
+              See details ›
+            </AppText>
+          </View>
         </View>
-        <FocusCurve
-          scoreByBin={scoreByBin}
-          variant="learned"
-          windowStartMin={ws}
-          windowEndMin={we}
-          peakMin={insights?.peakMin}
-          bandVariant="coarse"
-          yAxis
-        />
-        <FocusConfidenceMeter tier={win.confidenceTier} fill={win.confidence} />
-      </View>
+      </Pressable>
     );
   }
 
@@ -269,7 +287,7 @@ export function FocusPeakCard() {
           windowEndMin={we}
           peakMin={insights?.peakMin}
           bandVariant="precise"
-          yAxis
+          grid
         />
         {whyLead ? (
           <AppText style={{ ...(type.body as TextStyle), color: t.colors.ink }}>

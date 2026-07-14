@@ -14,19 +14,50 @@ const win = { startMin: 810, endMin: 960, basis: 'revealed' as const, confidence
 
 beforeEach(() => (useLearnedFocusWindow as jest.Mock).mockReturnValue(win));
 
-it('renders Tier-1 rows always', () => {
-  (useFocusInsights as jest.Mock).mockReturnValue({ peakMin: 882, troughMin: 555, contrast: null, accuracyBetterInWindow: null, durationLongerInWindow: null });
+it('renders Tier-1 rows always; confidence is the meter, evidence a caption', () => {
+  (useFocusInsights as jest.Mock).mockReturnValue({ peakMin: 882, troughMin: 555, troughStartMin: 540, troughEndMin: 600, contrast: null, accuracyBetterInWindow: null, durationLongerInWindow: null });
   const { getByText, queryByText } = render(<FocusWindowDetail />);
   expect(getByText('Peak focus')).toBeTruthy();
-  expect(getByText('Confidence')).toBeTruthy();
+  expect(getByText('Steady')).toBeTruthy(); // header tier pill
+  expect(getByText('Steady · locked to your rhythm')).toBeTruthy(); // meter label (tier steady)
+  expect(getByText('137 sessions · 3 wks of evidence')).toBeTruthy();
+  expect(queryByText('Confidence')).toBeNull(); // text row replaced by the meter
   expect(queryByText('Most accurate')).toBeNull(); // null Tier-2 hidden
 });
 
+it('foggiest stretch is a real span (trough bin bounds), never a single minute', () => {
+  (useFocusInsights as jest.Mock).mockReturnValue({ peakMin: 882, troughMin: 570, troughStartMin: 540, troughEndMin: 600, contrast: null, accuracyBetterInWindow: null, durationLongerInWindow: null });
+  const { getByText, queryByText } = render(<FocusWindowDetail />);
+  expect(getByText('Foggiest stretch')).toBeTruthy();
+  expect(getByText('9:00 – 10:00 am')).toBeTruthy();
+  expect(queryByText('9:30 am')).toBeNull(); // the old point-in-time value
+});
+
 it('renders Tier-2 rows when available', () => {
-  (useFocusInsights as jest.Mock).mockReturnValue({ peakMin: 882, troughMin: 555, contrast: 2.3, accuracyBetterInWindow: true, durationLongerInWindow: true });
+  (useFocusInsights as jest.Mock).mockReturnValue({ peakMin: 882, troughMin: 555, troughStartMin: 540, troughEndMin: 600, contrast: 2.3, accuracyBetterInWindow: true, durationLongerInWindow: true });
   const { getByText } = render(<FocusWindowDetail />);
   expect(getByText('Sharper than your slump')).toBeTruthy();
   expect(getByText('Most accurate')).toBeTruthy();
+});
+
+it('low confidence: honest early-read copy, coarse block hero, tier-true meter', () => {
+  (useLearnedFocusWindow as jest.Mock).mockReturnValue({
+    ...win, confidence: 0.4, confidenceTier: 'low' as const, coarseBlockLabel: 'Mornings',
+    sampleCount: 26, distinctDays: 14,
+  });
+  (useFocusInsights as jest.Mock).mockReturnValue(null);
+  const { getByText, queryByText } = render(<FocusWindowDetail />);
+  expect(getByText(/An early read from 26 sessions/)).toBeTruthy();
+  expect(queryByText(/sessions agree/)).toBeNull();
+  expect(queryByText(/has held for/)).toBeNull();
+  // Coarse hero: block name leads, precise range demotes to an "around" subline.
+  expect(getByText('Mornings')).toBeTruthy();
+  expect(getByText(/^around /)).toBeTruthy();
+  expect(getByText('Still learning')).toBeTruthy(); // header tier pill
+  // Meter label must match the engine's pinned tier, not the raw number —
+  // a coarse window at confidence 0.55 is 'low', never "Building".
+  expect(getByText('Still learning · sharpening')).toBeTruthy();
+  expect(queryByText(/Building/)).toBeNull();
 });
 
 it('why-line lead matches the bucket for a non-afternoon peakMin', () => {

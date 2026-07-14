@@ -41,6 +41,13 @@ export interface FocusCurveProps {
    *  'coarse' = a wider band (suggests the enclosing block, low-confidence reveal)
    *  with dashed amber edge lines instead of a hard-edged fill. */
   bandVariant?: 'coarse' | 'precise';
+  /** Peak dot + label colour. 'accent' ties the dot to an amber peak value
+   *  beside the curve (detail sheet); default keeps the indigo dot. */
+  peakTone?: 'primary' | 'accent';
+  /** Draw the horizontal gridlines WITHOUT the Hi/Low label column. The detail
+   *  sheet uses this so the plot spans exactly the text column — the yAxis
+   *  label gutter would indent the plot's left edge asymmetrically. */
+  grid?: boolean;
 }
 
 const FW_WAKING_RANGE = FW_WAKING_END_MIN - FW_WAKING_START_MIN; // 1140 min
@@ -61,6 +68,8 @@ export function FocusCurve({
   height,
   peakMin,
   bandVariant = 'precise',
+  peakTone = 'primary',
+  grid = false,
 }: FocusCurveProps) {
   const t = useTheme();
   const {
@@ -184,7 +193,7 @@ export function FocusCurve({
         {/* Gridlines (opt-in via yAxis): 4 evenly-spaced lines from the top
             headroom band down to the baseline, so the peak sits framed below the
             top line with room for its label above the dot. */}
-        {yAxis && [0, 1, 2, 3].map((i) => {
+        {(yAxis || grid) && [0, 1, 2, 3].map((i) => {
           const gy = gridTop + ((viewH - yPad - gridTop) * i) / 3;
           return <Path key={`grid-${i}`} d={`M0 ${gy} L${viewW} ${gy}`} stroke={t.colors.hairline} strokeWidth={gridW} />;
         })}
@@ -253,7 +262,7 @@ export function FocusCurve({
             cx={peakX}
             cy={peakY}
             r={dotR}
-            fill={t.colors.primary}
+            fill={peakTone === 'accent' ? t.colors.accent : t.colors.primary}
           />
         )}
 
@@ -262,7 +271,7 @@ export function FocusCurve({
           <SvgText
             x={peakX}
             y={Math.max(peakLabelMinY, peakY - dotR - peakLabelGap)}
-            fill={t.colors.primary}
+            fill={peakTone === 'accent' ? t.colors.accent : t.colors.primary}
             fontSize={t.fontSize.micro}
             fontWeight="700"
             textAnchor="middle"

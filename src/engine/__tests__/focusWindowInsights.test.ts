@@ -67,4 +67,17 @@ describe('computeFocusInsights', () => {
     expect(r.troughMin).toBe(450); // the interior slump bin wins instead
     expect(r.peakMin).toBe(870);
   });
+
+  it('exposes the trough bin bounds as a real stretch (start/end, not just a point)', () => {
+    const events: FocusEventInput[] = [];
+    for (let d = 0; d < 8; d++) {
+      events.push(ev(450, 30, 90, d));  // bin 2 interior slump, center 450 (07:30)
+      events.push(ev(870, 30, 30, d));  // bin 9 peak
+    }
+    const r = computeFocusInsights(events, fits, 840, 960);
+    expect(r.troughMin).toBe(450);
+    expect(r.troughStartMin).toBe(420); // 07:00 — bin start
+    expect(r.troughEndMin).toBe(480);   // 08:00 — bin end (one full 60-min bin)
+    expect(r.troughEndMin - r.troughStartMin).toBe(60);
+  });
 });

@@ -229,6 +229,21 @@ function strongestCoveredBinIndex(scores: BinScores): number {
   return bestIdx;
 }
 
+/** Coarse fallback window when no statistically clear peak exists yet: a
+ *  max-length block centred on the strongest covered bin. Both gates being met
+ *  promises the user a window ("always shows a window — even a weak, coarse
+ *  one"), so significance can grade the reveal but must never withhold it. */
+function coarseCandidate(scores: BinScores): WindowCandidate {
+  const peakIdx = strongestCoveredBinIndex(scores);
+  if (peakIdx < 0) return null; // no covered bin at all — nothing to point at
+  const maxBins = C.FW_WINDOW_MAX_LEN / C.FW_BIN_MIN;
+  let lo = peakIdx - Math.floor((maxBins - 1) / 2);
+  let hi = lo + maxBins - 1;
+  if (lo < 0) { hi -= lo; lo = 0; }
+  if (hi > C.FW_BIN_COUNT - 1) { lo = Math.max(0, lo - (hi - (C.FW_BIN_COUNT - 1))); hi = C.FW_BIN_COUNT - 1; }
+  return { startMin: snap(binStartMin(lo)), endMin: snap(binStartMin(hi) + C.FW_BIN_MIN), peakIdx };
+}
+
 /** Builds the 2-gate unlock ladder (sessions + distinct days). */
 function buildGates(signals: EventSignal[], distinctDays: number): FocusGates {
   return {
@@ -259,8 +274,13 @@ export function learnFocusWindow(input: LearnFocusInput): LearnedFocusWindow {
   if (signals.length < C.FW_GATE_MIN_COMPLETED || distinctDays < C.FW_GATE_MIN_DISTINCT_DAYS) {
     return forming();
   }
-  const candidate = selectWindow(scores);
-  if (!candidate) return forming(); // truly flat / spread-out — no window to reveal yet
+  // Reveal-early contract: once both gates clear, the user always gets a window.
+  // A statistically clear peak yields the precise candidate; flat / spread-out /
+  // bimodal data falls back to a coarse block pinned at confidence 'low'.
+  const selected = selectWindow(scores);
+  const candidate = selected ?? coarseCandidate(scores);
+  if (!candidate) return forming(); // unreachable in practice: gates met ⇒ ≥1 covered bin
+  const coarse = selected == null;
 
   const seed = input.seed && input.seed > 0
     ? input.seed
@@ -281,7 +301,9 @@ export function learnFocusWindow(input: LearnFocusInput): LearnedFocusWindow {
   const centerMin = binStartMin(candidate.peakIdx) + C.FW_BIN_MIN / 2;
   return {
     startMin, endMin, basis: 'revealed',
-    confidence, confidenceTier: tierFor(confidence, significant),
+    // A coarse fallback window is never presented as more than 'low' — precision
+    // is earned by a real selectWindow candidate, not by elapsed days.
+    confidence, confidenceTier: coarse ? 'low' : tierFor(confidence, significant),
     coarseBlockLabel: peakBucketLabel(centerMin),
     scoreByBin: normalise(scores.shrunk), sampleCount: signals.length, distinctDays, held,
     gates,
