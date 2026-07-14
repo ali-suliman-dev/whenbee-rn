@@ -189,6 +189,7 @@ export interface AppEventProps {
   goal_met: { category: string; target_band: number; logs_to_meet: number };
   goal_replaced: { category: string; from_band: number; to_band: number };
   goal_kept: { category: string; band: number };
+  goal_coach_shown: { category: string; target_band: number; best_band: number; has_lever: boolean };
 
   // ── Hyperfocus guardrail (Pro) ────────────────────────────────────────────────
   guardrail_armed: { setting: GuardrailSetting; threshold_min: number; honest_min: number };

@@ -39,6 +39,7 @@ import {
   reconcileGoal,
   errorBandToAccuracy,
   accuracyToErrorBand,
+  goalProgress,
   SHARPNESS_WINDOW,
   TIERS,
   CATEGORY_NAMES,
@@ -401,6 +402,20 @@ function detailCategoryName(id: string): string {
     .join(' ');
 }
 
+/** Add-screen goal coach — read-only status for the active goal (spec
+ *  2026-07-13-goal-lever-coach): bands + forward-only progress + inside-band
+ *  count over the newest ≤7 logs + the time-of-day lever. Depends ONLY on the
+ *  category (never the live guess). Null when the category has no active
+ *  (un-met) goal. A bounded read; called on category change. */
+export interface GoalCoachInfo {
+  targetBand: number;
+  bestBand: number;
+  progress: number;
+  insideCount: number;
+  windowCount: number;
+  lever: { bestValue: string; worstValue: string; bestBand: number; worstBand: number } | null;
+}
+
 interface CalibrationState {
   logs: number;
   statsByCategory: Record<string, CachedStat>;
@@ -459,12 +474,9 @@ interface CalibrationState {
   /** Read a category's goal, reconcile it against the live `sharpness` (advancing
    *  the max-latched best + met), persist the advance, and return it. Null if none. */
   loadGoal: (categoryId: string) => CategoryGoal | null;
-  /** Add-screen goal coach: the active goal's target band + the biggest time-of-day
-   *  lever for this category (worstValue, or null when no real pattern). Null when
-   *  the category has no active (un-met) goal. A bounded read; called on category change. */
-  loadGoalCoach: (
-    categoryId: string,
-  ) => Promise<{ targetBand: number; worstValue: string | null } | null>;
+  /** Add-screen goal coach — read-only status for the active goal. See
+   *  `GoalCoachInfo` above. */
+  loadGoalCoach: (categoryId: string) => Promise<GoalCoachInfo | null>;
   /** Reward-screen post-log feedback for a goaled category: this log's error band,
    *  a self-relative never-negative quality verdict, and the goal target band. Null
    *  when the category has no active (un-met) goal or has no completed logs. */
@@ -495,13 +507,20 @@ function makeId(createdAt: number): string {
   return `${createdAt}-${Math.random().toString(36).slice(2)}`;
 }
 
-/** Local hour → a human time-of-day bucket. The label IS what the goal-coach row
- *  phrases ("Your mornings miss widest"), so it returns the plural display form. */
+/** Local hour → a human time-of-day bucket. The label IS what the lever surfaces
+ *  phrase (GoalCard: "Your mornings miss widest"; add-sheet coach: "You land
+ *  closest to your guess in the mornings"), so it returns the plural display form. */
 function timeOfDayBucket(hour: number): string {
   if (hour >= 5 && hour < 12) return 'mornings';
   if (hour >= 12 && hour < 17) return 'afternoons';
   if (hour >= 17 && hour < 22) return 'evenings';
   return 'late nights';
+}
+
+/** Per-log error on the engine's accuracy scale: min(1, |1 − 1/ratio|). */
+function logErrorOf(e: { estimateMin: number; actualMin: number | null }): number {
+  const r = clampRatio(e.estimateMin, e.actualMin as number);
+  return Math.min(1, Math.abs(1 - 1 / r));
 }
 
 /** How many recent events the Patterns surface scans. Generous (the "this week"
@@ -973,19 +992,38 @@ export const useCalibrationStore = create<CalibrationState>((set, get) => ({
 
     const db = await resolveDb(get, set);
     const taskEventsRepo = makeTaskEventsRepo(db);
-    const events = await taskEventsRepo.listByCategory(categoryId, 30);
+    const events = await taskEventsRepo.listByCategory(categoryId, 30); // newest first
+    const completed = events.filter((e) => e.status === 'completed' && e.actualMin !== null);
+
+    const targetBand = accuracyToErrorBand(goal.targetAccuracy);
+    const window = completed.slice(0, 7);
+    const insideCount = window.filter((e) => Math.round(logErrorOf(e) * 100) <= targetBand).length;
+
     const lever = biggestLever([
       {
         key: 'timeOfDay',
-        samples: events
-          .filter((e) => e.status === 'completed' && e.actualMin !== null)
-          .map((e) => ({
-            value: timeOfDayBucket(new Date(e.createdAt).getHours()),
-            ratio: clampRatio(e.estimateMin, e.actualMin as number),
-          })),
+        samples: completed.map((e) => ({
+          value: timeOfDayBucket(new Date(e.createdAt).getHours()),
+          ratio: clampRatio(e.estimateMin, e.actualMin as number),
+        })),
       },
     ]);
-    return { targetBand: accuracyToErrorBand(goal.targetAccuracy), worstValue: lever?.worstValue ?? null };
+
+    return {
+      targetBand,
+      bestBand: accuracyToErrorBand(goal.bestAccuracy),
+      progress: goalProgress(goal),
+      insideCount,
+      windowCount: window.length,
+      lever: lever
+        ? {
+            bestValue: lever.bestValue,
+            worstValue: lever.worstValue,
+            bestBand: 100 - lever.bestAccuracy,
+            worstBand: 100 - lever.worstAccuracy,
+          }
+        : null,
+    };
   },
 
   loadGoalLogFeedback: async (categoryId) => {
@@ -998,19 +1036,14 @@ export const useCalibrationStore = create<CalibrationState>((set, get) => ({
     const completed = events.filter((e) => e.status === 'completed' && e.actualMin !== null);
     if (completed.length === 0) return null;
 
-    // Per-log error on the engine's accuracy scale: min(1, |1 − 1/ratio|).
-    const errOf = (e: (typeof completed)[number]): number => {
-      const r = clampRatio(e.estimateMin, e.actualMin as number);
-      return Math.min(1, Math.abs(1 - 1 / r));
-    };
     const WEEK_MS = 7 * 24 * 60 * 60 * 1000;
     const newest = completed[0] as (typeof completed)[number];
     const cutoff = newest.createdAt - WEEK_MS;
-    const thisError = errOf(newest);
+    const thisError = logErrorOf(newest);
     const recentErrors = completed
       .slice(1)
       .filter((e) => e.createdAt >= cutoff)
-      .map(errOf);
+      .map(logErrorOf);
 
     return {
       thisBand: Math.round(thisError * 100),

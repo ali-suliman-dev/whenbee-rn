@@ -331,16 +331,13 @@ export default function AddTask() {
               user raises the guess toward/past the honest number. */}
           {a.antiChaseVisible ? <AntiChaseCoachCard onDismiss={a.dismissAntiChase} /> : null}
 
-          {/* Goal coach — only when this category has an active goal. A separate
-              card below the honest card; ties the honest number to the goal. */}
-          {a.suggestion && a.goalCoach ? (
+          {/* Goal coach — read-only status + lever for this category's active goal.
+              Never renders for free users (goals are Pro-gated at creation) and
+              never depends on the guess. */}
+          {a.goalCoach ? (
             <GoalCoachCard
               categoryName={a.categories.find((c) => c.id === a.category)?.name ?? ''}
-              targetBand={a.goalCoach.targetBand}
-              worstValue={a.goalCoach.worstValue}
-              honestMinutes={a.suggestion.honestMinutes}
-              guessMinutes={a.guessMin}
-              onApply={a.applyHonest}
+              info={a.goalCoach}
             />
           ) : null}
         </ScrollView>
