@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { router } from 'expo-router';
-import { useCalibrationStore } from '@/src/stores/calibrationStore';
+import { useCalibrationStore, type GoalCoachInfo } from '@/src/stores/calibrationStore';
 import { useCategoriesStore } from '@/src/stores/categoriesStore';
 import { useDayTasksStore } from '@/src/stores/dayTasksStore';
 import { useVocabStore } from '@/src/stores/vocabStore';
@@ -42,11 +42,9 @@ export interface UseAddTaskResult {
   suggestion: CalibrationSummary | null;
   /** True when the suggestion is based on the population prior (cold category, n < 3). */
   preEstimate: boolean;
-  /** Add-screen goal coach for the active category (target band + biggest lever),
-   *  or null when the category has no active goal. Loaded on category change. */
-  goalCoach: { targetBand: number; worstValue: string | null } | null;
-  /** Write the honest suggestion into the guess field (the coach "Use Xm" action). */
-  applyHonest: () => void;
+  /** Read-only goal-coach status for the current category (or null). Depends
+   *  only on the category — never the live guess (spec 2026-07-13). */
+  goalCoach: GoalCoachInfo | null;
   /** True while the once-ever anti-chase coach is showing (user raised the guess
    *  toward/past the honest number). Dismissible; never fires again once seen. */
   antiChaseVisible: boolean;
@@ -192,17 +190,26 @@ export function useAddTask(initialTitle?: string, editId?: string): UseAddTaskRe
 
   // Goal coach for the active category — a bounded read on category change (NOT
   // per keystroke). Null whenever the category has no active, un-met goal.
-  const [goalCoach, setGoalCoach] = useState<{ targetBand: number; worstValue: string | null } | null>(
-    null,
-  );
+  const [goalCoach, setGoalCoach] = useState<GoalCoachInfo | null>(null);
+  const goalCoachSeen = useRef<Set<string>>(new Set());
   useEffect(() => {
-    let alive = true;
     if (category === null) {
       setGoalCoach(null);
       return;
     }
+    let alive = true;
     void loadGoalCoach(category).then((res) => {
-      if (alive) setGoalCoach(res);
+      if (!alive) return;
+      setGoalCoach(res);
+      if (res && !goalCoachSeen.current.has(category)) {
+        goalCoachSeen.current.add(category);
+        analytics.capture('goal_coach_shown', {
+          category,
+          target_band: res.targetBand,
+          best_band: res.bestBand,
+          has_lever: res.lever !== null,
+        });
+      }
     });
     return () => {
       alive = false;
@@ -212,8 +219,7 @@ export function useAddTask(initialTitle?: string, editId?: string): UseAddTaskRe
   // Wrapped guess setter — before applying the new value, check whether the user
   // just raised their guess to/past the honest number (the chase move). If so, and
   // they've never seen it, surface the one-time anti-chase coach and persist the
-  // once-ever flag. `applyHonest` (the goal-coach action) writes state directly so
-  // deliberately using the honest number never trips the coach.
+  // once-ever flag.
   const setGuessMin = (next: number) => {
     const honest = suggestion?.honestMinutes ?? null;
     if (honest !== null && !antiChaseVisible) {
@@ -226,11 +232,6 @@ export function useAddTask(initialTitle?: string, editId?: string): UseAddTaskRe
     setGuessMinState(next);
   };
   const dismissAntiChase = () => setAntiChaseVisible(false);
-
-  // The coach "Use Xm" action — write the honest suggestion into the guess field.
-  const applyHonest = () => {
-    if (suggestion !== null) setGuessMinState(suggestion.honestMinutes);
-  };
 
   const addCategory = (name: string): string => {
     const id = addCategoryToStore(name);
@@ -312,7 +313,6 @@ export function useAddTask(initialTitle?: string, editId?: string): UseAddTaskRe
     suggestion,
     preEstimate: suggestion?.basis === 'prior',
     goalCoach,
-    applyHonest,
     antiChaseVisible,
     dismissAntiChase,
     canSubmit,
