@@ -1,43 +1,35 @@
-import { View, Pressable, type ViewStyle, type TextStyle } from 'react-native';
+import { View, type ViewStyle, type TextStyle } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { AppText } from '@/src/components/AppText';
 import { useTheme } from '@/src/theme/useTheme';
 import { type } from '@/src/theme/typography';
-import { haptics } from '@/src/lib/haptics';
+import type { GoalCoachInfo } from '@/src/stores/calibrationStore';
 
 // ──────────────────────────────────────────────────────────────────────────────
-// GoalCoachCard — the add-screen goal coach (spec 2026-06-26-goal-coach §1, the
-// locked "E-sep" design). A SEPARATE neutral card below the amber HonestSuggestion
-// card (which is unchanged). Ties the honest number to the user's active goal and
-// offers a one-tap apply. Only the goal-aware bits live here; the honest number
-// itself stays the calibration card's job. No-guilt, amber accents, no indigo.
+// GoalCoachCard — read-only add-sheet goal status (spec 2026-07-13-goal-lever-
+// coach). Where the user stands on their active goal (forward-only meter +
+// countable inside-band line) and the learned time-of-day lever, strength-first.
+// It depends ONLY on the category's goal + logs — never the live guess — and is
+// deliberately non-interactive: the old "Use Xm" apply button fed the engine its
+// own output (15→25→40→60) and polluted calibration. Never re-add a button here.
 // ──────────────────────────────────────────────────────────────────────────────
 
-/** "mornings" → "Mornings". */
-function cap(s: string): string {
-  return s.length === 0 ? s : s[0]!.toUpperCase() + s.slice(1);
-}
+const BUCKET_ICON: Record<string, keyof typeof Ionicons.glyphMap> = {
+  mornings: 'sunny-outline',
+  afternoons: 'partly-sunny-outline',
+  evenings: 'moon-outline',
+  'late nights': 'cloudy-night-outline',
+};
 
 export function GoalCoachCard({
   categoryName,
-  targetBand,
-  worstValue,
-  honestMinutes,
-  guessMinutes,
-  onApply,
+  info,
 }: {
   categoryName: string;
-  /** "within ±{targetBand}%". */
-  targetBand: number;
-  /** The biggest time-of-day lever ("mornings"), or null for the plain line. */
-  worstValue: string | null;
-  honestMinutes: number;
-  guessMinutes: number;
-  /** Writes the honest number into the guess field. */
-  onApply: () => void;
+  info: GoalCoachInfo;
 }) {
   const t = useTheme();
-  const alreadyInside = honestMinutes === guessMinutes;
+  const { targetBand, bestBand, progress, insideCount, windowCount, lever } = info;
 
   const card: ViewStyle = {
     backgroundColor: t.colors.surface,
@@ -48,7 +40,11 @@ export function GoalCoachCard({
     padding: t.space[4],
     gap: t.space[3],
   };
-  const headRow: ViewStyle = { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' };
+  const headRow: ViewStyle = {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  };
   const eyebrow: TextStyle = { ...(type.eyebrow as unknown as TextStyle), color: t.colors.inkSoft };
   const chip: ViewStyle = {
     backgroundColor: t.colors.accentSoft,
@@ -56,8 +52,45 @@ export function GoalCoachCard({
     paddingHorizontal: t.space[3],
     paddingVertical: t.space[0.5],
   };
-  const chipText: TextStyle = { ...(type.captionBold as unknown as TextStyle), color: t.colors.amberText };
-  const body: ViewStyle = { flexDirection: 'row', gap: t.space[2.5], alignItems: 'flex-start' };
+  const chipText: TextStyle = {
+    ...(type.captionBold as unknown as TextStyle),
+    color: t.colors.amberText,
+  };
+
+  const meter: ViewStyle = { gap: t.space[1.5] };
+  const meterHead: ViewStyle = {
+    flexDirection: 'row',
+    alignItems: 'baseline',
+    justifyContent: 'space-between',
+  };
+  const meterNowRow: ViewStyle = { flexDirection: 'row', alignItems: 'baseline', gap: t.space[1.5] };
+  const meterNow: TextStyle = { ...(type.bodySmBold as unknown as TextStyle), color: t.colors.ink };
+  const meterNowLabel: TextStyle = {
+    ...(type.caption as unknown as TextStyle),
+    color: t.colors.inkSoft,
+  };
+  const meterGoal: TextStyle = {
+    ...(type.captionBold as unknown as TextStyle),
+    color: t.colors.amberText,
+  };
+  const track: ViewStyle = {
+    height: t.progress.track,
+    borderRadius: t.radii.full,
+    backgroundColor: t.colors.surfaceSunken,
+    overflow: 'hidden',
+  };
+  const fill: ViewStyle = {
+    height: '100%',
+    width: `${Math.round(progress * 100)}%`,
+    borderRadius: t.radii.full,
+    backgroundColor: t.colors.accent,
+  };
+  const countLine: TextStyle = {
+    ...(type.caption as unknown as TextStyle),
+    color: t.colors.inkFaint,
+  };
+
+  const leverRow: ViewStyle = { flexDirection: 'row', gap: t.space[2.5], alignItems: 'flex-start' };
   const iconWell: ViewStyle = {
     width: t.space[6],
     height: t.space[6],
@@ -66,75 +99,58 @@ export function GoalCoachCard({
     alignItems: 'center',
     justifyContent: 'center',
   };
-  const line: TextStyle = { ...(type.bodySm as unknown as TextStyle), color: t.colors.ink, flex: 1 };
+  const leverLine: TextStyle = { ...(type.bodySm as unknown as TextStyle), color: t.colors.ink, flex: 1 };
   const strong: TextStyle = { color: t.colors.amberText, fontFamily: 'Jakarta-Bold' };
 
-  // Apply row — a small honey coin button + a quiet "keep" affordance.
-  const applyRow: ViewStyle = { flexDirection: 'row', alignItems: 'center', gap: t.space[3] };
-  const coinWrap: ViewStyle = { paddingBottom: t.burst.coinEdge };
-  const coinEdge: ViewStyle = {
-    position: 'absolute',
-    left: 0,
-    right: 0,
-    top: t.burst.coinEdge,
-    bottom: 0,
-    borderRadius: t.radii.full,
-    borderCurve: 'continuous',
-    backgroundColor: t.colors.accentEdge,
-  };
-  const coinFace: ViewStyle = {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: t.space[1],
-    backgroundColor: t.colors.accent,
-    borderRadius: t.radii.full,
-    borderCurve: 'continuous',
-    paddingHorizontal: t.space[4],
-    minHeight: t.size.control.xs,
-  };
-  const coinText: TextStyle = { ...(type.captionBold as unknown as TextStyle), color: t.colors.onAmber };
-  const keep: TextStyle = { ...(type.bodySm as unknown as TextStyle), color: t.colors.inkSoft };
-
-  function apply() {
-    haptics.selection();
-    onApply();
-  }
+  const logsWord = windowCount === 1 ? 'log' : 'logs';
+  const a11y =
+    `Goal for ${categoryName}: best within ${bestBand} percent, target ${targetBand} percent.` +
+    (windowCount > 0 ? ` ${insideCount} of your last ${windowCount} ${logsWord} inside the band.` : '') +
+    (lever
+      ? ` You land closest to your guess in the ${lever.bestValue}, within ${lever.bestBand} percent, versus ${lever.worstBand} percent in the ${lever.worstValue}.`
+      : '');
 
   return (
-    <View style={card} accessibilityLabel={`Goal coach: aim within ${targetBand} percent`}>
+    <View style={card} accessibilityLabel={a11y}>
       <View style={headRow}>
-        <AppText style={eyebrow}>GOAL · COACH</AppText>
+        <AppText style={eyebrow}>GOAL · {categoryName.toUpperCase()}</AppText>
         <View style={chip}>
-          <AppText style={chipText}>within ±{targetBand}%</AppText>
+          <AppText style={chipText}>goal ±{targetBand}%</AppText>
         </View>
       </View>
 
-      <View style={body}>
-        <View style={iconWell}>
-          <Ionicons name="bulb-outline" size={t.iconSize.sm} color={t.colors.amberText} />
+      <View style={meter}>
+        <View style={meterHead}>
+          <View style={meterNowRow}>
+            <AppText style={meterNow}>±{bestBand}%</AppText>
+            <AppText style={meterNowLabel}>your best so far</AppText>
+          </View>
+          <AppText style={meterGoal}>±{targetBand}%</AppText>
         </View>
-        <AppText style={line}>
-          {worstValue ? `${cap(worstValue)} run longest for you on ${categoryName} — ` : ''}
-          <AppText style={strong}>~{honestMinutes}m</AppText> keeps you inside{' '}
-          <AppText style={strong}>±{targetBand}%</AppText>.
-        </AppText>
+        <View style={track}>
+          <View style={fill} />
+        </View>
+        {windowCount > 0 ? (
+          <AppText style={countLine}>
+            {insideCount} of your last {windowCount} {logsWord} landed inside the band
+          </AppText>
+        ) : null}
       </View>
 
-      {!alreadyInside ? (
-        <View style={applyRow}>
-          <Pressable
-            onPress={apply}
-            accessibilityRole="button"
-            accessibilityLabel={`Use ${honestMinutes} minutes`}
-            style={coinWrap}
-          >
-            <View style={coinEdge} />
-            <View style={coinFace}>
-              <Ionicons name="arrow-down" size={t.iconSize.xs} color={t.colors.onAmber} />
-              <AppText style={coinText}>Use {honestMinutes}m</AppText>
-            </View>
-          </Pressable>
-          <AppText style={keep}>or keep {guessMinutes}m</AppText>
+      {lever ? (
+        <View style={leverRow}>
+          <View style={iconWell}>
+            <Ionicons
+              name={BUCKET_ICON[lever.bestValue] ?? 'sunny-outline'}
+              size={t.iconSize.sm}
+              color={t.colors.amberText}
+            />
+          </View>
+          <AppText style={leverLine}>
+            You land closest to your guess in the <AppText style={strong}>{lever.bestValue}</AppText> —
+            within <AppText style={strong}>±{lever.bestBand}%</AppText>, vs ±{lever.worstBand}% in the{' '}
+            {lever.worstValue}.
+          </AppText>
         </View>
       ) : null}
     </View>
