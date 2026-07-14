@@ -3,6 +3,7 @@ import { View, Pressable, Alert, useWindowDimensions, type ViewStyle, type TextS
 import { Redirect, router, useLocalSearchParams } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
+import { haptics } from '@/src/lib/haptics';
 import Animated, {
   cancelAnimation,
   useSharedValue,
@@ -28,6 +29,8 @@ import { PostStopCaptureSheet } from '@/src/components/quick/PostStopCaptureShee
 import { guessCategory } from '@/src/features/shared/categoryGuess';
 import { usePickerCategories } from '@/src/features/shared/CategoryChips';
 import { useTimerStore } from '@/src/stores/timerStore';
+import { useDayTasksStore } from '@/src/stores/dayTasksStore';
+import { SwitchTaskSheet } from '@/src/features/today/SwitchTaskSheet';
 import { resolveTimerRoute } from '@/src/features/timer/resolveTimerRoute';
 import type { ResolvedTimerRoute, TimerSessionParams } from '@/src/features/timer/resolveTimerRoute';
 import { handlePresenceStop } from '@/src/features/timer/stopPresenceSession';
@@ -97,8 +100,40 @@ function TimerGate() {
   }
   const resolved = resolvedRef.current;
 
+  // The user's decision on a confirm-switch prompt — resolved.session stays
+  // frozen (from params) regardless, so the fresh TimerScreen mounts with the
+  // task the user tapped, unaffected by stopSilently() clearing the store.
+  const [switchChoice, setSwitchChoice] = useState<'pending' | 'go' | 'cancel'>('pending');
+
   if (resolved === null) return <View style={{ flex: 1, backgroundColor: t.colors.bg }} />;
   if (resolved.kind === 'redirect-today') return <Redirect href="/(tabs)" />;
+
+  if (resolved.kind === 'confirm-switch') {
+    if (switchChoice === 'cancel') return <Redirect href="/(tabs)" />;
+    if (switchChoice === 'go') return <TimerScreen session={resolved.session} />;
+    return (
+      <View style={{ flex: 1, backgroundColor: t.colors.bg }}>
+        <SwitchTaskSheet
+          visible
+          leavingLabel={resolved.leavingLabel}
+          startingLabel={resolved.startingLabel}
+          onConfirm={() => {
+            haptics.medium();
+            useTimerStore.getState().stopSilently();
+            if (resolved.session.taskId) {
+              void useDayTasksStore.getState().promoteToFocus(resolved.session.taskId);
+            }
+            setSwitchChoice('go');
+          }}
+          onCancel={() => {
+            haptics.light();
+            setSwitchChoice('cancel');
+          }}
+        />
+      </View>
+    );
+  }
+
   return <TimerScreen session={resolved.session} />;
 }
 

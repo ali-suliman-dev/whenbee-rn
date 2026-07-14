@@ -5,7 +5,8 @@ import { useTimerStore } from '@/src/stores/timerStore';
 import { useCalibrationStore } from '@/src/stores/calibrationStore';
 import { useDayTasksStore } from '@/src/stores/dayTasksStore';
 import { useRewardStore } from '@/src/stores/rewardStore';
-import type { LogResult } from '@/src/stores/calibrationStore';
+import type { LogResult, ReclaimSummary } from '@/src/stores/calibrationStore';
+import { capabilityFor } from '@/src/engine';
 import { kv } from '@/src/lib/kv';
 
 // ── router + route params ─────────────────────────────────────────────────────
@@ -78,11 +79,34 @@ beforeEach(() => {
     dayTasks: [],
     completeTask: jest.fn(async () => {}),
     reload: jest.fn(async () => {}),
+    // Confirming a task switch calls promoteToFocus — stub it so it doesn't
+    // hit the real (unavailable-in-tests) sqlite adapter.
+    promoteToFocus: jest.fn(async () => {}),
   });
   useRewardStore.getState().clear();
-  // Stub applyLog so we don't touch the DB; capture its calls.
+  // Stub applyLog so we don't touch the DB; capture its calls. Also stub
+  // loadReclaimSummary — the mount effect's first_task_started check calls it
+  // fire-and-forget; without a stub it hits the real (unavailable-in-tests)
+  // sqlite adapter and rejects, which a same-act() fresh mount (e.g. confirming
+  // a task switch) surfaces as a failing act() call.
   useCalibrationStore.setState({
     applyLog: jest.fn(async () => okResult),
+    loadReclaimSummary: jest.fn(async (): Promise<ReclaimSummary> => ({
+      lifetimeMin: 0,
+      byCategory: [],
+      biggestArea: null,
+      honestLogCount: 1,
+      companion: {
+        stage: 1,
+        capability: capabilityFor(1),
+        keeper: false,
+        lifetimeNectar: 1,
+        driftHealth: 'settled',
+        seed: 1,
+        name: null,
+      },
+      discoveryCount: 0,
+    })),
   });
 });
 
@@ -311,7 +335,7 @@ describe('Live Timer screen', () => {
     expect(screen.getByText('Leave for work')).toBeOnTheScreen();
   });
 
-  it('explicit params for a DIFFERENT task while one runs: starts that task (intentional)', () => {
+  it('explicit params for a DIFFERENT task while one runs: shows the switch-confirm sheet, store untouched', () => {
     useTimerStore.setState(runningSession);
     mockParams = {
       taskId: 'task-2',
@@ -321,9 +345,51 @@ describe('Live Timer screen', () => {
       guessMin: '30',
     };
     render(<Timer />);
+    // The running session's own label appears in the sheet copy — must not have
+    // been silently replaced.
+    expect(screen.getByText('Switch tasks?')).toBeOnTheScreen();
+    const st = useTimerStore.getState();
+    expect(st.taskId).toBe('task-1');
+    expect(st.taskLabel).toBe('Leave for work');
+  });
+
+  it('confirming the switch stops the old session (no log) and mounts the new one', () => {
+    useTimerStore.setState(runningSession);
+    mockParams = {
+      taskId: 'task-2',
+      label: 'Write report',
+      category: 'admin',
+      estimateMin: '45',
+      guessMin: '30',
+    };
+    render(<Timer />);
+
+    fireEvent.press(screen.getByText('Yes, switch'));
+
     const st = useTimerStore.getState();
     expect(st.taskId).toBe('task-2');
     expect(st.taskLabel).toBe('Write report');
+    expect(screen.getByText('Write report')).toBeOnTheScreen();
+  });
+
+  it('keeping going on the switch-confirm sheet leaves the running session untouched and returns to Today', () => {
+    useTimerStore.setState(runningSession);
+    mockParams = {
+      taskId: 'task-2',
+      label: 'Write report',
+      category: 'admin',
+      estimateMin: '45',
+      guessMin: '30',
+    };
+    render(<Timer />);
+
+    fireEvent.press(screen.getByText('Keep going'));
+
+    const st = useTimerStore.getState();
+    expect(st.taskId).toBe('task-1');
+    expect(st.taskLabel).toBe('Leave for work');
+    expect(st.isRunning).toBe(true);
+    expect(mockRedirect).toHaveBeenCalledWith('/(tabs)');
   });
 
   it('action=stop with nothing running (stale notification): lands on Today, no blank screen', () => {
