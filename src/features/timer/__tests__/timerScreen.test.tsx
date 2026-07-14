@@ -6,17 +6,23 @@ import { useCalibrationStore } from '@/src/stores/calibrationStore';
 import { useDayTasksStore } from '@/src/stores/dayTasksStore';
 import { useRewardStore } from '@/src/stores/rewardStore';
 import type { LogResult } from '@/src/stores/calibrationStore';
+import { kv } from '@/src/lib/kv';
 
 // ── router + route params ─────────────────────────────────────────────────────
 // `mock`-prefixed so jest's factory-hoisting allows referencing them.
 const mockReplace = jest.fn();
 const mockDismiss = jest.fn();
+const mockRedirect = jest.fn();
 let mockParams: Record<string, string> = {};
 
 jest.mock('expo-router', () => ({
   router: {
     replace: (...a: unknown[]) => mockReplace(...a),
     dismiss: (...a: unknown[]) => mockDismiss(...a),
+  },
+  Redirect: ({ href }: { href: string }) => {
+    mockRedirect(href);
+    return null;
   },
   useLocalSearchParams: () => mockParams,
   useFocusEffect: (cb: () => void | (() => void)) => cb(),
@@ -43,6 +49,8 @@ let alertSpy: jest.SpyInstance;
 beforeEach(() => {
   mockReplace.mockClear();
   mockDismiss.mockClear();
+  mockRedirect.mockClear();
+  kv.delete('whenbee.activeTimer');
   alertSpy = jest.spyOn(Alert, 'alert').mockImplementation(() => {});
   mockParams = {
     taskId: 'task-1',
@@ -63,6 +71,8 @@ beforeEach(() => {
     guessMin: 0,
     taskId: null,
     suggestedHonestMin: 0,
+    isQuickStart: false,
+    guardNudged: false,
   });
   useDayTasksStore.setState({
     dayTasks: [],
@@ -195,6 +205,131 @@ describe('Live Timer screen', () => {
     await Promise.resolve();
 
     expect(applyLog.mock.calls[0][0].estimateMin).toBe(28); // fell back to estimate
+  });
+
+  // ── Bare deep-link opens (presence-notification body tap, widget, quick chips) ──
+  // The route can arrive with NO params while a session runs. The store is the
+  // source of truth for a running session: the screen must ATTACH with the
+  // store's context, never restart with placeholder defaults (the exact bug:
+  // notification tap replaced the running timer with a fresh untitled
+  // "Focus session" and reset the clock).
+
+  const runningSession = {
+    taskLabel: 'Leave for work',
+    category: 'errands',
+    estimateMin: 28,
+    guessMin: 15,
+    taskId: 'task-1',
+    suggestedHonestMin: 28,
+    startedAt: 123456,
+    pausedAccumMs: 0,
+    pausedAt: null,
+    isRunning: true,
+    isQuickStart: false,
+    guardNudged: false,
+  };
+
+  it('bare open (no params) while a session runs: attaches with the STORE context', () => {
+    useTimerStore.setState(runningSession);
+    mockParams = {};
+    render(<Timer />);
+    const st = useTimerStore.getState();
+    // Not restarted: clock and session context intact.
+    expect(st.startedAt).toBe(123456);
+    expect(st.taskLabel).toBe('Leave for work');
+    expect(st.category).toBe('errands');
+    // The screen shows the REAL session, not the 'Focus session' placeholder.
+    expect(screen.getByText('Leave for work')).toBeOnTheScreen();
+    expect(screen.getByText('~28m')).toBeOnTheScreen();
+    expect(screen.queryByText('Focus session')).toBeNull();
+  });
+
+  it('bare open attach: Stop & log trains the STORE category + guess, not defaults', async () => {
+    useTimerStore.setState(runningSession);
+    mockParams = {};
+    render(<Timer />);
+    const applyLog = useCalibrationStore.getState().applyLog as jest.Mock;
+
+    fireEvent.press(screen.getByText('Stop & log'));
+    await Promise.resolve();
+    await Promise.resolve();
+
+    const arg = applyLog.mock.calls[0][0];
+    expect(arg.category).toBe('errands');
+    expect(arg.estimateMin).toBe(15); // the guess, from the store — never the 15-min DEFAULT by luck: change store to prove
+    expect(arg.label).toBe('Leave for work');
+  });
+
+  it('bare open while a QUICK session runs: attaches without overwriting it', () => {
+    useTimerStore.setState({
+      ...runningSession,
+      taskLabel: '',
+      category: null,
+      estimateMin: 0,
+      guessMin: 0,
+      taskId: null,
+      suggestedHonestMin: 0,
+      isQuickStart: true,
+    });
+    mockParams = {};
+    render(<Timer />);
+    const st = useTimerStore.getState();
+    expect(st.startedAt).toBe(123456);
+    expect(st.isQuickStart).toBe(true);
+  });
+
+  it('bare open with NOTHING running: redirects to Today, never starts a phantom session', () => {
+    mockParams = {};
+    render(<Timer />);
+    expect(mockRedirect).toHaveBeenCalledWith('/(tabs)');
+    expect(useTimerStore.getState().isRunning).toBe(false);
+  });
+
+  it('bare open on COLD BOOT: restores the KV session and attaches to it', () => {
+    // Session lives only in KV (app was killed); the store is empty.
+    kv.set(
+      'whenbee.activeTimer',
+      JSON.stringify({
+        taskLabel: 'Leave for work',
+        category: 'errands',
+        estimateMin: 28,
+        startedAt: 123456,
+        pausedAccumMs: 0,
+        pausedAt: null,
+        guessMin: 15,
+        taskId: 'task-1',
+        suggestedHonestMin: 28,
+        isQuickStart: false,
+        guardNudged: false,
+      }),
+    );
+    mockParams = {};
+    render(<Timer />);
+    const st = useTimerStore.getState();
+    expect(st.isRunning).toBe(true);
+    expect(st.startedAt).toBe(123456);
+    expect(screen.getByText('Leave for work')).toBeOnTheScreen();
+  });
+
+  it('explicit params for a DIFFERENT task while one runs: starts that task (intentional)', () => {
+    useTimerStore.setState(runningSession);
+    mockParams = {
+      taskId: 'task-2',
+      label: 'Write report',
+      category: 'admin',
+      estimateMin: '45',
+      guessMin: '30',
+    };
+    render(<Timer />);
+    const st = useTimerStore.getState();
+    expect(st.taskId).toBe('task-2');
+    expect(st.taskLabel).toBe('Write report');
+  });
+
+  it('action=stop with nothing running (stale notification): lands on Today, no blank screen', () => {
+    mockParams = { action: 'stop' };
+    render(<Timer />);
+    expect(mockReplace).toHaveBeenCalledWith('/(tabs)');
   });
 
   it('abandon path: applyLog with status abandoned, then dismiss', async () => {
