@@ -23,6 +23,7 @@ import { useRewardStore } from '@/src/stores/rewardStore';
 import { useSettingsStore } from '@/src/stores/settingsStore';
 import { useEntitlement } from '@/src/features/paywall/useEntitlement';
 import type { LogResult } from '@/src/stores/calibrationStore';
+import { kv } from '@/src/lib/kv';
 
 // ── router + route params ─────────────────────────────────────────────────────
 
@@ -122,6 +123,11 @@ function resetAll(): void {
   mockGuardrailThresholdMin = null; // guard not armed by default
   presence.available = false;
   presence.active = false;
+
+  // The mocked KV store (jest.setup.js) is a module-level Map that survives
+  // across tests in this file — a persisted session from a prior test's start()
+  // would otherwise leak into the next test's TimerGate hydration (resumeFromKv).
+  kv.delete('whenbee.activeTimer');
 
   useTimerStore.setState({
     taskLabel: null,
