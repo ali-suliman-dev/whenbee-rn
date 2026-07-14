@@ -56,11 +56,13 @@ test('a single extreme event is pulled toward the global mean, not left at its r
   expect(shrunk[binAt(420)]!).toBeLessThan(0.6); // suppressed well below its raw clamped s≈1.1
 });
 
-test('a single outlier fast event never manufactures a revealed window (coverage + gate)', () => {
+test('a single outlier fast event never manufactures a confident window (coarse low reveal only)', () => {
   const events: ReturnType<typeof ev>[] = [];
   for (let d = 0; d < 20; d++) for (const m of [360, 540, 720, 900, 1080]) events.push(ev(m, 28, d));
   events.push(ev(420, 3, 99)); // lone outlier, single day
-  expect(learnFocusWindow({ events, fitByCategory: fit, shown: null }).basis).toBe('forming');
+  const w = learnFocusWindow({ events, fitByCategory: fit, shown: null });
+  expect(w.basis).toBe('revealed');     // gates met — reveal-early always shows a window
+  expect(w.confidenceTier).toBe('low'); // …but one outlier never earns a confident one
 });
 
 // ── Task 6: Select window ─────────────────────────────────────────────────────
@@ -135,13 +137,18 @@ test('gates: few signals reports raw have/need, no peak gate on the shape', () =
   expect(w.gates.peak).toBeUndefined();
 });
 
-test('gates: sessions+days met but flat/bimodal spread → forming, gates report both met', () => {
+test('gates: sessions+days met but flat/bimodal spread → coarse low reveal, never a dead-end', () => {
   const flatEvents: ReturnType<typeof ev8>[] = [];
   for (let d = 0; d < 20; d++) for (const m of [360, 540, 720, 900, 1080]) flatEvents.push(ev8(m, 28, d));
   const w = learnFocusWindow({ events: flatEvents, fitByCategory: fit, shown: null });
-  expect(w.basis).toBe('forming');
+  expect(w.basis).toBe('revealed');
+  expect(w.confidenceTier).toBe('low');
+  expect(w.coarseBlockLabel).not.toBe('');
   expect(w.gates.sessions.have).toBeGreaterThanOrEqual(15);
   expect(w.gates.days.have).toBeGreaterThanOrEqual(5);
+  expect(w.endMin - w.startMin).toBeLessThanOrEqual(C.FW_WINDOW_MAX_LEN);
+  expect(w.startMin).toBeGreaterThanOrEqual(C.FW_WAKING_START_MIN);
+  expect(w.endMin).toBeLessThanOrEqual(C.FW_WAKING_END_MIN);
 });
 
 test('gates: a real revealed window reports both counting gates met', () => {
@@ -202,6 +209,31 @@ describe('reveal-early focus window', () => {
     expect(w.basis).toBe('revealed');
     expect(w.confidence).toBeGreaterThanOrEqual(C.FW_CONF_HIGH);
     expect(w.confidenceTier).toBe('steady');
+  });
+
+  it('reveals a coarse window when sessions are spread thin across hours (no concentrated slot)', () => {
+    // 26 sessions over 14 days, rotating through 13 different hour slots: no 60-min
+    // slot ever collects FW_BIN_MIN_EVENTS on FW_BIN_MIN_DAYS distinct days — the
+    // real-usage case that used to dead-end on "Almost there" with 2 of 2 unlocked.
+    const events: FocusEventInput[] = [];
+    for (let i = 0; i < 26; i++) {
+      events.push({
+        category: 'work',
+        estimateMin: 30,
+        actualMin: 20 + (i % 9),
+        status: 'completed',
+        startLocalMinute: 330 + (i % 13) * 60,
+        ageDays: i % 14,
+        dayKey: i % 14,
+      });
+    }
+    const a = learnFocusWindow({ events, fitByCategory: workFit, shown: null });
+    const b = learnFocusWindow({ events, fitByCategory: workFit, shown: null });
+    expect(a.basis).toBe('revealed');
+    expect(a.confidenceTier).toBe('low');
+    expect(a.coarseBlockLabel).not.toBe('');
+    expect(a.endMin - a.startMin).toBeLessThanOrEqual(C.FW_WINDOW_MAX_LEN);
+    expect(a).toEqual(b); // determinism (seed derived from signals, no ambient clock)
   });
 
   it('buckets peak times into coarse blocks', () => {

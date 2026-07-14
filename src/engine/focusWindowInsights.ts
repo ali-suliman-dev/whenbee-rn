@@ -7,12 +7,15 @@ import * as C from './constants';
 export interface FocusInsights {
   peakMin: number;                         // bin-center minute of the sharpest bin
   troughMin: number;                       // bin-center minute of the foggiest eligible bin
+  troughStartMin: number;                  // trough bin start — the foggiest stretch is a real
+  troughEndMin: number;                    //   bin-wide span, never presented as a single minute
   contrast: number | null;                 // exp(peakS - troughS), clamped; null if uncovered
   accuracyBetterInWindow: boolean | null;  // mean rel-error lower inside the window
   durationLongerInWindow: boolean | null;  // mean actualMin higher inside the window
 }
 
 const binCenterMin = (i: number) => C.FW_WAKING_START_MIN + i * C.FW_BIN_MIN + C.FW_BIN_MIN / 2;
+const binStartMin = (i: number) => C.FW_WAKING_START_MIN + i * C.FW_BIN_MIN;
 
 export function confidenceLabel(confidence: number): 'High' | 'Building' | 'Low' {
   if (confidence >= C.FW_CONF_HIGH) return 'High';
@@ -93,9 +96,12 @@ export function computeFocusInsights(
   const accuracyBetterInWindow = enough(inMin, outMin) ? mean(inMin) < mean(outMin) : null;
   const durationLongerInWindow = enough(inDur, outDur) ? mean(inDur) > mean(outDur) : null;
 
+  const troughBin = Math.max(0, troughIdx);
   return {
     peakMin: binCenterMin(Math.max(0, peakIdx)),
-    troughMin: binCenterMin(Math.max(0, troughIdx)),
+    troughMin: binCenterMin(troughBin),
+    troughStartMin: binStartMin(troughBin),
+    troughEndMin: binStartMin(troughBin) + C.FW_BIN_MIN,
     contrast,
     accuracyBetterInWindow,
     durationLongerInWindow,

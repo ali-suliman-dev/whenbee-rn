@@ -1,8 +1,11 @@
-import { render } from '@testing-library/react-native';
+import { render, fireEvent } from '@testing-library/react-native';
+import { router } from 'expo-router';
 import { FocusPeakCard } from '../FocusPeakCard';
 import { useLearnedFocusWindow } from '@/src/features/planner/useLearnedFocusWindow';
 import { useFocusInsights } from '@/src/features/patterns/useFocusInsights';
 import { useEntitlement } from '@/src/features/paywall/useEntitlement';
+
+jest.mock('expo-router', () => ({ router: { push: jest.fn() } }));
 
 jest.mock('@/src/features/planner/useLearnedFocusWindow');
 jest.mock('@/src/features/patterns/useFocusInsights');
@@ -79,6 +82,20 @@ it('revealed low: shows coarse block name + confidence label, not the precise wi
   expect(getByText('Mornings')).toBeTruthy();
   expect(getByText('Still learning · sharpening')).toBeTruthy();
   expect(queryByText('Open ›')).toBeNull();
+});
+
+it('revealed low: footer shows evidence meta + the See details link', () => {
+  (useLearnedFocusWindow as jest.Mock).mockReturnValue(revealedLow);
+  const { getByText } = render(<FocusPeakCard />);
+  expect(getByText('16 sessions · 5 days')).toBeTruthy();
+  expect(getByText('See details ›')).toBeTruthy();
+});
+
+it('revealed low: the whole card opens the focus-window detail on press', () => {
+  (useLearnedFocusWindow as jest.Mock).mockReturnValue(revealedLow);
+  const { getByLabelText } = render(<FocusPeakCard />);
+  fireEvent.press(getByLabelText('Open focus window detail'));
+  expect(router.push).toHaveBeenCalledWith('/(modals)/focus-window');
 });
 
 it('free + revealed: shows a quiet Unlock link (no filled CTA), no exact window', () => {
