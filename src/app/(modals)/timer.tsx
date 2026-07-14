@@ -78,6 +78,7 @@ function TimerGate() {
     guessMin?: string;
     suggestedHonestMin?: string;
     quick?: string;
+    replace?: string;
   }>();
   // Cold boot from a deep link: child screens mount BEFORE the root layout's
   // resumeFromKv effect runs, so a session that survived a kill is still KV-only.

@@ -145,7 +145,12 @@ export function resolveTimerRoute(
       };
     }
     if (store.isQuickStart) {
-      if (!hasExplicitSession) {
+      // A quick=1 nav is a REOPEN of the running quick session — the minimized-timer
+      // bar and RunningFocusCard reopen with a synthetic label ('Timing now'), and
+      // presence/notification taps carry no params. Attach, never replace. Only a
+      // real different-task start (explicit taskId/label WITHOUT quick=1) replaces a
+      // quick session; the explicit FAB replace intent was handled above.
+      if (first(params.quick) === '1' || !hasExplicitSession) {
         // Attach to the running quick session with the quick defaults (a quick
         // session carries no label/estimate of its own — capture happens at stop).
         return { kind: 'session', session: { ...sessionFromParams(params), isQuickNav: true } };

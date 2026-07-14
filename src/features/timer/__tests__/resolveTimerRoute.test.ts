@@ -121,6 +121,26 @@ describe('resolveTimerRoute', () => {
     expect(r.session.isQuickNav).toBe(true);
   });
 
+  it('reopen (ActiveTimerBar/RunningFocusCard tap: quick=1 + synthetic label) while a quick session runs → attaches, never confirm-switch', () => {
+    // Regression: reopen() sends { label: taskLabel || 'Timing now', quick: '1' }.
+    // A quick session's taskLabel is '', so label is always the synthetic
+    // 'Timing now' — that must still be treated as a reopen, not a replace.
+    const r = resolveTimerRoute({ label: 'Timing now', quick: '1' }, runningQuick);
+    expect(r.kind).toBe('session');
+    if (r.kind !== 'session') return;
+    expect(r.session.isQuickNav).toBe(true);
+  });
+
+  it('running QUICK session + explicit different-task params WITHOUT quick=1 → confirm-switch (genuine replace, preserved)', () => {
+    const r = resolveTimerRoute({ taskId: 't9', label: 'Email' }, runningQuick);
+    expect(r.kind).toBe('confirm-switch');
+  });
+
+  it('running QUICK session + {quick:"1", replace:"1"} → confirm-switch (FAB replace intent, preserved)', () => {
+    const r = resolveTimerRoute({ quick: '1', replace: '1' }, runningQuick);
+    expect(r.kind).toBe('confirm-switch');
+  });
+
   it('running QUICK session + explicit params for a task → confirm-switch (quick sessions have no task identity)', () => {
     const r = resolveTimerRoute(
       { taskId: 'task-2', label: 'Write report', category: 'admin', estimateMin: '45', guessMin: '30' },
