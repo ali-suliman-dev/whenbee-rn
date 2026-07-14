@@ -1,7 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
 import { router } from 'expo-router';
 import { useCalibrationStore } from '@/src/stores/calibrationStore';
-import { useTimerStore } from '@/src/stores/timerStore';
 import { resolveSuggestion, priorFor } from '@/src/engine';
 import { makeTaskEventsRepo } from '@/src/db/repositories/taskEventsRepo';
 import type { FrequentTask } from '@/src/db/queries/frequentTasks';
@@ -63,15 +62,20 @@ export function useQuickTasks(): {
     };
   }, [db, statsByCategory]);
 
+  // Navigate with params only — no store mutation here. A running session must
+  // win until the gate (resolveTimerRoute + TimerGate) confirms the switch;
+  // writing the store first would clobber it before the gate ever runs.
   const startQuickTask = useCallback((chip: QuickTaskChip) => {
-    useTimerStore.getState().start({
-      label: chip.label,
-      category: chip.category,
-      estimateMin: chip.honestMin,
-      guessMin: chip.guessMin,
-      suggestedHonestMin: chip.honestMin,
+    router.push({
+      pathname: '/(modals)/timer',
+      params: {
+        label: chip.label,
+        category: chip.category,
+        estimateMin: String(chip.honestMin),
+        guessMin: String(chip.guessMin),
+        suggestedHonestMin: String(chip.honestMin),
+      },
     });
-    router.push('/(modals)/timer');
   }, []);
 
   return { chips, startQuickTask };

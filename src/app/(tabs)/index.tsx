@@ -21,7 +21,6 @@ import type { HoneycombCell } from '@/src/components/honeycomb/Honeycomb';
 import { TodayEmptyState } from '@/src/features/today/TodayEmptyState';
 import { RetroLogChip } from '@/src/features/today/RetroLogChip';
 import { QuickTaskChips } from '@/src/components/quick/QuickTaskChips';
-import { SwitchTaskSheet } from '@/src/features/today/SwitchTaskSheet';
 import { ActionSheet, type ActionSheetItem } from '@/src/components/ActionSheet';
 import { canEditRow } from '@/src/features/today/canEditRow';
 import { useCategoriesStore } from '@/src/stores/categoriesStore';
@@ -107,12 +106,9 @@ export default function Today() {
 
   const isTimerRunning = useTimerStore((s) => s.isRunning);
   const runningTaskId = useTimerStore((s) => s.taskId);
-  const runningTaskLabel = useTimerStore((s) => s.taskLabel);
-  const [pendingRow, setPendingRow] = useState<TodayRow | null>(null);
   const dailyRitualEnabled = useSettingsStore((s) => s.dailyRitualEnabled);
   const quickStartEnabled = useSettingsStore((s) => s.quickStartEnabled);
   const removeTask = useDayTasksStore((s) => s.removeTask);
-  const promoteToFocus = useDayTasksStore((s) => s.promoteToFocus);
   const shelfTasks = useDayTasksStore((s) => s.shelfTasks);
 
   // Keep the shelf fresh: load on mount and whenever tasks change.
@@ -235,26 +231,7 @@ export default function Today() {
   }
 
   function startRow(row: TodayRow) {
-    if (isTimerRunning) {
-      haptics.light();
-      setPendingRow(row);
-    } else {
-      navigateToTimer(row);
-    }
-  }
-
-  function confirmSwitch() {
-    if (pendingRow === null) return;
-    haptics.medium();
-    const row = pendingRow;
-    setPendingRow(null);
-    void promoteToFocus(row.id);
     navigateToTimer(row);
-  }
-
-  function cancelSwitch() {
-    haptics.light();
-    setPendingRow(null);
   }
 
   // Build the honey strip from the tracked categories + their cached stats. One
@@ -553,14 +530,6 @@ export default function Today() {
           )}
         </ScrollView>
       </View>
-
-      <SwitchTaskSheet
-        visible={pendingRow !== null}
-        leavingLabel={runningTaskLabel ?? 'current task'}
-        startingLabel={pendingRow?.label ?? ''}
-        onConfirm={confirmSwitch}
-        onCancel={cancelSwitch}
-      />
 
       <ActionSheet
         visible={rowActions !== null}

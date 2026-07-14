@@ -58,36 +58,32 @@ it('exposes thresholded chips with a resolved honest estimate', async () => {
   expect(chip.honestMin).toBeGreaterThanOrEqual(30);
 });
 
-it('startQuickTask boots the timer with the learned guess', async () => {
+it('startQuickTask does NOT mutate the timer store — the gate decides, not the chip', async () => {
   await seed();
   const { result } = renderHook(() => useQuickTasks());
   await waitFor(() => expect(result.current.chips.length).toBe(1));
   act(() => result.current.startQuickTask(result.current.chips[0]!));
-  expect(useTimerStore.getState().isRunning).toBe(true);
+  expect(useTimerStore.getState().isRunning).toBe(false);
 });
 
-it('startQuickTask passes correct params to timerStore.start', async () => {
-  await seed();
-  const { result } = renderHook(() => useQuickTasks());
-  await waitFor(() => expect(result.current.chips.length).toBe(1));
-  const chip = result.current.chips[0]!;
-  act(() => result.current.startQuickTask(chip));
-  const state = useTimerStore.getState();
-  expect(state.taskLabel).toBe(chip.label);
-  expect(state.category).toBe(chip.category);
-  expect(state.estimateMin).toBe(chip.honestMin);
-  expect(state.guessMin).toBe(chip.guessMin);
-  expect(state.suggestedHonestMin).toBe(chip.honestMin);
-});
-
-it('navigates to the timer route after startQuickTask', async () => {
+it('startQuickTask navigates to the timer route with the chip params', async () => {
   await seed();
   const { router } = jest.requireMock('expo-router') as { router: { push: jest.Mock } };
   router.push.mockClear();
   const { result } = renderHook(() => useQuickTasks());
   await waitFor(() => expect(result.current.chips.length).toBe(1));
-  act(() => result.current.startQuickTask(result.current.chips[0]!));
-  expect(router.push).toHaveBeenCalledWith('/(modals)/timer');
+  const chip = result.current.chips[0]!;
+  act(() => result.current.startQuickTask(chip));
+  expect(router.push).toHaveBeenCalledWith({
+    pathname: '/(modals)/timer',
+    params: {
+      label: chip.label,
+      category: chip.category,
+      estimateMin: String(chip.honestMin),
+      guessMin: String(chip.guessMin),
+      suggestedHonestMin: String(chip.honestMin),
+    },
+  });
 });
 
 it('returns empty chips when no frequent tasks exist', async () => {
