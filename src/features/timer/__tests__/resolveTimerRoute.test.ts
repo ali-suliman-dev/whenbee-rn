@@ -188,4 +188,38 @@ describe('resolveTimerRoute', () => {
     expect(r.session.taskId).toBe('task-2');
     expect(r.session.estimateMin).toBe(10);
   });
+
+  describe('replace intent (FAB quick-start while a session is running)', () => {
+    it('running + {replace:"1", quick:"1"} → confirm-switch to a fresh quick session', () => {
+      const r = resolveTimerRoute({ replace: '1', quick: '1' }, runningTask);
+      expect(r.kind).toBe('confirm-switch');
+      if (r.kind !== 'confirm-switch') return;
+      expect(r.leavingLabel).toBe('Leave for work');
+      expect(r.startingLabel).toBe('a quick timer');
+      expect(r.session.isQuickNav).toBe(true);
+    });
+
+    it('running (no store label) + {replace:"1", quick:"1"} → leavingLabel falls back to "your timer"', () => {
+      const runningTaskNoLabel: TimerStoreSnapshot = { ...runningTask, taskLabel: '' };
+      const r = resolveTimerRoute({ replace: '1', quick: '1' }, runningTaskNoLabel);
+      expect(r.kind).toBe('confirm-switch');
+      if (r.kind !== 'confirm-switch') return;
+      expect(r.leavingLabel).toBe('your timer');
+    });
+
+    it('running + {replace:"1", label:"Email"} → startingLabel is the explicit label', () => {
+      const r = resolveTimerRoute({ replace: '1', label: 'Email' }, runningTask);
+      expect(r.kind).toBe('confirm-switch');
+      if (r.kind !== 'confirm-switch') return;
+      expect(r.startingLabel).toBe('Email');
+    });
+
+    it('NOT running + {replace:"1", quick:"1"} → replace is a no-op, still a normal quick session', () => {
+      const r = resolveTimerRoute({ replace: '1', quick: '1' }, idle);
+      expect(r.kind).not.toBe('confirm-switch');
+      expect(r.kind).toBe('session');
+      if (r.kind !== 'session') return;
+      expect(r.session.isQuickNav).toBe(true);
+    });
+  });
 });

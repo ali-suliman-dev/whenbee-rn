@@ -19,9 +19,14 @@
 //      this is a destructive action — surface it for confirmation instead of
 //      silently swapping (a quick session has no task identity of its own, so
 //      ANY explicit start while one runs counts as a different task).
-//   4. Nothing running + no explicit params + not a quick nav → nothing to show;
+//   4. Running session + an explicit `replace=1` intent (a start path that
+//      mutates the store BEFORE navigating, e.g. the tab-bar FAB, would clobber
+//      a live session if it wrote first — routing through here with the intent
+//      as a param instead lets the running session win until confirmed) →
+//      confirm-switch, regardless of whether params also describe the same task.
+//   5. Nothing running + no explicit params + not a quick nav → nothing to show;
 //      send the user to Today instead of fabricating a placeholder session.
-//   5. Otherwise → fresh session from the route params.
+//   6. Otherwise → fresh session from the route params.
 // ──────────────────────────────────────────────────────────────────────────────
 
 export interface TimerRouteParams {
@@ -32,6 +37,10 @@ export interface TimerRouteParams {
   guessMin?: string | string[];
   suggestedHonestMin?: string | string[];
   quick?: string | string[];
+  /** Explicit "confirm before replacing the running session" intent — set by
+   *  start paths that would otherwise mutate the timer store before this
+   *  route even runs (see rule 4 above). */
+  replace?: string | string[];
 }
 
 /** The slice of timer-store state the decision needs (structurally satisfied by
@@ -70,6 +79,9 @@ const FALLBACK_ESTIMATE_MIN = 15;
 // A running quick session carries no label of its own (captured at stop) — this
 // stands in for "the thing currently running" in the confirm-switch copy.
 const RUNNING_FALLBACK_LABEL = 'your timer';
+// The FAB quick-start's confirm-switch copy needs a starting label when no
+// explicit label param is given (quick=1 with no task identity).
+const QUICK_START_LABEL = 'a quick timer';
 
 function first(v: string | string[] | undefined): string | undefined {
   const raw = Array.isArray(v) ? v[0] : v;
@@ -120,6 +132,18 @@ export function resolveTimerRoute(
   const isRunning = store.isRunning && store.startedAt !== null;
 
   if (isRunning) {
+    if (first(params.replace) === '1') {
+      // Explicit replace intent (the FAB quick-start) — always confirm before
+      // clobbering a live session, regardless of task identity. quickStart()
+      // initializes taskLabel to '' (empty, not null), so leavingLabel MUST use
+      // `||` — `??` would leave the sheet copy blank instead of falling back.
+      return {
+        kind: 'confirm-switch',
+        leavingLabel: store.taskLabel || RUNNING_FALLBACK_LABEL,
+        startingLabel: first(params.label) ?? QUICK_START_LABEL,
+        session: sessionFromParams(params),
+      };
+    }
     if (store.isQuickStart) {
       if (!hasExplicitSession) {
         // Attach to the running quick session with the quick defaults (a quick
