@@ -120,7 +120,11 @@ function TimerGate() {
           onConfirm={() => {
             haptics.medium();
             useTimerStore.getState().stopSilently();
-            if (resolved.session.taskId) {
+            if (resolved.session.isQuickNav) {
+              // FAB replace intent — start the fresh quick session now that the
+              // old one is stopped; TimerScreen's useTimer attaches to it.
+              useTimerStore.getState().quickStart();
+            } else if (resolved.session.taskId) {
               void useDayTasksStore.getState().promoteToFocus(resolved.session.taskId);
             }
             setSwitchChoice('go');

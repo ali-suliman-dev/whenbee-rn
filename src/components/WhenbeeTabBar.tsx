@@ -122,8 +122,15 @@ export function WhenbeeTabBar({ state, descriptors, navigation }: BottomTabBarPr
   }
   function handleTimer() {
     hardCloseArc();
-    useTimerStore.getState().quickStart();
-    router.push({ pathname: '/(modals)/timer', params: { quick: '1' } });
+    const s = useTimerStore.getState();
+    if (s.isRunning && s.startedAt !== null) {
+      // A session is live — confirm before replacing it with a new quick timer
+      // (resolveTimerRoute's `replace` intent routes this through the gate).
+      router.push({ pathname: '/(modals)/timer', params: { quick: '1', replace: '1' } });
+    } else {
+      useTimerStore.getState().quickStart();
+      router.push({ pathname: '/(modals)/timer', params: { quick: '1' } });
+    }
   }
   function handleType() {
     hardCloseArc();
