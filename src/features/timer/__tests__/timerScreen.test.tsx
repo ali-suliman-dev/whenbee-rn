@@ -372,7 +372,7 @@ describe('Live Timer screen', () => {
     expect(screen.getByText('Write report')).toBeOnTheScreen();
   });
 
-  it('keeping going on the switch-confirm sheet leaves the running session untouched and returns to Today', () => {
+  it('keeping going on the switch-confirm sheet opens the RUNNING task’s timer (never a dead end)', () => {
     useTimerStore.setState(runningSession);
     mockParams = {
       taskId: 'task-2',
@@ -385,11 +385,38 @@ describe('Live Timer screen', () => {
 
     fireEvent.press(screen.getByText('Keep going'));
 
+    // Session untouched…
     const st = useTimerStore.getState();
     expect(st.taskId).toBe('task-1');
     expect(st.taskLabel).toBe('Leave for work');
+    expect(st.startedAt).toBe(123456);
     expect(st.isRunning).toBe(true);
-    expect(mockRedirect).toHaveBeenCalledWith('/(tabs)');
+    // …and the user lands ON that running timer, not back on Today.
+    expect(mockRedirect).not.toHaveBeenCalled();
+    expect(screen.getByText('Leave for work')).toBeOnTheScreen();
+    expect(screen.getByText('~28m')).toBeOnTheScreen();
+  });
+
+  it('keeping going while a QUICK session runs (FAB replace intent) attaches to it untouched', () => {
+    useTimerStore.setState({
+      ...runningSession,
+      taskLabel: '',
+      category: null,
+      estimateMin: 0,
+      guessMin: 0,
+      taskId: null,
+      suggestedHonestMin: 0,
+      isQuickStart: true,
+    });
+    mockParams = { quick: '1', replace: '1' };
+    render(<Timer />);
+
+    fireEvent.press(screen.getByText('Keep going'));
+
+    const st = useTimerStore.getState();
+    expect(st.isQuickStart).toBe(true);
+    expect(st.startedAt).toBe(123456);
+    expect(mockRedirect).not.toHaveBeenCalled();
   });
 
   it('action=stop with nothing running (stale notification): lands on Today, no blank screen', () => {

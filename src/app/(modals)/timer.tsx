@@ -101,17 +101,24 @@ function TimerGate() {
   }
   const resolved = resolvedRef.current;
 
-  // The user's decision on a confirm-switch prompt — resolved.session stays
-  // frozen (from params) regardless, so the fresh TimerScreen mounts with the
-  // task the user tapped, unaffected by stopSilently() clearing the store.
-  const [switchChoice, setSwitchChoice] = useState<'pending' | 'go' | 'cancel'>('pending');
+  // The user's decision on a confirm-switch prompt. 'go' mounts resolved.session
+  // (frozen from params, so the fresh TimerScreen starts the task the user
+  // tapped, unaffected by stopSilently() clearing the store). Keep-going instead
+  // ATTACHES to the running session — you pressed something timer-shaped, so
+  // either answer lands you on a timer, never a dead end. The attach session is
+  // frozen at press time: resolving the store later (e.g. after a stop cleared
+  // it) could flip the render mid-teardown.
+  const [switchChoice, setSwitchChoice] = useState<
+    'pending' | 'go' | { keep: TimerSessionParams } | 'today'
+  >('pending');
 
   if (resolved === null) return <View style={{ flex: 1, backgroundColor: t.colors.bg }} />;
   if (resolved.kind === 'redirect-today') return <Redirect href="/(tabs)" />;
 
   if (resolved.kind === 'confirm-switch') {
-    if (switchChoice === 'cancel') return <Redirect href="/(tabs)" />;
+    if (switchChoice === 'today') return <Redirect href="/(tabs)" />;
     if (switchChoice === 'go') return <TimerScreen session={resolved.session} />;
+    if (typeof switchChoice === 'object') return <TimerScreen session={switchChoice.keep} />;
     return (
       <View style={{ flex: 1, backgroundColor: t.colors.bg }}>
         <SwitchTaskSheet
@@ -132,7 +139,11 @@ function TimerGate() {
           }}
           onCancel={() => {
             haptics.light();
-            setSwitchChoice('cancel');
+            // Re-resolve with BARE params: a running session always attaches
+            // (quick sessions attach as quick). Today only as a race fallback
+            // (session ended while the sheet was up).
+            const attach = resolveTimerRoute({}, useTimerStore.getState());
+            setSwitchChoice(attach.kind === 'session' ? { keep: attach.session } : 'today');
           }}
         />
       </View>
