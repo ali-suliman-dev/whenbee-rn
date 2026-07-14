@@ -111,9 +111,9 @@ export function GoalCoachCard({
       : '');
 
   return (
-    <View style={card} accessibilityLabel={a11y}>
+    <View style={card} accessible accessibilityLabel={a11y}>
       <View style={headRow}>
-        <AppText style={eyebrow}>GOAL · {categoryName.toUpperCase()}</AppText>
+        <AppText style={eyebrow}>GOAL · {categoryName}</AppText>
         <View style={chip}>
           <AppText style={chipText}>goal ±{targetBand}%</AppText>
         </View>

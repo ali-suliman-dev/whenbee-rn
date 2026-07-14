@@ -507,8 +507,9 @@ function makeId(createdAt: number): string {
   return `${createdAt}-${Math.random().toString(36).slice(2)}`;
 }
 
-/** Local hour → a human time-of-day bucket. The label IS what the goal-coach row
- *  phrases ("Your mornings miss widest"), so it returns the plural display form. */
+/** Local hour → a human time-of-day bucket. The label IS what the lever surfaces
+ *  phrase (GoalCard: "Your mornings miss widest"; add-sheet coach: "You land
+ *  closest to your guess in the mornings"), so it returns the plural display form. */
 function timeOfDayBucket(hour: number): string {
   if (hour >= 5 && hour < 12) return 'mornings';
   if (hour >= 12 && hour < 17) return 'afternoons';

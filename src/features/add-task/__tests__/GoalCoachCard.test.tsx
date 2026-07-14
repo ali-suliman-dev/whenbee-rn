@@ -50,3 +50,12 @@ it('is completely non-interactive — no button, no apply affordance', () => {
   expect(screen.queryByText(/or keep/)).toBeNull();
   expect(screen.UNSAFE_queryAllByType(Pressable)).toHaveLength(0);
 });
+
+it('exposes the full status as one accessibility label', () => {
+  render(<GoalCoachCard categoryName="Focused work" info={full} />);
+  expect(
+    screen.getByLabelText(
+      'Goal for Focused work: best within 14 percent, target 10 percent. 3 of your last 7 logs inside the band. You land closest to your guess in the mornings, within 18 percent, versus 42 percent in the afternoons.',
+    ),
+  ).toBeTruthy();
+});
