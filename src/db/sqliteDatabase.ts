@@ -321,6 +321,10 @@ export async function createSqliteDatabase(name = 'whenbee.db'): Promise<Databas
       await db.runAsync('DELETE FROM task_events WHERE category = ?', categoryId);
     },
 
+    async deleteCategoryStat(categoryId: string): Promise<void> {
+      await db.runAsync('DELETE FROM category_stats WHERE category_id = ?', categoryId);
+    },
+
     async listRecentEvents(limit: number): Promise<TaskEventRow[]> {
       const rows = await db.getAllAsync<TaskEventDbRow>(
         'SELECT * FROM task_events ORDER BY created_at DESC LIMIT ?',

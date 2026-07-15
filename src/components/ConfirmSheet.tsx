@@ -27,6 +27,8 @@ export interface ConfirmSheetProps {
   title: string;
   bullets: string[];
   confirmLabel: string;
+  /** Cancel button label. Defaults to 'Cancel'. */
+  cancelLabel?: string;
   onConfirm: () => void;
   onCancel: () => void;
 }
@@ -38,6 +40,7 @@ export function ConfirmSheet({
   title,
   bullets,
   confirmLabel,
+  cancelLabel = 'Cancel',
   onConfirm,
   onCancel,
 }: ConfirmSheetProps) {
@@ -122,7 +125,7 @@ export function ConfirmSheet({
               variant={tone === 'danger' ? 'danger' : 'amber'}
               fullWidth
             />
-            <AppButton label="Cancel" onPress={onCancel} variant="ghost" fullWidth />
+            <AppButton label={cancelLabel} onPress={onCancel} variant="ghost" fullWidth />
           </View>
         </Animated.View>
       </View>

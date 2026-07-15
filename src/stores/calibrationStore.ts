@@ -461,6 +461,8 @@ interface CalibrationState {
    *  "when you're sharpest" / context surface. Never trains the model. */
   loadContextInsights: () => Promise<ContextCorrelation[]>;
   resetCategory: (categoryId: string) => Promise<void>;
+  /** Delete a category outright: its events, stats row, goal, and cache entry. */
+  deleteCategory: (categoryId: string) => Promise<void>;
   /** Clear in-memory caches after a full/learning data wipe. The db itself is
    *  cleared by the dataReset service; this just drops the cached mirrors so the
    *  UI doesn't show stale stats before the next hydrate. */
@@ -1290,6 +1292,23 @@ export const useCalibrationStore = create<CalibrationState>((set, get) => ({
 
     // A reset category starts goal-free — drop any stale goal + celebration so a
     // fresh baseline isn't carried over from the old learning.
+    get().clearGoal(categoryId);
+  },
+
+  deleteCategory: async (categoryId) => {
+    const db = await resolveDb(get, set);
+    const categoryStatsRepo = makeCategoryStatsRepo(db);
+    const taskEventsRepo = makeTaskEventsRepo(db);
+
+    await taskEventsRepo.deleteByCategory(categoryId);
+    await categoryStatsRepo.deleteStat(categoryId);
+
+    set((state) => {
+      const next = { ...state.statsByCategory };
+      delete next[categoryId];
+      return { statsByCategory: next };
+    });
+
     get().clearGoal(categoryId);
   },
 

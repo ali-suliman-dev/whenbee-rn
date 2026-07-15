@@ -11,6 +11,7 @@ import type { CategoryStatRow } from '../types';
 export interface CategoryStatsRepo {
   get(categoryId: string): Promise<CategoryStatRow>;
   upsert(row: CategoryStatRow): Promise<void>;
+  deleteStat(categoryId: string): Promise<void>;
 }
 
 function seedRow(categoryId: string): CategoryStatRow {
@@ -54,6 +55,9 @@ export function makeCategoryStatsRepo(db: Database): CategoryStatsRepo {
     },
     async upsert(row: CategoryStatRow): Promise<void> {
       await db.upsertCategoryStat(row);
+    },
+    async deleteStat(categoryId: string): Promise<void> {
+      await db.deleteCategoryStat(categoryId);
     },
   };
 }

@@ -26,6 +26,7 @@ import { TrendChart } from '@/src/features/category-detail/TrendChart';
 import { RecentList } from '@/src/features/category-detail/RecentList';
 import { GoalCard } from '@/src/features/category-detail/GoalCard';
 import { GoalLocked } from '@/src/features/category-detail/GoalLocked';
+import { ManageAreaCard } from '@/src/features/category-detail/ManageAreaCard';
 import { ProGate } from '@/src/features/paywall/ProGate';
 import { TIERS } from '@/src/engine';
 
@@ -48,13 +49,14 @@ export default function CategoryDetailScreen() {
     adaptSpeed,
     setAdaptSpeed,
     resetCategory,
+    deleteCategory,
+    canDelete,
     justGraduated,
     clearJustGraduated,
     reasonNote,
     isPro,
   } = useCategoryDetail(categoryId);
 
-  const [confirming, setConfirming] = useState(false);
   const [toast, setToast] = useState<string | null>(null);
 
   function showToast(message: string) {
@@ -70,8 +72,12 @@ export default function CategoryDetailScreen() {
 
   async function handleReset() {
     await resetCategory();
-    setConfirming(false);
-    showToast('Start fresh — your honey stays');
+    showToast('Learning reset — your honey stays');
+  }
+
+  async function handleDelete() {
+    await deleteCategory();
+    router.back();
   }
 
   const nextTierIdx = detail ? TIERS.indexOf(detail.tier) + 1 : -1;
@@ -162,44 +168,12 @@ export default function CategoryDetailScreen() {
               <AdaptSegment value={adaptSpeed} onChange={handleSetAdapt} />
             </View>
 
-            {/* Quiet reset */}
-            <View style={styles(t).resetBlock}>
-              {confirming ? (
-                <View style={{ gap: t.space[3] }}>
-                  <Text style={styles(t).resetConfirmCopy}>
-                    Reset this category&apos;s learning? Start fresh — your honey stays.
-                  </Text>
-                  <View style={styles(t).resetActions}>
-                    <Pressable
-                      onPress={() => setConfirming(false)}
-                      accessibilityRole="button"
-                      accessibilityLabel="Keep this category's learning"
-                      style={styles(t).resetCancel}
-                    >
-                      <Text style={styles(t).resetCancelText}>Keep it</Text>
-                    </Pressable>
-                    <Pressable
-                      onPress={handleReset}
-                      accessibilityRole="button"
-                      accessibilityLabel="Confirm reset category learning"
-                      style={styles(t).resetConfirm}
-                    >
-                      <Text style={styles(t).resetConfirmText}>Reset</Text>
-                    </Pressable>
-                  </View>
-                </View>
-              ) : (
-                <Pressable
-                  onPress={() => setConfirming(true)}
-                  accessibilityRole="button"
-                  accessibilityLabel="Reset this category's learning"
-                  style={styles(t).resetLink}
-                >
-                  <Ionicons name="refresh-outline" size={16} color={t.colors.inkSoft} />
-                  <Text style={styles(t).resetLinkText}>Reset this category&apos;s learning</Text>
-                </Pressable>
-              )}
-            </View>
+            <ManageAreaCard
+              categoryName={detail.categoryName}
+              canDelete={canDelete}
+              onConfirmReset={handleReset}
+              onConfirmDelete={handleDelete}
+            />
           </ScrollView>
         ) : (
           <View style={styles(t).loading}>
@@ -298,55 +272,6 @@ function styles(t: ReturnType<typeof useTheme>) {
       fontFamily: 'Jakarta-Bold',
     } as TextStyle,
     tierMeta: { ...(type.caption as unknown as TextStyle), color: t.colors.inkSoft } as TextStyle,
-    resetBlock: { paddingTop: t.space[2] } as ViewStyle,
-    // A quiet filled pill (the same raised `surface` as other interactive wells)
-    // — reads as tappable without a border or the indigo CTA color. Hugs its
-    // content and centers, so it looks like a control, not a line of body text.
-    resetLink: {
-      alignSelf: 'center',
-      flexDirection: 'row',
-      alignItems: 'center',
-      justifyContent: 'center',
-      gap: t.space[2],
-      minHeight: 44,
-      paddingHorizontal: t.space[4],
-      paddingVertical: t.space[2],
-      borderRadius: t.radii.full,
-      borderCurve: 'continuous',
-      backgroundColor: t.colors.surface,
-    } as ViewStyle,
-    resetLinkText: {
-      ...(type.bodySm as unknown as TextStyle),
-      color: t.colors.inkSoft,
-    } as TextStyle,
-    resetConfirmCopy: {
-      ...(type.bodySm as unknown as TextStyle),
-      color: t.colors.ink,
-      textAlign: 'center',
-    } as TextStyle,
-    resetActions: { flexDirection: 'row', justifyContent: 'center', gap: t.space[3] } as ViewStyle,
-    resetCancel: {
-      minHeight: 44,
-      paddingHorizontal: t.space[5],
-      borderRadius: t.radii.full,
-      borderWidth: t.borderWidth.thin,
-      borderColor: t.colors.hairline,
-      alignItems: 'center',
-      justifyContent: 'center',
-    } as ViewStyle,
-    resetCancelText: { ...(type.bodySm as unknown as TextStyle), color: t.colors.ink } as TextStyle,
-    resetConfirm: {
-      minHeight: 44,
-      paddingHorizontal: t.space[5],
-      borderRadius: t.radii.full,
-      backgroundColor: t.colors.primary,
-      alignItems: 'center',
-      justifyContent: 'center',
-    } as ViewStyle,
-    resetConfirmText: {
-      ...(type.bodySm as unknown as TextStyle),
-      color: t.colors.onIndigo,
-    } as TextStyle,
     loading: { flex: 1, alignItems: 'center', justifyContent: 'center' } as ViewStyle,
     loadingText: { ...(type.body as unknown as TextStyle), color: t.colors.inkSoft } as TextStyle,
   };

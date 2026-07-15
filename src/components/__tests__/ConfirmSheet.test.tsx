@@ -25,3 +25,18 @@ describe('ConfirmSheet', () => {
     expect(onCancel).toHaveBeenCalledTimes(1);
   });
 });
+
+describe('ConfirmSheet cancelLabel', () => {
+  it('defaults the cancel button to "Cancel"', () => {
+    const { getByText } = render(
+      <ConfirmSheet {...baseProps} onConfirm={() => {}} onCancel={() => {}} />,
+    );
+    expect(getByText('Cancel')).toBeTruthy();
+  });
+  it('uses a custom cancelLabel when provided', () => {
+    const { getByText } = render(
+      <ConfirmSheet {...baseProps} cancelLabel="Keep it" onConfirm={() => {}} onCancel={() => {}} />,
+    );
+    expect(getByText('Keep it')).toBeTruthy();
+  });
+});
