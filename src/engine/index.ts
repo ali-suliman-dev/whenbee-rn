@@ -1,6 +1,6 @@
 // Public barrel for the pure calibration engine.
 export * from './constants';
-export { CATEGORY_PRIORS, CATEGORY_NAMES, priorFor } from './priors';
+export { priorFor, seededPriorFor, CATEGORY_PRIORS, CATEGORY_NAMES } from './priors';
 export { clampRatio } from './ratio';
 export { alphaFor, alphaRegFor, updateEwma } from './ewma';
 export * from './affine';
@@ -34,7 +34,7 @@ export {
   companionStageFor, capabilityFor, keeperReached, driftHealthFromRecent, COMPANION_KEEPER_QUOTA,
 } from './companion';
 export type { CompanionStage, CompanionCapability, DriftHealth } from './companion';
-export { seedMultiplierFor, provisionalArchetypeMultiplier, buildRevealEcho } from './archetypeSeed';
+export { seedMultiplierFor, provisionalArchetypeMultiplier, buildRevealEcho, sinkCategoryFor } from './archetypeSeed';
 export type { QuizAnswers } from './archetypeSeed';
 export { greetingFor } from './greeting';
 export {

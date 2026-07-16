@@ -23,3 +23,11 @@ export function slugify(name: string): string {
 }
 
 export const MAX_CUSTOM_NAME = 24;
+
+/**
+ * The floor for complete(): if a user somehow reaches the end with nothing
+ * picked, they still get a tracked set. An empty tracked list is unrecoverable
+ * in the UI — calibrationStore.hydrate iterates ONLY tracked categories, so
+ * statsByCategory would stay {} forever and every log would vanish from view.
+ */
+export const DEFAULT_CATEGORY_IDS = ['getting_ready', 'cleaning', 'admin'] as const;

@@ -1,7 +1,8 @@
 import { useCallback, useEffect, useState } from 'react';
 import { router } from 'expo-router';
 import { useCalibrationStore } from '@/src/stores/calibrationStore';
-import { resolveSuggestion, priorFor } from '@/src/engine';
+import { useSettingsStore } from '@/src/stores/settingsStore';
+import { resolveSuggestion, seededPriorFor } from '@/src/engine';
 import { makeTaskEventsRepo } from '@/src/db/repositories/taskEventsRepo';
 import type { FrequentTask } from '@/src/db/queries/frequentTasks';
 
@@ -21,6 +22,7 @@ export function useQuickTasks(): {
 } {
   const db = useCalibrationStore((s) => s.db);
   const statsByCategory = useCalibrationStore((s) => s.statsByCategory);
+  const archetypeSeed = useSettingsStore((s) => s.archetypeSeed);
   const [chips, setChips] = useState<QuickTaskChip[]>([]);
 
   useEffect(() => {
@@ -33,7 +35,7 @@ export function useQuickTasks(): {
 
       const mapped: QuickTaskChip[] = frequent.map((t) => {
         const cached = statsByCategory[t.category];
-        const prior = cached?.priorMult ?? priorFor(t.category);
+        const prior = cached?.priorMult ?? seededPriorFor(t.category, archetypeSeed);
         const cat = cached
           ? { fit: cached.fit, n: cached.n, clampedRatios: cached.clampedRatios ?? [] }
           : { fit: { a: 0, b: prior }, n: 0, clampedRatios: [] };
@@ -60,7 +62,7 @@ export function useQuickTasks(): {
     return () => {
       alive = false;
     };
-  }, [db, statsByCategory]);
+  }, [db, statsByCategory, archetypeSeed]);
 
   // Navigate with params only — no store mutation here. A running session must
   // win until the gate (resolveTimerRoute + TimerGate) confirms the switch;

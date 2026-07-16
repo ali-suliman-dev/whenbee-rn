@@ -35,7 +35,7 @@ export const tokens = {
   // `hitSlop` = extra tap area added via the Pressable hitSlop prop so that small
   // touch targets (secondary buttons, skip links) comfortably meet the 44pt HIG
   // floor without visually enlarging the element.
-  size: { control: { xxs: 28, xs: 32, sm: 36, md: 44, lg: 52 }, coin: 40, wheelCol: 72, wheelRow: 32, shareCard: 340, timelineCol: 110, planCardMin: 70, calTimeCol: 52, gripW: 14, hitSlop: 8, sparkline: 32, honestBand: 180 },
+  size: { control: { xxs: 28, xs: 32, sm: 36, md: 44, lg: 52 }, coin: 40, wheelCol: 72, wheelRow: 32, shareCard: 340, timelineCol: 110, planCardMin: 70, calTimeCol: 52, gripW: 14, hitSlop: 8, sparkline: 32, honestBand: 180, progressPill: 4, chipMinWidth: 120, quizTileWidth: '47%' },
 
   // Icon sizing scale — replaces inline 12/16/18/20/22/24/30 across the app.
   iconSize: { xs: 12, sm: 16, md: 20, lg: 24, xl: 32 },
@@ -94,7 +94,9 @@ export const tokens = {
   // rather than loose. `tight` is the standard display-headline tightening.
   // M4: normal/wide added for plan-screen labels (PlanTaskCard "RUNNING" tag,
   // PlanRail now-pill text). tight stays for display headings.
-  letterSpacing: { tight: -0.5, normal: 0.2, wide: 0.8 },
+  // `display` is a deeper tightening reserved for the largest hero headlines
+  // (onboarding welcome) where `tight` alone reads too loose at that size.
+  letterSpacing: { display: -0.75, tight: -0.5, normal: 0.2, wide: 0.8 },
 
   // Soft elevation for raised/focal cards (CSS box-shadow renders cross-platform).
   // `lift` is a genuinely soft drop (real blur radius + elevation) for a focal
@@ -261,6 +263,10 @@ export const tokens = {
       night: '#1C1E2E', // dark chip on light (aha card)
       nightSoft: '#2C2E40',
       onIndigo: '#FFFFFF', // text on indigo fill (AA 5.1:1 — warm white only hit 4.37)
+      // ── disabled controls ── (see the dark palette for the rationale)
+      controlDisabled: '#E9E4F6', // inert lavender-grey — reads off white AND off the cream bg
+      onControlDisabled: '#6E7183', // 3.88:1 on controlDisabled
+      controlDisabledEdge: '#DAD5C9', // = hairline
       onAmber: '#20233A', // text on amber fill (AA 7.9:1)
       ringTrack: '#E4DFD3', // sits just off cream
       // Soft-edge backing coin behind the ring bee (WhenbeeAvatar 'soft'). Pure white
@@ -345,6 +351,13 @@ export const tokens = {
       night: '#1C1E2E',
       nightSoft: '#2C2E40',
       onIndigo: '#14151D', // dark text on the lighter dark-mode indigo (AA)
+      // ── disabled controls ──
+      // A disabled pill mutes its FACE, never its label: onIndigo is a DARK ink,
+      // so dimming it toward the bright indigo makes it sink into the fill
+      // (1.92:1) instead of greying out. Inert face + legible label = 3.28:1.
+      controlDisabled: '#292B3C', // = surfaceRaised — visibly inert, not the live indigo
+      onControlDisabled: 'rgba(244,241,234,0.40)', // = inkFaint — 3.28:1 on controlDisabled
+      controlDisabledEdge: 'rgba(255,255,255,0.08)', // = hairline — the face is only 1.3:1 off bg
       onAmber: '#20233A',
       ringTrack: 'rgba(255,255,255,0.08)',
       companionCoin: '#292B3C', // = surfaceRaised (a raised lift on the deep bg)

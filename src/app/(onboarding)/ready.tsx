@@ -17,6 +17,7 @@ import { StepProgress } from '@/src/features/onboarding/StepProgress';
 import { onboardingStepIndex, ONBOARDING_TOTAL } from '@/src/features/onboarding/onboardingFlow';
 import { Reveal } from '@/src/features/onboarding/Reveal';
 import { MAX_CUSTOM_NAME } from '@/src/features/onboarding/categories';
+import { useOnce } from '@/src/lib/useOnce';
 
 // Raw (now) → Honest (goal) look-ahead. Not a setup wall — a goal preview.
 const MASTERY_TRAIL = [
@@ -34,11 +35,14 @@ export default function Ready() {
   const { saveName } = usePersonalize();
   const [nickname, setNickname] = useState('');
 
-  function timeFirstThing() {
+  const timeFirstThing = useOnce(() => {
     saveName(nickname.trim() || undefined);
     complete();
+    // Anchor (tabs) beneath first: (modals) live on the root stack, so pushing
+    // the sheet without the anchor traps the user in the drawer on dismiss.
     router.replace('/(tabs)');
-  }
+    router.push('/(modals)/add-task');
+  });
 
   return (
     <Screen backdrop={<OnboardingBackdrop />}>
@@ -54,7 +58,7 @@ export default function Ready() {
                 fontSize: t.fontSize.xl,
                 fontWeight: t.fontWeight.bold as '700',
                 color: t.colors.ink,
-                letterSpacing: -0.6,
+                letterSpacing: t.letterSpacing.tight,
               }}
             >
               One tap to start. One tap to ripen.
@@ -63,7 +67,7 @@ export default function Ready() {
           <Reveal index={1}>
             <AppText
               variant="body"
-              style={{ color: t.colors.inkSoft, lineHeight: t.fontSize.base * 1.5 }}
+              style={{ color: t.colors.inkSoft, lineHeight: t.fontSize.base * t.lineHeight.relaxed }}
             >
               From your first guess, I&apos;ll show honest times. Each task you log
               makes them sharper, and I&apos;ll never scold you for a gap.

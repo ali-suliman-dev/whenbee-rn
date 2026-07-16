@@ -51,7 +51,7 @@ export const QUIZ_QUESTIONS: readonly QuizQuestionDef[] = [
     prompt: 'Where does time run away from you most?',
     layout: 'tile',
     options: [
-      { value: 'meetings', label: 'Meetings',  glyph: 'sink_meetings' },
+      { value: 'meetings', label: 'Calls & meetings', glyph: 'sink_meetings' },
       { value: 'chores',   label: 'Chores',    glyph: 'sink_chores' },
       { value: 'errands',  label: 'Errands',   glyph: 'sink_errands' },
       { value: 'deepwork', label: 'Deep work', glyph: 'sink_deepwork' },

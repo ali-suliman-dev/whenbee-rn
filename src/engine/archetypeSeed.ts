@@ -3,12 +3,28 @@
 // provisional time-personality moves toward the truth as data accumulates. The quiz
 // asks about BIAS/STYLE, never durations, so this never substitutes for calibration.
 import { ARCHETYPE_SEED_PACE, ARCHETYPE_SEED_RABBIT_BUMP, ARCHETYPE_SEED_PSEUDO, RATIO_CEIL } from './constants';
+import type { PaceAnswer, MidAnswer, FocusAnswer, SinkAnswer } from '@/src/domain/types';
 
 export interface QuizAnswers {
-  pace: 'about' | 'bit' | 'lot' | 'lose';
-  mid?: 'track' | 'rabbit';
-  focus?: 'morning' | 'evening' | 'varies';
-  sink?: 'meetings' | 'chores' | 'errands' | 'deepwork';
+  pace: PaceAnswer;
+  mid?: MidAnswer;
+  focus?: FocusAnswer;
+  sink?: SinkAnswer;
+}
+
+/** Q3's answer → the category it names. Every value MUST exist in
+ *  CATEGORY_PRIORS: an unpriced id would silently fall back to GLOBAL_PRIOR and
+ *  the bump would land on nothing. The option LABELS are worded to match these
+ *  categories — keep them in sync (quizQuestions.ts). */
+const SINK_CATEGORY: Record<SinkAnswer, string> = {
+  meetings: 'calls',
+  chores: 'cleaning',
+  errands: 'errands',
+  deepwork: 'creative',
+};
+
+export function sinkCategoryFor(sink: SinkAnswer): string {
+  return SINK_CATEGORY[sink];
 }
 
 export function seedMultiplierFor(a: QuizAnswers): number {

@@ -6,7 +6,7 @@ import { useEntitlement } from '@/src/features/paywall/useEntitlement';
 import { getCalendar, type CalendarEvent } from '@/src/services/calendar';
 import { honestDayLoad, type DayLoadResult } from '@/src/engine/honestDayLoad';
 import { WAKING_WINDOW_MIN } from '@/src/engine/constants';
-import { resolveSuggestion, priorFor } from '@/src/engine';
+import { resolveSuggestion, seededPriorFor } from '@/src/engine';
 import { useScheduledRoutines } from './useScheduledRoutines';
 
 // ──────────────────────────────────────────────────────────────────────────────
@@ -38,6 +38,7 @@ export function useDayCapacity(_nowMs?: number): DayCapacityResult {
   const statsByCategory = useCalibrationStore((s) => s.statsByCategory);
   const showEvents = useSettingsStore((s) => s.calendar.showEvents);
   const enabledCalendarIds = useSettingsStore((s) => s.calendar.enabledCalendarIds);
+  const archetypeSeed = useSettingsStore((s) => s.archetypeSeed);
   const isPro = useEntitlement((s) => s.isPro);
 
   const [status, setStatus] = useState<DayCapacityStatus>('loading');
@@ -63,14 +64,14 @@ export function useDayCapacity(_nowMs?: number): DayCapacityResult {
         const cached = statsByCategory[t.category];
         const cat = cached
           ? { fit: cached.fit, n: cached.n }
-          : { fit: { a: 0, b: priorFor(t.category) }, n: 0 };
+          : { fit: { a: 0, b: seededPriorFor(t.category, archetypeSeed) }, n: 0 };
         return resolveSuggestion({ guessMinutes: t.guessMin, category: cat, recurring: null })
           .honestMinutes;
       });
     // Each scheduled routine counts as one block (its honest total) — Pro only.
     const routineMins = isPro ? routineBlocks.map((b) => b.honestTotalMin) : [];
     return [...taskMins, ...routineMins];
-  }, [dayTasks, statsByCategory, routineBlocks, isPro]);
+  }, [dayTasks, statsByCategory, routineBlocks, isPro, archetypeSeed]);
 
   // ── Calendar async effect ─────────────────────────────────────────────────
   // Runs when Pro + showEvents. Respects the per-calendar filter (empty list =

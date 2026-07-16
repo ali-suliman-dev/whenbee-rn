@@ -9,7 +9,8 @@ import { AppText } from '@/src/components/AppText';
 import { TaskTitleField } from '@/src/components/TaskTitleField';
 import { useRoutinesStore } from '@/src/stores/routinesStore';
 import { useCalibrationStore } from '@/src/stores/calibrationStore';
-import { priorFor, TRANSITION_PRIOR } from '@/src/engine';
+import { useSettingsStore } from '@/src/stores/settingsStore';
+import { seededPriorFor, TRANSITION_PRIOR } from '@/src/engine';
 import { buildRoutineRail } from './routineRailModel';
 import { RoutineRail } from './RoutineRail';
 import { AnimatedHonestTotal } from './AnimatedHonestTotal';
@@ -40,10 +41,11 @@ export function RoutineBuildView({ onDone, onBack }: { onDone: () => void; onBac
   const setDoneBy = useRoutinesStore((s) => s.setDoneBy);
   const saveDraft = useRoutinesStore((s) => s.saveDraft);
   const statsByCategory = useCalibrationStore((s) => s.statsByCategory);
+  const archetypeSeed = useSettingsStore((s) => s.archetypeSeed);
 
   const [sheet, setSheet] = useReducer(sheetReducer, { kind: 'none' } as SheetState);
 
-  const mFor = (c: string) => statsByCategory[c]?.mEffective ?? priorFor(c);
+  const mFor = (c: string) => statsByCategory[c]?.mEffective ?? seededPriorFor(c, archetypeSeed);
 
   const model = useMemo(
     () =>
@@ -54,7 +56,7 @@ export function RoutineBuildView({ onDone, onBack }: { onDone: () => void; onBac
         doneByMinuteOfDay: draft.doneByMinuteOfDay,
       }),
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [draft.steps, draft.doneByMinuteOfDay, statsByCategory],
+    [draft.steps, draft.doneByMinuteOfDay, statsByCategory, archetypeSeed],
   );
 
   const canSave = draft.name.trim().length > 0 && draft.steps.length > 0;

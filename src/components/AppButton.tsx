@@ -107,7 +107,7 @@ export function AppButton({
     indigo: t.colors.onIndigo,
     amber: t.colors.onAmber,
     ghost: t.colors.ink,
-    danger: '#FFFFFF',
+    danger: t.colors.onIndigo, // was '#FFFFFF' — hardcoded hex, now a token
   };
   const edge: Record<NewVariant, string> = {
     indigo: t.colors.primaryEdge,
@@ -115,6 +115,14 @@ export function AppButton({
     ghost: 'transparent',
     danger: t.colors.dangerEdge,
   };
+
+  // A disabled control mutes its FACE, never its label. onIndigo/onAmber are DARK
+  // inks — fading them toward a bright fill makes them sink in (1.92:1) rather
+  // than grey out. Inert face + full-opacity label reads as 3.28:1 and is
+  // unmistakably not the live control.
+  const faceColor = disabled ? t.colors.controlDisabled : bg[resolved];
+  const labelColor = disabled ? t.colors.onControlDisabled : fg[resolved];
+  const edgeColor = disabled ? t.colors.controlDisabledEdge : edge[resolved];
 
   // Filled pills drop onto the edge; ghost squeezes. One shared value per path.
   const pressY = useSharedValue(0);
@@ -160,25 +168,27 @@ export function AppButton({
     height: PILL_H,
     borderRadius: t.radii.md,
     borderCurve: 'continuous',
-    backgroundColor: edge[resolved],
+    backgroundColor: edgeColor,
   };
 
   const pillContainer: ViewStyle = {
     height: PILL_H,
     borderRadius: t.radii.md,
     borderCurve: 'continuous',
-    backgroundColor: bg[resolved],
-    // Disabled keeps the FACE and edge fully solid/opaque (a real raised coin
-    // edge) — only the LABEL mutes. Never put opacity on the face or wrapper:
-    // it composites the whole pill and the edge stops reading as an edge.
+    backgroundColor: faceColor,
+    // Disabled mutes the FACE (see faceColor above). Never put opacity on the
+    // face or wrapper: it composites the whole pill and the edge stops reading
+    // as an edge.
     // Android drops the corner clip on press-layer promotion, squaring the pill.
     // overflow:hidden pins the rounded clip. (Edge is a sibling, not clipped.)
     overflow: 'hidden',
     alignItems: 'center',
     justifyContent: 'center',
     paddingHorizontal: padX,
-    // Ghost reads as a flat outlined control — hairline border, no depth.
-    ...(isGhost ? { borderWidth: t.borderWidth.hairline, borderColor: t.colors.border } : null),
+    // The disabled face sits only ~1.3:1 off the page — a hairline holds its shape.
+    ...(isGhost || disabled
+      ? { borderWidth: t.borderWidth.hairline, borderColor: disabled ? edgeColor : t.colors.border }
+      : null),
   };
 
   return (
@@ -193,18 +203,18 @@ export function AppButton({
       onPressOut={handlePressOut}
       style={wrapper}
     >
-      {/* Solid colored depth edge behind FILLED pills only */}
-      {isGhost ? null : <View style={edgeBase} />}
+      {/* Solid colored depth edge behind FILLED pills only. A disabled pill is
+          flat: it is not a live coin, so it gets no raised edge. */}
+      {isGhost || disabled ? null : <View style={edgeBase} />}
 
-      {/* Pill surface (face + edge stay fully solid) */}
-      <Animated.View style={[pillContainer, pillStyle]}>
-        {/* Only the CONTENT dims when disabled — face + coin edge stay opaque. */}
+      <Animated.View testID="appbutton-face" style={[pillContainer, pillStyle]}>
         <View
+          testID="appbutton-content"
           style={{
             flexDirection: 'row',
             alignItems: 'center',
             gap: t.space[2],
-            opacity: disabled ? t.opacity.disabled : 1,
+            opacity: 1,
           }}
         >
           {icon ?? null}
@@ -212,7 +222,7 @@ export function AppButton({
             style={{
               fontSize: labelSize,
               fontWeight: t.fontWeight.bold as TextStyle['fontWeight'],
-              color: fg[resolved],
+              color: labelColor,
             }}
           >
             {label}

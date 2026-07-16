@@ -19,9 +19,10 @@
 import { useMemo } from 'react';
 import { useDayTasksStore } from '@/src/stores/dayTasksStore';
 import { useCalibrationStore } from '@/src/stores/calibrationStore';
+import { useSettingsStore } from '@/src/stores/settingsStore';
 import { useDayCapacity } from '@/src/features/today/useDayCapacity';
 import { useLearnedFocusWindow } from '@/src/features/planner/useLearnedFocusWindow';
-import { resolveSuggestion, priorFor } from '@/src/engine';
+import { resolveSuggestion, seededPriorFor } from '@/src/engine';
 import { orderForFocus } from '@/src/engine/focusOrder';
 import { planDayAroundAnchors } from '@/src/engine/planDayAroundAnchors';
 import type { PlanTaskInput, PlanResult } from '@/src/domain/types';
@@ -74,6 +75,7 @@ export function useDayPlan(nowMs?: number): UseDayPlanResult {
 
   // ── Calibration stats ────────────────────────────────────────────────────────
   const statsByCategory = useCalibrationStore((s) => s.statsByCategory);
+  const archetypeSeed = useSettingsStore((s) => s.archetypeSeed);
 
   // ── Calendar anchors (timed events only — all-day events are NOT anchors) ───
   // We pass nowMs through so tests can override the clock.
@@ -95,7 +97,7 @@ export function useDayPlan(nowMs?: number): UseDayPlanResult {
       const cached = statsByCategory[t.category];
       const cat = cached
         ? { fit: cached.fit, n: cached.n }
-        : { fit: { a: 0, b: priorFor(t.category) }, n: 0 };
+        : { fit: { a: 0, b: seededPriorFor(t.category, archetypeSeed) }, n: 0 };
       const { honestMinutes } = resolveSuggestion({
         guessMinutes: t.guessMin,
         category: cat,
@@ -103,7 +105,7 @@ export function useDayPlan(nowMs?: number): UseDayPlanResult {
       });
       return { task: t, honestMin: honestMinutes };
     });
-  }, [queuedTasks, statsByCategory]);
+  }, [queuedTasks, statsByCategory, archetypeSeed]);
 
   // ── Ordering: manual drag order wins, else focus-aware ordering ───────────
   // When the day has a user-set manual order (Task 4: drag-to-reorder), honor

@@ -6,7 +6,7 @@ import {
   DEFAULT_GUARDRAIL,
   DEFAULT_FORGOT_STEP_IN,
 } from '@/src/engine/constants';
-import type { GuardrailMultiple, ForgotStepIn } from '@/src/domain/types';
+import type { GuardrailMultiple, ForgotStepIn, ArchetypeSeed } from '@/src/domain/types';
 import type { QuietHours } from '@/src/lib/notifyTiming';
 import {
   type StripVariant,
@@ -75,8 +75,8 @@ interface SettingsState {
   displayName?: string;
   setDisplayName: (name: string | undefined) => void;
   /** Provisional archetype seed from the onboarding quiz; washes out as data grows. */
-  archetypeSeed?: { m0: number; source: 'quiz'; tookAt: number };
-  setArchetypeSeed: (seed: { m0: number; source: 'quiz'; tookAt: number }) => void;
+  archetypeSeed?: ArchetypeSeed;
+  setArchetypeSeed: (seed: ArchetypeSeed) => void;
   /** End-of-day, minutes after local midnight (0–1439). Durable, set once, reused
    *  daily. Independent of any per-plan planner deadline. */
   dayEndMin: number;

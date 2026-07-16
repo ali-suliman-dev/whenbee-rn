@@ -1,0 +1,445 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Whenbee — Onboarding audit, 2026-07-15</title>
+<style>
+  :root{
+    --bg:#14151D; --surface:#1F2130; --raised:#292B3C; --sunken:#15161F;
+    --hairline:rgba(255,255,255,0.08); --border:rgba(255,255,255,0.14);
+    --ink:#F4F1EA; --inkSoft:#ADA9B5; --inkFaint:rgba(244,241,234,0.40);
+    --primary:#8275F0; --primaryEdge:#6B5BE6; --primarySoft:rgba(130,117,240,0.22);
+    --primaryWash:rgba(130,117,240,0.10); --onIndigo:#14151D;
+    --accent:#EEAE4D; --accentSoft:rgba(238,174,77,0.18); --accentChip:#2E2A20;
+    --danger:#E06464; --dangerSoft:rgba(224,100,100,0.16);
+    --success:#33B07C; --successSoft:rgba(51,176,124,0.18);
+    --r-sm:8px; --r-md:12px; --r-card:16px; --r-full:999px;
+    --s1:4px; --s2:8px; --s3:12px; --s4:16px; --s5:20px; --s6:24px; --s8:32px; --s10:40px; --s12:48px; --s16:64px;
+    --mono:'Menlo','SFMono-Regular',ui-monospace,monospace;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{
+    background:var(--bg); color:var(--ink);
+    font:400 16px/1.6 -apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-serif;
+    -webkit-font-smoothing:antialiased; padding:var(--s10) var(--s5) var(--s16);
+  }
+  .wrap{max-width:1080px;margin:0 auto}
+  h1{font-size:38px;line-height:1.15;letter-spacing:-0.5px;font-weight:700;margin-bottom:var(--s3)}
+  h2{font-size:26px;line-height:1.2;letter-spacing:-0.5px;font-weight:700;margin:var(--s16) 0 var(--s2)}
+  h3{font-size:18px;font-weight:600;margin:var(--s6) 0 var(--s3)}
+  p{color:var(--inkSoft);margin-bottom:var(--s3)}
+  p strong,li strong{color:var(--ink);font-weight:600}
+  code{font-family:var(--mono);font-size:0.85em;background:var(--sunken);border:1px solid var(--hairline);border-radius:var(--r-sm);padding:2px 6px;color:var(--ink)}
+  pre{font-family:var(--mono);font-size:12.5px;line-height:1.65;background:var(--sunken);border:1px solid var(--hairline);border-radius:var(--r-md);padding:var(--s4);overflow-x:auto;color:var(--inkSoft);margin:var(--s3) 0}
+  pre .c{color:rgba(244,241,234,0.32)} pre .k{color:var(--primary)} pre .s{color:var(--accent)} pre .bad{color:var(--danger)} pre .good{color:var(--success)}
+  .lede{font-size:18px;color:var(--inkSoft);max-width:68ch;margin-bottom:var(--s6)}
+  .eyebrow{font-size:10px;letter-spacing:1.6px;text-transform:uppercase;color:var(--inkFaint);font-weight:600;margin-bottom:var(--s2)}
+  .card{background:var(--surface);border:1px solid var(--hairline);border-radius:var(--r-card);padding:var(--s5);margin:var(--s4) 0}
+  .verdict{border:1px solid var(--danger);background:var(--dangerSoft);border-radius:var(--r-card);padding:var(--s5) var(--s6);margin:var(--s6) 0 var(--s10)}
+  .verdict .big{font-size:26px;font-weight:700;letter-spacing:-0.5px;color:var(--ink);margin-bottom:var(--s2)}
+  .verdict p{color:rgba(244,241,234,0.72);margin:0;max-width:70ch}
+  .tag{display:inline-flex;align-items:center;gap:6px;font-size:11px;font-weight:600;letter-spacing:0.4px;padding:4px 10px;border-radius:var(--r-full);white-space:nowrap}
+  .t-block{background:var(--dangerSoft);color:var(--danger);border:1px solid rgba(224,100,100,0.32)}
+  .t-warn{background:var(--accentSoft);color:var(--accent);border:1px solid rgba(238,174,77,0.32)}
+  .t-poli{background:var(--primarySoft);color:var(--primary);border:1px solid rgba(130,117,240,0.32)}
+  .t-ok{background:var(--successSoft);color:var(--success);border:1px solid rgba(51,176,124,0.32)}
+  .head-row{display:flex;align-items:center;gap:var(--s3);flex-wrap:wrap;margin:var(--s16) 0 var(--s2)}
+  .head-row h2{margin:0}
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:var(--s4)}
+  .grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:var(--s4)}
+  @media(max-width:820px){.grid2,.grid3{grid-template-columns:1fr}}
+  .ba{border-radius:var(--r-card);border:1px solid var(--hairline);overflow:hidden;background:var(--surface)}
+  .ba > .lbl{font-size:10px;letter-spacing:1.4px;text-transform:uppercase;font-weight:700;padding:var(--s3) var(--s4);border-bottom:1px solid var(--hairline)}
+  .ba.now > .lbl{color:var(--danger);background:var(--dangerSoft)}
+  .ba.fix > .lbl{color:var(--success);background:var(--successSoft)}
+  .ba .body{padding:var(--s5)}
+  /* flow diagram */
+  .flow{display:flex;flex-direction:column;gap:var(--s2);font-family:var(--mono);font-size:12px}
+  .node{display:flex;align-items:center;gap:var(--s2);padding:var(--s2) var(--s3);border-radius:var(--r-sm);border:1px solid var(--hairline);background:var(--raised);color:var(--ink)}
+  .node.dead{border-color:rgba(224,100,100,0.4);background:var(--dangerSoft);color:var(--danger)}
+  .node.live{border-color:rgba(51,176,124,0.4);background:var(--successSoft);color:var(--success)}
+  .node.seed{border-color:rgba(238,174,77,0.4);background:var(--accentSoft);color:var(--accent)}
+  .arrow{color:var(--inkFaint);font-family:var(--mono);font-size:12px;padding-left:var(--s3)}
+  .arrow.bad{color:var(--danger)}
+  /* answers table */
+  table{width:100%;border-collapse:collapse;margin:var(--s3) 0;font-size:14px}
+  th{text-align:left;font-size:10px;letter-spacing:1.2px;text-transform:uppercase;color:var(--inkFaint);font-weight:700;padding:var(--s2) var(--s3);border-bottom:1px solid var(--border)}
+  td{padding:var(--s3);border-bottom:1px solid var(--hairline);color:var(--inkSoft);vertical-align:top}
+  td:first-child{color:var(--ink);font-family:var(--mono);font-size:12.5px}
+  tr:last-child td{border-bottom:none}
+  /* phone silhouettes */
+  .phones{display:flex;gap:var(--s5);flex-wrap:wrap;justify-content:center}
+  .phone{width:150px}
+  .phone .scr{height:300px;border:1px solid var(--border);border-radius:18px;background:var(--bg);padding:8px;display:flex;flex-direction:column;gap:5px;position:relative;overflow:hidden}
+  .phone .cap{text-align:center;font-size:11px;color:var(--inkFaint);margin-top:var(--s2);font-family:var(--mono)}
+  .bar{height:3px;border-radius:2px;background:var(--primary)}
+  .bar.off{background:var(--raised)}
+  .barrow{display:flex;gap:3px}
+  .blk{border-radius:4px;background:var(--raised)}
+  .blk.txt{height:7px;background:rgba(244,241,234,0.22)}
+  .blk.txt.w70{width:70%} .blk.txt.w50{width:50%} .blk.txt.w90{width:90%}
+  .blk.tile{height:34px;background:var(--raised);border:1px solid var(--hairline)}
+  .blk.hero{height:26px;background:rgba(244,241,234,0.30);border-radius:3px}
+  .tiles{display:grid;grid-template-columns:1fr 1fr;gap:5px}
+  .void{flex:1;border:1px dashed rgba(224,100,100,0.45);border-radius:6px;background:rgba(224,100,100,0.06);display:flex;align-items:center;justify-content:center;color:var(--danger);font-size:9px;font-family:var(--mono);letter-spacing:0.5px}
+  .void.ok{border-color:rgba(51,176,124,0.3);background:rgba(51,176,124,0.05);color:var(--success)}
+  .cta{height:26px;border-radius:var(--r-full);background:var(--primary);display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:700;color:var(--onIndigo)}
+  .cta.dis{color:rgba(20,21,29,0.4)}
+  .cta.fixed{background:var(--raised);color:var(--inkFaint)}
+  /* button demo */
+  .btnrow{display:flex;flex-direction:column;gap:var(--s3);align-items:stretch}
+  .btn{height:44px;border-radius:var(--r-full);display:flex;align-items:center;justify-content:center;font-size:15px;font-weight:700}
+  .btn.live{background:var(--primary);color:var(--onIndigo)}
+  .btn.dis-now{background:var(--primary);color:rgba(20,21,29,0.4)}
+  .btn.dis-fix{background:var(--raised);color:var(--inkFaint);border:1px solid var(--hairline)}
+  .ratio{font-family:var(--mono);font-size:11px;margin-top:6px;letter-spacing:0.3px}
+  .ratio.bad{color:var(--danger)} .ratio.ok{color:var(--success)} .ratio.neutral{color:var(--inkFaint)}
+  .reason{font-size:12px;color:var(--inkFaint);text-align:center;margin-bottom:6px}
+  ul{margin:0 0 var(--s3) var(--s5);color:var(--inkSoft)} li{margin-bottom:6px}
+  .kv{display:flex;gap:var(--s2);font-size:12px;font-family:var(--mono);color:var(--inkFaint);margin-top:var(--s2)}
+  .foot{margin-top:var(--s16);padding-top:var(--s5);border-top:1px solid var(--hairline);color:var(--inkFaint);font-size:13px}
+  .taps{display:flex;align-items:center;gap:var(--s2);flex-wrap:wrap;font-family:var(--mono);font-size:12px;color:var(--inkSoft)}
+  .tap{padding:6px 10px;border-radius:var(--r-sm);background:var(--raised);border:1px solid var(--hairline);color:var(--ink)}
+  .tap.bad{border-color:rgba(224,100,100,0.4);color:var(--danger);background:var(--dangerSoft)}
+  .tap.goal{border-color:rgba(51,176,124,0.4);color:var(--success);background:var(--successSoft)}
+  .note{font-size:13px;color:var(--inkFaint);border-left:2px solid var(--border);padding-left:var(--s3);margin:var(--s3) 0}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <div class="eyebrow">Whenbee · audit · 2026-07-15</div>
+  <h1>The onboarding's craft is ahead of its wiring.</h1>
+  <p class="lede">Seven screens, mapped from source and captured on the simulator. The writing has voice, the reveal is genuinely good, the motion is mostly disciplined. And the flow collects four answers, shows you a personalized multiplier, then quietly uses a population average anyway.</p>
+
+  <div class="card" style="border-color:var(--success);background:var(--successSoft)">
+    <div class="eyebrow" style="color:var(--success)">✅ Implemented — branch worktree-feat+onboarding-wiring · 2026-07-16</div>
+    <p style="margin:0;color:var(--ink)">All three blockers and the accepted findings shipped as 17 reviewed TDD tasks (~1962 tests passing). The quiz seed now reaches the honest number — <strong>verified live on the simulator</strong>: same task + guess, a Dreamer lands on band 25–35 and a Steady Reader on 18–20. Dropped by founder decision: the dead-space finding and the FadeInDown change (rule carved out in CLAUDE.md). See the Decisions log below.</p>
+  </div>
+  <div class="verdict">
+    <div class="big">❌ Not production-ready — 3 blockers, all silent</div>
+    <p>None of them throw. None of them show an error. A user hits all three and just… never gets a personalized honest number. That's the worst failure mode available for a product whose entire wedge is calibration.</p>
+  </div>
+
+  <!-- BLOCKER 1 -->
+  <div class="head-row"><span class="tag t-block">🔴 Blocker 1</span><h2>The quiz result never reaches the honest number</h2></div>
+  <p>The reveal computes <code>m0</code>, prints "2.4×", and says <em>"Now you know by how much."</em> The engine never reads it. <code>archetypeSeed</code> has <strong>exactly two readers in the whole codebase</strong> — both the Patterns tab's card label.</p>
+
+  <div class="grid2">
+    <div class="ba now">
+      <div class="lbl">Now — m0 dead-ends at a label</div>
+      <div class="body">
+        <div class="flow">
+          <div class="node">quiz answers <span style="color:var(--inkFaint)">pace · mid</span></div>
+          <div class="arrow">↓ seedMultiplierFor()</div>
+          <div class="node seed">m0 = 2.4 &nbsp;<span style="opacity:.7">archetypeSeed.ts:14-18</span></div>
+          <div class="arrow">↓ setArchetypeSeed()</div>
+          <div class="node">settingsStore.archetypeSeed</div>
+          <div class="arrow bad">↓ only 2 readers, both cosmetic</div>
+          <div class="node dead">usePatterns.ts:406,416 → card label</div>
+          <div class="arrow bad">✕ never reaches the engine</div>
+          <div class="node dead">honest number ← priorFor(category)</div>
+        </div>
+        <div class="kv">blendWithPrior(n, logEwma, <span style="color:var(--danger)">prior</span>) ← m0 never passed here</div>
+      </div>
+    </div>
+    <div class="ba fix">
+      <div class="lbl">Fix — seed anchors the prior, decays out</div>
+      <div class="body">
+        <div class="flow">
+          <div class="node">quiz answers <span style="color:var(--inkFaint)">pace · mid</span></div>
+          <div class="arrow">↓ seedMultiplierFor()</div>
+          <div class="node seed">m0 = 2.4</div>
+          <div class="arrow">↓</div>
+          <div class="node">settingsStore.archetypeSeed</div>
+          <div class="arrow" style="color:var(--success)">↓ seededPriorFor(category, m0)</div>
+          <div class="node live">prior = priorFor(cat) × (m0 / mean)</div>
+          <div class="arrow" style="color:var(--success)">↓ blendWithPrior(n, ewma, prior)</div>
+          <div class="node live">honest number — personal from task #1</div>
+        </div>
+        <div class="kv" style="color:var(--success)">real logs wash the seed out as n grows</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h3 style="margin-top:0">What this costs, concretely</h3>
+    <p>A <strong>Dreamer</strong> (m0 ≈ 3.0) and a <strong>Steady Reader</strong> (m0 ≈ 1.15) both guess 15 min on <code>admin</code>. They answered the quiz completely differently. They get the identical number:</p>
+    <div class="grid2" style="margin-top:var(--s4)">
+      <div style="text-align:center;padding:var(--s4);background:var(--sunken);border:1px solid var(--hairline);border-radius:var(--r-md)">
+        <div class="eyebrow">Dreamer · m0 3.0</div>
+        <div style="font-size:36px;font-weight:700;color:var(--accent);letter-spacing:-0.5px">~35<span style="font-size:16px;color:var(--inkFaint)"> min</span></div>
+        <div class="ratio neutral">15 × priorFor('admin') = 2.2</div>
+      </div>
+      <div style="text-align:center;padding:var(--s4);background:var(--sunken);border:1px solid var(--hairline);border-radius:var(--r-md)">
+        <div class="eyebrow">Steady Reader · m0 1.15</div>
+        <div style="font-size:36px;font-weight:700;color:var(--accent);letter-spacing:-0.5px">~35<span style="font-size:16px;color:var(--inkFaint)"> min</span></div>
+        <div class="ratio neutral">15 × priorFor('admin') = 2.2</div>
+      </div>
+    </div>
+    <p style="margin-top:var(--s4);margin-bottom:0"><strong>Identical.</strong> The quiz result is discarded by the engine and shown back only as a label. That's not a missing feature — it's the reveal making a claim the app doesn't honor.</p>
+  </div>
+
+<pre><span class="c">// src/engine/priors.ts — new</span>
+<span class="c">/** Population prior, personalized by the quiz seed while the category is cold.
+ *  m0 is a whole-person read; the category prior carries the shape. Blend, don't replace. */</span>
+<span class="k">export function</span> seededPriorFor(categoryId: <span class="k">string</span>, m0: <span class="k">number</span> | <span class="k">undefined</span>): <span class="k">number</span> {
+  <span class="k">const</span> prior = priorFor(categoryId);
+  <span class="k">if</span> (m0 === <span class="k">undefined</span>) <span class="k">return</span> prior;           <span class="c">// skip path → today's behavior exactly</span>
+  <span class="k">return</span> clampRatio(prior * (m0 / POPULATION_MEAN_M));
+}
+
+<span class="c">// then thread settingsStore.archetypeSeed?.m0 into the call sites, starting with</span>
+<span class="c">// useAddTask.ts:168 (the decision moment) and useToday.ts:102</span></pre>
+
+  <p class="note"><strong>TDD required</strong> (engine layer). Tests first: Dreamer ≠ Steady Reader on the same guess · seed influence decays to nil by <code>n ≥ SHARPNESS_WINDOW</code> · no seed → identical to today · honey/sharpness stays monotonic.</p>
+
+  <!-- BLOCKER 2 -->
+  <div class="head-row"><span class="tag t-block">🔴 Blocker 2</span><h2>Two of the four questions are dead</h2></div>
+  <p>You ask four questions. Two change behavior. Two cost the user friction and return nothing.</p>
+
+  <table>
+    <thead><tr><th style="width:70px">Answer</th><th>Question</th><th style="width:44%">Where it actually goes</th><th style="width:90px">Verdict</th></tr></thead>
+    <tbody>
+      <tr>
+        <td>pace</td>
+        <td>"When you plan your day, things usually take…"</td>
+        <td><code>ARCHETYPE_SEED_PACE[a.pace]</code> → m0. The only gate — <code>quizComplete()</code> checks <code>pace</code> alone.</td>
+        <td><span class="tag t-ok">live</span></td>
+      </tr>
+      <tr>
+        <td>mid</td>
+        <td>"Mid-task, you usually…"</td>
+        <td>Only <code>'rabbit'</code> acts (<code>m *= RABBIT_BUMP</code>). <code>'track'</code> is a no-op on the multiplier.</td>
+        <td><span class="tag t-ok">live·½</span></td>
+      </tr>
+      <tr>
+        <td>sink</td>
+        <td>"Where does time run away from you most?"</td>
+        <td>Builds a <strong>string</strong>. That's it. <code>buildRevealEcho</code> → "rabbit-hole on deep work". Never reaches engine, db, or category weighting.</td>
+        <td><span class="tag t-block">dead</span></td>
+      </tr>
+      <tr>
+        <td>focus</td>
+        <td>"You focus best…"</td>
+        <td>One Patterns row. <strong>Does NOT feed the focus-window planner</strong> — <code>focusWindowLearn.ts</code> learns from logged <code>startLocalMinute</code> and ignores the stated answer entirely.</td>
+        <td><span class="tag t-block">dead</span></td>
+      </tr>
+    </tbody>
+  </table>
+
+  <p><code>focus</code> is the worse offender: a planner that <em>could</em> honor it exists, and doesn't. The user declares "I focus best in mornings" and the planner relearns it from scratch.</p>
+
+  <div class="grid2">
+    <div class="ba now"><div class="lbl">Now — 7 screens, 4 questions, 2 payoffs</div><div class="body">
+      <div class="flow">
+        <div class="node">welcome</div>
+        <div class="node live">quiz/0 · pace → m0</div>
+        <div class="node live">quiz/1 · mid → m0 ×1.15</div>
+        <div class="node dead">quiz/2 · sink → a string</div>
+        <div class="node dead">quiz/3 · focus → nothing</div>
+        <div class="node">reveal</div>
+        <div class="node">categories <span style="color:var(--danger)">← asks sink again</span></div>
+        <div class="node">ready</div>
+      </div>
+    </div></div>
+    <div class="ba fix"><div class="lbl">Fix — keep all 4, make all 4 pay (founder call)</div><div class="body">
+      <div class="flow">
+        <div class="node">welcome</div>
+        <div class="node live">quiz/0 · pace → m0</div>
+        <div class="node live">quiz/1 · mid → m0 ×1.15</div>
+        <div class="node live">quiz/2 · sink → bumps that category's prior</div>
+        <div class="node live">quiz/3 · focus → day-1 stated block</div>
+        <div class="node">reveal</div>
+        <div class="node live">categories <span style="opacity:.7">← sink preselected</span></div>
+        <div class="node">ready → opens add-task</div>
+      </div>
+      <p style="margin:var(--s4) 0 0;font-size:13px"><strong>Better than cutting.</strong> <code>sink</code> maps to a real category (chores→<code>cleaning</code>, deep work→<code>creative</code>, meetings→<code>calls</code>) and bumps its prior — so two archetypes now diverge <em>per category</em>, not just globally. It preselects on the categories screen, which also kills Finding 6's duplicate question.</p>
+      <p style="margin:var(--s3) 0 0;font-size:13px"><code>focus</code> becomes a <strong>stated</strong> block, never evidence: <code>focusWindowLearn</code> earns confidence from logged events and permutation strength, so feeding it a self-report would let it claim confidence it hasn't earned. Instead it shows day 1 as <em>"You said mornings — I'll check that against your timers"</em>, and the learned window <strong>replaces</strong> it once the gates clear.</p>
+    </div></div>
+  </div>
+
+  <!-- BLOCKER 3 -->
+  <div class="head-row"><span class="tag t-block">🔴 Blocker 3</span><h2>"Skip to my type" bricks calibration — permanently, silently</h2></div>
+  <p>The button labelled "Skip to my <strong>type</strong>" is the one path that never shows the type. It also skips categories — and that's what does the damage.</p>
+
+  <div class="grid2">
+    <div class="ba now"><div class="lbl">Now — skip → ready → empty forever</div><div class="body">
+      <div class="flow">
+        <div class="node">quiz/0 · "Skip to my type"</div>
+        <div class="arrow bad">↓ QuizStepScreen.tsx:68-71 — skips reveal AND categories</div>
+        <div class="node">ready → complete()</div>
+        <div class="arrow bad">↓ picked = []</div>
+        <div class="node dead">categoriesStore.categories = []</div>
+        <div class="arrow bad">↓ hydrate iterates ONLY tracked (:567)</div>
+        <div class="node dead">statsByCategory = {} — forever</div>
+      </div>
+      <p style="margin:var(--s4) 0 0;font-size:13px;color:var(--inkSoft)">Not a hard block. Tasks and timers <em>work</em> — the picker unions a hardcoded seed six. <code>applyLog</code> writes to the DB correctly. But <strong>every UI read iterates <code>tracked</code></strong>, so:</p>
+      <ul style="margin-top:var(--s2);font-size:13px">
+        <li>honest number never reflects the user's own logs</li>
+        <li>honeycomb: empty</li>
+        <li>Patterns: empty</li>
+        <li>no error, no empty state — <strong>they log into a void</strong></li>
+      </ul>
+      <p style="margin:0;font-size:13px;color:var(--danger)">Only escape: manually add a category in Settings. Nothing tells them to.</p>
+    </div></div>
+    <div class="ba fix"><div class="lbl">Fix — skip is deleted; quiz is mandatory (founder call)</div><div class="body">
+      <div class="flow">
+        <div class="node live">quiz/0 — no skip affordance</div>
+        <div class="arrow" style="color:var(--success)">↓ every step answered</div>
+        <div class="node live">reveal → categories — picked ≥ 1 enforced</div>
+        <div class="arrow" style="color:var(--success)">↓ complete() — floor, not a gate</div>
+        <div class="node live">categories.length ≥ 1 — always</div>
+        <div class="arrow" style="color:var(--success)">↓ hydrate finds rows</div>
+        <div class="node live">statsByCategory learns from log #1</div>
+      </div>
+      <p style="margin:var(--s4) 0 0;font-size:13px"><strong>Deletes the blocker at the root</strong> rather than routing around it. The old skip was rational <em>precisely because the quiz did nothing</em> — once the answers drive the number, skipping only costs the user their own accuracy. 4 taps, no typing, no account.</p>
+      <p style="margin:var(--s3) 0 0;font-size:13px">The floor stays as belt-and-braces: nothing <em>should</em> reach <code>complete()</code> empty now, but an empty tracked list is unrecoverable, so the invariant gets a hard guarantee instead of a routing assumption. <code>categoriesStore.ts:22-24</code> already documents <em>"the app needs at least one"</em>.</p>
+      <p style="margin:var(--s3) 0 0;font-size:13px;color:var(--accent)">Watch after ship: <code>quiz_started → quiz_completed</code>. If a bounce appears, revisit.</p>
+    </div></div>
+  </div>
+
+<pre><span class="c">// 1. QuizStepScreen.tsx — the skip button and its handler are deleted outright.</span>
+<span class="bad">- const skip = () => { trackQuizSkipped(); router.push('/(onboarding)/ready'); };</span>
+<span class="bad">- &lt;AppButton label="Skip to my type" size="xs" variant="ghost" onPress={skip} /&gt;</span>
+
+<span class="c">// 2. useOnboarding.ts — complete() can never write an empty list, whatever the path</span>
+<span class="k">const</span> complete = () => {
+  <span class="k">const</span> ids = picked.length > <span class="s">0</span> ? picked : [...DEFAULT_CATEGORY_IDS];  <span class="good">// floor, not a gate</span>
+  setCategories(ids.map((id) => ({ id, name: nameFor(id), adaptSpeed: <span class="s">'balanced'</span> })));
+};</pre>
+
+  <p class="note"><strong>Regression test:</strong> <code>complete()</code> with nothing picked → assert <code>categoriesStore.categories.length >= 1</code> <em>and</em> that a logged event surfaces in <code>statsByCategory</code>. Bonus: deleting the skip button also removes the 32pt sub-HIG hit target flagged in Finding 11.</p>
+
+  <!-- FINDING 4 -->
+  <div class="head-row"><span class="tag t-warn">🟠 Finding 4</span><h2>The disabled CTA is unreadable — and doesn't look disabled</h2></div>
+  <p>By deliberate design (<code>AppButton.tsx:171-175</code>) the pill <strong>face stays 100% opaque</strong> when disabled; only the label dims to <code>opacity.disabled = 0.4</code>. Because <code>onIndigo</code> is a <strong>dark</strong> ink, fading it toward bright indigo makes it <em>sink into</em> the fill instead of greying out. Dark mode is the worst case — and dark mode is what ships.</p>
+
+  <div class="grid3">
+    <div class="ba"><div class="lbl" style="color:var(--inkFaint)">Enabled — correct</div><div class="body">
+      <div class="reason">&nbsp;</div>
+      <div class="btn live">Next →</div>
+      <div class="ratio ok">#8275F0 · #14151D — 4.98:1 ✓</div>
+    </div></div>
+    <div class="ba now"><div class="lbl">Now — disabled</div><div class="body">
+      <div class="reason">&nbsp;</div>
+      <div class="btn dis-now">Next →</div>
+      <div class="ratio bad">#8275F0 · #14151D @40% — 1.92:1 ✕</div>
+      <p style="margin-top:var(--s3);font-size:12.5px;margin-bottom:0">Reads as a live button that ignores taps. No reason given anywhere.</p>
+    </div></div>
+    <div class="ba fix"><div class="lbl">Fix — inert face, legible label</div><div class="body">
+      <div class="reason">Pick one to continue</div>
+      <div class="btn dis-fix">Next →</div>
+      <div class="ratio ok">#292B3C · inkFaint — 3.28:1 ✓ inert</div>
+      <p style="margin-top:var(--s3);font-size:12.5px;margin-bottom:0">Mute the <strong>face</strong> to <code>surfaceRaised</code>, not the label. Unmistakably not the live indigo.</p>
+    </div></div>
+  </div>
+
+  <p style="margin-top:var(--s4)">VoiceOver is fine — <code>accessibilityState={{disabled:true}}</code> is set correctly. This fails <em>only</em> sighted users, which is why it survived. Worse: on <code>categories.tsx:152</code> the helper card renders only when <code>picked > 0</code> — <strong>the one state where the CTA is disabled is the one state with zero guidance on screen.</strong></p>
+
+<pre><span class="c">// AppButton.tsx — disabled is a visibly inert pill, not a dimmed live one</span>
+<span class="k">const</span> faceColor  = disabled ? t.colors.surfaceRaised : t.colors.primary;   <span class="good">// mute the face</span>
+<span class="k">const</span> labelColor = disabled ? t.colors.inkFaint      : t.colors.onIndigo;
+<span class="bad">// remove: opacity: disabled ? t.opacity.disabled : 1  ← the blanket dim on content</span></pre>
+
+
+  <!-- FINDING 7 -->
+  <div class="head-row"><span class="tag t-warn">🟠 Finding 7</span><h2>"Time my first thing →" doesn't time anything</h2></div>
+  <p><code>ready.tsx:37-41</code> → <code>router.replace('/(tabs)')</code>. No add-task push, no params, no coach mark. The user never makes a guess, never starts a timer, never sees a real honest number during onboarding. The loop is described and deferred.</p>
+
+  <div class="ba now" style="margin-bottom:var(--s4)"><div class="lbl">Now — the fastest path skips the guess</div><div class="body">
+    <div class="taps" style="margin-bottom:var(--s4)">
+      <span class="tap">Time my first thing →</span><span style="color:var(--inkFaint)">→</span>
+      <span class="tap">Today (empty)</span><span style="color:var(--inkFaint)">→</span>
+      <span class="tap">FAB</span><span style="color:var(--inkFaint)">→</span>
+      <span class="tap bad">▶ quickStart</span><span style="color:var(--inkFaint)">=</span>
+      <span class="tap bad">naked timer · guessMin: 0</span>
+    </div>
+    <p style="margin:0;font-size:13px"><strong>2 taps — and no guess.</strong> <code>timerStore.ts:169-185</code> sets <code>category: null, guessMin: 0, estimateMin: 0</code>. No ratio at start; category and guess get retrofitted through the post-stop capture sheet. <strong>The path that feels fastest bypasses the one input the whole wedge depends on.</strong></p>
+    <div class="taps" style="margin-top:var(--s4)">
+      <span class="tap">Time my first thing →</span><span style="color:var(--inkFaint)">→</span>
+      <span class="tap">Start now</span><span style="color:var(--inkFaint)">→</span>
+      <span class="tap">type title</span><span style="color:var(--inkFaint)">→</span>
+      <span class="tap">pick category</span><span style="color:var(--inkFaint)">→</span>
+      <span class="tap goal">Add &amp; start</span>
+    </div>
+    <p style="margin:var(--s2) 0 0;font-size:13px;color:var(--inkFaint)">3 taps + typing for the intended path. <code>TodayEmptyState.tsx:35</code> just repeats the ready CTA's copy — the handoff is copy continuity, not navigation.</p>
+  </div>
+  <div class="ba fix"><div class="lbl">Fix — hand off for real</div><div class="body">
+    <div class="taps">
+      <span class="tap">Time my first thing →</span><span style="color:var(--success)">→</span>
+      <span class="tap goal">add-task opens, guess field focused</span>
+    </div>
+    <p style="margin:var(--s3) 0 0;font-size:13px">The aha moment is <strong>guess → start → honest number</strong>. It should happen in the first session, not be described and deferred to a screen the user has to find.</p>
+  </div></div>
+
+
+  <!-- REMAINING -->
+  <div class="head-row"><h2>The rest, briefly</h2></div>
+  <div class="grid2">
+    <div class="card">
+      <div class="eyebrow" style="color:var(--accent)">🟠 Finding 5 — your funnel is lying</div>
+      <p style="font-size:14px">No in-flight guard on any CTA. <code>router.push</code> doesn't dedupe → double-tap stacks screens. <code>ready.tsx</code> fires <strong><code>onboarding_completed</code> twice</strong>. Back-swiping reveal→quiz→reveal re-fires <code>quiz_completed</code> + <code>reveal_shown</code> every round-trip.</p>
+      <p style="font-size:14px;color:var(--danger);margin-bottom:0"><strong>Any activation baseline measured today is inflated.</strong> Fix before instrumenting decisions on it.</p>
+    </div>
+    <div class="card">
+      <div class="eyebrow" style="color:var(--accent)">🟠 Finding 6 — same question, twice</div>
+      <p style="font-size:14px">quiz/2: "Where does time <strong>run away</strong> from you most?" → Meetings · Chores · Errands · Deep work</p>
+      <p style="font-size:14px">categories: "Where does time <strong>slip</strong> most?" → Getting ready · Cleaning · Admin &amp; email · Errands · Cooking · Out the door</p>
+      <p style="font-size:14px;margin-bottom:0">Two screens apart. Only "Errands" overlaps. No carry-over. Say "Deep work" and it isn't even offered as a category.</p>
+    </div>
+    <div class="card">
+      <div class="eyebrow" style="color:var(--primary)">🟡 Finding 10 — clips at large type</div>
+      <p style="font-size:14px;margin-bottom:0">No screen scrolls. <code>QuizOption.tsx:58</code> uses fixed <code>height</code> (104/64pt) and the coin-edge hardcodes the same <code>H</code> — fix it in one place and the edge detaches. At AX sizes: spacer collapses, then content clips, then the CTA is squeezed off. No scroll = unrecoverable.</p>
+    </div>
+    <div class="card">
+      <div class="eyebrow" style="color:var(--primary)">🟡 Finding 11 — a11y gaps</div>
+      <p style="font-size:14px;margin-bottom:0">Quiz options are <code>role="button"</code>, should be <code>radio</code> in a <code>radiogroup</code> · progress bar has <code>role="progressbar"</code> but <strong>no <code>accessibilityValue</code></strong> · skip target is <strong>32pt</strong> with no hitSlop, under the 44pt floor <code>AppButton.tsx:27</code> claims to enforce. Reduced motion: honored correctly throughout. <span class="tag t-ok">good</span></p>
+    </div>
+    <div class="card">
+      <div class="eyebrow" style="color:var(--primary)">🟡 Finding 12 — silent swallow</div>
+      <p style="font-size:14px;margin-bottom:0">Custom category: <code>"🎉"</code> → slug is empty → <strong>vanishes, no feedback</strong>. <code>"   "</code> → same. Duplicate of a picked seed → total no-op. <code>onSubmitEditing</code> + <code>onBlur</code> both commit; double-add is prevented only by an incidental guard — <strong>load-bearing by accident</strong>. Nickname: emoji-only survives → "Hey 🎉".</p>
+    </div>
+    <div class="card">
+      <div class="eyebrow" style="color:var(--inkFaint)">Stale comments — docs lying about code</div>
+      <p style="font-size:14px;margin-bottom:0"><code>StepProgress.tsx:13</code> "<strong>Three</strong> hairline pills" — it's 7 · <code>ArchetypeReveal.tsx:224</code> "<strong>never loops</strong>" — it loops forever (<code>withRepeat(..., -1)</code> at <code>:109</code>) · <code>useOnboarding.ts:8</code> "the <strong>3-step</strong> flow" — it's 7.</p>
+    </div>
+  </div>
+
+  <!-- ORDER -->
+  <div class="head-row"><h2>Recommended order</h2></div>
+  <table>
+    <thead><tr><th style="width:40px">#</th><th style="width:34%">Fix</th><th style="width:80px">Plan task</th><th>Why here</th></tr></thead>
+    <tbody>
+      <tr><td>1</td><td><span class="tag t-warn">🟠</span> Finding 4 — disabled button tokens</td><td>1–3</td><td>One file. Fixes every disabled button in the <strong>whole app</strong>, not just onboarding.</td></tr>
+      <tr><td>2</td><td><span class="tag t-block">🔴</span> Blocker 1 — wire <code>m0</code> into the prior</td><td>4, 7</td><td>Makes the reveal's claim true. TDD, engine layer.</td></tr>
+      <tr><td>3</td><td><span class="tag t-block">🔴</span> Blocker 2 — wire <code>sink</code> + <code>focus</code></td><td>5, 6, 8</td><td>Archetypes diverge per-category. Kills Finding 6's duplicate question too.</td></tr>
+      <tr><td>4</td><td><span class="tag t-block">🔴</span> Blocker 3 — remove skip, floor <code>complete()</code></td><td>9, 10</td><td>Deletes the blocker at the root.</td></tr>
+      <tr><td>5</td><td><span class="tag t-warn">🟠</span> Finding 5 — double-tap guard</td><td>11</td><td>Restores funnel trust <em>before</em> you measure anything on it.</td></tr>
+      <tr><td>6</td><td><span class="tag t-warn">🟠</span> Finding 7 — real first-run handoff</td><td>12</td><td>The activation moment.</td></tr>
+      <tr><td>7</td><td><span class="tag t-poli">🟡</span> Findings 11–12 + cleanup</td><td>13–15</td><td>Polish sweep.</td></tr>
+    </tbody>
+  </table>
+
+  <div class="head-row"><h2>Decisions log</h2></div>
+  <table>
+    <thead><tr><th style="width:110px">Date</th><th style="width:32%">Decision</th><th>Rationale</th></tr></thead>
+    <tbody>
+      <tr><td>2026-07-15</td><td><strong>Wire <code>sink</code>/<code>focus</code>, don't cut</strong></td><td>Founder: use the answers instead of deleting them. Makes archetypes diverge per-category.</td></tr>
+      <tr><td>2026-07-15</td><td><strong>Quiz mandatory — skip removed</strong></td><td>Founder. Skip was rational only while the quiz did nothing; now it costs the user accuracy. Watch <code>quiz_started → quiz_completed</code>.</td></tr>
+      <tr><td>2026-07-15</td><td><strong>Disabled fix applies app-wide</strong></td><td>Founder. <code>AppButton</code> is the shared primitive — one fix covers every screen.</td></tr>
+      <tr><td>2026-07-15</td><td><strong>Categories names the Settings path</strong></td><td>Founder. The path is real (<code>src/app/categories.tsx</code>, <code>addCategory</code> at <code>:118</code>).</td></tr>
+      <tr><td>2026-07-15</td><td><strong>Dead-space finding dropped</strong></td><td>Founder: the CTA stays pinned at the bottom, near the thumb. <em>Note: the proposed <code>space-between</code> fix would not have moved it — it only redistributed the gap above. Available to revisit if the objection was placement.</em></td></tr>
+      <tr><td>2026-07-15</td><td><strong><code>FadeInDown</code> entrance kept</strong></td><td>Founder. <em>Open: contradicts the CLAUDE.md hard rule "never animate buttons in/out/up/down on entrance" — the rule needs a carve-out or future agents will re-flag it.</em></td></tr>
+    </tbody>
+  </table>
+
+  <div class="foot">
+    <p style="margin-bottom:var(--s2)"><strong style="color:var(--ink)">Method.</strong> Flow mapped from source. All 7 screens captured on the iOS simulator via deep-link + <code>simctl io screenshot</code>. Every claim carries a <code>file:line</code> and was read in the code, not inferred. The crux claim — <code>archetypeSeed</code> having only two readers — was independently re-verified by grep.</p>
+    <p style="margin-bottom:0">Written companion: <code>docs/product/12-ONBOARDING-AUDIT.md</code> · Colors are the real <code>src/theme/tokens.ts</code> dark values.</p>
+  </div>
+
+</div>
+</body>
+</html>

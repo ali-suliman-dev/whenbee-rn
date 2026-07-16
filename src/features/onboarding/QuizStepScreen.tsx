@@ -14,15 +14,17 @@ import { StepProgress } from '@/src/features/onboarding/StepProgress';
 import { ONBOARDING_TOTAL, QUIZ_BASE } from '@/src/features/onboarding/onboardingFlow';
 import { QuizOption } from './QuizOption';
 import { QUIZ_QUESTIONS, QUIZ_SUBTEXT } from './quizQuestions';
+import { useOnce } from '@/src/lib/useOnce';
 import type { QuizAnswers } from '@/src/engine';
 
 // ──────────────────────────────────────────────────────────────────────────────
 // QuizStepScreen — one time-style quiz question per route (Layout A, companion-led).
 // The quiz is PART of onboarding: the same top progress bar counts each question as
 // a step (no separate comb). The Whenbee bee hosts; the answer NEVER auto-advances
-// (the user taps Next). Skip-left / Next-right, one row, Next styled exactly like
-// the onboarding Continue (default size — never the oversized lg). Back = native
-// swipe. Reveal is reached only from the last step's Next.
+// (the user taps Next). Mandatory — no skip; the quiz answers drive the honest
+// number, so skipping would only cost the user their own accuracy. Next styled
+// exactly like the onboarding Continue (default size — never the oversized lg).
+// Back = native swipe. Reveal is reached only from the last step's Next.
 // ──────────────────────────────────────────────────────────────────────────────
 
 export function QuizStepScreen({ step }: { step: number }): React.JSX.Element | null {
@@ -30,7 +32,7 @@ export function QuizStepScreen({ step }: { step: number }): React.JSX.Element | 
   const insets = useSafeAreaInsets();
   const quizAnswers = useOnboardingStore((s) => s.quizAnswers);
   const setQuizAnswer = useOnboardingStore((s) => s.setQuizAnswer);
-  const { trackQuizSkipped, trackQuizStarted } = usePersonalize();
+  const { trackQuizStarted } = usePersonalize();
 
   const question = QUIZ_QUESTIONS[step];
   const isLast = step === QUIZ_QUESTIONS.length - 1;
@@ -49,6 +51,12 @@ export function QuizStepScreen({ step }: { step: number }): React.JSX.Element | 
     trackQuizStarted();
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
+  // Guard above the early return — hooks must run unconditionally every render.
+  const goNext = useOnce(() => {
+    if (isLast) router.push('/(onboarding)/reveal');
+    else router.push(`/(onboarding)/quiz/${step + 1}`);
+  });
+
   if (!question) return null;
 
   const selected = quizAnswers[question.key];
@@ -60,24 +68,9 @@ export function QuizStepScreen({ step }: { step: number }): React.JSX.Element | 
     setQuizAnswer(question.key, value as QuizAnswers[typeof question.key]);
   }
 
-  function goNext() {
-    if (isLast) router.push('/(onboarding)/reveal');
-    else router.push(`/(onboarding)/quiz/${step + 1}`);
-  }
-
-  function skip() {
-    trackQuizSkipped();
-    router.push('/(onboarding)/ready');
-  }
-
   return (
     <Screen backdrop={<OnboardingBackdrop />}>
       <StepProgress current={QUIZ_BASE + step} total={ONBOARDING_TOTAL} />
-
-      {/* Skip lives quietly at the top, just under the progress bar. */}
-      <View style={{ flexDirection: 'row', justifyContent: 'flex-end' }}>
-        <AppButton label="Skip to my type" variant="ghost" size="xs" onPress={skip} />
-      </View>
 
       <View style={{ flex: 1, paddingTop: t.space[2] }}>
         <View style={{ alignItems: 'center', gap: t.space[3] }}>
@@ -103,6 +96,7 @@ export function QuizStepScreen({ step }: { step: number }): React.JSX.Element | 
 
         {isTile ? (
           <View
+            accessibilityRole="radiogroup"
             style={{
               flexDirection: 'row',
               flexWrap: 'wrap',
@@ -112,7 +106,7 @@ export function QuizStepScreen({ step }: { step: number }): React.JSX.Element | 
             }}
           >
             {question.options.map((opt) => (
-              <View key={opt.value} style={{ width: '47%' }}>
+              <View key={opt.value} style={{ width: t.size.quizTileWidth }}>
                 <QuizOption
                   layout="tile"
                   label={opt.label}
@@ -124,7 +118,7 @@ export function QuizStepScreen({ step }: { step: number }): React.JSX.Element | 
             ))}
           </View>
         ) : (
-          <View style={{ gap: t.space[2.5], marginTop: t.space[6] }}>
+          <View accessibilityRole="radiogroup" style={{ gap: t.space[2.5], marginTop: t.space[6] }}>
             {question.options.map((opt) => (
               <QuizOption
                 key={opt.value}
@@ -141,6 +135,18 @@ export function QuizStepScreen({ step }: { step: number }): React.JSX.Element | 
         <View style={{ flex: 1 }} />
 
         {/* Only the Next button at the bottom — full width, the standard CTA. */}
+        {!hasAnswer ? (
+          <AppText
+            style={{
+              fontSize: t.fontSize.sm,
+              color: t.colors.inkFaint,
+              textAlign: 'center',
+              marginBottom: t.space[2],
+            }}
+          >
+            Pick one to continue
+          </AppText>
+        ) : null}
         <AppButton
           label="Next →"
           variant="indigo"

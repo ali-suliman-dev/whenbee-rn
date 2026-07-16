@@ -221,8 +221,9 @@ export function ArchetypeReveal({
           </Svg>
         ) : null}
 
-        {/* One-pass diagonal light sweep on reveal (epic but calm). Decorative; sits
-            over the surface, under the content, and never loops. */}
+        {/* Diagonal light sweep on reveal (epic but calm). Decorative; sits over the
+            surface, under the content, and loops forever (withRepeat(-1) below) —
+            a calm glance across the card every SWEEP_CYCLE, not a one-shot. */}
         {size.w > 0 && !reduced ? (
           <Animated.View
             pointerEvents="none"

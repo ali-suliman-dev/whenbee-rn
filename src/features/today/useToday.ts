@@ -3,7 +3,8 @@ import { useFocusEffect } from 'expo-router';
 import { useCalibrationStore } from '@/src/stores/calibrationStore';
 import { useDayTasksStore } from '@/src/stores/dayTasksStore';
 import { useTimerStore } from '@/src/stores/timerStore';
-import { resolveSuggestion, priorFor, type CompanionStage } from '@/src/engine';
+import { useSettingsStore } from '@/src/stores/settingsStore';
+import { resolveSuggestion, seededPriorFor, type CompanionStage } from '@/src/engine';
 import { analytics } from '@/src/services/analytics';
 import { toLocalDayKey } from '@/src/lib/day';
 import { categoryName } from '@/src/features/today/categoryName';
@@ -67,6 +68,7 @@ export function useToday(): UseTodayResult {
   const isViewingToday = selectedDate === toLocalDayKey(Date.now());
   const isTimerRunning = useTimerStore((s) => s.isRunning);
   const runningTaskId = useTimerStore((s) => s.taskId);
+  const archetypeSeed = useSettingsStore((s) => s.archetypeSeed);
 
   const [companionStage, setCompanionStage] = useState<CompanionStage>(1);
   const [companionSeed, setCompanionSeed] = useState(1);
@@ -99,7 +101,7 @@ export function useToday(): UseTodayResult {
     const cached = statsByCategory[task.category];
     const category = cached
       ? { fit: cached.fit, n: cached.n }
-      : { fit: { a: 0, b: priorFor(task.category) }, n: 0 };
+      : { fit: { a: 0, b: seededPriorFor(task.category, archetypeSeed) }, n: 0 };
     return resolveSuggestion({ guessMinutes: task.guessMin, category, recurring: null });
   };
 

@@ -5,7 +5,7 @@ import { useOnboardingStore } from '@/src/stores/onboardingStore';
 import { useSettingsStore } from '@/src/stores/settingsStore';
 
 jest.mock('expo-router', () => ({
-  router: { replace: jest.fn() },
+  router: { replace: jest.fn(), push: jest.fn() },
   useFocusEffect: (cb: () => void | (() => void)) => cb(),
   useNavigation: () => ({
     isFocused: () => true,
@@ -14,10 +14,12 @@ jest.mock('expo-router', () => ({
 }));
 
 const replaceMock = router.replace as jest.Mock;
+const pushMock = router.push as jest.Mock;
 
 describe('Onboarding Step 2 — Ready screen', () => {
   beforeEach(() => {
     replaceMock.mockClear();
+    pushMock.mockClear();
     useOnboardingStore.setState({ completed: false, picked: [] });
   });
 
@@ -48,5 +50,33 @@ describe('Onboarding Step 2 — Ready screen', () => {
     expect(replaceMock).toHaveBeenCalledWith('/(tabs)');
     expect(useOnboardingStore.getState().completed).toBe(true);
     expect(useSettingsStore.getState().displayName).toBe('Jordan');
+  });
+
+  test('double-tapping the CTA only completes onboarding once', () => {
+    render(<Ready />);
+    const cta = screen.getByText(/Time my first thing/);
+    fireEvent.press(cta);
+    fireEvent.press(cta);
+    expect(replaceMock).toHaveBeenCalledTimes(1);
+  });
+
+  test('hands off into the add-task sheet, not a bare tab screen', () => {
+    render(<Ready />);
+    fireEvent.press(screen.getByText(/Time my first thing/));
+    expect(replaceMock).toHaveBeenCalledWith('/(tabs)');
+    expect(pushMock).toHaveBeenCalledWith('/(modals)/add-task');
+    // anchor (tabs) beneath the modal before opening it
+    const replaceOrder = replaceMock.mock.invocationCallOrder[0];
+    const pushOrder = pushMock.mock.invocationCallOrder[0];
+    expect(replaceOrder).toBeDefined();
+    expect(pushOrder).toBeDefined();
+    expect(replaceOrder).toBeLessThan(pushOrder as number);
+  });
+
+  test('completes onboarding before handing off', () => {
+    render(<Ready />);
+    fireEvent.press(screen.getByText(/Time my first thing/));
+    expect(useOnboardingStore.getState().completed).toBe(true);
+    expect(pushMock).toHaveBeenCalledWith('/(modals)/add-task');
   });
 });

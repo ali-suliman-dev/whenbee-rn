@@ -9,9 +9,10 @@ import { AppButton } from '@/src/components/AppButton';
 import { PlanRail } from '@/src/features/planner/PlanRail';
 import type { RailNodeState } from '@/src/features/planner/RailNode';
 import { formatMmSs } from '@/src/lib/time';
-import { stepHonestMinutes, routineHonestTotal, priorFor } from '@/src/engine';
+import { stepHonestMinutes, routineHonestTotal, seededPriorFor } from '@/src/engine';
 import { useRoutinesStore, type RunStepStatus } from '@/src/stores/routinesStore';
 import { useCalibrationStore } from '@/src/stores/calibrationStore';
+import { useSettingsStore } from '@/src/stores/settingsStore';
 import { categoryName } from '@/src/features/shared/categoryName';
 import { analytics } from '@/src/services/analytics';
 import { haptics } from '@/src/lib/haptics';
@@ -65,6 +66,7 @@ export function RoutineRunView() {
   const finishRun = useRoutinesStore((s) => s.finishRun);
   const abandonRun = useRoutinesStore((s) => s.abandonRun);
   const statsByCategory = useCalibrationStore((s) => s.statsByCategory);
+  const archetypeSeed = useSettingsStore((s) => s.archetypeSeed);
 
   const routine = useMemo(
     () => routines.find((r) => r.routine.id === activeRun?.routineId) ?? null,
@@ -110,7 +112,8 @@ export function RoutineRunView() {
       if (!stepDef) return;
 
       const calibStats = useCalibrationStore.getState().statsByCategory;
-      const stepM = calibStats[stepDef.category]?.mEffective ?? priorFor(stepDef.category);
+      const seed = useSettingsStore.getState().archetypeSeed;
+      const stepM = calibStats[stepDef.category]?.mEffective ?? seededPriorFor(stepDef.category, seed);
       const honestSec = Math.round(stepHonestMinutes(stepDef.guessMin, stepM) * 60);
       const stepElapsedSec = Math.max(
         0,
@@ -194,7 +197,7 @@ export function RoutineRunView() {
           actualMin={orderedRun.reduce((sum, rs) => sum + (rs.actualMin ?? 0), 0)}
           honestMin={routineHonestTotal(
             routine.steps.map((s) =>
-              stepHonestMinutes(s.guessMin, statsByCategory[s.category]?.mEffective ?? priorFor(s.category)),
+              stepHonestMinutes(s.guessMin, statsByCategory[s.category]?.mEffective ?? seededPriorFor(s.category, archetypeSeed)),
             ),
             routine.routine.transitionFactor,
           )}
@@ -207,7 +210,7 @@ export function RoutineRunView() {
           const prev = i > 0 ? railStateFor(orderedRun[i - 1]!.status) : undefined;
 
           // Compute per-step honest seconds for the countdown target.
-          const stepM = statsByCategory[step.category]?.mEffective ?? priorFor(step.category);
+          const stepM = statsByCategory[step.category]?.mEffective ?? seededPriorFor(step.category, archetypeSeed);
           const honestMin = stepHonestMinutes(step.guessMin, stepM);
           const honestSec = Math.round(honestMin * 60);
 

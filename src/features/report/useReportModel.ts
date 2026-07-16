@@ -23,6 +23,7 @@ import { makeCategoryStatsRepo } from '@/src/db/repositories/categoryStatsRepo';
 import { makeCompanionRepo } from '@/src/db/repositories/companionRepo';
 import { useCalibrationStore } from '@/src/stores/calibrationStore';
 import { useCategoriesStore } from '@/src/stores/categoriesStore';
+import { useSettingsStore } from '@/src/stores/settingsStore';
 import { CATEGORY_NAMES } from '@/src/engine/priors';
 import type {
   ReportModel,
@@ -265,7 +266,7 @@ export function useReportModel(
       const statsByCategory: Record<string, ReportCategoryStat> = {};
       await Promise.all(
         tracked.map(async (cat) => {
-          const stat = await categoryStatsRepo.get(cat.id);
+          const stat = await categoryStatsRepo.get(cat.id, useSettingsStore.getState().archetypeSeed);
           statsByCategory[cat.id] = { n: stat.n, mEffective: stat.mEffective };
         }),
       );

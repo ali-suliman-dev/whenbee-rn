@@ -4,7 +4,8 @@ import { useCalibrationStore, type GoalCoachInfo } from '@/src/stores/calibratio
 import { useCategoriesStore } from '@/src/stores/categoriesStore';
 import { useDayTasksStore } from '@/src/stores/dayTasksStore';
 import { useVocabStore } from '@/src/stores/vocabStore';
-import { resolveSuggestion, priorFor } from '@/src/engine';
+import { useSettingsStore } from '@/src/stores/settingsStore';
+import { resolveSuggestion, seededPriorFor } from '@/src/engine';
 import { usePickerCategories, type PickerCategory } from '@/src/features/shared/CategoryChips';
 import { guessCategory } from '@/src/features/shared/categoryGuess';
 import { shouldShowAntiChase } from '@/src/features/add-task/antiChase';
@@ -88,6 +89,7 @@ export function useAddTask(initialTitle?: string, editId?: string): UseAddTaskRe
   const categories = usePickerCategories();
   const learned = useVocabStore((s) => s.map);
   const bank = useVocabStore((s) => s.bank);
+  const archetypeSeed = useSettingsStore((s) => s.archetypeSeed);
 
   const [title, setTitleState] = useState('');
   const [category, setCategoryState] = useState<string | null>(null);
@@ -165,12 +167,12 @@ export function useAddTask(initialTitle?: string, editId?: string): UseAddTaskRe
   const suggestion = useMemo<CalibrationSummary | null>(() => {
     if (category === null) return null;
     const cached = statsByCategory[category];
-    const prior = cached?.priorMult ?? priorFor(category);
+    const prior = cached?.priorMult ?? seededPriorFor(category, archetypeSeed);
     const cat = cached
       ? { fit: cached.fit, n: cached.n, clampedRatios: cached.clampedRatios ?? [] }
       : { fit: { a: 0, b: prior }, n: 0, clampedRatios: [] };
     return resolveSuggestion({ guessMinutes: guessMin, category: cat, recurring: null, prior });
-  }, [category, guessMin, statsByCategory]);
+  }, [category, guessMin, statsByCategory, archetypeSeed]);
 
   // honest_suggestion_shown: fire once per surfacing (category+guess), not per
   // keystroke. De-duped by the value the user is currently looking at.

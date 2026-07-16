@@ -5,6 +5,24 @@
 /** Honey/ripeness tier, mapped from sharpness thresholds [0,40,64,82,93]. */
 export type Tier = 'Raw' | 'Setting' | 'Ripening' | 'Thickening' | 'Honest';
 
+// ── Onboarding quiz answer vocabularies ───────────────────────────────────────
+/** The onboarding quiz's answer vocabularies. Canonical here: the engine's
+ *  QuizAnswers, the settings seed, and the planner all reference these. */
+export type PaceAnswer = 'about' | 'bit' | 'lot' | 'lose';
+export type MidAnswer = 'track' | 'rabbit';
+export type FocusAnswer = 'morning' | 'evening' | 'varies';
+export type SinkAnswer = 'meetings' | 'chores' | 'errands' | 'deepwork';
+
+/** A self-reported read from the onboarding quiz. Anchors a cold category's
+ *  prior until real logs outweigh it. Never a measurement — always decays out. */
+export type ArchetypeSeed = {
+  m0: number;
+  /** Q3's answer — bumps only the mapped category. */
+  sink?: SinkAnswer;
+  source: 'quiz';
+  tookAt: number;
+};
+
 /** Per-category learning speed; maps ONLY to the EWMA alpha. */
 export type AdaptSpeed = 'steady' | 'balanced' | 'reactive';
 
