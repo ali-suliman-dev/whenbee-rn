@@ -1,4 +1,5 @@
-import { seedMultiplierFor, provisionalArchetypeMultiplier, buildRevealEcho } from '../archetypeSeed';
+import { seedMultiplierFor, provisionalArchetypeMultiplier, buildRevealEcho, sinkCategoryFor } from '../archetypeSeed';
+import { CATEGORY_PRIORS } from '../priors';
 
 describe('seedMultiplierFor', () => {
   it('maps each pace answer to its band', () => {
@@ -53,5 +54,20 @@ describe('buildRevealEcho', () => {
   });
   it('lot + rabbit (no sink)', () => {
     expect(buildRevealEcho({ pace: 'lot', mid: 'rabbit' })).toBe('You plan tight · rabbit-hole');
+  });
+});
+
+describe('sinkCategoryFor', () => {
+  it('maps every sink answer to a real, priced category', () => {
+    for (const s of ['meetings', 'chores', 'errands', 'deepwork'] as const) {
+      expect(CATEGORY_PRIORS[sinkCategoryFor(s)]).toBeDefined();
+    }
+  });
+
+  it('maps each answer to its intended category', () => {
+    expect(sinkCategoryFor('meetings')).toBe('calls');
+    expect(sinkCategoryFor('chores')).toBe('cleaning');
+    expect(sinkCategoryFor('errands')).toBe('errands');
+    expect(sinkCategoryFor('deepwork')).toBe('creative');
   });
 });
