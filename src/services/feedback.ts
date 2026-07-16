@@ -37,8 +37,17 @@ async function insertWithRetry(payload: SubmissionPayload): Promise<boolean> {
   return false;
 }
 
-/** Fire-and-forget. Optimistic UI has already confirmed; never throws. */
+/**
+ * Fire-and-forget. Optimistic UI has already confirmed; never throws.
+ *
+ * Two failure modes are distinguished: when there's no client at all (Expo Go
+ * / missing env), the feature can never reach a backend, so we return early
+ * without the retry delay or an unbounded, un-drainable queue entry. When a
+ * client exists but the insert errors (e.g. a paused DB), the existing
+ * retry + offline-queue path applies — that's the intended resilience path.
+ */
 export async function submitFeedback(input: FeedbackInput): Promise<void> {
+  if (!getFeedbackClient()) return;
   const payload = buildPayload(input);
   const ok = await insertWithRetry(payload);
   if (!ok) enqueue(payload);
@@ -53,13 +62,15 @@ export async function fetchChangelog(): Promise<ChangelogEntry[]> {
     .eq('is_published', true)
     .order('published_at', { ascending: false });
   if (error || !data) return [];
-  return data.map((r: Record<string, unknown>) => ({
-    id: String(r.id),
-    status: r.status as ChangelogEntry['status'],
-    title: String(r.title),
-    body: String(r.body),
-    publishedAt: String(r.published_at),
-  }));
+  return data
+    .filter((r: Record<string, unknown>) => !!r.published_at)
+    .map((r: Record<string, unknown>) => ({
+      id: String(r.id),
+      status: r.status as ChangelogEntry['status'],
+      title: String(r.title),
+      body: String(r.body),
+      publishedAt: String(r.published_at),
+    }));
 }
 
 /** Best-effort drain; keeps anything still failing in the queue. */

@@ -2,6 +2,8 @@ import { kv } from '@/src/lib/kv';
 import type { FeedbackKind } from './types';
 
 const KEY = 'feedback.queue';
+/** Bounds kv growth for a queue that may never fully drain (e.g. a paused DB). */
+const MAX_QUEUE_LENGTH = 50;
 
 export type SubmissionPayload = {
   kind: FeedbackKind;
@@ -29,5 +31,6 @@ export function writeQueue(items: SubmissionPayload[]): void {
 }
 
 export function enqueue(p: SubmissionPayload): void {
-  writeQueue([...readQueue(), p]);
+  const next = [...readQueue(), p];
+  writeQueue(next.length > MAX_QUEUE_LENGTH ? next.slice(next.length - MAX_QUEUE_LENGTH) : next);
 }

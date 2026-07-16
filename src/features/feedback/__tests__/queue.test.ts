@@ -26,4 +26,13 @@ describe('offline queue', () => {
     writeQueue([]);
     expect(readQueue()).toEqual([]);
   });
+
+  it('caps the queue at the most recent 50 entries', () => {
+    writeQueue([]);
+    for (let i = 0; i < 55; i++) enqueue(p(`item-${i}`));
+    const bodies = readQueue().map((x) => x.body);
+    expect(bodies).toHaveLength(50);
+    expect(bodies[0]).toBe('item-5');
+    expect(bodies[49]).toBe('item-54');
+  });
 });

@@ -5,8 +5,9 @@ const mockOrder = jest.fn();
 const mockEq = jest.fn(() => ({ order: mockOrder }));
 const mockSelect = jest.fn(() => ({ eq: mockEq }));
 const mockFrom = jest.fn(() => ({ insert: mockInsert, select: mockSelect }));
+const mockGetFeedbackClient = jest.fn((): { from: typeof mockFrom } | null => ({ from: mockFrom }));
 
-jest.mock('../feedbackClient', () => ({ getFeedbackClient: () => ({ from: mockFrom }) }));
+jest.mock('../feedbackClient', () => ({ getFeedbackClient: () => mockGetFeedbackClient() }));
 jest.mock('@/src/features/feedback/installId', () => ({ getInstallId: () => 'install-1' }));
 jest.mock('expo-application', () => ({ nativeApplicationVersion: '1.2.3' }));
 jest.mock('expo-localization', () => ({ getLocales: () => [{ languageTag: 'en-US' }] }));
@@ -38,6 +39,13 @@ describe('submitFeedback', () => {
     await expect(submitFeedback({ kind: 'love', body: 'x' })).resolves.toBeUndefined();
     expect(mockEnqueue).toHaveBeenCalledTimes(1);
   });
+
+  it('returns early without inserting or enqueuing when there is no client', async () => {
+    mockGetFeedbackClient.mockReturnValueOnce(null);
+    await expect(submitFeedback({ kind: 'idea', body: 'no backend' })).resolves.toBeUndefined();
+    expect(mockInsert).not.toHaveBeenCalled();
+    expect(mockEnqueue).not.toHaveBeenCalled();
+  });
 });
 
 describe('fetchChangelog', () => {
@@ -56,5 +64,16 @@ describe('fetchChangelog', () => {
   it('returns [] on error', async () => {
     mockOrder.mockResolvedValue({ data: null, error: { message: 'nope' } });
     expect(await fetchChangelog()).toEqual([]);
+  });
+
+  it('drops a row with a null published_at', async () => {
+    mockOrder.mockResolvedValue({ data: [
+      { id: '1', status: 'shipped', title: 'T', body: 'B', published_at: null },
+      { id: '2', status: 'planned', title: 'U', body: 'C', published_at: '2026-07-14T00:00:00Z' },
+    ], error: null });
+    const rows = await fetchChangelog();
+    expect(rows).toEqual([
+      { id: '2', status: 'planned', title: 'U', body: 'C', publishedAt: '2026-07-14T00:00:00Z' },
+    ]);
   });
 });
