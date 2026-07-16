@@ -1,48 +1,32 @@
-import { useCallback, useEffect, useState } from 'react';
-import { kv } from '@/src/lib/kv';
-import { submitFeedback, fetchChangelog, drainQueue } from '@/src/services/feedback';
-import type { ChangelogEntry, FeedbackInput } from './types';
+import { useEffect } from 'react';
+import {
+  useFeedbackStore,
+  useHasUnreadChangelog,
+  computeHasUnread,
+  drainFeedbackQueueOnce,
+} from '@/src/stores/feedbackStore';
 
-const SEEN_KEY = 'feedback.changelog.lastSeenAt';
+export { computeHasUnread };
 
-export function computeHasUnread(entries: ChangelogEntry[], lastSeenAt: string | null): boolean {
-  if (entries.length === 0) return false;
-  const newest = entries.reduce((m, e) => (e.publishedAt > m ? e.publishedAt : m), '');
-  if (!lastSeenAt) return true;
-  return newest > lastSeenAt;
-}
-
+/**
+ * Thin delegator onto the shared `feedbackStore` — kept so existing screens
+ * (`settings.tsx`, `whats-new.tsx`, `feedback.tsx`) don't need to know about
+ * Zustand. The state itself lives in the store, not per-instance `useState`,
+ * so every screen reading `changelog`/`hasUnread` sees the same values and a
+ * `markChangelogSeen()` call anywhere clears the unread dot everywhere.
+ */
 export function useFeedback() {
-  const [changelog, setChangelog] = useState<ChangelogEntry[]>([]);
-  const [loading, setLoading] = useState(false);
-  const [lastSeenAt, setLastSeenAt] = useState<string | null>(() => kv.getString(SEEN_KEY));
+  const submit = useFeedbackStore((s) => s.submit);
+  const changelog = useFeedbackStore((s) => s.changelog);
+  const loading = useFeedbackStore((s) => s.loading);
+  const loadChangelog = useFeedbackStore((s) => s.loadChangelog);
+  const markChangelogSeen = useFeedbackStore((s) => s.markChangelogSeen);
+  const hasUnread = useHasUnreadChangelog();
 
-  const submit = useCallback((input: FeedbackInput) => submitFeedback(input), []);
-
-  const loadChangelog = useCallback(async () => {
-    setLoading(true);
-    const rows = await fetchChangelog();
-    setChangelog(rows);
-    setLoading(false);
+  // Drain any queued submissions once per app session (best-effort).
+  useEffect(() => {
+    drainFeedbackQueueOnce();
   }, []);
 
-  const markChangelogSeen = useCallback(() => {
-    const newest = changelog.reduce((m, e) => (e.publishedAt > m ? e.publishedAt : m), '');
-    if (newest) {
-      kv.set(SEEN_KEY, newest);
-      setLastSeenAt(newest);
-    }
-  }, [changelog]);
-
-  // Drain any queued submissions once on mount (best-effort).
-  useEffect(() => { void drainQueue(); }, []);
-
-  return {
-    submit,
-    changelog,
-    loading,
-    loadChangelog,
-    hasUnread: computeHasUnread(changelog, lastSeenAt),
-    markChangelogSeen,
-  };
+  return { submit, changelog, loading, loadChangelog, hasUnread, markChangelogSeen };
 }

@@ -1,4 +1,4 @@
-import { useCallback, useState, type ReactNode } from 'react';
+import { useCallback, useEffect, useState, type ReactNode } from 'react';
 import { Alert, KeyboardAvoidingView, Modal, Platform, View, Text, Pressable, Switch, ScrollView, TextInput, type ViewStyle, type TextStyle } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
@@ -180,7 +180,14 @@ export default function Settings() {
   } = useDayEndSetting();
   const { resetting, resetProgress, eraseEverything } = useAccountReset();
   const { isPresenceAvailable, handlePresenceCta } = usePresenceSection();
-  const { hasUnread } = useFeedback();
+  const { hasUnread, loadChangelog } = useFeedback();
+
+  // Populate the shared changelog on mount so the unread dot reflects reality —
+  // returning here after What's-new marked it seen (or after a fresh publish)
+  // now shows the right state because the store is shared, not per-instance.
+  useEffect(() => {
+    void loadChangelog();
+  }, [loadChangelog]);
 
   const [toastMsg, setToastMsg] = useState('');
   const [toastVisible, setToastVisible] = useState(false);
