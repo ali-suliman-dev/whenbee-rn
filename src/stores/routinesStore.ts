@@ -17,7 +17,7 @@ import {
   recurringHasEnoughData,
   alphaFor,
   clampRatio,
-  priorFor,
+  seededPriorFor,
   TRANSITION_PRIOR,
   stepHonestMinutes,
   routineHonestTotal,
@@ -214,7 +214,7 @@ async function trainStep(
 ): Promise<void> {
   const repo = makeRecurringRepo(db);
   const prev = await repo.get(key);
-  const prior = priorFor(category);
+  const prior = seededPriorFor(category, useSettingsStore.getState().archetypeSeed);
   const ratio = clampRatio(estimateMin, actualMin);
   // Timed run → the timed alpha for the category's learning speed (balanced default).
   const alpha = alphaFor('balanced', 'timed');
