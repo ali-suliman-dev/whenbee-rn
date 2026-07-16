@@ -1,4 +1,4 @@
-import { useCallback, useState, type ReactNode } from 'react';
+import { useCallback, useEffect, useState, type ReactNode } from 'react';
 import { Alert, KeyboardAvoidingView, Modal, Platform, View, Text, Pressable, Switch, ScrollView, TextInput, type ViewStyle, type TextStyle } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
@@ -38,6 +38,7 @@ import { GuardrailLockedRow } from '@/src/features/settings/GuardrailLockedRow';
 import { CalendarSettingsSection } from '@/src/features/settings/CalendarSettingsSection';
 import { StripVariantSwitcher } from '@/src/features/settings/StripVariantSwitcher';
 import { seedDemoData } from '@/src/features/dev/seedDemoData';
+import { useFeedback } from '@/src/features/feedback/useFeedback';
 
 const modes: ColorModePref[] = ['system', 'light', 'dark'];
 
@@ -179,6 +180,14 @@ export default function Settings() {
   } = useDayEndSetting();
   const { resetting, resetProgress, eraseEverything } = useAccountReset();
   const { isPresenceAvailable, handlePresenceCta } = usePresenceSection();
+  const { hasUnread, loadChangelog } = useFeedback();
+
+  // Populate the shared changelog on mount so the unread dot reflects reality —
+  // returning here after What's-new marked it seen (or after a fresh publish)
+  // now shows the right state because the store is shared, not per-instance.
+  useEffect(() => {
+    void loadChangelog();
+  }, [loadChangelog]);
 
   const [toastMsg, setToastMsg] = useState('');
   const [toastVisible, setToastVisible] = useState(false);
@@ -582,6 +591,38 @@ export default function Settings() {
             title="Terms of Use"
             note="The plain-language agreement for using Whenbee."
             onPress={() => WebBrowser.openBrowserAsync(LEGAL.termsUrl)}
+          />
+        </View>
+
+        <View style={{ gap: t.space[3] }}>
+          <AppText variant="label">Feedback</AppText>
+          <SettingRow
+            icon="chatbubble-ellipses-outline"
+            title="Send feedback"
+            note="An idea, a snag, or what's working. Comes straight to me."
+            onPress={() => router.push('/(modals)/feedback')}
+          />
+          <SettingRow
+            icon="sparkles-outline"
+            tint={t.colors.accent}
+            title="What's new"
+            note="What you asked for, and what I shipped."
+            onPress={() => router.push('/(modals)/whats-new')}
+            trailing={
+              hasUnread ? (
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: t.space[2] }}>
+                  <View
+                    style={{
+                      width: t.space[2.5],
+                      height: t.space[2.5],
+                      borderRadius: t.radii.full,
+                      backgroundColor: t.colors.accent,
+                    }}
+                  />
+                  <Ionicons name="chevron-forward" size={t.iconSize.sm} color={t.colors.inkSoft} />
+                </View>
+              ) : undefined
+            }
           />
         </View>
 

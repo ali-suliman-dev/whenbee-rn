@@ -172,6 +172,8 @@ function RootNavigator() {
       <Stack.Screen name="(modals)/focus-window" options={sheet} />
       <Stack.Screen name="(modals)/timer" options={sheet} />
       <Stack.Screen name="(modals)/plan" options={sheet} />
+      <Stack.Screen name="(modals)/feedback" options={sheet} />
+      <Stack.Screen name="(modals)/whats-new" options={sheet} />
       <Stack.Screen name="(modals)/reward" options={{ presentation: 'fullScreenModal', headerShown: false }} />
       <Stack.Screen name="(modals)/report" options={{ presentation: 'fullScreenModal', headerShown: false }} />
     </Stack>
