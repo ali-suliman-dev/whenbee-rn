@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { View, TextInput, KeyboardAvoidingView, Platform, type TextStyle } from 'react-native';
+import { View, TextInput, KeyboardAvoidingView, Platform, Pressable, type TextStyle } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import { Screen } from '@/src/components/Screen';
@@ -34,6 +34,7 @@ export default function Ready() {
   const { complete } = useOnboarding();
   const { saveName } = usePersonalize();
   const [nickname, setNickname] = useState('');
+  const [expanded, setExpanded] = useState(false);
 
   const timeFirstThing = useOnce(() => {
     saveName(nickname.trim() || undefined);
@@ -108,29 +109,13 @@ export default function Ready() {
             </View>
           </Reveal>
 
-          {/* Optional nickname — quiet, skippable, folded in above the CTA. */}
+          {/* Optional nickname — demoted to a tap. Collapsed ghost row → real input. */}
           <Reveal index={4}>
-            <View style={{ gap: t.space[2] }}>
-              <View style={{ flexDirection: 'row', alignItems: 'baseline', gap: t.space[2] }}>
-                <AppText
-                  style={{
-                    fontSize: t.fontSize.sm,
-                    color: t.colors.inkSoft,
-                    fontWeight: t.fontWeight.medium as '500',
-                  }}
-                >
-                  Anything I should call you?
-                </AppText>
-                <AppText
-                  style={{ fontSize: t.fontSize.xs, color: t.colors.inkFaint }}
-                >
-                  optional
-                </AppText>
-              </View>
+            {expanded ? (
               <TextInput
                 value={nickname}
                 onChangeText={setNickname}
-                onSubmitEditing={() => {/* save happens on CTA */}}
+                autoFocus
                 placeholder="Your nickname"
                 placeholderTextColor={t.colors.inkFaint}
                 maxLength={MAX_CUSTOM_NAME}
@@ -142,11 +127,37 @@ export default function Ready() {
                   color: t.colors.ink,
                   borderWidth: t.borderWidth.chip,
                   borderColor: t.colors.border,
-                  borderRadius: t.radii.sm,
+                  borderRadius: t.radii.md,
                   paddingHorizontal: t.space[3],
                 }}
               />
-            </View>
+            ) : (
+              <Pressable
+                onPress={() => setExpanded(true)}
+                accessibilityRole="button"
+                accessibilityLabel="Set a nickname"
+              >
+                <View
+                  style={{
+                    flexDirection: 'row',
+                    alignItems: 'center',
+                    gap: t.space[2],
+                    height: t.size.control.md,
+                    paddingHorizontal: t.space[3],
+                    borderWidth: t.borderWidth.chip,
+                    borderStyle: 'dashed',
+                    borderColor: t.colors.border,
+                    borderRadius: t.radii.md,
+                  }}
+                >
+                  <AppText style={{ fontSize: t.fontSize.md, color: t.colors.primary }}>＋</AppText>
+                  <AppText style={{ fontSize: t.fontSize.base, color: t.colors.inkSoft }}>Set a nickname</AppText>
+                  <AppText style={{ fontSize: t.fontSize.xs, color: t.colors.inkFaint, marginLeft: 'auto' }}>
+                    optional
+                  </AppText>
+                </View>
+              </Pressable>
+            )}
           </Reveal>
         </View>
 

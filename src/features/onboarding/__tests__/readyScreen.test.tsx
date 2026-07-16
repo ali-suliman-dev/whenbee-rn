@@ -31,11 +31,18 @@ describe('Onboarding Step 2 — Ready screen', () => {
     expect(screen.getByText(/no streak to break/i)).toBeTruthy();
     expect(screen.getByText(/Empty days are fine/i)).toBeTruthy();
     expect(screen.getByText(/Forgot to time something\? Add it in one tap/i)).toBeTruthy();
-    // Optional nickname field
-    expect(screen.getByText(/Anything I should call you/i)).toBeTruthy();
-    expect(screen.getByLabelText('Your nickname')).toBeTruthy();
+    // Optional nickname field — demoted to tap-to-reveal ghost row
+    expect(screen.getByLabelText('Set a nickname')).toBeTruthy();
+    expect(screen.queryByLabelText('Your nickname')).toBeNull();
     // CTA — new label from §E
     expect(screen.getByText(/Time my first thing/)).toBeTruthy();
+  });
+
+  test('tapping "Set a nickname" reveals the input', () => {
+    render(<Ready />);
+    expect(screen.queryByLabelText('Your nickname')).toBeNull();
+    fireEvent.press(screen.getByLabelText('Set a nickname'));
+    expect(screen.getByLabelText('Your nickname')).toBeTruthy();
   });
 
   test('CTA with no nickname calls replace to tabs', () => {
@@ -46,6 +53,7 @@ describe('Onboarding Step 2 — Ready screen', () => {
 
   test('CTA with a nickname saves it before completing', () => {
     render(<Ready />);
+    fireEvent.press(screen.getByLabelText('Set a nickname'));
     fireEvent.changeText(screen.getByLabelText('Your nickname'), 'Jordan');
     fireEvent.press(screen.getByText(/Time my first thing/));
     expect(replaceMock).toHaveBeenCalledWith('/(tabs)');
