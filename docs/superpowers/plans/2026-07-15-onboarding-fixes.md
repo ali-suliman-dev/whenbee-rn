@@ -428,13 +428,13 @@ git commit -m "feat(onboarding): say why the CTA is disabled"
 ### Task 4: `seededPriorFor` — the quiz reaches the honest number
 
 **Files:**
-- Modify: `src/engine/constants.ts:114-118`, `src/engine/priors.ts`, `src/domain/types.ts`, `src/engine/index.ts`
+- Modify: `src/engine/constants.ts:114-118`, `src/engine/priors.ts`, `src/domain/types.ts`, `src/engine/archetypeSeed.ts:7-12` (QuizAnswers references the domain unions), `src/engine/index.ts`
 - Test: `src/engine/__tests__/priors.test.ts`
 
 **Interfaces:**
 - Consumes: `CATEGORY_PRIORS`, `priorFor`, `RATIO_CEIL` (existing).
 - Produces:
-  - `type ArchetypeSeed = { m0: number; sink?: SinkAnswer; source: 'quiz'; tookAt: number }` (in `src/domain/types.ts`)
+  - `PaceAnswer` / `MidAnswer` / `FocusAnswer` / `SinkAnswer` + `ArchetypeSeed` (in `src/domain/types.ts` — the sink/focus unions MOVE here from `archetypeSeed.ts`'s inline `QuizAnswers`; `QuizAnswers` then references them and keeps its `@/src/engine` export unchanged)
   - `seededPriorFor(categoryId: string, seed: ArchetypeSeed | undefined): number` (in `src/engine/priors.ts`)
   - `POPULATION_MEAN_M: number`, `ARCHETYPE_SEED_SINK_BUMP: number` (in `src/engine/constants.ts`)
   - `sinkCategoryFor(sink: SinkAnswer): string` (in `src/engine/archetypeSeed.ts`, Task 5)
@@ -516,14 +516,35 @@ export const POPULATION_MEAN_M = GLOBAL_PRIOR;
 export const ARCHETYPE_SEED_SINK_BUMP = 1.12;
 ```
 
-- [ ] **Step 4: Add the type to the domain contract**
+- [ ] **Step 4: Add the types to the domain contract — centralize, do NOT duplicate**
+
+⚠️ **The sink union already exists.** `src/engine/archetypeSeed.ts:7-12` declares:
+
+```ts
+export interface QuizAnswers {
+  pace: 'about' | 'bit' | 'lot' | 'lose';
+  mid?: 'track' | 'rabbit';
+  focus?: 'morning' | 'evening' | 'varies';
+  sink?: 'meetings' | 'chores' | 'errands' | 'deepwork';
+}
+```
+
+Re-declaring those unions in `domain/types.ts` would leave two sources of truth that drift. CLAUDE.md: *"`src/domain/types.ts` is the contract between engine, db, stores, and UI. Change types here first."* Engine already imports from domain (`focusWindowLearn.ts` imports `FocusEventInput`), so engine → domain is the established direction and creates no cycle.
+
+So: **the unions move to `domain/types.ts`, and `QuizAnswers` references them.** `QuizAnswers` keeps its name and its export from `@/src/engine` — `onboardingStore.ts:4` and every other consumer stay untouched.
 
 In `src/domain/types.ts`:
 
 ```ts
+/** The onboarding quiz's answer vocabularies. Canonical here: the engine's
+ *  QuizAnswers, the settings seed, and the planner all reference these. */
+export type PaceAnswer = 'about' | 'bit' | 'lot' | 'lose';
+export type MidAnswer = 'track' | 'rabbit';
+export type FocusAnswer = 'morning' | 'evening' | 'varies';
+export type SinkAnswer = 'meetings' | 'chores' | 'errands' | 'deepwork';
+
 /** A self-reported read from the onboarding quiz. Anchors a cold category's
  *  prior until real logs outweigh it. Never a measurement — always decays out. */
-export type SinkAnswer = 'meetings' | 'chores' | 'errands' | 'deepwork';
 export type ArchetypeSeed = {
   m0: number;
   /** Q3's answer — bumps only the mapped category. */
@@ -532,6 +553,23 @@ export type ArchetypeSeed = {
   tookAt: number;
 };
 ```
+
+Then in `src/engine/archetypeSeed.ts`, reference them instead of re-declaring:
+
+```ts
+import type { PaceAnswer, MidAnswer, FocusAnswer, SinkAnswer } from '@/src/domain/types';
+
+export interface QuizAnswers {
+  pace: PaceAnswer;
+  mid?: MidAnswer;
+  focus?: FocusAnswer;
+  sink?: SinkAnswer;
+}
+```
+
+`AREA_LABEL`'s existing `Record<NonNullable<QuizAnswers['sink']>, string>` keeps working unchanged.
+
+Verify no consumer broke: `npx tsc --noEmit` must be clean before you continue.
 
 - [ ] **Step 5: Write the implementation**
 
@@ -930,7 +968,8 @@ Expected: FAIL — module not found
 // src/features/planner/statedFocusBlock.ts
 import * as C from '@/src/engine/constants';
 
-export type FocusAnswer = 'morning' | 'evening' | 'varies';
+import type { FocusAnswer } from '@/src/domain/types';   // canonical — do NOT re-declare
+
 export type StatedFocusBlock = { startMin: number; endMin: number; label: string; source: 'stated' };
 
 /**
