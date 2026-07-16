@@ -53,17 +53,16 @@ export default function Categories() {
 
   const canContinue = picked.length >= 1;
 
-  const onContinue = useOnce(() => {
-    trackCategoriesCommitted();
-    router.push('/(onboarding)/ready');
-  });
-
-  // Count-aware nudge: encourage one or two more early, then affirm once there's
-  // plenty — so "one more" never lingers after the grid is full.
-  function pickedLine(n: number): string {
-    if (n >= 3) return `${n} picked. That's plenty to learn from.`;
-    const more = n === 1 ? 'A couple more' : 'One more';
-    return `${n} picked. ${more} and I'll learn your pace faster.`;
+  // Shared validation core: what would committing the current draft produce?
+  // Both the explicit (onSubmitEditing, shows errors) and implicit (blur/
+  // Continue, silent) commit paths read this so they can't drift apart.
+  function draftResult(): { id: string; name: string } | null {
+    const name = draft.trim();
+    if (name.length === 0) return null;
+    const id = slugify(name);
+    if (id.length === 0) return null;
+    if (isPicked(id)) return null;
+    return { id, name };
   }
 
   function commitCustom() {
@@ -88,6 +87,39 @@ export default function Categories() {
     setDraft('');
     setCustomError(null);
     setAdding(false);
+  }
+
+  // A blur or Continue tap isn't an explicit submit, so it never scolds — a
+  // valid typed name is silently kept, an invalid/empty one is silently
+  // dropped. Without this, a valid name the user forgot to press return on
+  // vanishes without a trace, which is the exact bug this screen exists to
+  // prevent.
+  function flushValidDraft() {
+    if (!adding) return;
+    const result = draftResult();
+    if (result) togglePick(result);
+    setDraft('');
+    setCustomError(null);
+    setAdding(false);
+  }
+
+  function onOutsideTap() {
+    flushValidDraft();
+    Keyboard.dismiss();
+  }
+
+  const onContinue = useOnce(() => {
+    flushValidDraft();
+    trackCategoriesCommitted();
+    router.push('/(onboarding)/ready');
+  });
+
+  // Count-aware nudge: encourage one or two more early, then affirm once there's
+  // plenty — so "one more" never lingers after the grid is full.
+  function pickedLine(n: number): string {
+    if (n >= 3) return `${n} picked. That's plenty to learn from.`;
+    const more = n === 1 ? 'A couple more' : 'One more';
+    return `${n} picked. ${more} and I'll learn your pace faster.`;
   }
 
   // Custom picks that aren't part of the seed grid, so they render as their own chips.
@@ -116,7 +148,8 @@ export default function Categories() {
       {/* Tapping anywhere outside the inline "+ New" input dismisses the keyboard. */}
       <Pressable
         accessible={false}
-        onPress={Keyboard.dismiss}
+        testID="categories-outside-tap"
+        onPress={onOutsideTap}
         style={{ flex: 1, gap: t.space[4], paddingTop: t.space[2] }}
       >
         <Reveal index={0}>

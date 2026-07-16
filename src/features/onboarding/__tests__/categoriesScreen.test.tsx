@@ -124,4 +124,41 @@ describe('Onboarding Step 1 — Pick tasks', () => {
     expect(tree.queryByLabelText('New category name')).toBeNull();
     expect(tree.queryByText('Try letters or numbers')).toBeNull();
   });
+
+  it('keeps a valid typed name when Continue is tapped instead of submitting', () => {
+    const tree = render(<Categories />);
+    fireEvent.press(tree.getByText('Cleaning'));
+    fireEvent.press(tree.getByText('Add your own'));
+    fireEvent.changeText(tree.getByLabelText('New category name'), 'Gardening');
+    // No submitEditing — the user goes straight for Continue instead.
+    fireEvent.press(screen.getByText('Continue →'));
+    expect(useOnboardingStore.getState().picked.map((p) => p.id)).toContain('gardening');
+    expect(pushMock).toHaveBeenCalledWith('/(onboarding)/ready');
+  });
+
+  it('keeps a valid typed name when the user taps outside the input', () => {
+    const tree = render(<Categories />);
+    fireEvent.press(tree.getByText('Add your own'));
+    fireEvent.changeText(tree.getByLabelText('New category name'), 'Gardening');
+    fireEvent.press(tree.getByTestId('categories-outside-tap'));
+    expect(useOnboardingStore.getState().picked.map((p) => p.id)).toContain('gardening');
+    expect(tree.queryByLabelText('New category name')).toBeNull();
+  });
+
+  it('silently drops an invalid draft on outside tap or Continue — no error, no crash', () => {
+    const tree = render(<Categories />);
+    fireEvent.press(tree.getByText('Cleaning'));
+    fireEvent.press(tree.getByText('Add your own'));
+    fireEvent.changeText(tree.getByLabelText('New category name'), '🎉');
+    fireEvent.press(tree.getByTestId('categories-outside-tap'));
+    expect(tree.queryByLabelText('New category name')).toBeNull();
+    expect(tree.queryByText('Try letters or numbers')).toBeNull();
+    expect(useOnboardingStore.getState().picked.map((p) => p.id)).toEqual(['cleaning']);
+
+    fireEvent.press(tree.getByText('Add your own'));
+    fireEvent.changeText(tree.getByLabelText('New category name'), '🎉');
+    fireEvent.press(screen.getByText('Continue →'));
+    expect(tree.queryByText('Try letters or numbers')).toBeNull();
+    expect(pushMock).toHaveBeenCalledWith('/(onboarding)/ready');
+  });
 });
