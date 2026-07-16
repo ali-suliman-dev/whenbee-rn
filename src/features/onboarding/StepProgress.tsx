@@ -9,17 +9,20 @@ import Animated, {
 import { useTheme } from '@/src/theme/useTheme';
 
 /**
- * Three hairline pills, filled indigo up to and including the current step.
- * Forward-only progress indicator for the onboarding flow (no carousel race).
- * On mount the *current* step fills in from the left — a quiet "you advanced"
- * cue; already-completed steps render full instantly so only the new gain moves.
+ * Hairline pills (one per onboarding step), filled indigo up to and including
+ * the current step. Forward-only progress indicator for the onboarding flow
+ * (no carousel race). On mount the *current* step fills in from the left — a
+ * quiet "you advanced" cue; already-completed steps render full instantly so
+ * only the new gain moves.
  */
-export function StepProgress({ current, total = 3 }: { current: number; total?: number }) {
+export function StepProgress({ current, total }: { current: number; total: number }) {
   const t = useTheme();
   return (
     <View
+      accessible
       accessibilityRole="progressbar"
       accessibilityLabel={`Step ${current + 1} of ${total}`}
+      accessibilityValue={{ min: 0, max: total, now: current + 1 }}
       style={{ flexDirection: 'row', gap: t.space[1], paddingVertical: t.space[3] }}
     >
       {Array.from({ length: total }).map((_, i) => (
@@ -49,7 +52,7 @@ function Pill({ filled, active }: { filled: boolean; active: boolean }) {
     <View
       style={{
         flex: 1,
-        height: 4,
+        height: t.size.progressPill,
         borderRadius: t.radii.full,
         backgroundColor: t.colors.hairline,
         overflow: 'hidden',

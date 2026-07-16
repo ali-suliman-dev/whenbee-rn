@@ -96,6 +96,7 @@ export function QuizStepScreen({ step }: { step: number }): React.JSX.Element | 
 
         {isTile ? (
           <View
+            accessibilityRole="radiogroup"
             style={{
               flexDirection: 'row',
               flexWrap: 'wrap',
@@ -117,7 +118,7 @@ export function QuizStepScreen({ step }: { step: number }): React.JSX.Element | 
             ))}
           </View>
         ) : (
-          <View style={{ gap: t.space[2.5], marginTop: t.space[6] }}>
+          <View accessibilityRole="radiogroup" style={{ gap: t.space[2.5], marginTop: t.space[6] }}>
             {question.options.map((opt) => (
               <QuizOption
                 key={opt.value}
