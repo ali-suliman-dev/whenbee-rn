@@ -8,7 +8,6 @@ import { AppButton } from '@/src/components/AppButton';
 import { Card } from '@/src/components/Card';
 import { HoneyTrail } from '@/src/components/HoneyTrail';
 import { OnboardingBackdrop } from '@/src/components/OnboardingBackdrop';
-import { OnboardingFooterCard } from '@/src/components/OnboardingFooterCard';
 import { ReasonGlyph } from '@/src/features/reward/ReasonGlyph';
 import { useTheme } from '@/src/theme/useTheme';
 import { type } from '@/src/theme/typography';
@@ -101,11 +100,12 @@ export default function Ready() {
           <View style={{ flex: 1 }} />
 
           <Reveal index={3}>
-            <OnboardingFooterCard
-              glyph={<ReasonGlyph kind="pulled" active={false} ambient size={t.iconSize.lg} />}
-            >
-              Empty days are fine. Forgot to time something? Add it in one tap.
-            </OnboardingFooterCard>
+            <View style={{ flexDirection: 'row', alignItems: 'flex-start', gap: t.space[3] }}>
+              <ReasonGlyph kind="pulled" active={false} ambient size={t.iconSize.md} />
+              <AppText variant="body" style={{ flex: 1, color: t.colors.ink }}>
+                Forgot to time something? Add it in one tap — empty days are fine.
+              </AppText>
+            </View>
           </Reveal>
 
           {/* Optional nickname — quiet, skippable, folded in above the CTA. */}

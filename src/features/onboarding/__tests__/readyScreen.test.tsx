@@ -30,6 +30,7 @@ describe('Onboarding Step 2 — Ready screen', () => {
     expect(screen.getByText(/Your accuracy ripens as you log/i)).toBeTruthy();
     expect(screen.getByText(/no streak to break/i)).toBeTruthy();
     expect(screen.getByText(/Empty days are fine/i)).toBeTruthy();
+    expect(screen.getByText(/Forgot to time something\? Add it in one tap/i)).toBeTruthy();
     // Optional nickname field
     expect(screen.getByText(/Anything I should call you/i)).toBeTruthy();
     expect(screen.getByLabelText('Your nickname')).toBeTruthy();
