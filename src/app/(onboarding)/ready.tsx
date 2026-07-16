@@ -38,7 +38,10 @@ export default function Ready() {
   const timeFirstThing = useOnce(() => {
     saveName(nickname.trim() || undefined);
     complete();
+    // Anchor (tabs) beneath first: (modals) live on the root stack, so pushing
+    // the sheet without the anchor traps the user in the drawer on dismiss.
     router.replace('/(tabs)');
+    router.push('/(modals)/add-task');
   });
 
   return (
