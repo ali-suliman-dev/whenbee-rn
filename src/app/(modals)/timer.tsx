@@ -533,7 +533,7 @@ function TimerScreen({ session }: { session: TimerSessionParams }) {
         {/* Hyperfocus guardrail check-in (Pro, opt-in) — a calm amber panel pinned to
             the bottom over the dimmed controls. The ring stays readable above. Mounted
             only while due; entering-only motion drives the dismiss internally. */}
-        {timer.guardDue ? (
+        {timer.guardDue && !forgotOpen ? (
           <View
             style={{ position: 'absolute', left: 0, right: 0, bottom: 0 }}
             pointerEvents="box-none"
