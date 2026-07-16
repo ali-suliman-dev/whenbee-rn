@@ -30,6 +30,7 @@ All public keys are `EXPO_PUBLIC_*` (read at build time, exposed to the client) 
 | `EXPO_PUBLIC_POSTHOG_HOST` | analytics | defaults to `https://eu.i.posthog.com` |
 | `EXPO_PUBLIC_SENTRY_DSN` | crash reporting | Sentry disabled |
 | `EXPO_PUBLIC_RC_IOS_KEY` / `EXPO_PUBLIC_RC_ANDROID_KEY` | RevenueCat | purchases stubbed (also stubbed in Expo Go) |
+| `EXPO_PUBLIC_SUPABASE_URL` / `EXPO_PUBLIC_SUPABASE_ANON_KEY` | feedback channel | `getFeedbackClient()` returns `null`; feedback submit is queued locally, changelog fetch returns `[]` |
 
 Because keys are optional, the core guess → timer → learn loop runs fully offline with an empty `.env`. Never hardcode prices — read them from RevenueCat.
 
