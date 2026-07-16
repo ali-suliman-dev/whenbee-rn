@@ -55,6 +55,29 @@ describe('Reveal screen', () => {
     ).toHaveLength(1);
   });
 
+  test('a different-answers re-mount (genuine retake) re-fires the funnel', () => {
+    const { unmount } = render(<Reveal />);
+    expect(
+      captureSpy.mock.calls.filter(([event]) => event === 'quiz_completed'),
+    ).toHaveLength(1);
+    expect(
+      captureSpy.mock.calls.filter(([event]) => event === 'reveal_shown'),
+    ).toHaveLength(1);
+
+    // Unmount and change the answers to simulate a genuine retake
+    unmount();
+    useOnboardingStore.setState({ quizAnswers: { pace: 'steady', mid: 'tortoise' } });
+
+    // Re-mount with different answers
+    render(<Reveal />);
+    expect(
+      captureSpy.mock.calls.filter(([event]) => event === 'quiz_completed'),
+    ).toHaveLength(2);
+    expect(
+      captureSpy.mock.calls.filter(([event]) => event === 'reveal_shown'),
+    ).toHaveLength(2);
+  });
+
   test('double-tapping Continue pushes to categories only once', () => {
     render(<Reveal />);
     const cta = screen.getByText(/Sharpen it on my tasks/i);
