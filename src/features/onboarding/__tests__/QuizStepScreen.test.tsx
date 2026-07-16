@@ -22,3 +22,9 @@ it('tells the user why Next is disabled, and stops once they answer', () => {
   fireEvent.press(tree.getByText('About right'));
   expect(tree.queryByText('Pick one to continue')).toBeNull();
 });
+
+it('offers no skip — the quiz is the product', () => {
+  const tree = render(<QuizStepScreen step={0} />);
+  expect(tree.queryByText('Skip to my type')).toBeNull();
+  expect(tree.queryByText(/skip/i)).toBeNull();
+});

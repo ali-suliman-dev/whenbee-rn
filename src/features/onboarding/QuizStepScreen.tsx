@@ -20,9 +20,10 @@ import type { QuizAnswers } from '@/src/engine';
 // QuizStepScreen — one time-style quiz question per route (Layout A, companion-led).
 // The quiz is PART of onboarding: the same top progress bar counts each question as
 // a step (no separate comb). The Whenbee bee hosts; the answer NEVER auto-advances
-// (the user taps Next). Skip-left / Next-right, one row, Next styled exactly like
-// the onboarding Continue (default size — never the oversized lg). Back = native
-// swipe. Reveal is reached only from the last step's Next.
+// (the user taps Next). Mandatory — no skip; the quiz answers drive the honest
+// number, so skipping would only cost the user their own accuracy. Next styled
+// exactly like the onboarding Continue (default size — never the oversized lg).
+// Back = native swipe. Reveal is reached only from the last step's Next.
 // ──────────────────────────────────────────────────────────────────────────────
 
 export function QuizStepScreen({ step }: { step: number }): React.JSX.Element | null {
@@ -30,7 +31,7 @@ export function QuizStepScreen({ step }: { step: number }): React.JSX.Element | 
   const insets = useSafeAreaInsets();
   const quizAnswers = useOnboardingStore((s) => s.quizAnswers);
   const setQuizAnswer = useOnboardingStore((s) => s.setQuizAnswer);
-  const { trackQuizSkipped, trackQuizStarted } = usePersonalize();
+  const { trackQuizStarted } = usePersonalize();
 
   const question = QUIZ_QUESTIONS[step];
   const isLast = step === QUIZ_QUESTIONS.length - 1;
@@ -65,19 +66,9 @@ export function QuizStepScreen({ step }: { step: number }): React.JSX.Element | 
     else router.push(`/(onboarding)/quiz/${step + 1}`);
   }
 
-  function skip() {
-    trackQuizSkipped();
-    router.push('/(onboarding)/ready');
-  }
-
   return (
     <Screen backdrop={<OnboardingBackdrop />}>
       <StepProgress current={QUIZ_BASE + step} total={ONBOARDING_TOTAL} />
-
-      {/* Skip lives quietly at the top, just under the progress bar. */}
-      <View style={{ flexDirection: 'row', justifyContent: 'flex-end' }}>
-        <AppButton label="Skip to my type" variant="ghost" size="xs" onPress={skip} />
-      </View>
 
       <View style={{ flex: 1, paddingTop: t.space[2] }}>
         <View style={{ alignItems: 'center', gap: t.space[3] }}>

@@ -2,6 +2,7 @@ import { useOnboardingStore, type PickedCategory } from '@/src/stores/onboarding
 import { useCategoriesStore } from '@/src/stores/categoriesStore';
 import { CATEGORY_NAMES } from '@/src/engine';
 import { analytics } from '@/src/services/analytics';
+import { DEFAULT_CATEGORY_IDS } from './categories';
 
 /**
  * Onboarding feature hook. Owns the cross-store wiring for the 3-step flow so the
@@ -31,9 +32,17 @@ export function useOnboarding() {
    * Finish the flow: persist the picked categories (balanced adapt speed by
    * default) and flip the boot-gate flag. category_stats rows are created lazily
    * on first read, so nothing is pre-seeded into the DB here.
+   *
+   * Floor: an empty pick list (the quiz is mandatory now, but this stays as
+   * belt-and-braces) falls back to DEFAULT_CATEGORY_IDS — an empty tracked list
+   * is unrecoverable in the UI (see categories.ts).
    */
   function complete() {
-    setCategories(picked.map((p) => ({ id: p.id, name: p.name, adaptSpeed: 'balanced' })));
+    const list =
+      picked.length > 0
+        ? picked
+        : DEFAULT_CATEGORY_IDS.map((id) => ({ id, name: CATEGORY_NAMES[id] ?? id }));
+    setCategories(list.map((p) => ({ id: p.id, name: p.name, adaptSpeed: 'balanced' })));
     markComplete();
     // A picked id that isn't a seed slug is a custom category the user typed.
     const customAdded = picked.some((p) => !(p.id in CATEGORY_NAMES));
