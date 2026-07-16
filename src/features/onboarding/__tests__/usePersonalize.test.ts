@@ -14,6 +14,20 @@ it('persists the seed and returns a reveal card from quiz answers', () => {
   expect(card!.title.length).toBeGreaterThan(0);
 });
 
+it('persists the sink answer on the seed so the engine can bump that category', () => {
+  const { result } = renderHook(() => usePersonalize());
+  act(() => {
+    result.current.saveQuiz({ pace: 'lot', mid: 'rabbit', sink: 'deepwork', focus: 'morning' });
+  });
+  expect(useSettingsStore.getState().archetypeSeed).toMatchObject({ sink: 'deepwork', source: 'quiz' });
+});
+
+it('omits sink when the question was not answered', () => {
+  const { result } = renderHook(() => usePersonalize());
+  act(() => { result.current.saveQuiz({ pace: 'lot' }); });
+  expect(useSettingsStore.getState().archetypeSeed?.sink).toBeUndefined();
+});
+
 it('persists a name and clears on undefined', () => {
   const { result } = renderHook(() => usePersonalize());
   act(() => result.current.saveName('Ali'));

@@ -39,7 +39,7 @@ export function usePersonalize() {
     saveQuiz: (answers: QuizAnswers): RevealCard => {
       const m0 = seedMultiplierFor(answers);
       // tookAt is stamped here at the hook layer (allowed — not the engine).
-      setArchetypeSeed({ m0, source: 'quiz', tookAt: Date.now() });
+      setArchetypeSeed({ m0, sink: answers.sink, source: 'quiz', tookAt: Date.now() });
       const { title, blurb } = rungFor(m0);
       analytics.capture('quiz_completed', { archetype: title });
       return { title, blurb, multiplier: m0 };
