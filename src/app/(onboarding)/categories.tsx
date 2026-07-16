@@ -161,6 +161,18 @@ export default function Categories() {
       </Pressable>
 
       <Reveal index={3} style={{ paddingTop: t.space[4] }}>
+        {!canContinue ? (
+          <AppText
+            style={{
+              fontSize: t.fontSize.sm,
+              color: t.colors.inkFaint,
+              textAlign: 'center',
+              marginBottom: t.space[2],
+            }}
+          >
+            Pick at least one to continue
+          </AppText>
+        ) : null}
         <AppButton
           label="Continue →"
           fullWidth

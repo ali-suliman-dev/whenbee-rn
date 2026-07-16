@@ -141,6 +141,18 @@ export function QuizStepScreen({ step }: { step: number }): React.JSX.Element | 
         <View style={{ flex: 1 }} />
 
         {/* Only the Next button at the bottom — full width, the standard CTA. */}
+        {!hasAnswer ? (
+          <AppText
+            style={{
+              fontSize: t.fontSize.sm,
+              color: t.colors.inkFaint,
+              textAlign: 'center',
+              marginBottom: t.space[2],
+            }}
+          >
+            Pick one to continue
+          </AppText>
+        ) : null}
         <AppButton
           label="Next →"
           variant="indigo"
