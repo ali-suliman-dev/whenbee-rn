@@ -4,7 +4,7 @@ import { solveAffine, priorFor } from '@/src/engine';
 
 it('cold get returns empty affine stats at the population prior', async () => {
   const repo = makeCategoryStatsRepo(createMemoryDatabase());
-  const row = await repo.get('admin');
+  const row = await repo.get('admin', undefined);
   expect(row.n).toBe(0);
   expect(row.sw).toBe(0);
   const fit = solveAffine({ sw: row.sw, swx: row.swx, swy: row.swy, swxx: row.swxx, swxy: row.swxy }, row.priorMult);
@@ -18,7 +18,7 @@ it('lazily seeds a legacy row (n>0, sw=0) from m_effective', async () => {
     priorMult: 2.2, adaptSpeed: 'balanced', updatedAt: 1, reclaimedMinutes: 0,
     sw: 0, swx: 0, swy: 0, swxx: 0, swxy: 0,
   });
-  const row = await makeCategoryStatsRepo(db).get('admin');
+  const row = await makeCategoryStatsRepo(db).get('admin', undefined);
   expect(row.sw).toBeGreaterThan(0);
   const fit = solveAffine({ sw: row.sw, swx: row.swx, swy: row.swy, swxx: row.swxx, swxy: row.swxy }, row.priorMult);
   expect(fit.b).toBeCloseTo(1.4, 4); // honest unchanged immediately after migration
@@ -40,6 +40,6 @@ describe('CategoryStatsRepo.deleteStat', () => {
     // raw row gone
     expect(await db.getCategoryStat('cleaning')).toBeNull();
     // repo.get re-seeds a fresh n=0 row (never throws)
-    expect((await repo.get('cleaning')).n).toBe(0);
+    expect((await repo.get('cleaning', undefined)).n).toBe(0);
   });
 });

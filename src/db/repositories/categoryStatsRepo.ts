@@ -3,19 +3,22 @@
 // it seeds a valid n=0 row whose multiplier is the population prior, so the very
 // first suggestion is already smart and downstream code never branches on null.
 
-import { priorFor } from '@/src/engine/priors';
+import { seededPriorFor } from '@/src/engine/priors';
 import { emptyAffineStats, seedAffineFromMultiplier } from '@/src/engine';
 import type { Database } from '../Database';
 import type { CategoryStatRow } from '../types';
+import type { ArchetypeSeed } from '@/src/domain/types';
 
 export interface CategoryStatsRepo {
-  get(categoryId: string): Promise<CategoryStatRow>;
+  /** @param seed - the quiz archetype seed, or undefined when no quiz was
+   *  taken (falls back to the plain population prior for a cold row). */
+  get(categoryId: string, seed: ArchetypeSeed | undefined): Promise<CategoryStatRow>;
   upsert(row: CategoryStatRow): Promise<void>;
   deleteStat(categoryId: string): Promise<void>;
 }
 
-function seedRow(categoryId: string): CategoryStatRow {
-  const prior = priorFor(categoryId);
+function seedRow(categoryId: string, seed: ArchetypeSeed | undefined): CategoryStatRow {
+  const prior = seededPriorFor(categoryId, seed);
   return {
     categoryId,
     n: 0,
@@ -49,9 +52,9 @@ function withAffineSeed(row: CategoryStatRow): CategoryStatRow {
 
 export function makeCategoryStatsRepo(db: Database): CategoryStatsRepo {
   return {
-    async get(categoryId: string): Promise<CategoryStatRow> {
+    async get(categoryId: string, seed: ArchetypeSeed | undefined): Promise<CategoryStatRow> {
       const row = await db.getCategoryStat(categoryId);
-      return row ? withAffineSeed(row) : seedRow(categoryId);
+      return row ? withAffineSeed(row) : seedRow(categoryId, seed);
     },
     async upsert(row: CategoryStatRow): Promise<void> {
       await db.upsertCategoryStat(row);
