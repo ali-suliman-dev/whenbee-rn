@@ -44,4 +44,12 @@ describe('Onboarding Step 1 — Pick tasks', () => {
     fireEvent.press(screen.getByText('Continue →'));
     expect(pushMock).not.toHaveBeenCalled();
   });
+
+  it('tells the user why Continue is disabled, and stops once they pick a category', () => {
+    render(<Categories />);
+    expect(screen.getByText('Pick at least one to continue')).toBeTruthy();
+
+    fireEvent.press(screen.getByText('Cleaning'));
+    expect(screen.queryByText('Pick at least one to continue')).toBeNull();
+  });
 });
