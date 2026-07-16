@@ -35,7 +35,7 @@ import {
 import { shouldSuppressHonestBanner, guardCollidesWithHonest, honestReachedFireMs } from '@/src/lib/notifyTiming';
 import { useEntitlement } from '@/src/features/paywall/useEntitlement';
 import { guardrailThresholdMin, nudgeThresholdMin, confidenceFor, honestRangeFor } from '@/src/engine';
-import type { AdaptSpeed, CalibrationConfidence, HonestRange } from '@/src/domain/types';
+import type { AdaptSpeed, CalibrationConfidence, HonestRange, LogSource } from '@/src/domain/types';
 
 // ──────────────────────────────────────────────────────────────────────────────
 // useTimer — the Live Timer's whole brain. Keeps timer.tsx thin.
@@ -137,6 +137,10 @@ export interface UseTimerResult {
   keepGoing: () => void;
   /** Dismiss the check-in card and run the normal Stop-and-log flow. */
   wrapUp: () => Promise<void>;
+  /** Manual forgot-to-stop: log a corrected completed retro at finishMs, then reward. */
+  onForgotStopAndLog: (finishMs: number, method: 'preset' | 'wheel') => Promise<void>;
+  /** Manual forgot-to-stop escape: log a partial (never trains) and dismiss. */
+  onForgotNotSure: () => Promise<void>;
 }
 
 export function useTimer(params: TimerParams): UseTimerResult {
@@ -445,6 +449,58 @@ export function useTimer(params: TimerParams): UseTimerResult {
     [fireGuard],
   );
 
+  // Shared tail for every "completed" stop path: write the calibration log, fire
+  // the first-completion activation event, set the reward, flip Today + plan
+  // bookkeeping, then navigate to the reward. Both the normal Stop (timed) and the
+  // manual Forgot (retro) funnel through here — only actualMin + source differ.
+  const logCompletedAndReward = useCallback(
+    async (args: { actualMin: number; source: LogSource; label: string; category: string }) => {
+      const { actualMin, source, label: resolvedLabel, category: resolvedCategory } = args;
+      const adaptSpeed: AdaptSpeed =
+        useCategoriesStore.getState().categories.find((c) => c.id === resolvedCategory)?.adaptSpeed ??
+        'balanced';
+
+      const result = await applyLog({
+        category: resolvedCategory,
+        estimateMin: guessMin,
+        actualMin,
+        status: 'completed',
+        source,
+        adaptSpeed,
+        label: resolvedLabel,
+        suggestedHonestMin,
+        startedAt: startedAtRef.current ?? undefined,
+      });
+
+      if (!firstTaskCompletedFiredRef.current) {
+        void useCalibrationStore.getState().loadReclaimSummary().then((summary) => {
+          if (summary.companion.lifetimeNectar === 1 && !firstTaskCompletedFiredRef.current) {
+            firstTaskCompletedFiredRef.current = true;
+            analytics.capture('first_task_completed');
+          }
+        }).catch(() => { /* analytics fire-and-forget; never break the core loop */ });
+      }
+
+      useRewardStore.getState().setReward({ actualMin, guessMin, category: resolvedCategory, label: resolvedLabel, result });
+
+      if (taskId) {
+        useDayTasksStore.getState().completeTask(taskId, { completedAt: Date.now(), actualMin });
+        void useDayTasksStore.getState().reload();
+      }
+      if (taskId) {
+        const planStore = usePlanStore.getState();
+        const planActive = planStore.active;
+        if (planActive !== null) {
+          const planTask = planActive.tasks.find((t) => t.id === taskId);
+          if (planTask?.status === 'running') planStore.completeTask(taskId, actualMin);
+        }
+      }
+
+      router.replace('/(modals)/reward');
+    },
+    [applyLog, guessMin, suggestedHonestMin, taskId],
+  );
+
   const onStopAndLog = useCallback(async (labelOverride?: string, categoryOverride?: string) => {
     // Mark BEFORE clearing the store so the external-clear reaction treats the
     // upcoming stop()/reward-nav as ours (no dismiss, no fake log).
@@ -471,70 +527,60 @@ export function useTimer(params: TimerParams): UseTimerResult {
     // closure-captured route params for normal (non-quick-start) timer stops.
     const resolvedLabel = labelOverride ?? label;
     const resolvedCategory = categoryOverride ?? category;
+    await logCompletedAndReward({ actualMin, source: 'timed', label: resolvedLabel, category: resolvedCategory });
+  }, [stop, logCompletedAndReward, category, label, clearOverrunTimer]);
 
+  // Manual "I forgot to stop — I finished at finishMs". stop(finishMs) derives the
+  // corrected actualMin from that timestamp; the log is source:'retro' (half weight)
+  // because a reconstructed finish is approximate. Mirrors onStopAndLog's teardown.
+  const onForgotStopAndLog = useCallback(
+    async (finishMs: number, method: 'preset' | 'wheel') => {
+      stoppingLocallyRef.current = true;
+      clearOverrunTimer();
+      const { actualMin } = stop(finishMs);
+      void cancelTimerDone();
+      void cancelGuardCheckIn();
+      endFinishTimeActivity();
+      const elapsedMin = Math.max(0, Math.floor((Date.now() - (startedAtRef.current ?? Date.now())) / 60_000));
+      analytics.capture('forgot_stop_logged', {
+        method,
+        corrected_min: actualMin,
+        elapsed_min: elapsedMin,
+        delta_min: Math.max(0, elapsedMin - actualMin),
+      });
+      await logCompletedAndReward({ actualMin, source: 'retro', label, category });
+    },
+    [stop, clearOverrunTimer, logCompletedAndReward, label, category],
+  );
+
+  // "Not sure yet" — stop now, record a PARTIAL retro (never trains, excluded from
+  // the model) as best-effort history, then dismiss to Today. No reward (nothing to
+  // celebrate) and never a guilt beat.
+  const onForgotNotSure = useCallback(async () => {
+    stoppingLocallyRef.current = true;
+    clearOverrunTimer();
+    const { actualMin } = stop(Date.now());
+    void cancelTimerDone();
+    void cancelGuardCheckIn();
+    endFinishTimeActivity();
     const adaptSpeed: AdaptSpeed =
-      useCategoriesStore.getState().categories.find((c) => c.id === resolvedCategory)?.adaptSpeed ??
-      'balanced';
-
-    // estimateMin here = the user's GUESS (ratio = actual / guess), NOT the
-    // honest suggestion the ring filled toward.
-    // suggestedHonestMin = the honest number the user SAW (defaults to estimateMin
-    // which IS the honest number passed from Today / Add-Task).
-    const result = await applyLog({
-      category: resolvedCategory,
-      estimateMin: guessMin,
-      actualMin,
-      status: 'completed',
-      source: 'timed',
-      adaptSpeed,
-      label: resolvedLabel,
-      suggestedHonestMin,
-      startedAt: startedAtRef.current ?? undefined,
-    });
-
-    // first_task_completed — THE ACTIVATION EVENT. Fires exactly once after the
-    // user's genuine first-ever calibration completes (lifetimeNectar === 1 after
-    // the log, sourced from the persisted companion row via loadReclaimSummary).
-    // Fire-and-forget: swallow DB errors so analytics never breaks the core loop.
-    if (!firstTaskCompletedFiredRef.current) {
-      void useCalibrationStore.getState().loadReclaimSummary().then((summary) => {
-        if (summary.companion.lifetimeNectar === 1 && !firstTaskCompletedFiredRef.current) {
-          firstTaskCompletedFiredRef.current = true;
-          analytics.capture('first_task_completed');
-        }
-      }).catch(() => { /* analytics fire-and-forget; never break the core loop */ });
+      useCategoriesStore.getState().categories.find((c) => c.id === category)?.adaptSpeed ?? 'balanced';
+    try {
+      await applyLog({
+        category,
+        estimateMin: guessMin,
+        actualMin,
+        status: 'partial',
+        source: 'retro',
+        adaptSpeed,
+        label,
+        startedAt: startedAtRef.current ?? undefined,
+      });
+    } catch {
+      /* history log is best-effort; teardown + dismiss must still happen */
     }
-
-    useRewardStore.getState().setReward({
-      actualMin,
-      guessMin,
-      category: resolvedCategory,
-      label: resolvedLabel,
-      result,
-    });
-
-    // Keep the task on Today — flip it to done (checked off) so the day shows
-    // progress instead of the row vanishing. actualMin powers the "took N" receipt.
-    if (taskId) {
-      useDayTasksStore.getState().completeTask(taskId, { completedAt: Date.now(), actualMin });
-      void useDayTasksStore.getState().reload();
-    }
-
-    // If this task is the active plan's running task, mark it done in the plan
-    // run-state (pure UI bookkeeping — calibration already happened via applyLog above).
-    if (taskId) {
-      const planStore = usePlanStore.getState();
-      const planActive = planStore.active;
-      if (planActive !== null) {
-        const planTask = planActive.tasks.find((t) => t.id === taskId);
-        if (planTask?.status === 'running') {
-          planStore.completeTask(taskId, actualMin);
-        }
-      }
-    }
-
-    router.replace('/(modals)/reward');
-  }, [stop, applyLog, category, guessMin, label, taskId, suggestedHonestMin, clearOverrunTimer]);
+    router.dismiss();
+  }, [stop, clearOverrunTimer, applyLog, category, guessMin, label]);
 
   /**
    * Freeze the elapsed time WITHOUT writing a calibration log. Stores the
@@ -637,5 +683,7 @@ export function useTimer(params: TimerParams): UseTimerResult {
     guardDue,
     keepGoing,
     wrapUp,
+    onForgotStopAndLog,
+    onForgotNotSure,
   };
 }
