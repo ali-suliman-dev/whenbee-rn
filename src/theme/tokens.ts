@@ -261,6 +261,10 @@ export const tokens = {
       night: '#1C1E2E', // dark chip on light (aha card)
       nightSoft: '#2C2E40',
       onIndigo: '#FFFFFF', // text on indigo fill (AA 5.1:1 — warm white only hit 4.37)
+      // ── disabled controls ── (see the dark palette for the rationale)
+      controlDisabled: '#E9E4F6', // inert lavender-grey — reads off white AND off the cream bg
+      onControlDisabled: '#6E7183', // 3.88:1 on controlDisabled
+      controlDisabledEdge: '#DAD5C9', // = hairline
       onAmber: '#20233A', // text on amber fill (AA 7.9:1)
       ringTrack: '#E4DFD3', // sits just off cream
       // Soft-edge backing coin behind the ring bee (WhenbeeAvatar 'soft'). Pure white
@@ -345,6 +349,13 @@ export const tokens = {
       night: '#1C1E2E',
       nightSoft: '#2C2E40',
       onIndigo: '#14151D', // dark text on the lighter dark-mode indigo (AA)
+      // ── disabled controls ──
+      // A disabled pill mutes its FACE, never its label: onIndigo is a DARK ink,
+      // so dimming it toward the bright indigo makes it sink into the fill
+      // (1.92:1) instead of greying out. Inert face + legible label = 3.28:1.
+      controlDisabled: '#292B3C', // = surfaceRaised — visibly inert, not the live indigo
+      onControlDisabled: 'rgba(244,241,234,0.40)', // = inkFaint — 3.28:1 on controlDisabled
+      controlDisabledEdge: 'rgba(255,255,255,0.08)', // = hairline — the face is only 1.3:1 off bg
       onAmber: '#20233A',
       ringTrack: 'rgba(255,255,255,0.08)',
       companionCoin: '#292B3C', // = surfaceRaised (a raised lift on the deep bg)

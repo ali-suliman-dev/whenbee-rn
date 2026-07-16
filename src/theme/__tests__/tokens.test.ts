@@ -31,3 +31,25 @@ describe('design tokens', () => {
     expect(tokens.colors.light.accentEdge).toBe('#C68A30');
   });
 });
+
+describe('disabled control tokens', () => {
+  it('exposes a disabled face, ink, and edge in both palettes', () => {
+    for (const mode of ['light', 'dark'] as const) {
+      const c = tokens.colors[mode];
+      expect(typeof c.controlDisabled).toBe('string');
+      expect(typeof c.onControlDisabled).toBe('string');
+      expect(typeof c.controlDisabledEdge).toBe('string');
+    }
+  });
+
+  it('never reuses the live primary as the disabled face', () => {
+    for (const mode of ['light', 'dark'] as const) {
+      const c = tokens.colors[mode];
+      expect(c.controlDisabled).not.toBe(c.primary);
+    }
+  });
+
+  it('keeps light and dark key order identical', () => {
+    expect(Object.keys(tokens.colors.light)).toEqual(Object.keys(tokens.colors.dark));
+  });
+});
