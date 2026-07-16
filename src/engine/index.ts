@@ -1,6 +1,6 @@
 // Public barrel for the pure calibration engine.
 export * from './constants';
-export { CATEGORY_PRIORS, CATEGORY_NAMES, priorFor } from './priors';
+export { priorFor, seededPriorFor, CATEGORY_PRIORS, CATEGORY_NAMES } from './priors';
 export { clampRatio } from './ratio';
 export { alphaFor, alphaRegFor, updateEwma } from './ewma';
 export * from './affine';
