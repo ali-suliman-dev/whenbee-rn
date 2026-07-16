@@ -135,7 +135,7 @@ export default function Categories() {
     backgroundColor: t.colors.primarySoft,
     borderWidth: t.borderWidth.thin,
     borderColor: t.colors.primary,
-    minWidth: 120,
+    minWidth: t.size.chipMinWidth,
   };
 
   return (
@@ -158,7 +158,7 @@ export default function Categories() {
               fontSize: t.fontSize.xl,
               fontWeight: t.fontWeight.bold as '700',
               color: t.colors.ink,
-              letterSpacing: -0.6,
+              letterSpacing: t.letterSpacing.tight,
             }}
           >
             Where does time slip most?

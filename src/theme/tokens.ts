@@ -35,7 +35,7 @@ export const tokens = {
   // `hitSlop` = extra tap area added via the Pressable hitSlop prop so that small
   // touch targets (secondary buttons, skip links) comfortably meet the 44pt HIG
   // floor without visually enlarging the element.
-  size: { control: { xxs: 28, xs: 32, sm: 36, md: 44, lg: 52 }, coin: 40, wheelCol: 72, wheelRow: 32, shareCard: 340, timelineCol: 110, planCardMin: 70, calTimeCol: 52, gripW: 14, hitSlop: 8, sparkline: 32, honestBand: 180, progressPill: 4 },
+  size: { control: { xxs: 28, xs: 32, sm: 36, md: 44, lg: 52 }, coin: 40, wheelCol: 72, wheelRow: 32, shareCard: 340, timelineCol: 110, planCardMin: 70, calTimeCol: 52, gripW: 14, hitSlop: 8, sparkline: 32, honestBand: 180, progressPill: 4, chipMinWidth: 120, quizTileWidth: '47%' },
 
   // Icon sizing scale — replaces inline 12/16/18/20/22/24/30 across the app.
   iconSize: { xs: 12, sm: 16, md: 20, lg: 24, xl: 32 },
@@ -94,7 +94,9 @@ export const tokens = {
   // rather than loose. `tight` is the standard display-headline tightening.
   // M4: normal/wide added for plan-screen labels (PlanTaskCard "RUNNING" tag,
   // PlanRail now-pill text). tight stays for display headings.
-  letterSpacing: { tight: -0.5, normal: 0.2, wide: 0.8 },
+  // `display` is a deeper tightening reserved for the largest hero headlines
+  // (onboarding welcome) where `tight` alone reads too loose at that size.
+  letterSpacing: { display: -0.75, tight: -0.5, normal: 0.2, wide: 0.8 },
 
   // Soft elevation for raised/focal cards (CSS box-shadow renders cross-platform).
   // `lift` is a genuinely soft drop (real blur radius + elevation) for a focal

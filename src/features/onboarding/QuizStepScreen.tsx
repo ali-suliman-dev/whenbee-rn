@@ -106,7 +106,7 @@ export function QuizStepScreen({ step }: { step: number }): React.JSX.Element | 
             }}
           >
             {question.options.map((opt) => (
-              <View key={opt.value} style={{ width: '47%' }}>
+              <View key={opt.value} style={{ width: t.size.quizTileWidth }}>
                 <QuizOption
                   layout="tile"
                   label={opt.label}

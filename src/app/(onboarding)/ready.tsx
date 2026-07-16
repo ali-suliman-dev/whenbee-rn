@@ -58,7 +58,7 @@ export default function Ready() {
                 fontSize: t.fontSize.xl,
                 fontWeight: t.fontWeight.bold as '700',
                 color: t.colors.ink,
-                letterSpacing: -0.6,
+                letterSpacing: t.letterSpacing.tight,
               }}
             >
               One tap to start. One tap to ripen.
@@ -67,7 +67,7 @@ export default function Ready() {
           <Reveal index={1}>
             <AppText
               variant="body"
-              style={{ color: t.colors.inkSoft, lineHeight: t.fontSize.base * 1.5 }}
+              style={{ color: t.colors.inkSoft, lineHeight: t.fontSize.base * t.lineHeight.relaxed }}
             >
               From your first guess, I&apos;ll show honest times. Each task you log
               makes them sharper, and I&apos;ll never scold you for a gap.

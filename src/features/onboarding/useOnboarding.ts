@@ -5,8 +5,9 @@ import { analytics } from '@/src/services/analytics';
 import { DEFAULT_CATEGORY_IDS } from './categories';
 
 /**
- * Onboarding feature hook. Owns the cross-store wiring for the 3-step flow so the
- * route screens never reach into stores/services directly (layer rule).
+ * Onboarding feature hook. Owns the cross-store wiring for the onboarding flow
+ * (7 steps — see ONBOARDING_FLOW in `onboardingFlow.ts`) so the route screens
+ * never reach into stores/services directly (layer rule).
  */
 export function useOnboarding() {
   const completed = useOnboardingStore((s) => s.completed);

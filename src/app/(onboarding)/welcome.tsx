@@ -40,20 +40,20 @@ export default function Welcome() {
           <AppText
             style={{
               fontSize: t.fontSize['2xl'],
-              lineHeight: t.fontSize['2xl'] * 1.1,
+              lineHeight: t.fontSize['2xl'] * t.lineHeight.tight,
               fontWeight: t.fontWeight.bold as '700',
               color: t.colors.ink,
-              letterSpacing: -0.75,
+              letterSpacing: t.letterSpacing.display,
             }}
           >
             You&apos;re not lazy. You&apos;re a{' '}
             <AppText
               style={{
                 fontSize: t.fontSize['2xl'],
-                lineHeight: t.fontSize['2xl'] * 1.1,
+                lineHeight: t.fontSize['2xl'] * t.lineHeight.tight,
                 fontWeight: t.fontWeight.bold as '700',
                 color: t.colors.primary,
-                letterSpacing: -0.75,
+                letterSpacing: t.letterSpacing.display,
               }}
             >
               time optimist.
@@ -63,7 +63,7 @@ export default function Welcome() {
         <Reveal index={2}>
           <AppText
             variant="body"
-            style={{ color: t.colors.inkSoft, lineHeight: t.fontSize.base * 1.5 }}
+            style={{ color: t.colors.inkSoft, lineHeight: t.fontSize.base * t.lineHeight.relaxed }}
           >
             I learn how long things really take you, then show you the honest number. No more planning around a guess.
           </AppText>
