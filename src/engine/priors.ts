@@ -1,6 +1,6 @@
 // Day-1 population priors. PURE TS. Values verbatim from 01-FOUNDATION.md §3.5.
 // n=0 → M = prior, so the very first suggestion is already smart.
-import { GLOBAL_PRIOR, POPULATION_MEAN_M, ARCHETYPE_SEED_SINK_BUMP, RATIO_CEIL } from './constants';
+import { GLOBAL_PRIOR, POPULATION_MEAN_M, ARCHETYPE_SEED_SINK_BUMP, RATIO_CEIL, RATIO_FLOOR } from './constants';
 import { sinkCategoryFor } from './archetypeSeed';
 import type { ArchetypeSeed } from '@/src/domain/types';
 
@@ -55,5 +55,5 @@ export function seededPriorFor(categoryId: string, seed: ArchetypeSeed | undefin
   const bumped = seed.sink !== undefined && sinkCategoryFor(seed.sink) === categoryId
     ? scaled * ARCHETYPE_SEED_SINK_BUMP
     : scaled;
-  return Math.min(Math.max(bumped, 1 / RATIO_CEIL), RATIO_CEIL);
+  return Math.min(Math.max(bumped, RATIO_FLOOR), RATIO_CEIL);
 }
