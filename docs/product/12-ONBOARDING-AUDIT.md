@@ -1,6 +1,8 @@
 # 12 — Onboarding audit (2026-07-15)
 
-**Verdict: NOT production-ready.** Three silent blockers. The craft is ahead of the wiring — the screens are well-written and well-drawn; the flow collects four answers, shows a personalized multiplier, and then the engine uses a population average anyway.
+> **✅ IMPLEMENTED (branch `worktree-feat+onboarding-wiring`, 2026-07-16).** All three blockers and the accepted findings are fixed on the branch — 17 TDD tasks, each reviewed, ~1962 tests passing. The quiz seed now reaches the honest number (verified live on the simulator: a Dreamer and a Steady Reader get different first honest numbers for the same guess), `sink` bumps the named category, `focus` shows an honest day-1 stated block, the skip button is gone with a default-category floor, disabled buttons are fixed app-wide, the funnel no longer double-counts, and the final CTA opens add-task. Dropped by founder decision: the dead-space layout finding and the `FadeInDown` animation change (the animation rule was carved out in `CLAUDE.md` instead). Plan: [`docs/superpowers/plans/2026-07-15-onboarding-fixes.md`](../superpowers/plans/2026-07-15-onboarding-fixes.md). The verdict below is the **pre-fix** record; the Decisions log at the bottom tracks what changed.
+
+**Verdict (pre-fix): NOT production-ready.** Three silent blockers. The craft is ahead of the wiring — the screens are well-written and well-drawn; the flow collects four answers, shows a personalized multiplier, and then the engine uses a population average anyway.
 
 Method: flow mapped from source; all 7 screens captured on the iOS simulator (deep-link + `simctl io screenshot`); every claim below carries a `file:line` and was confirmed by reading the code, not inferred.
 
