@@ -58,6 +58,12 @@ export interface AppEventProps {
     counted?: boolean;
   };
   first_log: { time_since_install_sec: number };
+  forgot_stop_logged: {
+    method: 'preset' | 'wheel';
+    corrected_min: number;
+    elapsed_min: number;
+    delta_min: number;
+  };
   honey_ripened: { sharpness_before: number; sharpness_after: number; delta: number };
   tier_up: { from_tier: TierName; to_tier: TierName };
   cell_capped: { tier: TierName };

@@ -26,6 +26,7 @@ import { FinishTime } from '@/src/features/timer/FinishTime';
 import { InfoRow, LedgerValue } from '@/src/features/timer/InfoRow';
 import { GuardrailCheckIn } from '@/src/features/timer/GuardrailCheckIn';
 import { PostStopCaptureSheet } from '@/src/components/quick/PostStopCaptureSheet';
+import { ForgotStopSheet } from '@/src/features/timer/ForgotStopSheet';
 import { guessCategory } from '@/src/features/shared/categoryGuess';
 import { usePickerCategories } from '@/src/features/shared/CategoryChips';
 import { useTimerStore } from '@/src/stores/timerStore';
@@ -197,6 +198,7 @@ function TimerScreen({ session }: { session: TimerSessionParams }) {
   // Shown after the user taps Stop on a quick-start session (no category yet).
   // The sheet lets them name + categorise before the log is written.
   const [showCaptureSheet, setShowCaptureSheet] = useState(false);
+  const [forgotOpen, setForgotOpen] = useState(false);
   const [capturedLabel, setCapturedLabel] = useState('');
   const categories = usePickerCategories();
   const stats = useCalibrationStore((s) => s.statsByCategory);
@@ -453,6 +455,26 @@ function TimerScreen({ session }: { session: TimerSessionParams }) {
         >
           <PaceLabel elapsedSec={timer.elapsedSec} estimateSec={timer.estimateSec} />
 
+          {!timer.isQuickStart ? (
+            <Pressable
+              onPress={() => { haptics.light(); setForgotOpen(true); }}
+              accessibilityRole="button"
+              accessibilityLabel="Forgot to stop the timer earlier"
+              hitSlop={t.size.hitSlop}
+              style={{ alignSelf: 'center', paddingVertical: t.space[1] }}
+            >
+              <AppText
+                style={{
+                  ...(type.caption as TextStyle),
+                  color: t.colors.primaryBright,
+                  textDecorationLine: 'underline',
+                }}
+              >
+                Forgot to stop?
+              </AppText>
+            </Pressable>
+          ) : null}
+
           <View style={controlsRow}>
             <Pressable
               onPress={confirmAbandon}
@@ -488,6 +510,23 @@ function TimerScreen({ session }: { session: TimerSessionParams }) {
             onCategoryChange={onCapturedCategoryChange}
             onSave={() => void handleCaptureSave()}
             onSkip={() => void handleCaptureSkip()}
+          />
+        ) : null}
+
+        {forgotOpen ? (
+          <ForgotStopSheet
+            startedAt={timer.startedAt}
+            elapsedMin={Math.max(0, Math.floor((Date.now() - timer.startedAt) / 60000))}
+            honestMin={estimateMin}
+            onConfirm={(finishMs, method) => {
+              setForgotOpen(false);
+              void timer.onForgotStopAndLog(finishMs, method);
+            }}
+            onStillGoing={() => setForgotOpen(false)}
+            onNotSure={() => {
+              setForgotOpen(false);
+              void timer.onForgotNotSure();
+            }}
           />
         ) : null}
 
