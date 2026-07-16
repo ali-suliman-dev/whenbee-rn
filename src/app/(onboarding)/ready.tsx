@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { View, TextInput, KeyboardAvoidingView, Platform } from 'react-native';
+import { View, TextInput, KeyboardAvoidingView, Platform, type TextStyle } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import { Screen } from '@/src/components/Screen';
@@ -11,6 +11,7 @@ import { OnboardingBackdrop } from '@/src/components/OnboardingBackdrop';
 import { OnboardingFooterCard } from '@/src/components/OnboardingFooterCard';
 import { ReasonGlyph } from '@/src/features/reward/ReasonGlyph';
 import { useTheme } from '@/src/theme/useTheme';
+import { type } from '@/src/theme/typography';
 import { useOnboarding } from '@/src/features/onboarding/useOnboarding';
 import { usePersonalize } from '@/src/features/onboarding/usePersonalize';
 import { StepProgress } from '@/src/features/onboarding/StepProgress';
@@ -149,7 +150,13 @@ export default function Ready() {
           </Reveal>
         </View>
 
-        <Reveal index={5} style={{ paddingTop: t.space[4] }}>
+        <Reveal index={5}>
+          <AppText style={{ ...(type.caption as TextStyle), color: t.colors.inkSoft, textAlign: 'center' }}>
+            <AppText style={{ ...(type.captionBold as TextStyle), color: t.colors.ink }}>Made by one person. </AppText>
+            Tell me what to add anytime, it&apos;s in Settings.
+          </AppText>
+        </Reveal>
+        <Reveal index={6} style={{ paddingTop: t.space[4] }}>
           <AppButton label="Time my first thing →" fullWidth onPress={timeFirstThing} />
         </Reveal>
         <View style={{ height: insets.bottom }} />
