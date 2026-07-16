@@ -17,7 +17,7 @@ const pushMock = router.push as jest.Mock;
 describe('Onboarding Step 1 — Pick tasks', () => {
   beforeEach(() => {
     pushMock.mockClear();
-    useOnboardingStore.setState({ completed: false, picked: [] });
+    useOnboardingStore.setState({ completed: false, picked: [], quizAnswers: {} });
   });
 
   it('gates Continue until at least one chip is selected', () => {
@@ -51,5 +51,22 @@ describe('Onboarding Step 1 — Pick tasks', () => {
 
     fireEvent.press(screen.getByText('Cleaning'));
     expect(screen.queryByText('Pick at least one to continue')).toBeNull();
+  });
+
+  it('preselects the area the user named as their time sink', () => {
+    useOnboardingStore.setState({ quizAnswers: { pace: 'lot', sink: 'chores' } });
+    const tree = render(<Categories />);
+    expect(tree.getByLabelText('Cleaning').props.accessibilityState.selected).toBe(true);
+  });
+
+  it('preselects nothing when sink was not answered', () => {
+    useOnboardingStore.setState({ quizAnswers: { pace: 'lot' } });
+    const tree = render(<Categories />);
+    expect(tree.getByText('Pick at least one to continue')).toBeTruthy();
+  });
+
+  it('tells the user areas are editable later, naming the real path', () => {
+    const tree = render(<Categories />);
+    expect(tree.getByText('Change or remove these any time in the Whenbee tab.')).toBeTruthy();
   });
 });

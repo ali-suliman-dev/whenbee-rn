@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import {
   View,
   TextInput,
@@ -19,9 +19,11 @@ import { OnboardingFooterCard } from '@/src/components/OnboardingFooterCard';
 import { BeeGlyph } from '@/src/components/BeeGlyph';
 import { useTheme } from '@/src/theme/useTheme';
 import { useOnboarding } from '@/src/features/onboarding/useOnboarding';
+import { useOnboardingStore } from '@/src/stores/onboardingStore';
 import { StepProgress } from '@/src/features/onboarding/StepProgress';
 import { onboardingStepIndex, ONBOARDING_TOTAL } from '@/src/features/onboarding/onboardingFlow';
 import { Reveal } from '@/src/features/onboarding/Reveal';
+import { sinkCategoryFor, CATEGORY_NAMES } from '@/src/engine';
 import {
   ONBOARDING_CATEGORIES,
   slugify,
@@ -32,8 +34,20 @@ export default function Categories() {
   const t = useTheme();
   const insets = useSafeAreaInsets();
   const { picked, isPicked, togglePick, trackCategoriesCommitted } = useOnboarding();
+  const sink = useOnboardingStore((s) => s.quizAnswers.sink);
   const [adding, setAdding] = useState(false);
   const [draft, setDraft] = useState('');
+
+  // The user already named this area on quiz/2 ("where does time run away from
+  // you most"). Asking again here would be the same question twice — preselect
+  // it and let them adjust. Mount-only: re-running would fight the user
+  // un-picking it after they land on the screen.
+  useEffect(() => {
+    if (sink === undefined) return;
+    const id = sinkCategoryFor(sink);
+    if (!isPicked(id)) togglePick({ id, name: CATEGORY_NAMES[id] ?? id });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const canContinue = picked.length >= 1;
 
@@ -148,6 +162,9 @@ export default function Categories() {
             )}
           </View>
         </Reveal>
+        <AppText style={{ fontSize: t.fontSize.sm, color: t.colors.inkFaint }}>
+          Change or remove these any time in the Whenbee tab.
+        </AppText>
         <View style={{ flex: 1 }} />
         {picked.length > 0 ? (
           <Reveal>
