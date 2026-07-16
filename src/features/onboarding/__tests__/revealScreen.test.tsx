@@ -66,7 +66,7 @@ describe('Reveal screen', () => {
 
     // Unmount and change the answers to simulate a genuine retake
     unmount();
-    useOnboardingStore.setState({ quizAnswers: { pace: 'steady', mid: 'tortoise' } });
+    useOnboardingStore.setState({ quizAnswers: { pace: 'about', mid: 'track' } });
 
     // Re-mount with different answers
     render(<Reveal />);
