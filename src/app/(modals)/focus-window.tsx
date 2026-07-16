@@ -12,9 +12,11 @@ import { FocusCurve } from '@/src/features/planner/FocusCurve';
 import { FocusConfidenceMeter } from '@/src/features/planner/FocusConfidenceMeter';
 import { FocusWindowEditorSheet } from '@/src/features/planner/FocusWindowEditorSheet';
 import { useLearnedFocusWindow } from '@/src/features/planner/useLearnedFocusWindow';
+import { statedFocusBlock } from '@/src/features/planner/statedFocusBlock';
 import { useFocusInsights } from '@/src/features/patterns/useFocusInsights';
 import { whyNarrative } from '@/src/features/patterns/focusCopy';
 import { useSettingsStore } from '@/src/stores/settingsStore';
+import { useOnboardingStore } from '@/src/stores/onboardingStore';
 import { formatWindowRange, formatClockMin } from '@/src/lib/time';
 
 // ──────────────────────────────────────────────────────────────────────────────
@@ -46,7 +48,15 @@ export default function FocusWindowDetail() {
   const startMin = useSettingsStore((s) => s.windowStartMin);
   const endMin = useSettingsStore((s) => s.windowEndMin);
   const setFocusWindow = useSettingsStore((s) => s.setFocusWindow);
+  const focusAnswer = useOnboardingStore((s) => s.quizAnswers.focus);
   const [editing, setEditing] = useState(false);
+
+  // Before any timer has logged evidence, the quiz's self-reported focus block
+  // is the only honest thing to show — the engine's own "coarse" read still
+  // requires a few logged sessions. The moment sampleCount > 0 the engine's
+  // read takes over; the two are never shown together.
+  const stated = statedFocusBlock(focusAnswer);
+  const showStated = win.sampleCount === 0 && stated !== null;
 
   const coarse = win.confidenceTier === 'low';
   const weeks = Math.max(1, Math.round(win.distinctDays / 7));
@@ -130,7 +140,22 @@ export default function FocusWindowDetail() {
             }}
           >
             <View style={{ flexShrink: 1, gap: t.space[1] }}>
-              {coarse ? (
+              {showStated && stated ? (
+                <>
+                  <AppText style={{ ...(type.display as unknown as TextStyle), color: t.colors.ink }}>
+                    {stated.label}
+                  </AppText>
+                  <AppText style={{ ...(type.body as unknown as TextStyle), color: t.colors.inkSoft }}>
+                    {'around '}
+                    <AppText style={{ ...(type.heading as unknown as TextStyle), color: t.colors.ink }}>
+                      {formatWindowRange(stated.startMin, stated.endMin)}
+                    </AppText>
+                  </AppText>
+                  <AppText style={{ ...(type.caption as unknown as TextStyle), color: t.colors.inkFaint }}>
+                    I&apos;ll check that against your timers.
+                  </AppText>
+                </>
+              ) : coarse ? (
                 <>
                   <AppText style={{ ...(type.display as unknown as TextStyle), color: t.colors.ink }}>
                     {win.coarseBlockLabel}
