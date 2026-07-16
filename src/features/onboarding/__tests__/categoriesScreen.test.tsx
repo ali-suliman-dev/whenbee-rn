@@ -79,4 +79,49 @@ describe('Onboarding Step 1 — Pick tasks', () => {
     expect(pushMock).toHaveBeenCalledTimes(1);
     expect(pushMock).toHaveBeenCalledWith('/(onboarding)/ready');
   });
+
+  it('says so instead of swallowing a duplicate', () => {
+    const tree = render(<Categories />);
+    fireEvent.press(tree.getByText('Cleaning'));
+    fireEvent.press(tree.getByText('Add your own'));
+    fireEvent.changeText(tree.getByLabelText('New category name'), 'Cleaning');
+    fireEvent(tree.getByLabelText('New category name'), 'submitEditing');
+    expect(tree.getByText('Already tracking that one')).toBeTruthy();
+  });
+
+  it('says so instead of swallowing an unslugifiable name', () => {
+    const tree = render(<Categories />);
+    fireEvent.press(tree.getByText('Add your own'));
+    fireEvent.changeText(tree.getByLabelText('New category name'), '🎉');
+    fireEvent(tree.getByLabelText('New category name'), 'submitEditing');
+    expect(tree.getByText('Try letters or numbers')).toBeTruthy();
+  });
+
+  it('keeps the input open when a commit fails', () => {
+    const tree = render(<Categories />);
+    fireEvent.press(tree.getByText('Add your own'));
+    fireEvent.changeText(tree.getByLabelText('New category name'), '🎉');
+    fireEvent(tree.getByLabelText('New category name'), 'submitEditing');
+    expect(tree.queryByLabelText('New category name')).toBeTruthy();
+  });
+
+  it('closes the input without an error when submitted blank', () => {
+    const tree = render(<Categories />);
+    fireEvent.press(tree.getByText('Add your own'));
+    fireEvent.changeText(tree.getByLabelText('New category name'), '   ');
+    fireEvent(tree.getByLabelText('New category name'), 'submitEditing');
+    expect(tree.queryByLabelText('New category name')).toBeNull();
+    expect(tree.queryByText('Try letters or numbers')).toBeNull();
+    expect(tree.queryByText('Already tracking that one')).toBeNull();
+  });
+
+  it('adds a valid custom category and clears the error state for next time', () => {
+    const tree = render(<Categories />);
+    fireEvent.press(tree.getByText('Add your own'));
+    fireEvent.changeText(tree.getByLabelText('New category name'), 'Gardening');
+    fireEvent(tree.getByLabelText('New category name'), 'submitEditing');
+    expect(useOnboardingStore.getState().picked.map((p) => p.id)).toContain('gardening');
+    expect(tree.queryByLabelText('New category name')).toBeNull();
+    expect(tree.queryByText('Try letters or numbers')).toBeNull();
+  });
 });

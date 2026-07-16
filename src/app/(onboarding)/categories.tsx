@@ -38,6 +38,7 @@ export default function Categories() {
   const sink = useOnboardingStore((s) => s.quizAnswers.sink);
   const [adding, setAdding] = useState(false);
   const [draft, setDraft] = useState('');
+  const [customError, setCustomError] = useState<string | null>(null);
 
   // The user already named this area on quiz/2 ("where does time run away from
   // you most"). Asking again here would be the same question twice — preselect
@@ -67,11 +68,25 @@ export default function Categories() {
 
   function commitCustom() {
     const name = draft.trim();
-    const id = slugify(name);
-    if (name.length > 0 && id.length > 0 && !isPicked(id)) {
-      togglePick({ id, name });
+    if (name.length === 0) {
+      // Empty is a change of mind, not a mistake — close quietly.
+      setDraft('');
+      setCustomError(null);
+      setAdding(false);
+      return;
     }
+    const id = slugify(name);
+    if (id.length === 0) {
+      setCustomError('Try letters or numbers');
+      return;
+    }
+    if (isPicked(id)) {
+      setCustomError('Already tracking that one');
+      return;
+    }
+    togglePick({ id, name });
     setDraft('');
+    setCustomError(null);
     setAdding(false);
   }
 
@@ -147,9 +162,11 @@ export default function Categories() {
                 <TextInput
                   autoFocus
                   value={draft}
-                  onChangeText={setDraft}
+                  onChangeText={(text) => {
+                    setDraft(text);
+                    if (customError) setCustomError(null);
+                  }}
                   onSubmitEditing={commitCustom}
-                  onBlur={commitCustom}
                   placeholder="Name it…"
                   placeholderTextColor={t.colors.inkSoft}
                   maxLength={MAX_CUSTOM_NAME}
@@ -164,10 +181,22 @@ export default function Categories() {
                 />
               </View>
             ) : (
-              <Chip label="Add your own" variant="add" onPress={() => setAdding(true)} />
+              <Chip
+                label="Add your own"
+                variant="add"
+                onPress={() => {
+                  setCustomError(null);
+                  setAdding(true);
+                }}
+              />
             )}
           </View>
         </Reveal>
+        {customError ? (
+          <AppText style={{ fontSize: t.fontSize.sm, color: t.colors.amberText }}>
+            {customError}
+          </AppText>
+        ) : null}
         <AppText style={{ fontSize: t.fontSize.sm, color: t.colors.inkFaint }}>
           Change or remove these any time in the Whenbee tab.
         </AppText>
