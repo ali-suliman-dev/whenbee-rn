@@ -17,6 +17,7 @@ import { StepProgress } from '@/src/features/onboarding/StepProgress';
 import { onboardingStepIndex, ONBOARDING_TOTAL } from '@/src/features/onboarding/onboardingFlow';
 import { Reveal } from '@/src/features/onboarding/Reveal';
 import { MAX_CUSTOM_NAME } from '@/src/features/onboarding/categories';
+import { useOnce } from '@/src/lib/useOnce';
 
 // Raw (now) → Honest (goal) look-ahead. Not a setup wall — a goal preview.
 const MASTERY_TRAIL = [
@@ -34,11 +35,11 @@ export default function Ready() {
   const { saveName } = usePersonalize();
   const [nickname, setNickname] = useState('');
 
-  function timeFirstThing() {
+  const timeFirstThing = useOnce(() => {
     saveName(nickname.trim() || undefined);
     complete();
     router.replace('/(tabs)');
-  }
+  });
 
   return (
     <Screen backdrop={<OnboardingBackdrop />}>

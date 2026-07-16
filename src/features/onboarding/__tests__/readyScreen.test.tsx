@@ -49,4 +49,12 @@ describe('Onboarding Step 2 — Ready screen', () => {
     expect(useOnboardingStore.getState().completed).toBe(true);
     expect(useSettingsStore.getState().displayName).toBe('Jordan');
   });
+
+  test('double-tapping the CTA only completes onboarding once', () => {
+    render(<Ready />);
+    const cta = screen.getByText(/Time my first thing/);
+    fireEvent.press(cta);
+    fireEvent.press(cta);
+    expect(replaceMock).toHaveBeenCalledTimes(1);
+  });
 });

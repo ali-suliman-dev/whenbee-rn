@@ -15,6 +15,7 @@ import { StepProgress } from '@/src/features/onboarding/StepProgress';
 import { onboardingStepIndex, ONBOARDING_TOTAL } from '@/src/features/onboarding/onboardingFlow';
 import { BrandLockup } from '@/src/features/onboarding/BrandLockup';
 import { Reveal } from '@/src/features/onboarding/Reveal';
+import { useOnce } from '@/src/lib/useOnce';
 
 export default function Welcome() {
   const t = useTheme();
@@ -27,6 +28,7 @@ export default function Welcome() {
     firedRef.current = true;
     trackWelcomeShown();
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  const onGetStarted = useOnce(() => router.push('/(onboarding)/quiz/0'));
   return (
     <Screen backdrop={<OnboardingBackdrop />}>
       <StepProgress current={onboardingStepIndex('welcome')} total={ONBOARDING_TOTAL} />
@@ -88,7 +90,7 @@ export default function Welcome() {
         <AppButton
           label="Get started →"
           fullWidth
-          onPress={() => router.push('/(onboarding)/quiz/0')}
+          onPress={onGetStarted}
         />
       </Reveal>
       <View style={{ height: insets.bottom }} />

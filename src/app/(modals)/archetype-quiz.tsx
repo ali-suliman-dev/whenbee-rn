@@ -19,11 +19,15 @@ import type { QuizAnswers } from '@/src/engine';
 export default function ArchetypeQuizModal() {
   const t = useTheme();
   const insets = useSafeAreaInsets();
-  const { saveQuiz, trackQuizSkipped, trackReopened } = usePersonalize();
+  const { saveQuiz, trackQuizCompleted, trackQuizSkipped, trackReopened } = usePersonalize();
   const [reveal, setReveal] = useState<{ card: RevealCard; answers: QuizAnswers } | null>(null);
 
   function handleQuizComplete(answers: QuizAnswers) {
     const card = saveQuiz(answers);
+    // saveQuiz no longer owns quiz_completed (onboarding's reveal screen guards it
+    // against back-swipe re-mounts) — the re-take modal fires it explicitly here,
+    // once per actual completion, since this screen only mounts fresh per open.
+    trackQuizCompleted({ archetype: card.title });
     trackReopened();
     setReveal({ card, answers });
   }

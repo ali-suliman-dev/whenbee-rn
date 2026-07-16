@@ -41,9 +41,17 @@ export function usePersonalize() {
       // tookAt is stamped here at the hook layer (allowed — not the engine).
       setArchetypeSeed({ m0, sink: answers.sink, source: 'quiz', tookAt: Date.now() });
       const { title, blurb } = rungFor(m0);
-      analytics.capture('quiz_completed', { archetype: title });
+      // quiz_completed is NOT fired here — saveQuiz is a data write, not an event
+      // owner. A caller re-running this (e.g. a re-mounted reveal screen after a
+      // back-swipe) would otherwise double-count the funnel. Callers fire
+      // trackQuizCompleted() themselves, once, at the point that actually means
+      // "the user completed the quiz" for their flow.
       return { title, blurb, multiplier: m0 };
     },
+    /** Fire once per quiz completion — moved out of saveQuiz so a re-mount (or a
+     *  re-take from Settings/the Hub) doesn't silently double- or under-count. */
+    trackQuizCompleted: (payload: { archetype: string }) =>
+      analytics.capture('quiz_completed', payload),
     trackQuizSkipped: () => analytics.capture('quiz_skipped'),
     trackReopened: () => analytics.capture('archetype_reopened'),
   };

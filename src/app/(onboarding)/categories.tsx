@@ -23,6 +23,7 @@ import { useOnboardingStore } from '@/src/stores/onboardingStore';
 import { StepProgress } from '@/src/features/onboarding/StepProgress';
 import { onboardingStepIndex, ONBOARDING_TOTAL } from '@/src/features/onboarding/onboardingFlow';
 import { Reveal } from '@/src/features/onboarding/Reveal';
+import { useOnce } from '@/src/lib/useOnce';
 import { sinkCategoryFor, CATEGORY_NAMES } from '@/src/engine';
 import {
   ONBOARDING_CATEGORIES,
@@ -50,6 +51,11 @@ export default function Categories() {
   }, []);
 
   const canContinue = picked.length >= 1;
+
+  const onContinue = useOnce(() => {
+    trackCategoriesCommitted();
+    router.push('/(onboarding)/ready');
+  });
 
   // Count-aware nudge: encourage one or two more early, then affirm once there's
   // plenty — so "one more" never lingers after the grid is full.
@@ -194,10 +200,7 @@ export default function Categories() {
           label="Continue →"
           fullWidth
           disabled={!canContinue}
-          onPress={() => {
-            trackCategoriesCommitted();
-            router.push('/(onboarding)/ready');
-          }}
+          onPress={onContinue}
         />
       </Reveal>
       <View style={{ height: insets.bottom }} />

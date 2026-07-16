@@ -69,4 +69,14 @@ describe('Onboarding Step 1 — Pick tasks', () => {
     const tree = render(<Categories />);
     expect(tree.getByText('Change or remove these any time in the Whenbee tab.')).toBeTruthy();
   });
+
+  it('double-tapping Continue advances only once', () => {
+    render(<Categories />);
+    fireEvent.press(screen.getByText('Cleaning'));
+    const cta = screen.getByText('Continue →');
+    fireEvent.press(cta);
+    fireEvent.press(cta);
+    expect(pushMock).toHaveBeenCalledTimes(1);
+    expect(pushMock).toHaveBeenCalledWith('/(onboarding)/ready');
+  });
 });

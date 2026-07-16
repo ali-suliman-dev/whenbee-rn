@@ -14,6 +14,7 @@ import { StepProgress } from '@/src/features/onboarding/StepProgress';
 import { ONBOARDING_TOTAL, QUIZ_BASE } from '@/src/features/onboarding/onboardingFlow';
 import { QuizOption } from './QuizOption';
 import { QUIZ_QUESTIONS, QUIZ_SUBTEXT } from './quizQuestions';
+import { useOnce } from '@/src/lib/useOnce';
 import type { QuizAnswers } from '@/src/engine';
 
 // ──────────────────────────────────────────────────────────────────────────────
@@ -50,6 +51,12 @@ export function QuizStepScreen({ step }: { step: number }): React.JSX.Element | 
     trackQuizStarted();
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
+  // Guard above the early return — hooks must run unconditionally every render.
+  const goNext = useOnce(() => {
+    if (isLast) router.push('/(onboarding)/reveal');
+    else router.push(`/(onboarding)/quiz/${step + 1}`);
+  });
+
   if (!question) return null;
 
   const selected = quizAnswers[question.key];
@@ -59,11 +66,6 @@ export function QuizStepScreen({ step }: { step: number }): React.JSX.Element | 
   function choose(value: string) {
     if (!question) return;
     setQuizAnswer(question.key, value as QuizAnswers[typeof question.key]);
-  }
-
-  function goNext() {
-    if (isLast) router.push('/(onboarding)/reveal');
-    else router.push(`/(onboarding)/quiz/${step + 1}`);
   }
 
   return (
