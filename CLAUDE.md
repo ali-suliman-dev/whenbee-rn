@@ -57,11 +57,11 @@ Run lint + typecheck + test before every commit — CI runs the same set on ever
 
 - **No spring/bounce/overshoot on content entrances.** No `withSpring` that overshoots, no bounce easing on text, cards, badges, numbers. Entrances settle, they don't wobble.
 - **No translate-in slides on content** (text, stats, badges rising up into place). Fade with opacity instead.
-- **Never animate buttons** in/out/up/down on entrance. A button appears at full opacity, full size. Don't fade, slide, or pop it in.
+- **Never animate buttons** in/out/up/down on entrance — with one deliberate, approved exception: the **onboarding CTA**. `Reveal.tsx`'s staggered `FadeInDown` (used by `welcome.tsx` / `categories.tsx` / `ready.tsx`) is intentional and approved (founder, 2026-07-15) — do NOT "fix" it to `FadeIn`. Everywhere else a button appears at full opacity, full size. Don't fade, slide, or pop it in.
 - **What IS allowed:** animate the actual SVG **paths** (draw, fill, morph — e.g. the bee's micro-life), **opacity** fades, a **subtle resize** (scale settling with `ease-out`, no overshoot), or a small **wiggle**. Prefer path/opacity/scale over moving elements around.
 - Durations stay short (UI < ~300ms; a hero reveal may stagger opacity fades but each ≤ the motion tokens). Reduced-motion → final state, no travel.
 
-This applies everywhere, onboarding included. The archetype reveal is the reference: card fades + settles a hair in scale, the bee animates its paths, text fades — nothing slides up, nothing bounces, the button is static.
+This applies everywhere. The archetype reveal is the content reference: card fades + settles a hair in scale, the bee animates its paths, text fades — nothing slides up, nothing bounces. The one carve-out is the onboarding CTA entrance noted above (`Reveal.tsx`'s `FadeInDown`), which is approved and stays.
 
 ## Button sizing — HARD RULE
 
