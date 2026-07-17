@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { View, TextInput, KeyboardAvoidingView, Platform, type TextStyle } from 'react-native';
+import { View, TextInput, KeyboardAvoidingView, Platform, Pressable, type TextStyle } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import { Screen } from '@/src/components/Screen';
@@ -8,7 +8,6 @@ import { AppButton } from '@/src/components/AppButton';
 import { Card } from '@/src/components/Card';
 import { HoneyTrail } from '@/src/components/HoneyTrail';
 import { OnboardingBackdrop } from '@/src/components/OnboardingBackdrop';
-import { OnboardingFooterCard } from '@/src/components/OnboardingFooterCard';
 import { ReasonGlyph } from '@/src/features/reward/ReasonGlyph';
 import { useTheme } from '@/src/theme/useTheme';
 import { type } from '@/src/theme/typography';
@@ -35,6 +34,7 @@ export default function Ready() {
   const { complete } = useOnboarding();
   const { saveName } = usePersonalize();
   const [nickname, setNickname] = useState('');
+  const [expanded, setExpanded] = useState(false);
 
   const timeFirstThing = useOnce(() => {
     saveName(nickname.trim() || undefined);
@@ -101,36 +101,21 @@ export default function Ready() {
           <View style={{ flex: 1 }} />
 
           <Reveal index={3}>
-            <OnboardingFooterCard
-              glyph={<ReasonGlyph kind="pulled" active={false} ambient size={t.iconSize.lg} />}
-            >
-              Empty days are fine. Forgot to time something? Add it in one tap.
-            </OnboardingFooterCard>
+            <View style={{ flexDirection: 'row', alignItems: 'flex-start', gap: t.space[3] }}>
+              <ReasonGlyph kind="pulled" active={false} ambient size={t.iconSize.md} />
+              <AppText variant="body" style={{ flex: 1, color: t.colors.ink }}>
+                Forgot to time something? Add it in one tap — empty days are fine.
+              </AppText>
+            </View>
           </Reveal>
 
-          {/* Optional nickname — quiet, skippable, folded in above the CTA. */}
+          {/* Optional nickname — demoted to a tap. Collapsed ghost row → real input. */}
           <Reveal index={4}>
-            <View style={{ gap: t.space[2] }}>
-              <View style={{ flexDirection: 'row', alignItems: 'baseline', gap: t.space[2] }}>
-                <AppText
-                  style={{
-                    fontSize: t.fontSize.sm,
-                    color: t.colors.inkSoft,
-                    fontWeight: t.fontWeight.medium as '500',
-                  }}
-                >
-                  Anything I should call you?
-                </AppText>
-                <AppText
-                  style={{ fontSize: t.fontSize.xs, color: t.colors.inkFaint }}
-                >
-                  optional
-                </AppText>
-              </View>
+            {expanded ? (
               <TextInput
                 value={nickname}
                 onChangeText={setNickname}
-                onSubmitEditing={() => {/* save happens on CTA */}}
+                autoFocus
                 placeholder="Your nickname"
                 placeholderTextColor={t.colors.inkFaint}
                 maxLength={MAX_CUSTOM_NAME}
@@ -142,11 +127,38 @@ export default function Ready() {
                   color: t.colors.ink,
                   borderWidth: t.borderWidth.chip,
                   borderColor: t.colors.border,
-                  borderRadius: t.radii.sm,
+                  borderRadius: t.radii.md,
                   paddingHorizontal: t.space[3],
                 }}
               />
-            </View>
+            ) : (
+              <Pressable
+                onPress={() => setExpanded(true)}
+                accessibilityRole="button"
+                accessibilityLabel="Set a nickname"
+                accessibilityHint="Optional"
+              >
+                <View
+                  style={{
+                    flexDirection: 'row',
+                    alignItems: 'center',
+                    gap: t.space[2],
+                    height: t.size.control.md,
+                    paddingHorizontal: t.space[3],
+                    borderWidth: t.borderWidth.chip,
+                    borderStyle: 'dashed',
+                    borderColor: t.colors.border,
+                    borderRadius: t.radii.md,
+                  }}
+                >
+                  <AppText style={{ fontSize: t.fontSize.md, color: t.colors.primary }}>＋</AppText>
+                  <AppText style={{ fontSize: t.fontSize.base, color: t.colors.inkSoft }}>Set a nickname</AppText>
+                  <AppText style={{ fontSize: t.fontSize.xs, color: t.colors.inkFaint, marginLeft: 'auto' }}>
+                    optional
+                  </AppText>
+                </View>
+              </Pressable>
+            )}
           </Reveal>
         </View>
 

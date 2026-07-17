@@ -30,11 +30,19 @@ describe('Onboarding Step 2 — Ready screen', () => {
     expect(screen.getByText(/Your accuracy ripens as you log/i)).toBeTruthy();
     expect(screen.getByText(/no streak to break/i)).toBeTruthy();
     expect(screen.getByText(/Empty days are fine/i)).toBeTruthy();
-    // Optional nickname field
-    expect(screen.getByText(/Anything I should call you/i)).toBeTruthy();
-    expect(screen.getByLabelText('Your nickname')).toBeTruthy();
+    expect(screen.getByText(/Forgot to time something\? Add it in one tap/i)).toBeTruthy();
+    // Optional nickname field — demoted to tap-to-reveal ghost row
+    expect(screen.getByLabelText('Set a nickname')).toBeTruthy();
+    expect(screen.queryByLabelText('Your nickname')).toBeNull();
     // CTA — new label from §E
     expect(screen.getByText(/Time my first thing/)).toBeTruthy();
+  });
+
+  test('tapping "Set a nickname" reveals the input', () => {
+    render(<Ready />);
+    expect(screen.queryByLabelText('Your nickname')).toBeNull();
+    fireEvent.press(screen.getByLabelText('Set a nickname'));
+    expect(screen.getByLabelText('Your nickname')).toBeTruthy();
   });
 
   test('CTA with no nickname calls replace to tabs', () => {
@@ -43,8 +51,18 @@ describe('Onboarding Step 2 — Ready screen', () => {
     expect(replaceMock).toHaveBeenCalledWith('/(tabs)');
   });
 
+  test('expanding then leaving the nickname empty still completes without a name', () => {
+    useSettingsStore.setState({ displayName: undefined });
+    render(<Ready />);
+    fireEvent.press(screen.getByLabelText('Set a nickname'));
+    fireEvent.press(screen.getByText(/Time my first thing/));
+    expect(useOnboardingStore.getState().completed).toBe(true);
+    expect(useSettingsStore.getState().displayName).toBeUndefined();
+  });
+
   test('CTA with a nickname saves it before completing', () => {
     render(<Ready />);
+    fireEvent.press(screen.getByLabelText('Set a nickname'));
     fireEvent.changeText(screen.getByLabelText('Your nickname'), 'Jordan');
     fireEvent.press(screen.getByText(/Time my first thing/));
     expect(replaceMock).toHaveBeenCalledWith('/(tabs)');
