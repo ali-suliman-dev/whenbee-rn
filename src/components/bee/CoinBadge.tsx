@@ -32,12 +32,22 @@ export function CoinBadge({
   label,
   icon,
   delay = 0,
+  entrance = 'pop',
+  appearDelay = 0,
 }: {
   tone: 'amber' | 'indigo';
   label?: string;
   icon?: ReactNode;
   /** Phase-offset (ms) for the bob loop, so coin + bee don't bob in lockstep. */
   delay?: number;
+  /**
+   * `'pop'` (default) = the existing Playful spring pop-in, unchanged for every
+   * current caller. `'settle'` = a calmer ease-out scale-in with NO overshoot
+   * (the Pro-drawer ▲ seal, sequenced after the bee's ray/glow/wing beats).
+   */
+  entrance?: 'pop' | 'settle';
+  /** Start delay (ms) for the entrance itself — `'settle'` only. */
+  appearDelay?: number;
 }) {
   const t = useTheme();
   const reducedMotion = useReducedMotion();
@@ -51,9 +61,14 @@ export function CoinBadge({
 
   useEffect(() => {
     if (reducedMotion) return;
+    if (entrance === 'settle') {
+      // Seal-in: ease-out scale 0→1, no overshoot (Proud-seal entrance).
+      appear.set(withDelay(appearDelay, withTiming(1, { duration: t.motion.reveal, easing: t.motion.easing.out })));
+      return;
+    }
     // Pop-in: scale + opacity settle with a touch of overshoot (Playful).
     appear.set(withSpring(1, t.motion.spring));
-  }, [reducedMotion, appear, t.motion.spring]);
+  }, [reducedMotion, appear, t.motion.spring, entrance, appearDelay, t.motion.reveal, t.motion.easing.out]);
 
   useAmbientMotion(
     !reducedMotion,

@@ -1,4 +1,4 @@
-import { useCallback } from 'react';
+import { useCallback, useEffect } from 'react';
 import Animated, {
   cancelAnimation,
   useAnimatedProps,
@@ -10,11 +10,13 @@ import Animated, {
   withSequence,
   withTiming,
 } from 'react-native-reanimated';
-import Svg, { Path, Rect, Circle, Defs, RadialGradient, Stop } from 'react-native-svg';
+import Svg, { Path, Rect, Circle, G, Defs, RadialGradient, Stop } from 'react-native-svg';
 import { useTheme } from '@/src/theme/useTheme';
 import { useAmbientMotion } from '@/src/hooks/useAmbientMotion';
 
 const AnimatedRect = Animated.createAnimatedComponent(Rect);
+const AnimatedG = Animated.createAnimatedComponent(G);
+const AnimatedCircle = Animated.createAnimatedComponent(Circle);
 
 // ── Companion micro-life geometry (viewBox units, art-internal like the paths) ──
 // The two eyes are 50×100 ink rects centred on y≈937. Blink collapses each to a
@@ -28,6 +30,15 @@ const WING_FOLD = 0.05; // ± wing scaleX flutter (small + slow = a calm settle,
 // same way, so the WHOLE bee reads as turning to look left/right — not just its eyes.
 const BODY_LEAN = 0.035; // ± horizontal lean as a fraction of size (≈5px at 140)
 const BODY_TILT = 2; // ± degrees of turn toward the look direction
+
+// ── "Proud seal" celebrate entrance (Pro-drawer, plays once on mount) ──────────
+// A distinctly bigger wing fold than the calm ambient hum (buzz, not a hover),
+// and a small once-only antenna rotate. Origin sits between the two antenna
+// bases so the whole cluster perks as one unit.
+const WING_BUZZ_FOLD = 0.22; // ± wing scaleX during the one-shot entrance buzz
+const ANTENNA_PERK_DEG = 7; // ± degrees of the once-only antenna perk
+const ANTENNA_ORIGIN_X = 1160;
+const ANTENNA_ORIGIN_Y = 430;
 
 // ──────────────────────────────────────────────────────────────────────────────
 // BeeMascot — the brand Whenbee, a hand-authored react-native-svg translation of
@@ -67,6 +78,7 @@ export function BeeMascot({
   variant = 'default',
   animated = false,
   glow = true,
+  celebrate = false,
 }: {
   size?: number;
   variant?: BeeVariant;
@@ -79,6 +91,14 @@ export function BeeMascot({
   animated?: boolean;
   /** When false, the amber/drift glow halo is not rendered. Default true. */
   glow?: boolean;
+  /**
+   * One-shot "Proud seal" entrance for the Pro-drawer bee (BeeBurst's `upgrade`
+   * variant only): wings buzz + antennae perk once on mount, a honey glow blooms,
+   * then both eyes blink continuously forever (no wink — both together). Independent
+   * of `animated`/`look` — do not combine with `animated` on the same instance.
+   * Reduced-motion → final static state (open eyes, wings at rest, glow settled).
+   */
+  celebrate?: boolean;
 }) {
   const t = useTheme();
   const c = t.brand.bee;
@@ -87,6 +107,12 @@ export function BeeMascot({
   const stage = stageOf(variant);
   // noUncheckedIndexedAccess: glow array may be undefined-at-index — fall back to 0.
   const glowRadius = t.companion.glow[stage - 1] ?? 0;
+  // Celebrate always shows a full honey-glow bloom regardless of companion stage
+  // (the Pro-drawer bee isn't tied to the hub's presence-stage glow ladder) —
+  // reuses the existing top-of-ladder token rather than inventing a new one.
+  const celebrateGlowRadius = t.companion.glow[t.companion.glow.length - 1] ?? 0;
+  const effectiveGlowRadius = celebrate ? celebrateGlowRadius : glowRadius;
+  const showCelebrateMotion = celebrate && !reduced;
 
   // The bee's yellows are the fixed honey tokens at ALL times (band + head-shadow).
   const stripe = c.stripe;
@@ -137,8 +163,80 @@ export function BeeMascot({
     }, [flutter, blink, look, m]),
   );
 
+  // ── Celebrate: the one-shot "Proud seal" entrance (independent of the ambient
+  // hub loop above — never combined with `animated` on the same instance). Ray
+  // shimmer + seal scale-in + glow bloom live in RayBurst/CoinBadge/here; this
+  // effect owns the wing buzz, the once-only antenna perk, and — once the wings
+  // settle — kicks off the same continuous both-eye blink shape the hub uses.
+  const antennaPerk = useSharedValue(0);
+  const glowBloom = useSharedValue(0);
+  useEffect(() => {
+    if (!showCelebrateMotion) return undefined;
+    const buzzLeg = m.beeWingBuzz / 2;
+    flutter.set(
+      withSequence(
+        withTiming(1, { duration: buzzLeg, easing: m.easing.standard }),
+        withTiming(0, { duration: buzzLeg, easing: m.easing.standard }),
+        withTiming(1, { duration: buzzLeg, easing: m.easing.standard }),
+        withTiming(0, { duration: buzzLeg, easing: m.easing.out }),
+      ),
+    );
+    antennaPerk.set(
+      withDelay(
+        m.beeWingBuzz,
+        withSequence(
+          withTiming(-1, { duration: m.fast, easing: m.easing.out }),
+          withTiming(0.4, { duration: m.fast, easing: m.easing.out }),
+          withTiming(0, { duration: m.fast, easing: m.easing.out }),
+        ),
+      ),
+    );
+    glowBloom.set(
+      withSequence(
+        withTiming(1, { duration: m.reveal, easing: m.easing.out }),
+        withTiming(0.82, { duration: m.slow, easing: m.easing.out }),
+      ),
+    );
+    // Both eyes blink together (never a wink), starting only after the wings
+    // and antennae have settled, then looping forever — same shape as the
+    // ambient hub blink above.
+    const blinkStart = m.beeWingBuzz * 2 + m.fast * 3;
+    blink.set(
+      withDelay(
+        blinkStart,
+        withRepeat(
+          withSequence(
+            withTiming(1, { duration: m.beeBlink, easing: m.easing.calm }),
+            withTiming(0, { duration: m.beeBlink, easing: m.easing.calm }),
+            withDelay(m.beeBlinkGap, withTiming(0, { duration: 0 })),
+          ),
+          -1,
+        ),
+      ),
+    );
+    return () => {
+      cancelAnimation(flutter);
+      cancelAnimation(antennaPerk);
+      cancelAnimation(glowBloom);
+      cancelAnimation(blink);
+      flutter.set(0);
+      antennaPerk.set(0);
+      glowBloom.set(0);
+      blink.set(0);
+    };
+  }, [showCelebrateMotion, flutter, antennaPerk, glowBloom, blink, m]);
+
+  const wingFoldAmount = celebrate ? WING_BUZZ_FOLD : WING_FOLD;
   const wingStyle = useAnimatedStyle(() => ({
-    transform: [{ scaleX: 1 - WING_FOLD * flutter.get() }],
+    transform: [{ scaleX: 1 - wingFoldAmount * flutter.get() }],
+  }));
+
+  const antennaProps = useAnimatedProps(() => ({
+    rotation: antennaPerk.get() * ANTENNA_PERK_DEG,
+  }));
+
+  const glowAnimatedProps = useAnimatedProps(() => ({
+    opacity: glowBloom.get(),
   }));
 
   // Each eye: height collapses to a slit toward EYE_MID_Y (blink), x slides with the
@@ -165,9 +263,9 @@ export function BeeMascot({
   // Clamp the halo radius to the viewBox half (1200): the Svg canvas is square and
   // clips anything past its bounds, so a circle larger than 1200 gets cropped to a
   // BOX. Keeping the transparent rim at exactly the edge renders a clean circle.
-  const haloRadius = Math.min(1100 + glowRadius * 40, 1200);
+  const haloRadius = Math.min(1100 + effectiveGlowRadius * 40, 1200);
   const glowHalo =
-    glow && glowRadius > 0 ? (
+    glow && effectiveGlowRadius > 0 ? (
       <>
         <Defs>
           <RadialGradient id="beeGlow" cx="50%" cy="50%" r="50%">
@@ -175,7 +273,11 @@ export function BeeMascot({
             <Stop offset="100%" stopColor={stripe} stopOpacity={0} />
           </RadialGradient>
         </Defs>
-        <Circle cx={1200} cy={1200} r={haloRadius} fill="url(#beeGlow)" />
+        {showCelebrateMotion ? (
+          <AnimatedCircle cx={1200} cy={1200} r={haloRadius} fill="url(#beeGlow)" animatedProps={glowAnimatedProps} />
+        ) : (
+          <Circle cx={1200} cy={1200} r={haloRadius} fill="url(#beeGlow)" />
+        )}
       </>
     ) : null;
 
@@ -192,12 +294,11 @@ export function BeeMascot({
     </>
   );
 
-  // Everything that sits on TOP of the wings (drawn after them in z-order).
-  const front = (
+  // Antennae — static pair (shared/reduced usage) vs. celebrate pair, which rides
+  // an added one-shot perk rotation (AnimatedG) on top of the artwork's own
+  // static ±15° tilt. The perk origin sits between the two antenna bases.
+  const antennaeContent = (
     <>
-      {/* Stinger (behind the body) */}
-      <Rect x={1100} y={1700} width={200} height={200} rx={80} fill={c.ink} />
-
       {/* Right antenna (rotation via originX/originY props — the proven RN-SVG path) */}
       <Rect x={1320.26} y={426.085} width={50} height={200} rotation={15} originX={1320.26} originY={426.085} fill={c.antenna} />
       <Rect x={1309.06} y={371.318} width={100} height={100} rx={40} rotation={15} originX={1309.06} originY={371.318} fill={c.antenna} />
@@ -213,6 +314,22 @@ export function BeeMascot({
         d="M1058.41 389.803C1063.75 388.374 1069.23 391.54 1070.66 396.874C1072.09 402.209 1068.92 407.692 1063.59 409.121L1033.59 417.16C1028.25 418.589 1022.77 415.424 1021.34 410.089C1019.91 404.755 1023.08 399.271 1028.41 397.841L1058.41 389.803Z"
         fill={c.antennaHi}
       />
+    </>
+  );
+
+  // Everything that sits on TOP of the wings (drawn after them in z-order).
+  const front = (
+    <>
+      {/* Stinger (behind the body) */}
+      <Rect x={1100} y={1700} width={200} height={200} rx={80} fill={c.ink} />
+
+      {showCelebrateMotion ? (
+        <AnimatedG originX={ANTENNA_ORIGIN_X} originY={ANTENNA_ORIGIN_Y} animatedProps={antennaProps}>
+          {antennaeContent}
+        </AnimatedG>
+      ) : (
+        antennaeContent
+      )}
 
       {/* Body */}
       <Path
@@ -271,8 +388,9 @@ export function BeeMascot({
     accessibilityLabel: 'Your Whenbee companion',
   };
 
-  // Static path (every shared usage): one Svg, original z-order preserved.
-  if (!animated || reduced) {
+  // Static path (every shared usage, and celebrate under reduced-motion): one
+  // Svg, original z-order preserved — final state, no motion.
+  if (!(animated || celebrate) || reduced) {
     return (
       <Svg width={size} height={size} viewBox="0 0 2400 2400" {...a11y}>
         {glowHalo}

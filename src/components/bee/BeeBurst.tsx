@@ -51,6 +51,10 @@ export function BeeBurst({
   const stage = stageSize ?? t.burst.stage;
   const bee = beeSize ?? t.burst.bee;
   const spec = BADGE[variant];
+  // The Pro-drawer "Proud seal" entrance: rays sweep in → seal settles in → bee
+  // buzzes + perks + blooms once, then blinks forever. Reward/aha keep today's
+  // calm float only — no entrance choreography.
+  const isUpgrade = variant === 'upgrade';
 
   const float = useSharedValue(0);
   useAmbientMotion(
@@ -86,15 +90,17 @@ export function BeeBurst({
 
   return (
     <View style={stageStyle}>
-      <RayBurst size={stage} />
+      <RayBurst size={stage} sweepIn={isUpgrade} />
       <Animated.View style={beeStyle}>
-        <BeeMascot size={bee} />
+        <BeeMascot size={bee} celebrate={isUpgrade} />
       </Animated.View>
       <View style={coinSlot}>
         <CoinBadge
           tone={spec.tone}
           label={spec.label}
           delay={t.motion.base}
+          entrance={isUpgrade ? 'settle' : 'pop'}
+          appearDelay={isUpgrade ? t.motion.base : 0}
           icon={
             spec.isUpgrade ? (
               <Ionicons name="triangle" size={t.iconSize.xs} color={t.colors.onAmber} />
