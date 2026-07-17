@@ -1,12 +1,15 @@
 import { useState } from 'react';
-import { type TextStyle, type ViewStyle, View } from 'react-native';
-import {
+import { type TextStyle, type ViewStyle, View, Pressable } from 'react-native';
+import Animated, {
   useDerivedValue,
   useAnimatedReaction,
   runOnJS,
+  FadeIn,
+  useReducedMotion,
   type SharedValue,
 } from 'react-native-reanimated';
 import { AppText } from '@/src/components/AppText';
+import { haptics } from '@/src/lib/haptics';
 import { useTheme } from '@/src/theme/useTheme';
 import { type } from '@/src/theme/typography';
 
@@ -25,27 +28,36 @@ import { type } from '@/src/theme/typography';
 
 type Phase = 'under' | 'closing' | 'over';
 
+// Pure so it can drive both the UI-thread derived value and the state's lazy
+// initializer (the initial render — before any reaction has fired — must
+// already reflect the real elapsedSec, not a hardcoded guess).
+function computePace(elapsedSec: number, estimateSec: number): { phase: Phase; over: number } {
+  'worklet';
+  const left = Math.floor((estimateSec - elapsedSec) / 60);
+  let p: Phase;
+  if (elapsedSec >= estimateSec) p = 'over';
+  else if (left <= 3) p = 'closing';
+  else p = 'under';
+  const over = p === 'over' ? Math.floor((elapsedSec - estimateSec) / 60) : 0;
+  return { phase: p, over };
+}
+
 export function PaceLabel({
   elapsedSec,
   estimateSec,
+  onForgotPress,
 }: {
   elapsedSec: SharedValue<number>;
   estimateSec: number;
+  onForgotPress?: () => void;
 }) {
   const t = useTheme();
-  const [phase, setPhase] = useState<Phase>('under');
-  const [overMin, setOverMin] = useState(0);
+  const reducedMotion = useReducedMotion();
+  const [phase, setPhase] = useState<Phase>(() => computePace(elapsedSec.value, estimateSec).phase);
+  const [overMin, setOverMin] = useState(() => computePace(elapsedSec.value, estimateSec).over);
 
   // Phase + over-amount as derived values (UI thread).
-  const view = useDerivedValue(() => {
-    const left = Math.floor((estimateSec - elapsedSec.value) / 60);
-    let p: Phase;
-    if (elapsedSec.value >= estimateSec) p = 'over';
-    else if (left <= 3) p = 'closing';
-    else p = 'under';
-    const over = p === 'over' ? Math.floor((elapsedSec.value - estimateSec) / 60) : 0;
-    return { phase: p, over };
-  }, [estimateSec]);
+  const view = useDerivedValue(() => computePace(elapsedSec.value, estimateSec), [estimateSec]);
 
   // Only push to JS state when the visible copy would actually change.
   useAnimatedReaction(
@@ -80,9 +92,43 @@ export function PaceLabel({
   else if (phase === 'closing') copy = 'Almost at your guess';
   else copy = 'You’ve got time';
 
-  return (
+  const pill = (
     <View style={wrap} accessibilityLiveRegion="polite">
       <AppText style={baseStyle}>{copy}</AppText>
+    </View>
+  );
+
+  if (!isOver || !onForgotPress) return pill;
+
+  const forgotStyle: TextStyle = {
+    ...(type.caption as TextStyle),
+    color: t.colors.inkSoft,
+  };
+
+  const rowStyle: ViewStyle = {
+    flexDirection: 'row',
+    alignItems: 'center',
+    alignSelf: 'center',
+    gap: t.space[3],
+  };
+
+  return (
+    <View style={rowStyle}>
+      {pill}
+      <Animated.View entering={reducedMotion ? undefined : FadeIn.duration(t.motion.fast)}>
+        <Pressable
+          onPress={() => {
+            haptics.light();
+            onForgotPress();
+          }}
+          accessibilityRole="button"
+          accessibilityLabel="Forgot to stop the timer earlier"
+          hitSlop={t.size.hitSlop}
+          style={{ paddingVertical: t.space[1] }}
+        >
+          <AppText style={forgotStyle}>Forgot to stop?</AppText>
+        </Pressable>
+      </Animated.View>
     </View>
   );
 }
