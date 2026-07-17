@@ -61,6 +61,10 @@ export const tokens = {
   // straddle arc on the Live-Timer ring marking the honest [low, high] spread.
   opacity: { disabled: 0.4, pressed: 0.6, wash: 0.78, rangeArc: 0.5 },
 
+  // Ripening Rail — five-step even fade from full accent to a whisper of it
+  // (Ready screen look-ahead). Mode-independent; identical in light/dark.
+  ripeningFade: [1, 0.5, 0.34, 0.22, 0.12],
+
   // Onboarding aurora glow opacities (mode-independent alphas; colours come from colors.primary/primaryEdge).
   gradients: { backdropTop: 0.22, backdropCorner: 0.16 },
 

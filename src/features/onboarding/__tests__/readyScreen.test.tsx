@@ -41,7 +41,7 @@ describe('Onboarding Step 2 — Ready screen', () => {
     // The "forgot to time something" tip is gone
     expect(screen.queryByText(/Forgot to time something/i)).toBeNull();
     // Optional nickname — 6C quiet link, tap-to-reveal
-    expect(screen.getByLabelText('Set a nickname')).toBeTruthy();
+    expect(screen.getByLabelText('Give me a nickname')).toBeTruthy();
     expect(screen.getByText('Give me a nickname')).toBeTruthy();
     expect(screen.queryByLabelText('Your nickname')).toBeNull();
     expect(screen.getByText(/Time my first thing/)).toBeTruthy();
@@ -53,10 +53,10 @@ describe('Onboarding Step 2 — Ready screen', () => {
     expect(screen.queryByText('Your time-style')).toBeNull();
   });
 
-  test('tapping "Set a nickname" reveals the input', () => {
+  test('tapping "Give me a nickname" reveals the input', () => {
     render(<Ready />);
     expect(screen.queryByLabelText('Your nickname')).toBeNull();
-    fireEvent.press(screen.getByLabelText('Set a nickname'));
+    fireEvent.press(screen.getByLabelText('Give me a nickname'));
     expect(screen.getByLabelText('Your nickname')).toBeTruthy();
   });
 
@@ -69,7 +69,7 @@ describe('Onboarding Step 2 — Ready screen', () => {
   test('expanding then leaving the nickname empty still completes without a name', () => {
     useSettingsStore.setState({ displayName: undefined });
     render(<Ready />);
-    fireEvent.press(screen.getByLabelText('Set a nickname'));
+    fireEvent.press(screen.getByLabelText('Give me a nickname'));
     fireEvent.press(screen.getByText(/Time my first thing/));
     expect(useOnboardingStore.getState().completed).toBe(true);
     expect(useSettingsStore.getState().displayName).toBeUndefined();
@@ -77,7 +77,7 @@ describe('Onboarding Step 2 — Ready screen', () => {
 
   test('CTA with a nickname saves it before completing', () => {
     render(<Ready />);
-    fireEvent.press(screen.getByLabelText('Set a nickname'));
+    fireEvent.press(screen.getByLabelText('Give me a nickname'));
     fireEvent.changeText(screen.getByLabelText('Your nickname'), 'Jordan');
     fireEvent.press(screen.getByText(/Time my first thing/));
     expect(replaceMock).toHaveBeenCalledWith('/(tabs)');

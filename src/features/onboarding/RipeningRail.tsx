@@ -16,7 +16,7 @@ const STAGES = ['Raw', 'Setting', 'Ripening', 'Thickening', 'Honest'] as const;
 export function RipeningRail() {
   const t = useTheme();
   // Even fade from full accent to a whisper of it, five even steps.
-  const opacities = [1, 0.5, 0.34, 0.22, 0.12];
+  const opacities = t.ripeningFade;
 
   return (
     <View>
