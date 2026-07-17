@@ -51,6 +51,15 @@ describe('Onboarding Step 2 — Ready screen', () => {
     expect(replaceMock).toHaveBeenCalledWith('/(tabs)');
   });
 
+  test('expanding then leaving the nickname empty still completes without a name', () => {
+    useSettingsStore.setState({ displayName: undefined });
+    render(<Ready />);
+    fireEvent.press(screen.getByLabelText('Set a nickname'));
+    fireEvent.press(screen.getByText(/Time my first thing/));
+    expect(useOnboardingStore.getState().completed).toBe(true);
+    expect(useSettingsStore.getState().displayName).toBeUndefined();
+  });
+
   test('CTA with a nickname saves it before completing', () => {
     render(<Ready />);
     fireEvent.press(screen.getByLabelText('Set a nickname'));

@@ -136,6 +136,7 @@ export default function Ready() {
                 onPress={() => setExpanded(true)}
                 accessibilityRole="button"
                 accessibilityLabel="Set a nickname"
+                accessibilityHint="Optional"
               >
                 <View
                   style={{
