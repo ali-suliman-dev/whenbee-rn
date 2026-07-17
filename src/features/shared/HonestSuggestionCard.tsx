@@ -4,6 +4,7 @@ import { AppText } from '@/src/components/AppText';
 import { useEntitlement } from '@/src/features/paywall/useEntitlement';
 import { useTheme } from '@/src/theme/useTheme';
 import { analytics } from '@/src/services/analytics';
+import { formatHonestMinutes } from '@/src/lib/time';
 import type { CalibrationConfidence, HonestRange } from '@/src/domain/types';
 
 // ──────────────────────────────────────────────────────────────────────────────
@@ -128,9 +129,11 @@ export function HonestSuggestionCard({
     borderTopColor: t.colors.hairline,
   };
 
+  const formatted = formatHonestMinutes(honestMinutes);
   const numberText = showRange && range
     ? `~${range.lowMinutes}–${range.highMinutes}`
-    : `~${honestMinutes}`;
+    : `~${formatted.value}`;
+  const unitToShow = showRange && range ? 'min' : formatted.unit;
 
   const provenanceText = preEstimate
     ? 'a rough range from optimists like you · sharpens as you log'
@@ -153,7 +156,7 @@ export function HonestSuggestionCard({
 
       <View style={numberRow}>
         <AppText style={number}>{numberText}</AppText>
-        <AppText style={unit}>min</AppText>
+        {unitToShow ? <AppText style={unit}>{unitToShow}</AppText> : null}
       </View>
 
       <AppText style={provenance}>{provenanceText}</AppText>
