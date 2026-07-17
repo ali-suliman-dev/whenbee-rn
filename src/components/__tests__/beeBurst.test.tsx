@@ -27,11 +27,31 @@ describe('BeeBurst', () => {
   it('renders the upgrade variant at its final static state under reduced motion', () => {
     jest.spyOn(Reanimated, 'useReducedMotion').mockReturnValue(true);
     const { toJSON } = render(<BeeBurst variant="upgrade" />);
-    const tree = JSON.stringify(toJSON());
-    // Final state: the eyes are open (rx=25 ink rects, not animated slit rects)
-    // and the ▲ seal badge is present — both render statically, no crash.
-    expect(tree).toContain('beeGlow');
-    expect(tree).toBeTruthy();
+    const tree = toJSON();
+    const treeJson = JSON.stringify(tree);
+    expect(treeJson).toContain('beeGlow');
+
+    // Final state: the eyes render as the STATIC open pair (BeeMascot's
+    // `staticEyes`, width 50 / height 100 / rx 25 ink rects, rendered by
+    // react-native-svg as host node type "RNSVGRect") — not the animated
+    // `AnimatedRect` slit rects that blink under motion. Find every rect in
+    // the rendered tree and assert the two eye rects (x=1355 / x=995) are at
+    // their open resting height, never collapsed to the EYE_SLIT (8) shape.
+    const rects: { props: Record<string, unknown> }[] = [];
+    const collect = (node: unknown): void => {
+      if (!node || typeof node !== 'object') return;
+      const n = node as { type?: string; props?: Record<string, unknown>; children?: unknown[] };
+      if (n.type === 'RNSVGRect') rects.push({ props: n.props ?? {} });
+      if (Array.isArray(n.children)) n.children.forEach(collect);
+    };
+    collect(tree);
+    const eyeRects = rects.filter((r) => r.props.x === 1355 || r.props.x === 995);
+    expect(eyeRects.length).toBe(2);
+    for (const eye of eyeRects) {
+      expect(eye.props.height).toBe(100);
+      expect(eye.props.rx).toBe(25);
+    }
+
     (Reanimated.useReducedMotion as jest.Mock).mockRestore?.();
   });
 });

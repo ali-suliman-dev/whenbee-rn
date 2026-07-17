@@ -90,7 +90,11 @@ export function CoinBadge({
     }, [bob, t.motion.reveal, t.motion.float, t.motion.easing.calm, delay]),
   );
 
-  const animStyle = useAnimatedStyle(() => {
+  // 'pop' keeps the existing lift+spring (translateY from coinLift, phased with
+  // the bob loop). 'settle' is a pure scale-in per the no-slide-in hard rule —
+  // opacity + scale only, zero translateY on entrance (the bob loop still rides
+  // its own translateY once the entrance settles).
+  const popStyle = useAnimatedStyle(() => {
     const a = appear.get();
     return {
       opacity: a,
@@ -100,6 +104,14 @@ export function CoinBadge({
       ],
     };
   });
+  const settleStyle = useAnimatedStyle(() => {
+    const a = appear.get();
+    return {
+      opacity: a,
+      transform: [{ scale: 0.6 + a * 0.4 }, { translateY: -bob.get() * t.burst.coinBob }],
+    };
+  });
+  const animStyle = entrance === 'settle' ? settleStyle : popStyle;
 
   const wrapper: ViewStyle = { paddingBottom: t.burst.coinEdge };
   const edgeBase: ViewStyle = {
