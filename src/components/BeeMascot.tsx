@@ -79,6 +79,7 @@ export function BeeMascot({
   animated = false,
   glow = true,
   celebrate = false,
+  sleepy = false,
 }: {
   size?: number;
   variant?: BeeVariant;
@@ -99,6 +100,13 @@ export function BeeMascot({
    * Reduced-motion → final static state (open eyes, wings at rest, glow settled).
    */
   celebrate?: boolean;
+  /**
+   * Dozing expression for empty/resting states (e.g. What's New with nothing to
+   * show): swaps the two open-eye rects for short downward-arc closed-eye paths.
+   * Purely static — never combine with `animated`/`celebrate`; when true it always
+   * wins and renders the calm resting artwork regardless of those props.
+   */
+  sleepy?: boolean;
 }) {
   const t = useTheme();
   const c = t.brand.bee;
@@ -376,6 +384,15 @@ export function BeeMascot({
       <Rect x={995} y={887} width={50} height={100} rx={25} fill={c.ink} />
     </>
   );
+  // Dozing eyes — short downward-arc closed lids, centred on the same eye
+  // positions as the open rects above (rect centre x=1020/1380 → arc spans
+  // ±45 either side). Stroke, not fill, so it reads as a closed lid crease.
+  const sleepyEyes = (
+    <>
+      <Path d="M1315 930 q45 34 90 0" stroke={c.ink} strokeWidth={26} fill="none" strokeLinecap="round" />
+      <Path d="M955 930 q45 34 90 0" stroke={c.ink} strokeWidth={26} fill="none" strokeLinecap="round" />
+    </>
+  );
   const animatedEyes = (
     <>
       <AnimatedRect width={50} rx={25} fill={c.ink} animatedProps={rightEyeProps} />
@@ -389,14 +406,15 @@ export function BeeMascot({
   };
 
   // Static path (every shared usage, and celebrate under reduced-motion): one
-  // Svg, original z-order preserved — final state, no motion.
-  if (!(animated || celebrate) || reduced) {
+  // Svg, original z-order preserved — final state, no motion. `sleepy` always
+  // wins (dozing is a static resting expression, never animated).
+  if (sleepy || !(animated || celebrate) || reduced) {
     return (
       <Svg width={size} height={size} viewBox="0 0 2400 2400" {...a11y}>
         {glowHalo}
         {wings}
         {front}
-        {staticEyes}
+        {sleepy ? sleepyEyes : staticEyes}
       </Svg>
     );
   }
