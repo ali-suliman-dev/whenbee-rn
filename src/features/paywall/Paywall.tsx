@@ -206,7 +206,7 @@ export function Paywall({ trigger, readiness = 'pre' }: { trigger?: string; read
         <View style={{ gap: t.space[2] }}>
           <View style={eyebrowChip}>
             <Ionicons name="ribbon-outline" size={t.iconSize.sm} color={t.colors.accent} />
-            <Text style={eyebrowText}>{copy.eyebrow}</Text>
+            <Text style={eyebrowText} numberOfLines={1}>{copy.eyebrow}</Text>
           </View>
           <Text style={heading}>{copy.title}</Text>
           <Text style={sub}>{copy.sub}</Text>

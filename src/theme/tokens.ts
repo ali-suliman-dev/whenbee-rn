@@ -35,7 +35,10 @@ export const tokens = {
   // `hitSlop` = extra tap area added via the Pressable hitSlop prop so that small
   // touch targets (secondary buttons, skip links) comfortably meet the 44pt HIG
   // floor without visually enlarging the element.
-  size: { control: { xxs: 28, xs: 32, sm: 36, md: 44, lg: 52 }, coin: 40, wheelCol: 72, wheelRow: 32, shareCard: 340, timelineCol: 110, planCardMin: 70, calTimeCol: 52, gripW: 14, hitSlop: 8, sparkline: 32, honestBand: 180, progressPill: 4, chipMinWidth: 120, quizTileWidth: '47%' },
+  // `emptyArt` = mascot illustration size in a full-bleed empty state (e.g. the
+  // dozing bee in What's New). `emptyCopy` = matching empty-state body-copy
+  // max-width, so the line length stays readable under a centred title.
+  size: { control: { xxs: 28, xs: 32, sm: 36, md: 44, lg: 52 }, coin: 40, wheelCol: 72, wheelRow: 32, shareCard: 340, timelineCol: 110, planCardMin: 70, calTimeCol: 52, gripW: 14, hitSlop: 8, sparkline: 32, honestBand: 180, progressPill: 4, chipMinWidth: 120, quizTileWidth: '47%', emptyArt: 132, emptyCopy: 230 },
 
   // Icon sizing scale — replaces inline 12/16/18/20/22/24/30 across the app.
   iconSize: { xs: 12, sm: 16, md: 20, lg: 24, xl: 32 },
@@ -60,6 +63,10 @@ export const tokens = {
   // Replaces scattered 0.3 / 0.4 / 0.6 opacities. `rangeArc` = the faint amber
   // straddle arc on the Live-Timer ring marking the honest [low, high] spread.
   opacity: { disabled: 0.4, pressed: 0.6, wash: 0.78, rangeArc: 0.5 },
+
+  // Ripening Rail — five-step even fade from full accent to a whisper of it
+  // (Ready screen look-ahead). Mode-independent; identical in light/dark.
+  ripeningFade: [1, 0.5, 0.34, 0.22, 0.12],
 
   // Onboarding aurora glow opacities (mode-independent alphas; colours come from colors.primary/primaryEdge).
   gradients: { backdropTop: 0.22, backdropCorner: 0.16 },

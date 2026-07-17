@@ -21,27 +21,42 @@ describe('Onboarding Step 2 — Ready screen', () => {
     replaceMock.mockClear();
     pushMock.mockClear();
     useOnboardingStore.setState({ completed: false, picked: [] });
+    useSettingsStore.getState().reset();
   });
 
-  test('ready shows trail, legend, promise, nickname field, CTA', () => {
+  test('ready shows the archetype crest, headline, ripening rail, nickname link, CTA', () => {
+    useSettingsStore.setState({
+      archetypeSeed: { m0: 1.7, source: 'quiz', tookAt: Date.now() },
+    });
     render(<Ready />);
+    expect(screen.getByText('Your time-style')).toBeTruthy();
+    expect(screen.getByText('The Sprint Optimist')).toBeTruthy();
+    expect(screen.getByText(/Your first/)).toBeTruthy();
+    expect(screen.getByText('honest')).toBeTruthy();
+    expect(screen.getByText(/times are already set/)).toBeTruthy();
+    expect(screen.getByText(/I read them from your time-style/i)).toBeTruthy();
+    // Ripening rail — five stages, no guilt/streak framing
     expect(screen.getByText('Raw')).toBeTruthy();
-    // Trail legend — new copy from §E
-    expect(screen.getByText(/Your accuracy ripens as you log/i)).toBeTruthy();
-    expect(screen.getByText(/no streak to break/i)).toBeTruthy();
-    expect(screen.getByText(/Empty days are fine/i)).toBeTruthy();
-    expect(screen.getByText(/Forgot to time something\? Add it in one tap/i)).toBeTruthy();
-    // Optional nickname field — demoted to tap-to-reveal ghost row
-    expect(screen.getByLabelText('Set a nickname')).toBeTruthy();
+    expect(screen.getByText('Honest')).toBeTruthy();
+    // The "forgot to time something" tip is gone
+    expect(screen.queryByText(/Forgot to time something/i)).toBeNull();
+    // Optional nickname — 6C quiet link, tap-to-reveal
+    expect(screen.getByLabelText('Give me a nickname')).toBeTruthy();
+    expect(screen.getByText('Give me a nickname')).toBeTruthy();
     expect(screen.queryByLabelText('Your nickname')).toBeNull();
-    // CTA — new label from §E
     expect(screen.getByText(/Time my first thing/)).toBeTruthy();
   });
 
-  test('tapping "Set a nickname" reveals the input', () => {
+  test('falls back to a neutral kicker with no archetype title when the quiz was skipped', () => {
+    render(<Ready />);
+    expect(screen.getByText("You're calibrated")).toBeTruthy();
+    expect(screen.queryByText('Your time-style')).toBeNull();
+  });
+
+  test('tapping "Give me a nickname" reveals the input', () => {
     render(<Ready />);
     expect(screen.queryByLabelText('Your nickname')).toBeNull();
-    fireEvent.press(screen.getByLabelText('Set a nickname'));
+    fireEvent.press(screen.getByLabelText('Give me a nickname'));
     expect(screen.getByLabelText('Your nickname')).toBeTruthy();
   });
 
@@ -54,7 +69,7 @@ describe('Onboarding Step 2 — Ready screen', () => {
   test('expanding then leaving the nickname empty still completes without a name', () => {
     useSettingsStore.setState({ displayName: undefined });
     render(<Ready />);
-    fireEvent.press(screen.getByLabelText('Set a nickname'));
+    fireEvent.press(screen.getByLabelText('Give me a nickname'));
     fireEvent.press(screen.getByText(/Time my first thing/));
     expect(useOnboardingStore.getState().completed).toBe(true);
     expect(useSettingsStore.getState().displayName).toBeUndefined();
@@ -62,7 +77,7 @@ describe('Onboarding Step 2 — Ready screen', () => {
 
   test('CTA with a nickname saves it before completing', () => {
     render(<Ready />);
-    fireEvent.press(screen.getByLabelText('Set a nickname'));
+    fireEvent.press(screen.getByLabelText('Give me a nickname'));
     fireEvent.changeText(screen.getByLabelText('Your nickname'), 'Jordan');
     fireEvent.press(screen.getByText(/Time my first thing/));
     expect(replaceMock).toHaveBeenCalledWith('/(tabs)');

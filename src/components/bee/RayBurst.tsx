@@ -1,11 +1,12 @@
-import { useCallback } from 'react';
-import { View, type ViewStyle } from 'react-native';
+import { useCallback, useEffect } from 'react';
+import { type ViewStyle } from 'react-native';
 import Svg, { Defs, RadialGradient, Stop, Path, Rect, G } from 'react-native-svg';
 import Animated, {
   cancelAnimation,
   useSharedValue,
   useAnimatedStyle,
   withRepeat,
+  withSequence,
   withTiming,
   Easing,
   useReducedMotion,
@@ -59,12 +60,16 @@ function wedges(count: number, fill: string, opacity: number, opacityAlt: number
   return paths;
 }
 
-export function RayBurst({ size }: { size: number }) {
+export function RayBurst({ size, sweepIn = false }: { size: number; sweepIn?: boolean }) {
   const t = useTheme();
   const reducedMotion = useReducedMotion();
   const { count, opacity, opacityAlt } = t.burst.ray;
 
   const spin = useSharedValue(0);
+  // Opacity multiplier for the one-shot Pro-drawer shimmer sweep (`sweepIn`):
+  // rays fade up then settle to a quieter resting wash. Every other caller
+  // (reward/aha) leaves this at 1 — full opacity, unchanged, no mount fade.
+  const sweep = useSharedValue(sweepIn && !reducedMotion ? 0 : 1);
 
   useAmbientMotion(
     !reducedMotion,
@@ -77,7 +82,21 @@ export function RayBurst({ size }: { size: number }) {
     }, [spin, t.motion.drift]),
   );
 
+  useEffect(() => {
+    if (!sweepIn || reducedMotion) return undefined;
+    sweep.set(
+      withSequence(
+        withTiming(1, { duration: t.motion.base, easing: t.motion.easing.out }),
+        withTiming(0.7, { duration: t.motion.slow, easing: t.motion.easing.out }),
+      ),
+    );
+    return () => {
+      cancelAnimation(sweep);
+    };
+  }, [sweepIn, reducedMotion, sweep, t.motion.base, t.motion.slow, t.motion.easing.out]);
+
   const spinStyle = useAnimatedStyle(() => ({ transform: [{ rotate: `${spin.get()}deg` }] }));
+  const sweepStyle = useAnimatedStyle(() => ({ opacity: sweep.get() }));
 
   const wrap: ViewStyle = {
     position: 'absolute',
@@ -88,7 +107,12 @@ export function RayBurst({ size }: { size: number }) {
   };
 
   return (
-    <View style={wrap} pointerEvents="none" accessibilityElementsHidden importantForAccessibility="no-hide-descendants">
+    <Animated.View
+      style={[wrap, sweepStyle]}
+      pointerEvents="none"
+      accessibilityElementsHidden
+      importantForAccessibility="no-hide-descendants"
+    >
       <Animated.View style={spinStyle}>
         <Svg width={size} height={size} viewBox={`0 0 ${VIEWBOX} ${VIEWBOX}`}>
           <Defs>
@@ -102,6 +126,6 @@ export function RayBurst({ size }: { size: number }) {
           <Rect x={0} y={0} width={VIEWBOX} height={VIEWBOX} fill="url(#rayFade)" />
         </Svg>
       </Animated.View>
-    </View>
+    </Animated.View>
   );
 }

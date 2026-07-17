@@ -7,6 +7,7 @@ import { AppText } from '@/src/components/AppText';
 import { useTheme } from '@/src/theme/useTheme';
 import { type } from '@/src/theme/typography';
 import { useFeedback } from '@/src/features/feedback/useFeedback';
+import { WhatsNewEmpty } from '@/src/features/feedback/WhatsNewEmpty';
 import type { ChangelogEntry } from '@/src/features/feedback/types';
 
 // ──────────────────────────────────────────────────────────────────────────────
@@ -33,12 +34,19 @@ export default function WhatsNew() {
     // side gutters — this screen adds no paddingHorizontal of its own.
     <Screen horizontalPadding={false} edges={['left', 'right']}>
       <SheetGrabber />
-      <ScrollView contentContainerStyle={{ paddingBottom: insets.bottom + t.space[6], gap: t.space[3] }}>
+      <ScrollView
+        contentContainerStyle={{
+          flexGrow: 1,
+          paddingTop: t.space[5],
+          paddingBottom: insets.bottom + t.space[6],
+          gap: t.space[3],
+        }}
+      >
         <AppText style={{ ...(type.title as TextStyle), color: t.colors.ink, marginBottom: t.space[2] }}>
           What&apos;s new
         </AppText>
         {changelog.length === 0 && !loading ? (
-          <AppText style={{ ...(type.body as TextStyle), color: t.colors.inkSoft }}>Nothing new yet.</AppText>
+          <WhatsNewEmpty />
         ) : (
           changelog.map((e) => <ChangelogCard key={e.id} entry={e} />)
         )}
