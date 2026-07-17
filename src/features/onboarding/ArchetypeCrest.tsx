@@ -58,10 +58,14 @@ export function ArchetypeCrest({ beeSize }: { beeSize?: number }) {
   const t = useTheme();
   const reduced = useReducedMotion();
 
-  const w = t.reveal.crestW;
-  const h = w * HEX_RATIO;
   const bee = beeSize ?? t.reveal.bee;
-  const coin = t.reveal.coinHex;
+  // Every dimension scales off the same bee/crest ratio the default (full-size
+  // reveal) crest uses, so a smaller `beeSize` (e.g. the Ready-screen kicker
+  // crest) shrinks the whole badge in proportion instead of just the mascot.
+  const scale = bee / t.reveal.bee;
+  const w = t.reveal.crestW * scale;
+  const h = w * HEX_RATIO;
+  const coin = t.reveal.coinHex * scale;
   const raySize = w * 1.3;
 
   // Coin-hex seal sits UP at the bee's head — just above and a little to the right
