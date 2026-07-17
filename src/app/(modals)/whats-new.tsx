@@ -33,7 +33,7 @@ export default function WhatsNew() {
     // side gutters — this screen adds no paddingHorizontal of its own.
     <Screen horizontalPadding={false} edges={['left', 'right']}>
       <SheetGrabber />
-      <ScrollView contentContainerStyle={{ paddingBottom: insets.bottom + t.space[6], gap: t.space[3] }}>
+      <ScrollView contentContainerStyle={{ paddingTop: t.space[5], paddingBottom: insets.bottom + t.space[6], gap: t.space[3] }}>
         <AppText style={{ ...(type.title as TextStyle), color: t.colors.ink, marginBottom: t.space[2] }}>
           What&apos;s new
         </AppText>

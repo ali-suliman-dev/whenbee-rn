@@ -603,7 +603,7 @@ export default function Settings() {
             onPress={() => router.push('/(modals)/feedback')}
           />
           <SettingRow
-            icon="sparkles-outline"
+            icon="newspaper-outline"
             tint={t.colors.accent}
             title="What's new"
             note="What you asked for, and what I shipped."
@@ -681,7 +681,7 @@ export default function Settings() {
                   color: t.colors.inkSoft,
                 }}
               >
-                Ring is on. Your honest finish shows on the Lock Screen while the timer runs.
+                Presence is on. Your honest finish shows on the Lock Screen while a timer runs.
               </AppText>
             </ProGate>
           </View>
