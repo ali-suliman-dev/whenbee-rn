@@ -13,10 +13,9 @@ import { type } from '@/src/theme/typography';
 // docs/product/specs/2026-07-17-ui-polish-batch.md, Workstream 3.
 // ──────────────────────────────────────────────────────────────────────────────
 
-const ART_SIZE = 132;
-
 export function WhatsNewEmpty() {
   const t = useTheme();
+  const ART_SIZE = t.size.emptyArt;
 
   return (
     <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', gap: t.space[4] }}>
@@ -68,7 +67,7 @@ export function WhatsNewEmpty() {
             ...(type.bodySm as TextStyle),
             color: t.colors.inkSoft,
             textAlign: 'center',
-            maxWidth: 230,
+            maxWidth: t.size.emptyCopy,
           }}
         >
           When I ship something you asked for, it lands right here.

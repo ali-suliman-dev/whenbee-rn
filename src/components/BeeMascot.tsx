@@ -325,6 +325,12 @@ export function BeeMascot({
     </>
   );
 
+  // Dozing mouth — a small content/closed arc replacing the awake smile, so the
+  // resting face reads as dozing rather than "eyes shut at attention". Matches
+  // the approved mock's mouth path exactly. Defined ahead of `front` (below)
+  // since it's referenced there.
+  const sleepyMouth = <Path d="M1150 1090 q50 26 100 0" stroke={c.ink} strokeWidth={22} fill="none" strokeLinecap="round" />;
+
   // Everything that sits on TOP of the wings (drawn after them in z-order).
   const front = (
     <>
@@ -369,11 +375,17 @@ export function BeeMascot({
         fill={stripeLo}
       />
 
-      {/* Smile (eyes are drawn separately so they can blink/glance — see below) */}
-      <Path
-        d="M1245.64 1084.39C1253.16 1083.14 1260 1088.94 1260 1096.55C1260 1102.58 1255.64 1107.73 1249.7 1108.72L1241.5 1110.08C1214.02 1114.66 1185.98 1114.66 1158.5 1110.08L1150.3 1108.72C1144.36 1107.73 1140 1102.58 1140 1096.55C1140 1088.94 1146.84 1083.14 1154.36 1084.39L1162.99 1085.83C1187.5 1089.92 1212.5 1089.92 1237.01 1085.83L1245.64 1084.39Z"
-        fill={c.ink}
-      />
+      {/* Mouth: the awake smile, or (sleepy) the mock's content/closed dozing
+          arc — swapped so the resting face reads as dozing, not "eyes shut at
+          attention" (eyes are drawn separately so they can blink/glance). */}
+      {sleepy ? (
+        sleepyMouth
+      ) : (
+        <Path
+          d="M1245.64 1084.39C1253.16 1083.14 1260 1088.94 1260 1096.55C1260 1102.58 1255.64 1107.73 1249.7 1108.72L1241.5 1110.08C1214.02 1114.66 1185.98 1114.66 1158.5 1110.08L1150.3 1108.72C1144.36 1107.73 1140 1102.58 1140 1096.55C1140 1088.94 1146.84 1083.14 1154.36 1084.39L1162.99 1085.83C1187.5 1089.92 1212.5 1089.92 1237.01 1085.83L1245.64 1084.39Z"
+          fill={c.ink}
+        />
+      )}
     </>
   );
 
@@ -409,12 +421,28 @@ export function BeeMascot({
   // Svg, original z-order preserved — final state, no motion. `sleepy` always
   // wins (dozing is a static resting expression, never animated).
   if (sleepy || !(animated || celebrate) || reduced) {
-    return (
-      <Svg width={size} height={size} viewBox="0 0 2400 2400" {...a11y}>
-        {glowHalo}
+    // Dozing gets a slight head tilt (mirrors the approved mock's
+    // `rotate(8 1200 1200)`) so the resting pose reads as relaxed rather than
+    // upright-with-eyes-shut. Only the art rotates — the glow halo is a circle
+    // centred on the same rotation origin, so it is visually unaffected either
+    // way; keep it outside the group for clarity.
+    const art = (
+      <>
         {wings}
         {front}
         {sleepy ? sleepyEyes : staticEyes}
+      </>
+    );
+    return (
+      <Svg width={size} height={size} viewBox="0 0 2400 2400" {...a11y}>
+        {glowHalo}
+        {sleepy ? (
+          <G rotation={8} originX={1200} originY={1200}>
+            {art}
+          </G>
+        ) : (
+          art
+        )}
       </Svg>
     );
   }
