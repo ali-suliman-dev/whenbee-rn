@@ -453,27 +453,11 @@ function TimerScreen({ session }: { session: TimerSessionParams }) {
           }}
           pointerEvents={timer.guardDue ? 'none' : 'auto'}
         >
-          <PaceLabel elapsedSec={timer.elapsedSec} estimateSec={timer.estimateSec} />
-
-          {!timer.isQuickStart ? (
-            <Pressable
-              onPress={() => { haptics.light(); setForgotOpen(true); }}
-              accessibilityRole="button"
-              accessibilityLabel="Forgot to stop the timer earlier"
-              hitSlop={t.size.hitSlop}
-              style={{ alignSelf: 'center', paddingVertical: t.space[1] }}
-            >
-              <AppText
-                style={{
-                  ...(type.caption as TextStyle),
-                  color: t.colors.primaryBright,
-                  textDecorationLine: 'underline',
-                }}
-              >
-                Forgot to stop?
-              </AppText>
-            </Pressable>
-          ) : null}
+          <PaceLabel
+            elapsedSec={timer.elapsedSec}
+            estimateSec={timer.estimateSec}
+            onForgotPress={!timer.isQuickStart ? () => setForgotOpen(true) : undefined}
+          />
 
           <View style={controlsRow}>
             <Pressable

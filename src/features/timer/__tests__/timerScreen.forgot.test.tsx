@@ -14,6 +14,24 @@ jest.mock('expo-router', () => ({
   Redirect: () => null,
 }));
 
+// PaceLabel's overrun gate is driven by a UI-thread reaction that never fires
+// under jest's mocked reanimated (see FinishTime.test.tsx) — that gating is
+// covered by PaceLabel's own unit test. This screen test only cares that the
+// forgot affordance, when rendered, opens the sheet and logs a corrected retro;
+// stub PaceLabel down to just the onForgotPress trigger it exposes.
+jest.mock('@/src/features/timer/PaceLabel', () => {
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
+  const { Pressable, Text } = require('react-native');
+  return {
+    PaceLabel: ({ onForgotPress }: { onForgotPress?: () => void }) =>
+      onForgotPress ? (
+        <Pressable onPress={onForgotPress} accessibilityRole="button" accessibilityLabel="Forgot to stop the timer earlier">
+          <Text>Forgot to stop?</Text>
+        </Pressable>
+      ) : null,
+  };
+});
+
 describe('Timer screen — forgot-to-stop', () => {
   beforeEach(() => {
     jest.clearAllMocks();

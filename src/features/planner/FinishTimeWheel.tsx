@@ -16,7 +16,7 @@ import Animated, {
 import { haptics } from '@/src/lib/haptics';
 import { useTheme } from '@/src/theme/useTheme';
 import { Chip } from '@/src/components/Chip';
-import { clampWheelIndex, WheelRow, WHEEL_SIDE_PEEK } from './wheelShared';
+import { clampWheelIndex, clampToRange, WheelRow, WHEEL_SIDE_PEEK } from './wheelShared';
 import {
   bufferFromHourMinute,
   bufferToHourMinute,
@@ -76,10 +76,87 @@ function minutesData(step: number): { value: number; label: string }[] {
 }
 
 const HOURS = hoursData();
-const HOUR_COUNT = HOURS.length; // 24
 
 function pad2(n: number): string {
   return String(n).padStart(2, '0');
+}
+
+// ── bounded-window helpers (forgot picker) ─────────────────────────────────────
+
+/** A finish window derived from [minMs, maxMs], as calendar hour/minute edges. */
+type Bounds = {
+  minHour: number;
+  minMinute: number;
+  maxHour: number;
+  maxMinute: number;
+};
+
+/**
+ * Derive the selectable finish window from [minMs, maxMs] on the calendar day of
+ * `maxMs`. The lower minute rounds UP to `step` (can't log before start), the
+ * upper rounds DOWN (can't log after now). If the window collapses or inverts
+ * (e.g. rounding crosses, or a cross-midnight session), it falls back to the
+ * single value at `maxMs` so the wheel is never empty.
+ */
+function deriveBounds(minMs: number, maxMs: number, step: number): Bounds {
+  const lo = new Date(minMs);
+  const hi = new Date(maxMs);
+
+  let minHour = lo.getHours();
+  let minMinute = Math.ceil(lo.getMinutes() / step) * step;
+  if (minMinute >= 60) {
+    minMinute = 0;
+    minHour += 1;
+  }
+  const maxHour = hi.getHours();
+  const maxMinute = Math.floor(hi.getMinutes() / step) * step;
+
+  const collapsed = minHour * 60 + minMinute > maxHour * 60 + maxMinute;
+  if (collapsed) {
+    const only = maxHour * 60 + Math.floor(hi.getMinutes() / step) * step;
+    return {
+      minHour: Math.floor(only / 60),
+      minMinute: only % 60,
+      maxHour: Math.floor(only / 60),
+      maxMinute: only % 60,
+    };
+  }
+  return { minHour, minMinute, maxHour, maxMinute };
+}
+
+/** Contiguous hours from `minHour`…`maxHour` (bounded) or the full 0–23 clock. */
+function buildHours(bounds: Bounds | null): { value: number; label: string }[] {
+  if (bounds === null) return HOURS;
+  const arr: { value: number; label: string }[] = [];
+  for (let h = bounds.minHour; h <= bounds.maxHour; h += 1) {
+    arr.push({ value: h, label: pad2(h) });
+  }
+  return arr;
+}
+
+/** Index of `hour` in a (possibly filtered) hours array; clamps to the nearest end. */
+function hourIdxIn(hour: number, hoursArr: { value: number }[]): number {
+  const idx = hoursArr.findIndex((h) => h.value === hour);
+  if (idx >= 0) return idx;
+  return hour < (hoursArr[0]?.value ?? 0) ? 0 : hoursArr.length - 1;
+}
+
+/**
+ * Allowed minute-index range for the currently selected hour. At the window's
+ * first hour the floor is `minMinute`; at its last hour the cap is `maxMinute`;
+ * any hour in between spans the whole minute column.
+ */
+function minuteRange(
+  hourValue: number,
+  bounds: Bounds | null,
+  minutes: { value: number }[],
+  step: number,
+): { lo: number; hi: number } {
+  const last = minutes.length - 1;
+  if (bounds === null) return { lo: 0, hi: last };
+  const lo = hourValue === bounds.minHour ? minuteIndex(bounds.minMinute, minutes, step) : 0;
+  const hi = hourValue === bounds.maxHour ? minuteIndex(bounds.maxMinute, minutes, step) : last;
+  return { lo, hi };
 }
 
 /** Epoch ms for hour:minute on the calendar day of `baseMs`. */
@@ -94,10 +171,6 @@ function decompose(ms: number, step: number): { hour: number; minute: number } {
   const d = new Date(ms);
   const minute = Math.round(d.getMinutes() / step) * step;
   return { hour: d.getHours(), minute: minute >= 60 ? 60 - step : minute };
-}
-
-function hourIndex(hour: number): number {
-  return clampWheelIndex(hour, HOUR_COUNT);
 }
 
 function minuteIndex(minute: number, minutes: { value: number }[], step: number): number {
@@ -121,6 +194,9 @@ function ColumnWheel({
   accessibilityMax,
   accessibilityValue,
   reducedMotion,
+  minIndex,
+  maxIndex,
+  disabledOpacity,
 }: {
   data: { value: number; label: string }[];
   selectedIndex: number;
@@ -135,8 +211,17 @@ function ColumnWheel({
   accessibilityMax: number;
   accessibilityValue: number;
   reducedMotion: boolean;
+  /** Lowest selectable index (bounded wheel). Defaults to 0. */
+  minIndex?: number;
+  /** Highest selectable index (bounded wheel). Defaults to count - 1. */
+  maxIndex?: number;
+  /** Opacity for out-of-window (disabled) rows — passed as a token. */
+  disabledOpacity?: number;
 }) {
   const count = data.length;
+  // Bounded window: default to the full column so non-bounded callers are unchanged.
+  const loIndex = minIndex ?? 0;
+  const hiIndex = maxIndex ?? count - 1;
   // Centre row + a half-row peek each side (scroll cue) — compact, not 3 full rows.
   const pad = itemHeight * WHEEL_SIDE_PEEK;
   const wheelHeight = itemHeight * (1 + 2 * WHEEL_SIDE_PEEK);
@@ -162,8 +247,14 @@ function ColumnWheel({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedIndex, itemHeight, reducedMotion, spring]);
 
-  const liveIndex = useDerivedValue(() =>
-    Math.round(clampWheelIndex(-translateY.get() / itemHeight, count)),
+  const liveIndex = useDerivedValue(
+    () =>
+      clampToRange(
+        Math.round(clampWheelIndex(-translateY.get() / itemHeight, count)),
+        loIndex,
+        hiIndex,
+      ),
+    [itemHeight, count, loIndex, hiIndex],
   );
   useAnimatedReaction(
     () => liveIndex.get(),
@@ -184,11 +275,17 @@ function ColumnWheel({
         })
         .onEnd((e) => {
           const projected = translateY.get() + e.velocityY * FLING_PROJECTION;
-          const idx = clampWheelIndex(Math.round(-projected / itemHeight), count);
+          // Clamp the fling landing into the window: a fling past the edge snaps
+          // back to it (acceptable rubber-band), so a bounded wheel can't overrun.
+          const idx = clampToRange(
+            clampWheelIndex(Math.round(-projected / itemHeight), count),
+            loIndex,
+            hiIndex,
+          );
           translateY.set(withSpring(-idx * itemHeight, spring));
           runOnJS(commitIdx)(idx);
         }),
-    [itemHeight, spring, startY, translateY, commitIdx, count],
+    [itemHeight, spring, startY, translateY, commitIdx, count, loIndex, hiIndex],
   );
 
   const listStyle = useAnimatedStyle(() => ({
@@ -210,9 +307,9 @@ function ColumnWheel({
       accessibilityActions={[{ name: 'increment' }, { name: 'decrement' }]}
       onAccessibilityAction={(e) => {
         if (e.nativeEvent.actionName === 'increment')
-          commitIdx(clampWheelIndex(committedIndex.current + 1, count));
+          commitIdx(clampToRange(committedIndex.current + 1, loIndex, hiIndex));
         else if (e.nativeEvent.actionName === 'decrement')
-          commitIdx(clampWheelIndex(committedIndex.current - 1, count));
+          commitIdx(clampToRange(committedIndex.current - 1, loIndex, hiIndex));
       }}
     >
       <GestureDetector gesture={pan}>
@@ -228,6 +325,8 @@ function ColumnWheel({
               inkColor={inkColor}
               inkFaintColor={inkFaintColor}
               fontSize={fontSize}
+              disabled={index < loIndex || index > hiIndex}
+              disabledOpacity={disabledOpacity}
             />
           ))}
         </Animated.View>
@@ -300,6 +399,8 @@ export function FinishTimeWheel({
   nowMs,
   showModes = true,
   editable = false,
+  minMs,
+  maxMs,
 }: {
   /** Selected deadline as epoch ms. If null/undefined, defaults to the next whole hour. */
   valueMs: number | null;
@@ -312,14 +413,33 @@ export function FinishTimeWheel({
   showModes?: boolean;
   /** Add a large tappable readout that flips the wheel into a type-any-minute keypad. */
   editable?: boolean;
+  /**
+   * Bounded mode — pass BOTH `minMs` and `maxMs` to constrain the wheel to a
+   * window (e.g. the forgot picker: you can only finish between start and now).
+   * The wheel then can't scroll, fling, or emit a time outside [minMs, maxMs].
+   * Non-bounded callers (deadline picking) pass neither and are unchanged.
+   */
+  minMs?: number;
+  maxMs?: number;
 }) {
   const t = useTheme();
   const reducedMotion = useReducedMotion();
 
-  // Editable mode lets the keypad type any minute, so the wheel must step by 1 to
-  // land on it exactly; otherwise a typed 47 snaps back to 45 on the wheel.
-  const minuteStep = editable ? 1 : DEFAULT_MINUTE_STEP;
+  // Bounded mode = both edges provided. Guard every new branch on this flag so the
+  // planner's deadline picker (which passes neither) behaves exactly as before.
+  const bounded = minMs != null && maxMs != null;
+
+  // Editable OR bounded steps by 1: editable so a typed 47 lands exactly; bounded
+  // so a narrow window (even < 5 min) is representable and the edge minute is real.
+  const minuteStep = editable || bounded ? 1 : DEFAULT_MINUTE_STEP;
   const minutes = useMemo(() => minutesData(minuteStep), [minuteStep]);
+
+  // Bounded window edges + the hours filtered to that window (null when unbounded).
+  const bounds = useMemo(
+    () => (bounded ? deriveBounds(minMs, maxMs, minuteStep) : null),
+    [bounded, minMs, maxMs, minuteStep],
+  );
+  const hours = useMemo(() => buildHours(bounds), [bounds]);
 
   // Resolve initial hour/minute from valueMs or default to next whole hour.
   const defaultMs = useMemo(() => {
@@ -330,42 +450,67 @@ export function FinishTimeWheel({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const resolved = valueMs ?? defaultMs;
+  // Anchor todayAt to the window's day in bounded mode (maxMs = "now"), else the
+  // injected nowMs. Kept possibly-undefined (not `?? Date.now()` at render) so it
+  // stays referentially stable — emitChange falls back at CALL time, as before.
+  const anchorMs = nowMs ?? maxMs;
+
+  // Clamp the opening value into the window before decompose so it opens in-range.
+  const resolvedRaw = valueMs ?? defaultMs;
+  const resolved = bounded ? clampToRange(resolvedRaw, minMs, maxMs) : resolvedRaw;
   const initial = useMemo(() => decompose(resolved, minuteStep), [resolved, minuteStep]);
 
-  const [hIdx, setHIdx] = useState(() => hourIndex(initial.hour));
-  const [mIdx, setMIdx] = useState(() => minuteIndex(initial.minute, minutes, minuteStep));
+  const initHIdx = hourIdxIn(initial.hour, hours);
+  const [hIdx, setHIdx] = useState(initHIdx);
+  const [mIdx, setMIdx] = useState(() => {
+    // Seed the minute range from the SELECTED (clamped) hour, not the raw
+    // decomposed hour: a collapsed cross-midnight window can point hIdx at a
+    // different hour, and using initial.hour would open on a future minute.
+    const selHour = hours[initHIdx]?.value ?? initial.hour;
+    const range = minuteRange(selHour, bounds, minutes, minuteStep);
+    return clampToRange(minuteIndex(initial.minute, minutes, minuteStep), range.lo, range.hi);
+  });
 
   // Keypad (editable) state: whether the keypad is showing + the digit buffer.
   const [typing, setTyping] = useState(false);
   const [buffer, setBuffer] = useState('');
 
-  // When valueMs changes externally, sync indices.
+  // When valueMs changes externally, sync indices (clamped into the window).
   const prevMs = useRef(resolved);
   useEffect(() => {
     if (valueMs === null || valueMs === prevMs.current) return;
     prevMs.current = valueMs;
-    const dec = decompose(valueMs, minuteStep);
-    setHIdx(hourIndex(dec.hour));
-    setMIdx(minuteIndex(dec.minute, minutes, minuteStep));
-  }, [valueMs, minuteStep, minutes]);
+    const v = bounded ? clampToRange(valueMs, minMs, maxMs) : valueMs;
+    const dec = decompose(v, minuteStep);
+    const range = minuteRange(dec.hour, bounds, minutes, minuteStep);
+    setHIdx(hourIdxIn(dec.hour, hours));
+    setMIdx(clampToRange(minuteIndex(dec.minute, minutes, minuteStep), range.lo, range.hi));
+  }, [valueMs, minuteStep, minutes, bounded, minMs, maxMs, bounds, hours]);
 
   const emitChange = useCallback(
     (newHIdx: number, newMIdx: number, newMode: DeadlineMode) => {
-      const h = HOURS[newHIdx]?.value ?? 0;
+      const h = hours[newHIdx]?.value ?? 0;
       const m = minutes[newMIdx]?.value ?? 0;
-      // I3: use injected nowMs so todayAt anchors to the right calendar day.
-      onChange(todayAt(h, m, nowMs ?? Date.now()), newMode);
+      // I3: anchor todayAt to the right calendar day (injected nowMs / window max);
+      // fall back to the live clock at call time so `anchorMs` stays stable.
+      onChange(todayAt(h, m, anchorMs ?? Date.now()), newMode);
     },
-    [onChange, nowMs, minutes],
+    [onChange, anchorMs, hours, minutes],
   );
 
   const handleHourChange = useCallback(
     (idx: number) => {
       setHIdx(idx);
-      emitChange(idx, mIdx, mode);
+      // Minute coupling: when the new hour narrows the allowed minutes (first/last
+      // hour of the window), clamp the current minute into range AND emit the
+      // corrected value so the readout/confirm never show an out-of-window time.
+      const hourValue = hours[idx]?.value ?? 0;
+      const range = minuteRange(hourValue, bounds, minutes, minuteStep);
+      const clampedMIdx = clampToRange(mIdx, range.lo, range.hi);
+      if (clampedMIdx !== mIdx) setMIdx(clampedMIdx);
+      emitChange(idx, clampedMIdx, mode);
     },
-    [emitChange, mIdx, mode],
+    [emitChange, mIdx, mode, hours, bounds, minutes, minuteStep],
   );
 
   const handleMinuteChange = useCallback(
@@ -385,8 +530,12 @@ export function FinishTimeWheel({
   );
 
   // Current hour/minute values (for the readout + keypad seed).
-  const curHour = HOURS[hIdx]?.value ?? 0;
+  const curHour = hours[hIdx]?.value ?? 0;
   const curMin = minutes[mIdx]?.value ?? 0;
+
+  // Allowed minute-index window for the current hour → drives the minute wheel's
+  // bounds + dead rows (null bounds → full 0–59, so unbounded is unchanged).
+  const curMinuteRange = minuteRange(curHour, bounds, minutes, minuteStep);
 
   // Commit a keypad buffer: update the wheel indices AND emit. Kept in sync so
   // toggling back to the wheel shows the typed time.
@@ -394,13 +543,13 @@ export function FinishTimeWheel({
     (next: string) => {
       const hm = bufferToHourMinute(next);
       if (hm === null) return;
-      const newHIdx = hourIndex(hm.hour);
+      const newHIdx = hourIdxIn(hm.hour, hours);
       const newMIdx = minuteIndex(hm.minute, minutes, minuteStep);
       setHIdx(newHIdx);
       setMIdx(newMIdx);
       emitChange(newHIdx, newMIdx, mode);
     },
-    [emitChange, minutes, minuteStep, mode],
+    [emitChange, minutes, minuteStep, mode, hours],
   );
 
   const handleDigit = useCallback(
@@ -488,7 +637,7 @@ export function FinishTimeWheel({
       <View style={highlight} pointerEvents="none" />
       <View style={row}>
         <ColumnWheel
-          data={HOURS}
+          data={hours}
           selectedIndex={hIdx}
           onIndexChange={handleHourChange}
           itemHeight={itemHeight}
@@ -497,8 +646,8 @@ export function FinishTimeWheel({
           inkFaintColor={t.colors.inkFaint}
           fontSize={t.fontSize.base}
           accessibilityLabel="Hour"
-          accessibilityMin={0}
-          accessibilityMax={23}
+          accessibilityMin={hours[0]?.value ?? 0}
+          accessibilityMax={hours[hours.length - 1]?.value ?? 23}
           accessibilityValue={curHour}
           reducedMotion={reducedMotion}
         />
@@ -515,10 +664,12 @@ export function FinishTimeWheel({
           inkFaintColor={t.colors.inkFaint}
           fontSize={t.fontSize.base}
           accessibilityLabel="Minute"
-          accessibilityMin={0}
-          accessibilityMax={59}
+          accessibilityMin={minutes[curMinuteRange.lo]?.value ?? 0}
+          accessibilityMax={minutes[curMinuteRange.hi]?.value ?? 59}
           accessibilityValue={curMin}
           reducedMotion={reducedMotion}
+          minIndex={bounded ? curMinuteRange.lo : undefined}
+          maxIndex={bounded ? curMinuteRange.hi : undefined}
         />
       </View>
     </View>
