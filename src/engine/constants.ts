@@ -110,8 +110,12 @@ export const ACCURACY_TREND_MIN_LOGS = 12; // below this, UI falls back to 2-poi
 export const ACCURACY_TREND_BUCKETS = 6; // max ordered windows in the series
 
 // ── Archetype quiz seed (provisional time-personality before data) ───────────
-/** Seed multiplier per Q1 pace answer (self-perceived bias, NOT a duration). */
-export const ARCHETYPE_SEED_PACE = { about: 1.15, bit: 1.5, lot: 2.1, lose: 3.0 } as const;
+/** Seed multiplier per Q1 pace answer (self-perceived bias, NOT a duration).
+ *  Grounded in planning-fallacy research: chronic under-estimators run ~1.3–2×
+ *  their guess, rarely more as a *sustained average*. The top rung (lose) sits at
+ *  2.2 so the reveal number stays believable — a 3×+ "average" reads as invented
+ *  and undercuts the whole honest-number promise. Real logs override it fast. */
+export const ARCHETYPE_SEED_PACE = { about: 1.1, bit: 1.35, lot: 1.7, lose: 2.2 } as const;
 /** Q2 'rabbit holes' multiplies the seed by this (capped at RATIO_CEIL). */
 export const ARCHETYPE_SEED_RABBIT_BUMP = 1.15;
 /** Seed acts as a prior worth this many pseudo-logs; real logs wash it out. */

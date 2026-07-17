@@ -51,14 +51,14 @@ describe('deriveArchetype', () => {
   it('names a personality from the average multiplier when enough history exists', () => {
     const data = makeData({
       categories: [
-        stat({ categoryId: 'admin', n: 7, mEffective: 2.2 }),
-        stat({ categoryId: 'email', n: 6, mEffective: 2.0 }),
+        stat({ categoryId: 'admin', n: 7, mEffective: 1.8 }),
+        stat({ categoryId: 'email', n: 6, mEffective: 1.6 }),
       ],
     });
     const card = deriveArchetype(data);
     expect(card).not.toBeNull();
     expect(card!.title).toBe('The Sprint Optimist');
-    expect(card!.averageMultiplier).toBeCloseTo(2.1, 5);
+    expect(card!.averageMultiplier).toBeCloseTo(1.7, 5);
   });
 
   it('excludes categories under the personal minimum from the spread', () => {

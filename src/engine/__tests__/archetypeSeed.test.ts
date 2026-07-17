@@ -3,8 +3,8 @@ import { CATEGORY_PRIORS } from '../priors';
 
 describe('seedMultiplierFor', () => {
   it('maps each pace answer to its band', () => {
-    expect(seedMultiplierFor({ pace: 'about' })).toBeCloseTo(1.15);
-    expect(seedMultiplierFor({ pace: 'lose' })).toBeCloseTo(3.0);
+    expect(seedMultiplierFor({ pace: 'about' })).toBeCloseTo(1.1);
+    expect(seedMultiplierFor({ pace: 'lose' })).toBeCloseTo(2.2);
   });
   it('bumps the seed when mid-task goes to rabbit holes', () => {
     expect(seedMultiplierFor({ pace: 'bit', mid: 'rabbit' })).toBeGreaterThan(seedMultiplierFor({ pace: 'bit' }));

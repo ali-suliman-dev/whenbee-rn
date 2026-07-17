@@ -167,13 +167,13 @@ function ratiosOf(logs: PatternLog[]): number[] {
 function archetypeFor(avg: number, provisional: boolean): ArchetypeCard {
   let title: string;
   let blurb: string;
-  if (avg < 1.3) {
+  if (avg < 1.2) {
     title = 'The Steady Reader';
     blurb = 'Your guesses land close to reality. Quietly rare.';
-  } else if (avg < 1.8) {
+  } else if (avg < 1.5) {
     title = 'The Gentle Optimist';
     blurb = 'You lean hopeful, then mostly catch up. A little padding does it.';
-  } else if (avg < 2.6) {
+  } else if (avg < 2.0) {
     title = 'The Sprint Optimist';
     blurb = 'Your mind moves fast; the doing takes a touch longer. Now you know by how much.';
   } else {

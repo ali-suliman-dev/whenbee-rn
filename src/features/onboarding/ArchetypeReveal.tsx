@@ -261,7 +261,7 @@ export function ArchetypeReveal({
             <Text style={multStyle}>{multiplier.toFixed(1)}</Text>
             <Text style={multX}>×</Text>
           </View>
-          <Text style={multCaption}>your guess, on average</Text>
+          <Text style={multCaption}>your starting estimate</Text>
         </Animated.View>
         <Animated.Text style={[blurbStyle, blurbAnim]}>{blurb}</Animated.Text>
       </Animated.View>

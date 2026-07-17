@@ -4,12 +4,12 @@ import { analytics } from '@/src/services/analytics';
 
 // Maps a seed multiplier to the same 4-rung ladder deriveArchetype uses, so the
 // reveal label matches what Patterns will show. Kept in lockstep with the engine
-// ladder thresholds (Steady<1.3, Gentle<1.8, Sprint<2.6, Dreamer>=2.6).
+// ladder thresholds (Steady<1.2, Gentle<1.5, Sprint<2.0, Dreamer>=2.0).
 // Thresholds and titles MUST stay in sync with `archetypeFor` in usePatterns.ts.
 function rungFor(m: number): { title: string; blurb: string } {
-  if (m < 1.3) return { title: 'The Steady Reader', blurb: 'Your guesses already land close to reality. I\'ll sharpen this with every task you log.' };
-  if (m < 1.8) return { title: 'The Gentle Optimist', blurb: 'You lean hopeful, then mostly catch up. A little padding does it.' };
-  if (m < 2.6) return { title: 'The Sprint Optimist', blurb: 'Your mind moves fast; the doing takes a touch longer. Now you know by how much.' };
+  if (m < 1.2) return { title: 'The Steady Reader', blurb: 'Your guesses already land close to reality. I\'ll sharpen this with every task you log.' };
+  if (m < 1.5) return { title: 'The Gentle Optimist', blurb: 'You lean hopeful, then mostly catch up. A little padding does it.' };
+  if (m < 2.0) return { title: 'The Sprint Optimist', blurb: 'Your mind moves fast; the doing takes a touch longer. Now you know by how much.' };
   return { title: 'The Dreamer', blurb: 'Big plans, generous timelines. Your honest numbers keep them grounded.' };
 }
 

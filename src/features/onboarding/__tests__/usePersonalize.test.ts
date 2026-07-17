@@ -10,8 +10,9 @@ it('persists the seed and returns a reveal card from quiz answers', () => {
   const { result } = renderHook(() => usePersonalize());
   let card: { title: string; multiplier: number } | undefined;
   act(() => { card = result.current.saveQuiz({ pace: 'lot', mid: 'rabbit' }); });
-  expect(useSettingsStore.getState().archetypeSeed?.m0).toBeGreaterThan(2);
-  expect(card!.title.length).toBeGreaterThan(0);
+  // lot (1.7) × rabbit bump (1.15) ≈ 1.96 → Sprint rung.
+  expect(useSettingsStore.getState().archetypeSeed?.m0).toBeCloseTo(1.955, 2);
+  expect(card!.title).toBe('The Sprint Optimist');
 });
 
 it('persists the sink answer on the seed so the engine can bump that category', () => {
@@ -55,10 +56,10 @@ function makeEarnedData(avgMultiplier: number): PatternsData {
 }
 
 const LADDER: { multiplier: number; expectedTitle: string }[] = [
-  { multiplier: 1.15, expectedTitle: 'The Steady Reader' },
-  { multiplier: 1.5,  expectedTitle: 'The Gentle Optimist' },
-  { multiplier: 2.1,  expectedTitle: 'The Sprint Optimist' },
-  { multiplier: 3.0,  expectedTitle: 'The Dreamer' },
+  { multiplier: 1.1,  expectedTitle: 'The Steady Reader' },
+  { multiplier: 1.35, expectedTitle: 'The Gentle Optimist' },
+  { multiplier: 1.7,  expectedTitle: 'The Sprint Optimist' },
+  { multiplier: 2.2,  expectedTitle: 'The Dreamer' },
 ];
 
 it.each(LADDER)(
