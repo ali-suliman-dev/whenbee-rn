@@ -119,7 +119,14 @@ export function ForgotStopSheet({
               <AppText style={heading}>When did you finish?</AppText>
               <AppText style={body}>Spin to the time you actually stopped.</AppText>
               <View style={{ paddingVertical: t.space[2] }}>
-                <FinishTimeWheel valueMs={clampedFinishMs} mode="be done by" showModes={false} onChange={(ms) => setPickedMs(ms)} />
+                <FinishTimeWheel
+                  valueMs={clampedFinishMs}
+                  mode="be done by"
+                  showModes={false}
+                  minMs={startedAt}
+                  maxMs={nowMs}
+                  onChange={(ms) => setPickedMs(ms)}
+                />
               </View>
               <AppButton
                 label={`Log ${formatClock(clampedFinishMs)}  ·  ${pickedActualMin}m`}

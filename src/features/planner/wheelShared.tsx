@@ -29,6 +29,13 @@ export const WHEEL_OPACITY = [1, 0.45, 0.16] as const;
 export const WHEEL_SCALE = [1, 0.84] as const;
 
 /**
+ * Opacity for a dead (out-of-window) row on a bounded wheel. Set well below the
+ * 0.16 far-fade so an unreachable row reads as "can't go there", not just distant.
+ * A drum-picker physics value, not a design token (cf. WHEEL_OPACITY).
+ */
+export const WHEEL_DISABLED_OPACITY = 0.08 as const;
+
+/**
  * Fraction of a row that peeks above and below the centre band — the scroll cue.
  *
  * The wheel window is `(1 + 2 * peek)` rows tall: one full centre row plus a
@@ -63,6 +70,32 @@ export function clampWheelIndex(n: number, count: number): number {
   return Math.min(count - 1, Math.max(0, n));
 }
 
+/**
+ * Clamp `n` into the closed range [lo, hi].
+ *
+ * Unlike {@link clampWheelIndex} (which clamps to a 0-based item count), this
+ * bounds a value between an explicit lower and upper edge — used to keep a bounded
+ * wheel (e.g. the "can't finish in the future" forgot picker) inside its window.
+ *
+ * Guard: if the range is inverted (`lo > hi`, a collapsed window) it returns `lo`,
+ * the single authoritative value, rather than an undefined result.
+ *
+ * Marked a worklet for the same reason as {@link clampWheelIndex}: it runs inside
+ * UI-thread pan handlers and `useDerivedValue`, so without the directive Reanimated
+ * aborts the app on Fabric. It also runs fine when called from the JS thread.
+ *
+ * @example
+ *   clampToRange(2, 5, 10)  // → 5   (below lo)
+ *   clampToRange(20, 5, 10) // → 10  (above hi)
+ *   clampToRange(7, 5, 10)  // → 7   (inside)
+ *   clampToRange(7, 10, 5)  // → 10  (inverted guard)
+ */
+export function clampToRange(n: number, lo: number, hi: number): number {
+  'worklet';
+  if (lo > hi) return lo;
+  return Math.min(hi, Math.max(lo, n));
+}
+
 // ── WheelRow ──────────────────────────────────────────────────────────────────
 
 export type WheelRowProps = {
@@ -74,6 +107,10 @@ export type WheelRowProps = {
   inkColor: string;
   inkFaintColor: string;
   fontSize: number;
+  /** Out-of-window row: rendered dead (dimmed) so a bounded wheel reads its edge. */
+  disabled?: boolean;
+  /** Opacity for a disabled row — passed as a token (e.g. `t.opacity.disabled`). */
+  disabledOpacity?: number;
 };
 
 export const WheelRow = memo(function WheelRow({
@@ -85,17 +122,17 @@ export const WheelRow = memo(function WheelRow({
   inkColor,
   inkFaintColor,
   fontSize,
+  disabled = false,
+  disabledOpacity = WHEEL_DISABLED_OPACITY,
 }: WheelRowProps) {
   const animStyle = useAnimatedStyle(() => {
     const centre = -translateY.get() / itemHeight;
     const dist = Math.abs(centre - index);
     return {
-      opacity: interpolate(
-        dist,
-        [0, 1, 2],
-        WHEEL_OPACITY as unknown as number[],
-        Extrapolation.CLAMP,
-      ),
+      // A disabled (out-of-window) row is dead: a fixed dim, not the distance fade.
+      opacity: disabled
+        ? disabledOpacity
+        : interpolate(dist, [0, 1, 2], WHEEL_OPACITY as unknown as number[], Extrapolation.CLAMP),
       transform: [
         {
           scale: interpolate(

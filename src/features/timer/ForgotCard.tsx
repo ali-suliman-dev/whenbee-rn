@@ -109,11 +109,16 @@ export function ForgotCard(): React.JSX.Element | null {
   // wheel's 5-min step so the readout and the confirm button agree before any
   // scroll. Derive the minutes any chosen clock time would log (clamped to ≥1,
   // never a runaway or a negative).
+  const nowMs = Date.now();
   const stepMs = 5 * 60_000;
   const defaultFinishMs =
     Math.round((pending.startedAt + Math.max(1, pending.honestMin) * 60_000) / stepMs) * stepMs;
   const finishMs = pickedMs ?? defaultFinishMs;
-  const pickedActualMin = Math.max(1, Math.round((finishMs - pending.startedAt) / 60_000));
+  // Belt-and-suspenders: the wheel is now bounded to [startedAt, now] and can't
+  // emit outside it, but keep the parent clamp so the logged minutes never run
+  // past the present even if a caller passes an odd value.
+  const clampedFinishMs = Math.min(nowMs, Math.max(pending.startedAt, finishMs));
+  const pickedActualMin = Math.max(1, Math.round((clampedFinishMs - pending.startedAt) / 60_000));
 
   // ─── Styles ─────────────────────────────────────────────────────────────────
 
@@ -215,14 +220,16 @@ export function ForgotCard(): React.JSX.Element | null {
               <AppText style={body}>Spin to the time you actually stopped.</AppText>
               <View style={wheelWrap}>
                 <FinishTimeWheel
-                  valueMs={finishMs}
+                  valueMs={clampedFinishMs}
                   mode="be done by"
                   showModes={false}
+                  minMs={pending.startedAt}
+                  maxMs={nowMs}
                   onChange={(ms) => setPickedMs(ms)}
                 />
               </View>
               <AppButton
-                label={`Log ${formatClock(finishMs)} · ${pickedActualMin}m`}
+                label={`Log ${formatClock(clampedFinishMs)} · ${pickedActualMin}m`}
                 variant="amber"
                 size="md"
                 fullWidth
