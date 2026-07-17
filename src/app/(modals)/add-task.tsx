@@ -160,6 +160,7 @@ export default function AddTask() {
     color: t.colors.ink,
   };
   const fieldLabel: TextStyle = { ...(type.eyebrow as unknown as TextStyle), color: t.colors.inkSoft };
+  const promptLabel: TextStyle = { ...(type.heading as unknown as TextStyle), color: t.colors.ink };
 
   // inputText is kept for the inline new-category TextInput below.
   const inputText: TextStyle = {
@@ -252,12 +253,18 @@ export default function AddTask() {
                 </View>
               </Pressable>
             </View>
-            <Text style={heading}>{a.isEditing ? 'Edit task' : 'New task'}</Text>
-            <Text style={sub}>{a.isEditing ? 'Adjust the details.' : 'What are you working on?'}</Text>
+            {a.isEditing ? (
+              <>
+                <Text style={heading}>Edit task</Text>
+                <Text style={sub}>Adjust the details.</Text>
+              </>
+            ) : null}
           </View>
 
           <View style={{ gap: t.space[2] }}>
-            <Text style={fieldLabel}>TASK</Text>
+            <Text style={a.isEditing ? fieldLabel : promptLabel}>
+              {a.isEditing ? 'TASK' : 'What are you working on?'}
+            </Text>
             <TaskTitleField
               variant="boxed"
               value={a.title}
