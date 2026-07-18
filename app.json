@@ -2,6 +2,7 @@
   "expo": {
     "name": "Whenbee",
     "slug": "whenbee",
+    "owner": "alx-organization",
     "version": "0.1.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
@@ -12,6 +13,9 @@
       "bundleIdentifier": "com.whenbee.app",
       "supportsTablet": true,
       "appleTeamId": "KXJDWZ2PKA",
+      "config": {
+        "usesNonExemptEncryption": false
+      },
       "entitlements": {
         "com.apple.developer.usernotifications.time-sensitive": true
       }
@@ -48,7 +52,6 @@
         }
       ],
       "expo-font",
-      "expo-secure-store",
       "expo-web-browser",
       [
         "expo-calendar",
@@ -56,6 +59,7 @@
           "calendarPermission": "Whenbee reads today's events so it can show your honest day, and only writes back the times you confirm."
         }
       ],
+      "./plugins/withNoRemindersPermission",
       [
         "@sentry/react-native/expo",
         {
@@ -88,6 +92,11 @@
     "experiments": {
       "typedRoutes": true,
       "reactCompiler": true
+    },
+    "extra": {
+      "eas": {
+        "projectId": "4be512ee-fdc9-429e-8e14-d27d7b187be6"
+      }
     }
   }
 }

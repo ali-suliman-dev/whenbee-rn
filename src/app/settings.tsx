@@ -723,22 +723,22 @@ export default function Settings() {
           />
         </View>
 
-        <View style={{ gap: t.space[3] }}>
-          <AppText variant="label">Developer</AppText>
-          <SettingRow
-            icon="construct-outline"
-            title="Unlock Pro (testing)"
-            note="Flip the Pro entitlement to preview every gated screen. For testing — leave off in normal use."
-            trailing={
-              <Switch
-                value={isPro}
-                onValueChange={setPro}
-                trackColor={{ true: t.colors.primary, false: t.colors.hairline }}
-                accessibilityLabel="Unlock Pro (testing)"
-              />
-            }
-          />
-          {__DEV__ && (
+        {__DEV__ && (
+          <View style={{ gap: t.space[3] }}>
+            <AppText variant="label">Developer</AppText>
+            <SettingRow
+              icon="construct-outline"
+              title="Unlock Pro (testing)"
+              note="Flip the Pro entitlement to preview every gated screen. For testing — leave off in normal use."
+              trailing={
+                <Switch
+                  value={isPro}
+                  onValueChange={setPro}
+                  trackColor={{ true: t.colors.primary, false: t.colors.hairline }}
+                  accessibilityLabel="Unlock Pro (testing)"
+                />
+              }
+            />
             <SettingRow
               icon="flask-outline"
               title="Seed demo data"
@@ -746,8 +746,8 @@ export default function Settings() {
               onPress={handleSeedDemo}
               disabled={seeding}
             />
-          )}
-        </View>
+          </View>
+        )}
       </ScrollView>
       </KeyboardAvoidingView>
 
