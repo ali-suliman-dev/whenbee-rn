@@ -201,7 +201,11 @@ export default function AddTask() {
     borderTopWidth: t.borderWidth.hairline,
     borderTopColor: t.colors.hairline,
     paddingTop: t.space[3],
-    paddingBottom: insets.bottom + t.space[3],
+    // Clear the bottom system inset (home indicator / gesture bar) plus a small
+    // breathing gap. On Android the flex:1 column pins this footer to the true
+    // screen bottom, so inset (24dp here) + space[2] lands the CTAs ~32dp up —
+    // snug to the edge without sitting under the gesture bar.
+    paddingBottom: insets.bottom + (Platform.OS === 'ios' ? t.space[3] : t.space[2]),
     gap: t.space[2],
   };
 
@@ -218,8 +222,22 @@ export default function AddTask() {
           while the footer stays pinned. behavior='padding' still lifts it over the
           keyboard within that fixed frame. */}
       <KeyboardAvoidingView
-        style={{ height: winH * 0.95 - insets.bottom }}
-        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        // iOS: the formSheet's content area is a real 0.95 detent; rn-screens
+        // collapses a flex:1 child to content height there, so pin the column to a
+        // fixed height (winH·0.95 minus the home indicator) to keep the footer down.
+        // Android: the sheet presents FULL-SCREEN (react-native-screens' Android
+        // fallback), so a winH·0.95 cap left a permanent ~5% dead zone below the
+        // pinned footer. flex:1 fills the actual presented area, so the footer pins
+        // to the true bottom.
+        style={Platform.OS === 'ios' ? { height: winH * 0.95 - insets.bottom } : { flex: 1 }}
+        // iOS: 'padding' lifts the fixed-height column over the keyboard.
+        // Android: the activity is windowSoftInputMode=adjustResize, so the native
+        // window ALREADY shrinks for the keyboard — the flex:1 column shrinks with
+        // it and the absolute footer rises on its own. A KAV behavior here would
+        // DOUBLE-compensate: it captured the shrunken height while the keyboard was
+        // up, then restored the column to that stale smaller height on dismiss,
+        // leaving a large gap under the CTAs. Defer to adjustResize (undefined).
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
       >
         <ScrollView
           style={{ flex: 1 }}
