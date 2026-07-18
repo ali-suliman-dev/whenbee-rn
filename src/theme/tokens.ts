@@ -559,6 +559,25 @@ export const tokens = {
     bloom: '#7C6DE8', sheen: '#FFFFFF', border: 'rgba(255,255,255,0.08)', crestGlow: '#FFFFFF',
     // On-card highlight sweep + the soft amber row-divider hairline (stat-sheet).
     shine: 'rgba(255,255,255,0.05)', amberHairline: 'rgba(238,174,77,0.18)',
+    // Accent colours the two cards pull for the hero multiplier numeral, its `×`,
+    // and the card-2 eyebrow. Mode-aware — dark values here, light in `revealLight`.
+    // (Dark keeps its exact prior look: number = brand.honeyFill, × / eyebrow = accent.)
+    statOn: '#F5C03F', statXOn: '#EEAE4D', eyebrowAccentOn: '#EEAE4D',
+  },
+
+  // Light-mode override for the reveal COLOUR fields ONLY (geometry — crestW/bee/
+  // coinHex/coinEdge — stays shared from `reveal`). In light the two "time
+  // personality" cards (ArchetypeReveal, ArchetypeHero) go "lavender-lift": a flat
+  // lavender surface that separates from the page bg by TINT alone (no shadow, no
+  // border — mirrors how the dark card lifts off near-black). The coloured bloom is
+  // killed (it read as a muddy stain on a light surface); the sheen sweep stays.
+  // COLOURS ONLY — animation, fonts, sizes and layout are unchanged. Merged over
+  // `reveal` in light mode by resolveTheme.
+  revealLight: {
+    gradTop: '#EBE5F8', gradMid: '#E1D9F3', gradBot: '#D6CBEE',
+    inkOn: '#20233A', blurbOn: '#5C5F73', eyebrowOn: '#8A5A12',
+    bloom: 'transparent', border: 'rgba(42,36,64,0.10)', amberHairline: 'rgba(238,174,77,0.36)',
+    statOn: '#C68A30', statXOn: '#C68A30', eyebrowAccentOn: '#8A5A12',
   },
 
   // Quiz step progress comb (QuizProgressComb) — one flat-top honey cell per quiz

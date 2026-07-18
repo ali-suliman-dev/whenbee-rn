@@ -58,23 +58,27 @@ export function ArchetypeHero({
     borderCurve: 'continuous',
     backgroundColor: t.reveal.gradBot,
     padding: t.space[5],
-    ...Platform.select({
-      ios: {
-        shadowColor: '#000',
-        shadowOpacity: 0.45,
-        shadowRadius: t.shadow.lift.radius,
-        shadowOffset: { width: 0, height: t.shadow.lift.offset },
-      },
-      default: { elevation: t.shadow.lift.elevation },
-    }),
+    // Dark only: soft drop lifting the card off near-black. In light the card is flat
+    // and separates from the page by its lavender tint alone (no shadow).
+    ...(t.mode === 'dark'
+      ? Platform.select({
+          ios: {
+            shadowColor: '#000',
+            shadowOpacity: 0.45,
+            shadowRadius: t.shadow.lift.radius,
+            shadowOffset: { width: 0, height: t.shadow.lift.offset },
+          },
+          default: { elevation: t.shadow.lift.elevation },
+        })
+      : null),
   };
-  const eyebrow: TextStyle = { ...(type.eyebrow as unknown as TextStyle), color: t.colors.accent };
+  const eyebrow: TextStyle = { ...(type.eyebrow as unknown as TextStyle), color: t.reveal.eyebrowAccentOn };
   const titleStyle: TextStyle = { ...(type.subtitle as unknown as TextStyle), color: t.reveal.inkOn, marginTop: t.space[1] };
 
   // Hero stat: a big honey numeral with a smaller deeper-amber "×", read beside it.
   const heroRow: ViewStyle = { flexDirection: 'row', alignItems: 'flex-end', gap: t.space[3], marginTop: t.space[5] };
-  const heroNum: TextStyle = { ...(type.honestNumberHero as unknown as TextStyle), color: t.brand.honeyFill };
-  const heroX: TextStyle = { fontFamily: 'Inter-Bold', fontSize: t.fontSize.xl, color: t.colors.accent, letterSpacing: -0.5 };
+  const heroNum: TextStyle = { ...(type.honestNumberHero as unknown as TextStyle), color: t.reveal.statOn };
+  const heroX: TextStyle = { fontFamily: 'Inter-Bold', fontSize: t.fontSize.xl, color: t.reveal.statXOn, letterSpacing: -0.5 };
   const heroRead: TextStyle = { ...(type.bodySm as unknown as TextStyle), color: t.reveal.blurbOn, flexShrink: 1, paddingBottom: t.space[2] };
 
   // Supporting LEARNED-stat block. An amber rule splits it from the hero; each row
