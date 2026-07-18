@@ -8,6 +8,7 @@ import { Screen } from '@/src/components/Screen';
 import { AppButton } from '@/src/components/AppButton';
 import { SheetGrabber } from '@/src/components/SheetGrabber';
 import { BeeBurst } from '@/src/components/bee/BeeBurst';
+import { ProCoin } from '@/src/components/ProCoin';
 import { useTheme } from '@/src/theme/useTheme';
 import { type } from '@/src/theme/typography';
 import { isExpoGo } from '@/src/lib/isExpoGo';
@@ -163,21 +164,12 @@ export function Paywall({ trigger, readiness = 'pre' }: { trigger?: string; read
   const fineText: TextStyle = { ...(type.caption as unknown as TextStyle), color: t.colors.inkFaint, textAlign: 'center' };
   const linkText: TextStyle = { ...(type.bodySm as unknown as TextStyle), color: t.colors.primary };
   const errorText: TextStyle = { ...(type.caption as unknown as TextStyle), color: t.colors.danger, textAlign: 'center' };
-  const eyebrowText: TextStyle = { ...(type.eyebrow as unknown as TextStyle), color: t.colors.amberText, letterSpacing: 0.8 };
-
   const proofRow: ViewStyle = { flexDirection: 'row', alignItems: 'center', gap: t.space[2] };
   const linkRow: ViewStyle = { flexDirection: 'row', justifyContent: 'center', gap: t.space[6] };
   // Apple 3.1.2: a functional Terms + Privacy link must sit on the buy screen.
   const legalRow: ViewStyle = { flexDirection: 'row', justifyContent: 'center', alignItems: 'center', gap: t.space[1.5], flexWrap: 'wrap' };
   const legalMuted: TextStyle = { ...(type.caption as unknown as TextStyle), color: t.colors.inkFaint };
   const legalLink: TextStyle = { ...(type.caption as unknown as TextStyle), color: t.colors.primary };
-  const eyebrowChip: ViewStyle = {
-    alignSelf: 'flex-start',
-    flexDirection: 'row', alignItems: 'center', gap: t.space[1.5],
-    backgroundColor: t.colors.accentSoft,
-    borderRadius: t.radii.full,
-    paddingHorizontal: t.space[2.5], paddingVertical: t.space[1],
-  };
   // The free-tier reassurance (prototype): the real no-card, no-renewal trial.
   const freeStrip: ViewStyle = {
     backgroundColor: t.colors.primarySoft,
@@ -204,10 +196,11 @@ export function Paywall({ trigger, readiness = 'pre' }: { trigger?: string; read
         </View>
 
         <View style={{ gap: t.space[2] }}>
-          <View style={eyebrowChip}>
-            <Ionicons name="ribbon-outline" size={t.iconSize.sm} color={t.colors.accent} />
-            <Text style={eyebrowText} numberOfLines={1}>{copy.eyebrow}</Text>
-          </View>
+          <ProCoin
+            size="md"
+            label={copy.eyebrow}
+            icon={<Ionicons name="ribbon" size={t.iconSize.sm} color={t.colors.onAmber} />}
+          />
           <Text style={heading}>{copy.title}</Text>
           <Text style={sub}>{copy.sub}</Text>
         </View>

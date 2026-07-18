@@ -1,10 +1,11 @@
-import { Pressable, View, Text, type ViewStyle, type TextStyle } from 'react-native';
+import { Pressable, View, type ViewStyle, type TextStyle } from 'react-native';
 import Animated, { useSharedValue, useAnimatedStyle, withTiming } from 'react-native-reanimated';
 import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '@/src/theme/useTheme';
 import { type } from '@/src/theme/typography';
 import { AppText } from '@/src/components/AppText';
+import { ProCoin } from '@/src/components/ProCoin';
 import { formatWindowRange } from '@/src/lib/time';
 import { useEntitlement } from '@/src/features/paywall/useEntitlement';
 import { useLearnedFocusWindow } from '@/src/features/planner/useLearnedFocusWindow';
@@ -128,18 +129,6 @@ export function TodayFocusHook({ nowMs }: TodayFocusHookProps): React.ReactEleme
     color: t.colors.inkFaint,
   };
 
-  // ── Pro pill for free path ────────────────────────────────────────────────
-  const pillStyle: ViewStyle = {
-    backgroundColor: t.colors.accent,
-    paddingHorizontal: t.space[1.5],
-    paddingVertical: t.space[0.5],
-    borderRadius: t.radii.full,
-  };
-  const pillTextStyle: TextStyle = {
-    ...(type.captionBold as unknown as TextStyle),
-    color: t.colors.onAmber,
-  };
-
   return (
     <Pressable
       accessibilityRole="button"
@@ -164,9 +153,7 @@ export function TodayFocusHook({ nowMs }: TodayFocusHookProps): React.ReactEleme
               <AppText style={insightStyle} numberOfLines={1}>
                 Your focus window is ready
               </AppText>
-              <View style={pillStyle}>
-                <Text style={pillTextStyle}>Pro</Text>
-              </View>
+              <ProCoin label="Pro" />
             </>
           )}
         </View>
