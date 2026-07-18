@@ -37,6 +37,10 @@ The current key `test_eNXvgxIhPcfvyDpDrJRoqMZoFRi` is RevenueCat's **Test Store*
 
 Code is ready: `configurePurchases()` reads the platform key from env and RC hydrates at boot.
 
+**Prices:** production prices come from **Google Play Console** IAP config (RC mirrors the store), NOT RevenueCat. Set `$4.99/mo · $34.99/yr · $89 lifetime` there when creating the IAPs. The current RC values ($9.99/$79.99/$99.99) are Test-Store placeholders — the v2 price API errors, so edit them in the **RC dashboard** (Products → price) if you want the test flow to show the right numbers.
+
+**Entitlement identifier:** code now matches the live RC entitlement `Whenbee Pro` (a legacy `pro` is archived, lookup_key reserved but unreachable via API). If you consolidate RC back to a clean `pro` entitlement later, update `PRO_ENTITLEMENT_ID` in `src/services/purchases.ts`.
+
 ---
 
 ## 3. Android signing / keystore
