@@ -20,7 +20,7 @@ const revealedSteady = {
   startMin: 810, endMin: 960, basis: 'revealed' as const, confidence: 0.9,
   confidenceTier: 'steady' as const, coarseBlockLabel: 'Afternoons',
   scoreByBin: Array.from({ length: 19 }, (_, i) => (i === 9 ? 1 : 0.3)),
-  sampleCount: 137, distinctDays: 21, held: false,
+  sampleCount: 137, distinctDays: 21, held: false, hydrated: true,
   gates: { sessions: { have: 137, need: 15 }, days: { have: 21, need: 5 } },
 };
 
@@ -28,7 +28,7 @@ const revealedSteady = {
 const revealedLow = {
   startMin: 480, endMin: 690, basis: 'revealed' as const, confidence: 0.4,
   confidenceTier: 'low' as const, coarseBlockLabel: 'Mornings',
-  scoreByBin: Array(19).fill(0.5), sampleCount: 16, distinctDays: 5, held: false,
+  scoreByBin: Array(19).fill(0.5), sampleCount: 16, distinctDays: 5, held: false, hydrated: true,
   gates: { sessions: { have: 16, need: 15 }, days: { have: 5, need: 5 } },
 };
 
@@ -37,7 +37,7 @@ const forming = {
   startMin: 540, endMin: 720, basis: 'forming' as const, confidence: 0,
   confidenceTier: 'low' as const, coarseBlockLabel: '',
   scoreByBin: Array.from({ length: 19 }, () => 0.3),
-  sampleCount: 3, distinctDays: 2, held: false,
+  sampleCount: 3, distinctDays: 2, held: false, hydrated: true,
   gates: { sessions: { have: 3, need: 15 }, days: { have: 2, need: 5 } },
 };
 
@@ -59,6 +59,16 @@ beforeEach(() => {
   (useFocusInsights as jest.Mock).mockReturnValue({
     peakMin: 882, troughMin: 555, contrast: 2.3, accuracyBetterInWindow: true, durationLongerInWindow: true,
   });
+});
+
+it('not hydrated yet: quiet skeleton — no ladder, no PRO badge, no window (regression: sharp-section flash)', () => {
+  (useLearnedFocusWindow as jest.Mock).mockReturnValue({ ...forming, hydrated: false });
+  (useEntitlement as unknown as jest.Mock).mockReturnValue(false); // free — would otherwise show the PRO pill
+  const { getByText, queryByText } = render(<FocusPeakCard />);
+  expect(getByText("WHEN YOU'RE SHARP")).toBeTruthy(); // stable header stays
+  expect(queryByText('PRO')).toBeNull(); // no flashed Pro badge
+  expect(queryByText('0 of 2 unlocked')).toBeNull(); // no forming ladder
+  expect(queryByText('Timed sessions')).toBeNull();
 });
 
 it('revealed + steady, Pro: shows window range in user clock + why-line + meter', () => {

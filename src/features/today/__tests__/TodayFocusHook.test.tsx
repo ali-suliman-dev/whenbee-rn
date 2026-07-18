@@ -42,6 +42,7 @@ const FORMING_WINDOW = {
   sampleCount: 5,
   distinctDays: 3,
   held: false,
+  hydrated: true,
   gates: {
     sessions: { have: 5, need: 15 },
     days: { have: 3, need: 5 },
@@ -60,6 +61,7 @@ const REVEALED_WINDOW = {
   sampleCount: 20,
   distinctDays: 12,
   held: false,
+  hydrated: true,
   gates: {
     sessions: { have: 20, need: 15 },
     days: { have: 12, need: 5 },

@@ -74,6 +74,25 @@ export function FocusPeakCard() {
     justifyContent: 'space-between',
   };
 
+  // ── loading — focus events haven't loaded yet ──
+  // Until the first async load lands, `win` reflects empty events (basis
+  // 'forming'), which would flash the Pro-badge ladder before snapping to the
+  // real state. Hold a same-height skeleton so the card settles once, quietly.
+  if (!win.hydrated) {
+    return (
+      <View style={card}>
+        <Eyebrow />
+        <View
+          style={{
+            height: t.focusCurve.viewH,
+            backgroundColor: t.colors.surfaceSunken,
+            borderRadius: t.radii.md,
+          }}
+        />
+      </View>
+    );
+  }
+
   // ── forming — the 2-gate unlock ladder ──
   if (basis === 'forming') {
     const { gates } = win;

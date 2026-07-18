@@ -91,7 +91,7 @@ function atTime(h: number, m: number): number {
 
 // ── Fixtures ──────────────────────────────────────────────────────────────────
 
-function makeFormingFocusWindow(): LearnedFocusWindow {
+function makeFormingFocusWindow(): LearnedFocusWindow & { hydrated: boolean } {
   return {
     startMin: 540,
     endMin: 720,
@@ -103,6 +103,7 @@ function makeFormingFocusWindow(): LearnedFocusWindow {
     sampleCount: 0,
     distinctDays: 0,
     held: false,
+    hydrated: true,
     gates: {
       sessions: { have: 0, need: 15 },
       days: { have: 0, need: 5 },
@@ -110,7 +111,7 @@ function makeFormingFocusWindow(): LearnedFocusWindow {
   };
 }
 
-function makeRevealedFocusWindow(): LearnedFocusWindow {
+function makeRevealedFocusWindow(): LearnedFocusWindow & { hydrated: boolean } {
   return {
     startMin: 540,
     endMin: 720,
@@ -122,6 +123,7 @@ function makeRevealedFocusWindow(): LearnedFocusWindow {
     sampleCount: 12,
     distinctDays: 8,
     held: false,
+    hydrated: true,
     gates: {
       sessions: { have: 12, need: 15 },
       days: { have: 8, need: 5 },
