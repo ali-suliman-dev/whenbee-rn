@@ -100,9 +100,13 @@ export function PaceLabel({
 
   if (!isOver || !onForgotPress) return pill;
 
+  // Reads as an inline text link: underlined + full ink (a muted underline looks
+  // disabled). Stays a quiet recovery affordance beside the amber pace pill — no
+  // amber, no weight bump, so it never competes with the pill.
   const forgotStyle: TextStyle = {
     ...(type.caption as TextStyle),
-    color: t.colors.inkSoft,
+    color: t.colors.ink,
+    textDecorationLine: 'underline',
   };
 
   const rowStyle: ViewStyle = {
