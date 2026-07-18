@@ -704,7 +704,13 @@ export const tokens = {
       bodyLo: '#4F3CE2', // bottom shade
       stripe: '#F6B442', // amber band / head (≈ accent)
       stripeLo: '#EA980B', // head shadow (≈ accentEdge)
-      wing: '#FCE7C5', // pale wing cream
+      wing: '#FCE7C5', // pale wing cream — the canonical/dark wing (reads on the deep bg)
+      // Light-theme-only wing: the pale cream above nearly vanishes on the light
+      // ground (#F4F2FC → ~1.1:1), so light mode uses a deeper warm cream. This is
+      // the ONE mode-aware bee color — BeeMascot picks it via `t.mode`; every other
+      // bee color stays fixed so the mascot still reads as one bee. RitualSeal keeps
+      // using `wing` (the cream) unchanged.
+      wingLight: '#F7DEB2', // deeper warm cream — light-mode wing only
       ink: '#262D40', // eyes / smile / stinger (≈ ink)
       antenna: '#191E2B', // antenna stalks + tips
       antennaHi: '#474B55', // antenna tip highlight

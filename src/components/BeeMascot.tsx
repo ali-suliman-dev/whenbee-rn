@@ -51,8 +51,11 @@ const ANTENNA_ORIGIN_Y = 430;
 //     (companion.glow token; stages 1–2 have none — a young bee is plain).
 //
 // Colors are token-sourced from `brand.bee` (fixed, mode-independent — a mascot
-// reads as the same bee in light and dark, like a logo). The bee's YELLOWS are the
-// fixed honey tokens at ALL times — never recolored. (An earlier per-install seed
+// reads as the same bee in light and dark, like a logo) — with ONE exception: the
+// WING. The pale cream wing (`wing`) dissolves on the light ground, so light mode
+// uses the deeper `wingLight`; dark keeps `wing`. Every other color stays fixed.
+// The bee's YELLOWS are the fixed honey tokens at ALL times — never recolored.
+// (An earlier per-install seed
 // hue-shift could drift the head shadow toward red-orange and flashed reddish on
 // first render when the real seed loaded; honey-always removes both problems.)
 // ──────────────────────────────────────────────────────────────────────────────
@@ -125,6 +128,9 @@ export function BeeMascot({
   // The bee's yellows are the fixed honey tokens at ALL times (band + head-shadow).
   const stripe = c.stripe;
   const stripeLo = c.stripeLo;
+  // Wing is the one mode-aware bee color: the pale cream `wing` vanishes on the
+  // light ground, so light mode uses the deeper `wingLight`; dark keeps `wing`.
+  const wing = t.mode === 'dark' ? c.wing : c.wingLight;
 
   // ── Three calm, looping layers of life (premium, never busy) ──────────────────
   //   • flutter — wings buzz in place: small + fast = an insect hum, not a bird flap
@@ -293,11 +299,11 @@ export function BeeMascot({
     <>
       <Path
         d="M1310 1195.19C1310 1080.48 1388.07 980.481 1499.37 952.658L1799.37 877.658C1957.15 838.212 2110 957.551 2110 1120.19V1279.81C2110 1442.45 1957.15 1561.79 1799.37 1522.34L1499.37 1447.34C1388.07 1419.52 1310 1319.52 1310 1204.81V1195.19Z"
-        fill={c.wing}
+        fill={wing}
       />
       <Path
         d="M290 1120.19C290 957.551 442.847 838.212 600.634 877.658L900.634 952.658C1011.93 980.481 1090 1081.46 1090 1196.18C1090 1309.81 1013.38 1410.11 903.475 1438.96L603.474 1517.71C444.989 1559.32 290 1439.76 290 1275.91V1120.19Z"
-        fill={c.wing}
+        fill={wing}
       />
     </>
   );
