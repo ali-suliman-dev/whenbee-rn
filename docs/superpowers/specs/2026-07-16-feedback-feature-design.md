@@ -44,7 +44,7 @@ founder-curated, and close the loop with a changelog.** That is exactly this des
 | Placement | Two rows in Settings under a **Feedback** section. "What's new" shows an amber unread dot. |
 | Onboarding | One quiet founder-voice line on the existing final screen. No new step. |
 | Identity | Anonymous. Random per-install ID (not PII) + app version / OS / locale. No name, email, or login. |
-| Hosting | Supabase (existing project `vxvifohhogckedqfrymz`), `public` schema, `feedback_` table prefix. |
+| Hosting | Supabase (existing project `iptnmqcrmxakwqbaqugs`), `public` schema, `feedback_` table prefix. |
 | Pause handling | Optimistic client + background retry + local queue (free-tier auto-pause never shows a failure). |
 
 ### Non-goals (YAGNI — explicitly out)

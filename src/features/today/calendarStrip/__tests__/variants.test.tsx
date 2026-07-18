@@ -1,13 +1,12 @@
 // src/features/today/calendarStrip/__tests__/variants.test.tsx
-// Contract tests for both strip variants (Lens + Segment) and the selector.
-// Each variant must: render 7 day buttons, mark the selected one, call selectDate
-// on a different tap, and render its final state under reduced motion.
+// Contract tests for the calendar strip. The Segment variant must: render 7 day
+// buttons, mark the selected one, call selectDate on a different tap, and render
+// its final state under reduced motion. CalendarStrip re-exports Segment.
 
 import React from 'react';
 import { fireEvent, render } from '@testing-library/react-native';
 import * as Reanimated from 'react-native-reanimated';
 
-import { CalendarStripLens } from '../CalendarStripLens';
 import { CalendarStripSegment } from '../CalendarStripSegment';
 import { CalendarStrip } from '../CalendarStrip';
 
@@ -26,27 +25,22 @@ jest.mock('@/src/stores/dayTasksStore', () => ({
   useDayTasksStore: (selector: (s: typeof mockStoreState) => unknown) => selector(mockStoreState),
 }));
 
-// settingsStore is real; default stripVariant is 'segment'.
-
 beforeEach(() => {
   mockSelectDate.mockClear();
   mockStoreState.selectedDate = '2026-06-24';
   mockStoreState.datesWithTasks = ['2026-06-24', '2026-06-26'];
 });
 
-describe.each([
-  ['Lens', CalendarStripLens],
-  ['Segment', CalendarStripSegment],
-])('%s variant', (_name, Variant) => {
+describe('Segment variant', () => {
   test('renders day buttons (whole weeks of 7)', () => {
-    const { getAllByRole } = render(<Variant />);
+    const { getAllByRole } = render(<CalendarStripSegment />);
     const btns = getAllByRole('button');
     expect(btns.length).toBeGreaterThanOrEqual(7);
     expect(btns.length % 7).toBe(0); // FlatList renders N whole week pages
   });
 
   test('the selected cell exposes accessibilityState selected=true', () => {
-    const { getAllByRole } = render(<Variant />);
+    const { getAllByRole } = render(<CalendarStripSegment />);
     const selected = getAllByRole('button').find(
       (b) => b.props.accessibilityState?.selected === true,
     );
@@ -54,7 +48,7 @@ describe.each([
   });
 
   test('tapping a non-selected cell calls selectDate', () => {
-    const { getAllByRole } = render(<Variant />);
+    const { getAllByRole } = render(<CalendarStripSegment />);
     const other = getAllByRole('button').find(
       (b) => b.props.accessibilityState?.selected !== true,
     );
@@ -71,17 +65,14 @@ describe('reduced motion', () => {
   });
   afterAll(() => jest.restoreAllMocks());
 
-  test.each([
-    ['Lens', CalendarStripLens],
-    ['Segment', CalendarStripSegment],
-  ])('%s renders its final state with no animation', (_n, Variant) => {
-    const { getAllByRole } = render(<Variant />);
+  test('Segment renders its final state with no animation', () => {
+    const { getAllByRole } = render(<CalendarStripSegment />);
     expect(getAllByRole('button').length % 7).toBe(0);
   });
 });
 
-describe('selector', () => {
-  test('renders a strip (default = segment)', () => {
+describe('CalendarStrip', () => {
+  test('renders a strip', () => {
     const { getAllByRole } = render(<CalendarStrip />);
     const btns = getAllByRole('button');
     expect(btns.length).toBeGreaterThanOrEqual(7);

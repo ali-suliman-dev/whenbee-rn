@@ -49,19 +49,20 @@ export default function Ready() {
         <View style={{ flex: 1, paddingTop: t.space[3] }}>
           <Reveal index={0}>
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: t.space[3] }}>
-              <ArchetypeCrest beeSize={t.iconSize.xl} />
+              <ArchetypeCrest beeSize={t.iconSize['2xl']} showSeal={false} />
               <View>
-                <AppText style={{ fontSize: t.fontSize.xs, color: t.colors.inkFaint }}>
+                <AppText style={{ fontSize: t.fontSize.sm, color: t.colors.inkFaint }}>
                   {archetypeTitle ? 'Your time-style' : "You're calibrated"}
                 </AppText>
                 {archetypeTitle ? (
                   <AppText
                     style={{
-                      fontSize: t.fontSize.xs,
-                      fontWeight: t.fontWeight.semibold as '600',
+                      fontSize: t.fontSize.sm,
+                      fontWeight: t.fontWeight.bold as '700',
                       letterSpacing: t.letterSpacing.wide,
                       textTransform: 'uppercase',
                       color: t.colors.accent,
+                      marginTop: t.space[0.5],
                     }}
                   >
                     {archetypeTitle}

@@ -54,7 +54,7 @@ function rayWedges(count: number, fill: string, opacity: number, opacityAlt: num
   return paths;
 }
 
-export function ArchetypeCrest({ beeSize }: { beeSize?: number }) {
+export function ArchetypeCrest({ beeSize, showSeal = true }: { beeSize?: number; showSeal?: boolean }) {
   const t = useTheme();
   const reduced = useReducedMotion();
 
@@ -144,9 +144,11 @@ export function ArchetypeCrest({ beeSize }: { beeSize?: number }) {
       <BeeMascot size={bee} animated glow={false} />
 
       {/* (3) Coin-hex seal up by the bee's head — calmly floating. */}
-      <Animated.View style={[coinSlot, coinBobStyle]} pointerEvents="none">
-        <CoinHex size={coin} />
-      </Animated.View>
+      {showSeal ? (
+        <Animated.View style={[coinSlot, coinBobStyle]} pointerEvents="none">
+          <CoinHex size={coin} />
+        </Animated.View>
+      ) : null}
     </View>
   );
 }

@@ -36,7 +36,6 @@ import { GuardrailSettingRow } from '@/src/features/settings/GuardrailSettingRow
 import { ForgotStepInRow } from '@/src/features/settings/ForgotStepInRow';
 import { GuardrailLockedRow } from '@/src/features/settings/GuardrailLockedRow';
 import { CalendarSettingsSection } from '@/src/features/settings/CalendarSettingsSection';
-import { StripVariantSwitcher } from '@/src/features/settings/StripVariantSwitcher';
 import { seedDemoData } from '@/src/features/dev/seedDemoData';
 import { useFeedback } from '@/src/features/feedback/useFeedback';
 
@@ -307,10 +306,6 @@ export default function Settings() {
             ))}
           </View>
         </View>
-
-        {/* TEMP A/B — calendar-strip design switcher. Remove after the decision
-            (see docs/product/specs/2026-06-25-calendar-strip-ab.md). */}
-        <StripVariantSwitcher />
 
         <View style={{ gap: t.space[3] }}>
           <AppText variant="label">Your Whenbee</AppText>

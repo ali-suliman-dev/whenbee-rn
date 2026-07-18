@@ -8,10 +8,6 @@ import {
 } from '@/src/engine/constants';
 import type { GuardrailMultiple, ForgotStepIn, ArchetypeSeed } from '@/src/domain/types';
 import type { QuietHours } from '@/src/lib/notifyTiming';
-import {
-  type StripVariant,
-  DEFAULT_STRIP_VARIANT,
-} from '@/src/features/today/calendarStrip/stripVariant';
 
 export type ColorModePref = 'system' | 'light' | 'dark';
 
@@ -129,11 +125,6 @@ interface SettingsState {
   setExportEnabled: (enabled: boolean) => void;
   /** Store (or clear) the native id of the app-owned "Whenbee" calendar. */
   setWhenbeeCalendarId: (id: string | null) => void;
-  /** TEMP A/B (remove after decision): which calendar-strip design renders.
-   *  Lets the founder compare both variants live on-device. See
-   *  src/features/today/calendarStrip/stripVariant.ts. */
-  stripVariant: StripVariant;
-  setStripVariant: (v: StripVariant) => void;
   /** Return every preference to its first-run default (full data-reset path). */
   reset: () => void;
 }
@@ -206,8 +197,6 @@ export const useSettingsStore = create<SettingsState>()(
         set((s) => ({ calendar: { ...s.calendar, exportEnabled } })),
       setWhenbeeCalendarId: (whenbeeCalendarId) =>
         set((s) => ({ calendar: { ...s.calendar, whenbeeCalendarId } })),
-      stripVariant: DEFAULT_STRIP_VARIANT,
-      setStripVariant: (stripVariant) => set({ stripVariant }),
       reset: () =>
         set({
           colorMode: 'system',
@@ -232,7 +221,6 @@ export const useSettingsStore = create<SettingsState>()(
           startByEnabled: false,
           quietHours: { enabled: true, startMin: 1260, endMin: 480 },
           notificationSound: 'default',
-          stripVariant: DEFAULT_STRIP_VARIANT,
         }),
     }),
     {
