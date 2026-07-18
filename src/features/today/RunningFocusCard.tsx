@@ -16,6 +16,7 @@ import { Card } from '@/src/components/Card';
 import { useTheme } from '@/src/theme/useTheme';
 import { type } from '@/src/theme/typography';
 import { GapLine } from './GapLine';
+import { formatTimerClock, fmtHm } from '@/src/lib/time';
 import { useTimerStore } from '@/src/stores/timerStore';
 
 // ──────────────────────────────────────────────────────────────────────────────
@@ -31,12 +32,6 @@ import { useTimerStore } from '@/src/stores/timerStore';
 interface RunningFocusCardProps {
   /** Resolve a category slug → display label (shared with Today). */
   categoryName: (id: string) => string;
-}
-
-function clockLabel(sec: number): string {
-  const m = Math.floor(sec / 60);
-  const s = sec % 60;
-  return `${m}:${String(s).padStart(2, '0')}`;
 }
 
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
@@ -166,7 +161,7 @@ export function RunningFocusCard({ categoryName }: RunningFocusCardProps) {
       onPressIn={pressIn}
       onPressOut={pressOut}
       accessibilityRole="button"
-      accessibilityLabel={`Timing ${taskLabel ?? 'a task'}, ${clockLabel(elapsedSec)} elapsed of about ${honestMin} minutes. Tap to reopen.`}
+      accessibilityLabel={`Timing ${taskLabel ?? 'a task'}, ${formatTimerClock(elapsedSec)} elapsed of about ${honestMin} minutes. Tap to reopen.`}
       style={pressStyle}
     >
       <Card tone="raised" style={{ gap: t.space[4] }}>
@@ -182,7 +177,7 @@ export function RunningFocusCard({ categoryName }: RunningFocusCardProps) {
           </View>
           <View style={rightCol}>
             <Text style={miniHdr}>ELAPSED</Text>
-            <Text style={clock}>{clockLabel(elapsedSec)}</Text>
+            <Text style={clock}>{formatTimerClock(elapsedSec)}</Text>
           </View>
         </View>
 
@@ -192,8 +187,8 @@ export function RunningFocusCard({ categoryName }: RunningFocusCardProps) {
             ~0" pair is meaningless noise there, so drop it. */}
         {!isQuickStart ? (
           <View style={labelsRow}>
-            <Text style={guessLabel}>guessed {guessMin} min</Text>
-            <Text style={planLabel}>plan ~{honestMin} min</Text>
+            <Text style={planLabel}>plan ~{fmtHm(honestMin)}</Text>
+            <Text style={guessLabel}>guessed {fmtHm(guessMin)}</Text>
           </View>
         ) : null}
       </Card>
