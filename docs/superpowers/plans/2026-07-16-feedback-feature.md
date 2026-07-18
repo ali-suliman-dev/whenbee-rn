@@ -85,7 +85,7 @@ create policy changelog_read on public.feedback_changelog
 
 - [ ] **Step 2: Apply to the live project**
 
-Apply via the Supabase MCP `apply_migration` (name `feedback`, the SQL above) against project `vxvifohhogckedqfrymz`, or paste into the dashboard SQL editor. The project is free-tier and may be paused — the first call wakes it (retry once after ~10s if it times out).
+Apply via the Supabase MCP `apply_migration` (name `feedback`, the SQL above) against project `iptnmqcrmxakwqbaqugs`, or paste into the dashboard SQL editor. The project is free-tier and may be paused — the first call wakes it (retry once after ~10s if it times out).
 
 - [ ] **Step 3: Verify RLS with an anon probe**
 
@@ -131,7 +131,7 @@ Append to `docs/DEVELOPMENT.md` env section and `.env.example`:
 
 ```bash
 # Feedback backend (Supabase — anon/publishable key only; RLS is the guard)
-EXPO_PUBLIC_SUPABASE_URL=https://vxvifohhogckedqfrymz.supabase.co
+EXPO_PUBLIC_SUPABASE_URL=https://iptnmqcrmxakwqbaqugs.supabase.co
 EXPO_PUBLIC_SUPABASE_ANON_KEY=<publishable anon key>
 ```
 
