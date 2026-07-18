@@ -1,9 +1,11 @@
+import { Platform } from 'react-native';
 import type {
   CustomerInfo,
   PurchasesOfferings,
   PurchasesPackage as RcPackage,
 } from 'react-native-purchases';
 import { isExpoGo } from '@/src/lib/isExpoGo';
+import { env } from '@/src/lib/env';
 
 /** RevenueCat entitlement identifier that unlocks Pro (Honest-Day calendar). */
 const PRO_ENTITLEMENT_ID = 'pro';
@@ -142,4 +144,24 @@ let cached: PurchasesModule | null = null;
 export function getPurchases(): PurchasesModule {
   if (!cached) cached = resolvePurchasesModule(isExpoGo, loadNativePurchases);
   return cached;
+}
+
+/**
+ * Initialize RevenueCat once with the current platform's public SDK key from
+ * env. Idempotent — safe to call on every boot. Returns false (and configures
+ * nothing) in Expo Go / tests (stub module) or when no key is set for the
+ * platform, so the app never crashes; the paywall just runs against the stub
+ * or stays locked. MUST run before `useEntitlement.hydrate()` so that
+ * `getCustomerInfo()` has a configured SDK.
+ */
+let configured = false;
+export function configurePurchases(): boolean {
+  if (configured) return true;
+  const module = getPurchases();
+  if (module.isStub) return false;
+  const apiKey = Platform.OS === 'ios' ? env.revenueCatIosKey : env.revenueCatAndroidKey;
+  if (!apiKey) return false;
+  module.configure(apiKey);
+  configured = true;
+  return true;
 }

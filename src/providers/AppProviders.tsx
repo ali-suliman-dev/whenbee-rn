@@ -6,12 +6,20 @@ import { GluestackUIProvider } from '@/components/ui/gluestack-ui-provider';
 import { useColorMode } from '@/src/theme/useColorMode';
 import { env } from '@/src/lib/env';
 import { initSentry, SentryErrorBoundary } from '@/src/services/sentry';
+import { configurePurchases } from '@/src/services/purchases';
+import { useEntitlement } from '@/src/features/paywall/useEntitlement';
 import { AnalyticsProvider } from './AnalyticsProvider';
 
 export function AppProviders({ children }: { children: ReactNode }) {
   const mode = useColorMode();
   useEffect(() => {
     initSentry();
+    // Configure RevenueCat with the platform key, then restore the user's
+    // entitlement so a returning purchaser keeps Pro across launches. Both
+    // no-op safely in Expo Go / when no key is set.
+    if (configurePurchases()) {
+      void useEntitlement.getState().hydrate();
+    }
   }, []);
 
   const inner = (
