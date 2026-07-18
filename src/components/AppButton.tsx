@@ -179,9 +179,15 @@ export function AppButton({
     // Disabled mutes the FACE (see faceColor above). Never put opacity on the
     // face or wrapper: it composites the whole pill and the edge stops reading
     // as an edge.
-    // Android drops the corner clip on press-layer promotion, squaring the pill.
-    // overflow:hidden pins the rounded clip. (Edge is a sibling, not clipped.)
-    overflow: 'hidden',
+    // Keep overflow VISIBLE. `overflow:'hidden'` here dropped the label Text on
+    // Android for FILLED variants inside a react-native-screens formSheet: the
+    // clipped face composites to a hardware texture that fails to draw its Text
+    // children when the absolute coin-edge sibling is present (the label went
+    // invisible only when the button was enabled). The content never spills the
+    // pill, so no clip is needed; corner-rounding on press is instead preserved by
+    // keeping the press transform on the OUTER wrapper (below), so the rounded
+    // face is never the promoted layer.
+    overflow: 'visible',
     alignItems: 'center',
     justifyContent: 'center',
     paddingHorizontal: padX,
@@ -207,26 +213,35 @@ export function AppButton({
           flat: it is not a live coin, so it gets no raised edge. */}
       {isGhost || disabled ? null : <View style={edgeBase} />}
 
-      <Animated.View testID="appbutton-face" style={[pillContainer, pillStyle]}>
-        <View
-          testID="appbutton-content"
-          style={{
-            flexDirection: 'row',
-            alignItems: 'center',
-            gap: t.space[2],
-            opacity: 1,
-          }}
-        >
-          {icon ?? null}
-          <AppText
+      {/* The press transform lives on the OUTER view; the rounded overflow-clip on
+          the INNER static face. On Android an overflow:hidden view that ALSO carries
+          the transform is promoted to a hardware layer that DROPS its Text children
+          whenever the absolute coin-edge sibling is present (i.e. enabled filled
+          variants) — that's why the label went invisible only when enabled. Keeping
+          the clip off the animated layer draws the label while preserving both the
+          press drop and the rounded corners. */}
+      <Animated.View style={pillStyle}>
+        <View testID="appbutton-face" style={pillContainer}>
+          <View
+            testID="appbutton-content"
             style={{
-              fontSize: labelSize,
-              fontWeight: t.fontWeight.bold as TextStyle['fontWeight'],
-              color: labelColor,
+              flexDirection: 'row',
+              alignItems: 'center',
+              gap: t.space[2],
+              opacity: 1,
             }}
           >
-            {label}
-          </AppText>
+            {icon ?? null}
+            <AppText
+              style={{
+                fontSize: labelSize,
+                fontWeight: t.fontWeight.bold as TextStyle['fontWeight'],
+                color: labelColor,
+              }}
+            >
+              {label}
+            </AppText>
+          </View>
         </View>
       </Animated.View>
     </Pressable>
