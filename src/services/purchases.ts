@@ -161,6 +161,11 @@ export function configurePurchases(): boolean {
   if (module.isStub) return false;
   const apiKey = Platform.OS === 'ios' ? env.revenueCatIosKey : env.revenueCatAndroidKey;
   if (!apiKey) return false;
+  // RevenueCat Test Store keys ("test_…") are debug-only: the native SDK
+  // hard-closes a RELEASE build if configured with one ("wrong API key … the
+  // app will close"). Skip configuring in release so the app still opens;
+  // purchases stay inert until a real production key (appl_/goog_) is set.
+  if (!__DEV__ && apiKey.startsWith('test_')) return false;
   module.configure(apiKey);
   configured = true;
   return true;
