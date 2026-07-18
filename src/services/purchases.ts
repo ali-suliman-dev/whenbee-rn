@@ -7,8 +7,16 @@ import type {
 import { isExpoGo } from '@/src/lib/isExpoGo';
 import { env } from '@/src/lib/env';
 
-/** RevenueCat entitlement identifier that unlocks Pro (Honest-Day calendar). */
-const PRO_ENTITLEMENT_ID = 'pro';
+/**
+ * RevenueCat entitlement identifier that unlocks Pro. This MUST match the
+ * entitlement's lookup_key in RevenueCat exactly — the SDK keys
+ * `customerInfo.entitlements.active` by it. The live project's active
+ * entitlement (granting monthly/yearly/lifetime) is `Whenbee Pro`; a legacy
+ * `pro` entitlement is archived and its lookup_key is reserved but unreachable,
+ * so we point at the active one. If the RC entitlement is ever consolidated
+ * back to `pro`, change this string to match.
+ */
+const PRO_ENTITLEMENT_ID = 'Whenbee Pro';
 
 /** Duration tag the paywall uses to label and order packages. */
 export type PackageDuration = 'monthly' | 'yearly' | 'lifetime' | 'other';
