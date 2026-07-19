@@ -1,0 +1,207 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Feature line — premium treatments (V3 editorial)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:ital,wght@0,400;0,500;0,600;0,700;0,800;1,400;1,500&family=Inter:wght@600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#F4F2FC; --surface:#FFFFFF; --surfaceSunken:#F1EEFB;
+    --ink:#20233A; --inkSoft:#5C5F73; --inkFaint:#9B9DAB;
+    --primary:#6B5BE6; --primarySoft:#E4E0FA; --primaryWash:#EFEDFC;
+    --accent:#EEAE4D; --accentSoft:#FBEFD6; --accentChip:#F3E2C0; --amberText:#8A5A12;
+    --rCard:16px; --rFull:999px;
+    --ui:'Plus Jakarta Sans',system-ui,sans-serif; --num:'Inter',system-ui,sans-serif;
+  }
+  *{box-sizing:border-box;margin:0;padding:0;}
+  body{background:#E7E3F6;font-family:var(--ui);color:var(--ink);-webkit-font-smoothing:antialiased;padding:34px 0 80px;}
+  h1.pagetitle{text-align:center;font-size:15px;font-weight:800;margin-bottom:6px;}
+  p.pagesub{text-align:center;font-size:12px;color:var(--inkSoft);margin-bottom:30px;max-width:860px;margin-left:auto;margin-right:auto;}
+  .stage{display:flex;gap:38px;justify-content:center;align-items:flex-start;flex-wrap:wrap;}
+  .colwrap{display:flex;flex-direction:column;align-items:center;max-width:400px;}
+  .optlabel{font-size:13px;font-weight:800;margin-bottom:4px;}
+  .optnote{font-size:11px;line-height:16px;color:var(--inkSoft);margin:0 0 14px;text-align:center;max-width:352px;}
+  .phone{width:372px;background:var(--bg);border-radius:30px;padding:10px 20px 0;border:1px solid rgba(0,0,0,0.06);
+    box-shadow:0 24px 60px rgba(32,35,58,.18);position:relative;overflow:hidden;height:560px;}
+  .phone::after{content:"";position:absolute;left:0;right:0;bottom:0;height:90px;background:linear-gradient(180deg,rgba(244,242,252,0),var(--bg) 75%);}
+  .grab{width:36px;height:5px;border-radius:999px;background:var(--inkFaint);opacity:.5;margin:4px auto 16px;}
+  .deck{display:flex;flex-direction:column;gap:16px;}
+  .num{font-family:var(--num);font-variant-numeric:tabular-nums;}
+
+  .eb{font-size:10px;font-weight:800;letter-spacing:2px;text-transform:uppercase;}
+  .procoin{display:inline-flex;align-items:center;gap:6px;background:var(--accentChip);border-radius:var(--rFull);padding:5px 12px;align-self:flex-start;}
+  .procoin .eb{color:var(--amberText);letter-spacing:1.5px;}
+  .title{font-size:24px;line-height:29px;font-weight:800;letter-spacing:-0.5px;text-wrap:balance;}
+  .sub{font-size:13px;line-height:19px;color:var(--inkSoft);font-weight:500;}
+
+  /* context plan card (faded continuation) */
+  .plan{display:flex;align-items:center;gap:12px;background:var(--surface);border-radius:var(--rCard);padding:13px 16px;}
+  .plan .pl{flex:1;display:flex;flex-direction:column;gap:2px;}
+  .plan .pt{font-size:15px;font-weight:800;}
+  .plan .pn{font-size:11.5px;color:var(--inkSoft);font-weight:500;}
+  .plan .pp{font-family:var(--num);font-weight:700;font-size:17px;}
+  .radio{width:20px;height:20px;border-radius:50%;border:2px solid var(--inkFaint);flex:none;}
+
+  /* ══ F1 · Small-caps index ══ */
+  .f1{display:flex;flex-direction:column;gap:9px;align-items:center;padding:6px 0 2px;}
+  .f1 .line{display:flex;align-items:center;gap:12px;}
+  .f1 .w{font-size:11px;font-weight:700;letter-spacing:1.8px;text-transform:uppercase;color:var(--inkSoft);white-space:nowrap;}
+  .f1 .dia{width:4px;height:4px;background:var(--accent);transform:rotate(45deg);flex:none;}
+
+  /* ══ F2 · Woven sentence ══ */
+  .f2{font-size:14.5px;line-height:24px;font-weight:500;color:var(--inkFaint);text-align:center;max-width:300px;margin:2px auto 0;text-wrap:balance;}
+  .f2 b{font-weight:700;color:var(--ink);}
+  .f2 .amb{color:var(--amberText);font-weight:700;}
+
+  /* ══ F3 · Icon constellation + caption ══ */
+  .f3{display:flex;flex-direction:column;gap:11px;align-items:center;padding:8px 0 2px;}
+  .f3 .icons{display:flex;align-items:center;gap:22px;}
+  .f3 .icons svg{display:block;}
+  .f3 .cap{display:flex;align-items:center;gap:9px;}
+  .f3 .cw{font-size:9.5px;font-weight:700;letter-spacing:1.6px;text-transform:uppercase;color:var(--inkFaint);}
+  .f3 .cd{width:3px;height:3px;border-radius:50%;background:var(--inkFaint);opacity:.6;}
+
+  /* ══ F4 · Sentence-case index, amber diamonds ══ */
+  .f4{display:flex;flex-direction:column;gap:8px;align-items:center;padding:4px 0 2px;}
+  .f4 .line{display:flex;align-items:center;gap:11px;}
+  .f4 .w{display:flex;align-items:center;gap:6px;font-size:13px;font-weight:700;color:var(--ink);white-space:nowrap;}
+  .f4 .w svg{display:block;}
+  .f4 .dia{width:4px;height:4px;background:var(--accent);transform:rotate(45deg);flex:none;}
+</style>
+</head>
+<body>
+<h1 class="pagetitle">The feature line — four premium treatments (inside locked V3 editorial)</h1>
+<p class="pagesub">Fixes over current: no trailing separators at line ends, hand-balanced lines, icons either on one strict optical grid or gone entirely, real tracking on caps. Amber only as garnish (the payoff color).</p>
+<div class="stage">
+
+  <!-- F1 -->
+  <div class="colwrap">
+    <div class="optlabel">F1 · Small-caps index</div>
+    <p class="optnote">Fashion-credits typography: no icons, letterspaced caps, tiny amber diamonds as separators. The most confident — words carry it alone. Two hand-balanced lines, nothing dangles.</p>
+    <div class="phone"><div class="grab"></div><div class="deck">
+      <div style="display:flex;flex-direction:column;gap:8px;">
+        <span class="procoin"><svg width="10" height="10" viewBox="0 0 10 10"><circle cx="5" cy="5" r="4" fill="#8A5A12"/></svg><span class="eb">Whenbee Pro</span></span>
+        <div class="title">Your real day, before you live it.</div>
+        <div class="sub">Everything Pro adds, powered by the numbers you already earned:</div>
+      </div>
+      <div class="f1">
+        <div class="line"><span class="w">Honest calendar</span><span class="dia"></span><span class="w">Sharper insight</span></div>
+        <div class="line"><span class="w">Routines &amp; goals</span><span class="dia"></span><span class="w">Week in review</span></div>
+        <div class="line"><span class="w">Lock-screen timer</span></div>
+      </div>
+      <div class="plan">
+        <span class="radio"></span>
+        <div class="pl"><span class="pt">Lifetime</span><span class="pn">Pay once. Yours forever.</span></div>
+        <span class="pp num">$89.00</span>
+      </div>
+      <div class="plan" style="opacity:.55;">
+        <span class="radio"></span>
+        <div class="pl"><span class="pt">Yearly</span><span class="pn">7 days free, then $34.99 a year</span></div>
+        <span class="pp num">$2.92</span>
+      </div>
+    </div></div>
+  </div>
+
+  <!-- F2 -->
+  <div class="colwrap">
+    <div class="optlabel">F2 · Woven sentence</div>
+    <p class="optnote">Zero UI chrome — the features become one book-jacket sentence. Feature names in ink bold, connective words whisper in faint. The payoff word "honest" gets the only amber. Reads, not scans.</p>
+    <div class="phone"><div class="grab"></div><div class="deck">
+      <div style="display:flex;flex-direction:column;gap:8px;">
+        <span class="procoin"><svg width="10" height="10" viewBox="0 0 10 10"><circle cx="5" cy="5" r="4" fill="#8A5A12"/></svg><span class="eb">Whenbee Pro</span></span>
+        <div class="title">Your real day, before you live it.</div>
+        <div class="sub">Everything Pro adds, powered by the numbers you already earned:</div>
+      </div>
+      <p class="f2">An <span class="amb">honest calendar</span>, <b>routines</b> that learn, <b>sharper self-insight</b>, your <b>week in review</b>, and a <b>live timer</b> on the lock screen.</p>
+      <div class="plan">
+        <span class="radio"></span>
+        <div class="pl"><span class="pt">Lifetime</span><span class="pn">Pay once. Yours forever.</span></div>
+        <span class="pp num">$89.00</span>
+      </div>
+      <div class="plan" style="opacity:.55;">
+        <span class="radio"></span>
+        <div class="pl"><span class="pt">Yearly</span><span class="pn">7 days free, then $34.99 a year</span></div>
+        <span class="pp num">$2.92</span>
+      </div>
+    </div></div>
+  </div>
+
+  <!-- F3 -->
+  <div class="colwrap">
+    <div class="optlabel">F3 · Icon constellation</div>
+    <p class="optnote">Apple-keynote move: five icons on one strict 22px optical grid, generous 22px gaps, then one whisper-quiet caption line. Scans in under a second; the icons become a tiny brand moment.</p>
+    <div class="phone"><div class="grab"></div><div class="deck">
+      <div style="display:flex;flex-direction:column;gap:8px;">
+        <span class="procoin"><svg width="10" height="10" viewBox="0 0 10 10"><circle cx="5" cy="5" r="4" fill="#8A5A12"/></svg><span class="eb">Whenbee Pro</span></span>
+        <div class="title">Your real day, before you live it.</div>
+        <div class="sub">Everything Pro adds, powered by the numbers you already earned:</div>
+      </div>
+      <div class="f3">
+        <div class="icons">
+          <svg width="22" height="22" viewBox="0 0 22 22"><rect x="2.5" y="4" width="17" height="15" rx="3.5" fill="none" stroke="#6B5BE6" stroke-width="1.6"/><line x1="2.5" y1="9" x2="19.5" y2="9" stroke="#6B5BE6" stroke-width="1.6"/><line x1="7" y1="2" x2="7" y2="6" stroke="#6B5BE6" stroke-width="1.6" stroke-linecap="round"/><line x1="15" y1="2" x2="15" y2="6" stroke="#6B5BE6" stroke-width="1.6" stroke-linecap="round"/></svg>
+          <svg width="22" height="22" viewBox="0 0 22 22"><path d="M4 18 L4 11 M11 18 L11 5 M18 18 L18 13" stroke="#6B5BE6" stroke-width="2" stroke-linecap="round"/></svg>
+          <svg width="22" height="22" viewBox="0 0 22 22"><circle cx="11" cy="11" r="8" fill="none" stroke="#6B5BE6" stroke-width="1.6"/><path d="M11 6.5 V11 L14.5 13.5" stroke="#6B5BE6" stroke-width="1.6" fill="none" stroke-linecap="round"/></svg>
+          <svg width="22" height="22" viewBox="0 0 22 22"><rect x="4" y="2.5" width="14" height="17" rx="2.5" fill="none" stroke="#6B5BE6" stroke-width="1.6"/><line x1="7.5" y1="7.5" x2="14.5" y2="7.5" stroke="#6B5BE6" stroke-width="1.5" stroke-linecap="round"/><line x1="7.5" y1="11" x2="14.5" y2="11" stroke="#6B5BE6" stroke-width="1.5" stroke-linecap="round"/><line x1="7.5" y1="14.5" x2="11.5" y2="14.5" stroke="#6B5BE6" stroke-width="1.5" stroke-linecap="round"/></svg>
+          <svg width="22" height="22" viewBox="0 0 22 22"><path d="M11 3 a5.6 5.6 0 0 1 5.6 5.6 c0 4.6 1.9 5.6 1.9 5.6 H3.5 s1.9-1 1.9-5.6 A5.6 5.6 0 0 1 11 3 Z" fill="none" stroke="#6B5BE6" stroke-width="1.6"/><path d="M8.8 17.5 a2.3 2.3 0 0 0 4.4 0" fill="none" stroke="#6B5BE6" stroke-width="1.6" stroke-linecap="round"/></svg>
+        </div>
+        <div class="cap">
+          <span class="cw">Calendar</span><span class="cd"></span><span class="cw">Insight</span><span class="cd"></span><span class="cw">Routines</span><span class="cd"></span><span class="cw">Review</span><span class="cd"></span><span class="cw">Timer</span>
+        </div>
+      </div>
+      <div class="plan">
+        <span class="radio"></span>
+        <div class="pl"><span class="pt">Lifetime</span><span class="pn">Pay once. Yours forever.</span></div>
+        <span class="pp num">$89.00</span>
+      </div>
+      <div class="plan" style="opacity:.55;">
+        <span class="radio"></span>
+        <div class="pl"><span class="pt">Yearly</span><span class="pn">7 days free, then $34.99 a year</span></div>
+        <span class="pp num">$2.92</span>
+      </div>
+    </div></div>
+  </div>
+
+  <!-- F4 -->
+  <div class="colwrap">
+    <div class="optlabel">F4 · Sentence-case index</div>
+    <p class="optnote">Direct evolution of the current line, disciplined: icons kept but on one grid and optically centered to each word, amber diamond separators, three hand-composed lines so nothing ever dangles at a line end.</p>
+    <div class="phone"><div class="grab"></div><div class="deck">
+      <div style="display:flex;flex-direction:column;gap:8px;">
+        <span class="procoin"><svg width="10" height="10" viewBox="0 0 10 10"><circle cx="5" cy="5" r="4" fill="#8A5A12"/></svg><span class="eb">Whenbee Pro</span></span>
+        <div class="title">Your real day, before you live it.</div>
+        <div class="sub">Everything Pro adds, powered by the numbers you already earned:</div>
+      </div>
+      <div class="f4">
+        <div class="line">
+          <span class="w"><svg width="13" height="13" viewBox="0 0 12 12"><rect x="1" y="2" width="10" height="9" rx="2" fill="none" stroke="#6B5BE6" stroke-width="1.4"/><line x1="1" y1="5" x2="11" y2="5" stroke="#6B5BE6" stroke-width="1.4"/></svg>Honest calendar</span>
+          <span class="dia"></span>
+          <span class="w"><svg width="13" height="13" viewBox="0 0 12 12"><path d="M2 10 L2 6 M6 10 L6 3 M10 10 L10 7" stroke="#6B5BE6" stroke-width="1.6" stroke-linecap="round"/></svg>Sharper insight</span>
+        </div>
+        <div class="line">
+          <span class="w"><svg width="13" height="13" viewBox="0 0 12 12"><circle cx="6" cy="6" r="4.5" fill="none" stroke="#6B5BE6" stroke-width="1.4"/><path d="M6 3.5 V6 L8 7.5" stroke="#6B5BE6" stroke-width="1.4" fill="none" stroke-linecap="round"/></svg>Routines &amp; goals</span>
+          <span class="dia"></span>
+          <span class="w"><svg width="13" height="13" viewBox="0 0 12 12"><rect x="2" y="1.5" width="8" height="9" rx="1.5" fill="none" stroke="#6B5BE6" stroke-width="1.4"/><line x1="4" y1="4" x2="8" y2="4" stroke="#6B5BE6" stroke-width="1.2"/><line x1="4" y1="6" x2="8" y2="6" stroke="#6B5BE6" stroke-width="1.2"/></svg>Week in review</span>
+        </div>
+        <div class="line">
+          <span class="w"><svg width="13" height="13" viewBox="0 0 12 12"><path d="M6 1.5 a3.2 3.2 0 0 1 3.2 3.2 c0 2.6 1 3.1 1 3.1 H1.8 s1-.5 1-3.1 A3.2 3.2 0 0 1 6 1.5 Z" fill="none" stroke="#6B5BE6" stroke-width="1.3"/></svg>Lock-screen timer</span>
+        </div>
+      </div>
+      <div class="plan">
+        <span class="radio"></span>
+        <div class="pl"><span class="pt">Lifetime</span><span class="pn">Pay once. Yours forever.</span></div>
+        <span class="pp num">$89.00</span>
+      </div>
+      <div class="plan" style="opacity:.55;">
+        <span class="radio"></span>
+        <div class="pl"><span class="pt">Yearly</span><span class="pn">7 days free, then $34.99 a year</span></div>
+        <span class="pp num">$2.92</span>
+      </div>
+    </div></div>
+  </div>
+
+</div>
+</body>
+</html>

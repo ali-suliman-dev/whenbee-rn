@@ -155,7 +155,7 @@ describe('no-guilt copy audit', () => {
 // Files where a `danger`/`error` colour token is legitimate — real system errors
 // only (failed purchase / restore). Add a path here ONLY for genuine error UI.
 const DANGER_ALLOW: readonly string[] = [
-  'src/features/paywall/Paywall.tsx', // purchase/restore failure message
+  'src/features/paywall/InlineNotice.tsx', // purchase/restore failure band
   // Settings "Danger zone" — deliberate, user-initiated destructive actions
   // (Reset progress / Erase everything). Red here is genuine danger semantics,
   // never a guilt signal on a honey/reward surface (the protected-surface test

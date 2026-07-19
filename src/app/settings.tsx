@@ -22,6 +22,7 @@ import { useSettingsStore, type ColorModePref } from '@/src/stores/settingsStore
 import { useCategoriesStore } from '@/src/stores/categoriesStore';
 import { useEntitlement } from '@/src/features/paywall/useEntitlement';
 import { useAccountActions, type RestoreOutcome } from '@/src/features/paywall/useAccountActions';
+import { usePaywallVariant } from '@/src/features/paywall/usePaywallVariant';
 import { useReminderSetting } from '@/src/features/settings/useReminderSetting';
 import { useReviewNotifySetting } from '@/src/features/settings/useReviewNotifySetting';
 import { useDayEndSetting } from '@/src/features/settings/useDayEndSetting';
@@ -151,6 +152,7 @@ export default function Settings() {
   const setPro = useEntitlement((s) => s.setPro);
   const categoryCount = useCategoriesStore((s) => s.categories.length);
   const { restoring, manageSubscription, restorePurchases } = useAccountActions();
+  const { variant: paywallVariant, setVariant: setPaywallVariant } = usePaywallVariant();
   const { enabled: remindersEnabled, toggle: toggleReminders } = useReminderSetting();
   const { enabled: reviewNotifyEnabled, toggle: toggleReviewNotify } = useReviewNotifySetting();
   const honestReachedEnabled = useSettingsStore((s) => s.honestReachedEnabled);
@@ -738,6 +740,16 @@ export default function Settings() {
                   accessibilityLabel="Unlock Pro (testing)"
                 />
               }
+            />
+            <SettingRow
+              icon="grid-outline"
+              title="Paywall feature layout"
+              note={
+                paywallVariant === 'day'
+                  ? "Showing 'A day with Pro'. Tap to switch to 'Plan · Do · Learn'."
+                  : "Showing 'Plan · Do · Learn'. Tap to switch to 'A day with Pro'."
+              }
+              onPress={() => setPaywallVariant(paywallVariant === 'day' ? 'groups' : 'day')}
             />
             <SettingRow
               icon="flask-outline"

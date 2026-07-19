@@ -38,7 +38,7 @@ export const tokens = {
   // `emptyArt` = mascot illustration size in a full-bleed empty state (e.g. the
   // dozing bee in What's New). `emptyCopy` = matching empty-state body-copy
   // max-width, so the line length stays readable under a centred title.
-  size: { control: { xxs: 28, xs: 32, sm: 36, md: 44, lg: 52 }, coin: 40, wheelCol: 72, wheelRow: 32, shareCard: 340, timelineCol: 110, planCardMin: 70, calTimeCol: 52, gripW: 14, hitSlop: 8, sparkline: 32, honestBand: 180, progressPill: 4, chipMinWidth: 120, quizTileWidth: '47%', emptyArt: 132, emptyCopy: 230 },
+  size: { control: { xxs: 28, xs: 32, sm: 36, md: 44, lg: 52 }, coin: 40, momentCoin: 30, checkCoin: 20, wheelCol: 72, wheelRow: 32, shareCard: 340, timelineCol: 110, planCardMin: 70, calTimeCol: 52, gripW: 14, hitSlop: 8, sparkline: 32, honestBand: 180, progressPill: 4, chipMinWidth: 120, quizTileWidth: '47%', emptyArt: 132, emptyCopy: 230 },
 
   // Icon sizing scale — replaces inline 12/16/18/20/22/24/30 across the app.
   iconSize: { xs: 12, sm: 16, md: 20, lg: 24, xl: 32, '2xl': 64 },
@@ -257,6 +257,7 @@ export const tokens = {
       successSoft: '#E2F4EA',
       danger: '#D14343',
       dangerEdge: '#A82F2F', // darker depth edge for a filled danger control
+      dangerSoft: 'rgba(209,67,67,0.08)', // inline error band fill (paywall purchase errors)
 
       // ── utility ──
       scrim: 'rgba(20,21,29,0.45)', // modal/sheet overlay
@@ -346,6 +347,7 @@ export const tokens = {
       successSoft: 'rgba(51,176,124,0.18)',
       danger: '#E06464',
       dangerEdge: '#B84A4A', // darker depth edge for a filled danger control
+      dangerSoft: 'rgba(224,100,100,0.14)', // inline error band fill (paywall purchase errors)
 
       // ── utility ──
       scrim: 'rgba(10,11,16,0.60)',

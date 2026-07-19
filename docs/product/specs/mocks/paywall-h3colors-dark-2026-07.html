@@ -1,0 +1,381 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>H3 color variants + G5/H3 dark theme</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Inter:wght@500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    /* light */
+    --bg:#F4F2FC; --surface:#FFFFFF; --surfaceSunken:#F1EEFB; --surfaceRaisedEdge:#DAD3EC;
+    --ink:#20233A; --inkSoft:#5C5F73; --inkFaint:#9B9DAB;
+    --primary:#6B5BE6; --primarySoft:#E4E0FA; --primaryWash:#EFEDFC;
+    --accent:#EEAE4D; --accentEdge:#C68A30; --accentSoft:#FBEFD6; --accentChip:#F3E2C0; --amberText:#8A5A12;
+    --success:#33B07C; --successSoft:#E2F4EA;
+    /* dark */
+    --dbg:#14151D; --dsurface:#1F2130; --dsunken:#15161F; --dedge:#1B1C27;
+    --dink:#F4F1EA; --dinkSoft:#ADA9B5; --dinkFaint:rgba(244,241,234,0.40);
+    --dprimary:#8275F0; --dprimarySoft:rgba(130,117,240,0.22); --dprimaryWash:rgba(130,117,240,0.10);
+    --daccentSoft:rgba(238,174,77,0.18); --daccentChip:#2E2A20;
+    --dsuccessSoft:rgba(51,176,124,0.18);
+    --rCard:16px; --rMd:12px; --rSm:8px; --rFull:999px;
+    --ui:'Plus Jakarta Sans',system-ui,sans-serif; --num:'Inter',system-ui,sans-serif;
+  }
+  *{box-sizing:border-box;margin:0;padding:0;}
+  body{background:#E7E3F6;font-family:var(--ui);color:var(--ink);-webkit-font-smoothing:antialiased;padding:34px 0 80px;}
+  h1.pagetitle{text-align:center;font-size:15px;font-weight:800;margin-bottom:6px;}
+  p.pagesub{text-align:center;font-size:12px;color:var(--inkSoft);margin-bottom:26px;max-width:880px;margin-left:auto;margin-right:auto;}
+  h2.rowtitle{text-align:center;font-size:13px;font-weight:800;margin:34px 0 16px;}
+  .stage{display:flex;gap:30px;justify-content:center;align-items:flex-start;flex-wrap:wrap;}
+  .colwrap{display:flex;flex-direction:column;align-items:center;max-width:400px;}
+  .optlabel{font-size:12.5px;font-weight:800;margin-bottom:4px;}
+  .optnote{font-size:11px;line-height:15px;color:var(--inkSoft);margin:0 0 12px;text-align:center;max-width:330px;}
+  .panel{width:340px;background:var(--bg);border-radius:20px;padding:20px 18px;border:1px solid rgba(0,0,0,0.06);box-shadow:0 14px 40px rgba(32,35,58,.14);}
+  .num{font-family:var(--num);font-variant-numeric:tabular-nums;}
+
+  /* H3 section structure (shared) */
+  .h3{display:flex;flex-direction:column;gap:13px;}
+  .h3 .grp{display:flex;flex-direction:column;gap:8px;}
+  .h3 .ghead{font-size:10px;font-weight:800;letter-spacing:1.8px;text-transform:uppercase;}
+  .h3 .cols{display:grid;grid-template-columns:1fr 1fr;gap:8px 10px;}
+  .h3 .it{display:flex;align-items:center;gap:8px;}
+  .h3 .co{width:19px;height:19px;border-radius:50%;display:flex;align-items:center;justify-content:center;flex:none;}
+  .h3 .lab{font-size:12.5px;font-weight:700;line-height:15px;}
+
+  /* ═ dark phones ═ */
+  .darkzone{background:#0d0e14;border-radius:26px;padding:26px 30px 34px;display:flex;gap:34px;justify-content:center;flex-wrap:wrap;margin:0 auto;max-width:960px;}
+  .phone.dark{width:372px;background:var(--dbg);border-radius:30px;padding:10px 20px 26px;border:1px solid rgba(255,255,255,0.06);box-shadow:0 24px 60px rgba(0,0,0,.5);}
+  .phone.dark .grab{background:rgba(244,241,234,0.3);}
+  .grab{width:36px;height:5px;border-radius:999px;background:var(--inkFaint);opacity:.6;margin:4px auto 16px;}
+  .deck{display:flex;flex-direction:column;gap:16px;}
+  .eb{font-size:10px;font-weight:800;letter-spacing:2px;text-transform:uppercase;}
+  .dark .procoin{display:inline-flex;align-items:center;gap:6px;background:var(--daccentChip);border-radius:var(--rFull);padding:5px 12px;align-self:flex-start;}
+  .dark .procoin .eb{color:#EEAE4D;letter-spacing:1.5px;}
+  .dark .title{font-size:24px;line-height:29px;font-weight:800;letter-spacing:-0.5px;text-wrap:balance;color:var(--dink);}
+  .dark .sub{font-size:13px;line-height:19px;color:var(--dinkSoft);font-weight:500;}
+
+  .dark .cta{position:relative;margin-bottom:8px;}
+  .dark .cta .edge{position:absolute;left:0;right:0;top:8px;bottom:-8px;border-radius:var(--rFull);background:var(--accentEdge);}
+  .dark .cta .face{position:relative;border-radius:var(--rFull);background:var(--accent);color:#20233A;font-weight:800;font-size:16px;text-align:center;padding:14px 24px;}
+
+  .dark .plans{display:flex;flex-direction:column;gap:10px;}
+  .dark .plan{display:flex;align-items:center;gap:12px;background:var(--dsurface);border:1.5px solid transparent;border-radius:var(--rCard);padding:13px 16px;}
+  .dark .plan.sel{background:var(--dprimarySoft);border-color:var(--dprimary);}
+  .dark .plan .pl{flex:1;display:flex;flex-direction:column;gap:2px;}
+  .dark .plan .pt{font-size:15px;font-weight:800;display:flex;align-items:center;gap:8px;color:var(--dink);}
+  .dark .plan .pn{font-size:11.5px;color:var(--dinkSoft);font-weight:500;}
+  .dark .plan .pr{display:flex;flex-direction:column;align-items:flex-end;gap:2px;}
+  .dark .plan .pp{font-family:var(--num);font-weight:700;font-size:17px;color:var(--dink);}
+  .dark .plan .pm{font-size:11px;color:var(--dinkSoft);font-weight:600;}
+  .dark .badge{background:var(--accent);color:#20233A;border-radius:var(--rFull);padding:2.5px 8px;font-size:9.5px;font-weight:800;letter-spacing:.5px;}
+  .dark .radio{width:20px;height:20px;border-radius:50%;border:2px solid var(--dinkFaint);flex:none;}
+  .dark .radio.on{border-color:var(--dprimary);background:radial-gradient(circle at center,var(--dprimary) 0 5px,transparent 5.5px);}
+
+  .dark .airy{display:flex;flex-direction:column;padding:2px 6px;}
+  .dark .airy .step{display:flex;gap:14px;}
+  .dark .airy .railcol{display:flex;flex-direction:column;align-items:center;width:24px;flex:none;}
+  .dark .airy .dot{width:24px;height:24px;border-radius:50%;flex:none;display:flex;align-items:center;justify-content:center;background:var(--dsurface);}
+  .dark .airy .dot.today{background:var(--accent);box-shadow:0 0 0 4px var(--daccentSoft);}
+  .dark .airy .dot.today::after{content:"✓";font-size:12px;font-weight:800;color:#20233A;}
+  .dark .airy .dot.next{box-shadow:0 0 0 1.5px rgba(130,117,240,0.4) inset;}
+  .dark .airy .line{width:0;flex:1;min-height:16px;border-left:2px dotted rgba(130,117,240,0.45);}
+  .dark .airy .stx{padding:2px 0 18px;display:flex;flex-direction:column;gap:1px;}
+  .dark .airy .step:last-child .stx{padding-bottom:0;}
+  .dark .airy .sh{font-size:13.5px;font-weight:800;color:var(--dink);}
+  .dark .airy .sd{font-size:12px;line-height:17px;color:var(--dinkSoft);font-weight:500;}
+  .dark .airy .sd b{color:var(--dink);font-weight:700;}
+
+  .dark .foot{display:flex;flex-direction:column;gap:9px;align-items:center;padding-top:2px;}
+  .dark .reassure{font-size:12.5px;font-weight:600;color:var(--dinkSoft);text-align:center;}
+  .dark .trust{font-size:12px;line-height:17px;color:var(--dinkSoft);text-align:center;font-weight:500;}
+  .dark .trust b{color:var(--dink);font-weight:800;}
+  .dark .renew{font-size:10.5px;color:var(--dinkFaint);text-align:center;font-weight:500;}
+  .dark .links{display:flex;gap:8px;align-items:center;font-size:12px;font-weight:700;color:var(--dinkSoft);}
+  .dark .links .d{color:var(--dinkFaint);font-weight:400;}
+
+  /* G5 dark */
+  .dark .g5{display:flex;flex-direction:column;padding:2px 0;}
+  .dark .g5 .mom{display:flex;gap:12px;}
+  .dark .g5 .tcol{width:36px;flex:none;text-align:right;padding-top:9px;}
+  .dark .g5 .t{font-family:var(--num);font-size:10px;font-weight:600;color:var(--dinkFaint);}
+  .dark .g5 .railcol{display:flex;flex-direction:column;align-items:center;width:30px;flex:none;}
+  .dark .g5 .coin{width:30px;height:30px;border-radius:50%;background:var(--dsurface);box-shadow:0 2.5px 0 var(--dedge);display:flex;align-items:center;justify-content:center;flex:none;}
+  .dark .g5 .mom.amber .coin{background:var(--accent);box-shadow:0 2.5px 0 var(--accentEdge);}
+  .dark .g5 .line{width:0;flex:1;min-height:12px;border-left:2px dotted rgba(130,117,240,0.45);}
+  .dark .g5 .mx{padding:4px 0 16px;display:flex;flex-direction:column;gap:6px;flex:1;}
+  .dark .g5 .mom:last-child .mx{padding-bottom:2px;}
+  .dark .g5 .mh{font-size:13.5px;font-weight:800;color:var(--dink);}
+  .dark .g5 .fchips{display:flex;flex-wrap:wrap;gap:5px;}
+  .dark .g5 .fc{background:var(--dprimarySoft);border-radius:var(--rFull);padding:4px 10px;font-size:11px;font-weight:700;color:var(--dink);white-space:nowrap;}
+  .dark .g5 .mom.amber .fc{background:var(--daccentSoft);}
+
+  /* H3 dark */
+  .dark .h3 .lab{color:var(--dink);}
+</style>
+</head>
+<body>
+<h1 class="pagetitle">H3 color variants (light) + G5 &amp; H3 in dark</h1>
+<p class="pagesub">Row 1: the Plan · Do · Learn section only, five color mixes — all pulled from existing tokens (indigo primary, green success, amber accent, neutrals). Row 2: the two pinned layouts as full dark-mode paywalls.</p>
+
+<h2 class="rowtitle">Row 1 · Color variants of the check section</h2>
+<div class="stage">
+
+  <!-- C1 -->
+  <div class="colwrap">
+    <div class="optlabel">C1 · Green checks, indigo headers</div>
+    <p class="optnote">Checks = success green (the natural "you get this" semantic), headers = indigo. Amber disappears entirely; the section stops competing with the amber CTA below.</p>
+    <div class="panel"><div class="h3">
+      <div class="grp"><span class="ghead" style="color:var(--primary);">Plan honestly</span><div class="cols">
+        <div class="it"><span class="co" style="background:var(--successSoft);"><svg width="10" height="10" viewBox="0 0 14 14"><path d="M2.5 7.5 L6 11 L11.5 3.5" fill="none" stroke="#33B07C" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg></span><span class="lab">Honest calendar</span></div>
+        <div class="it"><span class="co" style="background:var(--successSoft);"><svg width="10" height="10" viewBox="0 0 14 14"><path d="M2.5 7.5 L6 11 L11.5 3.5" fill="none" stroke="#33B07C" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg></span><span class="lab">Day capacity</span></div>
+        <div class="it"><span class="co" style="background:var(--successSoft);"><svg width="10" height="10" viewBox="0 0 14 14"><path d="M2.5 7.5 L6 11 L11.5 3.5" fill="none" stroke="#33B07C" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg></span><span class="lab">Focus windows</span></div>
+        <div class="it"><span class="co" style="background:var(--successSoft);"><svg width="10" height="10" viewBox="0 0 14 14"><path d="M2.5 7.5 L6 11 L11.5 3.5" fill="none" stroke="#33B07C" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg></span><span class="lab">Confidence band</span></div>
+      </div></div>
+      <div class="grp"><span class="ghead" style="color:var(--primary);">Run the day</span><div class="cols">
+        <div class="it"><span class="co" style="background:var(--successSoft);"><svg width="10" height="10" viewBox="0 0 14 14"><path d="M2.5 7.5 L6 11 L11.5 3.5" fill="none" stroke="#33B07C" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg></span><span class="lab">Routines</span></div>
+        <div class="it"><span class="co" style="background:var(--successSoft);"><svg width="10" height="10" viewBox="0 0 14 14"><path d="M2.5 7.5 L6 11 L11.5 3.5" fill="none" stroke="#33B07C" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg></span><span class="lab">Goal coach</span></div>
+        <div class="it"><span class="co" style="background:var(--successSoft);"><svg width="10" height="10" viewBox="0 0 14 14"><path d="M2.5 7.5 L6 11 L11.5 3.5" fill="none" stroke="#33B07C" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg></span><span class="lab">Lock-screen timer</span></div>
+        <div class="it"><span class="co" style="background:var(--successSoft);"><svg width="10" height="10" viewBox="0 0 14 14"><path d="M2.5 7.5 L6 11 L11.5 3.5" fill="none" stroke="#33B07C" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg></span><span class="lab">Hyperfocus guard</span></div>
+      </div></div>
+      <div class="grp"><span class="ghead" style="color:var(--primary);">Learn your patterns</span><div class="cols">
+        <div class="it"><span class="co" style="background:var(--successSoft);"><svg width="10" height="10" viewBox="0 0 14 14"><path d="M2.5 7.5 L6 11 L11.5 3.5" fill="none" stroke="#33B07C" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg></span><span class="lab">What steals your time</span></div>
+        <div class="it"><span class="co" style="background:var(--successSoft);"><svg width="10" height="10" viewBox="0 0 14 14"><path d="M2.5 7.5 L6 11 L11.5 3.5" fill="none" stroke="#33B07C" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg></span><span class="lab">Weekly review</span></div>
+        <div class="it"><span class="co" style="background:var(--successSoft);"><svg width="10" height="10" viewBox="0 0 14 14"><path d="M2.5 7.5 L6 11 L11.5 3.5" fill="none" stroke="#33B07C" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg></span><span class="lab">PDF export</span></div>
+        <div class="it"><span class="co" style="background:var(--successSoft);"><svg width="10" height="10" viewBox="0 0 14 14"><path d="M2.5 7.5 L6 11 L11.5 3.5" fill="none" stroke="#33B07C" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg></span><span class="lab">Full history</span></div>
+      </div></div>
+    </div></div>
+  </div>
+
+  <!-- C2 -->
+  <div class="colwrap">
+    <div class="optlabel">C2 · Green checks, quiet headers</div>
+    <p class="optnote">Same green checks, but headers drop to muted ink — zero decoration in the type. The green coins become the only color. Cleanest read.</p>
+    <div class="panel"><div class="h3">
+      <div class="grp"><span class="ghead" style="color:var(--inkSoft);">Plan honestly</span><div class="cols">
+        <div class="it"><span class="co" style="background:var(--successSoft);"><svg width="10" height="10" viewBox="0 0 14 14"><path d="M2.5 7.5 L6 11 L11.5 3.5" fill="none" stroke="#33B07C" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg></span><span class="lab">Honest calendar</span></div>
+        <div class="it"><span class="co" style="background:var(--successSoft);"><svg width="10" height="10" viewBox="0 0 14 14"><path d="M2.5 7.5 L6 11 L11.5 3.5" fill="none" stroke="#33B07C" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg></span><span class="lab">Day capacity</span></div>
+        <div class="it"><span class="co" style="background:var(--successSoft);"><svg width="10" height="10" viewBox="0 0 14 14"><path d="M2.5 7.5 L6 11 L11.5 3.5" fill="none" stroke="#33B07C" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg></span><span class="lab">Focus windows</span></div>
+        <div class="it"><span class="co" style="background:var(--successSoft);"><svg width="10" height="10" viewBox="0 0 14 14"><path d="M2.5 7.5 L6 11 L11.5 3.5" fill="none" stroke="#33B07C" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg></span><span class="lab">Confidence band</span></div>
+      </div></div>
+      <div class="grp"><span class="ghead" style="color:var(--inkSoft);">Run the day</span><div class="cols">
+        <div class="it"><span class="co" style="background:var(--successSoft);"><svg width="10" height="10" viewBox="0 0 14 14"><path d="M2.5 7.5 L6 11 L11.5 3.5" fill="none" stroke="#33B07C" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg></span><span class="lab">Routines</span></div>
+        <div class="it"><span class="co" style="background:var(--successSoft);"><svg width="10" height="10" viewBox="0 0 14 14"><path d="M2.5 7.5 L6 11 L11.5 3.5" fill="none" stroke="#33B07C" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg></span><span class="lab">Goal coach</span></div>
+        <div class="it"><span class="co" style="background:var(--successSoft);"><svg width="10" height="10" viewBox="0 0 14 14"><path d="M2.5 7.5 L6 11 L11.5 3.5" fill="none" stroke="#33B07C" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg></span><span class="lab">Lock-screen timer</span></div>
+        <div class="it"><span class="co" style="background:var(--successSoft);"><svg width="10" height="10" viewBox="0 0 14 14"><path d="M2.5 7.5 L6 11 L11.5 3.5" fill="none" stroke="#33B07C" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg></span><span class="lab">Hyperfocus guard</span></div>
+      </div></div>
+      <div class="grp"><span class="ghead" style="color:var(--inkSoft);">Learn your patterns</span><div class="cols">
+        <div class="it"><span class="co" style="background:var(--successSoft);"><svg width="10" height="10" viewBox="0 0 14 14"><path d="M2.5 7.5 L6 11 L11.5 3.5" fill="none" stroke="#33B07C" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg></span><span class="lab">What steals your time</span></div>
+        <div class="it"><span class="co" style="background:var(--successSoft);"><svg width="10" height="10" viewBox="0 0 14 14"><path d="M2.5 7.5 L6 11 L11.5 3.5" fill="none" stroke="#33B07C" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg></span><span class="lab">Weekly review</span></div>
+        <div class="it"><span class="co" style="background:var(--successSoft);"><svg width="10" height="10" viewBox="0 0 14 14"><path d="M2.5 7.5 L6 11 L11.5 3.5" fill="none" stroke="#33B07C" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg></span><span class="lab">PDF export</span></div>
+        <div class="it"><span class="co" style="background:var(--successSoft);"><svg width="10" height="10" viewBox="0 0 14 14"><path d="M2.5 7.5 L6 11 L11.5 3.5" fill="none" stroke="#33B07C" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg></span><span class="lab">Full history</span></div>
+      </div></div>
+    </div></div>
+  </div>
+
+  <!-- C3 -->
+  <div class="colwrap">
+    <div class="optlabel">C3 · All indigo (brand mono)</div>
+    <p class="optnote">Indigo checks on lavender coins, muted headers. One hue = calm, on-brand, zero color noise. Risk: checks read less like "included."</p>
+    <div class="panel"><div class="h3">
+      <div class="grp"><span class="ghead" style="color:var(--inkSoft);">Plan honestly</span><div class="cols">
+        <div class="it"><span class="co" style="background:var(--primarySoft);"><svg width="10" height="10" viewBox="0 0 14 14"><path d="M2.5 7.5 L6 11 L11.5 3.5" fill="none" stroke="#6B5BE6" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg></span><span class="lab">Honest calendar</span></div>
+        <div class="it"><span class="co" style="background:var(--primarySoft);"><svg width="10" height="10" viewBox="0 0 14 14"><path d="M2.5 7.5 L6 11 L11.5 3.5" fill="none" stroke="#6B5BE6" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg></span><span class="lab">Day capacity</span></div>
+        <div class="it"><span class="co" style="background:var(--primarySoft);"><svg width="10" height="10" viewBox="0 0 14 14"><path d="M2.5 7.5 L6 11 L11.5 3.5" fill="none" stroke="#6B5BE6" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg></span><span class="lab">Focus windows</span></div>
+        <div class="it"><span class="co" style="background:var(--primarySoft);"><svg width="10" height="10" viewBox="0 0 14 14"><path d="M2.5 7.5 L6 11 L11.5 3.5" fill="none" stroke="#6B5BE6" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg></span><span class="lab">Confidence band</span></div>
+      </div></div>
+      <div class="grp"><span class="ghead" style="color:var(--inkSoft);">Run the day</span><div class="cols">
+        <div class="it"><span class="co" style="background:var(--primarySoft);"><svg width="10" height="10" viewBox="0 0 14 14"><path d="M2.5 7.5 L6 11 L11.5 3.5" fill="none" stroke="#6B5BE6" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg></span><span class="lab">Routines</span></div>
+        <div class="it"><span class="co" style="background:var(--primarySoft);"><svg width="10" height="10" viewBox="0 0 14 14"><path d="M2.5 7.5 L6 11 L11.5 3.5" fill="none" stroke="#6B5BE6" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg></span><span class="lab">Goal coach</span></div>
+        <div class="it"><span class="co" style="background:var(--primarySoft);"><svg width="10" height="10" viewBox="0 0 14 14"><path d="M2.5 7.5 L6 11 L11.5 3.5" fill="none" stroke="#6B5BE6" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg></span><span class="lab">Lock-screen timer</span></div>
+        <div class="it"><span class="co" style="background:var(--primarySoft);"><svg width="10" height="10" viewBox="0 0 14 14"><path d="M2.5 7.5 L6 11 L11.5 3.5" fill="none" stroke="#6B5BE6" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg></span><span class="lab">Hyperfocus guard</span></div>
+      </div></div>
+      <div class="grp"><span class="ghead" style="color:var(--inkSoft);">Learn your patterns</span><div class="cols">
+        <div class="it"><span class="co" style="background:var(--primarySoft);"><svg width="10" height="10" viewBox="0 0 14 14"><path d="M2.5 7.5 L6 11 L11.5 3.5" fill="none" stroke="#6B5BE6" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg></span><span class="lab">What steals your time</span></div>
+        <div class="it"><span class="co" style="background:var(--primarySoft);"><svg width="10" height="10" viewBox="0 0 14 14"><path d="M2.5 7.5 L6 11 L11.5 3.5" fill="none" stroke="#6B5BE6" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg></span><span class="lab">Weekly review</span></div>
+        <div class="it"><span class="co" style="background:var(--primarySoft);"><svg width="10" height="10" viewBox="0 0 14 14"><path d="M2.5 7.5 L6 11 L11.5 3.5" fill="none" stroke="#6B5BE6" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg></span><span class="lab">PDF export</span></div>
+        <div class="it"><span class="co" style="background:var(--primarySoft);"><svg width="10" height="10" viewBox="0 0 14 14"><path d="M2.5 7.5 L6 11 L11.5 3.5" fill="none" stroke="#6B5BE6" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg></span><span class="lab">Full history</span></div>
+      </div></div>
+    </div></div>
+  </div>
+
+  <!-- C4 -->
+  <div class="colwrap">
+    <div class="optlabel">C4 · One color per group</div>
+    <p class="optnote">Mixing, structured: Plan = indigo, Run = amber, Learn = green — header and coins match per group. Most colorful; the coding actually means something.</p>
+    <div class="panel"><div class="h3">
+      <div class="grp"><span class="ghead" style="color:var(--primary);">Plan honestly</span><div class="cols">
+        <div class="it"><span class="co" style="background:var(--primarySoft);"><svg width="10" height="10" viewBox="0 0 14 14"><path d="M2.5 7.5 L6 11 L11.5 3.5" fill="none" stroke="#6B5BE6" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg></span><span class="lab">Honest calendar</span></div>
+        <div class="it"><span class="co" style="background:var(--primarySoft);"><svg width="10" height="10" viewBox="0 0 14 14"><path d="M2.5 7.5 L6 11 L11.5 3.5" fill="none" stroke="#6B5BE6" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg></span><span class="lab">Day capacity</span></div>
+        <div class="it"><span class="co" style="background:var(--primarySoft);"><svg width="10" height="10" viewBox="0 0 14 14"><path d="M2.5 7.5 L6 11 L11.5 3.5" fill="none" stroke="#6B5BE6" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg></span><span class="lab">Focus windows</span></div>
+        <div class="it"><span class="co" style="background:var(--primarySoft);"><svg width="10" height="10" viewBox="0 0 14 14"><path d="M2.5 7.5 L6 11 L11.5 3.5" fill="none" stroke="#6B5BE6" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg></span><span class="lab">Confidence band</span></div>
+      </div></div>
+      <div class="grp"><span class="ghead" style="color:var(--amberText);">Run the day</span><div class="cols">
+        <div class="it"><span class="co" style="background:var(--accentSoft);"><svg width="10" height="10" viewBox="0 0 14 14"><path d="M2.5 7.5 L6 11 L11.5 3.5" fill="none" stroke="#8A5A12" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg></span><span class="lab">Routines</span></div>
+        <div class="it"><span class="co" style="background:var(--accentSoft);"><svg width="10" height="10" viewBox="0 0 14 14"><path d="M2.5 7.5 L6 11 L11.5 3.5" fill="none" stroke="#8A5A12" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg></span><span class="lab">Goal coach</span></div>
+        <div class="it"><span class="co" style="background:var(--accentSoft);"><svg width="10" height="10" viewBox="0 0 14 14"><path d="M2.5 7.5 L6 11 L11.5 3.5" fill="none" stroke="#8A5A12" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg></span><span class="lab">Lock-screen timer</span></div>
+        <div class="it"><span class="co" style="background:var(--accentSoft);"><svg width="10" height="10" viewBox="0 0 14 14"><path d="M2.5 7.5 L6 11 L11.5 3.5" fill="none" stroke="#8A5A12" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg></span><span class="lab">Hyperfocus guard</span></div>
+      </div></div>
+      <div class="grp"><span class="ghead" style="color:var(--success);">Learn your patterns</span><div class="cols">
+        <div class="it"><span class="co" style="background:var(--successSoft);"><svg width="10" height="10" viewBox="0 0 14 14"><path d="M2.5 7.5 L6 11 L11.5 3.5" fill="none" stroke="#33B07C" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg></span><span class="lab">What steals your time</span></div>
+        <div class="it"><span class="co" style="background:var(--successSoft);"><svg width="10" height="10" viewBox="0 0 14 14"><path d="M2.5 7.5 L6 11 L11.5 3.5" fill="none" stroke="#33B07C" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg></span><span class="lab">Weekly review</span></div>
+        <div class="it"><span class="co" style="background:var(--successSoft);"><svg width="10" height="10" viewBox="0 0 14 14"><path d="M2.5 7.5 L6 11 L11.5 3.5" fill="none" stroke="#33B07C" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg></span><span class="lab">PDF export</span></div>
+        <div class="it"><span class="co" style="background:var(--successSoft);"><svg width="10" height="10" viewBox="0 0 14 14"><path d="M2.5 7.5 L6 11 L11.5 3.5" fill="none" stroke="#33B07C" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg></span><span class="lab">Full history</span></div>
+      </div></div>
+    </div></div>
+  </div>
+
+  <!-- C5 -->
+  <div class="colwrap">
+    <div class="optlabel">C5 · Neutral coins, indigo headers</div>
+    <p class="optnote">White coins, soft-ink checks, indigo headers only. Almost no color — the words do the selling; the section gets out of the CTA's way completely.</p>
+    <div class="panel"><div class="h3">
+      <div class="grp"><span class="ghead" style="color:var(--primary);">Plan honestly</span><div class="cols">
+        <div class="it"><span class="co" style="background:var(--surface);"><svg width="10" height="10" viewBox="0 0 14 14"><path d="M2.5 7.5 L6 11 L11.5 3.5" fill="none" stroke="#5C5F73" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg></span><span class="lab">Honest calendar</span></div>
+        <div class="it"><span class="co" style="background:var(--surface);"><svg width="10" height="10" viewBox="0 0 14 14"><path d="M2.5 7.5 L6 11 L11.5 3.5" fill="none" stroke="#5C5F73" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg></span><span class="lab">Day capacity</span></div>
+        <div class="it"><span class="co" style="background:var(--surface);"><svg width="10" height="10" viewBox="0 0 14 14"><path d="M2.5 7.5 L6 11 L11.5 3.5" fill="none" stroke="#5C5F73" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg></span><span class="lab">Focus windows</span></div>
+        <div class="it"><span class="co" style="background:var(--surface);"><svg width="10" height="10" viewBox="0 0 14 14"><path d="M2.5 7.5 L6 11 L11.5 3.5" fill="none" stroke="#5C5F73" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg></span><span class="lab">Confidence band</span></div>
+      </div></div>
+      <div class="grp"><span class="ghead" style="color:var(--primary);">Run the day</span><div class="cols">
+        <div class="it"><span class="co" style="background:var(--surface);"><svg width="10" height="10" viewBox="0 0 14 14"><path d="M2.5 7.5 L6 11 L11.5 3.5" fill="none" stroke="#5C5F73" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg></span><span class="lab">Routines</span></div>
+        <div class="it"><span class="co" style="background:var(--surface);"><svg width="10" height="10" viewBox="0 0 14 14"><path d="M2.5 7.5 L6 11 L11.5 3.5" fill="none" stroke="#5C5F73" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg></span><span class="lab">Goal coach</span></div>
+        <div class="it"><span class="co" style="background:var(--surface);"><svg width="10" height="10" viewBox="0 0 14 14"><path d="M2.5 7.5 L6 11 L11.5 3.5" fill="none" stroke="#5C5F73" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg></span><span class="lab">Lock-screen timer</span></div>
+        <div class="it"><span class="co" style="background:var(--surface);"><svg width="10" height="10" viewBox="0 0 14 14"><path d="M2.5 7.5 L6 11 L11.5 3.5" fill="none" stroke="#5C5F73" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg></span><span class="lab">Hyperfocus guard</span></div>
+      </div></div>
+      <div class="grp"><span class="ghead" style="color:var(--primary);">Learn your patterns</span><div class="cols">
+        <div class="it"><span class="co" style="background:var(--surface);"><svg width="10" height="10" viewBox="0 0 14 14"><path d="M2.5 7.5 L6 11 L11.5 3.5" fill="none" stroke="#5C5F73" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg></span><span class="lab">What steals your time</span></div>
+        <div class="it"><span class="co" style="background:var(--surface);"><svg width="10" height="10" viewBox="0 0 14 14"><path d="M2.5 7.5 L6 11 L11.5 3.5" fill="none" stroke="#5C5F73" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg></span><span class="lab">Weekly review</span></div>
+        <div class="it"><span class="co" style="background:var(--surface);"><svg width="10" height="10" viewBox="0 0 14 14"><path d="M2.5 7.5 L6 11 L11.5 3.5" fill="none" stroke="#5C5F73" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg></span><span class="lab">PDF export</span></div>
+        <div class="it"><span class="co" style="background:var(--surface);"><svg width="10" height="10" viewBox="0 0 14 14"><path d="M2.5 7.5 L6 11 L11.5 3.5" fill="none" stroke="#5C5F73" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg></span><span class="lab">Full history</span></div>
+      </div></div>
+    </div></div>
+  </div>
+
+</div>
+
+<h2 class="rowtitle">Row 2 · The two pinned layouts, dark mode (H3 shown with C1 colors — swap to whichever wins Row 1)</h2>
+<div class="darkzone">
+
+  <!-- G5 dark -->
+  <div class="colwrap">
+    <div class="optlabel" style="color:#F4F1EA;">G5 · A day with Pro — dark</div>
+    <div class="phone dark"><div class="grab"></div><div class="deck">
+      <div style="display:flex;flex-direction:column;gap:8px;">
+        <span class="procoin"><svg width="10" height="10" viewBox="0 0 10 10"><circle cx="5" cy="5" r="4" fill="#EEAE4D"/></svg><span class="eb">Whenbee Pro</span></span>
+        <div class="title">Your real day, before you live it.</div>
+        <div class="sub">Everything Pro adds, riding your real numbers from wake-up to wind-down:</div>
+      </div>
+      <div class="g5">
+        <div class="mom">
+          <div class="tcol"><span class="t">7:00</span></div>
+          <div class="railcol"><span class="coin"><svg width="14" height="14" viewBox="0 0 22 22"><path d="M4.5 8 a6.5 6.5 0 0 1 12.5-1.5 M17.5 14 a6.5 6.5 0 0 1-12.5 1.5" fill="none" stroke="#8275F0" stroke-width="1.9" stroke-linecap="round"/><path d="M17.5 3 v4 h-4 M4.5 19 v-4 h4" fill="none" stroke="#8275F0" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"/></svg></span><span class="line"></span></div>
+          <div class="mx"><span class="mh">The morning starts honest</span><div class="fchips"><span class="fc">Routines</span><span class="fc">Goal coach</span></div></div>
+        </div>
+        <div class="mom">
+          <div class="tcol"><span class="t">9:30</span></div>
+          <div class="railcol"><span class="coin"><svg width="14" height="14" viewBox="0 0 22 22"><path d="M11 3 a5.6 5.6 0 0 1 5.6 5.6 c0 4.6 1.9 5.6 1.9 5.6 H3.5 s1.9-1 1.9-5.6 A5.6 5.6 0 0 1 11 3 Z" fill="none" stroke="#8275F0" stroke-width="1.9"/></svg></span><span class="line"></span></div>
+          <div class="mx"><span class="mh">Deep work, kept company</span><div class="fchips"><span class="fc">Focus windows</span><span class="fc">Lock-screen timer</span><span class="fc">Hyperfocus guard</span></div></div>
+        </div>
+        <div class="mom">
+          <div class="tcol"><span class="t">13:00</span></div>
+          <div class="railcol"><span class="coin"><svg width="14" height="14" viewBox="0 0 22 22"><rect x="2" y="7" width="16" height="8" rx="3" fill="none" stroke="#8275F0" stroke-width="1.9"/><rect x="4.5" y="9.5" width="7" height="3" rx="1.5" fill="#8275F0"/></svg></span><span class="line"></span></div>
+          <div class="mx"><span class="mh">Before you say yes to more</span><div class="fchips"><span class="fc">Day capacity</span><span class="fc">Confidence band</span></div></div>
+        </div>
+        <div class="mom">
+          <div class="tcol"><span class="t">17:00</span></div>
+          <div class="railcol"><span class="coin"><svg width="14" height="14" viewBox="0 0 22 22"><rect x="2.5" y="4" width="17" height="15" rx="3.5" fill="none" stroke="#8275F0" stroke-width="1.9"/><line x1="2.5" y1="9" x2="19.5" y2="9" stroke="#8275F0" stroke-width="1.9"/></svg></span><span class="line"></span></div>
+          <div class="mx"><span class="mh">The evening actually fits</span><div class="fchips"><span class="fc">Honest calendar</span></div></div>
+        </div>
+        <div class="mom amber">
+          <div class="tcol"><span class="t">Sun</span></div>
+          <div class="railcol"><span class="coin"><svg width="14" height="14" viewBox="0 0 22 22"><rect x="4" y="2.5" width="14" height="17" rx="2.5" fill="none" stroke="#20233A" stroke-width="1.9"/><line x1="7.5" y1="7.5" x2="14.5" y2="7.5" stroke="#20233A" stroke-width="1.7"/><line x1="7.5" y1="11" x2="14.5" y2="11" stroke="#20233A" stroke-width="1.7"/></svg></span></div>
+          <div class="mx"><span class="mh">The week, understood</span><div class="fchips"><span class="fc">Weekly review</span><span class="fc">PDF export</span><span class="fc">Full history</span><span class="fc">What steals your time</span></div></div>
+        </div>
+      </div>
+
+      <div class="plans">
+        <div class="plan"><span class="radio"></span><div class="pl"><span class="pt">Lifetime</span><span class="pn">Pay once. Yours forever.</span></div><div class="pr"><span class="pp num">$89.00</span></div></div>
+        <div class="plan sel"><span class="radio on"></span><div class="pl"><span class="pt">Yearly <span class="badge">MOST POPULAR</span></span><span class="pn">7 days free, then $34.99 a year</span></div><div class="pr"><span class="pp num">$2.92</span><span class="pm">per month</span></div></div>
+        <div class="plan"><span class="radio"></span><div class="pl"><span class="pt">Monthly</span><span class="pn">7 days free, then billed monthly</span></div><div class="pr"><span class="pp num">$4.99</span></div></div>
+      </div>
+
+      <div class="airy">
+        <div class="step"><div class="railcol"><div class="dot today"></div><div class="line"></div></div>
+          <div class="stx"><span class="sh">Today</span><span class="sd">All of Pro, free. Nothing is charged.</span></div></div>
+        <div class="step"><div class="railcol"><div class="dot next"></div><div class="line"></div></div>
+          <div class="stx"><span class="sh">Day 5</span><span class="sd"><b>We remind you</b> the trial is ending.</span></div></div>
+        <div class="step"><div class="railcol"><div class="dot next"></div></div>
+          <div class="stx"><span class="sh">Day 7</span><span class="sd">Trial ends. Cancel before and you pay nothing.</span></div></div>
+      </div>
+
+      <div><div class="cta"><div class="edge"></div><div class="face">Try 7 days free</div></div></div>
+      <div class="foot">
+        <div class="reassure">No payment now. Cancel anytime.</div>
+        <div class="trust"><b>Calibration stays free, always.</b> Pro just adds the payoff.</div>
+        <div class="renew">Plans renew until cancelled.</div>
+        <div class="links"><span>Restore Purchases</span><span class="d">·</span><span>Terms</span><span class="d">·</span><span>Privacy</span></div>
+      </div>
+    </div></div>
+  </div>
+
+  <!-- H3 dark -->
+  <div class="colwrap">
+    <div class="optlabel" style="color:#F4F1EA;">H3 · Plan · Do · Learn — dark (C1 colors)</div>
+    <div class="phone dark"><div class="grab"></div><div class="deck">
+      <div style="display:flex;flex-direction:column;gap:8px;">
+        <span class="procoin"><svg width="10" height="10" viewBox="0 0 10 10"><circle cx="5" cy="5" r="4" fill="#EEAE4D"/></svg><span class="eb">Whenbee Pro</span></span>
+        <div class="title">Your real day, before you live it.</div>
+        <div class="sub">Everything Pro adds, powered by the numbers you already earned:</div>
+      </div>
+
+      <div class="h3" style="padding:2px 4px;">
+        <div class="grp"><span class="ghead" style="color:var(--dprimary);">Plan honestly</span><div class="cols">
+          <div class="it"><span class="co" style="background:var(--dsuccessSoft);"><svg width="10" height="10" viewBox="0 0 14 14"><path d="M2.5 7.5 L6 11 L11.5 3.5" fill="none" stroke="#33B07C" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg></span><span class="lab">Honest calendar</span></div>
+          <div class="it"><span class="co" style="background:var(--dsuccessSoft);"><svg width="10" height="10" viewBox="0 0 14 14"><path d="M2.5 7.5 L6 11 L11.5 3.5" fill="none" stroke="#33B07C" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg></span><span class="lab">Day capacity</span></div>
+          <div class="it"><span class="co" style="background:var(--dsuccessSoft);"><svg width="10" height="10" viewBox="0 0 14 14"><path d="M2.5 7.5 L6 11 L11.5 3.5" fill="none" stroke="#33B07C" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg></span><span class="lab">Focus windows</span></div>
+          <div class="it"><span class="co" style="background:var(--dsuccessSoft);"><svg width="10" height="10" viewBox="0 0 14 14"><path d="M2.5 7.5 L6 11 L11.5 3.5" fill="none" stroke="#33B07C" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg></span><span class="lab">Confidence band</span></div>
+        </div></div>
+        <div class="grp"><span class="ghead" style="color:var(--dprimary);">Run the day</span><div class="cols">
+          <div class="it"><span class="co" style="background:var(--dsuccessSoft);"><svg width="10" height="10" viewBox="0 0 14 14"><path d="M2.5 7.5 L6 11 L11.5 3.5" fill="none" stroke="#33B07C" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg></span><span class="lab">Routines</span></div>
+          <div class="it"><span class="co" style="background:var(--dsuccessSoft);"><svg width="10" height="10" viewBox="0 0 14 14"><path d="M2.5 7.5 L6 11 L11.5 3.5" fill="none" stroke="#33B07C" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg></span><span class="lab">Goal coach</span></div>
+          <div class="it"><span class="co" style="background:var(--dsuccessSoft);"><svg width="10" height="10" viewBox="0 0 14 14"><path d="M2.5 7.5 L6 11 L11.5 3.5" fill="none" stroke="#33B07C" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg></span><span class="lab">Lock-screen timer</span></div>
+          <div class="it"><span class="co" style="background:var(--dsuccessSoft);"><svg width="10" height="10" viewBox="0 0 14 14"><path d="M2.5 7.5 L6 11 L11.5 3.5" fill="none" stroke="#33B07C" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg></span><span class="lab">Hyperfocus guard</span></div>
+        </div></div>
+        <div class="grp"><span class="ghead" style="color:var(--dprimary);">Learn your patterns</span><div class="cols">
+          <div class="it"><span class="co" style="background:var(--dsuccessSoft);"><svg width="10" height="10" viewBox="0 0 14 14"><path d="M2.5 7.5 L6 11 L11.5 3.5" fill="none" stroke="#33B07C" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg></span><span class="lab">What steals your time</span></div>
+          <div class="it"><span class="co" style="background:var(--dsuccessSoft);"><svg width="10" height="10" viewBox="0 0 14 14"><path d="M2.5 7.5 L6 11 L11.5 3.5" fill="none" stroke="#33B07C" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg></span><span class="lab">Weekly review</span></div>
+          <div class="it"><span class="co" style="background:var(--dsuccessSoft);"><svg width="10" height="10" viewBox="0 0 14 14"><path d="M2.5 7.5 L6 11 L11.5 3.5" fill="none" stroke="#33B07C" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg></span><span class="lab">PDF export</span></div>
+          <div class="it"><span class="co" style="background:var(--dsuccessSoft);"><svg width="10" height="10" viewBox="0 0 14 14"><path d="M2.5 7.5 L6 11 L11.5 3.5" fill="none" stroke="#33B07C" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg></span><span class="lab">Full history</span></div>
+        </div></div>
+      </div>
+
+      <div class="plans">
+        <div class="plan"><span class="radio"></span><div class="pl"><span class="pt">Lifetime</span><span class="pn">Pay once. Yours forever.</span></div><div class="pr"><span class="pp num">$89.00</span></div></div>
+        <div class="plan sel"><span class="radio on"></span><div class="pl"><span class="pt">Yearly <span class="badge">MOST POPULAR</span></span><span class="pn">7 days free, then $34.99 a year</span></div><div class="pr"><span class="pp num">$2.92</span><span class="pm">per month</span></div></div>
+        <div class="plan"><span class="radio"></span><div class="pl"><span class="pt">Monthly</span><span class="pn">7 days free, then billed monthly</span></div><div class="pr"><span class="pp num">$4.99</span></div></div>
+      </div>
+
+      <div class="airy">
+        <div class="step"><div class="railcol"><div class="dot today"></div><div class="line"></div></div>
+          <div class="stx"><span class="sh">Today</span><span class="sd">All of Pro, free. Nothing is charged.</span></div></div>
+        <div class="step"><div class="railcol"><div class="dot next"></div><div class="line"></div></div>
+          <div class="stx"><span class="sh">Day 5</span><span class="sd"><b>We remind you</b> the trial is ending.</span></div></div>
+        <div class="step"><div class="railcol"><div class="dot next"></div></div>
+          <div class="stx"><span class="sh">Day 7</span><span class="sd">Trial ends. Cancel before and you pay nothing.</span></div></div>
+      </div>
+
+      <div><div class="cta"><div class="edge"></div><div class="face">Try 7 days free</div></div></div>
+      <div class="foot">
+        <div class="reassure">No payment now. Cancel anytime.</div>
+        <div class="trust"><b>Calibration stays free, always.</b> Pro just adds the payoff.</div>
+        <div class="renew">Plans renew until cancelled.</div>
+        <div class="links"><span>Restore Purchases</span><span class="d">·</span><span>Terms</span><span class="d">·</span><span>Privacy</span></div>
+      </div>
+    </div></div>
+  </div>
+
+</div>
+</body>
+</html>

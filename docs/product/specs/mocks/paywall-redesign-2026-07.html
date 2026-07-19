@@ -1,0 +1,402 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Paywall redesign — brainstorm (2026-07)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:ital,wght@0,400;0,500;0,600;0,700;0,800;1,400&family=Inter:wght@600;700&display=swap" rel="stylesheet">
+<style>
+  /* ── Whenbee LIGHT tokens (src/theme/tokens.ts, light palette) ── */
+  :root{
+    --bg:#F4F2FC; --surface:#FFFFFF; --surfaceSunken:#F1EEFB;
+    --hairline:#DAD5C9; --divider:rgba(0,0,0,0.10);
+    --ink:#20233A; --inkSoft:#5C5F73; --inkFaint:#9B9DAB;
+    --primary:#6B5BE6; --primaryEdge:#463B9E; --primarySoft:#E4E0FA; --primaryWash:#EFEDFC;
+    --accent:#EEAE4D; --accentEdge:#C68A30; --accentSoft:#FBEFD6; --accentChip:#F3E2C0;
+    --honeyWash:#FBF2DF; --amberText:#8A5A12;
+    --success:#33B07C; --successSoft:#E2F4EA;
+    --danger:#D14343; --dangerSoft:rgba(209,67,67,0.08); /* PROPOSED token — add to tokens.ts */
+    --onAmber:#20233A;
+    --rCard:16px; --rMd:12px; --rSm:8px; --rFull:999px;
+    --ui:'Plus Jakarta Sans',system-ui,sans-serif; --num:'Inter',system-ui,sans-serif;
+  }
+  *{box-sizing:border-box;margin:0;padding:0;}
+  body{background:#E7E3F6;font-family:var(--ui);color:var(--ink);-webkit-font-smoothing:antialiased;padding:34px 0 80px;}
+  h1.pagetitle{text-align:center;font-size:15px;font-weight:800;margin-bottom:6px;}
+  p.pagesub{text-align:center;font-size:12px;color:var(--inkSoft);margin-bottom:30px;}
+  .stage{display:flex;gap:44px;justify-content:center;align-items:flex-start;flex-wrap:wrap;}
+  .colwrap{display:flex;flex-direction:column;align-items:center;max-width:400px;}
+  .optlabel{font-size:13px;font-weight:800;margin-bottom:4px;}
+  .optnote{font-size:11px;line-height:16px;color:var(--inkSoft);margin:0 0 14px;text-align:center;max-width:352px;}
+  .phone{width:372px;background:var(--bg);border-radius:30px;padding:10px 20px 26px;border:1px solid rgba(0,0,0,0.06);box-shadow:0 24px 60px rgba(32,35,58,.18);}
+  .grab{width:36px;height:5px;border-radius:999px;background:var(--inkFaint);opacity:.5;margin:4px auto 16px;}
+  .deck{display:flex;flex-direction:column;gap:16px;}
+  .num{font-family:var(--num);font-variant-numeric:tabular-nums;}
+
+  /* ── shared primitives ── */
+  .card{background:var(--surface);border-radius:var(--rCard);padding:16px;}
+  .eb{font-size:10px;font-weight:800;letter-spacing:2px;text-transform:uppercase;}
+  .procoin{display:inline-flex;align-items:center;gap:6px;background:var(--accentChip);border-radius:var(--rFull);padding:5px 12px;align-self:flex-start;}
+  .procoin .eb{color:var(--amberText);letter-spacing:1.5px;}
+  .title{font-size:24px;line-height:29px;font-weight:800;letter-spacing:-0.5px;text-wrap:balance;}
+  .sub{font-size:13px;line-height:19px;color:var(--inkSoft);font-weight:500;}
+
+  /* amber coin CTA (AppButton amber, depth 8/7) */
+  .cta{position:relative;margin-bottom:8px;}
+  .cta .edge{position:absolute;left:0;right:0;top:8px;bottom:-8px;border-radius:var(--rFull);background:var(--accentEdge);}
+  .cta .face{position:relative;border-radius:var(--rFull);background:var(--accent);color:var(--onAmber);font-weight:800;font-size:16px;text-align:center;padding:14px 24px;}
+
+  /* plan rows */
+  .plans{display:flex;flex-direction:column;gap:10px;}
+  .plan{display:flex;align-items:center;gap:12px;background:var(--surface);border:1.5px solid transparent;border-radius:var(--rCard);padding:13px 16px;}
+  .plan.sel{background:var(--primarySoft);border-color:var(--primary);}
+  .plan .pl{flex:1;display:flex;flex-direction:column;gap:2px;}
+  .plan .pt{font-size:15px;font-weight:800;display:flex;align-items:center;gap:8px;}
+  .plan .pn{font-size:11.5px;color:var(--inkSoft);font-weight:500;}
+  .plan .pr{display:flex;flex-direction:column;align-items:flex-end;gap:2px;}
+  .plan .pp{font-family:var(--num);font-weight:700;font-size:17px;}
+  .plan .pm{font-size:11px;color:var(--inkSoft);font-weight:600;}
+  .badge{background:var(--accent);color:var(--onAmber);border-radius:var(--rFull);padding:2.5px 8px;font-size:9.5px;font-weight:800;letter-spacing:.5px;}
+  .radio{width:20px;height:20px;border-radius:50%;border:2px solid var(--inkFaint);flex:none;}
+  .radio.on{border-color:var(--primary);background:radial-gradient(circle at center,var(--primary) 0 5px,transparent 5.5px);}
+
+  /* vertical trial timeline */
+  .vtl{display:flex;flex-direction:column;gap:0;}
+  .vtl .step{display:flex;gap:12px;}
+  .vtl .railcol{display:flex;flex-direction:column;align-items:center;width:22px;flex:none;}
+  .vtl .dot{width:22px;height:22px;border-radius:50%;flex:none;display:flex;align-items:center;justify-content:center;}
+  .vtl .dot.today{background:var(--accent);}
+  .vtl .dot.today::after{content:"✓";font-size:11px;font-weight:800;color:var(--onAmber);}
+  .vtl .dot.next{background:var(--surfaceSunken);border:2px solid var(--primarySoft);}
+  .vtl .line{width:2px;flex:1;min-height:14px;background:var(--primarySoft);}
+  .vtl .stx{padding:1px 0 16px;display:flex;flex-direction:column;gap:1px;}
+  .vtl .step:last-child .stx{padding-bottom:0;}
+  .vtl .sh{font-size:13px;font-weight:800;}
+  .vtl .sd{font-size:12px;line-height:17px;color:var(--inkSoft);font-weight:500;}
+  .vtl .sd b{color:var(--ink);font-weight:700;}
+
+  /* horizontal timeline w/ connecting line (Option B) */
+  .htl{position:relative;display:flex;gap:8px;}
+  .htl::before{content:"";position:absolute;top:6px;left:14px;right:calc(33% - 8px);height:2px;background:var(--primarySoft);}
+  .htl .col{flex:1;display:flex;flex-direction:column;gap:4px;position:relative;}
+  .htl .hdot{width:13px;height:13px;border-radius:50%;background:var(--surface);border:2px solid var(--inkFaint);}
+  .htl .hdot.on{background:var(--accent);border-color:var(--accent);}
+  .htl .hh{font-size:12px;font-weight:800;margin-top:2px;}
+  .htl .hd{font-size:11px;line-height:15px;color:var(--inkSoft);font-weight:500;}
+
+  /* compact before/after hero */
+  .hero{display:flex;flex-direction:column;gap:10px;}
+  .hcols{display:flex;gap:10px;}
+  .hcol{flex:1;background:var(--surfaceSunken);border-radius:var(--rMd);padding:10px 12px;display:flex;flex-direction:column;gap:7px;}
+  .hcol .eb{letter-spacing:1.5px;}
+  .bars{display:flex;flex-direction:column;gap:5px;}
+  .bar{height:9px;border-radius:5px;}
+  .hnote{font-size:11px;line-height:15px;font-weight:600;color:var(--inkSoft);}
+  .hnote.after{color:var(--amberText);font-weight:800;}
+  .legend{display:flex;gap:14px;}
+  .li{display:flex;align-items:center;gap:6px;font-size:10.5px;color:var(--inkSoft);font-weight:600;}
+  .sw{width:12px;height:8px;border-radius:3px;}
+
+  /* value chips (Option B) */
+  .chips{display:flex;flex-wrap:wrap;gap:7px;justify-content:center;}
+  .chip{display:flex;align-items:center;gap:6px;background:var(--surface);border-radius:var(--rFull);padding:6px 11px;font-size:11.5px;font-weight:700;color:var(--ink);}
+  .chip svg{flex:none;}
+
+  /* quiet footer group */
+  .foot{display:flex;flex-direction:column;gap:9px;align-items:center;padding-top:2px;}
+  .reassure{font-size:12.5px;font-weight:600;color:var(--inkSoft);text-align:center;}
+  .trust{font-size:12px;line-height:17px;color:var(--inkSoft);text-align:center;font-weight:500;}
+  .trust b{color:var(--ink);font-weight:800;}
+  .renew{font-size:10.5px;color:var(--inkFaint);text-align:center;font-weight:500;}
+  .links{display:flex;gap:8px;align-items:center;font-size:12px;font-weight:700;color:var(--inkSoft);}
+  .links .d{color:var(--inkFaint);font-weight:400;}
+  .quote{display:flex;gap:7px;align-items:flex-start;justify-content:center;max-width:290px;}
+  .quote .qt{font-size:11px;line-height:16px;font-style:italic;color:var(--inkFaint);text-align:center;font-weight:400;}
+
+  /* error banner */
+  .errband{display:flex;gap:10px;align-items:flex-start;background:var(--dangerSoft);border-radius:var(--rMd);padding:11px 13px;}
+  .errband .et{font-size:12.5px;line-height:18px;font-weight:500;color:var(--ink);}
+  .errband .et b{font-weight:800;color:var(--danger);}
+  .erricon{width:18px;height:18px;border-radius:50%;background:var(--danger);color:#fff;font-size:11px;font-weight:800;display:flex;align-items:center;justify-content:center;flex:none;margin-top:1px;}
+
+  /* success screen */
+  .success{display:flex;flex-direction:column;gap:18px;align-items:center;padding-top:26px;}
+  .halo{position:relative;width:120px;height:120px;display:flex;align-items:center;justify-content:center;}
+  .halo .ring{position:absolute;inset:0;border-radius:50%;background:radial-gradient(circle,var(--accentSoft) 0 58%,transparent 62%);}
+  .halo .coin{position:relative;width:76px;height:76px;border-radius:50%;background:var(--accent);display:flex;align-items:center;justify-content:center;box-shadow:0 6px 0 var(--accentEdge);}
+  .stitle{font-size:26px;font-weight:800;letter-spacing:-0.5px;text-align:center;}
+  .ssub{font-size:13px;line-height:19px;color:var(--inkSoft);font-weight:500;text-align:center;max-width:280px;}
+  .rows{width:100%;display:flex;flex-direction:column;gap:0;background:var(--surface);border-radius:var(--rCard);padding:6px 16px;}
+  .row{display:flex;gap:11px;align-items:center;padding:11px 0;}
+  .row + .row{border-top:1px solid var(--surfaceSunken);}
+  .row .ri{width:30px;height:30px;border-radius:var(--rSm);background:var(--primaryWash);display:flex;align-items:center;justify-content:center;flex:none;}
+  .row .rt{font-size:12.5px;line-height:17px;font-weight:600;color:var(--ink);}
+  .row .rt b{font-weight:800;}
+  .row .rt .mut{color:var(--inkSoft);font-weight:500;}
+  .anno{font-size:10px;line-height:14px;color:var(--inkFaint);text-align:center;font-style:italic;}
+</style>
+</head>
+<body>
+<h1 class="pagetitle">Whenbee paywall — redesign brainstorm (research-led)</h1>
+<p class="pagesub">Blinkist evidence: the paywall's one job is killing "I'll forget to cancel" fear. Fewer words, one obvious plan, one quiet footer row.</p>
+<div class="stage">
+
+  <!-- ══════════ OPTION A — "One decision" ══════════ -->
+  <div class="colwrap">
+    <div class="optlabel">A · One decision (keeps the hero, compact)</div>
+    <p class="optnote">Hero halved · yearly pre-selected, badge on the card · vertical trial timeline with the reminder promise · one reassurance line · footer collapsed to a single muted row. "Manage subscription" moved to Settings (research: no top app shows it pre-purchase).</p>
+    <div class="phone"><div class="grab"></div><div class="deck">
+
+      <div style="display:flex;flex-direction:column;gap:8px;">
+        <span class="procoin"><svg width="10" height="10" viewBox="0 0 10 10"><circle cx="5" cy="5" r="4" fill="#8A5A12"/></svg><span class="eb">Whenbee Pro</span></span>
+        <div class="title">Your real day, before you live it.</div>
+        <div class="sub">You did the logging. Pro carries your real numbers into everything you plan.</div>
+      </div>
+
+      <div class="card hero">
+        <div class="hcols">
+          <div class="hcol">
+            <span class="eb" style="color:var(--inkSoft);">Your plan</span>
+            <div class="bars">
+              <div class="bar" style="width:92%;background:var(--inkFaint);"></div>
+              <div class="bar" style="width:74%;background:var(--inkFaint);"></div>
+              <div class="bar" style="width:100%;background:var(--inkFaint);opacity:.4;"></div>
+            </div>
+            <div class="hnote">Crashes 5:00.</div>
+          </div>
+          <div class="hcol">
+            <span class="eb" style="color:var(--amberText);">Honest day</span>
+            <div class="bars">
+              <div class="bar" style="width:90%;background:var(--primary);"></div>
+              <div class="bar" style="width:34%;background:var(--accent);"></div>
+              <div class="bar" style="width:72%;background:var(--primary);"></div>
+            </div>
+            <div class="hnote after">Ends 7:10. It fits.</div>
+          </div>
+        </div>
+        <div class="legend">
+          <span class="li"><span class="sw" style="background:var(--primary);"></span>your real time</span>
+          <span class="li"><span class="sw" style="background:var(--accent);"></span>the buffer Whenbee adds</span>
+        </div>
+      </div>
+
+      <div class="plans">
+        <div class="plan sel">
+          <span class="radio on"></span>
+          <div class="pl">
+            <span class="pt">Yearly <span class="badge">SAVE 42%</span></span>
+            <span class="pn">7 days free, then billed yearly</span>
+          </div>
+          <div class="pr"><span class="pp num">$34.99</span><span class="pm num">≈ $2.92 / mo</span></div>
+        </div>
+        <div class="plan">
+          <span class="radio"></span>
+          <div class="pl"><span class="pt">Lifetime</span><span class="pn">Pay once. Yours forever.</span></div>
+          <div class="pr"><span class="pp num">$89.00</span></div>
+        </div>
+        <div class="plan">
+          <span class="radio"></span>
+          <div class="pl"><span class="pt">Monthly</span><span class="pn">7 days free, then billed monthly</span></div>
+          <div class="pr"><span class="pp num">$4.99</span></div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="vtl">
+          <div class="step">
+            <div class="railcol"><div class="dot today"></div><div class="line"></div></div>
+            <div class="stx"><span class="sh">Today</span><span class="sd">All of Pro, free. Nothing is charged.</span></div>
+          </div>
+          <div class="step">
+            <div class="railcol"><div class="dot next"></div><div class="line"></div></div>
+            <div class="stx"><span class="sh">Day 5</span><span class="sd"><b>We remind you</b> the trial is ending.</span></div>
+          </div>
+          <div class="step">
+            <div class="railcol"><div class="dot next"></div></div>
+            <div class="stx"><span class="sh">Day 7</span><span class="sd">Trial ends. Cancel before and you pay nothing.</span></div>
+          </div>
+        </div>
+      </div>
+
+      <div>
+        <div class="cta"><div class="edge"></div><div class="face">Try 7 days free</div></div>
+      </div>
+
+      <div class="foot">
+        <div class="reassure">No payment now. Cancel anytime.</div>
+        <div class="trust"><b>Calibration stays free, always.</b> Pro just adds the payoff.</div>
+        <div class="renew">Plans renew until cancelled.</div>
+        <div class="links"><span>Restore Purchases</span><span class="d">·</span><span>Terms</span><span class="d">·</span><span>Privacy</span></div>
+      </div>
+
+    </div></div>
+  </div>
+
+  <!-- ══════════ OPTION B — "No hero, anchored" ══════════ -->
+  <div class="colwrap">
+    <div class="optlabel">B · No hero, lifetime as anchor</div>
+    <p class="optnote">Hero replaced by five feature chips (the 5-row text stack becomes scannable in one glance) · Lifetime listed first so $34.99 reads small (decoy pricing, Nebula pattern) · timeline stays horizontal but gains a connecting line + integrated card so the dots stop looking random.</p>
+    <div class="phone"><div class="grab"></div><div class="deck">
+
+      <div style="display:flex;flex-direction:column;gap:8px;">
+        <span class="procoin"><svg width="10" height="10" viewBox="0 0 10 10"><circle cx="5" cy="5" r="4" fill="#8A5A12"/></svg><span class="eb">Whenbee Pro</span></span>
+        <div class="title">Your real day, before you live it.</div>
+        <div class="sub">Everything Pro adds, powered by the numbers you already earned:</div>
+      </div>
+
+      <div class="chips">
+        <span class="chip"><svg width="12" height="12" viewBox="0 0 12 12"><rect x="1" y="2" width="10" height="9" rx="2" fill="none" stroke="#6B5BE6" stroke-width="1.4"/><line x1="1" y1="5" x2="11" y2="5" stroke="#6B5BE6" stroke-width="1.4"/></svg>Honest calendar</span>
+        <span class="chip"><svg width="12" height="12" viewBox="0 0 12 12"><path d="M2 10 L2 6 M6 10 L6 3 M10 10 L10 7" stroke="#6B5BE6" stroke-width="1.6" stroke-linecap="round"/></svg>Sharper insight</span>
+        <span class="chip"><svg width="12" height="12" viewBox="0 0 12 12"><circle cx="6" cy="6" r="4.5" fill="none" stroke="#6B5BE6" stroke-width="1.4"/><path d="M6 3.5 V6 L8 7.5" stroke="#6B5BE6" stroke-width="1.4" fill="none" stroke-linecap="round"/></svg>Routines &amp; goals</span>
+        <span class="chip"><svg width="12" height="12" viewBox="0 0 12 12"><rect x="2" y="1.5" width="8" height="9" rx="1.5" fill="none" stroke="#6B5BE6" stroke-width="1.4"/><line x1="4" y1="4" x2="8" y2="4" stroke="#6B5BE6" stroke-width="1.2"/><line x1="4" y1="6" x2="8" y2="6" stroke="#6B5BE6" stroke-width="1.2"/></svg>Week in review</span>
+        <span class="chip"><svg width="12" height="12" viewBox="0 0 12 12"><path d="M6 1.5 a3.2 3.2 0 0 1 3.2 3.2 c0 2.6 1 3.1 1 3.1 H1.8 s1-.5 1-3.1 A3.2 3.2 0 0 1 6 1.5 Z" fill="none" stroke="#6B5BE6" stroke-width="1.3"/></svg>Lock-screen timer</span>
+      </div>
+
+      <div class="plans">
+        <div class="plan">
+          <span class="radio"></span>
+          <div class="pl"><span class="pt">Lifetime</span><span class="pn">Pay once. Yours forever.</span></div>
+          <div class="pr"><span class="pp num">$89.00</span></div>
+        </div>
+        <div class="plan sel">
+          <span class="radio on"></span>
+          <div class="pl">
+            <span class="pt">Yearly <span class="badge">MOST POPULAR</span></span>
+            <span class="pn">7 days free, then $34.99 a year</span>
+          </div>
+          <div class="pr"><span class="pp num">$2.92</span><span class="pm">per month</span></div>
+        </div>
+        <div class="plan">
+          <span class="radio"></span>
+          <div class="pl"><span class="pt">Monthly</span><span class="pn">7 days free, then billed monthly</span></div>
+          <div class="pr"><span class="pp num">$4.99</span></div>
+        </div>
+      </div>
+
+      <div class="card" style="background:var(--primaryWash);">
+        <div style="display:flex;flex-direction:column;gap:12px;">
+          <span class="eb" style="color:var(--primary);">How the free trial works</span>
+          <div class="htl">
+            <div class="col"><span class="hdot on"></span><span class="hh">Today</span><span class="hd">All of Pro, free</span></div>
+            <div class="col"><span class="hdot"></span><span class="hh">Day 5</span><span class="hd">We remind you</span></div>
+            <div class="col"><span class="hdot"></span><span class="hh">Day 7</span><span class="hd">Cancel before, pay nothing</span></div>
+          </div>
+        </div>
+      </div>
+
+      <div>
+        <div class="cta"><div class="edge"></div><div class="face">Try 7 days free</div></div>
+      </div>
+
+      <div class="foot">
+        <div class="reassure">No payment now. Cancel anytime.</div>
+        <div class="trust"><b>Calibration stays free, always.</b> Pro just adds the payoff.</div>
+        <div class="quote">
+          <svg width="11" height="11" viewBox="0 0 12 12" style="margin-top:2px;flex:none;"><path d="M6 10.5 C3 8 1 6.2 1 4.2 A2.6 2.6 0 0 1 6 3 A2.6 2.6 0 0 1 11 4.2 C11 6.2 9 8 6 10.5 Z" fill="none" stroke="#EEAE4D" stroke-width="1.2"/></svg>
+          <span class="qt">Built by people who are late to everything. It's the tool we needed first.</span>
+        </div>
+        <div class="renew">Plans renew until cancelled.</div>
+        <div class="links"><span>Restore Purchases</span><span class="d">·</span><span>Terms</span><span class="d">·</span><span>Privacy</span></div>
+      </div>
+
+    </div></div>
+  </div>
+
+  <!-- ══════════ SUCCESS SCREEN ══════════ -->
+  <div class="colwrap">
+    <div class="optlabel">C · Post-purchase success (new screen)</div>
+    <p class="optnote">Blinkist's masterstroke: the success screen keeps the paywall's promise. Confirms exactly what happens with dates, shows the reminder is set, ends in one action. Animation: honey ring blooms via opacity, bee paths draw in, coin settles with a soft ease-out scale (0.95→1) — no bounce, no slide.</p>
+    <div class="phone"><div class="grab"></div>
+      <div class="success">
+        <div class="halo">
+          <div class="ring"></div>
+          <div class="coin">
+            <svg width="34" height="34" viewBox="0 0 34 34"><path d="M8 18 L15 25 L27 10" fill="none" stroke="#20233A" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </div>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:6px;align-items:center;">
+          <div class="stitle">You're Pro.</div>
+          <div class="ssub">Every honest number you earned now works everywhere you plan.</div>
+        </div>
+        <div class="rows">
+          <div class="row">
+            <span class="ri"><svg width="14" height="14" viewBox="0 0 14 14"><path d="M2.5 7.5 L6 11 L11.5 3.5" fill="none" stroke="#6B5BE6" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+            <span class="rt"><b>7-day free trial started.</b> <span class="mut">Nothing is charged before July 26.</span></span>
+          </div>
+          <div class="row">
+            <span class="ri"><svg width="14" height="14" viewBox="0 0 14 14"><path d="M7 1.8 a3.6 3.6 0 0 1 3.6 3.6 c0 3 1.2 3.6 1.2 3.6 H2.2 s1.2-.6 1.2-3.6 A3.6 3.6 0 0 1 7 1.8 Z" fill="none" stroke="#6B5BE6" stroke-width="1.5"/><path d="M5.8 11 a1.3 1.3 0 0 0 2.4 0" fill="none" stroke="#6B5BE6" stroke-width="1.5" stroke-linecap="round"/></svg></span>
+            <span class="rt"><b>Reminder set for July 24.</b> <span class="mut">We'll nudge you before the trial ends.</span></span>
+          </div>
+          <div class="row">
+            <span class="ri"><svg width="14" height="14" viewBox="0 0 14 14"><rect x="1.5" y="2.5" width="11" height="10" rx="2" fill="none" stroke="#6B5BE6" stroke-width="1.5"/><line x1="1.5" y1="5.8" x2="12.5" y2="5.8" stroke="#6B5BE6" stroke-width="1.5"/></svg></span>
+            <span class="rt"><b>Your day is honest now.</b> <span class="mut">Calendar, routines, insights, review, lock-screen timer.</span></span>
+          </div>
+        </div>
+        <div style="width:100%;">
+          <div class="cta"><div class="edge"></div><div class="face">See my honest day</div></div>
+        </div>
+        <div class="anno">Bee glyph replaces the check in the real build — wings draw, honey ring fades in. Trial rows use the real purchase date.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══════════ ERROR STATE ══════════ -->
+  <div class="colwrap">
+    <div class="optlabel">D · Purchase error (inline, calm)</div>
+    <p class="optnote">User-cancelled = show nothing (silent return — most common indie mistake is alerting on a deliberate cancel). Real errors get an inline band above the CTA: no-blame copy, states no charge happened, the CTA itself is the retry. Selection is preserved. Restore-with-nothing-found stays neutral ink, never red.</p>
+    <div class="phone"><div class="grab"></div><div class="deck">
+
+      <div style="display:flex;flex-direction:column;gap:8px;">
+        <span class="procoin"><svg width="10" height="10" viewBox="0 0 10 10"><circle cx="5" cy="5" r="4" fill="#8A5A12"/></svg><span class="eb">Whenbee Pro</span></span>
+        <div class="title">Your real day, before you live it.</div>
+      </div>
+
+      <div class="plans">
+        <div class="plan sel">
+          <span class="radio on"></span>
+          <div class="pl">
+            <span class="pt">Yearly <span class="badge">SAVE 42%</span></span>
+            <span class="pn">7 days free, then billed yearly</span>
+          </div>
+          <div class="pr"><span class="pp num">$34.99</span><span class="pm num">≈ $2.92 / mo</span></div>
+        </div>
+      </div>
+
+      <div class="errband">
+        <span class="erricon">!</span>
+        <span class="et"><b>That didn't go through.</b> You weren't charged. Check your connection and try once more.</span>
+      </div>
+
+      <div>
+        <div class="cta"><div class="edge"></div><div class="face">Try again</div></div>
+      </div>
+
+      <div class="foot">
+        <div class="reassure">No payment now. Cancel anytime.</div>
+      </div>
+
+      <div style="height:1px;background:var(--divider);margin:4px 0;"></div>
+
+      <div style="display:flex;flex-direction:column;gap:8px;">
+        <span class="eb" style="color:var(--inkSoft);">Restore, nothing found — neutral, not an error</span>
+        <div class="errband" style="background:var(--surfaceSunken);">
+          <span class="et">No earlier purchase on this Apple ID. If you subscribed on another account, switch and restore there.</span>
+        </div>
+      </div>
+
+      <div style="display:flex;flex-direction:column;gap:8px;">
+        <span class="eb" style="color:var(--inkSoft);">Payment declined — actionable variant</span>
+        <div class="errband">
+          <span class="erricon">!</span>
+          <span class="et"><b>Your payment method was declined.</b> You weren't charged. Check it in App Store settings, then try again.</span>
+        </div>
+      </div>
+
+    </div></div>
+  </div>
+
+</div>
+</body>
+</html>

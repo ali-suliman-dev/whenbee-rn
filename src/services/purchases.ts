@@ -178,3 +178,4 @@ export function configurePurchases(): boolean {
   configured = true;
   return true;
 }
+
