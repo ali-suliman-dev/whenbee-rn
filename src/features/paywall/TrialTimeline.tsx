@@ -74,7 +74,7 @@ export function TrialTimeline() {
               ) : (
                 <View style={dotNext} />
               )}
-              {last ? null : <DottedRail />}
+              {last ? null : <DottedRail topOffset={t.iconSize.xl} />}
             </View>
             <View style={last ? stxLast : stx}>
               <Text style={head}>{s.head}</Text>

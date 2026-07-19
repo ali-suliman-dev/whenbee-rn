@@ -93,7 +93,7 @@ export function DayWithPro() {
                   />
                 </View>
               </View>
-              {last ? null : <DottedRail />}
+              {last ? null : <DottedRail topOffset={t.size.momentCoin + t.borderWidth.thick} />}
             </View>
             <View style={last ? bodyLast : body}>
               <Text style={heading}>{m.heading}</Text>
