@@ -31,7 +31,7 @@ Verify claims marked **(VERIFY)** against a **fresh `npx expo prebuild`** — so
 | 16 | P2 | Secrets | Out-of-band: confirm EAS `EXPO_PUBLIC_RC_*` = RC **public** keys, `SUPABASE_ANON_KEY` = **anon** | `[ ]` |
 | 17 | P2 | Secrets | Confirm **RLS enabled** on `feedback_submissions` (only guard on that path) | `[ ]` |
 | 18 | P3 | Config | Bump `version` 0.1.0 → 1.0.0 (app.json, package.json) | `[ ]` |
-| 19 | P3 | Legal | `src/lib/legal.ts` privacy/terms URLs must be live (no 404) before submit | `[ ]` |
+| 19 | P3 | Legal | `src/lib/legal.ts` privacy/terms URLs must be live (no 404) before submit | `[x]` live 2026-07-19 |
 | 20 | P2 | Config | `supportsTablet:true` (iOS) — verify layout or set false (Apple; N/A Play but same build) | `[ ]` |
 
 ---
@@ -102,5 +102,5 @@ Verify claims marked **(VERIFY)** against a **fresh `npx expo prebuild`** — so
 ## Order of operations
 1. Clear P0 (1–3) — code + config, small.
 2. P1 config/build (4, 10) + manifest verify (5–6).
-3. Rewrite the disclosure surfaces (8–9, 11) — privacy policy, manifest, and both stores' forms — then complete Console declarations (7).
+3. Rewrite the disclosure surfaces (8–9, 11) — privacy policy, manifest, and both stores' forms — then complete Console declarations (7). **Paste-ready answers for 7, 8–9, 11: [`13-PLAY-CONSOLE-ANSWERS.md`](13-PLAY-CONSOLE-ANSWERS.md); the hosted policy (19) is live and already covers the feedback path.**
 4. P2/P3 cleanup, then EAS production build → internal track → pre-launch report → production.

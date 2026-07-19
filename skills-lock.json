@@ -1,0 +1,11 @@
+{
+  "version": 1,
+  "skills": {
+    "terms-of-service": {
+      "source": "shawnpang/startup-founder-skills",
+      "sourceType": "github",
+      "skillPath": "skills/terms-of-service/SKILL.md",
+      "computedHash": "044956db2c4b3ec158127a9e5efa0683e42ac4eaa97679cf15a15b1c10d496d3"
+    }
+  }
+}
