@@ -154,6 +154,7 @@ export interface AppEventProps {
       | 'calendar_export'
       | 'day_capacity';
     readiness?: 'pre' | 'honest';
+    feature_variant?: 'day' | 'groups';
   };
   founder_reserve: { result: 'reserved' };
   plan_selected: { plan: 'yearly' | 'lifetime' | 'monthly' };
@@ -161,6 +162,11 @@ export interface AppEventProps {
   purchase: { plan: string; price: number; result: string };
   restore_purchases: { plan?: string; price?: number; result: string };
   manage_subscription: { source: 'settings' | 'paywall' };
+  // Post-purchase welcome screen + the Day-5 trial-reminder promise.
+  pro_welcome_view: { plan: string };
+  pro_welcome_cta: Record<string, never>;
+  trial_reminder_scheduled: Record<string, never>;
+  trial_reminder_skipped: { reason: string };
 
   // ── On-device share ──────────────────────────────────────────────────────────
   plan_shared: { surface: 'plan' | 'archetype'; is_pro: boolean; result: 'shared' | 'gated' | 'error' };
