@@ -1,0 +1,262 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Feature section v2 — presence treatments</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Inter:wght@600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#F4F2FC; --surface:#FFFFFF; --surfaceSunken:#F1EEFB;
+    --surfaceRaisedEdge:#DAD3EC;
+    --ink:#20233A; --inkSoft:#5C5F73; --inkFaint:#9B9DAB;
+    --primary:#6B5BE6; --primarySoft:#E4E0FA; --primaryWash:#EFEDFC;
+    --accent:#EEAE4D; --accentSoft:#FBEFD6; --accentChip:#F3E2C0; --amberText:#8A5A12;
+    --rCard:16px; --rMd:12px; --rSm:8px; --rFull:999px;
+    --ui:'Plus Jakarta Sans',system-ui,sans-serif; --num:'Inter',system-ui,sans-serif;
+  }
+  *{box-sizing:border-box;margin:0;padding:0;}
+  body{background:#E7E3F6;font-family:var(--ui);color:var(--ink);-webkit-font-smoothing:antialiased;padding:34px 0 80px;}
+  h1.pagetitle{text-align:center;font-size:15px;font-weight:800;margin-bottom:6px;}
+  p.pagesub{text-align:center;font-size:12px;color:var(--inkSoft);margin-bottom:30px;max-width:880px;margin-left:auto;margin-right:auto;}
+  .stage{display:flex;gap:34px;justify-content:center;align-items:flex-start;flex-wrap:wrap;}
+  .colwrap{display:flex;flex-direction:column;align-items:center;max-width:400px;}
+  .optlabel{font-size:13px;font-weight:800;margin-bottom:4px;}
+  .optnote{font-size:11px;line-height:16px;color:var(--inkSoft);margin:0 0 14px;text-align:center;max-width:352px;}
+  .phone{width:372px;background:var(--bg);border-radius:30px;padding:10px 20px 0;border:1px solid rgba(0,0,0,0.06);
+    box-shadow:0 24px 60px rgba(32,35,58,.18);position:relative;overflow:hidden;height:600px;}
+  .phone::after{content:"";position:absolute;left:0;right:0;bottom:0;height:90px;background:linear-gradient(180deg,rgba(244,242,252,0),var(--bg) 75%);}
+  .grab{width:36px;height:5px;border-radius:999px;background:var(--inkFaint);opacity:.5;margin:4px auto 16px;}
+  .deck{display:flex;flex-direction:column;gap:16px;}
+  .num{font-family:var(--num);font-variant-numeric:tabular-nums;}
+  .eb{font-size:10px;font-weight:800;letter-spacing:2px;text-transform:uppercase;}
+  .procoin{display:inline-flex;align-items:center;gap:6px;background:var(--accentChip);border-radius:var(--rFull);padding:5px 12px;align-self:flex-start;}
+  .procoin .eb{color:var(--amberText);letter-spacing:1.5px;}
+  .title{font-size:24px;line-height:29px;font-weight:800;letter-spacing:-0.5px;text-wrap:balance;}
+  .sub{font-size:13px;line-height:19px;color:var(--inkSoft);font-weight:500;}
+  .plan{display:flex;align-items:center;gap:12px;background:var(--surface);border-radius:var(--rCard);padding:13px 16px;}
+  .plan .pl{flex:1;display:flex;flex-direction:column;gap:2px;}
+  .plan .pt{font-size:15px;font-weight:800;}
+  .plan .pn{font-size:11.5px;color:var(--inkSoft);font-weight:500;}
+  .plan .pp{font-family:var(--num);font-weight:700;font-size:17px;}
+  .radio{width:20px;height:20px;border-radius:50%;border:2px solid var(--inkFaint);flex:none;}
+
+  /* ══ G1 · Tile list ══ */
+  .g1{display:flex;flex-direction:column;gap:10px;padding:2px 6px;}
+  .g1 .row{display:flex;align-items:center;gap:13px;}
+  .g1 .tile{width:40px;height:40px;border-radius:var(--rMd);background:var(--primarySoft);display:flex;align-items:center;justify-content:center;flex:none;}
+  .g1 .tile.amber{background:var(--accentSoft);}
+  .g1 .lab{font-size:15px;font-weight:700;}
+
+  /* ══ G2 · Tactile chips ══ */
+  .g2{display:flex;flex-direction:column;gap:10px;align-items:center;padding:4px 0 6px;}
+  .g2 .row{display:flex;gap:9px;justify-content:center;}
+  .g2 .chip{display:flex;align-items:center;gap:8px;background:var(--surface);border-radius:var(--rFull);padding:9px 15px;
+    font-size:13.5px;font-weight:800;box-shadow:0 3px 0 var(--surfaceRaisedEdge);white-space:nowrap;}
+  .g2 .chip .k{color:var(--primary);}
+  .g2 .chip.amber{background:var(--accentSoft);box-shadow:0 3px 0 var(--accentChip);}
+  .g2 .chip.amber .k{color:var(--amberText);}
+
+  /* ══ G3 · Check list ══ */
+  .g3{display:flex;flex-direction:column;gap:12px;padding:2px 0 2px;align-self:center;}
+  .g3 .row{display:flex;align-items:center;gap:11px;}
+  .g3 .co{width:22px;height:22px;border-radius:50%;background:var(--accentSoft);display:flex;align-items:center;justify-content:center;flex:none;}
+  .g3 .lab{font-size:14.5px;font-weight:700;}
+
+  /* ══ G4 · Honeycomb path ══ */
+  .g4{display:flex;flex-direction:column;gap:2px;padding:2px 0;align-self:center;width:296px;}
+  .g4 .row{display:flex;align-items:center;gap:13px;height:52px;}
+  .g4 .row.indent{margin-left:30px;}
+  .g4 .hex{position:relative;width:50px;height:44px;flex:none;display:flex;align-items:center;justify-content:center;}
+  .g4 .hex svg.shape{position:absolute;inset:0;}
+  .g4 .hex .ic{position:relative;}
+  .g4 .lab{font-size:15px;font-weight:800;}
+  .g4 .sublab{font-size:11px;font-weight:500;color:var(--inkSoft);margin-top:1px;}
+
+  /* ══ G5 · A day with Pro (ribbon) ══ */
+  .g5{display:flex;flex-direction:column;gap:0;padding:6px 2px 0;}
+  .g5 .coins{display:flex;justify-content:space-between;padding:0 6px;}
+  .g5 .stop{display:flex;flex-direction:column;align-items:center;gap:7px;width:58px;}
+  .g5 .coin{width:38px;height:38px;border-radius:50%;background:var(--surface);box-shadow:0 3px 0 var(--surfaceRaisedEdge);display:flex;align-items:center;justify-content:center;}
+  .g5 .stop.amber .coin{background:var(--accent);box-shadow:0 3px 0 #C68A30;}
+  .g5 .t{font-family:var(--num);font-size:9px;font-weight:600;color:var(--inkFaint);letter-spacing:.3px;}
+  .g5 .track{position:relative;height:22px;margin:9px 2px 0;}
+  .g5 .track .bar{position:absolute;left:0;right:0;top:8px;height:6px;border-radius:3px;
+    background:linear-gradient(90deg,var(--primarySoft) 0 80%,var(--accentSoft) 80%);}
+  .g5 .track .tick{position:absolute;top:6px;width:2px;height:10px;border-radius:1px;background:rgba(255,255,255,.9);}
+  .g5 .lbls{display:flex;justify-content:space-between;padding:8px 0 0;}
+  .g5 .lb{width:58px;text-align:center;font-size:8.5px;font-weight:800;letter-spacing:.9px;text-transform:uppercase;color:var(--inkSoft);line-height:11px;}
+</style>
+</head>
+<body>
+<h1 class="pagetitle">Feature section, round 2 — presence over whisper</h1>
+<p class="pagesub">What the inspo shares: features get weight — real tiles, chunky chips, affirming checks, one per line, big type. Five takes in Whenbee's own language (lavender surfaces, indigo icons, amber = payoff, coin edges from the app's tactile tiles).</p>
+<div class="stage">
+
+  <!-- G1 -->
+  <div class="colwrap">
+    <div class="optlabel">G1 · Tile list</div>
+    <p class="optnote">The premium-app classic (inspo 1 + 4): 40pt lavender icon tiles, one feature per line, 15pt bold. The lead feature's tile goes amber — the payoff literally glows first. No card around it; the tiles ARE the weight.</p>
+    <div class="phone"><div class="grab"></div><div class="deck">
+      <div style="display:flex;flex-direction:column;gap:8px;">
+        <span class="procoin"><svg width="10" height="10" viewBox="0 0 10 10"><circle cx="5" cy="5" r="4" fill="#8A5A12"/></svg><span class="eb">Whenbee Pro</span></span>
+        <div class="title">Your real day, before you live it.</div>
+        <div class="sub">Everything Pro adds, powered by the numbers you already earned:</div>
+      </div>
+      <div class="g1">
+        <div class="row"><span class="tile amber"><svg width="19" height="19" viewBox="0 0 22 22"><rect x="2.5" y="4" width="17" height="15" rx="3.5" fill="none" stroke="#8A5A12" stroke-width="1.7"/><line x1="2.5" y1="9" x2="19.5" y2="9" stroke="#8A5A12" stroke-width="1.7"/><line x1="7" y1="2" x2="7" y2="6" stroke="#8A5A12" stroke-width="1.7" stroke-linecap="round"/><line x1="15" y1="2" x2="15" y2="6" stroke="#8A5A12" stroke-width="1.7" stroke-linecap="round"/></svg></span><span class="lab">Honest calendar</span></div>
+        <div class="row"><span class="tile"><svg width="19" height="19" viewBox="0 0 22 22"><path d="M4 18 L4 11 M11 18 L11 5 M18 18 L18 13" stroke="#6B5BE6" stroke-width="2.1" stroke-linecap="round"/></svg></span><span class="lab">Sharper insight</span></div>
+        <div class="row"><span class="tile"><svg width="19" height="19" viewBox="0 0 22 22"><circle cx="11" cy="11" r="8" fill="none" stroke="#6B5BE6" stroke-width="1.7"/><path d="M11 6.5 V11 L14.5 13.5" stroke="#6B5BE6" stroke-width="1.7" fill="none" stroke-linecap="round"/></svg></span><span class="lab">Routines &amp; goals</span></div>
+        <div class="row"><span class="tile"><svg width="19" height="19" viewBox="0 0 22 22"><rect x="4" y="2.5" width="14" height="17" rx="2.5" fill="none" stroke="#6B5BE6" stroke-width="1.7"/><line x1="7.5" y1="7.5" x2="14.5" y2="7.5" stroke="#6B5BE6" stroke-width="1.6" stroke-linecap="round"/><line x1="7.5" y1="11" x2="14.5" y2="11" stroke="#6B5BE6" stroke-width="1.6" stroke-linecap="round"/><line x1="7.5" y1="14.5" x2="11.5" y2="14.5" stroke="#6B5BE6" stroke-width="1.6" stroke-linecap="round"/></svg></span><span class="lab">Week in review</span></div>
+        <div class="row"><span class="tile"><svg width="19" height="19" viewBox="0 0 22 22"><path d="M11 3 a5.6 5.6 0 0 1 5.6 5.6 c0 4.6 1.9 5.6 1.9 5.6 H3.5 s1.9-1 1.9-5.6 A5.6 5.6 0 0 1 11 3 Z" fill="none" stroke="#6B5BE6" stroke-width="1.7"/><path d="M8.8 17.5 a2.3 2.3 0 0 0 4.4 0" fill="none" stroke="#6B5BE6" stroke-width="1.7" stroke-linecap="round"/></svg></span><span class="lab">Lock-screen timer</span></div>
+      </div>
+      <div class="plan">
+        <span class="radio"></span>
+        <div class="pl"><span class="pt">Lifetime</span><span class="pn">Pay once. Yours forever.</span></div>
+        <span class="pp num">$89.00</span>
+      </div>
+    </div></div>
+  </div>
+
+  <!-- G2 -->
+  <div class="colwrap">
+    <div class="optlabel">G2 · Tactile chips</div>
+    <p class="optnote">Inspo 2, in Whenbee's own tactile language: chunky 14pt-bold pills with the app's coin edge (same 3pt press-edge as the option tiles). Key word of each feature tinted indigo. The calendar chip goes amber + leads.</p>
+    <div class="phone"><div class="grab"></div><div class="deck">
+      <div style="display:flex;flex-direction:column;gap:8px;">
+        <span class="procoin"><svg width="10" height="10" viewBox="0 0 10 10"><circle cx="5" cy="5" r="4" fill="#8A5A12"/></svg><span class="eb">Whenbee Pro</span></span>
+        <div class="title">Your real day, before you live it.</div>
+        <div class="sub">Everything Pro adds, powered by the numbers you already earned:</div>
+      </div>
+      <div class="g2">
+        <div class="row">
+          <span class="chip amber"><svg width="15" height="15" viewBox="0 0 22 22"><rect x="2.5" y="4" width="17" height="15" rx="3.5" fill="none" stroke="#8A5A12" stroke-width="1.9"/><line x1="2.5" y1="9" x2="19.5" y2="9" stroke="#8A5A12" stroke-width="1.9"/></svg><span><span class="k">Honest</span> calendar</span></span>
+          <span class="chip"><svg width="15" height="15" viewBox="0 0 22 22"><path d="M4 18 L4 11 M11 18 L11 5 M18 18 L18 13" stroke="#6B5BE6" stroke-width="2.2" stroke-linecap="round"/></svg><span><span class="k">Sharper</span> insight</span></span>
+        </div>
+        <div class="row">
+          <span class="chip"><svg width="15" height="15" viewBox="0 0 22 22"><circle cx="11" cy="11" r="8" fill="none" stroke="#6B5BE6" stroke-width="1.9"/><path d="M11 6.5 V11 L14.5 13.5" stroke="#6B5BE6" stroke-width="1.9" fill="none" stroke-linecap="round"/></svg><span><span class="k">Routines</span> &amp; goals</span></span>
+          <span class="chip"><svg width="15" height="15" viewBox="0 0 22 22"><rect x="4" y="2.5" width="14" height="17" rx="2.5" fill="none" stroke="#6B5BE6" stroke-width="1.9"/><line x1="7.5" y1="7.5" x2="14.5" y2="7.5" stroke="#6B5BE6" stroke-width="1.7"/><line x1="7.5" y1="11" x2="14.5" y2="11" stroke="#6B5BE6" stroke-width="1.7"/></svg><span>Week in <span class="k">review</span></span></span>
+        </div>
+        <div class="row">
+          <span class="chip"><svg width="15" height="15" viewBox="0 0 22 22"><path d="M11 3 a5.6 5.6 0 0 1 5.6 5.6 c0 4.6 1.9 5.6 1.9 5.6 H3.5 s1.9-1 1.9-5.6 A5.6 5.6 0 0 1 11 3 Z" fill="none" stroke="#6B5BE6" stroke-width="1.9"/></svg><span><span class="k">Lock-screen</span> timer</span></span>
+        </div>
+      </div>
+      <div class="plan">
+        <span class="radio"></span>
+        <div class="pl"><span class="pt">Lifetime</span><span class="pn">Pay once. Yours forever.</span></div>
+        <span class="pp num">$89.00</span>
+      </div>
+    </div></div>
+  </div>
+
+  <!-- G3 -->
+  <div class="colwrap">
+    <div class="optlabel">G3 · Honey checks</div>
+    <p class="optnote">Inspo 3, warmed up: every feature already earned — amber check coins say "this is yours the moment you start." 14.5pt bold, one per line, centered block. Calmest of the five, zero clutter.</p>
+    <div class="phone"><div class="grab"></div><div class="deck">
+      <div style="display:flex;flex-direction:column;gap:8px;">
+        <span class="procoin"><svg width="10" height="10" viewBox="0 0 10 10"><circle cx="5" cy="5" r="4" fill="#8A5A12"/></svg><span class="eb">Whenbee Pro</span></span>
+        <div class="title">Your real day, before you live it.</div>
+        <div class="sub">Everything Pro adds, powered by the numbers you already earned:</div>
+      </div>
+      <div class="g3">
+        <div class="row"><span class="co"><svg width="12" height="12" viewBox="0 0 14 14"><path d="M2.5 7.5 L6 11 L11.5 3.5" fill="none" stroke="#8A5A12" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg></span><span class="lab">Honest calendar</span></div>
+        <div class="row"><span class="co"><svg width="12" height="12" viewBox="0 0 14 14"><path d="M2.5 7.5 L6 11 L11.5 3.5" fill="none" stroke="#8A5A12" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg></span><span class="lab">Sharper insight</span></div>
+        <div class="row"><span class="co"><svg width="12" height="12" viewBox="0 0 14 14"><path d="M2.5 7.5 L6 11 L11.5 3.5" fill="none" stroke="#8A5A12" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg></span><span class="lab">Routines &amp; goals</span></div>
+        <div class="row"><span class="co"><svg width="12" height="12" viewBox="0 0 14 14"><path d="M2.5 7.5 L6 11 L11.5 3.5" fill="none" stroke="#8A5A12" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg></span><span class="lab">Week in review</span></div>
+        <div class="row"><span class="co"><svg width="12" height="12" viewBox="0 0 14 14"><path d="M2.5 7.5 L6 11 L11.5 3.5" fill="none" stroke="#8A5A12" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg></span><span class="lab">Lock-screen timer</span></div>
+      </div>
+      <div class="plan">
+        <span class="radio"></span>
+        <div class="pl"><span class="pt">Lifetime</span><span class="pn">Pay once. Yours forever.</span></div>
+        <span class="pp num">$89.00</span>
+      </div>
+    </div></div>
+  </div>
+
+  <!-- G4 -->
+  <div class="colwrap">
+    <div class="optlabel">G4 · Honeycomb path (new — the brand one)</div>
+    <p class="optnote">Nobody else can do this: features as honeycomb cells, staggered like real comb so the eye drips down the hive. Lead cell filled with honey (amber). Each cell gets a 2-word payoff subline. In the build the cells' paths draw in one by one (allowed SVG-path animation).</p>
+    <div class="phone"><div class="grab"></div><div class="deck">
+      <div style="display:flex;flex-direction:column;gap:8px;">
+        <span class="procoin"><svg width="10" height="10" viewBox="0 0 10 10"><circle cx="5" cy="5" r="4" fill="#8A5A12"/></svg><span class="eb">Whenbee Pro</span></span>
+        <div class="title">Your real day, before you live it.</div>
+        <div class="sub">Everything Pro adds, powered by the numbers you already earned:</div>
+      </div>
+      <div class="g4">
+        <div class="row">
+          <span class="hex"><svg class="shape" width="50" height="44" viewBox="0 0 50 44"><path d="M13 1.5 H37 L48.5 22 L37 42.5 H13 L1.5 22 Z" fill="#EEAE4D"/></svg><span class="ic"><svg width="19" height="19" viewBox="0 0 22 22"><rect x="2.5" y="4" width="17" height="15" rx="3.5" fill="none" stroke="#20233A" stroke-width="1.8"/><line x1="2.5" y1="9" x2="19.5" y2="9" stroke="#20233A" stroke-width="1.8"/></svg></span></span>
+          <span><span class="lab">Honest calendar</span><div class="sublab">Your day, padded with real buffers</div></span>
+        </div>
+        <div class="row indent">
+          <span class="hex"><svg class="shape" width="50" height="44" viewBox="0 0 50 44"><path d="M13 1.5 H37 L48.5 22 L37 42.5 H13 L1.5 22 Z" fill="#E4E0FA"/></svg><span class="ic"><svg width="19" height="19" viewBox="0 0 22 22"><path d="M4 18 L4 11 M11 18 L11 5 M18 18 L18 13" stroke="#6B5BE6" stroke-width="2.1" stroke-linecap="round"/></svg></span></span>
+          <span><span class="lab">Sharper insight</span><div class="sublab">What steals your time</div></span>
+        </div>
+        <div class="row">
+          <span class="hex"><svg class="shape" width="50" height="44" viewBox="0 0 50 44"><path d="M13 1.5 H37 L48.5 22 L37 42.5 H13 L1.5 22 Z" fill="#E4E0FA"/></svg><span class="ic"><svg width="19" height="19" viewBox="0 0 22 22"><circle cx="11" cy="11" r="8" fill="none" stroke="#6B5BE6" stroke-width="1.8"/><path d="M11 6.5 V11 L14.5 13.5" stroke="#6B5BE6" stroke-width="1.8" fill="none" stroke-linecap="round"/></svg></span></span>
+          <span><span class="lab">Routines &amp; goals</span><div class="sublab">Chains learn their honest length</div></span>
+        </div>
+        <div class="row indent">
+          <span class="hex"><svg class="shape" width="50" height="44" viewBox="0 0 50 44"><path d="M13 1.5 H37 L48.5 22 L37 42.5 H13 L1.5 22 Z" fill="#E4E0FA"/></svg><span class="ic"><svg width="19" height="19" viewBox="0 0 22 22"><rect x="4" y="2.5" width="14" height="17" rx="2.5" fill="none" stroke="#6B5BE6" stroke-width="1.8"/><line x1="7.5" y1="7.5" x2="14.5" y2="7.5" stroke="#6B5BE6" stroke-width="1.6"/><line x1="7.5" y1="11" x2="14.5" y2="11" stroke="#6B5BE6" stroke-width="1.6"/></svg></span></span>
+          <span><span class="lab">Week in review</span><div class="sublab">A calm recap, sharable</div></span>
+        </div>
+        <div class="row">
+          <span class="hex"><svg class="shape" width="50" height="44" viewBox="0 0 50 44"><path d="M13 1.5 H37 L48.5 22 L37 42.5 H13 L1.5 22 Z" fill="#E4E0FA"/></svg><span class="ic"><svg width="19" height="19" viewBox="0 0 22 22"><path d="M11 3 a5.6 5.6 0 0 1 5.6 5.6 c0 4.6 1.9 5.6 1.9 5.6 H3.5 s1.9-1 1.9-5.6 A5.6 5.6 0 0 1 11 3 Z" fill="none" stroke="#6B5BE6" stroke-width="1.8"/></svg></span></span>
+          <span><span class="lab">Lock-screen timer</span><div class="sublab">Whenbee stays while you work</div></span>
+        </div>
+      </div>
+      <div class="plan">
+        <span class="radio"></span>
+        <div class="pl"><span class="pt">Lifetime</span><span class="pn">Pay once. Yours forever.</span></div>
+        <span class="pp num">$89.00</span>
+      </div>
+    </div></div>
+  </div>
+
+  <!-- G5 -->
+  <div class="colwrap">
+    <div class="optlabel">G5 · A day with Pro (new — the concept one)</div>
+    <p class="optnote">Revolutionary take: the features ARE a day. Five coins ride a mini day-track from morning to evening — routines wake you, the timer holds your focus, capacity guards your yes, the calendar lands the evening, review closes the week (amber = the payoff end of the day). The headline's promise, drawn.</p>
+    <div class="phone"><div class="grab"></div><div class="deck">
+      <div style="display:flex;flex-direction:column;gap:8px;">
+        <span class="procoin"><svg width="10" height="10" viewBox="0 0 10 10"><circle cx="5" cy="5" r="4" fill="#8A5A12"/></svg><span class="eb">Whenbee Pro</span></span>
+        <div class="title">Your real day, before you live it.</div>
+        <div class="sub">Everything Pro adds, riding your real numbers from wake-up to wind-down:</div>
+      </div>
+      <div class="g5">
+        <div class="coins">
+          <div class="stop"><span class="t num">7:00</span><span class="coin"><svg width="17" height="17" viewBox="0 0 22 22"><circle cx="11" cy="11" r="8" fill="none" stroke="#6B5BE6" stroke-width="1.9"/><path d="M11 6.5 V11 L14.5 13.5" stroke="#6B5BE6" stroke-width="1.9" fill="none" stroke-linecap="round"/></svg></span></div>
+          <div class="stop"><span class="t num">9:30</span><span class="coin"><svg width="17" height="17" viewBox="0 0 22 22"><path d="M11 3 a5.6 5.6 0 0 1 5.6 5.6 c0 4.6 1.9 5.6 1.9 5.6 H3.5 s1.9-1 1.9-5.6 A5.6 5.6 0 0 1 11 3 Z" fill="none" stroke="#6B5BE6" stroke-width="1.9"/></svg></span></div>
+          <div class="stop"><span class="t num">13:00</span><span class="coin"><svg width="17" height="17" viewBox="0 0 22 22"><path d="M4 18 L4 11 M11 18 L11 5 M18 18 L18 13" stroke="#6B5BE6" stroke-width="2.2" stroke-linecap="round"/></svg></span></div>
+          <div class="stop"><span class="t num">17:00</span><span class="coin"><svg width="17" height="17" viewBox="0 0 22 22"><rect x="2.5" y="4" width="17" height="15" rx="3.5" fill="none" stroke="#6B5BE6" stroke-width="1.9"/><line x1="2.5" y1="9" x2="19.5" y2="9" stroke="#6B5BE6" stroke-width="1.9"/></svg></span></div>
+          <div class="stop amber"><span class="t num">Sun</span><span class="coin"><svg width="17" height="17" viewBox="0 0 22 22"><rect x="4" y="2.5" width="14" height="17" rx="2.5" fill="none" stroke="#20233A" stroke-width="1.9"/><line x1="7.5" y1="7.5" x2="14.5" y2="7.5" stroke="#20233A" stroke-width="1.7"/><line x1="7.5" y1="11" x2="14.5" y2="11" stroke="#20233A" stroke-width="1.7"/></svg></span></div>
+        </div>
+        <div class="track">
+          <div class="bar"></div>
+          <div class="tick" style="left:19.5%;"></div>
+          <div class="tick" style="left:39.7%;"></div>
+          <div class="tick" style="left:60%;"></div>
+          <div class="tick" style="left:80.2%;"></div>
+        </div>
+        <div class="lbls">
+          <span class="lb">Routines<br>&amp; goals</span>
+          <span class="lb">Lock-screen<br>timer</span>
+          <span class="lb">Sharper<br>insight</span>
+          <span class="lb">Honest<br>calendar</span>
+          <span class="lb">Week in<br>review</span>
+        </div>
+      </div>
+      <div class="plan">
+        <span class="radio"></span>
+        <div class="pl"><span class="pt">Lifetime</span><span class="pn">Pay once. Yours forever.</span></div>
+        <span class="pp num">$89.00</span>
+      </div>
+    </div></div>
+  </div>
+
+</div>
+</body>
+</html>
