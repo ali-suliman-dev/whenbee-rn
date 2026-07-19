@@ -175,6 +175,7 @@ function RootNavigator() {
       <Stack.Screen name="(modals)/feedback" options={sheet} />
       <Stack.Screen name="(modals)/whats-new" options={sheet} />
       <Stack.Screen name="(modals)/reward" options={{ presentation: 'fullScreenModal', headerShown: false }} />
+      <Stack.Screen name="(modals)/pro-welcome" options={{ presentation: 'fullScreenModal', headerShown: false, gestureEnabled: false }} />
       <Stack.Screen name="(modals)/report" options={{ presentation: 'fullScreenModal', headerShown: false }} />
     </Stack>
     </>

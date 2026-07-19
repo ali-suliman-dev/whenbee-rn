@@ -6,21 +6,18 @@ import { haptics } from '@/src/lib/haptics';
 import type { Offering, Package, PackageDuration } from '@/src/services/purchases';
 
 // ──────────────────────────────────────────────────────────────────────────────
-// PlanPicker — three selectable plan rows, ordered Yearly (hero) → Lifetime →
-// Monthly by DURATION TAG, never array order. Every price is read from the
-// store package's `priceString`; nothing is hardcoded.
+// PlanPicker — three selectable plan rows, ordered Lifetime (anchor) → Yearly
+// (pre-selected hero) → Monthly, by DURATION TAG, never array order. Lifetime
+// leads so its price makes the yearly read small (decoy anchoring, <5% of
+// purchases industry-wide); yearly carries a MOST POPULAR badge and shows the
+// per-month equivalent as its primary number. Every price is read from the store
+// package's `priceString`; nothing is hardcoded.
 //
 // Selected styling mirrors the Chip/Card "selected" language: a primarySoft tint
-// and a 1.5px indigo border (the same indigo selection stroke the chips use),
-// so a picked plan reads identically to a picked chip elsewhere in the app.
-//
-// The Yearly hero carries a "Save 42%" badge. The percentage is COMPUTED from the
-// real yearly vs monthly priceStrings when both parse cleanly; if a locale's
-// price can't be parsed, we fall back to the labeled "Save 42%" (the locked offer
-// in 06-MONETIZATION) rather than print a wrong number.
+// and the indigo selection stroke, so a picked plan reads like a picked chip.
 // ──────────────────────────────────────────────────────────────────────────────
 
-const ORDER: PackageDuration[] = ['yearly', 'lifetime', 'monthly'];
+const ORDER: PackageDuration[] = ['lifetime', 'yearly', 'monthly'];
 
 const TITLE: Record<PackageDuration, string> = {
   yearly: 'Yearly',
@@ -29,15 +26,7 @@ const TITLE: Record<PackageDuration, string> = {
   other: 'Plan',
 };
 
-// Plain-language note under each plan title. No guilt, no fake urgency.
-const NOTE: Record<PackageDuration, string> = {
-  yearly: '7-day free trial, then billed yearly',
-  lifetime: 'Pay once. No subscription, ever.',
-  monthly: '7-day free trial, then billed monthly',
-  other: '',
-};
-
-const FALLBACK_SAVINGS = 'Save 42%';
+const BADGE_LABEL = 'MOST POPULAR';
 
 /** Pull the first numeric value out of a localized price string (e.g. "USD 12,50" → 12.5). */
 function parsePrice(priceString: string): number | null {
@@ -48,49 +37,44 @@ function parsePrice(priceString: string): number | null {
   return Number.isFinite(n) && n > 0 ? n : null;
 }
 
-/** Savings of yearly vs 12× monthly, as "Save N%", or the labeled fallback. */
-function savingsLabel(yearly: Package | undefined, monthly: Package | undefined): string {
-  const y = yearly ? parsePrice(yearly.priceString) : null;
-  const m = monthly ? parsePrice(monthly.priceString) : null;
-  if (y == null || m == null) return FALLBACK_SAVINGS;
-  const annualized = m * 12;
-  if (annualized <= y) return FALLBACK_SAVINGS;
-  const pct = Math.round((1 - y / annualized) * 100);
-  return `Save ${pct}%`;
-}
-
-/** Per-month equivalent of the yearly price (e.g. "≈ $2.92 / mo"), or null if unparseable.
+/** Per-month equivalent of the yearly price (yearly ÷ 12, store currency), or null if unparseable.
  *
  * Returns null when no non-empty prefix currency symbol is found (suffix-currency
- * locales such as "34,99 €") — the yearly total price still shows, so the absence
- * is graceful. Also handles:
- *  - ISO-code prefixes ("USD 34.99" → "≈ USD 2.92 / mo", with a separating space)
- *  - Zero-decimal currencies (no fractional separator → whole number, no cents)
+ * locales such as "34,99 €") — the yearly total then stays the primary number, so
+ * the absence is graceful. Also handles ISO-code prefixes ("USD 34.99") and
+ * zero-decimal currencies (no fractional separator → whole number, no cents).
  */
-function perMonthLabel(yearly: Package | undefined): string | null {
+function perMonthValue(yearly: Package | undefined): string | null {
   if (!yearly) return null;
   const y = parsePrice(yearly.priceString);
   if (y == null) return null;
 
-  // Capture any non-digit prefix (may be empty for suffix-currency locales).
   const symbolMatch = yearly.priceString.match(/^[^\d]*/);
   const symbol = symbolMatch ? symbolMatch[0].trim() : '';
-
-  // Omit the line when there is no prefix symbol — rendering "≈ 2.92 / mo" (no
-  // currency indicator at all) would be ambiguous and worse than showing nothing.
   if (symbol.length === 0) return null;
 
-  // Determine decimal precision: zero-decimal currencies have no fractional part
-  // in the price string's numeric section (e.g. "¥3500", "₩12000").
   const numericPart = yearly.priceString.replace(/^[^\d]+/, '');
   const isZeroDecimal = !/[.,]\d{2}/.test(numericPart);
   const per = isZeroDecimal ? String(Math.round(y / 12)) : (y / 12).toFixed(2);
 
-  // ISO-code prefixes (all-alpha, e.g. "USD") need a space before the digits to
-  // read correctly. Glyph symbols ($, £, ¥, €…) keep no space.
   const separator = /^[A-Za-z]+$/.test(symbol) ? ' ' : '';
+  return `${symbol}${separator}${per}`;
+}
 
-  return `≈ ${symbol}${separator}${per} / mo`;
+/** Plain-language note under each plan title. No guilt, no fake urgency. */
+function noteFor(pkg: Package, perMonth: string | null): string {
+  switch (pkg.duration) {
+    case 'lifetime':
+      return 'Pay once. Yours forever.';
+    case 'yearly':
+      return perMonth != null
+        ? `7 days free, then ${pkg.priceString} a year`
+        : '7 days free, then billed yearly';
+    case 'monthly':
+      return '7 days free, then billed monthly';
+    default:
+      return '';
+  }
 }
 
 export function PlanPicker({
@@ -104,7 +88,7 @@ export function PlanPicker({
 }) {
   const t = useTheme();
 
-  // Order the offering's packages into the hero → lifetime → monthly sequence,
+  // Order the offering's packages into the anchor → hero → monthly sequence,
   // dropping any duration we don't surface (e.g. weekly/"other").
   const ordered = useMemo(() => {
     const byDuration = new Map<PackageDuration, Package>();
@@ -113,9 +97,7 @@ export function PlanPicker({
   }, [offering]);
 
   const yearly = ordered.find((p) => p.duration === 'yearly');
-  const monthly = ordered.find((p) => p.duration === 'monthly');
-  const savings = savingsLabel(yearly, monthly);
-  const perMonth = perMonthLabel(yearly);
+  const perMonth = perMonthValue(yearly);
 
   const titleStyle: TextStyle = { ...(type.bodyLg as unknown as TextStyle), color: t.colors.ink };
   const noteStyle: TextStyle = {
@@ -133,13 +115,14 @@ export function PlanPicker({
     color: t.colors.onAmber,
     letterSpacing: 0.5,
   };
-  const perMonthStyle: TextStyle = { ...(type.caption as unknown as TextStyle), color: t.colors.inkSoft, fontVariant: ['tabular-nums'] };
+  const perUnitStyle: TextStyle = { ...(type.caption as unknown as TextStyle), color: t.colors.inkSoft };
 
   return (
     <View style={{ gap: t.space[3] }}>
       {ordered.map((pkg) => {
         const selected = pkg.id === selectedId;
         const isHero = pkg.duration === 'yearly';
+        const heroPerMonth = isHero ? perMonth : null;
 
         const row: ViewStyle = {
           flexDirection: 'row',
@@ -170,7 +153,7 @@ export function PlanPicker({
             }}
             accessibilityRole="radio"
             accessibilityState={{ selected, checked: selected }}
-            accessibilityLabel={`${TITLE[pkg.duration]}, ${NOTE[pkg.duration]}, ${pkg.priceString}`}
+            accessibilityLabel={`${TITLE[pkg.duration]}, ${noteFor(pkg, perMonth)}, ${pkg.priceString}`}
             style={row}
           >
             <View style={{ flex: 1, gap: t.space[0.5] }}>
@@ -178,15 +161,15 @@ export function PlanPicker({
                 <Text style={titleStyle}>{TITLE[pkg.duration]}</Text>
                 {isHero ? (
                   <View style={badge}>
-                    <Text style={badgeText}>{savings.toUpperCase()}</Text>
+                    <Text style={badgeText}>{BADGE_LABEL}</Text>
                   </View>
                 ) : null}
               </View>
-              <Text style={noteStyle}>{NOTE[pkg.duration]}</Text>
+              <Text style={noteStyle}>{noteFor(pkg, perMonth)}</Text>
             </View>
             <View style={{ alignItems: 'flex-end', gap: t.space[0.5] }}>
-              <Text style={priceStyle}>{pkg.priceString}</Text>
-              {isHero && perMonth ? <Text style={perMonthStyle}>{perMonth}</Text> : null}
+              <Text style={priceStyle}>{heroPerMonth ?? pkg.priceString}</Text>
+              {heroPerMonth ? <Text style={perUnitStyle}>per month</Text> : null}
             </View>
           </Pressable>
         );
