@@ -110,8 +110,14 @@ export function PlanPicker({
     color: t.colors.ink,
     fontVariant: ['tabular-nums'],
   };
+  // One step down the scale from `eyebrow` (xs 10 → 2xs 8) and a weight up (Bold
+  // → ExtraBold): at badge size the extra weight is what holds legibility once
+  // the size drops. Tracking stays at the badge's own 0.5 — wide tracking at this
+  // size inflates the footprint straight back to where it started.
   const badgeText: TextStyle = {
     ...(type.eyebrow as unknown as TextStyle),
+    fontFamily: 'Jakarta-ExtraBold',
+    fontSize: t.fontSize['2xs'],
     color: t.colors.onAmber,
     letterSpacing: 0.5,
   };

@@ -11,10 +11,18 @@ const DOT_COUNT = 14; // more than any rail needs; the overflow clips.
 
 export function DottedRail() {
   const t = useTheme();
-  const wrap: ViewStyle = {
-    flex: 1,
+  // The dot column is ABSOLUTE on purpose. In normal flow its 14 dots carry real
+  // intrinsic height (~84dp), which made the rail column taller than the text
+  // column — so the rail, not the caller's padding, dictated row height and the
+  // step spacing refused to tighten (and nothing ever clipped). Absolute = zero
+  // intrinsic height, so the text column drives the row and the overflow clips.
+  const wrap: ViewStyle = { flex: 1, alignSelf: 'stretch', overflow: 'hidden' };
+  const column: ViewStyle = {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
     alignItems: 'center',
-    overflow: 'hidden',
     gap: t.space[1],
     paddingVertical: t.space[0.5],
   };
@@ -26,9 +34,11 @@ export function DottedRail() {
   };
   return (
     <View style={wrap} pointerEvents="none">
-      {Array.from({ length: DOT_COUNT }, (_, i) => (
-        <View key={i} style={dot} />
-      ))}
+      <View style={column}>
+        {Array.from({ length: DOT_COUNT }, (_, i) => (
+          <View key={i} style={dot} />
+        ))}
+      </View>
     </View>
   );
 }

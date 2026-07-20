@@ -48,7 +48,10 @@ export function TrialTimeline() {
     borderColor: t.colors.primarySoft,
     marginVertical: (t.iconSize.xl - t.iconSize.lg) / 2,
   };
-  const stx: ViewStyle = { flex: 1, gap: t.space[0.5], paddingTop: t.space[0.5], paddingBottom: t.space[4] };
+  // paddingBottom is the only thing separating one step from the next (DottedRail
+  // is flex:1 and just fills whatever height the row ends up). Keep it well above
+  // the 2pt head→desc gap so the steps still read as three groups, not six lines.
+  const stx: ViewStyle = { flex: 1, gap: t.space[0.5], paddingTop: t.space[0.5], paddingBottom: t.space[2] };
   const stxLast: ViewStyle = { ...stx, paddingBottom: 0 };
   const head: TextStyle = {
     ...(type.bodySm as unknown as TextStyle),

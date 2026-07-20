@@ -22,10 +22,31 @@ interface Moment {
 
 const MOMENTS: readonly Moment[] = [
   { moment: 'morning', time: '7:00', heading: 'The morning starts honest', icon: 'repeat-outline' },
-  { moment: 'deepwork', time: '9:30', heading: 'Deep work, kept company', icon: 'notifications-outline' },
-  { moment: 'midday', time: '13:00', heading: 'Before you say yes to more', icon: 'battery-half-outline' },
-  { moment: 'evening', time: '17:00', heading: 'The evening actually fits', icon: 'calendar-outline' },
-  { moment: 'week', time: 'Sun', heading: 'The week, understood', icon: 'document-text-outline', amber: true },
+  {
+    moment: 'deepwork',
+    time: '9:30',
+    heading: 'Deep work, kept company',
+    icon: 'notifications-outline',
+  },
+  {
+    moment: 'midday',
+    time: '13:00',
+    heading: 'Before you say yes to more',
+    icon: 'battery-half-outline',
+  },
+  {
+    moment: 'evening',
+    time: '17:00',
+    heading: 'The evening actually fits',
+    icon: 'calendar-outline',
+  },
+  {
+    moment: 'week',
+    time: 'Sun',
+    heading: 'The week, understood',
+    icon: 'document-text-outline',
+    amber: true,
+  },
 ];
 
 export function DayWithPro() {
@@ -53,7 +74,12 @@ export function DayWithPro() {
     alignItems: 'center',
     justifyContent: 'center',
   });
-  const body: ViewStyle = { flex: 1, gap: t.space[1.5], paddingTop: t.space[1], paddingBottom: t.space[4] };
+  const body: ViewStyle = {
+    flex: 1,
+    gap: t.space[1.5],
+    paddingTop: t.space[1],
+    paddingBottom: t.space[4],
+  };
   const bodyLast: ViewStyle = { ...body, paddingBottom: t.space[1] };
   const heading: TextStyle = {
     ...(type.bodySm as unknown as TextStyle),
@@ -61,17 +87,37 @@ export function DayWithPro() {
     fontFamily: 'Jakarta-Bold',
   };
   const chips: ViewStyle = { flexDirection: 'row', flexWrap: 'wrap', gap: t.space[1.5] };
+  // Light mode reads as cards on a lavender page, so the indigo chips become the
+  // same white as every other surface and the Sunday payoff chips take the full
+  // honey of the WHENBEE PRO coin — the one amber beat lands instead of whispering.
+  // Dark keeps its tints: white/full-amber would glare on the deep bg.
+  const isLight = t.mode === 'light';
   const chip = (amber: boolean): ViewStyle => ({
-    backgroundColor: amber ? t.colors.accentSoft : t.colors.primaryWash,
+    backgroundColor: amber
+      ? isLight
+        ? t.colors.accent
+        : t.colors.accentSoft
+      : isLight
+        ? t.colors.surface
+        : t.colors.primaryWash,
     borderRadius: t.radii.full,
     paddingHorizontal: t.space[2.5],
     paddingVertical: t.space[1],
   });
-  const chipText: TextStyle = {
+  // Chip label takes the colour of the moment's own coin glyph, so each moment
+  // reads as one unit: indigo chips under an indigo coin, ink-on-honey under the
+  // amber one. Dark keeps ink — its indigo on primaryWash sits under 3:1.
+  const chipText = (amber: boolean): TextStyle => ({
     ...(type.caption as unknown as TextStyle),
-    color: t.colors.ink,
+    color: amber
+      ? isLight
+        ? t.colors.onAmber
+        : t.colors.ink
+      : isLight
+        ? t.colors.primary
+        : t.colors.ink,
     fontFamily: 'Jakarta-Bold',
-  };
+  });
 
   return (
     <View style={wrap}>
@@ -100,7 +146,7 @@ export function DayWithPro() {
               <View style={chips}>
                 {featuresByMoment(m.moment).map((f) => (
                   <View key={f.key} style={chip(amber)}>
-                    <Text style={chipText}>{f.label}</Text>
+                    <Text style={chipText(amber)}>{f.label}</Text>
                   </View>
                 ))}
               </View>
