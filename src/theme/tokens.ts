@@ -45,7 +45,13 @@ export const tokens = {
   // `emptyArt` = mascot illustration size in a full-bleed empty state (e.g. the
   // dozing bee in What's New). `emptyCopy` = matching empty-state body-copy
   // max-width, so the line length stays readable under a centred title.
-  size: { control: { xxs: 28, xs: 32, sm: 36, md: 44, lg: 52 }, coin: 40, momentCoin: 30, checkCoin: 20, wheelCol: 72, wheelRow: 32, shareCard: 340, timelineCol: 110, planCardMin: 70, calTimeCol: 52, gripW: 14, hitSlop: 8, iconTap: { pad: 8, slopX: 8, slopY: 6 }, sparkline: 32, honestBand: 180, progressPill: 4, chipMinWidth: 120, quizTileWidth: '47%', emptyArt: 132, emptyCopy: 230 },
+  // `radio` = geometry of a single-select radio marker (the plan-anchor chooser):
+  // `dot` is the outer circle, `ring` its unselected stroke width, `core` the
+  // filled centre when selected. The stroke is NOT `borderWidth.thin` on purpose
+  // — that knob is 0 app-wide (cards run borderless) and a radio needs an edge.
+  // `chooserRow` = minimum height of a chooser row: above the 44pt HIG floor with
+  // room for the derived clock line underneath the label.
+  size: { control: { xxs: 28, xs: 32, sm: 36, md: 44, lg: 52 }, coin: 40, momentCoin: 30, checkCoin: 20, wheelCol: 72, wheelRow: 32, shareCard: 340, timelineCol: 110, planCardMin: 70, calTimeCol: 52, gripW: 14, hitSlop: 8, iconTap: { pad: 8, slopX: 8, slopY: 6 }, sparkline: 32, honestBand: 180, progressPill: 4, chipMinWidth: 120, quizTileWidth: '47%', emptyArt: 132, emptyCopy: 230, radio: { dot: 18, ring: 1.5, core: 8 }, chooserRow: 52 },
 
   // Icon sizing scale — replaces inline 12/16/18/20/22/24/30 across the app.
   iconSize: { xs: 12, sm: 16, md: 20, lg: 24, xl: 32, '2xl': 64 },

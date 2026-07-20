@@ -4,6 +4,7 @@ import PlanRoute from '@/src/app/(modals)/plan';
 import { useDayPlan } from '@/src/features/today/useDayPlan';
 import { useStartByToggle } from '@/src/features/today/useStartByToggle';
 import { formatClock } from '@/src/lib/time';
+import { tokens } from '@/src/theme/tokens';
 import type { PlanResult } from '@/src/domain/types';
 
 jest.mock('expo-router', () => ({ router: { back: jest.fn() } }));
@@ -26,10 +27,26 @@ jest.mock('@/src/features/today/DayTimeline', () => {
 // it to a visibility marker so we can assert the pill opens it.
 jest.mock('@/src/features/routines/FinishEditorSheet', () => {
   const React = jest.requireActual<typeof import('react')>('react');
-  const { Text } = jest.requireActual<typeof import('react-native')>('react-native');
+  const { Text, Pressable } = jest.requireActual<typeof import('react-native')>('react-native');
   return {
-    FinishEditorSheet: ({ visible }: { visible: boolean }) =>
-      visible ? React.createElement(Text, null, 'Finish by') : null,
+    FinishEditorSheet: ({
+      visible,
+      title,
+      onUseNow,
+    }: {
+      visible: boolean;
+      title?: string;
+      onUseNow?: () => void;
+    }) =>
+      visible
+        ? React.createElement(
+            Pressable,
+            { testID: `picker-${title ?? ''}`, onPress: onUseNow },
+            React.createElement(Text, null, title ?? 'Finish by'),
+            // Only rendered when the route hands down the start-only shortcut.
+            onUseNow ? React.createElement(Text, null, 'Use now') : null,
+          )
+        : null,
   };
 });
 
@@ -63,8 +80,8 @@ jest.mock('@/src/components/ConfirmSheet', () => {
 jest.mock('@/src/features/today/useDayPlan');
 const mockUseDayPlan = jest.mocked(useDayPlan);
 
-/** The anchor-chooser half of useDayPlan's contract. These tests predate it and
- *  assert nothing about it, so they take the neutral defaults. */
+/** The anchor-chooser half of useDayPlan's contract. Tests that assert nothing
+ *  about it take these neutral defaults; the chooser suite overrides them. */
 const anchorDefaults = {
   startAtMin: null,
   setStartAt: jest.fn(),
@@ -75,6 +92,29 @@ const anchorDefaults = {
   effectiveStartMs: 0,
   startHasPassed: false,
 };
+
+/** The route converts every stored minute-of-day against TODAY's local midnight. */
+function todayMidnight(): number {
+  const d = new Date();
+  d.setHours(0, 0, 0, 0);
+  return d.getTime();
+}
+const minutesOfDay = (h: number, m: number): number => h * 60 + m;
+const clockAt = (h: number, m: number): string =>
+  formatClock(todayMidnight() + minutesOfDay(h, m) * 60_000);
+
+/** Flattened `color` off a rendered Text, whatever style shape it was given. */
+function colorOf(node: { props: { style?: unknown } }): string | undefined {
+  const style = node.props.style;
+  const layers = Array.isArray(style) ? style : [style];
+  return layers.reduce<string | undefined>(
+    (found, layer) => (layer as { color?: string } | undefined)?.color ?? found,
+    undefined,
+  );
+}
+
+/** Mode-agnostic: the suite must not care which colour mode jest resolves to. */
+const ACCENTS = [tokens.colors.light.accent, tokens.colors.dark.accent];
 
 
 jest.mock('@/src/features/today/useStartByToggle');
@@ -118,23 +158,22 @@ describe('(modals)/plan', () => {
     expect(within(root).getByText('Done')).toBeOnTheScreen();
   });
 
-  it('renders a neutral Done-by control and a Nudge toggle in the footer', () => {
+  it('renders the anchor chooser and a Nudge toggle in the footer', () => {
     const startBy = new Date(2026, 5, 24, 12, 35, 0).getTime();
     mockUseDayPlan.mockReturnValue({ ...anchorDefaults, plan: makePlan(startBy), status: 'ready', doneByMin: 780, setDoneBy: jest.fn() });
     render(<PlanRoute />);
-    expect(screen.getByTestId('plan-doneby-pill')).toBeOnTheScreen();
+    expect(screen.getByTestId('plan-anchor-chooser')).toBeOnTheScreen();
     expect(screen.getByTestId('plan-nudge-row')).toBeOnTheScreen();
     expect(screen.getByText('Nudge me to start')).toBeOnTheScreen();
   });
 
-  it('opens the same done-by picker DoneByChip uses on Done-by pill press', () => {
+  // The standalone Done-by cell is gone — a finish time is one of the chooser's
+  // two answers now, not a setting sitting on its own.
+  it('no longer renders a standalone Done-by cell', () => {
     const startBy = new Date(2026, 5, 24, 12, 35, 0).getTime();
-    const setDoneBy = jest.fn();
-    mockUseDayPlan.mockReturnValue({ ...anchorDefaults, plan: makePlan(startBy), status: 'ready', doneByMin: 780, setDoneBy });
+    mockUseDayPlan.mockReturnValue({ ...anchorDefaults, plan: makePlan(startBy), status: 'ready', doneByMin: 780, setDoneBy: jest.fn() });
     render(<PlanRoute />);
-    expect(screen.queryByText('Finish by')).not.toBeOnTheScreen();
-    fireEvent.press(screen.getByTestId('plan-doneby-pill'));
-    expect(screen.getByText('Finish by')).toBeOnTheScreen();
+    expect(screen.queryByTestId('plan-doneby-pill')).toBeNull();
   });
 
   it('toggles the nudge control via useStartByToggle', () => {
@@ -184,6 +223,145 @@ describe('(modals)/plan', () => {
     render(<PlanRoute />);
     fireEvent.press(screen.getByText('Done'));
     expect(router.back).toHaveBeenCalledTimes(1);
+  });
+
+  // The anchor chooser: which end of the day is fixed, and the picker each row
+  // opens. Both rows always show their derived clock — the comparison IS the
+  // control — so these assert the unselected row's readout too.
+  describe('anchor chooser', () => {
+    const startBy = new Date(2026, 5, 24, 9, 0, 0).getTime();
+
+    function renderWithAnchor(over: Partial<Parameters<typeof mockUseDayPlan.mockReturnValue>[0]> = {}) {
+      mockUseDayPlan.mockReturnValue({
+        ...anchorDefaults,
+        plan: makePlan(startBy),
+        status: 'ready',
+        doneByMin: minutesOfDay(15, 30),
+        setDoneBy: jest.fn(),
+        derivedFinishMs: todayMidnight() + minutesOfDay(14, 55) * 60_000,
+        derivedStartByMs: todayMidnight() + minutesOfDay(11, 0) * 60_000,
+        ...over,
+      });
+      return render(<PlanRoute />);
+    }
+
+    it('shows both rows with their own value pill and derived clock', () => {
+      renderWithAnchor({ planAnchor: 'start' });
+      // Scope to the chooser: the footer times line quotes clocks of its own.
+      const chooser = within(screen.getByTestId('plan-anchor-chooser'));
+      expect(chooser.getByText('Start at')).toBeOnTheScreen();
+      expect(chooser.getByText('Finish by')).toBeOnTheScreen();
+      // Start unpinned reads the live Now anchor; finish reads the user's target.
+      expect(chooser.getByText('Now')).toBeOnTheScreen();
+      expect(chooser.getByText(clockAt(15, 30))).toBeOnTheScreen();
+      expect(chooser.getByText(`finish ${clockAt(14, 55)}`)).toBeOnTheScreen();
+      // The UNSELECTED row still states its outcome — that is the whole design.
+      expect(chooser.getByText(`start by ${clockAt(11, 0)}`)).toBeOnTheScreen();
+    });
+
+    it('reads "Set" and "not set" on the finish row until a target exists', () => {
+      renderWithAnchor({ planAnchor: 'start', doneByMin: null });
+      expect(screen.getByText('Set')).toBeOnTheScreen();
+      expect(screen.getByText('not set')).toBeOnTheScreen();
+    });
+
+    it('shows the pinned start clock once a start minute is set', () => {
+      renderWithAnchor({ planAnchor: 'start', startAtMin: minutesOfDay(9, 30) });
+      expect(screen.getByText(clockAt(9, 30))).toBeOnTheScreen();
+    });
+
+    // No red, no "you missed it", no rewriting their number — the row keeps the
+    // 09:30 they chose and simply states what is actually happening.
+    it('states a passed start calmly, keeping the number the user set', () => {
+      renderWithAnchor({
+        planAnchor: 'start',
+        startAtMin: minutesOfDay(9, 30),
+        startHasPassed: true,
+        effectiveStartMs: todayMidnight() + minutesOfDay(14, 20) * 60_000,
+      });
+      expect(
+        screen.getByText(`${clockAt(9, 30)} has passed · starting ${clockAt(14, 20)}`),
+      ).toBeOnTheScreen();
+    });
+
+    it('selects a row when the row itself is pressed', () => {
+      const setPlanAnchor = jest.fn();
+      renderWithAnchor({ planAnchor: 'finish', setPlanAnchor });
+      fireEvent.press(screen.getByTestId('plan-anchor-start'));
+      expect(setPlanAnchor).toHaveBeenCalledWith('start');
+    });
+
+    it('selects the row AND opens its picker in one gesture on a value press', () => {
+      const setPlanAnchor = jest.fn();
+      renderWithAnchor({ planAnchor: 'finish', setPlanAnchor });
+      fireEvent.press(screen.getByTestId('plan-anchor-start-value'));
+      expect(setPlanAnchor).toHaveBeenCalledWith('start');
+      expect(screen.getByTestId('picker-Start at')).toBeOnTheScreen();
+    });
+
+    it('opens the finish picker from the finish row value', () => {
+      renderWithAnchor({ planAnchor: 'start' });
+      expect(screen.queryByTestId('picker-Finish by')).toBeNull();
+      fireEvent.press(screen.getByTestId('plan-anchor-finish-value'));
+      expect(screen.getByTestId('picker-Finish by')).toBeOnTheScreen();
+    });
+
+    // "Finish by now" is meaningless, so the shortcut is start-only.
+    it('offers Use now on the start picker only', () => {
+      const { unmount } = renderWithAnchor({ planAnchor: 'start' });
+      fireEvent.press(screen.getByTestId('plan-anchor-start-value'));
+      expect(screen.getByText('Use now')).toBeOnTheScreen();
+      unmount();
+
+      renderWithAnchor({ planAnchor: 'start' });
+      fireEvent.press(screen.getByTestId('plan-anchor-finish-value'));
+      expect(screen.queryByText('Use now')).toBeNull();
+    });
+
+    it('hands the start row back to the live Now anchor and closes on Use now', () => {
+      const setStartAt = jest.fn();
+      renderWithAnchor({ planAnchor: 'start', startAtMin: minutesOfDay(9, 30), setStartAt });
+      fireEvent.press(screen.getByTestId('plan-anchor-start-value'));
+      fireEvent.press(screen.getByTestId('picker-Start at'));
+      expect(setStartAt).toHaveBeenCalledWith(null);
+      expect(screen.queryByTestId('picker-Start at')).toBeNull();
+    });
+  });
+
+  // The footer's finish clock reads the day's REAL end. When that runs past the
+  // done-by target it goes accent — amber, never red: the day ran long, nobody
+  // failed. The gap between the two numbers is the message.
+  describe('footer finish clock', () => {
+    function planEndingAt(startBy: number, endAt: number): PlanResult {
+      return {
+        startBy,
+        timeline: [
+          { kind: 'task', id: 'a', label: 'Invoices', startAt: startBy, endAt },
+        ],
+        verdict: { kind: 'fits', startBy },
+        totalMin: 50,
+      };
+    }
+
+    it('stays ink while the day lands inside the target', () => {
+      const startBy = new Date(2026, 5, 24, 9, 0, 0).getTime();
+      const endAt = new Date(2026, 5, 24, 14, 0, 0).getTime();
+      mockUseDayPlan.mockReturnValue({ ...anchorDefaults, plan: planEndingAt(startBy, endAt), status: 'ready', doneByMin: minutesOfDay(15, 30), setDoneBy: jest.fn() });
+      render(<PlanRoute />);
+      const clock = screen.getByTestId('plan-finish-clock');
+      expect(clock).toHaveTextContent(formatClock(endAt));
+      expect(ACCENTS).not.toContain(colorOf(clock));
+    });
+
+    it('turns accent when the day runs past the target', () => {
+      const startBy = new Date(2026, 5, 24, 9, 0, 0).getTime();
+      const endAt = new Date(2026, 5, 24, 16, 20, 0).getTime();
+      mockUseDayPlan.mockReturnValue({ ...anchorDefaults, plan: planEndingAt(startBy, endAt), status: 'ready', doneByMin: minutesOfDay(15, 30), setDoneBy: jest.fn() });
+      render(<PlanRoute />);
+      const clock = screen.getByTestId('plan-finish-clock');
+      expect(clock).toHaveTextContent(formatClock(endAt));
+      expect(ACCENTS).toContain(colorOf(clock));
+    });
   });
 
   describe('Clear plan', () => {
