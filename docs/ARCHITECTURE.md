@@ -20,14 +20,14 @@ src/stores/         Zustand stores
                       settingsStore  — colorMode (system | light | dark)
                       onboardingStore — completion flag
 
-src/services/       analytics (PostHog), sentry, purchases (RevenueCat, guarded), haptics
+src/services/       analytics (PostHog), purchases (RevenueCat, guarded), haptics
 
 src/features/       Feature-scoped hooks and components
                       onboarding/useOnboarding
                       paywall/useEntitlement + ProGate
 
 src/providers/      AppProviders — gesture root, safe-area, gluestack, PostHog,
-                      Sentry boundary + init
+                      PostHog error boundary + init
 
 src/lib/            kv       — KV store wrapper (expo-sqlite/kv-store)
                     env      — typed EXPO_PUBLIC_* environment variables
@@ -49,5 +49,5 @@ UI layers (`src/app/**`, `src/components/**`) must **not** import from `src/serv
 
 - **Routes are thin.** Business logic lives in feature hooks and stores, not in screen files.
 - **Primitives are token-driven.** `Screen`, `AppText`, `AppButton`, `Card`, and `Chip` read from `useTheme()` and use `style` props — no hardcoded colors or spacing.
-- **Native-only code is guarded.** Anything that requires a native build (real RevenueCat purchases, full Sentry) checks `isExpoGo` at runtime and stubs gracefully in Expo Go.
+- **Native-only code is guarded.** Anything that requires a native build (real RevenueCat purchases) checks `isExpoGo` at runtime and stubs gracefully in Expo Go.
 - **Single persistence layer.** `src/lib/kv.ts` wraps `expo-sqlite/kv-store`, which is synchronous and Expo Go-safe. Nothing else writes to persistent storage directly.

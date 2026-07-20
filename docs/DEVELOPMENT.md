@@ -28,7 +28,6 @@ All public keys are `EXPO_PUBLIC_*` (read at build time, exposed to the client) 
 |---|---|---|
 | `EXPO_PUBLIC_POSTHOG_KEY` | analytics | analytics disabled |
 | `EXPO_PUBLIC_POSTHOG_HOST` | analytics | defaults to `https://eu.i.posthog.com` |
-| `EXPO_PUBLIC_SENTRY_DSN` | crash reporting | Sentry disabled |
 | `EXPO_PUBLIC_RC_IOS_KEY` / `EXPO_PUBLIC_RC_ANDROID_KEY` | RevenueCat | purchases stubbed (also stubbed in Expo Go) |
 | `EXPO_PUBLIC_SUPABASE_URL` / `EXPO_PUBLIC_SUPABASE_ANON_KEY` | feedback channel | `getFeedbackClient()` returns `null`; feedback submit is queued locally, changelog fetch returns `[]` |
 
@@ -42,7 +41,7 @@ npm run ios          # build & launch the native iOS app (dev client) on simulat
 npm run web          # web preview (react-native-web)
 ```
 
-**Expo Go vs. dev client.** Expo Go is fastest for JS/UI work, but native-only features (real RevenueCat, full Sentry) are guarded by `src/lib/isExpoGo.ts` and stub out there. To exercise those, use a development build:
+**Expo Go vs. dev client.** Expo Go is fastest for JS/UI work, but native-only features (real RevenueCat) are guarded by `src/lib/isExpoGo.ts` and stub out there. To exercise those, use a development build:
 
 ```bash
 eas build --profile development --platform ios   # cloud dev-client build

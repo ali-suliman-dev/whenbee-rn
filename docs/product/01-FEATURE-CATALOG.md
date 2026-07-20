@@ -130,7 +130,7 @@ The free product is the **entire calibration experience**. Pro gates only the pa
 |---|---|
 | Custom categories everywhere; amber-never-red; no-guilt empty states; haptics; Reduce Motion; Dynamic Type; toasts; dark mode | ✅ |
 | Tab nav (Today · Plan · Whenbee · Patterns; Settings via gear) | ✅ |
-| PostHog funnel (install→first_log→aha→tier_up→paywall→purchase) + Sentry | ✅ |
+| PostHog funnel (install→first_log→aha→tier_up→paywall→purchase) | ✅ |
 | Widget / Lock Screen / Live Activity finish-time ring | ◐ (scaffolded, native module unlinked) |
 | Opt-in finish-time notifications; cloud sync / Android / Apple Watch | ○ (future) |
 

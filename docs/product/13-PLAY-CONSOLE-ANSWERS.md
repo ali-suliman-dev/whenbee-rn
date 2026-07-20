@@ -37,7 +37,7 @@ Why (audit evidence):
 - **Purchase history** — RevenueCat processes receipts server-side (`src/services/purchases.ts:126-137`). RevenueCat's own Play guidance says declare exactly this. Card details are Google's; never declare "User payment info".
 - **App interactions** — PostHog typed event allow-list (`src/services/analytics.ts:36-240`). No autocapture, no session replay (`AppProviders.tsx:37` passes only key+host).
 - **Other user-generated content** — the feedback body free-text → Supabase (`src/services/feedback.ts:11-27`). This was doc-12 item 8 (undisclosed); it's now in the policy and declared here.
-- **Crash logs + Diagnostics** — Sentry (`src/services/sentry.ts:6`).
+- **Crash logs + Diagnostics** — PostHog error tracking (`src/providers/AppProviders.tsx`, `PostHogErrorBoundary` + `errorTracking.autocapture`).
 - **Device or other IDs** — PostHog `distinct_id`, feedback `install_id` (`src/features/feedback/installId.ts:12-27`), RC anonymous ID. Doc-12 item 9 ("Identifiers: None" was wrong) — this fixes it.
 
 **Do NOT declare** (on-device-only = not "collected" per Google's definition):
@@ -72,7 +72,7 @@ The presence module ships **both** `USE_EXACT_ALARM` and `SCHEDULE_EXACT_ALARM` 
 3. **Prominent disclosure:** not required — mic use is user-initiated and expected (tap the mic, dictate a task); calendar access is requested in the Honest-Day flow with the standard runtime prompt. No background capture anywhere.
 4. **If a reviewer asks:** "Microphone: voice input for task entry, transcribed on-device, never uploaded. Calendar: Honest-Day reads today's events and writes back only user-confirmed blocks, all locally."
 
-**Guardrail:** never let task titles or calendar event titles into PostHog/Sentry payloads — that would instantly turn both into declarable collection. The analytics allow-list + the fixed chip enums (`EnergyChips.tsx:22-26`, `ReasonChips.tsx` preset options) currently enforce this; keep it that way.
+**Guardrail:** never let task titles or calendar event titles into PostHog payloads — that would instantly turn analytics/error-tracking into declarable collection. The analytics allow-list + the fixed chip enums (`EnergyChips.tsx:22-26`, `ReasonChips.tsx` preset options) currently enforce this; keep it that way.
 
 ---
 
@@ -90,7 +90,7 @@ The presence module ships **both** `USE_EXACT_ALARM` and `SCHEDULE_EXACT_ALARM` 
 | Government app | No |
 | Financial features | "My app doesn't provide any financial features" (mandatory question since Oct 2025; a subscription is not a financial feature) |
 | Health apps | "My app does not have any health features" — **and keep ADHD/mental-health claims out of the store listing text**; reviewers cross-check the listing against this declaration. "For time optimists" is safe; "ADHD treatment/support tool" is not. |
-| Advertising ID | **No.** Then verify the release AAB's merged manifest has no `com.google.android.gms.permission.AD_ID` (a mismatch hard-errors at review). PostHog/Sentry/RevenueCat don't inject it by default. |
+| Advertising ID | **No.** Then verify the release AAB's merged manifest has no `com.google.android.gms.permission.AD_ID` (a mismatch hard-errors at review). PostHog/RevenueCat don't inject it by default. |
 
 **Account-level (once):** developer identity verification must be complete; personal accounts created after Nov 2023 need the 20-tester/14-day closed test before production — check which side the account falls on.
 
@@ -115,4 +115,4 @@ The presence module ships **both** `USE_EXACT_ALARM` and `SCHEDULE_EXACT_ALARM` 
 - Subscriptions: …/answer/9900533 · Refunds: support.google.com/googleplay/answer/15574908
 - Health: …/answer/14738291 · Financial: …/answer/16550159 · Ad ID: …/answer/6048248
 - RevenueCat: revenuecat.com/docs/platform-resources/google-platform-resources/google-plays-data-safety
-- PostHog GDPR: posthog.com/docs/privacy/gdpr-compliance · Sentry: docs.sentry.io/…/data-collected/
+- PostHog GDPR: posthog.com/docs/privacy/gdpr-compliance
