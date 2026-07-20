@@ -7,6 +7,15 @@ import { useEntitlement } from '@/src/features/paywall/useEntitlement';
 import type { DayTask } from '@/src/engine/daySelectors';
 import type { CalendarEvent } from '@/src/services/calendar';
 
+// `useDayCapacity` re-reads the calendar on screen focus. The mock runs the
+// effect body once and never invokes its blur cleanup, so the hook's "skip the
+// first focus" guard holds and the read count below stays at one.
+jest.mock('expo-router', () => ({
+  useFocusEffect: (cb: () => void | (() => void)) => {
+    cb();
+  },
+}));
+
 // ── Stable references for the mock calendar module ──────────────────────────
 
 const mockGetEventsForDay = jest.fn<Promise<CalendarEvent[]>, [string, (readonly string[] | undefined)?]>();

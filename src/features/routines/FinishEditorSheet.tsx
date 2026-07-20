@@ -44,6 +44,14 @@ interface FinishEditorSheetProps {
   onChange: (ms: number) => void;
   onClear: () => void;
   onClose: () => void;
+  /** Quiet caption above the wheel — names which end of the day is being set. */
+  title?: string;
+  /**
+   * Start row only: drops the pinned time and hands the row back to the live
+   * "Now" anchor, then closes. Omit it for a finish picker — "finish by now" is
+   * meaningless, so the link must not render there.
+   */
+  onUseNow?: () => void;
 }
 
 // ──────────────────────────────────────────────────────────────────────────────
@@ -62,6 +70,8 @@ export function FinishEditorSheet({
   onChange,
   onClear,
   onClose,
+  title = 'Finish by',
+  onUseNow,
 }: FinishEditorSheetProps): ReactElement | null {
   const t = useTheme();
 
@@ -93,6 +103,22 @@ export function FinishEditorSheet({
     ...(type.caption as unknown as TextStyle),
     color: t.colors.inkSoft,
   };
+  // Label left, shortcut right — the same header shape as the plan sheet's Clear.
+  // The link matches the title's size and earns its separation from weight and
+  // colour alone, so it never out-shouts the caption it sits beside.
+  const titleRow: ViewStyle = {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: t.space[3],
+    minHeight: t.size.control.xs,
+  };
+  const useNowStyle: TextStyle = {
+    fontFamily: t.fontFamily.ui,
+    fontSize: t.fontSize.caption,
+    fontWeight: t.fontWeight.semibold as TextStyle['fontWeight'],
+    color: t.colors.primaryBright,
+  };
 
   // ─── Render ─────────────────────────────────────────────────────────────────
 
@@ -115,7 +141,25 @@ export function FinishEditorSheet({
           />
           <View style={sheet}>
             <SheetGrabber />
-            <AppText style={titleStyle}>Finish by</AppText>
+            {/* Without the shortcut the title stays a bare caption, so the
+                existing finish picker keeps the exact rhythm it shipped with. */}
+            {onUseNow ? (
+              <View style={titleRow}>
+                <AppText style={titleStyle}>{title}</AppText>
+                <Pressable
+                  testID="finish-editor-use-now"
+                  onPress={onUseNow}
+                  accessibilityRole="button"
+                  accessibilityLabel="Use now"
+                  accessibilityHint="Starts from the current time and keeps moving with the clock"
+                  hitSlop={t.size.hitSlop}
+                >
+                  <AppText style={useNowStyle}>Use now</AppText>
+                </Pressable>
+              </View>
+            ) : (
+              <AppText style={titleStyle}>{title}</AppText>
+            )}
             <View style={wheelWrap}>
               <FinishTimeWheel
                 valueMs={valueMs}

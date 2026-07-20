@@ -170,6 +170,84 @@ describe('CalendarOverlaySection — mixed (expanded)', () => {
   });
 });
 
+// ── Header refresh affordance (spec §C.2) ───────────────────────────────────
+// The glyph only exists when a caller wires `onRefresh`. The "updated Nm ago"
+// stamp is silent under the 2-minute staleness threshold and appears above it —
+// quiet in normal use, present exactly when a tap is worth it.
+
+describe('CalendarOverlaySection — refresh affordance', () => {
+  const NOW = new Date('2024-01-15T12:00:00').getTime();
+  const MIN = 60_000;
+
+  function renderWithRefresh(props: {
+    lastFetchedAtMs?: number | null;
+    onRefresh?: () => void;
+    refreshing?: boolean;
+  }) {
+    return render(
+      <CalendarOverlaySection
+        events={[makeTimedEvent()]}
+        allDayEvents={[]}
+        nowMs={NOW}
+        {...props}
+      />,
+    );
+  }
+
+  it('renders no refresh glyph when no onRefresh handler is wired', () => {
+    renderWithRefresh({ lastFetchedAtMs: NOW - 10 * MIN });
+    expect(screen.queryByLabelText(/refresh calendar/i)).toBeNull();
+  });
+
+  it('renders the refresh glyph when onRefresh is wired', () => {
+    renderWithRefresh({ onRefresh: jest.fn(), lastFetchedAtMs: NOW });
+    expect(screen.getByLabelText(/refresh calendar/i)).toBeOnTheScreen();
+  });
+
+  it('calls onRefresh when the glyph is pressed', () => {
+    const onRefresh = jest.fn();
+    renderWithRefresh({ onRefresh, lastFetchedAtMs: NOW });
+    fireEvent.press(screen.getByLabelText(/refresh calendar/i));
+    expect(onRefresh).toHaveBeenCalledTimes(1);
+  });
+
+  it('pressing the glyph does NOT expand or collapse the section', () => {
+    renderWithRefresh({ onRefresh: jest.fn(), lastFetchedAtMs: NOW });
+    fireEvent.press(screen.getByLabelText(/refresh calendar/i));
+    expect(screen.queryByText('Team sync')).toBeNull();
+  });
+
+  it('shows no age stamp while the read is fresh', () => {
+    renderWithRefresh({ onRefresh: jest.fn(), lastFetchedAtMs: NOW - MIN });
+    expect(screen.queryByText(/updated/i)).toBeNull();
+  });
+
+  it('shows the age stamp once the read is stale', () => {
+    renderWithRefresh({ onRefresh: jest.fn(), lastFetchedAtMs: NOW - 6 * MIN });
+    expect(screen.getByText('updated 6m ago')).toBeOnTheScreen();
+  });
+
+  it('shows no age stamp when the calendar was never read', () => {
+    renderWithRefresh({ onRefresh: jest.fn(), lastFetchedAtMs: null });
+    expect(screen.queryByText(/updated/i)).toBeNull();
+  });
+
+  it('ignores presses while a refresh is already in flight', () => {
+    const onRefresh = jest.fn();
+    renderWithRefresh({ onRefresh, lastFetchedAtMs: NOW, refreshing: true });
+    fireEvent.press(screen.getByLabelText(/refresh calendar/i));
+    expect(onRefresh).not.toHaveBeenCalled();
+  });
+
+  it('keeps the event rows unchanged — the header is the only edit', () => {
+    renderWithRefresh({ onRefresh: jest.fn(), lastFetchedAtMs: NOW - 6 * MIN });
+    expandSection();
+    expect(screen.getByText('Team sync')).toBeOnTheScreen();
+    expect(screen.getByText('2:00')).toBeOnTheScreen();
+    expect(screen.getByText('1h · until 3:00 PM')).toBeOnTheScreen();
+  });
+});
+
 // Pro-gate regression: useDayCapacity returns [] for free users (calendar is
 // never fetched). CalendarOverlaySection must render nothing when events=[].
 // This test documents the contract between the hook and the component so that

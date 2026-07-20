@@ -6,8 +6,9 @@
  */
 import { planDayAroundAnchors } from '../planDayAroundAnchors';
 import { planBackward } from '../planner';
+import { MIN_START_LEAD_MIN } from '../constants';
 import type { PlanAnchor } from '../planDayAroundAnchors';
-import type { PlanTaskInput } from '../../domain/types';
+import type { PlanTaskInput, PlanTimelineItem } from '../../domain/types';
 
 const MIN = 60_000; // 1 minute in ms
 
@@ -406,5 +407,263 @@ describe('Case 11: Empty tasks — just event items, fits', () => {
     expect(result.timeline.filter((i) => i.kind === 'task')).toHaveLength(0);
     expect(result.timeline.filter((i) => i.kind === 'event')).toHaveLength(1);
     expect(result.totalMin).toBe(0);
+  });
+});
+
+// ===========================================================================
+// Forward fill — the user pins the START of the day and Whenbee derives the
+// finish. Every case below drives the public entry with
+// `fill: { direction: 'forward', startAtMs }`; `backward` stays the default.
+// ===========================================================================
+
+/** Task items only, in chronological order (the timeline is already sorted). */
+const taskItemsOf = (timeline: readonly { kind: string; id: string }[]) =>
+  timeline.filter((i) => i.kind === 'task');
+
+// ---------------------------------------------------------------------------
+// Case 12: Forward, no anchors → tasks run back-to-back from the start anchor
+// ---------------------------------------------------------------------------
+describe('Case 12: Forward fill with no anchors', () => {
+  it('packs tasks back-to-back starting at the anchor, not at the deadline', () => {
+    // One free window [0,480]. Start pinned at 60. a=20, b=30, bufferMin=0.
+    // Forward: a [60,80], b [80,110]. Backward would have put them at [430,480].
+    const result = planDayAroundAnchors({
+      deadline: at(480),
+      nowMs: at(0),
+      dayStartMs: DAY_START,
+      tasks: [task('a', 20), task('b', 30)],
+      anchors: [],
+      bufferMin: 0,
+      fill: { direction: 'forward', startAtMs: at(60) },
+    });
+
+    expect(result.verdict.kind).toBe('fits');
+    expect(result.startBy).toBe(at(60));
+
+    const items = taskItemsOf(result.timeline);
+    expect(items.map((i) => i.id)).toEqual(['a', 'b']);
+    expect(items[0]).toMatchObject({ startAt: at(60), endAt: at(80) });
+    expect(items[1]).toMatchObject({ startAt: at(80), endAt: at(110) });
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Case 13: Forward around one meeting → fills up to it, resumes after it
+// ---------------------------------------------------------------------------
+describe('Case 13: Forward fill around one meeting', () => {
+  it('fills the window before the meeting then resumes at the meeting end', () => {
+    // anchor [120,180]. Free windows [0,120] and [180,480]. Start pinned at 60.
+    // a=30 fits [60,90]. b=60 needs 90→150, which would run into the meeting,
+    // so it jumps to the next window and starts the moment the meeting ends.
+    const result = planDayAroundAnchors({
+      deadline: at(480),
+      nowMs: at(0),
+      dayStartMs: DAY_START,
+      tasks: [task('a', 30), task('b', 60)],
+      anchors: [anchor('mtg', 120, 180)],
+      bufferMin: 0,
+      fill: { direction: 'forward', startAtMs: at(60) },
+    });
+
+    expect(result.verdict.kind).toBe('fits');
+
+    const items = taskItemsOf(result.timeline);
+    expect(items[0]).toMatchObject({ id: 'a', startAt: at(60), endAt: at(90) });
+    expect(items[1]).toMatchObject({ id: 'b', startAt: at(180), endAt: at(240) });
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Case 14: A task too big for the current window jumps to the next one
+// ---------------------------------------------------------------------------
+describe('Case 14: Forward fill — oversized task jumps to the next window', () => {
+  it('skips a window that cannot hold the whole block rather than splitting it', () => {
+    // Free windows [0,120] and [180,480]. Start pinned at 60 → 60min of room
+    // left before the meeting. A 100min task cannot be split, so it moves whole.
+    const result = planDayAroundAnchors({
+      deadline: at(480),
+      nowMs: at(0),
+      dayStartMs: DAY_START,
+      tasks: [task('big', 100)],
+      anchors: [anchor('mtg', 120, 180)],
+      bufferMin: 0,
+      fill: { direction: 'forward', startAtMs: at(60) },
+    });
+
+    const items = taskItemsOf(result.timeline);
+    expect(items).toHaveLength(1);
+    expect(items[0]).toMatchObject({ startAt: at(180), endAt: at(280) });
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Case 15: A task that fits no remaining window is left unplaced
+// ---------------------------------------------------------------------------
+describe('Case 15: Forward fill — task that fits no remaining window', () => {
+  it('leaves the task unplaced instead of overlapping an anchor', () => {
+    // Free windows [0,120] and [180,300]. Start pinned at 60 → 60min then 120min.
+    // A 200min block fits neither, so nothing is placed and the day cannot fit.
+    const result = planDayAroundAnchors({
+      deadline: at(300),
+      nowMs: at(0),
+      dayStartMs: DAY_START,
+      tasks: [task('huge', 200)],
+      anchors: [anchor('mtg', 120, 180)],
+      bufferMin: 0,
+      fill: { direction: 'forward', startAtMs: at(60) },
+    });
+
+    expect(taskItemsOf(result.timeline)).toHaveLength(0);
+    expect(result.verdict.kind).not.toBe('fits');
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Case 16: MIN_START_LEAD_MIN floor — a pinned start that has already passed
+// ---------------------------------------------------------------------------
+describe('Case 16: Forward fill — the pinned start has already passed', () => {
+  it('floors the fill at now + MIN_START_LEAD_MIN instead of scheduling in the past', () => {
+    // The user pinned 60 this morning; it is now 300. Their number is theirs to
+    // keep, but the work can only actually begin a lead-time after now.
+    const nowMs = at(300);
+    const result = planDayAroundAnchors({
+      deadline: at(480),
+      nowMs,
+      dayStartMs: DAY_START,
+      tasks: [task('a', 30)],
+      anchors: [],
+      bufferMin: 0,
+      fill: { direction: 'forward', startAtMs: at(60) },
+    });
+
+    const expectedStart = nowMs + MIN_START_LEAD_MIN * MIN;
+    expect(result.startBy).toBe(expectedStart);
+    expect(taskItemsOf(result.timeline)[0]).toMatchObject({ startAt: expectedStart });
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Case 17: Breathers still only separate tasks inside one window
+// ---------------------------------------------------------------------------
+describe('Case 17: Forward fill — breather within a window, none across a jump', () => {
+  it('gaps two tasks in the same window and never across the meeting', () => {
+    // anchor [120,180]. Start pinned at 10, comfortably clear of the lead floor.
+    // a=30 [10,40], breather 10, b=30 [50,80] — same window. c=60 cannot fit
+    // before 120 → jumps to 180, and the window change itself is the separation,
+    // so no breather precedes it.
+    const result = planDayAroundAnchors({
+      deadline: at(480),
+      nowMs: at(0),
+      dayStartMs: DAY_START,
+      tasks: [task('a', 30), task('b', 30), task('c', 60)],
+      anchors: [anchor('mtg', 120, 180)],
+      bufferMin: 0,
+      breatherMin: 10,
+      fill: { direction: 'forward', startAtMs: at(10) },
+    });
+
+    const items = taskItemsOf(result.timeline);
+    expect(items[0]).toMatchObject({ id: 'a', startAt: at(10), endAt: at(40) });
+    expect(items[1]).toMatchObject({ id: 'b', startAt: at(50), endAt: at(80) });
+    expect(items[2]).toMatchObject({ id: 'c', startAt: at(180), endAt: at(240) });
+
+    const breathers = result.timeline.filter((i) => i.kind === 'breather');
+    expect(breathers).toHaveLength(1);
+    expect(breathers[0]).toMatchObject({ startAt: at(40), endAt: at(50) });
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Case 18: Backward stays the default — no existing caller changes behaviour
+// ---------------------------------------------------------------------------
+describe('Case 18: Backward is the default fill direction', () => {
+  it('matches an explicit backward fill when the direction is omitted', () => {
+    const base = {
+      deadline: at(480),
+      nowMs: at(0),
+      dayStartMs: DAY_START,
+      tasks: [task('a', 60), task('b', 60)],
+      anchors: [anchor('mtg', 200, 260)],
+      bufferMin: 0,
+    };
+
+    const implicit = planDayAroundAnchors(base);
+    const explicit = planDayAroundAnchors({ ...base, fill: { direction: 'backward' } });
+
+    expect(implicit).toEqual(explicit);
+    // Backward still packs late: the last task ends at the deadline.
+    expect(implicit.timeline.filter((i) => i.kind === 'task').at(-1)?.endAt).toBe(at(480));
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Case 19: A task the fill cannot place is SHOWN, not silently dropped
+// ---------------------------------------------------------------------------
+describe('Case 19: Unplaced tasks surface as overflow blocks', () => {
+  const overflowItemsOf = (timeline: readonly PlanTimelineItem[]) =>
+    timeline.filter((i) => i.kind === 'overflow');
+
+  /** Free window [0,60]. 'c' (40min) is the only block the backward pass can
+   *  place; 'a' and 'b' have nowhere to go and used to vanish from the timeline. */
+  const overflowingDay = () =>
+    planDayAroundAnchors({
+      deadline: at(60),
+      nowMs: at(0),
+      dayStartMs: DAY_START,
+      tasks: [task('a', 200), task('b', 30), task('c', 40)],
+      anchors: [],
+      bufferMin: 0,
+    });
+
+  it('emits unplaced tasks as overflow blocks instead of dropping them', () => {
+    const overflow = overflowItemsOf(overflowingDay().timeline);
+    expect(overflow.map((i) => i.id)).toEqual(['a', 'b']);
+  });
+
+  it('starts the overflow chain AT the deadline so the overrun is real', () => {
+    const overflow = overflowItemsOf(overflowingDay().timeline);
+    // Starting at the done-by is what lets the UI read the boundary clock
+    // straight off the first overflow row instead of re-deriving a deadline.
+    expect(overflow[0]).toMatchObject({ startAt: at(60), endAt: at(260) });
+  });
+
+  it('chains further overflow blocks in queue order, each one further over', () => {
+    const overflow = overflowItemsOf(overflowingDay().timeline);
+    expect(overflow[1]).toMatchObject({ startAt: at(260), endAt: at(290) });
+  });
+
+  it('keeps an unplaced task at its QUEUE position, not shoved to the bottom', () => {
+    // 'huge' is first in the queue and fits nowhere. It must still render first —
+    // that is what lets a drop above the done-by line stick, with the boundary
+    // moving up above it rather than the row snapping back down.
+    const result = planDayAroundAnchors({
+      deadline: at(120),
+      nowMs: at(0),
+      dayStartMs: DAY_START,
+      tasks: [task('huge', 200), task('fits', 100)],
+      anchors: [],
+      bufferMin: 0,
+    });
+
+    const rows = result.timeline.filter(
+      (i) => i.kind === 'task' || i.kind === 'overflow',
+    );
+    expect(rows.map((i) => i.id)).toEqual(['huge', 'fits']);
+  });
+
+  it('never loses a queued task, whatever the verdict', () => {
+    const result = planDayAroundAnchors({
+      deadline: at(60),
+      nowMs: at(0),
+      dayStartMs: DAY_START,
+      tasks: [task('a', 50), task('b', 90), task('c', 120)],
+      anchors: [anchor('mtg', 20, 40)],
+      bufferMin: 0,
+    });
+
+    const rows = result.timeline.filter(
+      (i) => i.kind === 'task' || i.kind === 'overflow',
+    );
+    expect(rows.map((i) => i.id).sort()).toEqual(['a', 'b', 'c']);
   });
 });

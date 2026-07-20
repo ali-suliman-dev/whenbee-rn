@@ -26,7 +26,8 @@ import { resolveSuggestion, seededPriorFor } from '@/src/engine';
 import { orderForFocus } from '@/src/engine/focusOrder';
 import { planDayAroundAnchors } from '@/src/engine/planDayAroundAnchors';
 import type { PlanTaskInput, PlanResult } from '@/src/domain/types';
-import type { PlanAnchor } from '@/src/engine/planDayAroundAnchors';
+import type { PlanAnchor, PlanFill } from '@/src/engine/planDayAroundAnchors';
+import type { PlanAnchorSide } from '@/src/stores/dayTasksStore';
 import {
   WAKING_START_MIN,
   WAKING_END_MIN,
@@ -37,10 +38,19 @@ import {
 // Helpers
 // ---------------------------------------------------------------------------
 
+const MS_PER_MIN = 60_000;
+
 /** Local midnight (epoch ms) for a 'YYYY-MM-DD' key. */
 function localMidnight(dayKey: string): number {
   const [y, m, d] = dayKey.split('-').map(Number) as [number, number, number];
   return new Date(y, m - 1, d, 0, 0, 0, 0).getTime();
+}
+
+/** When the last task block in a plan ends, or null if nothing was placed. */
+function finishOf(plan: PlanResult | null): number | null {
+  if (plan === null) return null;
+  const ends = plan.timeline.filter((i) => i.kind === 'task').map((i) => i.endAt);
+  return ends.length === 0 ? null : Math.max(...ends);
 }
 
 // ---------------------------------------------------------------------------
@@ -56,6 +66,38 @@ export interface UseDayPlanResult {
   doneByMin: number | null;
   /** Write a new "done by" target for the selected date (persisted via the store). */
   setDoneBy: (m: number | null) => void;
+  /** The stored start minute-of-day, or null for the live "Now" anchor. */
+  startAtMin: number | null;
+  /** Pin a start minute, or null for "Use now". Also selects the start row. */
+  setStartAt: (m: number | null) => void;
+  /** Which end of the day is fixed. */
+  planAnchor: PlanAnchorSide;
+  /** Select which end is fixed without changing either value. */
+  setPlanAnchor: (side: PlanAnchorSide) => void;
+  /**
+   * When the day finishes if the START is the fixed end — the start row's derived
+   * clock. Computed even while the finish row is selected: the chooser shows the
+   * unselected row's outcome too, so the choice is a comparison, not a guess.
+   * Null when there is nothing to place.
+   */
+  derivedFinishMs: number | null;
+  /**
+   * The latest moment work can begin if the FINISH is the fixed end — the finish
+   * row's derived clock. Also always computed. Null when there is nothing to place.
+   */
+  derivedStartByMs: number | null;
+  /**
+   * Where the forward plan actually begins: the pinned start, or now + the lead
+   * floor when that start has already gone by. Reading "starting 14:20".
+   */
+  effectiveStartMs: number;
+  /**
+   * True when a pinned start is earlier than effectiveStartMs — the "09:30 has
+   * passed · starting 14:20" case. Their minute is kept in state untouched; this
+   * only tells the UI to state what is actually happening. Never true for the
+   * live Now anchor, which cannot pass.
+   */
+  startHasPassed: boolean;
 }
 
 // ---------------------------------------------------------------------------
@@ -76,6 +118,10 @@ export function useDayPlan(nowMs?: number): UseDayPlanResult {
   const dayMeta = useDayTasksStore((s) => s.dayMeta);
   const hasManualOrder = useDayTasksStore((s) => s.hasManualOrder);
   const storeSetDoneBy = useDayTasksStore((s) => s.setDoneBy);
+  const startAtMin = useDayTasksStore((s) => s.startAtMin);
+  const planAnchor = useDayTasksStore((s) => s.planAnchor);
+  const setStartAt = useDayTasksStore((s) => s.setStartAt);
+  const setPlanAnchor = useDayTasksStore((s) => s.setPlanAnchor);
 
   // ── Calibration stats ────────────────────────────────────────────────────────
   const statsByCategory = useCalibrationStore((s) => s.statsByCategory);
@@ -165,18 +211,39 @@ export function useDayPlan(nowMs?: number): UseDayPlanResult {
     return midnight + doneByMin * 60_000;
   }, [midnight, dayMeta?.doneByMin]);
 
-  // ── Run the engine ────────────────────────────────────────────────────────
-  const plan = useMemo((): PlanResult | null => {
-    if (planTasks.length === 0) return null;
+  // ── The start anchor ──────────────────────────────────────────────────────
+  // A pinned minute is theirs and is never rewritten; a null startAtMin is the
+  // LIVE "Now" anchor and re-derives from the clock on every render. The floor
+  // is only about where blocks land — the engine applies the same one, this
+  // mirror exists so the UI can say which of the two numbers it used.
+  const pinnedStartMs = startAtMin === null ? now : midnight + startAtMin * MS_PER_MIN;
+  const startFloorMs = now + MIN_START_LEAD_MIN * MS_PER_MIN;
+  const effectiveStartMs = Math.max(pinnedStartMs, startFloorMs);
+  const startHasPassed = startAtMin !== null && pinnedStartMs < startFloorMs;
 
-    return planDayAroundAnchors({
+  // ── Run the engine, from BOTH ends ────────────────────────────────────────
+  // Both passes always run: the chooser renders the unselected row's derived
+  // clock alongside the selected one, so a single directional plan is not enough.
+  const { backwardPlan, forwardPlan } = useMemo((): {
+    backwardPlan: PlanResult | null;
+    forwardPlan: PlanResult | null;
+  } => {
+    if (planTasks.length === 0) return { backwardPlan: null, forwardPlan: null };
+    const base = {
       deadline: deadlineMs,
       nowMs: now,
       dayStartMs,
       tasks: planTasks,
       anchors,
-    });
-  }, [planTasks, anchors, deadlineMs, now, dayStartMs]);
+    };
+    const forwardFill: PlanFill = { direction: 'forward', startAtMs: pinnedStartMs };
+    return {
+      backwardPlan: planDayAroundAnchors({ ...base, fill: { direction: 'backward' } }),
+      forwardPlan: planDayAroundAnchors({ ...base, fill: forwardFill }),
+    };
+  }, [planTasks, anchors, deadlineMs, now, dayStartMs, pinnedStartMs]);
+
+  const plan = planAnchor === 'start' ? forwardPlan : backwardPlan;
 
   // ── setDoneBy: wraps the store action, no need for useCallback in a hook ───
   const setDoneBy = (m: number | null): void => {
@@ -188,5 +255,13 @@ export function useDayPlan(nowMs?: number): UseDayPlanResult {
     status: plan === null ? 'empty' : 'ready',
     doneByMin: dayMeta?.doneByMin ?? null,
     setDoneBy,
+    startAtMin,
+    setStartAt,
+    planAnchor,
+    setPlanAnchor,
+    derivedFinishMs: finishOf(forwardPlan),
+    derivedStartByMs: backwardPlan?.startBy ?? null,
+    effectiveStartMs,
+    startHasPassed,
   };
 }

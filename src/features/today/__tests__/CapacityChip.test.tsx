@@ -50,6 +50,9 @@ function makeCap(
     events: [],
     allDayEvents: [],
     isPro: true,
+    lastFetchedAtMs: null,
+    refresh: jest.fn(async () => {}),
+    refreshing: false,
     ...partial,
   };
 }

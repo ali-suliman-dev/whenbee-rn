@@ -9,8 +9,10 @@
  */
 
 import React from 'react';
-import { render, screen, fireEvent } from '@testing-library/react-native';
+import { StyleSheet } from 'react-native';
+import { render, screen, fireEvent, act } from '@testing-library/react-native';
 import * as Reanimated from 'react-native-reanimated';
+import ReorderableList from 'react-native-reorderable-list';
 import { FW_BIN_COUNT } from '@/src/engine';
 import { DayTimeline } from '@/src/features/today/DayTimeline';
 import { useDayPlan } from '@/src/features/today/useDayPlan';
@@ -62,6 +64,20 @@ jest.mock('@/src/features/paywall/useEntitlement', () => ({
 // ── Typed mock references ─────────────────────────────────────────────────────
 
 const mockUseDayPlan = useDayPlan as jest.MockedFunction<typeof useDayPlan>;
+
+/** The anchor-chooser half of useDayPlan's contract. These tests predate it and
+ *  assert nothing about it, so they take the neutral defaults. */
+const anchorDefaults = {
+  startAtMin: null,
+  setStartAt: jest.fn(),
+  planAnchor: 'finish' as const,
+  setPlanAnchor: jest.fn(),
+  derivedFinishMs: null,
+  derivedStartByMs: null,
+  effectiveStartMs: 0,
+  startHasPassed: false,
+};
+
 const mockUseFocusWindow = useLearnedFocusWindow as jest.MockedFunction<
   typeof useLearnedFocusWindow
 >;
@@ -162,30 +178,87 @@ function makeFitsPlan(): PlanResult {
   };
 }
 
-function makeCutOnePlan(): PlanResult {
+/**
+ * A day that runs over: one task fits up to the 15:30 done-by, one does not and
+ * lands as an `overflow` block ending 16:20 — 50 minutes past.
+ *
+ * The engine starts the overflow chain AT the deadline, so the first overflow
+ * row's startAt IS the done-by; the component reads both boundary clocks from
+ * these rows rather than re-deriving a deadline.
+ */
+function makeOverflowPlan(): PlanResult {
   return {
-    startBy: atTime(9, 0),
-    totalMin: 90,
+    startBy: atTime(14, 40),
+    totalMin: 100,
     verdict: {
       kind: 'cut-one',
-      startBy: atTime(9, 0),
+      startBy: atTime(14, 40),
       cut: { id: 'task-big', label: 'Big project' },
-      savedMin: 60,
+      savedMin: 50,
     },
     timeline: [
       {
         id: 'task-1',
         label: 'Quick email',
-        startAt: atTime(9, 0),
-        endAt: atTime(9, 15),
+        startAt: atTime(14, 40),
+        endAt: atTime(15, 30),
         kind: 'task',
       },
       {
-        id: 'event-1',
-        label: 'Sync meeting',
-        startAt: atTime(10, 0),
-        endAt: atTime(10, 30),
-        kind: 'event',
+        id: 'task-big',
+        label: 'Big project',
+        startAt: atTime(15, 30),
+        endAt: atTime(16, 20),
+        kind: 'overflow',
+      },
+    ],
+  };
+}
+
+/** Three overflow blocks stacked past the same boundary — the "does it still read
+ *  calm?" case. One boundary, three identical rows, no second design. */
+function makeThreeOverflowPlan(): PlanResult {
+  return {
+    startBy: atTime(14, 40),
+    totalMin: 210,
+    verdict: {
+      kind: 'multi-cut',
+      startBy: atTime(14, 40),
+      cuts: [
+        { id: 'task-big', label: 'Big project' },
+        { id: 'task-calls', label: 'Return calls' },
+        { id: 'task-review', label: 'Review deck' },
+      ],
+      savedMin: 120,
+    },
+    timeline: [
+      {
+        id: 'task-1',
+        label: 'Quick email',
+        startAt: atTime(14, 40),
+        endAt: atTime(15, 30),
+        kind: 'task',
+      },
+      {
+        id: 'task-big',
+        label: 'Big project',
+        startAt: atTime(15, 30),
+        endAt: atTime(16, 20),
+        kind: 'overflow',
+      },
+      {
+        id: 'task-calls',
+        label: 'Return calls',
+        startAt: atTime(16, 20),
+        endAt: atTime(16, 50),
+        kind: 'overflow',
+      },
+      {
+        id: 'task-review',
+        label: 'Review deck',
+        startAt: atTime(16, 50),
+        endAt: atTime(17, 30),
+        kind: 'overflow',
       },
     ],
   };
@@ -205,7 +278,7 @@ beforeEach(() => {
 
 describe('DayTimeline — fits plan', () => {
   beforeEach(() => {
-    mockUseDayPlan.mockReturnValue({
+    mockUseDayPlan.mockReturnValue({ ...anchorDefaults,
       plan: makeFitsPlan(),
       status: 'ready',
       doneByMin: 1080,
@@ -241,7 +314,7 @@ describe('DayTimeline — fits plan', () => {
 
 describe('DayTimeline — drag-to-reorder grip', () => {
   beforeEach(() => {
-    mockUseDayPlan.mockReturnValue({
+    mockUseDayPlan.mockReturnValue({ ...anchorDefaults,
       plan: makeFitsPlan(),
       status: 'ready',
       doneByMin: 1080,
@@ -273,7 +346,7 @@ describe('DayTimeline — drag-to-reorder grip', () => {
 
 describe('DayTimeline — focus band with revealed window', () => {
   beforeEach(() => {
-    mockUseDayPlan.mockReturnValue({
+    mockUseDayPlan.mockReturnValue({ ...anchorDefaults,
       plan: makeFitsPlan(),
       status: 'ready',
       doneByMin: 1080,
@@ -294,7 +367,7 @@ describe('DayTimeline — focus band with revealed window', () => {
 
 describe('DayTimeline — no focus band when basis is forming', () => {
   beforeEach(() => {
-    mockUseDayPlan.mockReturnValue({
+    mockUseDayPlan.mockReturnValue({ ...anchorDefaults,
       plan: makeFitsPlan(),
       status: 'ready',
       doneByMin: 1080,
@@ -310,42 +383,186 @@ describe('DayTimeline — no focus band when basis is forming', () => {
 });
 
 // ═════════════════════════════════════════════════════════════════════════════
-// Test 4 — cut-one overflow: calm copy, no guilt words, move action present
+// Test 4 — overflow IN PLACE. The banner named a task it never showed; this
+// replaces it with the task itself, rendered below a done-by boundary.
 // ═════════════════════════════════════════════════════════════════════════════
 
-describe('DayTimeline — cut-one overflow banner', () => {
+describe('DayTimeline — overflow in place', () => {
   beforeEach(() => {
-    mockUseDayPlan.mockReturnValue({
-      plan: makeCutOnePlan(),
+    mockUseDayPlan.mockReturnValue({ ...anchorDefaults,
+      plan: makeOverflowPlan(),
       status: 'ready',
-      doneByMin: 1080,
+      doneByMin: 930, // 15:30
       setDoneBy: mockSetDoneBy,
     });
   });
 
-  it('renders the overflow banner', () => {
+  it('SHOWS the overflowing task instead of only naming it in a banner', () => {
     render(<DayTimeline />);
-    expect(screen.getByTestId('timeline-overflow-banner')).toBeOnTheScreen();
+    expect(screen.getByText('Big project')).toBeOnTheScreen();
+    expect(screen.getByTestId('timeline-overflow-task-big')).toBeOnTheScreen();
   });
 
-  it('overflow copy contains NO guilt words (overdue, behind, failed)', () => {
+  it('no longer renders the old banner', () => {
+    render(<DayTimeline />);
+    expect(screen.queryByTestId('timeline-overflow-banner')).toBeNull();
+  });
+
+  it('renders the done-by boundary with the deadline clock', () => {
+    render(<DayTimeline />);
+    expect(screen.getByTestId('timeline-overflow-boundary')).toBeOnTheScreen();
+    expect(
+      screen.getByText(`${formatClock(atTime(15, 30))} DONE BY`),
+    ).toBeOnTheScreen();
+  });
+
+  it('names BOTH exits in one sentence, with the real overrun clock', () => {
+    render(<DayTimeline />);
+    expect(screen.getByText(/Past here you run over/)).toBeOnTheScreen();
+    // The push-to clock is the furthest overflow end, not the done-by.
+    expect(screen.getByText(formatClock(atTime(16, 20)))).toBeOnTheScreen();
+    expect(screen.getByText(/move a task to tomorrow/)).toBeOnTheScreen();
+  });
+
+  it('states how far past the done-by the block runs', () => {
+    render(<DayTimeline />);
+    expect(screen.getByText('+50m over')).toBeOnTheScreen();
+  });
+
+  it('the Tomorrow chip moves that exact task', () => {
+    render(<DayTimeline />);
+    fireEvent.press(screen.getByTestId('timeline-move-tomorrow-task-big'));
+    expect(mockMoveToTomorrow).toHaveBeenCalledWith('task-big');
+  });
+
+  it('copy carries no guilt and no alarm (overdue/behind/failed/late/warning)', () => {
     render(<DayTimeline />);
     const json = JSON.stringify(screen.toJSON()).toLowerCase();
     expect(json).not.toMatch(/overdue/);
     expect(json).not.toMatch(/behind/);
     expect(json).not.toMatch(/failed/);
+    expect(json).not.toMatch(/too late/);
+    expect(json).not.toMatch(/warning/);
   });
 
-  it('overflow banner has a move action', () => {
+  it('draws the boundary as a flat rule — never a left border or inset edge', () => {
     render(<DayTimeline />);
-    expect(screen.getByTestId('timeline-move-action')).toBeOnTheScreen();
+    const block = screen.getByTestId('timeline-overflow-task-big');
+    const style = StyleSheet.flatten(block.props.style) as Record<string, unknown>;
+    expect(style.borderLeftWidth).toBeUndefined();
+    expect(style.borderWidth).toBeUndefined();
+    expect(style.boxShadow).toBeUndefined();
+  });
+});
+
+// ═════════════════════════════════════════════════════════════════════════════
+// Test 4b — three overflowing tasks: the treatment holds. One boundary, three
+// identical rows, no second design and no escalation.
+// ═════════════════════════════════════════════════════════════════════════════
+
+describe('DayTimeline — three overflowing tasks', () => {
+  beforeEach(() => {
+    mockUseDayPlan.mockReturnValue({ ...anchorDefaults,
+      plan: makeThreeOverflowPlan(),
+      status: 'ready',
+      doneByMin: 930,
+      setDoneBy: mockSetDoneBy,
+    });
   });
 
-  it('tapping the move action calls moveToTomorrow with the cut task id', () => {
+  it('renders every overflowing task', () => {
     render(<DayTimeline />);
-    const moveBtn = screen.getByTestId('timeline-move-action');
-    fireEvent.press(moveBtn);
-    expect(mockMoveToTomorrow).toHaveBeenCalledWith('task-big');
+    expect(screen.getByText('Big project')).toBeOnTheScreen();
+    expect(screen.getByText('Return calls')).toBeOnTheScreen();
+    expect(screen.getByText('Review deck')).toBeOnTheScreen();
+  });
+
+  it('draws exactly ONE boundary, above the first overflowing row', () => {
+    render(<DayTimeline />);
+    expect(screen.getAllByTestId('timeline-overflow-boundary')).toHaveLength(1);
+  });
+
+  it('each row states its own overrun, cumulative from the done-by', () => {
+    render(<DayTimeline />);
+    expect(screen.getByText('+50m over')).toBeOnTheScreen();
+    expect(screen.getByText('+1h 20m over')).toBeOnTheScreen();
+    expect(screen.getByText('+2h over')).toBeOnTheScreen();
+  });
+
+  it('offers the push-to clock of the LAST block, and still no guilt words', () => {
+    render(<DayTimeline />);
+    expect(screen.getByText(formatClock(atTime(17, 30)))).toBeOnTheScreen();
+    const json = JSON.stringify(screen.toJSON()).toLowerCase();
+    expect(json).not.toMatch(/overdue|behind|failed|warning/);
+  });
+});
+
+// ═════════════════════════════════════════════════════════════════════════════
+// Test 4c — drag, both directions. Overflow rows are ordinary cells, and a drop
+// is never refused: the optimistic order renders immediately and the boundary
+// moves to wherever the first overflowing row now sits.
+// ═════════════════════════════════════════════════════════════════════════════
+
+describe('DayTimeline — dragging across the boundary', () => {
+  beforeEach(() => {
+    mockUseDayPlan.mockReturnValue({ ...anchorDefaults,
+      plan: makeOverflowPlan(),
+      status: 'ready',
+      doneByMin: 930,
+      setDoneBy: mockSetDoneBy,
+    });
+  });
+
+  /** Drive the list's reorder contract directly — the pan gesture itself cannot
+   *  be simulated here, but every rule under test hangs off this callback. */
+  function drop(from: number, to: number): void {
+    const list = screen.UNSAFE_getByType(ReorderableList);
+    act(() => {
+      (list.props as { onReorder: (e: { from: number; to: number }) => void }).onReorder({
+        from,
+        to,
+      });
+    });
+  }
+
+  it('gives an overflow row the same grip as a fitting task', () => {
+    render(<DayTimeline />);
+    expect(screen.getByTestId('timeline-drag-handle-task-big')).toBeOnTheScreen();
+    expect(screen.getByTestId('timeline-drag-handle-task-1')).toBeOnTheScreen();
+  });
+
+  it('persists overflow rows in the new order — they are never dropped from it', () => {
+    render(<DayTimeline />);
+    drop(1, 0); // overflow row dragged above the fitting one
+    expect(mockReorderTasks).toHaveBeenCalledWith(['task-big', 'task-1']);
+  });
+
+  it('a drop above the line STICKS even while the plan still says otherwise', () => {
+    render(<DayTimeline />);
+    drop(1, 0);
+    // useDayPlan is mocked and keeps returning the OLD order — exactly the async
+    // round-trip window the optimistic override exists to cover. The dragged row
+    // must stay where it was dropped, not snap back.
+    const labels = screen
+      .getAllByText(/Big project|Quick email/)
+      .map((node) => node.props.children);
+    expect(labels[0]).toBe('Big project');
+  });
+
+  it('moves the boundary UP above a row that still does not fit', () => {
+    render(<DayTimeline />);
+    drop(1, 0);
+    // The overflowing row is now first, so the day runs over from the very top:
+    // the line is a readout of where that happens, not a wall that refuses it.
+    const boundary = screen.getByTestId('timeline-overflow-boundary');
+    expect(boundary).toBeOnTheScreen();
+    expect(screen.getByText('Big project')).toBeOnTheScreen();
+  });
+
+  it('a fitting task dragged below the line becomes the overflowing one', () => {
+    render(<DayTimeline />);
+    drop(0, 1);
+    expect(mockReorderTasks).toHaveBeenCalledWith(['task-big', 'task-1']);
   });
 });
 
@@ -355,7 +572,7 @@ describe('DayTimeline — cut-one overflow banner', () => {
 
 describe('DayTimeline — empty plan', () => {
   beforeEach(() => {
-    mockUseDayPlan.mockReturnValue({
+    mockUseDayPlan.mockReturnValue({ ...anchorDefaults,
       plan: null,
       status: 'empty',
       doneByMin: null,
@@ -376,7 +593,7 @@ describe('DayTimeline — empty plan', () => {
 
 describe('DayTimeline — DoneByChip local-time label', () => {
   beforeEach(() => {
-    mockUseDayPlan.mockReturnValue({
+    mockUseDayPlan.mockReturnValue({ ...anchorDefaults,
       plan: makeFitsPlan(),
       status: 'ready',
       doneByMin: 1080, // 18:00 local (6 PM)
@@ -401,7 +618,7 @@ describe('DayTimeline — DoneByChip local-time label', () => {
 
 describe('DayTimeline — hideHeader', () => {
   beforeEach(() => {
-    mockUseDayPlan.mockReturnValue({
+    mockUseDayPlan.mockReturnValue({ ...anchorDefaults,
       plan: makeFitsPlan(),
       status: 'ready',
       doneByMin: 1080,
@@ -434,7 +651,7 @@ describe('DayTimeline — Pro guard', () => {
     useEntitlement.mockImplementation((selector: (s: any) => any) =>
       selector({ isPro: false }),
     );
-    mockUseDayPlan.mockReturnValue({
+    mockUseDayPlan.mockReturnValue({ ...anchorDefaults,
       plan: makeFitsPlan(),
       status: 'ready',
       doneByMin: 1080,

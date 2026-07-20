@@ -23,6 +23,7 @@ import { DayTimeline } from '@/src/features/today/DayTimeline';
 import { useDayPlan } from '@/src/features/today/useDayPlan';
 import { useStartByToggle } from '@/src/features/today/useStartByToggle';
 import { FinishEditorSheet } from '@/src/features/routines/FinishEditorSheet';
+import { PlanAnchorChooser } from '@/src/features/planner/PlanAnchorChooser';
 import { formatClock } from '@/src/lib/time';
 import { useDayTasksStore } from '@/src/stores/dayTasksStore';
 
@@ -42,50 +43,77 @@ export default function PlanRoute() {
   // DayTimeline re-reads the plan itself; we read it here only to render the
   // quiet start-by/finish-by summary line in the footer (device clock format, so
   // it matches the timeline rows) and to feed the done-by picker.
-  const { plan, doneByMin, setDoneBy } = useDayPlan();
+  const {
+    plan,
+    doneByMin,
+    setDoneBy,
+    startAtMin,
+    setStartAt,
+    planAnchor,
+    setPlanAnchor,
+    derivedFinishMs,
+    derivedStartByMs,
+    effectiveStartMs,
+    startHasPassed,
+  } = useDayPlan();
   const startByLabel = plan ? formatClock(plan.startBy) : null;
-  const [doneByPickerOpen, setDoneByPickerOpen] = useState(false);
+  const [openPicker, setOpenPicker] = useState<'start' | 'finish' | null>(null);
   const [clearConfirmOpen, setClearConfirmOpen] = useState(false);
 
-  // Finish-by clock: prefer the user's done-by target (local midnight of the
-  // plan's own day + doneByMin) since that's the deadline they're planning
-  // against; fall back to the plan's own last placed block when no target is
-  // set yet, so the line still reads something real rather than nothing.
-  const finishAtMs = useMemo(() => {
-    if (!plan) return null;
-    if (doneByMin !== null) {
-      const localMidnight = new Date(plan.startBy);
-      localMidnight.setHours(0, 0, 0, 0);
-      return localMidnight.getTime() + doneByMin * 60_000;
-    }
-    if (plan.timeline.length > 0) {
-      return Math.max(...plan.timeline.map((item) => item.endAt));
-    }
-    return null;
+  // The two finish clocks the footer has to tell apart:
+  //   target — the done-by the user is planning against (null until they set one)
+  //   actual — where the last placed block genuinely lands
+  // The gap between them IS the overrun message, so the line reads the real
+  // finish and tints it accent; the chooser's finish row still shows the target.
+  const { finishAtMs, finishRunsOver } = useMemo(() => {
+    if (!plan) return { finishAtMs: null, finishRunsOver: false };
+    const localMidnight = new Date(plan.startBy);
+    localMidnight.setHours(0, 0, 0, 0);
+    const target = doneByMin === null ? null : localMidnight.getTime() + doneByMin * 60_000;
+    const actual =
+      plan.timeline.length > 0 ? Math.max(...plan.timeline.map((item) => item.endAt)) : null;
+    return {
+      finishAtMs: actual ?? target,
+      finishRunsOver: target !== null && actual !== null && actual > target,
+    };
   }, [plan, doneByMin]);
 
-  // Done-by picker — replicates DoneByChip's (DayTimeline.tsx) open/select logic
-  // inline: it's a module-private component there, so the neutral pill here opens
-  // the same FinishEditorSheet and calls the same setDoneBy from useDayPlan.
-  const doneByLocalMidnightMs = useMemo(() => {
+  // Both anchor values are stored as a minute-of-day, so every clock in this
+  // sheet converts against the same local midnight.
+  const localMidnightMs = useMemo(() => {
     const d = new Date();
     d.setHours(0, 0, 0, 0);
     return d.getTime();
   }, []);
-  const doneByClock = useMemo(
-    () => (doneByMin === null ? null : formatClock(doneByLocalMidnightMs + doneByMin * 60_000)),
-    [doneByMin, doneByLocalMidnightMs],
+  const toMinuteOfDay = useCallback(
+    (ms: number) => Math.round((ms - localMidnightMs) / 60_000),
+    [localMidnightMs],
   );
-  const doneByValueMs = doneByMin === null ? null : doneByLocalMidnightMs + doneByMin * 60_000;
-  const openDoneByPicker = useCallback(() => setDoneByPickerOpen(true), []);
-  const closeDoneByPicker = useCallback(() => setDoneByPickerOpen(false), []);
+  const doneByMs = doneByMin === null ? null : localMidnightMs + doneByMin * 60_000;
+  const startAtMs = startAtMin === null ? null : localMidnightMs + startAtMin * 60_000;
+
+  // One FinishEditorSheet serves both ends — which row opened it decides the
+  // title, the value it edits and whether the "Use now" shortcut exists.
+  const closePicker = useCallback(() => setOpenPicker(null), []);
+  const openStartPicker = useCallback(() => setOpenPicker('start'), []);
+  const openFinishPicker = useCallback(() => setOpenPicker('finish'), []);
+  const handleStartChange = useCallback(
+    (ms: number) => setStartAt(toMinuteOfDay(ms)),
+    [setStartAt, toMinuteOfDay],
+  );
   const handleDoneByChange = useCallback(
-    (ms: number) => setDoneBy(Math.round((ms - doneByLocalMidnightMs) / 60_000)),
-    [setDoneBy, doneByLocalMidnightMs],
+    (ms: number) => setDoneBy(toMinuteOfDay(ms)),
+    [setDoneBy, toMinuteOfDay],
   );
+  // Hands the start row back to the live "Now" anchor — it re-derives from the
+  // clock every render, unlike a pinned minute.
+  const useNowStart = useCallback(() => {
+    setStartAt(null);
+    setOpenPicker(null);
+  }, [setStartAt]);
   const clearDoneBy = useCallback(() => {
     setDoneBy(null);
-    setDoneByPickerOpen(false);
+    setOpenPicker(null);
   }, [setDoneBy]);
 
   // Nudge toggle — the shared start-by reminder hook, rendered as a neutral
@@ -172,10 +200,6 @@ export default function PlanRoute() {
     color: t.colors.ink,
     fontFamily: t.fontFamily.ui,
   };
-  const doneByClockStyle: TextStyle = {
-    color: t.colors.ink,
-    fontWeight: t.fontWeight.semibold as TextStyle['fontWeight'],
-  };
 
   return (
     // Sheet host already sits below the status bar — no top inset (avoids a gap on
@@ -246,7 +270,16 @@ export default function PlanRoute() {
                 <>
                   <Text style={timesSepStyle}>·</Text>
                   <Text style={timesWordStyle}>finish</Text>
-                  <Text style={[timesNumStyle, { color: t.colors.ink }]}>
+                  {/* Accent when the day genuinely runs past the done-by target —
+                      the gap between this clock and the target IS the message.
+                      Amber, never red: the day ran long, nobody failed. */}
+                  <Text
+                    testID="plan-finish-clock"
+                    style={[
+                      timesNumStyle,
+                      { color: finishRunsOver ? t.colors.accent : t.colors.ink },
+                    ]}
+                  >
                     {formatClock(finishAtMs)}
                   </Text>
                 </>
@@ -255,27 +288,21 @@ export default function PlanRoute() {
           ) : null}
 
           <View style={controlsColStyle}>
-            <Pressable
-              testID="plan-doneby-pill"
-              onPress={openDoneByPicker}
-              accessibilityRole="button"
-              accessibilityLabel={doneByClock ? `Done by ${doneByClock}` : 'Set a finish time'}
-              accessibilityHint="Tap to change your finish-by target time"
-            >
-              <View style={cellStyle}>
-                <Ionicons name="time-outline" size={t.iconSize.md} color={t.colors.inkSoft} />
-                {doneByClock ? (
-                  <Text style={cellLabelStyle} numberOfLines={1}>
-                    Done by <Text style={doneByClockStyle}>{doneByClock}</Text>
-                  </Text>
-                ) : (
-                  <Text style={cellLabelStyle} numberOfLines={1}>
-                    Set a finish time
-                  </Text>
-                )}
-                <Ionicons name="chevron-forward" size={t.iconSize.sm} color={t.colors.inkFaint} />
-              </View>
-            </Pressable>
+            {/* Which end of the day is fixed. Replaces the old standalone Done-by
+                cell — a finish time is now one of the two answers, not a setting
+                that sits on its own. */}
+            <PlanAnchorChooser
+              selected={planAnchor}
+              startAtMs={startAtMs}
+              derivedFinishMs={derivedFinishMs}
+              finishByMs={doneByMs}
+              derivedStartByMs={derivedStartByMs}
+              effectiveStartMs={effectiveStartMs}
+              startHasPassed={startHasPassed}
+              onSelect={setPlanAnchor}
+              onEditStart={openStartPicker}
+              onEditFinish={openFinishPicker}
+            />
 
             {/* Plain Settings-style cell — the native Switch is the sole
                 interactive element (a wrapping Pressable would double-toggle) and
@@ -304,12 +331,25 @@ export default function PlanRoute() {
         </View>
       </GestureHandlerRootView>
 
+      {/* The start picker. `Use now` is start-only — "finish by now" is
+          meaningless — and Clear is a no-op here since Now IS the empty state. */}
       <FinishEditorSheet
-        visible={doneByPickerOpen}
-        valueMs={doneByValueMs}
+        visible={openPicker === 'start'}
+        title="Start at"
+        valueMs={startAtMs}
+        onChange={handleStartChange}
+        onClear={useNowStart}
+        onUseNow={useNowStart}
+        onClose={closePicker}
+      />
+
+      <FinishEditorSheet
+        visible={openPicker === 'finish'}
+        title="Finish by"
+        valueMs={doneByMs}
         onChange={handleDoneByChange}
         onClear={clearDoneBy}
-        onClose={closeDoneByPicker}
+        onClose={closePicker}
       />
 
       <ConfirmSheet

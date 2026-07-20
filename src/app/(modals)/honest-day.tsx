@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { View } from 'react-native';
+import { View, RefreshControl } from 'react-native';
 import { router } from 'expo-router';
 import { Screen } from '@/src/components/Screen';
 import { SheetScrollView } from '@/src/components/SheetScrollView';
@@ -39,7 +39,7 @@ function NotPro() {
 
 function HonestDayContent() {
   const t = useTheme();
-  const { status, result, apply } = useHonestDay();
+  const { status, result, apply, refresh, refreshing } = useHonestDay();
   const [applying, setApplying] = useState(false);
 
   async function handleApply() {
@@ -57,6 +57,14 @@ function HonestDayContent() {
       <SheetScrollView
         contentContainerStyle={{ gap: t.space[5], paddingTop: t.space[4], paddingBottom: t.space[12] }}
         showsVerticalScrollIndicator={false}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={() => void refresh()}
+            tintColor={t.colors.primary}
+            colors={[t.colors.primary]}
+          />
+        }
       >
         <ScreenHeader
           title="Pad my calendar"

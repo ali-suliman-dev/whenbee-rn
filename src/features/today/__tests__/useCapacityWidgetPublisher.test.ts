@@ -32,6 +32,9 @@ function makeCap(overrides: Partial<DayCapacityResult> = {}): DayCapacityResult 
     events: [],
     allDayEvents: [],
     isPro: true,
+    lastFetchedAtMs: null,
+    refresh: jest.fn(async () => {}),
+    refreshing: false,
     ...overrides,
   };
 }

@@ -232,6 +232,9 @@ beforeEach(() => {
     events: [],
     allDayEvents: [],
     isPro: false,
+    lastFetchedAtMs: null,
+    refresh: jest.fn(async () => {}),
+    refreshing: false,
   });
 
   useCalibrationStore.setState({

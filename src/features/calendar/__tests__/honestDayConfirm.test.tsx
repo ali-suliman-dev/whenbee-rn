@@ -11,7 +11,15 @@ import { useCalibrationStore } from '@/src/stores/calibrationStore';
 // write spy directly.
 // ──────────────────────────────────────────────────────────────────────────────
 
-jest.mock('expo-router', () => ({ router: { push: jest.fn(), replace: jest.fn(), back: jest.fn() } }));
+// `useHonestDay` now re-reads on focus; the mock runs the effect body once and
+// never invokes its blur cleanup, so the hook's "skip the first focus" guard
+// holds and no extra calendar read fires.
+jest.mock('expo-router', () => ({
+  router: { push: jest.fn(), replace: jest.fn(), back: jest.fn() },
+  useFocusEffect: (cb: () => void | (() => void)) => {
+    cb();
+  },
+}));
 
 const writeAdjustments = jest.fn(async () => 2);
 const requestReadAccess = jest.fn(async () => true);
