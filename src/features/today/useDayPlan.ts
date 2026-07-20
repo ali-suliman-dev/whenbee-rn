@@ -27,7 +27,11 @@ import { orderForFocus } from '@/src/engine/focusOrder';
 import { planDayAroundAnchors } from '@/src/engine/planDayAroundAnchors';
 import type { PlanTaskInput, PlanResult } from '@/src/domain/types';
 import type { PlanAnchor } from '@/src/engine/planDayAroundAnchors';
-import { WAKING_START_MIN, WAKING_END_MIN } from '@/src/engine/constants';
+import {
+  WAKING_START_MIN,
+  WAKING_END_MIN,
+  MIN_START_LEAD_MIN,
+} from '@/src/engine/constants';
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -148,8 +152,11 @@ export function useDayPlan(nowMs?: number): UseDayPlanResult {
   // ── Compute timing bounds ──────────────────────────────────────────────────
   const midnight = useMemo(() => localMidnight(selectedDate), [selectedDate]);
 
+  // Earliest schedulable instant: the waking-window floor, or a short grace from
+  // now if the day is already underway. MIN_START_LEAD_MIN keeps a start-by from
+  // landing in the past between render and the user reading it.
   const dayStartMs = useMemo(
-    () => Math.max(now, midnight + WAKING_START_MIN * 60_000),
+    () => Math.max(now + MIN_START_LEAD_MIN * 60_000, midnight + WAKING_START_MIN * 60_000),
     [now, midnight],
   );
 

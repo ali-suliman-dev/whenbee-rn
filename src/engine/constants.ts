@@ -245,3 +245,11 @@ export const WAKING_WINDOW_MIN = 840;
 export const WAKING_START_MIN = 8 * 60; // 480
 /** Latest schedulable minute of day (22:00) — the default "done by" fallback. */
 export const WAKING_END_MIN = 22 * 60; // 1320
+
+/**
+ * Grace between "now" and the earliest minute the planner may schedule against.
+ * A plan whose start-by has already passed is useless, but demanding a big
+ * head-start is worse — it declares a day "won't fit" that the user could still
+ * start on. 5 min = enough to put the phone down and begin, nothing more.
+ */
+export const MIN_START_LEAD_MIN = 5;
