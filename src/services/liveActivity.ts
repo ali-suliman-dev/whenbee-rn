@@ -2,7 +2,7 @@
 // liveActivity — RN-side bridge to the native presence surfaces (Home-screen
 // widget + ActivityKit Live Activity / Dynamic Island). See targets/widget/*.
 //
-// Mirrors the house guarded-service pattern (purchases.ts / sentry.ts /
+// Mirrors the house guarded-service pattern (purchases.ts /
 // timerNotifications.ts): every export is a NO-OP in Expo Go and in unit tests,
 // so the Expo-Go-testable JS app never depends on native presence. The core
 // guess → timer → learn loop must never break for a widget write.

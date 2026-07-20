@@ -64,13 +64,6 @@
         }
       ],
       "./plugins/withNoRemindersPermission",
-      [
-        "@sentry/react-native/expo",
-        {
-          "organization": "your-org",
-          "project": "whenbee"
-        }
-      ],
       "expo-localization",
       [
         "expo-speech-recognition",

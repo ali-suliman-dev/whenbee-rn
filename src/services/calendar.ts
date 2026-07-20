@@ -2,7 +2,7 @@ import { isExpoGo } from '@/src/lib/isExpoGo';
 import { toLocalDayKey } from '@/src/lib/day';
 
 // ──────────────────────────────────────────────────────────────────────────────
-// calendar — the expo-calendar house (isExpoGo-guarded, like purchases/sentry).
+// calendar — the expo-calendar house (isExpoGo-guarded, like purchases).
 //
 // TRUST MODEL (do not weaken):
 //
