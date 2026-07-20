@@ -87,35 +87,30 @@ export function DayWithPro() {
     fontFamily: 'Jakarta-Bold',
   };
   const chips: ViewStyle = { flexDirection: 'row', flexWrap: 'wrap', gap: t.space[1.5] };
-  // Light mode reads as cards on a lavender page, so the indigo chips become the
-  // same white as every other surface and the Sunday payoff chips take the full
-  // honey of the WHENBEE PRO coin — the one amber beat lands instead of whispering.
-  // Dark keeps its tints: white/full-amber would glare on the deep bg.
+  // Both modes tint rather than fill: the indigo chips are a light wash of the CTA
+  // and the Sunday payoff chips a wash of honey, so the amber beat still separates
+  // without a solid block shouting over the heading. Light takes the deeper chip
+  // tints (primaryChip/accentChip) — accentSoft's cream sat too close to the
+  // lavender page to read as a chip at all.
   const isLight = t.mode === 'light';
   const chip = (amber: boolean): ViewStyle => ({
     backgroundColor: amber
       ? isLight
-        ? t.colors.accent
+        ? t.colors.accentChip
         : t.colors.accentSoft
       : isLight
-        ? t.colors.surface
+        ? t.colors.primaryChip
         : t.colors.primaryWash,
     borderRadius: t.radii.full,
     paddingHorizontal: t.space[2.5],
     paddingVertical: t.space[1],
   });
-  // Chip label takes the colour of the moment's own coin glyph, so each moment
-  // reads as one unit: indigo chips under an indigo coin, ink-on-honey under the
-  // amber one. Dark keeps ink — its indigo on primaryWash sits under 3:1.
-  const chipText = (amber: boolean): TextStyle => ({
+  // Label is ink on every tinted chip in both modes — the tint alone carries the
+  // moment's colour, and ink keeps both chip families on one legible weight
+  // (indigo-on-indigo and amber-on-amber both sat low against their own fill).
+  const chipText = (): TextStyle => ({
     ...(type.caption as unknown as TextStyle),
-    color: amber
-      ? isLight
-        ? t.colors.onAmber
-        : t.colors.ink
-      : isLight
-        ? t.colors.primary
-        : t.colors.ink,
+    color: t.colors.ink,
     fontFamily: 'Jakarta-Bold',
   });
 
@@ -146,7 +141,7 @@ export function DayWithPro() {
               <View style={chips}>
                 {featuresByMoment(m.moment).map((f) => (
                   <View key={f.key} style={chip(amber)}>
-                    <Text style={chipText(amber)}>{f.label}</Text>
+                    <Text style={chipText()}>{f.label}</Text>
                   </View>
                 ))}
               </View>
