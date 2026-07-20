@@ -1,0 +1,363 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Whenbee — Goal → Coach Experiments</title>
+<style>
+  :root{
+    --bg:#14151D; --surface:#1F2130; --raised:#292B3C; --sunken:#15161F;
+    --hairline:rgba(255,255,255,0.08);
+    --ink:#F4F1EA; --inkSoft:#ADA9B5; --inkFaint:rgba(244,241,234,0.40);
+    --primary:#8275F0; --primaryBright:#B3A7FF; --primaryEdge:#6B5BE6;
+    --primaryChip:rgba(130,117,240,0.20); --primarySoft:rgba(130,117,240,0.22);
+    --accent:#EEAE4D; --accentEdge:#C68A30; --accentSoft:rgba(238,174,77,0.18);
+    --accentChip:#2E2A20; --onAmber:#20233A;
+    --s1:4px; --s1_5:6px; --s2:8px; --s2_5:10px; --s3:12px; --s4:16px; --s5:20px; --s6:24px; --s8:32px;
+    --rSm:8px; --rMd:12px; --rCard:16px; --rSheet:20px; --rFull:999px;
+    --mono:Menlo,monospace;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{background:#0B0C12;color:var(--ink);
+    font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
+    padding:40px 28px 90px;line-height:1.4}
+  .wrap{max-width:1560px;margin:0 auto}
+  h1{font-size:30px;font-weight:800;letter-spacing:-0.75px;margin-bottom:6px}
+  .lede{color:var(--inkSoft);font-size:15px;max-width:860px;margin-bottom:10px}
+  .lede b{color:var(--ink)}
+  .loop{font-family:var(--mono);font-size:12.5px;color:var(--accent);margin-bottom:38px;letter-spacing:0.3px}
+  .loop i{color:var(--inkFaint);font-style:normal}
+  section{margin-bottom:62px}
+  .shead{display:flex;align-items:baseline;gap:12px;margin-bottom:6px}
+  .snum{font-family:var(--mono);font-size:12px;color:var(--accent);letter-spacing:1px}
+  h2{font-size:22px;font-weight:800;letter-spacing:-0.5px}
+  .sdesc{color:var(--inkSoft);font-size:14px;max-width:880px;margin-bottom:22px}
+  .sdesc b{color:var(--ink)}
+  .row{display:flex;gap:26px;flex-wrap:wrap;align-items:flex-start}
+  .onote{color:var(--inkSoft);font-size:12.5px;margin-top:11px;width:352px}
+  .onote b{color:var(--ink)}
+
+  /* phone frame */
+  .ph{width:352px;background:var(--bg);border:1px solid var(--hairline);
+    border-radius:26px;padding:var(--s3) var(--s5) var(--s5);
+    display:flex;flex-direction:column;gap:var(--s3);min-height:520px}
+  .status{display:flex;justify-content:space-between;font-family:var(--mono);
+    font-size:11px;color:var(--inkFaint);padding:2px 4px 0}
+  .nav{display:flex;align-items:center;gap:var(--s2_5);padding-top:var(--s1)}
+  .back{color:var(--primaryBright);font-size:16px}
+  .navt{font-size:17px;font-weight:800;letter-spacing:-0.3px}
+  .dim{opacity:.38}
+
+  /* generic card */
+  .c{background:var(--surface);border-radius:var(--rCard);padding:var(--s4)}
+  .eyebrow{display:flex;align-items:center;gap:var(--s2);margin-bottom:var(--s2_5)}
+  .eb{font-size:10px;letter-spacing:1.1px;text-transform:uppercase;font-weight:800;color:var(--inkFaint)}
+  .propill{font-size:9px;font-weight:800;letter-spacing:0.6px;background:var(--accent);
+    color:var(--onAmber);padding:2px 8px;border-radius:var(--rFull)}
+  .chip{font-family:var(--mono);font-size:10.5px;color:var(--accent);background:var(--accentSoft);
+    padding:3px 9px;border-radius:var(--rFull);margin-left:auto}
+  .hl{font-size:17.5px;font-weight:800;letter-spacing:-0.3px;line-height:1.25;margin-bottom:var(--s2)}
+  .body13{font-size:13px;color:var(--inkSoft);line-height:1.5}
+  .body13 b{color:var(--ink);font-weight:700}
+  .receipt{display:flex;align-items:baseline;gap:var(--s2);font-family:var(--mono);font-size:11px;
+    color:var(--inkFaint);margin-top:var(--s2_5)}
+  .receipt b{color:var(--accent);font-weight:400}
+
+  /* if-then rail */
+  .ifthen{display:flex;flex-direction:column;gap:var(--s1_5);background:var(--sunken);
+    border-radius:var(--rMd);padding:var(--s3) var(--s3_5,14px);margin:var(--s3) 0}
+  .itrow{display:flex;gap:var(--s2_5);align-items:baseline}
+  .itk{font-family:var(--mono);font-size:10px;letter-spacing:0.8px;color:var(--inkFaint);width:44px;text-align:right;flex:none}
+  .itv{font-size:13.5px;font-weight:600;color:var(--ink);line-height:1.35}
+  .itv i{color:var(--accent);font-style:normal}
+
+  /* buttons */
+  .coin{background:var(--accent);color:var(--onAmber);text-align:center;font-weight:800;
+    font-size:14.5px;padding:12px;border-radius:var(--rFull);box-shadow:0 5px 0 var(--accentEdge)}
+  .ghost{text-align:center;font-weight:700;font-size:13.5px;color:var(--inkSoft);padding:11px}
+  .quiet{text-align:center;font-size:12.5px;color:var(--primaryBright);padding:4px}
+  .btnrow{display:flex;flex-direction:column;gap:var(--s1_5);margin-top:var(--s3)}
+
+  /* meter */
+  .meter{margin-top:var(--s3)}
+  .mtrack{height:6px;border-radius:var(--rFull);background:var(--sunken);overflow:hidden}
+  .mfill{height:100%;border-radius:var(--rFull);background:var(--accent)}
+  .mlabs{display:flex;justify-content:space-between;font-family:var(--mono);font-size:10.5px;
+    color:var(--inkFaint);margin-top:5px}
+  .mlabs b{color:var(--accent);font-weight:400}
+
+  /* context filler pieces */
+  .hero{background:var(--surface);border-radius:var(--rCard);padding:var(--s4);display:flex;
+    justify-content:space-between;align-items:center;gap:var(--s3)}
+  .hero .lab{font-size:10px;letter-spacing:1px;text-transform:uppercase;color:var(--inkFaint);font-weight:800}
+  .hero .num{font-family:var(--mono);font-size:26px;color:var(--ink);margin-top:4px;white-space:nowrap}
+  .hero .cap{font-size:12px;color:var(--inkSoft);margin-top:3px;white-space:nowrap}
+  .spark{width:96px;height:34px;position:relative}
+  .spark svg{position:absolute;inset:0}
+  .mrow{display:flex;align-items:center;gap:var(--s2_5);background:var(--surface);
+    border-radius:var(--rMd);padding:var(--s3);font-size:13.5px;color:var(--inkSoft)}
+  .mrow .chev{margin-left:auto;color:var(--inkFaint)}
+
+  /* reward screen */
+  .rwbig{font-family:var(--mono);font-size:44px;text-align:center;margin-top:var(--s6)}
+  .rwcap{text-align:center;font-size:13px;color:var(--inkSoft);margin-top:2px}
+  .rwline{background:var(--accentChip);border-radius:var(--rMd);padding:var(--s3) var(--s4);
+    margin-top:var(--s5)}
+  .rwline .t{font-size:13.5px;font-weight:700;color:var(--accent)}
+  .rwline .s{font-family:var(--mono);font-size:11px;color:var(--inkFaint);margin-top:4px}
+
+  /* lock screen notification */
+  .lock{width:352px;border-radius:26px;padding:var(--s6) var(--s5);min-height:520px;
+    background:linear-gradient(160deg,#1A1C2E 0%,#12131C 60%,#0E0F16 100%);
+    border:1px solid var(--hairline);display:flex;flex-direction:column;align-items:center}
+  .lktime{font-size:64px;font-weight:200;letter-spacing:-1px;margin-top:var(--s8)}
+  .lkdate{font-size:15px;color:var(--inkSoft);margin-bottom:var(--s8)}
+  .notif{width:100%;background:rgba(41,43,60,0.85);backdrop-filter:blur(8px);
+    border-radius:var(--rCard);padding:var(--s3) var(--s4)}
+  .nhead{display:flex;align-items:center;gap:var(--s2);margin-bottom:var(--s1_5)}
+  .nicon{width:20px;height:20px;border-radius:5px;background:var(--accent);display:grid;
+    place-items:center;font-size:11px}
+  .napp{font-size:11px;color:var(--inkSoft);letter-spacing:0.3px;text-transform:uppercase}
+  .nwhen{margin-left:auto;font-size:11px;color:var(--inkFaint)}
+  .ntitle{font-size:13.5px;font-weight:700}
+  .nbody{font-size:13px;color:var(--inkSoft);margin-top:2px;line-height:1.45}
+  .nbody b{color:var(--ink)}
+
+  /* verdict delta */
+  .delta{display:flex;align-items:baseline;justify-content:center;gap:var(--s2_5);
+    font-family:var(--mono);margin:var(--s4) 0 var(--s2)}
+  .delta .from{font-size:20px;color:var(--inkFaint);text-decoration:line-through;text-decoration-thickness:1px}
+  .delta .arr{font-size:15px;color:var(--inkFaint)}
+  .delta .to{font-size:34px;color:var(--accent)}
+  .payoff{text-align:center;font-size:12.5px;color:var(--inkSoft)}
+  .payoff b{color:var(--ink)}
+
+  /* teaser lock */
+  .lockrow{display:flex;align-items:center;gap:var(--s2_5)}
+  .greyfill{height:6px;border-radius:var(--rFull);flex:1;
+    background:repeating-linear-gradient(90deg,var(--raised) 0 8px,var(--sunken) 8px 16px)}
+
+  .variant{font-size:10px;letter-spacing:1px;font-weight:800;text-transform:uppercase;
+    color:var(--inkFaint);margin:18px 0 8px;width:352px}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>Goal → Coach Experiments</h1>
+  <p class="lede">The accuracy-band target retires. In its place: when the engine finds a <b>real pattern in your logs</b>, the coach proposes <b>one two-week experiment</b> — a concrete change you control, with the evidence shown. Every screen below is a surface you'd touch.</p>
+  <p class="loop">propose <i>→</i> accept <i>→</i> observe per-log <i>→</i> Monday pulse <i>→</i> verdict <i>→</i> adopt / next <i>·</i> <i>experiments conclude, they never fail</i></p>
+
+  <!-- ─────────────────── 1 PROPOSAL ─────────────────── -->
+  <section>
+    <div class="shead"><span class="snum">01</span><h2>Category detail — the proposal (replaces GoalCard)</h2></div>
+    <p class="sdesc">Same slot the old goal card held (below trend, above "Tune how I learn"). Coach leads with its receipts, states the experiment as a when→then, and prices the payoff in minutes — computed from the real gap, never invented. One amber CTA on screen.</p>
+    <div class="row">
+      <div>
+        <div class="ph">
+          <div class="status"><span>9:41</span><span>●●●</span></div>
+          <div class="nav"><span class="back">‹</span><span class="navt">Deep Work</span></div>
+          <div class="hero dim">
+            <div><div class="lab">Honest number</div><div class="num">1h 35m</div><div class="cap">for your 1h guess</div></div>
+            <div class="spark"><svg viewBox="0 0 96 34"><polyline points="0,26 16,22 32,24 48,16 64,14 80,10 96,8" fill="none" stroke="#8275F0" stroke-width="2"/></svg></div>
+          </div>
+          <div class="c">
+            <div class="eyebrow"><span class="eb">Experiment</span><span class="propill">PRO</span></div>
+            <div class="hl">Your mornings know something</div>
+            <p class="body13">Morning guesses here land <b>2.1× tighter</b> than evening ones. So — a two-week experiment:</p>
+            <div class="ifthen">
+              <div class="itrow"><span class="itk">WHEN</span><span class="itv">Deep Work lands after 5pm</span></div>
+              <div class="itrow"><span class="itk">THEN</span><span class="itv">take <i>the honest number</i>, not your gut</span></div>
+            </div>
+            <p class="body13">Worth about <b>40m a week</b> of plans that hold.</p>
+            <div class="receipt"><span>from your logs</span><b>14 morning · 9 evening</b></div>
+            <div class="btnrow">
+              <div class="coin">Try it — two weeks</div>
+              <div class="ghost">Not now</div>
+              <div class="quiet">See 2 other patterns</div>
+            </div>
+          </div>
+          <div class="mrow dim">Tune how I learn<span class="chev">›</span></div>
+        </div>
+        <p class="onote"><b>Receipts first.</b> "14 morning · 9 evening" is the labor-illusion line — the coach shows where the advice came from. "See 2 other patterns" = the autonomy valve (one recommendation leads, alternatives on request).</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ─────────────────── 2 ACTIVE ─────────────────── -->
+  <section>
+    <div class="shead"><span class="snum">02</span><h2>Category detail — experiment running</h2></div>
+    <p class="sdesc">Progress starts <b>endowed</b>: evening logs from before the accept already count as observations. The ratio is the feedback — it visibly moves. No % complete, no countdown pressure; the chip carries the day quietly.</p>
+    <div class="row">
+      <div>
+        <div class="ph">
+          <div class="status"><span>9:41</span><span>●●●</span></div>
+          <div class="nav"><span class="back">‹</span><span class="navt">Deep Work</span></div>
+          <div class="hero dim">
+            <div><div class="lab">Honest number</div><div class="num">1h 35m</div><div class="cap">for your 1h guess</div></div>
+            <div class="spark"><svg viewBox="0 0 96 34"><polyline points="0,26 16,22 32,24 48,16 64,14 80,10 96,8" fill="none" stroke="#8275F0" stroke-width="2"/></svg></div>
+          </div>
+          <div class="c">
+            <div class="eyebrow"><span class="eb">Experiment</span><span class="chip">day 4 of 14</span></div>
+            <div class="hl">Evenings, honest-numbered</div>
+            <p class="body13">Six evening logs in. Your evening ratio so far:</p>
+            <div class="meter">
+              <div class="mtrack"><div class="mfill" style="width:50%"></div></div>
+              <div class="mlabs"><span>started 1.9×</span><b>now 1.6×</b><span>morning 0.9×</span></div>
+            </div>
+            <div class="receipt"><span>observations</span><b>9 · three from before</b></div>
+            <p class="body13" style="margin-top:10px">Verdict lands Monday.</p>
+          </div>
+          <div class="mrow dim">Tune how I learn<span class="chev">›</span></div>
+        </div>
+        <p class="onote"><b>The meter is a fact, not a score.</b> Left edge = where evenings started, right edge = what mornings prove is possible. The fill is the measured ratio moving between them.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ─────────────────── 3 ADD-TASK ─────────────────── -->
+  <section>
+    <div class="shead"><span class="snum">03</span><h2>Add-task sheet — coach at the moment it matters</h2></div>
+    <p class="sdesc">The read-only coach card (PR #85 rule intact — <b>no button, ever</b>) becomes situational: it only speaks when the task being planned falls inside the experiment's scope. An evening Deep Work task ⇒ one line, pointed at the honest number the sheet already shows.</p>
+    <div class="row">
+      <div>
+        <div class="ph" style="min-height:470px">
+          <div class="status"><span>21:12</span><span>●●●</span></div>
+          <div class="nav"><span class="navt">New task</span></div>
+          <div class="c dim"><div class="body13" style="font-size:15px;color:var(--ink)">Spec review — auth flow</div></div>
+          <div class="hero dim" style="padding:var(--s3) var(--s4)">
+            <div><div class="lab">Your guess</div><div class="num" style="font-size:20px">45m</div></div>
+            <div><div class="lab">Honest</div><div class="num" style="font-size:20px;color:var(--accent)">1h 10m</div></div>
+          </div>
+          <div class="c">
+            <div class="eyebrow"><span class="eb">Experiment · Deep Work</span><span class="chip">day 4</span></div>
+            <p class="body13">This one's an evening log — the kind your experiment is about. <b>The honest number is the move here.</b></p>
+            <div class="receipt"><span>evening ratio</span><b>1.6× and tightening</b></div>
+          </div>
+          <div class="mrow dim">Done by<span class="chev">today, 22:30</span></div>
+          <div style="flex:1"></div>
+          <div class="coin dim" style="background:var(--primary);box-shadow:0 5px 0 var(--primaryEdge);color:#fff">Add task</div>
+        </div>
+        <p class="onote"><b>Silent when out of scope.</b> A morning task shows nothing — the card earns attention by only appearing when the experiment is live in this exact decision.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ─────────────────── 4 REWARD ─────────────────── -->
+  <section>
+    <div class="shead"><span class="snum">04</span><h2>Reward screen — the observation tick</h2></div>
+    <p class="sdesc">Replaces the current single goal line. Each in-scope log becomes a numbered <b>observation</b> — informational, never evaluative. The ratio movement is the reward.</p>
+    <div class="row">
+      <div>
+        <div class="ph" style="min-height:470px">
+          <div class="status"><span>22:26</span><span>●●●</span></div>
+          <div class="rwbig">1h 14m</div>
+          <div class="rwcap">you guessed 45m · honest said 1h 10m</div>
+          <div class="rwline">
+            <div class="t">Observation 7 — that landed within 6% of honest</div>
+            <div class="s">evening ratio 1.9× → 1.6× · day 4</div>
+          </div>
+          <div class="c dim" style="margin-top:14px"><p class="body13">Deep Work is ripening — 2 more logs to the next comb.</p></div>
+        </div>
+        <p class="onote"><b>"Within 6% of honest"</b> — the experiment praises following the coach, not gut accuracy. Off-scope logs show the normal reward screen untouched.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ─────────────────── 5 NOTIFICATION ─────────────────── -->
+  <section>
+    <div class="shead"><span class="snum">05</span><h2>Monday pulse — the delivered loop</h2></div>
+    <p class="sdesc">One local notification, Monday morning (fresh-start anchor). States the measured movement, nothing else. Mid-experiment = pulse; end = verdict. Taps deep-link to the Honest Week review.</p>
+    <div class="row">
+      <div>
+        <div class="lock">
+          <div class="lktime">9:04</div>
+          <div class="lkdate">Monday, July 27</div>
+          <div class="notif">
+            <div class="nhead"><span class="nicon">🐝</span><span class="napp">Whenbee</span><span class="nwhen">now</span></div>
+            <div class="ntitle">Deep Work experiment — week one</div>
+            <div class="nbody">Your evening ratio moved <b>1.9× → 1.5×</b>. One week to go.</div>
+          </div>
+        </div>
+        <p class="onote"><b>One per week, only while an experiment runs.</b> No streak nags, no "come back". A number moved; you're told. That's the whole message.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ─────────────────── 6 VERDICT ─────────────────── -->
+  <section>
+    <div class="shead"><span class="snum">06</span><h2>Honest Week review — the verdict</h2></div>
+    <p class="sdesc">The experiment concludes inside the ritual that's already Pro. Measured delta, minutes payoff, three exits: <b>keep the habit</b>, <b>new experiment</b>, <b>rest</b>. Sparse data can't fail — it just asks for more time.</p>
+    <div class="row">
+      <div>
+        <div class="ph">
+          <div class="status"><span>9:06</span><span>●●●</span></div>
+          <div class="nav"><span class="back">‹</span><span class="navt">Honest Week</span></div>
+          <div class="c dim" style="padding:var(--s3) var(--s4)"><p class="body13">This week: 11 logs · 3 categories · tightest Tuesday</p></div>
+          <div class="c">
+            <div class="eyebrow"><span class="eb">Experiment · verdict</span></div>
+            <div class="hl" style="text-align:center;margin-top:6px">It worked.</div>
+            <div class="delta"><span class="from">1.9×</span><span class="arr">→</span><span class="to">1.4×</span></div>
+            <p class="payoff">evening ratio, two weeks of honest-number evenings<br/>≈ <b>45m a week</b> back in plans that hold</p>
+            <div class="receipt" style="justify-content:center"><span>13 observations</span><b>·</b><span>evenings only</span></div>
+            <div class="btnrow">
+              <div class="coin">Keep the habit</div>
+              <div class="ghost">Try a new experiment</div>
+              <div class="quiet">Rest a while</div>
+            </div>
+          </div>
+        </div>
+        <p class="onote"><b>"Keep the habit"</b> folds the behavior into normal coaching (add-sheet keeps nudging honest numbers on evenings, quietly). <b>"Rest"</b> is a first-class exit — disengaging is never punished.</p>
+      </div>
+      <div>
+        <div class="variant">Variant — not enough data</div>
+        <div class="ph" style="min-height:auto">
+          <div class="c">
+            <div class="eyebrow"><span class="eb">Experiment · verdict</span></div>
+            <div class="hl">Too quiet to tell</div>
+            <p class="body13">Only 3 evening logs came in — not enough to measure a real change. No harm done.</p>
+            <div class="btnrow">
+              <div class="coin">Give it one more week</div>
+              <div class="ghost">Wrap it up</div>
+            </div>
+          </div>
+        </div>
+        <p class="onote"><b>The no-guilt floor.</b> An empty fortnight reads as "quiet", never "you failed". Wrap-up with no data just returns to the proposal state later.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ─────────────────── 7 FREE TEASER ─────────────────── -->
+  <section>
+    <div class="shead"><span class="snum">07</span><h2>Free tier — existence-only teaser (replaces GoalLocked)</h2></div>
+    <p class="sdesc">Fires only when a real lever exists in the free user's own logs — the teaser is <b>true</b>, which is what makes it strong. No dimension, no direction, no numbers (pro-gate-leak rule). Tap → paywall, trigger <span style="font-family:var(--mono);font-size:12px">experiments</span>.</p>
+    <div class="row">
+      <div>
+        <div class="ph" style="min-height:auto">
+          <div class="status"><span>9:41</span><span>●●●</span></div>
+          <div class="nav"><span class="back">‹</span><span class="navt">Deep Work</span></div>
+          <div class="hero dim">
+            <div><div class="lab">Honest number</div><div class="num">1h 35m</div><div class="cap">for your 1h guess</div></div>
+          </div>
+          <div class="c">
+            <div class="eyebrow"><span class="eb">Experiment</span><span class="propill">PRO</span></div>
+            <div class="hl">There's a pattern in your Deep Work logs</div>
+            <p class="body13">Whenbee found something your guesses do — and an experiment that would use it. Pro runs it with you and measures what changes.</p>
+            <div class="lockrow" style="margin-top:12px"><div class="greyfill"></div><span style="font-size:13px;color:var(--inkFaint)">🔒</span></div>
+          </div>
+        </div>
+        <p class="onote"><b>Only shown when true.</b> No detected lever ⇒ free users see nothing at all — no hollow upsell card parked on the screen.</p>
+      </div>
+      <div>
+        <div class="variant">Paywall trigger copy (replaces "goals" trigger)</div>
+        <div class="ph" style="min-height:auto">
+          <div class="c">
+            <div class="hl">Your logs already know the fix.</div>
+            <p class="body13">Whenbee finds the patterns in how you guess — then runs two-week experiments with you and measures what actually changes. Coaching from your own data, nobody else's.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+</div>
+</body>
+</html>

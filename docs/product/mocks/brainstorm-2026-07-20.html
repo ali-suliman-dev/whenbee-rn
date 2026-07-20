@@ -1,0 +1,522 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Whenbee — brainstorm 2026-07-20</title>
+<style>
+  /* ── real tokens from src/theme/tokens.ts (dark) ─────────────────────── */
+  :root{
+    --bg:#14151D; --surface:#1F2130; --raised:#292B3C; --sunken:#15161F;
+    --hairline:rgba(255,255,255,0.08); --divider:rgba(0,0,0,0.32);
+    --ink:#F4F1EA; --inkSoft:#ADA9B5; --inkFaint:rgba(244,241,234,0.40);
+    --primary:#8275F0; --primaryBright:#B3A7FF; --primaryEdge:#6B5BE6;
+    --primarySoft:rgba(130,117,240,0.22); --primaryChip:rgba(130,117,240,0.20);
+    --accent:#EEAE4D; --accentEdge:#C68A30; --accentSoft:rgba(238,174,77,0.18);
+    --accentChip:#2E2A20; --onAmber:#20233A;
+    --danger:#E06464;
+    /* space */
+    --s1:4px; --s1_5:6px; --s2:8px; --s2_5:10px; --s3:12px; --s4:16px; --s5:20px; --s6:24px; --s8:32px;
+    --rSm:8px; --rMd:12px; --rCard:16px; --rSheet:20px; --rFull:999px;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{
+    background:#0B0C12; color:var(--ink);
+    font-family:'Plus Jakarta Sans',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
+    padding:40px 28px 90px; line-height:1.4;
+  }
+  .wrap{max-width:1500px;margin:0 auto}
+  h1{font-size:30px;font-weight:800;letter-spacing:-0.75px;margin-bottom:6px}
+  .lede{color:var(--inkSoft);font-size:15px;max-width:760px;margin-bottom:40px}
+
+  section{margin-bottom:64px}
+  .shead{display:flex;align-items:baseline;gap:12px;margin-bottom:6px}
+  .snum{font-family:Menlo,monospace;font-size:12px;color:var(--accent);letter-spacing:1px}
+  h2{font-size:22px;font-weight:800;letter-spacing:-0.5px}
+  .sdesc{color:var(--inkSoft);font-size:14px;max-width:820px;margin-bottom:22px}
+  .callout{
+    background:var(--surface);border-left:2px solid var(--accent);
+    padding:14px 16px;border-radius:0 var(--rMd) var(--rMd) 0;
+    color:var(--inkSoft);font-size:13.5px;max-width:820px;margin-bottom:24px;
+  }
+  .callout b{color:var(--ink)}
+  code{font-family:Menlo,monospace;font-size:12px;color:var(--primaryBright);background:var(--sunken);padding:1px 5px;border-radius:4px}
+
+  .row{display:flex;gap:26px;flex-wrap:wrap;align-items:flex-start}
+  .opt{width:352px}
+  .otag{
+    display:inline-flex;align-items:center;gap:7px;margin-bottom:9px;
+    font-size:11px;letter-spacing:0.8px;text-transform:uppercase;font-weight:800;color:var(--inkSoft);
+  }
+  .pick{background:var(--accent);color:var(--onAmber);padding:2px 8px;border-radius:var(--rFull);font-size:9px;letter-spacing:0.8px}
+  .onote{color:var(--inkSoft);font-size:12.5px;margin-top:11px}
+  .onote b{color:var(--ink)}
+  .con{color:#C99;font-size:12.5px;margin-top:4px}
+
+  /* phone */
+  .ph{
+    width:352px;background:var(--bg);border-radius:26px;padding:var(--s5) var(--s5) var(--s6);
+    border:1px solid var(--hairline);
+  }
+  .ph.sheet{border-radius:var(--rSheet) var(--rSheet) 26px 26px;padding-top:var(--s3)}
+  .grab{width:36px;height:4px;border-radius:var(--rFull);background:var(--hairline);margin:0 auto var(--s4)}
+
+  /* generic bits */
+  .eyebrow{font-size:10px;letter-spacing:0.8px;text-transform:uppercase;font-weight:800;color:var(--inkSoft)}
+  .mono{font-family:Menlo,monospace}
+  .hr{height:1px;background:var(--hairline);margin:var(--s4) 0}
+
+  /* ── calendar section ── */
+  .secthead{display:flex;align-items:center;justify-content:space-between;height:44px}
+  .icobtn{
+    width:32px;height:32px;border-radius:var(--rFull);display:grid;place-items:center;
+    background:var(--raised);color:var(--inkSoft);font-size:14px;
+  }
+  .icobtn.hot{background:var(--primaryChip);color:var(--primaryBright)}
+  .evrow{display:flex;gap:var(--s3);align-items:flex-start;padding:var(--s2_5) 0}
+  .evtime{width:52px;font-family:Menlo,monospace;font-size:12px;color:var(--inkSoft);padding-top:1px}
+  .evrail{width:2px;align-self:stretch;background:var(--hairline);border-radius:2px}
+  .evttl{font-size:14px;color:var(--ink)}
+  .evdur{font-size:11px;color:var(--inkFaint);margin-top:2px}
+  .stamp{font-size:11px;color:var(--inkFaint)}
+
+  /* ── timeline ── */
+  .tl{display:flex;flex-direction:column}
+  .blk{display:flex;gap:var(--s3);align-items:stretch;padding:var(--s2) 0}
+  .clock{width:50px;font-family:Menlo,monospace;font-size:12.5px;color:var(--primaryBright);padding-top:12px}
+  .clock.q{color:var(--inkSoft)}
+  .clock.a{color:var(--accent)}
+  .clock.g{color:var(--inkFaint)}
+  .card{
+    flex:1;background:var(--surface);border-radius:var(--rCard);
+    padding:var(--s3) var(--s4);min-height:56px;display:flex;align-items:center;justify-content:space-between;gap:var(--s3)
+  }
+  .card .t{font-size:14.5px;font-weight:600}
+  .card .m{font-size:11.5px;color:var(--inkSoft);margin-top:2px}
+  .card.evt{background:transparent;border:1px dashed var(--hairline);min-height:46px}
+  .card.evt .t{font-style:italic;color:var(--inkSoft);font-weight:500}
+  .card.over{background:var(--accentChip);box-shadow:inset 2px 0 0 var(--accent)}
+  .card.ghost{background:transparent;border:1px dashed rgba(238,174,77,0.45)}
+  .card.ghost .t{color:var(--inkSoft)}
+  .tag{font-size:10px;letter-spacing:0.6px;text-transform:uppercase;font-weight:800;color:var(--accent)}
+  .inline{
+    font-size:12px;font-weight:700;color:var(--accent);
+    border:1px solid rgba(238,174,77,0.4);padding:5px 10px;border-radius:var(--rFull);white-space:nowrap
+  }
+  .inline.q{color:var(--inkSoft);border-color:var(--hairline)}
+  .boundary{display:flex;align-items:center;gap:var(--s3);padding:var(--s2) 0}
+  .bline{flex:1;height:1px;background:rgba(238,174,77,0.35)}
+  .blab{font-family:Menlo,monospace;font-size:11px;color:var(--accent);letter-spacing:0.4px}
+  .msg{font-size:13px;color:var(--inkSoft);padding:var(--s2) 0 var(--s3)}
+  .msg b{color:var(--ink)}
+  .acts{display:flex;gap:var(--s2);padding-bottom:var(--s2)}
+  .banner{
+    background:var(--accentChip);border-radius:var(--rCard);padding:var(--s3) var(--s4);
+    display:flex;align-items:center;justify-content:space-between;gap:var(--s3);margin-bottom:var(--s3)
+  }
+  .banner .bt{font-size:13px;color:var(--ink)}
+  .pill{
+    display:inline-flex;align-items:center;gap:6px;background:var(--raised);
+    padding:7px 13px;border-radius:var(--rFull);font-size:12.5px;color:var(--inkSoft)
+  }
+  .pill.amb{background:var(--accentChip);color:var(--accent)}
+  .pill b{color:var(--ink);font-family:Menlo,monospace}
+  .pill.amb b{color:var(--accent)}
+  .summ{display:flex;gap:var(--s6);padding:var(--s2) 0 var(--s4)}
+  .summ div{display:flex;flex-direction:column;gap:3px}
+  .summ .k{font-size:10px;letter-spacing:0.8px;text-transform:uppercase;color:var(--inkFaint);font-weight:800}
+  .summ .v{font-family:Menlo,monospace;font-size:17px;color:var(--ink)}
+  .summ .v.a{color:var(--accent)}
+  .seg{display:flex;background:var(--sunken);border-radius:var(--rMd);padding:3px;gap:3px}
+  .seg div{flex:1;text-align:center;padding:8px 6px;border-radius:var(--rSm);font-size:12.5px;color:var(--inkSoft);font-weight:600}
+  .seg div.on{background:var(--raised);color:var(--ink)}
+  .anch{width:6px;height:6px;border-radius:var(--rFull);background:var(--primary);flex:none}
+
+  /* ── paywall ── */
+  .coin{
+    display:inline-flex;align-items:center;gap:6px;background:var(--accent);color:var(--onAmber);
+    padding:4px 10px;border-radius:var(--rFull);font-size:10px;font-weight:800;letter-spacing:0.8px
+  }
+  .pwh{font-size:26px;font-weight:800;letter-spacing:-0.6px;line-height:1.19}
+  .pwsub{font-size:14px;color:var(--inkSoft);line-height:1.62}
+  .cta{
+    background:var(--accent);color:var(--onAmber);text-align:center;font-weight:800;font-size:16px;
+    padding:14px;border-radius:var(--rFull);box-shadow:0 7px 0 var(--accentEdge);margin:var(--s2) 0 var(--s5)
+  }
+  .foot{display:flex;flex-direction:column;align-items:center;gap:var(--s2_5);text-align:center}
+  .f1{font-size:12px;font-weight:700;color:var(--inkSoft)}
+  .f2{font-size:12px;color:var(--inkSoft)}
+  .f2 b{color:var(--ink);font-weight:800}
+  .f3{font-size:12px;color:var(--inkFaint)}
+  .flinks{display:flex;gap:var(--s2);font-size:12px}
+  .flinks span{color:var(--inkSoft);font-weight:800}
+  .flinks i{color:var(--inkFaint);font-style:normal}
+  .del{text-decoration:line-through;opacity:.42}
+  .measure{position:relative;border-left:2px solid var(--primary);padding-left:10px;margin:0 0 0 -12px}
+  .mlab{font-family:Menlo,monospace;font-size:9px;color:var(--primaryBright);position:absolute;left:-2px;top:-13px}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<h1>Brainstorm — 20 Jul 2026</h1>
+<p class="lede">Four questions, options rendered at real token values in dark mode. Pick per section (you can mix). Nothing below is built yet — the two things already shipped this session are noted inline.</p>
+
+<!-- ══════════════ 1. CALENDAR REFRESH ══════════════ -->
+<section>
+  <div class="shead"><span class="snum">01</span><h2>Where the calendar refresh lives</h2></div>
+  <p class="sdesc">Today the app fetches calendar events <em>once</em> per day-selection and never again (<code>useDayCapacity.ts:122</code>). Add an event in iOS Calendar while Whenbee is open and it will not appear. There is no refresh anywhere, and no pull-to-refresh in the whole app.</p>
+
+  <div class="callout">
+    <b>What successful apps actually do:</b> Fantastical, Apple Calendar and Google Calendar have <b>no visible refresh button at all</b> — they refetch on app foreground and on screen focus, plus pull-to-refresh as the escape hatch. Sunsama and Notion Calendar do show one explicit sync control, always paired with a <b>last-synced timestamp</b> — because a refresh button with no staleness signal just tells the user "this data might be wrong" without telling them when.<br><br>
+    <b>So the real answer is two-part:</b> (1) auto-refetch on foreground + focus — this is the missing 90%, and it is not a design question; (2) exactly <b>one</b> manual control, in the densest calendar surface. Three refresh buttons across Today / Honest Day / Plan would read as an app that doesn't trust its own data.
+  </div>
+
+  <div class="row">
+
+    <div class="opt">
+      <div class="otag">A · Section header <span class="pick">recommended</span></div>
+      <div class="ph">
+        <div class="secthead">
+          <div style="display:flex;align-items:center;gap:10px">
+            <span class="eyebrow">Calendar · 3</span>
+            <span class="stamp">updated 2m ago</span>
+          </div>
+          <div style="display:flex;gap:6px;align-items:center">
+            <div class="icobtn hot">⟳</div>
+            <div class="icobtn" style="background:transparent">⌄</div>
+          </div>
+        </div>
+        <div class="hr" style="margin:var(--s2) 0"></div>
+        <div class="evrow"><div class="evtime">09:30</div><div class="evrail"></div><div><div class="evttl">Standup</div><div class="evdur">15m</div></div></div>
+        <div class="evrow"><div class="evtime">13:00</div><div class="evrail"></div><div><div class="evttl">Client call</div><div class="evdur">1h</div></div></div>
+        <div class="evrow"><div class="evtime">16:30</div><div class="evrail"></div><div><div class="evttl">Gym</div><div class="evdur">45m</div></div></div>
+      </div>
+      <p class="onote"><b>Always visible, zero new chrome.</b> The dropdown header is the labeled home of calendar data, it is on-screen whenever events exist, and it already has a 44pt row. The timestamp only appears once data is &gt;2 min old, so it is silent in normal use and loud exactly when refresh is worth tapping.</p>
+      <p class="con">Cost: header now carries three elements — needs the count label to stay left and the two glyphs to group right, or it reads cluttered.</p>
+    </div>
+
+    <div class="opt">
+      <div class="otag">B · Pull-to-refresh</div>
+      <div class="ph">
+        <div style="text-align:center;padding:var(--s2) 0 var(--s4);color:var(--primaryBright);font-size:20px">⟳</div>
+        <div class="secthead">
+          <span class="eyebrow">Calendar · 3</span>
+          <div class="icobtn" style="background:transparent">⌄</div>
+        </div>
+        <div class="hr" style="margin:var(--s2) 0"></div>
+        <div class="evrow"><div class="evtime">09:30</div><div class="evrail"></div><div><div class="evttl">Standup</div><div class="evdur">15m</div></div></div>
+        <div class="evrow"><div class="evtime">13:00</div><div class="evrail"></div><div><div class="evttl">Client call</div><div class="evdur">1h</div></div></div>
+        <div class="evrow"><div class="evtime">16:30</div><div class="evrail"></div><div><div class="evttl">Gym</div><div class="evdur">45m</div></div></div>
+      </div>
+      <p class="onote"><b>The universal gesture, no pixels spent.</b> Every user already knows it. Refreshes the whole Today screen, not just calendar — arguably more honest.</p>
+      <p class="con">Undiscoverable — you asked for something <em>visible</em>, and this is the opposite. Also fights the Today scroll on a screen that is already gesture-heavy. Good as a <b>companion</b> to A, weak on its own.</p>
+    </div>
+
+    <div class="opt">
+      <div class="otag">C · Honest Day + Plan too</div>
+      <div class="ph sheet">
+        <div class="grab"></div>
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:var(--s4)">
+          <div style="font-size:20px;font-weight:800;letter-spacing:-0.5px">Your honest day</div>
+          <div class="icobtn hot">⟳</div>
+        </div>
+        <div class="evrow"><div class="evtime">09:30</div><div class="evrail"></div><div><div class="evttl">Standup</div><div class="evdur">15m → 25m</div></div></div>
+        <div class="evrow"><div class="evtime">13:00</div><div class="evrail"></div><div><div class="evttl">Client call</div><div class="evdur">1h → 1h 15m</div></div></div>
+        <div class="hr"></div>
+        <div style="font-size:12.5px;color:var(--inkFaint);text-align:center">Missing an event? Pull down to refetch.</div>
+      </div>
+      <p class="onote"><b>Refresh in every surface.</b> Honest Day has the highest stakes — it <em>writes</em> to the real calendar, so acting on stale reads is the one place that causes damage.</p>
+      <p class="con">Three buttons = repetition, and Plan/Today share the exact same cached fetch (<code>useDayPlan.ts:82</code>), so a Plan-drawer button would be a third control over one data source.</p>
+    </div>
+
+  </div>
+
+  <div class="callout" style="margin-top:26px;border-left-color:var(--primary)">
+    <b>My call — where it's actually needed:</b><br>
+    · <b>Today CALENDAR header → yes, the visible button (A).</b> Primary, always-on, discoverable.<br>
+    · <b>Honest Day → yes, but not a second button.</b> Auto-refetch on mount (it currently fetches once per <code>Date.now()</code>) plus a quiet "Missing an event? Refresh" line in the empty/denied state. Stakes are high, chrome is low.<br>
+    · <b>Plan drawer → no button.</b> It renders the same cache; refetch when the drawer opens. Adding a control here buys nothing and costs a third glyph.<br>
+    · <b>Everywhere → auto-refetch on app foreground + screen focus.</b> <code>useFocusEffect</code> is already the house pattern (<code>usePatterns.ts:424</code>) and calendar is the one hook that never got it.
+  </div>
+</section>
+
+<!-- ══════════════ 2. WON'T FIT ══════════════ -->
+<section>
+  <div class="shead"><span class="snum">02</span><h2>When a task doesn't fit</h2></div>
+  <p class="sdesc">Today: an amber banner sits at the top saying <em>"This won't all fit today — move &lsquo;X&rsquo; to tomorrow?"</em> (<code>DayTimeline.tsx:78</code>), and any task the engine genuinely can't place is <b>silently dropped from the timeline</b> (<code>planDayAroundAnchors.ts:336</code>). You asked for the opposite: keep it visible, colour it differently, put the action in the block.</p>
+
+  <div class="row">
+
+    <div class="opt">
+      <div class="otag">A · Current (for reference)</div>
+      <div class="ph sheet">
+        <div class="grab"></div>
+        <div class="banner">
+          <div class="bt">This won't all fit today — move "Invoices" to tomorrow?</div>
+          <div class="inline">Move</div>
+        </div>
+        <div class="tl">
+          <div class="blk"><div class="clock">11:00</div><div class="card"><div><div class="t">Draft proposal</div><div class="m">1h 20m</div></div></div></div>
+          <div class="blk"><div class="clock g">13:00</div><div class="card evt"><div class="t">Client call</div></div></div>
+          <div class="blk"><div class="clock">14:00</div><div class="card"><div><div class="t">Review PRs</div><div class="m">50m</div></div></div></div>
+        </div>
+        <div style="color:var(--inkFaint);font-size:12px;text-align:center;padding-top:var(--s4)">"Invoices" is named in the banner<br>but appears nowhere in the plan.</div>
+      </div>
+      <p class="con">The failure: the task is <b>talked about but not shown</b>. You read a name in a banner and have to trust it. Alert at the top is also disconnected from where the problem physically is — the bottom of the day.</p>
+    </div>
+
+    <div class="opt">
+      <div class="otag">B · Overflow in place <span class="pick">recommended</span></div>
+      <div class="ph sheet">
+        <div class="grab"></div>
+        <div class="summ">
+          <div><span class="k">Start by</span><span class="v">11:00</span></div>
+          <div><span class="k">Done by</span><span class="v a">15:30 →16:20</span></div>
+        </div>
+        <div class="tl">
+          <div class="blk"><div class="clock">11:00</div><div class="card"><div><div class="t">Draft proposal</div><div class="m">1h 20m</div></div></div></div>
+          <div class="blk"><div class="clock g">13:00</div><div class="card evt"><div class="t">Client call</div></div></div>
+          <div class="blk"><div class="clock">14:00</div><div class="card"><div><div class="t">Review PRs</div><div class="m">50m</div></div></div></div>
+
+          <div class="boundary"><span class="blab">15:30 · done by</span><span class="bline"></span></div>
+          <div class="msg">Everything from here runs past your done-by. <b>Push it to 16:20</b>, or move a task to tomorrow.</div>
+
+          <div class="blk">
+            <div class="clock a">15:30</div>
+            <div class="card over">
+              <div><div class="t">Invoices</div><div class="m"><span class="tag">+50m over</span></div></div>
+              <div class="inline">Tomorrow</div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <p class="onote"><b>The task never disappears.</b> It sits where it actually falls — after the done-by line — in an amber block with its own "Tomorrow" action. The message is a plain sentence at the boundary, not an alert at the top, and it names both exits. The done-by summary shows <code>15:30 →16:20</code> so the cost is a number, not a warning.</p>
+      <p class="onote">Matches the invariant: amber, never red. It's a fact about the day, not a failure.</p>
+    </div>
+
+    <div class="opt">
+      <div class="otag">C · Ghost shelf</div>
+      <div class="ph sheet">
+        <div class="grab"></div>
+        <div class="summ">
+          <div><span class="k">Start by</span><span class="v">11:00</span></div>
+          <div><span class="k">Done by</span><span class="v">15:30</span></div>
+        </div>
+        <div class="tl">
+          <div class="blk"><div class="clock">11:00</div><div class="card"><div><div class="t">Draft proposal</div><div class="m">1h 20m</div></div></div></div>
+          <div class="blk"><div class="clock g">13:00</div><div class="card evt"><div class="t">Client call</div></div></div>
+          <div class="blk"><div class="clock">14:00</div><div class="card"><div><div class="t">Review PRs</div><div class="m">50m</div></div></div></div>
+
+          <div class="boundary"><span class="bline"></span><span class="blab">doesn't fit today</span><span class="bline"></span></div>
+
+          <div class="blk">
+            <div class="clock g">—</div>
+            <div class="card ghost">
+              <div><div class="t">Invoices</div><div class="m">50m · needs until 16:20</div></div>
+              <div class="inline q">Tomorrow</div>
+            </div>
+          </div>
+          <div class="blk">
+            <div class="clock g">—</div>
+            <div class="card ghost">
+              <div><div class="t">Email backlog</div><div class="m">25m</div></div>
+              <div class="inline q">Tomorrow</div>
+            </div>
+          </div>
+        </div>
+        <div class="acts" style="padding-top:var(--s3)">
+          <div class="inline" style="flex:1;text-align:center">Push done-by to 16:45</div>
+        </div>
+      </div>
+      <p class="onote"><b>A holding area below the line.</b> Overflow tasks lose their clock entirely (they have no honest time today) and render as dashed ghosts. Scales cleanly to 3+ overflowing tasks, which B starts to strain at.</p>
+      <p class="con">Weaker signal that these are <em>your day</em> — a shelf reads a bit like a second list. And "—" instead of a time is less informative than B's honest 15:30.</p>
+    </div>
+
+  </div>
+  <div class="callout" style="margin-top:26px;border-left-color:var(--primary)">
+    <b>My call:</b> <b>B</b> for one or two overflowing tasks — which is the real case ~90% of the time — and it degrades into <b>C</b> automatically at three or more, where a stack of amber blocks would start to feel like nagging. Same boundary line, same inline "Tomorrow" action, so it's one component with a density switch, not two designs.
+  </div>
+</section>
+
+<!-- ══════════════ 3. START BY ══════════════ -->
+<section>
+  <div class="shead"><span class="snum">03</span><h2>Done-by shouldn't dictate start-by</h2></div>
+
+  <div class="callout">
+    <b>First — the diagnosis, because your premise was slightly off.</b><br>
+    There is no 30-minute lock. The planner's floor was literally <code>now</code>. What you're actually hitting is that <code>backwardFill</code> packs tasks <b>as late as possible</b>, filling right-to-left from your done-by. Done-by 15:30 → it fills 14:00–15:30 first, then spills backwards <em>past</em> the 13:00 meeting → start-by 11:00.<br><br>
+    And dragging a task only rewrites its <b>sequence order</b> (<code>dayTasksStore.ts:441</code>) — never which free window it sits in. The engine then re-derives placement from scratch, so your drag "before the meeting" gets undone the next frame. That is the lock you're feeling. There is no per-task window pinning in the model at all.<br><br>
+    <b>Already shipped this session:</b> <code>MIN_START_LEAD_MIN = 5</code> — the plan will now never claim you must have started earlier than 5 minutes from right now.
+  </div>
+
+  <div class="row">
+
+    <div class="opt">
+      <div class="otag">A · Direction toggle <span class="pick">recommended</span></div>
+      <div class="ph sheet">
+        <div class="grab"></div>
+        <div class="seg" style="margin-bottom:var(--s4)">
+          <div>Finish by 15:30</div><div class="on">Start soon</div>
+        </div>
+        <div class="summ">
+          <div><span class="k">Start by</span><span class="v a">09:05</span></div>
+          <div><span class="k">Finish</span><span class="v">14:55</span></div>
+        </div>
+        <div class="tl">
+          <div class="blk"><div class="clock a">09:05</div><div class="card"><div><div class="t">Draft proposal</div><div class="m">1h 20m</div></div></div></div>
+          <div class="blk"><div class="clock">10:30</div><div class="card"><div><div class="t">Review PRs</div><div class="m">50m</div></div></div></div>
+          <div class="blk"><div class="clock g">13:00</div><div class="card evt"><div class="t">Client call</div></div></div>
+          <div class="blk"><div class="clock">14:05</div><div class="card"><div><div class="t">Invoices</div><div class="m">50m</div></div></div></div>
+        </div>
+        <div style="color:var(--inkFaint);font-size:12px;padding-top:var(--s4);line-height:1.5">Same tasks, same meeting, same done-by — filled <b style="color:var(--inkSoft)">forward from now+5m</b> instead of backward from the deadline. Two tasks land before the meeting and everything finishes 35m early.</div>
+      </div>
+      <p class="onote"><b>One switch, whole problem gone.</b> Forward-fill is a mirror of the existing <code>backwardFill</code> — same free-window machinery, opposite direction. "Start soon" earns you the earliest honest start-by; "Finish by" keeps today's latest-possible behaviour for people who want the lie-in.</p>
+      <p class="onote">Smallest engine change of the three, and it answers your literal ask: <em>"give me an earlier start-by."</em></p>
+    </div>
+
+    <div class="opt">
+      <div class="otag">B · Drag pins the window</div>
+      <div class="ph sheet">
+        <div class="grab"></div>
+        <div class="summ">
+          <div><span class="k">Start by</span><span class="v a">09:05</span></div>
+          <div><span class="k">Done by</span><span class="v">15:30</span></div>
+        </div>
+        <div class="tl">
+          <div class="blk"><div class="clock a">09:05</div><div class="card" style="box-shadow:inset 2px 0 0 var(--primary)"><div style="display:flex;align-items:center;gap:9px"><span class="anch"></span><div><div class="t">Draft proposal</div><div class="m">before the call · pinned</div></div></div></div></div>
+          <div class="blk"><div class="clock a">10:30</div><div class="card" style="box-shadow:inset 2px 0 0 var(--primary)"><div style="display:flex;align-items:center;gap:9px"><span class="anch"></span><div><div class="t">Review PRs</div><div class="m">before the call · pinned</div></div></div></div></div>
+          <div class="blk"><div class="clock g">13:00</div><div class="card evt"><div class="t">Client call</div></div></div>
+          <div class="blk"><div class="clock">14:40</div><div class="card"><div><div class="t">Invoices</div><div class="m">50m</div></div></div></div>
+        </div>
+        <div style="color:var(--inkFaint);font-size:12px;padding-top:var(--s4);line-height:1.5">Dragging a task <b style="color:var(--inkSoft)">above</b> the meeting row pins it to that side. The indigo dot is the pin; tap it to release. Unpinned tasks still flow automatically.</div>
+      </div>
+      <p class="onote"><b>The most direct answer to what you described.</b> "If I move the two tasks before the meeting" — this makes that gesture actually mean something, permanently.</p>
+      <p class="con">Biggest build: needs a per-task window pin in the domain model, pin persistence, and a rule for what happens when a pinned window shrinks because a meeting moved. Real engine work, not a toggle.</p>
+    </div>
+
+    <div class="opt">
+      <div class="otag">C · Draggable start-by</div>
+      <div class="ph sheet">
+        <div class="grab"></div>
+        <div style="display:flex;align-items:center;gap:var(--s3);padding-bottom:var(--s3)">
+          <div class="pill amb"><b>09:05</b> start by</div>
+          <div style="flex:1;height:2px;background:linear-gradient(90deg,var(--accent),var(--hairline));border-radius:2px"></div>
+          <div style="color:var(--accent);font-size:15px">⇕</div>
+        </div>
+        <div style="font-size:12.5px;color:var(--inkSoft);padding-bottom:var(--s3)">Drag the start-by earlier and the day re-flows into the earliest free windows. Floor is <b style="color:var(--ink)">09:00</b> — five minutes from now.</div>
+        <div class="tl">
+          <div class="blk"><div class="clock a">09:05</div><div class="card"><div><div class="t">Draft proposal</div><div class="m">1h 20m</div></div></div></div>
+          <div class="blk"><div class="clock">10:30</div><div class="card"><div><div class="t">Review PRs</div><div class="m">50m</div></div></div></div>
+          <div class="blk"><div class="clock g">13:00</div><div class="card evt"><div class="t">Client call</div></div></div>
+          <div class="blk"><div class="clock">14:05</div><div class="card"><div><div class="t">Invoices</div><div class="m">50m</div></div></div></div>
+        </div>
+      </div>
+      <p class="onote"><b>Makes start-by a lever instead of a readout.</b> Symmetric with the done-by pill you already have — you'd own both ends of the day.</p>
+      <p class="con">Conflicts with the locked "honest number is a forecast, not a target" direction — a draggable start-by invites chasing it. Also the most gesture work, on a sheet already hosting drag-to-reorder.</p>
+    </div>
+
+  </div>
+  <div class="callout" style="margin-top:26px;border-left-color:var(--primary)">
+    <b>My call:</b> <b>A now, B next.</b> The toggle is a genuinely small change (mirror the fill direction) and immediately gives you the earlier start-by you asked for. B is the better long-term model but needs a new domain concept — worth doing once A proves the forward-fill maths on your real days. <b>C I'd skip</b>: it re-opens the target-chasing problem the honest-number redesign deliberately closed.
+  </div>
+</section>
+
+<!-- ══════════════ 4. PAYWALL ══════════════ -->
+<section>
+  <div class="shead"><span class="snum">04</span><h2>Paywall — footer copy &amp; header breathing room</h2></div>
+  <p class="sdesc">Four stacked lines under the CTA is three too many; the promise that matters ("calibration stays free") is buried at the bottom where nobody reads, sandwiched between legalese.</p>
+
+  <div class="row">
+
+    <div class="opt">
+      <div class="otag">Header · shipped</div>
+      <div class="ph">
+        <div style="display:flex;gap:34px">
+          <div style="flex:1">
+            <div style="font-size:9px;letter-spacing:1px;color:var(--inkFaint);margin-bottom:9px;font-family:Menlo,monospace">BEFORE · 8px</div>
+            <div class="coin">◆ WHENBEE PRO</div>
+            <div style="height:8px"></div>
+            <div class="pwh" style="font-size:22px">Everything your honest numbers can do.</div>
+          </div>
+          <div style="flex:1">
+            <div style="font-size:9px;letter-spacing:1px;color:var(--accent);margin-bottom:9px;font-family:Menlo,monospace">AFTER · 16px</div>
+            <div class="coin">◆ WHENBEE PRO</div>
+            <div class="measure" style="height:16px;margin-left:0"></div>
+            <div class="pwh" style="font-size:22px">Everything your honest numbers can do.</div>
+          </div>
+        </div>
+      </div>
+      <p class="onote"><b>Done.</b> The badge and headline shared one 8px gap with the subtext, so the coin read as the first line of the title. Now badge → headline is <code>space[4]</code> (16), while headline → subtext stays <code>space[2]</code> (8) so those two still group as one unit.</p>
+    </div>
+
+    <div class="opt">
+      <div class="otag">A · Promise moves up top <span class="pick">recommended</span></div>
+      <div class="ph">
+        <div class="coin">◆ WHENBEE PRO</div>
+        <div style="height:16px"></div>
+        <div class="pwh">Everything your honest numbers can do.</div>
+        <div style="height:8px"></div>
+        <div class="pwsub">You did the logging. Pro puts those real numbers to work everywhere you plan — <b style="color:var(--ink);font-weight:800">calibration stays free, always.</b></div>
+        <div class="hr" style="margin:var(--s5) 0"></div>
+        <div class="cta">Try 7 days free</div>
+        <div class="foot">
+          <div class="f1">No payment now. Cancel anytime.</div>
+          <div class="f2 del">Calibration stays free, always. Pro just adds the payoff.</div>
+          <div class="f3">Plans renew until cancelled.</div>
+          <div class="flinks"><span>Restore Purchases</span><i>·</i><span>Terms</span><i>·</i><span>Privacy</span></div>
+        </div>
+      </div>
+      <p class="onote"><b>Merged into the subheader, exactly as you suggested.</b> "Am I losing what I already have?" is the objection that forms in the first three seconds — answering it at the bottom of the page is answering it too late. Footer drops 4 lines → 3 and becomes purely transactional.</p>
+      <p class="onote">"Pro just adds the payoff" is dropped, not moved: with the free promise stated, it was restating the headline.</p>
+    </div>
+
+    <div class="opt">
+      <div class="otag">B · Under the feature list</div>
+      <div class="ph">
+        <div style="opacity:.5">
+          <div class="blk" style="padding:6px 0"><div class="clock g">17:00</div><div class="card" style="min-height:40px"><div class="t" style="font-size:13px">The evening actually fits</div></div></div>
+          <div class="blk" style="padding:6px 0"><div class="clock g">Sun</div><div class="card" style="min-height:40px"><div class="t" style="font-size:13px">The week, understood</div></div></div>
+        </div>
+        <div style="padding:var(--s4) 0 var(--s5);text-align:center">
+          <div class="f2" style="font-size:13px"><b>Calibration stays free, always.</b><br><span style="color:var(--inkSoft)">Pro just adds the payoff.</span></div>
+        </div>
+        <div class="cta">Try 7 days free</div>
+        <div class="foot">
+          <div class="f1">No payment now. Cancel anytime.</div>
+          <div class="f3">Plans renew until cancelled.</div>
+          <div class="flinks"><span>Restore Purchases</span><i>·</i><span>Terms</span><i>·</i><span>Privacy</span></div>
+        </div>
+      </div>
+      <p class="onote"><b>A reassurance beat right before the ask.</b> Sits at the doubt peak — you've just scrolled 12 locked features and are wondering what you're giving up. Keeps both sentences intact.</p>
+      <p class="con">Adds a line to the scroll body instead of removing one, and puts free-tier talk immediately above the CTA — one beat of hesitation exactly where you don't want it.</p>
+    </div>
+
+    <div class="opt">
+      <div class="otag">C · Fold into the reassurance</div>
+      <div class="ph">
+        <div class="pwh" style="font-size:22px">Everything your honest numbers can do.</div>
+        <div style="height:8px"></div>
+        <div class="pwsub" style="font-size:13.5px">You did the logging. Pro puts those real numbers to work everywhere you plan.</div>
+        <div class="hr" style="margin:var(--s5) 0"></div>
+        <div class="cta">Try 7 days free</div>
+        <div class="foot">
+          <div class="f1">No payment now. Cancel anytime.</div>
+          <div class="f2"><b>Calibration stays free either way.</b></div>
+          <div class="f3">Plans renew until cancelled.</div>
+          <div class="flinks"><span>Restore Purchases</span><i>·</i><span>Terms</span><i>·</i><span>Privacy</span></div>
+        </div>
+      </div>
+      <p class="onote"><b>Smallest edit, footer stays four rows but each is one short line.</b> "Either way" does the work of the whole dropped sentence — it ties the promise to the trial decision instead of stating it in the abstract.</p>
+      <p class="con">Still buried below the CTA. Tidier than today, but it doesn't fix the placement problem — it just shortens it.</p>
+    </div>
+
+  </div>
+  <div class="callout" style="margin-top:26px;border-left-color:var(--primary)">
+    <b>My call: A.</b> It's the only one that both cleans up the footer <em>and</em> puts the free-forever promise where the objection actually forms. If you want the reassurance beat near the CTA too, A + C compose — subheader carries the promise, footer says "either way" — but that's two statements of the same idea, so I'd ship A alone first and see if it reads short.
+  </div>
+</section>
+
+</div>
+</body>
+</html>

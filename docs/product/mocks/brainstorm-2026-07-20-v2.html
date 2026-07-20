@@ -1,0 +1,448 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Whenbee — v2, real context</title>
+<style>
+  :root{
+    --bg:#14151D; --surface:#1F2130; --raised:#292B3C; --sunken:#15161F; --raisedEdge:#1B1C27;
+    --hairline:rgba(255,255,255,0.08);
+    --ink:#F4F1EA; --inkSoft:#ADA9B5; --inkFaint:rgba(244,241,234,0.40);
+    --primary:#8275F0; --primaryBright:#B3A7FF; --primaryEdge:#6B5BE6;
+    --primaryWash:rgba(130,117,240,0.10); --primaryChip:rgba(130,117,240,0.20);
+    --accent:#EEAE4D; --accentEdge:#C68A30; --accentSoft:rgba(238,174,77,0.18);
+    --accentChip:#2E2A20; --onAmber:#20233A; --danger:#E06464;
+    /* light */
+    --lbg:#F4F2FC; --lsurface:#FFFFFF; --link:#20233A; --linkSoft:#5C5F73; --linkFaint:#9B9DAB;
+    --lprimary:#6B5BE6; --lprimaryWash:#EFEDFC; --laccent:#EEAE4D; --laccentSoft:#FBEFD6;
+    --lraisedEdge:#DAD3EC; --lhairline:#DAD5C9; --ltaskbg:#E9E4F6;
+    --s0_5:2px; --s1:4px; --s1_5:6px; --s2:8px; --s2_5:10px; --s3:12px; --s4:16px; --s5:20px; --s6:24px; --s8:32px;
+    --rSm:8px; --rMd:12px; --rCard:16px; --rSheet:20px; --rFull:999px;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{background:#0B0C12;color:var(--ink);
+    font-family:'Plus Jakarta Sans',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
+    padding:40px 28px 90px;line-height:1.4}
+  .wrap{max-width:1560px;margin:0 auto}
+  h1{font-size:30px;font-weight:800;letter-spacing:-0.75px;margin-bottom:6px}
+  .lede{color:var(--inkSoft);font-size:15px;max-width:800px;margin-bottom:38px}
+  section{margin-bottom:62px}
+  .shead{display:flex;align-items:baseline;gap:12px;margin-bottom:6px}
+  .snum{font-family:Menlo,monospace;font-size:12px;color:var(--accent);letter-spacing:1px}
+  h2{font-size:22px;font-weight:800;letter-spacing:-0.5px}
+  .sdesc{color:var(--inkSoft);font-size:14px;max-width:860px;margin-bottom:22px}
+  .note{background:var(--surface);padding:14px 16px;border-radius:var(--rMd);
+    color:var(--inkSoft);font-size:13.5px;max-width:860px;margin-bottom:24px}
+  .note b{color:var(--ink)}
+  code{font-family:Menlo,monospace;font-size:12px;color:var(--primaryBright);background:var(--sunken);padding:1px 5px;border-radius:4px}
+  .row{display:flex;gap:26px;flex-wrap:wrap;align-items:flex-start}
+  .opt{width:352px}
+  .otag{display:inline-flex;align-items:center;gap:7px;margin-bottom:9px;font-size:11px;
+    letter-spacing:0.8px;text-transform:uppercase;font-weight:800;color:var(--inkSoft)}
+  .pick{background:var(--accent);color:var(--onAmber);padding:2px 8px;border-radius:var(--rFull);font-size:9px}
+  .onote{color:var(--inkSoft);font-size:12.5px;margin-top:11px}
+  .onote b{color:var(--ink)}
+  .con{color:#C99;font-size:12.5px;margin-top:4px}
+
+  /* device */
+  .ph{width:352px;background:var(--bg);border:1px solid var(--hairline);
+    border-radius:var(--rSheet) var(--rSheet) 26px 26px;padding:var(--s3) var(--s5) var(--s5);
+    display:flex;flex-direction:column}
+  .ph.light{background:var(--lbg);border-color:var(--lhairline);color:var(--link)}
+  .grab{width:36px;height:4px;border-radius:var(--rFull);background:var(--hairline);margin:0 auto}
+
+  .phead{display:flex;align-items:center;justify-content:space-between;padding:var(--s5) 0 var(--s3)}
+  .ptitle{font-size:22px;font-weight:800;letter-spacing:-0.5px}
+  .clear{display:flex;align-items:center;gap:var(--s1);color:var(--danger);font-size:14px;font-weight:500}
+
+  /* timeline — matches DayTimeline */
+  .tl{display:flex;flex-direction:column;margin-top:var(--s3)}
+  .blk{display:flex;gap:var(--s3);align-items:stretch;padding:var(--s1_5) 0}
+  .clock{width:46px;font-family:Menlo,monospace;font-size:12.5px;color:var(--primaryBright);padding-top:14px;text-align:right}
+  .clock.a{color:var(--accent)} .clock.g{color:var(--inkFaint)}
+  .card{flex:1;background:var(--surface);border-radius:var(--rCard);padding:var(--s3) var(--s4);
+    min-height:70px;display:flex;align-items:center;justify-content:space-between;gap:var(--s3)}
+  .card .t{font-size:14.5px;font-weight:600}
+  .card .m{font-size:11.5px;color:var(--inkSoft);margin-top:3px}
+  .card.evt{background:transparent;min-height:46px;padding:var(--s2) var(--s4)}
+  .card.evt .t{font-style:italic;color:var(--inkSoft);font-weight:500;font-size:13.5px}
+  .card.over{background:var(--accentChip)}
+  .card.over .t{color:var(--accent)}
+  .grip{display:flex;flex-direction:column;gap:3px;opacity:.5}
+  .grip i{display:block;width:14px;height:1.5px;background:var(--inkSoft);border-radius:2px}
+  .tag{font-size:10px;letter-spacing:0.6px;text-transform:uppercase;font-weight:800;color:var(--accent);margin-top:4px;display:block}
+  .inline{font-size:12px;font-weight:700;color:var(--accent);background:var(--accentSoft);
+    padding:7px 12px;border-radius:var(--rFull);white-space:nowrap}
+  .boundary{display:flex;align-items:center;gap:var(--s2_5);padding:var(--s3) 0 var(--s1)}
+  .bline{flex:1;height:1px;background:rgba(238,174,77,0.28)}
+  .blab{font-family:Menlo,monospace;font-size:10.5px;color:var(--accent);letter-spacing:0.6px;text-transform:uppercase}
+  .msg{font-size:13px;color:var(--inkSoft);padding:var(--s1) 0 var(--s2);line-height:1.5}
+  .msg b{color:var(--ink)}
+
+  /* bottom controls — matches plan.tsx */
+  .foot{border-top:1px solid var(--hairline);padding-top:var(--s3);margin-top:var(--s4);
+    display:flex;flex-direction:column;gap:var(--s3)}
+  .times{display:flex;align-items:baseline;gap:var(--s1_5);font-size:12px;color:var(--inkSoft)}
+  .times b{font-family:Menlo,monospace;color:var(--ink);font-weight:400;font-size:12px}
+  .times b.a{color:var(--accent)}
+  .times i{color:var(--inkFaint);font-style:normal}
+  .cells{display:flex;flex-direction:column;gap:var(--s2_5)}
+  .cell{display:flex;align-items:center;gap:var(--s2_5);padding:var(--s2_5) var(--s3);
+    min-height:44px;border-radius:var(--rMd);background:var(--raised);font-size:14px}
+  .cell .lab{flex:1;color:var(--ink);font-weight:500}
+  .cell .ic{color:var(--inkSoft);font-size:16px;width:20px;text-align:center}
+  .cell .chev{color:var(--inkFaint);font-size:13px}
+  .sw{width:44px;height:26px;border-radius:var(--rFull);background:#3A3D52;position:relative}
+  .sw.on{background:var(--primary)}
+  .sw::after{content:'';position:absolute;top:2px;left:2px;width:22px;height:22px;border-radius:var(--rFull);background:#fff}
+  .sw.on::after{left:20px}
+  .cta{background:var(--primary);color:#fff;text-align:center;font-weight:800;font-size:16px;
+    padding:13px;border-radius:var(--rFull);box-shadow:0 7px 0 var(--primaryEdge);margin-top:var(--s1)}
+  .seg{display:flex;background:var(--sunken);border-radius:var(--rMd);padding:3px;gap:3px}
+  .seg div{flex:1;text-align:center;padding:9px 6px;border-radius:var(--rSm);font-size:12.5px;color:var(--inkSoft);font-weight:600}
+  .seg div.on{background:var(--raised);color:var(--ink)}
+  .seglab{font-size:10px;letter-spacing:0.8px;text-transform:uppercase;font-weight:800;color:var(--inkFaint);margin-bottom:var(--s2)}
+
+  /* today calendar section — unchanged design */
+  .today{width:352px;background:var(--bg);border:1px solid var(--hairline);border-radius:26px;padding:var(--s5)}
+  .secthead{display:flex;align-items:center;justify-content:space-between;height:44px}
+  .eyebrow{font-size:10px;letter-spacing:0.8px;text-transform:uppercase;font-weight:800;color:var(--inkSoft)}
+  .stamp{font-size:11px;color:var(--inkFaint)}
+  .icobtn{width:32px;height:32px;border-radius:var(--rFull);display:grid;place-items:center;color:var(--inkSoft);font-size:15px}
+  .icobtn.hot{background:var(--primaryChip);color:var(--primaryBright)}
+  .evrow{display:flex;gap:var(--s3);align-items:flex-start;padding:var(--s2_5) 0}
+  .evtime{width:52px;font-family:Menlo,monospace;font-size:12px;color:var(--inkSoft);padding-top:1px}
+  .evrail{width:2px;align-self:stretch;background:var(--hairline);border-radius:2px}
+  .evttl{font-size:14px} .evdur{font-size:11px;color:var(--inkFaint);margin-top:2px}
+  .spin{display:flex;justify-content:center;color:var(--primaryBright);font-size:19px;padding:var(--s2) 0 var(--s3)}
+
+  /* paywall light */
+  .prow{display:flex;gap:var(--s3)}
+  .ptime{width:40px;text-align:right;font-size:12px;color:var(--linkFaint);padding-top:var(--s2);font-variant-numeric:tabular-nums}
+  .prail{width:30px;display:flex;flex-direction:column;align-items:center}
+  .pcoin{width:30px;height:30px;border-radius:var(--rFull);background:var(--lsurface);
+    display:grid;place-items:center;color:var(--lprimary);font-size:13px;border-bottom:2px solid var(--lraisedEdge)}
+  .pcoin.amb{background:var(--laccent);color:var(--onAmber);border-bottom-color:var(--accentEdge)}
+  .pdots{flex:1;width:2px;background:repeating-linear-gradient(to bottom,var(--linkFaint) 0 2px,transparent 2px 6px);margin:4px 0;opacity:.55}
+  .pbody{flex:1;padding-top:var(--s1);padding-bottom:var(--s4)}
+  .phead2{font-size:14px;font-weight:800;color:var(--link);margin-bottom:var(--s1_5)}
+  .pchips{display:flex;flex-wrap:wrap;gap:var(--s1_5)}
+  .pchip{border-radius:var(--rFull);padding:4px 10px;font-size:12px;font-weight:800;color:var(--link);background:var(--lprimaryWash)}
+  .pchip.white{background:var(--lsurface)}
+  .pchip.old{background:var(--laccentSoft)}
+  .pchip.honey{background:var(--laccent);color:var(--onAmber)}
+  .lcoin{display:inline-flex;align-items:center;gap:6px;background:var(--laccent);color:var(--onAmber);
+    padding:4px 10px;border-radius:var(--rFull);font-size:10px;font-weight:800;letter-spacing:0.8px}
+  .lh{font-size:26px;font-weight:800;letter-spacing:-0.6px;line-height:1.19;color:var(--link)}
+  .lsub{font-size:14px;color:var(--linkSoft);line-height:1.62}
+  .lsub b{color:var(--link);font-weight:800}
+  .ctaA{background:var(--accent);color:var(--onAmber);text-align:center;font-weight:800;font-size:16px;
+    padding:14px;border-radius:var(--rFull);box-shadow:0 7px 0 var(--accentEdge);margin:var(--s4) 0 var(--s5)}
+  .f1{font-size:12px;font-weight:700;color:var(--inkSoft)}
+  .f3{font-size:12px;color:var(--inkFaint)}
+  .flinks{display:flex;gap:var(--s2);font-size:12px;justify-content:center}
+  .flinks span{color:var(--inkSoft);font-weight:800}
+  .flinks i{color:var(--inkFaint);font-style:normal}
+  .fwrap{display:flex;flex-direction:column;align-items:center;gap:var(--s2_5)}
+  .del{text-decoration:line-through;opacity:.4}
+  .shipped{display:inline-block;background:#2A3F33;color:#7DD6A6;font-size:9px;font-weight:800;
+    letter-spacing:0.8px;padding:2px 8px;border-radius:var(--rFull)}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<h1>v2 — real context, decisions locked</h1>
+<p class="lede">Everything below sits in the actual screen it would ship in. No left-border accents anywhere. Calendar rows keep their existing design untouched.</p>
+
+<!-- 01 CALENDAR -->
+<section>
+  <div class="shead"><span class="snum">01</span><h2>Calendar refresh — A + B, everywhere <span class="shipped">DECIDED</span></h2></div>
+  <p class="sdesc">Refresh icon in the section header <em>and</em> pull-to-refresh on every surface that shows calendar data. Row design is exactly what you have now — nothing changed but the header.</p>
+
+  <div class="row">
+    <div class="opt">
+      <div class="otag">Today · at rest</div>
+      <div class="today">
+        <div class="secthead">
+          <div style="display:flex;align-items:center;gap:10px"><span class="eyebrow">Calendar · 3</span></div>
+          <div style="display:flex;gap:2px;align-items:center"><div class="icobtn">⟳</div><div class="icobtn">⌄</div></div>
+        </div>
+        <div class="evrow"><div class="evtime">09:30</div><div class="evrail"></div><div><div class="evttl">Standup</div><div class="evdur">15m</div></div></div>
+        <div class="evrow"><div class="evtime">13:00</div><div class="evrail"></div><div><div class="evttl">Client call</div><div class="evdur">1h</div></div></div>
+        <div class="evrow"><div class="evtime">16:30</div><div class="evrail"></div><div><div class="evttl">Gym</div><div class="evdur">45m</div></div></div>
+      </div>
+      <p class="onote">Fresh data → no timestamp, refresh glyph sits quiet at <code>inkSoft</code> beside the chevron. Two 32pt glyphs grouped right, count label left.</p>
+    </div>
+
+    <div class="opt">
+      <div class="otag">Today · stale (&gt;2 min)</div>
+      <div class="today">
+        <div class="secthead">
+          <div style="display:flex;align-items:center;gap:10px"><span class="eyebrow">Calendar · 3</span><span class="stamp">updated 6m ago</span></div>
+          <div style="display:flex;gap:2px;align-items:center"><div class="icobtn hot">⟳</div><div class="icobtn">⌄</div></div>
+        </div>
+        <div class="evrow"><div class="evtime">09:30</div><div class="evrail"></div><div><div class="evttl">Standup</div><div class="evdur">15m</div></div></div>
+        <div class="evrow"><div class="evtime">13:00</div><div class="evrail"></div><div><div class="evttl">Client call</div><div class="evdur">1h</div></div></div>
+        <div class="evrow"><div class="evtime">16:30</div><div class="evrail"></div><div><div class="evttl">Gym</div><div class="evdur">45m</div></div></div>
+      </div>
+      <p class="onote">The stamp and the indigo tint appear together, only once data has aged. Silent in normal use; loud exactly when a tap is worth it.</p>
+    </div>
+
+    <div class="opt">
+      <div class="otag">Any surface · pulling</div>
+      <div class="today">
+        <div class="spin">⟳</div>
+        <div class="secthead">
+          <div style="display:flex;align-items:center;gap:10px"><span class="eyebrow">Calendar · 3</span></div>
+          <div style="display:flex;gap:2px;align-items:center"><div class="icobtn hot">⟳</div><div class="icobtn">⌄</div></div>
+        </div>
+        <div class="evrow" style="opacity:.5"><div class="evtime">09:30</div><div class="evrail"></div><div><div class="evttl">Standup</div><div class="evdur">15m</div></div></div>
+        <div class="evrow" style="opacity:.5"><div class="evtime">13:00</div><div class="evrail"></div><div><div class="evttl">Client call</div><div class="evdur">1h</div></div></div>
+      </div>
+      <p class="onote"><b>Pull-to-refresh on Today, the Plan drawer and Honest Day.</b> Same <code>RefreshControl</code>, indigo tint. Plus auto-refetch on app foreground and screen focus so most refreshes never need a gesture at all.</p>
+    </div>
+  </div>
+</section>
+
+<!-- 02 WON'T FIT -->
+<section>
+  <div class="shead"><span class="snum">02</span><h2>Won't fit — B, in the real Plan drawer</h2></div>
+  <p class="sdesc">The actual sheet: grabber, "Today's plan" + Clear at the top, timeline in the middle, and the start-by/finish line + Done-by + Nudge + Done pinned at the <b>bottom</b>. No border-left on the overflow block — it's a flat amber-tinted card, nothing else.</p>
+
+  <div class="row">
+    <div class="opt">
+      <div class="otag">Fits — for reference</div>
+      <div class="ph">
+        <div class="grab"></div>
+        <div class="phead"><div class="ptitle">Today&apos;s plan</div><div class="clear">⟳ Clear</div></div>
+        <div class="tl">
+          <div class="blk"><div class="clock">11:00</div><div class="card"><div><div class="t">Draft proposal</div><div class="m">1h 20m</div></div><div class="grip"><i></i><i></i><i></i></div></div></div>
+          <div class="blk"><div class="clock g">13:00</div><div class="card evt"><div class="t">📅 Client call · 1h</div></div></div>
+          <div class="blk"><div class="clock">14:00</div><div class="card"><div><div class="t">Review PRs</div><div class="m">50m</div></div><div class="grip"><i></i><i></i><i></i></div></div></div>
+        </div>
+        <div class="foot">
+          <div class="times">Start by <b>11:00</b><i>·</i>finish <b>14:50</b></div>
+          <div class="cells">
+            <div class="cell"><span class="ic">◷</span><span class="lab">Done by <b>15:30</b></span><span class="chev">›</span></div>
+            <div class="cell"><span class="ic">🔔</span><span class="lab">Nudge me to start</span><span class="sw on"></span></div>
+          </div>
+          <div class="cta">Done</div>
+        </div>
+      </div>
+      <p class="onote">Unchanged. This is today's sheet exactly.</p>
+    </div>
+
+    <div class="opt">
+      <div class="otag">Overflows — 1 task <span class="pick">B</span></div>
+      <div class="ph">
+        <div class="grab"></div>
+        <div class="phead"><div class="ptitle">Today&apos;s plan</div><div class="clear">⟳ Clear</div></div>
+        <div class="tl">
+          <div class="blk"><div class="clock">11:00</div><div class="card"><div><div class="t">Draft proposal</div><div class="m">1h 20m</div></div><div class="grip"><i></i><i></i><i></i></div></div></div>
+          <div class="blk"><div class="clock g">13:00</div><div class="card evt"><div class="t">📅 Client call · 1h</div></div></div>
+          <div class="blk"><div class="clock">14:00</div><div class="card"><div><div class="t">Review PRs</div><div class="m">50m</div></div><div class="grip"><i></i><i></i><i></i></div></div></div>
+
+          <div class="boundary"><span class="blab">15:30 done by</span><span class="bline"></span></div>
+          <div class="msg">Past here you run over. <b>Push done-by to 16:20</b>, or move a task to tomorrow.</div>
+
+          <div class="blk">
+            <div class="clock a">15:30</div>
+            <div class="card over">
+              <div><div class="t">Invoices</div><span class="tag">+50m over</span></div>
+              <div class="inline">Tomorrow</div>
+            </div>
+          </div>
+        </div>
+        <div class="foot">
+          <div class="times">Start by <b>11:00</b><i>·</i>finish <b class="a">16:20</b></div>
+          <div class="cells">
+            <div class="cell"><span class="ic">◷</span><span class="lab">Done by <b>15:30</b></span><span class="chev">›</span></div>
+            <div class="cell"><span class="ic">🔔</span><span class="lab">Nudge me to start</span><span class="sw on"></span></div>
+          </div>
+          <div class="cta">Done</div>
+        </div>
+      </div>
+      <p class="onote"><b>The task stays where it actually falls.</b> Flat amber card, amber title, "+50M OVER" as the meta line, "Tomorrow" as a filled amber chip inside the block. Boundary is a hairline with a mono label — no banner, no alert.</p>
+      <p class="onote">The footer <code>finish</code> clock turns amber and reads the real overrun (16:20) while <code>Done by</code> still shows your target. The gap between the two numbers <em>is</em> the message.</p>
+    </div>
+
+    <div class="opt">
+      <div class="otag">Overflows — 3 tasks</div>
+      <div class="ph">
+        <div class="grab"></div>
+        <div class="phead"><div class="ptitle">Today&apos;s plan</div><div class="clear">⟳ Clear</div></div>
+        <div class="tl">
+          <div class="blk"><div class="clock">11:00</div><div class="card"><div><div class="t">Draft proposal</div><div class="m">1h 20m</div></div><div class="grip"><i></i><i></i><i></i></div></div></div>
+          <div class="blk"><div class="clock g">13:00</div><div class="card evt"><div class="t">📅 Client call · 1h</div></div></div>
+
+          <div class="boundary"><span class="blab">15:30 done by</span><span class="bline"></span></div>
+          <div class="msg">Three tasks run past here. <b>Push done-by to 17:35</b>, or move some to tomorrow.</div>
+
+          <div class="blk"><div class="clock a">15:30</div><div class="card over"><div><div class="t">Invoices</div><span class="tag">+50m over</span></div><div class="inline">Tomorrow</div></div></div>
+          <div class="blk"><div class="clock a">16:20</div><div class="card over"><div><div class="t">Email backlog</div><span class="tag">+25m over</span></div><div class="inline">Tomorrow</div></div></div>
+          <div class="blk"><div class="clock a">16:45</div><div class="card over"><div><div class="t">Expenses</div><span class="tag">+50m over</span></div><div class="inline">Tomorrow</div></div></div>
+        </div>
+        <div class="foot">
+          <div class="times">Start by <b>11:00</b><i>·</i>finish <b class="a">17:35</b></div>
+          <div class="cells">
+            <div class="cell"><span class="ic">◷</span><span class="lab">Done by <b>15:30</b></span><span class="chev">›</span></div>
+          </div>
+          <div class="cta">Done</div>
+        </div>
+      </div>
+      <p class="onote">Density check — three amber cards in a row. Still calm because the tint is low and nothing shouts, but this is the case worth your eye before we build it.</p>
+    </div>
+  </div>
+</section>
+
+<!-- 03 START BY -->
+<section>
+  <div class="shead"><span class="snum">03</span><h2>Direction toggle — where it actually sits</h2></div>
+  <p class="sdesc">The toggle belongs in the bottom controls, above the Done-by cell — the same block that already owns "when does this day end". Two placements; both real.</p>
+
+  <div class="row">
+    <div class="opt">
+      <div class="otag">P1 · Own segmented control <span class="pick">recommended</span></div>
+      <div class="ph">
+        <div class="grab"></div>
+        <div class="phead"><div class="ptitle">Today&apos;s plan</div><div class="clear">⟳ Clear</div></div>
+        <div class="tl">
+          <div class="blk"><div class="clock a">09:05</div><div class="card"><div><div class="t">Draft proposal</div><div class="m">1h 20m</div></div><div class="grip"><i></i><i></i><i></i></div></div></div>
+          <div class="blk"><div class="clock">10:30</div><div class="card"><div><div class="t">Review PRs</div><div class="m">50m</div></div><div class="grip"><i></i><i></i><i></i></div></div></div>
+          <div class="blk"><div class="clock g">13:00</div><div class="card evt"><div class="t">📅 Client call · 1h</div></div></div>
+          <div class="blk"><div class="clock">14:05</div><div class="card"><div><div class="t">Invoices</div><div class="m">50m</div></div><div class="grip"><i></i><i></i><i></i></div></div></div>
+        </div>
+        <div class="foot">
+          <div class="times">Start by <b class="a">09:05</b><i>·</i>finish <b>14:55</b></div>
+          <div>
+            <div class="seglab">Fill the day</div>
+            <div class="seg"><div class="on">Start soon</div><div>Finish by 15:30</div></div>
+          </div>
+          <div class="cells">
+            <div class="cell"><span class="ic">◷</span><span class="lab">Done by <b>15:30</b></span><span class="chev">›</span></div>
+            <div class="cell"><span class="ic">🔔</span><span class="lab">Nudge me to start</span><span class="sw on"></span></div>
+          </div>
+          <div class="cta">Done</div>
+        </div>
+      </div>
+      <p class="onote"><b>Reads as a mode, because it is one.</b> Sits directly under the times line it changes — flip it and the amber start-by above moves. Both labels stay honest: "Start soon" earns 09:05, "Finish by 15:30" is today's behaviour (start-by 11:00, everything jammed late).</p>
+      <p class="onote">Two tasks now land before the meeting and the day finishes 35m early — same tasks, same meeting, same done-by.</p>
+    </div>
+
+    <div class="opt">
+      <div class="otag">P2 · Inside the Done-by cell</div>
+      <div class="ph">
+        <div class="grab"></div>
+        <div class="phead"><div class="ptitle">Today&apos;s plan</div><div class="clear">⟳ Clear</div></div>
+        <div class="tl">
+          <div class="blk"><div class="clock a">09:05</div><div class="card"><div><div class="t">Draft proposal</div><div class="m">1h 20m</div></div><div class="grip"><i></i><i></i><i></i></div></div></div>
+          <div class="blk"><div class="clock">10:30</div><div class="card"><div><div class="t">Review PRs</div><div class="m">50m</div></div><div class="grip"><i></i><i></i><i></i></div></div></div>
+          <div class="blk"><div class="clock g">13:00</div><div class="card evt"><div class="t">📅 Client call · 1h</div></div></div>
+          <div class="blk"><div class="clock">14:05</div><div class="card"><div><div class="t">Invoices</div><div class="m">50m</div></div><div class="grip"><i></i><i></i><i></i></div></div></div>
+        </div>
+        <div class="foot">
+          <div class="times">Start by <b class="a">09:05</b><i>·</i>finish <b>14:55</b></div>
+          <div class="cells">
+            <div class="cell"><span class="ic">▦</span><span class="lab">Pack the day</span>
+              <span style="font-size:12.5px;color:var(--ink);font-weight:700">Early</span><span class="chev">›</span></div>
+            <div class="cell"><span class="ic">◷</span><span class="lab">Done by <b>15:30</b></span><span class="chev">›</span></div>
+            <div class="cell"><span class="ic">🔔</span><span class="lab">Nudge me to start</span><span class="sw on"></span></div>
+          </div>
+          <div class="cta">Done</div>
+        </div>
+      </div>
+      <p class="onote">A third Settings-style cell — "Pack the day · Early / Late", opening the same kind of chooser as Done-by. Perfectly consistent with the existing cells and costs less vertical space.</p>
+      <p class="con">One tap further away, and the mode becomes a hidden setting rather than a visible switch. Weaker for something you'd flip often.</p>
+    </div>
+
+    <div class="opt">
+      <div class="otag">Same day, toggle flipped</div>
+      <div class="ph">
+        <div class="grab"></div>
+        <div class="phead"><div class="ptitle">Today&apos;s plan</div><div class="clear">⟳ Clear</div></div>
+        <div class="tl">
+          <div class="blk"><div class="clock">11:00</div><div class="card"><div><div class="t">Draft proposal</div><div class="m">1h 20m</div></div><div class="grip"><i></i><i></i><i></i></div></div></div>
+          <div class="blk"><div class="clock g">13:00</div><div class="card evt"><div class="t">📅 Client call · 1h</div></div></div>
+          <div class="blk"><div class="clock">14:00</div><div class="card"><div><div class="t">Review PRs</div><div class="m">50m</div></div><div class="grip"><i></i><i></i><i></i></div></div></div>
+          <div class="blk"><div class="clock">14:50</div><div class="card"><div><div class="t">Invoices</div><div class="m">50m</div></div><div class="grip"><i></i><i></i><i></i></div></div></div>
+        </div>
+        <div class="foot">
+          <div class="times">Start by <b>11:00</b><i>·</i>finish <b>15:30</b></div>
+          <div><div class="seglab">Fill the day</div>
+            <div class="seg"><div>Start soon</div><div class="on">Finish by 15:30</div></div></div>
+          <div class="cells">
+            <div class="cell"><span class="ic">◷</span><span class="lab">Done by <b>15:30</b></span><span class="chev">›</span></div>
+          </div>
+          <div class="cta">Done</div>
+        </div>
+      </div>
+      <p class="onote"><b>This is your bug, rendered.</b> Identical tasks and meeting — but backward-filled, so nothing goes before the 13:00 call and start-by is 11:00. Same screen as P1, one tap apart.</p>
+    </div>
+  </div>
+</section>
+
+<!-- 04 PAYWALL -->
+<section>
+  <div class="shead"><span class="snum">04</span><h2>Paywall — built, awaiting your eye <span class="shipped">CODE DONE</span></h2></div>
+  <p class="sdesc">Three changes are in the code already. Light-theme chips are the one you asked to try before approving.</p>
+
+  <div class="row">
+    <div class="opt">
+      <div class="otag">Light chips · before</div>
+      <div class="ph light" style="border-radius:26px;padding:var(--s5)">
+        <div class="prow"><div class="ptime">13:00</div><div class="prail"><div class="pcoin">▤</div><div class="pdots"></div></div>
+          <div class="pbody"><div class="phead2">Before you say yes to more</div>
+            <div class="pchips"><span class="pchip">Day capacity</span><span class="pchip">Confidence band</span></div></div></div>
+        <div class="prow"><div class="ptime">17:00</div><div class="prail"><div class="pcoin">▦</div><div class="pdots"></div></div>
+          <div class="pbody"><div class="phead2">The evening actually fits</div>
+            <div class="pchips"><span class="pchip">Honest calendar</span></div></div></div>
+        <div class="prow"><div class="ptime">Sun</div><div class="prail"><div class="pcoin amb">▤</div></div>
+          <div class="pbody" style="padding-bottom:var(--s1)"><div class="phead2">The week, understood</div>
+            <div class="pchips"><span class="pchip old">What steals your time</span><span class="pchip old">Weekly review</span><span class="pchip old">PDF export</span><span class="pchip old">Full history</span></div></div></div>
+      </div>
+      <p class="onote">Indigo chips at <code>primaryWash</code> #EFEDFC, Sunday at <code>accentSoft</code> #FBEFD6 — both barely off the lavender page, so the amber beat doesn't land.</p>
+    </div>
+
+    <div class="opt">
+      <div class="otag">Light chips · after <span class="pick">built</span></div>
+      <div class="ph light" style="border-radius:26px;padding:var(--s5)">
+        <div class="prow"><div class="ptime">13:00</div><div class="prail"><div class="pcoin">▤</div><div class="pdots"></div></div>
+          <div class="pbody"><div class="phead2">Before you say yes to more</div>
+            <div class="pchips"><span class="pchip white">Day capacity</span><span class="pchip white">Confidence band</span></div></div></div>
+        <div class="prow"><div class="ptime">17:00</div><div class="prail"><div class="pcoin">▦</div><div class="pdots"></div></div>
+          <div class="pbody"><div class="phead2">The evening actually fits</div>
+            <div class="pchips"><span class="pchip white">Honest calendar</span></div></div></div>
+        <div class="prow"><div class="ptime">Sun</div><div class="prail"><div class="pcoin amb">▤</div></div>
+          <div class="pbody" style="padding-bottom:var(--s1)"><div class="phead2">The week, understood</div>
+            <div class="pchips"><span class="pchip honey">What steals your time</span><span class="pchip honey">Weekly review</span><span class="pchip honey">PDF export</span><span class="pchip honey">Full history</span></div></div></div>
+      </div>
+      <p class="onote"><b>White chips = <code>surface</code>, the same white as every card in the app.</b> Honey chips = <code>accent</code> #EEAE4D, the exact fill of the WHENBEE PRO coin, with <code>onAmber</code> text at 7.9:1.</p>
+      <p class="onote">Dark mode is untouched — white and full-amber would glare on the deep bg, so it keeps its tints.</p>
+    </div>
+
+    <div class="opt">
+      <div class="otag">Header + footer · built</div>
+      <div class="ph light" style="border-radius:26px;padding:var(--s5)">
+        <div class="lcoin">◆ WHENBEE PRO</div>
+        <div style="height:16px"></div>
+        <div class="lh">Everything your honest numbers can do.</div>
+        <div style="height:8px"></div>
+        <div class="lsub">You did the logging. Pro puts those real numbers to work everywhere you plan. <b>Calibration stays free, always.</b></div>
+        <div class="ctaA">Try 7 days free</div>
+        <div class="fwrap">
+          <div class="f1" style="color:var(--linkSoft)">No payment now. Cancel anytime.</div>
+          <div class="f3 del" style="color:var(--linkFaint)">Calibration stays free, always. Pro just adds the payoff.</div>
+          <div class="f3" style="color:var(--linkFaint)">Plans renew until cancelled.</div>
+          <div class="flinks"><span style="color:var(--linkSoft)">Restore Purchases</span><i>·</i><span style="color:var(--linkSoft)">Terms</span><i>·</i><span style="color:var(--linkSoft)">Privacy</span></div>
+        </div>
+      </div>
+      <p class="onote"><b>Three things shipped:</b> badge→headline gap 8→16px; the free promise moved up into the sub, bolded, and deleted from the footer (4 rows → 3); sheet <code>paddingTop</code> 12→20px so it matches the left/right gutter — that was the Android edge you spotted.</p>
+    </div>
+  </div>
+</section>
+
+</div>
+</body>
+</html>
