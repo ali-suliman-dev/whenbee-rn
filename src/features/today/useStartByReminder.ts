@@ -30,7 +30,12 @@ export function useStartByReminder(plan: PlanResult | null): void {
   const startByMs = plan?.startBy ?? null;
   const firstTask = plan?.timeline.find((i) => i.kind === 'task') ?? null;
   const firstTaskLabel = firstTask?.label ?? null;
-  const deadlineMs = plan ? plan.timeline.reduce((max, i) => Math.max(max, i.endAt), 0) : null;
+  // Placed blocks only. An `overflow` block's clocks run past the done-by to show
+  // how far over the day goes; the reminder is about the work that IS scheduled,
+  // so counting them would push the finish time it announces into fiction.
+  const deadlineMs = plan
+    ? plan.timeline.reduce((max, i) => (i.kind === 'overflow' ? max : Math.max(max, i.endAt)), 0)
+    : null;
 
   // Honest estimate the plan used for this block = its duration in minutes.
   const honestMin = firstTask ? Math.round((firstTask.endAt - firstTask.startAt) / 60000) : null;

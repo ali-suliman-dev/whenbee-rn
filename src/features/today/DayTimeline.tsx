@@ -6,10 +6,11 @@
  *   - 'task' items: start clock + label + honest duration
  *   - 'event' items: greyed, read-only meeting block (non-interactive)
  *   - 'breather' items: a thin gap spacer
+ *   - 'overflow' items: a queued task the day had no room for, rendered IN PLACE
+ *     below a done-by boundary rule — flat amber card, "+Nm over", Tomorrow chip.
+ *     Ordinary draggable cells; drag one up and the engine re-runs.
  *   - Learned focus-window band behind rows that fall inside it (personal only)
  *   - Header chip: "done by {time}" → opens a time picker → setDoneBy
- *   - Overflow banner (cut-one / multi-cut / push-deadline): calm amber, no guilt,
- *     "move to tomorrow?" action
  *
  * Motion: rows fade in via entering-only opacity (no bounce / translate-in).
  * Reduced-motion → final state. reactCompiler Pressable gotcha: visual styles on
@@ -19,6 +20,7 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   Pressable,
+  StyleSheet,
   View,
   type TextStyle,
   type ViewStyle,
@@ -41,8 +43,8 @@ import { useEntitlement } from '@/src/features/paywall/useEntitlement';
 import { useTheme } from '@/src/theme/useTheme';
 import { AppText } from '@/src/components/AppText';
 import { FinishEditorSheet } from '@/src/features/routines/FinishEditorSheet';
-import { formatClock, formatClockMeridiem, fmtHm } from '@/src/lib/time';
-import type { PlanTimelineItem, PlanVerdict } from '@/src/domain/types';
+import { formatClock, fmtHm } from '@/src/lib/time';
+import type { PlanTimelineItem } from '@/src/domain/types';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Constants
@@ -72,41 +74,29 @@ function overlapsWindow(
 }
 
 /**
- * Derives the label text for an overflow verdict — calm, no guilt.
- * Uses conversion-psychology: name the gap, offer a calm path forward.
+ * True for the rows the user owns and can drag: their tasks, whether or not the
+ * day had room for them. An overflow block is an ordinary cell — same grip, same
+ * drag, same drop — because a task that ran past the done-by is exactly the one
+ * you most want to move.
  */
-function overflowLabel(verdict: PlanVerdict): string {
-  if (verdict.kind === 'cut-one') {
-    return `This won't all fit today — move "${verdict.cut.label}" to tomorrow?`;
-  }
-  if (verdict.kind === 'multi-cut') {
-    const count = verdict.cuts.length;
-    return `${count} tasks won't fit today — move them to tomorrow?`;
-  }
-  if (verdict.kind === 'push-deadline') {
-    const feasibleStr = formatClockMeridiem(verdict.feasibleDeadline);
-    return `You'd need until ${feasibleStr} to fit everything — move one to tomorrow?`;
-  }
-  return '';
-}
-
-/**
- * Derives the task id to move to tomorrow from a verdict.
- * For cut-one → the one cut; for multi-cut → the first (largest); for push-deadline → null.
- */
-function firstCutId(verdict: PlanVerdict): string | null {
-  if (verdict.kind === 'cut-one') return verdict.cut.id;
-  if (verdict.kind === 'multi-cut') return verdict.cuts[0]?.id ?? null;
-  return null;
+function isDraggable(item: PlanTimelineItem): boolean {
+  return item.kind === 'task' || item.kind === 'overflow';
 }
 
 /** Stable id-string of a timeline's task order — the reorder identity we compare
- *  the optimistic override against (see the optimistic-reorder block below). */
-function taskOrderKey(items: readonly PlanTimelineItem[]): string {
+ *  the optimistic override against (see the optimistic-reorder block below).
+ *  Overflow rows count: they carry an orderIndex like any other task, and leaving
+ *  them out would let the override compare equal while the queue still differs. */
+function queueOrderKey(items: readonly PlanTimelineItem[]): string {
   return items
-    .filter((i) => i.kind === 'task')
+    .filter(isDraggable)
     .map((i) => i.id)
     .join('|');
+}
+
+/** Index of the first row that runs past the done-by, or -1 when the day fits. */
+function firstOverflowIndex(items: readonly PlanTimelineItem[]): number {
+  return items.findIndex((i) => i.kind === 'overflow');
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -125,11 +115,16 @@ function taskOrderKey(items: readonly PlanTimelineItem[]): string {
 function RowContent({
   item,
   focusBandActive,
+  overMin,
+  onMoveToTomorrow,
   onDragHandleLongPress,
 }: {
   item: PlanTimelineItem;
   focusBandActive: boolean;
-  /** Present only for task rows — long-press on the grip starts the drag. */
+  /** Minutes this block ends past the done-by. Only meaningful for overflow rows. */
+  overMin: number;
+  onMoveToTomorrow: (id: string) => void;
+  /** Present only for draggable rows — long-press on the grip starts the drag. */
   onDragHandleLongPress?: () => void;
 }) {
   const t = useTheme();
@@ -216,6 +211,96 @@ function RowContent({
     );
   }
 
+  if (item.kind === 'overflow') {
+    // A task the day had no room for, shown IN PLACE rather than named in a
+    // banner or dropped in silence. Structurally identical to a task row — same
+    // grip, same type scale, same card geometry — so the only thing that changes
+    // as a row crosses the boundary is its colour. FLAT tinted card: no left
+    // border, no inset edge, nothing that reads as an alert stripe.
+    const block: ViewStyle = {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: t.space[3],
+      paddingVertical: t.space[2],
+      paddingHorizontal: t.space[3],
+      minHeight: t.size.control.md,
+      backgroundColor: t.colors.accentChip,
+      borderRadius: t.radii.md,
+      borderCurve: 'continuous',
+      marginHorizontal: t.space[2],
+      marginVertical: t.space[0.5],
+    };
+    const textColumn: ViewStyle = { flex: 1, gap: t.space[0.5] };
+    const titleStyle: TextStyle = {
+      fontSize: t.fontSize.bodySm,
+      fontWeight: t.fontWeight.semibold as TextStyle['fontWeight'],
+      color: t.colors.amberText,
+    };
+    const metaStyle: TextStyle = {
+      fontSize: t.fontSize.xs,
+      color: t.colors.inkSoft,
+    };
+    const chipFace: ViewStyle = {
+      paddingHorizontal: t.space[2],
+      paddingVertical: t.space[1],
+      borderRadius: t.radii.full,
+      // Android squares rounded corners on press-layer promotion — pin the clip.
+      overflow: 'hidden',
+      backgroundColor: t.colors.accentSoft,
+      flexShrink: 0,
+    };
+    const chipText: TextStyle = {
+      fontSize: t.fontSize.xs,
+      fontWeight: t.fontWeight.semibold as TextStyle['fontWeight'],
+      color: t.colors.amberText,
+    };
+    const overLabel = `+${fmtHm(overMin)} over`;
+
+    return (
+      <View
+        style={block}
+        testID={`timeline-overflow-${item.id}`}
+        accessible
+        accessibilityRole="text"
+        accessibilityLabel={`${item.label}, runs ${fmtHm(overMin)} past your done-by time`}
+      >
+        {onDragHandleLongPress ? (
+          <Pressable
+            testID={`timeline-drag-handle-${item.id}`}
+            onLongPress={onDragHandleLongPress}
+            accessibilityRole="button"
+            accessibilityLabel={`Reorder ${item.label}`}
+            accessibilityHint="Long-press and drag to reorder this task"
+            hitSlop={t.size.hitSlop}
+          >
+            <MaterialCommunityIcons
+              name="drag-vertical"
+              size={t.iconSize.md}
+              color={t.colors.inkSoft}
+            />
+          </Pressable>
+        ) : null}
+        <View style={textColumn}>
+          <AppText style={titleStyle} numberOfLines={2}>
+            {item.label}
+          </AppText>
+          <AppText style={metaStyle}>{overLabel}</AppText>
+        </View>
+        <Pressable
+          testID={`timeline-move-tomorrow-${item.id}`}
+          onPress={() => onMoveToTomorrow(item.id)}
+          accessibilityRole="button"
+          accessibilityLabel={`Move ${item.label} to tomorrow`}
+          hitSlop={t.size.hitSlop}
+        >
+          <View style={chipFace}>
+            <AppText style={chipText}>Tomorrow</AppText>
+          </View>
+        </Pressable>
+      </View>
+    );
+  }
+
   // task — a draggable "card": a darker recessed fill + rounded inset so it reads
   // as a movable item distinct from the read-only event rows (which stay flat).
   const row: ViewStyle = {
@@ -296,71 +381,74 @@ function RowContent({
   );
 }
 
-/** Calm amber overflow banner — no red, no guilt. */
-function OverflowBanner({
-  verdict,
-  onMove,
+/**
+ * The done-by boundary: a mono clock, a faint amber rule, and one sentence naming
+ * both ways out. It is a READOUT of where the day starts running over, not a wall
+ * — it sits above whichever row is first past the deadline, so dragging a task up
+ * moves the line up with it rather than refusing the drop.
+ *
+ * No banner, no alert, no icon. Amber, never red: running long is a fact.
+ */
+function OverflowBoundary({
+  doneByMs,
+  overrunFinishMs,
 }: {
-  verdict: PlanVerdict;
-  onMove: (id: string) => void;
+  doneByMs: number;
+  overrunFinishMs: number;
 }) {
   const t = useTheme();
-  const cutId = firstCutId(verdict);
-  const labelText = overflowLabel(verdict);
 
-  if (!labelText) return null;
-
-  const bannerStyle: ViewStyle = {
-    marginHorizontal: t.space[3],
-    marginBottom: t.space[3],
-    paddingVertical: t.space[2],
+  const wrapStyle: ViewStyle = {
     paddingHorizontal: t.space[3],
-    borderRadius: t.radii.sm,
-    backgroundColor: t.colors.accentSoft,
-    borderWidth: t.borderWidth.chip,
-    borderColor: t.colors.accentChip,
-    flexDirection: 'row',
-    alignItems: 'center',
+    paddingTop: t.space[4],
+    paddingBottom: t.space[2],
     gap: t.space[2],
   };
 
-  const labelStyle: TextStyle = {
-    flex: 1,
-    fontSize: t.fontSize.caption,
-    color: t.colors.amberText,
-    lineHeight: t.fontSize.caption * t.lineHeight.normal,
+  const ruleRowStyle: ViewStyle = {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: t.space[3],
   };
 
-  const moveButtonOuter: ViewStyle = {
-    paddingHorizontal: t.space[2],
-    paddingVertical: t.space[1],
-    borderRadius: t.radii.sm,
-    backgroundColor: t.colors.accentChip,
+  // amberText, not the raw accent: #EEAE4D on the light surface is ~1.9:1 and
+  // unreadable at this size. amberText IS the accent in dark mode and its AA-safe
+  // sibling in light, so the label reads as amber on both without going murky.
+  const labelStyle: TextStyle = {
+    fontFamily: t.fontFamily.mono,
+    fontSize: t.fontSize.xs,
+    color: t.colors.amberText,
+    letterSpacing: t.letterSpacing.wide,
     flexShrink: 0,
   };
 
-  const moveButtonText: TextStyle = {
-    fontSize: t.fontSize.xs,
-    fontWeight: t.fontWeight.semibold as TextStyle['fontWeight'],
-    color: t.colors.amberText,
+  const ruleStyle: ViewStyle = {
+    flex: 1,
+    height: StyleSheet.hairlineWidth,
+    backgroundColor: t.colors.accentLine,
   };
 
+  const sentenceStyle: TextStyle = {
+    fontSize: t.fontSize.caption,
+    color: t.colors.inkSoft,
+    lineHeight: t.fontSize.caption * t.lineHeight.normal,
+  };
+
+  const clockStyle: TextStyle = { color: t.colors.ink };
+
+  const overrunClock = formatClock(overrunFinishMs);
+
   return (
-    <View testID="timeline-overflow-banner" style={bannerStyle}>
-      <AppText style={labelStyle}>{labelText}</AppText>
-      {cutId !== null ? (
-        <Pressable
-          testID="timeline-move-action"
-          onPress={() => onMove(cutId)}
-          accessibilityRole="button"
-          accessibilityLabel="Move task to tomorrow"
-          hitSlop={t.size.hitSlop}
-        >
-          <View style={moveButtonOuter}>
-            <AppText style={moveButtonText}>Move</AppText>
-          </View>
-        </Pressable>
-      ) : null}
+    <View style={wrapStyle} testID="timeline-overflow-boundary">
+      <View style={ruleRowStyle}>
+        <AppText style={labelStyle}>{`${formatClock(doneByMs)} DONE BY`}</AppText>
+        <View style={ruleStyle} />
+      </View>
+      <AppText style={sentenceStyle}>
+        Past here you run over. Push it to{' '}
+        <AppText style={clockStyle}>{overrunClock}</AppText>, or move a task to
+        tomorrow.
+      </AppText>
     </View>
   );
 }
@@ -492,8 +580,8 @@ export function DayTimeline({ hideHeader = false }: DayTimelineProps = {}) {
   // very next frame and the flash would come back.
   const [optimisticTimeline, setOptimisticTimeline] = useState<PlanTimelineItem[] | null>(null);
   const displayTimeline = optimisticTimeline ?? plan?.timeline ?? null;
-  const planOrderKey = plan ? taskOrderKey(plan.timeline) : '';
-  const optimisticOrderKey = optimisticTimeline ? taskOrderKey(optimisticTimeline) : null;
+  const planOrderKey = plan ? queueOrderKey(plan.timeline) : '';
+  const optimisticOrderKey = optimisticTimeline ? queueOrderKey(optimisticTimeline) : null;
   useEffect(() => {
     if (optimisticOrderKey !== null && optimisticOrderKey === planOrderKey) {
       setOptimisticTimeline(null);
@@ -528,7 +616,9 @@ export function DayTimeline({ hideHeader = false }: DayTimelineProps = {}) {
       setOptimisticTimeline(reordered);
       // …then persist. useDayPlan re-derives the real clocks; once its task order
       // matches this one, the effect above drops the override seamlessly.
-      const taskIds = reordered.filter((item) => item.kind === 'task').map((item) => item.id);
+      // Overflow rows are included: they are queued tasks with an orderIndex, and
+      // dropping them here would silently shove them back to the end of the day.
+      const taskIds = reordered.filter(isDraggable).map((item) => item.id);
       void reorderTasks(taskIds);
     },
     [displayTimeline, reorderTasks],
@@ -548,6 +638,20 @@ export function DayTimeline({ hideHeader = false }: DayTimelineProps = {}) {
   }, [t.motion.base, t.motion.stagger]);
   const enterAnim = reducedMotion || entrancesDone ? undefined : FadeIn.duration(t.motion.base);
 
+  // ── Where the day runs over ───────────────────────────────────────────────
+  // Both clocks come straight off the rows, never from a re-derived deadline: the
+  // engine starts the overflow chain AT the done-by, so the first overflow block's
+  // startAt IS that deadline, and the furthest overflow end is the real finish the
+  // sentence offers to push to. Reading them from the rendered list (not the plan)
+  // is what makes the boundary follow an optimistic drop in the same frame.
+  const rows = displayTimeline ?? [];
+  const boundaryIndex = firstOverflowIndex(rows);
+  const doneByMs = rows[boundaryIndex]?.startAt ?? null;
+  const overrunFinishMs = rows.reduce(
+    (latest, item) => (item.kind === 'overflow' ? Math.max(latest, item.endAt) : latest),
+    0,
+  );
+
   // ── Row renderer ──────────────────────────────────────────────────────────
   const renderItem = useCallback(
     ({ item, index }: ReorderableListRenderItemInfo<PlanTimelineItem>) => (
@@ -555,6 +659,11 @@ export function DayTimeline({ hideHeader = false }: DayTimelineProps = {}) {
         item={item}
         index={index}
         enterAnim={enterAnim}
+        showBoundary={index === boundaryIndex}
+        doneByMs={doneByMs}
+        overrunFinishMs={overrunFinishMs}
+        overMin={doneByMs === null ? 0 : Math.round((item.endAt - doneByMs) / 60_000)}
+        onMoveToTomorrow={handleMoveToTomorrow}
         focusBandActive={
           showFocusBand &&
           overlapsWindow(
@@ -566,7 +675,16 @@ export function DayTimeline({ hideHeader = false }: DayTimelineProps = {}) {
         }
       />
     ),
-    [enterAnim, showFocusBand, focusWindow.startMin, focusWindow.endMin],
+    [
+      enterAnim,
+      showFocusBand,
+      focusWindow.startMin,
+      focusWindow.endMin,
+      boundaryIndex,
+      doneByMs,
+      overrunFinishMs,
+      handleMoveToTomorrow,
+    ],
   );
 
   // ── Empty state ───────────────────────────────────────────────────────────
@@ -578,12 +696,6 @@ export function DayTimeline({ hideHeader = false }: DayTimelineProps = {}) {
   if (!isPro) {
     return null;
   }
-
-  // ── Overflow verdict ──────────────────────────────────────────────────────
-  const showOverflow =
-    plan.verdict.kind === 'cut-one' ||
-    plan.verdict.kind === 'multi-cut' ||
-    plan.verdict.kind === 'push-deadline';
 
   // ── Styles ────────────────────────────────────────────────────────────────
   const containerStyle: ViewStyle = {
@@ -638,14 +750,6 @@ export function DayTimeline({ hideHeader = false }: DayTimelineProps = {}) {
           )}
           <DoneByChip doneByMin={doneByMin} onSelect={setDoneBy} />
         </View>
-      ) : null}
-
-      {/* Overflow banner */}
-      {showOverflow ? (
-        <OverflowBanner
-          verdict={plan.verdict}
-          onMove={handleMoveToTomorrow}
-        />
       ) : null}
 
       {/* Timeline rows — a reorderable FlatList. Only task rows expose a grip
@@ -704,13 +808,29 @@ interface TimelineRowProps {
   index: number;
   enterAnim: ReturnType<typeof FadeIn.duration> | undefined;
   focusBandActive: boolean;
+  /** True for the first row past the done-by — it carries the boundary above it. */
+  showBoundary: boolean;
+  doneByMs: number | null;
+  overrunFinishMs: number;
+  overMin: number;
+  onMoveToTomorrow: (id: string) => void;
 }
 
-function TimelineRow({ item, index, enterAnim, focusBandActive }: TimelineRowProps) {
+function TimelineRow({
+  item,
+  index,
+  enterAnim,
+  focusBandActive,
+  showBoundary,
+  doneByMs,
+  overrunFinishMs,
+  overMin,
+  onMoveToTomorrow,
+}: TimelineRowProps) {
   const t = useTheme();
   // Hooks are unconditional (rules-of-hooks) — every row gets a drag trigger,
-  // but only 'task' rows render the grip that wires it up (see RowContent),
-  // so event/breather rows can never initiate a drag.
+  // but only task/overflow rows render the grip that wires it up (see
+  // RowContent), so event/breather rows can never initiate a drag.
   const drag = useReorderableDrag();
 
   // Stagger per row — subtle, within budget
@@ -718,12 +838,22 @@ function TimelineRow({ item, index, enterAnim, focusBandActive }: TimelineRowPro
     ? FadeIn.duration(t.motion.base).delay(index * t.motion.stagger)
     : undefined;
 
+  // The boundary lives INSIDE the first overflow cell rather than as its own list
+  // entry: it must never be a droppable slot of its own, and riding the cell means
+  // it inherits the same entrances guard (a separate row would replay its fade on
+  // every reorder) and moves with the row the moment a drop changes which one is
+  // first past the done-by.
   return (
     <Animated.View entering={staggeredAnim} style={{ zIndex: 1 }}>
+      {showBoundary && doneByMs !== null ? (
+        <OverflowBoundary doneByMs={doneByMs} overrunFinishMs={overrunFinishMs} />
+      ) : null}
       <RowContent
         item={item}
         focusBandActive={focusBandActive}
-        onDragHandleLongPress={item.kind === 'task' ? drag : undefined}
+        overMin={overMin}
+        onMoveToTomorrow={onMoveToTomorrow}
+        onDragHandleLongPress={isDraggable(item) ? drag : undefined}
       />
     </Animated.View>
   );

@@ -257,6 +257,10 @@ export const tokens = {
       honeyWash: '#FBF2DF', // solid warm panel — the honest-number hero surface (one continuous tint, no gradient seam)
       accentChip: '#F3E2C0', // solid warm chip (tier/status pill) — a step deeper than accentSoft
       accentCoin: 'rgba(238,174,77,0.32)', // tint disc that still reads on accentSoft
+      // Amber rule for a boundary the eye should find but never be alarmed by —
+      // the done-by line on the day timeline. Faint on purpose: running over is a
+      // fact to read, not a warning to react to.
+      accentLine: 'rgba(238,174,77,0.28)',
       // RayBurst sunburst wedge fill. A deeper periwinkle than primarySoft so the
       // rays actually read on cream (primarySoft was near-invisible on the page bg).
       rayFill: '#BFB2F0',
@@ -349,6 +353,8 @@ export const tokens = {
       honeyWash: '#2B2620', // solid warm-dark panel — the honest-number hero surface (one continuous tint, no gradient seam)
       accentChip: '#2E2A20', // solid warm-dark chip (tier/status pill) — reads as a coin on the deep bg
       accentCoin: 'rgba(238,174,77,0.28)', // tint disc that still reads on accentSoft
+      // See the light-mode note — same rule, same restraint.
+      accentLine: 'rgba(238,174,77,0.28)',
       // RayBurst wedge fill — indigo lifted just off the deep bg (the #8 look).
       rayFill: 'rgba(130,117,240,0.30)',
       // Companion drift-health tint (amber/indigo only — never red). Matches the

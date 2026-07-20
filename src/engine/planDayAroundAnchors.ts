@@ -396,7 +396,7 @@ export function planDayAroundAnchors(input: PlanDayInput): PlanResult {
 
     if (startBy >= nowMs) {
       // Fits — build full timeline.
-      const timeline = buildTimeline(effectives, placedArr as PlacedTask[], mergedAnchors, anchors, breatherMin);
+      const timeline = buildTimeline(effectives, placedArr as PlacedTask[], mergedAnchors, anchors, breatherMin, deadline);
       const totalMin = computeTotalMin(effectives, placedArr as PlacedTask[], breatherMin);
       return { startBy, timeline, verdict: { kind: 'fits', startBy }, totalMin };
     }
@@ -408,7 +408,7 @@ export function planDayAroundAnchors(input: PlanDayInput): PlanResult {
     // Capacity fine but we'd need to start in the past. Run cut ladder on free-window space.
     const verdict = cutLadderForWindows(deadline, nowMs, freeWindows, effectives, runFill);
     const startBy = placedArr.reduce((min, p) => p ? Math.min(min, p.startAt) : min, Infinity);
-    const timeline = buildTimeline(effectives, placedArr as PlacedTask[], mergedAnchors, anchors, breatherMin);
+    const timeline = buildTimeline(effectives, placedArr as PlacedTask[], mergedAnchors, anchors, breatherMin, deadline);
     const totalMin = computeTotalMin(effectives, placedArr as PlacedTask[], breatherMin);
     return { startBy, timeline, verdict, totalMin };
   }
@@ -418,7 +418,7 @@ export function planDayAroundAnchors(input: PlanDayInput): PlanResult {
   // Build a best-effort timeline for display.
   const startBy = placedArr.reduce((min, p) => p ? Math.min(min, p.startAt) : min, Infinity);
   const safeStartBy = Number.isFinite(startBy) ? startBy : deadline;
-  const timeline = buildTimeline(effectives, placedArr as (PlacedTask | null)[], mergedAnchors, anchors, breatherMin);
+  const timeline = buildTimeline(effectives, placedArr as (PlacedTask | null)[], mergedAnchors, anchors, breatherMin, deadline);
   const totalMin = taskTotalMin;
   return { startBy: safeStartBy, timeline, verdict, totalMin };
 }
@@ -445,6 +445,7 @@ function buildTimeline(
   mergedAnchors: readonly Window[],
   originalAnchors: readonly PlanAnchor[],
   breatherMin: number,
+  deadline: number,
 ): PlanTimelineItem[] {
   const items: PlanTimelineItem[] = [];
   const breatherMs = breatherMin * MS_PER_MIN;
@@ -500,7 +501,63 @@ function buildTimeline(
   }
 
   items.sort((a, b) => a.startAt - b.startAt);
-  return items;
+  return withOverflowTasks(items, effectives, placed, deadline);
+}
+
+/**
+ * Put every task the fill could not place back on the timeline as an `overflow`
+ * block, rather than dropping it. A queued task that is simply missing from the
+ * plan is the one outcome the user cannot act on.
+ *
+ * Clocks continue past the deadline in queue order, so each block's
+ * `endAt - deadline` is a real number of minutes over. Position, though, comes
+ * from the QUEUE, not from those clocks: an unplaced task sits directly after the
+ * task that precedes it in the user's own order. That is what lets a task dragged
+ * above the done-by boundary stay where it was dropped even when it still does not
+ * fit — the boundary moves up above it instead of the row snapping back down.
+ */
+function withOverflowTasks(
+  items: PlanTimelineItem[],
+  effectives: readonly EffectiveTask[],
+  placed: readonly (PlacedTask | null)[],
+  deadline: number,
+): PlanTimelineItem[] {
+  const withOverflow = [...items];
+  let cursor = placed.reduce((latest, p) => (p ? Math.max(latest, p.endAt) : latest), deadline);
+
+  for (let i = 0; i < effectives.length; i++) {
+    if (placed[i]) continue;
+    const eff = effectives[i]!;
+    const endAt = cursor + eff.effectiveMin * MS_PER_MIN;
+    withOverflow.splice(overflowSlot(withOverflow, effectives, i), 0, {
+      id: eff.task.id,
+      label: eff.task.label,
+      startAt: cursor,
+      endAt,
+      kind: 'overflow' as const,
+    });
+    cursor = endAt;
+  }
+
+  return withOverflow;
+}
+
+/**
+ * Where an unplaced task belongs in the rendered order: straight after the row of
+ * the nearest earlier task in the queue, or at the very top when it is the first
+ * queued task.
+ */
+function overflowSlot(
+  items: readonly PlanTimelineItem[],
+  effectives: readonly EffectiveTask[],
+  queueIndex: number,
+): number {
+  for (let prev = queueIndex - 1; prev >= 0; prev--) {
+    const prevId = effectives[prev]!.task.id;
+    const at = items.findIndex((item) => item.id === prevId);
+    if (at !== -1) return at + 1;
+  }
+  return 0;
 }
 
 /** Compute total effective minutes including intra-window breathers. */

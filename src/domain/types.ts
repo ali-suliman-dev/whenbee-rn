@@ -180,8 +180,16 @@ export interface PlanTaskRunState {
   suggestedHonestMin: number;
 }
 
-/** Discriminates between a scheduled task block, a between-task breather gap, or a fixed calendar event anchor. */
-export type PlanTimelineKind = 'task' | 'breather' | 'event';
+/**
+ * Discriminates between a scheduled task block, a between-task breather gap, a
+ * fixed calendar event anchor, or a queued task that runs past the done-by.
+ *
+ * `overflow` is still the user's task, still in their queue order — the fill just
+ * had no room for it before the deadline. Its clocks continue past the done-by so
+ * `endAt - deadline` is a real "how far over", and it is never dropped from the
+ * timeline: a task you queued and cannot see is worse than a day that runs long.
+ */
+export type PlanTimelineKind = 'task' | 'breather' | 'event' | 'overflow';
 
 /** One ordered task fed to the backward pass. `durationMin` is the honest block. */
 export interface PlanTaskInput {
