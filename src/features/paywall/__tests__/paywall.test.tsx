@@ -1,5 +1,6 @@
 import { readFileSync } from 'fs';
 import { join } from 'path';
+import { ScrollView } from 'react-native';
 import { render, fireEvent, screen, waitFor, act } from '@testing-library/react-native';
 
 // ── Mocks ─────────────────────────────────────────────────────────────────────
@@ -94,6 +95,18 @@ describe('Paywall', () => {
     expect(sources).not.toMatch(/\$34\.99/);
     expect(sources).not.toMatch(/\$89/);
     expect(sources).not.toMatch(/\$2\.92/);
+  });
+
+  // Regression: without nestedScrollEnabled the Android sheet's BottomSheetBehavior
+  // finds no scrolling child, so a downward drag dismisses the sheet instead of
+  // scrolling back up. The prop has no visual effect, so only this test stops a
+  // refactor from silently dropping it again. See the comment in Paywall.tsx.
+  it('marks the scroll view nested-scrolling so the Android sheet does not drag-to-dismiss', async () => {
+    mockGetOfferings.mockResolvedValue(OFFERING);
+    render(<Paywall trigger="make_day_honest" />);
+
+    await waitFor(() => expect(screen.getByText('PRICE_LIFETIME_99')).toBeTruthy());
+    expect(screen.UNSAFE_getByType(ScrollView).props.nestedScrollEnabled).toBe(true);
   });
 
   it('fires paywall_view once on mount with trigger, readiness and feature variant', async () => {

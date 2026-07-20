@@ -1,8 +1,9 @@
 import { useState } from 'react';
-import { View, ScrollView, type ViewStyle, type TextStyle } from 'react-native';
+import { View, type ViewStyle, type TextStyle } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { Screen } from '@/src/components/Screen';
+import { SheetScrollView } from '@/src/components/SheetScrollView';
 import { SheetGrabber } from '@/src/components/SheetGrabber';
 import { AppText } from '@/src/components/AppText';
 import { AppButton } from '@/src/components/AppButton';
@@ -115,7 +116,7 @@ export default function FocusWindowDetail() {
 
   return (
     <Screen edges={['left', 'right']} horizontalPadding={false}>
-      <ScrollView
+      <SheetScrollView
         contentContainerStyle={{
           paddingTop: t.space[4],
           paddingBottom: insets.bottom + t.space[6],
@@ -251,7 +252,7 @@ export default function FocusWindowDetail() {
           }}
           onCancel={() => setEditing(false)}
         />
-      </ScrollView>
+      </SheetScrollView>
     </Screen>
   );
 }

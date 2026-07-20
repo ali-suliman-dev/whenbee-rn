@@ -660,6 +660,13 @@ export function DayTimeline({ hideHeader = false }: DayTimelineProps = {}) {
         contentContainerStyle={timelineContainerStyle}
         showsVerticalScrollIndicator={false}
         contentInsetAdjustmentBehavior="automatic"
+        // This list is the plan formSheet's scroll container. A list can't use
+        // <SheetScrollView>, so it takes the same invariant directly (the prop is
+        // not in ReorderableList's OmittedProps, so it reaches the underlying
+        // ScrollView): without it the Android sheet's BottomSheetBehavior finds no
+        // scrolling child and a downward drag dismisses the sheet. See
+        // SheetScrollView for the full mechanism.
+        nestedScrollEnabled
         ListHeaderComponent={
           // Focus band — only personal, only behind the list
           showFocusBand ? <FocusBandOverlay bandStyle={focusBandStyle} /> : null

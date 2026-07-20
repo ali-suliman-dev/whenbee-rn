@@ -1,9 +1,10 @@
 import { useEffect, useRef, useState } from 'react';
-import { View, Text, TextInput, Pressable, ScrollView, KeyboardAvoidingView, Platform, useWindowDimensions, type ViewStyle, type TextStyle } from 'react-native';
+import { View, Text, TextInput, Pressable, KeyboardAvoidingView, Platform, useWindowDimensions, type ViewStyle, type TextStyle } from 'react-native';
 import { router, useLocalSearchParams } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Screen } from '@/src/components/Screen';
+import { SheetScrollView } from '@/src/components/SheetScrollView';
 import { AppButton } from '@/src/components/AppButton';
 import { SheetGrabber } from '@/src/components/SheetGrabber';
 import { Toast } from '@/src/components/Toast';
@@ -239,7 +240,7 @@ export default function AddTask() {
         // leaving a large gap under the CTAs. Defer to adjustResize (undefined).
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
       >
-        <ScrollView
+        <SheetScrollView
           style={{ flex: 1 }}
           contentContainerStyle={{
             gap: t.space[5],
@@ -365,7 +366,7 @@ export default function AddTask() {
               info={a.goalCoach}
             />
           ) : null}
-        </ScrollView>
+        </SheetScrollView>
 
         {/* Pinned CTA footer — opaque absolute overlay in the lower-third thumb zone,
             rises with keyboard. Absolute (not a column sibling) so the native sheet

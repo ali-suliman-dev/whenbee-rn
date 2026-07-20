@@ -1,7 +1,8 @@
 import { useState } from 'react';
-import { ScrollView, View } from 'react-native';
+import { View } from 'react-native';
 import { router } from 'expo-router';
 import { Screen } from '@/src/components/Screen';
+import { SheetScrollView } from '@/src/components/SheetScrollView';
 import { ScreenHeader } from '@/src/components/ScreenHeader';
 import { AppText } from '@/src/components/AppText';
 import { AppButton } from '@/src/components/AppButton';
@@ -53,7 +54,7 @@ function HonestDayContent() {
 
   return (
     <Screen edges={['left', 'right']} horizontalPadding={false}>
-      <ScrollView
+      <SheetScrollView
         contentContainerStyle={{ gap: t.space[5], paddingTop: t.space[4], paddingBottom: t.space[12] }}
         showsVerticalScrollIndicator={false}
       >
@@ -94,7 +95,7 @@ function HonestDayContent() {
             onCancel={() => router.back()}
           />
         ) : null}
-      </ScrollView>
+      </SheetScrollView>
     </Screen>
   );
 }

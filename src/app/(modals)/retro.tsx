@@ -1,5 +1,6 @@
-import { View, Text, ScrollView, type TextStyle } from 'react-native';
+import { View, Text, type TextStyle } from 'react-native';
 import { Screen } from '@/src/components/Screen';
+import { SheetScrollView } from '@/src/components/SheetScrollView';
 import { SheetGrabber } from '@/src/components/SheetGrabber';
 import { AppButton } from '@/src/components/AppButton';
 import { TaskTitleField } from '@/src/components/TaskTitleField';
@@ -31,7 +32,7 @@ export default function Retro() {
 
   return (
     <Screen edges={['left', 'right']} horizontalPadding={false}>
-      <ScrollView
+      <SheetScrollView
         contentContainerStyle={{ gap: t.space[5], paddingTop: t.space[3], paddingBottom: t.space[6] }}
         showsVerticalScrollIndicator={false}
       >
@@ -84,7 +85,7 @@ export default function Retro() {
           />
           <Text style={saveHint}>+1 nectar · ripens your honey a little</Text>
         </View>
-      </ScrollView>
+      </SheetScrollView>
     </Screen>
   );
 }

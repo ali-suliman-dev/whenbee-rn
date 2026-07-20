@@ -112,6 +112,11 @@ export function DiscoveriesGallery({ discoveries }: { discoveries: Discovery[] }
       ItemSeparatorComponent={Separator}
       showsVerticalScrollIndicator={false}
       contentContainerStyle={{ paddingTop: t.space[4], paddingBottom: t.space[12] }}
+      // This gallery is the discoveries formSheet's scroll container. A list can't
+      // use <SheetScrollView>, so it takes the same invariant directly — without it
+      // the Android sheet's BottomSheetBehavior finds no scrolling child and a
+      // downward drag dismisses the sheet instead of scrolling. See SheetScrollView.
+      nestedScrollEnabled
     />
   );
 }

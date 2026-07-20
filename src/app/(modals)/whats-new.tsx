@@ -1,7 +1,8 @@
 import { useEffect } from 'react';
-import { View, ScrollView, type TextStyle } from 'react-native';
+import { View, type TextStyle } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Screen } from '@/src/components/Screen';
+import { SheetScrollView } from '@/src/components/SheetScrollView';
 import { SheetGrabber } from '@/src/components/SheetGrabber';
 import { AppText } from '@/src/components/AppText';
 import { useTheme } from '@/src/theme/useTheme';
@@ -34,7 +35,7 @@ export default function WhatsNew() {
     // side gutters — this screen adds no paddingHorizontal of its own.
     <Screen horizontalPadding={false} edges={['left', 'right']}>
       <SheetGrabber />
-      <ScrollView
+      <SheetScrollView
         contentContainerStyle={{
           flexGrow: 1,
           paddingTop: t.space[5],
@@ -50,7 +51,7 @@ export default function WhatsNew() {
         ) : (
           changelog.map((e) => <ChangelogCard key={e.id} entry={e} />)
         )}
-      </ScrollView>
+      </SheetScrollView>
     </Screen>
   );
 }
