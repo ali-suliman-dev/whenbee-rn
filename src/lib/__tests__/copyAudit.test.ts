@@ -1,4 +1,4 @@
-import { readFileSync, readdirSync } from 'node:fs';
+import { existsSync, readFileSync, readdirSync } from 'node:fs';
 import { join, relative, sep } from 'node:path';
 import { execFileSync } from 'node:child_process';
 
@@ -51,6 +51,9 @@ function listSourceFiles(): string[] {
     const norm = f.split(sep).join('/');
     if (/\.(test|spec)\.tsx?$/.test(norm)) return false;
     if (norm.includes('/__tests__/')) return false;
+    // `git ls-files` lists TRACKED paths, so a file deleted in the working tree
+    // but not yet staged still shows up and would blow up readFileSync below.
+    if (!existsSync(f)) return false;
     return true;
   });
 }

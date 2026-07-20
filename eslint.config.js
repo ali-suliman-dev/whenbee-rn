@@ -29,5 +29,7 @@ module.exports = [
       ],
     },
   },
-  { ignores: ['dist/*', '.expo/*', 'components/ui/**', '.claude/worktrees/**'] },
+  // Worktrees carry their own node_modules; linting into them crashes the run
+  // (a broken transitive dep there takes down `eslint .` for the whole repo).
+  { ignores: ['dist/*', '.expo/*', 'components/ui/**', '.claude/worktrees/**', '.worktrees/**'] },
 ];
