@@ -1,15 +1,21 @@
 /**
- * planDayAroundAnchors — backward scheduler that routes tasks around fixed
- * calendar event anchors (meetings, appointments). PURE TypeScript: no
- * Date/clock/RN/Expo. Callers pass all time values as epoch ms.
+ * planDayAroundAnchors — scheduler that routes tasks around fixed calendar event
+ * anchors (meetings, appointments). PURE TypeScript: no Date/clock/RN/Expo.
+ * Callers pass all time values as epoch ms.
+ *
+ * The caller picks which end of the day is fixed (see PlanFill). Fixing the
+ * finish fills backward and answers "how late can I start"; fixing the start
+ * fills forward and answers "when does this actually finish". Backward is the
+ * default so the historical single-direction callers are unaffected.
  *
  * Algorithm overview:
  *  1. Normalize + merge anchors (clip to [dayStartMs, deadline], sort, merge overlaps).
  *  2. Compute free windows = complement of merged anchors within [dayStartMs, deadline].
  *  3. Compute effective block per task (durationMin + bufferMin).
- *  4. Backward fill: right-to-left, placing each task into the latest slot ≤ cursor
- *     that fits fully inside a single free window; jump to the previous window's end
- *     when the current window runs out of space.
+ *  4. Fill — backward: right-to-left from the deadline, placing each task into the
+ *     latest slot ≤ cursor that fits fully inside a single free window; forward:
+ *     left-to-right from the pinned start into the earliest such slot. Either way a
+ *     block that no longer fits jumps whole to the adjacent window.
  *  5. Build timeline: placed tasks + anchor event items + intra-window breathers.
  *  6. Verdict: fits / cut-one / multi-cut / push-deadline (reuses cutLadder from planner.ts).
  */
@@ -25,6 +31,7 @@ import {
   smallestEffectiveMin,
 } from './planner';
 import type { EffectiveTask } from './planner';
+import { MIN_START_LEAD_MIN } from './constants';
 
 const MS_PER_MIN = 60_000;
 
@@ -39,6 +46,20 @@ export interface PlanAnchor {
   /** epoch ms end of the event. */
   endMs: number;
 }
+
+/**
+ * Which end of the day the user pinned, and therefore which direction the free
+ * windows are walked.
+ *
+ * `backward` packs work as late as the deadline allows — the finish is the fixed
+ * number and the start is derived. `forward` begins at `startAtMs` and lets the
+ * finish fall where it falls. The two are not interchangeable: a number the user
+ * set is a start, a number the engine derived is a deadline, and collapsing them
+ * would turn a plan into a demand.
+ */
+export type PlanFill =
+  | { direction: 'backward' }
+  | { direction: 'forward'; startAtMs: number };
 
 /** Input to planDayAroundAnchors. */
 export interface PlanDayInput {
@@ -56,6 +77,8 @@ export interface PlanDayInput {
   bufferMin?: number;
   /** Gap inserted between two consecutive tasks within the same free window (minutes). */
   breatherMin?: number;
+  /** Which end of the day is fixed. Defaults to backward (fill from the deadline). */
+  fill?: PlanFill;
 }
 
 // ── Internal helpers ─────────────────────────────────────────────────────────
@@ -208,11 +231,105 @@ function backwardFill(
   return placed;
 }
 
+/**
+ * Forward fill: the mirror of backwardFill for a day whose START is pinned.
+ * Walks the free windows left-to-right from `startMs`, placing each task at the
+ * earliest slot ≥ cursor that fits fully inside a single free window; jumps to
+ * the next window when the current one runs out of room. Returns an array
+ * parallel to `effectives`, null for anything no remaining window can hold.
+ *
+ * A block never straddles an anchor: a meeting interrupts work, it does not
+ * halve it. So an oversized task moves whole to the next window and leaves the
+ * tail of the current one empty rather than being split around the event.
+ *
+ * The `breatherMin` gap is inserted BEFORE a task that shares a window with the
+ * one preceding it — the same rule as the backward pass, viewed from the other
+ * side. A window jump already provides separation.
+ */
+function forwardFill(
+  effectives: readonly EffectiveTask[],
+  freeWindows: readonly Window[],
+  breatherMin: number,
+  startMs: number,
+): (PlacedTask | null)[] {
+  if (freeWindows.length === 0) {
+    return effectives.map(() => null);
+  }
+
+  const placed: (PlacedTask | null)[] = new Array(effectives.length).fill(null);
+
+  // cursor = the point from which the next task may START.
+  let cursor: number = startMs;
+  let winIdx = 0;
+
+  // Track what windowIdx the PREVIOUS task (i-1) landed in, so we know whether
+  // to add a breather.
+  let prevWindowIdx: number = -1;
+
+  for (let i = 0; i < effectives.length; i++) {
+    const eff = effectives[i]!;
+    const blockMs = eff.effectiveMin * MS_PER_MIN;
+
+    // Try to fit in the current window and later windows.
+    while (winIdx < freeWindows.length) {
+      const win = freeWindows[winIdx]!;
+
+      // Re-decided on every retry: jumping a window drops the breather, because
+      // the anchor between them is the gap.
+      const needsBreather = prevWindowIdx === winIdx;
+      const gapMs = needsBreather ? breatherMin * MS_PER_MIN : 0;
+
+      // The task must start at or after cursor (and at or after win.start).
+      const startAt = Math.max(cursor, win.start) + gapMs;
+      const endAt = startAt + blockMs;
+
+      if (endAt <= win.end) {
+        placed[i] = { startAt, endAt, windowIdx: winIdx };
+        cursor = endAt;
+        prevWindowIdx = winIdx;
+        break;
+      }
+
+      // Doesn't fit in this window — move to the next window.
+      winIdx += 1;
+    }
+
+    // Falling out of the while loop leaves placed[i] at its null default: no
+    // remaining window can hold this block, and none of the later ones will
+    // either, since they are strictly further right.
+  }
+
+  return placed;
+}
+
+/** One fill pass over this day's free windows, with the direction already bound. */
+type FillPass = (
+  effectives: readonly EffectiveTask[],
+  breatherMin: number,
+) => (PlacedTask | null)[];
+
+/**
+ * Bind the requested fill direction to this day's free windows.
+ *
+ * The forward pass is floored at `nowMs + MIN_START_LEAD_MIN`: a start the user
+ * pinned this morning is still theirs to keep — we never rewrite their number —
+ * but placing work in a slot that has already gone by would be a plan nobody can
+ * act on. The floor moves the placement only; the anchor itself is untouched.
+ */
+function fillPassFor(fill: PlanFill, freeWindows: readonly Window[], nowMs: number): FillPass {
+  if (fill.direction === 'backward') {
+    return (effectives, breatherMin) => backwardFill(effectives, freeWindows, breatherMin);
+  }
+  const earliestStart = Math.max(fill.startAtMs, nowMs + MIN_START_LEAD_MIN * MS_PER_MIN);
+  return (effectives, breatherMin) =>
+    forwardFill(effectives, freeWindows, breatherMin, earliestStart);
+}
+
 // ── Main export ───────────────────────────────────────────────────────────────
 
 /**
- * Backward scheduler that fragments the day around fixed calendar anchors and
- * fills free windows with the given tasks.
+ * Scheduler that fragments the day around fixed calendar anchors and fills the
+ * free windows with the given tasks, from whichever end the caller pinned.
  *
  * @param input - See PlanDayInput.
  * @returns PlanResult — startBy, timeline (tasks + events + breathers), verdict, totalMin.
@@ -227,12 +344,14 @@ export function planDayAroundAnchors(input: PlanDayInput): PlanResult {
   } = input;
   const bufferMin = input.bufferMin ?? DEFAULT_BUFFER_MIN;
   const breatherMin = Math.max(0, input.breatherMin ?? 0);
+  const fill: PlanFill = input.fill ?? { direction: 'backward' };
 
   // Step 1: Normalize + merge anchors.
   const mergedAnchors = normalizeAnchors(anchors, dayStartMs, deadline);
 
   // Step 2: Free windows.
   const freeWindows = computeFreeWindows(mergedAnchors, dayStartMs, deadline);
+  const runFill = fillPassFor(fill, freeWindows, nowMs);
 
   // Step 3: Effective blocks.
   const effectives: EffectiveTask[] = tasks.map((t) => ({
@@ -258,8 +377,8 @@ export function planDayAroundAnchors(input: PlanDayInput): PlanResult {
     };
   }
 
-  // Step 4: Backward fill.
-  const placedArr = backwardFill(effectives, freeWindows, breatherMin);
+  // Step 4: Fill, from the pinned end.
+  const placedArr = runFill(effectives, breatherMin);
 
   // Check if all tasks were placed.
   const allPlaced = placedArr.every((p) => p !== null);
@@ -287,7 +406,7 @@ export function planDayAroundAnchors(input: PlanDayInput): PlanResult {
   // Re-examine: if capacity is enough but startBy < now, or capacity is insufficient.
   if (freeCapacityMin >= taskTotalMin && allPlaced) {
     // Capacity fine but we'd need to start in the past. Run cut ladder on free-window space.
-    const verdict = cutLadderForWindows(deadline, nowMs, freeWindows, effectives);
+    const verdict = cutLadderForWindows(deadline, nowMs, freeWindows, effectives, runFill);
     const startBy = placedArr.reduce((min, p) => p ? Math.min(min, p.startAt) : min, Infinity);
     const timeline = buildTimeline(effectives, placedArr as PlacedTask[], mergedAnchors, anchors, breatherMin);
     const totalMin = computeTotalMin(effectives, placedArr as PlacedTask[], breatherMin);
@@ -295,7 +414,7 @@ export function planDayAroundAnchors(input: PlanDayInput): PlanResult {
   }
 
   // Capacity insufficient (can't fit even with perfect placement).
-  const verdict = cutLadderForWindows(deadline, nowMs, freeWindows, effectives);
+  const verdict = cutLadderForWindows(deadline, nowMs, freeWindows, effectives, runFill);
   // Build a best-effort timeline for display.
   const startBy = placedArr.reduce((min, p) => p ? Math.min(min, p.startAt) : min, Infinity);
   const safeStartBy = Number.isFinite(startBy) ? startBy : deadline;
@@ -415,6 +534,7 @@ function cutLadderForWindows(
   nowMs: number,
   freeWindows: readonly Window[],
   effectives: readonly EffectiveTask[],
+  runFill: FillPass,
 ): PlanVerdict {
   const freeMin = totalFreeMin(freeWindows);
 
@@ -436,7 +556,9 @@ function cutLadderForWindows(
     const remainingEffectives = effectives.filter(
       (_, idx) => !dropped.some((d) => d.index === idx),
     );
-    const refilled = backwardFill(remainingEffectives, freeWindows, 0);
+    // Re-fill from the same end the user pinned — a cut proposed against the
+    // other direction would land the survivors somewhere the plan never shows.
+    const refilled = runFill(remainingEffectives, 0);
     const allRefitPlaced = refilled.every((p) => p !== null);
 
     if (allRefitPlaced && remainingMin <= freeMin) {
