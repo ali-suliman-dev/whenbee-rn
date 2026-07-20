@@ -1,8 +1,9 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { View, Text, ScrollView, type TextStyle } from 'react-native';
+import { View, Text, type TextStyle } from 'react-native';
 import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { Screen } from '@/src/components/Screen';
+import { SheetScrollView } from '@/src/components/SheetScrollView';
 import { AppButton } from '@/src/components/AppButton';
 import { SheetGrabber } from '@/src/components/SheetGrabber';
 import { ProCoin } from '@/src/components/ProCoin';
@@ -17,7 +18,7 @@ import { useOfferings } from './useOfferings';
 import { useFounderReserve } from './useFounderReserve';
 import { FounderReserveCard } from './FounderReserveCard';
 import { PlanPicker } from './PlanPicker';
-import { copyFor, isTrigger, type Trigger } from './paywallCopy';
+import { copyFor, isTrigger, FREE_PROMISE, type Trigger } from './paywallCopy';
 import { TrialTimeline } from './TrialTimeline';
 import { DayWithPro } from './DayWithPro';
 import { FeatureGroups } from './FeatureGroups';
@@ -215,6 +216,7 @@ export function Paywall({ trigger, readiness = 'pre' }: { trigger?: string; read
 
   const heading: TextStyle = { ...(type.title as unknown as TextStyle), color: t.colors.ink };
   const sub: TextStyle = { ...(type.body as unknown as TextStyle), color: t.colors.inkSoft };
+  const subStrong: TextStyle = { color: t.colors.ink, fontFamily: 'Jakarta-Bold' };
   const fineText: TextStyle = {
     ...(type.caption as unknown as TextStyle),
     color: t.colors.inkFaint,
@@ -223,20 +225,31 @@ export function Paywall({ trigger, readiness = 'pre' }: { trigger?: string; read
 
   return (
     <Screen edges={['left', 'right']} horizontalPadding={false}>
-      <ScrollView
-        contentContainerStyle={{ gap: t.space[5], paddingTop: t.space[3], paddingBottom: t.space[8] }}
+      <SheetScrollView
+        // paddingTop matches the sheet's horizontal gutter (contentStyle in
+        // src/app/_layout.tsx also uses space[5]) so the content is inset evenly on
+        // all three sides. Android shows no SheetGrabber, so a smaller top read as
+        // a visibly tighter edge than the sides.
+        contentContainerStyle={{ gap: t.space[5], paddingTop: t.space[5], paddingBottom: t.space[8] }}
         showsVerticalScrollIndicator={false}
       >
         <SheetGrabber />
 
-        <View style={{ gap: t.space[2] }}>
+        {/* Badge sits apart from the headline block: the coin is a label for the
+            whole screen, not the first line of the title. Title + sub stay tight
+            so they read as one unit. */}
+        <View style={{ gap: t.space[4] }}>
           <ProCoin
             size="md"
             label={copy.eyebrow}
             icon={<Ionicons name="ribbon" size={t.iconSize.sm} color={t.colors.onAmber} />}
           />
-          <Text style={heading}>{copy.title}</Text>
-          <Text style={sub}>{copy.sub}</Text>
+          <View style={{ gap: t.space[2] }}>
+            <Text style={heading}>{copy.title}</Text>
+            <Text style={sub}>
+              {copy.sub} <Text style={subStrong}>{FREE_PROMISE}</Text>
+            </Text>
+          </View>
         </View>
 
         {/* Everything in Pro — the founder-picked variant, all 12 features. */}
@@ -290,7 +303,7 @@ export function Paywall({ trigger, readiness = 'pre' }: { trigger?: string; read
         {isExpoGo ? (
           <Text style={fineText}>Running in Expo Go — purchases are simulated.</Text>
         ) : null}
-      </ScrollView>
+      </SheetScrollView>
     </Screen>
   );
 }

@@ -104,6 +104,15 @@ const MAP: Record<Trigger, TriggerCopy> = {
   },
 };
 
+/**
+ * The free-tier promise. Rendered as an emphasised sentence right after the sub
+ * (Paywall.tsx) rather than baked into all 15 trigger subs — and deliberately at
+ * the TOP, not in the footer: "am I losing what I already have?" is the doubt
+ * that forms in the first seconds, so answering it under the CTA answers it too
+ * late.
+ */
+export const FREE_PROMISE = 'Calibration stays free, always.';
+
 const HONEST_SUB =
   'You did the logging — Whenbee knows how your days actually run. Now let Pro put those real numbers to work everywhere you plan.';
 

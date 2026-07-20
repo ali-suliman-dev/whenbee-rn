@@ -29,12 +29,6 @@ export function PaywallFooter({
     fontFamily: 'Jakarta-SemiBold',
     textAlign: 'center',
   };
-  const trust: TextStyle = {
-    ...(type.caption as unknown as TextStyle),
-    color: t.colors.inkSoft,
-    textAlign: 'center',
-  };
-  const trustStrong: TextStyle = { fontFamily: 'Jakarta-Bold', color: t.colors.ink };
   const renew: TextStyle = {
     ...(type.caption as unknown as TextStyle),
     color: t.colors.inkFaint,
@@ -53,9 +47,8 @@ export function PaywallFooter({
       <Text style={reassure}>
         {isLifetime ? 'One payment. No renewals, ever.' : 'No payment now. Cancel anytime.'}
       </Text>
-      <Text style={trust}>
-        <Text style={trustStrong}>Calibration stays free, always.</Text> Pro just adds the payoff.
-      </Text>
+      {/* The free-tier promise used to live here. It moved into the header sub
+          (paywallCopy.FREE_PROMISE) — the footer is now purely transactional. */}
       {isLifetime ? null : <Text style={renew}>Plans renew until cancelled.</Text>}
       <View style={linkRow}>
         <Pressable
