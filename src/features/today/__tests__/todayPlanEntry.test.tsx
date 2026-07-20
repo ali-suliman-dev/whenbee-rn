@@ -38,6 +38,20 @@ jest.mock('@/src/features/today/useDayCapacity');
 const mockUseDayCapacity = jest.mocked(useDayCapacity);
 jest.mock('@/src/features/today/useDayPlan');
 const mockUseDayPlan = jest.mocked(useDayPlan);
+
+/** The anchor-chooser half of useDayPlan's contract. These tests predate it and
+ *  assert nothing about it, so they take the neutral defaults. */
+const anchorDefaults = {
+  startAtMin: null,
+  setStartAt: jest.fn(),
+  planAnchor: 'finish' as const,
+  setPlanAnchor: jest.fn(),
+  derivedFinishMs: null,
+  derivedStartByMs: null,
+  effectiveStartMs: 0,
+  startHasPassed: false,
+};
+
 jest.mock('expo-router', () => ({
   router: { push: jest.fn() },
   useFocusEffect: (cb: () => void | (() => void)) => cb(),
@@ -62,7 +76,7 @@ beforeEach(() => {
   useEntitlement.setState({ isPro: false });
   useSettingsStore.setState({ startByEnabled: true });
   mockUseDayCapacity.mockReturnValue({ status: 'off', load: undefined as never, events: [], allDayEvents: [], isPro: false, lastFetchedAtMs: null, refresh: jest.fn(async () => {}), refreshing: false });
-  mockUseDayPlan.mockReturnValue({ plan: null, status: 'empty', doneByMin: null, setDoneBy: jest.fn() });
+  mockUseDayPlan.mockReturnValue({ ...anchorDefaults, plan: null, status: 'empty', doneByMin: null, setDoneBy: jest.fn() });
   useDayTasksStore.setState({
     dayTasks: [], shelfTasks: [], selectedDate: FIXED_TODAY, dayMeta: null,
     selectFocusTask: () => null, loadShelf: async () => {}, markPlanned: jest.fn(async () => {}),
@@ -80,7 +94,7 @@ describe('Today plan entry (Option 1)', () => {
   it('shows the compact PlanButton with the start-by clock (24-h) and no segmented control once a plan exists', () => {
     const startBy = new Date(2026, 5, 24, 12, 35, 0).getTime();
     useDayTasksStore.setState({ dayTasks: [makeQueued('a')], dayMeta: { doneByMin: 780, planComputedAt: FIXED_NOW } });
-    mockUseDayPlan.mockReturnValue({ plan: makePlan(startBy), status: 'ready', doneByMin: 780, setDoneBy: jest.fn() });
+    mockUseDayPlan.mockReturnValue({ ...anchorDefaults, plan: makePlan(startBy), status: 'ready', doneByMin: 780, setDoneBy: jest.fn() });
     render(<Today />);
     expect(screen.getByText('12:35')).toBeOnTheScreen();
     expect(screen.queryByTestId('view-toggle-timeline')).toBeNull();

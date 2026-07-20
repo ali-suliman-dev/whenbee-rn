@@ -62,6 +62,20 @@ jest.mock('@/src/features/paywall/useEntitlement', () => ({
 // ── Typed mock references ─────────────────────────────────────────────────────
 
 const mockUseDayPlan = useDayPlan as jest.MockedFunction<typeof useDayPlan>;
+
+/** The anchor-chooser half of useDayPlan's contract. These tests predate it and
+ *  assert nothing about it, so they take the neutral defaults. */
+const anchorDefaults = {
+  startAtMin: null,
+  setStartAt: jest.fn(),
+  planAnchor: 'finish' as const,
+  setPlanAnchor: jest.fn(),
+  derivedFinishMs: null,
+  derivedStartByMs: null,
+  effectiveStartMs: 0,
+  startHasPassed: false,
+};
+
 const mockUseFocusWindow = useLearnedFocusWindow as jest.MockedFunction<
   typeof useLearnedFocusWindow
 >;
@@ -205,7 +219,7 @@ beforeEach(() => {
 
 describe('DayTimeline — fits plan', () => {
   beforeEach(() => {
-    mockUseDayPlan.mockReturnValue({
+    mockUseDayPlan.mockReturnValue({ ...anchorDefaults,
       plan: makeFitsPlan(),
       status: 'ready',
       doneByMin: 1080,
@@ -241,7 +255,7 @@ describe('DayTimeline — fits plan', () => {
 
 describe('DayTimeline — drag-to-reorder grip', () => {
   beforeEach(() => {
-    mockUseDayPlan.mockReturnValue({
+    mockUseDayPlan.mockReturnValue({ ...anchorDefaults,
       plan: makeFitsPlan(),
       status: 'ready',
       doneByMin: 1080,
@@ -273,7 +287,7 @@ describe('DayTimeline — drag-to-reorder grip', () => {
 
 describe('DayTimeline — focus band with revealed window', () => {
   beforeEach(() => {
-    mockUseDayPlan.mockReturnValue({
+    mockUseDayPlan.mockReturnValue({ ...anchorDefaults,
       plan: makeFitsPlan(),
       status: 'ready',
       doneByMin: 1080,
@@ -294,7 +308,7 @@ describe('DayTimeline — focus band with revealed window', () => {
 
 describe('DayTimeline — no focus band when basis is forming', () => {
   beforeEach(() => {
-    mockUseDayPlan.mockReturnValue({
+    mockUseDayPlan.mockReturnValue({ ...anchorDefaults,
       plan: makeFitsPlan(),
       status: 'ready',
       doneByMin: 1080,
@@ -315,7 +329,7 @@ describe('DayTimeline — no focus band when basis is forming', () => {
 
 describe('DayTimeline — cut-one overflow banner', () => {
   beforeEach(() => {
-    mockUseDayPlan.mockReturnValue({
+    mockUseDayPlan.mockReturnValue({ ...anchorDefaults,
       plan: makeCutOnePlan(),
       status: 'ready',
       doneByMin: 1080,
@@ -355,7 +369,7 @@ describe('DayTimeline — cut-one overflow banner', () => {
 
 describe('DayTimeline — empty plan', () => {
   beforeEach(() => {
-    mockUseDayPlan.mockReturnValue({
+    mockUseDayPlan.mockReturnValue({ ...anchorDefaults,
       plan: null,
       status: 'empty',
       doneByMin: null,
@@ -376,7 +390,7 @@ describe('DayTimeline — empty plan', () => {
 
 describe('DayTimeline — DoneByChip local-time label', () => {
   beforeEach(() => {
-    mockUseDayPlan.mockReturnValue({
+    mockUseDayPlan.mockReturnValue({ ...anchorDefaults,
       plan: makeFitsPlan(),
       status: 'ready',
       doneByMin: 1080, // 18:00 local (6 PM)
@@ -401,7 +415,7 @@ describe('DayTimeline — DoneByChip local-time label', () => {
 
 describe('DayTimeline — hideHeader', () => {
   beforeEach(() => {
-    mockUseDayPlan.mockReturnValue({
+    mockUseDayPlan.mockReturnValue({ ...anchorDefaults,
       plan: makeFitsPlan(),
       status: 'ready',
       doneByMin: 1080,
@@ -434,7 +448,7 @@ describe('DayTimeline — Pro guard', () => {
     useEntitlement.mockImplementation((selector: (s: any) => any) =>
       selector({ isPro: false }),
     );
-    mockUseDayPlan.mockReturnValue({
+    mockUseDayPlan.mockReturnValue({ ...anchorDefaults,
       plan: makeFitsPlan(),
       status: 'ready',
       doneByMin: 1080,
