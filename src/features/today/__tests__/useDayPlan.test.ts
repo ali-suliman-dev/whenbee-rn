@@ -13,6 +13,13 @@ import { useCalibrationStore } from '@/src/stores/calibrationStore';
 import type { DayTask } from '@/src/engine/daySelectors';
 import type { CalendarEvent } from '@/src/services/calendar';
 
+// useDayPlan → useDayCapacity, which re-reads the calendar on screen focus.
+jest.mock('expo-router', () => ({
+  useFocusEffect: (cb: () => void | (() => void)) => {
+    cb();
+  },
+}));
+
 // ── Stable mock references ───────────────────────────────────────────────────
 
 const mockGetEventsForDay = jest.fn<Promise<CalendarEvent[]>, [string, (readonly string[] | undefined)?]>();

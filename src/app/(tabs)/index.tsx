@@ -1,4 +1,4 @@
-import { View, Text, Pressable, ScrollView, type TextStyle } from 'react-native';
+import { View, Text, Pressable, ScrollView, RefreshControl, type TextStyle } from 'react-native';
 import { useState, useCallback, useEffect } from 'react';
 import { router } from 'expo-router';
 import Animated, { FadeIn } from 'react-native-reanimated';
@@ -288,6 +288,14 @@ export default function Today() {
             paddingBottom: t.space[8],
           }}
           showsVerticalScrollIndicator={false}
+          refreshControl={
+            <RefreshControl
+              refreshing={cap.refreshing}
+              onRefresh={() => void cap.refresh()}
+              tintColor={t.colors.primary}
+              colors={[t.colors.primary]}
+            />
+          }
         >
           <ScreenHeader
             title={headerTitle}
@@ -487,6 +495,9 @@ export default function Today() {
                 <CalendarOverlaySection
                   events={cap.events}
                   allDayEvents={cap.allDayEvents}
+                  lastFetchedAtMs={cap.lastFetchedAtMs}
+                  onRefresh={() => void cap.refresh()}
+                  refreshing={cap.refreshing}
                 />
 
                 {done.length > 0 ? (

@@ -142,6 +142,9 @@ beforeEach(() => {
     events: [],
     allDayEvents: [],
     isPro: false,
+    lastFetchedAtMs: null,
+    refresh: jest.fn(async () => {}),
+    refreshing: false,
   });
   // Reset to the pinned today so isPastDay is always false unless a test explicitly
   // sets a past date. Must use FIXED_TODAY (local key) — not a UTC ISO string — so
@@ -232,6 +235,9 @@ describe('Today screen', () => {
       events: [],
       allDayEvents: [],
       isPro: true,
+      lastFetchedAtMs: null,
+      refresh: jest.fn(async () => {}),
+      refreshing: false,
     });
     const task = makeQueued({ id: 'c2', label: 'Leave for work', category: 'getting_ready', guessMin: 15 });
     useDayTasksStore.setState({ dayTasks: [task], selectFocusTask: () => task });

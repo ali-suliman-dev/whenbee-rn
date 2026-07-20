@@ -35,10 +35,17 @@ export const tokens = {
   // `hitSlop` = extra tap area added via the Pressable hitSlop prop so that small
   // touch targets (secondary buttons, skip links) comfortably meet the 44pt HIG
   // floor without visually enlarging the element.
+  // `iconTap` = geometry for a BARE icon glyph used as a control (e.g. the
+  // refresh + chevron pair in the Today calendar header). `pad` around an
+  // `iconSize.sm` (16pt) glyph makes a 32pt box; `slopX`/`slopY` on top of it
+  // give a 48×44 touch target, clearing the 44pt HIG floor without growing the
+  // row. `slopX` is exactly half the `space[4]` gap between two adjacent glyphs,
+  // so their slop regions meet but never OVERLAP — overlapping hit areas let the
+  // later-rendered glyph silently swallow its neighbour's taps.
   // `emptyArt` = mascot illustration size in a full-bleed empty state (e.g. the
   // dozing bee in What's New). `emptyCopy` = matching empty-state body-copy
   // max-width, so the line length stays readable under a centred title.
-  size: { control: { xxs: 28, xs: 32, sm: 36, md: 44, lg: 52 }, coin: 40, momentCoin: 30, checkCoin: 20, wheelCol: 72, wheelRow: 32, shareCard: 340, timelineCol: 110, planCardMin: 70, calTimeCol: 52, gripW: 14, hitSlop: 8, sparkline: 32, honestBand: 180, progressPill: 4, chipMinWidth: 120, quizTileWidth: '47%', emptyArt: 132, emptyCopy: 230 },
+  size: { control: { xxs: 28, xs: 32, sm: 36, md: 44, lg: 52 }, coin: 40, momentCoin: 30, checkCoin: 20, wheelCol: 72, wheelRow: 32, shareCard: 340, timelineCol: 110, planCardMin: 70, calTimeCol: 52, gripW: 14, hitSlop: 8, iconTap: { pad: 8, slopX: 8, slopY: 6 }, sparkline: 32, honestBand: 180, progressPill: 4, chipMinWidth: 120, quizTileWidth: '47%', emptyArt: 132, emptyCopy: 230 },
 
   // Icon sizing scale — replaces inline 12/16/18/20/22/24/30 across the app.
   iconSize: { xs: 12, sm: 16, md: 20, lg: 24, xl: 32, '2xl': 64 },

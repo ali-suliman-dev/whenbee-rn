@@ -61,7 +61,7 @@ beforeEach(() => {
   jest.clearAllMocks();
   useEntitlement.setState({ isPro: false });
   useSettingsStore.setState({ startByEnabled: true });
-  mockUseDayCapacity.mockReturnValue({ status: 'off', load: undefined as never, events: [], allDayEvents: [], isPro: false });
+  mockUseDayCapacity.mockReturnValue({ status: 'off', load: undefined as never, events: [], allDayEvents: [], isPro: false, lastFetchedAtMs: null, refresh: jest.fn(async () => {}), refreshing: false });
   mockUseDayPlan.mockReturnValue({ plan: null, status: 'empty', doneByMin: null, setDoneBy: jest.fn() });
   useDayTasksStore.setState({
     dayTasks: [], shelfTasks: [], selectedDate: FIXED_TODAY, dayMeta: null,

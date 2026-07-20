@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { View, Text, Pressable, Linking, type ViewStyle, type TextStyle } from 'react-native';
 import Animated, { FadeIn } from 'react-native-reanimated';
 import { Ionicons } from '@expo/vector-icons';
@@ -6,6 +6,7 @@ import { useTheme } from '@/src/theme/useTheme';
 import { type } from '@/src/theme/typography';
 import { haptics } from '@/src/lib/haptics';
 import type { CalendarEvent } from '@/src/services/calendar';
+import { formatCalendarAge, CALENDAR_AGE_TICK_MS } from './useDayCapacity';
 
 // ──────────────────────────────────────────────────────────────────────────────
 // CalendarOverlaySection — read-only calendar events for the selected day.
@@ -27,6 +28,13 @@ import type { CalendarEvent } from '@/src/services/calendar';
 //
 // Tap on a timed row: best-effort deep link to `calshow:<startMs>` (iOS opens the
 // Calendar app to that timestamp). If Linking.openURL rejects, the tap is a no-op.
+//
+// The header carries a refresh glyph grouped right with the chevron, plus a quiet
+// "updated 6m ago" stamp that only appears once the read is stale. Fresh: the
+// glyph sits at inkSoft on a transparent chip and there is no stamp. Stale: the
+// chip fills with primaryChip and the glyph lifts to primaryBright. The chip's
+// geometry is identical in both states, so going stale changes colour only —
+// nothing in the row shifts.
 // ──────────────────────────────────────────────────────────────────────────────
 
 export interface CalendarOverlaySectionProps {
@@ -34,6 +42,14 @@ export interface CalendarOverlaySectionProps {
   events: CalendarEvent[];
   /** All-day events — shown separately; excluded from capacity math. */
   allDayEvents: CalendarEvent[];
+  /** Epoch ms of the last calendar read; drives the staleness stamp. */
+  lastFetchedAtMs?: number | null;
+  /** Re-reads the calendar. Omit to render no refresh glyph at all. */
+  onRefresh?: () => void;
+  /** True while a refresh is in flight — the glyph dims and stops accepting taps. */
+  refreshing?: boolean;
+  /** Clock injection point for tests. Defaults to the live clock. */
+  nowMs?: number;
 }
 
 /** Format an epoch ms as a short local time string, e.g. "2:00 PM" or "9:30 AM". */
@@ -76,9 +92,27 @@ function openInCalendar(startMs: number): void {
 export function CalendarOverlaySection({
   events,
   allDayEvents,
+  lastFetchedAtMs = null,
+  onRefresh,
+  refreshing = false,
+  nowMs,
 }: CalendarOverlaySectionProps): React.ReactElement | null {
   const t = useTheme();
   const [expanded, setExpanded] = useState(false);
+  // The stamp is a function of elapsed time, so it needs a heartbeat to cross the
+  // staleness threshold on its own. A caller-supplied `nowMs` pins the clock
+  // (tests) and skips the timer entirely.
+  const [tickMs, setTickMs] = useState(() => Date.now());
+  const clockPinned = nowMs !== undefined;
+
+  useEffect(() => {
+    if (clockPinned) return;
+    const id = setInterval(() => setTickMs(Date.now()), CALENDAR_AGE_TICK_MS);
+    return () => clearInterval(id);
+  }, [clockPinned]);
+
+  const ageLabel = formatCalendarAge(lastFetchedAtMs, nowMs ?? tickMs);
+  const stale = ageLabel !== null;
 
   const count = events.length + allDayEvents.length;
   if (count === 0) return null;
@@ -88,16 +122,55 @@ export function CalendarOverlaySection({
     setExpanded((v) => !v);
   }
 
+  function handleRefresh() {
+    if (refreshing) return;
+    haptics.light();
+    onRefresh?.();
+  }
+
   const header: ViewStyle = {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingVertical: t.space[2],
+    // No paddingVertical: the 32pt action glyphs set the row height, which lands
+    // within a point of the old padded-text header. One spacing source per axis.
     marginTop: t.space[2],
   };
   const label: TextStyle = {
     ...(type.eyebrowSm as unknown as TextStyle),
     color: t.colors.inkSoft,
+  };
+  // The right-hand cluster: age stamp, refresh glyph, chevron — one gap, no
+  // per-child margins, so the three stay on a shared centre line.
+  const headerActions: ViewStyle = {
+    flexDirection: 'row',
+    alignItems: 'center',
+    // Exactly 2 × iconTap.slopX, so the two glyphs' touch regions meet edge to
+    // edge and neither can steal the other's taps.
+    gap: t.space[4],
+  };
+  const ageStamp: TextStyle = {
+    ...(type.caption as unknown as TextStyle),
+    color: t.colors.inkFaint,
+  };
+  /** Shared 32pt box behind a header glyph — identical geometry for both. */
+  const glyphBox: ViewStyle = {
+    padding: t.size.iconTap.pad,
+    borderRadius: t.radii.full,
+    borderCurve: 'continuous',
+  };
+  const refreshChip: ViewStyle = {
+    ...glyphBox,
+    // Transparent when fresh: same box, colour is the only thing that changes,
+    // so going stale never shifts anything in the row.
+    backgroundColor: stale ? t.colors.primaryChip : 'transparent',
+    opacity: refreshing ? t.opacity.disabled : 1,
+  };
+  const glyphSlop = {
+    top: t.size.iconTap.slopY,
+    bottom: t.size.iconTap.slopY,
+    left: t.size.iconTap.slopX,
+    right: t.size.iconTap.slopX,
   };
 
   const row: ViewStyle = {
@@ -149,21 +222,60 @@ export function CalendarOverlaySection({
 
   return (
     <View>
-      <Pressable
-        onPress={toggle}
-        accessibilityRole="button"
-        accessibilityState={{ expanded }}
-        accessibilityLabel={`Calendar, ${count} ${count === 1 ? 'event' : 'events'}. ${expanded ? 'Tap to collapse.' : 'Tap to expand.'}`}
-        hitSlop={t.size.hitSlop}
-        style={header}
-      >
-        <Text style={label}>CALENDAR · {count}</Text>
-        <Ionicons
-          name={expanded ? 'chevron-up' : 'chevron-down'}
-          size={t.iconSize.sm}
-          color={t.colors.inkSoft}
-        />
-      </Pressable>
+      <View style={header}>
+        <Pressable
+          onPress={toggle}
+          accessibilityRole="button"
+          accessibilityState={{ expanded }}
+          accessibilityLabel={`Calendar, ${count} ${count === 1 ? 'event' : 'events'}. ${expanded ? 'Tap to collapse.' : 'Tap to expand.'}`}
+          hitSlop={t.size.hitSlop}
+        >
+          <Text style={label}>CALENDAR · {count}</Text>
+        </Pressable>
+
+        <View style={headerActions}>
+          {ageLabel ? (
+            <Animated.Text entering={FadeIn.duration(t.motion.base)} style={ageStamp}>
+              {ageLabel}
+            </Animated.Text>
+          ) : null}
+
+          {onRefresh ? (
+            <Pressable
+              onPress={handleRefresh}
+              accessibilityRole="button"
+              accessibilityState={{ busy: refreshing, disabled: refreshing }}
+              accessibilityLabel={
+                ageLabel ? `Refresh calendar, ${ageLabel}` : 'Refresh calendar'
+              }
+              hitSlop={glyphSlop}
+            >
+              <View style={refreshChip}>
+                <Ionicons
+                  name="refresh"
+                  size={t.iconSize.sm}
+                  color={stale ? t.colors.primaryBright : t.colors.inkSoft}
+                />
+              </View>
+            </Pressable>
+          ) : null}
+
+          <Pressable
+            onPress={toggle}
+            accessibilityRole="button"
+            accessibilityLabel={expanded ? 'Collapse calendar' : 'Expand calendar'}
+            hitSlop={glyphSlop}
+          >
+            <View style={glyphBox}>
+              <Ionicons
+                name={expanded ? 'chevron-up' : 'chevron-down'}
+                size={t.iconSize.sm}
+                color={t.colors.inkSoft}
+              />
+            </View>
+          </Pressable>
+        </View>
+      </View>
 
       {expanded ? (
         <Animated.View entering={FadeIn.duration(t.motion.base)} style={{ gap: t.space[2] }}>
