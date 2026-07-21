@@ -64,7 +64,7 @@
         }
       ],
       "./plugins/withNoRemindersPermission",
-      "./plugins/withNoExternalStoragePermission",
+      "./plugins/withStripUnusedAndroidPermissions",
       "expo-localization",
       [
         "expo-speech-recognition",
