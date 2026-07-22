@@ -18,6 +18,13 @@ expo-env.d.ts
 *.key
 *.mobileprovision
 
+# Secrets — service-account credentials, never commit (belt-and-suspenders rules)
+secrets/
+*service-account*.json
+*.iam.gserviceaccount.com.json
+# EAS local signing credentials — holds keystore passwords, never commit
+credentials.json
+
 # Metro
 .metro-health-check*
 

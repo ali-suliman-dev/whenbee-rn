@@ -8,11 +8,14 @@
       "developmentClient": true,
       "distribution": "internal",
       "environment": "development",
-      "ios": { "simulator": true }
+      "credentialsSource": "local",
+      "ios": { "simulator": true },
+      "android": { "buildType": "apk" }
     },
     "preview": {
       "distribution": "internal",
       "environment": "preview",
+      "credentialsSource": "local",
       "android": { "buildType": "apk" }
     },
     "production": {
@@ -25,6 +28,7 @@
   "submit": {
     "production": {
       "android": {
+        "serviceAccountKeyPath": "./secrets/play-service-account.json",
         "track": "internal",
         "releaseStatus": "draft"
       }
