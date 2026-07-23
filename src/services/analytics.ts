@@ -136,6 +136,8 @@ export interface AppEventProps {
   // Ripening Pro card CTA taps.
   pro_reveal_tap: { surface: 'whenbee_hub' };
   pro_preview_tap: { surface: 'whenbee_hub' };
+  // Ripening-state honey "Get Pro" chip tap (soft paywall preview, not a hard CTA).
+  ripening_get_pro_tapped: { surface: 'whenbee_hub' };
   paywall_view: {
     trigger:
       | 'make_day_honest'

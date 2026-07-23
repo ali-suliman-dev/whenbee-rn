@@ -9,7 +9,7 @@ export { blendWithPrior, honestNumber, roundHonest, recurringHasEnoughData, reso
 export { sharpnessFromWindow, tierFor, logsToNextTier, tierBandProgress } from './sharpness';
 export type { TierBandProgress } from './sharpness';
 export { effortFloor, honeyMaturity } from './honeyMaturity';
-export { proReadiness } from './proReadiness';
+export { proReadiness, FEATURE_MIN_LOGS } from './proReadiness';
 export type { ProFeatureId } from './proReadiness';
 export { detectInsight } from './insight';
 export { shouldBankDiscovery } from './discovery';

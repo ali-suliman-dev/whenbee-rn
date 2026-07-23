@@ -63,10 +63,12 @@ export const tokens = {
   // One honest radius set with clear semantics — every CARD uses `card`.
   //   sm   tags / small chips
   //   md   inputs, segmented controls
+  //   panel nested inset panels (e.g. the ripening ticket strip) — a step
+  //        between `md` and `card` since it lives INSIDE a card
   //   card all cards (one value, no exceptions)
   //   sheet modals / bottom sheets
   //   full true pills, FAB, dots, the tab indicator
-  radii: { none: 0, sm: 8, md: 12, card: 16, sheet: 20, full: 999 },
+  radii: { none: 0, sm: 8, md: 12, panel: 14, card: 16, sheet: 20, full: 999 },
 
   // `card` is the ONE knob for every card's edge — change it once to restyle (or
   // set 0 to remove) all card borders app-wide. hairline/thin/thick stay for
@@ -78,7 +80,9 @@ export const tokens = {
   // `selected` = the option-row inset selection ring on the reward
   // context-question card (~1.5px, matches Chip's selection-border weight).
   // `ghost` = the dashed border on empty-slot affordances (1.5px, semantic).
-  borderWidth: { hairline: 0, thin: 0, thick: 2, card: 0, share: 1, chip: 1, selected: 1.5, ghost: 1.5 },
+  // `coin` = the honey-chip bottom coin-edge on the ripening ticket strip (a touch
+  // deeper than `thick` so a pill-sized chip still reads tactile).
+  borderWidth: { hairline: 0, thin: 0, thick: 2, card: 0, share: 1, chip: 1, selected: 1.5, ghost: 1.5, coin: 3 },
 
   // Replaces scattered 0.3 / 0.4 / 0.6 opacities. `rangeArc` = the faint amber
   // straddle arc on the Live-Timer ring marking the honest [low, high] spread.
@@ -111,6 +115,13 @@ export const tokens = {
     '2xs': 8, xs: 10, sm: 12, base: 14, md: 16, lg: 20, xl: 24, '2xl': 30, '3xl': 38,
     // finer steps the role scale needs
     crumb: 9, micro: 10, caption: 12, bodySm: 14, bodyLg: 16, titleSm: 18, subtitle: 22, title: 26, honestCard: 32, honestLg: 36, honest: 40, honestHero: 46, timerClock: 64, timer: 78,
+    // ghostWatermark = the oversized faint hex glyph behind the ripening ticket
+    // strip (RipeningProCard) — display-scale decoration, not legible text.
+    ghostWatermark: 88,
+    // ticketTitle/ticketSub = the ripening ticket strip's two-line copy block —
+    // sit a half-step below caption/micro so the strip reads compact next to
+    // the honey chip beside it.
+    ticketTitle: 13, ticketSub: 11,
   },
   fontWeight: { regular: '400', medium: '500', semibold: '600', bold: '700' },
   // `Menlo` is Apple-only — on Android an unknown family renders nothing, so the
@@ -163,6 +174,10 @@ export const tokens = {
     // primarySoft). Tones the guess down from a solid indigo block so Start is the
     // single filled indigo on Today. lineW = stroke width, gapW = clear gap between.
     gapStripe: { lineW: 2, gapW: 4 },
+    // tally = the ripening-card feature tally bar (RipeningProCard) — one rounded
+    // segment per Pro feature, thinner than the honey-fill `track` so the row of
+    // segments reads as a ticket-strip meter, not another progress bar.
+    tally: 5,
   },
 
   // The thin indigo left-edge on actionable Today rows (TaskRow) — a semantic
@@ -266,6 +281,8 @@ export const tokens = {
       honeyWash: '#FBF2DF', // solid warm panel — the honest-number hero surface (one continuous tint, no gradient seam)
       accentChip: '#F3E2C0', // solid warm chip (tier/status pill) — a step deeper than accentSoft
       accentCoin: 'rgba(238,174,77,0.32)', // tint disc that still reads on accentSoft
+      accentGhost: 'rgba(238,174,77,0.10)', // faint watermark hex behind the ripening ticket strip
+      sheenChip: 'rgba(255,255,255,0.35)', // top specular strip on the honey "Get Pro" chip
       // Amber rule for a boundary the eye should find but never be alarmed by —
       // the done-by line on the day timeline. Faint on purpose: running over is a
       // fact to read, not a warning to react to.
@@ -364,6 +381,8 @@ export const tokens = {
       honeyWash: '#2B2620', // solid warm-dark panel — the honest-number hero surface (one continuous tint, no gradient seam)
       accentChip: '#2E2A20', // solid warm-dark chip (tier/status pill) — reads as a coin on the deep bg
       accentCoin: 'rgba(238,174,77,0.28)', // tint disc that still reads on accentSoft
+      accentGhost: 'rgba(238,174,77,0.07)', // faint watermark hex behind the ripening ticket strip
+      sheenChip: 'rgba(255,255,255,0.35)', // top specular strip on the honey "Get Pro" chip
       // See the light-mode note — same rule, same restraint.
       accentLine: 'rgba(238,174,77,0.28)',
       // RayBurst wedge fill — indigo lifted just off the deep bg (the #8 look).

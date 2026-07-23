@@ -112,8 +112,9 @@ describe('WhenbeeHub', () => {
 
     render(<WhenbeeHub />);
 
-    // RipeningProCard ripening state headline (pitchUnlocked: false by default)
-    expect(screen.getByText('Your honest range')).toBeOnTheScreen();
+    // RipeningProCard ripening state headline (pitchUnlocked: false, 0 features
+    // ready by default in this fixture's empty perFeatureReady map)
+    expect(screen.getByText('Your Pro features are on the way.')).toBeOnTheScreen();
   });
 
   it('renders the day-honest CTA for Pro users with logs', () => {
