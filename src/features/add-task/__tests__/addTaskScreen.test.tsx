@@ -74,6 +74,28 @@ afterEach(() => {
 });
 
 describe('Add Task screen', () => {
+  it('shows the once-ever coach tip on the very FIRST suggestion (no chase move needed)', () => {
+    const { kv } = jest.requireActual<typeof import('@/src/lib/kv')>('@/src/lib/kv');
+    kv.delete('coach.antiChase.seen');
+    render(<AddTask />);
+    fireEvent.press(screen.getByText('Getting ready'));
+    expect(
+      screen.getByText('No need to pad it yourself. Guess how long it feels, and Whenbee adds the reality part.'),
+    ).toBeOnTheScreen();
+    // Once-ever flag persisted on show.
+    expect(kv.getString('coach.antiChase.seen')).toBe('1');
+  });
+
+  it('does not re-show the coach tip once the seen flag is set', () => {
+    const { kv } = jest.requireActual<typeof import('@/src/lib/kv')>('@/src/lib/kv');
+    kv.set('coach.antiChase.seen', '1');
+    render(<AddTask />);
+    fireEvent.press(screen.getByText('Getting ready'));
+    expect(
+      screen.queryByText('No need to pad it yourself. Guess how long it feels, and Whenbee adds the reality part.'),
+    ).toBeNull();
+  });
+
   it('shows a live honest preview reflecting the cached multiplier', () => {
     render(<AddTask />);
     fireEvent.press(screen.getByText('Getting ready'));
