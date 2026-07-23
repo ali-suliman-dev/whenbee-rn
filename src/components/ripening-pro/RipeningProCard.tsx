@@ -213,6 +213,9 @@ export function RipeningProCard({
   };
 
   // Ticket strip: the calm ownership footer that replaces the old HoneyBar/meta row.
+  // overflow: 'hidden' clips the oversized ghost watermark (negative top/right
+  // offsets) to the strip's rounded bounds so it reads as an inset watermark,
+  // not a shape bleeding past the card edge.
   const ticketStrip: ViewStyle = {
     flexDirection: 'row',
     alignItems: 'center',
@@ -221,6 +224,7 @@ export function RipeningProCard({
     borderRadius: t.radii.panel,
     padding: t.space[3],
     position: 'relative',
+    overflow: 'hidden',
   };
 
   // Ghost hex watermark — decorative, never intercepts touches.
