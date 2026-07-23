@@ -1,9 +1,11 @@
 // src/features/today/useDaySoFar.ts
 // Data assembly for the Today "Your day so far" recap card. Route stays thin —
-// this hook is the only place that reads the day-tasks + calibration stores for
-// the card; DaySoFarCard itself only receives resolved values.
+// this hook derives the card's data from values the route's OWN `useToday()`
+// call already computed (see index.tsx). It does NOT call `useToday()` itself:
+// that hook is side-effectful (fires `honest_suggestion_shown` once per
+// surfacing, mounts `useWidgetPublisher`) and must only ever be mounted once
+// per screen — a second instance here would double-fire both.
 
-import { useToday } from '@/src/features/today/useToday';
 import { useTimerStore } from '@/src/stores/timerStore';
 import { useCalibrationStore } from '@/src/stores/calibrationStore';
 import { useCategoriesStore } from '@/src/stores/categoriesStore';
@@ -11,6 +13,17 @@ import { logsToNextTier } from '@/src/engine';
 import { daySoFarVisible } from '@/src/features/today/daySoFar';
 import { leadHoney } from '@/src/features/today/leadHoney';
 import type { HoneycombCell } from '@/src/components/honeycomb/Honeycomb';
+import type { TodayRow } from '@/src/features/today/useToday';
+
+export interface UseDaySoFarParams {
+  /** Today's completed rows, most-recent-first — the route's `useToday().done`. */
+  done: TodayRow[];
+  /** Total tasks on the selected day — the route's `useToday().totalCount`. */
+  totalCount: number;
+  /** True only when the selected day IS today. The recap never shows on a
+   * past or future day, so callers viewing another day should pass false. */
+  isToday: boolean;
+}
 
 export interface DaySoFar {
   /** Number of tasks completed today. */
@@ -30,11 +43,12 @@ export interface DaySoFar {
 }
 
 /** Returns the recap data, or null when the card isn't visible right now. */
-export function useDaySoFar(): DaySoFar | null {
-  const { done, totalCount } = useToday();
+export function useDaySoFar({ done, totalCount, isToday }: UseDaySoFarParams): DaySoFar | null {
   const isTimerRunning = useTimerStore((s) => s.isRunning);
   const statsByCategory = useCalibrationStore((s) => s.statsByCategory);
   const categories = useCategoriesStore((s) => s.categories);
+
+  if (!isToday) return null;
 
   const completedCount = done.length;
   // `upNext` only holds queued rows AFTER the current focus task, so the true

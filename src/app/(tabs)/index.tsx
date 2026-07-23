@@ -108,7 +108,7 @@ export default function Today() {
   // "Your day so far" recap — null unless today reads sparse-done (nothing
   // running, nothing queued, at least one thing logged). Mounted above
   // DoneSection; unmounts plainly the moment a timer starts or a task queues.
-  const daySoFar = useDaySoFar();
+  const daySoFar = useDaySoFar({ done, totalCount, isToday });
 
   const isTimerRunning = useTimerStore((s) => s.isRunning);
   const runningTaskId = useTimerStore((s) => s.taskId);
