@@ -9,10 +9,17 @@ import { type } from '@/src/theme/typography';
 // earned, not missing.
 // ──────────────────────────────────────────────────────────────────────────────
 
-export function PatternsEmpty() {
+export function PatternsEmpty({ archetypeShown = false }: { archetypeShown?: boolean }) {
   const t = useTheme();
 
-  const wrap: ViewStyle = { alignItems: 'center', gap: t.space[3], paddingHorizontal: t.space[4], paddingTop: t.space[16] };
+  // With the provisional archetype card above, this block is a footnote, not the
+  // whole screen — it hugs the card and stops promising the personality reveal.
+  const wrap: ViewStyle = {
+    alignItems: 'center',
+    gap: t.space[3],
+    paddingHorizontal: t.space[4],
+    paddingTop: archetypeShown ? t.space[6] : t.space[16],
+  };
   const disc: ViewStyle = {
     width: t.size.control.lg,
     height: t.size.control.lg,
@@ -23,6 +30,17 @@ export function PatternsEmpty() {
   };
   const title: TextStyle = { ...(type.subtitle as unknown as TextStyle), color: t.colors.ink, textAlign: 'center' };
   const body: TextStyle = { ...(type.body as unknown as TextStyle), color: t.colors.inkSoft, textAlign: 'center' };
+
+  if (archetypeShown) {
+    return (
+      <View style={wrap}>
+        <Text style={body}>
+          Time a few tasks and this fills in with your sharpest category and the surprises worth
+          noticing.
+        </Text>
+      </View>
+    );
+  }
 
   return (
     <View style={wrap}>

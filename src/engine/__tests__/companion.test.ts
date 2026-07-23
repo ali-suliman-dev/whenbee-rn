@@ -62,13 +62,26 @@ describe('keeperReached — set-once prestige when the comb is (near-)fully capp
 
 describe('driftHealthFromRecent — Layer 3, POSITIVE-ONLY, oscillates, never guilt', () => {
   it('settled when recent ratios sit near 1', () => {
-    expect(driftHealthFromRecent([1, 1.05, 0.97, 1.02])).toBe('settled');
+    expect(driftHealthFromRecent([1, 1.05, 0.97, 1.02, 1.01])).toBe('settled');
   });
-  it('curious — not sad — when recent ratios drift away', () => {
-    expect(driftHealthFromRecent([1, 2.5, 3, 2.8])).toBe('curious');
+  it('curious — not sad — when recent ratios drift away (full window)', () => {
+    expect(driftHealthFromRecent([1, 2.5, 3, 2.8, 2.6])).toBe('curious');
   });
   it('empty window is settled; only ever returns settled|curious', () => {
     expect(driftHealthFromRecent([])).toBe('settled');
-    expect(['settled', 'curious']).toContain(driftHealthFromRecent([5, 6, 0.2]));
+    expect(['settled', 'curious']).toContain(driftHealthFromRecent([5, 6, 0.2, 4, 3])); // full window
+  });
+  // Drift means "you WERE calibrated, then life shifted" — it needs a baseline.
+  // Below the minimum window (5 ratios) there is no baseline to drift FROM, so
+  // even wildly-off ratios read as settled: a first log 3× over its guess is
+  // normal calibration, never drift. (Regression: drift card on first-ever log.)
+  it('below the minimum window, wild ratios are still settled — no baseline yet', () => {
+    expect(driftHealthFromRecent([3])).toBe('settled');
+    expect(driftHealthFromRecent([3, 2.8])).toBe('settled');
+    expect(driftHealthFromRecent([3, 2.8, 2.5, 2.9])).toBe('settled');
+  });
+  it('at exactly the minimum window (5), drift scoring turns on', () => {
+    expect(driftHealthFromRecent([3, 2.8, 2.5, 2.9, 3.1])).toBe('curious');
+    expect(driftHealthFromRecent([1, 1.02, 0.98, 1.05, 1.0])).toBe('settled');
   });
 });

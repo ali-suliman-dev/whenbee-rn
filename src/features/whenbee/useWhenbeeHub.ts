@@ -9,6 +9,7 @@ import { kv } from '@/src/lib/kv';
 import type { HoneycombCell } from '@/src/components/honeycomb/Honeycomb';
 import type { Tier, Discovery } from '@/src/domain/types';
 import { leadSharpnessOf } from './leadSharpness';
+import { blindSpotFor, driftRecheckVisible, type BlindSpot } from './hubGates';
 
 // ──────────────────────────────────────────────────────────────────────────────
 // useWhenbeeHub — the read-model for the Whenbee hub screen (UI lands in B.3).
@@ -22,12 +23,8 @@ import { leadSharpnessOf } from './leadSharpness';
 // that has at least one log — an opportunity to calibrate next, never a "worst".
 // ──────────────────────────────────────────────────────────────────────────────
 
-/** A tracked category surfaced as the gentle next calibration opportunity. */
-export interface BlindSpot {
-  categoryId: string;
-  name: string;
-  sharpness: number;
-}
+// BlindSpot moved to hubGates.ts (pure, testable); re-exported for consumers.
+export type { BlindSpot };
 
 export interface WhenbeeHubVM {
   honestLogCount: number;
@@ -166,18 +163,12 @@ export function useWhenbeeHub(): WhenbeeHubVM {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   const proReadiness = useMemo(() => getProReadiness(), [getProReadiness, statsByCategory, focusTick]);
 
-  // Blind spot = lowest-sharpness tracked category that has at least one log.
-  const blindSpot = useMemo<BlindSpot | null>(() => {
-    let lowest: BlindSpot | null = null;
-    for (const c of categories) {
-      const stat = statsByCategory[c.id];
-      if (!stat || stat.n < 1) continue;
-      if (lowest === null || stat.sharpness < lowest.sharpness) {
-        lowest = { categoryId: c.id, name: categoryName(c.id), sharpness: stat.sharpness };
-      }
-    }
-    return lowest;
-  }, [categories, statsByCategory]);
+  // Blind spot = lowest-sharpness tracked category — gated in hubGates so it
+  // only surfaces once there's real contrast between areas (never on day one).
+  const blindSpot = useMemo<BlindSpot | null>(
+    () => blindSpotFor(categories, statsByCategory, categoryName),
+    [categories, statsByCategory],
+  );
 
   // Re-arm the drift card the moment drift settles, so a *new* drift cycle can
   // surface it again (and we never nag while it's already settled).
@@ -189,7 +180,13 @@ export function useWhenbeeHub(): WhenbeeHubVM {
     }
   }, [driftHealth]);
 
-  const showDriftRecheck = driftHealth === 'curious' && !driftDismissed;
+  // Stage-gated (hubGates): drift re-check is the stage-5 capability — a
+  // re-CHECK needs an established baseline, so it never fires on early logs.
+  const showDriftRecheck = driftRecheckVisible({
+    driftHealth,
+    stage: reclaim.companion.stage,
+    dismissed: driftDismissed,
+  });
   useEffect(() => {
     if (showDriftRecheck) analytics.capture('drift_recheck', { action: 'shown' });
   }, [showDriftRecheck]);

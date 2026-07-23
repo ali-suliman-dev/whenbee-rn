@@ -152,7 +152,23 @@ export default function Patterns() {
         contentContainerStyle={{ gap: t.space[4], paddingBottom: t.space[12] }}
         showsVerticalScrollIndicator={false}
       >
-        {showEmpty ? <PatternsEmpty /> : null}
+        {/* Empty state — a quiz-seeded provisional archetype still shows, so a
+            brand-new user meets their time type from onboarding instead of a
+            blank screen. The copy below it stops promising what's already shown. */}
+        {showEmpty ? (
+          view.archetype ? (
+            <>
+              <Animated.View entering={rise()}>
+                <ArchetypeHero card={view.archetype} calibrationMap={view.calibrationMap} />
+              </Animated.View>
+              <Animated.View entering={rise()}>
+                <PatternsEmpty archetypeShown />
+              </Animated.View>
+            </>
+          ) : (
+            <PatternsEmpty />
+          )
+        ) : null}
 
         {view && !view.empty ? (
           <>
