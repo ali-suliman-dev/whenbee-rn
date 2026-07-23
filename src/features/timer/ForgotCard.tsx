@@ -17,6 +17,8 @@ import { formatClock } from '@/src/lib/time';
 import { FinishTimeWheel } from '@/src/features/planner/FinishTimeWheel';
 import { useForgotStore } from '@/src/stores/forgotStore';
 import { useCalibrationStore } from '@/src/stores/calibrationStore';
+import { useDayTasksStore } from '@/src/stores/dayTasksStore';
+import { usePlanStore } from '@/src/stores/planStore';
 import { useTimerStore } from '@/src/stores/timerStore';
 import { useSettingsStore } from '@/src/stores/settingsStore';
 import { useCategoriesStore } from '@/src/stores/categoriesStore';
@@ -77,6 +79,20 @@ export function ForgotCard(): React.JSX.Element | null {
         suggestedHonestMin: pending.honestMin,
         startedAt: null,
       });
+      // A completed retro must also flip Today + plan bookkeeping — same tail as
+      // every other completed stop (useTimer.logCompletedAndReward,
+      // stopPresenceSessionAndLog). Without it the linked task stays queued and
+      // rolls forward as still-to-do. Partial ("Not sure yet") never marks done.
+      if (status === 'completed' && pending.taskId !== null) {
+        const taskId = pending.taskId;
+        useDayTasksStore.getState().completeTask(taskId, { completedAt: Date.now(), actualMin });
+        void useDayTasksStore.getState().reload();
+        const planActive = usePlanStore.getState().active;
+        if (planActive !== null) {
+          const planTask = planActive.tasks.find((pt) => pt.id === taskId);
+          if (planTask?.status === 'running') usePlanStore.getState().completeTask(taskId, actualMin);
+        }
+      }
       useSettingsStore.getState().markForgotProtectSeen();
       clear();
     },
