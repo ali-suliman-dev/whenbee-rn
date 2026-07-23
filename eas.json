@@ -23,6 +23,12 @@
       "distribution": "store",
       "environment": "production",
       "android": { "buildType": "app-bundle" }
+    },
+    "production-apk": {
+      "extends": "production",
+      "distribution": "internal",
+      "credentialsSource": "local",
+      "android": { "buildType": "apk" }
     }
   },
   "submit": {

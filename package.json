@@ -89,6 +89,7 @@
     "build:dev": "eas build --profile development --platform android",
     "build:debug": "eas build --profile preview --platform android",
     "build:prod": "eas build --profile production --platform android",
+    "build:prod-apk": "eas build --profile production-apk --platform android",
     "submit:prod": "eas submit --profile production --platform android --latest",
     "web": "expo start --web",
     "lint": "eslint . --max-warnings=0",
