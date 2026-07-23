@@ -77,7 +77,8 @@ export const tokens = {
   // even when in-app cards run borderless.
   // `selected` = the option-row inset selection ring on the reward
   // context-question card (~1.5px, matches Chip's selection-border weight).
-  borderWidth: { hairline: 0, thin: 0, thick: 2, card: 0, share: 1, chip: 1, selected: 1.5 },
+  // `ghost` = the dashed border on empty-slot affordances (1.5px, semantic).
+  borderWidth: { hairline: 0, thin: 0, thick: 2, card: 0, share: 1, chip: 1, selected: 1.5, ghost: 1.5 },
 
   // Replaces scattered 0.3 / 0.4 / 0.6 opacities. `rangeArc` = the faint amber
   // straddle arc on the Live-Timer ring marking the honest [low, high] spread.

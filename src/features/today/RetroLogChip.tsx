@@ -23,7 +23,7 @@ export function RetroLogChip({
     gap: t.space[3],
     alignSelf: 'stretch',
     backgroundColor: 'transparent',
-    borderWidth: 1.5,
+    borderWidth: t.borderWidth.ghost,
     borderColor: t.colors.ghostBorder,
     borderStyle: 'dashed',
     borderRadius: t.radii.card,
@@ -33,16 +33,16 @@ export function RetroLogChip({
   };
 
   const coin: ViewStyle = {
-    width: 24,
-    height: 24,
-    borderRadius: 8,
+    width: t.iconSize.lg,
+    height: t.iconSize.lg,
+    borderRadius: t.radii.sm,
     backgroundColor: t.colors.primaryWash,
     justifyContent: 'center',
     alignItems: 'center',
   };
 
   const coinText: TextStyle = {
-    fontSize: 16,
+    fontSize: t.fontSize.md,
     fontWeight: t.fontWeight.bold,
     color: t.colors.primary,
   };
