@@ -14,14 +14,20 @@ import type { CalibrationConfidence, HonestRange } from '@/src/domain/types';
 // wheel to this", so users dragged their own guess up to match it and the number
 // chased them higher (15 → 30 → 60 …). The fix is presentation: a calm, read-only,
 // past-tense description of what tasks like this tend to run — decoupled from the
-// guess, with no arrow, no "+X more", no upsell. The number wears amber (the honey
-// accent) because it's the one honest thing on the sheet; everything around it is
-// quiet ink so nothing reads as a call to action.
+// guess, with no arrow, no "+X more", no upsell.
+//
+// Sentence-first (2026-07-23 redesign): no display number. The value sits inline
+// in one quiet sentence as an amber semibold span — the one honest thing on the
+// sheet — with a hairline-divided footer carrying the behavioral reminder
+// (pre-data: don't pad your guess; trained: not a target).
 //
 // Pre-data (a cold category on the population prior) shows a soft RANGE so it can
 // never look like a precise 2× target. Once the model has data, free users see the
 // single point; the tightening range stays a Pro payoff.
 // ──────────────────────────────────────────────────────────────────────────────
+
+// Keeps the value + unit ("25 min", "20–45 min") wrapping as one token.
+const NBSP = ' ';
 
 export function HonestSuggestionCard({
   honestMinutes,
@@ -43,7 +49,7 @@ export function HonestSuggestionCard({
   reasonNote?: string;
   /** OPTIONAL. True while the estimate is still the population prior (cold category). */
   preEstimate?: boolean;
-  /** OPTIONAL category name — grounds the provenance line ("your last few X tasks"). */
+  /** OPTIONAL category name — grounds the sentence ("your last few X tasks"). */
   categoryName?: string;
 }) {
   const t = useTheme();
@@ -89,40 +95,31 @@ export function HonestSuggestionCard({
   };
   const eyebrow: TextStyle = {
     fontSize: t.fontSize.xs,
-    fontWeight: t.fontWeight.bold as TextStyle['fontWeight'],
+    fontWeight: t.fontWeight.medium as TextStyle['fontWeight'],
     letterSpacing: t.letterSpacing.wide,
     textTransform: 'uppercase',
     color: t.colors.inkSoft,
   };
   const guessNote: TextStyle = { fontSize: t.fontSize.xs, color: t.colors.inkFaint };
-  const headline: TextStyle = {
-    fontSize: t.fontSize.base,
-    fontWeight: t.fontWeight.semibold as TextStyle['fontWeight'],
+  const sentence: TextStyle = {
+    fontSize: t.fontSize.md,
+    fontWeight: t.fontWeight.regular as TextStyle['fontWeight'],
     color: t.colors.ink,
-    lineHeight: t.fontSize.base * t.lineHeight.normal,
+    lineHeight: t.fontSize.md * t.lineHeight.normal,
   };
-  const numberRow: ViewStyle = { flexDirection: 'row', alignItems: 'baseline', gap: t.space[2] };
-  const number: TextStyle = {
-    fontSize: t.fontSize.honestCard,
-    fontWeight: t.fontWeight.bold as TextStyle['fontWeight'],
-    // amberText reads AA in BOTH modes; the raw `accent` fails contrast on light.
-    color: t.colors.amberText,
-    fontVariant: ['tabular-nums'],
-    letterSpacing: t.letterSpacing.tight,
-  };
-  const unit: TextStyle = {
+  const sentenceValue: TextStyle = {
     fontSize: t.fontSize.md,
     fontWeight: t.fontWeight.semibold as TextStyle['fontWeight'],
-    color: t.colors.inkSoft,
+    color: t.colors.amberText,
+    fontVariant: ['tabular-nums'],
   };
-  const provenance: TextStyle = { fontSize: t.fontSize.sm, color: t.colors.inkSoft };
   const noteText: TextStyle = { fontSize: t.fontSize.sm, color: t.colors.inkSoft };
-  const notGoal: TextStyle = {
-    fontSize: t.fontSize.xs,
-    color: t.colors.inkFaint,
-    lineHeight: t.fontSize.xs * t.lineHeight.normal,
-    marginTop: t.space[2],
-    paddingTop: t.space[2],
+  const footer: TextStyle = {
+    fontSize: t.fontSize.sm,
+    color: t.colors.inkSoft,
+    lineHeight: t.fontSize.sm * t.lineHeight.normal,
+    marginTop: t.space[3],
+    paddingTop: t.space[2.5],
     // A divider hairline (not a card border) — the borderWidth.hairline token is 0
     // in this borderless-card system, so use the platform hairline like InfoRow.
     borderTopWidth: StyleSheet.hairlineWidth,
@@ -130,18 +127,27 @@ export function HonestSuggestionCard({
   };
 
   const formatted = formatHonestMinutes(honestMinutes);
-  const numberText = showRange && range
-    ? `~${range.lowMinutes}–${range.highMinutes}`
-    : `~${formatted.value}`;
-  const unitToShow = showRange && range ? 'min' : formatted.unit;
+  const pointValue = formatted.unit
+    ? `${formatted.value}${NBSP}${formatted.unit}`
+    : formatted.value;
+  const valueText =
+    showRange && range ? `${range.lowMinutes}–${range.highMinutes}${NBSP}min` : pointValue;
 
-  const provenanceText = preEstimate
-    ? 'a rough range from optimists like you · sharpens as you log'
-    : `from your last few ${categoryName?.toLowerCase() ?? 'similar'} tasks`;
+  const categoryLabel = categoryName?.toLowerCase() ?? 'similar';
+  const sentenceLead = preEstimate
+    ? 'Tasks like this usually land around '
+    : `Your last few ${categoryLabel} tasks landed around `;
+  const footerText = preEstimate
+    ? 'No need to pad your guess. This range does it for you. Sharpens as you log.'
+    : 'Not a target, just what usually happens. Keep guessing with your gut.';
 
-  const a11yLabel = showRange && range
-    ? `Tasks like this usually take ${range.lowMinutes} to ${range.highMinutes} minutes.`
-    : `Honest estimate about ${honestMinutes} minutes for tasks like this. Not a target, just what usually happens.`;
+  const spokenValue =
+    showRange && range
+      ? `${range.lowMinutes} to ${range.highMinutes} minutes`
+      : `${honestMinutes} minutes`;
+  const a11yLabel = preEstimate
+    ? `Tasks like this usually land around ${spokenValue}. No need to pad your guess — this range does it for you.`
+    : `Your last few ${categoryLabel} tasks usually land around ${spokenValue}. Not a target, just what usually happens.`;
 
   return (
     <View style={card} accessibilityLabel={a11yLabel}>
@@ -150,26 +156,14 @@ export function HonestSuggestionCard({
         <AppText style={guessNote}>you guessed {guessMinutes}m</AppText>
       </View>
 
-      {preEstimate ? (
-        <AppText style={headline}>Tasks like this often run a bit longer than they feel.</AppText>
-      ) : null}
-
-      <View style={numberRow}>
-        <AppText style={number}>{numberText}</AppText>
-        {unitToShow ? <AppText style={unit}>{unitToShow}</AppText> : null}
-      </View>
-
-      <AppText style={provenance}>{provenanceText}</AppText>
+      <AppText style={sentence}>
+        {sentenceLead}
+        <AppText style={sentenceValue}>{valueText}</AppText>.
+      </AppText>
 
       {reasonNote ? <AppText style={noteText}>{reasonNote}</AppText> : null}
 
-      {/* The pre-data headline already carries the "not a goal" reframe, so the
-          divider line only shows once the category is trained. */}
-      {!preEstimate ? (
-        <AppText style={notGoal}>
-          Not a target. Just what usually happens. Keep guessing with your gut.
-        </AppText>
-      ) : null}
+      <AppText style={footer}>{footerText}</AppText>
     </View>
   );
 }
