@@ -235,6 +235,7 @@ export const tokens = {
       // surfaceSunken: '#ECE8DE', // wells / inset tracks
       hairline: '#DAD5C9', // 1px internal dividers (reads at 3:1 non-text)
       border: '#CFC9BA', // stronger edge for cards that must read
+      ghostBorder: '#CFC8EA', // dashed border for empty-slot affordances
       radio: '#CFC8EA', // unselected single-select marker ring (reward context questions)
       divider: 'rgba(0,0,0,0.10)', // section separator — a darker recessed line (not a tint)
       shineOverlay: 'rgba(255,255,255,0.55)', // inner top-edge specular (glass lift)
@@ -329,6 +330,7 @@ export const tokens = {
       taskCardBg: '#0F1016', // darker fill for draggable plan task rows (distinct from event rows)
       hairline: 'rgba(255,255,255,0.08)', // internal dividers only
       border: 'rgba(255,255,255,0.14)', // cards that must read
+      ghostBorder: 'rgba(255,255,255,0.18)', // dashed border for empty-slot affordances
       radio: 'rgba(255,255,255,0.25)', // unselected single-select marker ring (reward context questions)
       divider: 'rgba(0,0,0,0.32)', // section separator — a darker recessed line on the deep bg
       shineOverlay: 'rgba(255,255,255,0.07)', // inner top-edge specular (glass lift)

@@ -543,7 +543,8 @@ export default function Today() {
 
           {totalCount === 0 && !isTimerRunning ? null : (
             <RetroLogChip
-              label="Finished something else? Log it too"
+              firstText="Finished something else? "
+              secondText="Log it too"
               onPress={() => router.push('/(modals)/retro')}
             />
           )}

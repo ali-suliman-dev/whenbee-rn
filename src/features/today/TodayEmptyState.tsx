@@ -45,7 +45,8 @@ export function TodayEmptyState({ variant, weekday, onPrimary, onLog }: TodayEmp
       : "Add a task and I'll show its honest finish, plus whether the day actually fits.";
 
   const primaryLabel = isFirstRun ? 'Start now' : isFuture ? 'Plan ahead' : 'Plan a task';
-  const chipLabel = isFirstRun ? 'Already finished something? Log it' : 'Or log something you finished';
+  const chipFirstText = isFirstRun ? 'Already finished something? ' : 'Or log something ';
+  const chipSecondText = isFirstRun ? 'Log it' : 'you finished';
 
   const block: ViewStyle = { alignItems: 'center', gap: t.space[2], marginTop: t.space[8] };
   const eyebrow: TextStyle = { ...(type.eyebrow as unknown as TextStyle), color: t.colors.inkSoft };
@@ -70,7 +71,11 @@ export function TodayEmptyState({ variant, weekday, onPrimary, onLog }: TodayEmp
 
       <AppButton label={primaryLabel} variant="indigo" fullWidth onPress={onPrimary} />
 
-      <RetroLogChip label={chipLabel} onPress={onLog} />
+      <RetroLogChip
+        firstText={chipFirstText}
+        secondText={chipSecondText}
+        onPress={onLog}
+      />
     </View>
   );
 }
