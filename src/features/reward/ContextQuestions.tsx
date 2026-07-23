@@ -178,7 +178,24 @@ export function ContextQuestions({
   }
 
   const activeQuestion: Question | undefined = questions[stepIndex];
+  // Nothing left to show once every question has been settled AND every
+  // settlement was a skip (a skip's Receipt renders null — see below). A
+  // tagged answer always leaves a visible receipt, so the card chrome only
+  // needs to disappear in the all-skipped case. Owning the card surface here
+  // (instead of the parent always wrapping one) is what lets it unmount
+  // cleanly — a plain unmount, no exit animation.
+  const hasContent = activeQuestion !== undefined || receipts.some((r) => r.value !== null);
+  if (!hasContent) return null;
 
+  // The payoff card groups these questions into one surface — owned here so
+  // the whole card (chrome included) disappears once there is nothing left to
+  // show, instead of leaving an empty rounded box behind (see `hasContent`).
+  const card: ViewStyle = {
+    backgroundColor: t.colors.surface,
+    borderRadius: t.radii.card,
+    padding: t.space[4],
+    gap: t.space[3],
+  };
   const wrap: ViewStyle = { gap: t.space[3] };
   const headerRow: ViewStyle = {
     flexDirection: 'row',
@@ -196,7 +213,7 @@ export function ContextQuestions({
   };
 
   return (
-    <View style={wrap}>
+    <View style={card}>
       {receipts.map((r, i) => (
         <Receipt key={i} questionKey={r.key} value={r.value} />
       ))}

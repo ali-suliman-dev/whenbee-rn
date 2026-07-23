@@ -169,4 +169,28 @@ describe('ContextQuestions', () => {
     expect(mockCapture).not.toHaveBeenCalled();
     expect(screen.queryByText(/Noted\./)).toBeNull();
   });
+
+  // Regression: an empty rounded card surface must not linger once every
+  // question has been skipped — the component owns its own card chrome and
+  // unmounts it (renders null) rather than leaving an empty box on screen.
+  it('renders no card chrome once the only question is skipped', () => {
+    const { toJSON } = render(
+      <ContextQuestions eventId="evt-1" category="email" reasonDirection={null} />,
+    );
+
+    fireEvent.press(screen.getByText('Skip'));
+
+    expect(toJSON()).toBeNull();
+  });
+
+  it('renders no card chrome once both questions (reason + energy) are skipped in sequence', () => {
+    const { toJSON } = render(
+      <ContextQuestions eventId="evt-1" category="cleaning" reasonDirection="over" />,
+    );
+
+    fireEvent.press(screen.getByText('Skip')); // skip reason → advances to energy
+    fireEvent.press(screen.getByText('Skip')); // skip energy → nothing left
+
+    expect(toJSON()).toBeNull();
+  });
 });

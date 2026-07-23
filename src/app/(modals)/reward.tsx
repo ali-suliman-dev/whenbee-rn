@@ -146,12 +146,6 @@ export default function Reward() {
     gap: t.space[2.5], // medium tier — card internals (tightened with the row collapse)
   };
   const heroBlock: ViewStyle = { alignItems: 'center', gap: t.space[1.5] };
-  const questionsCard: ViewStyle = {
-    backgroundColor: t.colors.surface,
-    borderRadius: t.radii.card,
-    padding: t.space[4],
-    gap: t.space[3],
-  };
   const ctaBlock: ViewStyle = {
     // Not pinned: rides the bottom of the scroll flow. marginTop pushes it down
     // when content is short, collapses when it overflows — so nothing hides
@@ -238,15 +232,16 @@ export default function Reward() {
         <NotifSoftAskCard />
 
         {/* Zone 4 — the "quick questions" card: reason (if diverged past the
-            gate) then energy, asked one at a time via ContextQuestions. */}
+            gate) then energy, asked one at a time via ContextQuestions.
+            ContextQuestions owns its own card chrome (surface/radius/padding)
+            so it can unmount that chrome too once every question is settled —
+            it renders null rather than leaving an empty rounded box behind. */}
         {r.eventId ? (
-          <View style={questionsCard}>
-            <ContextQuestions
-              eventId={r.eventId}
-              category={r.category}
-              reasonDirection={r.reasonDirection}
-            />
-          </View>
+          <ContextQuestions
+            eventId={r.eventId}
+            category={r.category}
+            reasonDirection={r.reasonDirection}
+          />
         ) : null}
 
         {/* CTA zone — rides the bottom of the flow (not pinned), single primary
