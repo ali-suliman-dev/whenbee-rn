@@ -1,0 +1,252 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Whenbee · Brainstorm v3 — recap final: copy restored, stats back, color lab</title>
+<style>
+  :root{
+    --bg:#F4F2FC; --surface:#FFFFFF; --sunken:#F1EEFB;
+    --ink:#20233A; --inksoft:#5C5F73; --inkfaint:#9B9DAB;
+    --primary:#6B5BE6; --primary-edge:#463B9E; --primary-soft:#E4E0FA; --primary-wash:#EFEDFC;
+    --accent:#EEAE4D; --accent-edge:#C68A30; --accent-soft:#FBEFD6; --honey-wash:#FBF2DF;
+    --amber-text:#8A5A12;
+    --r-card:16px; --r-sheet:20px;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;background:#1C1E2E;color:#F4F1EA;padding:40px 32px 80px}
+  h1{font-size:26px;letter-spacing:-0.5px;margin-bottom:6px}
+  h2{font-size:20px;letter-spacing:-0.3px;margin:46px 0 6px;color:#F5C03F}
+  .sub{color:#ADA9B5;font-size:14px;max-width:860px;line-height:1.55;margin-bottom:26px}
+  .row{display:flex;gap:34px;flex-wrap:wrap;align-items:flex-start;margin-bottom:8px}
+  .col{width:392px}
+  .dirlabel{font-size:15px;font-weight:700;margin:0 0 2px;letter-spacing:-0.2px}
+  .dirsub{font-size:12.5px;color:#ADA9B5;line-height:1.5;margin-bottom:12px;min-height:40px}
+  .notes{margin-top:12px;font-size:12.5px;color:#CFCAE0;line-height:1.55;background:#242436;border-radius:12px;padding:14px 16px}
+  .notes b{color:#F5C03F;font-weight:600}
+  .notes ul{margin:6px 0 0 16px}
+  .notes li{margin-bottom:4px}
+  .verdict{max-width:860px;font-size:13.5px;color:#E8E4F4;line-height:1.6;background:#2A2A40;border-left:3px solid #F5C03F;border-radius:10px;padding:14px 18px;margin:14px 0 8px}
+  .verdict b{color:#F5C03F}
+
+  .phone{width:392px;height:856px;border-radius:44px;overflow:hidden;position:relative;
+         box-shadow:0 18px 50px rgba(0,0,0,.5);border:6px solid #0c0c12;background:var(--bg);
+         display:flex;flex-direction:column}
+  .screen{flex:1;padding:54px 20px 0;overflow:hidden;position:relative;display:flex;flex-direction:column;gap:14px}
+  .notch{position:absolute;top:12px;left:50%;transform:translateX(-50%);width:110px;height:26px;background:#000;border-radius:20px;z-index:9}
+
+  .greet{font-size:12px;color:var(--inksoft)}
+  .hdr{display:flex;justify-content:space-between;align-items:flex-start}
+  .title{font-size:38px;font-weight:800;letter-spacing:-0.75px;color:var(--ink);line-height:1.05}
+  .date{font-size:12px;color:var(--inksoft);margin-top:2px}
+  .avatar{position:relative;width:58px;height:58px;margin-left:auto}
+  .ring{width:58px;height:58px;border-radius:50%;background:conic-gradient(var(--accent) 0 33%, #E4DFD3 33% 100%);
+        display:flex;align-items:center;justify-content:center}
+  .ring-in{width:49px;height:49px;border-radius:50%;background:#fff;display:flex;align-items:center;justify-content:center;font-size:20px}
+  .tier{font-size:10.5px;color:var(--inksoft);text-align:center;margin-top:3px}
+  .hdr-right{display:flex;align-items:flex-start;gap:14px}
+  .gear{font-size:20px;color:var(--inksoft);margin-top:16px}
+  .card{background:var(--surface);border-radius:var(--r-card);padding:14px 16px}
+  .cal{display:flex;justify-content:space-between;padding:12px 8px}
+  .day{width:44px;text-align:center;border-radius:14px;padding:7px 0}
+  .day .wd{font-size:11px;color:var(--inkfaint)}
+  .day .num{font-size:17px;font-weight:600;color:var(--ink);margin-top:2px}
+  .day.sel{background:var(--primary-soft)}
+  .day.sel .wd,.day.sel .num{color:var(--primary)}
+  .dot{width:4px;height:4px;border-radius:2px;background:var(--primary);margin:4px auto 0}
+  .sect{font-size:11px;letter-spacing:1.2px;font-weight:700;color:var(--inksoft);display:flex;justify-content:space-between;align-items:center}
+  .sect .chev{color:var(--inkfaint)}
+  .donerow{background:var(--surface);border-radius:var(--r-card);padding:13px 16px;display:flex;align-items:center;gap:10px}
+  .donerow .ck{width:22px;height:22px;border-radius:50%;background:var(--accent-soft);color:var(--amber-text);
+      display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:800;flex:none}
+  .donerow .tt{font-size:14.5px;font-weight:600;color:var(--ink);flex:1}
+  .donerow .mm{font-size:12px;color:var(--inksoft)}
+  .tabbar{margin:auto -20px 0;padding:10px 22px 26px;display:flex;align-items:flex-end;justify-content:space-between;position:relative}
+  .tab{font-size:10.5px;color:var(--inksoft);text-align:center;width:56px}
+  .tab .ic{font-size:19px;display:block;margin-bottom:3px}
+  .tab.on{color:var(--primary)}
+  .fab{width:52px;height:52px;border-radius:16px;background:var(--primary);color:#fff;font-size:24px;
+       display:flex;align-items:center;justify-content:center;margin-top:-26px;box-shadow:0 6px 0 var(--primary-edge)}
+  .retro-ghost{border:1.5px dashed #CFC8EA;border-radius:var(--r-card);padding:12px 16px;display:flex;align-items:center;gap:10px;
+      font-size:13.5px;color:var(--inksoft);background:rgba(255,255,255,.45)}
+  .retro-ghost .plus{width:24px;height:24px;border-radius:8px;background:var(--primary-wash);color:var(--primary);display:flex;align-items:center;justify-content:center;font-weight:700}
+
+  /* ── recap card v3 ── */
+  .recap{background:var(--surface);border-radius:var(--r-card);padding:15px 16px 14px}
+  .recap .eyebrow{font-size:10px;letter-spacing:.9px;font-weight:700;color:var(--inkfaint)}
+  .recap .line{font-size:16.5px;font-weight:700;color:var(--ink);letter-spacing:-0.25px;margin-top:5px;line-height:1.4}
+  .statrow{display:flex;align-items:stretch;margin-top:12px}
+  .stat{flex:1;display:flex;flex-direction:column;gap:3px;position:relative}
+  .stat + .stat{padding-left:14px;border-left:1px solid #EFECF9}
+  .stat .k{font-size:10px;letter-spacing:.7px;font-weight:700;color:var(--inkfaint)}
+  .stat .v{font-size:20px;font-weight:800;color:var(--ink);letter-spacing:-0.3px}
+  .stat .v small{font-size:11px;font-weight:600;color:var(--inksoft);margin-left:2px}
+  .minibar{height:3px;border-radius:2px;background:var(--honey-wash);margin-top:4px;width:56px;overflow:hidden}
+  .minibar i{display:block;height:100%;width:27%;background:linear-gradient(90deg,#F5C03F,#EEAE4D);border-radius:2px}
+  .hair{height:1px;background:#EFECF9;margin:12px 0 9px}
+  .mile{font-size:12.5px;color:var(--inksoft);display:flex;align-items:center;gap:7px}
+
+  /* color-variant modifiers */
+  .cInk .stat .v.hn{color:var(--ink)}
+  .cInk .mile b{color:var(--ink);font-weight:700}
+  .cInk .mile .hx{color:var(--accent)}
+  .cInd .stat .v.hn{color:var(--primary)}
+  .cInd .mile b{color:var(--primary);font-weight:700}
+  .cInd .mile .hx{color:var(--primary)}
+  .cPill .stat .v.hn{color:var(--amber-text)}
+  .cPill .mile b{background:var(--accent-soft);color:var(--amber-text);padding:2px 8px;border-radius:999px;font-weight:700}
+  .cPill .mile .hx{display:none}
+  .cCur .stat .v.hn{color:var(--amber-text)}
+  .cCur .mile b{color:var(--amber-text);font-weight:700}
+  .cCur .mile .hx{color:var(--accent)}
+
+  .varwrap{background:var(--bg);border-radius:20px;padding:16px;display:flex;flex-direction:column;gap:8px}
+  .varlab{font-size:12px;font-weight:700;color:#F5C03F;margin:6px 0 2px}
+</style>
+</head>
+<body>
+
+<h1>Brainstorm v3 — 2026-07-23</h1>
+<p class="sub">Locked so far: context section = <b>1·I one question at a time</b> · Pro ripening = <b>4B checklist</b> · retro row = <b>3A ghost slot</b>.
+This round: the "See your bee" button question answered below, and the day recap finalized — v1 copy restored, stat row back (restyled), and a color lab for the two spots that used the dark-yellow <code>amberText #8A5A12</code>.</p>
+
+<div class="verdict"><b>The "See your bee" button — do nothing to it.</b>
+<ul style="margin:8px 0 2px 18px;line-height:1.6">
+<li><b>Never disable</b> — your instinct is right. A disabled CTA turns two optional tags into a toll gate, and the app already removed disabled buttons app-wide (onboarding audit). The tags are side-channel data; the log is already saved.</li>
+<li><b>Don't dim/ghost it either</b> — a de-emphasized CTA is a soft version of the same pressure ("answer first"). Optional means the exit looks identical whether you tagged or not.</li>
+<li>Tapping it with questions unanswered = implicit skip; the funnel already records <code>overrun_reason_skipped</code> on unmount. No confirm, no toast.</li>
+<li>Only real work: <b>keep it stationary</b>. When Q1 collapses to the receipt line, the card above shrinks — the footer+CTA is bottom-anchored so nothing moves under the thumb. That's a layout guarantee, not a redesign.</li>
+</ul>
+</div>
+
+<!-- ═══════════ RECAP FINAL ═══════════ -->
+<h2>Day recap — copy restored, stats back, color options</h2>
+<p class="sub">Headline reverted to the v1 sentence (two short sentences, no dash): <b>"One honest log in. 23 real minutes on the books."</b>
+Stat row returns, restyled: hairline dividers between stats, 20px values, unit words small — and the HONEY stat carries a 3px honey bar so color can live in a material instead of dyed text.
+The two dark-yellow spots (HONEY value, "~2 more logs") get four treatments below.</p>
+
+<div class="row">
+
+  <!-- Full phone: recommended C1 -->
+  <div class="col">
+    <p class="dirlabel">Recommended — ink numbers, honey as material</p>
+    <p class="dirsub">No colored text at all. The amber lives in two tiny real things: the mini honey bar under the HONEY stat and the filled hex before the milestone. Numbers stay ink like everywhere else in the app.</p>
+    <div class="phone"><div class="notch"></div><div class="screen">
+      <div class="hdr">
+        <div><div class="greet">Good morning</div><div class="title">Today</div><div class="date">Thu · Jul 23</div></div>
+        <div class="hdr-right"><div class="gear">⚙</div>
+          <div><div class="avatar"><div class="ring"><div class="ring-in">🐝</div></div></div><div class="tier">Raw</div></div>
+        </div>
+      </div>
+      <div class="card cal">
+        <div class="day"><div class="wd">Mon</div><div class="num">20</div></div>
+        <div class="day"><div class="wd">Tue</div><div class="num">21</div></div>
+        <div class="day"><div class="wd">Wed</div><div class="num">22</div></div>
+        <div class="day sel"><div class="wd">Thu</div><div class="num">23</div><div class="dot"></div></div>
+        <div class="day"><div class="wd">Fri</div><div class="num">24</div></div>
+        <div class="day"><div class="wd">Sat</div><div class="num">25</div></div>
+        <div class="day"><div class="wd">Sun</div><div class="num">26</div></div>
+      </div>
+      <div class="recap cInk">
+        <div class="eyebrow">YOUR DAY SO FAR</div>
+        <div class="line">One honest log in. 23 real minutes on the books.</div>
+        <div class="statrow">
+          <div class="stat"><span class="k">LOGGED</span><span class="v">1<small>task</small></span></div>
+          <div class="stat"><span class="k">REAL TIME</span><span class="v">23<small>min</small></span></div>
+          <div class="stat"><span class="k">HONEY</span><span class="v hn">27<small>%</small></span><span class="minibar"><i></i></span></div>
+        </div>
+        <div class="hair"></div>
+        <div class="mile"><span class="hx" style="color:var(--accent)">⬢</span><span><b>~2 more logs</b> and Admin settles in.</span></div>
+      </div>
+      <div class="sect"><span>DONE TODAY · 1</span><span class="chev">⌄</span></div>
+      <div class="donerow"><div class="ck">✓</div><div class="tt">Test</div><div class="mm">guessed 5 · took 23</div></div>
+      <div class="retro-ghost"><div class="plus">+</div><div>Finished something else? <b style="color:var(--primary);font-weight:600">Log it too</b></div></div>
+      <div class="tabbar">
+        <div class="tab on"><span class="ic">⌂</span>Today</div>
+        <div class="tab"><span class="ic">▦</span>Routines</div>
+        <div class="fab">+</div>
+        <div class="tab"><span class="ic">🐝</span>Whenbee</div>
+        <div class="tab"><span class="ic">〰</span>Patterns</div>
+      </div>
+    </div></div>
+    <div class="notes"><b>What changed in the stat row:</b>
+      <ul>
+        <li>Hairline verticals between stats — the row reads as one instrument, not three floating numbers (the "chaotic" fix).</li>
+        <li>Values 20px/800, units tucked small — same optical grammar as the honest number.</li>
+        <li>HONEY: number in ink + 3px honey bar beneath = color as material, not dyed text. The bar is the same honey fill as the reward bar, so it rhymes.</li>
+        <li>Milestone: structure untouched — filled hex ⬢ in real amber accent carries the warmth, words in soft ink, "~2 more logs" bold ink.</li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- Variants column -->
+  <div class="col">
+    <p class="dirlabel">Color lab — the two amber spots</p>
+    <p class="dirsub">Same card, four treatments of HONEY 27% + "~2 more logs". Current dark yellow shown last for comparison.</p>
+    <div class="varwrap">
+      <div class="varlab">C1 · Ink + honey material (the phone at left)</div>
+      <div class="recap cInk">
+        <div class="eyebrow">YOUR DAY SO FAR</div>
+        <div class="line">One honest log in. 23 real minutes on the books.</div>
+        <div class="statrow">
+          <div class="stat"><span class="k">LOGGED</span><span class="v">1<small>task</small></span></div>
+          <div class="stat"><span class="k">REAL TIME</span><span class="v">23<small>min</small></span></div>
+          <div class="stat"><span class="k">HONEY</span><span class="v hn">27<small>%</small></span><span class="minibar"><i></i></span></div>
+        </div>
+        <div class="hair"></div>
+        <div class="mile"><span class="hx" style="color:var(--accent)">⬢</span><span><b>~2 more logs</b> and Admin settles in.</span></div>
+      </div>
+
+      <div class="varlab">C2 · Indigo emphasis</div>
+      <div class="recap cInd">
+        <div class="eyebrow">YOUR DAY SO FAR</div>
+        <div class="line">One honest log in. 23 real minutes on the books.</div>
+        <div class="statrow">
+          <div class="stat"><span class="k">LOGGED</span><span class="v">1<small>task</small></span></div>
+          <div class="stat"><span class="k">REAL TIME</span><span class="v">23<small>min</small></span></div>
+          <div class="stat"><span class="k">HONEY</span><span class="v hn">27<small>%</small></span></div>
+        </div>
+        <div class="hair"></div>
+        <div class="mile"><span class="hx">⬢</span><span><b>~2 more logs</b> and Admin settles in.</span></div>
+      </div>
+
+      <div class="varlab">C3 · Amber kept, but always on its cream pill</div>
+      <div class="recap cPill">
+        <div class="eyebrow">YOUR DAY SO FAR</div>
+        <div class="line">One honest log in. 23 real minutes on the books.</div>
+        <div class="statrow">
+          <div class="stat"><span class="k">LOGGED</span><span class="v">1<small>task</small></span></div>
+          <div class="stat"><span class="k">REAL TIME</span><span class="v">23<small>min</small></span></div>
+          <div class="stat"><span class="k">HONEY</span><span class="v hn" style="background:var(--accent-soft);border-radius:8px;padding:0 7px">27<small>%</small></span></div>
+        </div>
+        <div class="hair"></div>
+        <div class="mile"><span><b>~2 more logs</b> <span style="color:var(--inksoft)">and Admin settles in.</span></span></div>
+      </div>
+
+      <div class="varlab">C4 · Current (for comparison) — bare dark yellow</div>
+      <div class="recap cCur">
+        <div class="eyebrow">YOUR DAY SO FAR</div>
+        <div class="line">One honest log in. 23 real minutes on the books.</div>
+        <div class="statrow">
+          <div class="stat"><span class="k">LOGGED</span><span class="v">1<small>task</small></span></div>
+          <div class="stat"><span class="k">REAL TIME</span><span class="v">23<small>min</small></span></div>
+          <div class="stat"><span class="k">HONEY</span><span class="v hn">27<small>%</small></span></div>
+        </div>
+        <div class="hair"></div>
+        <div class="mile"><span class="hx">⬡</span><span><b>~2 more logs</b> <span style="color:var(--inksoft)">and Admin settles in.</span></span></div>
+      </div>
+    </div>
+    <div class="notes"><b>Why the dark yellow feels off, and the trade-offs:</b>
+      <ul>
+        <li><code>amberText #8A5A12</code> exists because real honey amber (#EEAE4D) fails contrast on white text-sized — darkened to pass AA it turns muddy brown. Any "amber text on white" ends up in that swamp.</li>
+        <li><b>C1</b> escapes the trap: text never carries the color; honey shows up as actual honey (bar, hex). Calmest, most premium.</li>
+        <li><b>C2</b> is clean + on-brand, but indigo elsewhere means "tappable" — a colored non-link risks dead taps.</li>
+        <li><b>C3</b> keeps warmth and reads intentional (same grammar as the "Ripens at" pill you already have) — dark yellow only ever on cream, never bare.</li>
+      </ul>
+    </div>
+  </div>
+</div>
+
+<div class="verdict"><b>Recommendation — C1.</b> The "hideous" wasn't amber, it was amber-as-text on white. Keep numbers ink like every other number in the app and let honey appear only as material (mini bar + hex). If you want more warmth than C1, C3's pill is the safe middle. Copy locked: "One honest log in. 23 real minutes on the books." + "~2 more logs and Admin settles in." — short words, real numbers, no dash.</div>
+
+</body>
+</html>

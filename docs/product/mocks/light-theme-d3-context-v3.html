@@ -1,0 +1,571 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Whenbee · D3 Toybox in context + 3 restrained alternatives (v3)</title>
+<style>
+  :root{
+    --ink:#20233A; --inksoft:#5C5F73; --inkfaint:#9B9DAB;
+    --primary:#6B5BE6; --primary-edge:#463B9E; --primary-soft:#E4E0FA; --primary-wash:#EFEDFC;
+    --accent:#EEAE4D; --accent-edge:#C68A30; --accent-soft:#FBEFD6; --amber-text:#8A5A12;
+    --bg:#F1EDFB; --surface:#FFFFFF; --sunken:#EAE5F8; --edge:#D8D0F0;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;background:#14151D;color:#F4F1EA;padding:40px 32px 80px}
+  h1{font-size:24px;letter-spacing:-0.5px;margin-bottom:6px}
+  h2{font-size:19px;letter-spacing:-0.3px;margin:34px 0 4px;color:#F5C03F}
+  .sub{color:#ADA9B5;font-size:14px;max-width:880px;line-height:1.55;margin-bottom:22px}
+  .sub b{color:#F4F1EA}
+  .row{display:flex;gap:30px;flex-wrap:wrap;align-items:flex-start}
+  .col{width:372px;margin-bottom:20px}
+  .dirlabel{font-size:15px;font-weight:800;margin:0 0 3px;color:#F5C03F}
+  .dirsub{font-size:12.5px;color:#ADA9B5;line-height:1.5;margin-bottom:12px;min-height:40px}
+  .notes{margin-top:12px;font-size:12.5px;color:#CFCAE0;line-height:1.55;background:#242436;border-radius:12px;padding:13px 15px}
+  .notes b{color:#F5C03F;font-weight:600}
+  .notes ul{margin:6px 0 0 16px}.notes li{margin-bottom:4px}
+  code{font-family:Menlo,monospace;font-size:12px;color:#F5C03F;background:#242436;padding:1px 5px;border-radius:4px}
+
+  .phone{width:372px;height:800px;border-radius:44px;overflow:hidden;position:relative;
+         box-shadow:0 18px 50px rgba(0,0,0,.5);border:6px solid #0c0c12;background:var(--bg);
+         display:flex;flex-direction:column}
+  .screen{flex:1;overflow:hidden;display:flex;flex-direction:column}
+  .notch{position:absolute;top:12px;left:50%;transform:translateX(-50%);width:104px;height:25px;background:#000;border-radius:20px;z-index:9}
+  .hdrwrap{padding:52px 18px 14px}
+  .content{flex:1;display:flex;flex-direction:column;gap:13px;padding:0 18px}
+
+  .greet{font-size:12px;color:var(--inksoft)}
+  .hdr{display:flex;justify-content:space-between;align-items:flex-start}
+  .title{font-size:36px;font-weight:800;letter-spacing:-0.75px;color:var(--ink);line-height:1.05}
+  .date{font-size:12px;color:var(--inksoft);margin-top:2px}
+  .avatar{width:56px;height:56px;margin-left:auto}
+  .ring{width:56px;height:56px;border-radius:50%;background:conic-gradient(var(--accent) 0 78%, #E2DCF2 78% 100%);display:flex;align-items:center;justify-content:center}
+  .ring-in{width:47px;height:47px;border-radius:50%;background:#fff;display:flex;align-items:center;justify-content:center;font-size:19px}
+  .tier{font-size:10.5px;color:var(--inksoft);text-align:center;margin-top:3px}
+  .hdr-right{display:flex;align-items:flex-start;gap:13px}
+  .gear{font-size:19px;color:var(--inksoft);margin-top:15px}
+
+  /* D3 base card: extruded */
+  .card{background:var(--surface);border-radius:20px;padding:14px 16px;box-shadow:0 4px 0 var(--edge)}
+  .cal{display:flex;justify-content:space-between;padding:12px 6px}
+  .day{width:42px;text-align:center;border-radius:12px;padding:7px 0}
+  .day .wd{font-size:10.5px;color:var(--inkfaint)}
+  .day .num{font-size:16px;font-weight:600;color:var(--ink);margin-top:2px}
+  .day.sel{background:var(--primary);box-shadow:0 3px 0 var(--primary-edge);transform:translateY(-2px)}
+  .day.sel .wd,.day.sel .num{color:#fff}
+  .dot{width:4px;height:4px;border-radius:2px;background:var(--accent);margin:4px auto 0}
+  .day.sel .dot{background:#F5C03F}
+
+  .pillrow{display:flex;align-items:center;gap:10px}
+  .pillrow .txt{font-size:13.5px;color:var(--ink);flex:1;font-weight:600}
+  .coin{width:30px;height:30px;border-radius:10px;background:var(--accent-soft);box-shadow:0 2.5px 0 #E8D5AC;display:flex;align-items:center;justify-content:center;font-size:14px;flex-shrink:0}
+  .coin.ind{background:var(--primary-soft);box-shadow:0 2.5px 0 #C4BBEE}
+  .pro{background:var(--accent);color:#20233A;font-weight:700;font-size:11px;padding:3px 10px;border-radius:999px;box-shadow:0 3px 0 var(--accent-edge)}
+  .chev{color:var(--inkfaint);font-size:15px}
+
+  .focus{padding:17px 17px 15px;border-radius:20px;box-shadow:0 5px 0 var(--edge)}
+  .eyebrow{font-size:10px;letter-spacing:.8px;font-weight:700;color:var(--primary)}
+  .eyebrow .dotlive{display:inline-block;width:7px;height:7px;border-radius:4px;background:var(--primary);margin-right:5px;vertical-align:1px}
+  .elapsed-lbl{font-size:10px;letter-spacing:.8px;font-weight:700;color:var(--inkfaint);float:right}
+  .frow{display:flex;justify-content:space-between;align-items:baseline;margin-top:8px}
+  .task{font-size:22px;font-weight:800;color:var(--ink)}
+  .est{font-size:12px;color:var(--inksoft)}
+  .est b{font-size:30px;font-weight:800;color:var(--ink);letter-spacing:-0.5px}
+  .clock{font-size:30px;font-weight:800;color:var(--ink);letter-spacing:-0.5px;font-variant-numeric:tabular-nums}
+
+  /* ── THE BAR: guess (indigo hatch) + honest top-up (amber) + shine + tick ── */
+  .gapbar{height:14px;border-radius:7px;background:var(--sunken);margin:14px 0 10px;position:relative}
+  .gapbar .guess{position:absolute;left:0;top:0;bottom:0;width:50%;border-radius:7px 0 0 7px;overflow:hidden;
+        background:repeating-linear-gradient(135deg,var(--primary) 0 4px,#8B7DEB 4px 9px)}
+  .gapbar .topup{position:absolute;left:50%;top:0;bottom:0;width:50%;border-radius:0 7px 7px 0;background:var(--accent)}
+  .gapbar .shine{position:absolute;top:3px;left:6px;right:6px;height:3px;border-radius:2px;background:rgba(255,255,255,.38);z-index:2}
+  .gapbar .tick{position:absolute;top:-2px;bottom:-2px;width:3px;border-radius:2px;background:var(--ink);z-index:3}
+  .meta{display:flex;justify-content:space-between;font-size:12.5px}
+  .meta .l{color:var(--inksoft)} .meta .r{color:var(--primary);font-weight:700}
+  .cta{margin-top:14px;height:50px;border-radius:999px;background:var(--primary);color:#fff;
+       display:flex;align-items:center;justify-content:center;font-size:17px;font-weight:700;letter-spacing:.3px;box-shadow:0 8px 0 var(--primary-edge)}
+
+  .tabbar{margin-top:auto;padding:10px 20px 24px;display:flex;align-items:flex-end;justify-content:space-between;background:#fff;box-shadow:0 -1px 0 #E5DFF5}
+  .tab{font-size:10.5px;color:var(--inksoft);text-align:center;width:54px}
+  .tab .ic{font-size:18px;display:block;margin-bottom:3px}
+  .tab.on{color:var(--primary)}
+  .fab{width:52px;height:52px;border-radius:16px;background:var(--primary);color:#fff;font-size:24px;display:flex;align-items:center;justify-content:center;margin-top:-26px;box-shadow:0 6px 0 var(--primary-edge)}
+
+  /* Whenbee hub bits */
+  .hubring{width:200px;height:200px;border-radius:50%;margin:8px auto 0;
+    background:conic-gradient(var(--accent) 0 80%, #E2DCF2 80% 100%);
+    display:flex;align-items:center;justify-content:center}
+  .hubring-in{width:176px;height:176px;border-radius:50%;background:var(--bg);display:flex;align-items:center;justify-content:center}
+  .hubbee{width:150px;height:150px;border-radius:50%;background:#fff;box-shadow:0 5px 0 var(--edge);display:flex;align-items:center;justify-content:center;font-size:64px}
+  .tierpill{margin:14px auto 0;background:#fff;border-radius:16px;box-shadow:0 4px 0 var(--edge);padding:10px 22px;text-align:center;width:fit-content}
+  .tierpill .a{color:var(--accent-edge);font-weight:800;font-size:17px}
+  .tierpill .b{color:var(--inksoft);font-size:12px;margin-top:2px}
+  .sect{font-size:11px;letter-spacing:1px;font-weight:700;color:var(--inksoft)}
+  .disc-num{font-size:26px;font-weight:800;color:var(--accent-edge)}
+  .disc-num small{font-size:15px;color:var(--accent)}
+  .disc-cat{font-size:17px;font-weight:800;color:var(--ink);margin-top:2px}
+  .disc-line{font-size:12.5px;color:var(--inksoft);margin-top:4px}
+  .banked{background:var(--accent-soft);color:var(--amber-text);font-weight:700;font-size:11px;padding:4px 10px;border-radius:999px;box-shadow:0 2.5px 0 #E8D5AC;float:right}
+
+  /* Add-task bits */
+  .sheet-top{font-size:13px;color:var(--inksoft);display:flex;justify-content:space-between;align-items:center}
+  .todaychip{background:#fff;border-radius:999px;padding:6px 14px;font-size:13px;font-weight:700;color:var(--ink);box-shadow:0 3px 0 var(--edge)}
+  .q{font-size:15px;font-weight:700;color:var(--ink)}
+  .input{background:#fff;border-radius:14px;box-shadow:0 3.5px 0 var(--edge);padding:13px 14px;font-size:15px;color:var(--ink);display:flex;justify-content:space-between}
+  .lbl{font-size:10px;letter-spacing:.8px;font-weight:700;color:var(--inksoft)}
+  .chips{display:flex;gap:8px;overflow:hidden}
+  .chip{background:#fff;border-radius:999px;padding:9px 16px;font-size:13.5px;font-weight:600;color:var(--ink);box-shadow:0 3px 0 var(--edge);white-space:nowrap}
+  .chip.sel{background:var(--primary-soft);color:var(--primary);box-shadow:0 3px 0 #C4BBEE;font-weight:700}
+  .wheel{display:flex;flex-direction:column;align-items:center;gap:6px}
+  .wheel .ghost{font-size:16px;color:var(--inkfaint);font-weight:600}
+  .wheel .now{background:#fff;border-radius:14px;box-shadow:0 3.5px 0 var(--edge);font-size:20px;font-weight:800;color:var(--ink);padding:9px 0;width:70%;text-align:center}
+  .hunch{background:#fff;border-radius:20px;box-shadow:0 4px 0 var(--edge);padding:15px 16px}
+  .hunch .hl{font-size:14px;font-weight:700;color:var(--ink);margin-top:5px}
+  .hunch .range{font-size:27px;font-weight:800;color:var(--accent-edge);margin-top:4px}
+  .hunch .range small{font-size:14px;color:var(--inksoft);font-weight:600}
+  .hunch .foot{font-size:11.5px;color:var(--inkfaint);margin-top:4px}
+  .cta2{height:44px;border-radius:999px;background:#fff;color:var(--ink);display:flex;align-items:center;justify-content:center;font-size:15px;font-weight:700;box-shadow:0 4px 0 var(--edge)}
+
+  /* ── FLAT VARIANT (D3-flat): kill all edges/lifts, keep everything else ── */
+  .flat .card,.flat .focus,.flat .coin,.flat .coin.ind,.flat .tierpill,.flat .hubbee{box-shadow:none}
+  .flat .day.sel{box-shadow:none;transform:none}
+  .flat .pro{box-shadow:none}
+  .flat .tabbar{box-shadow:none;background:transparent}
+  .flat .fab{box-shadow:0 6px 0 var(--primary-edge)} /* buttons keep their coin edge */
+  .flat .cta{box-shadow:0 8px 0 var(--primary-edge)}
+
+  /* ═════════ E1 · INK EDITORIAL — de-carded, typography carries it ═════════ */
+  .e1 .card,.e1 .focus{background:transparent;box-shadow:none;border-radius:0;padding-left:2px;padding-right:2px}
+  .e1{--bg:#F6F4FD}
+  .e1 .cal{background:transparent;box-shadow:none}
+  .e1 .day.sel{background:var(--ink);box-shadow:none;transform:none}
+  .e1 .day.sel .dot{background:var(--accent)}
+  .e1 .divider{height:1px;background:rgba(32,35,58,.10);margin:2px 0}
+  .e1 .pillrow .txt{font-weight:600}
+  .e1 .coin,.e1 .coin.ind{background:transparent;box-shadow:none;width:22px;height:22px;font-size:15px}
+  .e1 .task{font-size:26px;letter-spacing:-0.5px}
+  .e1 .est b{font-size:44px;letter-spacing:-1.5px;color:var(--amber-text)}
+  .e1 .est{color:var(--inkfaint)}
+  .e1 .eyebrow{color:var(--inkfaint)}
+  .e1 .gapbar{height:6px;border-radius:3px}
+  .e1 .gapbar .shine{display:none}
+  .e1 .meta{font-size:12px}
+  .e1 .tabbar{background:transparent;box-shadow:none}
+  .e1 .title{font-size:44px;letter-spacing:-1.5px}
+
+  /* ═════════ E2 · MIDNIGHT FOCUS — one hero card flip, everything else current ═════════ */
+  .e2{--bg:#F4F2FC}
+  .e2 .card{border-radius:16px;box-shadow:none}
+  .e2 .coin{width:26px;height:26px;border-radius:50%;box-shadow:none}
+  .e2 .coin.ind{box-shadow:none}
+  .e2 .day.sel{background:var(--primary-soft);box-shadow:none;transform:none}
+  .e2 .day.sel .wd,.e2 .day.sel .num{color:var(--primary)}
+  .e2 .day.sel .dot{background:var(--primary)}
+  .e2 .pro{box-shadow:0 2.5px 0 var(--accent-edge)}
+  .e2 .focus{background:linear-gradient(165deg,#2B2455,#221C46);box-shadow:0 12px 30px rgba(34,28,70,.35)}
+  .e2 .focus .eyebrow{color:#B7AFE0}
+  .e2 .focus .task{color:#F7F4EC}
+  .e2 .focus .est{color:#B7AFE0}
+  .e2 .focus .est b{color:#F5C03F;font-size:34px}
+  .e2 .focus .gapbar{background:rgba(255,255,255,.12)}
+  .e2 .focus .meta .l{color:#B7AFE0}
+  .e2 .focus .meta .r{color:#CFC8F5}
+  .e2 .focus .cta{background:var(--primary);box-shadow:0 8px 0 #14102e}
+  .e2 .pillrow .txt{font-weight:400}
+  .e2 .tabbar{background:transparent;box-shadow:none}
+
+  /* ═════════ E3 · STICKER OUTLINE — inked borders, zero elevation, flat white ═════════ */
+  .e3{--bg:#F1EDFB}
+  .e3 .card,.e3 .focus{box-shadow:none;border:1.5px solid rgba(32,35,58,.16);border-radius:18px}
+  .e3 .coin{box-shadow:none;border:1.5px solid rgba(198,138,48,.4)}
+  .e3 .coin.ind{box-shadow:none;border:1.5px solid rgba(107,91,230,.35)}
+  .e3 .day.sel{background:var(--primary);box-shadow:none;transform:none;border:none}
+  .e3 .pro{box-shadow:none;border:1.5px solid var(--accent-edge)}
+  .e3 .cta{box-shadow:none;border:2px solid var(--primary-edge)}
+  .e3 .fab{box-shadow:none;border:2px solid var(--primary-edge)}
+  .e3 .tabbar{background:transparent;box-shadow:none;border-top:1.5px solid rgba(32,35,58,.10)}
+  .e3 .gapbar .shine{display:none}
+  .e3 .task{font-weight:800}
+</style>
+</head>
+<body>
+
+<h1>D3 · Toybox Tactile — pinned. In context, correct states, + the shine question.</h1>
+<p class="sub">
+<b>Can the shine be done in React Native? Yes, trivially — no library, no boxShadow risk.</b>
+The fill is a rounded <code>View</code>; the shine is an absolutely-positioned child <code>View</code>
+(<code>height 3, borderRadius 2, backgroundColor rgba(255,255,255,0.38), top 3, left/right 6</code>).
+Pure Views on the GPU — Fabric-safe, no RN 0.81 boxShadow bug, works identically on Android.
+The card's extruded edge = the same View-layering trick <code>AppButton</code>'s coin edge already uses, so the whole D3 look is proven tech in this codebase.
+The bar below uses the app's REAL anatomy: indigo hatch = your guess, <b>amber = the honest top-up minutes</b>, black tick = live elapsed (running only).
+</p>
+
+<div class="row">
+
+  <!-- ═══ D3 · TODAY IDLE ═══ -->
+  <div class="col">
+    <p class="dirlabel">D3 · Today — timer NOT running</p>
+    <p class="dirsub">Correct idle state: NEXT eyebrow, guess-hatch + amber honest top-up, no tick, Start present.</p>
+    <div class="phone"><div class="notch"></div><div class="screen">
+      <div class="hdrwrap"><div class="hdr">
+        <div><div class="greet">Good morning</div><div class="title">Today</div><div class="date">Thu · Jul 23</div></div>
+        <div class="hdr-right"><div class="gear">⚙</div>
+          <div><div class="avatar"><div class="ring"><div class="ring-in">🐝</div></div></div><div class="tier">Ripening</div></div>
+        </div>
+      </div></div>
+      <div class="content">
+        <div class="card cal">
+          <div class="day"><div class="wd">Mon</div><div class="num">20</div><div class="dot"></div></div>
+          <div class="day"><div class="wd">Tue</div><div class="num">21</div></div>
+          <div class="day"><div class="wd">Wed</div><div class="num">22</div></div>
+          <div class="day sel"><div class="wd">Thu</div><div class="num">23</div><div class="dot"></div></div>
+          <div class="day"><div class="wd">Fri</div><div class="num">24</div></div>
+          <div class="day"><div class="wd">Sat</div><div class="num">25</div></div>
+          <div class="day"><div class="wd">Sun</div><div class="num">26</div></div>
+        </div>
+        <div class="card pillrow"><div class="coin">⚡</div><div class="txt">Honest day 10m · fits</div><span class="chev">✕</span></div>
+        <div class="card pillrow"><div class="coin ind">◑</div><div class="txt">Your focus window is ready</div><span class="pro">Pro</span><span class="chev">›</span></div>
+        <div class="card focus">
+          <div class="eyebrow" style="color:var(--inkfaint)">NEXT · ADMIN &amp; EMAIL</div>
+          <div class="frow"><div class="task">Test</div><div class="est"><b>~10</b> min</div></div>
+          <div class="gapbar">
+            <div class="guess"></div><div class="topup"></div><div class="shine"></div>
+          </div>
+          <div class="meta"><span class="l">plan ~10m</span><span class="r">guessed 5m</span></div>
+          <div class="cta">▶&nbsp; Start</div>
+        </div>
+        <div class="card pillrow"><div class="coin ind" style="background:var(--sunken);box-shadow:0 2.5px 0 #D3CBEE">🕐</div><div class="txt">Finished something else? Log it too</div><span class="chev">›</span></div>
+      </div>
+      <div class="tabbar">
+        <div class="tab on"><span class="ic">⌂</span>Today</div>
+        <div class="tab"><span class="ic">▦</span>Routines</div>
+        <div class="fab">+</div>
+        <div class="tab"><span class="ic">🐝</span>Whenbee</div>
+        <div class="tab"><span class="ic">〰</span>Patterns</div>
+      </div>
+    </div></div>
+  </div>
+
+  <!-- ═══ D3 · TODAY RUNNING ═══ -->
+  <div class="col">
+    <p class="dirlabel">D3 · Today — timer RUNNING</p>
+    <p class="dirsub">Live state: ● NOW eyebrow, ELAPSED clock replaces ~min, black elapsed tick rides the bar, no Start.</p>
+    <div class="phone"><div class="notch"></div><div class="screen">
+      <div class="hdrwrap"><div class="hdr">
+        <div><div class="greet">Good morning</div><div class="title">Today</div><div class="date">Thu · Jul 23</div></div>
+        <div class="hdr-right"><div class="gear">⚙</div>
+          <div><div class="avatar"><div class="ring"><div class="ring-in">🐝</div></div></div><div class="tier">Ripening</div></div>
+        </div>
+      </div></div>
+      <div class="content">
+        <div class="card cal">
+          <div class="day"><div class="wd">Mon</div><div class="num">20</div><div class="dot"></div></div>
+          <div class="day"><div class="wd">Tue</div><div class="num">21</div></div>
+          <div class="day"><div class="wd">Wed</div><div class="num">22</div></div>
+          <div class="day sel"><div class="wd">Thu</div><div class="num">23</div><div class="dot"></div></div>
+          <div class="day"><div class="wd">Fri</div><div class="num">24</div></div>
+          <div class="day"><div class="wd">Sat</div><div class="num">25</div></div>
+          <div class="day"><div class="wd">Sun</div><div class="num">26</div></div>
+        </div>
+        <div class="card pillrow"><div class="coin">⚡</div><div class="txt">Honest day 10m · fits</div><span class="chev">✕</span></div>
+        <div class="card focus">
+          <div class="eyebrow"><span class="dotlive"></span>NOW · ADMIN &amp; EMAIL<span class="elapsed-lbl">ELAPSED</span></div>
+          <div class="frow"><div class="task">Test</div><div class="clock">4:38</div></div>
+          <div class="gapbar">
+            <div class="guess"></div><div class="topup"></div><div class="shine"></div><div class="tick" style="left:44%"></div>
+          </div>
+          <div class="meta"><span class="l">plan ~10m</span><span class="r">guessed 5m</span></div>
+        </div>
+        <div class="card pillrow"><div class="coin ind" style="background:var(--sunken);box-shadow:0 2.5px 0 #D3CBEE">🕐</div><div class="txt">Finished something else? Log it too</div><span class="chev">›</span></div>
+      </div>
+      <div class="tabbar">
+        <div class="tab on"><span class="ic">⌂</span>Today</div>
+        <div class="tab"><span class="ic">▦</span>Routines</div>
+        <div class="fab">+</div>
+        <div class="tab"><span class="ic">🐝</span>Whenbee</div>
+        <div class="tab"><span class="ic">〰</span>Patterns</div>
+      </div>
+    </div></div>
+  </div>
+
+  <!-- ═══ D3 · WHENBEE HUB ═══ -->
+  <div class="col">
+    <p class="dirlabel">D3 · Whenbee hub</p>
+    <p class="dirsub">Same grammar carried over: bee coin extruded, tier pill a real pill, discovery card with an edge, banked chip a coin.</p>
+    <div class="phone"><div class="notch"></div><div class="screen">
+      <div class="hdrwrap"><div class="hdr"><div><div class="title">Whenbee</div></div></div></div>
+      <div class="content">
+        <div class="hubring"><div class="hubring-in"><div class="hubbee">🐝</div></div></div>
+        <div class="tierpill"><div class="a">Ripening 80%</div><div class="b">Landing closer · ~1 log to Thickening →</div></div>
+        <div style="margin-top:8px"><span class="sect">DISCOVERIES</span>
+          <div style="font-size:11.5px;color:var(--inkfaint);margin-top:2px">surprising truths about how long things take</div>
+        </div>
+        <div class="card" style="padding:16px">
+          <span class="banked">3 banked</span>
+          <div class="sect" style="font-size:10px">LATEST DISCOVERY</div>
+          <div class="disc-num" style="margin-top:8px">1.4<small>×</small></div>
+          <div class="disc-cat">Errands</div>
+          <div class="disc-line">You plan 15 minutes — it really takes about 21.</div>
+          <div style="border-top:1.5px solid var(--accent-soft);margin-top:12px;padding-top:9px;display:flex;justify-content:space-between">
+            <span style="font-size:12.5px;color:var(--inkfaint)">+2 more</span>
+            <span style="font-size:12.5px;color:var(--primary);font-weight:700">See all 3 ›</span>
+          </div>
+        </div>
+        <div class="card pillrow" style="align-items:flex-start">
+          <div class="coin ind">↻</div>
+          <div style="flex:1">
+            <div class="sect" style="font-size:9.5px">DRIFT CHECK</div>
+            <div style="font-size:15px;font-weight:800;color:var(--ink);margin-top:2px">Life shifts, so does your timing</div>
+            <div style="font-size:12px;color:var(--inksoft);margin-top:3px">A few honest logs and Whenbee catches back up to you.</div>
+          </div>
+        </div>
+      </div>
+      <div class="tabbar">
+        <div class="tab"><span class="ic">⌂</span>Today</div>
+        <div class="tab"><span class="ic">▦</span>Routines</div>
+        <div class="fab">+</div>
+        <div class="tab on"><span class="ic">🐝</span>Whenbee</div>
+        <div class="tab"><span class="ic">〰</span>Patterns</div>
+      </div>
+    </div></div>
+  </div>
+
+  <!-- ═══ D3 · ADD-TASK ═══ -->
+  <div class="col">
+    <p class="dirlabel">D3 · Add-task sheet</p>
+    <p class="dirsub">Where tactility pays most: category + guess chips become pressable keys, input and wheel are tiles, hunch card gets the edge.</p>
+    <div class="phone"><div class="notch"></div><div class="screen">
+      <div class="hdrwrap" style="padding-top:46px;padding-bottom:6px">
+        <div style="width:44px;height:4px;border-radius:2px;background:#CFC8E8;margin:0 auto 14px"></div>
+        <div class="sheet-top"><span>Adding to Today</span><span class="todaychip">Today ▾</span></div>
+      </div>
+      <div class="content" style="gap:12px">
+        <div class="q">What are you working on?</div>
+        <div class="input"><span>Test</span><span style="color:var(--inkfaint)">🎤</span></div>
+        <div class="lbl">CATEGORY</div>
+        <div class="chips">
+          <span class="chip sel">Admin &amp; email</span><span class="chip">Errands</span><span class="chip">Cleaning</span><span class="chip">Cook…</span>
+        </div>
+        <div class="lbl">YOUR GUT GUESS</div>
+        <div class="chips">
+          <span class="chip">5m</span><span class="chip">10m</span><span class="chip">15m</span><span class="chip">30m</span><span class="chip">45m</span>
+        </div>
+        <div class="wheel">
+          <div class="ghost">5m</div><div class="now">6m</div><div class="ghost">7m</div>
+        </div>
+        <div class="hunch">
+          <div style="display:flex;justify-content:space-between"><span class="sect" style="font-size:10px">A STARTING HUNCH</span><span style="font-size:11.5px;color:var(--inkfaint)">you guessed 6m</span></div>
+          <div class="hl">Tasks like this often run a bit longer than they feel.</div>
+          <div class="range">~10–25 <small>min</small></div>
+          <div class="foot">a rough range from optimists like you · sharpens as you log</div>
+        </div>
+        <div class="cta">Add &amp; start timer</div>
+        <div class="cta2">Add to today</div>
+      </div>
+    </div></div>
+  </div>
+
+  <!-- ═══ D3-FLAT ═══ -->
+  <div class="col flat">
+    <p class="dirlabel">D3-flat · No elevated containers</p>
+    <p class="dirsub">Your requested variant: cards stay flat white exactly as today — the D3 personality lives ONLY in the fat shiny bar, key-press day, tile coins, heavier type. Buttons keep their coin edge.</p>
+    <div class="phone"><div class="notch"></div><div class="screen">
+      <div class="hdrwrap"><div class="hdr">
+        <div><div class="greet">Good morning</div><div class="title">Today</div><div class="date">Thu · Jul 23</div></div>
+        <div class="hdr-right"><div class="gear">⚙</div>
+          <div><div class="avatar"><div class="ring"><div class="ring-in">🐝</div></div></div><div class="tier">Ripening</div></div>
+        </div>
+      </div></div>
+      <div class="content">
+        <div class="card cal">
+          <div class="day"><div class="wd">Mon</div><div class="num">20</div><div class="dot"></div></div>
+          <div class="day"><div class="wd">Tue</div><div class="num">21</div></div>
+          <div class="day"><div class="wd">Wed</div><div class="num">22</div></div>
+          <div class="day sel"><div class="wd">Thu</div><div class="num">23</div><div class="dot"></div></div>
+          <div class="day"><div class="wd">Fri</div><div class="num">24</div></div>
+          <div class="day"><div class="wd">Sat</div><div class="num">25</div></div>
+          <div class="day"><div class="wd">Sun</div><div class="num">26</div></div>
+        </div>
+        <div class="card pillrow"><div class="coin">⚡</div><div class="txt">Honest day 10m · fits</div><span class="chev">✕</span></div>
+        <div class="card pillrow"><div class="coin ind">◑</div><div class="txt">Your focus window is ready</div><span class="pro">Pro</span><span class="chev">›</span></div>
+        <div class="card focus">
+          <div class="eyebrow" style="color:var(--inkfaint)">NEXT · ADMIN &amp; EMAIL</div>
+          <div class="frow"><div class="task">Test</div><div class="est"><b>~10</b> min</div></div>
+          <div class="gapbar">
+            <div class="guess"></div><div class="topup"></div><div class="shine"></div>
+          </div>
+          <div class="meta"><span class="l">plan ~10m</span><span class="r">guessed 5m</span></div>
+          <div class="cta">▶&nbsp; Start</div>
+        </div>
+        <div class="card pillrow"><div class="coin ind" style="background:var(--sunken)">🕐</div><div class="txt">Finished something else? Log it too</div><span class="chev">›</span></div>
+      </div>
+      <div class="tabbar">
+        <div class="tab on"><span class="ic">⌂</span>Today</div>
+        <div class="tab"><span class="ic">▦</span>Routines</div>
+        <div class="fab">+</div>
+        <div class="tab"><span class="ic">🐝</span>Whenbee</div>
+        <div class="tab"><span class="ic">〰</span>Patterns</div>
+      </div>
+    </div></div>
+    <div class="notes"><b>Flat vs full D3:</b>
+      <ul>
+        <li>Cards: flat white, borderless — exactly today's card system, zero migration risk</li>
+        <li>Kept: 14px shiny gap-bar, indigo key selected day (flat fill), 30px rounded-square coins, 800-weight task title, solid tab slab dropped</li>
+        <li>Buttons/FAB/Pro pill keep the coin edge they already have</li>
+        <li>Cheapest real version of D3 — bar + day + coins + type only</li>
+      </ul>
+    </div>
+  </div>
+</div>
+
+<h2>Three NEW alternatives — palette-restrained (same tokens, no extra hues)</h2>
+<p class="sub">Per your note: no color explosion. All three use ONLY the existing indigo + amber + ink families. The difference is structure, type, and where the one dramatic move goes.</p>
+
+<div class="row">
+
+  <!-- ═══ E1 ═══ -->
+  <div class="col e1">
+    <p class="dirlabel">E1 · Ink Editorial</p>
+    <p class="dirsub">De-carded. Containers disappear; hairlines + whitespace structure the page, type does the popping. Honest number huge in honey-ink. Calm-premium (Linear/Amie energy).</p>
+    <div class="phone"><div class="notch"></div><div class="screen">
+      <div class="hdrwrap"><div class="hdr">
+        <div><div class="greet">Good morning</div><div class="title">Today</div><div class="date">Thu · Jul 23</div></div>
+        <div class="hdr-right"><div class="gear">⚙</div>
+          <div><div class="avatar"><div class="ring"><div class="ring-in">🐝</div></div></div><div class="tier">Ripening</div></div>
+        </div>
+      </div></div>
+      <div class="content" style="gap:10px">
+        <div class="card cal">
+          <div class="day"><div class="wd">Mon</div><div class="num">20</div><div class="dot"></div></div>
+          <div class="day"><div class="wd">Tue</div><div class="num">21</div></div>
+          <div class="day"><div class="wd">Wed</div><div class="num">22</div></div>
+          <div class="day sel"><div class="wd">Thu</div><div class="num">23</div><div class="dot"></div></div>
+          <div class="day"><div class="wd">Fri</div><div class="num">24</div></div>
+          <div class="day"><div class="wd">Sat</div><div class="num">25</div></div>
+          <div class="day"><div class="wd">Sun</div><div class="num">26</div></div>
+        </div>
+        <div class="divider"></div>
+        <div class="card pillrow"><div class="coin">⚡</div><div class="txt">Honest day 10m · fits</div><span class="chev">✕</span></div>
+        <div class="divider"></div>
+        <div class="card pillrow"><div class="coin ind">◑</div><div class="txt">Your focus window is ready</div><span class="pro">Pro</span><span class="chev">›</span></div>
+        <div class="divider"></div>
+        <div class="card focus">
+          <div class="eyebrow">NEXT · ADMIN &amp; EMAIL</div>
+          <div class="frow" style="align-items:flex-end"><div class="task">Test</div><div class="est"><b>~10</b> min</div></div>
+          <div class="gapbar">
+            <div class="guess"></div><div class="topup"></div>
+          </div>
+          <div class="meta"><span class="l">plan ~10m</span><span class="r">guessed 5m</span></div>
+          <div class="cta">▶&nbsp; Start</div>
+        </div>
+        <div class="divider"></div>
+        <div class="card pillrow"><div class="coin ind">🕐</div><div class="txt">Finished something else? Log it too</div><span class="chev">›</span></div>
+      </div>
+      <div class="tabbar">
+        <div class="tab on"><span class="ic">⌂</span>Today</div>
+        <div class="tab"><span class="ic">▦</span>Routines</div>
+        <div class="fab">+</div>
+        <div class="tab"><span class="ic">🐝</span>Whenbee</div>
+        <div class="tab"><span class="ic">〰</span>Patterns</div>
+      </div>
+    </div></div>
+    <div class="notes"><b>Scope:</b> kill card containers on list rows (hairline dividers instead), display-size title + honest numeral (44pt honey-ink), selected day = ink block, bar slims to 6px. Least color of all — pop = type scale + space. Risk: loses the cozy feel; gains sharp editorial confidence.</div>
+  </div>
+
+  <!-- ═══ E2 ═══ -->
+  <div class="col e2">
+    <p class="dirlabel">E2 · Midnight Focus</p>
+    <p class="dirsub">ONE dramatic move: the focal Next/Now card flips to the midnight-indigo reveal surface with the honest number in gold. Everything else stays exactly today's flat system.</p>
+    <div class="phone"><div class="notch"></div><div class="screen">
+      <div class="hdrwrap"><div class="hdr">
+        <div><div class="greet">Good morning</div><div class="title">Today</div><div class="date">Thu · Jul 23</div></div>
+        <div class="hdr-right"><div class="gear">⚙</div>
+          <div><div class="avatar"><div class="ring"><div class="ring-in">🐝</div></div></div><div class="tier">Ripening</div></div>
+        </div>
+      </div></div>
+      <div class="content">
+        <div class="card cal">
+          <div class="day"><div class="wd">Mon</div><div class="num">20</div><div class="dot"></div></div>
+          <div class="day"><div class="wd">Tue</div><div class="num">21</div></div>
+          <div class="day"><div class="wd">Wed</div><div class="num">22</div></div>
+          <div class="day sel"><div class="wd">Thu</div><div class="num">23</div><div class="dot"></div></div>
+          <div class="day"><div class="wd">Fri</div><div class="num">24</div></div>
+          <div class="day"><div class="wd">Sat</div><div class="num">25</div></div>
+          <div class="day"><div class="wd">Sun</div><div class="num">26</div></div>
+        </div>
+        <div class="card pillrow"><div class="coin">⚡</div><div class="txt">Honest day 10m · fits</div><span class="chev">✕</span></div>
+        <div class="card pillrow"><div class="coin ind">◑</div><div class="txt">Your focus window is ready</div><span class="pro">Pro</span><span class="chev">›</span></div>
+        <div class="card focus">
+          <div class="eyebrow">NEXT · ADMIN &amp; EMAIL</div>
+          <div class="frow"><div class="task">Test</div><div class="est"><b>~10</b> min</div></div>
+          <div class="gapbar">
+            <div class="guess" style="background:repeating-linear-gradient(135deg,#8B7DEB 0 4px,#6B5BE6 4px 9px)"></div><div class="topup" style="background:#F5C03F"></div>
+          </div>
+          <div class="meta"><span class="l">plan ~10m</span><span class="r">guessed 5m</span></div>
+          <div class="cta">▶&nbsp; Start</div>
+        </div>
+        <div class="card pillrow"><div class="coin ind" style="background:var(--sunken)">🕐</div><div class="txt">Finished something else? Log it too</div><span class="chev">›</span></div>
+      </div>
+      <div class="tabbar">
+        <div class="tab on"><span class="ic">⌂</span>Today</div>
+        <div class="tab"><span class="ic">▦</span>Routines</div>
+        <div class="fab">+</div>
+        <div class="tab"><span class="ic">🐝</span>Whenbee</div>
+        <div class="tab"><span class="ic">〰</span>Patterns</div>
+      </div>
+    </div></div>
+    <div class="notes"><b>Scope:</b> one component (FocusCard) gets the midnight surface the archetype reveal already owns; honest number + honey top-up go gold on it; soft indigo drop under it (the one floating element). Zero new hues — reuses reveal.gradTop/statOn tokens. Smallest change, biggest single-point drama. The rest of the app stays untouched.</div>
+  </div>
+
+  <!-- ═══ E3 ═══ -->
+  <div class="col e3">
+    <p class="dirlabel">E3 · Sticker Outline</p>
+    <p class="dirsub">Flat white cards, but every container gets a confident 1.5px ink outline — sticker/comic energy. No elevation anywhere except the buttons you already have. Same palette, new silhouette.</p>
+    <div class="phone"><div class="notch"></div><div class="screen">
+      <div class="hdrwrap"><div class="hdr">
+        <div><div class="greet">Good morning</div><div class="title">Today</div><div class="date">Thu · Jul 23</div></div>
+        <div class="hdr-right"><div class="gear">⚙</div>
+          <div><div class="avatar"><div class="ring"><div class="ring-in">🐝</div></div></div><div class="tier">Ripening</div></div>
+        </div>
+      </div></div>
+      <div class="content">
+        <div class="card cal">
+          <div class="day"><div class="wd">Mon</div><div class="num">20</div><div class="dot"></div></div>
+          <div class="day"><div class="wd">Tue</div><div class="num">21</div></div>
+          <div class="day"><div class="wd">Wed</div><div class="num">22</div></div>
+          <div class="day sel"><div class="wd">Thu</div><div class="num">23</div><div class="dot"></div></div>
+          <div class="day"><div class="wd">Fri</div><div class="num">24</div></div>
+          <div class="day"><div class="wd">Sat</div><div class="num">25</div></div>
+          <div class="day"><div class="wd">Sun</div><div class="num">26</div></div>
+        </div>
+        <div class="card pillrow"><div class="coin">⚡</div><div class="txt">Honest day 10m · fits</div><span class="chev">✕</span></div>
+        <div class="card pillrow"><div class="coin ind">◑</div><div class="txt">Your focus window is ready</div><span class="pro">Pro</span><span class="chev">›</span></div>
+        <div class="card focus">
+          <div class="eyebrow" style="color:var(--inkfaint)">NEXT · ADMIN &amp; EMAIL</div>
+          <div class="frow"><div class="task">Test</div><div class="est"><b>~10</b> min</div></div>
+          <div class="gapbar">
+            <div class="guess"></div><div class="topup"></div>
+          </div>
+          <div class="meta"><span class="l">plan ~10m</span><span class="r">guessed 5m</span></div>
+          <div class="cta">▶&nbsp; Start</div>
+        </div>
+        <div class="card pillrow"><div class="coin ind" style="background:var(--sunken)">🕐</div><div class="txt">Finished something else? Log it too</div><span class="chev">›</span></div>
+      </div>
+      <div class="tabbar">
+        <div class="tab on"><span class="ic">⌂</span>Today</div>
+        <div class="tab"><span class="ic">▦</span>Routines</div>
+        <div class="fab">+</div>
+        <div class="tab"><span class="ic">🐝</span>Whenbee</div>
+        <div class="tab"><span class="ic">〰</span>Patterns</div>
+      </div>
+    </div></div>
+    <div class="notes"><b>Scope:</b> borderWidth.card 0 → 1.5 with an ink-alpha border token, radius 16→18, outlined coins/Pro pill/CTA. One token knob (<code>borderWidth.card</code>) already exists for exactly this — the codebase was built to flip it. Crisp, graphic, hand-drawn energy; zero new colors, zero shadows.</div>
+  </div>
+</div>
+
+<p class="sub" style="margin-top:14px">
+All bars above = real anatomy (indigo hatch guess · amber honest top-up · tick when running). The shine is D3-only by design; E1–E3 drop it.
+Combos still on the table: <b>D3-flat + E2's midnight focal card</b> is a strong pair — tactile bar/chips with one dramatic hero.
+</p>
+
+</body>
+</html>

@@ -32,8 +32,8 @@ Verify claims marked **(VERIFY)** against a **fresh `npx expo prebuild`** — so
 | 13 | P2 | Config | eas.json: add `cli.appVersionSource`, make `distribution:store` + `buildType:app-bundle` explicit | `[x]` done — all three present |
 | 14 | P2 | Privacy | Sentry has no `beforeSend`/breadcrumb scrub — no safety net if task text ever logged | `[x]` **resolved** — Sentry removed; error reporting moved to PostHog with `errorTracking.autocapture.console: false`, which is the equivalent safeguard (console breadcrumbs never captured, so they can't carry task text off-device) |
 | 15 | P2 | Config | Decide R8/minify + `mapping.txt` upload (currently off → obfuscated-free but larger AAB) | `[ ]` |
-| 16 | P2 | Secrets | Out-of-band: confirm EAS `EXPO_PUBLIC_RC_*` = RC **public** keys, `SUPABASE_ANON_KEY` = **anon** | `[ ]` |
-| 17 | P2 | Secrets | Confirm **RLS enabled** on `feedback_submissions` (only guard on that path) | `[ ]` |
+| 16 | P2 | Secrets | Out-of-band: confirm EAS `EXPO_PUBLIC_RC_*` = RC **public** keys, `SUPABASE_ANON_KEY` = **anon** | `[x]` verified 2026-07-22 — RC key is the public `goog_` SDK key; Supabase JWT decodes to `role: anon` (not service_role). Also fixed: `EXPO_PUBLIC_SUPABASE_URL` pointed at the wrong project (`vxvi…`); corrected to `iptnmqcrmxakwqbaqugs` (the project holding the feedback tables) in all three EAS envs + anon key added (was missing everywhere) |
+| 17 | P2 | Secrets | Confirm **RLS enabled** on `feedback_submissions` (only guard on that path) | `[x]` verified 2026-07-22 via `pg_policies` — RLS on; anon = INSERT-only (body 1–4000, kind ∈ idea/problem/love), no anon SELECT; changelog anon SELECT gated on `is_published` |
 | 18 | P3 | Config | Bump `version` 0.1.0 → 1.0.0 (app.json, package.json) | `[ ]` |
 | 19 | P3 | Legal | `src/lib/legal.ts` privacy/terms URLs must be live (no 404) before submit | `[x]` live 2026-07-19 |
 | 20 | P2 | Config | `supportsTablet:true` (iOS) — verify layout or set false (Apple; N/A Play but same build) | `[ ]` |

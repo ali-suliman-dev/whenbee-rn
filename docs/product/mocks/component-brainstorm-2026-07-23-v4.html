@@ -1,0 +1,362 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Whenbee · Brainstorm v4 — headline color, "real time" explained, dark theme</title>
+<style>
+  :root{
+    --bg:#F4F2FC; --surface:#FFFFFF; --sunken:#F1EEFB;
+    --ink:#20233A; --inksoft:#5C5F73; --inkfaint:#9B9DAB;
+    --primary:#6B5BE6; --primary-edge:#463B9E; --primary-soft:#E4E0FA; --primary-wash:#EFEDFC;
+    --accent:#EEAE4D; --accent-edge:#C68A30; --accent-soft:#FBEFD6; --honey-wash:#FBF2DF;
+    --amber-text:#8A5A12; --hairline:#EFECF9; --ghost:#CFC8EA; --radio:#CFC8EA;
+    --r-card:16px; --r-sheet:20px;
+  }
+  /* ── dark palette (real values from tokens.ts dark) ── */
+  .dk{
+    --bg:#14151D; --surface:#1F2130; --sunken:#15161F;
+    --ink:#F4F1EA; --inksoft:#ADA9B5; --inkfaint:rgba(244,241,234,.40);
+    --primary:#8275F0; --primary-edge:#6B5BE6; --primary-soft:rgba(130,117,240,.22); --primary-wash:rgba(130,117,240,.10);
+    --accent:#EEAE4D; --accent-edge:#C68A30; --accent-soft:rgba(238,174,77,.18); --honey-wash:#2B2620;
+    --amber-text:#EEAE4D; --hairline:rgba(255,255,255,.08); --ghost:rgba(255,255,255,.18); --radio:rgba(255,255,255,.25);
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;background:#1C1E2E;color:#F4F1EA;padding:40px 32px 80px}
+  h1{font-size:26px;letter-spacing:-0.5px;margin-bottom:6px}
+  h2{font-size:20px;letter-spacing:-0.3px;margin:46px 0 6px;color:#F5C03F}
+  .sub{color:#ADA9B5;font-size:14px;max-width:880px;line-height:1.55;margin-bottom:26px}
+  .row{display:flex;gap:34px;flex-wrap:wrap;align-items:flex-start;margin-bottom:8px}
+  .col{width:392px}
+  .dirlabel{font-size:15px;font-weight:700;margin:0 0 2px;letter-spacing:-0.2px}
+  .dirsub{font-size:12.5px;color:#ADA9B5;line-height:1.5;margin-bottom:12px;min-height:40px}
+  .notes{margin-top:12px;font-size:12.5px;color:#CFCAE0;line-height:1.55;background:#242436;border-radius:12px;padding:14px 16px}
+  .notes b{color:#F5C03F;font-weight:600}
+  .notes ul{margin:6px 0 0 16px}
+  .notes li{margin-bottom:4px}
+  .verdict{max-width:880px;font-size:13.5px;color:#E8E4F4;line-height:1.6;background:#2A2A40;border-left:3px solid #F5C03F;border-radius:10px;padding:14px 18px;margin:14px 0 8px}
+  .verdict b{color:#F5C03F}
+  .varwrap{background:var(--bg);border-radius:20px;padding:16px;display:flex;flex-direction:column;gap:8px}
+  .varlab{font-size:12px;font-weight:700;color:#F5C03F;margin:6px 0 2px}
+
+  .phone{width:392px;height:856px;border-radius:44px;overflow:hidden;position:relative;
+         box-shadow:0 18px 50px rgba(0,0,0,.5);border:6px solid #0c0c12;background:var(--bg);
+         display:flex;flex-direction:column}
+  .screen{flex:1;padding:54px 20px 0;overflow:hidden;position:relative;display:flex;flex-direction:column;gap:14px}
+  .notch{position:absolute;top:12px;left:50%;transform:translateX(-50%);width:110px;height:26px;background:#000;border-radius:20px;z-index:9}
+
+  .greet{font-size:12px;color:var(--inksoft)}
+  .hdr{display:flex;justify-content:space-between;align-items:flex-start}
+  .title{font-size:38px;font-weight:800;letter-spacing:-0.75px;color:var(--ink);line-height:1.05}
+  .date{font-size:12px;color:var(--inksoft);margin-top:2px}
+  .avatar{position:relative;width:58px;height:58px;margin-left:auto}
+  .ring{width:58px;height:58px;border-radius:50%;background:conic-gradient(var(--accent) 0 33%, var(--sunken) 33% 100%);
+        display:flex;align-items:center;justify-content:center}
+  .ring-in{width:49px;height:49px;border-radius:50%;background:var(--surface);display:flex;align-items:center;justify-content:center;font-size:20px}
+  .tier{font-size:10.5px;color:var(--inksoft);text-align:center;margin-top:3px}
+  .hdr-right{display:flex;align-items:flex-start;gap:14px}
+  .gear{font-size:20px;color:var(--inksoft);margin-top:16px}
+  .card{background:var(--surface);border-radius:var(--r-card);padding:14px 16px}
+  .cal{display:flex;justify-content:space-between;padding:12px 8px}
+  .day{width:44px;text-align:center;border-radius:14px;padding:7px 0}
+  .day .wd{font-size:11px;color:var(--inkfaint)}
+  .day .num{font-size:17px;font-weight:600;color:var(--ink);margin-top:2px}
+  .day.sel{background:var(--primary-soft)}
+  .day.sel .wd,.day.sel .num{color:var(--primary)}
+  .dot{width:4px;height:4px;border-radius:2px;background:var(--primary);margin:4px auto 0}
+  .sect{font-size:11px;letter-spacing:1.2px;font-weight:700;color:var(--inksoft);display:flex;justify-content:space-between;align-items:center}
+  .sect .chev{color:var(--inkfaint)}
+  .donerow{background:var(--surface);border-radius:var(--r-card);padding:13px 16px;display:flex;align-items:center;gap:10px}
+  .donerow .ck{width:22px;height:22px;border-radius:50%;background:var(--accent-soft);color:var(--amber-text);
+      display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:800;flex:none}
+  .donerow .tt{font-size:14.5px;font-weight:600;color:var(--ink);flex:1}
+  .donerow .mm{font-size:12px;color:var(--inksoft)}
+  .tabbar{margin:auto -20px 0;padding:10px 22px 26px;display:flex;align-items:flex-end;justify-content:space-between;position:relative}
+  .tab{font-size:10.5px;color:var(--inksoft);text-align:center;width:56px}
+  .tab .ic{font-size:19px;display:block;margin-bottom:3px}
+  .tab.on{color:var(--primary)}
+  .fab{width:52px;height:52px;border-radius:16px;background:var(--primary);color:#fff;font-size:24px;
+       display:flex;align-items:center;justify-content:center;margin-top:-26px;box-shadow:0 6px 0 var(--primary-edge)}
+  .retro-ghost{border:1.5px dashed var(--ghost);border-radius:var(--r-card);padding:12px 16px;display:flex;align-items:center;gap:10px;
+      font-size:13.5px;color:var(--inksoft)}
+  .retro-ghost .plus{width:24px;height:24px;border-radius:8px;background:var(--primary-soft);color:var(--primary);display:flex;align-items:center;justify-content:center;font-weight:700}
+
+  /* ── recap C1 ── */
+  .recap{background:var(--surface);border-radius:var(--r-card);padding:15px 16px 14px}
+  .recap .eyebrow{font-size:10px;letter-spacing:.9px;font-weight:700;color:var(--inkfaint)}
+  .recap .line{font-size:16.5px;font-weight:700;color:var(--ink);letter-spacing:-0.25px;margin-top:5px;line-height:1.45}
+  .statrow{display:flex;align-items:stretch;margin-top:12px}
+  .stat{flex:1;display:flex;flex-direction:column;gap:3px}
+  .stat + .stat{padding-left:14px;border-left:1px solid var(--hairline)}
+  .stat .k{font-size:10px;letter-spacing:.7px;font-weight:700;color:var(--inkfaint)}
+  .stat .v{font-size:20px;font-weight:800;color:var(--ink);letter-spacing:-0.3px}
+  .stat .v small{font-size:11px;font-weight:600;color:var(--inksoft);margin-left:2px}
+  .minibar{height:3px;border-radius:2px;background:var(--honey-wash);margin-top:4px;width:56px;overflow:hidden}
+  .minibar i{display:block;height:100%;width:27%;background:linear-gradient(90deg,#F5C03F,#EEAE4D);border-radius:2px}
+  .hair{height:1px;background:var(--hairline);margin:12px 0 9px}
+  .mile{font-size:12.5px;color:var(--inksoft);display:flex;align-items:center;gap:7px}
+  .mile b{color:var(--ink);font-weight:700}
+  .mile .hx{color:var(--accent);font-size:12px}
+  /* headline emphasis variants */
+  .hl-ind{color:var(--primary)}
+  .hl-mark{background:var(--accent-soft);border-radius:6px;padding:0 4px;box-decoration-break:clone;-webkit-box-decoration-break:clone}
+
+  /* ── reward + 1·I flow ── */
+  .rw-bee{display:flex;flex-direction:column;align-items:center;margin-top:2px}
+  .rw-beebox{position:relative;width:120px;height:106px;display:flex;align-items:center;justify-content:center}
+  .rw-rays{position:absolute;inset:-16px;background:
+      repeating-conic-gradient(from 0deg, rgba(130,117,240,.12) 0 6deg, transparent 6deg 18deg);
+      border-radius:50%;filter:blur(1px)}
+  .rw-beeimg{font-size:58px;position:relative}
+  .rw-nectar{position:absolute;top:-4px;right:-28px;background:var(--accent);color:#5A3E10;font-size:12px;font-weight:700;
+      padding:4px 11px;border-radius:999px;box-shadow:0 2px 0 var(--accent-edge)}
+  .rw-h1{font-size:24px;font-weight:800;color:var(--ink);text-align:center;letter-spacing:-0.4px;margin-top:6px}
+  .rw-eyebrow{font-size:11px;letter-spacing:1.5px;font-weight:700;color:var(--inksoft);text-align:center;margin-top:8px}
+  .rw-min{text-align:center;color:var(--ink)}
+  .rw-min b{font-size:40px;font-weight:800;letter-spacing:-1px}
+  .rw-min span{font-size:17px;color:var(--inksoft);margin-left:4px}
+  .rw-badge{align-self:center;background:var(--sunken);color:var(--inksoft);font-size:12.5px;padding:5px 13px;border-radius:999px}
+  .rw-honey{background:var(--surface);border-radius:var(--r-card);padding:12px 16px 13px}
+  .rw-hrow{display:flex;justify-content:space-between;align-items:baseline}
+  .rw-hlabel{font-size:11px;letter-spacing:1.2px;font-weight:700;color:var(--inksoft)}
+  .rw-hlabel small{color:var(--inkfaint);font-weight:500;letter-spacing:0;font-size:11px}
+  .rw-hpct{font-size:19px;font-weight:800;color:var(--amber-text)}
+  .rw-hpct small{font-size:11px;font-weight:600;color:var(--inkfaint)}
+  .rw-hbar{height:8px;border-radius:4px;background:var(--honey-wash);margin-top:7px;overflow:hidden}
+  .rw-hfill{height:100%;width:27%;border-radius:4px;background:linear-gradient(90deg,#F5C03F,#EEAE4D)}
+  .rw-foot{font-size:12.5px;color:var(--inksoft);text-align:center;margin-top:auto;padding-top:6px}
+  .rw-cta{margin:10px 0 24px;height:50px;border-radius:14px;background:var(--primary);color:#fff;
+      display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:700;box-shadow:0 5px 0 var(--primary-edge)}
+  .g svg{display:block;width:100%;height:100%}
+  .q1-card{background:var(--surface);border-radius:var(--r-sheet);padding:15px 16px;display:flex;flex-direction:column;gap:10px}
+  .q1-done{display:flex;align-items:center;gap:8px;font-size:13px;color:var(--inksoft)}
+  .q1-done .ok{width:20px;height:20px;border-radius:50%;background:var(--accent);color:#fff;font-size:11px;font-weight:800;
+      display:flex;align-items:center;justify-content:center}
+  .q1-done b{color:var(--ink);font-weight:700}
+  .q1-div{height:1px;background:var(--hairline)}
+  .q1-ask{display:flex;align-items:center;justify-content:space-between}
+  .q1-q{font-size:15.5px;font-weight:700;color:var(--ink);letter-spacing:-0.2px}
+  .q1-skip{font-size:12.5px;color:var(--inkfaint);font-weight:600}
+  .q1-opt{display:flex;align-items:center;gap:11px;background:var(--sunken);border-radius:14px;padding:10px 13px}
+  .q1-opt .dish{width:34px;height:34px;border-radius:11px;background:var(--surface);display:flex;align-items:center;justify-content:center;flex:none;
+      box-shadow:0 1px 3px rgba(0,0,0,.18)}
+  .q1-opt .dish .g{width:20px;height:20px}
+  .q1-opt .lb{font-size:14.5px;font-weight:600;color:var(--ink);flex:1}
+  .q1-opt .hint{font-size:11.5px;color:var(--inkfaint)}
+  .q1-opt .radio{width:20px;height:20px;border-radius:50%;border:1.8px solid var(--radio);flex:none}
+  .q1-opt.on{background:var(--primary-wash);box-shadow:inset 0 0 0 1.5px var(--primary)}
+  .q1-opt.on .radio{border-color:var(--primary);background:radial-gradient(circle at center,var(--primary) 0 5px,transparent 5.5px)}
+  .q1-count{font-size:11px;color:var(--inkfaint);text-align:center}
+
+  /* ── hub + 4B checklist ── */
+  .hub-hdr{display:flex;flex-direction:column;align-items:center;gap:4px;padding-top:2px}
+  .hub-bee{font-size:56px}
+  .hub-tier{font-size:12px;color:var(--inksoft)}
+  .rp-card{background:var(--surface);border-radius:var(--r-sheet);padding:16px;display:flex;flex-direction:column;gap:12px}
+  .rp-top{display:flex;justify-content:space-between;align-items:center}
+  .rp-eb{display:flex;align-items:center;gap:6px;font-size:10.5px;letter-spacing:1px;font-weight:700;color:var(--amber-text)}
+  .rp-pill{background:var(--accent-soft);color:var(--amber-text);font-size:10.5px;font-weight:700;padding:4px 10px;border-radius:999px}
+  .rp-title{font-size:19px;font-weight:800;color:var(--ink);letter-spacing:-0.3px}
+  .rp-sub{font-size:12.5px;color:var(--inksoft);line-height:1.5;margin-top:3px}
+  .rp-foot{font-size:11.5px;color:var(--inkfaint);line-height:1.5}
+  .rp-eta{background:var(--honey-wash);border-radius:12px;padding:9px 12px;font-size:12.5px;color:var(--amber-text)}
+  .rp-eta b{font-weight:700}
+  .ck-list{display:flex;flex-direction:column;gap:10px}
+  .ck-row{display:flex;align-items:center;gap:10px}
+  .ck-pip{width:20px;height:20px;border-radius:50%;flex:none;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:800}
+  .ck-pip.done{background:var(--accent);color:#fff}
+  .ck-pip.part{background:var(--surface);border:2px solid var(--accent);color:var(--amber-text)}
+  .ck-pip.wait{background:var(--sunken);border:1.5px solid var(--primary-soft)}
+  .ck-lab{font-size:13.5px;color:var(--ink);flex:1;font-weight:600}
+  .ck-lab.dim{color:var(--inkfaint);font-weight:500}
+  .ck-st{font-size:11.5px;color:var(--amber-text);font-weight:700}
+  .ck-st.dim{color:var(--inkfaint);font-weight:500}
+  .ck-mini{height:4px;border-radius:2px;background:var(--honey-wash);overflow:hidden;margin-top:4px}
+  .ck-mini i{display:block;height:100%;width:27%;background:linear-gradient(90deg,#F5C03F,#EEAE4D);border-radius:2px}
+</style>
+</head>
+<body>
+
+<h1>Brainstorm v4 — 2026-07-23</h1>
+<p class="sub">Three things: what "23 real minutes" actually is (and a label fix), the headline emphasis color (no dark yellow), and the full chosen set rendered in <b>dark theme</b> with the real dark tokens.</p>
+
+<div class="verdict"><b>What "REAL TIME / 23 real minutes" is:</b> the sum of ACTUAL minutes across today's completed logs — what the clock really measured, not what you guessed. Today's example: one task, guessed 5, the timer ran 23 → "23 real minutes". It's the app's core number (same thing the reward screen calls "IT REALLY TOOK").
+<br><br><b>Label fix (recommended):</b> "REAL TIME" is jargon — you just proved it by asking. Rename the stat to <b>REALLY TOOK</b>, the exact phrase the reward screen already taught the user. Vocabulary stays one word-family: guess → really took → honest number. Mocked below.</div>
+
+<!-- ═══════════ HEADLINE COLOR ═══════════ -->
+<h2>Headline emphasis — "23 real minutes", no dark yellow</h2>
+<div class="row">
+  <div class="col">
+    <p class="dirlabel">Emphasis options</p>
+    <p class="dirsub">Same card, three treatments of the headline phrase. Stat row uses the renamed REALLY TOOK label.</p>
+    <div class="varwrap">
+      <div class="varlab">H1 · Honey highlighter (recommended) — ink text, honey swiped behind</div>
+      <div class="recap">
+        <div class="eyebrow">YOUR DAY SO FAR</div>
+        <div class="line">One honest log in. <span class="hl-mark">23 real minutes</span> on the books.</div>
+        <div class="statrow">
+          <div class="stat"><span class="k">LOGGED</span><span class="v">1<small>task</small></span></div>
+          <div class="stat"><span class="k">REALLY TOOK</span><span class="v">23<small>min</small></span></div>
+          <div class="stat"><span class="k">HONEY</span><span class="v">27<small>%</small></span><span class="minibar"><i></i></span></div>
+        </div>
+        <div class="hair"></div>
+        <div class="mile"><span class="hx">⬢</span><span><b>~2 more logs</b> and Admin settles in.</span></div>
+      </div>
+
+      <div class="varlab">H2 · Indigo phrase</div>
+      <div class="recap">
+        <div class="eyebrow">YOUR DAY SO FAR</div>
+        <div class="line">One honest log in. <span class="hl-ind">23 real minutes</span> on the books.</div>
+        <div class="statrow">
+          <div class="stat"><span class="k">LOGGED</span><span class="v">1<small>task</small></span></div>
+          <div class="stat"><span class="k">REALLY TOOK</span><span class="v">23<small>min</small></span></div>
+          <div class="stat"><span class="k">HONEY</span><span class="v">27<small>%</small></span><span class="minibar"><i></i></span></div>
+        </div>
+        <div class="hair"></div>
+        <div class="mile"><span class="hx">⬢</span><span><b>~2 more logs</b> and Admin settles in.</span></div>
+      </div>
+
+      <div class="varlab">H3 · All ink (no colored phrase)</div>
+      <div class="recap">
+        <div class="eyebrow">YOUR DAY SO FAR</div>
+        <div class="line">One honest log in. 23 real minutes on the books.</div>
+        <div class="statrow">
+          <div class="stat"><span class="k">LOGGED</span><span class="v">1<small>task</small></span></div>
+          <div class="stat"><span class="k">REALLY TOOK</span><span class="v">23<small>min</small></span></div>
+          <div class="stat"><span class="k">HONEY</span><span class="v">27<small>%</small></span><span class="minibar"><i></i></span></div>
+        </div>
+        <div class="hair"></div>
+        <div class="mile"><span class="hx">⬢</span><span><b>~2 more logs</b> and Admin settles in.</span></div>
+      </div>
+    </div>
+    <div class="notes"><b>Trade-offs:</b>
+      <ul>
+        <li><b>H1</b> — the highlighter swipe (ink on <code>accentSoft</code>) is honey-as-material applied to words: warm, unmistakable, zero contrast loss, and nothing looks like a link. The one warm moment the card gets.</li>
+        <li><b>H2</b> — clean, but an indigo phrase inside a sentence reads exactly like a tappable link; risks dead taps on the headline.</li>
+        <li><b>H3</b> — safest, quietest; headline loses its one warm beat and the sentence goes flat.</li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- dark Today -->
+  <div class="col dk">
+    <p class="dirlabel">Dark · Today — recap C1 + ghost slot</p>
+    <p class="dirsub">Real dark tokens: surface #1F2130 on bg #14151D, hairlines white-8%, honey unchanged (#EEAE4D works natively on dark), highlighter = amber 18% wash.</p>
+    <div class="phone"><div class="notch"></div><div class="screen">
+      <div class="hdr">
+        <div><div class="greet">Good morning</div><div class="title">Today</div><div class="date">Thu · Jul 23</div></div>
+        <div class="hdr-right"><div class="gear">⚙</div>
+          <div><div class="avatar"><div class="ring"><div class="ring-in">🐝</div></div></div><div class="tier">Raw</div></div>
+        </div>
+      </div>
+      <div class="card cal">
+        <div class="day"><div class="wd">Mon</div><div class="num">20</div></div>
+        <div class="day"><div class="wd">Tue</div><div class="num">21</div></div>
+        <div class="day"><div class="wd">Wed</div><div class="num">22</div></div>
+        <div class="day sel"><div class="wd">Thu</div><div class="num">23</div><div class="dot"></div></div>
+        <div class="day"><div class="wd">Fri</div><div class="num">24</div></div>
+        <div class="day"><div class="wd">Sat</div><div class="num">25</div></div>
+        <div class="day"><div class="wd">Sun</div><div class="num">26</div></div>
+      </div>
+      <div class="recap">
+        <div class="eyebrow">YOUR DAY SO FAR</div>
+        <div class="line">One honest log in. <span class="hl-mark">23 real minutes</span> on the books.</div>
+        <div class="statrow">
+          <div class="stat"><span class="k">LOGGED</span><span class="v">1<small>task</small></span></div>
+          <div class="stat"><span class="k">REALLY TOOK</span><span class="v">23<small>min</small></span></div>
+          <div class="stat"><span class="k">HONEY</span><span class="v">27<small>%</small></span><span class="minibar"><i></i></span></div>
+        </div>
+        <div class="hair"></div>
+        <div class="mile"><span class="hx">⬢</span><span><b>~2 more logs</b> and Admin settles in.</span></div>
+      </div>
+      <div class="sect"><span>DONE TODAY · 1</span><span class="chev">⌄</span></div>
+      <div class="donerow"><div class="ck">✓</div><div class="tt">Test</div><div class="mm">guessed 5 · took 23</div></div>
+      <div class="retro-ghost"><div class="plus">+</div><div>Finished something else? <b style="color:var(--primary);font-weight:600">Log it too</b></div></div>
+      <div class="tabbar">
+        <div class="tab on"><span class="ic">⌂</span>Today</div>
+        <div class="tab"><span class="ic">▦</span>Routines</div>
+        <div class="fab">+</div>
+        <div class="tab"><span class="ic">🐝</span>Whenbee</div>
+        <div class="tab"><span class="ic">〰</span>Patterns</div>
+      </div>
+    </div></div>
+    <div class="notes"><b>Dark notes:</b>
+      <ul>
+        <li>Honey minibar + hex identical to light — amber needs no AA-darkening on dark, the whole "muddy amberText" problem doesn't exist here (dark <code>amberText</code> = #EEAE4D, the true accent).</li>
+        <li>Highlighter uses dark <code>accentSoft</code> (amber 18%) — warm glow behind ink #F4F1EA.</li>
+        <li>Ghost slot: dashed white-18% + indigo #8275F0 verb.</li>
+      </ul>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════ DARK: FLOW + 4B ═══════════ -->
+<h2>Dark theme — the other two locked picks</h2>
+<div class="row">
+
+  <div class="col dk">
+    <p class="dirlabel">Dark · Reward — 1·I flow</p>
+    <p class="dirsub">Option rows sit in sunken wells (#15161F) on the card (#1F2130); glyph dishes stay lifted surfaces so the strokes read; selected = indigo wash + ring.</p>
+    <div class="phone"><div class="notch"></div><div class="screen">
+      <div class="rw-bee"><div class="rw-beebox"><div class="rw-rays"></div><div class="rw-beeimg">🐝</div><div class="rw-nectar">+1 nectar</div></div></div>
+      <div class="rw-h1">That's the honest number.</div>
+      <div class="rw-eyebrow">IT REALLY TOOK</div>
+      <div class="rw-min"><b>23</b><span>min</span></div>
+      <div class="rw-badge">18 min over your guess</div>
+      <div class="rw-honey">
+        <div class="rw-hrow"><div class="rw-hlabel">HONEY <small>· 2.3×</small></div><div class="rw-hpct">27 <small>%</small></div></div>
+        <div class="rw-hbar"><div class="rw-hfill"></div></div>
+      </div>
+      <div class="q1-card">
+        <div class="q1-done"><div class="ok">✓</div><div>It <b>grew</b> on you — good to know.</div></div>
+        <div class="q1-div"></div>
+        <div class="q1-ask"><div class="q1-q">How was your energy?</div><div class="q1-skip">Skip</div></div>
+        <div class="q1-opt"><div class="dish"><span class="g" style="width:20px;height:20px"><svg viewBox="0 0 18 18"><rect x="2" y="5.5" width="12" height="7" rx="2" fill="none" stroke="#8275F0" stroke-width="1.5"/><rect x="4" y="7.5" width="3" height="3" rx="1" fill="#EEAE4D"/><path d="M15.5 8v2" stroke="#8275F0" stroke-width="1.5" stroke-linecap="round"/></svg></span></div><div class="lb">Low</div><div class="hint">running on fumes</div><div class="radio"></div></div>
+        <div class="q1-opt on"><div class="dish"><span class="g" style="width:20px;height:20px"><svg viewBox="0 0 18 18"><rect x="2" y="5.5" width="12" height="7" rx="2" fill="none" stroke="#8275F0" stroke-width="1.5"/><rect x="4" y="7.5" width="3" height="3" rx="1" fill="#EEAE4D"/><rect x="8" y="7.5" width="3" height="3" rx="1" fill="#EEAE4D"/><path d="M15.5 8v2" stroke="#8275F0" stroke-width="1.5" stroke-linecap="round"/></svg></span></div><div class="lb">OK</div><div class="hint">normal day</div><div class="radio"></div></div>
+        <div class="q1-opt"><div class="dish"><span class="g" style="width:20px;height:20px"><svg viewBox="0 0 18 18"><rect x="2" y="5.5" width="12" height="7" rx="2" fill="none" stroke="#8275F0" stroke-width="1.5"/><rect x="3.6" y="7.5" width="2.6" height="3" rx="1" fill="#EEAE4D"/><rect x="6.9" y="7.5" width="2.6" height="3" rx="1" fill="#EEAE4D"/><rect x="10.2" y="7.5" width="2.6" height="3" rx="1" fill="#EEAE4D"/><path d="M15.5 8v2" stroke="#8275F0" stroke-width="1.5" stroke-linecap="round"/></svg></span></div><div class="lb">High</div><div class="hint">fully charged</div><div class="radio"></div></div>
+        <div class="q1-count">2 of 2 · one tap each, both optional</div>
+      </div>
+      <div class="rw-foot">One honest log a day. No streak to keep.</div>
+      <div class="rw-cta">See your bee</div>
+    </div></div>
+  </div>
+
+  <div class="col dk">
+    <p class="dirlabel">Dark · Whenbee hub — 4B checklist</p>
+    <p class="dirsub">Pips unchanged in logic; ETA strip sits on the warm-dark honeyWash (#2B2620) with true-amber text — the one warm pool on the screen.</p>
+    <div class="phone"><div class="notch"></div><div class="screen">
+      <div class="hub-hdr"><div class="hub-bee">🐝</div><div class="title" style="font-size:24px">Whenbee</div><div class="hub-tier">Ripening · 27% honey</div></div>
+      <div class="rp-card">
+        <div class="rp-top">
+          <div class="rp-eb">⬡ PRO · RIPENING</div>
+          <div class="rp-pill">Ripens at Ripening</div>
+        </div>
+        <div>
+          <div class="rp-title">Pro is ripening with you.</div>
+          <div class="rp-sub">Each read switches on when your logs can back it up.</div>
+        </div>
+        <div class="ck-list">
+          <div class="ck-row"><div class="ck-pip done">✓</div><div class="ck-lab">Honest range</div><div class="ck-st">Ready</div></div>
+          <div class="ck-row"><div class="ck-pip part">2</div><div class="ck-lab">What steals your time</div><div class="ck-st dim">~2 logs</div></div>
+          <div class="ck-row"><div class="ck-pip wait"></div><div class="ck-lab dim">When you're sharpest</div><div class="ck-st dim">~5 logs</div></div>
+          <div class="ck-row"><div class="ck-pip wait"></div><div class="ck-lab dim">Day capacity check</div><div class="ck-st dim">~1 week</div></div>
+        </div>
+        <div class="ck-mini"><i></i></div>
+        <div class="rp-eta">🍯 First one's already in. <b>~2 logs</b> gets you the next — that's a normal day, not a project.</div>
+        <div class="rp-foot">No streak, no rush. It ripens on its own as you log.</div>
+      </div>
+      <div class="card" style="opacity:.55"><div class="sect"><span>YOUR AREAS</span></div></div>
+      <div class="tabbar">
+        <div class="tab"><span class="ic">⌂</span>Today</div>
+        <div class="tab"><span class="ic">▦</span>Routines</div>
+        <div class="fab">+</div>
+        <div class="tab on"><span class="ic">🐝</span>Whenbee</div>
+        <div class="tab"><span class="ic">〰</span>Patterns</div>
+      </div>
+    </div></div>
+  </div>
+</div>
+
+<div class="verdict"><b>Recommendation — H1 honey highlighter + the REALLY TOOK rename.</b> Ink text on an <code>accentSoft</code> swipe keeps every AA number while giving the sentence its one warm beat, and it's the same honey-as-material logic you picked in C1 — bar, hex, highlighter: one family. Dark theme needs no new decisions: dark <code>amberText</code> is already the true amber, so C1/H1/4B all land natively.</div>
+
+</body>
+</html>

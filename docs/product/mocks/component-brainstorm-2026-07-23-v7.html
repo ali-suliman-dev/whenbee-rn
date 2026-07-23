@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Whenbee · Brainstorm v7 — final ripening card + buy-anyway button</title>
+<style>
+  .dk{
+    --bg:#14151D; --surface:#1F2130; --sunken:#15161F;
+    --ink:#F4F1EA; --inksoft:#ADA9B5; --inkfaint:rgba(244,241,234,.40);
+    --primary:#8275F0; --primary-edge:#6B5BE6; --primary-soft:rgba(130,117,240,.22);
+    --accent:#EEAE4D; --accent-edge:#C68A30; --accent-soft:rgba(238,174,77,.18); --honey-wash:#2B2620;
+    --amber-text:#EEAE4D; --hairline:rgba(255,255,255,.08); --on-amber:#20233A;
+    --r-card:16px; --r-sheet:20px;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;background:#1C1E2E;color:#F4F1EA;padding:40px 32px 80px}
+  h1{font-size:26px;letter-spacing:-0.5px;margin-bottom:6px}
+  .sub{color:#ADA9B5;font-size:14px;max-width:880px;line-height:1.55;margin-bottom:26px}
+  .row{display:flex;gap:34px;flex-wrap:wrap;align-items:flex-start;margin-bottom:8px}
+  .col{width:392px}
+  .dirlabel{font-size:15px;font-weight:700;margin:0 0 2px;letter-spacing:-0.2px}
+  .dirsub{font-size:12.5px;color:#ADA9B5;line-height:1.5;margin-bottom:12px;min-height:42px}
+  .notes{margin-top:12px;font-size:12.5px;color:#CFCAE0;line-height:1.55;background:#242436;border-radius:12px;padding:14px 16px}
+  .notes b{color:#F5C03F;font-weight:600}
+  .notes ul{margin:6px 0 0 16px}
+  .notes li{margin-bottom:4px}
+  .verdict{max-width:880px;font-size:13.5px;color:#E8E4F4;line-height:1.6;background:#2A2A40;border-left:3px solid #F5C03F;border-radius:10px;padding:14px 18px;margin:14px 0 8px}
+  .verdict b{color:#F5C03F}
+
+  .phone{width:392px;height:790px;border-radius:44px;overflow:hidden;position:relative;
+         box-shadow:0 18px 50px rgba(0,0,0,.5);border:6px solid #0c0c12;background:var(--bg);
+         display:flex;flex-direction:column}
+  .screen{flex:1;padding:54px 20px 0;overflow:hidden;position:relative;display:flex;flex-direction:column;gap:14px}
+  .notch{position:absolute;top:12px;left:50%;transform:translateX(-50%);width:110px;height:26px;background:#000;border-radius:20px;z-index:9}
+  .title{font-size:24px;font-weight:800;letter-spacing:-0.5px;color:var(--ink)}
+  .card{background:var(--surface);border-radius:var(--r-card);padding:14px 16px}
+  .sect{font-size:11px;letter-spacing:1.2px;font-weight:700;color:var(--inksoft)}
+  .tabbar{margin:auto -20px 0;padding:10px 22px 26px;display:flex;align-items:flex-end;justify-content:space-between;position:relative}
+  .tab{font-size:10.5px;color:var(--inksoft);text-align:center;width:56px}
+  .tab .ic{font-size:19px;display:block;margin-bottom:3px}
+  .tab.on{color:var(--primary)}
+  .fab{width:52px;height:52px;border-radius:16px;background:var(--primary);color:#fff;font-size:24px;
+       display:flex;align-items:center;justify-content:center;margin-top:-26px;box-shadow:0 6px 0 var(--primary-edge)}
+  .hub-hdr{display:flex;flex-direction:column;align-items:center;gap:4px;padding-top:2px}
+  .hub-bee{font-size:56px}
+  .hub-tier{font-size:12px;color:var(--inksoft)}
+
+  .rp-card{background:var(--surface);border-radius:var(--r-sheet);padding:16px;display:flex;flex-direction:column;gap:12px}
+  .rp-top{display:flex;justify-content:space-between;align-items:center}
+  .rp-eb{display:flex;align-items:center;gap:6px;font-size:10.5px;letter-spacing:1px;font-weight:700;color:var(--amber-text)}
+  .rp-pill{background:var(--accent-soft);color:var(--amber-text);font-size:10.5px;font-weight:700;padding:4px 10px;border-radius:999px}
+  .rp-title{font-size:19px;font-weight:800;color:var(--ink);letter-spacing:-0.3px}
+  .rp-sub{font-size:12.5px;color:var(--inksoft);line-height:1.5;margin-top:3px}
+  .rp-foot{font-size:11.5px;color:var(--inkfaint);line-height:1.5}
+  .tally{display:flex;align-items:center;gap:8px;margin-top:9px}
+  .segs{display:flex;gap:4px;flex:1}
+  .seg{height:5px;border-radius:3px;flex:1;background:var(--honey-wash)}
+  .seg.full{background:linear-gradient(90deg,#F5C03F,#EEAE4D)}
+  .seg.half{background:linear-gradient(90deg,#F5C03F 0 52%,#2B2620 52%)}
+  .tally .n{font-size:11.5px;font-weight:700;color:var(--amber-text)}
+  .ck-list{display:flex;flex-direction:column;gap:11px}
+  .ck-row{display:flex;align-items:center;gap:10px}
+  .ck-pip{width:20px;height:20px;border-radius:50%;flex:none;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:800}
+  .ck-pip.done{background:var(--accent);color:#1F2130}
+  .ck-pip.part{background:var(--surface);border:2px solid var(--accent);color:var(--amber-text)}
+  .ck-pip.wait{background:var(--sunken);border:1.5px solid var(--primary-soft)}
+  .ck-lab{font-size:13.5px;color:var(--ink);flex:1;font-weight:600}
+  .ck-lab.dim{color:var(--inkfaint);font-weight:500}
+  .ck-st{font-size:11.5px;color:var(--amber-text);font-weight:700}
+  .ck-st.dim{color:var(--inkfaint);font-weight:500}
+  .rp-hair{height:1px;background:var(--hairline)}
+
+  /* P1 text link */
+  .p1{font-size:12.5px;text-align:center;color:var(--inksoft)}
+  .p1 b{color:var(--amber-text);font-weight:700}
+
+  /* P2 compact coin chip */
+  .p2wrap{display:flex;align-items:center;gap:12px}
+  .p2txt{flex:1;font-size:11.5px;color:var(--inksoft);line-height:1.45}
+  .p2btn{background:var(--accent);color:var(--on-amber);font-size:13.5px;font-weight:800;letter-spacing:-0.1px;
+      padding:10px 18px;border-radius:999px;border-bottom:3px solid var(--accent-edge);white-space:nowrap}
+
+  /* P3 full width */
+  .p3btn{background:var(--accent);color:var(--on-amber);font-size:15px;font-weight:800;height:46px;border-radius:12px;
+      display:flex;align-items:center;justify-content:center;border-bottom:3px solid var(--accent-edge)}
+  .p3sub{font-size:11px;color:var(--inkfaint);text-align:center;margin-top:6px}
+</style>
+</head>
+<body class="dk">
+
+<h1>Brainstorm v7 — the buy-anyway button</h1>
+<p class="sub">Copy A locked. Now the purchase door: always open, never a lock, honest about what buying does (Pro is yours from day one; each feature still lights up when its data is ready — buying doesn't skip the ripening, it removes the paywall from your future).
+Amber coin-edge = the established Pro grammar (never indigo for a Pro CTA). Three intensities below. Price/trial text comes from RevenueCat at runtime — mock shows the shape, not hardcoded numbers.</p>
+
+<div class="row">
+
+  <!-- P1 -->
+  <div class="col">
+    <p class="dirlabel">P1 · Quiet line</p>
+    <p class="dirsub">One warm sentence under the footer. Lowest pressure, lowest conversion.</p>
+    <div class="phone"><div class="notch"></div><div class="screen">
+      <div class="hub-hdr"><div class="hub-bee">🐝</div><div class="title">Whenbee</div><div class="hub-tier">Ripening · 27% honey</div></div>
+      <div class="rp-card">
+        <div class="rp-top">
+          <div class="rp-eb">⬡ PRO · RIPENING</div>
+          <div class="rp-pill">Ripens at Ripening</div>
+        </div>
+        <div>
+          <div class="rp-title">Your first Pro feature is ready.</div>
+          <div class="rp-sub">The other three open as you log more tasks.</div>
+          <div class="tally">
+            <div class="segs"><div class="seg full"></div><div class="seg half"></div><div class="seg"></div><div class="seg"></div></div>
+            <div class="n">1 of 4</div>
+          </div>
+        </div>
+        <div class="ck-list">
+          <div class="ck-row"><div class="ck-pip done">✓</div><div class="ck-lab">Honest range</div><div class="ck-st">Ready</div></div>
+          <div class="ck-row"><div class="ck-pip part">2</div><div class="ck-lab">What steals your time</div><div class="ck-st">2 logs to go</div></div>
+          <div class="ck-row"><div class="ck-pip wait"></div><div class="ck-lab dim">When you're sharpest</div><div class="ck-st dim">5 logs to go</div></div>
+          <div class="ck-row"><div class="ck-pip wait"></div><div class="ck-lab dim">Day capacity check</div><div class="ck-st dim">about a week</div></div>
+        </div>
+        <div class="rp-foot">No streak, no rush. Logging normally gets you there.</div>
+        <div class="rp-hair"></div>
+        <div class="p1">Already convinced? <b>Get Pro now</b></div>
+      </div>
+      <div class="card" style="opacity:.55"><div class="sect">YOUR AREAS</div></div>
+      <div class="tabbar">
+        <div class="tab"><span class="ic">⌂</span>Today</div>
+        <div class="tab"><span class="ic">▦</span>Routines</div>
+        <div class="fab">+</div>
+        <div class="tab on"><span class="ic">🐝</span>Whenbee</div>
+        <div class="tab"><span class="ic">〰</span>Patterns</div>
+      </div>
+    </div></div>
+    <div class="notes"><b>Notes:</b> the "escape hatch inverted" — same grammar as paywall escape links, pointed at buying. Safe, but easy to scroll past; weakest of the three.</div>
+  </div>
+
+  <!-- P2 -->
+  <div class="col">
+    <p class="dirlabel">P2 · Coin chip + promise line (recommended)</p>
+    <p class="dirsub">Compact amber coin-edge pill, right-aligned, with the honest promise beside it. Sexy but doesn't seize the screen.</p>
+    <div class="phone"><div class="notch"></div><div class="screen">
+      <div class="hub-hdr"><div class="hub-bee">🐝</div><div class="title">Whenbee</div><div class="hub-tier">Ripening · 27% honey</div></div>
+      <div class="rp-card">
+        <div class="rp-top">
+          <div class="rp-eb">⬡ PRO · RIPENING</div>
+          <div class="rp-pill">Ripens at Ripening</div>
+        </div>
+        <div>
+          <div class="rp-title">Your first Pro feature is ready.</div>
+          <div class="rp-sub">The other three open as you log more tasks.</div>
+          <div class="tally">
+            <div class="segs"><div class="seg full"></div><div class="seg half"></div><div class="seg"></div><div class="seg"></div></div>
+            <div class="n">1 of 4</div>
+          </div>
+        </div>
+        <div class="ck-list">
+          <div class="ck-row"><div class="ck-pip done">✓</div><div class="ck-lab">Honest range</div><div class="ck-st">Ready</div></div>
+          <div class="ck-row"><div class="ck-pip part">2</div><div class="ck-lab">What steals your time</div><div class="ck-st">2 logs to go</div></div>
+          <div class="ck-row"><div class="ck-pip wait"></div><div class="ck-lab dim">When you're sharpest</div><div class="ck-st dim">5 logs to go</div></div>
+          <div class="ck-row"><div class="ck-pip wait"></div><div class="ck-lab dim">Day capacity check</div><div class="ck-st dim">about a week</div></div>
+        </div>
+        <div class="rp-hair"></div>
+        <div class="p2wrap">
+          <div class="p2txt">Pro is yours from day one. Every feature lights up the moment it's ready.</div>
+          <div class="p2btn">Get Pro ⬢</div>
+        </div>
+        <div class="rp-foot">No streak, no rush. Logging normally gets you there.</div>
+      </div>
+      <div class="card" style="opacity:.55"><div class="sect">YOUR AREAS</div></div>
+      <div class="tabbar">
+        <div class="tab"><span class="ic">⌂</span>Today</div>
+        <div class="tab"><span class="ic">▦</span>Routines</div>
+        <div class="fab">+</div>
+        <div class="tab on"><span class="ic">🐝</span>Whenbee</div>
+        <div class="tab"><span class="ic">〰</span>Patterns</div>
+      </div>
+    </div></div>
+    <div class="notes"><b>Why it converts without pressuring:</b>
+      <ul>
+        <li>The promise line is the pitch: "yours from day one" (endowment) + "lights up the moment it's ready" (no overclaim — buying doesn't skip the data, it removes the future paywall).</li>
+        <li>Amber coin edge = tactile, premium, established Pro grammar. Compact width keeps the screen's primary-CTA slot free.</li>
+        <li>Placement above the footer: the no-pressure line still gets the last word — the card ends calm, not selling.</li>
+        <li>Tap → existing paywall (prices from RevenueCat; 7-day trial line comes from the offering, never hardcoded).</li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- P3 -->
+  <div class="col">
+    <p class="dirlabel">P3 · Full-width banner CTA</p>
+    <p class="dirsub">Maximum conversion push: reveal-state CTA borrowed early, full-width amber.</p>
+    <div class="phone"><div class="notch"></div><div class="screen">
+      <div class="hub-hdr"><div class="hub-bee">🐝</div><div class="title">Whenbee</div><div class="hub-tier">Ripening · 27% honey</div></div>
+      <div class="rp-card">
+        <div class="rp-top">
+          <div class="rp-eb">⬡ PRO · RIPENING</div>
+          <div class="rp-pill">Ripens at Ripening</div>
+        </div>
+        <div>
+          <div class="rp-title">Your first Pro feature is ready.</div>
+          <div class="rp-sub">The other three open as you log more tasks.</div>
+          <div class="tally">
+            <div class="segs"><div class="seg full"></div><div class="seg half"></div><div class="seg"></div><div class="seg"></div></div>
+            <div class="n">1 of 4</div>
+          </div>
+        </div>
+        <div class="ck-list">
+          <div class="ck-row"><div class="ck-pip done">✓</div><div class="ck-lab">Honest range</div><div class="ck-st">Ready</div></div>
+          <div class="ck-row"><div class="ck-pip part">2</div><div class="ck-lab">What steals your time</div><div class="ck-st">2 logs to go</div></div>
+          <div class="ck-row"><div class="ck-pip wait"></div><div class="ck-lab dim">When you're sharpest</div><div class="ck-st dim">5 logs to go</div></div>
+          <div class="ck-row"><div class="ck-pip wait"></div><div class="ck-lab dim">Day capacity check</div><div class="ck-st dim">about a week</div></div>
+        </div>
+        <div>
+          <div class="p3btn">Get Pro from day one</div>
+          <div class="p3sub">7-day free trial · cancel anytime (from RevenueCat)</div>
+        </div>
+        <div class="rp-foot">No streak, no rush. Logging normally gets you there.</div>
+      </div>
+      <div class="card" style="opacity:.55"><div class="sect">YOUR AREAS</div></div>
+      <div class="tabbar">
+        <div class="tab"><span class="ic">⌂</span>Today</div>
+        <div class="tab"><span class="ic">▦</span>Routines</div>
+        <div class="fab">+</div>
+        <div class="tab on"><span class="ic">🐝</span>Whenbee</div>
+        <div class="tab"><span class="ic">〰</span>Patterns</div>
+      </div>
+    </div></div>
+    <div class="notes"><b>Notes / risks:</b> strongest tap target, and the trial line does real conversion work. But a full-width filled CTA inside an upsell card breaks the standing "upsell never gets its own primary" rule, and it makes "no rush" ring hollow — the card says calm while shouting buy. If picked, the footer line should move ABOVE the button.</div>
+  </div>
+</div>
+
+<div class="verdict"><b>Recommendation — P2.</b> It's the sexy-without-shouting middle: tactile amber coin chip (the Pro color, never indigo), an honest endowment pitch ("Pro is yours from day one. Every feature lights up the moment it's ready."), placed so the calm footer still closes the card. P1 under-sells a card whose whole job is desire; P3 buys conversion by contradicting the card's own "no rush" voice and the one-primary rule. Trial/price strings always from RevenueCat.</div>
+
+</body>
+</html>

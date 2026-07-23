@@ -1,0 +1,414 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Whenbee · Light theme — DRASTIC directions v2</title>
+<style>
+  :root{
+    --ink:#20233A; --inksoft:#5C5F73; --inkfaint:#9B9DAB;
+    --primary:#6B5BE6; --primary-edge:#463B9E; --primary-soft:#E4E0FA; --primary-wash:#EFEDFC;
+    --accent:#EEAE4D; --accent-edge:#C68A30; --accent-soft:#FBEFD6; --accent-chip:#F3E2C0; --amber-text:#8A5A12;
+    --bg:#F4F2FC; --surface:#FFFFFF; --sunken:#F1EEFB;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;background:#14151D;color:#F4F1EA;padding:40px 32px 80px}
+  h1{font-size:26px;letter-spacing:-0.5px;margin-bottom:6px}
+  .sub{color:#ADA9B5;font-size:14px;max-width:860px;line-height:1.5;margin-bottom:34px}
+  .row{display:flex;gap:34px;flex-wrap:wrap;align-items:flex-start}
+  .col{width:392px;margin-bottom:26px}
+  .dirlabel{font-size:16px;font-weight:800;margin:0 0 3px;letter-spacing:-0.2px;color:#F5C03F}
+  .dirsub{font-size:12.5px;color:#ADA9B5;line-height:1.5;margin-bottom:12px;min-height:58px}
+  .notes{margin-top:12px;font-size:12.5px;color:#CFCAE0;line-height:1.55;background:#242436;border-radius:12px;padding:14px 16px}
+  .notes b{color:#F5C03F;font-weight:600}
+  .notes ul{margin:6px 0 0 16px}
+  .notes li{margin-bottom:4px}
+
+  .phone{width:392px;height:820px;border-radius:44px;overflow:hidden;position:relative;
+         box-shadow:0 18px 50px rgba(0,0,0,.5);border:6px solid #0c0c12;background:var(--bg);
+         display:flex;flex-direction:column}
+  .screen{flex:1;overflow:hidden;position:relative;display:flex;flex-direction:column}
+  .notch{position:absolute;top:12px;left:50%;transform:translateX(-50%);width:110px;height:26px;background:#000;border-radius:20px;z-index:9}
+  .hdrwrap{padding:54px 20px 16px}
+  .content{flex:1;display:flex;flex-direction:column;gap:14px;padding:0 20px}
+
+  .greet{font-size:12px;color:var(--inksoft)}
+  .hdr{display:flex;justify-content:space-between;align-items:flex-start}
+  .title{font-size:38px;font-weight:800;letter-spacing:-0.75px;color:var(--ink);line-height:1.05}
+  .date{font-size:12px;color:var(--inksoft);margin-top:2px}
+  .avatar{width:58px;height:58px;margin-left:auto}
+  .ring{width:58px;height:58px;border-radius:50%;
+        background:conic-gradient(var(--accent) 0 78%, #E4DFD3 78% 100%);
+        display:flex;align-items:center;justify-content:center}
+  .ring-in{width:49px;height:49px;border-radius:50%;background:#fff;display:flex;align-items:center;justify-content:center;font-size:20px}
+  .tier{font-size:10.5px;color:var(--inksoft);text-align:center;margin-top:3px}
+  .hdr-right{display:flex;align-items:flex-start;gap:14px}
+  .gear{font-size:20px;color:var(--inksoft);margin-top:16px}
+
+  .card{background:var(--surface);border-radius:16px;padding:14px 16px}
+  .cal{display:flex;justify-content:space-between;padding:12px 8px}
+  .day{width:44px;text-align:center;border-radius:14px;padding:7px 0}
+  .day .wd{font-size:11px;color:var(--inkfaint)}
+  .day .num{font-size:17px;font-weight:600;color:var(--ink);margin-top:2px}
+  .day.sel{background:var(--primary-soft)}
+  .day.sel .wd,.day.sel .num{color:var(--primary)}
+  .dot{width:4px;height:4px;border-radius:2px;background:var(--accent);margin:4px auto 0}
+
+  .pillrow{display:flex;align-items:center;gap:10px}
+  .pillrow .txt{font-size:14px;color:var(--ink);flex:1}
+  .coin{width:26px;height:26px;border-radius:50%;background:var(--accent-soft);display:flex;align-items:center;justify-content:center;font-size:13px;flex-shrink:0}
+  .coin.ind{background:var(--primary-soft)}
+  .pro{background:var(--accent);color:#20233A;font-weight:700;font-size:11px;padding:3px 10px;border-radius:999px;box-shadow:0 2.5px 0 var(--accent-edge)}
+  .chev{color:var(--inkfaint);font-size:15px}
+
+  .focus{padding:18px 18px 16px;border-radius:20px}
+  .eyebrow{font-size:10px;letter-spacing:.8px;font-weight:700;color:var(--inkfaint)}
+  .frow{display:flex;justify-content:space-between;align-items:baseline;margin-top:8px}
+  .task{font-size:20px;font-weight:700;color:var(--ink)}
+  .est{font-size:12px;color:var(--inksoft)}
+  .est b{font-size:30px;font-weight:800;color:var(--ink);letter-spacing:-0.5px}
+  .bar{height:8px;border-radius:4px;background:#C8C2F0;margin:14px 0 10px;position:relative;overflow:hidden}
+  .bar .fill{position:absolute;inset:0;width:34%;background:repeating-linear-gradient(135deg,var(--primary) 0 2px,#A89EE4 2px 6px)}
+  .meta{display:flex;justify-content:space-between;font-size:12.5px}
+  .meta .l{color:var(--inksoft)} .meta .r{color:var(--ink);font-weight:600}
+  .cta{margin-top:14px;height:44px;border-radius:999px;background:var(--primary);color:#fff;
+       display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:700;box-shadow:0 8px 0 var(--primary-edge)}
+
+  .tabbar{margin-top:auto;padding:10px 22px 26px;display:flex;align-items:flex-end;justify-content:space-between;background:transparent}
+  .tab{font-size:10.5px;color:var(--inksoft);text-align:center;width:56px}
+  .tab .ic{font-size:19px;display:block;margin-bottom:3px}
+  .tab.on{color:var(--primary)}
+  .fab{width:52px;height:52px;border-radius:16px;background:var(--primary);color:#fff;font-size:24px;
+       display:flex;align-items:center;justify-content:center;margin-top:-26px;box-shadow:0 6px 0 var(--primary-edge)}
+
+  /* ═════════ D1 · INDIGO CROWN — color-blocked header canvas ═════════ */
+  .d1 .phone{background:#EFECFA}
+  .d1 .hdrwrap{background:linear-gradient(170deg,#2B2455 0%,#241E4A 60%,#201A42 100%);
+               padding-bottom:44px;border-radius:0 0 28px 28px}
+  .d1 .greet{color:#B7AFE0}
+  .d1 .title{color:#F7F4EC}
+  .d1 .date{color:#B7AFE0}
+  .d1 .gear{color:#B7AFE0}
+  .d1 .tier{color:#F5C03F;font-weight:700}
+  .d1 .ring{background:conic-gradient(#F5C03F 0 78%, rgba(255,255,255,.16) 78% 100%);
+            box-shadow:0 0 24px rgba(245,192,63,.35)}
+  .d1 .ring-in{background:#2B2455}
+  .d1 .content{margin-top:-30px}
+  .d1 .cal{box-shadow:0 10px 26px rgba(32,26,66,.18)}
+  .d1 .day.sel{background:#241E4A}
+  .d1 .day.sel .wd,.d1 .day.sel .num{color:#F5C03F}
+  .d1 .tab.on{color:#241E4A}
+  .d1 .fab{background:#241E4A;box-shadow:0 6px 0 #14102e}
+  .d1 .cta{background:#241E4A;box-shadow:0 8px 0 #14102e}
+
+  /* ═════════ D2 · HIVE WARM — full hue flip to honey/cream ═════════ */
+  .d2 .phone{background:#F6EFDF}
+  .d2 .greet,.d2 .date{color:#8A7B5E}
+  .d2 .gear{color:#8A7B5E}
+  .d2 .card{background:#FFFDF7;box-shadow:0 3px 0 #E9DDC2}
+  .d2 .day .wd{color:#B5A886}
+  .d2 .day.sel{background:#F5C03F;box-shadow:0 3px 0 #C68A30}
+  .d2 .day.sel .wd,.d2 .day.sel .num{color:#4A3A12}
+  .d2 .dot{background:#6B5BE6}
+  .d2 .coin{background:#FBEFD6}
+  .d2 .coin.ind{background:#EDE7FF}
+  .d2 .eyebrow{color:#B5A886}
+  .d2 .est,.d2 .meta .l{color:#8A7B5E}
+  .d2 .bar{background:#F0E6CC}
+  .d2 .bar .fill{background:repeating-linear-gradient(135deg,#EEAE4D 0 2px,#F5C03F 2px 6px)}
+  .d2 .tier{color:#8A5A12;font-weight:700}
+  .d2 .tab{color:#B5A886}
+  .d2 .tab.on{color:#6B5BE6}
+  .d2 .pro{background:#6B5BE6;color:#fff;box-shadow:0 2.5px 0 #463B9E}
+
+  /* ═════════ D3 · TOYBOX TACTILE — everything extruded (Duolingo) ═════════ */
+  .d3 .phone{background:#F1EDFB}
+  .d3 .card{background:#FFFFFF;border-radius:20px;box-shadow:0 4px 0 #D8D0F0}
+  .d3 .focus{box-shadow:0 5px 0 #D8D0F0}
+  .d3 .day{border-radius:12px}
+  .d3 .day.sel{background:#6B5BE6;box-shadow:0 3px 0 #463B9E;transform:translateY(-2px)}
+  .d3 .day.sel .wd,.d3 .day.sel .num{color:#fff}
+  .d3 .day.sel .dot{background:#F5C03F}
+  .d3 .coin{width:30px;height:30px;border-radius:10px;background:#FBEFD6;box-shadow:0 2.5px 0 #E8D5AC}
+  .d3 .coin.ind{background:#E4E0FA;box-shadow:0 2.5px 0 #C4BBEE}
+  .d3 .txt{font-weight:600}
+  .d3 .eyebrow{color:#6B5BE6}
+  .d3 .task{font-size:22px;font-weight:800}
+  .d3 .bar{height:14px;border-radius:7px;background:#EAE5F8;margin:14px 0 10px}
+  .d3 .bar .fill{background:#6B5BE6;border-radius:7px;width:34%}
+  .d3 .bar .fill::after{content:"";position:absolute;top:3px;left:6px;right:6px;height:3px;border-radius:2px;background:rgba(255,255,255,.35)}
+  .d3 .cta{height:50px;font-size:17px;letter-spacing:.3px}
+  .d3 .tabbar{background:#fff;box-shadow:0 -1px 0 #E5DFF5;margin:auto -0px 0}
+  .d3 .pro{box-shadow:0 3px 0 var(--accent-edge)}
+
+  /* ═════════ D4 · CANDY TINTS — zero white cards, every card a pastel ═════════ */
+  .d4 .phone{background:#FBFAF6}
+  .d4 .card.cal{background:#EFEBFC}
+  .d4 .card.honest{background:#FBEFD6}
+  .d4 .card.honest .txt{color:#6E4A10;font-weight:600}
+  .d4 .card.honest .coin{background:#F5DFAE}
+  .d4 .card.win{background:#E7E2FB}
+  .d4 .card.win .txt{color:#3A2F86;font-weight:600}
+  .d4 .card.win .coin{background:#D3CBF6}
+  .d4 .focus{background:#241E4A}
+  .d4 .focus .eyebrow{color:#B7AFE0}
+  .d4 .focus .task{color:#F7F4EC;font-size:22px}
+  .d4 .focus .est{color:#B7AFE0}
+  .d4 .focus .est b{color:#F5C03F;font-size:34px}
+  .d4 .focus .bar{background:rgba(255,255,255,.14)}
+  .d4 .focus .bar .fill{background:repeating-linear-gradient(135deg,#F5C03F 0 2px,#EEAE4D 2px 6px)}
+  .d4 .focus .meta .l{color:#B7AFE0}
+  .d4 .focus .meta .r{color:#F7F4EC}
+  .d4 .focus .cta{background:#F5C03F;color:#241E4A;box-shadow:0 8px 0 #C68A30}
+  .d4 .card.log{background:#E6F2EA}
+  .d4 .card.log .txt{color:#1F5C40;font-weight:600}
+  .d4 .card.log .coin{background:#CBE6D6}
+  .d4 .day.sel{background:#241E4A}
+  .d4 .day.sel .wd,.d4 .day.sel .num{color:#F5C03F}
+  .d4 .est b{letter-spacing:-1px}
+
+  table{border-collapse:collapse;font-size:13px;margin-top:8px;background:#242436;border-radius:12px;overflow:hidden}
+  th,td{padding:9px 14px;text-align:left;border-bottom:1px solid rgba(255,255,255,.07)}
+  th{color:#9A95AD;font-weight:600;font-size:11px;letter-spacing:.6px}
+  td{color:#F4F1EA}
+</style>
+</head>
+<body>
+
+<h1>Light theme — DRASTIC directions (v2)</h1>
+<p class="sub">
+Component-level restyles, not background tweaks. Each direction changes what cards, headers, buttons, and accents ARE.
+All four still honor: no guilt colors, honey/amber = reward semantics, pricing/copy untouched. Where a direction bends the
+"one filled indigo per screen" rule, it's flagged. Mix and match is expected — say which pieces you want.
+</p>
+
+<div class="row">
+
+  <!-- ═══════════ D1 ═══════════ -->
+  <div class="col d1">
+    <p class="dirlabel">D1 · Indigo Crown</p>
+    <p class="dirsub">The header becomes a deep-indigo canvas (Headspace color-blocking). Honey ring glows gold on it, calendar floats over the seam. The app gets a face instead of a blank forehead.</p>
+    <div class="phone"><div class="notch"></div><div class="screen">
+      <div class="hdrwrap">
+        <div class="hdr">
+          <div><div class="greet">Good morning</div><div class="title">Today</div><div class="date">Thu · Jul 23</div></div>
+          <div class="hdr-right"><div class="gear">⚙</div>
+            <div><div class="avatar"><div class="ring"><div class="ring-in">🐝</div></div></div><div class="tier">Ripening</div></div>
+          </div>
+        </div>
+      </div>
+      <div class="content">
+        <div class="card cal">
+          <div class="day"><div class="wd">Mon</div><div class="num">20</div><div class="dot"></div></div>
+          <div class="day"><div class="wd">Tue</div><div class="num">21</div></div>
+          <div class="day"><div class="wd">Wed</div><div class="num">22</div></div>
+          <div class="day sel"><div class="wd">Thu</div><div class="num">23</div><div class="dot"></div></div>
+          <div class="day"><div class="wd">Fri</div><div class="num">24</div></div>
+          <div class="day"><div class="wd">Sat</div><div class="num">25</div></div>
+          <div class="day"><div class="wd">Sun</div><div class="num">26</div></div>
+        </div>
+        <div class="card pillrow"><div class="coin">⚡</div><div class="txt">Honest day 5m · fits</div><span class="chev">✕</span></div>
+        <div class="card pillrow"><div class="coin ind">◑</div><div class="txt">Your focus window is ready</div><span class="pro">Pro</span><span class="chev">›</span></div>
+        <div class="card focus">
+          <div class="eyebrow">NEXT · ADMIN &amp; EMAIL</div>
+          <div class="frow"><div class="task">Test</div><div class="est"><b>~5</b> min</div></div>
+          <div class="bar"><div class="fill"></div></div>
+          <div class="meta"><span class="l">guessed 5</span><span class="r">done 06:54am</span></div>
+          <div class="cta">▶&nbsp; Start</div>
+        </div>
+        <div class="card pillrow"><div class="coin ind" style="background:var(--sunken)">🕐</div><div class="txt">Finished something else? Log it too</div><span class="chev">›</span></div>
+      </div>
+      <div class="tabbar">
+        <div class="tab on"><span class="ic">⌂</span>Today</div>
+        <div class="tab"><span class="ic">▦</span>Routines</div>
+        <div class="fab">+</div>
+        <div class="tab"><span class="ic">🐝</span>Whenbee</div>
+        <div class="tab"><span class="ic">〰</span>Patterns</div>
+      </div>
+    </div></div>
+    <div class="notes"><b>Scope:</b>
+      <ul>
+        <li>New surface: <b>headerCanvas</b> (deep indigo #241E4A) on Today / Whenbee / Patterns headers; Screen component grows a variant</li>
+        <li>Honey ring + tier word go GOLD on indigo — the companion finally pops</li>
+        <li>Calendar card overlaps the seam (floating), soft indigo shadow</li>
+        <li>CTA/FAB shift to the deep indigo (header is a surface, not a control — but this bends the one-indigo rule: your call)</li>
+        <li>Every screen gets an identity moment above the fold; content zone stays calm</li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- ═══════════ D2 ═══════════ -->
+  <div class="col d2">
+    <p class="dirlabel">D2 · Hive Warm</p>
+    <p class="dirsub">Full temperature flip: honey-cream world instead of lavender. The bee lives in a hive, not a hospital. Indigo becomes the rare, electric accent (CTA + selection only).</p>
+    <div class="phone"><div class="notch"></div><div class="screen">
+      <div class="hdrwrap">
+        <div class="hdr">
+          <div><div class="greet">Good morning</div><div class="title">Today</div><div class="date">Thu · Jul 23</div></div>
+          <div class="hdr-right"><div class="gear">⚙</div>
+            <div><div class="avatar"><div class="ring"><div class="ring-in" style="background:#FFFDF7">🐝</div></div></div><div class="tier">Ripening</div></div>
+          </div>
+        </div>
+      </div>
+      <div class="content">
+        <div class="card cal">
+          <div class="day"><div class="wd">Mon</div><div class="num">20</div><div class="dot"></div></div>
+          <div class="day"><div class="wd">Tue</div><div class="num">21</div></div>
+          <div class="day"><div class="wd">Wed</div><div class="num">22</div></div>
+          <div class="day sel"><div class="wd">Thu</div><div class="num">23</div><div class="dot"></div></div>
+          <div class="day"><div class="wd">Fri</div><div class="num">24</div></div>
+          <div class="day"><div class="wd">Sat</div><div class="num">25</div></div>
+          <div class="day"><div class="wd">Sun</div><div class="num">26</div></div>
+        </div>
+        <div class="card pillrow"><div class="coin">⚡</div><div class="txt">Honest day 5m · fits</div><span class="chev">✕</span></div>
+        <div class="card pillrow"><div class="coin ind">◑</div><div class="txt">Your focus window is ready</div><span class="pro">Pro</span><span class="chev">›</span></div>
+        <div class="card focus">
+          <div class="eyebrow">NEXT · ADMIN &amp; EMAIL</div>
+          <div class="frow"><div class="task">Test</div><div class="est"><b>~5</b> min</div></div>
+          <div class="bar"><div class="fill"></div></div>
+          <div class="meta"><span class="l">guessed 5</span><span class="r">done 06:54am</span></div>
+          <div class="cta">▶&nbsp; Start</div>
+        </div>
+        <div class="card pillrow"><div class="coin ind" style="background:#F3EDDD">🕐</div><div class="txt">Finished something else? Log it too</div><span class="chev">›</span></div>
+      </div>
+      <div class="tabbar">
+        <div class="tab on"><span class="ic">⌂</span>Today</div>
+        <div class="tab"><span class="ic">▦</span>Routines</div>
+        <div class="fab">+</div>
+        <div class="tab"><span class="ic">🐝</span>Whenbee</div>
+        <div class="tab"><span class="ic">〰</span>Patterns</div>
+      </div>
+    </div></div>
+    <div class="notes"><b>Scope:</b>
+      <ul>
+        <li>Ground → warm cream #F6EFDF; cards → warm white with a warm bottom edge (subtle coin grammar on every card)</li>
+        <li>Selected day = honey key (amber fill, amber edge) — <b>loosens the amber-is-reward-only invariant</b>: amber becomes ambient brand warmth. Explicit decision needed</li>
+        <li>Indigo demoted to electric accent: CTA, FAB, Pro pill, active tab — it pops HARD against cream</li>
+        <li>Muted text goes warm taupe; progress bar honey-striped</li>
+        <li>Biggest identity shift of the four — the app stops looking like every lavender productivity app</li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- ═══════════ D3 ═══════════ -->
+  <div class="col d3">
+    <p class="dirlabel">D3 · Toybox Tactile</p>
+    <p class="dirsub">Duolingo physicality everywhere: every card, coin, chip and day-key is extruded with a visible pressed edge. Fat progress bar with a shine. The whole surface becomes touchable.</p>
+    <div class="phone"><div class="notch"></div><div class="screen">
+      <div class="hdrwrap">
+        <div class="hdr">
+          <div><div class="greet">Good morning</div><div class="title">Today</div><div class="date">Thu · Jul 23</div></div>
+          <div class="hdr-right"><div class="gear">⚙</div>
+            <div><div class="avatar"><div class="ring"><div class="ring-in">🐝</div></div></div><div class="tier">Ripening</div></div>
+          </div>
+        </div>
+      </div>
+      <div class="content">
+        <div class="card cal">
+          <div class="day"><div class="wd">Mon</div><div class="num">20</div><div class="dot"></div></div>
+          <div class="day"><div class="wd">Tue</div><div class="num">21</div></div>
+          <div class="day"><div class="wd">Wed</div><div class="num">22</div></div>
+          <div class="day sel"><div class="wd">Thu</div><div class="num">23</div><div class="dot"></div></div>
+          <div class="day"><div class="wd">Fri</div><div class="num">24</div></div>
+          <div class="day"><div class="wd">Sat</div><div class="num">25</div></div>
+          <div class="day"><div class="wd">Sun</div><div class="num">26</div></div>
+        </div>
+        <div class="card pillrow"><div class="coin">⚡</div><div class="txt">Honest day 5m · fits</div><span class="chev">✕</span></div>
+        <div class="card pillrow"><div class="coin ind">◑</div><div class="txt">Your focus window is ready</div><span class="pro">Pro</span><span class="chev">›</span></div>
+        <div class="card focus">
+          <div class="eyebrow">NEXT · ADMIN &amp; EMAIL</div>
+          <div class="frow"><div class="task">Test</div><div class="est"><b>~5</b> min</div></div>
+          <div class="bar"><div class="fill"></div></div>
+          <div class="meta"><span class="l">guessed 5</span><span class="r">done 06:54am</span></div>
+          <div class="cta">▶&nbsp; Start</div>
+        </div>
+        <div class="card pillrow"><div class="coin ind" style="background:#EAE5F8;box-shadow:0 2.5px 0 #D3CBEE">🕐</div><div class="txt">Finished something else? Log it too</div><span class="chev">›</span></div>
+      </div>
+      <div class="tabbar">
+        <div class="tab on"><span class="ic">⌂</span>Today</div>
+        <div class="tab"><span class="ic">▦</span>Routines</div>
+        <div class="fab">+</div>
+        <div class="tab"><span class="ic">🐝</span>Whenbee</div>
+        <div class="tab"><span class="ic">〰</span>Patterns</div>
+      </div>
+    </div></div>
+    <div class="notes"><b>Scope:</b>
+      <ul>
+        <li>Cards get the coin-edge treatment the buttons already have (4px lavender-shade bottom edge) — ONE physical grammar app-wide</li>
+        <li>Selected day = raised indigo key (lifts 2px, gold dot); press animates it down — real tactility, works with the existing pressIn scale</li>
+        <li>Icon coins become rounded-square tiles with edges; progress bar fattens to 14px with a top shine</li>
+        <li>Type steps up a weight (labels 600→700, task 20→22 800)</li>
+        <li>Tab bar becomes a solid white slab — grounded, not floating letters</li>
+        <li>Most playful of the four; personality without touching the palette</li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- ═══════════ D4 ═══════════ -->
+  <div class="col d4">
+    <p class="dirlabel">D4 · Candy Ink</p>
+    <p class="dirsub">No white cards, anywhere. Every card is a committed pastel with deep same-hue text (Amie), and the focal Next card flips to a midnight-indigo hero with a GOLD Start — the reveal-card look, on Today.</p>
+    <div class="phone"><div class="notch"></div><div class="screen">
+      <div class="hdrwrap">
+        <div class="hdr">
+          <div><div class="greet">Good morning</div><div class="title">Today</div><div class="date">Thu · Jul 23</div></div>
+          <div class="hdr-right"><div class="gear">⚙</div>
+            <div><div class="avatar"><div class="ring"><div class="ring-in" style="background:#FBFAF6">🐝</div></div></div><div class="tier">Ripening</div></div>
+          </div>
+        </div>
+      </div>
+      <div class="content">
+        <div class="card cal">
+          <div class="day"><div class="wd">Mon</div><div class="num">20</div><div class="dot"></div></div>
+          <div class="day"><div class="wd">Tue</div><div class="num">21</div></div>
+          <div class="day"><div class="wd">Wed</div><div class="num">22</div></div>
+          <div class="day sel"><div class="wd">Thu</div><div class="num">23</div><div class="dot"></div></div>
+          <div class="day"><div class="wd">Fri</div><div class="num">24</div></div>
+          <div class="day"><div class="wd">Sat</div><div class="num">25</div></div>
+          <div class="day"><div class="wd">Sun</div><div class="num">26</div></div>
+        </div>
+        <div class="card honest pillrow"><div class="coin">⚡</div><div class="txt">Honest day 5m · fits</div><span class="chev" style="color:#B99B62">✕</span></div>
+        <div class="card win pillrow"><div class="coin">◑</div><div class="txt">Your focus window is ready</div><span class="pro">Pro</span><span class="chev" style="color:#8F84C9">›</span></div>
+        <div class="card focus">
+          <div class="eyebrow">NEXT · ADMIN &amp; EMAIL</div>
+          <div class="frow"><div class="task">Test</div><div class="est"><b>~5</b> min</div></div>
+          <div class="bar"><div class="fill"></div></div>
+          <div class="meta"><span class="l">guessed 5</span><span class="r">done 06:54am</span></div>
+          <div class="cta">▶&nbsp; Start</div>
+        </div>
+        <div class="card log pillrow"><div class="coin">🕐</div><div class="txt">Finished something else? Log it too</div><span class="chev" style="color:#6FA98B">›</span></div>
+      </div>
+      <div class="tabbar">
+        <div class="tab on"><span class="ic">⌂</span>Today</div>
+        <div class="tab"><span class="ic">▦</span>Routines</div>
+        <div class="fab">+</div>
+        <div class="tab"><span class="ic">🐝</span>Whenbee</div>
+        <div class="tab"><span class="ic">〰</span>Patterns</div>
+      </div>
+    </div></div>
+    <div class="notes"><b>Scope:</b>
+      <ul>
+        <li>Card system becomes semantic tints: honey-capacity = amber tint, focus-window = periwinkle, retro-log = mint (uses existing success family), calendar = lavender — deep same-hue text on each</li>
+        <li><b>Focal Next card = midnight indigo</b> (the archetype-reveal surface, promoted to Today) with the honest number in GOLD and an amber Start — the strongest possible hero moment. Bends BOTH accent rules; the payoff is huge. Your call</li>
+        <li>Ground goes near-white warm (#FBFAF6) so the tints carry the color</li>
+        <li>Hero numeral 30→34pt, tighter tracking</li>
+        <li>Closest to Amie/"candy shop" energy; most colorful of the four</li>
+      </ul>
+    </div>
+  </div>
+</div>
+
+<h1 style="font-size:20px;margin-top:10px">How they compare</h1>
+<table>
+  <tr><th>DIRECTION</th><th>WHAT VISIBLY CHANGES</th><th>INVARIANT BENDS</th><th>EFFORT</th></tr>
+  <tr><td><b>D1 Indigo Crown</b></td><td>Header canvas, gold ring, floating strip, dark CTA</td><td>"one filled indigo" (header surface)</td><td>Medium — Screen variant + token set</td></tr>
+  <tr><td><b>D2 Hive Warm</b></td><td>Whole app temperature, honey selection keys, electric indigo</td><td>amber-is-reward-only</td><td>Medium — mostly tokens + edges</td></tr>
+  <tr><td><b>D3 Toybox Tactile</b></td><td>Every card/chip extruded, fat bars, key-press days, heavier type</td><td>none</td><td>Medium-high — card/chip components</td></tr>
+  <tr><td><b>D4 Candy Ink</b></td><td>Zero white cards, semantic tints, midnight hero card w/ gold</td><td>amber + indigo rules on the hero</td><td>High — card system rework</td></tr>
+</table>
+
+<p class="sub" style="margin-top:20px">
+Natural combos: <b>D1 + D3</b> (identity header + tactile body, no palette risk) or <b>D2 + D3</b> (hive world with toy physics — the most "nobody else looks like this" outcome). Dark mode gets the same direction translated, not left behind.
+</p>
+
+</body>
+</html>
