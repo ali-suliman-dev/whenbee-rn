@@ -2,9 +2,8 @@ import { AppButton } from '@/src/components/AppButton';
 import { AppText } from '@/src/components/AppText';
 import { HonestNumber } from '@/src/components/HonestNumber';
 import { Screen } from '@/src/components/Screen';
-import { EnergyChips } from '@/src/features/reward/EnergyChips';
+import { ContextQuestions } from '@/src/features/reward/ContextQuestions';
 import { HoneyBar } from '@/src/features/reward/HoneyBar';
-import { ReasonChips } from '@/src/features/reward/ReasonChips';
 import { GoalRewardFeedback } from '@/src/features/reward/GoalRewardFeedback';
 import { NotifSoftAskCard } from '@/src/features/reward/NotifSoftAskCard';
 import { RewardReaskRow } from '@/src/features/reward/RewardReaskRow';
@@ -148,16 +147,6 @@ export default function Reward() {
     gap: t.space[2.5], // medium tier — card internals (tightened with the row collapse)
   };
   const heroBlock: ViewStyle = { alignItems: 'center', gap: t.space[1.5] };
-  const questionsCard: ViewStyle = {
-    backgroundColor: t.colors.surface,
-    borderRadius: t.radii.card,
-    padding: t.space[4],
-    gap: t.space[3],
-  };
-  const questionsDivider: ViewStyle = {
-    height: 1,
-    backgroundColor: t.colors.hairline,
-  };
   const ctaBlock: ViewStyle = {
     // Not pinned: rides the bottom of the scroll flow. marginTop pushes it down
     // when content is short, collapses when it overflows — so nothing hides
@@ -248,23 +237,17 @@ export default function Reward() {
             Mutually exclusive with the card above; predicate in useNotifReask. */}
         <RewardReaskRow />
 
-        {/* Zone 4 — optional tags card: reason + energy grouped in one surface so
-            they read as a single "quick questions" section, not two orphan rows.
-            Card only renders when at least one tag section is active. */}
+        {/* Zone 4 — the "quick questions" card: reason (if diverged past the
+            gate) then energy, asked one at a time via ContextQuestions.
+            ContextQuestions owns its own card chrome (surface/radius/padding)
+            so it can unmount that chrome too once every question is settled —
+            it renders null rather than leaving an empty rounded box behind. */}
         {r.eventId ? (
-          <View style={questionsCard}>
-            {r.reasonDirection ? (
-              <>
-                <ReasonChips
-                  eventId={r.eventId}
-                  direction={r.reasonDirection}
-                  category={r.category}
-                />
-                <View style={questionsDivider} />
-              </>
-            ) : null}
-            <EnergyChips eventId={r.eventId} />
-          </View>
+          <ContextQuestions
+            eventId={r.eventId}
+            category={r.category}
+            reasonDirection={r.reasonDirection}
+          />
         ) : null}
 
         {/* CTA zone — rides the bottom of the flow (not pinned), single primary

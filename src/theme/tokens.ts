@@ -51,7 +51,11 @@ export const tokens = {
   // — that knob is 0 app-wide (cards run borderless) and a radio needs an edge.
   // `chooserRow` = minimum height of a chooser row: above the 44pt HIG floor with
   // room for the derived clock line underneath the label.
-  size: { control: { xxs: 28, xs: 32, sm: 36, md: 44, lg: 52 }, coin: 40, momentCoin: 30, checkCoin: 20, wheelCol: 72, wheelRow: 32, shareCard: 340, timelineCol: 110, planCardMin: 70, calTimeCol: 52, gripW: 14, hitSlop: 8, iconTap: { pad: 8, slopX: 8, slopY: 6 }, sparkline: 32, honestBand: 180, progressPill: 4, chipMinWidth: 120, quizTileWidth: '47%', emptyArt: 132, emptyCopy: 230, radio: { dot: 18, ring: 1.5, core: 8 }, chooserRow: 52 },
+  // `glyphDish` = the leading illustration well on a reward context-question
+  // option row (34px rounded-square). `optionRadio` = that same row's trailing
+  // single-select marker — a bigger sibling of `radio` (20px dot / 1.8 ring)
+  // tuned for the wider full-width row rather than a compact chooser line.
+  size: { control: { xxs: 28, xs: 32, sm: 36, md: 44, lg: 52 }, coin: 40, momentCoin: 30, checkCoin: 20, wheelCol: 72, wheelRow: 32, shareCard: 340, timelineCol: 110, planCardMin: 70, calTimeCol: 52, gripW: 14, hitSlop: 8, iconTap: { pad: 8, slopX: 8, slopY: 6 }, sparkline: 32, honestBand: 180, progressPill: 4, chipMinWidth: 120, quizTileWidth: '47%', emptyArt: 132, emptyCopy: 230, radio: { dot: 18, ring: 1.5, core: 8 }, chooserRow: 52, glyphDish: 34, optionRadio: { dot: 20, ring: 1.8, core: 9 } },
 
   // Icon sizing scale — replaces inline 12/16/18/20/22/24/30 across the app.
   iconSize: { xs: 12, sm: 16, md: 20, lg: 24, xl: 32, '2xl': 64 },
@@ -59,10 +63,12 @@ export const tokens = {
   // One honest radius set with clear semantics — every CARD uses `card`.
   //   sm   tags / small chips
   //   md   inputs, segmented controls
+  //   panel nested inset panels (e.g. the ripening ticket strip) — a step
+  //        between `md` and `card` since it lives INSIDE a card
   //   card all cards (one value, no exceptions)
   //   sheet modals / bottom sheets
   //   full true pills, FAB, dots, the tab indicator
-  radii: { none: 0, sm: 8, md: 12, card: 16, sheet: 20, full: 999 },
+  radii: { none: 0, sm: 8, md: 12, panel: 14, card: 16, sheet: 20, full: 999 },
 
   // `card` is the ONE knob for every card's edge — change it once to restyle (or
   // set 0 to remove) all card borders app-wide. hairline/thin/thick stay for
@@ -71,7 +77,12 @@ export const tokens = {
   // `share` = the ShareableCard's defined 1px edge. It is kept OFF the global card
   // knob on purpose: a shared image needs a visible edge against any background,
   // even when in-app cards run borderless.
-  borderWidth: { hairline: 0, thin: 0, thick: 2, card: 0, share: 1, chip: 1 },
+  // `selected` = the option-row inset selection ring on the reward
+  // context-question card (~1.5px, matches Chip's selection-border weight).
+  // `ghost` = the dashed border on empty-slot affordances (1.5px, semantic).
+  // `coin` = the honey-chip bottom coin-edge on the ripening ticket strip (a touch
+  // deeper than `thick` so a pill-sized chip still reads tactile).
+  borderWidth: { hairline: 0, thin: 0, thick: 2, card: 0, share: 1, chip: 1, selected: 1.5, ghost: 1.5, coin: 3 },
 
   // Replaces scattered 0.3 / 0.4 / 0.6 opacities. `rangeArc` = the faint amber
   // straddle arc on the Live-Timer ring marking the honest [low, high] spread.
@@ -104,6 +115,13 @@ export const tokens = {
     '2xs': 8, xs: 10, sm: 12, base: 14, md: 16, lg: 20, xl: 24, '2xl': 30, '3xl': 38,
     // finer steps the role scale needs
     crumb: 9, micro: 10, caption: 12, bodySm: 14, bodyLg: 16, titleSm: 18, subtitle: 22, title: 26, honestCard: 32, honestLg: 36, honest: 40, honestHero: 46, timerClock: 64, timer: 78,
+    // ghostWatermark = the oversized faint hex glyph behind the ripening ticket
+    // strip (RipeningProCard) — display-scale decoration, not legible text.
+    ghostWatermark: 88,
+    // ticketTitle/ticketSub = the ripening ticket strip's two-line copy block —
+    // sit a half-step below caption/micro so the strip reads compact next to
+    // the honey chip beside it.
+    ticketTitle: 13, ticketSub: 11,
   },
   fontWeight: { regular: '400', medium: '500', semibold: '600', bold: '700' },
   // `Menlo` is Apple-only — on Android an unknown family renders nothing, so the
@@ -156,6 +174,10 @@ export const tokens = {
     // primarySoft). Tones the guess down from a solid indigo block so Start is the
     // single filled indigo on Today. lineW = stroke width, gapW = clear gap between.
     gapStripe: { lineW: 2, gapW: 4 },
+    // tally = the ripening-card feature tally bar (RipeningProCard) — one rounded
+    // segment per Pro feature, thinner than the honey-fill `track` so the row of
+    // segments reads as a ticket-strip meter, not another progress bar.
+    tally: 5,
   },
 
   // The thin indigo left-edge on actionable Today rows (TaskRow) — a semantic
@@ -229,6 +251,8 @@ export const tokens = {
       // surfaceSunken: '#ECE8DE', // wells / inset tracks
       hairline: '#DAD5C9', // 1px internal dividers (reads at 3:1 non-text)
       border: '#CFC9BA', // stronger edge for cards that must read
+      ghostBorder: '#CFC8EA', // dashed border for empty-slot affordances
+      radio: '#CFC8EA', // unselected single-select marker ring (reward context questions)
       divider: 'rgba(0,0,0,0.10)', // section separator — a darker recessed line (not a tint)
       shineOverlay: 'rgba(255,255,255,0.55)', // inner top-edge specular (glass lift)
 
@@ -257,6 +281,8 @@ export const tokens = {
       honeyWash: '#FBF2DF', // solid warm panel — the honest-number hero surface (one continuous tint, no gradient seam)
       accentChip: '#F3E2C0', // solid warm chip (tier/status pill) — a step deeper than accentSoft
       accentCoin: 'rgba(238,174,77,0.32)', // tint disc that still reads on accentSoft
+      accentGhost: 'rgba(238,174,77,0.10)', // faint watermark hex behind the ripening ticket strip
+      sheenChip: 'rgba(255,255,255,0.35)', // top specular strip on the honey "Get Pro" chip
       // Amber rule for a boundary the eye should find but never be alarmed by —
       // the done-by line on the day timeline. Faint on purpose: running over is a
       // fact to read, not a warning to react to.
@@ -322,6 +348,8 @@ export const tokens = {
       taskCardBg: '#0F1016', // darker fill for draggable plan task rows (distinct from event rows)
       hairline: 'rgba(255,255,255,0.08)', // internal dividers only
       border: 'rgba(255,255,255,0.14)', // cards that must read
+      ghostBorder: 'rgba(255,255,255,0.18)', // dashed border for empty-slot affordances
+      radio: 'rgba(255,255,255,0.25)', // unselected single-select marker ring (reward context questions)
       divider: 'rgba(0,0,0,0.32)', // section separator — a darker recessed line on the deep bg
       shineOverlay: 'rgba(255,255,255,0.07)', // inner top-edge specular (glass lift)
 
@@ -353,6 +381,8 @@ export const tokens = {
       honeyWash: '#2B2620', // solid warm-dark panel — the honest-number hero surface (one continuous tint, no gradient seam)
       accentChip: '#2E2A20', // solid warm-dark chip (tier/status pill) — reads as a coin on the deep bg
       accentCoin: 'rgba(238,174,77,0.28)', // tint disc that still reads on accentSoft
+      accentGhost: 'rgba(238,174,77,0.07)', // faint watermark hex behind the ripening ticket strip
+      sheenChip: 'rgba(255,255,255,0.35)', // top specular strip on the honey "Get Pro" chip
       // See the light-mode note — same rule, same restraint.
       accentLine: 'rgba(238,174,77,0.28)',
       // RayBurst wedge fill — indigo lifted just off the deep bg (the #8 look).
@@ -437,6 +467,11 @@ export const tokens = {
   seal: { size: 38 },
   // Flat motes flicked outward on the cap (solid squares — no glow).
   mote: { size: 5, count: 8, distance: 96 },
+
+  // The Today "Your day so far" recap card's compact honey-ripeness readout —
+  // a hairline-height fill bar beneath the HONEY stat value (see HoneyBar for
+  // the fill approach this borrows: honeyWash track, accent fill).
+  miniHoneyBar: { height: 3, width: 56 },
 
   // Companion presence — the 6-stage Whenbee growth (Part 2 Group E). Both scales
   // are indexed by stage 1..6 (array index = stage - 1). They are pure geometry, so

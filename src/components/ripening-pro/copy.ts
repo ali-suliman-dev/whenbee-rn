@@ -10,18 +10,67 @@ export const RIPENING_COPY = {
   eyebrow: 'Pro · ripening',
   /** Prefix shown before the tier name in the pill, e.g. "Ripens at Sharpening". */
   pillPrefix: 'Ripens at',
-  /** Card headline. */
-  title: 'Your honest range',
-  /** One-line description of what the feature does once ready. */
-  sub: 'The range Whenbee will show you — once it has seen enough of your timing to mean something.',
-  /** Shown when the model is mid-calibration within this tier. */
+  /** Shown when the model is mid-calibration within this tier (RipeningBand, reveal state). */
   settling: 'Still settling…',
+  /** Ticket-strip title — the calm ownership frame, not a pitch. */
+  ticketTitle: 'Own Pro from day one',
+  /** Ticket-strip sub — states the mechanism plainly (opens, never "unlocks"). */
+  ticketSub: "Everything here lights up the moment it's ready.",
+  /** Honey chip label. No price text — RevenueCat owns that, on the paywall. */
+  chipLabel: 'Get Pro',
   /**
    * Footer under the ripening card. No imperative, no urgency.
    * Each log naturally sharpens the model; nothing for the user to "do".
    */
-  footer: 'Each task you log quietly sharpens the range. Nothing to keep up with.',
+  footer: 'No streak, no rush. Logging normally gets you there.',
 } as const;
+
+/**
+ * Header title + sub for the ripening state, keyed off how many Pro features
+ * are already ready out of the total shown. Pure — no store/hook access —
+ * so the three count bands are exhaustively unit-tested.
+ */
+export function ripeningHeaderCopy(
+  readyCount: number,
+  total: number,
+): { title: string; sub: string } {
+  if (readyCount === 0) {
+    return {
+      title: 'Your Pro features are on the way.',
+      sub: 'Each one opens once your logs can back it up.',
+    };
+  }
+  if (readyCount === 1) {
+    return {
+      title: 'Your first Pro feature is ready.',
+      sub: 'The rest open as you log more tasks.',
+    };
+  }
+  return {
+    title: `${readyCount} of ${total} Pro features are ready.`,
+    sub: 'The rest open as you log more tasks.',
+  };
+}
+
+/**
+ * "{k} logs to go" — the register shared by the next-up feature's pip number
+ * and status label. Singular-aware so "1 log to go" never reads as a typo.
+ */
+export function logsToGoLabel(remaining: number): string {
+  return `${remaining} log${remaining === 1 ? '' : 's'} to go`;
+}
+
+/**
+ * Status label for a not-yet-ready, not-next-up feature row. The two review
+ * features read in a calendar register ("about a week/month") since that is
+ * how the user thinks about them; every other log-gated feature reads in the
+ * same "N logs to go" register as the next-up pip, just with its own count.
+ */
+export function waitLabelFor(id: ProFeatureId, remainingLogs: number): string {
+  if (id === 'honest-week') return 'about a week';
+  if (id === 'honest-month') return 'about a month';
+  return logsToGoLabel(remainingLogs);
+}
 
 /**
  * Copy for the reveal state: calibration has crossed the threshold and

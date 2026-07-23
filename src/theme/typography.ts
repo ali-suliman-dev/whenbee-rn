@@ -22,6 +22,9 @@ export const type = {
   body: { fontFamily: 'Jakarta-Regular', fontSize: fs.base, lineHeight: 23 },
   bodySm: { fontFamily: 'Jakarta-Medium', fontSize: fs.caption, lineHeight: 20 },
   bodySmBold: { fontFamily: 'Jakarta-Bold', fontSize: fs.bodySm, lineHeight: 20 },
+  // Semibold sibling of `bodySmBold` — the option-row label weight the reward
+  // context questions want (semibold, not the heavier bold).
+  bodySmSemibold: { fontFamily: 'Jakarta-SemiBold', fontSize: fs.bodySm, lineHeight: 20 },
   caption: { fontFamily: 'Jakarta-Medium', fontSize: fs.caption, lineHeight: 18 },
   captionBold: { fontFamily: 'Jakarta-Bold', fontSize: fs.caption, lineHeight: 18 },
   micro: { fontFamily: 'Jakarta-Regular', fontSize: fs.micro, lineHeight: 16 },

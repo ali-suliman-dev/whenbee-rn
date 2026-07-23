@@ -12,7 +12,7 @@ export type ProFeatureId =
 /** Log-count thresholds at which each data-dependent Pro feature becomes
  *  meaningful (would show garbage earlier). 'confidence-band' is excluded: it is
  *  gated by confidence (pitchUnlocked), not by log count, so no threshold applies. */
-const FEATURE_MIN_LOGS: Record<Exclude<ProFeatureId, 'confidence-band'>, number> = {
+export const FEATURE_MIN_LOGS: Record<Exclude<ProFeatureId, 'confidence-band'>, number> = {
   'day-capacity': 8,
   'honest-week': 7,
   'honest-month': 20,

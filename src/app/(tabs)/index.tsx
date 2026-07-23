@@ -39,6 +39,8 @@ import { PlanButton } from '@/src/features/today/PlanButton';
 import { ShelfSection } from '@/src/features/today/ShelfSection';
 import { DayRecapCard } from '@/src/features/today/DayRecapCard';
 import { useDayRecap } from '@/src/features/today/useDayRecap';
+import { DaySoFarCard } from '@/src/features/today/DaySoFarCard';
+import { useDaySoFar } from '@/src/features/today/useDaySoFar';
 import { CapacityChip } from '@/src/features/today/CapacityChip';
 import { CalendarOverlaySection } from '@/src/features/today/CalendarOverlaySection';
 import { useDayCapacity } from '@/src/features/today/useDayCapacity';
@@ -103,6 +105,10 @@ export default function Today() {
 
   // Recap for past days — null when today or future.
   const recap = useDayRecap();
+  // "Your day so far" recap — null unless today reads sparse-done (nothing
+  // running, nothing queued, at least one thing logged). Mounted above
+  // DoneSection; unmounts plainly the moment a timer starts or a task queues.
+  const daySoFar = useDaySoFar({ done, totalCount, isToday });
 
   const isTimerRunning = useTimerStore((s) => s.isRunning);
   const runningTaskId = useTimerStore((s) => s.taskId);
@@ -500,6 +506,8 @@ export default function Today() {
                   refreshing={cap.refreshing}
                 />
 
+                {daySoFar ? <DaySoFarCard recap={daySoFar} /> : null}
+
                 {done.length > 0 ? (
                   <DoneSection
                     rows={done}
@@ -535,7 +543,8 @@ export default function Today() {
 
           {totalCount === 0 && !isTimerRunning ? null : (
             <RetroLogChip
-              label="Finished something else? Log it too"
+              firstText="Finished something else? "
+              secondText="Log it too"
               onPress={() => router.push('/(modals)/retro')}
             />
           )}
