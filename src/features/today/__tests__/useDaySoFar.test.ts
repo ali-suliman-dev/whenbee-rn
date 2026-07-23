@@ -1,15 +1,23 @@
 // src/features/today/__tests__/useDaySoFar.test.ts
 // TDD for useDaySoFar — wires the pure visibility rule to live store state
 // (useToday's done/upNext/totalCount, timerStore.isRunning, calibration stats),
-// and derives the lead-category honey/milestone data from the most recently
-// completed log.
+// and derives two DELIBERATELY separate pieces of data:
+//   - HONEY stat  = the OVERALL lead (most-ripened) category, same number the
+//                   Today avatar ring / Whenbee hub show (leadHoney.ts).
+//   - MILESTONE   = today's most recently completed log's category + its
+//                   logsToNextTier.
+// These can disagree (a category can be the day's most recent log without
+// being the account's overall highest-sharpness category) — several tests
+// below pin that distinction explicitly.
 
 import { renderHook } from '@testing-library/react-native';
 import { useDaySoFar } from '@/src/features/today/useDaySoFar';
 import { useCalibrationStore, type ReclaimSummary } from '@/src/stores/calibrationStore';
+import { useCategoriesStore } from '@/src/stores/categoriesStore';
 import { useDayTasksStore } from '@/src/stores/dayTasksStore';
 import { useTimerStore } from '@/src/stores/timerStore';
 import type { DayTask } from '@/src/engine/daySelectors';
+import { logsToNextTier } from '@/src/engine';
 
 jest.mock('expo-router', () => ({
   useFocusEffect: (cb: () => void | (() => void)) => cb(),
@@ -89,6 +97,7 @@ function makeQueued(overrides: { id: string; label: string; category: string; gu
 beforeEach(() => {
   useDayTasksStore.setState({ dayTasks: [], selectFocusTask: () => null });
   useCalibrationStore.setState({ logs: 0, statsByCategory: {} });
+  useCategoriesStore.setState({ categories: [] });
   useTimerStore.getState().cancel();
   stubStoreEffects();
 });
@@ -127,6 +136,7 @@ describe('useDaySoFar', () => {
         makeDone({ id: 'd1', label: 'Write doc', category: 'deep-work', guessMin: 30, actualMin: 35, completedAt: T0 + 1000 }),
       ],
     });
+    useCategoriesStore.setState({ categories: [{ id: 'deep-work', name: 'Deep Work', adaptSpeed: 'balanced' }] });
     useCalibrationStore.setState({ statsByCategory: { 'deep-work': { sharpness: 62, tier: 'Ripening', fit: { a: 0, b: 1 }, n: 4, mEffective: 1 } } });
 
     const { result } = renderHook(() => useDaySoFar());
@@ -154,11 +164,17 @@ describe('useDaySoFar', () => {
     expect(result.current?.totalMin).toBe(60); // 35 + 0 + 25
   });
 
-  it('picks the lead category from the most recently completed log, not the first-added one', () => {
+  it('MILESTONE tracks the most recently completed log, independent of the overall lead category (controller ruling)', () => {
     useDayTasksStore.setState({
       dayTasks: [
         makeDone({ id: 'd1', label: 'Older', category: 'admin', guessMin: 10, actualMin: 10, completedAt: T0 + 1000 }),
         makeDone({ id: 'd2', label: 'Newer', category: 'deep-work', guessMin: 20, actualMin: 20, completedAt: T0 + 9000 }),
+      ],
+    });
+    useCategoriesStore.setState({
+      categories: [
+        { id: 'admin', name: 'Admin', adaptSpeed: 'balanced' },
+        { id: 'deep-work', name: 'Deep Work', adaptSpeed: 'balanced' },
       ],
     });
     useCalibrationStore.setState({
@@ -170,14 +186,18 @@ describe('useDaySoFar', () => {
 
     const { result } = renderHook(() => useDaySoFar());
 
-    // The most recently COMPLETED log is d2 (deep-work), not the highest-sharpness
-    // category overall (admin) — this must not reuse leadHoney's "most-ripened
-    // cell" definition.
+    // MILESTONE: the most recently COMPLETED log is d2 (deep-work) — the
+    // milestone category + its logsToNextTier follow that, not the highest-
+    // sharpness category overall.
     expect(result.current?.leadCategoryLabel).toBe('Deep Work');
-    expect(result.current?.honeyPct).toBe(30);
+    expect(result.current?.logsToNextTier).toBe(logsToNextTier(30));
+    // HONEY: the OVERALL lead cell is admin (90 > 30) — same number leadHoney.ts
+    // (and the Today header ring) would report. This must NOT read 30
+    // (deep-work, the milestone category) — that was the pre-ruling bug.
+    expect(result.current?.honeyPct).toBe(90);
   });
 
-  it('defaults honeyPct to 0 for a category with no cached stat yet', () => {
+  it('defaults honeyPct to 0 for an untracked category with no cached stat yet', () => {
     useDayTasksStore.setState({
       dayTasks: [
         makeDone({ id: 'd1', label: 'First ever log', category: 'brand-new', guessMin: 10, actualMin: 10, completedAt: T0 + 1000 }),
@@ -185,5 +205,6 @@ describe('useDaySoFar', () => {
     });
     const { result } = renderHook(() => useDaySoFar());
     expect(result.current?.honeyPct).toBe(0);
+    expect(result.current?.leadCategoryLabel).toBe('Brand New');
   });
 });
