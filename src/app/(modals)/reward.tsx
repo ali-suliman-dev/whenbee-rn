@@ -7,6 +7,7 @@ import { HoneyBar } from '@/src/features/reward/HoneyBar';
 import { ReasonChips } from '@/src/features/reward/ReasonChips';
 import { GoalRewardFeedback } from '@/src/features/reward/GoalRewardFeedback';
 import { NotifSoftAskCard } from '@/src/features/reward/NotifSoftAskCard';
+import { RewardReaskRow } from '@/src/features/reward/RewardReaskRow';
 import { RewardBee } from '@/src/features/reward/RewardBee';
 import { useReward } from '@/src/features/reward/useReward';
 import { type } from '@/src/theme/typography';
@@ -238,9 +239,14 @@ export default function Reward() {
             never-negative). Renders only when a goal is active. */}
         {r.goalFeedback ? <GoalRewardFeedback feedback={r.goalFeedback} /> : null}
 
-        {/* Notification soft-ask — amber card, first calibration only, once.
+        {/* Notification soft-ask — first calibration only, once.
             Predicate is in useNotifSoftAsk; this renders null when not needed. */}
         <NotifSoftAskCard />
+
+        {/* Once-ever re-ask after a declined soft-ask — quiet row, only on a
+            qualifying moment (overrun receipt / permission granted elsewhere).
+            Mutually exclusive with the card above; predicate in useNotifReask. */}
+        <RewardReaskRow />
 
         {/* Zone 4 — optional tags card: reason + energy grouped in one surface so
             they read as a single "quick questions" section, not two orphan rows.
