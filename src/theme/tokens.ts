@@ -51,7 +51,11 @@ export const tokens = {
   // — that knob is 0 app-wide (cards run borderless) and a radio needs an edge.
   // `chooserRow` = minimum height of a chooser row: above the 44pt HIG floor with
   // room for the derived clock line underneath the label.
-  size: { control: { xxs: 28, xs: 32, sm: 36, md: 44, lg: 52 }, coin: 40, momentCoin: 30, checkCoin: 20, wheelCol: 72, wheelRow: 32, shareCard: 340, timelineCol: 110, planCardMin: 70, calTimeCol: 52, gripW: 14, hitSlop: 8, iconTap: { pad: 8, slopX: 8, slopY: 6 }, sparkline: 32, honestBand: 180, progressPill: 4, chipMinWidth: 120, quizTileWidth: '47%', emptyArt: 132, emptyCopy: 230, radio: { dot: 18, ring: 1.5, core: 8 }, chooserRow: 52 },
+  // `glyphDish` = the leading illustration well on a reward context-question
+  // option row (34px rounded-square). `optionRadio` = that same row's trailing
+  // single-select marker — a bigger sibling of `radio` (20px dot / 1.8 ring)
+  // tuned for the wider full-width row rather than a compact chooser line.
+  size: { control: { xxs: 28, xs: 32, sm: 36, md: 44, lg: 52 }, coin: 40, momentCoin: 30, checkCoin: 20, wheelCol: 72, wheelRow: 32, shareCard: 340, timelineCol: 110, planCardMin: 70, calTimeCol: 52, gripW: 14, hitSlop: 8, iconTap: { pad: 8, slopX: 8, slopY: 6 }, sparkline: 32, honestBand: 180, progressPill: 4, chipMinWidth: 120, quizTileWidth: '47%', emptyArt: 132, emptyCopy: 230, radio: { dot: 18, ring: 1.5, core: 8 }, chooserRow: 52, glyphDish: 34, optionRadio: { dot: 20, ring: 1.8, core: 9 } },
 
   // Icon sizing scale — replaces inline 12/16/18/20/22/24/30 across the app.
   iconSize: { xs: 12, sm: 16, md: 20, lg: 24, xl: 32, '2xl': 64 },
@@ -71,7 +75,9 @@ export const tokens = {
   // `share` = the ShareableCard's defined 1px edge. It is kept OFF the global card
   // knob on purpose: a shared image needs a visible edge against any background,
   // even when in-app cards run borderless.
-  borderWidth: { hairline: 0, thin: 0, thick: 2, card: 0, share: 1, chip: 1 },
+  // `selected` = the option-row inset selection ring on the reward
+  // context-question card (~1.5px, matches Chip's selection-border weight).
+  borderWidth: { hairline: 0, thin: 0, thick: 2, card: 0, share: 1, chip: 1, selected: 1.5 },
 
   // Replaces scattered 0.3 / 0.4 / 0.6 opacities. `rangeArc` = the faint amber
   // straddle arc on the Live-Timer ring marking the honest [low, high] spread.
@@ -229,6 +235,7 @@ export const tokens = {
       // surfaceSunken: '#ECE8DE', // wells / inset tracks
       hairline: '#DAD5C9', // 1px internal dividers (reads at 3:1 non-text)
       border: '#CFC9BA', // stronger edge for cards that must read
+      radio: '#CFC8EA', // unselected single-select marker ring (reward context questions)
       divider: 'rgba(0,0,0,0.10)', // section separator — a darker recessed line (not a tint)
       shineOverlay: 'rgba(255,255,255,0.55)', // inner top-edge specular (glass lift)
 
@@ -322,6 +329,7 @@ export const tokens = {
       taskCardBg: '#0F1016', // darker fill for draggable plan task rows (distinct from event rows)
       hairline: 'rgba(255,255,255,0.08)', // internal dividers only
       border: 'rgba(255,255,255,0.14)', // cards that must read
+      radio: 'rgba(255,255,255,0.25)', // unselected single-select marker ring (reward context questions)
       divider: 'rgba(0,0,0,0.32)', // section separator — a darker recessed line on the deep bg
       shineOverlay: 'rgba(255,255,255,0.07)', // inner top-edge specular (glass lift)
 

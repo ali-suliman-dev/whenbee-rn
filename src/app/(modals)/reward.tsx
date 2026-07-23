@@ -2,9 +2,8 @@ import { AppButton } from '@/src/components/AppButton';
 import { AppText } from '@/src/components/AppText';
 import { HonestNumber } from '@/src/components/HonestNumber';
 import { Screen } from '@/src/components/Screen';
-import { EnergyChips } from '@/src/features/reward/EnergyChips';
+import { ContextQuestions } from '@/src/features/reward/ContextQuestions';
 import { HoneyBar } from '@/src/features/reward/HoneyBar';
-import { ReasonChips } from '@/src/features/reward/ReasonChips';
 import { GoalRewardFeedback } from '@/src/features/reward/GoalRewardFeedback';
 import { NotifSoftAskCard } from '@/src/features/reward/NotifSoftAskCard';
 import { RewardBee } from '@/src/features/reward/RewardBee';
@@ -153,10 +152,6 @@ export default function Reward() {
     padding: t.space[4],
     gap: t.space[3],
   };
-  const questionsDivider: ViewStyle = {
-    height: 1,
-    backgroundColor: t.colors.hairline,
-  };
   const ctaBlock: ViewStyle = {
     // Not pinned: rides the bottom of the scroll flow. marginTop pushes it down
     // when content is short, collapses when it overflows — so nothing hides
@@ -242,22 +237,15 @@ export default function Reward() {
             Predicate is in useNotifSoftAsk; this renders null when not needed. */}
         <NotifSoftAskCard />
 
-        {/* Zone 4 — optional tags card: reason + energy grouped in one surface so
-            they read as a single "quick questions" section, not two orphan rows.
-            Card only renders when at least one tag section is active. */}
+        {/* Zone 4 — the "quick questions" card: reason (if diverged past the
+            gate) then energy, asked one at a time via ContextQuestions. */}
         {r.eventId ? (
           <View style={questionsCard}>
-            {r.reasonDirection ? (
-              <>
-                <ReasonChips
-                  eventId={r.eventId}
-                  direction={r.reasonDirection}
-                  category={r.category}
-                />
-                <View style={questionsDivider} />
-              </>
-            ) : null}
-            <EnergyChips eventId={r.eventId} />
+            <ContextQuestions
+              eventId={r.eventId}
+              category={r.category}
+              reasonDirection={r.reasonDirection}
+            />
           </View>
         ) : null}
 
