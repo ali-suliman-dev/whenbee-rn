@@ -446,6 +446,11 @@ export const tokens = {
   // Flat motes flicked outward on the cap (solid squares — no glow).
   mote: { size: 5, count: 8, distance: 96 },
 
+  // The Today "Your day so far" recap card's compact honey-ripeness readout —
+  // a hairline-height fill bar beneath the HONEY stat value (see HoneyBar for
+  // the fill approach this borrows: honeyWash track, accent fill).
+  miniHoneyBar: { height: 3, width: 56 },
+
   // Companion presence — the 6-stage Whenbee growth (Part 2 Group E). Both scales
   // are indexed by stage 1..6 (array index = stage - 1). They are pure geometry, so
   // they live mode-independent here (like `burst`); the per-stage DRIFT TINT colors
