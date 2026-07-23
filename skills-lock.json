@@ -1,6 +1,12 @@
 {
   "version": 1,
   "skills": {
+    "paywall-upgrade-cro": {
+      "source": "alirezarezvani/claude-skills",
+      "sourceType": "github",
+      "skillPath": "marketing-skill/skills/paywall-upgrade-cro/SKILL.md",
+      "computedHash": "a5f26b31280bd5887a5b33391ec790a2dd7fdad7089b31fa90227ccc6cfd590b"
+    },
     "terms-of-service": {
       "source": "shawnpang/startup-founder-skills",
       "sourceType": "github",

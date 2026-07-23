@@ -137,6 +137,34 @@ describe('Patterns screen', () => {
     expect(screen.getByText('One area reads honest now. The rest are catching up.')).toBeOnTheScreen();
   });
 
+  it('shows the quiz-seeded provisional archetype on a zero-log empty state', async () => {
+    const { useSettingsStore } = jest.requireActual<typeof import('@/src/stores/settingsStore')>(
+      '@/src/stores/settingsStore',
+    );
+    useSettingsStore.setState({ archetypeSeed: { m0: 2.2, source: 'quiz', tookAt: NOW } });
+    try {
+      setPatternsData({ categories: [], logs: [], nameOf: (id) => id });
+
+      render(<Patterns />);
+
+      await waitFor(() => {
+        // The onboarding time type shows even before the first log…
+        expect(screen.getByText('YOUR TIME PERSONALITY')).toBeOnTheScreen();
+      });
+      // Title renders in the card AND the off-screen ShareableCard copy.
+      expect(screen.getAllByText('The Dreamer').length).toBeGreaterThan(0);
+      // …with the trimmed footnote (no duplicate personality promise, no big empty hero).
+      expect(screen.queryByText('Your patterns are on the way')).toBeNull();
+      expect(
+        screen.getByText(
+          'Time a few tasks and this fills in with your sharpest category and the surprises worth noticing.',
+        ),
+      ).toBeOnTheScreen();
+    } finally {
+      useSettingsStore.setState({ archetypeSeed: undefined });
+    }
+  });
+
   it('shows the archetype placeholder for a logged-but-unearned user', async () => {
     setPatternsData({
       nameOf: (id) => id,

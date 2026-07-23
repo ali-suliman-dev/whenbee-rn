@@ -342,6 +342,11 @@ export default function AddTask() {
             <TimeField value={a.guessMin} onChange={a.setGuessMin} />
           </View>
 
+          {/* One-time coach tip — sits ABOVE the honest card so the reframe
+              ("guess the feel, we add reality") lands before the number does.
+              Shows on the very first suggestion, or on the chase move. */}
+          {a.antiChaseVisible ? <AntiChaseCoachCard onDismiss={a.dismissAntiChase} /> : null}
+
           {a.suggestion ? (
             <HonestSuggestionCard
               honestMinutes={a.suggestion.honestMinutes}
@@ -352,10 +357,6 @@ export default function AddTask() {
               categoryName={a.categories.find((c) => c.id === a.category)?.name}
             />
           ) : null}
-
-          {/* One-time anti-chase coach — appears under the honest card when the
-              user raises the guess toward/past the honest number. */}
-          {a.antiChaseVisible ? <AntiChaseCoachCard onDismiss={a.dismissAntiChase} /> : null}
 
           {/* Goal coach — read-only status + lever for this category's active goal.
               Never renders for free users (goals are Pro-gated at creation) and

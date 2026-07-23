@@ -1,0 +1,331 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Whenbee · Brainstorm v8 — P2 buy chip, four sharper cuts</title>
+<style>
+  .dk{
+    --bg:#14151D; --surface:#1F2130; --sunken:#15161F;
+    --ink:#F4F1EA; --inksoft:#ADA9B5; --inkfaint:rgba(244,241,234,.40);
+    --primary:#8275F0; --primary-edge:#6B5BE6; --primary-soft:rgba(130,117,240,.22);
+    --accent:#EEAE4D; --accent-edge:#C68A30; --accent-soft:rgba(238,174,77,.18); --honey-wash:#2B2620;
+    --amber-text:#EEAE4D; --hairline:rgba(255,255,255,.08); --on-amber:#20233A;
+    --r-card:16px; --r-sheet:20px;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;background:#1C1E2E;color:#F4F1EA;padding:40px 32px 80px}
+  h1{font-size:26px;letter-spacing:-0.5px;margin-bottom:6px}
+  .sub{color:#ADA9B5;font-size:14px;max-width:880px;line-height:1.55;margin-bottom:26px}
+  .row{display:flex;gap:34px;flex-wrap:wrap;align-items:flex-start;margin-bottom:8px}
+  .col{width:392px}
+  .dirlabel{font-size:15px;font-weight:700;margin:0 0 2px;letter-spacing:-0.2px}
+  .dirsub{font-size:12.5px;color:#ADA9B5;line-height:1.5;margin-bottom:12px;min-height:42px}
+  .notes{margin-top:12px;font-size:12.5px;color:#CFCAE0;line-height:1.55;background:#242436;border-radius:12px;padding:14px 16px}
+  .notes b{color:#F5C03F;font-weight:600}
+  .notes ul{margin:6px 0 0 16px}
+  .notes li{margin-bottom:4px}
+  .verdict{max-width:880px;font-size:13.5px;color:#E8E4F4;line-height:1.6;background:#2A2A40;border-left:3px solid #F5C03F;border-radius:10px;padding:14px 18px;margin:14px 0 8px}
+  .verdict b{color:#F5C03F}
+
+  .phone{width:392px;height:800px;border-radius:44px;overflow:hidden;position:relative;
+         box-shadow:0 18px 50px rgba(0,0,0,.5);border:6px solid #0c0c12;background:var(--bg);
+         display:flex;flex-direction:column}
+  .screen{flex:1;padding:54px 20px 0;overflow:hidden;position:relative;display:flex;flex-direction:column;gap:14px}
+  .notch{position:absolute;top:12px;left:50%;transform:translateX(-50%);width:110px;height:26px;background:#000;border-radius:20px;z-index:9}
+  .title{font-size:24px;font-weight:800;letter-spacing:-0.5px;color:var(--ink)}
+  .card{background:var(--surface);border-radius:var(--r-card);padding:14px 16px}
+  .sect{font-size:11px;letter-spacing:1.2px;font-weight:700;color:var(--inksoft)}
+  .tabbar{margin:auto -20px 0;padding:10px 22px 26px;display:flex;align-items:flex-end;justify-content:space-between;position:relative}
+  .tab{font-size:10.5px;color:var(--inksoft);text-align:center;width:56px}
+  .tab .ic{font-size:19px;display:block;margin-bottom:3px}
+  .tab.on{color:var(--primary)}
+  .fab{width:52px;height:52px;border-radius:16px;background:var(--primary);color:#fff;font-size:24px;
+       display:flex;align-items:center;justify-content:center;margin-top:-26px;box-shadow:0 6px 0 var(--primary-edge)}
+  .hub-hdr{display:flex;flex-direction:column;align-items:center;gap:4px;padding-top:2px}
+  .hub-bee{font-size:56px}
+  .hub-tier{font-size:12px;color:var(--inksoft)}
+
+  .rp-card{background:var(--surface);border-radius:var(--r-sheet);padding:16px;display:flex;flex-direction:column;gap:12px}
+  .rp-top{display:flex;justify-content:space-between;align-items:center}
+  .rp-eb{display:flex;align-items:center;gap:6px;font-size:10.5px;letter-spacing:1px;font-weight:700;color:var(--amber-text)}
+  .rp-pill{background:var(--accent-soft);color:var(--amber-text);font-size:10.5px;font-weight:700;padding:4px 10px;border-radius:999px}
+  .rp-title{font-size:19px;font-weight:800;color:var(--ink);letter-spacing:-0.3px}
+  .rp-sub{font-size:12.5px;color:var(--inksoft);line-height:1.5;margin-top:3px}
+  .rp-foot{font-size:11.5px;color:var(--inkfaint);line-height:1.5}
+  .tally{display:flex;align-items:center;gap:8px;margin-top:9px}
+  .segs{display:flex;gap:4px;flex:1}
+  .seg{height:5px;border-radius:3px;flex:1;background:var(--honey-wash)}
+  .seg.full{background:linear-gradient(90deg,#F5C03F,#EEAE4D)}
+  .seg.half{background:linear-gradient(90deg,#F5C03F 0 52%,#2B2620 52%)}
+  .tally .n{font-size:11.5px;font-weight:700;color:var(--amber-text)}
+  .ck-list{display:flex;flex-direction:column;gap:11px}
+  .ck-row{display:flex;align-items:center;gap:10px}
+  .ck-pip{width:20px;height:20px;border-radius:50%;flex:none;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:800}
+  .ck-pip.done{background:var(--accent);color:#1F2130}
+  .ck-pip.part{background:var(--surface);border:2px solid var(--accent);color:var(--amber-text)}
+  .ck-pip.wait{background:var(--sunken);border:1.5px solid var(--primary-soft)}
+  .ck-lab{font-size:13.5px;color:var(--ink);flex:1;font-weight:600}
+  .ck-lab.dim{color:var(--inkfaint);font-weight:500}
+  .ck-st{font-size:11.5px;color:var(--amber-text);font-weight:700}
+  .ck-st.dim{color:var(--inkfaint);font-weight:500}
+  .rp-hair{height:1px;background:var(--hairline)}
+
+  /* shared honey-material chip */
+  .hchip{background:linear-gradient(180deg,#F7C55C 0%,#EEAE4D 55%,#E8A138 100%);color:var(--on-amber);
+      font-size:13.5px;font-weight:800;letter-spacing:-0.1px;padding:11px 20px;border-radius:999px;
+      border-bottom:3px solid var(--accent-edge);white-space:nowrap;position:relative;overflow:hidden}
+  .hchip::after{content:"";position:absolute;left:8%;right:40%;top:2px;height:38%;border-radius:999px;
+      background:linear-gradient(180deg,rgba(255,255,255,.42),rgba(255,255,255,0));pointer-events:none}
+
+  /* A · glow row */
+  .gwrap{display:flex;align-items:center;gap:12px}
+  .gtxt{flex:1;font-size:11.5px;color:var(--inksoft);line-height:1.45}
+  .gtxt b{color:var(--ink)}
+  .glowbox{position:relative}
+  .glowbox::before{content:"";position:absolute;inset:-14px -18px;background:radial-gradient(ellipse at center,rgba(238,174,77,.28),transparent 68%);pointer-events:none}
+
+  /* B · ceremony */
+  .cwrap{display:flex;flex-direction:column;align-items:center;gap:9px;padding-top:2px}
+  .cline{font-size:13.5px;font-weight:700;color:var(--ink);text-align:center}
+  .csub{font-size:11.5px;color:var(--inksoft);text-align:center;margin-top:-4px}
+
+  /* C · trial anchor */
+  .twrap{display:flex;align-items:center;gap:12px}
+  .tleft{flex:1}
+  .tmain{font-size:13px;font-weight:700;color:var(--ink)}
+  .tsub{font-size:11px;color:var(--inkfaint);margin-top:2px}
+  .tbtncol{display:flex;flex-direction:column;align-items:center;gap:5px}
+  .tmicro{font-size:10px;color:var(--inkfaint)}
+
+  /* D · ticket */
+  .ticket{background:var(--sunken);border-radius:14px;padding:12px 14px;display:flex;align-items:center;gap:12px;position:relative;overflow:hidden}
+  .ticket .wm{position:absolute;right:-16px;top:-18px;font-size:88px;color:rgba(238,174,77,.07);pointer-events:none}
+  .ticket .tx{flex:1;position:relative}
+  .ticket .h{font-size:13px;font-weight:700;color:var(--ink)}
+  .ticket .s{font-size:11px;color:var(--inksoft);margin-top:2px;line-height:1.4}
+</style>
+</head>
+<body class="dk">
+
+<h1>Brainstorm v8 — P2, four sharper cuts</h1>
+<p class="sub">Same pinned concept: compact honey chip in the slot between checklist and footer, always tappable, never a lock.
+All four now use a <b>honey-material chip</b> (3-stop amber gradient + top sheen + coin edge) instead of the flat fill — the button itself is made of the thing being earned. Differences: layout, promise copy, and what sits beside the chip.</p>
+
+<div class="row">
+
+  <!-- A -->
+  <div class="col">
+    <p class="dirlabel">P2·A · Glow row (recommended)</p>
+    <p class="dirsub">Same row layout as pinned P2, upgraded: honey-material chip with a soft amber halo bleeding into the card — the one glowing object on the screen.</p>
+    <div class="phone"><div class="notch"></div><div class="screen">
+      <div class="hub-hdr"><div class="hub-bee">🐝</div><div class="title">Whenbee</div><div class="hub-tier">Ripening · 27% honey</div></div>
+      <div class="rp-card">
+        <div class="rp-top">
+          <div class="rp-eb">⬡ PRO · RIPENING</div>
+          <div class="rp-pill">Ripens at Ripening</div>
+        </div>
+        <div>
+          <div class="rp-title">Your first Pro feature is ready.</div>
+          <div class="rp-sub">The other three open as you log more tasks.</div>
+          <div class="tally">
+            <div class="segs"><div class="seg full"></div><div class="seg half"></div><div class="seg"></div><div class="seg"></div></div>
+            <div class="n">1 of 4</div>
+          </div>
+        </div>
+        <div class="ck-list">
+          <div class="ck-row"><div class="ck-pip done">✓</div><div class="ck-lab">Honest range</div><div class="ck-st">Ready</div></div>
+          <div class="ck-row"><div class="ck-pip part">2</div><div class="ck-lab">What steals your time</div><div class="ck-st">2 logs to go</div></div>
+          <div class="ck-row"><div class="ck-pip wait"></div><div class="ck-lab dim">When you're sharpest</div><div class="ck-st dim">5 logs to go</div></div>
+          <div class="ck-row"><div class="ck-pip wait"></div><div class="ck-lab dim">Day capacity check</div><div class="ck-st dim">about a week</div></div>
+        </div>
+        <div class="rp-hair"></div>
+        <div class="gwrap">
+          <div class="gtxt"><b>Own it from day one.</b> Every feature lights up the moment it's ready.</div>
+          <div class="glowbox"><div class="hchip">Get Pro</div></div>
+        </div>
+        <div class="rp-foot">No streak, no rush. Logging normally gets you there.</div>
+      </div>
+      <div class="card" style="opacity:.55"><div class="sect">YOUR AREAS</div></div>
+      <div class="tabbar">
+        <div class="tab"><span class="ic">⌂</span>Today</div>
+        <div class="tab"><span class="ic">▦</span>Routines</div>
+        <div class="fab">+</div>
+        <div class="tab on"><span class="ic">🐝</span>Whenbee</div>
+        <div class="tab"><span class="ic">〰</span>Patterns</div>
+      </div>
+    </div></div>
+    <div class="notes"><b>Details:</b>
+      <ul>
+        <li>Chip face = honey gradient + top sheen highlight + coin edge — reads as poured honey, not a flat pill. Halo (radial amber 28%→0) makes it the screen's one luminous object.</li>
+        <li>Promise split: bold hook ("Own it from day one.") + quiet mechanics line. Two beats, seven + eight words.</li>
+        <li>Build: gradient + edge are static styles; halo = one absolutely-positioned radial View. Press = existing scale dip; optional slow sheen sweep every ~8s (opacity-only, no movement of the chip).</li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- B -->
+  <div class="col">
+    <p class="dirlabel">P2·B · Centered ceremony</p>
+    <p class="dirsub">The offer gets its own centered beat: hook line, quiet sub, chip centered under them. More stage presence, still compact.</p>
+    <div class="phone"><div class="notch"></div><div class="screen">
+      <div class="hub-hdr"><div class="hub-bee">🐝</div><div class="title">Whenbee</div><div class="hub-tier">Ripening · 27% honey</div></div>
+      <div class="rp-card">
+        <div class="rp-top">
+          <div class="rp-eb">⬡ PRO · RIPENING</div>
+          <div class="rp-pill">Ripens at Ripening</div>
+        </div>
+        <div>
+          <div class="rp-title">Your first Pro feature is ready.</div>
+          <div class="rp-sub">The other three open as you log more tasks.</div>
+          <div class="tally">
+            <div class="segs"><div class="seg full"></div><div class="seg half"></div><div class="seg"></div><div class="seg"></div></div>
+            <div class="n">1 of 4</div>
+          </div>
+        </div>
+        <div class="ck-list">
+          <div class="ck-row"><div class="ck-pip done">✓</div><div class="ck-lab">Honest range</div><div class="ck-st">Ready</div></div>
+          <div class="ck-row"><div class="ck-pip part">2</div><div class="ck-lab">What steals your time</div><div class="ck-st">2 logs to go</div></div>
+          <div class="ck-row"><div class="ck-pip wait"></div><div class="ck-lab dim">When you're sharpest</div><div class="ck-st dim">5 logs to go</div></div>
+          <div class="ck-row"><div class="ck-pip wait"></div><div class="ck-lab dim">Day capacity check</div><div class="ck-st dim">about a week</div></div>
+        </div>
+        <div class="rp-hair"></div>
+        <div class="cwrap">
+          <div class="cline">Why wait for what's already yours?</div>
+          <div class="csub">Own Pro now. Each feature lights up the moment it's ready.</div>
+          <div class="glowbox"><div class="hchip">Get Pro</div></div>
+        </div>
+        <div class="rp-foot" style="text-align:center">No streak, no rush. Logging normally gets you there.</div>
+      </div>
+      <div class="card" style="opacity:.55"><div class="sect">YOUR AREAS</div></div>
+      <div class="tabbar">
+        <div class="tab"><span class="ic">⌂</span>Today</div>
+        <div class="tab"><span class="ic">▦</span>Routines</div>
+        <div class="fab">+</div>
+        <div class="tab on"><span class="ic">🐝</span>Whenbee</div>
+        <div class="tab"><span class="ic">〰</span>Patterns</div>
+      </div>
+    </div></div>
+    <div class="notes"><b>Details / risk:</b>
+      <ul>
+        <li>Hook is a question — "Why wait for what's already yours?" — the endowment flip (the tally above just PROVED it's already growing). Strongest single line of the set.</li>
+        <li>Centered block reads ceremonial, like the paywall's own rhythm — a preview of the purchase moment.</li>
+        <li>Risk: centered + question mark is the most "marketing" register of the four; check it against the card's calm voice on device.</li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- C -->
+  <div class="col">
+    <p class="dirlabel">P2·C · Trial-anchored</p>
+    <p class="dirsub">Risk-reversal at the point of tap: the chip carries the trial promise directly beneath it. Strings come from RevenueCat.</p>
+    <div class="phone"><div class="notch"></div><div class="screen">
+      <div class="hub-hdr"><div class="hub-bee">🐝</div><div class="title">Whenbee</div><div class="hub-tier">Ripening · 27% honey</div></div>
+      <div class="rp-card">
+        <div class="rp-top">
+          <div class="rp-eb">⬡ PRO · RIPENING</div>
+          <div class="rp-pill">Ripens at Ripening</div>
+        </div>
+        <div>
+          <div class="rp-title">Your first Pro feature is ready.</div>
+          <div class="rp-sub">The other three open as you log more tasks.</div>
+          <div class="tally">
+            <div class="segs"><div class="seg full"></div><div class="seg half"></div><div class="seg"></div><div class="seg"></div></div>
+            <div class="n">1 of 4</div>
+          </div>
+        </div>
+        <div class="ck-list">
+          <div class="ck-row"><div class="ck-pip done">✓</div><div class="ck-lab">Honest range</div><div class="ck-st">Ready</div></div>
+          <div class="ck-row"><div class="ck-pip part">2</div><div class="ck-lab">What steals your time</div><div class="ck-st">2 logs to go</div></div>
+          <div class="ck-row"><div class="ck-pip wait"></div><div class="ck-lab dim">When you're sharpest</div><div class="ck-st dim">5 logs to go</div></div>
+          <div class="ck-row"><div class="ck-pip wait"></div><div class="ck-lab dim">Day capacity check</div><div class="ck-st dim">about a week</div></div>
+        </div>
+        <div class="rp-hair"></div>
+        <div class="twrap">
+          <div class="tleft">
+            <div class="tmain">Try Pro free for a week.</div>
+            <div class="tsub">Keep it only if it earns its place.</div>
+          </div>
+          <div class="tbtncol">
+            <div class="hchip">Start free</div>
+            <div class="tmicro">then $·.·· /mo · from RevenueCat</div>
+          </div>
+        </div>
+        <div class="rp-foot">No streak, no rush. Logging normally gets you there.</div>
+      </div>
+      <div class="card" style="opacity:.55"><div class="sect">YOUR AREAS</div></div>
+      <div class="tabbar">
+        <div class="tab"><span class="ic">⌂</span>Today</div>
+        <div class="tab"><span class="ic">▦</span>Routines</div>
+        <div class="fab">+</div>
+        <div class="tab on"><span class="ic">🐝</span>Whenbee</div>
+        <div class="tab"><span class="ic">〰</span>Patterns</div>
+      </div>
+    </div></div>
+    <div class="notes"><b>Details / risk:</b>
+      <ul>
+        <li>"Try Pro free for a week. Keep it only if it earns its place." — pure risk-reversal in the app's honest voice; "earns its place" mirrors how the features themselves behave.</li>
+        <li>Label "Start free" converts harder than "Get Pro" when a trial exists (loss-free framing).</li>
+        <li>Price micro-line + trial length MUST come from the RevenueCat offering at runtime — never hardcoded, and hidden entirely if no trial intro offer is live.</li>
+        <li>Risk: most text in the slot; the card gains a second "reading zone".</li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- D -->
+  <div class="col">
+    <p class="dirlabel">P2·D · Ticket strip</p>
+    <p class="dirsub">The offer becomes an object: a sunken neutral strip with a giant ghost hex watermark, text left, honey chip right. Contained, collectible-feeling.</p>
+    <div class="phone"><div class="notch"></div><div class="screen">
+      <div class="hub-hdr"><div class="hub-bee">🐝</div><div class="title">Whenbee</div><div class="hub-tier">Ripening · 27% honey</div></div>
+      <div class="rp-card">
+        <div class="rp-top">
+          <div class="rp-eb">⬡ PRO · RIPENING</div>
+          <div class="rp-pill">Ripens at Ripening</div>
+        </div>
+        <div>
+          <div class="rp-title">Your first Pro feature is ready.</div>
+          <div class="rp-sub">The other three open as you log more tasks.</div>
+          <div class="tally">
+            <div class="segs"><div class="seg full"></div><div class="seg half"></div><div class="seg"></div><div class="seg"></div></div>
+            <div class="n">1 of 4</div>
+          </div>
+        </div>
+        <div class="ck-list">
+          <div class="ck-row"><div class="ck-pip done">✓</div><div class="ck-lab">Honest range</div><div class="ck-st">Ready</div></div>
+          <div class="ck-row"><div class="ck-pip part">2</div><div class="ck-lab">What steals your time</div><div class="ck-st">2 logs to go</div></div>
+          <div class="ck-row"><div class="ck-pip wait"></div><div class="ck-lab dim">When you're sharpest</div><div class="ck-st dim">5 logs to go</div></div>
+          <div class="ck-row"><div class="ck-pip wait"></div><div class="ck-lab dim">Day capacity check</div><div class="ck-st dim">about a week</div></div>
+        </div>
+        <div class="ticket">
+          <div class="wm">⬢</div>
+          <div class="tx">
+            <div class="h">Own Pro from day one</div>
+            <div class="s">Everything here lights up the moment it's ready.</div>
+          </div>
+          <div class="hchip">Get Pro</div>
+        </div>
+        <div class="rp-foot">No streak, no rush. Logging normally gets you there.</div>
+      </div>
+      <div class="card" style="opacity:.55"><div class="sect">YOUR AREAS</div></div>
+      <div class="tabbar">
+        <div class="tab"><span class="ic">⌂</span>Today</div>
+        <div class="tab"><span class="ic">▦</span>Routines</div>
+        <div class="fab">+</div>
+        <div class="tab on"><span class="ic">🐝</span>Whenbee</div>
+        <div class="tab"><span class="ic">〰</span>Patterns</div>
+      </div>
+    </div></div>
+    <div class="notes"><b>Details / risk:</b>
+      <ul>
+        <li>Strip is NEUTRAL sunken (not amber — the slab lesson); warmth = the ghost hex watermark at 7% and the chip itself.</li>
+        <li>Reads as a thing you could own — ticket/pass grammar — which is exactly the pitch.</li>
+        <li>Risk: closest cousin of the killed slab; lives or dies on the watermark staying whisper-quiet.</li>
+      </ul>
+    </div>
+  </div>
+</div>
+
+<div class="verdict"><b>Recommendation — P2·A glow row.</b> Keeps the pinned layout, upgrades the object: honey-gradient chip + sheen + a soft halo makes it the one luminous thing on a dark screen — sexy by light, not by size. P2·B has the best single line ("Why wait for what's already yours?") — steal it into A's hook slot if you want more tease. P2·C is the conversion-max play once the RC trial is live (label "Start free" + price micro from the offering). P2·D is the mood piece; keep only if the watermark reads quiet on device. All four: same chip component, honest pitch, no locks, prices from RevenueCat.</div>
+
+</body>
+</html>

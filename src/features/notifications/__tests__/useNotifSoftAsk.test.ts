@@ -5,6 +5,7 @@
 import { renderHook, act } from '@testing-library/react-native';
 import { kv } from '@/src/lib/kv';
 import { useCalibrationStore } from '@/src/stores/calibrationStore';
+import { useSettingsStore } from '@/src/stores/settingsStore';
 import { useNotifSoftAsk } from '../useNotifSoftAsk';
 
 // ── service mocks ──────────────────────────────────────────────────────────────
@@ -52,6 +53,7 @@ beforeEach(() => {
   mockGetPermStatus.mockReset();
   mockEnsurePerm.mockReset();
   mockEnsurePerm.mockResolvedValue(true);
+  useSettingsStore.setState({ remindersEnabled: false });
   // Default: lifetime = 0 (no calibrations ever).
   const mockLoadReclaimSummary = jest.fn().mockResolvedValue(makeReclaimSummary(0));
   useCalibrationStore.setState({ loadReclaimSummary: mockLoadReclaimSummary });
@@ -169,6 +171,30 @@ describe('useNotifSoftAsk — actions', () => {
     expect(mockEnsurePerm).toHaveBeenCalledTimes(1);
     // KV persists the accepted state.
     expect(kv.getString('whenbee.notifSoftAsk')).toBe('accepted');
+  });
+
+  // Regression (2026-07-23): accepting the soft-ask granted the OS permission but
+  // never flipped the app's master remindersEnabled setting — so the promised
+  // "gentle nudge when a timer ends" never fired and Settings showed Reminders OFF.
+  it('onAccept turns the master Reminders setting ON when the OS grants permission', async () => {
+    setupShowEnv();
+    const { result } = renderHook(() => useNotifSoftAsk());
+    await act(async () => {});
+
+    await act(async () => { await result.current.onAccept(); });
+
+    expect(useSettingsStore.getState().remindersEnabled).toBe(true);
+  });
+
+  it('onAccept leaves Reminders OFF when the OS denies permission', async () => {
+    setupShowEnv();
+    mockEnsurePerm.mockResolvedValue(false);
+    const { result } = renderHook(() => useNotifSoftAsk());
+    await act(async () => {});
+
+    await act(async () => { await result.current.onAccept(); });
+
+    expect(useSettingsStore.getState().remindersEnabled).toBe(false);
   });
 
   it('onDecline hides the card and does NOT call ensureNotificationPermission', async () => {

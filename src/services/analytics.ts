@@ -103,6 +103,8 @@ export interface AppEventProps {
   notif_softask_shown: Record<string, never>;
   notif_softask_accepted: Record<string, never>;
   notif_softask_declined: Record<string, never>;
+  /** Once-ever re-ask after a declined soft-ask (overrun receipt / granted piggyback). */
+  notif_reask: { action: 'shown' | 'accepted' | 'dismissed'; trigger: 'overrun' | 'granted' | null };
 
   // ── Whenbee personalization ──────────────────────────────────────────────────
   whenbee_personalized: { attribute: string; skipped: boolean };

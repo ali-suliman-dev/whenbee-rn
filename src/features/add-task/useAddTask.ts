@@ -218,6 +218,17 @@ export function useAddTask(initialTitle?: string, editId?: string): UseAddTaskRe
     };
   }, [category, loadGoalCoach]);
 
+  // Once-ever coach tip: surface it the FIRST time a hunch/honest suggestion
+  // appears at all (a brand-new user planning their first task must see it —
+  // the chase-move trigger below alone never fires for them), then never again.
+  const hasSuggestion = suggestion !== null;
+  useEffect(() => {
+    if (!hasSuggestion || antiChaseVisible) return;
+    if (kv.getString(ANTI_CHASE_SEEN_KEY) === '1') return;
+    setAntiChaseVisible(true);
+    kv.set(ANTI_CHASE_SEEN_KEY, '1');
+  }, [hasSuggestion, antiChaseVisible]);
+
   // Wrapped guess setter — before applying the new value, check whether the user
   // just raised their guess to/past the honest number (the chase move). If so, and
   // they've never seen it, surface the one-time anti-chase coach and persist the

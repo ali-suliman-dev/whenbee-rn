@@ -1,14 +1,18 @@
 // src/features/reward/NotifSoftAskCard.tsx
-// Post-calibration notification soft-ask card. Amber-tinted, never competing
-// as the screen's primary CTA. Opacity-only entrance (no translate/bounce).
-// Reduced-motion → rendered at final opacity with no transition.
+// Post-calibration notification soft-ask card. Follows the hub's gentle-card
+// grammar (BlindSpotCard / LifeDriftCard): white surface, sunken icon tile,
+// eyebrow + ink title, muted body. Amber lives ONLY in the CTA; the decline is
+// a quiet text link so it never competes with the screen's primary CTA.
+// Opacity-only entrance (no translate/bounce). Reduced-motion → final opacity.
 
 import { AppButton } from '@/src/components/AppButton';
+import { Card } from '@/src/components/Card';
 import { useNotifSoftAsk } from '@/src/features/notifications/useNotifSoftAsk';
 import { type } from '@/src/theme/typography';
 import { useTheme } from '@/src/theme/useTheme';
+import { Ionicons } from '@expo/vector-icons';
 import { useEffect } from 'react';
-import { Text, View, type TextStyle, type ViewStyle } from 'react-native';
+import { Pressable, Text, View, type TextStyle, type ViewStyle } from 'react-native';
 import Animated, {
   useAnimatedStyle,
   useReducedMotion,
@@ -18,12 +22,16 @@ import Animated, {
 
 // ──────────────────────────────────────────────────────────────────────────────
 // NotifSoftAskCard — renders only when the show-predicate is met:
-//   • first completed calibration (logs === 1)
+//   • first completed calibration (lifetimeNectar === 1)
 //   • soft-ask state is 'pending'
 //   • OS notification permission is undetermined
 //
-// Buttons are secondary (amber + ghost) — the screen's primary "See your bee"
-// CTA is untouched.
+// Layout (cohesive with BlindSpotCard — same sunken tile + eyebrow/title head):
+//   [🔔 tile]  ONE TAP, WHEN IT COUNTS
+//              A quiet ping at your honest finish
+//   When a timer hits your real number, not your guess, …
+//   [ Turn on the ping ]  (amber, the card's only color)
+//         Not now
 // ──────────────────────────────────────────────────────────────────────────────
 
 export function NotifSoftAskCard() {
@@ -48,47 +56,75 @@ export function NotifSoftAskCard() {
 
   if (!show) return null;
 
-  const card: ViewStyle = {
-    backgroundColor: t.colors.accentSoft,
-    borderRadius: t.radii.card,
-    padding: t.space[4],
-    gap: t.space[3],
+  const eyebrow: TextStyle = {
+    ...(type.eyebrow as unknown as TextStyle),
+    color: t.colors.inkFaint,
   };
-  const bodyText: TextStyle = {
-    ...(type.bodySm as unknown as TextStyle),
-    color: t.colors.amberText,
+  const title: TextStyle = { ...(type.heading as unknown as TextStyle), color: t.colors.ink };
+  const body: TextStyle = { ...(type.bodySm as unknown as TextStyle), color: t.colors.inkSoft };
+  const declineText: TextStyle = {
+    ...(type.caption as unknown as TextStyle),
+    textDecorationLine: 'underline',
+    color: t.colors.inkSoft,
+    textAlign: 'center',
   };
-  const buttonRow: ViewStyle = {
-    flexDirection: 'row',
-    gap: t.space[3],
+
+  const tile: ViewStyle = {
+    width: t.size.coin,
+    height: t.size.coin,
+    borderRadius: t.radii.md,
+    borderCurve: 'continuous',
+    backgroundColor: t.colors.surfaceSunken,
+    alignItems: 'center',
+    justifyContent: 'center',
+  };
+  const group: ViewStyle = { gap: t.space[1.5] };
+  const headRow: ViewStyle = { flexDirection: 'row', alignItems: 'center', gap: t.space[3] };
+  const titleCol: ViewStyle = { flex: 1, gap: t.space[0.5] };
+  const decline: ViewStyle = {
+    alignSelf: 'center',
+    justifyContent: 'center',
+    minHeight: t.size.control.sm,
+    paddingHorizontal: t.space[2],
   };
 
   return (
     <Animated.View style={animStyle}>
-      <View style={card}>
-        <Text style={bodyText}>
-          Want a gentle nudge when a timer ends? No streaks, no scolding — just the honest
-          number when it counts.
-        </Text>
-        <View style={buttonRow}>
-          <View style={{ flex: 1 }}>
-            <AppButton
-              label="Sounds good"
-              variant="amber"
-              fullWidth
-              onPress={() => { void onAccept(); }}
-            />
+      <Card style={{ gap: t.space[5] }}>
+        <View style={group}>
+          <View style={headRow}>
+            <View style={tile}>
+              <Ionicons name="notifications-outline" size={t.iconSize.sm} color={t.colors.ink} />
+            </View>
+            <View style={titleCol}>
+              <Text style={eyebrow}>One tap, when it counts</Text>
+              <Text style={title}>A quiet ping at your honest finish</Text>
+            </View>
           </View>
-          <View style={{ flex: 1 }}>
-            <AppButton
-              label="Not now"
-              variant="ghost"
-              fullWidth
-              onPress={onDecline}
-            />
-          </View>
+          <Text style={body}>
+            When a timer hits your real number, not your guess, Whenbee taps you once. No streaks,
+            no scolding.
+          </Text>
         </View>
-      </View>
+
+        <View style={{ gap: t.space[3] }}>
+          <AppButton
+            label="Turn on the ping"
+            variant="amber"
+            fullWidth
+            onPress={() => { void onAccept(); }}
+          />
+          <Pressable
+            onPress={onDecline}
+            hitSlop={t.size.hitSlop}
+            accessibilityRole="button"
+            accessibilityLabel="Not now"
+            style={decline}
+          >
+            <Text style={declineText}>Not now</Text>
+          </Pressable>
+        </View>
+      </Card>
     </Animated.View>
   );
 }

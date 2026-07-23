@@ -55,13 +55,13 @@ export function AntiChaseCoachCard({ onDismiss }: { onDismiss: () => void }) {
     <Animated.View
       entering={FadeIn.duration(t.motion.base)}
       style={card}
-      accessibilityLabel="No need to pad your guess. Guess how long it feels — we add the reality part."
+      accessibilityLabel="No need to pad it yourself. Guess how long it feels, and Whenbee adds the reality part."
     >
       <View style={coin}>
         <Ionicons name="bulb-outline" size={t.iconSize.md} color={t.colors.primary} />
       </View>
       <AppText style={body}>
-        No need to pad it yourself — just guess how long it feels. We add the reality part.
+        No need to pad it yourself. Guess how long it feels, and Whenbee adds the reality part.
       </AppText>
       <Pressable
         onPress={onDismiss}
