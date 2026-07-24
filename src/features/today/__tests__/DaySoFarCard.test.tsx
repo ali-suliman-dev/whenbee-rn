@@ -8,35 +8,35 @@ import type { DaySoFar } from '@/src/features/today/useDaySoFar';
 function makeRecap(overrides: Partial<DaySoFar> = {}): DaySoFar {
   return {
     completedCount: 1,
+    guessedMin: 25,
     totalMin: 35,
-    honeyPct: 62,
-    leadCategoryLabel: 'Deep Work',
-    logsToNextTier: 3,
     ...overrides,
   };
 }
 
 describe('DaySoFarCard', () => {
-  it('renders the singular count line + real-minutes phrase', () => {
-    render(<DaySoFarCard recap={makeRecap({ completedCount: 1, totalMin: 1 })} />);
+  it('renders the singular count line + guessed/honest headline', () => {
+    render(<DaySoFarCard recap={makeRecap({ completedCount: 1, guessedMin: 1, totalMin: 1 })} />);
     expect(screen.getByText(/One honest log in\./)).toBeOnTheScreen();
-    expect(screen.getByText('1 real minute')).toBeOnTheScreen();
+    expect(screen.getByText(/Guessed 1m, really took/)).toBeOnTheScreen();
   });
 
-  it('renders the plural count line + real-minutes phrase', () => {
-    render(<DaySoFarCard recap={makeRecap({ completedCount: 3, totalMin: 90 })} />);
+  it('renders the plural count line + h/m totals in the headline', () => {
+    render(<DaySoFarCard recap={makeRecap({ completedCount: 3, guessedMin: 100, totalMin: 130 })} />);
     expect(screen.getByText(/3 honest logs in\./)).toBeOnTheScreen();
-    expect(screen.getByText('90 real minutes')).toBeOnTheScreen();
+    expect(screen.getByText(/Guessed 1h 40m, really took/)).toBeOnTheScreen();
   });
 
-  it('renders the LOGGED / REALLY TOOK / HONEY stat values', () => {
-    render(<DaySoFarCard recap={makeRecap({ completedCount: 2, totalMin: 50, honeyPct: 40 })} />);
+  it('renders the LOGGED / GUESSED / HONEST stat values in h/m', () => {
+    render(<DaySoFarCard recap={makeRecap({ completedCount: 2, guessedMin: 100, totalMin: 130 })} />);
     expect(screen.getByText('LOGGED')).toBeOnTheScreen();
-    expect(screen.getByText('REALLY TOOK')).toBeOnTheScreen();
-    expect(screen.getByText('HONEY')).toBeOnTheScreen();
+    expect(screen.getByText('GUESSED')).toBeOnTheScreen();
+    expect(screen.getByText('HONEST')).toBeOnTheScreen();
     expect(screen.getByText('2')).toBeOnTheScreen();
-    expect(screen.getByText('50')).toBeOnTheScreen();
-    expect(screen.getByText('40')).toBeOnTheScreen();
+    // "1h 40m" (GUESSED stat) and "2h 10m" (HONEST stat + the accent headline
+    // span) — the latter renders twice, so assert at least one of each.
+    expect(screen.getAllByText('1h 40m').length).toBeGreaterThanOrEqual(1);
+    expect(screen.getAllByText('2h 10m').length).toBeGreaterThanOrEqual(1);
   });
 
   it('uses singular "task" unit at count 1 and "tasks" otherwise', () => {
@@ -46,14 +46,17 @@ describe('DaySoFarCard', () => {
     expect(screen.getByText('tasks')).toBeOnTheScreen();
   });
 
-  it('renders the countdown milestone line when a next tier exists', () => {
-    render(<DaySoFarCard recap={makeRecap({ leadCategoryLabel: 'Deep Work', logsToNextTier: 3 })} />);
-    expect(screen.getByText(/~3 more logs and Deep Work settles in\./)).toBeOnTheScreen();
+  it('states the over-guess gap milestone', () => {
+    render(<DaySoFarCard recap={makeRecap({ guessedMin: 100, totalMin: 130 })} />);
+    // The "+30m over" prefix is a separate bold Text node; assert the remainder.
+    expect(screen.getByText(/your guess today — that gap is what Whenbee's learning\./)).toBeOnTheScreen();
+    expect(screen.getByText('+30m over')).toBeOnTheScreen();
   });
 
-  it('renders the top-tier fallback line when there is no next tier', () => {
-    render(<DaySoFarCard recap={makeRecap({ leadCategoryLabel: 'Deep Work', logsToNextTier: 0 })} />);
-    expect(screen.getByText('Every log keeps Deep Work sharp.')).toBeOnTheScreen();
+  it('celebrates an under-guess day', () => {
+    render(<DaySoFarCard recap={makeRecap({ guessedMin: 120, totalMin: 90 })} />);
+    expect(screen.getByText(/your guess today — nicely called\./)).toBeOnTheScreen();
+    expect(screen.getByText('30m under')).toBeOnTheScreen();
   });
 
   it('renders the eyebrow', () => {

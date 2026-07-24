@@ -1,4 +1,4 @@
-import { daySoFarVisible, countLine, minutesPhrase, milestoneText } from '../daySoFar';
+import { daySoFarVisible, countLine, gapMilestone } from '../daySoFar';
 
 describe('daySoFarVisible', () => {
   // All 8 combinations of the 3 booleans (unfinishedCount and completedCount are
@@ -35,33 +35,28 @@ describe('countLine', () => {
   });
 });
 
-describe('minutesPhrase', () => {
-  it('singular for exactly one minute', () => {
-    expect(minutesPhrase(1)).toBe('1 real minute');
-  });
-  it('pluralizes for zero or more than one', () => {
-    expect(minutesPhrase(0)).toBe('0 real minutes');
-    expect(minutesPhrase(2)).toBe('2 real minutes');
-    expect(minutesPhrase(145)).toBe('145 real minutes');
-  });
-});
-
-describe('milestoneText', () => {
-  it('reads the count-down to the next tier when one exists', () => {
-    expect(milestoneText('Deep Work', 3)).toEqual({
-      text: '~3 more logs and Deep Work settles in.',
-      boldPrefix: '~3 more logs',
+describe('gapMilestone', () => {
+  it('frames an over-guess day as the gap Whenbee is learning (amber fact, no scold)', () => {
+    expect(gapMilestone(100, 130)).toEqual({
+      text: "+30m over your guess today — that gap is what Whenbee's learning.",
+      boldPrefix: '+30m over',
     });
   });
-  it('singular-safe at k=1 (still "logs", not "log" — matches spec copy exactly)', () => {
-    expect(milestoneText('Errands', 1)).toEqual({
-      text: '~1 more logs and Errands settles in.',
-      boldPrefix: '~1 more logs',
+  it('formats the over gap in h/m for longer overruns', () => {
+    expect(gapMilestone(60, 155)).toEqual({
+      text: "+1h 35m over your guess today — that gap is what Whenbee's learning.",
+      boldPrefix: '+1h 35m over',
     });
   });
-  it('falls back to the top-tier line when there is no next tier (k <= 0)', () => {
-    expect(milestoneText('Deep Work', 0)).toEqual({
-      text: 'Every log keeps Deep Work sharp.',
+  it('celebrates an under-guess day', () => {
+    expect(gapMilestone(120, 90)).toEqual({
+      text: '30m under your guess today — nicely called.',
+      boldPrefix: '30m under',
+    });
+  });
+  it('reads spot-on with no bold span when guess equals honest', () => {
+    expect(gapMilestone(45, 45)).toEqual({
+      text: 'Spot on your guess today.',
       boldPrefix: null,
     });
   });

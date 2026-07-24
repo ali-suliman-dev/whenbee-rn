@@ -5,6 +5,8 @@
 //
 // No guilt. This is a recap, not a score — copy never implies "should have".
 
+import { fmtHm } from '@/src/lib/time';
+
 /**
  * Visible only on a sparse-done day: nothing running, nothing still queued,
  * and at least one thing already logged. A timer start or a newly-added task
@@ -24,27 +26,30 @@ export function countLine(completedCount: number): string {
   return completedCount === 1 ? 'One honest log in.' : `${completedCount} honest logs in.`;
 }
 
-/** "1 real minute" / "{n} real minutes" (0 and 2+ both pluralize). */
-export function minutesPhrase(totalMin: number): string {
-  return totalMin === 1 ? '1 real minute' : `${totalMin} real minutes`;
-}
-
 export interface MilestoneCopy {
   /** Full milestone line. */
   text: string;
-  /** The leading bold span within `text` ("~{k} more logs"), or null at the top tier. */
+  /** The leading bold span within `text` (the gap phrase), or null when spot-on. */
   boldPrefix: string | null;
 }
 
 /**
- * "~{k} more logs and {category} settles in." when a next tier exists, or the
- * top-tier fallback "Every log keeps {category} sharp." when it doesn't
- * (k <= 0 — no next tier to count down to).
+ * States today's guess-vs-honest gap as a calm fact — never a scold (no guilt).
+ * The gap IS the signal Whenbee learns from, so the copy frames it as progress:
+ *   - over  ("+Xh Ym over"): the optimism the model is trimming.
+ *   - under ("Xh Ym under"): a win — "nicely called".
+ *   - equal: "Spot on your guess today." (no bold span).
+ * Durations render via fmtHm so they match the stat row + capacity chip.
  */
-export function milestoneText(category: string, logsToNextTier: number): MilestoneCopy {
-  if (logsToNextTier <= 0) {
-    return { text: `Every log keeps ${category} sharp.`, boldPrefix: null };
+export function gapMilestone(guessedMin: number, totalMin: number): MilestoneCopy {
+  const delta = totalMin - guessedMin;
+  if (delta === 0) {
+    return { text: 'Spot on your guess today.', boldPrefix: null };
   }
-  const boldPrefix = `~${logsToNextTier} more logs`;
-  return { text: `${boldPrefix} and ${category} settles in.`, boldPrefix };
+  if (delta > 0) {
+    const boldPrefix = `+${fmtHm(delta)} over`;
+    return { text: `${boldPrefix} your guess today — that gap is what Whenbee's learning.`, boldPrefix };
+  }
+  const boldPrefix = `${fmtHm(-delta)} under`;
+  return { text: `${boldPrefix} your guess today — nicely called.`, boldPrefix };
 }

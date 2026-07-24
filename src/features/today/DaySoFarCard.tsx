@@ -3,20 +3,25 @@
 // (see useDaySoFar / daySoFar.ts for the visibility rule). Tells the day's
 // story from real logged values only; nothing here is fabricated.
 //
+// The card's whole job: put today's GUESSED total beside the HONEST total so
+// the optimism gap is visible where you plan. All stat numbers stay ink/white;
+// a small dot on each label carries which side (indigo = guessed, amber =
+// honest). The honey % stat it replaced already lived in the header ring.
+//
 // Design constraints:
 //   - Tokens only. No inline hex or raw px.
 //   - Flat surface card, no shadow, matching sibling Today cards.
 //   - Opacity-fade entrance only; plain unmount (no exiting animation).
-//   - The ONE founder-approved accent-text exception: the "{n} real minutes"
-//     span in the headline renders in `t.colors.accent`. Every other run of
-//     text stays ink/inkSoft/inkFaint.
+//   - The ONE founder-approved accent-text exception: the honest-total span in
+//     the headline renders in `t.colors.accent`. Every other run of text stays
+//     ink/inkSoft/inkFaint.
 
-import type { ReactNode } from 'react';
 import { View, Text, type ViewStyle, type TextStyle } from 'react-native';
 import Animated, { FadeIn } from 'react-native-reanimated';
 import { useTheme } from '@/src/theme/useTheme';
 import { type } from '@/src/theme/typography';
-import { countLine, minutesPhrase, milestoneText } from '@/src/features/today/daySoFar';
+import { fmtHm } from '@/src/lib/time';
+import { countLine, gapMilestone } from '@/src/features/today/daySoFar';
 import type { DaySoFar } from '@/src/features/today/useDaySoFar';
 
 // ──────────────────────────────────────────────────────────────────────────────
@@ -27,15 +32,18 @@ import type { DaySoFar } from '@/src/features/today/useDaySoFar';
 
 interface StatColumnProps {
   value: string;
-  unit: string;
+  /** Optional unit suffix (e.g. "tasks"). Omitted for h/m values that carry
+   * their own unit inside the string ("1h 40m"). */
+  unit?: string;
   label: string;
-  /** Extra content rendered under the value/unit row (the mini honey bar). */
-  children?: ReactNode;
+  /** Small color-coded dot before the label — indigo = guessed, amber = honest.
+   * Numbers stay ink/white; the dot is the only color that encodes which side. */
+  dotColor?: string;
   /** Vertical hairline divider on the left edge — every column but the first. */
   divided?: boolean;
 }
 
-function StatColumn({ value, unit, label, children, divided = false }: StatColumnProps) {
+function StatColumn({ value, unit, label, dotColor, divided = false }: StatColumnProps) {
   const t = useTheme();
 
   const col: ViewStyle = {
@@ -59,8 +67,15 @@ function StatColumn({ value, unit, label, children, divided = false }: StatColum
   const unitText: TextStyle = {
     fontFamily: 'Inter-SemiBold' as TextStyle['fontFamily'],
     fontSize: t.fontSize.sm,
-    color: t.colors.ink,
+    color: t.colors.inkSoft,
     marginLeft: t.space[1],
+  };
+  const labelRow: ViewStyle = { flexDirection: 'row', alignItems: 'center', gap: t.space[1.5] };
+  const dot: ViewStyle = {
+    width: t.space[1.5],
+    height: t.space[1.5],
+    borderRadius: t.radii.full,
+    backgroundColor: dotColor,
   };
   const labelText: TextStyle = {
     ...(type.eyebrowSm as unknown as TextStyle),
@@ -71,40 +86,12 @@ function StatColumn({ value, unit, label, children, divided = false }: StatColum
     <View style={col}>
       <View style={valueRow}>
         <Text style={valueText}>{value}</Text>
-        <Text style={unitText}>{unit}</Text>
+        {unit ? <Text style={unitText}>{unit}</Text> : null}
       </View>
-      <Text style={labelText}>{label}</Text>
-      {children}
-    </View>
-  );
-}
-
-function MiniHoneyBar({ pct }: { pct: number }) {
-  const t = useTheme();
-  const clamped = Math.max(0, Math.min(100, pct));
-
-  const track: ViewStyle = {
-    width: t.miniHoneyBar.width,
-    height: t.miniHoneyBar.height,
-    borderRadius: t.radii.full,
-    backgroundColor: t.colors.honeyWash,
-    overflow: 'hidden',
-    marginTop: t.space[0.5],
-  };
-  const fill: ViewStyle = {
-    width: `${clamped}%`,
-    height: '100%',
-    borderRadius: t.radii.full,
-    backgroundColor: t.colors.accent,
-  };
-
-  return (
-    <View
-      style={track}
-      accessibilityRole="progressbar"
-      accessibilityValue={{ now: clamped, min: 0, max: 100 }}
-    >
-      <View style={fill} />
+      <View style={labelRow}>
+        {dotColor ? <View style={dot} /> : null}
+        <Text style={labelText}>{label}</Text>
+      </View>
     </View>
   );
 }
@@ -115,10 +102,11 @@ export interface DaySoFarCardProps {
 
 export function DaySoFarCard({ recap }: DaySoFarCardProps) {
   const t = useTheme();
-  const { completedCount, totalMin, honeyPct, leadCategoryLabel, logsToNextTier } = recap;
+  const { completedCount, guessedMin, totalMin } = recap;
 
-  const milestone = milestoneText(leadCategoryLabel, logsToNextTier);
-  const minutes = minutesPhrase(totalMin);
+  const milestone = gapMilestone(guessedMin, totalMin);
+  const guessed = fmtHm(guessedMin);
+  const honest = fmtHm(totalMin);
   const milestoneBoldEnd = milestone.boldPrefix?.length ?? 0;
 
   const card: ViewStyle = {
@@ -187,8 +175,8 @@ export function DaySoFarCard({ recap }: DaySoFarCardProps) {
       <View style={header}>
         <Text style={eyebrow}>YOUR DAY SO FAR</Text>
         <Text style={headline}>
-          {countLine(completedCount)}{' '}
-          <Text style={{ color: t.colors.accent }}>{minutes}</Text> on the books.
+          {countLine(completedCount)} Guessed {guessed}, really took{' '}
+          <Text style={{ color: t.colors.accent }}>{honest}</Text>.
         </Text>
       </View>
 
@@ -196,10 +184,8 @@ export function DaySoFarCard({ recap }: DaySoFarCardProps) {
 
       <View style={statsRow}>
         <StatColumn value={String(completedCount)} unit={completedCount === 1 ? 'task' : 'tasks'} label="LOGGED" />
-        <StatColumn value={String(totalMin)} unit="min" label="REALLY TOOK" divided />
-        <StatColumn value={String(honeyPct)} unit="%" label="HONEY" divided>
-          <MiniHoneyBar pct={honeyPct} />
-        </StatColumn>
+        <StatColumn value={guessed} label="GUESSED" dotColor={t.colors.primary} divided />
+        <StatColumn value={honest} label="HONEST" dotColor={t.colors.accent} divided />
       </View>
 
       <View style={divider} />
