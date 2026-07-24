@@ -244,7 +244,9 @@ export default function AddTask() {
           style={{ flex: 1 }}
           contentContainerStyle={{
             gap: t.space[5],
-            paddingTop: t.space[3],
+            // Top gap matches the content's bottom gap (space[4]) so the sheet
+            // breathes evenly above the first row and below the last.
+            paddingTop: t.space[4],
             // Reserve the pinned footer's height so the last row scrolls clear of it.
             paddingBottom: t.space[4] + footerH,
           }}

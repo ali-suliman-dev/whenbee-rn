@@ -15,15 +15,33 @@ import type { Ref } from 'react';
 // is the tell. Content short enough never to scroll hides the bug entirely, which
 // is why it surfaced on the paywall first.
 //
-// `nestedScrollEnabled` is applied AFTER the spread deliberately: it is a
-// correctness invariant of sheet scrolling, not a preference a caller may switch
-// off. Plain <ScrollView> stays correct for tabs and fullScreenModals — there is
-// no sheet behavior there to coordinate with.
+// iOS: the sheet couples its drag-to-dismiss to the FIRST descendant scroll view
+// (RNSScrollViewFinder). With the default `bounces`, a downward drag while the
+// scroll view is at the top rubber-bands the content DOWN instead of handing the
+// translation to the sheet — so the drawer only dismissed from the bare side
+// gutters and the area below the content, never by grabbing the content or the
+// grabber itself. `bounces=false` (+ `alwaysBounceVertical=false`) pins the offset
+// at 0, so at the top a downward drag falls straight through to the sheet and
+// dismisses from anywhere; mid-scroll it still scrolls up normally. The wheel
+// (TimeField) is a bounded Pan, not a scroll view, so it keeps its own gesture.
+//
+// These correctness props are applied AFTER the spread deliberately: they are
+// invariants of sheet scrolling, not preferences a caller may switch off. Plain
+// <ScrollView> stays correct for tabs and fullScreenModals — there is no sheet
+// behavior there to coordinate with.
 //
 // FlatList/ReorderableList-based sheets can't use this wrapper; they take the same
-// prop directly (both forward it to their underlying ScrollView).
+// props directly (all forward to their underlying ScrollView).
 // ──────────────────────────────────────────────────────────────────────────────
 
 export function SheetScrollView({ ref, ...props }: ScrollViewProps & { ref?: Ref<ScrollView> }) {
-  return <ScrollView ref={ref} {...props} nestedScrollEnabled />;
+  return (
+    <ScrollView
+      ref={ref}
+      {...props}
+      nestedScrollEnabled
+      bounces={false}
+      alwaysBounceVertical={false}
+    />
+  );
 }

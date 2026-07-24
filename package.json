@@ -91,6 +91,7 @@
     "build:prod": "eas build --profile production --platform android",
     "build:prod-apk": "eas build --profile production-apk --platform android",
     "submit:prod": "eas submit --profile production --platform android --latest",
+    "release:android": "eas build --profile production --platform android --submit",
     "web": "expo start --web",
     "lint": "eslint . --max-warnings=0",
     "format": "prettier --write .",

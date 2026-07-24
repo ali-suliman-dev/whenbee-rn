@@ -100,7 +100,7 @@ export function FocusCard({
   const eyebrow: TextStyle = { ...eyebrowText, color: t.colors.inkSoft };
   const title: TextStyle = {
     ...(type.heading as unknown as TextStyle),
-    fontSize: t.fontSize.base,
+    fontSize: t.fontSize.md,
     color: t.colors.ink,
   };
   const contextRow: ViewStyle = {

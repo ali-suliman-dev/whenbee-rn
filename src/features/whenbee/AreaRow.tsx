@@ -34,7 +34,7 @@ export function AreaRow({
   };
   const nameText: TextStyle = {
     ...(type.bodyLg as unknown as TextStyle),
-    fontSize: t.fontSize.sm,
+    fontSize: t.fontSize.base,
     color: t.colors.ink,
     minWidth: 66,
   };

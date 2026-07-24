@@ -122,10 +122,12 @@ export function DaySoFarCard({ recap }: DaySoFarCardProps) {
   const milestoneBoldEnd = milestone.boldPrefix?.length ?? 0;
 
   const card: ViewStyle = {
-    // Self-managed top margin — the parent Animated.View stacks Today's sections
-    // with no shared gap (see CalendarOverlaySection, the sibling that does the
-    // same), so each section owns its own spacing above it.
-    marginTop: t.space[3],
+    // Self-managed vertical margins — the parent Animated.View stacks Today's
+    // sections with no shared gap (see CalendarOverlaySection, the sibling that
+    // does the same), so each section owns its own spacing. Tight above (hugs the
+    // calendar strip) and a wider gap below to set the Done list apart.
+    marginTop: t.space[1],
+    marginBottom: t.space[4],
     backgroundColor: t.colors.surface,
     borderWidth: t.borderWidth.card,
     borderColor: t.colors.hairline,

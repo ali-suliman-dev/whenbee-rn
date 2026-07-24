@@ -1,4 +1,5 @@
 import { View, Text, type TextStyle } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Screen } from '@/src/components/Screen';
 import { SheetScrollView } from '@/src/components/SheetScrollView';
 import { SheetGrabber } from '@/src/components/SheetGrabber';
@@ -19,6 +20,7 @@ import { TimeField } from '@/src/features/shared/TimeField';
 
 export default function Retro() {
   const t = useTheme();
+  const insets = useSafeAreaInsets();
   const r = useRetro();
 
   const heading: TextStyle = { ...(type.subtitle as unknown as TextStyle), color: t.colors.ink };
@@ -32,8 +34,17 @@ export default function Retro() {
 
   return (
     <Screen edges={['left', 'right']} horizontalPadding={false}>
+      {/* flexGrow:1 lets the container fill the sheet when content is short, so the
+          Save block's marginTop:'auto' sinks it to the bottom; taller content just
+          scrolls. Top and bottom breathing room are equal (space[5]); the extra
+          bottom is the home-indicator inset, not visible padding. */}
       <SheetScrollView
-        contentContainerStyle={{ gap: t.space[5], paddingTop: t.space[3], paddingBottom: t.space[6] }}
+        contentContainerStyle={{
+          flexGrow: 1,
+          gap: t.space[5],
+          paddingTop: t.space[5],
+          paddingBottom: t.space[5] + insets.bottom,
+        }}
         showsVerticalScrollIndicator={false}
       >
         <SheetGrabber />
@@ -75,7 +86,9 @@ export default function Retro() {
           <TimeField value={r.actualMin} onChange={r.setActualMin} />
         </View>
 
-        <View style={{ gap: t.space[3], paddingTop: t.space[2] }}>
+        {/* marginTop:'auto' sinks the primary action + its hint to the bottom of
+            the sheet (thumb zone) when the form is short of a full screen. */}
+        <View style={{ gap: t.space[3], marginTop: 'auto' }}>
           <AppButton
             label="Save & ripen"
             variant="indigo"

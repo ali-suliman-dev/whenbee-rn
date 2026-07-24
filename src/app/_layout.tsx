@@ -52,6 +52,11 @@ function useSheetScreenOptions(): ComponentProps<typeof Stack.Screen>['options']
     headerShown: false,
     sheetAllowedDetents: [0.95],
     sheetCornerRadius: t.radii.sheet,
+    // Single detent — there is nothing larger to grow into, so DON'T let a scroll
+    // reaching the top edge try to expand the sheet. Left on (the iOS default),
+    // that coupling swallows a downward drag at the top instead of dismissing; off,
+    // the scroll view scrolls normally and the sheet stays freely draggable-down.
+    sheetExpandsWhenScrolledToEdge: false,
     gestureEnabled: true,
     // The native formSheet host view defaults to white; it shows through wherever
     // the JS content doesn't paint (below a short list → a white gap under the
