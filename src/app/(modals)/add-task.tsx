@@ -63,11 +63,6 @@ export default function AddTask() {
   const [datePickerVisible, setDatePickerVisible] = useState(false);
   const [addingCategory, setAddingCategory] = useState(false);
   const [newCategory, setNewCategory] = useState('');
-  // Measured height of the pinned footer. The footer is an opaque absolute overlay
-  // (not a column sibling) so the native formSheet can never lay it over the scroll
-  // content; the scroll content reserves this height as bottom padding so its last
-  // row always clears the footer and the whole sheet stays scrollable.
-  const [footerH, setFooterH] = useState(0);
   const dismissTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Target date for the new task. Null = shelf (no day yet).
@@ -193,19 +188,18 @@ export default function AddTask() {
     backgroundColor: newCategory.trim().length > 0 ? t.colors.primary : t.colors.surfaceSunken,
   };
 
+  // Footer is a normal flow child pinned to the bottom by marginTop:'auto'. The
+  // empty gap that auto-margin creates ABOVE it is plain sheet background — NOT the
+  // ScrollView — so dragging there takes the sheet down (that dead space used to be
+  // inside the scroll child and swallowed the drag). When the fields overflow, the
+  // ScrollView (flexShrink) takes the space instead and the gap collapses to zero.
   const footerStyle: ViewStyle = {
-    position: 'absolute',
-    left: 0,
-    right: 0,
-    bottom: 0,
+    marginTop: 'auto',
     backgroundColor: t.colors.bg,
     borderTopWidth: t.borderWidth.hairline,
     borderTopColor: t.colors.hairline,
     paddingTop: t.space[3],
-    // Clear the bottom system inset (home indicator / gesture bar) plus a small
-    // breathing gap. On Android the flex:1 column pins this footer to the true
-    // screen bottom, so inset (24dp here) + space[2] lands the CTAs ~32dp up —
-    // snug to the edge without sitting under the gesture bar.
+    // Clear the bottom system inset (home indicator / gesture bar) plus a small gap.
     paddingBottom: insets.bottom + (Platform.OS === 'ios' ? t.space[3] : t.space[2]),
     gap: t.space[2],
   };
@@ -240,48 +234,52 @@ export default function AddTask() {
         // leaving a large gap under the CTAs. Defer to adjustResize (undefined).
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
       >
+        {/* Fixed drag header — OUTSIDE the ScrollView, so it is NOT the sheet's
+            scrolling child. On Android that keeps the top of the sheet (grabber +
+            the "Adding to…" row) a real drag-to-dismiss zone while the fields below
+            scroll. Tapping the date chip still works — a tap and a sheet-drag are
+            different gestures. */}
+        <View style={{ paddingTop: t.space[4], paddingBottom: t.space[3], gap: t.space[2] }}>
+          <SheetGrabber />
+          <View style={targetRow}>
+            <Text style={targetLabel} accessibilityLabel={`${a.isEditing ? 'Scheduled for' : 'Adding to'} ${targetDayLabel(targetDate, today)}`}>
+              {`${a.isEditing ? 'Scheduled for' : 'Adding to'} ${targetDayLabel(targetDate, today)}`}
+            </Text>
+            <Pressable
+              onPress={() => setDatePickerVisible(true)}
+              accessibilityRole="button"
+              accessibilityLabel="Change target day"
+              hitSlop={t.size.hitSlop}
+            >
+              <View style={dateChip}>
+                <Text style={dateChipText}>
+                  {targetDate === null ? 'No day yet' : targetDayLabel(targetDate, today)}
+                </Text>
+                <Ionicons name="chevron-down" size={t.iconSize.xs} color={t.colors.inkSoft} />
+              </View>
+            </Pressable>
+          </View>
+          {a.isEditing ? (
+            <>
+              <Text style={heading}>Edit task</Text>
+              <Text style={sub}>Adjust the details.</Text>
+            </>
+          ) : null}
+        </View>
+
+        {/* flexShrink (not flex:1): the ScrollView is only as tall as its content
+            when the fields fit, leaving the space below as a sheet-drag zone; it
+            shrinks and scrolls only when the fields overflow. */}
         <SheetScrollView
-          style={{ flex: 1 }}
+          style={{ flexShrink: 1 }}
           contentContainerStyle={{
             gap: t.space[5],
-            // Top gap matches the content's bottom gap (space[4]) so the sheet
-            // breathes evenly above the first row and below the last.
-            paddingTop: t.space[4],
-            // Reserve the pinned footer's height so the last row scrolls clear of it.
-            paddingBottom: t.space[4] + footerH,
+            paddingTop: t.space[2],
+            paddingBottom: t.space[4],
           }}
           showsVerticalScrollIndicator={false}
           keyboardShouldPersistTaps="handled"
         >
-          <SheetGrabber />
-
-          <View style={{ gap: t.space[2] }}>
-            <View style={targetRow}>
-              <Text style={targetLabel} accessibilityLabel={`${a.isEditing ? 'Scheduled for' : 'Adding to'} ${targetDayLabel(targetDate, today)}`}>
-                {`${a.isEditing ? 'Scheduled for' : 'Adding to'} ${targetDayLabel(targetDate, today)}`}
-              </Text>
-              <Pressable
-                onPress={() => setDatePickerVisible(true)}
-                accessibilityRole="button"
-                accessibilityLabel="Change target day"
-                hitSlop={t.size.hitSlop}
-              >
-                <View style={dateChip}>
-                  <Text style={dateChipText}>
-                    {targetDate === null ? 'No day yet' : targetDayLabel(targetDate, today)}
-                  </Text>
-                  <Ionicons name="chevron-down" size={t.iconSize.xs} color={t.colors.inkSoft} />
-                </View>
-              </Pressable>
-            </View>
-            {a.isEditing ? (
-              <>
-                <Text style={heading}>Edit task</Text>
-                <Text style={sub}>Adjust the details.</Text>
-              </>
-            ) : null}
-          </View>
-
           <View style={{ gap: t.space[2] }}>
             <Text style={a.isEditing ? fieldLabel : promptLabel}>
               {a.isEditing ? 'TASK' : 'What are you working on?'}
@@ -371,13 +369,9 @@ export default function AddTask() {
           ) : null}
         </SheetScrollView>
 
-        {/* Pinned CTA footer — opaque absolute overlay in the lower-third thumb zone,
-            rises with keyboard. Absolute (not a column sibling) so the native sheet
-            can't render scroll content on top of it. */}
-        <View
-          style={footerStyle}
-          onLayout={(e) => setFooterH(e.nativeEvent.layout.height)}
-        >
+        {/* Pinned CTA footer — flow child sunk to the bottom via marginTop:'auto'
+            (see footerStyle). Rises with the keyboard inside the KAV frame. */}
+        <View style={footerStyle}>
           {a.isEditing ? (
             <>
               <AppButton

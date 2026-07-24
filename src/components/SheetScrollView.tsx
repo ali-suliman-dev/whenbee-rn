@@ -15,33 +15,23 @@ import type { Ref } from 'react';
 // is the tell. Content short enough never to scroll hides the bug entirely, which
 // is why it surfaced on the paywall first.
 //
-// iOS: the sheet couples its drag-to-dismiss to the FIRST descendant scroll view
-// (RNSScrollViewFinder). With the default `bounces`, a downward drag while the
-// scroll view is at the top rubber-bands the content DOWN instead of handing the
-// translation to the sheet — so the drawer only dismissed from the bare side
-// gutters and the area below the content, never by grabbing the content or the
-// grabber itself. `bounces=false` (+ `alwaysBounceVertical=false`) pins the offset
-// at 0, so at the top a downward drag falls straight through to the sheet and
-// dismisses from anywhere; mid-scroll it still scrolls up normally. The wheel
-// (TimeField) is a bounded Pan, not a scroll view, so it keeps its own gesture.
+// TRADE-OFF this creates (fixed at the screen level, not here): once the ScrollView
+// IS the behavior's scrolling child, a finger ON it is routed to scrolling, and RN's
+// ScrollView does not reliably hand a top-edge downward drag back to the sheet — so
+// you can no longer drag the CONTENT down to dismiss, only the areas OUTSIDE this
+// view (side gutters, a pinned footer, a fixed header). Screens therefore keep the
+// grabber + static heading OUTSIDE this ScrollView so the top of the sheet stays a
+// real drag-to-dismiss zone; only the fields scroll. See retro.tsx / add-task.tsx.
 //
-// These correctness props are applied AFTER the spread deliberately: they are
-// invariants of sheet scrolling, not preferences a caller may switch off. Plain
-// <ScrollView> stays correct for tabs and fullScreenModals — there is no sheet
-// behavior there to coordinate with.
+// `nestedScrollEnabled` is applied AFTER the spread deliberately: it is a
+// correctness invariant of sheet scrolling, not a preference a caller may switch
+// off. Plain <ScrollView> stays correct for tabs and fullScreenModals — there is
+// no sheet behavior there to coordinate with.
 //
 // FlatList/ReorderableList-based sheets can't use this wrapper; they take the same
-// props directly (all forward to their underlying ScrollView).
+// prop directly (both forward it to their underlying ScrollView).
 // ──────────────────────────────────────────────────────────────────────────────
 
 export function SheetScrollView({ ref, ...props }: ScrollViewProps & { ref?: Ref<ScrollView> }) {
-  return (
-    <ScrollView
-      ref={ref}
-      {...props}
-      nestedScrollEnabled
-      bounces={false}
-      alwaysBounceVertical={false}
-    />
-  );
+  return <ScrollView ref={ref} {...props} nestedScrollEnabled />;
 }

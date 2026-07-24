@@ -34,26 +34,30 @@ export default function Retro() {
 
   return (
     <Screen edges={['left', 'right']} horizontalPadding={false}>
-      {/* flexGrow:1 lets the container fill the sheet when content is short, so the
-          Save block's marginTop:'auto' sinks it to the bottom; taller content just
-          scrolls. Top and bottom breathing room are equal (space[5]); the extra
-          bottom is the home-indicator inset, not visible padding. */}
-      <SheetScrollView
-        contentContainerStyle={{
-          flexGrow: 1,
-          gap: t.space[5],
-          paddingTop: t.space[5],
-          paddingBottom: t.space[5] + insets.bottom,
-        }}
-        showsVerticalScrollIndicator={false}
-      >
+      {/* Fixed drag header — OUTSIDE the ScrollView so it is NOT the sheet's
+          scrolling child. On Android that makes the whole top of the sheet (grabber
+          + heading) a real drag-to-dismiss zone; the scroll child below only
+          scrolls. Equal top/bottom breathing room (space[5]) top and bottom. */}
+      <View style={{ paddingTop: t.space[5], paddingBottom: t.space[4], gap: t.space[3] }}>
         <SheetGrabber />
-
         <View style={{ gap: t.space[1] }}>
           <Text style={heading}>How long did it really take?</Text>
           <Text style={sub}>A rough number is plenty.</Text>
         </View>
+      </View>
 
+      {/* flexShrink (not flex:1): the ScrollView is only as tall as its fields when
+          they fit, so the space below is plain sheet background — a drag-to-dismiss
+          zone, not scroll child. It shrinks and scrolls only when the fields
+          overflow. */}
+      <SheetScrollView
+        style={{ flexShrink: 1 }}
+        contentContainerStyle={{
+          gap: t.space[5],
+          paddingBottom: t.space[4],
+        }}
+        showsVerticalScrollIndicator={false}
+      >
         <View style={{ gap: t.space[2] }}>
           <Text style={fieldLabel}>WHAT WAS IT?</Text>
           <TaskTitleField
@@ -85,20 +89,21 @@ export default function Retro() {
           <Text style={fieldLabel}>WHAT IT REALLY TOOK</Text>
           <TimeField value={r.actualMin} onChange={r.setActualMin} />
         </View>
-
-        {/* marginTop:'auto' sinks the primary action + its hint to the bottom of
-            the sheet (thumb zone) when the form is short of a full screen. */}
-        <View style={{ gap: t.space[3], marginTop: 'auto' }}>
-          <AppButton
-            label="Save & ripen"
-            variant="indigo"
-            fullWidth
-            disabled={!r.canSave}
-            onPress={() => void r.onSave()}
-          />
-          <Text style={saveHint}>+1 nectar · ripens your honey a little</Text>
-        </View>
       </SheetScrollView>
+
+      {/* Hint + primary action — OUTSIDE the ScrollView, pinned to the bottom by
+          marginTop:'auto'. The gap that auto-margin opens above it is sheet
+          background, so dragging there dismisses; the fields still scroll above. */}
+      <View style={{ gap: t.space[3], marginTop: 'auto', paddingBottom: insets.bottom + t.space[2] }}>
+        <Text style={saveHint}>+1 nectar · ripens your honey a little</Text>
+        <AppButton
+          label="Save & ripen"
+          variant="indigo"
+          fullWidth
+          disabled={!r.canSave}
+          onPress={() => void r.onSave()}
+        />
+      </View>
     </Screen>
   );
 }
