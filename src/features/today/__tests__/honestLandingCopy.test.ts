@@ -182,3 +182,36 @@ test('the states that render no bar get no scale', () => {
   expect(landingScale(past, { nowMs: NOW, dayEndMs: DAY_END })).toEqual([]);
   expect(landingScale(empty, { nowMs: NOW, dayEndMs: DAY_END })).toEqual([]);
 });
+
+test('a Pro day with meetings offers the calendar instead of another task', () => {
+  const clear: LandingResult = {
+    kind: 'clear',
+    landingMs: NOW + 60 * MIN,
+    overMin: 0,
+    openMin: 50,
+    remainingMin: 60,
+    tail: null,
+    ends: [],
+  };
+  const f = landingFooter(clear, {
+    doneCount: 2,
+    doneHonestMin: 75,
+    logsToWarm: 0,
+    dayEndShort: '9',
+    hasMeetings: true,
+  });
+  expect(f.action).toBe('Pad calendar');
+  // The fact half is unchanged — meetings swap the offer, not the reading.
+  expect(f.text).toBe('2 done · 1h 15m logged');
+});
+
+test('meetings never outrank naming the tail task', () => {
+  const f = landingFooter(over, {
+    doneCount: 2,
+    doneHonestMin: 75,
+    logsToWarm: 0,
+    dayEndShort: '9',
+    hasMeetings: true,
+  });
+  expect(f.action).toBe('Move it');
+});

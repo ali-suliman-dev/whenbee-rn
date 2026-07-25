@@ -127,7 +127,7 @@ export function dayEndEpochFor(nowMs: number, dayEndMin: number): number {
 /**
  * Format a minute count as a compact "Xh Ym" string. Examples:
  *   75 → "1h 15m"    60 → "1h"    45 → "45m"    0 → "0m"
- * Used by CapacityChip to display task/event durations.
+ * Used across the day-read surfaces to display task/event durations.
  */
 export function fmtHm(totalMin: number): string {
   const mins = Math.max(0, Math.round(totalMin));

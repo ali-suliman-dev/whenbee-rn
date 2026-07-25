@@ -593,8 +593,8 @@ export const tokens = {
   // pill horizontal padding.
   proTeaser: { previewH: 118, barGap: 9, barRadius: 4, scrimOpacity: 0.28, barOpacity: 0.55, pillPadX: 11 },
 
-  // Day-read bar geometry — shared by HonestLandingCard's now→landing bar and the
-  // Pro CapacityChip's task/meetings bar, so the two never read as different bars.
+  // Day-read bar geometry — HonestLandingCard's now→landing bar, in-day / meetings
+  // / overflow segments alike, so every segment reads as part of the same bar.
   // barH = height of the segmented track; iconDisc = ⚡ disc diameter; segRadius =
   // the track/segment cap — kept at barH ÷ 2 so the bar reads as a capsule, not a
   // slightly-rounded rectangle; pillPadX = horizontal padding inside the "Pro"

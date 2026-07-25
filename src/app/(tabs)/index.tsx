@@ -41,9 +41,8 @@ import { DayRecapCard } from '@/src/features/today/DayRecapCard';
 import { useDayRecap } from '@/src/features/today/useDayRecap';
 import { DaySoFarCard } from '@/src/features/today/DaySoFarCard';
 import { useDaySoFar } from '@/src/features/today/useDaySoFar';
-import { CapacityChip } from '@/src/features/today/CapacityChip';
 import { HonestLandingCard, type LandingAction } from '@/src/features/today/HonestLandingCard';
-import { useHonestLanding } from '@/src/features/today/useHonestLanding';
+import { useHonestLanding, useEventMinAhead } from '@/src/features/today/useHonestLanding';
 import { CalendarOverlaySection } from '@/src/features/today/CalendarOverlaySection';
 import { useDayCapacity } from '@/src/features/today/useDayCapacity';
 import { useCapacityWidgetPublisher } from '@/src/features/today/useCapacityWidgetPublisher';
@@ -264,7 +263,7 @@ export default function Today() {
   // Single call — avoids computing leadHoney(shownCells) twice in JSX.
   const lead = leadHoney(shownCells);
 
-  // Day capacity — single call here so CapacityChip and CalendarOverlaySection
+  // Day capacity — single call here so the landing card and CalendarOverlaySection
   // share the same resolved events (avoids double calendar fetches).
   const cap = useDayCapacity();
   // Keeps the "Does Today Fit?" Home-screen widget (Pro) live off the same
@@ -276,19 +275,23 @@ export default function Today() {
   // useBiasWidgetPublisher for the Pro-gate-at-source rule).
   useBiasWidgetPublisher();
 
-  // When the day lands, off the same honest numbers the rows show. Free-path
-  // only for now — Pro still reads CapacityChip until Task 11 migrates it.
-  // No `eventMinAhead` is threaded here on purpose: useDayCapacity never fetches
-  // the calendar on the free path, so the value is provably 0, and the hook
-  // zeroes calendar minutes for non-Pro anyway. Task 11 must pass real minutes
-  // derived from a live clock — NOT a Date.now() read inside a memo keyed only
-  // on cap.events, which would freeze at first render.
-  const landing = useHonestLanding();
+  // When the day lands, off the same honest numbers the rows show — one card for
+  // free and Pro alike. `useEventMinAhead` folds the resolved calendar into it on
+  // the shared minute tick, so the meetings slice shrinks as the day runs rather
+  // than freezing at the value it had when the screen mounted. `cap.events` is
+  // empty for free users (the calendar is never fetched) and the hook zeroes
+  // calendar minutes for non-Pro on top of that.
+  const eventMinAhead = useEventMinAhead(cap.events);
+  const landing = useHonestLanding(eventMinAhead);
 
   const onLandingAction = useCallback(
     (kind: LandingAction) => {
       if (kind === 'add-task' || kind === 'start-one') {
         router.push('/(modals)/add-task');
+        return;
+      }
+      if (kind === 'pad-calendar') {
+        router.push({ pathname: '/(modals)/honest-day' });
         return;
       }
       const store = useDayTasksStore.getState();
@@ -388,19 +391,15 @@ export default function Today() {
 
           {/* The day's read — only on today/future (past shows DayRecapCard instead)
               and only once the day has tasks; an empty day has nothing to weigh.
-              Free: the honest landing time. Pro: still the capacity chip, which
-              gets the pre-resolved cap result so it skips its own fetch. */}
+              Same card for everyone: Pro just hands it more data. */}
           {!isPastDay && totalCount > 0 ? (
-            isPro ? (
-              <CapacityChip cap={cap} />
-            ) : (
-              <HonestLandingCard
-                result={landing}
-                doneCount={done.length}
-                doneHonestMin={done.reduce((sum, r) => sum + (r.actualMin ?? r.honestMin), 0)}
-                onAction={onLandingAction}
-              />
-            )
+            <HonestLandingCard
+              result={landing}
+              doneCount={done.length}
+              doneHonestMin={done.reduce((sum, r) => sum + (r.actualMin ?? r.honestMin), 0)}
+              eventMinAhead={eventMinAhead}
+              onAction={onLandingAction}
+            />
           ) : null}
 
           {/* Daily ritual (opt-in) lived in the honey HUD footer; the HUD is gone,

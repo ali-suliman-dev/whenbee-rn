@@ -10,7 +10,7 @@
 // and a landing time that silently included them would leak both.
 // ──────────────────────────────────────────────────────────────────────────────
 
-import { useEffect, useMemo, useState } from 'react';
+import { useMemo } from 'react';
 import {
   honestLanding,
   landingRange,
@@ -26,9 +26,41 @@ import { useCalibrationStore } from '@/src/stores/calibrationStore';
 import { useDayTasksStore } from '@/src/stores/dayTasksStore';
 import { useSettingsStore } from '@/src/stores/settingsStore';
 import { useEntitlement } from '@/src/features/paywall/useEntitlement';
+import { useMinuteTick, MINUTE_TICK_MS } from './useMinuteTick';
 
 /** The landing text reads in whole minutes, so one tick a minute is exact enough. */
-export const LANDING_TICK_MS = 60_000;
+export const LANDING_TICK_MS = MINUTE_TICK_MS;
+
+/** Anything with a start and an end — a calendar event, structurally. */
+export interface TimedSpan {
+  startMs: number;
+  endMs: number;
+}
+
+/**
+ * Meeting minutes still ahead of `nowMs`. A meeting already half over counts only
+ * its remainder, and one that has ended counts for nothing — the landing is a
+ * forecast from here, not a tally of the whole day.
+ */
+export function eventMinutesAhead(events: readonly TimedSpan[], nowMs: number): number {
+  let ms = 0;
+  for (const e of events) ms += Math.max(0, e.endMs - Math.max(e.startMs, nowMs));
+  return Math.round(ms / 60_000);
+}
+
+/**
+ * The live `eventMinAhead` for `useHonestLanding`, recomputed on the same shared
+ * minute tick the landing itself runs on.
+ *
+ * Deriving it any other way is the trap: a `Date.now()` read inside a memo keyed
+ * only on the event list freezes at first render, so a meeting that ended hours
+ * ago keeps pushing the landing time out. The clock has to be a dependency, and
+ * `useMinuteTick` is what makes it one.
+ */
+export function useEventMinAhead(events: readonly TimedSpan[]): number {
+  const nowMs = useMinuteTick();
+  return useMemo(() => eventMinutesAhead(events, nowMs), [events, nowMs]);
+}
 
 export interface HonestLandingResult {
   landing: LandingResult;
@@ -49,12 +81,9 @@ export function useHonestLanding(eventMinAhead = 0): HonestLandingResult {
   const archetypeSeed = useSettingsStore((s) => s.archetypeSeed);
   const isPro = useEntitlement((s) => s.isPro);
 
-  const [nowMs, setNowMs] = useState(() => Date.now());
-
-  useEffect(() => {
-    const id = setInterval(() => setNowMs(Date.now()), LANDING_TICK_MS);
-    return () => clearInterval(id);
-  }, []);
+  // Shared with `useEventMinAhead` so the meetings slice and the landing time can
+  // never be drawn from two different readings of the clock.
+  const nowMs = useMinuteTick();
 
   // Honest minutes per queued task — mirrors the resolver useToday / useDayCapacity
   // already use, so the card and the rows can never disagree.

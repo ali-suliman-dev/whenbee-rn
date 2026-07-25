@@ -228,7 +228,7 @@ describe('Today screen', () => {
     expect(screen.queryByTestId('capacity-free')).toBeNull();
   });
 
-  it('renders the capacity chip collapsed for a Pro user on today', () => {
+  it('renders the same landing card for a Pro user — Pro is more data, not another card', () => {
     useEntitlement.setState({ isPro: true });
     mockUseDayCapacity.mockReturnValue({
       status: 'ready',
@@ -243,18 +243,17 @@ describe('Today screen', () => {
     const task = makeQueued({ id: 'c2', label: 'Leave for work', category: 'getting_ready', guessMin: 15 });
     useDayTasksStore.setState({ dayTasks: [task], selectFocusTask: () => task });
     render(<Today />);
-    expect(screen.getByTestId('capacity-chip-collapsed')).toBeOnTheScreen();
+    expect(screen.getByTestId('honest-landing')).toBeOnTheScreen();
   });
 
-  it('does NOT render the capacity chip on an empty today', () => {
-    // No tasks → nothing to weigh, so the chip stays hidden even on today.
+  it('does NOT render the day read on an empty today', () => {
+    // No tasks → nothing to weigh, so the card stays hidden even on today.
     useDayTasksStore.setState({ dayTasks: [], selectFocusTask: () => null });
     render(<Today />);
     expect(screen.queryByTestId('honest-landing')).toBeNull();
-    expect(screen.queryByTestId('capacity-chip-collapsed')).toBeNull();
   });
 
-  it('does NOT render the capacity chip on a past day', () => {
+  it('does NOT render the day read on a past day', () => {
     // 2023-11-13 is a past date.
     useDayTasksStore.setState({
       selectedDate: '2023-11-13',
@@ -262,7 +261,6 @@ describe('Today screen', () => {
       selectFocusTask: () => null,
     });
     render(<Today />);
-    expect(screen.queryByTestId('capacity-chip-collapsed')).toBeNull();
     expect(screen.queryByTestId('honest-landing')).toBeNull();
   });
 

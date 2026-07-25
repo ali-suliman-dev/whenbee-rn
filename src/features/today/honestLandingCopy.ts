@@ -31,6 +31,13 @@ export interface FooterCtx {
   logsToWarm: number;
   /** The user's end of day, spoken short ("9", "17:00"), for the tail sentence. */
   dayEndShort: string;
+  /**
+   * Pro only: the day has calendar minutes still ahead. Swaps the *offer* on a
+   * day with nothing more urgent to say — padding the meetings a user already
+   * has beats adding a task they don't. Never outranks naming the tail: when the
+   * day runs over, the task to move is the more useful thing to point at.
+   */
+  hasMeetings?: boolean;
 }
 
 export interface FooterCopy {
@@ -106,7 +113,7 @@ export function landingScale(landing: LandingResult, { nowMs, dayEndMs }: ScaleC
 
 export function landingFooter(
   landing: LandingResult,
-  { doneCount, doneHonestMin, logsToWarm, dayEndShort }: FooterCtx,
+  { doneCount, doneHonestMin, logsToWarm, dayEndShort, hasMeetings = false }: FooterCtx,
 ): FooterCopy {
   if (logsToWarm > 0) {
     return {
@@ -133,12 +140,16 @@ export function landingFooter(
     };
   }
 
+  // The label the Pro chip used, carried over verbatim — it already reads as an
+  // offer rather than a chore, and the user has met it before.
+  const action = hasMeetings ? 'Pad calendar' : 'Add a task';
+
   if (doneCount === 0) {
-    return { text: 'Nothing logged yet', boldSpan: null, action: 'Add a task' };
+    return { text: 'Nothing logged yet', boldSpan: null, action };
   }
   return {
     text: `${doneCount} done · ${fmtHm(doneHonestMin)} logged`,
     boldSpan: fmtHm(doneHonestMin),
-    action: 'Add a task',
+    action,
   };
 }

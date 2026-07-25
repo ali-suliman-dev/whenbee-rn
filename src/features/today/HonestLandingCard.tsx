@@ -1,6 +1,12 @@
 // ──────────────────────────────────────────────────────────────────────────────
-// HonestLandingCard — the free Today day-read. Replaces the capacity verdict,
-// which divided by a fixed 14h window and therefore always said "fits".
+// HonestLandingCard — the Today day-read, free and Pro alike. Replaces the
+// capacity verdict, which divided by a fixed 14h window and therefore always
+// said "fits".
+//
+// Pro is the same component with more data: `eventMinAhead` adds a meetings
+// slice to the bar and swaps the footer offer for "Pad calendar". A Pro user who
+// denies calendar access passes 0 and gets the free card — the degraded state is
+// a complete one, not a broken one.
 //
 // Anatomy (deliberately the old chip's, so it sits in the card rhythm rather
 // than becoming the loudest thing on the screen):
@@ -27,21 +33,33 @@ import { landingHeadline, landingFooter, landingScale } from './honestLandingCop
 import type { HonestLandingResult } from './useHonestLanding';
 import { useLandingVariant } from './useLandingVariant';
 
-export type LandingAction = 'move-tail' | 'add-task' | 'start-one' | 'move-to-tomorrow';
+export type LandingAction =
+  | 'move-tail'
+  | 'add-task'
+  | 'start-one'
+  | 'move-to-tomorrow'
+  | 'pad-calendar';
 
 export interface HonestLandingCardProps {
   result: HonestLandingResult;
   doneCount: number;
   doneHonestMin: number;
+  /**
+   * Pro only: calendar minutes still ahead of now. 0 (the default) is the free
+   * card — and also the Pro card of anyone who denied calendar access, which is
+   * the point: the degraded state is the free state, not a broken one.
+   */
+  eventMinAhead?: number;
   /** Fires the footer action. The kind tells the caller which route to take. */
   onAction: (kind: LandingAction) => void;
 }
 
 /** Which offer the footer is making — mirrors `landingFooter`'s own branch order. */
-function actionKindFor(result: HonestLandingResult): LandingAction {
+function actionKindFor(result: HonestLandingResult, hasMeetings: boolean): LandingAction {
   if (result.logsToWarm > 0) return 'start-one';
   if (result.landing.kind === 'past') return 'move-to-tomorrow';
   if (result.landing.kind === 'over' && result.landing.tail) return 'move-tail';
+  if (hasMeetings) return 'pad-calendar';
   return 'add-task';
 }
 
@@ -62,6 +80,7 @@ export function HonestLandingCard({
   result,
   doneCount,
   doneHonestMin,
+  eventMinAhead = 0,
   onAction,
 }: HonestLandingCardProps): React.ReactElement | null {
   const t = useTheme();
@@ -78,12 +97,14 @@ export function HonestLandingCard({
     rangeHighMs: range?.highMs,
     variant,
   });
+  const hasMeetings = eventMinAhead > 0;
   const scale = landingScale(landing, { nowMs, dayEndMs });
   const footer = landingFooter(landing, {
     doneCount,
     doneHonestMin,
     logsToWarm,
     dayEndShort: spokenDayEnd(dayEndMs),
+    hasMeetings,
   });
 
   // Bar geometry — every span is measured minutes, nothing is invented.
@@ -95,6 +116,12 @@ export function HonestLandingCard({
   const inDayMs = Math.max(0, Math.min(dayEndMs, landingMs) - nowMs);
   const overMs = isOver ? Math.max(0, landingMs - dayEndMs) : 0;
   const restMs = Math.max(0, totalMs - inDayMs - overMs);
+
+  // Meetings are committed time INSIDE the same span — they take their slice out
+  // of the in-day segment rather than extending the bar. The bar always spans
+  // now → landing; a meeting can only change what the span is made of.
+  const meetMs = Math.max(0, Math.min(eventMinAhead * 60_000, inDayMs));
+  const taskInDayMs = Math.max(0, inDayMs - meetMs);
 
   const card: ViewStyle = {
     backgroundColor: t.colors.surface,
@@ -183,10 +210,16 @@ export function HonestLandingCard({
       {showBar ? (
         <>
           <View style={track} testID="landing-bar">
-            {inDayMs > 0 ? (
+            {taskInDayMs > 0 ? (
               <View
                 testID="landing-seg-in"
-                style={{ flex: inDayMs, backgroundColor: t.colors.primary }}
+                style={{ flex: taskInDayMs, backgroundColor: t.colors.primary }}
+              />
+            ) : null}
+            {meetMs > 0 ? (
+              <View
+                testID="landing-seg-meet"
+                style={{ flex: meetMs, backgroundColor: t.colors.primaryEdge }}
               />
             ) : null}
             {overMs > 0 ? (
@@ -217,7 +250,7 @@ export function HonestLandingCard({
         <Pressable
           accessibilityRole="button"
           accessibilityLabel={footer.action}
-          onPress={() => onAction(actionKindFor(result))}
+          onPress={() => onAction(actionKindFor(result, hasMeetings))}
           hitSlop={t.size.hitSlop}
         >
           <Text style={actionText}>{footer.action}</Text>

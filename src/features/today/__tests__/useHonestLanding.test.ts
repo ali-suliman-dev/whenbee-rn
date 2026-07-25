@@ -1,7 +1,11 @@
 // Verifies the two things the hook owns that the engine can't: the minute
 // heartbeat, and the free-path gate that keeps routines/calendar out.
 import { renderHook, act } from '@testing-library/react-native';
-import { useHonestLanding } from '@/src/features/today/useHonestLanding';
+import {
+  useHonestLanding,
+  useEventMinAhead,
+  eventMinutesAhead,
+} from '@/src/features/today/useHonestLanding';
 import { useDayTasksStore } from '@/src/stores/dayTasksStore';
 import { useSettingsStore } from '@/src/stores/settingsStore';
 import { useEntitlement } from '@/src/features/paywall/useEntitlement';
@@ -129,4 +133,32 @@ test('event minutes passed to a free user are ignored, not folded in', () => {
   });
   const { result: pro } = renderHook(() => useHonestLanding(120));
   expect(pro.current.landing.landingMs).toBeGreaterThan(freeLandingMs ?? 0);
+});
+
+// ── eventMinAhead: the number Pro feeds the hook ─────────────────────────────
+// The trap this exists to close: computing it with a `Date.now()` read inside a
+// memo keyed only on the event list. That freezes at first render, so a meeting
+// that has already ended keeps padding the landing for the rest of the day.
+
+test('only the part of a meeting still ahead of now counts', () => {
+  const halfDone = { startMs: NOW - 30 * 60_000, endMs: NOW + 30 * 60_000 };
+  const finished = { startMs: NOW - 120 * 60_000, endMs: NOW - 60 * 60_000 };
+  const later = { startMs: NOW + 60 * 60_000, endMs: NOW + 105 * 60_000 };
+  expect(eventMinutesAhead([halfDone, finished, later], NOW)).toBe(75);
+});
+
+test('no meetings is zero, not a guess', () => {
+  expect(eventMinutesAhead([], NOW)).toBe(0);
+});
+
+test('the meeting minutes shrink as the clock moves — they never freeze', () => {
+  const events = [{ startMs: NOW, endMs: NOW + 60 * 60_000 }];
+  const { result } = renderHook(() => useEventMinAhead(events));
+  expect(result.current).toBe(60);
+
+  act(() => {
+    jest.advanceTimersByTime(20 * 60_000);
+  });
+
+  expect(result.current).toBe(40);
 });

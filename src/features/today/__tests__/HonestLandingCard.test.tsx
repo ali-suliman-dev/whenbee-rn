@@ -156,3 +156,113 @@ test('a cold estimate speaks the range, not a single minute', () => {
   );
   expect(screen.getByText(/9:10pm – 10:30pm/)).toBeTruthy();
 });
+
+// ── Pro: same component, more data ───────────────────────────────────────────
+// Meetings are committed time INSIDE the same now→landing span, so they take a
+// slice out of the in-day segment rather than lengthening the bar. A Pro user
+// who denies calendar permission passes 0 and lands back on the free card.
+
+test('Pro with meetings renders a third bar segment and the Pad calendar action', () => {
+  const onAction = jest.fn();
+  const clear = base({
+    kind: 'clear',
+    landingMs: NOW + 60 * MIN,
+    overMin: 0,
+    openMin: 50,
+    tail: null,
+  });
+  render(
+    <HonestLandingCard
+      result={clear}
+      doneCount={2}
+      doneHonestMin={75}
+      eventMinAhead={90}
+      onAction={onAction}
+    />,
+  );
+  expect(screen.getByTestId('landing-seg-meet')).toBeTruthy();
+  fireEvent.press(screen.getByLabelText('Pad calendar'));
+  expect(onAction).toHaveBeenCalledWith('pad-calendar');
+});
+
+test('the meetings slice comes out of the in-day segment, it does not extend the bar', () => {
+  const clear = base({
+    kind: 'clear',
+    landingMs: NOW + 60 * MIN,
+    overMin: 0,
+    openMin: 50,
+    tail: null,
+  });
+  const free = render(
+    <HonestLandingCard result={clear} doneCount={2} doneHonestMin={75} onAction={jest.fn()} />,
+  );
+  const freeIn = free.getByTestId('landing-seg-in').props.style.flex;
+  free.unmount();
+
+  render(
+    <HonestLandingCard
+      result={clear}
+      doneCount={2}
+      doneHonestMin={75}
+      eventMinAhead={30}
+      onAction={jest.fn()}
+    />,
+  );
+  const proIn = screen.getByTestId('landing-seg-in').props.style.flex;
+  const meet = screen.getByTestId('landing-seg-meet').props.style.flex;
+  expect(meet).toBe(30 * MIN);
+  expect(proIn).toBe(freeIn - meet);
+});
+
+test('Pro without meetings renders exactly the free card', () => {
+  const onAction = jest.fn();
+  const free = render(
+    <HonestLandingCard result={base()} doneCount={2} doneHonestMin={75} onAction={onAction} />,
+  ).toJSON();
+  const withZero = render(
+    <HonestLandingCard
+      result={base()}
+      doneCount={2}
+      doneHonestMin={75}
+      eventMinAhead={0}
+      onAction={onAction}
+    />,
+  ).toJSON();
+  expect(screen.queryByTestId('landing-seg-meet')).toBeNull();
+  // Serialised rather than deep-equalled: two render trees are structurally
+  // identical but never `toEqual` (each carries its own renderer internals).
+  expect(JSON.stringify(withZero)).toBe(JSON.stringify(free));
+});
+
+test('the tail offer still wins over Pad calendar once the day runs over', () => {
+  const onAction = jest.fn();
+  render(
+    <HonestLandingCard
+      result={base()}
+      doneCount={2}
+      doneHonestMin={75}
+      eventMinAhead={90}
+      onAction={onAction}
+    />,
+  );
+  fireEvent.press(screen.getByText(/Move it/));
+  expect(onAction).toHaveBeenCalledWith('move-tail');
+});
+
+// Ported from the deleted CapacityChip test suite: the Pro day-read used to be
+// the one place a "you're behind" word could creep in. The card inherits that
+// guard now that it is the only day-read on Today.
+test('never scolds a Pro user whose day runs over', () => {
+  render(
+    <HonestLandingCard
+      result={base()}
+      doneCount={2}
+      doneHonestMin={75}
+      eventMinAhead={90}
+      onAction={jest.fn()}
+    />,
+  );
+  expect(screen.queryByText(/overdue/i)).toBeNull();
+  expect(screen.queryByText(/behind/i)).toBeNull();
+  expect(screen.queryByText(/failed/i)).toBeNull();
+});
