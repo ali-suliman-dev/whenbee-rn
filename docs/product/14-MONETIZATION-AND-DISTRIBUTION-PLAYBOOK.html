@@ -1,0 +1,843 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Whenbee — money and distribution playbook</title>
+<style>
+  /* Tokens from src/theme/tokens.ts. Light and dark both real. */
+  :root {
+    --sp-1:4px; --sp-2:8px; --sp-3:12px; --sp-4:16px; --sp-5:20px;
+    --sp-6:24px; --sp-8:32px; --sp-10:40px; --sp-12:48px; --sp-16:64px;
+    --r-sm:8px; --r-md:12px; --r-panel:14px; --r-card:16px; --r-full:999px;
+    --fs-crumb:9px; --fs-micro:10px; --fs-caption:12px; --fs-body:14px;
+    --fs-body-lg:16px; --fs-title-sm:18px; --fs-subtitle:22px; --fs-title:26px; --fs-big:32px;
+    --ui:-apple-system,BlinkMacSystemFont,"Segoe UI",system-ui,sans-serif;
+    --mono:ui-monospace,Menlo,Consolas,monospace;
+    --rail: 232px;
+  }
+  :root, :root[data-theme="dark"] {
+    --bg:#14151D; --surface:#1F2130; --raised:#292B3C; --sunken:#15161F;
+    --border:rgba(255,255,255,0.14); --divider:rgba(255,255,255,0.07);
+    --ink:#F4F1EA; --ink-soft:#ADA9B5; --ink-faint:rgba(244,241,234,0.40);
+    --primary:#8275F0; --primary-bright:#B3A7FF;
+    --primary-soft:rgba(130,117,240,0.18); --primary-wash:rgba(130,117,240,0.09);
+    --accent:#EEAE4D; --accent-soft:#2E2A20; --honey:#2B2620; --amber-text:#EEAE4D;
+    --on-indigo:#14151D; --done:rgba(238,174,77,0.14);
+  }
+  :root[data-theme="light"] {
+    --bg:#F4F2FC; --surface:#FFFFFF; --raised:#FFFFFF; --sunken:#F1EEFB;
+    --border:#DAD3EC; --divider:rgba(0,0,0,0.08);
+    --ink:#20233A; --ink-soft:#5C5F73; --ink-faint:#9B9DAB;
+    --primary:#6B5BE6; --primary-bright:#5A4BD4;
+    --primary-soft:#E4E0FA; --primary-wash:#EFEDFC;
+    --accent:#EEAE4D; --accent-soft:#FBEFD6; --honey:#FBF2DF; --amber-text:#8A5A12;
+    --on-indigo:#FFFFFF; --done:rgba(238,174,77,0.16);
+  }
+  @media (prefers-color-scheme: light) {
+    :root:not([data-theme]) {
+      --bg:#F4F2FC; --surface:#FFFFFF; --raised:#FFFFFF; --sunken:#F1EEFB;
+      --border:#DAD3EC; --divider:rgba(0,0,0,0.08);
+      --ink:#20233A; --ink-soft:#5C5F73; --ink-faint:#9B9DAB;
+      --primary:#6B5BE6; --primary-bright:#5A4BD4;
+      --primary-soft:#E4E0FA; --primary-wash:#EFEDFC;
+      --accent:#EEAE4D; --accent-soft:#FBEFD6; --honey:#FBF2DF; --amber-text:#8A5A12;
+      --on-indigo:#FFFFFF; --done:rgba(238,174,77,0.16);
+    }
+  }
+
+  * { box-sizing:border-box; }
+  body {
+    margin:0; background:var(--bg); color:var(--ink);
+    font-family:var(--ui); font-size:var(--fs-body-lg); line-height:1.55;
+    -webkit-font-smoothing:antialiased;
+  }
+  p { margin:0 0 var(--sp-3); max-width:70ch; }
+  ul, ol { margin:0 0 var(--sp-3); padding-left:var(--sp-5); max-width:70ch; }
+  li { margin-bottom:var(--sp-1); }
+  a { color:var(--primary-bright); text-decoration:none; }
+  a:hover { text-decoration:underline; }
+  code { font-family:var(--mono); font-size:0.88em; background:var(--sunken); padding:1px 5px; border-radius:var(--r-sm); }
+  .mono { font-family:var(--mono); }
+
+  /* ── shell: sticky rail + content ── */
+  .shell { display:grid; grid-template-columns:var(--rail) minmax(0,1fr); gap:var(--sp-10); max-width:1180px; margin:0 auto; padding:var(--sp-6) var(--sp-5) var(--sp-16); }
+  @media (max-width:900px) { .shell { grid-template-columns:1fr; gap:var(--sp-6); } }
+
+  .rail { position:sticky; top:var(--sp-6); align-self:start; max-height:calc(100vh - var(--sp-12)); overflow-y:auto; }
+  @media (max-width:900px) { .rail { position:static; max-height:none; } }
+  .rail .brand { font-size:var(--fs-micro); letter-spacing:0.14em; text-transform:uppercase; color:var(--ink-faint); margin-bottom:var(--sp-4); }
+  .rail nav { display:flex; flex-direction:column; }
+  .rail .group { font-size:var(--fs-crumb); letter-spacing:0.16em; text-transform:uppercase; color:var(--ink-faint); margin:var(--sp-4) 0 var(--sp-2); }
+  .rail a {
+    display:flex; gap:var(--sp-2); align-items:baseline; padding:3px 0;
+    font-size:var(--fs-body); color:var(--ink-soft); line-height:1.35;
+  }
+  .rail a:hover { color:var(--ink); text-decoration:none; }
+  .rail a.on { color:var(--primary-bright); }
+  .rail a .n { font-family:var(--mono); font-size:var(--fs-caption); color:var(--ink-faint); min-width:1.6em; }
+  .rail a.on .n { color:var(--primary-bright); }
+  .railprog { margin-top:var(--sp-5); padding-top:var(--sp-4); border-top:1px solid var(--divider); font-size:var(--fs-caption); color:var(--ink-soft); }
+  .railprog .mono { color:var(--ink); }
+
+  /* ── theme switch ── */
+  .themebtns { display:flex; gap:2px; padding:3px; background:var(--surface); border:1px solid var(--border); border-radius:var(--r-full); margin-top:var(--sp-4); width:fit-content; }
+  .themebtns button { font:inherit; font-size:var(--fs-caption); cursor:pointer; border:0; background:transparent; color:var(--ink-soft); padding:2px var(--sp-3); border-radius:var(--r-full); }
+  .themebtns button[aria-pressed="true"] { background:var(--primary); color:var(--on-indigo); }
+
+  /* ── masthead ── */
+  .mast { padding-bottom:var(--sp-6); border-bottom:1px solid var(--divider); margin-bottom:var(--sp-10); }
+  h1 { font-size:var(--fs-title); line-height:1.15; margin:0 0 var(--sp-3); letter-spacing:-0.015em; }
+  .sub { color:var(--ink-soft); max-width:66ch; margin:0 0 var(--sp-4); }
+  .stampline { font-family:var(--mono); font-size:var(--fs-caption); color:var(--ink-faint); }
+
+  /* ── section rhythm: varied, not uniform ── */
+  section { margin-bottom:var(--sp-12); scroll-margin-top:var(--sp-5); }
+  .sechead { display:flex; align-items:baseline; gap:var(--sp-3); margin-bottom:var(--sp-2); flex-wrap:wrap; }
+  .sechead .id { font-family:var(--mono); font-size:var(--fs-caption); color:var(--ink-faint); }
+  h2 { font-size:var(--fs-subtitle); line-height:1.2; margin:0; letter-spacing:-0.01em; }
+  h3 { font-size:var(--fs-title-sm); margin:var(--sp-6) 0 var(--sp-2); }
+  h4 { font-size:var(--fs-body-lg); margin:var(--sp-5) 0 var(--sp-1); }
+  .thesis { font-size:var(--fs-body-lg); color:var(--ink); max-width:66ch; margin:0 0 var(--sp-4); }
+  .eyebrow { font-size:var(--fs-micro); letter-spacing:0.13em; text-transform:uppercase; color:var(--ink-faint); margin:0 0 var(--sp-2); }
+
+  /* ── chips ── */
+  .chip { display:inline-flex; align-items:center; font-size:var(--fs-caption); padding:1px var(--sp-2); border-radius:var(--r-full); background:var(--primary-soft); color:var(--primary-bright); white-space:nowrap; }
+  .chip.amber { background:var(--accent-soft); color:var(--amber-text); }
+  .chip.quiet { background:var(--sunken); color:var(--ink-soft); }
+  .chiprow { display:flex; flex-wrap:wrap; gap:var(--sp-2); margin:0 0 var(--sp-4); }
+
+  /* ── panels: full 1px border, no side stripes, never nested ── */
+  .panel { border:1px solid var(--border); border-radius:var(--r-card); padding:var(--sp-5); margin:var(--sp-4) 0; background:var(--surface); }
+  .panel > :last-child { margin-bottom:0; }
+  .panel.tint { background:var(--primary-wash); border-color:transparent; }
+  .panel.warm { background:var(--honey); border-color:transparent; }
+  .panel.warm .eyebrow { color:var(--amber-text); }
+  .panel.flat { background:transparent; }
+
+  /* ── tables ── */
+  .tw { overflow-x:auto; border:1px solid var(--border); border-radius:var(--r-card); margin:var(--sp-4) 0; }
+  table { border-collapse:collapse; width:100%; font-size:var(--fs-body); min-width:520px; }
+  th, td { text-align:left; padding:var(--sp-3) var(--sp-4); border-bottom:1px solid var(--divider); vertical-align:top; }
+  thead th { font-size:var(--fs-micro); letter-spacing:0.1em; text-transform:uppercase; color:var(--ink-faint); font-weight:600; background:var(--sunken); white-space:nowrap; }
+  tbody tr:last-child td { border-bottom:0; }
+  td.num, th.num { font-family:var(--mono); white-space:nowrap; }
+  td.yes { color:var(--amber-text); }
+  caption { caption-side:top; text-align:left; padding:var(--sp-3) var(--sp-4) 0; font-size:var(--fs-caption); color:var(--ink-faint); }
+
+  /* ── do / don't split ── */
+  .dd { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:0; border:1px solid var(--border); border-radius:var(--r-card); overflow:hidden; margin:var(--sp-4) 0; }
+  @media (max-width:720px) { .dd { grid-template-columns:1fr; } }
+  .dd > div { padding:var(--sp-5); }
+  .dd > div + div { border-left:1px solid var(--divider); }
+  @media (max-width:720px) { .dd > div + div { border-left:0; border-top:1px solid var(--divider); } }
+  .dd ul { margin:0; padding-left:var(--sp-4); }
+
+  /* ── move list (numbered, tight) ── */
+  ol.moves { list-style:none; padding:0; counter-reset:m; margin:0 0 var(--sp-4); }
+  ol.moves > li { counter-increment:m; display:grid; grid-template-columns:26px minmax(0,1fr); gap:var(--sp-3); padding:var(--sp-3) 0; border-bottom:1px solid var(--divider); margin:0; max-width:none; }
+  ol.moves > li:last-child { border-bottom:0; }
+  ol.moves > li::before { content:counter(m); grid-column:1; font-family:var(--mono); font-size:var(--fs-caption); color:var(--ink-faint); padding-top:3px; }
+  /* both the label and the body live in column 2; without this the second
+     child lands in the 26px number column and wraps one word per line */
+  ol.moves > li > b, ol.moves > li > span.why { grid-column:2; }
+  ol.moves b { font-weight:600; display:block; }
+  ol.moves span.why { color:var(--ink-soft); font-size:var(--fs-body); }
+
+  /* ── checklists ── */
+  .phase { border:1px solid var(--border); border-radius:var(--r-card); margin:var(--sp-4) 0; overflow:hidden; }
+  .phase > header { display:flex; align-items:center; gap:var(--sp-3); padding:var(--sp-4) var(--sp-5); background:var(--sunken); flex-wrap:wrap; }
+  .phase > header .ttl { font-weight:600; }
+  .phase > header .when { font-family:var(--mono); font-size:var(--fs-caption); color:var(--ink-faint); }
+  .phase > header .count { margin-left:auto; font-family:var(--mono); font-size:var(--fs-caption); color:var(--ink-soft); }
+  .bar { height:2px; background:var(--divider); }
+  .bar > i { display:block; height:100%; background:var(--accent); width:0; transition:width 180ms cubic-bezier(0.22,1,0.36,1); }
+  .phase ul.todo { list-style:none; margin:0; padding:0; max-width:none; }
+  .phase ul.todo li { margin:0; border-bottom:1px solid var(--divider); }
+  .phase ul.todo li:last-child { border-bottom:0; }
+  .phase label { display:grid; grid-template-columns:20px minmax(0,1fr); gap:var(--sp-3); padding:var(--sp-3) var(--sp-5); cursor:pointer; align-items:start; }
+  .phase label:hover { background:var(--primary-wash); }
+  /* 5px, not r-sm: an 8px radius on a 16px box renders as a circle, which reads
+     as a radio button. Checkboxes stay square-ish. */
+  .phase input { appearance:none; width:16px; height:16px; margin:3px 0 0; border:1px solid var(--ink-faint); border-radius:5px; background:transparent; cursor:pointer; position:relative; }
+  .phase input:checked { background:var(--accent); border-color:var(--accent); }
+  .phase input:checked::after { content:"✓"; position:absolute; inset:0; display:flex; align-items:center; justify-content:center; font-size:11px; color:#20233A; }
+  .phase input:focus-visible { outline:2px solid var(--primary); outline-offset:2px; }
+  .phase label .t { font-size:var(--fs-body-lg); }
+  .phase label .m { display:block; font-size:var(--fs-body); color:var(--ink-soft); }
+  .phase input:checked ~ span .t { color:var(--ink-soft); text-decoration:line-through; text-decoration-color:var(--ink-faint); }
+  .phase input:checked ~ span .m { color:var(--ink-faint); }
+  .toolbar { display:flex; gap:var(--sp-3); align-items:center; font-size:var(--fs-caption); color:var(--ink-soft); margin:var(--sp-3) 0 var(--sp-6); flex-wrap:wrap; }
+  .toolbar button { font:inherit; cursor:pointer; background:var(--surface); color:var(--ink-soft); border:1px solid var(--border); border-radius:var(--r-full); padding:2px var(--sp-3); }
+  .toolbar button:hover { color:var(--ink); }
+
+  /* ── gate blocks ── */
+  .gate { display:grid; grid-template-columns:auto minmax(0,1fr); gap:var(--sp-4); align-items:start; }
+  .gate .k { font-family:var(--mono); font-size:var(--fs-caption); color:var(--amber-text); white-space:nowrap; padding-top:2px; }
+
+  footer { border-top:1px solid var(--divider); padding-top:var(--sp-5); color:var(--ink-soft); font-size:var(--fs-body); }
+  footer ol { font-size:var(--fs-body); }
+  footer li { margin-bottom:var(--sp-2); }
+</style>
+</head>
+<body>
+<div class="shell">
+
+<!-- ══════════════ rail ══════════════ -->
+<aside class="rail">
+  <p class="brand">Whenbee · doc 14</p>
+  <nav id="rail">
+    <p class="group">Start here</p>
+    <a href="#decide"><span class="n">00</span><span>The short answer</span></a>
+    <a href="#rules"><span class="n">01</span><span>Rules of the game</span></a>
+
+    <p class="group">Systems, by payoff</p>
+    <a href="#sys-store"><span class="n">S1</span><span>Store surfaces</span></a>
+    <a href="#sys-ai"><span class="n">S2</span><span>AI answer visibility</span></a>
+    <a href="#sys-video"><span class="n">S3</span><span>Faceless video engine</span></a>
+    <a href="#sys-people"><span class="n">S4</span><span>Communities and creators</span></a>
+    <a href="#sys-money"><span class="n">S5</span><span>Paywall and pricing</span></a>
+    <a href="#sys-coach"><span class="n">S6</span><span>Off-store revenue</span></a>
+    <a href="#sys-paid"><span class="n">S7</span><span>Paid ads</span></a>
+    <a href="#sys-launch"><span class="n">S8</span><span>Launch spikes</span></a>
+
+    <p class="group">Do the work</p>
+    <a href="#todo"><span class="n">02</span><span>Checklists, 4 phases</span></a>
+    <a href="#gates"><span class="n">03</span><span>Gates and kill rules</span></a>
+    <a href="#metrics"><span class="n">04</span><span>Metrics</span></a>
+
+    <p class="group">Reference</p>
+    <a href="#bench"><span class="n">A1</span><span>Benchmarks</span></a>
+    <a href="#risks"><span class="n">A2</span><span>Risks</span></a>
+    <a href="#sources"><span class="n">A3</span><span>Sources</span></a>
+  </nav>
+  <div class="railprog">Checklist <span class="mono" id="globalcount">0/0</span></div>
+  <div class="themebtns" role="group" aria-label="Theme">
+    <button id="btn-dark" aria-pressed="true">Dark</button>
+    <button id="btn-light" aria-pressed="false">Light</button>
+  </div>
+</aside>
+
+<!-- ══════════════ content ══════════════ -->
+<main>
+
+<div class="mast">
+  <h1>Money and distribution, for one person with no budget</h1>
+  <p class="sub">The app is built. Two questions left: how money comes in, how strangers find it. Constraints assumed throughout: solo, small budget, no build-in-public, no face on camera, AI in the pipeline is fine.</p>
+  <p class="stampline">2026-07-25 · research: RevenueCat 2026, ASO ranking changes, Apple Ads data, UGC format data · pairs with docs 03, 05, 06, 11, 12</p>
+</div>
+
+<!-- ─────────── 00 decide ─────────── -->
+<section id="decide">
+  <div class="sechead"><span class="id">00</span><h2>The short answer</h2></div>
+  <p class="thesis">Fix the store listing before making a single video. Roughly 70% of installs start as a store search, and every other channel below routes through that page.</p>
+
+  <div class="tw">
+    <table>
+      <caption>Ranked by return per hour for a solo operator. Work top down.</caption>
+      <thead><tr><th class="num">#</th><th>System</th><th>Cash</th><th>Compounds</th><th>Do it when</th></tr></thead>
+      <tbody>
+        <tr><td class="num">S1</td><td><a href="#sys-store">Store surfaces</a></td><td class="num">$0</td><td class="yes">Strongly</td><td>Before launch. Blocks everything else.</td></tr>
+        <tr><td class="num">S2</td><td><a href="#sys-ai">AI answer visibility</a></td><td class="num">$0</td><td class="yes">Yes</td><td>Week 1 onward, forever</td></tr>
+        <tr><td class="num">S3</td><td><a href="#sys-video">Faceless video engine</a></td><td class="num">$0–60/mo</td><td>Partly</td><td>Once S1 converts</td></tr>
+        <tr><td class="num">S4</td><td><a href="#sys-people">Communities and creators</a></td><td class="num">$0–500</td><td>Somewhat</td><td>Karma work starts now</td></tr>
+        <tr><td class="num">S5</td><td><a href="#sys-money">Paywall and pricing</a></td><td class="num">$0</td><td class="yes">Yes</td><td>First experiment day 31</td></tr>
+        <tr><td class="num">S6</td><td><a href="#sys-coach">Off-store revenue</a></td><td class="num">$0</td><td class="yes">Yes</td><td>After D7 clears 25%</td></tr>
+        <tr><td class="num">S7</td><td><a href="#sys-paid">Paid ads</a></td><td class="num">$300+/mo</td><td>No</td><td>Only once payback is known</td></tr>
+        <tr><td class="num">S8</td><td><a href="#sys-launch">Launch spikes</a></td><td class="num">$0</td><td>Backlinks do</td><td>Launch week, one day each</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="dd">
+    <div>
+      <p class="eyebrow">Do</p>
+      <ul>
+        <li>Rewrite screenshot captions as search phrases. They are indexed now.</li>
+        <li>Build 4 to 6 custom product pages, one per search intent.</li>
+        <li>Submit the featuring nomination. Three weeks lead time, minimum.</li>
+        <li>Get into roundup articles. That is what chatbots quote.</li>
+        <li>Screen-recording video with AI voice. No avatars, no face.</li>
+        <li>Gift Pro codes widely. Track who got which code.</li>
+        <li>Bid on your own app name in Apple Ads, day one.</li>
+      </ul>
+    </div>
+    <div>
+      <p class="eyebrow">Don't</p>
+      <ul>
+        <li>Wall the app. The freemium revenue hit is accepted on purpose (see S5).</li>
+        <li>Build in public. Founder audiences do not convert for a consumer utility.</li>
+        <li>Buy installs before D7 is above 25%.</li>
+        <li>Use AI avatar presenters. Uncanny, and wrong for this audience.</li>
+        <li>Post a video without a trackable path to install.</li>
+        <li>Chase medical-device or reimbursement ground.</li>
+        <li>Ship a streak or a guilt nudge for retention. Ever.</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<!-- ─────────── 01 rules ─────────── -->
+<section id="rules">
+  <div class="sechead"><span class="id">01</span><h2>Rules of the game</h2></div>
+  <p class="thesis">Two sets. Product invariants that nothing here may touch, and the four constraints that decide which tactics are even available.</p>
+
+  <div class="panel">
+    <p class="eyebrow">Locked. This doc does not argue with these.</p>
+    <ul>
+      <li>Calibration free, all categories, full depth. Pro sells the payoff layer.</li>
+      <li>$4.99/mo, $34.99/yr hero, $89 lifetime, $49 founder. Read from RevenueCat.</li>
+      <li>No guilt, no streaks, amber never red, honey only climbs.</li>
+      <li>Core loop: no network call, no LLM.</li>
+      <li>No paywall at install, in onboarding, in the first session, during a timer, after a log, or on a calibration insight.</li>
+    </ul>
+  </div>
+
+  <div class="tw">
+    <table>
+      <thead><tr><th>Constraint</th><th>Kills</th><th>Forces, usefully</th></tr></thead>
+      <tbody>
+        <tr><td>Solo, small budget</td><td>Always-on paid UA, agencies, PR retainers, big creator deals</td><td>Channels that keep working while you sleep: store search, AI answers, evergreen video, permanent listings</td></tr>
+        <tr><td>No build-in-public</td><td>MRR screenshots, day-N threads, Indie Hackers as a channel</td><td>Marketing to users instead of to founders. Better anyway.</td></tr>
+        <tr><td>No face on camera</td><td>Talking-head content, day-in-the-life, podcast video</td><td>Screen-first video, which is what sells a utility. The number changing on screen is the product.</td></tr>
+        <tr><td>AI content allowed</td><td>Nothing, given disclosure (see <a href="#risks">A2</a>)</td><td>Volume. One person can ship 20 to 40 variants a week.</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <p>No face does not mean no human. Voice-only works everywhere: podcast guesting is audio, Reddit is text, a hand holding a phone is not a face. Anonymous accounts are normal in the ADHD space, where plenty of people keep a diagnosis off their real name.</p>
+</section>
+
+<!-- ─────────── S1 store ─────────── -->
+<section id="sys-store">
+  <div class="sechead"><span class="id">S1</span><h2>Store surfaces</h2></div>
+  <div class="chiprow"><span class="chip">free</span><span class="chip quiet">high effort once</span><span class="chip amber">highest payoff</span><span class="chip quiet">blocks S3, S7, S8</span></div>
+  <p class="thesis">Four things changed in Apple's store since mid-2025 and most apps have not adjusted. That gap is the opening.</p>
+
+  <ol class="moves">
+    <li><b>Treat screenshot captions as metadata</b><span class="why">Apple began OCR-indexing caption text in June 2025. Apple has not confirmed it; ASO teams measured apps ranking for terms that existed only in overlays. Write captions in words people search. First screenshot has one job, earning the tap in search results, so show the outcome: the honest number beside the guess. No stuffing, it converts badly and conversion is itself a ranking signal.</span></li>
+    <li><b>Build custom product pages, one per intent</b><span class="why">Since July 2025 a CPP can carry assigned keywords and surface in organic search instead of the default listing. Limit went to 70 in October 2025 and only about a third of apps use CPPs at all. Someone searching "always running late" needs a different first screen than someone searching "task timer". Build 4 to 6, not 70.</span></li>
+    <li><b>Run the Honest Week as an in-app event</b><span class="why">Events are indexed on name and short description, appear on Today, in search, and on your page, and Apple picks a best weekly event. Most utility apps skip events because they assume events mean game tournaments. You already built a cadenced weekly ritual.</span></li>
+    <li><b>Submit a featuring nomination</b><span class="why">App Store Connect has the form now, so it is a queue rather than a lottery. Three weeks minimum, up to three months for wide consideration. Editors score seven things: UX, UI, innovation, uniqueness, accessibility, localisation, product page. Needs Account Holder, Admin, App Manager or Marketing role.</span></li>
+    <li><b>Fix the iPad layout, and count it as growth work</b><span class="why">It is on the launch blocker list already. It is also a featuring criterion, and featured apps skew heavily to iPhone-plus-iPad availability.</span></li>
+    <li><b>Write Play's long description for indexing</b><span class="why">Play indexes the whole long description, has native listing experiments and custom store listings per audience, and only accepts nominations for new apps. Its discovery leans algorithmic where Apple leans editorial.</span></li>
+  </ol>
+
+  <p class="eyebrow">Intents worth their own page</p>
+  <div class="chiprow">
+    <span class="chip">time blindness</span><span class="chip">adhd time management</span><span class="chip">task timer</span>
+    <span class="chip">how long will this take</span><span class="chip">time estimate tracker</span>
+    <span class="chip">always running late</span><span class="chip">focus timer no streaks</span>
+  </div>
+
+  <div class="panel tint">
+    <p class="eyebrow">The pitch shape editors reward</p>
+    <p>Editors need a story they can write and one signature thing visible in thirty seconds. Yours is not the timer. It is that the app learns how wrong you are about time and quietly corrects your plans, on device, with no AI and no shaming. Nominate around a real hook: the Android live-timer presence work, the no-guilt accessibility angle, or a mental health awareness moment, which Apple reliably curates.</p>
+  </div>
+
+  <p><strong>Retention is now a ranking input in both stores</strong>, alongside downloads. So the D7 gate and store ranking are one project, and buying installs early actively damages the signal that earns free ones.</p>
+</section>
+
+<!-- ─────────── S2 AI ─────────── -->
+<section id="sys-ai">
+  <div class="sechead"><span class="id">S2</span><h2>AI answer visibility</h2></div>
+  <div class="chiprow"><span class="chip">free</span><span class="chip quiet">writing and email only</span><span class="chip amber">compounds</span><span class="chip quiet">no camera needed</span></div>
+  <p class="thesis">People ask a chatbot "what app helps with time blindness" instead of searching a store. Models recommend apps that recur across roundups with consistent positioning. A 4.8-star app with 17,000 ratings can be invisible if it never appears in a list.</p>
+
+  <ol class="moves">
+    <li><b>Baseline it, free, in an hour</b><span class="why">Ten phrasings of the user's question across ChatGPT, Claude, Gemini, Perplexity. Save the answers and every source each model cites. That citation list is your target list.</span></li>
+    <li><b>Get into the roundups models quote</b><span class="why">Usually ADHD and productivity listicles plus comparison sites. Pitch a specific angle, not a press release: the one calibration app that runs on device with no AI, no streaks, and a real multiplier. Offer a free Pro code and answer the unflattering questions straight.</span></li>
+    <li><b>Claim the comparison surfaces</b><span class="why">AlternativeTo and similar rank forever for "alternatives to X" and are cited heavily. List Whenbee, then list it as an alternative to the obvious incumbents. Best hour on the whole list.</span></li>
+    <li><b>Say the identical sentence everywhere</b><span class="why">Models reward consistency. Store, site, every directory, every roundup, same line: Whenbee learns how wrong your time estimates are and gives you the honest number, on your device.</span></li>
+    <li><b>Publish one page per question</b><span class="why">On whenbee.app: what is time blindness, why do I underestimate how long things take, what is a time-estimation multiplier. Plain question-and-answer shape. Same work as SEO, pays twice now.</span></li>
+    <li><b>Re-measure monthly</b><span class="why">Same ten prompts, same models. Share of answers naming Whenbee is the metric. AppTweak launched ChatGPT app-recommendation tracking in April 2026 if you ever want it instrumented properly.</span></li>
+  </ol>
+
+  <p>Useful side effect: Reddit is reportedly the most-cited domain across major models, so the community work in S4 feeds this system too. A good comment about estimation math today can be quoted inside a chatbot answer next year.</p>
+</section>
+
+<!-- ─────────── S3 video ─────────── -->
+<section id="sys-video">
+  <div class="sechead"><span class="id">S3</span><h2>Faceless video engine</h2></div>
+  <div class="chiprow"><span class="chip">$0–60/mo</span><span class="chip quiet">daily-ish, batched</span><span class="chip quiet">highest upside, highest waste risk</span></div>
+
+  <div class="panel warm">
+    <p class="eyebrow">Read this before making anything</p>
+    <p>An app-marketing operator posted in July 2026: 1.5 billion views, 2,000+ videos, 14% engagement, and the app barely converted. His line is the one to keep: views without product attribution are just building someone else's audience. Every asset needs a path to install that you can see.</p>
+  </div>
+
+  <h3>What converts in 2026</h3>
+  <p>Polished testimonial creative burned out. Ring-light reviews and scripted walkthroughs get scrolled. AppsFlyer's 2025 analysis found tutorials and reviews produce about 45% higher IPM and 17% better day-seven retention than testimonials. Method-first content earns slightly fewer clicks and much better users, which is the exact trade you want with a D7 gate.</p>
+
+  <div class="tw">
+    <table>
+      <thead><tr><th>Format</th><th>Faceless build</th><th>Platform</th><th>Whenbee line</th></tr></thead>
+      <tbody>
+        <tr><td>Expert commentary</td><td>Voice over screen recording, podcast-clip framing, burned captions</td><td>YouTube Shorts</td><td>"Time blindness is not a discipline problem, it is a measurement problem. Here is what 30 logged tasks looked like."</td></tr>
+        <tr><td>Scenario skit</td><td>Text-on-screen scenario, no actor</td><td>TikTok, Reels</td><td>"Me: this takes 20 minutes. The clock: 47. Every time."</td></tr>
+        <tr><td>Pattern interrupt</td><td>Starts as something else, turns into the number reveal</td><td>TikTok</td><td>Timer runs past the guess, then the honest number appears and matches reality.</td></tr>
+        <tr><td>Street interview</td><td>Needs faces. Skip.</td><td>n/a</td><td>n/a</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <p>TikTok and Reels want the hook inside three seconds and short skits. Shorts rewards longer explanation and shows the highest engagement of the three. One concept, three native cuts, never one video posted three times.</p>
+
+  <h3>The pipeline</h3>
+  <ol class="moves">
+    <li><b>Record once, properly</b><span class="why">Fifteen to twenty clean captures: the guess, the timer, the honest number appearing, the honeycomb ripening, the day rebuilding itself. That is a year of raw material. Do not keep re-recording.</span></li>
+    <li><b>Write thirty hooks</b><span class="why">One line each, confessional, lowercase, doc-06 voice. Bank below.</span></li>
+    <li><b>Assemble cheaply</b><span class="why">Screen capture plus AI voice plus burned captions. Capture-to-narrated-cut tooling runs under half an hour per video. Stay off avatar platforms and the stack costs $0 to $60 a month.</span></li>
+    <li><b>Attribute everything</b><span class="why">One link per format per platform. Bio link points at a page on whenbee.app, not straight at the store, so you see the click before the store swallows it.</span></li>
+    <li><b>Review weekly on hold rate, not views</b><span class="why">Three-second hold and saves. Kill weak hooks, then make five variants of anything that holds.</span></li>
+  </ol>
+
+  <div class="panel">
+    <p class="eyebrow">On AI avatars, a recommendation</p>
+    <p>Synthetic-creator platforms run about $39/mo at entry and past $100 for better avatars, against roughly $200 per video for a human creator. They are built for e-commerce and the avatars still read uncanny on close watch. An uncanny person telling an ADHD audience they were never broken will land badly. Use AI for voice, captions, scripting, editing, translation. Let the screen be the star. If you test an avatar anyway: disclose it, keep it in paid only, and expect it to lose to a plain screen recording.</p>
+  </div>
+
+  <div class="panel flat">
+    <p class="eyebrow">Hook bank, starter ten</p>
+    <ul>
+      <li>i said 20 minutes. it was 47. it is always 47.</li>
+      <li>i am not bad at time. i am wrong about it by the same amount every time.</li>
+      <li>my phone tells me the real number before i promise anyone anything.</li>
+      <li>the app watched me for two weeks and worked out i run 1.8x over. rude. correct.</li>
+      <li>nobody needs to tell me to try harder. i needed one honest multiplier.</li>
+      <li>this is what "i'll be there in 10 minutes" actually means, measured.</li>
+      <li>i stopped estimating. i just look at what it says now.</li>
+      <li>your morning collapses because of one task, and you can find out which.</li>
+      <li>no streaks. nothing dies if you skip a day. that was the design brief.</li>
+      <li>it runs on your phone. nothing leaves it. no ai in the part that matters.</li>
+    </ul>
+  </div>
+</section>
+
+<!-- ─────────── S4 people ─────────── -->
+<section id="sys-people">
+  <div class="sechead"><span class="id">S4</span><h2>Communities and creators</h2></div>
+  <div class="chiprow"><span class="chip">$0–500</span><span class="chip quiet">slow, high trust</span><span class="chip quiet">feeds S2</span></div>
+  <p class="thesis">Someone else already spent years gathering people who are late and tired of being told to try harder. Rent that, do not rebuild it.</p>
+
+  <h3>Reddit and the rest, six rules</h3>
+  <p>The full community map, per-sub rules and exact post copy already live in <code>market-research-2026/LAUNCH-AND-POSTING-PLAN.md</code>. Follow it rather than rewriting it. The part people skip:</p>
+  <ol class="moves">
+    <li><b>Nine to one</b><span class="why">Nine honest posts or comments for every one that mentions the app. In ADHD subs that is survival, not etiquette.</span></li>
+    <li><b>Age and karma first</b><span class="why">Most good subs auto-remove new accounts.</span></li>
+    <li><b>Lead with your own struggle</b><span class="why">The app is a footnote or absent.</span></li>
+    <li><b>Say "I built this"</b><span class="why">This audience has excellent radar and forgives honesty faster than anything else.</span></li>
+    <li><b>No link in a launch post body</b><span class="why">Comment, or wait to be asked.</span></li>
+    <li><b>Block the hour after posting</b><span class="why">Early replies decide whether a thread lives.</span></li>
+  </ol>
+
+  <h3>Borrowed audiences, in order of trust</h3>
+  <div class="tw">
+    <table>
+      <thead><tr><th>Channel</th><th>Cost</th><th>Ask</th><th>Note</th></tr></thead>
+      <tbody>
+        <tr><td>Coaches and therapists</td><td class="num">codes only</td><td>Recommend it to a client if it helps</td><td>Highest-converting channel available to you. Doubles as revenue, see S6.</td></tr>
+        <tr><td>Micro-creator seeding, 1k–50k followers</td><td class="num">codes only</td><td>Nothing. Post if you want to.</td><td>Gift 50 to 200, expect 5 to 15% to post. Do not brief them into an ad. Ask for usage rights only after something performs.</td></tr>
+        <tr><td>Podcast guesting</td><td class="num">$0</td><td>An episode</td><td>Audio, so no face needed. One good ADHD show outlives a hundred videos.</td></tr>
+        <tr><td>Niche newsletters</td><td class="num">$0 to low</td><td>Swap or code giveaway first</td><td>Do not buy a paid slot before you know what a subscriber is worth.</td></tr>
+        <tr><td>Discord and Facebook groups</td><td class="num">$0</td><td>Be a member</td><td>Less ban-happy than Reddit. Good for a tight beta cohort.</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="panel warm">
+    <p class="eyebrow">One rule, no exceptions</p>
+    <p>A unique code or link per partner, every time. Skip it and three months later you cannot tell which channel worked, and you will guess wrong.</p>
+  </div>
+</section>
+
+<!-- ─────────── S5 money ─────────── -->
+<section id="sys-money">
+  <div class="sechead"><span class="id">S5</span><h2>Paywall and pricing</h2></div>
+  <div class="chiprow"><span class="chip">free to change</span><span class="chip quiet">config, not build</span><span class="chip amber">biggest revenue lever</span></div>
+
+  <p class="thesis">2026 data says hard paywalls win on revenue by a lot. You are not going to use one, and that is the right call. So take the hit knowingly and claw it back with six levers that never touch an invariant.</p>
+
+  <div class="tw">
+    <table>
+      <caption>RevenueCat 2026. Hard paywall means unusable until you subscribe.</caption>
+      <thead><tr><th>Metric</th><th class="num">Hard paywall</th><th class="num">Freemium</th></tr></thead>
+      <tbody>
+        <tr><td>D35 trial to paid</td><td class="num yes">10.7%</td><td class="num">2.1%</td></tr>
+        <tr><td>Revenue per install, D60</td><td class="num yes">$3.09</td><td class="num">$0.38</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <p>Why keep the free tier anyway: free calibration is not a pricing choice, it is the thesis. The app proves it knows you before it asks for anything. Wall it and the D7 gate almost certainly fails on an unproven audience. This audience is also subscription-burned, so a wall reads as a trap, and the no-trap promise is load-bearing for trust.</p>
+
+  <ol class="moves">
+    <li><b>Move the value earlier, not the paywall</b><span class="why">Productivity is the category where 71.9% of eventual payers pay on day zero, and your paywall is deliberately absent then. Resolution: make the "make my whole day honest" moment and the capacity check reachable and visible in session one or two, locked but legible. Locked with a clear price of admission converts. Hidden does not exist.</span></li>
+    <li><b>Experiment on the paywall, not the prices</b><span class="why">Prices stay locked and read from RevenueCat. Headline, order of proof, whether lifetime sits beside yearly or under it, one screen or two: all testable server-side with no release. You already ship two feature variants behind the developer toggle, so the harness exists.</span></li>
+    <li><b>Treat intro and win-back offers as plumbing</b><span class="why">A win-back for churned subscribers, an offer for people who viewed the paywall three times and never bought, a longer trial for heavy loggers who do not convert.</span></li>
+    <li><b>Localise price points, not only strings</b><span class="why">Per-storefront pricing through RevenueCat. Sweden is already on the i18n plan. Highest margin work here because it is config.</span></li>
+    <li><b>Keep lifetime capped at 25% of mix</b><span class="why">$89 lifetime is your only real lump of early cash and this audience prefers it. Past the cap you are selling next year's income for this month's.</span></li>
+    <li><b>Annual stays the default</b><span class="why">Annual churns far less. Monthly stays visible but small so it anchors instead of competing.</span></li>
+  </ol>
+
+  <div class="panel">
+    <p class="eyebrow">Scale check</p>
+    <p>Median revenue per install is $0.23 by day 14 and $0.34 by day 60. Freemium at those numbers needs volume. Whenbee's bet is not volume, it is a high-intent niche with above-median willingness to pay. If your RPI lands near the median, fix the payoff bundle or the paywall, not the install count.</p>
+  </div>
+</section>
+
+<!-- ─────────── S6 coach ─────────── -->
+<section id="sys-coach">
+  <div class="sechead"><span class="id">S6</span><h2>Off-store revenue</h2></div>
+  <div class="chiprow"><span class="chip">no store cut</span><span class="chip quiet">emails and a web page</span><span class="chip quiet">after D7 clears</span></div>
+  <p class="thesis">The Pro bundle already contains the artifact a professional needs: a PDF of a person's real time patterns. Coaches and therapists currently try to extract that from a client's memory, which is the one place it does not exist.</p>
+
+  <ol class="moves">
+    <li><b>Version one: a page and a pile of codes</b><span class="why">A coaches page on whenbee.app. "Your client cannot tell you how long their morning takes. This can." Free Pro codes to any coach who asks, tracked per recipient. You are buying distribution, not selling software.</span></li>
+    <li><b>Version two, only if version one bites</b><span class="why">A practitioner tier: client codes in bundles at a per-seat price, billed through Stripe on the web. No store cut, and the coach becomes your salesperson.</span></li>
+    <li><b>Promo codes as your only attribution currency</b><span class="why">App Store and Play promo codes cost nothing and are how you measure organic mentions at all.</span></li>
+  </ol>
+
+  <p>Vendor research puts coaching bundles at three to five times the monthly revenue of a standard premium subscription. Treat the multiple as directional, it comes from a paid market report. The mechanism holds regardless: the payer is not the person with time blindness, and they are buying back their own session hours.</p>
+
+  <div class="dd">
+    <div>
+      <p class="eyebrow">Worth trying</p>
+      <ul><li>Coach and clinician door</li><li>Gift codes as marketing currency</li><li>Localised pricing</li><li>Lifetime, inside the cap</li></ul>
+    </div>
+    <div>
+      <p class="eyebrow">Ruled out, with reasons</p>
+      <ul>
+        <li>Medical device or reimbursement. Needs clinical validation and a compliance surface one person cannot staff.</li>
+        <li>Lifetime-deal marketplaces. Sells your best future revenue at a deep discount to buyers with no loyalty.</li>
+        <li>Ads in the app. Wrong product, and rounding-error money at your scale.</li>
+        <li>A spendable Reclaim economy. Doc 03 already killed it, correctly.</li>
+        <li>Consulting to fund the app. Funds this month, costs you the app.</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<!-- ─────────── S7 paid ─────────── -->
+<section id="sys-paid">
+  <div class="sechead"><span class="id">S7</span><h2>Paid ads</h2></div>
+  <div class="chiprow"><span class="chip">$300+/mo</span><span class="chip quiet">low effort</span><span class="chip quiet">locked until payback is known</span></div>
+  <p class="thesis">Apple Ads is the one paid channel that fits a solo operator: no creative production, exact attribution, and stable keywords once found. Everything else waits for creative that already worked organically.</p>
+
+  <div class="tw">
+    <table>
+      <caption>Apple Ads benchmarks, 2026. Category and country swing these hard.</caption>
+      <thead><tr><th>Metric</th><th class="num">Average</th><th class="num">Excellent</th></tr></thead>
+      <tbody>
+        <tr><td>Tap-through rate</td><td class="num">9%</td><td class="num yes">15%+</td></tr>
+        <tr><td>Conversion rate</td><td class="num">64%</td><td class="num yes">75%+</td></tr>
+        <tr><td>Cost per tap</td><td class="num">$1.34–1.51</td><td class="num yes">50% under category</td></tr>
+        <tr><td>Cost per install</td><td class="num">$2.00–3.50</td><td class="num yes">under $1.00</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <ol class="moves">
+    <li><b>Search results placement only</b><span class="why">Today tab and Search tab convert badly and product-page slots sit below the fold. One practitioner reports Search tab CPAs three to five times higher than Search results for the same app.</span></li>
+    <li><b>Brand defence first, at any budget</b><span class="why">If you do not bid on "whenbee", competitors will. Apps have lost half their impression share on their own name. Cheapest, highest-return campaign you will run. Insurance, basically.</span></li>
+    <li><b>Then a handful of exact-match intent keywords</b><span class="why">Small daily cap. Relevance and tap-through lower your cost over time, so a matched custom product page makes the ads cheaper. S1 pays off again here.</span></li>
+    <li><b>Competitor names, tested and mostly discarded</b><span class="why">Allowed by Apple. Works when a brand name is shorthand for a category, fails when the person wants that specific app. Expect half to fail.</span></li>
+    <li><b>Write the kill rule before you spend</b><span class="why">Any keyword with no paying user at 3x target cost gets paused. You will not want to follow this later, which is why it goes in writing now.</span></li>
+  </ol>
+</section>
+
+<!-- ─────────── S8 launch ─────────── -->
+<section id="sys-launch">
+  <div class="sechead"><span class="id">S8</span><h2>Launch spikes</h2></div>
+  <div class="chiprow"><span class="chip">free</span><span class="chip quiet">one day of work each</span><span class="chip quiet">value is the permanent page</span></div>
+  <p class="thesis">A launch platform is a day of traffic, not a business. The durable payoff is an indexed page that both search engines and models can read forever. Every rented spike points at something you own.</p>
+
+  <div class="tw">
+    <table>
+      <thead><tr><th>Platform</th><th>Why bother</th><th>Reality</th></tr></thead>
+      <tbody>
+        <tr><td>Product Hunt</td><td>Biggest single day, only badge press recognises</td><td>Saturated. Below the top five you are invisible. Line up people who will comment, not just upvote.</td></tr>
+        <tr><td>Show HN</td><td>On-device, no-LLM, forty-lines-of-math story lands here</td><td>All or nothing. Expect hard questions, answer them straight.</td></tr>
+        <tr><td>Uneed</td><td>Weekly launch plus curated newsletter, lower bar</td><td>Free slots queue weeks ahead. Book early.</td></tr>
+        <tr><td>BetaList</td><td>Built for pre-launch signups</td><td>Modest volume, well qualified. Submit two to three weeks ahead.</td></tr>
+        <tr><td>AlternativeTo</td><td>Ranks forever for "alternatives to X", heavily cited by models</td><td>Best hour on this list.</td></tr>
+        <tr><td>MicroLaunch, Launching Next, similar</td><td>Permanent listings and backlinks</td><td>Little direct traffic. One batch afternoon, then forget them.</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<!-- ─────────── 02 todo ─────────── -->
+<section id="todo">
+  <div class="sechead"><span class="id">02</span><h2>Checklists, four phases</h2></div>
+  <p class="thesis">Sequenced so nothing waits on something that has not happened, and a bad week does not cost the quarter. Ticks save in this browser.</p>
+
+  <div class="toolbar">
+    <button id="reset">Clear all ticks</button>
+    <span id="savednote">Progress is stored locally, nothing leaves this file.</span>
+  </div>
+
+  <div class="phase" data-phase="p0">
+    <header><span class="ttl">Phase 0 · Before anyone can download it</span><span class="when">days 1–14</span><span class="count">0/9</span></header>
+    <div class="bar"><i></i></div>
+    <ul class="todo">
+      <li><label><input type="checkbox" id="p0-1"><span><span class="t">Clear P0 and P1 in docs 11 and 12</span><span class="m">Nothing else matters if it cannot ship.</span></span></label></li>
+      <li><label><input type="checkbox" id="p0-2"><span><span class="t">Ship the iPad layout</span><span class="m">Blocker and featuring criterion at once. S1.</span></span></label></li>
+      <li><label><input type="checkbox" id="p0-3"><span><span class="t">Rewrite screenshot captions as search phrases</span><span class="m">First shot: honest number beside the guess. S1.</span></span></label></li>
+      <li><label><input type="checkbox" id="p0-4"><span><span class="t">Build 4 to 6 custom product pages, keyword-assigned</span><span class="m">One per intent from the chip list. S1.</span></span></label></li>
+      <li><label><input type="checkbox" id="p0-5"><span><span class="t">Write Play's long description for indexing</span><span class="m">Play indexes all of it. S1.</span></span></label></li>
+      <li><label><input type="checkbox" id="p0-6"><span><span class="t">Submit the featuring nomination</span><span class="m">Three-week floor, so this is the urgent one. S1.</span></span></label></li>
+      <li><label><input type="checkbox" id="p0-7"><span><span class="t">Set up the Honest Week in-app event</span><span class="m">Indexed and editorially visible. S1.</span></span></label></li>
+      <li><label><input type="checkbox" id="p0-8"><span><span class="t">Record 15 to 20 screen clips, write 30 hooks</span><span class="m">A year of raw material in one session. S3.</span></span></label></li>
+      <li><label><input type="checkbox" id="p0-9"><span><span class="t">Baseline AI visibility: 10 prompts, 4 models</span><span class="m">Save answers and cited sources. S2.</span></span></label></li>
+    </ul>
+  </div>
+
+  <div class="phase" data-phase="p1">
+    <header><span class="ttl">Phase 1 · Quiet launch</span><span class="when">days 15–30</span><span class="count">0/7</span></header>
+    <div class="bar"><i></i></div>
+    <ul class="todo">
+      <li><label><input type="checkbox" id="p1-1"><span><span class="t">Ship, without announcing loudly</span><span class="m">Fix the first wave of bugs against real users, not an audience.</span></span></label></li>
+      <li><label><input type="checkbox" id="p1-2"><span><span class="t">Start posting daily on three platforms</span><span class="m">Attribution links from day one. S3.</span></span></label></li>
+      <li><label><input type="checkbox" id="p1-3"><span><span class="t">Batch the directories and AlternativeTo</span><span class="m">One afternoon, permanent listings. S8, S2.</span></span></label></li>
+      <li><label><input type="checkbox" id="p1-4"><span><span class="t">Email 15 coaches and 15 roundup writers</span><span class="m">Codes tracked per recipient. S2, S4, S6.</span></span></label></li>
+      <li><label><input type="checkbox" id="p1-5"><span><span class="t">Turn on Apple Ads brand defence only</span><span class="m">Small daily cap. Nothing else paid. S7.</span></span></label></li>
+      <li><label><input type="checkbox" id="p1-6"><span><span class="t">Wire campaign source and creator code into PostHog</span><span class="m">Without these two fields the whole doc is unmeasurable. Metrics.</span></span></label></li>
+      <li><label><input type="checkbox" id="p1-7"><span><span class="t">Watch D1 and D7 daily</span><span class="m">The only number allowed to change the plan.</span></span></label></li>
+    </ul>
+  </div>
+
+  <div class="phase" data-phase="p2">
+    <header><span class="ttl">Phase 2 · Find what pulls</span><span class="when">days 31–60</span><span class="count">0/6</span></header>
+    <div class="bar"><i></i></div>
+    <ul class="todo">
+      <li><label><input type="checkbox" id="p2-1"><span><span class="t">Product Hunt and Show HN, separate days</span><span class="m">Only once the store page converts. S8.</span></span></label></li>
+      <li><label><input type="checkbox" id="p2-2"><span><span class="t">Gift Pro to 50 micro-creators</span><span class="m">No brief, no script, unique code each. S4.</span></span></label></li>
+      <li><label><input type="checkbox" id="p2-3"><span><span class="t">Run paywall experiment one</span><span class="m">Layout and proof order. Prices untouched. S5.</span></span></label></li>
+      <li><label><input type="checkbox" id="p2-4"><span><span class="t">Publish the intent pages on whenbee.app</span><span class="m">One question per page. S2.</span></span></label></li>
+      <li><label><input type="checkbox" id="p2-5"><span><span class="t">Double down on the one video format that holds</span><span class="m">Retire the rest without sentiment. S3.</span></span></label></li>
+      <li><label><input type="checkbox" id="p2-6"><span><span class="t">Re-run the AI visibility prompts</span><span class="m">Compare against the phase 0 baseline. S2.</span></span></label></li>
+    </ul>
+  </div>
+
+  <div class="phase" data-phase="p3">
+    <header><span class="ttl">Phase 3 · Decide</span><span class="when">days 61–90</span><span class="count">0/5</span></header>
+    <div class="bar"><i></i></div>
+    <ul class="todo">
+      <li><label><input type="checkbox" id="p3-1"><span><span class="t">Read payback honestly</span><span class="m">RPI at D14 and D60 against $0.23 and $0.34 medians. S5.</span></span></label></li>
+      <li><label><input type="checkbox" id="p3-2"><span><span class="t">If D7 is at or above 25%: open the taps</span><span class="m">Exact-match Apple Ads, coaches page, localised pricing. S7, S6, S5.</span></span></label></li>
+      <li><label><input type="checkbox" id="p3-3"><span><span class="t">If D7 is under 25%: stop all acquisition</span><span class="m">Product or pitch problem. More traffic only makes the leak louder.</span></span></label></li>
+      <li><label><input type="checkbox" id="p3-4"><span><span class="t">Ship one in-app event</span><span class="m">Recurring visibility for work already done. S1.</span></span></label></li>
+      <li><label><input type="checkbox" id="p3-5"><span><span class="t">Nominate for featuring again</span><span class="m">With whatever you built this quarter. S1.</span></span></label></li>
+    </ul>
+  </div>
+</section>
+
+<!-- ─────────── 03 gates ─────────── -->
+<section id="gates">
+  <div class="sechead"><span class="id">03</span><h2>Gates and kill rules</h2></div>
+  <p class="thesis">Written now so they get followed later, when following them is unattractive.</p>
+
+  <div class="panel warm">
+    <div class="gate">
+      <span class="k">GATE</span>
+      <div><strong>D7 at 25% or better before any acquisition spend.</strong> Everything post-launch in doc 05 hangs off this, and so does every recommendation here. Spending before it is met is paying to fill a bucket with a hole in it.</div>
+    </div>
+  </div>
+
+  <div class="tw">
+    <table>
+      <thead><tr><th>Rule</th><th>Trigger</th><th>Action</th></tr></thead>
+      <tbody>
+        <tr><td>Keyword kill</td><td>No paying user at 3x target cost</td><td>Pause it. No second chances, no "give it another week".</td></tr>
+        <tr><td>Format kill</td><td>Weak three-second hold across five posts</td><td>Retire the format, keep the shape that held.</td></tr>
+        <tr><td>Channel kill</td><td>No tracked installs after a month of effort</td><td>Drop it. Two channels done well beat six done badly.</td></tr>
+        <tr><td>Paid stop</td><td>D7 drops under 25% while spending</td><td>Turn off everything except brand defence.</td></tr>
+        <tr><td>Lifetime cap</td><td>Lifetime passes 25% of revenue mix</td><td>Stop featuring it until the mix rebalances.</td></tr>
+        <tr><td>Invariant breach</td><td>Any tactic that needs a streak, guilt, or a day-zero paywall</td><td>The tactic is dead, not the invariant.</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<!-- ─────────── 04 metrics ─────────── -->
+<section id="metrics">
+  <div class="sechead"><span class="id">04</span><h2>Metrics</h2></div>
+  <div class="dd">
+    <div>
+      <p class="eyebrow">Watch</p>
+      <ul>
+        <li>D1, D7, D30. Targets: above 25%, toward 25%, above 8%.</li>
+        <li>Revenue per install at D14 and D60.</li>
+        <li>Store conversion, impressions to install, per custom product page.</li>
+        <li>Three-second hold rate and saves per video.</li>
+        <li>Installs per creator code or partner link.</li>
+        <li>Share of AI answers naming Whenbee, ten fixed prompts.</li>
+        <li>Paywall view to purchase, split by trigger.</li>
+        <li>Resurrection rate: lapsed seven days, then returned.</li>
+      </ul>
+    </div>
+    <div>
+      <p class="eyebrow">Ignore</p>
+      <ul>
+        <li>Video views. See S3.</li>
+        <li>Follower counts anywhere.</li>
+        <li>Time in app and session length. Doc 03 rules these out. The goal is being on time in real life.</li>
+        <li>Product Hunt rank.</li>
+        <li>Downloads quoted without a retention number beside them.</li>
+        <li>Anything a founder-audience channel reports back.</li>
+      </ul>
+    </div>
+  </div>
+  <p>PostHog already tracks install, first log, aha, cell capped, paywall view, purchase. Add campaign source at install and creator code at redemption, or none of the above is measurable.</p>
+</section>
+
+<!-- ─────────── A1 bench ─────────── -->
+<section id="bench">
+  <div class="sechead"><span class="id">A1</span><h2>Benchmarks</h2></div>
+  <div class="tw">
+    <table>
+      <caption>Numbers used across this doc, with where they come from.</caption>
+      <thead><tr><th>Metric</th><th class="num">Value</th><th>Source</th></tr></thead>
+      <tbody>
+        <tr><td>Revenue per install, D14 median</td><td class="num">$0.23</td><td>RevenueCat 2026</td></tr>
+        <tr><td>Revenue per install, D60 median</td><td class="num">$0.34</td><td>RevenueCat 2026</td></tr>
+        <tr><td>Hard paywall RPI, D60</td><td class="num">$3.09</td><td>RevenueCat 2026</td></tr>
+        <tr><td>Freemium RPI, D60</td><td class="num">$0.38</td><td>RevenueCat 2026</td></tr>
+        <tr><td>D35 trial to paid, hard paywall vs freemium</td><td class="num">10.7% / 2.1%</td><td>RevenueCat 2026</td></tr>
+        <tr><td>Productivity payers converting on day 0</td><td class="num">71.9%</td><td>RevenueCat 2026</td></tr>
+        <tr><td>Trial cancels, 3-day vs 30-day</td><td class="num">26% / 51%</td><td>Business of Apps 2026</td></tr>
+        <tr><td>Installs originating in store search</td><td class="num">~70%</td><td>MobileAction, Indie App Santa</td></tr>
+        <tr><td>Custom product pages: adoption, per-app limit</td><td class="num">~31% / 70</td><td>App Radar, AppFollow</td></tr>
+        <tr><td>Tutorials vs testimonials: IPM, D7 retention</td><td class="num">+45% / +17%</td><td>AppsFlyer 2025, via RevenueCat</td></tr>
+        <tr><td>Apple Ads cost per tap, cost per install</td><td class="num">$1.34–1.51 / $2.00–3.50</td><td>Sparrow Apps 2026</td></tr>
+        <tr><td>AI UGC tool entry pricing vs human creator video</td><td class="num">$39/mo / ~$200 per video</td><td>HyperFX, EzUGC</td></tr>
+        <tr><td>ADHD app users disengaging inside 30 days</td><td class="num">&gt;60%</td><td>Dataintelo, vendor report, directional</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<!-- ─────────── A2 risks ─────────── -->
+<section id="risks">
+  <div class="sechead"><span class="id">A2</span><h2>Risks</h2></div>
+  <div class="tw">
+    <table>
+      <thead><tr><th>Risk</th><th>Looks like</th><th>Prevention</th></tr></thead>
+      <tbody>
+        <tr><td>Reddit ban</td><td>Account gone in week two over one link</td><td>Follow the posting plan literally. Karma first, link in comments, nine to one.</td></tr>
+        <tr><td>Undisclosed paid or synthetic content</td><td>FTC requires clear paid-partnership disclosure. Meta and Google require it for fully synthetic spokespeople.</td><td>Label partnerships plainly. Say so if a presenter is synthetic. Cheap to comply, expensive to get caught.</td></tr>
+        <tr><td>Incentivised reviews</td><td>Pro code offered for a rating</td><td>Both stores forbid it. Never tie a code to a review, and tell creators the same.</td></tr>
+        <tr><td>Health claims</td><td>Copy drifts to "treats ADHD" while chasing coaches</td><td>Whenbee measures time. It treats nothing. Add the phrase to the voice ban-list.</td></tr>
+        <tr><td>Growth pressure eats an invariant</td><td>A streak appears "just for retention"</td><td>Kill the tactic. This audience talks to each other, and a shame mechanic loses them permanently.</td></tr>
+        <tr><td>Volume without attribution</td><td>Six months of posting, no idea what worked</td><td>Trackable path on every asset. S3.</td></tr>
+        <tr><td>Category churn</td><td>Over 60% of ADHD app users disengage inside 30 days</td><td>Why the three-organ design exists and why the D7 gate governs spend. Retention work is growth work here.</td></tr>
+        <tr><td>Solo burnout</td><td>Daily video plus community plus support plus building</td><td>Batch everything. Two systems done properly, S1 and S3, beat six done badly.</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p>The likeliest failure has no table row: starting with the fun part. Video feels like progress, store metadata feels like admin, and the admin decides about 70% of your installs.</p>
+</section>
+
+<!-- ─────────── A3 sources ─────────── -->
+<section id="sources">
+  <div class="sechead"><span class="id">A3</span><h2>Sources</h2></div>
+  <footer>
+    <p>Checked July 2026. Vendor research is marked, since it is marketing as well as data.</p>
+    <ol>
+      <li><a href="https://www.revenuecat.com/state-of-subscription-apps/">RevenueCat, State of Subscription Apps 2026</a>: revenue per install by category and day, time-to-paid, access-method splits. Vendor data, largest public sample.</li>
+      <li><a href="https://www.revenuecat.com/blog/growth/subscription-app-trends-benchmarks-2026">RevenueCat trends summary 2026</a>: the hard paywall vs freemium comparison.</li>
+      <li><a href="https://www.businessofapps.com/data/app-subscription-trial-benchmarks/">Business of Apps, subscription trial benchmarks 2026</a>: trial length against cancellation.</li>
+      <li><a href="https://appradar.com/academy/app-store-ranking-factors">App Radar, ASO ranking factors 2026</a>: screenshot OCR from June 2025, CPPs ranking organically from July 2025, limit raised to 70, retention as a ranking signal.</li>
+      <li><a href="https://appfollow.io/blog/aso-ranking-factors">AppFollow, ASO ranking factors 2026</a>: captions as metadata, first-screenshot conversion, in-app events and CPP keyword assignment.</li>
+      <li><a href="https://phiture.com/asostack/aso-trends-in-2026/">Phiture, ASO trends 2026</a>: caption wording, CPP mechanics, video formats.</li>
+      <li><a href="https://developer.apple.com/app-store/getting-featured/">Apple, Getting featured</a> and <a href="https://developer.apple.com/help/app-store-connect/manage-featuring-nominations/nominate-your-app-for-featuring/">Nominate your app for featuring</a>: lead times, nomination types, required roles.</li>
+      <li><a href="https://www.apptweak.com/en/aso-blog/how-to-get-your-app-featured-on-the-app-store">AppTweak, getting featured 2026</a>: editorial criteria, seasonal timing, early adoption of new Apple tech. Vendor.</li>
+      <li><a href="https://appscreenshotstudio.com/blog/get-featured-on-the-app-store-2026-nominations-guide">App Screenshot Studio, nominations guide</a>: the seven criteria, the one-signature-thing pattern. Vendor.</li>
+      <li><a href="https://www.apptweak.com/en/aso-blog/tools-to-track-mobile-app-visibility-in-ai-search-engines-and-llms">AppTweak, tracking visibility in AI search</a>: ChatGPT app-recommendation tracking, launched April 2026. Vendor.</li>
+      <li><a href="https://www.growthbykev.com/blog/generative-engine-optimization-mobile-apps">Growth by Kev, generative engine optimisation for apps</a>: roundup presence as strongest signal, positioning consistency, the invisible-4.8-star-app problem.</li>
+      <li><a href="https://wellows.com/blog/ai-search-visibility-for-mobile-app-businesses/">Wellows, AI search visibility</a>: why clearly-defined niche apps get recommended. Vendor.</li>
+      <li><a href="https://www.revenuecat.com/blog/growth/ugc-ads-apps">RevenueCat, UGC ad formats 2026</a>: the four formats, platform mapping, the AppsFlyer tutorial-vs-testimonial finding.</li>
+      <li><a href="https://sparrowapps.io/articles/apple-search-ads-guide/">Sparrow Apps, Apple Search Ads guide 2026</a>: 2026 benchmarks, placement comparisons, brand defence. Practitioner account of $400k spend.</li>
+      <li><a href="https://smollaunch.com/alternatives/product-hunt">Smol Launch</a> and <a href="https://getlaunchlist.com/blog/product-hunt-alternatives">GetLaunchList</a>: Product Hunt alternatives, Uneed, BetaList, AlternativeTo, AppSumo mechanics.</li>
+      <li><a href="https://www.hyperfx.ai/blog/arcads-vs-creatify-vs-higgs-field-vs-hyper-2026">HyperFX, AI ad creative tools 2026</a>: entry pricing, uncanny-avatar limits, platform disclosure rules for synthetic spokespeople. Vendor.</li>
+      <li><a href="https://dataintelo.com/report/adhd-time-management-app-market">Dataintelo, ADHD time-management app market</a>: category size, 30-day disengagement, coaching revenue multiples, community as discovery channel. Paid vendor report, directional only.</li>
+      <li><a href="https://indieappsanta.com/2025/11/21/10349/">Indie App Santa</a> and <a href="https://www.mobileaction.co/blog/organic-app-growth-in-2025/">MobileAction</a>: the ~70% of installs starting in store search.</li>
+      <li>Internal: <code>docs/product/03-RETENTION-MONETIZATION.md</code>, <code>05-ROADMAP-TO-LAUNCH.md</code>, <code>06-BRAND-VOICE.md</code>, <code>11-APP-STORE-LAUNCH-BLOCKERS.md</code>, <code>12-PLAY-STORE-LAUNCH-BLOCKERS.md</code>, <code>market-research-2026/LAUNCH-AND-POSTING-PLAN.md</code>.</li>
+    </ol>
+    <p>Docs 03 and 06 override anything here that conflicts. If a tactic needs a streak, a guilt nudge, or a day-zero paywall to work, it does not work.</p>
+  </footer>
+</section>
+
+</main>
+</div>
+
+<script>
+(function () {
+  var root = document.documentElement;
+
+  /* theme */
+  var dark = document.getElementById('btn-dark');
+  var light = document.getElementById('btn-light');
+  function setTheme(m) {
+    root.setAttribute('data-theme', m);
+    dark.setAttribute('aria-pressed', String(m === 'dark'));
+    light.setAttribute('aria-pressed', String(m === 'light'));
+    try { localStorage.setItem('wb14-theme', m); } catch (e) {}
+  }
+  var savedTheme = null;
+  try { savedTheme = localStorage.getItem('wb14-theme'); } catch (e) {}
+  setTheme(savedTheme || (window.matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark'));
+  dark.addEventListener('click', function () { setTheme('dark'); });
+  light.addEventListener('click', function () { setTheme('light'); });
+
+  /* checklist state */
+  var KEY = 'wb14-todo';
+  var boxes = Array.prototype.slice.call(document.querySelectorAll('.phase input[type=checkbox]'));
+  var state = {};
+  try { state = JSON.parse(localStorage.getItem(KEY) || '{}'); } catch (e) { state = {}; }
+
+  function save() {
+    try { localStorage.setItem(KEY, JSON.stringify(state)); } catch (e) {}
+  }
+  function paint() {
+    var doneAll = 0;
+    Array.prototype.forEach.call(document.querySelectorAll('.phase'), function (ph) {
+      var items = ph.querySelectorAll('input[type=checkbox]');
+      var done = ph.querySelectorAll('input[type=checkbox]:checked').length;
+      ph.querySelector('.count').textContent = done + '/' + items.length;
+      ph.querySelector('.bar > i').style.width = (items.length ? (done / items.length) * 100 : 0) + '%';
+      doneAll += done;
+    });
+    document.getElementById('globalcount').textContent = doneAll + '/' + boxes.length;
+  }
+  boxes.forEach(function (b) {
+    if (state[b.id]) b.checked = true;
+    b.addEventListener('change', function () {
+      if (b.checked) { state[b.id] = 1; } else { delete state[b.id]; }
+      save(); paint();
+    });
+  });
+  document.getElementById('reset').addEventListener('click', function () {
+    boxes.forEach(function (b) { b.checked = false; });
+    state = {}; save(); paint();
+  });
+  paint();
+
+  /* rail active state */
+  var links = Array.prototype.slice.call(document.querySelectorAll('#rail a'));
+  var targets = links.map(function (a) { return document.querySelector(a.getAttribute('href')); });
+  var obs = new IntersectionObserver(function (entries) {
+    entries.forEach(function (en) {
+      if (!en.isIntersecting) return;
+      var i = targets.indexOf(en.target);
+      if (i < 0) return;
+      links.forEach(function (l) { l.classList.remove('on'); });
+      links[i].classList.add('on');
+    });
+  }, { rootMargin: '-10% 0px -75% 0px' });
+  targets.forEach(function (t) { if (t) obs.observe(t); });
+})();
+</script>
+</body>
+</html>
