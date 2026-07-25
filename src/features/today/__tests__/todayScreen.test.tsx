@@ -264,6 +264,46 @@ describe('Today screen', () => {
     expect(screen.queryByTestId('honest-landing')).toBeNull();
   });
 
+  it('does NOT render the day read on a FUTURE day, even with tasks queued', () => {
+    // The landing card reads the clock and end-of-day from TODAY while the task
+    // list is the SELECTED day. On a future selection that produced a card about
+    // tonight over tomorrow's tasks — and, past end of day, a "Move N to tomorrow"
+    // that moved the wrong day's work. A landing time only means anything today.
+    const task = makeQueued({ id: 'f1', label: 'Ship the deck', category: 'getting_ready', guessMin: 45 });
+    useDayTasksStore.setState({
+      selectedDate: '2026-06-25', // the day after FIXED_TODAY
+      dayTasks: [task],
+      selectFocusTask: () => task,
+    });
+    render(<Today />);
+    expect(screen.queryByTestId('honest-landing')).toBeNull();
+  });
+
+  it('does NOT label a future day’s rows with tonight’s finishing times or the amber tail', async () => {
+    // Same root cause as the card: `ends` are cumulative finishes measured from
+    // the CURRENT clock, so on a future day they would name times from today —
+    // and flag a "tail" row against an end-of-day the selected date never reaches.
+    // Mirrors the today-day wiring test below, one day later.
+    useCalibrationStore.setState({
+      statsByCategory: {
+        getting_ready: { mEffective: 2.0, n: 8, sharpness: 70, tier: 'Ripening', fit: { a: 0, b: 2.0 } },
+      },
+    });
+    const focus = makeQueued({ id: 'f2', label: 'Leave for work', category: 'getting_ready', guessMin: 100, createdAt: T0 });
+    const upNext = makeQueued({ id: 'f3', label: 'Pack bag', category: 'getting_ready', guessMin: 200, createdAt: T0 + 1 });
+    useDayTasksStore.setState({
+      selectedDate: '2026-06-25', // the day after FIXED_TODAY
+      dayTasks: [focus, upNext],
+      selectFocusTask: () => focus,
+    });
+
+    render(<Today />);
+    await screen.findByText('Pack bag');
+
+    expect(screen.queryByTestId('taskrow-ends')).toBeNull();
+    expect(screen.queryByTestId('taskrow-ends-tail')).toBeNull();
+  });
+
   it('leads up-next rows with the honest estimate and supports with the guess', async () => {
     useCalibrationStore.setState({
       statsByCategory: {

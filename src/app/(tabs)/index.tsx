@@ -312,9 +312,15 @@ export default function Today() {
     [landing],
   );
 
+  // Per-row "ends ~8:40pm" labels ride the same today-only gate as the card: the
+  // ends are cumulative finishes measured from the CURRENT clock, so on a future
+  // selection they would label tomorrow's rows with tonight's times.
   const endsById = useMemo(
-    () => new Map(landing.landing.ends.map((e) => [e.id, formatClockMeridiem(e.endMs)])),
-    [landing.landing.ends],
+    () =>
+      isToday
+        ? new Map(landing.landing.ends.map((e) => [e.id, formatClockMeridiem(e.endMs)]))
+        : new Map<string, string>(),
+    [isToday, landing.landing.ends],
   );
 
   const sectionLabel: TextStyle = {
@@ -389,10 +395,15 @@ export default function Today() {
               scrolls with content, lets the user jump to any day in the ±52 wk range. */}
           <CalendarStrip />
 
-          {/* The day's read — only on today/future (past shows DayRecapCard instead)
-              and only once the day has tasks; an empty day has nothing to weigh.
+          {/* The day's read — TODAY only, and only once the day has tasks; an empty
+              day has nothing to weigh. A landing time is a statement about the
+              running clock ("done ~9:50pm", "50m past your day"), so it has no
+              meaning on a day that hasn't started: the hook reads now/end-of-day
+              from TODAY while the task list is the selected day, which on a future
+              selection produced a card describing tonight over tomorrow's tasks —
+              and a footer whose "Move N to tomorrow" moved the wrong day's work.
               Same card for everyone: Pro just hands it more data. */}
-          {!isPastDay && totalCount > 0 ? (
+          {isToday && totalCount > 0 ? (
             <HonestLandingCard
               result={landing}
               doneCount={done.length}
@@ -540,7 +551,7 @@ export default function Today() {
                         onCoachMarkDismiss={dismissLongPressHint}
                         isExiting={deletingId === row.id}
                         endsAtLabel={endsById.has(row.id) ? `ends ~${endsById.get(row.id)}` : undefined}
-                        isTail={landing.landing.tail?.id === row.id}
+                        isTail={isToday && landing.landing.tail?.id === row.id}
                       />
                     ))}
                   </View>
