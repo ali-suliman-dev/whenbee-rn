@@ -216,15 +216,16 @@ describe('Today screen', () => {
     expect(screen.queryByText("What's on today?")).toBeNull();
   });
 
-  it('renders the free task-only capacity verdict line on today (free user)', () => {
-    // selectedDate is today (set in beforeEach). The chip only weighs a day that
+  it('a free user sees the landing card, never the capacity verdict', async () => {
+    // selectedDate is today (set in beforeEach). The card only weighs a day that
     // has tasks, so seed one.
     const task = makeQueued({ id: 'c1', label: 'Leave for work', category: 'getting_ready', guessMin: 15 });
     useDayTasksStore.setState({ dayTasks: [task], selectFocusTask: () => task });
     render(<Today />);
-    // Free user now sees the real honest verdict line (capacity is free), not a teaser.
-    expect(screen.getByTestId('capacity-free')).toBeOnTheScreen();
-    expect(screen.getByText(/honest day/i)).toBeOnTheScreen();
+    // Free users land on the honest-landing card; the old fixed-window capacity
+    // verdict (which always read "· fits") is gone from this path.
+    expect(await screen.findByTestId('honest-landing')).toBeOnTheScreen();
+    expect(screen.queryByTestId('capacity-free')).toBeNull();
   });
 
   it('renders the capacity chip collapsed for a Pro user on today', () => {
@@ -249,7 +250,7 @@ describe('Today screen', () => {
     // No tasks → nothing to weigh, so the chip stays hidden even on today.
     useDayTasksStore.setState({ dayTasks: [], selectFocusTask: () => null });
     render(<Today />);
-    expect(screen.queryByTestId('capacity-free')).toBeNull();
+    expect(screen.queryByTestId('honest-landing')).toBeNull();
     expect(screen.queryByTestId('capacity-chip-collapsed')).toBeNull();
   });
 
@@ -262,7 +263,7 @@ describe('Today screen', () => {
     });
     render(<Today />);
     expect(screen.queryByTestId('capacity-chip-collapsed')).toBeNull();
-    expect(screen.queryByTestId('capacity-free')).toBeNull();
+    expect(screen.queryByTestId('honest-landing')).toBeNull();
   });
 
   it('leads up-next rows with the honest estimate and supports with the guess', async () => {

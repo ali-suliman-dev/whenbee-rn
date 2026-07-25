@@ -42,6 +42,8 @@ import { useDayRecap } from '@/src/features/today/useDayRecap';
 import { DaySoFarCard } from '@/src/features/today/DaySoFarCard';
 import { useDaySoFar } from '@/src/features/today/useDaySoFar';
 import { CapacityChip } from '@/src/features/today/CapacityChip';
+import { HonestLandingCard, type LandingAction } from '@/src/features/today/HonestLandingCard';
+import { useHonestLanding } from '@/src/features/today/useHonestLanding';
 import { CalendarOverlaySection } from '@/src/features/today/CalendarOverlaySection';
 import { useDayCapacity } from '@/src/features/today/useDayCapacity';
 import { useCapacityWidgetPublisher } from '@/src/features/today/useCapacityWidgetPublisher';
@@ -274,6 +276,39 @@ export default function Today() {
   // useBiasWidgetPublisher for the Pro-gate-at-source rule).
   useBiasWidgetPublisher();
 
+  // When the day lands, off the same honest numbers the rows show. Free-path
+  // only for now — Pro still reads CapacityChip until Task 11 migrates it.
+  // No `eventMinAhead` is threaded here on purpose: useDayCapacity never fetches
+  // the calendar on the free path, so the value is provably 0, and the hook
+  // zeroes calendar minutes for non-Pro anyway. Task 11 must pass real minutes
+  // derived from a live clock — NOT a Date.now() read inside a memo keyed only
+  // on cap.events, which would freeze at first render.
+  const landing = useHonestLanding();
+
+  const onLandingAction = useCallback(
+    (kind: LandingAction) => {
+      if (kind === 'add-task' || kind === 'start-one') {
+        router.push('/(modals)/add-task');
+        return;
+      }
+      const store = useDayTasksStore.getState();
+      if (kind === 'move-tail') {
+        const tail = landing.landing.tail;
+        if (tail) void store.moveToTomorrow(tail.id);
+        return;
+      }
+      // move-to-tomorrow clears the whole overflow. Each move reloads the day and
+      // overwrites store state, so they run one at a time — firing them together
+      // interleaves the reloads and leaves the list half-moved.
+      const ids = landing.landing.ends.map((e) => e.id);
+      void ids.reduce(
+        (chain, id) => chain.then(() => store.moveToTomorrow(id)),
+        Promise.resolve(),
+      );
+    },
+    [landing],
+  );
+
   const sectionLabel: TextStyle = {
     ...(type.eyebrowSm as unknown as TextStyle),
     color: t.colors.inkSoft,
@@ -346,11 +381,21 @@ export default function Today() {
               scrolls with content, lets the user jump to any day in the ±52 wk range. */}
           <CalendarStrip />
 
-          {/* Capacity chip — only on today/future (past shows DayRecapCard instead)
-              and only once the day has tasks; an empty day has no load to weigh.
-              Passes the pre-resolved cap result so the chip skips its own fetch. */}
+          {/* The day's read — only on today/future (past shows DayRecapCard instead)
+              and only once the day has tasks; an empty day has nothing to weigh.
+              Free: the honest landing time. Pro: still the capacity chip, which
+              gets the pre-resolved cap result so it skips its own fetch. */}
           {!isPastDay && totalCount > 0 ? (
-            <CapacityChip cap={cap} />
+            isPro ? (
+              <CapacityChip cap={cap} />
+            ) : (
+              <HonestLandingCard
+                result={landing}
+                doneCount={done.length}
+                doneHonestMin={done.reduce((sum, r) => sum + (r.actualMin ?? r.honestMin), 0)}
+                onAction={onLandingAction}
+              />
+            )
           ) : null}
 
           {/* Daily ritual (opt-in) lived in the honey HUD footer; the HUD is gone,

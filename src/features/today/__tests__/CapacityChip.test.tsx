@@ -117,36 +117,10 @@ describe('CapacityChip — Pro ready', () => {
   });
 });
 
-describe('CapacityChip — Free user (task-only verdict)', () => {
-  it('renders the honest task-only verdict line ("Honest day … · fits")', () => {
-    render(<CapacityChip cap={setupFree()} />);
-    expect(screen.getByTestId('capacity-free')).toBeOnTheScreen();
-    expect(screen.getByText(/honest day/i)).toBeOnTheScreen();
-    expect(screen.getByText(/fits/i)).toBeOnTheScreen();
-  });
-
-  it('renders "snug" when the task-only verdict is snug', () => {
-    render(<CapacityChip cap={setupFree({ verdict: 'snug' })} />);
-    expect(screen.getByText(/snug/i)).toBeOnTheScreen();
-  });
-
-  it('renders "heavy — move" when over, never "overdue"/"behind"/"failed"', () => {
-    render(<CapacityChip cap={setupFree({ verdict: 'over', overByMin: 75 })} />);
-    expect(screen.getByText(/heavy/i)).toBeOnTheScreen();
-    expect(screen.getByText(/move/i)).toBeOnTheScreen();
-    expect(screen.queryByText(/overdue/i)).toBeNull();
-    expect(screen.queryByText(/behind/i)).toBeNull();
-    expect(screen.queryByText(/failed/i)).toBeNull();
-  });
-
-  it('does NOT render the calendar bar or the "Pad calendar" write action', () => {
-    render(<CapacityChip cap={setupFree()} />);
-    expect(screen.queryByTestId('capacity-bar')).toBeNull();
-    expect(screen.queryByText(/pad calendar/i)).toBeNull();
-  });
-
-  it('renders nothing on an empty day (no queued tasks)', () => {
-    render(<CapacityChip cap={setupFree({ taskMin: 0 })} />);
+describe('CapacityChip — Free user (Pro-only gate)', () => {
+  it('renders nothing — free users get HonestLandingCard on Today instead', () => {
+    const { toJSON } = render(<CapacityChip cap={setupFree()} />);
+    expect(toJSON()).toBeNull();
     expect(screen.queryByTestId('capacity-free')).toBeNull();
     expect(screen.queryByText(/honest day/i)).toBeNull();
   });

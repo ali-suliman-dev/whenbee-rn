@@ -19,9 +19,9 @@ import { fmtHm } from '@/src/lib/time';
 //   · denied/off: task-only load + calm "Turn on calendar in Settings" affordance
 //   · "Pad my calendar" quiet link → /(modals)/honest-day (the WRITE surface)
 //
-// Free: the honest task-only verdict as a calm one-liner ("Honest day Xh Ym ·
-//   fits | snug | ~Nh heavy — move one?"). No meetings, no bar, no "Pad calendar"
-//   — those are the Pro upgrade. Amber-never-red on 'over'. Nothing on an empty day.
+// Pro-only. Free users get HonestLandingCard on Today instead — it answers
+//   "when does my day land?" from the honest numbers rather than dividing the
+//   queue by a fixed waking window.
 //
 // Constraints: tokens only; reactCompiler Pressable gotcha (visual on inner View);
 // reduced-motion → instant; no bounce/translate-in; amber-only verdict.
@@ -57,72 +57,8 @@ export function CapacityChip({ cap }: CapacityChipProps): React.ReactElement | n
 
   if (dismissed) return null;
 
-  // ── FREE PATH — the honest task-only capacity verdict (no calendar) ─────────
-  // Free users get the real "will my day fit?" read from their planned tasks:
-  // task minutes vs the waking window, as a calm one-liner. No meetings, no bar,
-  // no "Pad calendar" (those are the Pro upgrade, rendered below). Amber-never-red
-  // on 'over'. An empty day (no queued tasks) says nothing at all.
-  if (!isPro2) {
-    if (!load || load.taskMin === 0) return null;
-
-    const isOverFree = load.verdict === 'over';
-    const freeSuffixCopy =
-      load.verdict === 'comfortable'
-        ? '· fits'
-        : load.verdict === 'snug'
-          ? '· snug'
-          : `· ~${Math.max(1, Math.round(load.overByMin / 60))}h heavy — move one?`;
-
-    const freeWrap: ViewStyle = {
-      flexDirection: 'row',
-      alignItems: 'center',
-      backgroundColor: t.colors.surface,
-      borderRadius: t.radii.card,
-      borderCurve: 'continuous',
-      paddingLeft: t.space[4],
-      paddingRight: t.space[2],
-      paddingVertical: t.space[2.5],
-      gap: t.space[2],
-    };
-    const freeDisc: ViewStyle = {
-      width: t.capacity.iconDisc,
-      height: t.capacity.iconDisc,
-      borderRadius: t.radii.full,
-      backgroundColor: t.colors.accentChip,
-      alignItems: 'center',
-      justifyContent: 'center',
-    };
-    const freeLabel: TextStyle = {
-      ...(type.bodySm as unknown as TextStyle),
-      color: t.colors.ink,
-      flex: 1,
-    };
-    const freeSuffixStyle: TextStyle = {
-      ...(type.bodySm as unknown as TextStyle),
-      color: isOverFree ? t.colors.amberText : t.colors.inkSoft,
-    };
-
-    return (
-      <View style={freeWrap} testID="capacity-free">
-        <View style={freeDisc}>
-          <Ionicons name="flash" size={t.iconSize.xs} color={t.colors.amberText} />
-        </View>
-        <Text style={freeLabel} numberOfLines={1}>
-          Honest day {fmtHm(load.taskMin)}{' '}
-          <Text style={freeSuffixStyle}>{freeSuffixCopy}</Text>
-        </Text>
-        <Pressable
-          accessibilityRole="button"
-          accessibilityLabel="Dismiss capacity"
-          onPress={() => setDismissed(true)}
-          hitSlop={t.size.hitSlop}
-          style={{ paddingRight: t.space[2], paddingVertical: t.space[1] }}
-        >
-          <Ionicons name="close" size={t.iconSize.xs} color={t.colors.inkFaint} />
-        </Pressable>
-      </View>
-    );
-  }
+  // Free users get HonestLandingCard on Today instead — this component is Pro-only now.
+  if (!isPro2) return null;
 
   // ── PRO PATH ────────────────────────────────────────────────────────────────
 
