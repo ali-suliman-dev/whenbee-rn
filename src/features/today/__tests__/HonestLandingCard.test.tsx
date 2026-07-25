@@ -8,6 +8,8 @@
 import { render, screen, fireEvent } from '@testing-library/react-native';
 import { HonestLandingCard } from '@/src/features/today/HonestLandingCard';
 import type { HonestLandingResult } from '@/src/features/today/useHonestLanding';
+import { setLandingVariant, LANDING_VARIANT_KEY } from '@/src/features/today/useLandingVariant';
+import { kv } from '@/src/lib/kv';
 
 const NOW = new Date(2026, 6, 25, 19, 10).getTime();
 const MIN = 60_000;
@@ -119,6 +121,27 @@ describe('the footer action reports which route the caller should take', () => {
     );
     fireEvent.press(screen.getByText(/Add a task/));
     expect(onAction).toHaveBeenCalledWith('add-task');
+  });
+});
+
+describe('the stored landing variant switches the headline wording', () => {
+  afterEach(() => kv.delete(LANDING_VARIANT_KEY));
+
+  test('defaults to the D wording when no variant is stored', () => {
+    render(
+      <HonestLandingCard result={base()} doneCount={2} doneHonestMin={75} onAction={jest.fn()} />,
+    );
+    expect(screen.getByText(/Done ~9:50pm · 50m past your day/)).toBeTruthy();
+    expect(screen.queryByText(/~9:50pm\. That's 50m past your day\./)).toBeNull();
+  });
+
+  test('renders the D-alt wording once the variant is set to dAlt', () => {
+    setLandingVariant('dAlt');
+    render(
+      <HonestLandingCard result={base()} doneCount={2} doneHonestMin={75} onAction={jest.fn()} />,
+    );
+    expect(screen.getByText(/~9:50pm\. That's 50m past your day\./)).toBeTruthy();
+    expect(screen.queryByText(/Done ~9:50pm · 50m past your day/)).toBeNull();
   });
 });
 
