@@ -216,6 +216,12 @@ export const tokens = {
     // rest between blinks; beeLook = one slow eye glance; beeLookHold = the dwell at
     // each glance (longer = calmer). All tuned slow so the bee reads serene, not busy.
     beeWingBuzz: 720, beeBlink: 130, beeBlinkGap: 5200, beeLook: 1400, beeLookHold: 2200,
+    // Dozing bee (What's-new empty state). beeBreath = one half of a sleeping
+    // breath (in OR out) — ~23 breaths/min at 2600ms, a resting human rate, so it
+    // reads alive rather than animated. zzz = one full rise-and-fade of a single
+    // "z"; zzzStagger = the delay between them, ~1/3 of a cycle so the three
+    // never peak together (motion-design 1/3 rule). Scale + opacity only.
+    beeBreath: 2600, zzz: 3600, zzzStagger: 1200,
     // Wax-seal ritual choreography (RitualSeal). Calm, no overshoot: the border
     // draws closed FIRST, then honey wells up, a soft bloom passes, the ✦ fades
     // in, and an amber sparkle bursts radially. Durations + start delays (ms).
