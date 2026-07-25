@@ -30,28 +30,46 @@ export default function WhatsNew() {
   // for the moment the user is actually looking at the list.
   useEffect(() => () => markChangelogSeen(), [markChangelogSeen]);
 
+  const empty = changelog.length === 0 && !loading;
+
   return (
     // The formSheet's native contentStyle (see src/app/_layout.tsx) supplies the
     // side gutters — this screen adds no paddingHorizontal of its own.
     <Screen horizontalPadding={false} edges={['left', 'right']}>
-      <SheetGrabber />
-      <SheetScrollView
-        contentContainerStyle={{
-          flexGrow: 1,
-          paddingTop: t.space[5],
-          paddingBottom: insets.bottom + t.space[6],
-          gap: t.space[3],
-        }}
-      >
-        <AppText style={{ ...(type.title as TextStyle), color: t.colors.ink, marginBottom: t.space[2] }}>
+      {/* Fixed drag header — OUTSIDE the ScrollView so it is NOT the sheet's
+          scrolling child. On Android the sheet (BottomSheetBehavior) only drags
+          from touches outside that child, so grabber + heading are what makes the
+          top of the sheet a real drag-to-dismiss zone. See retro.tsx. */}
+      <View style={{ paddingTop: t.space[5], paddingBottom: t.space[3] }}>
+        <SheetGrabber />
+        <AppText style={{ ...(type.title as TextStyle), color: t.colors.ink }}>
           What&apos;s new
         </AppText>
-        {changelog.length === 0 && !loading ? (
+      </View>
+
+      {empty ? (
+        // The empty state never scrolls, so it stays outside the scroll child —
+        // the whole surface drags.
+        <View style={{ flex: 1, paddingBottom: insets.bottom + t.space[6] }}>
           <WhatsNewEmpty />
-        ) : (
-          changelog.map((e) => <ChangelogCard key={e.id} entry={e} />)
-        )}
-      </SheetScrollView>
+        </View>
+      ) : (
+        // flexShrink (not flex:1): with a few entries the list is only as tall as
+        // its cards, so everything below stays plain sheet background — drag zone,
+        // not scroll child. It shrinks and scrolls only once entries overflow.
+        <SheetScrollView
+          style={{ flexShrink: 1 }}
+          showsVerticalScrollIndicator={false}
+          contentContainerStyle={{
+            paddingBottom: insets.bottom + t.space[6],
+            gap: t.space[3],
+          }}
+        >
+          {changelog.map((e) => (
+            <ChangelogCard key={e.id} entry={e} />
+          ))}
+        </SheetScrollView>
+      )}
     </Screen>
   );
 }
