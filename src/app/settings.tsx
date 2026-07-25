@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState, type ReactNode } from 'react';
 import { Alert, KeyboardAvoidingView, Modal, Platform, View, Text, Pressable, Switch, ScrollView, TextInput, type ViewStyle, type TextStyle } from 'react-native';
+import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import * as WebBrowser from 'expo-web-browser';
@@ -798,7 +799,11 @@ export default function Settings() {
         animationType="fade"
         onRequestClose={closeDayEnd}
       >
-        <View style={{ flex: 1, justifyContent: 'flex-end' }}>
+        {/* A native Modal is its own window, NOT a descendant of the app-root
+            GestureHandlerRootView, so FinishTimeWheel's pan gesture never fires
+            inside it — the wheel is dead to both drag and tap. Re-establish a
+            gesture root here (same fix as FinishEditorSheet). */}
+        <GestureHandlerRootView style={{ flex: 1, justifyContent: 'flex-end' }}>
           <Pressable
             style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: t.colors.scrim }}
             accessibilityLabel="Dismiss"
@@ -826,7 +831,7 @@ export default function Settings() {
             />
             <AppButton label="Done" onPress={closeDayEnd} variant="amber" fullWidth />
           </View>
-        </View>
+        </GestureHandlerRootView>
       </Modal>
 
       {/* Quiet hours time editor — mirrors the day-end modal exactly */}
@@ -836,7 +841,8 @@ export default function Settings() {
         animationType="fade"
         onRequestClose={closeQuietEditor}
       >
-        <View style={{ flex: 1, justifyContent: 'flex-end' }}>
+        {/* Own gesture root — see the day-end modal above. */}
+        <GestureHandlerRootView style={{ flex: 1, justifyContent: 'flex-end' }}>
           <Pressable
             style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: t.colors.scrim }}
             accessibilityLabel="Dismiss"
@@ -869,7 +875,7 @@ export default function Settings() {
             />
             <AppButton label="Done" onPress={closeQuietEditor} variant="amber" fullWidth />
           </View>
-        </View>
+        </GestureHandlerRootView>
       </Modal>
 
       <Toast message={toastMsg} visible={toastVisible} />

@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Modal, Pressable, View, type ViewStyle, type TextStyle } from 'react-native';
+import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Animated, {
   useAnimatedStyle,
@@ -128,7 +129,10 @@ export function FocusWindowEditorSheet({
 
   return (
     <Modal visible={visible} transparent animationType="none" onRequestClose={onCancel}>
-      <View style={{ flex: 1, justifyContent: 'flex-end' }}>
+      {/* A native Modal is its own window, NOT a descendant of the app-root
+          GestureHandlerRootView, so FinishTimeWheel's pan gesture never fires
+          inside it. Re-establish a gesture root (see FinishEditorSheet). */}
+      <GestureHandlerRootView style={{ flex: 1, justifyContent: 'flex-end' }}>
         <Animated.View
           style={[
             { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: t.colors.scrim },
@@ -179,7 +183,7 @@ export function FocusWindowEditorSheet({
             <AppButton label="Cancel" variant="ghost" fullWidth onPress={onCancel} />
           </View>
         </Animated.View>
-      </View>
+      </GestureHandlerRootView>
     </Modal>
   );
 }
