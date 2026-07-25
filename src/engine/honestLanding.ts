@@ -125,3 +125,34 @@ export function honestLanding({
     ends,
   };
 }
+
+export interface LandingRangeInput {
+  nowMs: number;
+  /** Summed lower edge of every task's honest range, in minutes. */
+  lowMin: number;
+  /** Summed upper edge, in minutes. */
+  highMin: number;
+  eventMinAhead?: number;
+}
+
+export interface LandingRangeResult {
+  lowMs: number;
+  highMs: number;
+}
+
+/**
+ * Projects a summed honest band onto the clock. Used only before the categories
+ * in play have enough logs for a single time to be honest. Edges are sorted, so
+ * a caller that hands them over in the wrong order still gets a sane range.
+ */
+export function landingRange({
+  nowMs,
+  lowMin,
+  highMin,
+  eventMinAhead = 0,
+}: LandingRangeInput): LandingRangeResult {
+  const events = Math.max(0, eventMinAhead);
+  const low = Math.max(0, Math.min(lowMin, highMin)) + events;
+  const high = Math.max(0, Math.max(lowMin, highMin)) + events;
+  return { lowMs: nowMs + low * MS_PER_MIN, highMs: nowMs + high * MS_PER_MIN };
+}

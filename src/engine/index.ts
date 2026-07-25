@@ -87,6 +87,8 @@ export type {
   LandingTask,
   TaskEnd,
 } from './honestLanding';
+export { landingRange } from './honestLanding';
+export type { LandingRangeInput, LandingRangeResult } from './honestLanding';
 export { planDayAroundAnchors } from './planDayAroundAnchors';
 export type { PlanAnchor, PlanDayInput } from './planDayAroundAnchors';
 export { orderForFocus } from './focusOrder';

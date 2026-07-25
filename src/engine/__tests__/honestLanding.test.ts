@@ -1,5 +1,5 @@
 // src/engine/__tests__/honestLanding.test.ts
-import { honestLanding, type LandingTask } from '@/src/engine';
+import { honestLanding, landingRange, type LandingTask } from '@/src/engine';
 
 const MIN = 60_000;
 // A fixed, readable clock: 7:10pm on 2026-07-25, end of day 9:00pm.
@@ -101,4 +101,16 @@ test('negative or zero honest minutes never move the clock backwards', () => {
   const r = honestLanding({ nowMs: NOW, dayEndMs: DAY_END, tasks: [task('a', -30), task('b', 20)] });
   expect(r.remainingMin).toBe(20);
   expect(r.landingMs).toBe(NOW + 20 * MIN);
+});
+
+test('landingRange projects a summed band onto the clock', () => {
+  const r = landingRange({ nowMs: NOW, lowMin: 180, highMin: 260 });
+  expect(r.lowMs).toBe(NOW + 180 * MIN); // 10:10pm
+  expect(r.highMs).toBe(NOW + 260 * MIN); // 11:30pm
+});
+
+test('landingRange folds events into both edges and never inverts', () => {
+  const r = landingRange({ nowMs: NOW, lowMin: 90, highMin: 40, eventMinAhead: 30 });
+  expect(r.lowMs).toBe(NOW + 70 * MIN); // low/high swapped back: 40 + 30
+  expect(r.highMs).toBe(NOW + 120 * MIN); // 90 + 30
 });
