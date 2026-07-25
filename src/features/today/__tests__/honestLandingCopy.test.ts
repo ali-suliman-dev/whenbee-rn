@@ -1,4 +1,4 @@
-import { landingHeadline, landingFooter } from '@/src/features/today/honestLandingCopy';
+import { landingHeadline, landingFooter, landingScale } from '@/src/features/today/honestLandingCopy';
 import type { LandingResult, LandingTask } from '@/src/engine';
 
 const NOW = new Date(2026, 6, 25, 19, 10).getTime();
@@ -151,4 +151,34 @@ test('past footer offers tomorrow and says "logged", never "banked"', () => {
   const f = landingFooter(past, { doneCount: 2, doneHonestMin: 75, logsToWarm: 0, dayEndShort: '9' });
   expect(f.text).toBe('2 done · 1h 15m logged');
   expect(f.action).toBe('Move 2 to tomorrow');
+});
+
+const DAY_END = new Date(2026, 6, 25, 21, 0).getTime();
+
+test('the over scale labels the present moment and names all three times', () => {
+  expect(landingScale(over, { nowMs: NOW, dayEndMs: DAY_END })).toEqual([
+    'now · 7:10pm',
+    '9:00pm',
+    '9:50pm',
+  ]);
+});
+
+test('the clear scale keeps the "now" anchor — two bare clocks would have none', () => {
+  const clear: LandingResult = {
+    kind: 'clear',
+    landingMs: NOW + 60 * MIN,
+    overMin: 0,
+    openMin: 50,
+    remainingMin: 60,
+    tail: null,
+    ends: [],
+  };
+  expect(landingScale(clear, { nowMs: NOW, dayEndMs: DAY_END })).toEqual(['now · 7:10pm', '9:00pm']);
+});
+
+test('the states that render no bar get no scale', () => {
+  const past: LandingResult = { ...over, kind: 'past' };
+  const empty: LandingResult = { ...over, kind: 'empty', landingMs: null, tail: null };
+  expect(landingScale(past, { nowMs: NOW, dayEndMs: DAY_END })).toEqual([]);
+  expect(landingScale(empty, { nowMs: NOW, dayEndMs: DAY_END })).toEqual([]);
 });

@@ -65,6 +65,14 @@ test('the over bar has both an in-day and an overflow segment', () => {
   expect(screen.getByTestId('landing-seg-over')).toBeTruthy();
 });
 
+test('the bar scale anchors the present moment — bare clocks would say nothing', () => {
+  render(
+    <HonestLandingCard result={base()} doneCount={2} doneHonestMin={75} onAction={jest.fn()} />,
+  );
+  expect(screen.getByText('now · 7:10pm')).toBeTruthy();
+  expect(screen.getByText('9:00pm')).toBeTruthy();
+});
+
 test('the clear bar has no overflow segment', () => {
   const clear = base({ kind: 'clear', landingMs: NOW + 60 * MIN, overMin: 0, openMin: 50, tail: null });
   render(

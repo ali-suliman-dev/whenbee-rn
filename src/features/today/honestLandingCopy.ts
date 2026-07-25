@@ -79,6 +79,31 @@ export function landingHeadline(
   return { lead: 'Done ', clock, trail: ` · ${fmtHm(landing.overMin)} past your day` };
 }
 
+export interface ScaleCtx {
+  /** The tick the card was computed at — the bar's left edge. */
+  nowMs: number;
+  /** The user's end of day — the bar's colour boundary ('over') or right edge ('clear'). */
+  dayEndMs: number;
+}
+
+/**
+ * The labels under the bar, left to right. The first is anchored ("now · 7:10pm")
+ * because three bare clock times read as a list of nothing in particular — the
+ * user has to be told which one is the present moment. The rest are bare clocks.
+ *
+ * Empty on the states that render no bar ('empty', 'past'), so the component
+ * never has to decide what a scale under a missing bar would say.
+ */
+export function landingScale(landing: LandingResult, { nowMs, dayEndMs }: ScaleCtx): string[] {
+  if (landing.kind === 'empty' || landing.kind === 'past') return [];
+
+  const labels = [`now · ${formatClockMeridiem(nowMs)}`, formatClockMeridiem(dayEndMs)];
+  if (landing.kind === 'over' && landing.landingMs !== null) {
+    labels.push(formatClockMeridiem(landing.landingMs));
+  }
+  return labels;
+}
+
 export function landingFooter(
   landing: LandingResult,
   { doneCount, doneHonestMin, logsToWarm, dayEndShort }: FooterCtx,

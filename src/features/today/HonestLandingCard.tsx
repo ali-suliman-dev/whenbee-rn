@@ -23,7 +23,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '@/src/theme/useTheme';
 import { type } from '@/src/theme/typography';
 import { formatClockMeridiem } from '@/src/lib/time';
-import { landingHeadline, landingFooter } from './honestLandingCopy';
+import { landingHeadline, landingFooter, landingScale } from './honestLandingCopy';
 import type { HonestLandingResult } from './useHonestLanding';
 
 export type LandingAction = 'move-tail' | 'add-task' | 'start-one' | 'move-to-tomorrow';
@@ -75,6 +75,7 @@ export function HonestLandingCard({
     rangeLowMs: range?.lowMs,
     rangeHighMs: range?.highMs,
   });
+  const scale = landingScale(landing, { nowMs, dayEndMs });
   const footer = landingFooter(landing, {
     doneCount,
     doneHonestMin,
@@ -194,9 +195,11 @@ export function HonestLandingCard({
             {restMs > 0 ? <View style={{ flex: restMs }} /> : null}
           </View>
           <View style={scaleRow}>
-            <Text style={scaleText}>{formatClockMeridiem(nowMs)}</Text>
-            <Text style={scaleText}>{formatClockMeridiem(dayEndMs)}</Text>
-            {isOver ? <Text style={scaleText}>{formatClockMeridiem(landingMs)}</Text> : null}
+            {scale.map((label) => (
+              <Text key={label} style={scaleText}>
+                {label}
+              </Text>
+            ))}
           </View>
         </>
       ) : null}

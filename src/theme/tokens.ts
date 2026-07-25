@@ -596,9 +596,10 @@ export const tokens = {
   // Day-read bar geometry — shared by HonestLandingCard's now→landing bar and the
   // Pro CapacityChip's task/meetings bar, so the two never read as different bars.
   // barH = height of the segmented track; iconDisc = ⚡ disc diameter; segRadius =
-  // rounded cap on each bar segment; pillPadX = horizontal padding inside the
-  // "Pro" pill teaser.
-  capacity: { barH: 10, iconDisc: 20, segRadius: 3, pillPadX: 8 },
+  // the track/segment cap — kept at barH ÷ 2 so the bar reads as a capsule, not a
+  // slightly-rounded rectangle; pillPadX = horizontal padding inside the "Pro"
+  // pill teaser.
+  capacity: { barH: 10, iconDisc: 20, segRadius: 5, pillPadX: 8 },
 
   // Discovery marker geometry — the honey-hex sign (amber + = runs longer, green
   // − = runs faster) on each gallery card. One size; consumed via t.discovery.hex.
