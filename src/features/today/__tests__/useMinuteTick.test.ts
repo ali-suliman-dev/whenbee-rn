@@ -2,6 +2,7 @@
 // time and the meeting minutes ahead of now must be computed from the same tick,
 // or the bar's meetings slice disagrees with the time the headline names.
 import { renderHook, act } from '@testing-library/react-native';
+import { AppState, type AppStateStatus } from 'react-native';
 import { useMinuteTick, MINUTE_TICK_MS } from '@/src/features/today/useMinuteTick';
 
 const NOW = new Date(2026, 6, 25, 19, 10).getTime();
@@ -43,6 +44,65 @@ test('one interval serves every subscriber, and it stops with the last of them',
 
   setSpy.mockRestore();
   clearSpy.mockRestore();
+});
+
+// iOS suspends `setInterval` while the app is backgrounded, so a screen reopened
+// hours later would keep rendering the tick it froze on until the next fire —
+// "now · 7:10pm" at half past nine. The foreground resync is what prevents that.
+describe('foreground resync', () => {
+  function captureAppStateListener(): (next: AppStateStatus) => void {
+    let listener: ((next: AppStateStatus) => void) | null = null;
+    jest
+      .spyOn(AppState, 'addEventListener')
+      .mockImplementation((_type: string, handler: (next: AppStateStatus) => void) => {
+        listener = handler;
+        return { remove: jest.fn() } as unknown as ReturnType<typeof AppState.addEventListener>;
+      });
+    return (next) => {
+      if (listener === null) throw new Error('useMinuteTick never subscribed to AppState');
+      listener(next);
+    };
+  }
+
+  afterEach(() => {
+    jest.restoreAllMocks();
+  });
+
+  test('coming back to the foreground re-reads the clock without waiting out a minute', () => {
+    const foreground = captureAppStateListener();
+    const hook = renderHook(() => useMinuteTick());
+    expect(hook.result.current).toBe(NOW);
+
+    // Two hours pass with the app suspended: the interval never fires.
+    jest.setSystemTime(NOW + 140 * MINUTE_TICK_MS);
+    expect(hook.result.current).toBe(NOW);
+
+    act(() => foreground('active'));
+    expect(hook.result.current).toBe(NOW + 140 * MINUTE_TICK_MS);
+  });
+
+  test('a background transition does not move the clock', () => {
+    const appState = captureAppStateListener();
+    const hook = renderHook(() => useMinuteTick());
+
+    jest.setSystemTime(NOW + 5 * MINUTE_TICK_MS);
+    act(() => appState('background'));
+    expect(hook.result.current).toBe(NOW);
+  });
+
+  test('the subscription is dropped with the last subscriber', () => {
+    const remove = jest.fn();
+    jest
+      .spyOn(AppState, 'addEventListener')
+      .mockReturnValue({ remove } as unknown as ReturnType<typeof AppState.addEventListener>);
+
+    const a = renderHook(() => useMinuteTick());
+    const b = renderHook(() => useMinuteTick());
+    a.unmount();
+    expect(remove).not.toHaveBeenCalled();
+    b.unmount();
+    expect(remove).toHaveBeenCalledTimes(1);
+  });
 });
 
 test('a fresh subscriber re-reads the clock rather than serving a stale tick', () => {

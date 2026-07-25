@@ -595,11 +595,11 @@ export const tokens = {
 
   // Day-read bar geometry — HonestLandingCard's now→landing bar, in-day / meetings
   // / overflow segments alike, so every segment reads as part of the same bar.
-  // barH = height of the segmented track; iconDisc = ⚡ disc diameter; segRadius =
-  // the track/segment cap — kept at barH ÷ 2 so the bar reads as a capsule, not a
-  // slightly-rounded rectangle; pillPadX = horizontal padding inside the "Pro"
-  // pill teaser.
-  capacity: { barH: 10, iconDisc: 20, segRadius: 5, pillPadX: 8 },
+  // barH = height of the segmented track; iconDisc = ⚡ disc diameter (also used by
+  // TodayFocusHook, so the two cards' leading discs match); segRadius = the
+  // track/segment cap — kept at barH ÷ 2 so the bar reads as a capsule, not a
+  // slightly-rounded rectangle.
+  capacity: { barH: 10, iconDisc: 20, segRadius: 5 },
 
   // Discovery marker geometry — the honey-hex sign (amber + = runs longer, green
   // − = runs faster) on each gallery card. One size; consumed via t.discovery.hex.
