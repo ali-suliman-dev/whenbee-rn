@@ -5,7 +5,15 @@ import { useHonestLanding } from '@/src/features/today/useHonestLanding';
 import { useDayTasksStore } from '@/src/stores/dayTasksStore';
 import { useSettingsStore } from '@/src/stores/settingsStore';
 import { useEntitlement } from '@/src/features/paywall/useEntitlement';
+import { getCalendar } from '@/src/services/calendar';
 import type { DayTask } from '@/src/engine';
+
+jest.mock('@/src/services/calendar', () => ({
+  getCalendar: jest.fn(() => ({
+    requestReadAccess: jest.fn(async () => true),
+    getEventsForDay: jest.fn(async () => []),
+  })),
+}));
 
 const NOW = new Date(2026, 6, 25, 19, 10).getTime();
 
@@ -87,4 +95,38 @@ test('a non-Pro user never has event minutes folded into the landing', () => {
 
   expect(proLanding.remainingMin).toBe(freeLanding.remainingMin); // events aren't "your" work either way
   expect(proLanding.landingMs).not.toBe(freeLanding.landingMs); // but the free landing must exclude the 120 events minutes
+});
+
+// The hook takes eventMinAhead as a plain parameter — it never imports the
+// calendar service itself (only useDayCapacity does, and only for Pro users).
+// This is a structural guard: it can't fail against today's code, but it WILL
+// fail the moment a future refactor wires getCalendar() directly into this
+// hook, which would be exactly the kind of accidental leak this task exists
+// to catch.
+test("a free user's landing never reads the calendar", () => {
+  useEntitlement.setState({ isPro: false });
+  renderHook(() => useHonestLanding(120)); // caller passes minutes; the gate must drop them
+  expect(getCalendar).not.toHaveBeenCalled();
+});
+
+test('event minutes passed to a free user are ignored, not folded in', () => {
+  useEntitlement.setState({ isPro: false });
+  const zero = renderHook(() => useHonestLanding(0));
+  const withEvents = renderHook(() => useHonestLanding(120));
+
+  // Passing a non-zero eventMinAhead to a free caller must produce a landing
+  // byte-identical to passing zero — not just "different from Pro's", but
+  // literally unaffected by the argument.
+  const freeLandingMs = withEvents.result.current.landing.landingMs;
+  expect(freeLandingMs).toBe(zero.result.current.landing.landingMs);
+
+  // Snapshotted above because `withEvents` stays mounted below: flipping the
+  // store re-renders every subscribed hook, `withEvents` included, so reading
+  // `withEvents.result.current` after the flip would silently pick up isPro
+  // too and this assertion would compare pro against itself.
+  act(() => {
+    useEntitlement.setState({ isPro: true });
+  });
+  const { result: pro } = renderHook(() => useHonestLanding(120));
+  expect(pro.current.landing.landingMs).toBeGreaterThan(freeLandingMs ?? 0);
 });
