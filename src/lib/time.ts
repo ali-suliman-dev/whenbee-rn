@@ -27,11 +27,12 @@ export function formatClock(epochMs: number, hour12 = hour12Default): string {
   return `${h12}:${minutes}`;
 }
 
-/** Local 12-hour clock with meridiem: "9:42am", "5:00pm", "12:00pm" (noon). */
-export function formatClockMeridiem(epochMs: number): string {
+/** Local clock with meridiem in 12h mode ("5:00pm"); bare 24h clock ("17:00") otherwise. */
+export function formatClockMeridiem(epochMs: number, hour12 = hour12Default): string {
+  if (!hour12) return formatClock(epochMs, false);
   const d = new Date(epochMs);
   const meridiem = d.getHours() < 12 ? 'am' : 'pm';
-  return `${formatClock(epochMs)}${meridiem}`;
+  return `${formatClock(epochMs, true)}${meridiem}`;
 }
 
 /** Minutes-after-midnight → local clock. 12h: "1:30" · 24h: "13:30". */

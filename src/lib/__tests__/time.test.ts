@@ -1,5 +1,6 @@
 import {
   formatClock,
+  formatClockMeridiem,
   formatTimerClock,
   formatHonestMinutes,
   formatMmSs,
@@ -198,5 +199,21 @@ describe('formatWindowRange', () => {
   });
   it('24h → no meridiem', () => {
     expect(formatWindowRange(810, 960, false)).toBe('13:30 – 16:00');
+  });
+});
+
+describe('formatClockMeridiem', () => {
+  afterEach(() => setClockHour12(true)); // restore the module default
+
+  test('12-hour mode keeps the meridiem', () => {
+    setClockHour12(true);
+    const at = new Date(2026, 6, 25, 21, 50).getTime();
+    expect(formatClockMeridiem(at)).toBe('9:50pm');
+  });
+
+  test('24-hour mode drops the meridiem instead of appending it to a 24h clock', () => {
+    setClockHour12(false);
+    const at = new Date(2026, 6, 25, 21, 50).getTime();
+    expect(formatClockMeridiem(at)).toBe('21:50');
   });
 });
