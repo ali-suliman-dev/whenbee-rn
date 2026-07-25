@@ -150,4 +150,31 @@ describe('TaskRow', () => {
     );
     expect(screen.getByText('← swipe to remove')).toBeTruthy();
   });
+
+  test('a queued row shows its honest end time beside the category', () => {
+    render(
+      <TaskRow
+        title="Finish invoice batch"
+        categoryLabel="Admin"
+        guessMin={30}
+        honestMin={45}
+        endsAtLabel="ends ~7:55pm"
+      />,
+    );
+    expect(screen.getByText(/ends ~7:55pm/)).toBeTruthy();
+  });
+
+  test('the tail row marks its end time as the one past end of day', () => {
+    render(
+      <TaskRow
+        title="Draft the deck"
+        categoryLabel="Deep work"
+        guessMin={60}
+        honestMin={90}
+        endsAtLabel="ends ~9:50pm"
+        isTail
+      />,
+    );
+    expect(screen.getByTestId('taskrow-ends-tail')).toBeTruthy();
+  });
 });

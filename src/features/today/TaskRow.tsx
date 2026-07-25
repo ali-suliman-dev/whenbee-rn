@@ -64,6 +64,10 @@ interface TaskRowProps {
   /** Move this task — currently only 'tomorrow' is passed from the swipe action.
    *  Only shown on queued rows (not done). Calls with a light-medium haptic. */
   onMove?: (target: 'tomorrow') => void;
+  /** Honest finish clock for this row, e.g. "ends ~7:55pm". Queued rows only. */
+  endsAtLabel?: string;
+  /** True when this is the row that crosses the user's end of day — amber clause. */
+  isTail?: boolean;
 }
 
 // Short weekday name for a YYYY-MM-DD key, e.g. '2026-06-22' → 'Mon'.
@@ -90,6 +94,8 @@ export function TaskRow({
   onCoachMarkDismiss,
   carriedFrom,
   onMove,
+  endsAtLabel,
+  isTail = false,
 }: TaskRowProps) {
   const t = useTheme();
   const reducedMotion = useReducedMotion();
@@ -271,6 +277,15 @@ export function TaskRow({
               {shortWeekday(carriedFrom)}
             </Text>
           ) : null}
+          {!done && endsAtLabel ? (
+            <Text
+              testID={isTail ? 'taskrow-ends-tail' : 'taskrow-ends'}
+              style={isTail ? { ...catText, color: t.colors.amberText } : catText}
+            >
+              {'· '}
+              {endsAtLabel}
+            </Text>
+          ) : null}
         </View>
       </View>
 
@@ -350,7 +365,7 @@ export function TaskRow({
       onLongPress={onLongPress}
       delayLongPress={300}
       accessibilityRole="button"
-      accessibilityLabel={`${title}, ${categoryLabel}, plan for ${honestMin} minutes, you guessed ${guessMin}. Tap to start.`}
+      accessibilityLabel={`${title}, ${categoryLabel}, plan for ${honestMin} minutes, you guessed ${guessMin}${endsAtLabel ? `, ${endsAtLabel}` : ''}. Tap to start.`}
     >
       {content}
     </Pressable>

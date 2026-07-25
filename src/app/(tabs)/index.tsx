@@ -1,5 +1,5 @@
 import { View, Text, Pressable, ScrollView, RefreshControl, type TextStyle } from 'react-native';
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback, useEffect, useMemo } from 'react';
 import { router } from 'expo-router';
 import Animated, { FadeIn } from 'react-native-reanimated';
 import { haptics } from '@/src/lib/haptics';
@@ -309,6 +309,11 @@ export default function Today() {
     [landing],
   );
 
+  const endsById = useMemo(
+    () => new Map(landing.landing.ends.map((e) => [e.id, formatClockMeridiem(e.endMs)])),
+    [landing.landing.ends],
+  );
+
   const sectionLabel: TextStyle = {
     ...(type.eyebrowSm as unknown as TextStyle),
     color: t.colors.inkSoft,
@@ -535,6 +540,8 @@ export default function Today() {
                         coachLabel="Press & hold for options"
                         onCoachMarkDismiss={dismissLongPressHint}
                         isExiting={deletingId === row.id}
+                        endsAtLabel={endsById.has(row.id) ? `ends ~${endsById.get(row.id)}` : undefined}
+                        isTail={landing.landing.tail?.id === row.id}
                       />
                     ))}
                   </View>
