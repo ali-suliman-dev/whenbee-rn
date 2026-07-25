@@ -98,7 +98,9 @@ export function HonestLandingCard({
     variant,
   });
   const hasMeetings = eventMinAhead > 0;
-  const scale = landingScale(landing, { nowMs, dayEndMs });
+  // A range in the headline suppresses the landing label on the scale — the card
+  // must not disclaim a precise minute and then name one.
+  const scale = landingScale(landing, { nowMs, dayEndMs, hasRange: range !== null });
   const footer = landingFooter(landing, {
     doneCount,
     doneHonestMin,
@@ -247,14 +249,16 @@ export function HonestLandingCard({
           {footer.boldSpan ? <Text style={footBold}>{footer.boldSpan}</Text> : null}
           {afterBold}
         </Text>
-        <Pressable
-          accessibilityRole="button"
-          accessibilityLabel={footer.action}
-          onPress={() => onAction(actionKindFor(result, hasMeetings))}
-          hitSlop={t.size.hitSlop}
-        >
-          <Text style={actionText}>{footer.action}</Text>
-        </Pressable>
+        {footer.action ? (
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel={footer.action}
+            onPress={() => onAction(actionKindFor(result, hasMeetings))}
+            hitSlop={t.size.hitSlop}
+          >
+            <Text style={actionText}>{footer.action}</Text>
+          </Pressable>
+        ) : null}
       </View>
     </View>
   );

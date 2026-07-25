@@ -153,6 +153,27 @@ test('past footer offers tomorrow and says "logged", never "banked"', () => {
   expect(f.action).toBe('Move 2 to tomorrow');
 });
 
+test('past footer makes NO offer when there is nothing left to move', () => {
+  // "Move 0 to tomorrow" was tappable and did nothing. An action that cannot act
+  // is not offered at all.
+  const nothingToMove: LandingResult = {
+    kind: 'past',
+    landingMs: NOW,
+    overMin: 60,
+    openMin: 0,
+    remainingMin: 0,
+    tail: null,
+    ends: [],
+  };
+  const f = landingFooter(nothingToMove, {
+    doneCount: 0,
+    doneHonestMin: 0,
+    logsToWarm: 0,
+    dayEndShort: '9',
+  });
+  expect(f.action).toBeNull();
+});
+
 const DAY_END = new Date(2026, 6, 25, 21, 0).getTime();
 
 test('the over scale labels the present moment and names all three times', () => {
@@ -160,6 +181,15 @@ test('the over scale labels the present moment and names all three times', () =>
     'now · 7:10pm',
     '9:00pm',
     '9:50pm',
+  ]);
+});
+
+test('a range in the headline drops the exact landing from the scale', () => {
+  // The headline reads "Roughly done 9:10pm – 10:30pm" here. A scale that then
+  // said "9:50pm" would assert the very minute the headline just disclaimed.
+  expect(landingScale(over, { nowMs: NOW, dayEndMs: DAY_END, hasRange: true })).toEqual([
+    'now · 7:10pm',
+    '9:00pm',
   ]);
 });
 

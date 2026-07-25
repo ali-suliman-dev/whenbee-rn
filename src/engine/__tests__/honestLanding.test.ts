@@ -70,6 +70,23 @@ test('past — now is already at or beyond end of day, whatever is queued', () =
   expect(r.landingMs).toBe(late + 115 * MIN);
 });
 
+test('past end of day with an empty queue is empty, even with a meeting still running', () => {
+  // Meetings alone used to keep this out of 'empty', producing a card of zeroes —
+  // "0m still queued", "0 done · 0m logged", "Move 0 to tomorrow". Past end of day
+  // with nothing on the list there is no forecast and nothing to offer.
+  const late = new Date(2026, 6, 25, 22, 0).getTime();
+  const r = honestLanding({ nowMs: late, dayEndMs: DAY_END, tasks: [], eventMinAhead: 60 });
+  expect(r.kind).toBe('empty');
+  expect(r.landingMs).toBeNull();
+  expect(r.ends).toEqual([]);
+});
+
+test('a meeting before end of day still reports a landing — only the past case is dropped', () => {
+  const r = honestLanding({ nowMs: NOW, dayEndMs: DAY_END, tasks: [], eventMinAhead: 60 });
+  expect(r.kind).toBe('clear');
+  expect(r.landingMs).toBe(NOW + 60 * MIN);
+});
+
 test('past also covers now exactly on the boundary', () => {
   const r = honestLanding({ nowMs: DAY_END, dayEndMs: DAY_END, tasks: [task('a', 10)] });
   expect(r.kind).toBe('past');

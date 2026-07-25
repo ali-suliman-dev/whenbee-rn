@@ -44,7 +44,12 @@ export interface FooterCopy {
   text: string;
   /** The span within `text` rendered semibold, or null. */
   boldSpan: string | null;
-  action: string;
+  /**
+   * The offer, or `null` when there is nothing the offer could act on. An action
+   * that cannot act must not be shown — a tappable "Move 0 to tomorrow" that does
+   * nothing is worse than a footer with no action at all.
+   */
+  action: string | null;
 }
 
 export function landingHeadline(
@@ -91,6 +96,13 @@ export interface ScaleCtx {
   nowMs: number;
   /** The user's end of day — the bar's colour boundary ('over') or right edge ('clear'). */
   dayEndMs: number;
+  /**
+   * The headline is showing a range ("Roughly done 9:10pm – 10:30pm") because the
+   * categories in play are still cold. The scale then must NOT name a landing
+   * minute: a card that disclaims precision in the headline and asserts it two
+   * lines down is worse than one that says less.
+   */
+  hasRange?: boolean;
 }
 
 /**
@@ -100,12 +112,19 @@ export interface ScaleCtx {
  *
  * Empty on the states that render no bar ('empty', 'past'), so the component
  * never has to decide what a scale under a missing bar would say.
+ *
+ * The third label (the landing minute) is dropped whenever a range is in play —
+ * see `ScaleCtx.hasRange`. The bar itself still runs to the point estimate; only
+ * the claim in words goes away, which is the part that could be quoted back.
  */
-export function landingScale(landing: LandingResult, { nowMs, dayEndMs }: ScaleCtx): string[] {
+export function landingScale(
+  landing: LandingResult,
+  { nowMs, dayEndMs, hasRange = false }: ScaleCtx,
+): string[] {
   if (landing.kind === 'empty' || landing.kind === 'past') return [];
 
   const labels = [`now · ${formatClockMeridiem(nowMs)}`, formatClockMeridiem(dayEndMs)];
-  if (landing.kind === 'over' && landing.landingMs !== null) {
+  if (!hasRange && landing.kind === 'over' && landing.landingMs !== null) {
     labels.push(formatClockMeridiem(landing.landingMs));
   }
   return labels;
@@ -127,7 +146,7 @@ export function landingFooter(
     return {
       text: `${doneCount} done · ${fmtHm(doneHonestMin)} logged`,
       boldSpan: fmtHm(doneHonestMin),
-      action: `Move ${landing.ends.length} to tomorrow`,
+      action: landing.ends.length > 0 ? `Move ${landing.ends.length} to tomorrow` : null,
     };
   }
 

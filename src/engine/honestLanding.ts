@@ -78,6 +78,14 @@ export function honestLanding({
 
   if (remainingMin === 0 && eventMin === 0) return EMPTY;
 
+  // Past end of day with nothing queued is also nothing to report. 'past' exists
+  // to say "the day ended and this much work is still on the list" — with no
+  // tasks left it degenerates to a card of zeroes ("0m still queued", "0 done")
+  // whose only offer is to move nothing to tomorrow. Meetings alone can't rescue
+  // it: an event still running is not the user's queue, and past end of day there
+  // is no landing left to forecast.
+  if (nowMs >= dayEndMs && remainingMin === 0) return EMPTY;
+
   // Events are committed time that has to happen alongside the tasks, so they
   // push the whole chain out. They get no row of their own in `ends`.
   const landingMs = nowMs + (remainingMin + eventMin) * MS_PER_MIN;

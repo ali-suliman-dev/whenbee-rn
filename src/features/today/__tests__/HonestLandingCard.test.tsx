@@ -15,6 +15,15 @@ const NOW = new Date(2026, 6, 25, 19, 10).getTime();
 const MIN = 60_000;
 const DAY_END = new Date(2026, 6, 25, 21, 0).getTime();
 
+// The cumulative finishes that come with a 'past' day. The engine only emits
+// 'past' while work is still queued — `remainingMin: 115` with an EMPTY `ends`
+// is a state it cannot produce, so fixtures must carry the rows the minutes are
+// made of or they pin behaviour ("Move 0 to tomorrow") that can never happen.
+const PAST_ENDS = [
+  { id: 'a', endMs: NOW + 55 * MIN },
+  { id: 'b', endMs: NOW + 115 * MIN },
+];
+
 const base = (over: Partial<HonestLandingResult['landing']> = {}): HonestLandingResult => ({
   landing: {
     kind: 'over',
@@ -51,7 +60,7 @@ test('renders nothing at all on an empty day', () => {
 });
 
 test('past end of day renders NO bar — a 100% amber bar would read as a scold', () => {
-  const past = base({ kind: 'past', overMin: 90, remainingMin: 115, tail: null });
+  const past = base({ kind: 'past', overMin: 90, remainingMin: 115, tail: null, ends: PAST_ENDS });
   render(
     <HonestLandingCard result={past} doneCount={2} doneHonestMin={75} onAction={jest.fn()} />,
   );
@@ -103,14 +112,30 @@ describe('the footer action reports which route the caller should take', () => {
     expect(onAction).toHaveBeenCalledWith('start-one');
   });
 
-  it('offers tomorrow once the day is already over', () => {
+  it('offers tomorrow once the day is already over — counting the rows it would move', () => {
     const onAction = jest.fn();
-    const past = base({ kind: 'past', overMin: 90, remainingMin: 115, tail: null });
+    const past = base({ kind: 'past', overMin: 90, remainingMin: 115, tail: null, ends: PAST_ENDS });
     render(
       <HonestLandingCard result={past} doneCount={2} doneHonestMin={75} onAction={onAction} />,
     );
-    fireEvent.press(screen.getByText(/Move 0 to tomorrow/));
+    fireEvent.press(screen.getByText('Move 2 to tomorrow'));
     expect(onAction).toHaveBeenCalledWith('move-to-tomorrow');
+  });
+
+  it('offers nothing at all when there is nothing the offer could move', () => {
+    // Defensive: the engine no longer emits 'past' with an empty queue, but a
+    // tappable "Move 0 to tomorrow" that does nothing must never be renderable.
+    const nothingToMove = base({ kind: 'past', overMin: 90, remainingMin: 0, tail: null, ends: [] });
+    render(
+      <HonestLandingCard
+        result={nothingToMove}
+        doneCount={2}
+        doneHonestMin={75}
+        onAction={jest.fn()}
+      />,
+    );
+    expect(screen.queryByText(/to tomorrow/)).toBeNull();
+    expect(screen.queryByRole('button')).toBeNull();
   });
 
   it('offers a task when the day is clear', () => {
@@ -155,6 +180,22 @@ test('a cold estimate speaks the range, not a single minute', () => {
     <HonestLandingCard result={cold} doneCount={0} doneHonestMin={0} onAction={jest.fn()} />,
   );
   expect(screen.getByText(/9:10pm – 10:30pm/)).toBeTruthy();
+});
+
+test('a cold estimate keeps the exact landing OFF the scale too', () => {
+  // The bar still runs to the point estimate, but naming "9:50pm" two lines under
+  // a headline that just disclaimed the minute would contradict it in words.
+  const cold: HonestLandingResult = {
+    ...base(),
+    range: { lowMs: NOW + 120 * MIN, highMs: NOW + 200 * MIN },
+    logsToWarm: 3,
+  };
+  render(
+    <HonestLandingCard result={cold} doneCount={0} doneHonestMin={0} onAction={jest.fn()} />,
+  );
+  expect(screen.getByText('now · 7:10pm')).toBeTruthy();
+  expect(screen.getByText('9:00pm')).toBeTruthy();
+  expect(screen.queryByText('9:50pm')).toBeNull();
 });
 
 // ── Pro: same component, more data ───────────────────────────────────────────
