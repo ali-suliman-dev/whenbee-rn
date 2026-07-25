@@ -269,24 +269,19 @@ export function TaskRow({
         <Text style={titleText} numberOfLines={1}>
           {title}
         </Text>
-        <View style={{ flexDirection: 'row', alignItems: 'center', gap: t.space[0.5] }}>
-          <Text style={catText}>{categoryLabel}</Text>
-          {!done && carriedFrom ? (
-            <Text style={catText}>
-              {'· from '}
-              {shortWeekday(carriedFrom)}
-            </Text>
-          ) : null}
+        <Text style={catText} numberOfLines={1} ellipsizeMode="tail">
+          {categoryLabel}
+          {!done && carriedFrom ? ` · from ${shortWeekday(carriedFrom)}` : null}
           {!done && endsAtLabel ? (
             <Text
               testID={isTail ? 'taskrow-ends-tail' : 'taskrow-ends'}
-              style={isTail ? { ...catText, color: t.colors.amberText } : catText}
+              style={isTail ? { color: t.colors.amberText } : {}}
             >
-              {'· '}
+              {' · '}
               {endsAtLabel}
             </Text>
           ) : null}
-        </View>
+        </Text>
       </View>
 
       {done ? (

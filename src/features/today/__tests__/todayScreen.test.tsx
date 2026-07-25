@@ -283,6 +283,31 @@ describe('Today screen', () => {
     expect(await screen.findByText('~50')).toBeOnTheScreen();
     expect(screen.getByText('guessed 25')).toBeOnTheScreen();
   });
+
+  it('wires each up-next row to its honest end time, and flags the tail row that crosses end of day', async () => {
+    // dayEndMin defaults to 21:00 (DEFAULT_DAY_END_MIN); FIXED_NOW is noon, so
+    // there are 540 minutes of runway before end of day.
+    useCalibrationStore.setState({
+      statsByCategory: {
+        getting_ready: { mEffective: 2.0, n: 8, sharpness: 70, tier: 'Ripening', fit: { a: 0, b: 2.0 } },
+      },
+    });
+    // Focus task: honestMin 100 * 2 = 200min → lands 15:20, still inside the day.
+    const focus = makeQueued({ id: 'g1', label: 'Leave for work', category: 'getting_ready', guessMin: 100, createdAt: T0 });
+    // Up-next task: cumulative honestMin 200 + (200*2=400) = 600min → lands 22:00,
+    // past the 21:00 end of day — this is the row that must carry the tail.
+    const upNext = makeQueued({ id: 'g2', label: 'Pack bag', category: 'getting_ready', guessMin: 200, createdAt: T0 + 1 });
+    useDayTasksStore.setState({ dayTasks: [focus, upNext], selectFocusTask: () => focus });
+
+    render(<Today />);
+
+    await screen.findByText('Leave for work');
+    expect(screen.getByText(/ends ~10:00pm/)).toBeOnTheScreen();
+    expect(screen.getByTestId('taskrow-ends-tail')).toBeOnTheScreen();
+    // Only the up-next row is the tail — the focus task isn't rendered as a TaskRow at all,
+    // so there is exactly one end-time clause on the screen.
+    expect(screen.queryByTestId('taskrow-ends')).toBeNull();
+  });
 });
 
 // ─────────────────────────────────────────────────────────────────────────────
