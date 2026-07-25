@@ -1,0 +1,497 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Whenbee · Day capacity v2 — A, B, and D (B in A's clothes)</title>
+<style>
+  /* ── Real dark-mode token values from src/theme/tokens.ts ───────────────── */
+  :root{
+    --bg:#14151D; --surface:#1F2130; --raised:#292B3C; --sunken:#15161F;
+    --hairline:rgba(255,255,255,0.08);
+    --ink:#F4F1EA; --inksoft:#ADA9B5; --inkfaint:rgba(244,241,234,0.40);
+    --primary:#8275F0; --primary-edge:#6B5BE6;
+    --accent:#EEAE4D; --accent-soft:rgba(238,174,77,0.18); --accent-chip:#2E2A20;
+    --amber-text:#EEAE4D;
+    --r-card:16px; --r-full:999px;
+    --s1:4px; --s2:8px; --s3:12px; --s4:16px;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+       background:#0C0D14;color:#F4F1EA;padding:40px 32px 90px}
+  h1{font-size:26px;letter-spacing:-0.6px;margin-bottom:8px}
+  .lede{color:#ADA9B5;font-size:14px;max-width:960px;line-height:1.6}
+  .lede b{color:#EEAE4D;font-weight:600}
+  .scenario{max-width:960px;font-size:13px;color:#E8E4F4;line-height:1.6;background:#1A1B27;
+       border-left:3px solid #8275F0;border-radius:10px;padding:13px 17px;margin:18px 0 30px}
+  .scenario b{color:#8275F0}
+  .row{display:flex;gap:30px;flex-wrap:wrap;align-items:flex-start}
+  .col{width:372px}
+  .dirlabel{font-size:15.5px;font-weight:700;letter-spacing:-0.2px;margin-bottom:3px}
+  .dirlabel .tag{font-size:10.5px;font-weight:700;letter-spacing:1px;padding:3px 8px;
+       border-radius:999px;margin-left:8px;vertical-align:2px}
+  .tag.pin{background:#241F45;color:#A99BFF}
+  .tag.new{background:#2E2A20;color:#EEAE4D}
+  .dirsub{font-size:12.5px;color:#9E9AA8;line-height:1.55;margin-bottom:14px;min-height:74px}
+  .notes{margin-top:14px;font-size:12.5px;color:#CFCAE0;line-height:1.6;background:#1A1B27;
+       border-radius:12px;padding:13px 15px}
+  .notes b{color:#EEAE4D;font-weight:600}
+  .notes ul{margin:6px 0 0 15px}
+  .notes li{margin-bottom:5px}
+  .stitle{font-size:19px;letter-spacing:-0.3px;margin:46px 0 6px;color:#EEAE4D}
+
+  /* ── Phone frame ── */
+  .phone{width:372px;height:770px;border-radius:42px;overflow:hidden;position:relative;
+         box-shadow:0 18px 50px rgba(0,0,0,.6);border:6px solid #05050A;background:var(--bg);
+         display:flex;flex-direction:column}
+  .notch{position:absolute;top:11px;left:50%;transform:translateX(-50%);width:104px;height:25px;
+         background:#000;border-radius:20px;z-index:9}
+  .screen{flex:1;padding:52px 18px 0;overflow:hidden;display:flex;flex-direction:column;gap:12px}
+
+  .hdr{display:flex;justify-content:space-between;align-items:flex-start}
+  .title{font-size:38px;font-weight:800;letter-spacing:-0.75px;color:var(--ink);line-height:1.05}
+  .date{font-size:12px;color:var(--inksoft);margin-top:3px}
+  .hdr-right{display:flex;align-items:center;gap:13px;margin-top:7px}
+  .gear{font-size:19px;color:var(--inksoft)}
+  .ring{width:52px;height:52px;border-radius:50%;
+        background:conic-gradient(var(--accent) 0 34%, rgba(255,255,255,.10) 34% 100%);
+        display:flex;align-items:center;justify-content:center}
+  .ring-in{width:44px;height:44px;border-radius:50%;background:var(--surface);
+           display:flex;align-items:center;justify-content:center;font-size:19px}
+
+  .cal{display:flex;justify-content:space-between}
+  .day{width:40px;text-align:center;border-radius:13px;padding:6px 0}
+  .day .wd{font-size:10.5px;color:var(--inkfaint)}
+  .day .num{font-size:16px;font-weight:600;color:var(--ink);margin-top:2px}
+  .day.sel{background:rgba(130,117,240,.20)}
+  .day.sel .wd,.day.sel .num{color:var(--primary)}
+
+  .task{background:var(--surface);border-radius:var(--r-card);padding:12px var(--s4);
+        display:flex;align-items:center;gap:11px}
+  .play{width:34px;height:34px;border-radius:50%;background:rgba(130,117,240,.16);flex:none;
+        display:flex;align-items:center;justify-content:center;color:var(--primary);font-size:12px}
+  .task .tt{flex:1}
+  .task .t1{font-size:14.5px;font-weight:600;color:var(--ink)}
+  .task .t2{font-size:11.5px;color:var(--inkfaint);margin-top:2px}
+  .task .mins{font-size:14px;font-weight:700;color:var(--ink);font-variant-numeric:tabular-nums}
+  .task .mins small{display:block;font-size:10px;font-weight:500;color:var(--inkfaint);
+        text-align:right;margin-top:1px}
+  .sect{font-size:10.5px;letter-spacing:1.2px;font-weight:700;color:var(--inksoft);margin-top:2px}
+
+  .tabbar{margin:auto -18px 0;padding:11px 26px 24px;display:flex;align-items:flex-end;
+          justify-content:space-between;border-top:1px solid var(--hairline);background:var(--bg)}
+  .tab{font-size:10px;color:var(--inkfaint);text-align:center;width:52px}
+  .tab .ic{font-size:19px;display:block;margin-bottom:2px}
+  .tab.on{color:var(--primary)}
+  .fab{width:54px;height:54px;border-radius:50%;background:var(--primary);color:#fff;
+       display:flex;align-items:center;justify-content:center;font-size:26px;font-weight:300;
+       box-shadow:0 5px 0 var(--primary-edge);margin-bottom:2px}
+
+  .disc{width:24px;height:24px;border-radius:50%;background:var(--accent-chip);flex:none;
+        display:flex;align-items:center;justify-content:center;font-size:11px;color:var(--amber-text)}
+
+  /* ══════════════ SHARED "A-anatomy" CARD ══════════════ */
+  .acard{background:var(--surface);border-radius:var(--r-card);padding:14px var(--s4) 15px}
+  .a-top{display:flex;align-items:center;gap:var(--s2)}
+  .a-head{flex:1;font-size:14px;color:var(--ink);line-height:1.35}
+  .a-head b{font-weight:700}
+  .a-head em{font-style:normal;color:var(--amber-text);font-weight:700}
+  .a-bar{height:10px;border-radius:5px;background:var(--sunken);margin-top:12px;
+         display:flex;overflow:hidden;position:relative}
+  .seg-fit{background:var(--primary)}
+  .seg-over{background:var(--accent)}
+  .seg-meet{background:var(--primary-edge)}
+  .a-pin{position:absolute;top:-4px;bottom:-4px;width:1.5px;background:var(--ink);opacity:.55}
+  .a-scale{display:flex;justify-content:space-between;margin-top:7px;
+           font-size:10.5px;color:var(--inkfaint);font-variant-numeric:tabular-nums}
+  .a-foot{display:flex;justify-content:space-between;align-items:center;margin-top:11px;
+          padding-top:10px;border-top:1px solid var(--hairline)}
+  .a-foot .l{font-size:12.5px;color:var(--inksoft)}
+  .a-foot .l b{color:var(--ink);font-weight:700;font-variant-numeric:tabular-nums}
+  .a-foot .l em{font-style:normal;color:var(--amber-text);font-weight:700}
+  .a-foot .act{font-size:12px;font-weight:700;color:var(--primary)}
+
+  /* ══════════════ B · original landing card ══════════════ */
+  .land{background:var(--surface);border-radius:var(--r-card);padding:15px var(--s4) 14px}
+  .land-eyebrow{font-size:10.5px;letter-spacing:1.2px;font-weight:700;color:var(--inksoft)}
+  .land-row{display:flex;align-items:baseline;gap:9px;margin-top:8px}
+  .land-time{font-size:32px;font-weight:800;letter-spacing:-0.9px;color:var(--amber-text);
+             font-variant-numeric:tabular-nums;line-height:1;white-space:nowrap}
+  .land-time.ok{color:var(--ink)}
+  .land-delta{font-size:13px;font-weight:600;color:var(--inksoft)}
+  .land-sub{font-size:12.5px;color:var(--inksoft);margin-top:9px;line-height:1.45}
+  .land-sub b{color:var(--ink);font-weight:600}
+  .land-line{height:3px;border-radius:2px;background:var(--sunken);margin-top:13px;position:relative}
+  .land-fill{position:absolute;left:0;top:0;bottom:0;border-radius:2px;background:var(--primary)}
+  .land-spill{position:absolute;top:0;bottom:0;border-radius:2px;background:var(--accent)}
+  .land-pin{position:absolute;top:-5px;width:1.5px;height:13px;background:var(--inkfaint)}
+  .land-pinlbl{position:absolute;top:12px;font-size:10px;color:var(--inkfaint);
+               transform:translateX(-50%);white-space:nowrap}
+  .land-foot{display:flex;justify-content:space-between;align-items:center;
+             margin-top:30px;padding-top:10px;border-top:1px solid var(--hairline)}
+  .land-foot .l{font-size:12.5px;color:var(--inksoft)}
+  .land-foot .act{font-size:12px;font-weight:700;color:var(--primary)}
+
+  /* ── D clock emphasis inside the A head ── */
+  .d-clock{font-weight:800;font-variant-numeric:tabular-nums;letter-spacing:-0.3px}
+
+  /* ── state shelf ── */
+  .stategrid{display:flex;gap:20px;flex-wrap:wrap;margin-top:18px}
+  .statecell{width:356px}
+  .statecap{font-size:12px;color:#9E9AA8;margin-bottom:9px;line-height:1.5;min-height:52px}
+  .statecap b{color:#F4F1EA;font-weight:600}
+  .fauxbg{background:var(--bg);border-radius:20px;padding:16px}
+
+  /* ── side-by-side collapsed comparison ── */
+  .cmp{display:flex;gap:20px;flex-wrap:wrap;margin-top:18px}
+  .cmpcell{width:356px}
+  .cmplbl{font-size:12px;color:#9E9AA8;margin-bottom:8px}
+  .cmplbl b{color:#F4F1EA}
+</style>
+</head>
+<body>
+
+<h1>A, B — and D: B's answer wearing A's body</h1>
+<p class="lede">
+  A and B are pinned as-is. <b>D</b> is the ask: keep A's exact anatomy — icon disc + one-line
+  headline, runway bar, hairline, footer row — but make the number a <b>clock time</b>, not a
+  capacity fraction. Nothing to divide, nothing to interpret.
+</p>
+
+<div class="scenario">
+  <b>Same scenario in all three.</b> <b>7:10 PM</b>, end of day <b>9:00 PM</b>, three tasks left,
+  honest total <b>2 h 40 m</b>. The day runs ~50 m past.
+</div>
+
+<div class="row">
+
+  <!-- ══════════════════ A ══════════════════ -->
+  <div class="col">
+    <div class="dirlabel">A · Runway <span class="tag pin">PINNED</span></div>
+    <div class="dirsub">Honest denominator: <b>now → your end of day</b>. Headline is two
+      durations against each other; the bar's amber tail is the overflow. Reads as
+      "how much room is left", answered in minutes.</div>
+
+    <div class="phone"><div class="notch"></div><div class="screen">
+      <div class="hdr">
+        <div><div class="title">Today</div><div class="date">Fri, 25 Jul</div></div>
+        <div class="hdr-right"><div class="gear">⚙</div><div class="ring"><div class="ring-in">🐝</div></div></div>
+      </div>
+      <div class="cal">
+        <div class="day"><div class="wd">M</div><div class="num">21</div></div>
+        <div class="day"><div class="wd">T</div><div class="num">22</div></div>
+        <div class="day"><div class="wd">W</div><div class="num">23</div></div>
+        <div class="day"><div class="wd">T</div><div class="num">24</div></div>
+        <div class="day sel"><div class="wd">F</div><div class="num">25</div></div>
+        <div class="day"><div class="wd">S</div><div class="num">26</div></div>
+        <div class="day"><div class="wd">S</div><div class="num">27</div></div>
+      </div>
+
+      <div class="acard">
+        <div class="a-top">
+          <div class="disc">⚡</div>
+          <div class="a-head"><b>2h 40m</b> of work left · <em>1h 50m</em> of day left</div>
+        </div>
+        <div class="a-bar">
+          <div class="seg-fit" style="flex:110"></div>
+          <div class="seg-over" style="flex:50"></div>
+        </div>
+        <div class="a-scale"><span>now · 7:10 PM</span><span>9:00 PM</span><span>9:50 PM</span></div>
+        <div class="a-foot">
+          <div class="l">Runs <b>~50m</b> past your day</div>
+          <div class="act">Move one →</div>
+        </div>
+      </div>
+
+      <div class="sect">UP NEXT</div>
+      <div class="task"><div class="play">▶</div><div class="tt">
+        <div class="t1">Finish invoice batch</div><div class="t2">Admin · guessed 30m</div></div>
+        <div class="mins">45m<small>honest</small></div></div>
+      <div class="task"><div class="play">▶</div><div class="tt">
+        <div class="t1">Reply to Marcus</div><div class="t2">Admin · guessed 15m</div></div>
+        <div class="mins">25m<small>honest</small></div></div>
+      <div class="task"><div class="play">▶</div><div class="tt">
+        <div class="t1">Draft the deck</div><div class="t2">Deep work · guessed 60m</div></div>
+        <div class="mins">1h 30m<small>honest</small></div></div>
+
+      <div class="tabbar">
+        <div class="tab on"><span class="ic">☀</span>Today</div>
+        <div class="tab"><span class="ic">▦</span>Plan</div>
+        <div class="fab">＋</div>
+        <div class="tab"><span class="ic">📈</span>Patterns</div>
+        <div class="tab"><span class="ic">🍯</span>Whenbee</div>
+      </div>
+    </div></div>
+
+    <div class="notes">
+      <b>Character</b>
+      <ul>
+        <li>Two durations, user does the subtraction — the footer does it for them.</li>
+        <li>Bar is the hero; the headline supports it.</li>
+        <li>Breaks late at night: window → 0, everything reads "over".</li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- ══════════════════ B ══════════════════ -->
+  <div class="col">
+    <div class="dirlabel">B · Landing time <span class="tag pin">PINNED</span></div>
+    <div class="dirsub">The clock time is the hero — 32px, amber, first thing you see. Bar
+      demoted to a 3px reference line. Reads as an answer, but eats more vertical space
+      and doesn't match the other Today cards' rhythm.</div>
+
+    <div class="phone"><div class="notch"></div><div class="screen">
+      <div class="hdr">
+        <div><div class="title">Today</div><div class="date">Fri, 25 Jul</div></div>
+        <div class="hdr-right"><div class="gear">⚙</div><div class="ring"><div class="ring-in">🐝</div></div></div>
+      </div>
+      <div class="cal">
+        <div class="day"><div class="wd">M</div><div class="num">21</div></div>
+        <div class="day"><div class="wd">T</div><div class="num">22</div></div>
+        <div class="day"><div class="wd">W</div><div class="num">23</div></div>
+        <div class="day"><div class="wd">T</div><div class="num">24</div></div>
+        <div class="day sel"><div class="wd">F</div><div class="num">25</div></div>
+        <div class="day"><div class="wd">S</div><div class="num">26</div></div>
+        <div class="day"><div class="wd">S</div><div class="num">27</div></div>
+      </div>
+
+      <div class="land">
+        <div class="land-eyebrow">HONESTLY, YOU FINISH</div>
+        <div class="land-row">
+          <div class="land-time">9:50 PM</div>
+          <div class="land-delta">50m past your 9:00</div>
+        </div>
+        <div class="land-sub">Three tasks left, <b>2h 40m</b> honest. Drop <b>Draft the deck</b>
+          and you land 8:20.</div>
+        <div class="land-line">
+          <div class="land-fill" style="left:0;width:63%"></div>
+          <div class="land-spill" style="left:63%;width:29%"></div>
+          <div class="land-pin" style="left:63%"></div>
+          <div class="land-pinlbl" style="left:63%">9:00 PM</div>
+        </div>
+        <div class="land-foot">
+          <div class="l">2 done · 1h 15m banked</div>
+          <div class="act">Move one →</div>
+        </div>
+      </div>
+
+      <div class="sect">UP NEXT</div>
+      <div class="task"><div class="play">▶</div><div class="tt">
+        <div class="t1">Finish invoice batch</div><div class="t2">Admin · ends ~7:55</div></div>
+        <div class="mins">45m<small>honest</small></div></div>
+      <div class="task"><div class="play">▶</div><div class="tt">
+        <div class="t1">Reply to Marcus</div><div class="t2">Admin · ends ~8:20</div></div>
+        <div class="mins">25m<small>honest</small></div></div>
+      <div class="task"><div class="play">▶</div><div class="tt">
+        <div class="t1">Draft the deck</div>
+        <div class="t2" style="color:var(--amber-text)">Deep work · ends ~9:50</div></div>
+        <div class="mins">1h 30m<small>honest</small></div></div>
+
+      <div class="tabbar">
+        <div class="tab on"><span class="ic">☀</span>Today</div>
+        <div class="tab"><span class="ic">▦</span>Plan</div>
+        <div class="fab">＋</div>
+        <div class="tab"><span class="ic">📈</span>Patterns</div>
+        <div class="tab"><span class="ic">🍯</span>Whenbee</div>
+      </div>
+    </div></div>
+
+    <div class="notes">
+      <b>Character</b>
+      <ul>
+        <li>Answer-first. Zero interpretation.</li>
+        <li>Hero number makes it the loudest card on Today — every day, forever.</li>
+        <li>Per-row end times are the real unlock and are independent of the card shape.</li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- ══════════════════ D ══════════════════ -->
+  <div class="col">
+    <div class="dirlabel">D · Landing, A-shaped <span class="tag new">NEW</span></div>
+    <div class="dirsub">A's exact anatomy — disc + one-line headline, runway bar, hairline,
+      footer. Only the semantics change: the headline is a <b>clock time</b>, the bar is
+      <b>now → landing</b> with the 9:00 pin drawn on it. Same footprint as A, same answer as B.</div>
+
+    <div class="phone"><div class="notch"></div><div class="screen">
+      <div class="hdr">
+        <div><div class="title">Today</div><div class="date">Fri, 25 Jul</div></div>
+        <div class="hdr-right"><div class="gear">⚙</div><div class="ring"><div class="ring-in">🐝</div></div></div>
+      </div>
+      <div class="cal">
+        <div class="day"><div class="wd">M</div><div class="num">21</div></div>
+        <div class="day"><div class="wd">T</div><div class="num">22</div></div>
+        <div class="day"><div class="wd">W</div><div class="num">23</div></div>
+        <div class="day"><div class="wd">T</div><div class="num">24</div></div>
+        <div class="day sel"><div class="wd">F</div><div class="num">25</div></div>
+        <div class="day"><div class="wd">S</div><div class="num">26</div></div>
+        <div class="day"><div class="wd">S</div><div class="num">27</div></div>
+      </div>
+
+      <div class="acard">
+        <div class="a-top">
+          <div class="disc">⚡</div>
+          <div class="a-head">Done <em class="d-clock">~9:50 PM</em> · 50m past your day</div>
+        </div>
+        <div class="a-bar">
+          <div class="seg-fit" style="flex:110"></div>
+          <div class="seg-over" style="flex:50"></div>
+        </div>
+        <div class="a-scale"><span>now · 7:10 PM</span><span>9:00 PM</span><span>9:50 PM</span></div>
+        <div class="a-foot">
+          <div class="l"><em>Draft the deck</em> lands after 9</div>
+          <div class="act">Move it →</div>
+        </div>
+      </div>
+
+      <div class="sect">UP NEXT</div>
+      <div class="task"><div class="play">▶</div><div class="tt">
+        <div class="t1">Finish invoice batch</div><div class="t2">Admin · ends ~7:55</div></div>
+        <div class="mins">45m<small>honest</small></div></div>
+      <div class="task"><div class="play">▶</div><div class="tt">
+        <div class="t1">Reply to Marcus</div><div class="t2">Admin · ends ~8:20</div></div>
+        <div class="mins">25m<small>honest</small></div></div>
+      <div class="task"><div class="play">▶</div><div class="tt">
+        <div class="t1">Draft the deck</div>
+        <div class="t2" style="color:var(--amber-text)">Deep work · ends ~9:50</div></div>
+        <div class="mins">1h 30m<small>honest</small></div></div>
+
+      <div class="tabbar">
+        <div class="tab on"><span class="ic">☀</span>Today</div>
+        <div class="tab"><span class="ic">▦</span>Plan</div>
+        <div class="fab">＋</div>
+        <div class="tab"><span class="ic">📈</span>Patterns</div>
+        <div class="tab"><span class="ic">🍯</span>Whenbee</div>
+      </div>
+    </div></div>
+
+    <div class="notes">
+      <b>What D inherits from each</b>
+      <ul>
+        <li>From A: footprint, one-line headline, bar-as-hero, footer action row — sits in the
+          card rhythm instead of shouting over it.</li>
+        <li>From B: the number is a clock time. No fraction, no "snug", nothing to divide.</li>
+        <li>Bar now spans <b>now → landing</b>, with the end-of-day pin drawn ON it — so the
+          amber tail literally is "past 9:00". A's bar spanned now → end of day and let the
+          tail hang off the end.</li>
+        <li>Footer names the tail task instead of restating the overage the headline
+          already gave.</li>
+        <li>Late-night failure of A is gone: no window to divide by. Past 9:00 it just
+          reflows (see states below).</li>
+      </ul>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════ COLLAPSED COMPARISON ══════════════════════ -->
+<h2 class="stitle">The one line, side by side</h2>
+<p class="lede">This is the whole decision. Everything else is the same card.</p>
+<div class="cmp">
+  <div class="cmpcell">
+    <div class="cmplbl"><b>A</b> — two durations, you subtract</div>
+    <div class="fauxbg"><div class="acard" style="padding-bottom:14px">
+      <div class="a-top"><div class="disc">⚡</div>
+        <div class="a-head"><b>2h 40m</b> of work left · <em>1h 50m</em> of day left</div></div>
+    </div></div>
+  </div>
+  <div class="cmpcell">
+    <div class="cmplbl"><b>D</b> — the answer, already subtracted</div>
+    <div class="fauxbg"><div class="acard" style="padding-bottom:14px">
+      <div class="a-top"><div class="disc">⚡</div>
+        <div class="a-head">Done <em class="d-clock">~9:50 PM</em> · 50m past your day</div></div>
+    </div></div>
+  </div>
+  <div class="cmpcell">
+    <div class="cmplbl"><b>D-alt</b> — landing first, cost second</div>
+    <div class="fauxbg"><div class="acard" style="padding-bottom:14px">
+      <div class="a-top"><div class="disc">⚡</div>
+        <div class="a-head"><em class="d-clock">~9:50 PM</em>. That's <b>50m</b> past your day.</div></div>
+    </div></div>
+  </div>
+</div>
+
+<!-- ══════════════════════ D STATES ══════════════════════ -->
+<h2 class="stitle">D in the states that decide it</h2>
+<p class="lede">Same anatomy every time — only the headline and the bar's contents change.</p>
+
+<div class="stategrid">
+
+  <div class="statecell">
+    <div class="statecap"><b>Morning, plenty of room.</b> 8:40 AM, 2 h 15 m queued.
+      Bar is mostly empty, no amber, footer offers growth instead of a cut.</div>
+    <div class="fauxbg"><div class="acard">
+      <div class="a-top"><div class="disc">⚡</div>
+        <div class="a-head">Done <em class="d-clock" style="color:var(--ink)">~10:55 AM</em>
+          · <b>10h</b> still open</div></div>
+      <div class="a-bar">
+        <div class="seg-fit" style="flex:135"></div>
+        <div style="flex:605"></div>
+      </div>
+      <div class="a-scale"><span>now · 8:40 AM</span><span>9:00 PM</span></div>
+      <div class="a-foot">
+        <div class="l">Nothing logged yet</div>
+        <div class="act">Add a task →</div>
+      </div>
+    </div></div>
+  </div>
+
+  <div class="statecell">
+    <div class="statecap"><b>Cold start — no calibration.</b> Day 1, seeded prior only. A single
+      clock time would be false precision, so the headline carries a range and the bar
+      gets a soft tail.</div>
+    <div class="fauxbg"><div class="acard">
+      <div class="a-top"><div class="disc">⚡</div>
+        <div class="a-head">Roughly done <em class="d-clock" style="color:var(--ink)">4:20 – 5:40 PM</em></div></div>
+      <div class="a-bar">
+        <div class="seg-fit" style="flex:280"></div>
+        <div style="flex:80;background:rgba(130,117,240,.35)"></div>
+        <div style="flex:380"></div>
+      </div>
+      <div class="a-scale"><span>now · 1:00 PM</span><span>9:00 PM</span></div>
+      <div class="a-foot">
+        <div class="l"><b>4 more logs</b> and this tightens</div>
+        <div class="act">Start one →</div>
+      </div>
+    </div></div>
+  </div>
+
+  <div class="statecell">
+    <div class="statecap"><b>Past your end of day.</b> 10:30 PM, work still queued. No window
+      left to divide by — the card reframes to tomorrow. No red, no scold.</div>
+    <div class="fauxbg"><div class="acard">
+      <div class="a-top"><div class="disc">⚡</div>
+        <div class="a-head">Your day ended <b>1h 30m</b> ago · <em>1h 55m</em> still queued</div></div>
+      <div class="a-bar">
+        <div class="seg-over" style="flex:115"></div>
+        <div style="flex:0"></div>
+      </div>
+      <div class="a-scale"><span>9:00 PM</span><span>now · 10:30 PM</span></div>
+      <div class="a-foot">
+        <div class="l">2 done · <b>1h 15m</b> logged</div>
+        <div class="act">Move 2 to tomorrow →</div>
+      </div>
+    </div></div>
+  </div>
+
+  <div class="statecell">
+    <div class="statecap"><b>Pro, with calendar.</b> Meetings become a third bar segment and
+      one clause in the headline. The Pro delta is data, not a different component.</div>
+    <div class="fauxbg"><div class="acard">
+      <div class="a-top"><div class="disc">⚡</div>
+        <div class="a-head">Done <em class="d-clock">~11:20 PM</em> · 2h 20m past your day</div></div>
+      <div class="a-bar">
+        <div class="seg-fit" style="flex:110"></div>
+        <div class="seg-meet" style="flex:90"></div>
+        <div class="seg-over" style="flex:50"></div>
+      </div>
+      <div class="a-scale"><span>now · 7:10 PM</span><span>9:00 PM</span><span>11:20 PM</span></div>
+      <div class="a-foot">
+        <div class="l"><b>2h 40m</b> tasks + <b>1h 30m</b> meetings</div>
+        <div class="act">Pad calendar →</div>
+      </div>
+    </div></div>
+  </div>
+
+</div>
+
+</body>
+</html>
