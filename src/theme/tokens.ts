@@ -17,7 +17,7 @@ import { Easing } from 'react-native-reanimated';
 export const tokens = {
   // 4-based rhythm + sub-8 micro steps (kills inline gap: 2/3/6). 2.5:10 is the
   // half-step the chip vertical padding needs to clear the 44pt target.
-  space: { 0: 0, 0.5: 2, 1: 4, 1.5: 6, 2: 8, 2.5: 10, 3: 12, 4: 16, 5: 20, 6: 24, 8: 32, 10: 40, 12: 48, 16: 64 },
+  space: { 0: 0, 0.5: 2, 1: 4, 1.5: 6, 2: 8, 2.5: 10, 3: 12, 3.5: 14, 4: 16, 5: 20, 6: 24, 8: 32, 10: 40, 12: 48, 16: 64 },
 
   // Control-height system — HIG-compliant touch targets (44pt floor). Buttons and
   // tappable controls size from here, so nothing is ad-hoc under the 44pt minimum.
@@ -593,11 +593,12 @@ export const tokens = {
   // pill horizontal padding.
   proTeaser: { previewH: 118, barGap: 9, barRadius: 4, scrimOpacity: 0.28, barOpacity: 0.55, pillPadX: 11 },
 
-  // CapacityChip geometry — the quiet Honest-Day collapsed/expanded chip on Today.
-  // barH = height of the two-segment capacity bar track; iconDisc = ⚡ disc diameter;
-  // segRadius = rounded cap on each bar segment; pillPadX = horizontal padding inside
-  // the "Pro" pill teaser.
-  capacity: { barH: 6, iconDisc: 20, segRadius: 3, pillPadX: 8 },
+  // Day-read bar geometry — shared by HonestLandingCard's now→landing bar and the
+  // Pro CapacityChip's task/meetings bar, so the two never read as different bars.
+  // barH = height of the segmented track; iconDisc = ⚡ disc diameter; segRadius =
+  // rounded cap on each bar segment; pillPadX = horizontal padding inside the
+  // "Pro" pill teaser.
+  capacity: { barH: 10, iconDisc: 20, segRadius: 3, pillPadX: 8 },
 
   // Discovery marker geometry — the honey-hex sign (amber + = runs longer, green
   // − = runs faster) on each gallery card. One size; consumed via t.discovery.hex.
