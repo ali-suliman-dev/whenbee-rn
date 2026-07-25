@@ -44,6 +44,12 @@ export function landingHeadline(
   landing: LandingResult,
   { rangeLowMs, rangeHighMs, variant = 'd' }: HeadlineOpts,
 ): HeadlineCopy {
+  // No plan yet — `landingMs` is null exactly here; never fall through to the
+  // `?? 0` epoch fallback below.
+  if (landing.kind === 'empty') {
+    return { lead: '', clock: '', trail: '' };
+  }
+
   if (landing.kind === 'past') {
     return {
       lead: 'Your day ended ',

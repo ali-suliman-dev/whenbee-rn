@@ -66,6 +66,50 @@ test('past headline states the fact without a scold', () => {
   expect(c.trail).toBe(' · 1h 55m still queued');
 });
 
+test('empty headline renders no clock — a regression to the epoch fallback fails loudly', () => {
+  const empty: LandingResult = {
+    kind: 'empty',
+    landingMs: null,
+    overMin: 0,
+    openMin: 0,
+    remainingMin: 0,
+    tail: null,
+    ends: [],
+  };
+  const c = landingHeadline(empty, {});
+  expect(c.clock).not.toMatch(/\d/);
+});
+
+test('a past day wins over a supplied range — the range never overrides the fact', () => {
+  const past: LandingResult = {
+    kind: 'past',
+    landingMs: NOW,
+    overMin: 90,
+    openMin: 0,
+    remainingMin: 115,
+    tail: null,
+    ends: [],
+  };
+  const c = landingHeadline(past, { rangeLowMs: NOW + 200 * MIN, rangeHighMs: NOW + 280 * MIN });
+  expect(c.lead).toBe('Your day ended ');
+  expect(c.clock).toBe('1h 30m ago');
+});
+
+test('warming logs win over the past footer', () => {
+  const past: LandingResult = {
+    kind: 'past',
+    landingMs: NOW,
+    overMin: 90,
+    openMin: 0,
+    remainingMin: 115,
+    tail: null,
+    ends: [{ id: 'a', endMs: NOW }],
+  };
+  const f = landingFooter(past, { doneCount: 1, doneHonestMin: 30, logsToWarm: 3, dayEndShort: '9' });
+  expect(f.text).toBe('3 more logs and this tightens');
+  expect(f.action).toBe('Start one');
+});
+
 test('over footer names the tail task, it does not restate the overage', () => {
   const f = landingFooter(over, { doneCount: 2, doneHonestMin: 75, logsToWarm: 0, dayEndShort: '9' });
   expect(f.text).toBe('Draft the deck lands after 9');
