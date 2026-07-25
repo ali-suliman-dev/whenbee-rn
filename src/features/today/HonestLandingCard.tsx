@@ -25,6 +25,7 @@ import { type } from '@/src/theme/typography';
 import { formatClockMeridiem } from '@/src/lib/time';
 import { landingHeadline, landingFooter, landingScale } from './honestLandingCopy';
 import type { HonestLandingResult } from './useHonestLanding';
+import { useLandingVariant } from './useLandingVariant';
 
 export type LandingAction = 'move-tail' | 'add-task' | 'start-one' | 'move-to-tomorrow';
 
@@ -64,6 +65,7 @@ export function HonestLandingCard({
   onAction,
 }: HonestLandingCardProps): React.ReactElement | null {
   const t = useTheme();
+  const { variant } = useLandingVariant();
   const { landing, range, logsToWarm, dayEndMs, nowMs } = result;
 
   if (landing.kind === 'empty') return null;
@@ -74,6 +76,7 @@ export function HonestLandingCard({
   const headline = landingHeadline(landing, {
     rangeLowMs: range?.lowMs,
     rangeHighMs: range?.highMs,
+    variant,
   });
   const scale = landingScale(landing, { nowMs, dayEndMs });
   const footer = landingFooter(landing, {
