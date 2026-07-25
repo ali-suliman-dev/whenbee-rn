@@ -207,7 +207,23 @@ export default function Reward() {
           </View>
         </Animated.View>
 
-        {/* Zone 3 — payoff card (honey + multiplier as one complete unit).
+        {/* Zone 3 — the "quick questions" card: reason (if diverged past the
+            gate) then energy, asked one at a time via ContextQuestions.
+            It sits directly under the hero number — the first thing after the
+            payoff beat — because as the last card in a stack of identical cards
+            it simply receded and went unanswered. ContextQuestions owns its own
+            card chrome (raised surface/radius/padding) so it can unmount that
+            chrome too once every question is settled — it renders null rather
+            than leaving an empty rounded box behind. */}
+        {r.eventId ? (
+          <ContextQuestions
+            eventId={r.eventId}
+            category={r.category}
+            reasonDirection={r.reasonDirection}
+          />
+        ) : null}
+
+        {/* Zone 4 — payoff card (honey + multiplier as one complete unit).
             Two rows: header (HONEY · multiplier + %), the honey bar.
             The payoff lands as a single beat — no dangling delay. */}
         <View style={payoffCard}>
@@ -236,19 +252,6 @@ export default function Reward() {
             qualifying moment (overrun receipt / permission granted elsewhere).
             Mutually exclusive with the card above; predicate in useNotifReask. */}
         <RewardReaskRow />
-
-        {/* Zone 4 — the "quick questions" card: reason (if diverged past the
-            gate) then energy, asked one at a time via ContextQuestions.
-            ContextQuestions owns its own card chrome (surface/radius/padding)
-            so it can unmount that chrome too once every question is settled —
-            it renders null rather than leaving an empty rounded box behind. */}
-        {r.eventId ? (
-          <ContextQuestions
-            eventId={r.eventId}
-            category={r.category}
-            reasonDirection={r.reasonDirection}
-          />
-        ) : null}
 
         {/* CTA zone — rides the bottom of the flow (not pinned), single primary
             action + a quiet text exit, with a generous bottom margin. */}

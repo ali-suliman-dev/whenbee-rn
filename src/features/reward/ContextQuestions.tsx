@@ -162,7 +162,7 @@ export function ContextQuestions({
       void setContext(eventId, 'energy', value, 'manual');
       analytics.capture('context_tagged', { key: 'energy', value });
     }
-    const delay = reducedMotion ? 0 : t.motion.reveal;
+    const delay = reducedMotion ? 0 : t.motion.contextBeat;
     beatTimeoutRef.current = setTimeout(() => completeQuestion(question.key, value), delay);
   }
 
@@ -190,20 +190,26 @@ export function ContextQuestions({
   // The payoff card groups these questions into one surface — owned here so
   // the whole card (chrome included) disappears once there is nothing left to
   // show, instead of leaving an empty rounded box behind (see `hasContent`).
+  //
+  // Chrome is deliberately a step above the neighbouring cards: on `surfaceRaised`
+  // with roomier padding, so the ask does not read as the third identical card in
+  // a stack. It also sits directly under the hero number now (see reward.tsx) —
+  // position and material together are what stop it receding.
   const card: ViewStyle = {
-    backgroundColor: t.colors.surface,
+    backgroundColor: t.colors.surfaceRaised,
     borderRadius: t.radii.card,
-    padding: t.space[4],
-    gap: t.space[3],
+    padding: t.space[5],
+    gap: t.space[4],
   };
-  const wrap: ViewStyle = { gap: t.space[3] };
+  const wrap: ViewStyle = { gap: t.space[4] };
   const headerRow: ViewStyle = {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
   };
-  // ~15.5px-equivalent bold — the closest role in the type scale (bodyLg = 16).
-  const headerText: TextStyle = { ...(type.bodyLg as unknown as TextStyle), color: t.colors.ink };
+  // titleSm (18) rather than bodyLg (16): the ask carries a heading's weight now,
+  // one clear step above the option labels beneath it.
+  const headerText: TextStyle = { ...(type.titleSm as unknown as TextStyle), color: t.colors.ink };
   const skipText: TextStyle = { ...(type.caption as unknown as TextStyle), color: t.colors.inkFaint };
   const optionsWrap: ViewStyle = { gap: t.space[2] };
   const counterText: TextStyle = {
@@ -302,10 +308,15 @@ function OptionRow({
   const container: ViewStyle = {
     flexDirection: 'row',
     alignItems: 'center',
-    minHeight: t.size.control.md,
+    // control.lg: the rows sit on a raised card now, so they need the taller
+    // target to keep the same optical weight against the roomier padding.
+    minHeight: t.size.control.lg,
     borderRadius: t.radii.md,
     paddingHorizontal: t.space[3],
     gap: t.space[3],
+    // surfaceSunken (not surfaceRaisedEdge): the edge token is a lavender coin-edge
+    // in light mode and would read as a tinted fill, not a recess. Sunken reads
+    // correctly against the raised card in both modes.
     backgroundColor: selected ? t.colors.primaryWash : t.colors.surfaceSunken,
     borderWidth: selected ? t.borderWidth.selected : 0,
     borderColor: t.colors.primary,

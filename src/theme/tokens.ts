@@ -222,6 +222,12 @@ export const tokens = {
     // "z"; zzzStagger = the delay between them, ~1/3 of a cycle so the three
     // never peak together (motion-design 1/3 rule). Scale + opacity only.
     beeBreath: 2600, zzz: 3600, zzzStagger: 1200,
+    // contextBeat = how long a tapped answer in the reward screen's quick
+    // questions holds its "landed" look (selected row + glyph) before the
+    // question collapses to its receipt. Its own knob, not `reveal`: this beat
+    // exists to be WATCHED, so it is tuned by eye and must not drag every other
+    // reveal with it.
+    contextBeat: 700,
     // Wax-seal ritual choreography (RitualSeal). Calm, no overshoot: the border
     // draws closed FIRST, then honey wells up, a soft bloom passes, the ✦ fades
     // in, and an amber sparkle bursts radially. Durations + start delays (ms).

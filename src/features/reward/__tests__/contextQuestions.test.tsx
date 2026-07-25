@@ -2,6 +2,7 @@ import { act, fireEvent, render, screen } from '@testing-library/react-native';
 import { ContextQuestions } from '@/src/features/reward/ContextQuestions';
 import { useCalibrationStore } from '@/src/stores/calibrationStore';
 import { analytics } from '@/src/services/analytics';
+import { tokens } from '@/src/theme/tokens';
 
 jest.mock('@/src/services/analytics', () => ({ analytics: { capture: jest.fn() } }));
 // ReasonGlyph's ambient-motion hook reaches expo-router's useFocusEffect even
@@ -28,7 +29,9 @@ afterEach(() => {
   jest.restoreAllMocks();
 });
 
-const REVEAL_MS = 600;
+// The "landed" beat a tapped answer holds before collapsing to its receipt.
+// Read from the token so the test tracks the real timing, not a copy of it.
+const BEAT_MS = tokens.motion.contextBeat;
 
 describe('ContextQuestions', () => {
   it('shows the over-run reason question first, with the 2-question counter', () => {
@@ -70,7 +73,7 @@ describe('ContextQuestions', () => {
     });
 
     act(() => {
-      jest.advanceTimersByTime(REVEAL_MS);
+      jest.advanceTimersByTime(BEAT_MS);
     });
 
     expect(screen.getByText(/Paused along the way\. Good to know\./)).toBeOnTheScreen();
@@ -153,7 +156,7 @@ describe('ContextQuestions', () => {
     expect(mockCapture).toHaveBeenCalledWith('context_tagged', { key: 'energy', value: 'ok' });
 
     act(() => {
-      jest.advanceTimersByTime(REVEAL_MS);
+      jest.advanceTimersByTime(BEAT_MS);
     });
 
     expect(screen.getByText(/Energy: OK\. Noted\./)).toBeOnTheScreen();
