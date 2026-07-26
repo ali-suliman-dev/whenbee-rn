@@ -308,9 +308,12 @@ export const tokens = {
       driftSettled: '#EEAE4D', // = accent (amber)
       driftCurious: '#6B5BE6', // = primary (indigo)
       amberText: '#8A5A12', // AA amber-on-light text
-      // Lighter honey amber — 3.6:1 on white, AA-LARGE only (bold text ≥18px).
-      // Do NOT use on small/regular text (footer spans, the ⚡ glyph, the overrun
-      // clock) — those stay on amberText, which clears AA at any weight/size.
+      // Lighter honey amber — 3.6:1 on white, AA-LARGE only. WCAG "large" bold
+      // text starts at 14pt/18.66px, so bold text must be ≥20px (fontSize.lg) to
+      // clear the boundary with margin — 18px (titleSm) bold is 0.66px short and
+      // formally fails. Do NOT use on small/regular text (footer spans, the ⚡
+      // glyph, the overrun clock) — those stay on amberText, which clears AA at
+      // any weight/size.
       honeyText: '#B87A16',
       success: '#33B07C',
       successSoft: '#E2F4EA',
@@ -410,8 +413,9 @@ export const tokens = {
       amberText: '#EEAE4D',
       // Same as amberText — dark mode already reads light amber on a deep ground,
       // so honey needs no separate lift here. Still AA-large-only by convention
-      // (bold text ≥18px); kept distinct from amberText so consumers stay explicit
-      // about which contrast contract they're opting into.
+      // (bold text ≥20px / fontSize.lg — see the light-mode note); kept distinct
+      // from amberText so consumers stay explicit about which contrast contract
+      // they're opting into.
       honeyText: '#EEAE4D',
       success: '#33B07C',
       successSoft: 'rgba(51,176,124,0.18)',

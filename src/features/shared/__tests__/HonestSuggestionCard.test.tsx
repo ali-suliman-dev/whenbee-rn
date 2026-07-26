@@ -51,7 +51,7 @@ describe('HonestSuggestionCard — pre-data (starting hunch)', () => {
     const value = screen.getByText(/20–45/);
     const flattened = StyleSheet.flatten(value.props.style);
     expect(flattened).toEqual(
-      expect.objectContaining({ color: '#B87A16', fontSize: 18, fontWeight: '700' }),
+      expect.objectContaining({ color: '#B87A16', fontSize: 20, fontWeight: '700' }),
     );
   });
 });
@@ -91,7 +91,7 @@ describe('HonestSuggestionCard — trained (usually, for you)', () => {
     const value = screen.getByText(`25${NBSP}min`);
     const flattened = StyleSheet.flatten(value.props.style);
     expect(flattened).toEqual(
-      expect.objectContaining({ color: '#B87A16', fontSize: 18, fontWeight: '700' }),
+      expect.objectContaining({ color: '#B87A16', fontSize: 20, fontWeight: '700' }),
     );
   });
 });
