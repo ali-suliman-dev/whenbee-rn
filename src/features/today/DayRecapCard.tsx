@@ -68,14 +68,17 @@ export function DayRecapCard({ recap, rows }: DayRecapCardProps) {
   // since running under a guess isn't a win any more than over is a loss.
   const gapColor = headline.direction === 'over' ? t.colors.accent : t.colors.inkSoft;
 
-  // Bar segments: guessed span, honest overhang past it (if any), and the
-  // unstyled remainder when the day came in under the guess. `barTotal` guards
-  // the degenerate zero-minute case (all segments would be flex:0) so the row
-  // still has a nonzero flex sum instead of a division-by-zero collapse.
+  // Bar segments: the primary segment is only what guessed and honest actually
+  // overlap on — min(guessed, honest) — so its share of the track always matches
+  // the fraction the scale row states underneath. An OVER day adds an amber
+  // overhang past that (honest − guessed); an UNDER day adds an unstyled
+  // remainder for the guessed time that never happened (guessed − honest).
+  // Track total is max(guessed, honest) either way — RN flex normalizes only
+  // among the segments actually rendered, so a 0/0 day (a done task logged with
+  // no actualMin) just renders an empty track, never a fabricated full fill.
+  const primaryFlex = Math.min(recap.guessedMin, recap.honestMin);
   const overhangFlex = Math.max(0, recap.honestMin - recap.guessedMin);
   const remainderFlex = Math.max(0, recap.guessedMin - recap.honestMin);
-  const barTotal = Math.max(1, recap.guessedMin + overhangFlex + remainderFlex);
-  const guessedFlex = recap.guessedMin > 0 ? recap.guessedMin : barTotal;
 
   // ── Styles ────────────────────────────────────────────────────────────────
 
@@ -112,7 +115,7 @@ export function DayRecapCard({ recap, rows }: DayRecapCardProps) {
     backgroundColor: t.colors.surfaceSunken,
     overflow: 'hidden',
   };
-  const barSegGuessed: ViewStyle = { flex: guessedFlex, backgroundColor: t.colors.primary };
+  const barSegGuessed: ViewStyle = { flex: primaryFlex, backgroundColor: t.colors.primary };
   const barSegOver: ViewStyle = { flex: overhangFlex, backgroundColor: t.colors.accent };
   const barSegRemainder: ViewStyle = { flex: remainderFlex };
 
@@ -187,9 +190,9 @@ export function DayRecapCard({ recap, rows }: DayRecapCardProps) {
         </Text>
 
         <View style={barTrack} testID="recap-bar">
-          <View style={barSegGuessed} />
+          <View style={barSegGuessed} testID="recap-seg-guessed" />
           {overhangFlex > 0 ? <View style={barSegOver} testID="recap-seg-over" /> : null}
-          {remainderFlex > 0 ? <View style={barSegRemainder} /> : null}
+          {remainderFlex > 0 ? <View style={barSegRemainder} testID="recap-seg-remainder" /> : null}
         </View>
 
         <View style={scaleRow}>

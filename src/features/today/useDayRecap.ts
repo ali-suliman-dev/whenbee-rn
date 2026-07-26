@@ -12,10 +12,6 @@ export interface DayRecap {
   date: string;
   /** Number of tasks with status === 'done' on that day. */
   doneCount: number;
-  /** Total tasks planned for the day (done + queued). */
-  plannedCount: number;
-  /** Sum of actualMin over done tasks (null actualMin → 0). */
-  realFocusMin: number;
   /** Sum of (actualMin − guessMin) for done tasks where actualMin is known. */
   vsGuessMin: number;
   /** Sum of guessMin over done tasks with a known actualMin. Pairs with honestMin. */
@@ -36,9 +32,6 @@ export function useDayRecap(): DayRecap | null {
 
   const done = dayTasks.filter((t) => t.status === 'done');
   const doneCount = done.length;
-  const plannedCount = dayTasks.length;
-
-  const realFocusMin = done.reduce((sum, t) => sum + (t.actualMin ?? 0), 0);
 
   const vsGuessMin = done.reduce((sum, t) => {
     if (t.actualMin == null) return sum;
@@ -52,8 +45,6 @@ export function useDayRecap(): DayRecap | null {
   return {
     date: selectedDate,
     doneCount,
-    plannedCount,
-    realFocusMin,
     vsGuessMin,
     guessedMin,
     honestMin,

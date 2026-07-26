@@ -106,10 +106,6 @@ describe('useDayRecap', () => {
     expect(result.current).not.toBeNull();
     // 2 done tasks.
     expect(result.current?.doneCount).toBe(2);
-    // 2 done + 1 queued = 3 planned.
-    expect(result.current?.plannedCount).toBe(3);
-    // 45 + 20 = 65 real focus minutes.
-    expect(result.current?.realFocusMin).toBe(65);
     // (45 - 60) + (20 - 30) = -15 + -10 = -25 (ran under guess).
     expect(result.current?.vsGuessMin).toBe(-25);
   });
@@ -141,13 +137,11 @@ describe('useDayRecap', () => {
     const { result } = renderHook(() => useDayRecap());
 
     expect(result.current?.doneCount).toBe(1);
-    expect(result.current?.plannedCount).toBe(1);
-    expect(result.current?.realFocusMin).toBe(12);
     // 12 - 10 = +2.
     expect(result.current?.vsGuessMin).toBe(2);
   });
 
-  it('returns zero realFocusMin for done tasks with no actualMin', async () => {
+  it('returns zero vsGuessMin for done tasks with no actualMin', async () => {
     const testStore = makeTestStore();
     await testStore.getState().init(TODAY_MS);
 
@@ -173,7 +167,6 @@ describe('useDayRecap', () => {
 
     const { result } = renderHook(() => useDayRecap());
 
-    expect(result.current?.realFocusMin).toBe(0);
     // vsGuessMin: no actualMin → not counted.
     expect(result.current?.vsGuessMin).toBe(0);
   });
@@ -184,8 +177,6 @@ describe('useDayRecap', () => {
 
     expect(result.current).not.toBeNull();
     expect(result.current?.doneCount).toBe(0);
-    expect(result.current?.plannedCount).toBe(0);
-    expect(result.current?.realFocusMin).toBe(0);
     expect(result.current?.vsGuessMin).toBe(0);
   });
 
