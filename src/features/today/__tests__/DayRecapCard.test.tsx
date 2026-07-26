@@ -52,28 +52,37 @@ function makeRow(overrides: Partial<TodayRow> = {}): TodayRow {
 }
 
 describe('DayRecapCard', () => {
-  it('renders the done/planned stat as value + label', () => {
+  it('states the gap in words, never with a plus sign', () => {
+    render(<DayRecapCard recap={makeRecap({ guessedMin: 130, honestMin: 165, vsGuessMin: 35 })} rows={[makeRow()]} />);
+    expect(screen.getByText('35m over')).toBeTruthy();
+    expect(screen.queryByText('+35m')).toBeNull();
+  });
+
+  it('formats durations in hours and minutes past the hour', () => {
+    render(<DayRecapCard recap={makeRecap({ guessedMin: 130, honestMin: 165 })} rows={[makeRow()]} />);
+    expect(screen.getByText('2h 10m')).toBeTruthy();
+    expect(screen.getByText('2h 45m')).toBeTruthy();
+    expect(screen.queryByText('165m')).toBeNull();
+  });
+
+  it('labels the stat columns like the day-so-far card', () => {
     render(<DayRecapCard recap={makeRecap()} rows={[makeRow()]} />);
-    // Value and label are now separate Text nodes in a stat column.
-    expect(screen.getByText('3 of 4')).toBeOnTheScreen();
-    expect(screen.getByText('done')).toBeOnTheScreen();
+    expect(screen.getByText('LOGGED')).toBeTruthy();
+    expect(screen.getByText('GUESSED')).toBeTruthy();
+    expect(screen.getByText('HONEST')).toBeTruthy();
   });
 
-  it('renders real focus minutes', () => {
-    render(<DayRecapCard recap={makeRecap({ realFocusMin: 90 })} rows={[makeRow()]} />);
-    expect(screen.getByText('90m')).toBeOnTheScreen();
-    expect(screen.getByText('real focus')).toBeOnTheScreen();
+  it('renders headline only on a day with nothing logged', () => {
+    render(<DayRecapCard recap={makeRecap({ doneCount: 0, plannedCount: 0, guessedMin: 0, honestMin: 0, vsGuessMin: 0 })} rows={[]} />);
+    expect(screen.getByText('Nothing logged that day.')).toBeTruthy();
+    expect(screen.queryByText('LOGGED')).toBeNull();
+    expect(screen.queryByTestId('recap-bar')).toBeNull();
   });
 
-  it('renders positive vsGuessMin with + prefix', () => {
-    render(<DayRecapCard recap={makeRecap({ vsGuessMin: 15 })} rows={[makeRow()]} />);
-    expect(screen.getByText('+15m')).toBeOnTheScreen();
-    expect(screen.getByText('vs your guess')).toBeOnTheScreen();
-  });
-
-  it('renders negative vsGuessMin without + prefix', () => {
-    render(<DayRecapCard recap={makeRecap({ vsGuessMin: -10 })} rows={[makeRow()]} />);
-    expect(screen.getByText('-10m')).toBeOnTheScreen();
+  it('renders no overhang segment when the day came in under', () => {
+    render(<DayRecapCard recap={makeRecap({ guessedMin: 120, honestMin: 100, vsGuessMin: -20 })} rows={[makeRow()]} />);
+    expect(screen.getByText('20m under')).toBeTruthy();
+    expect(screen.queryByTestId('recap-seg-over')).toBeNull();
   });
 
   it('starts with list collapsed and expands on tap', () => {
@@ -92,13 +101,13 @@ describe('DayRecapCard', () => {
     expect(screen.getByText('Write doc')).toBeOnTheScreen();
   });
 
-  it('shows "Nothing logged that day" when rows is empty', () => {
-    render(<DayRecapCard recap={makeRecap({ doneCount: 0, plannedCount: 0 })} rows={[]} />);
-    expect(screen.getByText('Nothing logged that day')).toBeOnTheScreen();
+  it('shows "Nothing logged that day." when rows is empty', () => {
+    render(<DayRecapCard recap={makeRecap({ doneCount: 0, plannedCount: 0, guessedMin: 0, honestMin: 0, vsGuessMin: 0 })} rows={[]} />);
+    expect(screen.getByText('Nothing logged that day.')).toBeOnTheScreen();
   });
 
   it('does not show the empty message when tasks are present', () => {
     render(<DayRecapCard recap={makeRecap()} rows={[makeRow()]} />);
-    expect(screen.queryByText('Nothing logged that day')).toBeNull();
+    expect(screen.queryByText('Nothing logged that day.')).toBeNull();
   });
 });

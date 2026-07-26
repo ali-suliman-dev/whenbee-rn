@@ -17,6 +17,9 @@ import { useTheme } from '@/src/theme/useTheme';
 import { type } from '@/src/theme/typography';
 import { haptics } from '@/src/lib/haptics';
 import { weekdayOf } from '@/src/lib/day';
+import { fmtHm } from '@/src/lib/time';
+import { recapHeadline, recapScale } from './dayRecapCopy';
+import { StatColumn } from './StatColumn';
 import { TaskRow } from './TaskRow';
 import type { TodayRow } from './useToday';
 import type { DayRecap } from './useDayRecap';
@@ -33,47 +36,6 @@ function datedLabel(key: string): string {
   const day = parts[2];
   if (month === undefined || day === undefined) return shortWeekday(key);
   return `${shortWeekday(key)} · ${SHORT_MONTH[month - 1] ?? ''} ${day}`;
-}
-
-// ──────────────────────────────────────────────────────────────────────────────
-// Stat column — a value stacked over its label. Sibling columns share identical
-// vertical structure (same gap, no per-column margins) so the values sit on one
-// baseline and the labels line up beneath them.
-// ──────────────────────────────────────────────────────────────────────────────
-interface StatColumnProps {
-  value: string;
-  label: string;
-  /** Tints the value (used for the "ran faster" vs-guess case). Default = ink. */
-  tone?: 'ink' | 'soft';
-}
-
-function StatColumn({ value, label, tone = 'ink' }: StatColumnProps) {
-  const t = useTheme();
-  const col: ViewStyle = {
-    flex: 1,
-    alignItems: 'flex-start',
-    gap: t.space[1],
-  };
-  const val: TextStyle = {
-    fontFamily: 'Inter-Bold' as TextStyle['fontFamily'],
-    fontSize: t.fontSize.lg,
-    lineHeight: t.fontSize.lg * t.lineHeight.tight,
-    color: tone === 'soft' ? t.colors.inkSoft : t.colors.ink,
-    fontVariant: ['tabular-nums'],
-  };
-  const lbl: TextStyle = {
-    ...(type.caption as unknown as TextStyle),
-    fontSize: t.fontSize.xs,
-    color: t.colors.inkSoft,
-    fontWeight: t.fontWeight.regular as TextStyle['fontWeight'],
-  };
-
-  return (
-    <View style={col}>
-      <Text style={val}>{value}</Text>
-      <Text style={lbl}>{label}</Text>
-    </View>
-  );
 }
 
 // ──────────────────────────────────────────────────────────────────────────────
@@ -95,11 +57,22 @@ export function DayRecapCard({ recap, rows }: DayRecapCardProps) {
 
   const dayLabel = shortWeekday(recap.date);
   const headerLabel = datedLabel(recap.date);
-  const vsSign = recap.vsGuessMin >= 0 ? '+' : '';
-  // Ran-under-guess reads as a quiet positive (no guilt either way); ran-over stays
-  // neutral ink. Never red, never a score.
-  const vsTone = recap.vsGuessMin < 0 ? 'soft' : 'ink';
   const isEmpty = rows.length === 0;
+
+  const headline = recapHeadline(recap);
+  const scale = recapScale(recap.guessedMin, recap.honestMin);
+  // No guilt: over reads in accent, under in a quiet ink-soft — never danger/red,
+  // since running under a guess isn't a win any more than over is a loss.
+  const gapColor = headline.direction === 'over' ? t.colors.accent : t.colors.inkSoft;
+
+  // Bar segments: guessed span, honest overhang past it (if any), and the
+  // unstyled remainder when the day came in under the guess. `barTotal` guards
+  // the degenerate zero-minute case (all segments would be flex:0) so the row
+  // still has a nonzero flex sum instead of a division-by-zero collapse.
+  const overhangFlex = Math.max(0, recap.honestMin - recap.guessedMin);
+  const remainderFlex = Math.max(0, recap.guessedMin - recap.honestMin);
+  const barTotal = Math.max(1, recap.guessedMin + overhangFlex + remainderFlex);
+  const guessedFlex = recap.guessedMin > 0 ? recap.guessedMin : barTotal;
 
   // ── Styles ────────────────────────────────────────────────────────────────
 
@@ -116,15 +89,43 @@ export function DayRecapCard({ recap, rows }: DayRecapCardProps) {
     paddingHorizontal: t.space[4],
     paddingTop: t.space[4],
     paddingBottom: t.space[3],
+    gap: t.space[2],
   };
 
-  const dayTitle: TextStyle = {
-    ...(type.eyebrow as unknown as TextStyle),
-    color: t.colors.inkSoft,
+  const eyebrow: TextStyle = {
+    ...(type.eyebrowSm as unknown as TextStyle),
+    color: t.colors.inkFaint,
   };
 
+  const headlineStyle: TextStyle = {
+    ...(type.bodyLg as unknown as TextStyle),
+    color: t.colors.ink,
+  };
+
+  const barTrack: ViewStyle = {
+    flexDirection: 'row',
+    height: t.capacity.barH,
+    borderRadius: t.radii.full,
+    backgroundColor: t.colors.surfaceSunken,
+    overflow: 'hidden',
+  };
+  const barSegGuessed: ViewStyle = { flex: guessedFlex, backgroundColor: t.colors.primary };
+  const barSegOver: ViewStyle = { flex: overhangFlex, backgroundColor: t.colors.accent };
+  const barSegRemainder: ViewStyle = { flex: remainderFlex };
+
+  const scaleRow: ViewStyle = {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+  };
+  const scaleText: TextStyle = {
+    ...(type.micro as unknown as TextStyle),
+    color: t.colors.inkFaint,
+  };
+
+  // `borderWidth.hairline` is 0 by design (global card-edge knob) — use `chip`
+  // (1) for a divider that actually renders, matching `DaySoFarCard`.
   const divider: ViewStyle = {
-    height: t.borderWidth.hairline || 1,
+    height: t.borderWidth.chip,
     backgroundColor: t.colors.hairline,
     marginHorizontal: t.space[4],
   };
@@ -133,8 +134,7 @@ export function DayRecapCard({ recap, rows }: DayRecapCardProps) {
     flexDirection: 'row',
     gap: t.space[3],
     paddingHorizontal: t.space[4],
-    paddingTop: t.space[0.5],
-    paddingBottom: t.space[4],
+    paddingVertical: t.space[4],
   };
 
   const disclosure: ViewStyle = {
@@ -156,82 +156,92 @@ export function DayRecapCard({ recap, rows }: DayRecapCardProps) {
     paddingBottom: t.space[3],
   };
 
-  const emptyText: TextStyle = {
-    ...(type.caption as unknown as TextStyle),
-    fontSize: t.fontSize.xs,
-    color: t.colors.inkSoft,
-    textAlign: 'center',
-    paddingHorizontal: t.space[4],
-    paddingBottom: t.space[3],
-  };
-
   function toggle() {
     haptics.light();
     setExpanded((v) => !v);
   }
 
+  if (isEmpty) {
+    return (
+      <View style={card}>
+        <View style={header}>
+          <Text style={eyebrow}>{headerLabel}</Text>
+          <Text style={headlineStyle}>{headline.lead}</Text>
+        </View>
+      </View>
+    );
+  }
+
   return (
     <View style={card}>
-      {/* Header: dated label — reads as a record of a specific day */}
+      {/* Header: dated label + the gap stated in words. */}
       <View style={header}>
-        <Text style={dayTitle}>{headerLabel}</Text>
+        <Text style={eyebrow}>{headerLabel}</Text>
+        <Text style={headlineStyle}>
+          {headline.lead}
+          {headline.gap ? <Text style={{ color: gapColor }}>{headline.gap}</Text> : null}
+          {headline.trail}
+        </Text>
+
+        <View style={barTrack} testID="recap-bar">
+          <View style={barSegGuessed} />
+          {overhangFlex > 0 ? <View style={barSegOver} testID="recap-seg-over" /> : null}
+          {remainderFlex > 0 ? <View style={barSegRemainder} /> : null}
+        </View>
+
+        <View style={scaleRow}>
+          <Text style={scaleText}>{scale.left}</Text>
+          <Text style={scaleText}>{scale.right}</Text>
+        </View>
       </View>
 
-      {/* Stats — three equal columns, value over label */}
+      <View style={divider} />
+
+      {/* Stats — three columns matching the day-so-far card's treatment. */}
       <View style={statsRow}>
-        <StatColumn value={`${recap.doneCount} of ${recap.plannedCount}`} label="done" />
-        <StatColumn value={`${recap.realFocusMin}m`} label="real focus" />
-        <StatColumn value={`${vsSign}${recap.vsGuessMin}m`} label="vs your guess" tone={vsTone} />
+        <StatColumn value={String(recap.doneCount)} unit={recap.doneCount === 1 ? 'task' : 'tasks'} label="LOGGED" />
+        <StatColumn value={fmtHm(recap.guessedMin)} label="GUESSED" dotColor={t.colors.primary} divided />
+        <StatColumn value={fmtHm(recap.honestMin)} label="HONEST" dotColor={t.colors.accent} divided />
       </View>
 
-      {/* Empty past day: quiet single-line, no toggle needed */}
-      {isEmpty ? (
-        <>
-          <View style={divider} />
-          <Text style={emptyText}>Nothing logged that day</Text>
-        </>
-      ) : (
-        <>
-          {/* Disclosure toggle — only shown when tasks exist */}
-          <View style={divider} />
+      {/* Disclosure toggle */}
+      <View style={divider} />
 
-          <Pressable
-            onPress={toggle}
-            accessibilityRole="button"
-            accessibilityState={{ expanded }}
-            accessibilityLabel={`All tasks · ${dayLabel}. ${expanded ? 'Tap to collapse.' : 'Tap to expand.'}`}
-            hitSlop={t.size.hitSlop}
-            style={disclosure}
-          >
-            <Text style={disclosureLabel}>ALL TASKS · {dayLabel.toUpperCase()}</Text>
-            <Ionicons
-              name={expanded ? 'chevron-up' : 'chevron-down'}
-              size={t.iconSize.sm}
-              color={t.colors.inkSoft}
-            />
-          </Pressable>
+      <Pressable
+        onPress={toggle}
+        accessibilityRole="button"
+        accessibilityState={{ expanded }}
+        accessibilityLabel={`All tasks · ${dayLabel}. ${expanded ? 'Tap to collapse.' : 'Tap to expand.'}`}
+        hitSlop={t.size.hitSlop}
+        style={disclosure}
+      >
+        <Text style={disclosureLabel}>ALL TASKS · {dayLabel.toUpperCase()}</Text>
+        <Ionicons
+          name={expanded ? 'chevron-up' : 'chevron-down'}
+          size={t.iconSize.sm}
+          color={t.colors.inkSoft}
+        />
+      </Pressable>
 
-          {/* Collapsible task list — entering-only (no exiting, Fabric SIGABRT) */}
-          {expanded ? (
-            <Animated.View entering={FadeIn.duration(t.motion.base)}>
-              <View style={taskList}>
-                {rows.map((row) => (
-                  <TaskRow
-                    key={row.id}
-                    title={row.label}
-                    categoryLabel={row.categoryLabel}
-                    guessMin={row.guessMin}
-                    honestMin={row.honestMin}
-                    actualMin={row.actualMin}
-                    done={row.done}
-                    carriedFrom={row.carriedFrom}
-                  />
-                ))}
-              </View>
-            </Animated.View>
-          ) : null}
-        </>
-      )}
+      {/* Collapsible task list — entering-only (no exiting, Fabric SIGABRT) */}
+      {expanded ? (
+        <Animated.View entering={FadeIn.duration(t.motion.base)}>
+          <View style={taskList}>
+            {rows.map((row) => (
+              <TaskRow
+                key={row.id}
+                title={row.label}
+                categoryLabel={row.categoryLabel}
+                guessMin={row.guessMin}
+                honestMin={row.honestMin}
+                actualMin={row.actualMin}
+                done={row.done}
+                carriedFrom={row.carriedFrom}
+              />
+            ))}
+          </View>
+        </Animated.View>
+      ) : null}
     </View>
   );
 }
