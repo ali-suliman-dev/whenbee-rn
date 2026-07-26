@@ -239,9 +239,11 @@ test('Pro with booked time renders a third bar segment and the booked-time actio
   );
   expect(screen.getByTestId('landing-seg-meet')).toBeTruthy();
   // eventMinAhead (90m) exceeds the 60m still open before the landing, so the
-  // booked slice — and the footer's booked-minutes offer — clamp to 1h, the
-  // same value the segment renders. See the `meetMs` derivation in the card.
-  fireEvent.press(screen.getByLabelText('1h already booked today'));
+  // bar/legend's booked slice clamps to 1h — but the footer states the TRUE
+  // total (1h 30m), and the action button itself is now the short verb
+  // "Pad calendar", not the amount. See the `meetMs`/`bookedMinAll` split.
+  expect(screen.getByText('1h 30m already booked today')).toBeTruthy();
+  fireEvent.press(screen.getByLabelText('Pad calendar'));
   expect(onAction).toHaveBeenCalledWith('pad-calendar');
 });
 
@@ -414,6 +416,29 @@ describe('the legend explains the bar colours once booked time exists', () => {
       <HonestLandingCard result={base()} doneCount={2} doneHonestMin={75} onAction={jest.fn()} />,
     );
     expect(screen.queryByText('booked')).toBeNull();
+    expect(screen.queryByText('tasks')).toBeNull();
+  });
+
+  it('drops the "tasks" legend entry (and its indigo dot) when booked time fully swallows the in-day segment — nothing indigo is on the bar to explain', () => {
+    mockEntitlement({ isPro: true });
+    const clear = base({
+      kind: 'clear',
+      landingMs: NOW + 30 * MIN, // 30m still open before the landing
+      overMin: 0,
+      openMin: 50,
+      tail: null,
+    });
+    render(
+      <HonestLandingCard
+        result={clear}
+        doneCount={2}
+        doneHonestMin={75}
+        eventMinAhead={90} // clamps to the full 30m in-day span — no room for tasks
+        onAction={jest.fn()}
+      />,
+    );
+    expect(screen.queryByTestId('landing-seg-in')).toBeNull();
+    expect(screen.getByText('booked')).toBeTruthy();
     expect(screen.queryByText('tasks')).toBeNull();
   });
 });

@@ -32,14 +32,17 @@ export interface FooterCtx {
   /** The user's end of day, spoken short ("9", "17:00"), for the tail sentence. */
   dayEndShort: string;
   /**
-   * Pro only: minutes of calendar time already booked into the span the bar is
-   * measuring (the same value the bar's booked segment renders — see `meetMs`
-   * in `HonestLandingCard`). Swaps the *offer* on a day with nothing more urgent
-   * to say — naming what's already booked beats adding a task they don't need.
-   * Never outranks naming the tail: when the day runs over, the task to move is
-   * the more useful thing to point at.
+   * Pro only: the TRUE total of calendar minutes still ahead of now — NOT the
+   * span-clamped value the bar/legend render (`bookedMin`/`meetMs` in
+   * `HonestLandingCard`). The bar deliberately clamps its booked segment to the
+   * now→landing span it's measuring, but a sentence stating a fact about the
+   * whole day must use the unclamped number or it understates what's actually
+   * booked (e.g. "1h already booked" when there are really 2h of meetings, just
+   * because only 1h of them falls before the landing). Swaps the fact + offer on
+   * a day with nothing more urgent to say. Never outranks naming the tail: when
+   * the day runs over, the task to move is the more useful thing to point at.
    */
-  bookedMin?: number;
+  bookedMinAll?: number;
 }
 
 export interface FooterCopy {
@@ -134,7 +137,7 @@ export function landingScale(
 
 export function landingFooter(
   landing: LandingResult,
-  { doneCount, doneHonestMin, logsToWarm, dayEndShort, bookedMin = 0 }: FooterCtx,
+  { doneCount, doneHonestMin, logsToWarm, dayEndShort, bookedMinAll = 0 }: FooterCtx,
 ): FooterCopy {
   if (logsToWarm > 0) {
     return {
@@ -161,18 +164,23 @@ export function landingFooter(
     };
   }
 
-  // The offer names what's already on the calendar rather than a generic
-  // chore — a user who has booked time doesn't need to be told to "pad" it,
-  // just shown it's accounted for.
-  const action = bookedMin > 0 ? `${fmtHm(bookedMin)} already booked today` : 'Add a task';
+  // The fact names what's already on the calendar rather than a generic
+  // done-count — a user who has booked time doesn't need to be told to "pad"
+  // it, just shown it's accounted for. `Pad calendar` is the action verb (the
+  // amount now lives in `text`, read from the TRUE total, not the bar's
+  // span-clamped segment — see `bookedMinAll` above).
+  if (bookedMinAll > 0) {
+    const total = fmtHm(bookedMinAll);
+    return { text: `${total} already booked today`, boldSpan: total, action: 'Pad calendar' };
+  }
 
   if (doneCount === 0) {
-    return { text: 'Nothing logged yet', boldSpan: null, action };
+    return { text: 'Nothing logged yet', boldSpan: null, action: 'Add a task' };
   }
   return {
     text: `${doneCount} done · ${fmtHm(doneHonestMin)} logged`,
     boldSpan: fmtHm(doneHonestMin),
-    action,
+    action: 'Add a task',
   };
 }
 
@@ -197,15 +205,19 @@ export interface LegendEntry {
  *
  * Empty whenever there's no booked time: the legend's whole reason to exist is
  * explaining the booked segment's colour, so a day with none gets nothing to
- * decode.
+ * decode. The `tasks` entry is itself gated on `taskMin > 0` — a booked span
+ * that fully swallows the in-day segment (no room left for queued tasks before
+ * the landing) renders no indigo segment at all, so a legend explaining an
+ * indigo dot would be decoding a colour that isn't on screen.
  */
 export function landingLegend({ taskMin, bookedMin, overMin }: LegendEntryArgs): LegendEntry[] {
   if (bookedMin <= 0) return [];
 
-  const entries: LegendEntry[] = [
-    { key: 'tasks', value: fmtHm(taskMin), label: 'tasks' },
-    { key: 'booked', value: fmtHm(bookedMin), label: 'booked' },
-  ];
+  const entries: LegendEntry[] = [];
+  if (taskMin > 0) {
+    entries.push({ key: 'tasks', value: fmtHm(taskMin), label: 'tasks' });
+  }
+  entries.push({ key: 'booked', value: fmtHm(bookedMin), label: 'booked' });
   if (overMin > 0) {
     entries.push({ key: 'over', value: fmtHm(overMin), label: 'over' });
   }

@@ -82,11 +82,11 @@ export interface HonestLandingCardProps {
 }
 
 /** Which offer the footer is making — mirrors `landingFooter`'s own branch order. */
-function actionKindFor(result: HonestLandingResult, bookedMin: number): LandingAction {
+function actionKindFor(result: HonestLandingResult, bookedMinAll: number): LandingAction {
   if (result.logsToWarm > 0) return 'start-one';
   if (result.landing.kind === 'past') return 'move-to-tomorrow';
   if (result.landing.kind === 'over' && result.landing.tail) return 'move-tail';
-  if (bookedMin > 0) return 'pad-calendar';
+  if (bookedMinAll > 0) return 'pad-calendar';
   return 'add-task';
 }
 
@@ -197,7 +197,9 @@ export function HonestLandingCard({
     doneHonestMin,
     logsToWarm,
     dayEndShort: spokenDayEnd(dayEndMs),
-    bookedMin,
+    // TRUE total, not the span-clamped `bookedMin` the bar/legend render — see
+    // the `bookedMinAll` doc in honestLandingCopy.ts.
+    bookedMinAll: eventMinAhead,
   });
 
   // The free calendar offer: a free user (or a Pro user who denied access —
@@ -303,6 +305,11 @@ export function HonestLandingCard({
   const actionText: TextStyle = {
     ...(type.captionBold as unknown as TextStyle),
     color: t.colors.primary,
+    // Without this, a long footer fact (e.g. the booked-time sentence) loses
+    // the flex tug-of-war against the action and truncates on a narrow screen
+    // — the action word is short and fixed, the fact is the one that should
+    // ellipsize via footText's own flex:1 + numberOfLines.
+    flexShrink: 0,
   };
 
   const [beforeBold, afterBold] = splitAroundBold(footer.text, footer.boldSpan);
@@ -408,7 +415,7 @@ export function HonestLandingCard({
               <Pressable
                 accessibilityRole="button"
                 accessibilityLabel={footer.action}
-                onPress={() => onAction(actionKindFor(result, bookedMin))}
+                onPress={() => onAction(actionKindFor(result, eventMinAhead))}
                 hitSlop={t.size.hitSlop}
               >
                 <Text style={actionText}>{footer.action}</Text>
