@@ -1,0 +1,571 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Whenbee — Pitch</title>
+<style>
+  :root{
+    --bg:#0B0C16;
+    --bg2:#12132170;
+    --card:#161829;
+    --line:#262943;
+    --ink:#FFFFFF;
+    --ink2:#B9BCD0;
+    --ink3:#7C8099;
+    --indigo:#8B7CF6;
+    --indigoDim:#6B5BE6;
+    --amber:#EEAE4D;
+    --amberDim:#B98A3C;
+    --green:#68C79A;
+    --red:#E4787A;
+    --mono:ui-monospace,"SF Mono",Menlo,monospace;
+    --sans:-apple-system,BlinkMacSystemFont,"Inter","Segoe UI",system-ui,sans-serif;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html{scroll-snap-type:y mandatory;scroll-behavior:smooth}
+  body{background:var(--bg);color:var(--ink);font-family:var(--sans);-webkit-font-smoothing:antialiased}
+
+  .slide{
+    scroll-snap-align:start;
+    min-height:100vh;
+    padding:56px 88px 84px;
+    display:flex;flex-direction:column;justify-content:center;
+    position:relative;
+    border-bottom:1px solid #1a1c2e;
+    overflow:hidden;
+  }
+  .slide::after{ /* progress edge */
+    content:"";position:absolute;left:0;bottom:0;height:3px;width:var(--p,0%);
+    background:var(--accent,var(--indigo));opacity:.9;
+  }
+  .glow{position:absolute;inset:auto -10% -40% -10%;height:60%;
+    background:radial-gradient(60% 100% at 50% 100%, var(--accent,var(--indigo)) 0%, transparent 70%);
+    opacity:.13;pointer-events:none}
+
+  .label{font-size:13px;font-weight:700;letter-spacing:.16em;text-transform:uppercase;color:var(--accent,var(--indigo));margin-bottom:28px}
+  h1{font-size:76px;line-height:1.02;letter-spacing:-.035em;font-weight:600}
+  h2{font-size:44px;line-height:1.08;letter-spacing:-.03em;font-weight:600;max-width:20ch}
+  h3{font-size:26px;line-height:1.2;letter-spacing:-.02em;font-weight:600}
+  .sub{font-size:21px;line-height:1.5;color:var(--ink2);max-width:60ch;margin-top:22px;font-weight:400}
+  .kicker{font-size:19px;color:var(--ink3);margin-top:14px}
+  .num{font-family:var(--mono)}
+
+  .cols{display:grid;grid-template-columns:1fr 1fr;gap:48px;align-items:start;margin-top:34px}
+  .cols3{display:grid;grid-template-columns:repeat(3,1fr);gap:22px;margin-top:34px}
+  .cols4{display:grid;grid-template-columns:repeat(4,1fr);gap:20px;margin-top:34px}
+
+  .card{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:26px 26px 28px}
+  .card .t{font-size:19px;font-weight:600;margin-bottom:10px}
+  .card .d{font-size:16px;line-height:1.55;color:var(--ink2)}
+  .card .tag{font-size:11.5px;letter-spacing:.1em;text-transform:uppercase;font-weight:700;color:var(--accent,var(--indigo));margin-bottom:12px;display:block}
+
+  ul{list-style:none;display:flex;flex-direction:column;gap:14px;margin-top:8px}
+  li{font-size:19px;line-height:1.5;color:var(--ink2);padding-left:26px;position:relative}
+  li::before{content:"";position:absolute;left:0;top:12px;width:9px;height:9px;border-radius:2px;background:var(--accent,var(--indigo))}
+  li b{color:var(--ink);font-weight:600}
+
+  .stat{display:flex;flex-direction:column;gap:8px}
+  .stat .v{font-family:var(--mono);font-size:42px;letter-spacing:-.03em;color:var(--ink)}
+  .stat .v.am{color:var(--amber)}
+  .stat .v.in{color:var(--indigo)}
+  .stat .k{font-size:14px;letter-spacing:.08em;text-transform:uppercase;color:var(--ink3);font-weight:600}
+
+  table{width:100%;border-collapse:collapse;margin-top:28px;font-size:16.5px}
+  th,td{text-align:left;padding:13px 14px;border-bottom:1px solid var(--line);vertical-align:middle}
+  th{font-size:12.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--ink3);font-weight:700}
+  td{color:var(--ink2)}
+  td b,th.us{color:var(--ink)}
+  tr.us td{background:#1a1734;color:var(--ink)}
+  tr.us td.yes{color:var(--amber)}
+  tr.us td:first-child{border-left:3px solid var(--amber)}
+  .yes{color:var(--green);font-weight:700}
+  .no{color:#5D6076}
+  .part{color:var(--amberDim)}
+  .price{font-family:var(--mono);color:var(--ink)}
+
+  .flow{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-top:38px}
+  .step{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:24px;position:relative}
+  .step .n{font-family:var(--mono);font-size:13px;color:var(--accent,var(--indigo));font-weight:700;margin-bottom:14px}
+  .step .t{font-size:20px;font-weight:600;margin-bottom:8px}
+  .step .d{font-size:16px;line-height:1.5;color:var(--ink2)}
+  .step::after{content:"→";position:absolute;right:-14px;top:50%;transform:translateY(-50%);color:var(--ink3);font-size:20px}
+  .step:last-child::after{content:""}
+
+  .phone{background:var(--card);border:1px solid var(--line);border-radius:22px;padding:22px 20px}
+  .phone .bar{font-size:12px;letter-spacing:.1em;text-transform:uppercase;color:var(--ink3);margin-bottom:16px;font-weight:700}
+  .row{display:flex;justify-content:space-between;align-items:baseline;padding:12px 0;border-bottom:1px solid #21243a;font-size:17px;color:var(--ink2)}
+  .row:last-child{border-bottom:0}
+  .row .r{font-family:var(--mono)}
+  .strike{text-decoration:line-through;color:#5D6076}
+  .amber{color:var(--amber)}
+  .ind{color:var(--indigo)}
+
+  .quote{font-size:34px;line-height:1.35;letter-spacing:-.02em;color:var(--ink);max-width:24ch}
+  .attr{margin-top:20px;font-size:16px;color:var(--ink3)}
+
+  .pill{display:inline-block;font-size:13px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;padding:6px 12px;border-radius:999px;border:1px solid var(--line);color:var(--ink3)}
+  .pill.free{color:var(--green);border-color:#2b4a3c}
+  .pill.pro{color:var(--amber);border-color:#4a3c22}
+
+  .foot{position:absolute;left:88px;bottom:26px;font-size:13px;color:#4A4D63;letter-spacing:.04em}
+  .pageno{position:absolute;right:88px;bottom:26px;font-family:var(--mono);font-size:13px;color:#4A4D63}
+
+  .big{font-size:96px;line-height:1;letter-spacing:-.04em;font-weight:600}
+  .center{align-items:center;text-align:center}
+  .center .sub{margin-left:auto;margin-right:auto}
+  .maxw{max-width:1180px;margin:0 auto;width:100%}
+  .note{margin-top:26px;font-size:15px;color:var(--ink3);line-height:1.6;max-width:78ch}
+
+  @media (max-width:1100px){
+    .slide{padding:48px 40px 64px}
+    h1{font-size:52px} h2{font-size:38px} .big{font-size:64px}
+    .cols,.cols3,.cols4,.flow{grid-template-columns:1fr;gap:20px}
+    .step::after{content:""}
+    .foot,.pageno{left:40px;right:40px}
+    .pageno{text-align:right}
+  }
+  @media print{
+    html{scroll-snap-type:none}
+    .slide{min-height:auto;page-break-after:always;border:0}
+  }
+</style>
+</head>
+<body>
+
+<!-- 1 TITLE -->
+<section id="s1" class="slide center" style="--accent:var(--amber);--p:4%">
+  <div class="glow"></div>
+  <div class="maxw">
+    <div class="label">Whenbee · iOS &amp; Android · pre-launch</div>
+    <h1>The app that learns<br>how long things<br>actually take you.</h1>
+    <p class="sub">You guess. You tap start. Whenbee measures the gap and quietly fixes your next guess. No AI guessing, no cloud, no guilt.</p>
+    <p class="kicker">A calibration app for people who are always late and never know why.</p>
+  </div>
+  <div class="foot">Whenbee pitch · July 2026</div>
+  <div class="pageno">01</div>
+</section>
+
+<!-- 2 PROBLEM -->
+<section id="s2" class="slide" style="--accent:var(--red);--p:9%">
+  <div class="glow"></div>
+  <div class="maxw">
+    <div class="label">The problem</div>
+    <h2>Some brains are wrong about time. Consistently.</h2>
+    <div class="cols">
+      <ul>
+        <li><b>"Fifteen minutes"</b> is really forty. Every time. It never gets better on its own.</li>
+        <li>The plan collapses by 11am, and the day turns into apology management.</li>
+        <li>People read it as laziness or not caring. It isn't. It's a broken internal clock.</li>
+        <li>Called <b>time blindness</b> in ADHD, and the <b>planning fallacy</b> in everyone else.</li>
+      </ul>
+      <div class="card">
+        <span class="tag">Voice of the user</span>
+        <div class="quote" style="font-size:26px">"I'm always late and people think I'm lazy. I just want to know how long things actually take me."</div>
+        <div class="attr">Recurring phrasing across ADHD app reviews and Reddit, review-mining pass, May 2026.</div>
+      </div>
+    </div>
+    <p class="note">Why it matters commercially: the problem is already self-diagnosed. People search for it in these exact words, so there is almost no market education to pay for.</p>
+  </div>
+  <div class="foot">Problem</div><div class="pageno">02</div>
+</section>
+
+<!-- 3 WHY APPS FAIL -->
+<section id="s3" class="slide" style="--accent:var(--red);--p:14%">
+  <div class="glow"></div>
+  <div class="maxw">
+    <div class="label">Why nothing has fixed it</div>
+    <h2>Every other app guesses for you. None of them learn you.</h2>
+    <div class="cols3">
+      <div class="card">
+        <span class="tag">Type 1</span>
+        <div class="t">AI estimates</div>
+        <div class="d">An AI says "this takes 25 minutes." That is a guess about an average person. It is exactly as wrong on your 100th task as on your first.</div>
+      </div>
+      <div class="card">
+        <span class="tag">Type 2</span>
+        <div class="t">Estimate vs actual reports</div>
+        <div class="d">"You planned 30, you spent 52." True, and useless. Nothing carries that gap forward into tomorrow's plan.</div>
+      </div>
+      <div class="card">
+        <span class="tag">Type 3</span>
+        <div class="t">Capacity warnings</div>
+        <div class="d">"Your day is too full" based on the numbers you typed. But your numbers are the thing that's broken.</div>
+      </div>
+    </div>
+    <p class="note">All three treat your estimate as data. Whenbee treats your estimate as a symptom, and measures the error.</p>
+  </div>
+  <div class="foot">Problem</div><div class="pageno">03</div>
+</section>
+
+<!-- 4 SOLUTION LOOP -->
+<section id="s4" class="slide" style="--accent:var(--indigo);--p:19%">
+  <div class="glow"></div>
+  <div class="maxw">
+    <div class="label">The solution</div>
+    <h2>One loop. Four seconds of effort a day.</h2>
+    <div class="flow">
+      <div class="step"><div class="n">01</div><div class="t">Guess</div><div class="d">"Emails, 15 min." One tap on a rough-time chip. No forms.</div></div>
+      <div class="step"><div class="n">02</div><div class="t">Start</div><div class="d">One tap. The timer <i>is</i> the log, so there's nothing to remember later.</div></div>
+      <div class="step"><div class="n">03</div><div class="t">Learn</div><div class="d">Stop. Whenbee stores the real number and updates your bias for that kind of task.</div></div>
+      <div class="step"><div class="n">04</div><div class="t">Honest number</div><div class="d">Next time you guess 15, it quietly shows <span class="amber">~25</span>. Your number, not an average.</div></div>
+    </div>
+    <p class="note">The whole loop runs on the phone, offline, in about forty lines of math. Nothing is sent anywhere.</p>
+  </div>
+  <div class="foot">Solution</div><div class="pageno">04</div>
+</section>
+
+<!-- 5 THE MULTIPLIER -->
+<section id="s5" class="slide" style="--accent:var(--amber);--p:24%">
+  <div class="glow"></div>
+  <div class="maxw">
+    <div class="label">The hero artifact</div>
+    <h2>Your personal multiplier.</h2>
+    <p class="sub">One number per area of life. It's the whole product in a single screenshot, and it gets sharper every time you use the app.</p>
+    <div class="cols" style="margin-top:40px">
+      <div class="phone">
+        <div class="bar">Your bias, by area</div>
+        <div class="row"><span>Writing</span><span class="r amber">1.9×</span></div>
+        <div class="row"><span>Chores</span><span class="r amber">1.6×</span></div>
+        <div class="row"><span>Errands</span><span class="r amber">1.4×</span></div>
+        <div class="row"><span>Email</span><span class="r">1.1×</span></div>
+        <div class="row"><span>Calls</span><span class="r">0.9×</span></div>
+      </div>
+      <div class="phone">
+        <div class="bar">What it changes</div>
+        <div class="row"><span>You said</span><span class="r strike">30 min</span></div>
+        <div class="row"><span>Whenbee says</span><span class="r amber">~55 min</span></div>
+        <div class="row"><span>Started</span><span class="r">9:14</span></div>
+        <div class="row"><span>Done about</span><span class="r ind">10:09</span></div>
+        <div class="row"><span>Based on</span><span class="r">your last 12 writing tasks</span></div>
+      </div>
+    </div>
+    <p class="note">Nobody else ships this. It is measured, personal, per category, and it compounds. A competitor cannot copy the number, only the idea, and the number is what people stay for.</p>
+  </div>
+  <div class="foot">Solution</div><div class="pageno">05</div>
+</section>
+
+<!-- 6 A DAY WITH IT -->
+<section id="s6" class="slide" style="--accent:var(--indigo);--p:29%">
+  <div class="glow"></div>
+  <div class="maxw">
+    <div class="label">What using it feels like</div>
+    <h2>A normal Tuesday.</h2>
+    <div class="cols4">
+      <div class="card">
+        <span class="tag">Morning</span>
+        <div class="t">Today</div>
+        <div class="d">Four things listed. Each one shows an honest length and a finish time. You can see the day doesn't fit before you live it.</div>
+      </div>
+      <div class="card">
+        <span class="tag">Working</span>
+        <div class="t">Timer</div>
+        <div class="d">A calm ring, "done about 10:09", and a kind line if you run over. Amber, never red.</div>
+      </div>
+      <div class="card">
+        <span class="tag">Stop</span>
+        <div class="t">The reward beat</div>
+        <div class="d">"Now we both know." A honeycomb cell fills with honey. The area you just measured gets a little sharper.</div>
+      </div>
+      <div class="card">
+        <span class="tag">Later</span>
+        <div class="t">Patterns</div>
+        <div class="d">"You run almost 2× over on writing." That's a discovery about you, and it gets saved to a small collection.</div>
+      </div>
+    </div>
+    <p class="note">Four tabs total: Today, Plan, Whenbee (your progress), Patterns. There is no inbox to maintain and no setup ritual to fall off.</p>
+  </div>
+  <div class="foot">Product</div><div class="pageno">06</div>
+</section>
+
+<!-- 7 START BY -->
+<section id="s7" class="slide" style="--accent:var(--indigo);--p:34%">
+  <div class="glow"></div>
+  <div class="maxw">
+    <div class="label">The payoff people describe out loud</div>
+    <h2>"Leave by 4:05, or drop one thing."</h2>
+    <p class="sub">Give Whenbee a hard deadline and it works backwards through your honest numbers, not your hopeful ones, and tells you when to start. If the day genuinely doesn't fit, it says so and offers the smallest thing to cut.</p>
+    <div class="cols" style="margin-top:36px">
+      <div class="phone">
+        <div class="bar">Start-by plan · dinner at 6:30</div>
+        <div class="row"><span>Shower</span><span class="r">4:05 → 4:30</span></div>
+        <div class="row"><span>Reply to Sam</span><span class="r">4:30 → 4:55</span></div>
+        <div class="row"><span>Pack + tidy</span><span class="r">4:55 → 5:40</span></div>
+        <div class="row"><span>Drive</span><span class="r">5:40 → 6:25</span></div>
+        <div class="row"><span class="amber">Verdict</span><span class="r amber">tight, cut one</span></div>
+      </div>
+      <div>
+        <ul>
+          <li><b>Honest, not optimistic.</b> Every block uses your measured bias for that kind of task.</li>
+          <li><b>One tap to fix it.</b> Ranked suggestions for what to drop, or push the deadline.</li>
+          <li><b>"I'm behind" button.</b> Re-projects the rest of the day without a lecture.</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+  <div class="foot">Product</div><div class="pageno">07</div>
+</section>
+
+<!-- 8 NO GUILT -->
+<section id="s8" class="slide" style="--accent:var(--green);--p:39%">
+  <div class="glow"></div>
+  <div class="maxw">
+    <div class="label">The design rule that decides retention</div>
+    <h2>It can never make you feel bad. That's a constraint, not a slogan.</h2>
+    <div class="cols3">
+      <div class="card"><span class="tag">Banned</span><div class="t">Streaks</div><div class="d">Miss a week, nothing breaks and nothing dies. The most-quoted reason people rage-quit ADHD apps.</div></div>
+      <div class="card"><span class="tag">Banned</span><div class="t">Red numbers</div><div class="d">Running over shows amber and a neutral line. You were never failing, you were measuring.</div></div>
+      <div class="card"><span class="tag">Banned</span><div class="t">Anything that can go down</div><div class="d">Progress only climbs. Once an area is "sealed", it stays sealed forever.</div></div>
+    </div>
+    <p class="note">This is enforced in the code, not the marketing. Punitive mechanics lift week-one numbers and then accelerate churn in exactly this audience. Every mechanic in Whenbee has to be impossible to lose.</p>
+  </div>
+  <div class="foot">Design</div><div class="pageno">08</div>
+</section>
+
+<!-- 9 PRIVACY -->
+<section id="s9" class="slide center" style="--accent:var(--green);--p:44%">
+  <div class="glow"></div>
+  <div class="maxw">
+    <div class="label">Trust</div>
+    <h2 style="max-width:26ch;margin:0 auto">Everything that matters stays on your phone.</h2>
+    <div class="cols3" style="margin-top:48px;text-align:left">
+      <div class="card"><div class="t">No account</div><div class="d">You open it and use it. No email, no password, no sync to break.</div></div>
+      <div class="card"><div class="t">No cloud in the loop</div><div class="d">Your tasks, timings and multipliers never leave the device. Nothing to leak.</div></div>
+      <div class="card"><div class="t">No AI doing the math</div><div class="d">Plain arithmetic you could check by hand. Same input, same answer, every time.</div></div>
+    </div>
+    <p class="note" style="margin-left:auto;margin-right:auto">Also a business advantage: no servers means near-zero cost per user, so gross margin sits around 85% and pricing is a positioning choice rather than cost recovery.</p>
+  </div>
+  <div class="foot">Trust</div><div class="pageno">09</div>
+</section>
+
+<!-- 10 FREE VS PRO -->
+<section id="s10" class="slide" style="--accent:var(--amber);--p:49%">
+  <div class="glow"></div>
+  <div class="maxw">
+    <div class="label">The model</div>
+    <h2>Free forever: the whole measuring machine. Paid: what you do with it.</h2>
+    <div class="cols" style="margin-top:36px">
+      <div class="card">
+        <span class="pill free">Free · $0</span>
+        <div class="t" style="margin-top:16px">Everything that makes it work</div>
+        <ul style="margin-top:14px">
+          <li>Unlimited logging, every area, full depth</li>
+          <li>Your honest number everywhere</li>
+          <li>The honeycomb, the companion, all progress</li>
+          <li>Start-by planner and "cut one"</li>
+          <li>Your patterns: time personality, drift alerts, discoveries</li>
+        </ul>
+      </div>
+      <div class="card">
+        <span class="pill pro">Pro</span>
+        <div class="t" style="margin-top:16px">The payoff bundle</div>
+        <ul style="margin-top:14px">
+          <li>PDF report for a coach, a doctor, or yourself</li>
+          <li>The weekly and monthly honest review</li>
+          <li>Day capacity check and calendar honesty</li>
+          <li>Live timer on the lock screen and home screen</li>
+          <li>Routines, long-range history, focus window, goals, "what steals your time"</li>
+        </ul>
+      </div>
+    </div>
+    <p class="note">The rule: charge for the payoff, never for the sensor. If we ever cap logging, the product stops learning and the reason to pay disappears with it.</p>
+  </div>
+  <div class="foot">Business</div><div class="pageno">10</div>
+</section>
+
+<!-- 11 PRICING -->
+<section id="s11" class="slide" style="--accent:var(--amber);--p:54%">
+  <div class="glow"></div>
+  <div class="maxw">
+    <div class="label">Pricing · locked</div>
+    <h2>Cheaper than the category, with a way out of subscriptions.</h2>
+    <table>
+      <tr><th>Plan</th><th>Price</th><th>Notes</th></tr>
+      <tr><td><b>Free</b></td><td class="price">$0</td><td>The entire calibration product. The real trial, with no card.</td></tr>
+      <tr class="us"><td><b>Yearly</b> · the hero</td><td class="price">$34.99 / year</td><td>About $2.92 a month. 7-day free trial.</td></tr>
+      <tr><td><b>Lifetime</b></td><td class="price">$89 once</td><td>Pay once, no subscription ever. Kept to a quarter of revenue at most.</td></tr>
+      <tr><td><b>Monthly</b></td><td class="price">$4.99 / month</td><td>The anchor, not the target. 7-day free trial.</td></tr>
+    </table>
+    <div class="cols3" style="margin-top:40px">
+      <div class="stat"><span class="v am">7 days</span><span class="k">Free trial on both subs</span></div>
+      <div class="stat"><span class="v">≈ 85%</span><span class="k">Gross margin, no servers</span></div>
+      <div class="stat"><span class="v in">2 taps</span><span class="k">To cancel, and we warn first</span></div>
+    </div>
+    <p class="note">This audience is subscription-burned, so the lifetime option is shown with equal weight and the pre-charge copy is deliberately honest. We never make money from someone forgetting to cancel. Prices are read live from the store, never hardcoded.</p>
+  </div>
+  <div class="foot">Business</div><div class="pageno">11</div>
+</section>
+
+<!-- 12 COMPETITION MATRIX -->
+<section id="s12" class="slide" style="--accent:var(--indigo);--p:60%">
+  <div class="glow"></div>
+  <div class="maxw">
+    <div class="label">Competition</div>
+    <h2>The row that matters is empty for everyone else.</h2>
+    <table>
+      <tr>
+        <th>Capability</th>
+        <th>Llama Life</th>
+        <th>Tiimo</th>
+        <th>Sunsama / Motion</th>
+        <th>Toggl</th>
+        <th>AI ADHD apps</th>
+        <th class="us">Whenbee</th>
+      </tr>
+      <tr><td>Shows estimate vs actual</td><td class="yes">Yes</td><td class="part">Partial</td><td class="part">Manual</td><td class="yes">Yes</td><td class="no">No</td><td class="yes">Yes</td></tr>
+      <tr><td>Generic AI time estimate</td><td class="yes">Yes</td><td class="yes">Yes</td><td class="part">Some</td><td class="no">No</td><td class="yes">Core pitch</td><td class="no">Not used</td></tr>
+      <tr class="us"><td><b>Learns your personal bias</b></td><td class="no">No</td><td class="no">No</td><td class="no">No</td><td class="no">No</td><td class="no">No</td><td class="yes">Yes</td></tr>
+      <tr class="us"><td><b>Per area of life</b></td><td class="no">No</td><td class="no">No</td><td class="no">No</td><td class="no">Project level</td><td class="no">No</td><td class="yes">Yes</td></tr>
+      <tr class="us"><td><b>Corrects tomorrow automatically</b></td><td class="no">No</td><td class="no">No</td><td class="no">No</td><td class="no">No</td><td class="no">No</td><td class="yes">Yes</td></tr>
+      <tr><td>Warns your day is overbooked</td><td class="part">End time only</td><td class="no">No</td><td class="yes">Yes</td><td class="no">No</td><td class="no">No</td><td class="yes">Yes, from real data</td></tr>
+      <tr><td>Price per month</td><td class="price">$6</td><td class="price">~$11.99</td><td class="price">$15–29</td><td class="price">~$9</td><td class="price">$3–7</td><td class="price"><b>$4.99</b></td></tr>
+    </table>
+    <p class="note">Verified live, May 2026. Nobody reviewed, direct or adjacent, closes the measuring loop. The nearest mechanic is Toggl's planned-vs-actual, which is manual, team-shaped and never learns.</p>
+  </div>
+  <div class="foot">Competition</div><div class="pageno">12</div>
+</section>
+
+<!-- 13 POSITIONING -->
+<section id="s13" class="slide" style="--accent:var(--indigo);--p:65%">
+  <div class="glow"></div>
+  <div class="maxw">
+    <div class="label">How we talk about each rival</div>
+    <h2>They guess. We measure.</h2>
+    <div class="cols" style="margin-top:36px">
+      <div class="card">
+        <span class="tag">Llama Life · $6/mo · the tone twin</span>
+        <div class="d" style="font-size:19px;color:var(--ink)">"Llama Life shows you that you went over. Whenbee learns by how much, and stops it happening tomorrow."</div>
+      </div>
+      <div class="card">
+        <span class="tag">Tiimo · ~$11.99/mo · 500k users, Apple award</span>
+        <div class="d" style="font-size:19px;color:var(--ink)">"Tiimo helps you see time. Whenbee fixes the estimate before time runs out." Half the price, one job.</div>
+      </div>
+      <div class="card">
+        <span class="tag">Sunsama, Motion, Morgen · $15–29/mo</span>
+        <div class="d" style="font-size:19px;color:var(--ink)">They protect your calendar's capacity. We fix the numbers you put in it. Different price tier, different buyer.</div>
+      </div>
+      <div class="card">
+        <span class="tag">The AI ADHD swarm · $3–7/mo</span>
+        <div class="d" style="font-size:19px;color:var(--ink)">Same headline, different engine. Their estimate is as wrong on day 100 as day 1. Ours is provably better.</div>
+      </div>
+    </div>
+    <p class="note">Biggest risk, honestly stated: Tiimo already has the timer, the users and the award. If it bolts on a calibration layer it becomes the threat. The defense is speed, focus, and owning the word "calibration" first.</p>
+  </div>
+  <div class="foot">Competition</div><div class="pageno">13</div>
+</section>
+
+<!-- 14 MARKET -->
+<section id="s14" class="slide" style="--accent:var(--amber);--p:70%">
+  <div class="glow"></div>
+  <div class="maxw">
+    <div class="label">Market · why now</div>
+    <h2>The problem already has a name, and people pay for this shelf.</h2>
+    <div class="cols4" style="margin-top:44px">
+      <div class="stat"><span class="v am">500k+</span><span class="k">Users on Tiimo alone</span></div>
+      <div class="stat"><span class="v">2025</span><span class="k">Apple award in this niche</span></div>
+      <div class="stat"><span class="v in">$4.99</span><span class="k">Our price vs $11.99 leader</span></div>
+      <div class="stat"><span class="v">3</span><span class="k">Audiences, one product</span></div>
+    </div>
+    <div class="cols3" style="margin-top:44px">
+      <div class="card"><div class="t">ADHD adults</div><div class="d">The warmest door. "Time blindness" is everyday vocabulary now, so we don't have to explain the pain.</div></div>
+      <div class="card"><div class="t">Time optimists</div><div class="d">Far bigger, no diagnosis needed. Same math, lighter framing, no disorder implied.</div></div>
+      <div class="card"><div class="t">The chronically late</div><div class="d">Widest reach and the most shareable. "I'm not lazy, my clock is off."</div></div>
+    </div>
+    <p class="note">Category legitimacy is proven at the top and the bottom is crowding with lookalikes, which is the normal signal that demand is real. The differentiator has to be the engine, not the aesthetic.</p>
+  </div>
+  <div class="foot">Market</div><div class="pageno">14</div>
+</section>
+
+<!-- 15 BUILD STATUS -->
+<section id="s15" class="slide" style="--accent:var(--green);--p:76%">
+  <div class="glow"></div>
+  <div class="maxw">
+    <div class="label">Status</div>
+    <h2>Not a concept. A finished app waiting on launch paperwork.</h2>
+    <div class="cols4" style="margin-top:44px">
+      <div class="stat"><span class="v">~2,200</span><span class="k">Tests passing</span></div>
+      <div class="stat"><span class="v in">2</span><span class="k">Platforms: iOS + Android</span></div>
+      <div class="stat"><span class="v am">10</span><span class="k">Areas with day-one estimates</span></div>
+      <div class="stat"><span class="v">$0</span><span class="k">Server cost per user</span></div>
+    </div>
+    <div class="cols" style="margin-top:44px">
+      <div>
+        <h3 style="margin-bottom:16px">Built and working</h3>
+        <ul>
+          <li>The full engine, timers, honeycomb, companion, planner, patterns</li>
+          <li>Payments wired through RevenueCat, Android store products live</li>
+          <li>Android home-screen widget and live lock-screen timer, native</li>
+          <li>Onboarding, settings, analytics funnel, privacy and terms published</li>
+        </ul>
+      </div>
+      <div>
+        <h3 style="margin-bottom:16px">Left before launch</h3>
+        <ul>
+          <li>Sandbox purchase verification, then the iOS store mirror of the Android setup</li>
+          <li>Store paperwork: version bump, data forms, age rating</li>
+          <li>Google's required 14-day closed test with at least 12 testers</li>
+          <li>iOS live timer needs a paid Apple team account to link</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+  <div class="foot">Status</div><div class="pageno">15</div>
+</section>
+
+<!-- 16 THE BET -->
+<section id="s16" class="slide" style="--accent:var(--indigo);--p:82%">
+  <div class="glow"></div>
+  <div class="maxw">
+    <div class="label">The honest risk</div>
+    <h2>Retention is the whole game, and we know it.</h2>
+    <div class="cols">
+      <div>
+        <ul>
+          <li><b>The hard part:</b> the discipline this product needs is the exact thing the user struggles with. So logging has to be nearly free, and it is: one tap.</li>
+          <li><b>The counter:</b> day-one estimates mean the app is useful before you've logged anything.</li>
+          <li><b>The gate:</b> if week-one retention doesn't reach 25%, we fix the loop before spending a cent on growth.</li>
+          <li><b>Three reasons to come back,</b> not one: the daily plan, the curiosity of seeing your patterns, and a quiet nudge when your pace changes.</li>
+        </ul>
+      </div>
+      <div class="card">
+        <span class="tag">Targets vs category benchmarks</span>
+        <div class="row"><span>Day 1</span><span class="r">25%+ <span style="color:var(--ink3)">vs 15–20%</span></span></div>
+        <div class="row"><span>Day 7</span><span class="r">25%+ <span style="color:var(--ink3)">vs 8–10%</span></span></div>
+        <div class="row"><span>Day 30</span><span class="r">8%+ <span style="color:var(--ink3)">vs 3–5%</span></span></div>
+        <div class="row"><span>Year one, base case</span><span class="r amber">$15–20k</span></div>
+        <div class="row"><span>Assumes</span><span class="r">~15k installs, ~2.5% pay</span></div>
+      </div>
+    </div>
+    <p class="note">Deliberately not a venture-scale claim. It's a solo-built, near-zero-cost product where a modest install base is already a real business, and where the ceiling comes from being the only app with the measuring loop.</p>
+  </div>
+  <div class="foot">Risk</div><div class="pageno">16</div>
+</section>
+
+<!-- 17 CLOSE -->
+<section id="s17" class="slide center" style="--accent:var(--amber);--p:100%">
+  <div class="glow"></div>
+  <div class="maxw">
+    <div class="label">In one line</div>
+    <p class="big">Other apps guess<br>how long a task takes.<br><span style="color:var(--amber)">Whenbee learns your number.</span></p>
+    <p class="sub" style="margin-top:36px">Free to calibrate, forever. $34.99 a year for the payoff, or $89 once. On your phone, offline, and it never once tells you off.</p>
+  </div>
+  <div class="foot">Whenbee · whenbee.app</div><div class="pageno">17</div>
+</section>
+
+<script>
+  // arrow / space navigation between slides
+  const slides = [...document.querySelectorAll('.slide')];
+  const go = d => {
+    const y = window.scrollY + 4;
+    let i = slides.findIndex(s => s.offsetTop > y);
+    if (d < 0) { i = slides.findIndex(s => s.offsetTop >= y) - 1; }
+    i = Math.max(0, Math.min(slides.length - 1, i < 0 ? (d < 0 ? 0 : slides.length - 1) : i));
+    slides[i].scrollIntoView();
+  };
+  addEventListener('keydown', e => {
+    if (['ArrowDown','PageDown',' '].includes(e.key)) { e.preventDefault(); go(1); }
+    if (['ArrowUp','PageUp'].includes(e.key)) { e.preventDefault(); go(-1); }
+  });
+</script>
+</body>
+</html>
