@@ -12,6 +12,7 @@ import {
   formatClockMin,
   formatWindowRange,
   setClockHour12,
+  fmtDelta,
 } from '@/src/lib/time';
 
 // Build a deterministic local epoch from explicit Y/M/D h:m so the formatted
@@ -215,5 +216,28 @@ describe('formatClockMeridiem', () => {
     setClockHour12(false);
     const at = new Date(2026, 6, 25, 21, 50).getTime();
     expect(formatClockMeridiem(at)).toBe('21:50');
+  });
+});
+
+describe('fmtDelta', () => {
+  it('words a positive delta as over', () => {
+    expect(fmtDelta(35)).toEqual({ text: '35m over', direction: 'over' });
+  });
+
+  it('words a negative delta as under, without a minus sign', () => {
+    expect(fmtDelta(-20)).toEqual({ text: '20m under', direction: 'under' });
+  });
+
+  it('crosses the hour boundary via fmtHm', () => {
+    expect(fmtDelta(65)).toEqual({ text: '1h 5m over', direction: 'over' });
+    expect(fmtDelta(-120)).toEqual({ text: '2h under', direction: 'under' });
+  });
+
+  it('reports zero as even with no duration', () => {
+    expect(fmtDelta(0)).toEqual({ text: 'even', direction: 'even' });
+  });
+
+  it('rounds fractional minutes before wording them', () => {
+    expect(fmtDelta(34.6)).toEqual({ text: '35m over', direction: 'over' });
   });
 });

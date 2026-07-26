@@ -1,4 +1,10 @@
-import { landingHeadline, landingFooter, landingScale } from '@/src/features/today/honestLandingCopy';
+import {
+  landingHeadline,
+  landingFooter,
+  landingScale,
+  landingLegend,
+  landingUpsell,
+} from '@/src/features/today/honestLandingCopy';
 import type { LandingResult, LandingTask } from '@/src/engine';
 
 const NOW = new Date(2026, 6, 25, 19, 10).getTime();
@@ -213,7 +219,7 @@ test('the states that render no bar get no scale', () => {
   expect(landingScale(empty, { nowMs: NOW, dayEndMs: DAY_END })).toEqual([]);
 });
 
-test('a Pro day with meetings offers the calendar instead of another task', () => {
+test('a Pro day with meetings offers the calendar instead of another task, stating the TRUE booked total', () => {
   const clear: LandingResult = {
     kind: 'clear',
     landingMs: NOW + 60 * MIN,
@@ -228,20 +234,82 @@ test('a Pro day with meetings offers the calendar instead of another task', () =
     doneHonestMin: 75,
     logsToWarm: 0,
     dayEndShort: '9',
-    hasMeetings: true,
+    bookedMinAll: 90,
   });
   expect(f.action).toBe('Pad calendar');
-  // The fact half is unchanged — meetings swap the offer, not the reading.
-  expect(f.text).toBe('2 done · 1h 15m logged');
+  // The fact now states the booked total, not the done-count — mirrors the
+  // 'over' branch, which also swaps the whole sentence rather than appending.
+  expect(f.text).toBe('1h 30m already booked today');
+  expect(f.boldSpan).toBe('1h 30m');
 });
 
-test('meetings never outrank naming the tail task', () => {
+test('the footer states the UNCLAMPED booked total, never the bar-span-clamped one', () => {
+  // 2h really booked, even though only part of it would fit inside the bar's
+  // now→landing span (that clamped figure is `bookedMin`, used only by the
+  // bar/legend). The sentence about the whole day must use the true total.
+  const clear: LandingResult = {
+    kind: 'clear',
+    landingMs: NOW + 60 * MIN,
+    overMin: 0,
+    openMin: 50,
+    remainingMin: 60,
+    tail: null,
+    ends: [],
+  };
+  const f = landingFooter(clear, {
+    doneCount: 2,
+    doneHonestMin: 75,
+    logsToWarm: 0,
+    dayEndShort: '9',
+    bookedMinAll: 120,
+  });
+  expect(f.text).toBe('2h already booked today');
+});
+
+test('booked time never outranks naming the tail task', () => {
   const f = landingFooter(over, {
     doneCount: 2,
     doneHonestMin: 75,
     logsToWarm: 0,
     dayEndShort: '9',
-    hasMeetings: true,
+    bookedMinAll: 90,
   });
   expect(f.action).toBe('Move it');
+});
+
+describe('landingLegend', () => {
+  it('names calendar time booked, never meetings', () => {
+    const legend = landingLegend({ taskMin: 95, bookedMin: 120, overMin: 0 });
+    expect(legend).toEqual([
+      { key: 'tasks', value: '1h 35m', label: 'tasks' },
+      { key: 'booked', value: '2h', label: 'booked' },
+    ]);
+    expect(JSON.stringify(legend)).not.toMatch(/meeting/i);
+  });
+
+  it('adds the over entry only when the day runs past its end', () => {
+    const legend = landingLegend({ taskMin: 400, bookedMin: 255, overMin: 40 });
+    expect(legend.map((e) => e.key)).toEqual(['tasks', 'booked', 'over']);
+  });
+
+  it('returns nothing when no calendar time exists', () => {
+    expect(landingLegend({ taskMin: 95, bookedMin: 0, overMin: 0 })).toEqual([]);
+  });
+
+  it('drops the tasks entry when the booked span swallows the whole in-day segment', () => {
+    // meetMs clamped to the full in-day span leaves taskInDayMs at 0 — no indigo
+    // segment renders on the bar, so a "tasks" dot would explain a colour that
+    // isn't on screen.
+    const legend = landingLegend({ taskMin: 0, bookedMin: 60, overMin: 0 });
+    expect(legend).toEqual([{ key: 'booked', value: '1h', label: 'booked' }]);
+  });
+});
+
+describe('landingUpsell', () => {
+  it('names the limit of the number on screen without blaming anyone', () => {
+    expect(landingUpsell()).toEqual({
+      text: "Optimistic — your calendar isn't in it",
+      action: 'Add it',
+    });
+  });
 });

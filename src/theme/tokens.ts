@@ -308,6 +308,13 @@ export const tokens = {
       driftSettled: '#EEAE4D', // = accent (amber)
       driftCurious: '#6B5BE6', // = primary (indigo)
       amberText: '#8A5A12', // AA amber-on-light text
+      // Lighter honey amber — 3.6:1 on white, AA-LARGE only. WCAG "large" bold
+      // text starts at 14pt/18.66px, so bold text must be ≥20px (fontSize.lg) to
+      // clear the boundary with margin — 18px (titleSm) bold is 0.66px short and
+      // formally fails. Do NOT use on small/regular text (footer spans, the ⚡
+      // glyph, the overrun clock) — those stay on amberText, which clears AA at
+      // any weight/size.
+      honeyText: '#B87A16',
       success: '#33B07C',
       successSoft: '#E2F4EA',
       danger: '#D14343',
@@ -404,6 +411,12 @@ export const tokens = {
       driftSettled: '#EEAE4D', // = accent (amber)
       driftCurious: '#8275F0', // = primary (indigo, dark variant)
       amberText: '#EEAE4D',
+      // Same as amberText — dark mode already reads light amber on a deep ground,
+      // so honey needs no separate lift here. Still AA-large-only by convention
+      // (bold text ≥20px / fontSize.lg — see the light-mode note); kept distinct
+      // from amberText so consumers stay explicit about which contrast contract
+      // they're opting into.
+      honeyText: '#EEAE4D',
       success: '#33B07C',
       successSoft: 'rgba(51,176,124,0.18)',
       danger: '#E06464',
@@ -593,13 +606,15 @@ export const tokens = {
   // pill horizontal padding.
   proTeaser: { previewH: 118, barGap: 9, barRadius: 4, scrimOpacity: 0.28, barOpacity: 0.55, pillPadX: 11 },
 
-  // Day-read bar geometry — HonestLandingCard's now→landing bar, in-day / meetings
+  // Day-read bar geometry — HonestLandingCard's now→landing bar, in-day / booked
   // / overflow segments alike, so every segment reads as part of the same bar.
   // barH = height of the segmented track; iconDisc = ⚡ disc diameter (also used by
   // TodayFocusHook, so the two cards' leading discs match); segRadius = the
   // track/segment cap — kept at barH ÷ 2 so the bar reads as a capsule, not a
   // slightly-rounded rectangle.
-  capacity: { barH: 10, iconDisc: 20, segRadius: 5 },
+  // legendDot = the small colour-key circle in the landing bar's legend row
+  // (tasks/booked/over) — one size, reused for all three entries.
+  capacity: { barH: 10, iconDisc: 20, segRadius: 5, legendDot: 6 },
 
   // Discovery marker geometry — the honey-hex sign (amber + = runs longer, green
   // − = runs faster) on each gallery card. One size; consumed via t.discovery.hex.

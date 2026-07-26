@@ -105,12 +105,18 @@ export function HonestSuggestionCard({
     fontSize: t.fontSize.md,
     fontWeight: t.fontWeight.regular as TextStyle['fontWeight'],
     color: t.colors.ink,
-    lineHeight: t.fontSize.md * t.lineHeight.normal,
+    // Sized off the taller nested `sentenceValue` run (20px bold), not the
+    // sentence's own 16px — a 24px box (16 × 1.4) clips a 20px bold run on
+    // Android. Room for the tallest child, not the parent's own type size.
+    lineHeight: t.fontSize.lg * t.lineHeight.normal,
   };
   const sentenceValue: TextStyle = {
-    fontSize: t.fontSize.md,
-    fontWeight: t.fontWeight.semibold as TextStyle['fontWeight'],
-    color: t.colors.amberText,
+    // honeyText (#B87A16, 3.6:1) only clears WCAG AA-large (3:1) at ≥18.66px
+    // bold. titleSm (18) bold falls 0.66px short of that boundary — lg (20)
+    // bold clears it outright. See the tokens.ts comment on honeyText.
+    fontSize: t.fontSize.lg,
+    fontWeight: t.fontWeight.bold as TextStyle['fontWeight'],
+    color: t.colors.honeyText,
     fontVariant: ['tabular-nums'],
   };
   const noteText: TextStyle = { fontSize: t.fontSize.sm, color: t.colors.inkSoft };
