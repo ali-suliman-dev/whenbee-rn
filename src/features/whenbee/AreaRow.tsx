@@ -53,10 +53,10 @@ export function AreaRow({
   };
   const multText: TextStyle = {
     fontFamily: 'Inter-Bold',
-    fontSize: t.fontSize.sm,
+    fontSize: t.fontSize.base,
     color: t.colors.primary,
     fontVariant: ['tabular-nums'],
-    minWidth: 34,
+    minWidth: 40,
     textAlign: 'right',
   };
 
