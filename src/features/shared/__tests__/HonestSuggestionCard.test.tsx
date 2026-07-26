@@ -1,4 +1,5 @@
 import { render, screen } from '@testing-library/react-native';
+import { StyleSheet } from 'react-native';
 import { HonestSuggestionCard } from '@/src/features/shared/HonestSuggestionCard';
 import { useEntitlement } from '@/src/features/paywall/useEntitlement';
 
@@ -37,6 +38,22 @@ describe('HonestSuggestionCard — pre-data (starting hunch)', () => {
     render(<HonestSuggestionCard honestMinutes={35} guessMinutes={15} preEstimate />);
     expect(screen.getByText(`35${NBSP}min`)).toBeOnTheScreen();
   });
+
+  it('renders the honest value in honey at the larger bold size', () => {
+    render(
+      <HonestSuggestionCard
+        honestMinutes={30}
+        guessMinutes={15}
+        preEstimate
+        range={{ lowMinutes: 20, highMinutes: 45 }}
+      />,
+    );
+    const value = screen.getByText(/20–45/);
+    const flattened = StyleSheet.flatten(value.props.style);
+    expect(flattened).toEqual(
+      expect.objectContaining({ color: '#B87A16', fontSize: 18, fontWeight: '700' }),
+    );
+  });
 });
 
 describe('HonestSuggestionCard — trained (usually, for you)', () => {
@@ -69,9 +86,13 @@ describe('HonestSuggestionCard — trained (usually, for you)', () => {
     expect(screen.queryByText('→')).toBeNull();
   });
 
-  it('renders the inline value at the sentence size (AppText default would shrink it)', () => {
+  it('renders the honest value in honey at the larger bold size', () => {
     render(<HonestSuggestionCard honestMinutes={25} guessMinutes={15} />);
-    expect(screen.getByText(`25${NBSP}min`)).toHaveStyle({ fontSize: 16 });
+    const value = screen.getByText(`25${NBSP}min`);
+    const flattened = StyleSheet.flatten(value.props.style);
+    expect(flattened).toEqual(
+      expect.objectContaining({ color: '#B87A16', fontSize: 18, fontWeight: '700' }),
+    );
   });
 });
 

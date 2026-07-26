@@ -108,9 +108,9 @@ export function HonestSuggestionCard({
     lineHeight: t.fontSize.md * t.lineHeight.normal,
   };
   const sentenceValue: TextStyle = {
-    fontSize: t.fontSize.md,
-    fontWeight: t.fontWeight.semibold as TextStyle['fontWeight'],
-    color: t.colors.amberText,
+    fontSize: t.fontSize.titleSm,
+    fontWeight: t.fontWeight.bold as TextStyle['fontWeight'],
+    color: t.colors.honeyText,
     fontVariant: ['tabular-nums'],
   };
   const noteText: TextStyle = { fontSize: t.fontSize.sm, color: t.colors.inkSoft };
