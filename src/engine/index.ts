@@ -79,6 +79,16 @@ export type {
 } from '@/src/domain/types';
 export { tasksForSelectedDay, type DayTask, type DaySelectorInput } from './daySelectors';
 export { honestDayLoad, type DayLoadInput, type DayLoadResult } from './honestDayLoad';
+export { honestLanding } from './honestLanding';
+export type {
+  LandingInput,
+  LandingResult,
+  LandingKind,
+  LandingTask,
+  TaskEnd,
+} from './honestLanding';
+export { landingRange } from './honestLanding';
+export type { LandingRangeInput, LandingRangeResult } from './honestLanding';
 export { planDayAroundAnchors } from './planDayAroundAnchors';
 export type { PlanAnchor, PlanDayInput } from './planDayAroundAnchors';
 export { orderForFocus } from './focusOrder';

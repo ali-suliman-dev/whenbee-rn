@@ -1,5 +1,5 @@
 import { View, Text, Pressable, ScrollView, RefreshControl, type TextStyle } from 'react-native';
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback, useEffect, useMemo } from 'react';
 import { router } from 'expo-router';
 import Animated, { FadeIn } from 'react-native-reanimated';
 import { haptics } from '@/src/lib/haptics';
@@ -41,7 +41,8 @@ import { DayRecapCard } from '@/src/features/today/DayRecapCard';
 import { useDayRecap } from '@/src/features/today/useDayRecap';
 import { DaySoFarCard } from '@/src/features/today/DaySoFarCard';
 import { useDaySoFar } from '@/src/features/today/useDaySoFar';
-import { CapacityChip } from '@/src/features/today/CapacityChip';
+import { HonestLandingCard, type LandingAction } from '@/src/features/today/HonestLandingCard';
+import { useHonestLanding, useEventMinAhead } from '@/src/features/today/useHonestLanding';
 import { CalendarOverlaySection } from '@/src/features/today/CalendarOverlaySection';
 import { useDayCapacity } from '@/src/features/today/useDayCapacity';
 import { useCapacityWidgetPublisher } from '@/src/features/today/useCapacityWidgetPublisher';
@@ -262,7 +263,7 @@ export default function Today() {
   // Single call — avoids computing leadHoney(shownCells) twice in JSX.
   const lead = leadHoney(shownCells);
 
-  // Day capacity — single call here so CapacityChip and CalendarOverlaySection
+  // Day capacity — single call here so the landing card and CalendarOverlaySection
   // share the same resolved events (avoids double calendar fetches).
   const cap = useDayCapacity();
   // Keeps the "Does Today Fit?" Home-screen widget (Pro) live off the same
@@ -273,6 +274,54 @@ export default function Today() {
   // calibration stats + entitlement, so it's mounted with no args (see
   // useBiasWidgetPublisher for the Pro-gate-at-source rule).
   useBiasWidgetPublisher();
+
+  // When the day lands, off the same honest numbers the rows show — one card for
+  // free and Pro alike. `useEventMinAhead` folds the resolved calendar into it on
+  // the shared minute tick, so the meetings slice shrinks as the day runs rather
+  // than freezing at the value it had when the screen mounted. `cap.events` is
+  // empty for free users (the calendar is never fetched) and the hook zeroes
+  // calendar minutes for non-Pro on top of that.
+  const eventMinAhead = useEventMinAhead(cap.events);
+  const landing = useHonestLanding(eventMinAhead);
+
+  const onLandingAction = useCallback(
+    (kind: LandingAction) => {
+      if (kind === 'add-task' || kind === 'start-one') {
+        router.push('/(modals)/add-task');
+        return;
+      }
+      if (kind === 'pad-calendar') {
+        router.push({ pathname: '/(modals)/honest-day' });
+        return;
+      }
+      const store = useDayTasksStore.getState();
+      if (kind === 'move-tail') {
+        const tail = landing.landing.tail;
+        if (tail) void store.moveToTomorrow(tail.id);
+        return;
+      }
+      // move-to-tomorrow clears the whole overflow. Each move reloads the day and
+      // overwrites store state, so they run one at a time — firing them together
+      // interleaves the reloads and leaves the list half-moved.
+      const ids = landing.landing.ends.map((e) => e.id);
+      void ids.reduce(
+        (chain, id) => chain.then(() => store.moveToTomorrow(id)),
+        Promise.resolve(),
+      );
+    },
+    [landing],
+  );
+
+  // Per-row "ends ~8:40pm" labels ride the same today-only gate as the card: the
+  // ends are cumulative finishes measured from the CURRENT clock, so on a future
+  // selection they would label tomorrow's rows with tonight's times.
+  const endsById = useMemo(
+    () =>
+      isToday
+        ? new Map(landing.landing.ends.map((e) => [e.id, formatClockMeridiem(e.endMs)]))
+        : new Map<string, string>(),
+    [isToday, landing.landing.ends],
+  );
 
   const sectionLabel: TextStyle = {
     ...(type.eyebrowSm as unknown as TextStyle),
@@ -346,11 +395,22 @@ export default function Today() {
               scrolls with content, lets the user jump to any day in the ±52 wk range. */}
           <CalendarStrip />
 
-          {/* Capacity chip — only on today/future (past shows DayRecapCard instead)
-              and only once the day has tasks; an empty day has no load to weigh.
-              Passes the pre-resolved cap result so the chip skips its own fetch. */}
-          {!isPastDay && totalCount > 0 ? (
-            <CapacityChip cap={cap} />
+          {/* The day's read — TODAY only, and only once the day has tasks; an empty
+              day has nothing to weigh. A landing time is a statement about the
+              running clock ("done ~9:50pm", "50m past your day"), so it has no
+              meaning on a day that hasn't started: the hook reads now/end-of-day
+              from TODAY while the task list is the selected day, which on a future
+              selection produced a card describing tonight over tomorrow's tasks —
+              and a footer whose "Move N to tomorrow" moved the wrong day's work.
+              Same card for everyone: Pro just hands it more data. */}
+          {isToday && totalCount > 0 ? (
+            <HonestLandingCard
+              result={landing}
+              doneCount={done.length}
+              doneHonestMin={done.reduce((sum, r) => sum + (r.actualMin ?? r.honestMin), 0)}
+              eventMinAhead={eventMinAhead}
+              onAction={onLandingAction}
+            />
           ) : null}
 
           {/* Daily ritual (opt-in) lived in the honey HUD footer; the HUD is gone,
@@ -490,6 +550,8 @@ export default function Today() {
                         coachLabel="Press & hold for options"
                         onCoachMarkDismiss={dismissLongPressHint}
                         isExiting={deletingId === row.id}
+                        endsAtLabel={endsById.has(row.id) ? `ends ~${endsById.get(row.id)}` : undefined}
+                        isTail={isToday && landing.landing.tail?.id === row.id}
                       />
                     ))}
                   </View>

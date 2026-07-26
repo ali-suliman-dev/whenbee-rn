@@ -216,18 +216,19 @@ describe('Today screen', () => {
     expect(screen.queryByText("What's on today?")).toBeNull();
   });
 
-  it('renders the free task-only capacity verdict line on today (free user)', () => {
-    // selectedDate is today (set in beforeEach). The chip only weighs a day that
+  it('a free user sees the landing card, never the capacity verdict', async () => {
+    // selectedDate is today (set in beforeEach). The card only weighs a day that
     // has tasks, so seed one.
     const task = makeQueued({ id: 'c1', label: 'Leave for work', category: 'getting_ready', guessMin: 15 });
     useDayTasksStore.setState({ dayTasks: [task], selectFocusTask: () => task });
     render(<Today />);
-    // Free user now sees the real honest verdict line (capacity is free), not a teaser.
-    expect(screen.getByTestId('capacity-free')).toBeOnTheScreen();
-    expect(screen.getByText(/honest day/i)).toBeOnTheScreen();
+    // Free users land on the honest-landing card; the old fixed-window capacity
+    // verdict (which always read "· fits") is gone from this path.
+    expect(await screen.findByTestId('honest-landing')).toBeOnTheScreen();
+    expect(screen.queryByTestId('capacity-free')).toBeNull();
   });
 
-  it('renders the capacity chip collapsed for a Pro user on today', () => {
+  it('renders the same landing card for a Pro user — Pro is more data, not another card', () => {
     useEntitlement.setState({ isPro: true });
     mockUseDayCapacity.mockReturnValue({
       status: 'ready',
@@ -242,18 +243,17 @@ describe('Today screen', () => {
     const task = makeQueued({ id: 'c2', label: 'Leave for work', category: 'getting_ready', guessMin: 15 });
     useDayTasksStore.setState({ dayTasks: [task], selectFocusTask: () => task });
     render(<Today />);
-    expect(screen.getByTestId('capacity-chip-collapsed')).toBeOnTheScreen();
+    expect(screen.getByTestId('honest-landing')).toBeOnTheScreen();
   });
 
-  it('does NOT render the capacity chip on an empty today', () => {
-    // No tasks → nothing to weigh, so the chip stays hidden even on today.
+  it('does NOT render the day read on an empty today', () => {
+    // No tasks → nothing to weigh, so the card stays hidden even on today.
     useDayTasksStore.setState({ dayTasks: [], selectFocusTask: () => null });
     render(<Today />);
-    expect(screen.queryByTestId('capacity-free')).toBeNull();
-    expect(screen.queryByTestId('capacity-chip-collapsed')).toBeNull();
+    expect(screen.queryByTestId('honest-landing')).toBeNull();
   });
 
-  it('does NOT render the capacity chip on a past day', () => {
+  it('does NOT render the day read on a past day', () => {
     // 2023-11-13 is a past date.
     useDayTasksStore.setState({
       selectedDate: '2023-11-13',
@@ -261,8 +261,47 @@ describe('Today screen', () => {
       selectFocusTask: () => null,
     });
     render(<Today />);
-    expect(screen.queryByTestId('capacity-chip-collapsed')).toBeNull();
-    expect(screen.queryByTestId('capacity-free')).toBeNull();
+    expect(screen.queryByTestId('honest-landing')).toBeNull();
+  });
+
+  it('does NOT render the day read on a FUTURE day, even with tasks queued', () => {
+    // The landing card reads the clock and end-of-day from TODAY while the task
+    // list is the SELECTED day. On a future selection that produced a card about
+    // tonight over tomorrow's tasks — and, past end of day, a "Move N to tomorrow"
+    // that moved the wrong day's work. A landing time only means anything today.
+    const task = makeQueued({ id: 'f1', label: 'Ship the deck', category: 'getting_ready', guessMin: 45 });
+    useDayTasksStore.setState({
+      selectedDate: '2026-06-25', // the day after FIXED_TODAY
+      dayTasks: [task],
+      selectFocusTask: () => task,
+    });
+    render(<Today />);
+    expect(screen.queryByTestId('honest-landing')).toBeNull();
+  });
+
+  it('does NOT label a future day’s rows with tonight’s finishing times or the amber tail', async () => {
+    // Same root cause as the card: `ends` are cumulative finishes measured from
+    // the CURRENT clock, so on a future day they would name times from today —
+    // and flag a "tail" row against an end-of-day the selected date never reaches.
+    // Mirrors the today-day wiring test below, one day later.
+    useCalibrationStore.setState({
+      statsByCategory: {
+        getting_ready: { mEffective: 2.0, n: 8, sharpness: 70, tier: 'Ripening', fit: { a: 0, b: 2.0 } },
+      },
+    });
+    const focus = makeQueued({ id: 'f2', label: 'Leave for work', category: 'getting_ready', guessMin: 100, createdAt: T0 });
+    const upNext = makeQueued({ id: 'f3', label: 'Pack bag', category: 'getting_ready', guessMin: 200, createdAt: T0 + 1 });
+    useDayTasksStore.setState({
+      selectedDate: '2026-06-25', // the day after FIXED_TODAY
+      dayTasks: [focus, upNext],
+      selectFocusTask: () => focus,
+    });
+
+    render(<Today />);
+    await screen.findByText('Pack bag');
+
+    expect(screen.queryByTestId('taskrow-ends')).toBeNull();
+    expect(screen.queryByTestId('taskrow-ends-tail')).toBeNull();
   });
 
   it('leads up-next rows with the honest estimate and supports with the guess', async () => {
@@ -281,6 +320,31 @@ describe('Today screen', () => {
     // The up-next row leads with the honest estimate (~50) and supports with the guess.
     expect(await screen.findByText('~50')).toBeOnTheScreen();
     expect(screen.getByText('guessed 25')).toBeOnTheScreen();
+  });
+
+  it('wires each up-next row to its honest end time, and flags the tail row that crosses end of day', async () => {
+    // dayEndMin defaults to 21:00 (DEFAULT_DAY_END_MIN); FIXED_NOW is noon, so
+    // there are 540 minutes of runway before end of day.
+    useCalibrationStore.setState({
+      statsByCategory: {
+        getting_ready: { mEffective: 2.0, n: 8, sharpness: 70, tier: 'Ripening', fit: { a: 0, b: 2.0 } },
+      },
+    });
+    // Focus task: honestMin 100 * 2 = 200min → lands 15:20, still inside the day.
+    const focus = makeQueued({ id: 'g1', label: 'Leave for work', category: 'getting_ready', guessMin: 100, createdAt: T0 });
+    // Up-next task: cumulative honestMin 200 + (200*2=400) = 600min → lands 22:00,
+    // past the 21:00 end of day — this is the row that must carry the tail.
+    const upNext = makeQueued({ id: 'g2', label: 'Pack bag', category: 'getting_ready', guessMin: 200, createdAt: T0 + 1 });
+    useDayTasksStore.setState({ dayTasks: [focus, upNext], selectFocusTask: () => focus });
+
+    render(<Today />);
+
+    await screen.findByText('Leave for work');
+    expect(screen.getByText(/ends ~10:00pm/)).toBeOnTheScreen();
+    expect(screen.getByTestId('taskrow-ends-tail')).toBeOnTheScreen();
+    // Only the up-next row is the tail — the focus task isn't rendered as a TaskRow at all,
+    // so there is exactly one end-time clause on the screen.
+    expect(screen.queryByTestId('taskrow-ends')).toBeNull();
   });
 });
 

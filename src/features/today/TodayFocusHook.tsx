@@ -23,7 +23,7 @@ import { useSettingsStore } from '@/src/stores/settingsStore';
 // Previously gate 3 required ≥1 queued task; that created a confusing gap where
 // calibrated users with a clear day saw nothing. Removed in Phase 5 Task A1.
 //
-// One-line chip, mirroring CapacityChip: ◑ contrast glyph in a 20px indigo disc +
+// One-line chip, mirroring HonestLandingCard: ◑ contrast glyph in a 20px indigo disc +
 // bodySm + numberOfLines=1. Indigo disc separates Focus (Pro/brand) from the amber
 // Honest-day chip.
 //
@@ -91,7 +91,7 @@ export function TodayFocusHook({ nowMs }: TodayFocusHookProps): React.ReactEleme
       ? `Sharpest ${rangeText} — your window for hard tasks`
       : 'Your focus window is ready — upgrade to Pro to see your sharpest hours';
 
-  // ── styles (mirror CapacityChip: disc + bodySm + one line) ─────────────────
+  // ── styles (mirror HonestLandingCard: disc + bodySm + one line) ────────────
   const rowStyle: ViewStyle = {
     flexDirection: 'row',
     alignItems: 'center',

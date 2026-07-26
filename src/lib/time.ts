@@ -27,11 +27,12 @@ export function formatClock(epochMs: number, hour12 = hour12Default): string {
   return `${h12}:${minutes}`;
 }
 
-/** Local 12-hour clock with meridiem: "9:42am", "5:00pm", "12:00pm" (noon). */
-export function formatClockMeridiem(epochMs: number): string {
+/** Local clock with meridiem in 12h mode ("5:00pm"); bare 24h clock ("17:00") otherwise. */
+export function formatClockMeridiem(epochMs: number, hour12 = hour12Default): string {
+  if (!hour12) return formatClock(epochMs, false);
   const d = new Date(epochMs);
   const meridiem = d.getHours() < 12 ? 'am' : 'pm';
-  return `${formatClock(epochMs)}${meridiem}`;
+  return `${formatClock(epochMs, true)}${meridiem}`;
 }
 
 /** Minutes-after-midnight → local clock. 12h: "1:30" · 24h: "13:30". */
@@ -126,7 +127,7 @@ export function dayEndEpochFor(nowMs: number, dayEndMin: number): number {
 /**
  * Format a minute count as a compact "Xh Ym" string. Examples:
  *   75 → "1h 15m"    60 → "1h"    45 → "45m"    0 → "0m"
- * Used by CapacityChip to display task/event durations.
+ * Used across the day-read surfaces to display task/event durations.
  */
 export function fmtHm(totalMin: number): string {
   const mins = Math.max(0, Math.round(totalMin));

@@ -24,6 +24,7 @@ import { useCategoriesStore } from '@/src/stores/categoriesStore';
 import { useEntitlement } from '@/src/features/paywall/useEntitlement';
 import { useAccountActions, type RestoreOutcome } from '@/src/features/paywall/useAccountActions';
 import { usePaywallVariant } from '@/src/features/paywall/usePaywallVariant';
+import { useLandingVariant } from '@/src/features/today/useLandingVariant';
 import { useReminderSetting } from '@/src/features/settings/useReminderSetting';
 import { useReviewNotifySetting } from '@/src/features/settings/useReviewNotifySetting';
 import { useDayEndSetting } from '@/src/features/settings/useDayEndSetting';
@@ -154,6 +155,7 @@ export default function Settings() {
   const categoryCount = useCategoriesStore((s) => s.categories.length);
   const { restoring, manageSubscription, restorePurchases } = useAccountActions();
   const { variant: paywallVariant, setVariant: setPaywallVariant } = usePaywallVariant();
+  const { variant: landingVariant, setVariant: setLandingVariant } = useLandingVariant();
   const { enabled: remindersEnabled, toggle: toggleReminders } = useReminderSetting();
   const { enabled: reviewNotifyEnabled, toggle: toggleReviewNotify } = useReviewNotifySetting();
   const honestReachedEnabled = useSettingsStore((s) => s.honestReachedEnabled);
@@ -751,6 +753,16 @@ export default function Settings() {
                   : "Showing 'Plan · Do · Learn'. Tap to switch to 'A day with Pro'."
               }
               onPress={() => setPaywallVariant(paywallVariant === 'day' ? 'groups' : 'day')}
+            />
+            <SettingRow
+              icon="today-outline"
+              title="Landing headline"
+              note={
+                landingVariant === 'd'
+                  ? "Showing 'Done ~9:50pm'. Tap to switch to '9:50pm. That's…'."
+                  : "Showing '9:50pm. That's…'. Tap to switch to 'Done ~9:50pm'."
+              }
+              onPress={() => setLandingVariant(landingVariant === 'd' ? 'dAlt' : 'd')}
             />
             <SettingRow
               icon="flask-outline"
