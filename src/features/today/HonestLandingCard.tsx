@@ -24,14 +24,25 @@
 // here. Nothing animates on entrance.
 // ──────────────────────────────────────────────────────────────────────────────
 
+import { useState, useEffect } from 'react';
 import { View, Text, Pressable, StyleSheet, type ViewStyle, type TextStyle } from 'react-native';
+import Animated, {
+  FadeIn,
+  useSharedValue,
+  useAnimatedStyle,
+  withTiming,
+  useReducedMotion,
+  Easing,
+} from 'react-native-reanimated';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '@/src/theme/useTheme';
 import { type } from '@/src/theme/typography';
 import { formatClockMeridiem } from '@/src/lib/time';
+import { haptics } from '@/src/lib/haptics';
 import { landingHeadline, landingFooter, landingScale } from './honestLandingCopy';
 import type { HonestLandingResult } from './useHonestLanding';
 import { useLandingVariant } from './useLandingVariant';
+import { readLandingCollapsed, writeLandingCollapsed } from './landingCollapse';
 
 export type LandingAction =
   | 'move-tail'
@@ -87,10 +98,40 @@ export function HonestLandingCard({
   const { variant } = useLandingVariant();
   const { landing, range, logsToWarm, dayEndMs, nowMs } = result;
 
+  // Collapse state — seeded synchronously from kv so the card renders in its
+  // remembered state on the first frame; a card that expands a beat after
+  // mount reads as a glitch. 'past' has no bar to hide, so it never collapses.
+  const [collapsed, setCollapsed] = useState(() => readLandingCollapsed());
+  const canToggle = landing.kind !== 'past';
+  const expanded = !canToggle || !collapsed;
+
+  const reducedMotion = useReducedMotion();
+  const chevronRotation = useSharedValue(expanded ? 180 : 0);
+  useEffect(() => {
+    const target = expanded ? 180 : 0;
+    chevronRotation.set(
+      reducedMotion
+        ? target
+        : withTiming(target, { duration: t.motion.base, easing: Easing.out(Easing.cubic) }),
+    );
+  }, [expanded, reducedMotion, chevronRotation, t.motion.base]);
+  const chevronStyle = useAnimatedStyle(() => ({
+    transform: [{ rotate: `${chevronRotation.get()}deg` }],
+  }));
+
   if (landing.kind === 'empty') return null;
 
   const isOver = landing.kind === 'over';
-  const showBar = landing.kind !== 'past';
+  const showBar = landing.kind !== 'past' && expanded;
+
+  function toggleCollapse() {
+    haptics.light();
+    setCollapsed((v) => {
+      const next = !v;
+      writeLandingCollapsed(next);
+      return next;
+    });
+  }
 
   const headline = landingHeadline(landing, {
     rangeLowMs: range?.lowMs,
@@ -196,70 +237,94 @@ export function HonestLandingCard({
 
   const [beforeBold, afterBold] = splitAroundBold(footer.text, footer.boldSpan);
 
+  const headerRow = (
+    <View style={topRow}>
+      <View style={disc}>
+        <Ionicons name="flash" size={t.iconSize.xs} color={t.colors.amberText} />
+      </View>
+      <Text style={headText} numberOfLines={2}>
+        {headline.lead}
+        <Text style={clockText}>{headline.clock}</Text>
+        {headline.trail}
+      </Text>
+      {canToggle ? (
+        <Animated.View style={chevronStyle}>
+          <Ionicons name="chevron-down" size={t.iconSize.sm} color={t.colors.inkSoft} />
+        </Animated.View>
+      ) : null}
+    </View>
+  );
+
   return (
     <View style={card} testID="honest-landing">
-      <View style={topRow}>
-        <View style={disc}>
-          <Ionicons name="flash" size={t.iconSize.xs} color={t.colors.amberText} />
-        </View>
-        <Text style={headText} numberOfLines={2}>
-          {headline.lead}
-          <Text style={clockText}>{headline.clock}</Text>
-          {headline.trail}
-        </Text>
-      </View>
+      {canToggle ? (
+        <Pressable
+          onPress={toggleCollapse}
+          accessibilityRole="button"
+          accessibilityState={{ expanded }}
+          hitSlop={t.size.hitSlop}
+        >
+          {headerRow}
+        </Pressable>
+      ) : (
+        headerRow
+      )}
 
-      {showBar ? (
-        <>
-          <View style={track} testID="landing-bar">
-            {taskInDayMs > 0 ? (
-              <View
-                testID="landing-seg-in"
-                style={{ flex: taskInDayMs, backgroundColor: t.colors.primary }}
-              />
+      {expanded ? (
+        <Animated.View entering={FadeIn.duration(t.motion.base)}>
+          {showBar ? (
+            <>
+              <View style={track} testID="landing-bar">
+                {taskInDayMs > 0 ? (
+                  <View
+                    testID="landing-seg-in"
+                    style={{ flex: taskInDayMs, backgroundColor: t.colors.primary }}
+                  />
+                ) : null}
+                {meetMs > 0 ? (
+                  <View
+                    testID="landing-seg-meet"
+                    style={{ flex: meetMs, backgroundColor: t.colors.primaryEdge }}
+                  />
+                ) : null}
+                {overMs > 0 ? (
+                  <View
+                    testID="landing-seg-over"
+                    style={{ flex: overMs, backgroundColor: t.colors.accent }}
+                  />
+                ) : null}
+                {restMs > 0 ? <View style={{ flex: restMs }} /> : null}
+              </View>
+              <View style={scaleRow}>
+                {scale.map((label) => (
+                  <Text key={label} style={scaleText}>
+                    {label}
+                  </Text>
+                ))}
+              </View>
+            </>
+          ) : null}
+
+          <View style={divider} />
+          <View style={footRow}>
+            <Text style={footText} numberOfLines={1}>
+              {beforeBold}
+              {footer.boldSpan ? <Text style={footBold}>{footer.boldSpan}</Text> : null}
+              {afterBold}
+            </Text>
+            {footer.action ? (
+              <Pressable
+                accessibilityRole="button"
+                accessibilityLabel={footer.action}
+                onPress={() => onAction(actionKindFor(result, hasMeetings))}
+                hitSlop={t.size.hitSlop}
+              >
+                <Text style={actionText}>{footer.action}</Text>
+              </Pressable>
             ) : null}
-            {meetMs > 0 ? (
-              <View
-                testID="landing-seg-meet"
-                style={{ flex: meetMs, backgroundColor: t.colors.primaryEdge }}
-              />
-            ) : null}
-            {overMs > 0 ? (
-              <View
-                testID="landing-seg-over"
-                style={{ flex: overMs, backgroundColor: t.colors.accent }}
-              />
-            ) : null}
-            {restMs > 0 ? <View style={{ flex: restMs }} /> : null}
           </View>
-          <View style={scaleRow}>
-            {scale.map((label) => (
-              <Text key={label} style={scaleText}>
-                {label}
-              </Text>
-            ))}
-          </View>
-        </>
+        </Animated.View>
       ) : null}
-
-      <View style={divider} />
-      <View style={footRow}>
-        <Text style={footText} numberOfLines={1}>
-          {beforeBold}
-          {footer.boldSpan ? <Text style={footBold}>{footer.boldSpan}</Text> : null}
-          {afterBold}
-        </Text>
-        {footer.action ? (
-          <Pressable
-            accessibilityRole="button"
-            accessibilityLabel={footer.action}
-            onPress={() => onAction(actionKindFor(result, hasMeetings))}
-            hitSlop={t.size.hitSlop}
-          >
-            <Text style={actionText}>{footer.action}</Text>
-          </Pressable>
-        ) : null}
-      </View>
     </View>
   );
 }

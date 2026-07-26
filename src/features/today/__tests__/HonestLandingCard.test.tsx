@@ -9,6 +9,7 @@ import { render, screen, fireEvent } from '@testing-library/react-native';
 import { HonestLandingCard } from '@/src/features/today/HonestLandingCard';
 import type { HonestLandingResult } from '@/src/features/today/useHonestLanding';
 import { setLandingVariant, LANDING_VARIANT_KEY } from '@/src/features/today/useLandingVariant';
+import { LANDING_COLLAPSE_KEY, writeLandingCollapsed } from '@/src/features/today/landingCollapse';
 import { kv } from '@/src/lib/kv';
 
 const NOW = new Date(2026, 6, 25, 19, 10).getTime();
@@ -306,4 +307,39 @@ test('never scolds a Pro user whose day runs over', () => {
   expect(screen.queryByText(/overdue/i)).toBeNull();
   expect(screen.queryByText(/behind/i)).toBeNull();
   expect(screen.queryByText(/failed/i)).toBeNull();
+});
+
+// ── Collapse: remembered open/closed state via kv ────────────────────────────
+// The header row is the touch target; collapsing hides the bar/scale/divider/
+// footer but never the headline. 'past' has no bar to hide, so it gets no
+// toggle at all and stays always-expanded.
+
+describe('the collapse state is remembered via kv', () => {
+  afterEach(() => kv.delete(LANDING_COLLAPSE_KEY));
+
+  it('hides the bar and footer when collapsed', () => {
+    writeLandingCollapsed(true);
+    render(
+      <HonestLandingCard result={base()} doneCount={2} doneHonestMin={75} onAction={jest.fn()} />,
+    );
+    expect(screen.getByText(/~9:50pm/)).toBeTruthy();
+    expect(screen.queryByTestId('landing-bar')).toBeNull();
+  });
+
+  it('reveals the bar when the header is pressed', () => {
+    writeLandingCollapsed(true);
+    render(
+      <HonestLandingCard result={base()} doneCount={2} doneHonestMin={75} onAction={jest.fn()} />,
+    );
+    fireEvent.press(screen.getByRole('button', { name: /~9:50pm/ }));
+    expect(screen.getByTestId('landing-bar')).toBeTruthy();
+  });
+
+  it('renders no toggle in the past state', () => {
+    const past = base({ kind: 'past', overMin: 90, remainingMin: 115, tail: null, ends: PAST_ENDS });
+    render(
+      <HonestLandingCard result={past} doneCount={2} doneHonestMin={75} onAction={jest.fn()} />,
+    );
+    expect(screen.queryByRole('button', { name: /roughly done/i })).toBeNull();
+  });
 });
