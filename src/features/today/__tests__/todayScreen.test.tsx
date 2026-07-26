@@ -246,6 +246,25 @@ describe('Today screen', () => {
     expect(screen.getByTestId('honest-landing')).toBeOnTheScreen();
   });
 
+  it('free calendar upsell routes to the paywall and never moves a task to tomorrow', () => {
+    // Regression for a real bug: 'connect-calendar' fell through an unguarded
+    // if-chain in onLandingAction straight into the 'move-to-tomorrow' branch,
+    // which bulk-moved every queued task. Assert BOTH halves: routes to the
+    // paywall, AND the move action is never invoked.
+    const moveToTomorrow = jest.fn(async () => {});
+    const task = makeQueued({ id: 'c3', label: 'Leave for work', category: 'getting_ready', guessMin: 15 });
+    useDayTasksStore.setState({ dayTasks: [task], selectFocusTask: () => task, moveToTomorrow });
+    render(<Today />);
+
+    fireEvent.press(screen.getByText('Add it'));
+
+    expect(router.push).toHaveBeenCalledWith({
+      pathname: '/(modals)/paywall',
+      params: { trigger: 'calendar_export' },
+    });
+    expect(moveToTomorrow).not.toHaveBeenCalled();
+  });
+
   it('does NOT render the day read on an empty today', () => {
     // No tasks → nothing to weigh, so the card stays hidden even on today.
     useDayTasksStore.setState({ dayTasks: [], selectFocusTask: () => null });

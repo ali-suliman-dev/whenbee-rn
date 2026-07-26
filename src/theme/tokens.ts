@@ -602,7 +602,7 @@ export const tokens = {
   // pill horizontal padding.
   proTeaser: { previewH: 118, barGap: 9, barRadius: 4, scrimOpacity: 0.28, barOpacity: 0.55, pillPadX: 11 },
 
-  // Day-read bar geometry — HonestLandingCard's now→landing bar, in-day / meetings
+  // Day-read bar geometry — HonestLandingCard's now→landing bar, in-day / booked
   // / overflow segments alike, so every segment reads as part of the same bar.
   // barH = height of the segmented track; iconDisc = ⚡ disc diameter (also used by
   // TodayFocusHook, so the two cards' leading discs match); segRadius = the

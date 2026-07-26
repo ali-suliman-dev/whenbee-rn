@@ -294,20 +294,39 @@ export default function Today() {
         router.push({ pathname: '/(modals)/honest-day' });
         return;
       }
+      if (kind === 'connect-calendar') {
+        // Free-only action (the card never emits it for a Pro user) — the
+        // calendar toggle itself lives in settings, but a free tapper can't use
+        // it, so send them straight to the gate. Same trigger the settings
+        // calendar toggle uses for a free tap, since it's pitching the same
+        // feature.
+        router.push({ pathname: '/(modals)/paywall', params: { trigger: 'calendar_export' } });
+        return;
+      }
       const store = useDayTasksStore.getState();
       if (kind === 'move-tail') {
         const tail = landing.landing.tail;
         if (tail) void store.moveToTomorrow(tail.id);
         return;
       }
-      // move-to-tomorrow clears the whole overflow. Each move reloads the day and
-      // overwrites store state, so they run one at a time — firing them together
-      // interleaves the reloads and leaves the list half-moved.
-      const ids = landing.landing.ends.map((e) => e.id);
-      void ids.reduce(
-        (chain, id) => chain.then(() => store.moveToTomorrow(id)),
-        Promise.resolve(),
-      );
+      if (kind === 'move-to-tomorrow') {
+        // Clears the whole overflow. Each move reloads the day and overwrites
+        // store state, so they run one at a time — firing them together
+        // interleaves the reloads and leaves the list half-moved.
+        const ids = landing.landing.ends.map((e) => e.id);
+        void ids.reduce(
+          (chain, id) => chain.then(() => store.moveToTomorrow(id)),
+          Promise.resolve(),
+        );
+        return;
+      }
+      // Exhaustiveness guard: if a new `LandingAction` variant is ever added
+      // without a branch above, this line fails to compile instead of silently
+      // falling through into a data-mutating default (the bug this guard was
+      // added to fix — `connect-calendar` used to fall through into
+      // move-to-tomorrow's bulk move).
+      const _exhaustive: never = kind;
+      throw new Error(`Unhandled landing action: ${String(_exhaustive)}`);
     },
     [landing],
   );
