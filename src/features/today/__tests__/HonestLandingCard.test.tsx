@@ -324,15 +324,17 @@ describe('the collapse state is remembered via kv', () => {
     );
     expect(screen.getByText(/~9:50pm/)).toBeTruthy();
     expect(screen.queryByTestId('landing-bar')).toBeNull();
+    expect(screen.queryByText(/Draft the deck lands after 9/)).toBeNull();
   });
 
-  it('reveals the bar when the header is pressed', () => {
+  it('reveals the bar and footer when the header is pressed', () => {
     writeLandingCollapsed(true);
     render(
       <HonestLandingCard result={base()} doneCount={2} doneHonestMin={75} onAction={jest.fn()} />,
     );
     fireEvent.press(screen.getByRole('button', { name: /~9:50pm/ }));
     expect(screen.getByTestId('landing-bar')).toBeTruthy();
+    expect(screen.getByText(/Draft the deck lands after 9/)).toBeTruthy();
   });
 
   it('renders no toggle in the past state', () => {
@@ -341,5 +343,26 @@ describe('the collapse state is remembered via kv', () => {
       <HonestLandingCard result={past} doneCount={2} doneHonestMin={75} onAction={jest.fn()} />,
     );
     expect(screen.queryByRole('button', { name: /roughly done/i })).toBeNull();
+  });
+
+  // The header comment says "Nothing animates on entrance" — an ordinary mount
+  // (expanded by default, nothing pressed yet) must never carry an `entering`
+  // animation, or the card would fade in on every visit to Today. It only
+  // becomes a "reveal" once the user has actually pressed the header.
+  it('does not animate the body on an ordinary expanded mount', () => {
+    render(
+      <HonestLandingCard result={base()} doneCount={2} doneHonestMin={75} onAction={jest.fn()} />,
+    );
+    expect(screen.getByTestId('landing-body').props.entering).toBeUndefined();
+  });
+
+  it('animates the body in only once the user presses the header to reveal it', () => {
+    writeLandingCollapsed(true);
+    render(
+      <HonestLandingCard result={base()} doneCount={2} doneHonestMin={75} onAction={jest.fn()} />,
+    );
+    expect(screen.queryByTestId('landing-body')).toBeNull();
+    fireEvent.press(screen.getByRole('button', { name: /~9:50pm/ }));
+    expect(screen.getByTestId('landing-body').props.entering).toBeDefined();
   });
 });

@@ -21,7 +21,10 @@
 // accident, and the no-guilt invariant outranks visual consistency.
 //
 // Every string comes from `honestLandingCopy`; nothing user-facing is written
-// here. Nothing animates on entrance.
+// here. Nothing animates on entrance — the card appears instantly on mount,
+// collapsed or expanded, in whichever state kv remembers. The bar/scale/
+// divider/footer block only fades in when the user actually taps the header
+// to reveal it (see `hasToggled` below); it never fades on an ordinary mount.
 // ──────────────────────────────────────────────────────────────────────────────
 
 import { useState, useEffect } from 'react';
@@ -105,6 +108,13 @@ export function HonestLandingCard({
   const canToggle = landing.kind !== 'past';
   const expanded = !canToggle || !collapsed;
 
+  // Mirrors DayTimeline's `entrancesDone` guard, inverted: that flag starts
+  // false and flips true to STOP a replaying entrance; this one starts false
+  // and flips true to START one. Nothing animates on an ordinary mount — the
+  // body block below only gets `entering` once the user has actually pressed
+  // the header, so a ready-expanded card (the default) never fades in.
+  const [hasToggled, setHasToggled] = useState(false);
+
   const reducedMotion = useReducedMotion();
   const chevronRotation = useSharedValue(expanded ? 180 : 0);
   useEffect(() => {
@@ -126,6 +136,7 @@ export function HonestLandingCard({
 
   function toggleCollapse() {
     haptics.light();
+    setHasToggled(true);
     setCollapsed((v) => {
       const next = !v;
       writeLandingCollapsed(next);
@@ -271,7 +282,10 @@ export function HonestLandingCard({
       )}
 
       {expanded ? (
-        <Animated.View entering={FadeIn.duration(t.motion.base)}>
+        <Animated.View
+          testID="landing-body"
+          entering={hasToggled ? FadeIn.duration(t.motion.base) : undefined}
+        >
           {showBar ? (
             <>
               <View style={track} testID="landing-bar">
