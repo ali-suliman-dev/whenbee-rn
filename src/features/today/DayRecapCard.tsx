@@ -57,7 +57,10 @@ export function DayRecapCard({ recap, rows }: DayRecapCardProps) {
 
   const dayLabel = shortWeekday(recap.date);
   const headerLabel = datedLabel(recap.date);
-  const isEmpty = rows.length === 0;
+  // Keyed on doneCount, not rows.length: a past day can carry queued (not-done)
+  // rows in `rows` (leftover tasks never logged that day) while doneCount is 0 —
+  // that's still an empty day for this card's purposes.
+  const isEmpty = recap.doneCount === 0;
 
   const headline = recapHeadline(recap);
   const scale = recapScale(recap.guessedMin, recap.honestMin);

@@ -85,6 +85,24 @@ describe('DayRecapCard', () => {
     expect(screen.queryByTestId('recap-seg-over')).toBeNull();
   });
 
+  it('treats the day as empty when nothing is done, even with leftover queued rows', () => {
+    // A past day can carry queued (not-done) rows in `rows` — a leftover task
+    // never logged that day. The empty gate must key on doneCount, not on
+    // whether `rows` happens to be non-empty.
+    render(
+      <DayRecapCard
+        recap={makeRecap({ doneCount: 0, plannedCount: 1, guessedMin: 0, honestMin: 0, vsGuessMin: 0 })}
+        rows={[makeRow({ done: false })]}
+      />,
+    );
+    expect(screen.getByText('Nothing logged that day.')).toBeTruthy();
+    expect(screen.queryByTestId('recap-bar')).toBeNull();
+    expect(screen.queryByText('LOGGED')).toBeNull();
+    expect(screen.queryByText('GUESSED')).toBeNull();
+    expect(screen.queryByText('HONEST')).toBeNull();
+    expect(screen.queryByRole('button', { name: /all tasks/i })).toBeNull();
+  });
+
   it('starts with list collapsed and expands on tap', () => {
     render(
       <DayRecapCard
