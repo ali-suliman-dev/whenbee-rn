@@ -138,6 +138,21 @@ export function fmtHm(totalMin: number): string {
   return `${m}m`;
 }
 
+/**
+ * A duration gap stated as a fact, never a score. `+35m` reads as a grade;
+ * `35m over` reads as something that happened. Direction lives in the word,
+ * so no caller ever renders a leading + or −.
+ */
+export function fmtDelta(deltaMin: number): {
+  text: string;
+  direction: 'over' | 'under' | 'even';
+} {
+  const rounded = Math.round(deltaMin);
+  if (rounded === 0) return { text: 'even', direction: 'even' };
+  if (rounded > 0) return { text: `${fmtHm(rounded)} over`, direction: 'over' };
+  return { text: `${fmtHm(-rounded)} under`, direction: 'under' };
+}
+
 /** Whole minutes remaining vs the estimate; negative on overrun. */
 export function minutesLeft(estimateMin: number, elapsedSec: number): number {
   return estimateMin - Math.floor(elapsedSec / 60);
