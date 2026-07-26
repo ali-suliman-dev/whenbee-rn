@@ -188,4 +188,70 @@ describe('useDayRecap', () => {
     expect(result.current?.realFocusMin).toBe(0);
     expect(result.current?.vsGuessMin).toBe(0);
   });
+
+  it('sums guessedMin and honestMin over done tasks with a known actualMin', async () => {
+    const testStore = makeTestStore();
+    await testStore.getState().init(TODAY_MS);
+
+    const t1 = await testStore.getState().addTask({
+      label: 'Task A',
+      category: 'deep-work',
+      guessMin: 20,
+      date: '2026-06-23',
+      nowMs: YESTERDAY_MS,
+    });
+    await testStore.getState().completeTask(t1.id, {
+      completedAt: YESTERDAY_MS + 30 * 60_000,
+      actualMin: 30,
+      nowMs: YESTERDAY_MS,
+    });
+
+    const t2 = await testStore.getState().addTask({
+      label: 'Task B',
+      category: 'meetings',
+      guessMin: 15,
+      date: '2026-06-23',
+      nowMs: YESTERDAY_MS,
+    });
+    await testStore.getState().completeTask(t2.id, {
+      completedAt: YESTERDAY_MS + 20 * 60_000,
+      actualMin: 20,
+      nowMs: YESTERDAY_MS,
+    });
+
+    // Done task with no actualMin — excluded from guessedMin/honestMin.
+    const t3 = await testStore.getState().addTask({
+      label: 'Task C (untimed)',
+      category: 'admin',
+      guessMin: 40,
+      date: '2026-06-23',
+      nowMs: YESTERDAY_MS,
+    });
+    await testStore.getState().completeTask(t3.id, {
+      completedAt: YESTERDAY_MS + 10 * 60_000,
+      nowMs: YESTERDAY_MS,
+    });
+
+    // Queued task — excluded entirely.
+    await testStore.getState().addTask({
+      label: 'Task D (queued)',
+      category: 'admin',
+      guessMin: 60,
+      date: '2026-06-23',
+      nowMs: YESTERDAY_MS,
+    });
+
+    await testStore.getState().selectDate('2026-06-23');
+
+    useDayTasksStore.setState({
+      selectedDate: testStore.getState().selectedDate,
+      dayTasks: testStore.getState().dayTasks,
+    });
+
+    const { result } = renderHook(() => useDayRecap());
+
+    expect(result.current?.guessedMin).toBe(35);
+    expect(result.current?.honestMin).toBe(50);
+    expect(result.current?.vsGuessMin).toBe(15);
+  });
 });

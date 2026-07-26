@@ -30,6 +30,8 @@ function makeRecap(overrides: Partial<DayRecap> = {}): DayRecap {
     plannedCount: 4,
     realFocusMin: 90,
     vsGuessMin: 15,
+    guessedMin: 75,
+    honestMin: 90,
     ...overrides,
   };
 }
