@@ -2,6 +2,8 @@ import { render, screen } from '@testing-library/react-native';
 import { HonestSuggestionCard } from '@/src/features/shared/HonestSuggestionCard';
 import { useEntitlement } from '@/src/features/paywall/useEntitlement';
 
+const NBSP = ' ';
+
 function setPro(isPro: boolean) {
   useEntitlement.setState({ isPro, ready: true });
 }
@@ -9,23 +11,7 @@ function setPro(isPro: boolean) {
 afterEach(() => setPro(false));
 
 describe('HonestSuggestionCard — pre-data (starting hunch)', () => {
-  it('shows the starting-hunch eyebrow, the reframe headline, and the soft-range provenance', () => {
-    render(<HonestSuggestionCard honestMinutes={35} guessMinutes={15} preEstimate />);
-    expect(screen.getByText('A starting hunch')).toBeOnTheScreen();
-    expect(screen.getByText('you guessed 15m')).toBeOnTheScreen();
-    expect(
-      screen.getByText('Tasks like this often run a bit longer than they feel.'),
-    ).toBeOnTheScreen();
-    expect(
-      screen.getByText('a rough range from optimists like you · sharpens as you log'),
-    ).toBeOnTheScreen();
-    // The pre-data headline carries the reframe, so the divider line is absent.
-    expect(
-      screen.queryByText(/Not a target/),
-    ).toBeNull();
-  });
-
-  it('shows a soft RANGE (not a precise point) pre-data when a range is present', () => {
+  it('sentence-first: eyebrow, guess note, inline range value, dont-pad footer', () => {
     render(
       <HonestSuggestionCard
         honestMinutes={35}
@@ -34,40 +20,58 @@ describe('HonestSuggestionCard — pre-data (starting hunch)', () => {
         range={{ lowMinutes: 25, highMinutes: 45 }}
       />,
     );
-    expect(screen.getByText('~25–45')).toBeOnTheScreen();
-    expect(screen.queryByText('~35')).toBeNull();
+    expect(screen.getByText('A starting hunch')).toBeOnTheScreen();
+    expect(screen.getByText('you guessed 15m')).toBeOnTheScreen();
+    expect(screen.getByText(/Tasks like this usually land around/)).toBeOnTheScreen();
+    expect(screen.getByText(`25–45${NBSP}min`)).toBeOnTheScreen();
+    expect(
+      screen.getByText('No need to pad your guess. This range does it for you. Sharpens as you log.'),
+    ).toBeOnTheScreen();
+    // Old chunky elements are gone.
+    expect(screen.queryByText(/often run a bit longer/)).toBeNull();
+    expect(screen.queryByText(/optimists like you/)).toBeNull();
+    expect(screen.queryByText(/~/)).toBeNull();
+  });
+
+  it('falls back to the point value pre-data when no range is present', () => {
+    render(<HonestSuggestionCard honestMinutes={35} guessMinutes={15} preEstimate />);
+    expect(screen.getByText(`35${NBSP}min`)).toBeOnTheScreen();
   });
 });
 
 describe('HonestSuggestionCard — trained (usually, for you)', () => {
-  it('shows the point number, category-grounded provenance, and the not-a-goal line', () => {
+  it('folds provenance into the sentence and keeps the gut footer', () => {
     render(
-      <HonestSuggestionCard
-        honestMinutes={25}
-        guessMinutes={15}
-        categoryName="Email"
-      />,
+      <HonestSuggestionCard honestMinutes={25} guessMinutes={15} categoryName="Email" />,
     );
     expect(screen.getByText('Usually, for you')).toBeOnTheScreen();
-    expect(screen.getByText('~25')).toBeOnTheScreen();
-    expect(screen.getByText('min')).toBeOnTheScreen();
-    expect(screen.getByText('from your last few email tasks')).toBeOnTheScreen();
+    expect(screen.getByText(/Your last few email tasks landed around/)).toBeOnTheScreen();
+    expect(screen.getByText(`25${NBSP}min`)).toBeOnTheScreen();
     expect(
-      screen.getByText('Not a target. Just what usually happens. Keep guessing with your gut.'),
+      screen.getByText('Not a target, just what usually happens. Keep guessing with your gut.'),
     ).toBeOnTheScreen();
   });
 
   it('falls back to "similar" when no category name is given', () => {
     render(<HonestSuggestionCard honestMinutes={25} guessMinutes={15} />);
-    expect(screen.getByText('from your last few similar tasks')).toBeOnTheScreen();
+    expect(screen.getByText(/Your last few similar tasks landed around/)).toBeOnTheScreen();
+  });
+
+  it('formats hour-scale values in the sentence', () => {
+    render(<HonestSuggestionCard honestMinutes={95} guessMinutes={60} />);
+    expect(screen.getByText('1h 35m')).toBeOnTheScreen();
   });
 
   it('no legacy delta / arrow / locked-range affordance', () => {
     render(<HonestSuggestionCard honestMinutes={25} guessMinutes={15} />);
     expect(screen.queryByText('+10m')).toBeNull();
-    expect(screen.queryByText(/more/)).toBeNull();
     expect(screen.queryByText('Range')).toBeNull();
     expect(screen.queryByText('→')).toBeNull();
+  });
+
+  it('renders the inline value at the sentence size (AppText default would shrink it)', () => {
+    render(<HonestSuggestionCard honestMinutes={25} guessMinutes={15} />);
+    expect(screen.getByText(`25${NBSP}min`)).toHaveStyle({ fontSize: 16 });
   });
 });
 
@@ -83,8 +87,8 @@ describe('HonestSuggestionCard — Pro-gated tightening range', () => {
         categoryName="Email"
       />,
     );
-    expect(screen.getByText('~20–30')).toBeOnTheScreen();
-    expect(screen.queryByText('~25')).toBeNull();
+    expect(screen.getByText(`20–30${NBSP}min`)).toBeOnTheScreen();
+    expect(screen.queryByText(`25${NBSP}min`)).toBeNull();
   });
 
   it('shows the point (never the range numbers) to free users, no upsell', () => {
@@ -97,8 +101,8 @@ describe('HonestSuggestionCard — Pro-gated tightening range', () => {
         range={{ lowMinutes: 20, highMinutes: 30 }}
       />,
     );
-    expect(screen.getByText('~25')).toBeOnTheScreen();
-    expect(screen.queryByText('~20–30')).toBeNull();
+    expect(screen.getByText(`25${NBSP}min`)).toBeOnTheScreen();
+    expect(screen.queryByText(`20–30${NBSP}min`)).toBeNull();
     expect(screen.queryByText('Range')).toBeNull();
   });
 
@@ -112,8 +116,8 @@ describe('HonestSuggestionCard — Pro-gated tightening range', () => {
         range={{ lowMinutes: 20, highMinutes: 30 }}
       />,
     );
-    expect(screen.getByText('~25')).toBeOnTheScreen();
-    expect(screen.queryByText('~20–30')).toBeNull();
+    expect(screen.getByText(`25${NBSP}min`)).toBeOnTheScreen();
+    expect(screen.queryByText(`20–30${NBSP}min`)).toBeNull();
   });
 });
 

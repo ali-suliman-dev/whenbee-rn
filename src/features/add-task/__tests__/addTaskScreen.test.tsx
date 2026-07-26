@@ -101,13 +101,13 @@ describe('Add Task screen', () => {
     fireEvent.press(screen.getByText('Getting ready'));
     // default guess 15 × cached 2.0 = round5(30) = 30; the card reads as a calm,
     // read-only forecast (trained state → "Usually, for you"), no delta/arrow.
-    expect(screen.getByText('~30')).toBeOnTheScreen();
+    expect(screen.getByText('30 min')).toBeOnTheScreen();
     expect(screen.getByText('Usually, for you')).toBeOnTheScreen();
     expect(screen.getByText('you guessed 15m')).toBeOnTheScreen();
     expect(screen.queryByText('+15m')).toBeNull();
     expect(
       screen.getByLabelText(
-        'Honest estimate about 30 minutes for tasks like this. Not a target, just what usually happens.',
+        'Your last few getting ready tasks usually land around 30 minutes. Not a target, just what usually happens.',
       ),
     ).toBeOnTheScreen();
   });
