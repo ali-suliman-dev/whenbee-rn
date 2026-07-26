@@ -608,7 +608,9 @@ export const tokens = {
   // TodayFocusHook, so the two cards' leading discs match); segRadius = the
   // track/segment cap — kept at barH ÷ 2 so the bar reads as a capsule, not a
   // slightly-rounded rectangle.
-  capacity: { barH: 10, iconDisc: 20, segRadius: 5 },
+  // legendDot = the small colour-key circle in the landing bar's legend row
+  // (tasks/booked/over) — one size, reused for all three entries.
+  capacity: { barH: 10, iconDisc: 20, segRadius: 5, legendDot: 6 },
 
   // Discovery marker geometry — the honey-hex sign (amber + = runs longer, green
   // − = runs faster) on each gallery card. One size; consumed via t.discovery.hex.

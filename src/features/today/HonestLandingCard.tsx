@@ -3,18 +3,23 @@
 // capacity verdict, which divided by a fixed 14h window and therefore always
 // said "fits".
 //
-// Pro is the same component with more data: `eventMinAhead` adds a meetings
-// slice to the bar and swaps the footer offer for "Pad calendar". A Pro user who
-// denies calendar access passes 0 and gets the free card — the degraded state is
-// a complete one, not a broken one.
+// Pro is the same component with more data: `eventMinAhead` adds a booked-time
+// slice to the bar, a legend explaining it, and swaps the footer offer for how
+// much is already booked. A Pro user who denies calendar access passes 0 and
+// gets the free card — the degraded state is a complete one, not a broken one.
+// A free user with no booked time gets a quiet text offer to connect their
+// calendar in the footer area instead — never a fabricated bar segment; the
+// free bar shows only what queued tasks justify.
 //
 // Anatomy (deliberately the old chip's, so it sits in the card rhythm rather
 // than becoming the loudest thing on the screen):
 //   ⚡ disc · one-line headline
 //   bar: now → landing, indigo up to end-of-day, amber past it
 //   scale: now · dayEnd · landing
+//   legend: tasks/booked/over colour key (only once booked time exists)
 //   hairline
 //   footer: fact left, one quiet action right
+//   free upsell: lock glyph · offer text · "Add it" (only free + calendar off)
 //
 // 'past' renders NO bar on purpose: past end-of-day the bar could only be 100%
 // amber, which turns the calmest state into the loudest — a guilt signal by
@@ -42,7 +47,14 @@ import { useTheme } from '@/src/theme/useTheme';
 import { type } from '@/src/theme/typography';
 import { formatClockMeridiem } from '@/src/lib/time';
 import { haptics } from '@/src/lib/haptics';
-import { landingHeadline, landingFooter, landingScale } from './honestLandingCopy';
+import { useEntitlement } from '@/src/features/paywall/useEntitlement';
+import {
+  landingHeadline,
+  landingFooter,
+  landingScale,
+  landingLegend,
+  landingUpsell,
+} from './honestLandingCopy';
 import type { HonestLandingResult } from './useHonestLanding';
 import { useLandingVariant } from './useLandingVariant';
 import { readLandingCollapsed, writeLandingCollapsed } from './landingCollapse';
@@ -52,7 +64,8 @@ export type LandingAction =
   | 'add-task'
   | 'start-one'
   | 'move-to-tomorrow'
-  | 'pad-calendar';
+  | 'pad-calendar'
+  | 'connect-calendar';
 
 export interface HonestLandingCardProps {
   result: HonestLandingResult;
@@ -69,11 +82,11 @@ export interface HonestLandingCardProps {
 }
 
 /** Which offer the footer is making — mirrors `landingFooter`'s own branch order. */
-function actionKindFor(result: HonestLandingResult, hasMeetings: boolean): LandingAction {
+function actionKindFor(result: HonestLandingResult, bookedMin: number): LandingAction {
   if (result.logsToWarm > 0) return 'start-one';
   if (result.landing.kind === 'past') return 'move-to-tomorrow';
   if (result.landing.kind === 'over' && result.landing.tail) return 'move-tail';
-  if (hasMeetings) return 'pad-calendar';
+  if (bookedMin > 0) return 'pad-calendar';
   return 'add-task';
 }
 
@@ -99,6 +112,7 @@ export function HonestLandingCard({
 }: HonestLandingCardProps): React.ReactElement | null {
   const t = useTheme();
   const { variant } = useLandingVariant();
+  const isPro = useEntitlement((s) => s.isPro);
   const { landing, range, logsToWarm, dayEndMs, nowMs } = result;
 
   // Collapse state — seeded synchronously from kv so the card renders in its
@@ -149,17 +163,9 @@ export function HonestLandingCard({
     rangeHighMs: range?.highMs,
     variant,
   });
-  const hasMeetings = eventMinAhead > 0;
   // A range in the headline suppresses the landing label on the scale — the card
   // must not disclaim a precise minute and then name one.
   const scale = landingScale(landing, { nowMs, dayEndMs, hasRange: range !== null });
-  const footer = landingFooter(landing, {
-    doneCount,
-    doneHonestMin,
-    logsToWarm,
-    dayEndShort: spokenDayEnd(dayEndMs),
-    hasMeetings,
-  });
 
   // Bar geometry — every span is measured minutes, nothing is invented.
   // 'over': now → landing, with the end-of-day boundary as the colour change.
@@ -171,11 +177,35 @@ export function HonestLandingCard({
   const overMs = isOver ? Math.max(0, landingMs - dayEndMs) : 0;
   const restMs = Math.max(0, totalMs - inDayMs - overMs);
 
-  // Meetings are committed time INSIDE the same span — they take their slice out
-  // of the in-day segment rather than extending the bar. The bar always spans
-  // now → landing; a meeting can only change what the span is made of.
+  // Booked calendar time is committed time INSIDE the same span — it takes its
+  // slice out of the in-day segment rather than extending the bar. The bar
+  // always spans now → landing; booked time can only change what the span is
+  // made of.
   const meetMs = Math.max(0, Math.min(eventMinAhead * 60_000, inDayMs));
   const taskInDayMs = Math.max(0, inDayMs - meetMs);
+
+  // The legend and the "already booked" footer offer read off these SAME
+  // measured spans (never a second computation from `eventMinAhead` directly)
+  // so the words under the bar can never disagree with the bar itself.
+  const taskMin = Math.round(taskInDayMs / 60_000);
+  const bookedMin = Math.round(meetMs / 60_000);
+  const overMin = Math.round(overMs / 60_000);
+  const legend = landingLegend({ taskMin, bookedMin, overMin });
+
+  const footer = landingFooter(landing, {
+    doneCount,
+    doneHonestMin,
+    logsToWarm,
+    dayEndShort: spokenDayEnd(dayEndMs),
+    bookedMin,
+  });
+
+  // The free calendar offer: a free user (or a Pro user who denied access —
+  // they land back on `eventMinAhead: 0` too, but `isPro` keeps them from ever
+  // seeing a pitch for something they already own) with no calendar time in the
+  // picture and at least one task queued. Never on a past day — nothing to add.
+  const showUpsell = !isPro && eventMinAhead === 0 && landing.kind !== 'past';
+  const upsell = showUpsell ? landingUpsell() : null;
 
   const card: ViewStyle = {
     backgroundColor: t.colors.surface,
@@ -219,6 +249,35 @@ export function HonestLandingCard({
     marginTop: t.space[1.5],
   };
   const scaleText: TextStyle = { ...(type.micro as unknown as TextStyle), color: t.colors.inkFaint };
+  const legendRow: ViewStyle = {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: t.space[3],
+    marginTop: t.space[1.5],
+  };
+  const legendItem: ViewStyle = { flexDirection: 'row', alignItems: 'center', gap: t.space[1] };
+  const legendDot: ViewStyle = {
+    width: t.capacity.legendDot,
+    height: t.capacity.legendDot,
+    borderRadius: t.radii.full,
+  };
+  const legendText: TextStyle = { ...(type.micro as unknown as TextStyle), color: t.colors.inkFaint };
+  const upsellRow: ViewStyle = {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: t.space[1.5],
+    marginTop: t.space[2],
+  };
+  const upsellText: TextStyle = {
+    ...(type.bodySm as unknown as TextStyle),
+    color: t.colors.inkSoft,
+    flex: 1,
+  };
+  const upsellAction: TextStyle = {
+    ...(type.captionBold as unknown as TextStyle),
+    color: t.colors.primary,
+    flexShrink: 0,
+  };
   const divider: ViewStyle = {
     height: StyleSheet.hairlineWidth,
     backgroundColor: t.colors.hairline,
@@ -247,6 +306,14 @@ export function HonestLandingCard({
   };
 
   const [beforeBold, afterBold] = splitAroundBold(footer.text, footer.boldSpan);
+
+  // Same tokens the bar segments render with — the legend dots must never be
+  // able to drift from the colours they're explaining.
+  const legendColor: Record<'tasks' | 'booked' | 'over', string> = {
+    tasks: t.colors.primary,
+    booked: t.colors.primaryEdge,
+    over: t.colors.accent,
+  };
 
   const headerRow = (
     <View style={topRow}>
@@ -316,6 +383,17 @@ export function HonestLandingCard({
                   </Text>
                 ))}
               </View>
+              {legend.length > 0 ? (
+                <View style={legendRow} testID="landing-legend">
+                  {legend.map((entry) => (
+                    <View key={entry.key} style={legendItem}>
+                      <View style={[legendDot, { backgroundColor: legendColor[entry.key] }]} />
+                      <Text style={legendText}>{entry.value}</Text>
+                      <Text style={legendText}>{entry.label}</Text>
+                    </View>
+                  ))}
+                </View>
+              ) : null}
             </>
           ) : null}
 
@@ -330,13 +408,30 @@ export function HonestLandingCard({
               <Pressable
                 accessibilityRole="button"
                 accessibilityLabel={footer.action}
-                onPress={() => onAction(actionKindFor(result, hasMeetings))}
+                onPress={() => onAction(actionKindFor(result, bookedMin))}
                 hitSlop={t.size.hitSlop}
               >
                 <Text style={actionText}>{footer.action}</Text>
               </Pressable>
             ) : null}
           </View>
+
+          {upsell ? (
+            <View style={upsellRow} testID="landing-upsell">
+              <Ionicons name="lock-closed" size={t.iconSize.xs} color={t.colors.accent} />
+              <Text style={upsellText} numberOfLines={1}>
+                {upsell.text}
+              </Text>
+              <Pressable
+                accessibilityRole="button"
+                accessibilityLabel={upsell.action}
+                onPress={() => onAction('connect-calendar')}
+                hitSlop={t.size.hitSlop}
+              >
+                <Text style={upsellAction}>{upsell.action}</Text>
+              </Pressable>
+            </View>
+          ) : null}
         </Animated.View>
       ) : null}
     </View>

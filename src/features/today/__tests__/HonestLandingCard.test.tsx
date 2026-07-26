@@ -12,6 +12,20 @@ import { setLandingVariant, LANDING_VARIANT_KEY } from '@/src/features/today/use
 import { LANDING_COLLAPSE_KEY, writeLandingCollapsed } from '@/src/features/today/landingCollapse';
 import { kv } from '@/src/lib/kv';
 
+// Entitlement mock — overridden per-test via mockEntitlement. Defaults to free
+// so every pre-existing test (written before Pro status mattered here) keeps
+// exercising the free path unless it opts into Pro.
+let mockIsPro = false;
+function mockEntitlement({ isPro }: { isPro: boolean }) {
+  mockIsPro = isPro;
+}
+jest.mock('@/src/features/paywall/useEntitlement', () => ({
+  useEntitlement: (sel: (s: Record<string, unknown>) => unknown) => sel({ isPro: mockIsPro }),
+}));
+afterEach(() => {
+  mockIsPro = false;
+});
+
 const NOW = new Date(2026, 6, 25, 19, 10).getTime();
 const MIN = 60_000;
 const DAY_END = new Date(2026, 6, 25, 21, 0).getTime();
@@ -204,8 +218,9 @@ test('a cold estimate keeps the exact landing OFF the scale too', () => {
 // slice out of the in-day segment rather than lengthening the bar. A Pro user
 // who denies calendar permission passes 0 and lands back on the free card.
 
-test('Pro with meetings renders a third bar segment and the Pad calendar action', () => {
+test('Pro with booked time renders a third bar segment and the booked-time action', () => {
   const onAction = jest.fn();
+  mockEntitlement({ isPro: true });
   const clear = base({
     kind: 'clear',
     landingMs: NOW + 60 * MIN,
@@ -223,11 +238,15 @@ test('Pro with meetings renders a third bar segment and the Pad calendar action'
     />,
   );
   expect(screen.getByTestId('landing-seg-meet')).toBeTruthy();
-  fireEvent.press(screen.getByLabelText('Pad calendar'));
+  // eventMinAhead (90m) exceeds the 60m still open before the landing, so the
+  // booked slice — and the footer's booked-minutes offer — clamp to 1h, the
+  // same value the segment renders. See the `meetMs` derivation in the card.
+  fireEvent.press(screen.getByLabelText('1h already booked today'));
   expect(onAction).toHaveBeenCalledWith('pad-calendar');
 });
 
 test('the meetings slice comes out of the in-day segment, it does not extend the bar', () => {
+  mockEntitlement({ isPro: true });
   const clear = base({
     kind: 'clear',
     landingMs: NOW + 60 * MIN,
@@ -257,6 +276,7 @@ test('the meetings slice comes out of the in-day segment, it does not extend the
 });
 
 test('Pro without meetings renders exactly the free card', () => {
+  mockEntitlement({ isPro: true });
   const onAction = jest.fn();
   const free = render(
     <HonestLandingCard result={base()} doneCount={2} doneHonestMin={75} onAction={onAction} />,
@@ -277,6 +297,7 @@ test('Pro without meetings renders exactly the free card', () => {
 });
 
 test('the tail offer still wins over Pad calendar once the day runs over', () => {
+  mockEntitlement({ isPro: true });
   const onAction = jest.fn();
   render(
     <HonestLandingCard
@@ -295,6 +316,7 @@ test('the tail offer still wins over Pad calendar once the day runs over', () =>
 // the one place a "you're behind" word could creep in. The card inherits that
 // guard now that it is the only day-read on Today.
 test('never scolds a Pro user whose day runs over', () => {
+  mockEntitlement({ isPro: true });
   render(
     <HonestLandingCard
       result={base()}
@@ -364,5 +386,127 @@ describe('the collapse state is remembered via kv', () => {
     expect(screen.queryByTestId('landing-body')).toBeNull();
     fireEvent.press(screen.getByRole('button', { name: /~9:50pm/ }));
     expect(screen.getByTestId('landing-body').props.entering).toBeDefined();
+  });
+});
+
+// ── Legend: explains what the bar's colours mean ─────────────────────────────
+// Rendered only once booked time exists, directly under the scale row — the
+// scale keeps anchoring the bar in time, the legend just explains its colours.
+
+describe('the legend explains the bar colours once booked time exists', () => {
+  it('shows the legend once calendar time exists', () => {
+    mockEntitlement({ isPro: true });
+    render(
+      <HonestLandingCard
+        result={base()}
+        doneCount={2}
+        doneHonestMin={75}
+        eventMinAhead={120}
+        onAction={jest.fn()}
+      />,
+    );
+    expect(screen.getByText('booked')).toBeTruthy();
+  });
+
+  it('renders no legend at all when the day has no booked time', () => {
+    mockEntitlement({ isPro: true });
+    render(
+      <HonestLandingCard result={base()} doneCount={2} doneHonestMin={75} onAction={jest.fn()} />,
+    );
+    expect(screen.queryByText('booked')).toBeNull();
+    expect(screen.queryByText('tasks')).toBeNull();
+  });
+});
+
+// ── Free upsell: offers the calendar without ever inventing a bar segment ────
+
+describe('the free upsell offers the calendar without gating on a fabricated bar segment', () => {
+  it('offers the calendar to a free user with tasks queued', () => {
+    mockEntitlement({ isPro: false });
+    render(
+      <HonestLandingCard
+        result={base()}
+        doneCount={2}
+        doneHonestMin={75}
+        eventMinAhead={0}
+        onAction={jest.fn()}
+      />,
+    );
+    expect(screen.getByText(/your calendar isn't in it/)).toBeTruthy();
+  });
+
+  it('never offers it on a past day', () => {
+    const past = base({ kind: 'past', overMin: 90, remainingMin: 115, tail: null, ends: PAST_ENDS });
+    mockEntitlement({ isPro: false });
+    render(
+      <HonestLandingCard
+        result={past}
+        doneCount={2}
+        doneHonestMin={75}
+        eventMinAhead={0}
+        onAction={jest.fn()}
+      />,
+    );
+    expect(screen.queryByText(/your calendar isn't in it/)).toBeNull();
+  });
+
+  it('never offers it to a Pro user with calendar on', () => {
+    mockEntitlement({ isPro: true });
+    render(
+      <HonestLandingCard
+        result={base()}
+        doneCount={2}
+        doneHonestMin={75}
+        eventMinAhead={120}
+        onAction={jest.fn()}
+      />,
+    );
+    expect(screen.queryByText(/your calendar isn't in it/)).toBeNull();
+  });
+
+  it('never offers it to a Pro user whose calendar is off', () => {
+    // A Pro user who denied calendar access gets the degraded free bar, but is
+    // still Pro — the upsell would be selling them what they already own.
+    mockEntitlement({ isPro: true });
+    render(
+      <HonestLandingCard
+        result={base()}
+        doneCount={2}
+        doneHonestMin={75}
+        eventMinAhead={0}
+        onAction={jest.fn()}
+      />,
+    );
+    expect(screen.queryByText(/your calendar isn't in it/)).toBeNull();
+  });
+
+  it('renders no bar segment for the un-purchased calendar', () => {
+    mockEntitlement({ isPro: false });
+    render(
+      <HonestLandingCard
+        result={base()}
+        doneCount={2}
+        doneHonestMin={75}
+        eventMinAhead={0}
+        onAction={jest.fn()}
+      />,
+    );
+    expect(screen.queryByTestId('landing-seg-meet')).toBeNull();
+  });
+
+  it('routes the action to connect-calendar', () => {
+    const onAction = jest.fn();
+    mockEntitlement({ isPro: false });
+    render(
+      <HonestLandingCard
+        result={base()}
+        doneCount={2}
+        doneHonestMin={75}
+        eventMinAhead={0}
+        onAction={onAction}
+      />,
+    );
+    fireEvent.press(screen.getByText('Add it'));
+    expect(onAction).toHaveBeenCalledWith('connect-calendar');
   });
 });

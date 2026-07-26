@@ -1,4 +1,10 @@
-import { landingHeadline, landingFooter, landingScale } from '@/src/features/today/honestLandingCopy';
+import {
+  landingHeadline,
+  landingFooter,
+  landingScale,
+  landingLegend,
+  landingUpsell,
+} from '@/src/features/today/honestLandingCopy';
 import type { LandingResult, LandingTask } from '@/src/engine';
 
 const NOW = new Date(2026, 6, 25, 19, 10).getTime();
@@ -228,20 +234,49 @@ test('a Pro day with meetings offers the calendar instead of another task', () =
     doneHonestMin: 75,
     logsToWarm: 0,
     dayEndShort: '9',
-    hasMeetings: true,
+    bookedMin: 90,
   });
-  expect(f.action).toBe('Pad calendar');
-  // The fact half is unchanged — meetings swap the offer, not the reading.
+  expect(f.action).toBe('1h 30m already booked today');
+  // The fact half is unchanged — booked time swaps the offer, not the reading.
   expect(f.text).toBe('2 done · 1h 15m logged');
 });
 
-test('meetings never outrank naming the tail task', () => {
+test('booked time never outranks naming the tail task', () => {
   const f = landingFooter(over, {
     doneCount: 2,
     doneHonestMin: 75,
     logsToWarm: 0,
     dayEndShort: '9',
-    hasMeetings: true,
+    bookedMin: 90,
   });
   expect(f.action).toBe('Move it');
+});
+
+describe('landingLegend', () => {
+  it('names calendar time booked, never meetings', () => {
+    const legend = landingLegend({ taskMin: 95, bookedMin: 120, overMin: 0 });
+    expect(legend).toEqual([
+      { key: 'tasks', value: '1h 35m', label: 'tasks' },
+      { key: 'booked', value: '2h', label: 'booked' },
+    ]);
+    expect(JSON.stringify(legend)).not.toMatch(/meeting/i);
+  });
+
+  it('adds the over entry only when the day runs past its end', () => {
+    const legend = landingLegend({ taskMin: 400, bookedMin: 255, overMin: 40 });
+    expect(legend.map((e) => e.key)).toEqual(['tasks', 'booked', 'over']);
+  });
+
+  it('returns nothing when no calendar time exists', () => {
+    expect(landingLegend({ taskMin: 95, bookedMin: 0, overMin: 0 })).toEqual([]);
+  });
+});
+
+describe('landingUpsell', () => {
+  it('names the limit of the number on screen without blaming anyone', () => {
+    expect(landingUpsell()).toEqual({
+      text: "Optimistic — your calendar isn't in it",
+      action: 'Add it',
+    });
+  });
 });

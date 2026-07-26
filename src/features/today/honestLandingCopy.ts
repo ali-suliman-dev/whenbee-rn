@@ -32,12 +32,14 @@ export interface FooterCtx {
   /** The user's end of day, spoken short ("9", "17:00"), for the tail sentence. */
   dayEndShort: string;
   /**
-   * Pro only: the day has calendar minutes still ahead. Swaps the *offer* on a
-   * day with nothing more urgent to say — padding the meetings a user already
-   * has beats adding a task they don't. Never outranks naming the tail: when the
-   * day runs over, the task to move is the more useful thing to point at.
+   * Pro only: minutes of calendar time already booked into the span the bar is
+   * measuring (the same value the bar's booked segment renders — see `meetMs`
+   * in `HonestLandingCard`). Swaps the *offer* on a day with nothing more urgent
+   * to say — naming what's already booked beats adding a task they don't need.
+   * Never outranks naming the tail: when the day runs over, the task to move is
+   * the more useful thing to point at.
    */
-  hasMeetings?: boolean;
+  bookedMin?: number;
 }
 
 export interface FooterCopy {
@@ -132,7 +134,7 @@ export function landingScale(
 
 export function landingFooter(
   landing: LandingResult,
-  { doneCount, doneHonestMin, logsToWarm, dayEndShort, hasMeetings = false }: FooterCtx,
+  { doneCount, doneHonestMin, logsToWarm, dayEndShort, bookedMin = 0 }: FooterCtx,
 ): FooterCopy {
   if (logsToWarm > 0) {
     return {
@@ -159,9 +161,10 @@ export function landingFooter(
     };
   }
 
-  // The label the Pro chip used, carried over verbatim — it already reads as an
-  // offer rather than a chore, and the user has met it before.
-  const action = hasMeetings ? 'Pad calendar' : 'Add a task';
+  // The offer names what's already on the calendar rather than a generic
+  // chore — a user who has booked time doesn't need to be told to "pad" it,
+  // just shown it's accounted for.
+  const action = bookedMin > 0 ? `${fmtHm(bookedMin)} already booked today` : 'Add a task';
 
   if (doneCount === 0) {
     return { text: 'Nothing logged yet', boldSpan: null, action };
@@ -171,4 +174,54 @@ export function landingFooter(
     boldSpan: fmtHm(doneHonestMin),
     action,
   };
+}
+
+export interface LegendEntryArgs {
+  taskMin: number;
+  bookedMin: number;
+  overMin: number;
+}
+
+export interface LegendEntry {
+  key: 'tasks' | 'booked' | 'over';
+  value: string;
+  label: string;
+}
+
+/**
+ * The legend under the bar, in the same order the segments render: tasks,
+ * booked, over. Callers must pass the same measured minutes the bar's segments
+ * use (`taskInDayMs`/`meetMs`/`overMs` in `HonestLandingCard`, converted to
+ * whole minutes) — a legend computed from anything else could disagree with
+ * the bar it's explaining.
+ *
+ * Empty whenever there's no booked time: the legend's whole reason to exist is
+ * explaining the booked segment's colour, so a day with none gets nothing to
+ * decode.
+ */
+export function landingLegend({ taskMin, bookedMin, overMin }: LegendEntryArgs): LegendEntry[] {
+  if (bookedMin <= 0) return [];
+
+  const entries: LegendEntry[] = [
+    { key: 'tasks', value: fmtHm(taskMin), label: 'tasks' },
+    { key: 'booked', value: fmtHm(bookedMin), label: 'booked' },
+  ];
+  if (overMin > 0) {
+    entries.push({ key: 'over', value: fmtHm(overMin), label: 'over' });
+  }
+  return entries;
+}
+
+export interface UpsellCopy {
+  text: string;
+  action: string;
+}
+
+/**
+ * The free-user offer to connect their calendar. Names the limit of the
+ * number already on screen ("your calendar isn't in it") rather than telling
+ * them what to do — no guilt, no "you're missing out".
+ */
+export function landingUpsell(): UpsellCopy {
+  return { text: "Optimistic — your calendar isn't in it", action: 'Add it' };
 }
