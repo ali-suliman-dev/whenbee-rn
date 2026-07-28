@@ -139,14 +139,6 @@ export function landingFooter(
   landing: LandingResult,
   { doneCount, doneHonestMin, logsToWarm, dayEndShort, bookedMinAll = 0 }: FooterCtx,
 ): FooterCopy {
-  if (logsToWarm > 0) {
-    return {
-      text: `${logsToWarm} more logs and this tightens`,
-      boldSpan: `${logsToWarm} more logs`,
-      action: 'Start one',
-    };
-  }
-
   if (landing.kind === 'past') {
     return {
       text: `${doneCount} done · ${fmtHm(doneHonestMin)} logged`,

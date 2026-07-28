@@ -101,7 +101,11 @@ test('a past day wins over a supplied range — the range never overrides the fa
   expect(c.clock).toBe('1h 30m ago');
 });
 
-test('warming logs win over the past footer', () => {
+// The card used to lead with "N more logs and this tightens" whenever the
+// categories were cold. It competed with the Pro offer directly beneath it for
+// the same slot, and asked for work rather than stating a fact — so the footer
+// now always reports what is true about the day and the offer stands alone.
+test('a cold estimate no longer displaces the day fact', () => {
   const past: LandingResult = {
     kind: 'past',
     landingMs: NOW,
@@ -112,8 +116,9 @@ test('warming logs win over the past footer', () => {
     ends: [{ id: 'a', endMs: NOW }],
   };
   const f = landingFooter(past, { doneCount: 1, doneHonestMin: 30, logsToWarm: 3, dayEndShort: '9' });
-  expect(f.text).toBe('3 more logs and this tightens');
-  expect(f.action).toBe('Start one');
+  expect(f.text).toBe('1 done · 30m logged');
+  expect(f.action).toBe('Move 1 to tomorrow');
+  expect(f.text).not.toMatch(/more logs/);
 });
 
 test('over footer names the tail task, it does not restate the overage', () => {
@@ -123,10 +128,10 @@ test('over footer names the tail task, it does not restate the overage', () => {
   expect(f.action).toBe('Move it');
 });
 
-test('cold-start footer counts the real logs left', () => {
+test('a cold start still names the tail that lands late', () => {
   const f = landingFooter(over, { doneCount: 0, doneHonestMin: 0, logsToWarm: 4, dayEndShort: '9' });
-  expect(f.text).toBe('4 more logs and this tightens');
-  expect(f.action).toBe('Start one');
+  expect(f.text).toBe('Draft the deck lands after 9');
+  expect(f.action).toBe('Move it');
 });
 
 test('clear footer with nothing logged offers growth, not a cut', () => {

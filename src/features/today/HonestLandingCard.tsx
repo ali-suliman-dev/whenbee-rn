@@ -83,7 +83,6 @@ export interface HonestLandingCardProps {
 
 /** Which offer the footer is making — mirrors `landingFooter`'s own branch order. */
 function actionKindFor(result: HonestLandingResult, bookedMinAll: number): LandingAction {
-  if (result.logsToWarm > 0) return 'start-one';
   if (result.landing.kind === 'past') return 'move-to-tomorrow';
   if (result.landing.kind === 'over' && result.landing.tail) return 'move-tail';
   if (bookedMinAll > 0) return 'pad-calendar';

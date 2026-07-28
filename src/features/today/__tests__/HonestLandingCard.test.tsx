@@ -117,14 +117,14 @@ describe('the footer action reports which route the caller should take', () => {
     expect(onAction).toHaveBeenCalledWith('move-tail');
   });
 
-  it('offers a log first while the estimate is still cold', () => {
+  it('never asks for more logs — a cold estimate leaves the footer to the day fact', () => {
     const onAction = jest.fn();
     const cold: HonestLandingResult = { ...base(), logsToWarm: 3 };
     render(
       <HonestLandingCard result={cold} doneCount={0} doneHonestMin={0} onAction={onAction} />,
     );
-    fireEvent.press(screen.getByText(/Start one/));
-    expect(onAction).toHaveBeenCalledWith('start-one');
+    expect(screen.queryByText(/more logs/)).toBeNull();
+    expect(screen.queryByText(/Start one/)).toBeNull();
   });
 
   it('offers tomorrow once the day is already over — counting the rows it would move', () => {
