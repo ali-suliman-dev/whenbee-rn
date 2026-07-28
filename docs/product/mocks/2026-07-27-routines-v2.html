@@ -1,0 +1,323 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Whenbee — Routines v2: quiet chips + full builder</title>
+<style>
+  :root{
+    --bg:#14151D; --surface:#1F2130; --raised:#292B3C; --sunken:#15161F;
+    --hairline:rgba(255,255,255,0.08);
+    --ink:#F4F1EA; --inkSoft:#ADA9B5; --inkFaint:rgba(244,241,234,0.40);
+    --primary:#8275F0; --primarySoft:rgba(130,117,240,0.22); --primaryWash:rgba(130,117,240,0.10);
+    --accent:#EEAE4D; --accentSoft:rgba(238,174,77,0.18);
+    --danger:#E06464; --ok:#5BC48A;
+    --r-card:16px; --r-md:12px; --r-sm:8px; --r-full:999px;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{background:#0C0D13;color:var(--ink);font-family:-apple-system,BlinkMacSystemFont,Inter,sans-serif;padding:40px 24px 90px;line-height:1.5}
+  .wrap{max-width:1240px;margin:0 auto}
+  h1{font-size:26px;font-weight:700;letter-spacing:-.02em;margin-bottom:6px}
+  .sub{color:var(--inkSoft);font-size:14px;margin-bottom:34px;max-width:82ch}
+  h2{font-size:17px;font-weight:650;margin-bottom:4px;letter-spacing:-.01em}
+  .note{color:var(--inkSoft);font-size:13px;max-width:80ch}
+  code{font-family:ui-monospace,Menlo,monospace;font-size:12px;background:var(--sunken);padding:1px 5px;border-radius:5px}
+  section{margin-bottom:44px;padding:22px;background:var(--bg);border:1px solid var(--hairline);border-radius:18px}
+  .head{display:flex;gap:12px;align-items:flex-start;margin-bottom:20px}
+  .tag{flex-shrink:0;font-size:10px;font-weight:700;letter-spacing:.08em;padding:4px 9px;border-radius:var(--r-full);text-transform:uppercase;margin-top:2px}
+  .tag.pick{background:rgba(255,255,255,.08);color:var(--inkSoft)}
+  .tag.ask{background:var(--primarySoft);color:var(--primary)}
+  .rec{font-size:10px;font-weight:800;color:var(--ok);letter-spacing:.06em}
+
+  .grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:18px;align-items:start}
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:20px;align-items:start}
+  @media(max-width:1040px){.grid3,.grid2{grid-template-columns:1fr}}
+  .col>.cap{font-size:11px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;margin-bottom:9px;color:var(--inkSoft)}
+  .cap.good{color:var(--ok)} .cap.bad{color:var(--danger)}
+  .phone{background:var(--bg);border:1px solid var(--hairline);border-radius:20px;padding:14px}
+  .mono{font-family:ui-monospace,Menlo,monospace;font-variant-numeric:tabular-nums}
+  .row{display:flex;align-items:center;justify-content:space-between;gap:10px}
+  .card{background:var(--surface);border:1px solid var(--hairline);border-radius:var(--r-card);padding:13px 14px}
+  .eyebrow{font-size:10px;font-weight:700;letter-spacing:.09em;text-transform:uppercase;color:var(--inkSoft)}
+  .rname{font-size:16px;font-weight:680;letter-spacing:-.01em}
+  .trash{width:30px;height:30px;border-radius:var(--r-full);display:grid;place-items:center;color:var(--inkFaint);border:1px solid var(--hairline);flex-shrink:0;font-size:13px}
+
+  /* quiet chips */
+  .facts{display:flex;gap:6px;flex-wrap:wrap;margin-top:11px}
+  .chip{display:inline-flex;align-items:center;gap:6px;border-radius:var(--r-full);padding:4px 10px;font-size:11.5px;font-weight:650;background:rgba(255,255,255,.05);color:var(--inkSoft);border:1px solid transparent}
+  .chip b{color:var(--ink);font-weight:700;font-family:ui-monospace,Menlo,monospace}
+  .chip .pip{width:5px;height:5px;border-radius:50%;flex-shrink:0}
+  .chip.lead{background:var(--primaryWash);border-color:var(--primarySoft)}
+  .chip.lead b{color:var(--ink)}
+  .chip.outline{background:transparent;border-color:var(--hairline)}
+
+  /* rail */
+  .rail{display:flex;gap:10px}
+  .gutter{width:52px;flex-shrink:0;text-align:right;font-size:11px;color:var(--inkFaint);padding-top:13px;font-family:ui-monospace,Menlo,monospace}
+  .body{flex:1}
+  .task{background:var(--surface);border:1px solid var(--hairline);border-radius:var(--r-card);padding:11px 13px;display:flex;justify-content:space-between;align-items:center;gap:10px}
+  .task .t{font-size:13.5px;font-weight:650}
+  .task .m{font-size:11.5px;color:var(--inkSoft);margin-top:2px}
+  .task .v{font-family:ui-monospace,Menlo,monospace;font-size:14.5px;font-weight:700}
+  .task .v small{font-size:.6em;color:var(--inkSoft)}
+  .breather{display:flex;align-items:center;gap:8px;font-size:11.5px;color:var(--inkSoft);padding:8px 0 8px 2px}
+  .dashed{flex:1;height:1px;background:repeating-linear-gradient(90deg,var(--hairline) 0 5px,transparent 5px 10px)}
+  .chgv{font-size:11px;font-weight:700;color:var(--primary)}
+  .addstep{font-size:12.5px;font-weight:700;color:var(--primary);padding:12px 0 2px}
+
+  /* settings + manage blocks */
+  .block{background:var(--surface);border:1px solid var(--hairline);border-radius:var(--r-card);overflow:hidden;margin-top:14px}
+  .blockhdr{padding:12px 14px 2px}
+  .mrow{display:flex;align-items:center;justify-content:space-between;padding:12px 14px;font-size:13.5px}
+  .mrow+.mrow{border-top:1px solid var(--hairline)}
+  .mrow.dngr{color:var(--danger);font-weight:650}
+  .mrow .v{color:var(--inkSoft);font-family:ui-monospace,Menlo,monospace;font-size:12.5px}
+  .mrow .v em{font-style:normal;color:var(--ink)}
+
+  /* pinned dock */
+  .dock{display:flex;gap:12px;border-top:1px solid var(--hairline);margin-top:14px;padding-top:13px;background:var(--bg)}
+  .btn{flex:1;text-align:center;border-radius:var(--r-md);padding:11px 0;font-size:13.5px;font-weight:700}
+  .btn.ghost{border:1.5px solid var(--hairline);color:var(--ink)}
+  .btn.indigo{background:var(--primary);color:#fff}
+  .fade{height:22px;margin-top:-22px;background:linear-gradient(to bottom,transparent,var(--bg))}
+  .scrollhint{text-align:center;font-size:10px;color:var(--inkFaint);letter-spacing:.08em;text-transform:uppercase;padding:6px 0}
+
+  .sheet{background:var(--raised);border-radius:18px 18px 0 0;padding:16px 14px 18px;margin-top:12px}
+  .grab{width:34px;height:4px;border-radius:2px;background:var(--hairline);margin:0 auto 14px}
+  .segs{display:flex;gap:6px;flex-wrap:wrap}
+  .seg{border:1px solid var(--hairline);border-radius:var(--r-full);padding:5px 13px;font-size:12px;font-weight:650;color:var(--inkSoft)}
+  .seg.on{background:var(--primarySoft);border-color:transparent;color:var(--ink)}
+
+  ul.k{margin:14px 0 0 16px;font-size:12.5px;color:var(--inkSoft)}
+  ul.k li{margin-bottom:6px}
+  ul.k b{color:var(--ink);font-weight:620}
+  .warn{border-left:2px solid var(--primary);padding:10px 0 10px 13px;margin-top:16px;font-size:12.5px;color:var(--inkSoft)}
+  .warn b{color:var(--ink)}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<h1>Routines v2 — quiet chips, and the builder in full</h1>
+<p class="sub">Chip-row structure kept. Amber is gone from the card entirely, and indigo is rationed to one thing. Then the whole builder screen, bottom to dock, with the gap control and the Manage block both living down there.</p>
+
+<!-- 1 · QUIET CHIPS -->
+<section>
+  <div class="head"><span class="tag pick">pick a treatment</span>
+  <div><h2>1 · Same structure, colour turned down</h2>
+  <p class="note">The problem with the last pass: three tinted chips meant three competing colours per card, and amber has a job elsewhere (it's the overrun/honest signal on Today and the timer). Spending it on a routine's duration devalues it. All three treatments below use <b>weight and mono type</b> to make the numbers catch the eye instead of fill.</p></div></div>
+
+  <div class="grid3">
+    <div class="col"><div class="cap good">V1 · One tint, on the clock only <span class="rec">← recommended</span></div>
+      <div class="phone">
+        <div class="card" style="margin-bottom:10px">
+          <div class="row" style="align-items:flex-start"><div class="rname">Morning routine</div><div class="trash">🗑</div></div>
+          <div class="facts">
+            <span class="chip"><b>42</b> min</span>
+            <span class="chip lead"><b>7:12am</b> start</span>
+            <span class="chip"><b>5</b> steps</span>
+          </div>
+        </div>
+        <div class="card">
+          <div class="row" style="align-items:flex-start"><div class="rname">Leaving the house</div><div class="trash">🗑</div></div>
+          <div class="facts">
+            <span class="chip"><b>18</b> min</span>
+            <span class="chip"><b>3</b> steps</span>
+          </div>
+        </div>
+      </div>
+      <ul class="k">
+        <li>Every chip is the same neutral fill. The <b>numbers are white mono</b>, the units grey — that contrast does the catching, not colour.</li>
+        <li>Exactly <b>one</b> tinted chip: the start clock, because it's the only fact you act on. Indigo stays meaningful.</li>
+        <li>No amber anywhere on this screen, so amber keeps meaning "running over" where it matters.</li>
+      </ul>
+    </div>
+
+    <div class="col"><div class="cap">V2 · Colour reduced to a pip</div>
+      <div class="phone">
+        <div class="card" style="margin-bottom:10px">
+          <div class="row" style="align-items:flex-start"><div class="rname">Morning routine</div><div class="trash">🗑</div></div>
+          <div class="facts">
+            <span class="chip"><i class="pip" style="background:var(--inkFaint)"></i><b>42</b> min</span>
+            <span class="chip"><i class="pip" style="background:var(--primary)"></i><b>7:12am</b> start</span>
+            <span class="chip"><i class="pip" style="background:var(--inkFaint)"></i><b>5</b> steps</span>
+          </div>
+        </div>
+        <div class="card">
+          <div class="row" style="align-items:flex-start"><div class="rname">Leaving the house</div><div class="trash">🗑</div></div>
+          <div class="facts">
+            <span class="chip"><i class="pip" style="background:var(--inkFaint)"></i><b>18</b> min</span>
+            <span class="chip"><i class="pip" style="background:var(--inkFaint)"></i><b>3</b> steps</span>
+          </div>
+        </div>
+      </div>
+      <ul class="k">
+        <li>Uniform chips; a 5px dot carries the only colour on the card.</li>
+        <li>Quietest option. The dots risk reading as decoration rather than meaning.</li>
+      </ul>
+    </div>
+
+    <div class="col"><div class="cap">V3 · Outlined, no fills at all</div>
+      <div class="phone">
+        <div class="card" style="margin-bottom:10px">
+          <div class="row" style="align-items:flex-start"><div class="rname">Morning routine</div><div class="trash">🗑</div></div>
+          <div class="facts">
+            <span class="chip outline"><b>42</b> min</span>
+            <span class="chip outline"><b>7:12am</b> start</span>
+            <span class="chip outline"><b>5</b> steps</span>
+          </div>
+        </div>
+        <div class="card">
+          <div class="row" style="align-items:flex-start"><div class="rname">Leaving the house</div><div class="trash">🗑</div></div>
+          <div class="facts">
+            <span class="chip outline"><b>18</b> min</span>
+            <span class="chip outline"><b>3</b> steps</span>
+          </div>
+        </div>
+      </div>
+      <ul class="k">
+        <li>Hairline outlines only — flattest, most editorial, matches the app's "flat over heavy" rule hardest.</li>
+        <li>Zero colour means nothing is prioritised; all three facts read at the same volume.</li>
+      </ul>
+    </div>
+  </div>
+  <p class="note" style="margin-top:16px"><b>My call: V1.</b> You wanted the eye to catch the facts — white mono numerals on a neutral chip do that without spending a brand colour, and the single indigo chip tells you which fact is actionable. Say the word if you'd rather the duration carry the tint instead of the clock.</p>
+</section>
+
+<!-- 2 · FULL BUILDER -->
+<section>
+  <div class="head"><span class="tag ask">full context — for sign-off</span>
+  <div><h2>2 · The builder, top to dock</h2>
+  <p class="note">You were right that I showed this without its furniture. Here it is whole: the scrolling column ends with two grouped blocks, and the <b>dock stays pinned</b> above the home indicator the entire time. <b>Decided:</b> the dock lost <code>＋ Step</code> — the rail's <code>＋ add step</code> is the single add affordance — so <code>Save</code> runs full width.</p></div></div>
+
+  <div class="grid2">
+    <div class="col"><div class="cap">Scrolled to top — what you see on open</div>
+      <div class="phone">
+        <div style="font-size:11.5px;color:var(--inkSoft);margin-bottom:14px">‹ Routines</div>
+        <div class="eyebrow" style="margin-bottom:5px">Routine name</div>
+        <div style="font-size:19px;font-weight:680;border-bottom:1px solid var(--hairline);padding-bottom:8px">Morning routine</div>
+
+        <div class="row" style="margin:18px 0 4px"><span class="eyebrow">Honest total</span><span class="mono" style="font-size:23px;font-weight:700">42<small style="font-size:.5em;color:var(--inkSoft);margin-left:2px">min</small></span></div>
+
+        <div class="rail" style="margin-top:10px">
+          <div class="gutter">7:12</div>
+          <div class="body">
+            <div class="task"><div><div class="t">Shower</div><div class="m">Getting ready</div></div><div class="v">12<small>m</small></div></div>
+            <div class="breather"><span>5m in-between</span><span class="dashed"></span></div>
+            <div class="task"><div><div class="t">Coffee + breakfast</div><div class="m">Kitchen</div></div><div class="v">15<small>m</small></div></div>
+            <div class="breather"><span>5m in-between</span><span class="dashed"></span></div>
+            <div class="task"><div><div class="t">Get dressed</div><div class="m">Getting ready</div></div><div class="v">10<small>m</small></div></div>
+          </div>
+        </div>
+        <div class="fade"></div>
+        <div class="scrollhint">scrolls ↓</div>
+        <div class="dock"><div class="btn indigo" style="flex:1">Save</div></div>
+      </div>
+    </div>
+
+    <div class="col"><div class="cap good">Scrolled to bottom — where everything you asked for lives</div>
+      <div class="phone">
+        <div class="rail">
+          <div class="gutter">7:44</div>
+          <div class="body">
+            <div class="task"><div><div class="t">Get dressed</div><div class="m">Getting ready</div></div><div class="v">10<small>m</small></div></div>
+            <div class="addstep">＋ add step</div>
+          </div>
+        </div>
+
+        <div class="block">
+          <div class="blockhdr"><span class="eyebrow">This routine</span></div>
+          <div class="mrow" style="border:0"><span>Finish by</span><span class="v"><em>7:55am</em> ›</span></div>
+          <div class="mrow"><span>Gap between steps</span><span class="v"><em>Learned · 5m</em> ›</span></div>
+          <div class="mrow"><span>Runs on</span><span class="v"><em>Weekdays</em> ›</span></div>
+        </div>
+
+        <div class="block">
+          <div class="blockhdr"><span class="eyebrow">Manage this routine</span></div>
+          <div class="mrow" style="border:0"><span>Duplicate</span><span style="color:var(--inkFaint)">›</span></div>
+          <div class="mrow dngr"><span>Delete routine</span><span>›</span></div>
+        </div>
+
+        <div class="fade"></div>
+        <div class="dock"><div class="btn indigo" style="flex:1">Save</div></div>
+      </div>
+      <ul class="k">
+        <li><b>Order down the screen:</b> name → total → rail → <code>＋ add step</code> → This routine → Manage this routine → pinned dock.</li>
+        <li><b>Two blocks, not one.</b> Settings you change often sit above; the destructive block sits last, past everything, which is the safety.</li>
+        <li>The dock never overlaps them — content gets bottom padding equal to the dock height, so <b>Delete routine</b> can always be scrolled clear of <code>Save</code>.</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="warn"><b>Decided:</b> the dock’s <code>＋ Step</code> is gone. It duplicated the rail’s <code>＋ add step</code>, which has the advantage of showing <i>where</i> the step lands. <code>Save</code> now runs full width. The Manage block is Duplicate + Delete only — no “Reset what it’s learned”.</div>
+</section>
+
+<!-- 3 · GAP CONTROL -->
+<section>
+  <div class="head"><span class="tag ask">confirm the wiring</span>
+  <div><h2>3 · The gap control — two doors, one sheet</h2>
+  <p class="note">You picked tapping the breather row, then asked for it in the bottom block too. Both work, and both open the same sheet — no second implementation, no second source of truth.</p></div></div>
+
+  <div class="grid2">
+    <div class="col"><div class="cap">Door 1 · the breather row on the rail</div>
+      <div class="phone"><div class="rail">
+        <div class="gutter">7:12</div>
+        <div class="body">
+          <div class="task"><div><div class="t">Shower</div><div class="m">Getting ready</div></div><div class="v">12<small>m</small></div></div>
+          <div class="breather"><span>5m in-between</span><span class="dashed"></span></div>
+          <div class="task"><div><div class="t">Coffee + breakfast</div><div class="m">Kitchen</div></div><div class="v">15<small>m</small></div></div>
+        </div>
+      </div>
+      <div style="font-size:11.5px;color:var(--inkFaint);text-align:center;padding-top:12px">in context, while you&rsquo;re looking at the gap</div>
+      </div>
+    </div>
+    <div class="col"><div class="cap">Door 2 · the row in "This routine"</div>
+      <div class="phone">
+        <div class="block" style="margin-top:0">
+          <div class="blockhdr"><span class="eyebrow">This routine</span></div>
+          <div class="mrow" style="border:0"><span>Finish by</span><span class="v"><em>7:55am</em> ›</span></div>
+          <div class="mrow" style="background:rgba(130,117,240,.07)"><span>Gap between steps</span><span class="v"><em>Learned · 5m</em> ›</span></div>
+          <div class="mrow"><span>Runs on</span><span class="v"><em>Weekdays</em> ›</span></div>
+        </div>
+        <div style="font-size:11.5px;color:var(--inkFaint);text-align:center;padding-top:12px">as a setting, next to the finish time</div>
+      </div>
+    </div>
+  </div>
+
+  <div style="max-width:420px;margin:20px auto 0">
+    <div class="cap" style="text-align:center;color:var(--inkSoft)">both open this</div>
+    <div class="phone" style="padding:0;overflow:hidden">
+      <div class="sheet" style="margin-top:0">
+        <div class="grab"></div>
+        <div class="eyebrow" style="margin-bottom:4px">Gap between steps</div>
+        <div style="font-size:12px;color:var(--inkSoft);margin-bottom:14px">Applies to every gap in this routine.</div>
+        <div class="segs">
+          <span class="seg on">Learned · 5m</span>
+          <span class="seg">0</span><span class="seg">5</span><span class="seg">10</span><span class="seg">20</span>
+        </div>
+        <div style="font-size:11.5px;color:var(--inkFaint);margin-top:14px">Learned uses what your run-throughs actually cost between steps.</div>
+      </div>
+    </div>
+  </div>
+
+  <ul class="k">
+    <li><b>Learned is first and default.</b> Nothing changes unless you deliberately override it.</li>
+    <li>Override once and both doors read <b>5m</b> with no "Learned" tag — and the honest total recomputes as your steps plus your gaps.</li>
+    <li>One value for the whole routine, not per-gap.</li>
+  </ul>
+</section>
+
+<section style="border-color:var(--primarySoft)">
+  <h2 style="margin-bottom:10px">What I need back</h2>
+  <ul class="k" style="margin-left:16px">
+    <li><b>Chips:</b> V1 one tint on the clock / V2 pip / V3 outlined — and should the tint sit on the duration instead?</li>
+    <li><b>Bottom blocks:</b> "This routine" + "Manage this routine" as two blocks, as drawn?</li>
+    <li><b>"Runs on Weekdays"</b> — I added it to fill out the settings block. Keep it or drop it?</li>
+    
+    <li><b>Gap:</b> both doors, as drawn?</li>
+  </ul>
+</section>
+
+</div>
+</body>
+</html>
