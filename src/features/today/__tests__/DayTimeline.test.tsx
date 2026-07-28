@@ -531,15 +531,29 @@ describe('DayTimeline — dragging across the boundary', () => {
     expect(screen.getByTestId('timeline-drag-handle-task-1')).toBeOnTheScreen();
   });
 
+  // The done-by boundary is a row of its own (so a drag can't carry it away with
+  // the card), which means it occupies a list index: [task-1, BOUNDARY, task-big].
+  // Reorder events index that list; the boundary is stripped before anything is
+  // persisted.
+  const OVERFLOW_ROW = 2;
+  const FITTING_ROW = 0;
+
   it('persists overflow rows in the new order — they are never dropped from it', () => {
     render(<DayTimeline />);
-    drop(1, 0); // overflow row dragged above the fitting one
+    drop(OVERFLOW_ROW, FITTING_ROW); // overflow row dragged above the fitting one
     expect(mockReorderTasks).toHaveBeenCalledWith(['task-big', 'task-1']);
+  });
+
+  it('never persists the boundary row itself as a task', () => {
+    render(<DayTimeline />);
+    drop(OVERFLOW_ROW, FITTING_ROW);
+    const persisted = mockReorderTasks.mock.calls[0]?.[0] as string[];
+    expect(persisted.some((id) => id.includes('boundary'))).toBe(false);
   });
 
   it('a drop above the line STICKS even while the plan still says otherwise', () => {
     render(<DayTimeline />);
-    drop(1, 0);
+    drop(OVERFLOW_ROW, FITTING_ROW);
     // useDayPlan is mocked and keeps returning the OLD order — exactly the async
     // round-trip window the optimistic override exists to cover. The dragged row
     // must stay where it was dropped, not snap back.
@@ -551,7 +565,7 @@ describe('DayTimeline — dragging across the boundary', () => {
 
   it('moves the boundary UP above a row that still does not fit', () => {
     render(<DayTimeline />);
-    drop(1, 0);
+    drop(OVERFLOW_ROW, FITTING_ROW);
     // The overflowing row is now first, so the day runs over from the very top:
     // the line is a readout of where that happens, not a wall that refuses it.
     const boundary = screen.getByTestId('timeline-overflow-boundary');
@@ -561,7 +575,7 @@ describe('DayTimeline — dragging across the boundary', () => {
 
   it('a fitting task dragged below the line becomes the overflowing one', () => {
     render(<DayTimeline />);
-    drop(0, 1);
+    drop(FITTING_ROW, OVERFLOW_ROW);
     expect(mockReorderTasks).toHaveBeenCalledWith(['task-big', 'task-1']);
   });
 });

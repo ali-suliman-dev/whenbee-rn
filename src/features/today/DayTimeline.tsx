@@ -17,7 +17,7 @@
  * inner View, Pressable is a bare touch wrapper.
  */
 
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   Pressable,
   StyleSheet,
@@ -97,6 +97,51 @@ function queueOrderKey(items: readonly PlanTimelineItem[]): string {
 /** Index of the first row that runs past the done-by, or -1 when the day fits. */
 function firstOverflowIndex(items: readonly PlanTimelineItem[]): number {
   return items.findIndex((i) => i.kind === 'overflow');
+}
+
+/**
+ * The done-by boundary as a list row of its own.
+ *
+ * It used to render INSIDE the first overflow cell, which meant the reorder list
+ * lifted the amber rule and its sentence along with the card the user grabbed —
+ * you appeared to be dragging a paragraph. As its own row it stays put while a
+ * card travels over it.
+ *
+ * It is never draggable (only `isDraggable` rows expose a grip) and it is never
+ * persisted: `handleReorder` strips it before writing the optimistic order, and
+ * the row is re-inserted from the freshly computed boundary index on the next
+ * render — so a drop moves the line to whichever row is now first past the
+ * done-by, exactly as before.
+ */
+const BOUNDARY_ROW_ID = '__done_by_boundary__';
+
+interface BoundaryRow {
+  kind: 'boundary';
+  id: typeof BOUNDARY_ROW_ID;
+  doneByMs: number;
+  overrunFinishMs: number;
+}
+
+type TimelineListRow = PlanTimelineItem | BoundaryRow;
+
+const isBoundaryRow = (row: TimelineListRow): row is BoundaryRow => row.kind === 'boundary';
+
+/** Drop the synthetic boundary row, leaving a pure plan timeline. */
+function stripBoundary(rows: readonly TimelineListRow[]): PlanTimelineItem[] {
+  return rows.filter((r): r is PlanTimelineItem => !isBoundaryRow(r));
+}
+
+/** Insert the boundary row above `index`; a negative index means the day fits. */
+function withBoundary(
+  rows: readonly PlanTimelineItem[],
+  index: number,
+  doneByMs: number | null,
+  overrunFinishMs: number,
+): TimelineListRow[] {
+  if (index < 0 || doneByMs === null) return [...rows];
+  const out: TimelineListRow[] = [...rows];
+  out.splice(index, 0, { kind: 'boundary', id: BOUNDARY_ROW_ID, doneByMs, overrunFinishMs });
+  return out;
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -609,9 +654,12 @@ export function DayTimeline({ hideHeader = false }: DayTimelineProps = {}) {
   // store; useDayPlan then re-derives the real timeline positions.
   const handleReorder = useCallback(
     ({ from, to }: ReorderableListReorderEvent) => {
-      const current = displayTimeline;
+      const current = listDataRef.current;
       if (!current) return;
-      const reordered = reorderItems(current, from, to);
+      // `from`/`to` index the list INCLUDING the synthetic boundary row, so the
+      // move is applied there and the row dropped afterwards — never persisted,
+      // never counted in the task order.
+      const reordered = stripBoundary(reorderItems(current, from, to));
       // Show the new order instantly — no wait for the async store round-trip…
       setOptimisticTimeline(reordered);
       // …then persist. useDayPlan re-derives the real clocks; once its task order
@@ -621,7 +669,7 @@ export function DayTimeline({ hideHeader = false }: DayTimelineProps = {}) {
       const taskIds = reordered.filter(isDraggable).map((item) => item.id);
       void reorderTasks(taskIds);
     },
-    [displayTimeline, reorderTasks],
+    [reorderTasks],
   );
 
   // ── Enter animation for rows ──────────────────────────────────────────────
@@ -644,6 +692,10 @@ export function DayTimeline({ hideHeader = false }: DayTimelineProps = {}) {
   // startAt IS that deadline, and the furthest overflow end is the real finish the
   // sentence offers to push to. Reading them from the rendered list (not the plan)
   // is what makes the boundary follow an optimistic drop in the same frame.
+  // The exact array handed to the list this render, boundary row included: the
+  // reorder event's from/to index into THIS, not into the plan timeline.
+  const listDataRef = useRef<TimelineListRow[]>([]);
+
   const rows = displayTimeline ?? [];
   const boundaryIndex = firstOverflowIndex(rows);
   const doneByMs = rows[boundaryIndex]?.startAt ?? null;
@@ -654,14 +706,14 @@ export function DayTimeline({ hideHeader = false }: DayTimelineProps = {}) {
 
   // ── Row renderer ──────────────────────────────────────────────────────────
   const renderItem = useCallback(
-    ({ item, index }: ReorderableListRenderItemInfo<PlanTimelineItem>) => (
+    ({ item, index }: ReorderableListRenderItemInfo<TimelineListRow>) =>
+      isBoundaryRow(item) ? (
+        <OverflowBoundary doneByMs={item.doneByMs} overrunFinishMs={item.overrunFinishMs} />
+      ) : (
       <TimelineRow
         item={item}
         index={index}
         enterAnim={enterAnim}
-        showBoundary={index === boundaryIndex}
-        doneByMs={doneByMs}
-        overrunFinishMs={overrunFinishMs}
         overMin={doneByMs === null ? 0 : Math.round((item.endAt - doneByMs) / 60_000)}
         onMoveToTomorrow={handleMoveToTomorrow}
         focusBandActive={
@@ -674,15 +726,13 @@ export function DayTimeline({ hideHeader = false }: DayTimelineProps = {}) {
           )
         }
       />
-    ),
+      ),
     [
       enterAnim,
       showFocusBand,
       focusWindow.startMin,
       focusWindow.endMin,
-      boundaryIndex,
       doneByMs,
-      overrunFinishMs,
       handleMoveToTomorrow,
     ],
   );
@@ -736,6 +786,17 @@ export function DayTimeline({ hideHeader = false }: DayTimelineProps = {}) {
     pointerEvents: 'none' as ViewStyle['pointerEvents'],
   };
 
+  // boundaryIndex/doneByMs are read off `rows` (the displayed timeline). With no
+  // display timeline yet they are -1/null, so no boundary row is inserted — the
+  // same as the old in-cell `index === boundaryIndex` test never matching.
+  const listData = withBoundary(
+    displayTimeline ?? plan.timeline,
+    boundaryIndex,
+    doneByMs,
+    overrunFinishMs,
+  );
+  listDataRef.current = listData;
+
   return (
     <View style={containerStyle}>
       {/* Header: start-by clock + done-by chip */}
@@ -756,7 +817,7 @@ export function DayTimeline({ hideHeader = false }: DayTimelineProps = {}) {
           (see RowContent) that starts a drag via long-press; event/breather
           rows have no grip and never initiate one. */}
       <ReorderableList
-        data={displayTimeline ?? plan.timeline}
+        data={listData}
         keyExtractor={(item) => item.id}
         renderItem={renderItem}
         onReorder={handleReorder}
@@ -808,10 +869,6 @@ interface TimelineRowProps {
   index: number;
   enterAnim: ReturnType<typeof FadeIn.duration> | undefined;
   focusBandActive: boolean;
-  /** True for the first row past the done-by — it carries the boundary above it. */
-  showBoundary: boolean;
-  doneByMs: number | null;
-  overrunFinishMs: number;
   overMin: number;
   onMoveToTomorrow: (id: string) => void;
 }
@@ -821,9 +878,6 @@ function TimelineRow({
   index,
   enterAnim,
   focusBandActive,
-  showBoundary,
-  doneByMs,
-  overrunFinishMs,
   overMin,
   onMoveToTomorrow,
 }: TimelineRowProps) {
@@ -838,16 +892,8 @@ function TimelineRow({
     ? FadeIn.duration(t.motion.base).delay(index * t.motion.stagger)
     : undefined;
 
-  // The boundary lives INSIDE the first overflow cell rather than as its own list
-  // entry: it must never be a droppable slot of its own, and riding the cell means
-  // it inherits the same entrances guard (a separate row would replay its fade on
-  // every reorder) and moves with the row the moment a drop changes which one is
-  // first past the done-by.
   return (
     <Animated.View entering={staggeredAnim} style={{ zIndex: 1 }}>
-      {showBoundary && doneByMs !== null ? (
-        <OverflowBoundary doneByMs={doneByMs} overrunFinishMs={overrunFinishMs} />
-      ) : null}
       <RowContent
         item={item}
         focusBandActive={focusBandActive}
