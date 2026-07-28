@@ -144,15 +144,17 @@ export function RunningFocusCard({ categoryName }: RunningFocusCardProps) {
   const labelsRow: ViewStyle = { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' };
   // Bold the guess/plan anchors. A named font family (Jakarta-Medium from caption)
   // ignores fontWeight on iOS, so swap the family to the bold cut directly.
+  // The honest number leads (full ink); the guess supports it in muted grey.
+  // Indigo on the guess read as "chase this" — the opposite of the point.
   const guessLabel: TextStyle = {
     ...(type.caption as unknown as TextStyle),
     fontFamily: 'Jakarta-Bold',
-    color: t.colors.primary,
+    color: t.colors.inkSoft,
   };
   const planLabel: TextStyle = {
     ...(type.caption as unknown as TextStyle),
     fontFamily: 'Jakarta-Bold',
-    color: t.colors.inkSoft,
+    color: t.colors.ink,
   };
 
   return (
