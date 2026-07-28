@@ -456,6 +456,7 @@ function TimerScreen({ session }: { session: TimerSessionParams }) {
           <PaceLabel
             elapsedSec={timer.elapsedSec}
             estimateSec={timer.estimateSec}
+            guessSec={guessMin > 0 ? Math.round(guessMin * 60) : undefined}
             onForgotPress={!timer.isQuickStart ? () => setForgotOpen(true) : undefined}
           />
 

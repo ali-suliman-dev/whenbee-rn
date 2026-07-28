@@ -31,7 +31,11 @@ type Phase = 'under' | 'closing' | 'over';
 // Pure so it can drive both the UI-thread derived value and the state's lazy
 // initializer (the initial render — before any reaction has fired — must
 // already reflect the real elapsedSec, not a hardcoded guess).
-function computePace(elapsedSec: number, estimateSec: number): { phase: Phase; over: number } {
+function computePace(
+  elapsedSec: number,
+  estimateSec: number,
+  forgotSec: number,
+): { phase: Phase; over: number; pastGuess: boolean } {
   'worklet';
   const left = Math.floor((estimateSec - elapsedSec) / 60);
   let p: Phase;
@@ -39,25 +43,45 @@ function computePace(elapsedSec: number, estimateSec: number): { phase: Phase; o
   else if (left <= 3) p = 'closing';
   else p = 'under';
   const over = p === 'over' ? Math.floor((elapsedSec - estimateSec) / 60) : 0;
-  return { phase: p, over };
+  return { phase: p, over, pastGuess: elapsedSec >= forgotSec };
 }
 
 export function PaceLabel({
   elapsedSec,
   estimateSec,
+  guessSec,
   onForgotPress,
 }: {
   elapsedSec: SharedValue<number>;
   estimateSec: number;
+  /**
+   * When the user's own guess is spent — the threshold the "Forgot to stop?"
+   * link waits for. Deliberately NOT estimateSec: a walked-away timer on a
+   * 20-minute guess with a 45-minute honest number would otherwise have no way
+   * back for 25 minutes, long past the point the offer helps. Falls back to
+   * estimateSec when no guess exists (quick-start).
+   */
+  guessSec?: number;
   onForgotPress?: () => void;
 }) {
   const t = useTheme();
   const reducedMotion = useReducedMotion();
-  const [phase, setPhase] = useState<Phase>(() => computePace(elapsedSec.value, estimateSec).phase);
-  const [overMin, setOverMin] = useState(() => computePace(elapsedSec.value, estimateSec).over);
+  const forgotSec = guessSec ?? estimateSec;
+  const [phase, setPhase] = useState<Phase>(
+    () => computePace(elapsedSec.value, estimateSec, forgotSec).phase,
+  );
+  const [overMin, setOverMin] = useState(
+    () => computePace(elapsedSec.value, estimateSec, forgotSec).over,
+  );
+  const [pastGuess, setPastGuess] = useState(
+    () => computePace(elapsedSec.value, estimateSec, forgotSec).pastGuess,
+  );
 
   // Phase + over-amount as derived values (UI thread).
-  const view = useDerivedValue(() => computePace(elapsedSec.value, estimateSec), [estimateSec]);
+  const view = useDerivedValue(
+    () => computePace(elapsedSec.value, estimateSec, forgotSec),
+    [estimateSec, forgotSec],
+  );
 
   // Only push to JS state when the visible copy would actually change.
   useAnimatedReaction(
@@ -66,6 +90,9 @@ export function PaceLabel({
       if (!prev || curr.phase !== prev.phase || curr.over !== prev.over) {
         runOnJS(setPhase)(curr.phase);
         runOnJS(setOverMin)(curr.over);
+      }
+      if (!prev || curr.pastGuess !== prev.pastGuess) {
+        runOnJS(setPastGuess)(curr.pastGuess);
       }
     },
     [],
@@ -98,7 +125,7 @@ export function PaceLabel({
     </View>
   );
 
-  if (!isOver || !onForgotPress) return pill;
+  if (!pastGuess || !onForgotPress) return pill;
 
   // Reads as an inline text link: underlined + full ink (a muted underline looks
   // disabled). Stays a quiet recovery affordance beside the amber pace pill — no

@@ -34,4 +34,42 @@ describe('PaceLabel', () => {
     fireEvent.press(link);
     expect(onForgotPress).toHaveBeenCalledTimes(1);
   });
+
+  // The recovery link is keyed to the GUESS, not the honest number. Waiting for
+  // the honest number means a user who walked away at minute 21 of a 20-minute
+  // guess has no way back until the honest 45 is up — long past useful.
+  describe('the forgot link is gated on the guess, not the honest estimate', () => {
+    it('offers it once the guess is spent, while the pill still reads under', () => {
+      render(
+        <PaceLabel
+          elapsedSec={fakeElapsed(22 * 60)}
+          estimateSec={45 * 60}
+          guessSec={20 * 60}
+          onForgotPress={jest.fn()}
+        />,
+      );
+      // The pill is untouched: still the calm under-honest copy.
+      expect(screen.getByText('You’ve got time')).toBeOnTheScreen();
+      expect(screen.getByText('Forgot to stop?')).toBeOnTheScreen();
+    });
+
+    it('withholds it while the guess still has time on it', () => {
+      render(
+        <PaceLabel
+          elapsedSec={fakeElapsed(12 * 60)}
+          estimateSec={45 * 60}
+          guessSec={20 * 60}
+          onForgotPress={jest.fn()}
+        />,
+      );
+      expect(screen.queryByText('Forgot to stop?')).toBeNull();
+    });
+
+    it('falls back to the honest estimate when no guess is given', () => {
+      render(
+        <PaceLabel elapsedSec={fakeElapsed(22 * 60)} estimateSec={45 * 60} onForgotPress={jest.fn()} />,
+      );
+      expect(screen.queryByText('Forgot to stop?')).toBeNull();
+    });
+  });
 });
