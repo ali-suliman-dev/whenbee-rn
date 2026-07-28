@@ -5,6 +5,7 @@ import { router } from 'expo-router';
 import Today from '@/src/app/(tabs)/index';
 import { useCalibrationStore, type ReclaimSummary } from '@/src/stores/calibrationStore';
 import { useDayTasksStore } from '@/src/stores/dayTasksStore';
+import { useTimerStore } from '@/src/stores/timerStore';
 import type { DayTask } from '@/src/engine/daySelectors';
 import { useDayCapacity } from '@/src/features/today/useDayCapacity';
 import { useEntitlement } from '@/src/features/paywall/useEntitlement';
@@ -162,6 +163,17 @@ beforeEach(() => {
     hydrate: async () => {},
     loadReclaimSummary: async () => summary({ lifetimeMin: 0, lifetimeNectar: 0 }),
   });
+  // No live session by default — a leaked isRunning changes the hero slot and the
+  // row affordances for every test that follows.
+  useTimerStore.setState({
+    isRunning: false,
+    taskLabel: null,
+    category: null,
+    estimateMin: 0,
+    guessMin: 0,
+    startedAt: null,
+    taskId: null,
+  });
 });
 
 describe('Today screen', () => {
@@ -296,6 +308,30 @@ describe('Today screen', () => {
     });
     render(<Today />);
     expect(screen.queryByTestId('honest-landing')).toBeNull();
+  });
+
+  it('does NOT carry the running-timer card onto another day', () => {
+    // The hero slot's other two states (FocusCard, empty) are gated on isToday;
+    // the running card was not, so a live session followed the user into every
+    // future day. A timer running right now is a fact about today only.
+    const task = makeQueued({ id: 'r1', label: 'Ship the deck', category: 'getting_ready', guessMin: 45 });
+    useTimerStore.setState({
+      isRunning: true,
+      taskLabel: 'Ship the deck',
+      category: 'getting_ready',
+      estimateMin: 45,
+      guessMin: 45,
+      startedAt: FIXED_NOW - 5 * 60_000,
+      taskId: 'r1',
+    });
+    useDayTasksStore.setState({
+      selectedDate: '2026-06-25', // the day after FIXED_TODAY
+      dayTasks: [task],
+      selectFocusTask: () => task,
+    });
+
+    render(<Today />);
+    expect(screen.queryByLabelText(/^Timing /)).toBeNull();
   });
 
   it('does NOT label a future day’s rows with tonight’s finishing times or the amber tail', async () => {

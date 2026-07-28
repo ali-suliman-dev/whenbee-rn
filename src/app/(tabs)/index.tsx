@@ -459,7 +459,7 @@ export default function Today() {
               {/* A live session takes the focus slot itself (the same footprint as the
                   Next card, so nothing jumps), carrying its guess→plan context + the
                   live elapsed. Otherwise the Next card invites the next start. */}
-              {isTimerRunning ? (
+              {isTimerRunning && isToday ? (
                 <RunningFocusCard categoryName={categoryName} />
               ) : isToday && focus && summary ? (
                 <Pressable
