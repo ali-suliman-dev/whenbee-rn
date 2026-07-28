@@ -177,6 +177,11 @@ function AnchorRow({
     paddingHorizontal: t.space[3],
     paddingVertical: t.space[1.5],
     borderRadius: t.radii.full,
+    borderCurve: 'continuous',
+    // Android squares rounded corners when the press layer is promoted (which
+    // happens on the sibling row's tap too, so BOTH pills flatten at once) —
+    // pin the clip. Same fix as DayTimeline's DoneByChip.
+    overflow: 'hidden',
     backgroundColor: selected ? t.colors.surface : 'transparent',
   };
   const pillTextColor = selected ? t.colors.ink : t.colors.inkFaint;
