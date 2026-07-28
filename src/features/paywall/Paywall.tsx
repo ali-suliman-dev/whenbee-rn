@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { View, Text, type TextStyle } from 'react-native';
 import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
@@ -49,9 +49,6 @@ interface Notice {
   retryable: boolean;
 }
 
-/** If the store neither resolves nor rejects, never leave the CTA spinning. */
-const PURCHASE_WATCHDOG_MS = 30_000;
-
 const GENERIC_PURCHASE_NOTICE: Notice = {
   tone: 'danger',
   title: "That didn't go through.",
@@ -96,7 +93,6 @@ export function Paywall({ trigger, readiness = 'pre' }: { trigger?: string; read
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [notice, setNotice] = useState<Notice | null>(null);
-  const attemptRef = useRef(0);
 
   const resolvedTrigger: Trigger = isTrigger(trigger) ? trigger : 'make_day_honest';
   const isHonest = readiness === 'honest';
@@ -143,14 +139,12 @@ export function Paywall({ trigger, readiness = 'pre' }: { trigger?: string; read
     if (!selected || busy) return;
     setBusy(true);
     setNotice(null);
-    const attempt = ++attemptRef.current;
     const plan = planName(selected);
     const isSub = selected.duration !== 'lifetime';
-    const watchdog = setTimeout(() => {
-      if (attemptRef.current !== attempt) return;
-      setBusy(false);
-      setNotice(GENERIC_PURCHASE_NOTICE);
-    }, PURCHASE_WATCHDOG_MS);
+    // No client-side deadline here: the store sheet is user-paced, and racing it
+    // painted "that didn't go through" over purchases that then succeeded. The
+    // only unbounded step (the pre-sheet offering lookup) is bounded in
+    // `services/purchases.ts`, and it rejects — landing in the catch below.
     try {
       await purchase(selected);
       if (isSub) analytics.capture('trial_started', { plan, price: 0, result: 'success' });
@@ -167,7 +161,6 @@ export function Paywall({ trigger, readiness = 'pre' }: { trigger?: string; read
       if (kind === 'declined') setNotice(DECLINED_PURCHASE_NOTICE);
       else if (kind === 'other') setNotice(GENERIC_PURCHASE_NOTICE);
     } finally {
-      clearTimeout(watchdog);
       setBusy(false);
     }
   }

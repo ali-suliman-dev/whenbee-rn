@@ -120,6 +120,25 @@ function createStub(): PurchasesModule {
   };
 }
 
+/**
+ * Ceiling for the offering lookup that runs BEFORE the store sheet opens — a
+ * plain network call that can hang. The sheet itself is deliberately not
+ * bounded: checkout is user-paced (reading the plan, picking a card, a 3DS
+ * step) and timing it out reports a failure over a purchase that then succeeds.
+ */
+const OFFERINGS_TIMEOUT_MS = 15_000;
+
+function withTimeout<T>(work: Promise<T>, ms: number, message: string): Promise<T> {
+  return new Promise<T>((resolve, reject) => {
+    const timer = setTimeout(() => reject(new Error(message)), ms);
+    const settle = <A>(fn: (arg: A) => void) => (arg: A) => {
+      clearTimeout(timer);
+      fn(arg);
+    };
+    work.then(settle(resolve), settle(reject));
+  });
+}
+
 function createNative(Purchases: NativePurchases): PurchasesModule {
   return {
     isStub: false,
@@ -127,7 +146,11 @@ function createNative(Purchases: NativePurchases): PurchasesModule {
     getEntitlement: async () => ({ isPro: isProActive(await Purchases.getCustomerInfo()) }),
     getOfferings: async () => toOffering(await Purchases.getOfferings()),
     purchasePackage: async (pkg: Package) => {
-      const offerings = await Purchases.getOfferings();
+      const offerings = await withTimeout(
+        Purchases.getOfferings(),
+        OFFERINGS_TIMEOUT_MS,
+        'Timed out reading the current offering',
+      );
       const rcPackage = offerings.current?.availablePackages.find((p) => p.identifier === pkg.id);
       if (!rcPackage) throw new Error(`Package not found in current offering: ${pkg.id}`);
       const { customerInfo } = await Purchases.purchasePackage(rcPackage);
