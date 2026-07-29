@@ -189,6 +189,10 @@ function backwardFill(
   // One cursor per window: the point up to which the next task placed in that
   // window must END. Starts at each window's own end.
   const cursors: number[] = freeWindows.map((w) => w.end);
+  // Whether a task has already been placed in this window — tracked
+  // independently of pass, so pass 2's gap-fill still reserves a breather
+  // before a task it drops into a window pass 1 already used.
+  const windowUsed: boolean[] = freeWindows.map(() => false);
 
   // ── Pass 1: order-preserving, non-poisoning ────────────────────────────────
   // `curWinIdx` only advances on a successful placement. On failure it is left
@@ -217,6 +221,7 @@ function backwardFill(
         const taskEndAt = startAt + blockMs;
         placed[i] = { startAt, endAt: taskEndAt, windowIdx: tryIdx };
         cursors[tryIdx] = startAt;
+        windowUsed[tryIdx] = true;
         curWinIdx = tryIdx;
         prevPlacedWindowIdx = tryIdx;
         didPlace = true;
@@ -233,7 +238,9 @@ function backwardFill(
 
   // ── Pass 2: gap-fill ────────────────────────────────────────────────────────
   // Anything still null gets one more chance, scanning every window
-  // reverse-chronologically (independent of queue position).
+  // reverse-chronologically (independent of queue position). A window that
+  // already holds a placed task (from either pass) still needs the breather
+  // gap before this one; an untouched window's edge needs none.
   for (let i = 0; i < effectives.length; i++) {
     if (placed[i]) continue;
     const eff = effectives[i]!;
@@ -241,12 +248,16 @@ function backwardFill(
 
     for (let w = freeWindows.length - 1; w >= 0; w--) {
       const win = freeWindows[w]!;
+      const needsBreather = windowUsed[w]!;
+      const totalBlockMs = blockMs + (needsBreather ? breatherMs : 0);
       const endAt = cursors[w]!;
-      const startAt = endAt - blockMs;
+      const startAt = endAt - totalBlockMs;
 
       if (startAt >= win.start) {
-        placed[i] = { startAt, endAt: startAt + blockMs, windowIdx: w };
+        const taskEndAt = startAt + blockMs;
+        placed[i] = { startAt, endAt: taskEndAt, windowIdx: w };
         cursors[w] = startAt;
+        windowUsed[w] = true;
         break;
       }
     }
@@ -299,6 +310,10 @@ function forwardFill(
   // window may START. Starts at each window's own start (floored to the
   // pinned start time — only matters for the window(s) at/before startMs).
   const cursors: number[] = freeWindows.map((w) => Math.max(w.start, startMs));
+  // Whether a task has already been placed in this window — tracked
+  // independently of pass, so pass 2's gap-fill still reserves a breather
+  // before a task it drops into a window pass 1 already used.
+  const windowUsed: boolean[] = freeWindows.map(() => false);
 
   // ── Pass 1: order-preserving, non-poisoning ────────────────────────────────
   // `curWinIdx` only advances on a successful placement. On failure it is left
@@ -326,6 +341,7 @@ function forwardFill(
       if (endAt <= win.end) {
         placed[i] = { startAt, endAt, windowIdx: tryIdx };
         cursors[tryIdx] = endAt;
+        windowUsed[tryIdx] = true;
         curWinIdx = tryIdx;
         prevPlacedWindowIdx = tryIdx;
         didPlace = true;
@@ -342,7 +358,9 @@ function forwardFill(
 
   // ── Pass 2: gap-fill ────────────────────────────────────────────────────────
   // Anything still null gets one more chance, scanning every window
-  // chronologically (independent of queue position).
+  // chronologically (independent of queue position). A window that already
+  // holds a placed task (from either pass) still needs the breather gap
+  // before this one; an untouched window's edge needs none.
   for (let i = 0; i < effectives.length; i++) {
     if (placed[i]) continue;
     const eff = effectives[i]!;
@@ -350,12 +368,15 @@ function forwardFill(
 
     for (let w = 0; w < freeWindows.length; w++) {
       const win = freeWindows[w]!;
-      const startAt = Math.max(cursors[w]!, win.start);
+      const needsBreather = windowUsed[w]!;
+      const gapMs = needsBreather ? breatherMs : 0;
+      const startAt = Math.max(cursors[w]!, win.start) + gapMs;
       const endAt = startAt + blockMs;
 
       if (endAt <= win.end) {
         placed[i] = { startAt, endAt, windowIdx: w };
         cursors[w] = endAt;
+        windowUsed[w] = true;
         break;
       }
     }

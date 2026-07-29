@@ -818,3 +818,72 @@ describe('Case 20: An unplaceable task does not block its neighbours', () => {
     expect(cItem).toMatchObject({ startAt: at(180), endAt: at(240) });
   });
 });
+
+// ---------------------------------------------------------------------------
+// Case 21: Gap-fill (pass 2) still reserves breatherMin against a neighbour
+// already placed in the same window — fix round 1 for Task 1.
+// ---------------------------------------------------------------------------
+describe('Case 21: Gap-filled tasks still respect breatherMin against a placed neighbour', () => {
+  it('forward: a gap-filled task reserves breatherMin after the task already in that window', () => {
+    // Windows [0,120] and [130,370] (a 10min meeting at [120,130]).
+    // a(90) placed [0,90] in window0. b(240) cannot follow a with the
+    // breather (100+240=340 > 120) so it jumps to window1, exactly filling it
+    // ([130,370]) and leaving zero room after it. c(20) then fails pass 1
+    // entirely (nowhere ahead fits) and must gap-fill into window0's leftover
+    // — but that leftover already holds 'a', so c must land at [100,120]
+    // (90 + the 10min breather), not flush at [90,110].
+    const result = planDayAroundAnchors({
+      deadline: at(370),
+      nowMs: at(-1000), // clear of MIN_START_LEAD_MIN
+      dayStartMs: DAY_START,
+      tasks: [task('a', 90), task('b', 240), task('c', 20)],
+      anchors: [anchor('mtg', 120, 130)],
+      bufferMin: 0,
+      breatherMin: 10,
+      fill: { direction: 'forward', startAtMs: at(0) },
+    });
+
+    const taskItems = result.timeline.filter((i) => i.kind === 'task');
+    const overflowItems = result.timeline.filter((i) => i.kind === 'overflow');
+
+    expect(overflowItems).toHaveLength(0);
+    expect(taskItems).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ id: 'a', startAt: at(0), endAt: at(90) }),
+        expect.objectContaining({ id: 'b', startAt: at(130), endAt: at(370) }),
+        expect.objectContaining({ id: 'c', startAt: at(100), endAt: at(120) }),
+      ]),
+    );
+  });
+
+  it('backward: a gap-filled task reserves breatherMin before the task already in that window', () => {
+    // Mirror: windows [0,240] and [250,370] (a 10min meeting at [240,250]).
+    // Backward tries 'a' first (last in queue) — lands at the tail of window1
+    // [280,370]. 'b' (240) can't precede it with the breather, jumps to
+    // window0 and exactly fills it ([0,240]). 'c' (first in queue, tried
+    // last) then fails pass 1 entirely and must gap-fill into window1's
+    // leftover before 'a' — landing at [250,270], not flush at [260,280].
+    const result = planDayAroundAnchors({
+      deadline: at(370),
+      nowMs: at(0),
+      dayStartMs: DAY_START,
+      tasks: [task('c', 20), task('b', 240), task('a', 90)],
+      anchors: [anchor('mtg', 240, 250)],
+      bufferMin: 0,
+      breatherMin: 10,
+      fill: { direction: 'backward' },
+    });
+
+    const taskItems = result.timeline.filter((i) => i.kind === 'task');
+    const overflowItems = result.timeline.filter((i) => i.kind === 'overflow');
+
+    expect(overflowItems).toHaveLength(0);
+    expect(taskItems).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ id: 'b', startAt: at(0), endAt: at(240) }),
+        expect.objectContaining({ id: 'a', startAt: at(280), endAt: at(370) }),
+        expect.objectContaining({ id: 'c', startAt: at(250), endAt: at(270) }),
+      ]),
+    );
+  });
+});
