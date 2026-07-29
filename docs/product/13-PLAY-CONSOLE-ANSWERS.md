@@ -8,10 +8,10 @@
 
 ## 0. Already done (2026-07-19)
 
-- **Privacy Policy** live at `https://whenbee.app/privacy` — names the app, the developer (Ali Suliman), every data class incl. the previously-undisclosed feedback upload, GDPR/CCPA rights, transfers, retention, deletion channel. Static HTML on Netlify (meets "active, public, non-PDF, non-editable").
+- **Privacy Policy** live at `https://whenbee.app/privacy` — names the app, the developer (**Deviso** — the public publisher name; never the founder's real name, anywhere), every data class incl. the previously-undisclosed feedback upload, GDPR/CCPA rights, transfers, retention, deletion channel. Static HTML on Netlify (meets "active, public, non-PDF, non-editable").
 - **Terms of Use** live at `https://whenbee.app/terms` — Google Play + Apple billing, auto-renewal, 48-h Play refund window, liability cap with consumer-law carve-out, governing law Sweden.
 - Both match `src/lib/legal.ts` (`/privacy`, `/terms`) exactly; `netlify.toml` pins the extensionless URLs. Footer links added on whenbee.app.
-- **Confirm before submitting:** (a) `support@whenbee.app` mailbox actually receives mail; (b) the Play listing developer name matches "Ali Suliman" as written in the policy; (c) governing-law = Sweden is right.
+- **Confirm before submitting:** (a) `support@whenbee.app` mailbox actually receives mail; (b) the Play listing developer name is **"Deviso"**, matching the live legal pages (`privacy.html:140`, `terms.html:110`, `delete-data.html:74,112`); (c) governing-law = Sweden is right.
 
 ---
 
@@ -83,8 +83,8 @@ The presence module ships **both** `USE_EXACT_ALARM` and `SCHEDULE_EXACT_ALARM` 
 | Privacy policy URL | `https://whenbee.app/privacy` |
 | Ads | **No** (no ad SDKs; self-promotion of Pro doesn't count) |
 | App access | "All or some functionality is restricted" → provide reviewer instructions for reaching Pro features (RevenueCat sandbox / a promo path). Free core needs no credentials. |
-| Content rating (IARC) | Category: Utility/Productivity/Other → no violence/sex/language/gambling; **yes** to digital purchases; **no** user-to-user interaction (feedback is private one-way). Expect Everyone / PEGI 3. |
-| Target audience | **13-15, 16-17, 18+** (never any under-13 bracket → stays out of Families policy). "Appeals to children" → No — keep store graphics non-childlike (the bee mascot is fine; avoid a cartoon-heavy screenshot set). |
+| Content rating (IARC) | **Entered 2026-07-28 — see §4a for the exact answers.** |
+| Target audience | **18 and over ONLY** (changed 2026-07-28 from 13+). See §4a. |
 | News app | No |
 | COVID-19 tracing/status | No |
 | Government app | No |
@@ -93,6 +93,58 @@ The presence module ships **both** `USE_EXACT_ALARM` and `SCHEDULE_EXACT_ALARM` 
 | Advertising ID | **No.** Then verify the release AAB's merged manifest has no `com.google.android.gms.permission.AD_ID` (a mismatch hard-errors at review). PostHog/RevenueCat don't inject it by default. |
 
 **Account-level (once):** developer identity verification must be complete; personal accounts created after Nov 2023 need the 20-tester/14-day closed test before production — check which side the account falls on.
+
+---
+
+## 4a. Entered in Play Console — 2026-07-28
+
+Everything in this section is **already submitted**, not a plan. Recorded so a re-submission or an iOS mirror stays consistent.
+
+### Content rating (IARC questionnaire)
+
+| Field | Answer |
+|---|---|
+| Email address | `support@whenbee.app` |
+| Category | **All other app types** (not Game, not Social/communication) |
+| IARC terms | Agreed |
+| Downloaded app — ratings-relevant content in the package (sex/violence/language) | No |
+| User content sharing — users interact or exchange content with each other | **No** — feedback is one-way to the developer; users never see each other's content |
+| Online content — features or promotes content not in the initial download | No |
+| Promotion or sale of age-restricted products | No |
+| Shares precise physical location with other users | No |
+| **Allows users to purchase digital goods** | **Yes** — Pro subscription via Play Billing. Must stay Yes; No contradicts the active billing products and is a declaration mismatch reviewers cross-check. It does not raise the rating. |
+| Chance-based purchases (loot boxes, random unlocks, drop-rate boosts) | **No** — Pro is a fixed, fully-known bundle |
+| Cash rewards, gift cards, play-to-earn, crypto, NFTs | No |
+| Web browser or search engine | No |
+| Primarily a news or educational product | No |
+
+**Why this got redone:** the first pass came back **ESRB Teen**, which blocked every under-13 target-age bracket in the Target audience form. A clean utility should land Everyone / PEGI 3. The usual causes of a false Teen are the *user-to-user interaction* and *unrestricted internet access* questions — both are No for Whenbee.
+
+### Target audience
+
+**18 and over only.** All five other brackets unchecked.
+
+- Any under-13 bracket pulls Whenbee into Google Play's **Families policy**: Families Self-Certified Ads SDK requirements, COPPA/GDPR-K obligations over PostHog analytics, a children's-data section in the privacy policy, Designed-for-Families asset review, and restrictions on selling subscriptions to minors. Large, permanent compliance surface for an audience that does not exist.
+- 13-17 was the earlier plan and is defensible, but adds teen-data expectations and an "appeals to children" review of the bee artwork for no real audience. 18+ is the clean call.
+- **"Restrict users that Google has determined to be minors from my app" → leave UNCHECKED.** That optional box hard-blocks minors from finding or downloading the app *and* blocks renewals for existing minor subscribers. Not required by any policy; pure funnel loss.
+- "Appeals to children" → **No**. Keep store graphics non-childlike — the bee mascot is fine, a cartoon-heavy screenshot set is not.
+
+### Store settings
+
+| Field | Value |
+|---|---|
+| App or game | App |
+| Category | **Productivity** |
+| Tags (max 5, three used) | **Calendar** · **Clock, alarm & timer** · **Productivity** |
+| Store listing email | `support@whenbee.app` |
+| Store listing phone | **blank** (optional, and it publishes on the store page) |
+| Store listing website | `https://whenbee.app` |
+
+Tag notes — tags drive discovery **and** the peer group Play benchmarks you against, so a wrong one costs twice:
+
+- Play's tag list is a fixed taxonomy; "Time management", "Task management", "Planner" etc. do not exist in it. Three honest tags beat five stretched ones — do not pad.
+- **Never take "Activity tracker"** — its related tag is Health & fitness, which contradicts the "no health features" declaration in §4.
+- **Rejected "Notebook"** — means note-taking (free-text, documents, journaling). Whenbee has none; it would bucket the app against Keep/Notion/Evernote, where it looks like a broken note app.
 
 ---
 
