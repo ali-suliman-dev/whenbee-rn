@@ -268,7 +268,7 @@ describe('Today screen', () => {
     useDayTasksStore.setState({ dayTasks: [task], selectFocusTask: () => task, moveToTomorrow });
     render(<Today />);
 
-    fireEvent.press(screen.getByText('Add it'));
+    fireEvent.press(screen.getByText('Add mine'));
 
     expect(router.push).toHaveBeenCalledWith({
       pathname: '/(modals)/paywall',

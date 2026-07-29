@@ -5,7 +5,19 @@ import {
   landingLegend,
   landingUpsell,
 } from '@/src/features/today/honestLandingCopy';
+import type { FooterCopy } from '@/src/features/today/honestLandingCopy';
 import type { LandingResult, LandingTask } from '@/src/engine';
+
+/**
+ * `landingFooter` returns null on the states that render no line at all. Every
+ * test below except the null one asserts on a line that must exist, so failing
+ * loudly here beats sprinkling `!` across the file.
+ */
+const footerOf = (...args: Parameters<typeof landingFooter>): FooterCopy => {
+  const f = landingFooter(...args);
+  if (!f) throw new Error('expected a footer line, got none');
+  return f;
+};
 
 const NOW = new Date(2026, 6, 25, 19, 10).getTime();
 const MIN = 60_000;
@@ -115,26 +127,28 @@ test('a cold estimate no longer displaces the day fact', () => {
     tail: null,
     ends: [{ id: 'a', endMs: NOW }],
   };
-  const f = landingFooter(past, { doneCount: 1, doneHonestMin: 30, logsToWarm: 3, dayEndShort: '9' });
+  const f = footerOf(past, { doneCount: 1, doneHonestMin: 30, logsToWarm: 3, dayEndShort: '9' });
   expect(f.text).toBe('1 done · 30m logged');
   expect(f.action).toBe('Move 1 to tomorrow');
   expect(f.text).not.toMatch(/more logs/);
 });
 
 test('over footer names the tail task, it does not restate the overage', () => {
-  const f = landingFooter(over, { doneCount: 2, doneHonestMin: 75, logsToWarm: 0, dayEndShort: '9' });
+  const f = footerOf(over, { doneCount: 2, doneHonestMin: 75, logsToWarm: 0, dayEndShort: '9' });
   expect(f.text).toBe('Draft the deck lands after 9');
   expect(f.boldSpan).toBe('Draft the deck');
   expect(f.action).toBe('Move it');
 });
 
 test('a cold start still names the tail that lands late', () => {
-  const f = landingFooter(over, { doneCount: 0, doneHonestMin: 0, logsToWarm: 4, dayEndShort: '9' });
+  const f = footerOf(over, { doneCount: 0, doneHonestMin: 0, logsToWarm: 4, dayEndShort: '9' });
   expect(f.text).toBe('Draft the deck lands after 9');
   expect(f.action).toBe('Move it');
 });
 
-test('clear footer with nothing logged offers growth, not a cut', () => {
+test('a clear day with nothing logged renders NO footer at all', () => {
+  // "Nothing logged yet · Add a task" stated an absence and duplicated an
+  // affordance Today already carries three of. No row is better than that row.
   const clear: LandingResult = {
     kind: 'clear',
     landingMs: NOW,
@@ -144,9 +158,9 @@ test('clear footer with nothing logged offers growth, not a cut', () => {
     tail: null,
     ends: [],
   };
-  const f = landingFooter(clear, { doneCount: 0, doneHonestMin: 0, logsToWarm: 0, dayEndShort: '9' });
-  expect(f.text).toBe('Nothing logged yet');
-  expect(f.action).toBe('Add a task');
+  expect(
+    landingFooter(clear, { doneCount: 0, doneHonestMin: 0, logsToWarm: 0, dayEndShort: '9' }),
+  ).toBeNull();
 });
 
 test('past footer offers tomorrow and says "logged", never "banked"', () => {
@@ -159,7 +173,7 @@ test('past footer offers tomorrow and says "logged", never "banked"', () => {
     tail: null,
     ends: [{ id: 'a', endMs: NOW }, { id: 'b', endMs: NOW }],
   };
-  const f = landingFooter(past, { doneCount: 2, doneHonestMin: 75, logsToWarm: 0, dayEndShort: '9' });
+  const f = footerOf(past, { doneCount: 2, doneHonestMin: 75, logsToWarm: 0, dayEndShort: '9' });
   expect(f.text).toBe('2 done · 1h 15m logged');
   expect(f.action).toBe('Move 2 to tomorrow');
 });
@@ -176,7 +190,7 @@ test('past footer makes NO offer when there is nothing left to move', () => {
     tail: null,
     ends: [],
   };
-  const f = landingFooter(nothingToMove, {
+  const f = footerOf(nothingToMove, {
     doneCount: 0,
     doneHonestMin: 0,
     logsToWarm: 0,
@@ -234,7 +248,7 @@ test('a Pro day with meetings offers the calendar instead of another task, stati
     tail: null,
     ends: [],
   };
-  const f = landingFooter(clear, {
+  const f = footerOf(clear, {
     doneCount: 2,
     doneHonestMin: 75,
     logsToWarm: 0,
@@ -261,7 +275,7 @@ test('the footer states the UNCLAMPED booked total, never the bar-span-clamped o
     tail: null,
     ends: [],
   };
-  const f = landingFooter(clear, {
+  const f = footerOf(clear, {
     doneCount: 2,
     doneHonestMin: 75,
     logsToWarm: 0,
@@ -272,7 +286,7 @@ test('the footer states the UNCLAMPED booked total, never the bar-span-clamped o
 });
 
 test('booked time never outranks naming the tail task', () => {
-  const f = landingFooter(over, {
+  const f = footerOf(over, {
     doneCount: 2,
     doneHonestMin: 75,
     logsToWarm: 0,
@@ -311,10 +325,10 @@ describe('landingLegend', () => {
 });
 
 describe('landingUpsell', () => {
-  it('names the limit of the number on screen without blaming anyone', () => {
+  it('names the assumption behind the number without blaming anyone', () => {
     expect(landingUpsell()).toEqual({
-      text: "Optimistic — your calendar isn't in it",
-      action: 'Add it',
+      text: 'Assumes an empty calendar',
+      action: 'Add mine',
     });
   });
 });

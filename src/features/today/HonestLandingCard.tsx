@@ -267,7 +267,10 @@ export function HonestLandingCard({
     flexDirection: 'row',
     alignItems: 'center',
     gap: t.space[1.5],
-    marginTop: t.space[2],
+    // Sits under the footer normally; when the footer renders nothing (a day
+    // with no logs yet) this row is the first thing after the divider, so it
+    // takes the footer's own top rhythm instead of the tighter stacked one.
+    marginTop: footer ? t.space[2] : t.space[2.5],
   };
   const upsellText: TextStyle = {
     ...(type.bodySm as unknown as TextStyle),
@@ -311,7 +314,9 @@ export function HonestLandingCard({
     flexShrink: 0,
   };
 
-  const [beforeBold, afterBold] = splitAroundBold(footer.text, footer.boldSpan);
+  const [beforeBold, afterBold] = footer
+    ? splitAroundBold(footer.text, footer.boldSpan)
+    : ['', ''];
 
   // Same tokens the bar segments render with — the legend dots must never be
   // able to drift from the colours they're explaining.
@@ -403,28 +408,34 @@ export function HonestLandingCard({
             </>
           ) : null}
 
-          <View style={divider} />
-          <View style={footRow}>
-            <Text style={footText} numberOfLines={1}>
-              {beforeBold}
-              {footer.boldSpan ? <Text style={footBold}>{footer.boldSpan}</Text> : null}
-              {afterBold}
-            </Text>
-            {footer.action ? (
-              <Pressable
-                accessibilityRole="button"
-                accessibilityLabel={footer.action}
-                onPress={() => onAction(actionKindFor(result, eventMinAhead))}
-                hitSlop={t.size.hitSlop}
-              >
-                <Text style={actionText}>{footer.action}</Text>
-              </Pressable>
-            ) : null}
-          </View>
+          {/* The divider belongs to whichever row renders first — with neither,
+              the card ends at the bar rather than on a stray hairline. */}
+          {footer || upsell ? <View style={divider} testID="landing-divider" /> : null}
+          {footer ? (
+            <View style={footRow}>
+              <Text style={footText} numberOfLines={1}>
+                {beforeBold}
+                {footer.boldSpan ? <Text style={footBold}>{footer.boldSpan}</Text> : null}
+                {afterBold}
+              </Text>
+              {footer.action ? (
+                <Pressable
+                  accessibilityRole="button"
+                  accessibilityLabel={footer.action}
+                  onPress={() => onAction(actionKindFor(result, eventMinAhead))}
+                  hitSlop={t.size.hitSlop}
+                >
+                  <Text style={actionText}>{footer.action}</Text>
+                </Pressable>
+              ) : null}
+            </View>
+          ) : null}
 
           {upsell ? (
             <View style={upsellRow} testID="landing-upsell">
-              <Ionicons name="lock-closed" size={t.iconSize.xs} color={t.colors.accent} />
+              {/* The object the sentence is about, not a padlock: the row points
+                  at data missing from the number, and the tap discovers Pro. */}
+              <Ionicons name="calendar-outline" size={t.iconSize.xs} color={t.colors.accent} />
               <Text style={upsellText} numberOfLines={1}>
                 {upsell.text}
               </Text>

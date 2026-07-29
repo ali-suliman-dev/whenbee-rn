@@ -153,14 +153,34 @@ describe('the footer action reports which route the caller should take', () => {
     expect(screen.queryByRole('button')).toBeNull();
   });
 
-  it('offers a task when the day is clear', () => {
+  it('offers a task when the day is clear and something has been logged', () => {
     const onAction = jest.fn();
     const clear = base({ kind: 'clear', landingMs: NOW + 60 * MIN, overMin: 0, openMin: 50, tail: null });
     render(
-      <HonestLandingCard result={clear} doneCount={0} doneHonestMin={0} onAction={onAction} />,
+      <HonestLandingCard result={clear} doneCount={2} doneHonestMin={75} onAction={onAction} />,
     );
     fireEvent.press(screen.getByText(/Add a task/));
     expect(onAction).toHaveBeenCalledWith('add-task');
+  });
+
+  it('renders no footer row — and no stray divider — before the first log', () => {
+    // "Nothing logged yet · Add a task" named an absence and duplicated an
+    // affordance Today already carries. The row is gone, so the divider that
+    // introduced it must go with it or the card ends on a hairline.
+    const clear = base({ kind: 'clear', landingMs: NOW + 60 * MIN, overMin: 0, openMin: 50, tail: null });
+    mockEntitlement({ isPro: true });
+    render(
+      <HonestLandingCard
+        result={clear}
+        doneCount={0}
+        doneHonestMin={0}
+        eventMinAhead={0}
+        onAction={jest.fn()}
+      />,
+    );
+    expect(screen.queryByText(/Nothing logged yet/)).toBeNull();
+    expect(screen.queryByText(/Add a task/)).toBeNull();
+    expect(screen.queryByTestId('landing-divider')).toBeNull();
   });
 });
 
@@ -457,7 +477,7 @@ describe('the free upsell offers the calendar without gating on a fabricated bar
         onAction={jest.fn()}
       />,
     );
-    expect(screen.getByText(/your calendar isn't in it/)).toBeTruthy();
+    expect(screen.getByText(/Assumes an empty calendar/)).toBeTruthy();
   });
 
   it('never offers it on a past day', () => {
@@ -472,7 +492,7 @@ describe('the free upsell offers the calendar without gating on a fabricated bar
         onAction={jest.fn()}
       />,
     );
-    expect(screen.queryByText(/your calendar isn't in it/)).toBeNull();
+    expect(screen.queryByText(/Assumes an empty calendar/)).toBeNull();
   });
 
   it('never offers it to a Pro user with calendar on', () => {
@@ -486,7 +506,7 @@ describe('the free upsell offers the calendar without gating on a fabricated bar
         onAction={jest.fn()}
       />,
     );
-    expect(screen.queryByText(/your calendar isn't in it/)).toBeNull();
+    expect(screen.queryByText(/Assumes an empty calendar/)).toBeNull();
   });
 
   it('never offers it to a Pro user whose calendar is off', () => {
@@ -502,7 +522,7 @@ describe('the free upsell offers the calendar without gating on a fabricated bar
         onAction={jest.fn()}
       />,
     );
-    expect(screen.queryByText(/your calendar isn't in it/)).toBeNull();
+    expect(screen.queryByText(/Assumes an empty calendar/)).toBeNull();
   });
 
   it('renders no bar segment for the un-purchased calendar', () => {
@@ -531,7 +551,7 @@ describe('the free upsell offers the calendar without gating on a fabricated bar
         onAction={onAction}
       />,
     );
-    fireEvent.press(screen.getByText('Add it'));
+    fireEvent.press(screen.getByText('Add mine'));
     expect(onAction).toHaveBeenCalledWith('connect-calendar');
   });
 });

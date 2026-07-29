@@ -135,10 +135,16 @@ export function landingScale(
   return labels;
 }
 
+/**
+ * The line under the bar, or `null` when there is nothing worth a line. A footer
+ * that states an absence ("Nothing logged yet") and offers a path Today already
+ * carries three of is weaker than no footer at all — the caller drops the row and
+ * its divider entirely.
+ */
 export function landingFooter(
   landing: LandingResult,
   { doneCount, doneHonestMin, logsToWarm, dayEndShort, bookedMinAll = 0 }: FooterCtx,
-): FooterCopy {
+): FooterCopy | null {
   if (landing.kind === 'past') {
     return {
       text: `${doneCount} done · ${fmtHm(doneHonestMin)} logged`,
@@ -166,9 +172,10 @@ export function landingFooter(
     return { text: `${total} already booked today`, boldSpan: total, action: 'Pad calendar' };
   }
 
-  if (doneCount === 0) {
-    return { text: 'Nothing logged yet', boldSpan: null, action: 'Add a task' };
-  }
+  // Nothing logged yet: no row. Naming the absence adds nothing the user can't
+  // see, and its "Add a task" duplicated an affordance Today already carries.
+  if (doneCount === 0) return null;
+
   return {
     text: `${doneCount} done · ${fmtHm(doneHonestMin)} logged`,
     boldSpan: fmtHm(doneHonestMin),
@@ -222,10 +229,11 @@ export interface UpsellCopy {
 }
 
 /**
- * The free-user offer to connect their calendar. Names the limit of the
- * number already on screen ("your calendar isn't in it") rather than telling
- * them what to do — no guilt, no "you're missing out".
+ * The free-user offer to connect their calendar. Names the assumption baked into
+ * the number on screen rather than telling them what to do — no guilt, no
+ * "you're missing out". Kept short enough to survive `numberOfLines={1}` beside
+ * the action on a narrow Android screen.
  */
 export function landingUpsell(): UpsellCopy {
-  return { text: "Optimistic — your calendar isn't in it", action: 'Add it' };
+  return { text: 'Assumes an empty calendar', action: 'Add mine' };
 }
