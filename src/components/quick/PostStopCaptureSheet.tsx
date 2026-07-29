@@ -1,11 +1,4 @@
-import { useRef } from 'react';
-import {
-  View,
-  TextInput,
-  Pressable,
-  type ViewStyle,
-  type TextStyle,
-} from 'react-native';
+import { View, Pressable, type ViewStyle, type TextStyle } from 'react-native';
 import Animated, {
   FadeInDown,
   useAnimatedKeyboard,
@@ -16,6 +9,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTheme } from '@/src/theme/useTheme';
 import { AppText } from '@/src/components/AppText';
 import { AppButton } from '@/src/components/AppButton';
+import { TaskTitleField } from '@/src/components/TaskTitleField';
 import {
   CategoryChips,
   usePickerCategories,
@@ -59,7 +53,6 @@ export function PostStopCaptureSheet({
   const t = useTheme();
   const insets = useSafeAreaInsets();
   const reducedMotion = useReducedMotion();
-  const inputRef = useRef<TextInput>(null);
 
   // The sheet is absolute-positioned at the bottom (not a modal), so a
   // KeyboardAvoidingView can't lift it — track the keyboard height directly and
@@ -140,15 +133,19 @@ export function PostStopCaptureSheet({
     marginBottom: t.space[2],
   };
 
-  const inputStyle: TextStyle = {
-    height: t.size.control.md,
-    fontSize: t.fontSize.base,
-    color: t.colors.ink,
+  // The sheet's sunken field look, handed to TaskTitleField so the only visible
+  // change from the old bare TextInput is the mic that now sits inside it.
+  const inputContainerStyle: ViewStyle = {
+    minHeight: t.size.control.md,
     backgroundColor: t.colors.surfaceSunken,
     borderRadius: t.radii.md,
     borderWidth: t.borderWidth.hairline,
     borderColor: t.colors.hairline,
     paddingHorizontal: t.space[3],
+  };
+  const inputTextStyle: TextStyle = {
+    fontSize: t.fontSize.base,
+    color: t.colors.ink,
   };
 
   const skipStyle: TextStyle = {
@@ -186,19 +183,20 @@ export function PostStopCaptureSheet({
           <AppText style={sublineStyle}>Sort it so it sharpens your estimates.</AppText>
         </View>
 
-        {/* Name input (optional — user can skip) */}
+        {/* Name input (optional — user can skip). TaskTitleField so this sheet
+            gets the same on-device voice capture as add-task: it asks the same
+            question, and typing a name you just finished doing is the moment
+            speaking beats typing. */}
         <View>
           <AppText style={labelStyle}>Task name (optional)</AppText>
-          <TextInput
-            ref={inputRef}
-            style={inputStyle}
+          <TaskTitleField
             value={label}
             onChangeText={onLabelChange}
             placeholder="Name it (optional)"
-            placeholderTextColor={t.colors.inkFaint}
             returnKeyType="done"
-            blurOnSubmit
             accessibilityLabel="Task name"
+            containerStyle={inputContainerStyle}
+            textStyle={inputTextStyle}
           />
         </View>
 

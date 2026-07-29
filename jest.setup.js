@@ -90,6 +90,13 @@ jest.mock('react-native-reanimated', () => {
   if (!Reanimated.useAnimatedReaction) {
     Reanimated.useAnimatedReaction = () => {};
   }
+  // The bundled mock hands back a plain number for the keyboard height; callers
+  // read it the shared-value way (`keyboard.height.get()`), which throws. Give
+  // it the real shape — no keyboard ever opens under test, so 0 is honest.
+  Reanimated.useAnimatedKeyboard = () => ({
+    height: { get: () => 0, set: () => {} },
+    state: { get: () => 0, set: () => {} },
+  });
   if (!Reanimated.addWhitelistedNativeProps) {
     Reanimated.addWhitelistedNativeProps = () => {};
   }
