@@ -110,7 +110,7 @@ describe('usePersonalize — funnel events', () => {
 
   it('saveName fires name_skipped when name is empty string (trimmed to undefined by caller)', () => {
     const { result } = renderHook(() => usePersonalize());
-    // The Ready screen passes `nickname.trim() || undefined`, so the hook receives undefined.
+    // The Ready screen passes `name.trim() || undefined`, so the hook receives undefined.
     // Confirm the hook correctly fires name_skipped for undefined.
     act(() => result.current.saveName(undefined));
     expect(captureSpy).toHaveBeenCalledWith('name_skipped');

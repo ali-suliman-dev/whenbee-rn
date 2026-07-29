@@ -25,11 +25,11 @@ export default function Ready() {
   const { complete } = useOnboarding();
   const { saveName } = usePersonalize();
   const archetypeSeed = useSettingsStore((s) => s.archetypeSeed);
-  const [nickname, setNickname] = useState('');
+  const [name, setName] = useState('');
   const [expanded, setExpanded] = useState(false);
 
   const timeFirstThing = useOnce(() => {
-    saveName(nickname.trim() || undefined);
+    saveName(name.trim() || undefined);
     complete();
     // Anchor (tabs) beneath first: (modals) live on the root stack, so pushing
     // the sheet without the anchor traps the user in the drawer on dismiss.
@@ -107,19 +107,25 @@ export default function Ready() {
             </AppText>
           </Reveal>
 
-          {/* Optional nickname — 6C quiet link. No container, no border; expands to
-              the real input on tap. */}
+          {/* Optional name — 6C quiet link. No container, no border; expands to
+              the real input on tap. The link is the APP asking ("What should I
+              call you?"), matching the body copy's voice: the screen also speaks
+              in the user's first person ("Time my first thing"), so a link that
+              said "give me a name" had no fixed referent — and the app has a real
+              companion-naming screen, so half of readers named the bee. The
+              placeholder stays deliberately open ("Anything you answer to"): the
+              field is just as happy with a handle as a first name. */}
           <Reveal index={3} style={{ marginTop: t.space[4] }}>
             {expanded ? (
               <TextInput
-                value={nickname}
-                onChangeText={setNickname}
+                value={name}
+                onChangeText={setName}
                 autoFocus
-                placeholder="Your nickname"
+                placeholder="Anything you answer to"
                 placeholderTextColor={t.colors.inkFaint}
                 maxLength={MAX_CUSTOM_NAME}
                 returnKeyType="done"
-                accessibilityLabel="Your nickname"
+                accessibilityLabel="Your name"
                 style={{
                   height: t.size.control.md,
                   fontSize: t.fontSize.base,
@@ -134,7 +140,7 @@ export default function Ready() {
               <Pressable
                 onPress={() => setExpanded(true)}
                 accessibilityRole="button"
-                accessibilityLabel="Give me a nickname"
+                accessibilityLabel="What should I call you?"
                 accessibilityHint="Optional"
               >
                 <View
@@ -149,7 +155,7 @@ export default function Ready() {
                     ＋
                   </AppText>
                   <AppText style={{ fontSize: t.fontSize.base, fontWeight: t.fontWeight.medium as '500', color: t.colors.primary }}>
-                    Give me a nickname
+                    What should I call you?
                   </AppText>
                   <AppText style={{ fontSize: t.fontSize.sm, color: t.colors.inkFaint }}>optional</AppText>
                 </View>

@@ -67,7 +67,7 @@ interface SettingsState {
   /** "Tap to start again" quick-start chips on Today (repeat tasks you've run before). Off by default. */
   quickStartEnabled: boolean;
   setQuickStartEnabled: (v: boolean) => void;
-  /** Optional nickname for greetings/companion lines. No name = greeting only. */
+  /** Optional name for greetings/companion lines. No name = greeting only. */
   displayName?: string;
   setDisplayName: (name: string | undefined) => void;
   /** Provisional archetype seed from the onboarding quiz; washes out as data grows. */

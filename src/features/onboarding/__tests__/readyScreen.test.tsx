@@ -24,7 +24,7 @@ describe('Onboarding Step 2 — Ready screen', () => {
     useSettingsStore.getState().reset();
   });
 
-  test('ready shows the archetype crest, headline, ripening rail, nickname link, CTA', () => {
+  test('ready shows the archetype crest, headline, ripening rail, name link, CTA', () => {
     useSettingsStore.setState({
       archetypeSeed: { m0: 1.7, source: 'quiz', tookAt: Date.now() },
     });
@@ -40,10 +40,10 @@ describe('Onboarding Step 2 — Ready screen', () => {
     expect(screen.getByText('Honest')).toBeTruthy();
     // The "forgot to time something" tip is gone
     expect(screen.queryByText(/Forgot to time something/i)).toBeNull();
-    // Optional nickname — 6C quiet link, tap-to-reveal
-    expect(screen.getByLabelText('Give me a nickname')).toBeTruthy();
-    expect(screen.getByText('Give me a nickname')).toBeTruthy();
-    expect(screen.queryByLabelText('Your nickname')).toBeNull();
+    // Optional name — 6C quiet link, tap-to-reveal
+    expect(screen.getByLabelText('What should I call you?')).toBeTruthy();
+    expect(screen.getByText('What should I call you?')).toBeTruthy();
+    expect(screen.queryByLabelText('Your name')).toBeNull();
     expect(screen.getByText(/Time my first thing/)).toBeTruthy();
   });
 
@@ -53,32 +53,32 @@ describe('Onboarding Step 2 — Ready screen', () => {
     expect(screen.queryByText('Your time-style')).toBeNull();
   });
 
-  test('tapping "Give me a nickname" reveals the input', () => {
+  test('tapping "What should I call you?" reveals the input', () => {
     render(<Ready />);
-    expect(screen.queryByLabelText('Your nickname')).toBeNull();
-    fireEvent.press(screen.getByLabelText('Give me a nickname'));
-    expect(screen.getByLabelText('Your nickname')).toBeTruthy();
+    expect(screen.queryByLabelText('Your name')).toBeNull();
+    fireEvent.press(screen.getByLabelText('What should I call you?'));
+    expect(screen.getByLabelText('Your name')).toBeTruthy();
   });
 
-  test('CTA with no nickname calls replace to tabs', () => {
+  test('CTA with no name calls replace to tabs', () => {
     render(<Ready />);
     fireEvent.press(screen.getByText(/Time my first thing/));
     expect(replaceMock).toHaveBeenCalledWith('/(tabs)');
   });
 
-  test('expanding then leaving the nickname empty still completes without a name', () => {
+  test('expanding then leaving the name empty still completes without a name', () => {
     useSettingsStore.setState({ displayName: undefined });
     render(<Ready />);
-    fireEvent.press(screen.getByLabelText('Give me a nickname'));
+    fireEvent.press(screen.getByLabelText('What should I call you?'));
     fireEvent.press(screen.getByText(/Time my first thing/));
     expect(useOnboardingStore.getState().completed).toBe(true);
     expect(useSettingsStore.getState().displayName).toBeUndefined();
   });
 
-  test('CTA with a nickname saves it before completing', () => {
+  test('CTA with a name saves it before completing', () => {
     render(<Ready />);
-    fireEvent.press(screen.getByLabelText('Give me a nickname'));
-    fireEvent.changeText(screen.getByLabelText('Your nickname'), 'Jordan');
+    fireEvent.press(screen.getByLabelText('What should I call you?'));
+    fireEvent.changeText(screen.getByLabelText('Your name'), 'Jordan');
     fireEvent.press(screen.getByText(/Time my first thing/));
     expect(replaceMock).toHaveBeenCalledWith('/(tabs)');
     expect(useOnboardingStore.getState().completed).toBe(true);
