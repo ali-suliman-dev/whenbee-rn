@@ -157,6 +157,16 @@ function totalFreeMin(windows: readonly Window[]): number {
  *
  * The `breatherMin` gap is inserted between two consecutive tasks that land in
  * the SAME window. A window jump already provides separation.
+ *
+ * Two passes, mirroring `forwardFill` (see its header for the full rationale):
+ *  - Pass 1 walks the queue right-to-left holding a current-window index that
+ *    only moves on a successful placement, so a task that fits nowhere never
+ *    consumes the scan position of the tasks still ahead of it (i.e. earlier
+ *    in the queue).
+ *  - Pass 2 gap-fills whatever pass 1 left null by scanning every window
+ *    reverse-chronologically. Placing a task out of queue order here is
+ *    intended: it only happens to a task that would otherwise be reported as
+ *    overflow, and an earlier free window is preferable to that.
  */
 interface PlacedTask {
   startAt: number;
@@ -174,57 +184,71 @@ function backwardFill(
   }
 
   const placed: (PlacedTask | null)[] = new Array(effectives.length).fill(null);
+  const breatherMs = breatherMin * MS_PER_MIN;
 
-  // We fill from last task to first (right-to-left), tracking cursor in ms.
-  // cursor = the point up to which subsequent tasks must END.
-  let cursor: number = freeWindows[freeWindows.length - 1]!.end;
-  let winIdx: number = freeWindows.length - 1;
+  // One cursor per window: the point up to which the next task placed in that
+  // window must END. Starts at each window's own end.
+  const cursors: number[] = freeWindows.map((w) => w.end);
 
-  // Track what windowIdx the NEXT task (i+1) landed in, so we know whether to
-  // add a breather.
-  let prevWindowIdx: number = -1;
+  // ── Pass 1: order-preserving, non-poisoning ────────────────────────────────
+  // `curWinIdx` only advances on a successful placement. On failure it is left
+  // exactly where it was, so the tasks still ahead in the queue (earlier
+  // indices, processed next) keep their full scan range.
+  let curWinIdx = freeWindows.length - 1;
+  // windowIdx the previously-processed task (i+1, i.e. later in the queue)
+  // landed in, so we know whether this task needs a breather before it.
+  let prevPlacedWindowIdx = -1;
 
   for (let i = effectives.length - 1; i >= 0; i--) {
     const eff = effectives[i]!;
     const blockMs = eff.effectiveMin * MS_PER_MIN;
 
-    // Breather needed if the task placed AFTER this one (i+1) is in the same window.
-    // We add breather to the block we need to find space for.
-    const needsBreather = prevWindowIdx !== -1 && prevWindowIdx === winIdx;
-    const totalBlockMs = blockMs + (needsBreather ? breatherMin * MS_PER_MIN : 0);
+    let tryIdx = curWinIdx;
+    let didPlace = false;
+    while (tryIdx >= 0) {
+      const win = freeWindows[tryIdx]!;
+      const needsBreather = prevPlacedWindowIdx === tryIdx;
+      const totalBlockMs = blockMs + (needsBreather ? breatherMs : 0);
 
-    // Try to fit in current window and earlier windows.
-    let found = false;
-    while (winIdx >= 0) {
-      const win = freeWindows[winIdx]!;
-
-      // The task must end at or before cursor (and cursor ≤ win.end).
-      const endAt = Math.min(cursor, win.end);
+      const endAt = Math.min(cursors[tryIdx]!, win.end);
       const startAt = endAt - totalBlockMs;
 
       if (startAt >= win.start) {
-        // Task fits. Place it (the breather gap is the space AFTER this task up to cursor).
         const taskEndAt = startAt + blockMs;
-        placed[i] = { startAt, endAt: taskEndAt, windowIdx: winIdx };
-        cursor = startAt;
-        prevWindowIdx = winIdx;
-        found = true;
+        placed[i] = { startAt, endAt: taskEndAt, windowIdx: tryIdx };
+        cursors[tryIdx] = startAt;
+        curWinIdx = tryIdx;
+        prevPlacedWindowIdx = tryIdx;
+        didPlace = true;
         break;
       }
 
-      // Doesn't fit in this window — move to the previous window.
-      winIdx -= 1;
-      if (winIdx >= 0) {
-        cursor = freeWindows[winIdx]!.end;
-        // Moving to a different window; the next task (i) and whatever is at i+1
-        // are now in different windows, so no breather needed for placement of i.
-        // But we still need to check if the NEW winIdx matches prevWindowIdx for
-        // the NEXT iteration. Reset for the retry.
-      }
+      tryIdx -= 1;
     }
 
-    if (!found) {
-      placed[i] = null;
+    if (!didPlace) {
+      prevPlacedWindowIdx = -1;
+    }
+  }
+
+  // ── Pass 2: gap-fill ────────────────────────────────────────────────────────
+  // Anything still null gets one more chance, scanning every window
+  // reverse-chronologically (independent of queue position).
+  for (let i = 0; i < effectives.length; i++) {
+    if (placed[i]) continue;
+    const eff = effectives[i]!;
+    const blockMs = eff.effectiveMin * MS_PER_MIN;
+
+    for (let w = freeWindows.length - 1; w >= 0; w--) {
+      const win = freeWindows[w]!;
+      const endAt = cursors[w]!;
+      const startAt = endAt - blockMs;
+
+      if (startAt >= win.start) {
+        placed[i] = { startAt, endAt: startAt + blockMs, windowIdx: w };
+        cursors[w] = startAt;
+        break;
+      }
     }
   }
 
@@ -245,6 +269,18 @@ function backwardFill(
  * The `breatherMin` gap is inserted BEFORE a task that shares a window with the
  * one preceding it — the same rule as the backward pass, viewed from the other
  * side. A window jump already provides separation.
+ *
+ * Two passes:
+ *  - Pass 1 walks the queue left-to-right holding a current-window index that
+ *    only moves forward on a successful placement. A task that fits nowhere
+ *    ahead is left `null` and the current index is left exactly where it was —
+ *    it must not consume the scan position of the tasks queued after it (that
+ *    was the defect: a monotonic index that kept advancing past a failure
+ *    left every later task scanning an already-exhausted window list).
+ *  - Pass 2 gap-fills whatever is still `null` by scanning every window
+ *    chronologically, independent of queue position. A task only reaches this
+ *    pass because it would otherwise be reported as overflow, so landing in
+ *    an earlier gap out of queue order is the intended, preferable outcome.
  */
 function forwardFill(
   effectives: readonly EffectiveTask[],
@@ -257,46 +293,72 @@ function forwardFill(
   }
 
   const placed: (PlacedTask | null)[] = new Array(effectives.length).fill(null);
+  const breatherMs = breatherMin * MS_PER_MIN;
 
-  // cursor = the point from which the next task may START.
-  let cursor: number = startMs;
-  let winIdx = 0;
+  // One cursor per window: the point from which the next task placed in that
+  // window may START. Starts at each window's own start (floored to the
+  // pinned start time — only matters for the window(s) at/before startMs).
+  const cursors: number[] = freeWindows.map((w) => Math.max(w.start, startMs));
 
-  // Track what windowIdx the PREVIOUS task (i-1) landed in, so we know whether
-  // to add a breather.
-  let prevWindowIdx: number = -1;
+  // ── Pass 1: order-preserving, non-poisoning ────────────────────────────────
+  // `curWinIdx` only advances on a successful placement. On failure it is left
+  // exactly where it was, so the tasks still queued after this one keep their
+  // full scan range instead of starting past the end of the window list.
+  let curWinIdx = 0;
+  // windowIdx the previously-processed task (i-1) landed in, so we know
+  // whether this task needs a breather before it.
+  let prevPlacedWindowIdx = -1;
 
   for (let i = 0; i < effectives.length; i++) {
     const eff = effectives[i]!;
     const blockMs = eff.effectiveMin * MS_PER_MIN;
 
-    // Try to fit in the current window and later windows.
-    while (winIdx < freeWindows.length) {
-      const win = freeWindows[winIdx]!;
+    let tryIdx = curWinIdx;
+    let didPlace = false;
+    while (tryIdx < freeWindows.length) {
+      const win = freeWindows[tryIdx]!;
+      const needsBreather = prevPlacedWindowIdx === tryIdx;
+      const gapMs = needsBreather ? breatherMs : 0;
 
-      // Re-decided on every retry: jumping a window drops the breather, because
-      // the anchor between them is the gap.
-      const needsBreather = prevWindowIdx === winIdx;
-      const gapMs = needsBreather ? breatherMin * MS_PER_MIN : 0;
-
-      // The task must start at or after cursor (and at or after win.start).
-      const startAt = Math.max(cursor, win.start) + gapMs;
+      const startAt = Math.max(cursors[tryIdx]!, win.start) + gapMs;
       const endAt = startAt + blockMs;
 
       if (endAt <= win.end) {
-        placed[i] = { startAt, endAt, windowIdx: winIdx };
-        cursor = endAt;
-        prevWindowIdx = winIdx;
+        placed[i] = { startAt, endAt, windowIdx: tryIdx };
+        cursors[tryIdx] = endAt;
+        curWinIdx = tryIdx;
+        prevPlacedWindowIdx = tryIdx;
+        didPlace = true;
         break;
       }
 
-      // Doesn't fit in this window — move to the next window.
-      winIdx += 1;
+      tryIdx += 1;
     }
 
-    // Falling out of the while loop leaves placed[i] at its null default: no
-    // remaining window can hold this block, and none of the later ones will
-    // either, since they are strictly further right.
+    if (!didPlace) {
+      prevPlacedWindowIdx = -1;
+    }
+  }
+
+  // ── Pass 2: gap-fill ────────────────────────────────────────────────────────
+  // Anything still null gets one more chance, scanning every window
+  // chronologically (independent of queue position).
+  for (let i = 0; i < effectives.length; i++) {
+    if (placed[i]) continue;
+    const eff = effectives[i]!;
+    const blockMs = eff.effectiveMin * MS_PER_MIN;
+
+    for (let w = 0; w < freeWindows.length; w++) {
+      const win = freeWindows[w]!;
+      const startAt = Math.max(cursors[w]!, win.start);
+      const endAt = startAt + blockMs;
+
+      if (endAt <= win.end) {
+        placed[i] = { startAt, endAt, windowIdx: w };
+        cursors[w] = endAt;
+        break;
+      }
+    }
   }
 
   return placed;

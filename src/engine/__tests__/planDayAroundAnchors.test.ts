@@ -667,3 +667,154 @@ describe('Case 19: Unplaced tasks surface as overflow blocks', () => {
     expect(rows.map((i) => i.id).sort()).toEqual(['a', 'b', 'c']);
   });
 });
+
+// ---------------------------------------------------------------------------
+// Case 20: A task that fits nowhere no longer poisons the tasks after it
+// (Task 1 of the 2026-07-29 planner-fixes plan — per-window cursors + gap-fill.)
+// ---------------------------------------------------------------------------
+describe('Case 20: An unplaceable task does not block its neighbours', () => {
+  it('forward: an unplaceable task does not block the tasks after it', () => {
+    // Single free window [0,240] (08:00-12:00 in the brief). huge (300) fits
+    // nowhere; tiny (30) must still land at the front of the window instead of
+    // being pushed to overflow behind huge.
+    const result = planDayAroundAnchors({
+      deadline: at(240),
+      nowMs: at(-1000), // well clear of MIN_START_LEAD_MIN so it never floors startAtMs
+      dayStartMs: DAY_START,
+      tasks: [task('huge', 300), task('tiny', 30)],
+      anchors: [],
+      bufferMin: 0,
+      fill: { direction: 'forward', startAtMs: at(0) },
+    });
+
+    const taskItems = result.timeline.filter((i) => i.kind === 'task');
+    const overflowItems = result.timeline.filter((i) => i.kind === 'overflow');
+
+    expect(taskItems).toEqual([
+      expect.objectContaining({ id: 'tiny', startAt: at(0), endAt: at(30) }),
+    ]);
+    expect(overflowItems.map((i) => i.id)).toEqual(['huge']);
+  });
+
+  it('backward: an unplaceable task does not block the tasks before it', () => {
+    // Mirror of the forward case: single free window [0,240]. huge is LAST in
+    // the queue (so backward fill tries it first) and fits nowhere; tiny is
+    // FIRST in the queue and must still land at the back of the window.
+    const result = planDayAroundAnchors({
+      deadline: at(240),
+      nowMs: at(0),
+      dayStartMs: DAY_START,
+      tasks: [task('tiny', 30), task('huge', 300)],
+      anchors: [],
+      bufferMin: 0,
+      fill: { direction: 'backward' },
+    });
+
+    const taskItems = result.timeline.filter((i) => i.kind === 'task');
+    const overflowItems = result.timeline.filter((i) => i.kind === 'overflow');
+
+    expect(taskItems).toEqual([
+      expect.objectContaining({ id: 'tiny', startAt: at(210), endAt: at(240) }),
+    ]);
+    expect(overflowItems.map((i) => i.id)).toEqual(['huge']);
+  });
+
+  it('forward: a task that fits nowhere ahead is placed in an earlier free window', () => {
+    // Free windows [0,120] and [180,420] (meeting 10:00-11:00 on an 08:00-15:00
+    // day). a(90) leaves an exact 30min gap at the tail of window0; b(240)
+    // exactly fills window1, leaving c(30) nowhere to go AHEAD of it. Gap-fill
+    // must place c in window0's leftover instead of reporting it as overflow.
+    const result = planDayAroundAnchors({
+      deadline: at(420),
+      nowMs: at(-1000), // well clear of MIN_START_LEAD_MIN so it never floors startAtMs
+      dayStartMs: DAY_START,
+      tasks: [task('a', 90), task('b', 240), task('c', 30)],
+      anchors: [anchor('mtg', 120, 180)],
+      bufferMin: 0,
+      fill: { direction: 'forward', startAtMs: at(0) },
+    });
+
+    const taskItems = result.timeline.filter((i) => i.kind === 'task');
+    const overflowItems = result.timeline.filter((i) => i.kind === 'overflow');
+
+    expect(overflowItems).toHaveLength(0);
+    expect(taskItems).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ id: 'a', startAt: at(0), endAt: at(90) }),
+        expect.objectContaining({ id: 'b', startAt: at(180), endAt: at(420) }),
+        expect.objectContaining({ id: 'c', startAt: at(90), endAt: at(120) }),
+      ]),
+    );
+  });
+
+  it('backward: a task that fits nowhere behind it is placed in a later free window', () => {
+    // Mirror: free windows [0,240] and [300,360] (meeting on a 0-360 day).
+    // Backward walks the queue right-to-left, so 'a' (last in queue) is tried
+    // first and takes the tail of window1, leaving an exact 30min gap; 'b'
+    // (middle) exactly fills window0; 'c' (first in queue, tried last) then
+    // has nowhere to go BEHIND b and must gap-fill into window1's leftover.
+    const result = planDayAroundAnchors({
+      deadline: at(360),
+      nowMs: at(0),
+      dayStartMs: DAY_START,
+      tasks: [task('c', 30), task('b', 240), task('a', 30)],
+      anchors: [anchor('mtg', 240, 300)],
+      bufferMin: 0,
+      fill: { direction: 'backward' },
+    });
+
+    const taskItems = result.timeline.filter((i) => i.kind === 'task');
+    const overflowItems = result.timeline.filter((i) => i.kind === 'overflow');
+
+    expect(overflowItems).toHaveLength(0);
+    expect(taskItems).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ id: 'b', startAt: at(0), endAt: at(240) }),
+        expect.objectContaining({ id: 'a', startAt: at(330), endAt: at(360) }),
+        expect.objectContaining({ id: 'c', startAt: at(300), endAt: at(330) }),
+      ]),
+    );
+  });
+
+  it('breathers are still applied between two tasks sharing a window (regression)', () => {
+    // Same shape as Case 10 (backward) — confirms the per-window cursor
+    // rewrite did not disturb intra-window breather placement.
+    const result = planDayAroundAnchors({
+      deadline: at(200),
+      nowMs: at(0),
+      dayStartMs: DAY_START,
+      tasks: [task('a', 30), task('b', 30)],
+      anchors: [],
+      bufferMin: 0,
+      breatherMin: 10,
+    });
+
+    const items = result.timeline.filter((i) => i.kind === 'task');
+    const breathers = result.timeline.filter((i) => i.kind === 'breather');
+    expect(items).toEqual([
+      expect.objectContaining({ id: 'a', startAt: at(130), endAt: at(160) }),
+      expect.objectContaining({ id: 'b', startAt: at(170), endAt: at(200) }),
+    ]);
+    expect(breathers).toHaveLength(1);
+  });
+
+  it('no breather is applied across a window jump (regression)', () => {
+    // Same shape as Case 17 (forward) — confirms the rewrite still treats a
+    // window jump as its own gap, never doubling up with a breather.
+    const result = planDayAroundAnchors({
+      deadline: at(480),
+      nowMs: at(0),
+      dayStartMs: DAY_START,
+      tasks: [task('a', 30), task('b', 30), task('c', 60)],
+      anchors: [anchor('mtg', 120, 180)],
+      bufferMin: 0,
+      breatherMin: 10,
+      fill: { direction: 'forward', startAtMs: at(10) },
+    });
+
+    const breathers = result.timeline.filter((i) => i.kind === 'breather');
+    expect(breathers).toHaveLength(1);
+    const cItem = result.timeline.find((i) => i.id === 'c');
+    expect(cItem).toMatchObject({ startAt: at(180), endAt: at(240) });
+  });
+});
