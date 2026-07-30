@@ -1054,3 +1054,70 @@ describe('Case 23: Overflow blocks never start in the past', () => {
     expect(result.startBy).toBeNull();
   });
 });
+
+// ---------------------------------------------------------------------------
+// Case 24: backwardFill recomputes the breather against the window it actually
+// lands in, not the one it started the retry loop against.
+// (Task 4 of the 2026-07-29 planner-fixes plan.)
+// ---------------------------------------------------------------------------
+describe('Case 24: Backward fill recomputes the breather after a window jump', () => {
+  it('backward: a task that jumps to an earlier window does not reserve a breather', () => {
+    // Day 08:00-18:00 (480-1080min), meeting 13:00-14:00 (780-840min),
+    // breatherMin 15, tasks [a 60, b 60, c 180].
+    // Windows: [480,780] and [840,1080]. Backward tries 'c' first (last in
+    // queue) — fills the tail of window1: [900,1080]. 'b' is tried next; it
+    // reserves a breather against window1 first (prevPlacedWindowIdx===1) but
+    // that reservation must be dropped the moment it retries window0 — a
+    // window it never shared with 'c'. If the breather leaked across the
+    // jump, 'b' would end at 12:45 instead of 13:00.
+    const result = planDayAroundAnchors({
+      deadline: at(1080),
+      nowMs: at(0),
+      dayStartMs: at(480),
+      tasks: [task('a', 60), task('b', 60), task('c', 180)],
+      anchors: [anchor('mtg', 780, 840)],
+      bufferMin: 0,
+      breatherMin: 15,
+      fill: { direction: 'backward' },
+    });
+
+    const taskItems = result.timeline.filter((i) => i.kind === 'task');
+    expect(taskItems).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ id: 'a', startAt: at(645), endAt: at(705) }),
+        expect.objectContaining({ id: 'b', startAt: at(720), endAt: at(780) }),
+        expect.objectContaining({ id: 'c', startAt: at(900), endAt: at(1080) }),
+      ]),
+    );
+
+    const breathers = result.timeline.filter((i) => i.kind === 'breather');
+    expect(breathers).toHaveLength(1);
+    expect(breathers[0]).toMatchObject({ startAt: at(705), endAt: at(720) });
+  });
+
+  it('backward: two tasks in the same window still get their breather', () => {
+    // Pins the unchanged behaviour: when a window jump is NOT involved, the
+    // breather is still reserved between two tasks that land in the same
+    // window.
+    const result = planDayAroundAnchors({
+      deadline: at(200),
+      nowMs: at(0),
+      dayStartMs: DAY_START,
+      tasks: [task('a', 30), task('b', 30)],
+      anchors: [],
+      bufferMin: 0,
+      breatherMin: 15,
+      fill: { direction: 'backward' },
+    });
+
+    const taskItems = result.timeline.filter((i) => i.kind === 'task');
+    expect(taskItems).toEqual([
+      expect.objectContaining({ id: 'a', startAt: at(125), endAt: at(155) }),
+      expect.objectContaining({ id: 'b', startAt: at(170), endAt: at(200) }),
+    ]);
+
+    const breathers = result.timeline.filter((i) => i.kind === 'breather');
+    expect(breathers).toHaveLength(1);
+    expect(breathers[0]).toMatchObject({ startAt: at(155), endAt: at(170) });
+  });
+});
