@@ -351,7 +351,8 @@ export default function Today() {
   // Plan entry: a plan exists for the selected day when it was computed AND the
   // engine currently resolves a ready plan. PlanButton mirrors this glanceable state.
   const hasPlan = dayMeta?.planComputedAt != null && planStatus === 'ready';
-  const startByClock = hasPlan && dayPlan ? formatClock(dayPlan.startBy, false) : null;
+  const startByClock =
+    hasPlan && dayPlan && dayPlan.startBy !== null ? formatClock(dayPlan.startBy, false) : null;
 
   return (
     <Screen>

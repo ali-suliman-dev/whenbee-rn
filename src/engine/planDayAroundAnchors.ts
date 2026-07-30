@@ -626,8 +626,12 @@ export function planDayAroundAnchors(input: PlanDayInput): PlanResult {
       kind: 'event' as const,
     }));
     eventItems.sort((a, b) => a.startAt - b.startAt);
+    // No task was queued at all — there is nothing to start, so `startBy` must
+    // not fabricate a clock from the deadline. `PlanVerdict.startBy` is a
+    // separate contract (the deadline genuinely IS "fits" for zero tasks) and
+    // keeps its real number.
     return {
-      startBy: deadline,
+      startBy: null,
       timeline: eventItems,
       verdict: { kind: 'fits', startBy: deadline },
       totalMin: 0,
@@ -653,7 +657,7 @@ export function planDayAroundAnchors(input: PlanDayInput): PlanResult {
 
     if (startBy >= nowMs) {
       // Fits — build full timeline.
-      const timeline = buildTimeline(effectives, placedArr as PlacedTask[], mergedAnchors, anchors, breatherMin, deadline);
+      const timeline = buildTimeline(effectives, placedArr as PlacedTask[], mergedAnchors, anchors, breatherMin, deadline, nowMs);
       const totalMin = computeTotalMin(effectives, placedArr as PlacedTask[], breatherMin);
       return { startBy, timeline, verdict: { kind: 'fits', startBy }, totalMin };
     }
@@ -665,7 +669,7 @@ export function planDayAroundAnchors(input: PlanDayInput): PlanResult {
     // Capacity fine but we'd need to start in the past. Run cut ladder on free-window space.
     const verdict = cutLadderForWindows(deadline, nowMs, freeWindows, effectives, runFill);
     const startBy = placedArr.reduce((min, p) => p ? Math.min(min, p.startAt) : min, Infinity);
-    const timeline = buildTimeline(effectives, placedArr as PlacedTask[], mergedAnchors, anchors, breatherMin, deadline);
+    const timeline = buildTimeline(effectives, placedArr as PlacedTask[], mergedAnchors, anchors, breatherMin, deadline, nowMs);
     const totalMin = computeTotalMin(effectives, placedArr as PlacedTask[], breatherMin);
     return { startBy, timeline, verdict, totalMin };
   }
@@ -674,8 +678,12 @@ export function planDayAroundAnchors(input: PlanDayInput): PlanResult {
   const verdict = cutLadderForWindows(deadline, nowMs, freeWindows, effectives, runFill);
   // Build a best-effort timeline for display.
   const startBy = placedArr.reduce((min, p) => p ? Math.min(min, p.startAt) : min, Infinity);
-  const safeStartBy = Number.isFinite(startBy) ? startBy : deadline;
-  const timeline = buildTimeline(effectives, placedArr as (PlacedTask | null)[], mergedAnchors, anchors, breatherMin, deadline);
+  // Nothing was placed at all — there is no honest clock to report, so `startBy`
+  // must be null rather than fabricated from the deadline (PlanVerdict's own
+  // startBy, produced by cutLadderForWindows above, is a separate contract and
+  // keeps its real number).
+  const safeStartBy = Number.isFinite(startBy) ? startBy : null;
+  const timeline = buildTimeline(effectives, placedArr as (PlacedTask | null)[], mergedAnchors, anchors, breatherMin, deadline, nowMs);
   const totalMin = taskTotalMin;
   return { startBy: safeStartBy, timeline, verdict, totalMin };
 }
@@ -703,6 +711,7 @@ function buildTimeline(
   originalAnchors: readonly PlanAnchor[],
   breatherMin: number,
   deadline: number,
+  nowMs: number,
 ): PlanTimelineItem[] {
   const items: PlanTimelineItem[] = [];
   const breatherMs = breatherMin * MS_PER_MIN;
@@ -758,7 +767,7 @@ function buildTimeline(
   }
 
   items.sort((a, b) => a.startAt - b.startAt);
-  return withOverflowTasks(items, effectives, placed, deadline);
+  return withOverflowTasks(items, effectives, placed, deadline, nowMs);
 }
 
 /**
@@ -772,15 +781,24 @@ function buildTimeline(
  * task that precedes it in the user's own order. That is what lets a task dragged
  * above the done-by boundary stay where it was dropped even when it still does not
  * fit — the boundary moves up above it instead of the row snapping back down.
+ *
+ * The chain starts at `max(latest placed end, deadline, nowMs)`. A deadline that
+ * has already passed by the time this plan is read must never seed a clock that
+ * is itself in the past — every overflow row has to read as a real, future
+ * overrun, not history.
  */
 function withOverflowTasks(
   items: PlanTimelineItem[],
   effectives: readonly EffectiveTask[],
   placed: readonly (PlacedTask | null)[],
   deadline: number,
+  nowMs: number,
 ): PlanTimelineItem[] {
   const withOverflow = [...items];
-  let cursor = placed.reduce((latest, p) => (p ? Math.max(latest, p.endAt) : latest), deadline);
+  let cursor = placed.reduce(
+    (latest, p) => (p ? Math.max(latest, p.endAt) : latest),
+    Math.max(deadline, nowMs),
+  );
 
   for (let i = 0; i < effectives.length; i++) {
     if (placed[i]) continue;

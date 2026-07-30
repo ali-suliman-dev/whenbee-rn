@@ -225,9 +225,18 @@ export type PlanVerdict =
   /** Even keeping only the single smallest task won't fit → push the deadline. */
   | { kind: 'push-deadline'; feasibleDeadline: number; overshootMin: number };
 
-/** The full result of one backward pass. Never mutates the inputs. */
+/**
+ * The full result of one backward pass. Never mutates the inputs.
+ *
+ * `startBy` is `null` when nothing could be placed at all (no queued tasks, or
+ * zero free windows / no task fits anywhere) — there is no honest clock to
+ * report, so it is never fabricated from the deadline. Readers must treat
+ * `null` as "render nothing", never fall back to a clock, a dash, or an
+ * empty string that still occupies the row's layout. `PlanVerdict.startBy` is
+ * a separate contract and stays a plain `number`.
+ */
 export interface PlanResult {
-  startBy: number;
+  startBy: number | null;
   timeline: PlanTimelineItem[];
   verdict: PlanVerdict;
   totalMin: number;

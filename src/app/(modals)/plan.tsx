@@ -56,7 +56,7 @@ export default function PlanRoute() {
     effectiveStartMs,
     startHasPassed,
   } = useDayPlan();
-  const startByLabel = plan ? formatClock(plan.startBy) : null;
+  const startByLabel = plan && plan.startBy !== null ? formatClock(plan.startBy) : null;
   const [openPicker, setOpenPicker] = useState<'start' | 'finish' | null>(null);
   const [clearConfirmOpen, setClearConfirmOpen] = useState(false);
 
@@ -67,7 +67,9 @@ export default function PlanRoute() {
   // finish and tints it accent; the chooser's finish row still shows the target.
   const { finishAtMs, finishRunsOver } = useMemo(() => {
     if (!plan) return { finishAtMs: null, finishRunsOver: false };
-    const localMidnight = new Date(plan.startBy);
+    // plan.startBy is null only when nothing could be placed; the local
+    // midnight it anchors is still today's, so fall back to the device clock.
+    const localMidnight = new Date(plan.startBy ?? Date.now());
     localMidnight.setHours(0, 0, 0, 0);
     const target = doneByMin === null ? null : localMidnight.getTime() + doneByMin * 60_000;
     const actual =

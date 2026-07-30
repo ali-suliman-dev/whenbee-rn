@@ -254,7 +254,9 @@ describe('breatherMin inserts', () => {
     const noBreather = planBackward({ deadline, nowMs, bufferMin: 0, tasks: twoTasks });
     const withBreather = planBackward({ deadline, nowMs, bufferMin: 0, breatherMin: 5, tasks: twoTasks });
 
-    expect(noBreather.startBy - withBreather.startBy).toBe(5 * 60_000);
+    // planBackward always places every task (never nothing-fits) so startBy is
+    // provably never null here.
+    expect(noBreather.startBy! - withBreather.startBy!).toBe(5 * 60_000);
     expect(withBreather.timeline.filter((i) => i.kind === 'breather')).toHaveLength(1);
   });
 
@@ -262,7 +264,9 @@ describe('breatherMin inserts', () => {
     const noBreather = planBackward({ ...base, breatherMin: 0 });
     const withBreather = planBackward({ ...base, breatherMin: 10 });
 
-    expect(noBreather.startBy - withBreather.startBy).toBe(20 * 60_000);
+    // planBackward always places every task (never nothing-fits) so startBy is
+    // provably never null here.
+    expect(noBreather.startBy! - withBreather.startBy!).toBe(20 * 60_000);
     expect(withBreather.timeline.filter((i) => i.kind === 'breather')).toHaveLength(2);
   });
 
@@ -291,7 +295,9 @@ describe('breatherMin inserts', () => {
     const noBreather = planBackward({ ...base, breatherMin: 0 });
     const withBreather = planBackward({ ...base, breatherMin: 10 });
 
-    expect(noBreather.startBy - withBreather.startBy).toBe(20 * 60_000);
+    // planBackward always places every task (never nothing-fits) so startBy is
+    // provably never null here.
+    expect(noBreather.startBy! - withBreather.startBy!).toBe(20 * 60_000);
     expect(withBreather.timeline.filter((i) => i.kind === 'breather')).toHaveLength(2);
   });
 });

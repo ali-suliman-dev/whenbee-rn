@@ -991,3 +991,66 @@ describe('Case 22: A later task is pulled into an otherwise-empty earlier window
     );
   });
 });
+
+// ---------------------------------------------------------------------------
+// Case 21: Overflow chain never reports clocks in the past; startBy is null
+// when nothing could be placed at all.
+// (Task 3 of the 2026-07-29 planner-fixes plan.)
+// ---------------------------------------------------------------------------
+describe('Case 23: Overflow blocks never start in the past', () => {
+  /** Single free window [0,60]. 'c' (40min) is the only block that fits;
+   *  'a' and 'b' overflow, exactly mirroring Case 19's `overflowingDay`. */
+  const overflowingDay = (nowMs: number) =>
+    planDayAroundAnchors({
+      deadline: at(60),
+      nowMs,
+      dayStartMs: DAY_START,
+      tasks: [task('a', 200), task('b', 30), task('c', 40)],
+      anchors: [],
+      bufferMin: 0,
+    });
+
+  it('overflow blocks still start at the deadline when the deadline is ahead', () => {
+    // now(0) is well before the deadline(60) — unaffected by the nowMs floor.
+    const overflow = overflowingDay(at(0)).timeline.filter((i) => i.kind === 'overflow');
+    expect(overflow[0]).toMatchObject({ startAt: at(60), endAt: at(260) });
+  });
+
+  it('overflow blocks start at now when the deadline has passed', () => {
+    // now(200) is well past the deadline(60) — the chain must not read as
+    // clocks already in the past.
+    const nowMs = at(200);
+    const overflow = overflowingDay(nowMs).timeline.filter((i) => i.kind === 'overflow');
+    expect(overflow[0]).toMatchObject({ startAt: nowMs, endAt: nowMs + 200 * MIN });
+    expect(overflow[1]).toMatchObject({ startAt: nowMs + 200 * MIN, endAt: nowMs + 230 * MIN });
+  });
+
+  it('startBy is null when nothing could be placed', () => {
+    // Anchor spans the entire schedulable day → zero free windows → nothing
+    // to place at all, so there is no honest clock to fabricate a start from.
+    const result = planDayAroundAnchors({
+      deadline: at(100),
+      nowMs: at(0),
+      dayStartMs: DAY_START,
+      tasks: [task('a', 30)],
+      anchors: [anchor('all-day-meeting', 0, 100)],
+      bufferMin: 0,
+    });
+
+    expect(result.timeline.filter((i) => i.kind === 'task')).toHaveLength(0);
+    expect(result.startBy).toBeNull();
+  });
+
+  it('startBy is null on the empty-task-list early return', () => {
+    const result = planDayAroundAnchors({
+      deadline: at(480),
+      nowMs: at(0),
+      dayStartMs: DAY_START,
+      tasks: [],
+      anchors: [],
+      bufferMin: 0,
+    });
+
+    expect(result.startBy).toBeNull();
+  });
+});
