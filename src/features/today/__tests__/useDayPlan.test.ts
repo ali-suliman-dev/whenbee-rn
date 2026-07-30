@@ -441,6 +441,63 @@ describe('useDayPlan', () => {
       expect(firstTaskStart(result.current.plan)).toBe(afternoon + 5 * MIN);
     });
 
+    it('derivedStartByMs (the finish-preview clock) does not depend on which anchor is selected', async () => {
+      // A meeting sits between the pin (06:30) and the waking floor (08:00),
+      // and the two tasks are sized so the smaller one alone just barely
+      // overflows the 60-minute 08:00-09:00 capacity (65 effective minutes:
+      // 60 honest + the 5-minute per-task buffer) but fits comfortably once
+      // the meeting reopens the 07:30-09:00 window (90 minutes). Fixed b:1
+      // stats make honestMin == guessMin, so the sizing is exact.
+      //
+      // If the backward pass's floor ever became pin-aware (06:30, only when
+      // 'start' happens to be selected), the meeting would survive
+      // normalizeAnchors' clip instead of being excluded, split the free
+      // windows, and let the cut-ladder land a real startBy — while the
+      // 'finish'-selected render (always the plain 08:00 floor) excludes the
+      // meeting and reports no viable startBy at all (push-deadline). Same
+      // day, same pin, only the selected tab differs: the two must agree.
+      //
+      // The two renders are taken one at a time (unmounting the first before
+      // flipping `planAnchor`): both hooks read the SAME global store, so
+      // leaving the first mounted while the second's setup mutates shared
+      // state would make both re-render onto the final state and trivially
+      // "agree" no matter what the code does.
+      useCalibrationStore.setState({
+        statsByCategory: {
+          admin: { mEffective: 1, n: 100, sharpness: 0, tier: 'Raw', fit: { a: 0, b: 1 } },
+        },
+      });
+      mockGetEventsForDay.mockResolvedValue([makeTimedEvent('early', 7, 30)]); // 07:00-07:30
+      const tightTasks = [
+        makeQueued({ id: 't1', label: 'Task A', category: 'admin', guessMin: 85 }),
+        makeQueued({ id: 't2', label: 'Task B', category: 'admin', guessMin: 60 }),
+      ];
+      const baseState = {
+        selectedDate: SELECTED_DATE,
+        dayTasks: tightTasks,
+        dayMeta: { doneByMin: 9 * 60, planComputedAt: null }, // deadline 09:00
+        hasManualOrder: false,
+        startAtMin: 6 * 60 + 30, // 06:30 — earlier than the 08:00 waking floor
+        setDoneBy: jest.fn(),
+        setStartAt: jest.fn(),
+        setPlanAnchor: jest.fn(),
+      };
+
+      useDayTasksStore.setState({ ...baseState, planAnchor: 'start' });
+      const startSelected = renderHook(() => useDayPlan(NOW_EARLY_MORNING));
+      await act(async () => {});
+      const startDerivedStartByMs = startSelected.result.current.derivedStartByMs;
+      startSelected.unmount();
+
+      useDayTasksStore.setState({ ...baseState, planAnchor: 'finish' });
+      const finishSelected = renderHook(() => useDayPlan(NOW_EARLY_MORNING));
+      await act(async () => {});
+      const finishDerivedStartByMs = finishSelected.result.current.derivedStartByMs;
+      finishSelected.unmount();
+
+      expect(startDerivedStartByMs).toBe(finishDerivedStartByMs);
+    });
+
     it('derivedFinishMs is the end of the last block in the forward fill', async () => {
       setAnchor({ planAnchor: 'start', startAtMin: 10 * 60 });
       const { result } = renderHook(() => useDayPlan(NOW_MID_MORNING));

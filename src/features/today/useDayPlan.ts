@@ -202,22 +202,34 @@ export function useDayPlan(nowMs?: number): UseDayPlanResult {
   // now if the day is already underway. MIN_START_LEAD_MIN keeps a start-by from
   // landing in the past between render and the user reading it.
   //
-  // When the START is the fixed end and the user pinned a minute earlier than
-  // the waking floor (e.g. 06:30 vs the 08:00 default), the free windows the
-  // engine builds must actually begin there — otherwise `forwardFill` clamps
-  // every block to the 08:00 window start and the pinned minute is silently
-  // discarded (the founder's "I pinned 06:30, it scheduled from 08:00" bug).
-  // A pin later than the waking floor (or the finish anchor, or the live "Now"
-  // anchor) leaves the floor exactly as it was.
-  const dayStartMs = useMemo(() => {
-    const wakingFloorMs = midnight + WAKING_START_MIN * MS_PER_MIN;
-    const nowFloorMs = now + MIN_START_LEAD_MIN * MS_PER_MIN;
-    if (planAnchor === 'start' && startAtMin !== null) {
-      const pinnedFloorMs = midnight + startAtMin * MS_PER_MIN;
-      return Math.max(nowFloorMs, Math.min(wakingFloorMs, pinnedFloorMs));
-    }
-    return Math.max(nowFloorMs, wakingFloorMs);
-  }, [now, midnight, planAnchor, startAtMin]);
+  // This floor is a property of the PASS, not of the currently selected
+  // `planAnchor` — both passes always run (the chooser previews the
+  // unselected row too), and neither preview may depend on which row happens
+  // to be selected right now.
+  //
+  // The FORWARD pass is the one that can be started early: when the user
+  // pinned a minute earlier than the waking floor (e.g. 06:30 vs the 08:00
+  // default), the free windows it builds must actually begin there —
+  // otherwise `forwardFill` clamps every block to the 08:00 window start and
+  // the pinned minute is silently discarded (the founder's "I pinned 06:30,
+  // it scheduled from 08:00" bug). A pin later than the waking floor, or no
+  // pin at all (the live "Now" anchor), leaves the floor exactly as it was.
+  //
+  // The BACKWARD pass always keeps the plain waking floor — it produces
+  // `derivedStartByMs`, the "if finish were the fixed end" preview, which
+  // must read the same regardless of which anchor the user currently has
+  // selected.
+  const nowFloorMs = now + MIN_START_LEAD_MIN * MS_PER_MIN;
+  const wakingFloorMs = useMemo(
+    () => midnight + WAKING_START_MIN * MS_PER_MIN,
+    [midnight],
+  );
+  const backwardDayStartMs = Math.max(nowFloorMs, wakingFloorMs);
+  const forwardDayStartMs = useMemo(() => {
+    if (startAtMin === null) return Math.max(nowFloorMs, wakingFloorMs);
+    const pinnedFloorMs = midnight + startAtMin * MS_PER_MIN;
+    return Math.max(nowFloorMs, Math.min(wakingFloorMs, pinnedFloorMs));
+  }, [nowFloorMs, wakingFloorMs, midnight, startAtMin]);
 
   const deadlineMs = useMemo(() => {
     const doneByMin = dayMeta?.doneByMin ?? WAKING_END_MIN;
@@ -245,16 +257,23 @@ export function useDayPlan(nowMs?: number): UseDayPlanResult {
     const base = {
       deadline: deadlineMs,
       nowMs: now,
-      dayStartMs,
       tasks: planTasks,
       anchors,
     };
     const forwardFill: PlanFill = { direction: 'forward', startAtMs: pinnedStartMs };
     return {
-      backwardPlan: planDayAroundAnchors({ ...base, fill: { direction: 'backward' } }),
-      forwardPlan: planDayAroundAnchors({ ...base, fill: forwardFill }),
+      backwardPlan: planDayAroundAnchors({
+        ...base,
+        dayStartMs: backwardDayStartMs,
+        fill: { direction: 'backward' },
+      }),
+      forwardPlan: planDayAroundAnchors({
+        ...base,
+        dayStartMs: forwardDayStartMs,
+        fill: forwardFill,
+      }),
     };
-  }, [planTasks, anchors, deadlineMs, now, dayStartMs, pinnedStartMs]);
+  }, [planTasks, anchors, deadlineMs, now, backwardDayStartMs, forwardDayStartMs, pinnedStartMs]);
 
   const plan = planAnchor === 'start' ? forwardPlan : backwardPlan;
 
