@@ -365,6 +365,112 @@ describe('(modals)/plan', () => {
     });
   });
 
+  // The footer's opening word depends on which end of the day is pinned — a
+  // forward plan's start clock is a derived landing spot, not a deadline.
+  describe('footer wording by anchor', () => {
+    it('reads "Starting" when the start is the pinned end', () => {
+      const startBy = new Date(2026, 5, 24, 9, 0, 0).getTime();
+      mockUseDayPlan.mockReturnValue({
+        ...anchorDefaults,
+        planAnchor: 'start',
+        plan: makePlan(startBy),
+        status: 'ready',
+        doneByMin: null,
+        setDoneBy: jest.fn(),
+      });
+      render(<PlanRoute />);
+      const line = screen.getByTestId('plan-times-line');
+      expect(within(line).getByText('Starting')).toBeOnTheScreen();
+      expect(within(line).queryByText('Start by')).toBeNull();
+    });
+
+    it('reads "Start by" when the finish is the pinned end', () => {
+      const startBy = new Date(2026, 5, 24, 9, 0, 0).getTime();
+      mockUseDayPlan.mockReturnValue({
+        ...anchorDefaults,
+        planAnchor: 'finish',
+        plan: makePlan(startBy),
+        status: 'ready',
+        doneByMin: null,
+        setDoneBy: jest.fn(),
+      });
+      render(<PlanRoute />);
+      const line = screen.getByTestId('plan-times-line');
+      expect(within(line).getByText('Start by')).toBeOnTheScreen();
+      expect(within(line).queryByText('Starting')).toBeNull();
+    });
+  });
+
+  describe('footer finish clock excludes non-task rows', () => {
+    // A calendar event that ends after the user's last task must not become
+    // the reported finish — that's the meeting's end, not theirs.
+    it('does not let a calendar event ending after the last task become the finish clock', () => {
+      const startBy = new Date(2026, 5, 24, 9, 0, 0).getTime();
+      const taskEnd = new Date(2026, 5, 24, 12, 0, 0).getTime();
+      const eventEnd = new Date(2026, 5, 24, 17, 0, 0).getTime();
+      const plan: PlanResult = {
+        startBy,
+        timeline: [
+          { kind: 'task', id: 'a', label: 'Invoices', startAt: startBy, endAt: taskEnd },
+          { kind: 'event', id: 'e', label: 'Standup', startAt: taskEnd, endAt: eventEnd },
+        ],
+        verdict: { kind: 'fits', startBy },
+        totalMin: 50,
+      };
+      mockUseDayPlan.mockReturnValue({
+        ...anchorDefaults,
+        plan,
+        status: 'ready',
+        doneByMin: null,
+        setDoneBy: jest.fn(),
+      });
+      render(<PlanRoute />);
+      const clock = screen.getByTestId('plan-finish-clock');
+      expect(clock).toHaveTextContent(formatClock(taskEnd));
+    });
+  });
+
+  describe('footer with no start clock', () => {
+    it('renders no start clock when the plan placed nothing', () => {
+      const plan: PlanResult = {
+        startBy: null,
+        timeline: [],
+        verdict: { kind: 'fits', startBy: Date.now() },
+        totalMin: 0,
+      };
+      mockUseDayPlan.mockReturnValue({
+        ...anchorDefaults,
+        plan,
+        status: 'ready',
+        doneByMin: minutesOfDay(18, 0),
+        setDoneBy: jest.fn(),
+      });
+      render(<PlanRoute />);
+      const line = screen.getByTestId('plan-times-line');
+      expect(within(line).queryByText('Starting')).toBeNull();
+      expect(within(line).queryByText('Start by')).toBeNull();
+      expect(within(line).getByText('finish')).toBeOnTheScreen();
+    });
+
+    it('renders no times line at all when neither clock is available', () => {
+      const plan: PlanResult = {
+        startBy: null,
+        timeline: [],
+        verdict: { kind: 'fits', startBy: Date.now() },
+        totalMin: 0,
+      };
+      mockUseDayPlan.mockReturnValue({
+        ...anchorDefaults,
+        plan,
+        status: 'ready',
+        doneByMin: null,
+        setDoneBy: jest.fn(),
+      });
+      render(<PlanRoute />);
+      expect(screen.queryByTestId('plan-times-line')).toBeNull();
+    });
+  });
+
   describe('Clear plan', () => {
     it('shows the Clear control when a plan exists', () => {
       mockUseDayPlan.mockReturnValue({ ...anchorDefaults, plan: makePlan(Date.now()), status: 'ready', doneByMin: null, setDoneBy: jest.fn() });

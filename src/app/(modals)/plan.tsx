@@ -55,8 +55,12 @@ export default function PlanRoute() {
     derivedStartByMs,
     effectiveStartMs,
     startHasPassed,
+    hasFinishTarget,
   } = useDayPlan();
   const startByLabel = plan && plan.startBy !== null ? formatClock(plan.startBy) : null;
+  // A forward plan's first clock is where the day starts, not a deadline — only
+  // a finish-anchored day owes the user a "by" verb.
+  const startWord = planAnchor === 'start' ? 'Starting' : 'Start by';
   const [openPicker, setOpenPicker] = useState<'start' | 'finish' | null>(null);
   const [clearConfirmOpen, setClearConfirmOpen] = useState(false);
 
@@ -72,13 +76,18 @@ export default function PlanRoute() {
     const localMidnight = new Date(plan.startBy ?? Date.now());
     localMidnight.setHours(0, 0, 0, 0);
     const target = doneByMin === null ? null : localMidnight.getTime() + doneByMin * 60_000;
-    const actual =
-      plan.timeline.length > 0 ? Math.max(...plan.timeline.map((item) => item.endAt)) : null;
+    // A calendar event (or a breather) can end after the user's own last task —
+    // that's the meeting's end, not the user's finish, so only task/overflow
+    // rows count toward "when the day actually ends".
+    const ownRows = plan.timeline.filter(
+      (item) => item.kind === 'task' || item.kind === 'overflow',
+    );
+    const actual = ownRows.length > 0 ? Math.max(...ownRows.map((item) => item.endAt)) : null;
     return {
       finishAtMs: actual ?? target,
-      finishRunsOver: target !== null && actual !== null && actual > target,
+      finishRunsOver: hasFinishTarget && target !== null && actual !== null && actual > target,
     };
-  }, [plan, doneByMin]);
+  }, [plan, doneByMin, hasFinishTarget]);
 
   // Both anchor values are stored as a minute-of-day, so every clock in this
   // sheet converts against the same local midnight.
@@ -264,13 +273,17 @@ export default function PlanRoute() {
           {/* Quiet start-by · finish summary (device clock format = matches the
               timeline rows). Rendered here, not in the header, so the title reads
               clean. DayTimeline's own header stays hidden (hideHeader). */}
-          {plan && startByLabel ? (
+          {plan && (startByLabel || finishAtMs !== null) ? (
             <View style={timesLineStyle} testID="plan-times-line">
-              <Text style={timesWordStyle}>Start by</Text>
-              <Text style={[timesNumStyle, { color: t.colors.ink }]}>{startByLabel}</Text>
+              {startByLabel ? (
+                <>
+                  <Text style={timesWordStyle}>{startWord}</Text>
+                  <Text style={[timesNumStyle, { color: t.colors.ink }]}>{startByLabel}</Text>
+                </>
+              ) : null}
               {finishAtMs !== null ? (
                 <>
-                  <Text style={timesSepStyle}>·</Text>
+                  {startByLabel ? <Text style={timesSepStyle}>·</Text> : null}
                   <Text style={timesWordStyle}>finish</Text>
                   {/* Accent when the day genuinely runs past the done-by target —
                       the gap between this clock and the target IS the message.
