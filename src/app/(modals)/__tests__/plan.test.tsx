@@ -91,6 +91,7 @@ const anchorDefaults = {
   derivedStartByMs: null,
   effectiveStartMs: 0,
   startHasPassed: false,
+  hasFinishTarget: true,
 };
 
 /** The route converts every stored minute-of-day against TODAY's local midnight. */

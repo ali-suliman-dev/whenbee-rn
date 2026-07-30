@@ -131,7 +131,12 @@ function stripBoundary(rows: readonly TimelineListRow[]): PlanTimelineItem[] {
   return rows.filter((r): r is PlanTimelineItem => !isBoundaryRow(r));
 }
 
-/** Insert the boundary row above `index`; a negative index means the day fits. */
+/**
+ * Insert the boundary row above `index`. A negative index means either the
+ * day fits, or there's no finish target to draw a boundary against — the
+ * caller passes -1 for both (see the `hasFinishTarget` guard at the call
+ * site).
+ */
 function withBoundary(
   rows: readonly PlanTimelineItem[],
   index: number,
@@ -161,6 +166,7 @@ function RowContent({
   item,
   focusBandActive,
   overMin,
+  hasFinishTarget,
   onMoveToTomorrow,
   onDragHandleLongPress,
 }: {
@@ -168,6 +174,11 @@ function RowContent({
   focusBandActive: boolean;
   /** Minutes this block ends past the done-by. Only meaningful for overflow rows. */
   overMin: number;
+  /** Whether the user actually set a finish time — see the boundary-row gate
+   *  in DayTimeline. Only affects this row's accessibility copy: an overflow
+   *  row with no chosen finish reads against "when today ends", never "your
+   *  done-by time" (there isn't one). */
+  hasFinishTarget: boolean;
   onMoveToTomorrow: (id: string) => void;
   /** Present only for draggable rows — long-press on the grip starts the drag. */
   onDragHandleLongPress?: () => void;
@@ -307,7 +318,11 @@ function RowContent({
         testID={`timeline-overflow-${item.id}`}
         accessible
         accessibilityRole="text"
-        accessibilityLabel={`${item.label}, runs ${fmtHm(overMin)} past your done-by time`}
+        accessibilityLabel={
+          hasFinishTarget
+            ? `${item.label}, runs ${fmtHm(overMin)} past your done-by time`
+            : `${item.label}, runs ${fmtHm(overMin)} past when today ends`
+        }
       >
         {onDragHandleLongPress ? (
           <Pressable
@@ -607,7 +622,7 @@ export function DayTimeline({ hideHeader = false }: DayTimelineProps = {}) {
   const isPro = useEntitlement((s) => s.isPro);
 
   // ── Data ──────────────────────────────────────────────────────────────────
-  const { plan, status, doneByMin, setDoneBy } = useDayPlan();
+  const { plan, status, doneByMin, hasFinishTarget, setDoneBy } = useDayPlan();
   const focusWindow = useLearnedFocusWindow();
   const moveToTomorrow = useDayTasksStore((s) => s.moveToTomorrow);
   const reorderTasks = useDayTasksStore((s) => s.reorderTasks);
@@ -715,6 +730,7 @@ export function DayTimeline({ hideHeader = false }: DayTimelineProps = {}) {
         index={index}
         enterAnim={enterAnim}
         overMin={doneByMs === null ? 0 : Math.round((item.endAt - doneByMs) / 60_000)}
+        hasFinishTarget={hasFinishTarget}
         onMoveToTomorrow={handleMoveToTomorrow}
         focusBandActive={
           showFocusBand &&
@@ -733,6 +749,7 @@ export function DayTimeline({ hideHeader = false }: DayTimelineProps = {}) {
       focusWindow.startMin,
       focusWindow.endMin,
       doneByMs,
+      hasFinishTarget,
       handleMoveToTomorrow,
     ],
   );
@@ -789,9 +806,13 @@ export function DayTimeline({ hideHeader = false }: DayTimelineProps = {}) {
   // boundaryIndex/doneByMs are read off `rows` (the displayed timeline). With no
   // display timeline yet they are -1/null, so no boundary row is inserted — the
   // same as the old in-cell `index === boundaryIndex` test never matching.
+  // The boundary row itself only draws when the user actually set a finish
+  // time: it names a "done by" deadline, and there isn't one to name when
+  // hasFinishTarget is false — the overflow cards still render (see
+  // isDraggable / RowContent's overflow branch), just without that readout.
   const listData = withBoundary(
     displayTimeline ?? plan.timeline,
-    boundaryIndex,
+    hasFinishTarget ? boundaryIndex : -1,
     doneByMs,
     overrunFinishMs,
   );
@@ -870,6 +891,7 @@ interface TimelineRowProps {
   enterAnim: ReturnType<typeof FadeIn.duration> | undefined;
   focusBandActive: boolean;
   overMin: number;
+  hasFinishTarget: boolean;
   onMoveToTomorrow: (id: string) => void;
 }
 
@@ -879,6 +901,7 @@ function TimelineRow({
   enterAnim,
   focusBandActive,
   overMin,
+  hasFinishTarget,
   onMoveToTomorrow,
 }: TimelineRowProps) {
   const t = useTheme();
@@ -898,6 +921,7 @@ function TimelineRow({
         item={item}
         focusBandActive={focusBandActive}
         overMin={overMin}
+        hasFinishTarget={hasFinishTarget}
         onMoveToTomorrow={onMoveToTomorrow}
         onDragHandleLongPress={isDraggable(item) ? drag : undefined}
       />

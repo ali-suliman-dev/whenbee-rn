@@ -50,6 +50,7 @@ const anchorDefaults = {
   derivedStartByMs: null,
   effectiveStartMs: 0,
   startHasPassed: false,
+  hasFinishTarget: true,
 };
 
 jest.mock('expo-router', () => ({

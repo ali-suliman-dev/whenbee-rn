@@ -76,6 +76,10 @@ const anchorDefaults = {
   derivedStartByMs: null,
   effectiveStartMs: 0,
   startHasPassed: false,
+  // Every existing fixture below sets a real doneByMin, so a real finish
+  // target is the correct default here; the "no finish target" suite
+  // overrides both this and doneByMin together.
+  hasFinishTarget: true,
 };
 
 const mockUseFocusWindow = useLearnedFocusWindow as jest.MockedFunction<
@@ -456,6 +460,55 @@ describe('DayTimeline — overflow in place', () => {
 });
 
 // ═════════════════════════════════════════════════════════════════════════════
+// Test 4a — no finish target: the boundary sentence never fabricates a
+// deadline the user didn't choose. The overflow cards still show (the day
+// really did run out) with the same amber, neutral treatment; only the
+// "Past here you run over" readout is suppressed.
+// ═════════════════════════════════════════════════════════════════════════════
+
+describe('DayTimeline — no finish target', () => {
+  beforeEach(() => {
+    mockUseDayPlan.mockReturnValue({ ...anchorDefaults,
+      plan: makeOverflowPlan(),
+      status: 'ready',
+      doneByMin: null,
+      hasFinishTarget: false,
+      setDoneBy: mockSetDoneBy,
+    });
+  });
+
+  it('the overflow boundary is not rendered without a finish target', () => {
+    render(<DayTimeline />);
+    expect(screen.queryByTestId('timeline-overflow-boundary')).toBeNull();
+    expect(screen.queryByText(/Past here you run over/)).toBeNull();
+  });
+
+  it('still shows the overflowing task, amber and with the Tomorrow affordance', () => {
+    render(<DayTimeline />);
+    expect(screen.getByText('Big project')).toBeOnTheScreen();
+    expect(screen.getByTestId('timeline-overflow-task-big')).toBeOnTheScreen();
+    expect(screen.getByTestId('timeline-move-tomorrow-task-big')).toBeOnTheScreen();
+  });
+});
+
+describe('DayTimeline — with a finish target', () => {
+  beforeEach(() => {
+    mockUseDayPlan.mockReturnValue({ ...anchorDefaults,
+      plan: makeOverflowPlan(),
+      status: 'ready',
+      doneByMin: 930, // 15:30
+      hasFinishTarget: true,
+      setDoneBy: mockSetDoneBy,
+    });
+  });
+
+  it('it is rendered with one', () => {
+    render(<DayTimeline />);
+    expect(screen.getByTestId('timeline-overflow-boundary')).toBeOnTheScreen();
+  });
+});
+
+// ═════════════════════════════════════════════════════════════════════════════
 // Test 4b — three overflowing tasks: the treatment holds. One boundary, three
 // identical rows, no second design and no escalation.
 // ═════════════════════════════════════════════════════════════════════════════
@@ -590,6 +643,7 @@ describe('DayTimeline — empty plan', () => {
       plan: null,
       status: 'empty',
       doneByMin: null,
+      hasFinishTarget: false,
       setDoneBy: mockSetDoneBy,
     });
   });

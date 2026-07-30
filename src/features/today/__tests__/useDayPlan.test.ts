@@ -159,6 +159,13 @@ describe('useDayPlan', () => {
 
       expect(result.current.doneByMin).toBeNull();
     });
+
+    it('hasFinishTarget is false when no done-by is stored', async () => {
+      const { result } = renderHook(() => useDayPlan(NOW_BEFORE_WAKING));
+      await act(async () => {});
+
+      expect(result.current.hasFinishTarget).toBe(false);
+    });
   });
 
   describe('with queued tasks, no calendar events', () => {
@@ -192,18 +199,48 @@ describe('useDayPlan', () => {
       expect(taskItems.map((i) => i.label)).toContain('Reply emails');
     });
 
-    it('tasks are scheduled within the waking window [08:00, 22:00)', async () => {
+    it('tasks start no earlier than the 08:00 waking floor', async () => {
       const { result } = renderHook(() => useDayPlan(NOW_BEFORE_WAKING));
       await act(async () => {});
 
       const wakingStart = MIDNIGHT + 8 * 60 * MIN;
-      const wakingEnd = MIDNIGHT + 22 * 60 * MIN;
       const taskItems = result.current.plan?.timeline.filter((i) => i.kind === 'task') ?? [];
 
       for (const item of taskItems) {
         expect(item.startAt).toBeGreaterThanOrEqual(wakingStart);
-        expect(item.endAt).toBeLessThanOrEqual(wakingEnd);
       }
+    });
+  });
+
+  // ── Task 6: no fabricated 22:00 deadline when the user never set a finish ────
+  describe('no finish target (dayMeta null)', () => {
+    it('the deadline is the end of the day when no finish is set (a task at 22:30 is placed, not overflowed)', async () => {
+      // 'writing' category prior is 2.3 (see src/engine/priors.ts); a 170-minute
+      // guess resolves to an exact 390-minute honest number (170 * 2.3 = 391,
+      // rounds to 390). Backward-filled from the 08:00 waking floor, that lands
+      // the task ending exactly at 22:30 (08:00 + 390min) — a placement the old
+      // fabricated-22:00-deadline code would have flagged as overflow. A tail
+      // meeting from 22:30–23:00 closes the free window there so the single
+      // task packs against it rather than against the real end of day.
+      mockGetEventsForDay.mockResolvedValue([makeTimedEvent('m-tail', 22.5, 30)]);
+      useDayTasksStore.setState({
+        selectedDate: SELECTED_DATE,
+        dayTasks: [
+          makeQueued({ id: 't1', label: 'Long task', category: 'writing', guessMin: 170 }),
+        ],
+        dayMeta: null,
+        setDoneBy: jest.fn(),
+      });
+
+      const { result } = renderHook(() => useDayPlan(NOW_BEFORE_WAKING));
+      await act(async () => {});
+
+      const taskItems = result.current.plan?.timeline.filter((i) => i.kind === 'task') ?? [];
+      const overflowItems = result.current.plan?.timeline.filter((i) => i.kind === 'overflow') ?? [];
+
+      expect(overflowItems).toHaveLength(0);
+      expect(taskItems).toHaveLength(1);
+      expect(taskItems[0]?.endAt).toBe(MIDNIGHT + (22 * 60 + 30) * MIN);
     });
   });
 
@@ -261,6 +298,27 @@ describe('useDayPlan', () => {
       await act(async () => {});
 
       expect(result.current.doneByMin).toBe(18 * 60);
+    });
+
+    it('hasFinishTarget is true and the deadline is the stored minute when a finish is set', async () => {
+      useDayTasksStore.setState({
+        selectedDate: SELECTED_DATE,
+        dayTasks: [
+          makeQueued({ id: 't1', label: 'Quick task', category: 'admin', guessMin: 15 }),
+        ],
+        dayMeta: { doneByMin: 10 * 60, planComputedAt: null },
+        setDoneBy: jest.fn(),
+      });
+
+      const { result } = renderHook(() => useDayPlan(NOW_BEFORE_WAKING));
+      await act(async () => {});
+
+      expect(result.current.hasFinishTarget).toBe(true);
+      const deadline = MIDNIGHT + 10 * 60 * MIN;
+      const taskItems = result.current.plan?.timeline.filter((i) => i.kind === 'task') ?? [];
+      for (const item of taskItems) {
+        expect(item.endAt).toBeLessThanOrEqual(deadline);
+      }
     });
 
     it('uses doneByMin as the deadline when planning', async () => {

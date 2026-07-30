@@ -30,7 +30,7 @@ import type { PlanAnchor, PlanFill } from '@/src/engine/planDayAroundAnchors';
 import type { PlanAnchorSide } from '@/src/stores/dayTasksStore';
 import {
   WAKING_START_MIN,
-  WAKING_END_MIN,
+  DAY_END_MIN,
   MIN_START_LEAD_MIN,
 } from '@/src/engine/constants';
 
@@ -64,6 +64,13 @@ export interface UseDayPlanResult {
   status: 'empty' | 'ready';
   /** The stored "done by" minute-of-day for the selected date, or null. */
   doneByMin: number | null;
+  /**
+   * True when the user has actually set a "done by" time for this day.
+   * When false, `doneByMin` is null and the engine's `deadline` falls back to
+   * the end of the day as a scheduling bound only — nothing was chosen, so
+   * nothing should read as a target the user is being measured against.
+   */
+  hasFinishTarget: boolean;
   /** Write a new "done by" target for the selected date (persisted via the store). */
   setDoneBy: (m: number | null) => void;
   /** The stored start minute-of-day, or null for the live "Now" anchor. */
@@ -231,8 +238,15 @@ export function useDayPlan(nowMs?: number): UseDayPlanResult {
     return Math.max(nowFloorMs, Math.min(wakingFloorMs, pinnedFloorMs));
   }, [nowFloorMs, wakingFloorMs, midnight, startAtMin]);
 
+  // A user who never set a finish time hasn't agreed to one — the engine still
+  // needs SOME deadline to stop the scheduler at, so it gets the end of the
+  // local day (DAY_END_MIN), not the old WAKING_END_MIN (22:00) stand-in. That
+  // used to read as an invented target: every block past 22:00 rendered
+  // "overflow" under a boundary that told the user they'd run over a time they
+  // never chose. `hasFinishTarget` lets the UI tell these two cases apart.
+  const hasFinishTarget = dayMeta?.doneByMin != null;
   const deadlineMs = useMemo(() => {
-    const doneByMin = dayMeta?.doneByMin ?? WAKING_END_MIN;
+    const doneByMin = dayMeta?.doneByMin ?? DAY_END_MIN;
     return midnight + doneByMin * 60_000;
   }, [midnight, dayMeta?.doneByMin]);
 
@@ -286,6 +300,7 @@ export function useDayPlan(nowMs?: number): UseDayPlanResult {
     plan,
     status: plan === null ? 'empty' : 'ready',
     doneByMin: dayMeta?.doneByMin ?? null,
+    hasFinishTarget,
     setDoneBy,
     startAtMin,
     setStartAt,
