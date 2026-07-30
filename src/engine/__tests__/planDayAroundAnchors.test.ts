@@ -887,3 +887,107 @@ describe('Case 21: Gap-filled tasks still respect breatherMin against a placed n
     );
   });
 });
+
+// ---------------------------------------------------------------------------
+// Case 22: Pass 3 — pull a later-placed task forward into an earlier window
+// that pass 1/2 left empty, so a wasted hour next to the pinned start/deadline
+// gets used instead of sitting idle while the queue's tail is packed later.
+// ---------------------------------------------------------------------------
+describe('Case 22: A later task is pulled into an otherwise-empty earlier window', () => {
+  it('forward: a later short task is pulled into the gap before a meeting', () => {
+    // Day 08:00-18:00 (0-600min), meeting 10:00-11:00 (120-180min).
+    // Windows: [0,120] and [180,600]. big(180) doesn't fit window0, jumps to
+    // window1; small(30) never reconsiders window0 in pass 1 (curWinIdx
+    // already ratcheted to window1) and lands right after big. Pass 3 must
+    // pull 'small' back into window0 since it's the last-placed occupant of
+    // window1 and fits there whole; 'big' must stay put at 11:00.
+    const result = planDayAroundAnchors({
+      deadline: at(600),
+      nowMs: at(-1000),
+      dayStartMs: DAY_START,
+      tasks: [task('big', 180), task('small', 30)],
+      anchors: [anchor('mtg', 120, 180)],
+      bufferMin: 0,
+      fill: { direction: 'forward', startAtMs: at(0) },
+    });
+
+    const taskItems = result.timeline.filter((i) => i.kind === 'task');
+    expect(taskItems).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ id: 'small', startAt: at(0), endAt: at(30) }),
+        expect.objectContaining({ id: 'big', startAt: at(180), endAt: at(360) }),
+      ]),
+    );
+  });
+
+  it('nothing is pulled before the pinned start', () => {
+    // Same day/anchor as above but startAtMs pinned to 09:00 (60min) instead
+    // of 08:00 — the [0,60] slice before the pinned start must stay empty;
+    // pass 3 must never place a task before the fill's own start bound.
+    const result = planDayAroundAnchors({
+      deadline: at(600),
+      nowMs: at(-1000),
+      dayStartMs: DAY_START,
+      tasks: [task('big', 180), task('small', 30)],
+      anchors: [anchor('mtg', 120, 180)],
+      bufferMin: 0,
+      fill: { direction: 'forward', startAtMs: at(60) },
+    });
+
+    const taskItems = result.timeline.filter((i) => i.kind === 'task');
+    expect(taskItems).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ id: 'small', startAt: at(60), endAt: at(90) }),
+        expect.objectContaining({ id: 'big', startAt: at(180), endAt: at(360) }),
+      ]),
+    );
+  });
+
+  it('the pass terminates on a day where nothing can move (fully packed day)', () => {
+    // Single window [0,110], two tasks that exactly fill it back-to-back —
+    // there is no remaining room anywhere for pass 3 to pull anything into,
+    // so the timeline must come out identical to pass 1/2's placement.
+    const before = planDayAroundAnchors({
+      deadline: at(110),
+      nowMs: at(-1000),
+      dayStartMs: DAY_START,
+      tasks: [task('a', 80), task('b', 30)],
+      anchors: [],
+      bufferMin: 0,
+      fill: { direction: 'forward', startAtMs: at(0) },
+    });
+
+    const taskItems = before.timeline.filter((i) => i.kind === 'task');
+    expect(taskItems).toEqual([
+      expect.objectContaining({ id: 'a', startAt: at(0), endAt: at(80) }),
+      expect.objectContaining({ id: 'b', startAt: at(80), endAt: at(110) }),
+    ]);
+  });
+
+  it('backward fill mirrors the pull', () => {
+    // Day 0-600min, meeting 480-540 (near the deadline). Windows: [0,480] and
+    // [540,600]. Queue order [small, big] means backward tries 'big' (last in
+    // queue) first: it doesn't fit window1 (60min), jumps to window0; 'small'
+    // (tried second) never reconsiders window1 (curWinIdx already ratcheted
+    // to window0) and lands right before big. Pass 3 must pull 'small'
+    // forward into window1's leftover since it's the last-placed occupant of
+    // window0 and fits there whole; 'big' must stay put ending at 480.
+    const result = planDayAroundAnchors({
+      deadline: at(600),
+      nowMs: at(0),
+      dayStartMs: DAY_START,
+      tasks: [task('small', 30), task('big', 180)],
+      anchors: [anchor('mtg', 480, 540)],
+      bufferMin: 0,
+      fill: { direction: 'backward' },
+    });
+
+    const taskItems = result.timeline.filter((i) => i.kind === 'task');
+    expect(taskItems).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ id: 'small', startAt: at(570), endAt: at(600) }),
+        expect.objectContaining({ id: 'big', startAt: at(300), endAt: at(480) }),
+      ]),
+    );
+  });
+});
