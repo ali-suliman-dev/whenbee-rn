@@ -13,6 +13,7 @@ import {
   formatWindowRange,
   setClockHour12,
   fmtDelta,
+  formatEventClockPair,
 } from '@/src/lib/time';
 
 // Build a deterministic local epoch from explicit Y/M/D h:m so the formatted
@@ -239,5 +240,49 @@ describe('fmtDelta', () => {
 
   it('rounds fractional minutes before wording them', () => {
     expect(fmtDelta(34.6)).toEqual({ text: '35m over', direction: 'over' });
+  });
+});
+
+describe('formatEventClockPair', () => {
+  const start = at(13, 0);
+  const end = at(14, 30);
+
+  it('splits a 12h start into the clock and a meridiem-led tail with the end time', () => {
+    expect(formatEventClockPair(start, end, true)).toEqual({
+      clock: '1:00',
+      tail: 'PM – 2:30 PM',
+    });
+  });
+
+  it('keeps the end meridiem even when it matches the start', () => {
+    expect(formatEventClockPair(at(10, 0), at(11, 0), true)).toEqual({
+      clock: '10:00',
+      tail: 'AM – 11:00 AM',
+    });
+  });
+
+  it('carries a meridiem change across noon', () => {
+    expect(formatEventClockPair(at(11, 30), at(13, 0), true)).toEqual({
+      clock: '11:30',
+      tail: 'AM – 1:00 PM',
+    });
+  });
+
+  it('drops every meridiem in 24h mode and keeps the leading-zero clock', () => {
+    expect(formatEventClockPair(start, end, false)).toEqual({
+      clock: '13:00',
+      tail: '– 14:30',
+    });
+    expect(formatEventClockPair(at(9, 5), at(9, 35), false)).toEqual({
+      clock: '09:05',
+      tail: '– 09:35',
+    });
+  });
+
+  it('follows the app-wide clock setting when no flag is passed', () => {
+    setClockHour12(false);
+    expect(formatEventClockPair(start, end)).toEqual({ clock: '13:00', tail: '– 14:30' });
+    setClockHour12(true);
+    expect(formatEventClockPair(start, end)).toEqual({ clock: '1:00', tail: 'PM – 2:30 PM' });
   });
 });

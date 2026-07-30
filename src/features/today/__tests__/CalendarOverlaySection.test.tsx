@@ -2,14 +2,17 @@ import React from 'react';
 import { render, screen, fireEvent } from '@testing-library/react-native';
 import { CalendarOverlaySection } from '@/src/features/today/CalendarOverlaySection';
 import type { CalendarEvent } from '@/src/services/calendar';
+import { setClockHour12 } from '@/src/lib/time';
 
 // ──────────────────────────────────────────────────────────────────────────────
 // CalendarOverlaySection — read-only calendar event display for the selected day.
 //
 // Collapsed by default (mirrors DoneSection): only the "CALENDAR · N" header shows
-// until tapped. Once expanded, timed events render as agenda rows (start clock +
-// AM/PM + "1h · until 3:00 PM" duration) and all-day events as an "All day · …"
-// sub-line. The section renders nothing when both arrays are empty.
+// until tapped. Once expanded, timed events render as agenda rows on the TaskRow
+// grid — title + span on the left, start clock over "PM – 3:00 PM" pinned right —
+// and all-day events as an "All day · …" sub-line. There is no refresh button:
+// the calendar re-reads on focus, on foreground and on Today's pull-to-refresh.
+// The section renders nothing when both arrays are empty.
 // ──────────────────────────────────────────────────────────────────────────────
 
 function makeTimedEvent(overrides: Partial<CalendarEvent> = {}): CalendarEvent {
@@ -89,18 +92,46 @@ describe('CalendarOverlaySection — timed events (expanded)', () => {
     expect(screen.getByText('Team sync')).toBeOnTheScreen();
   });
 
-  it('renders the start clock and meridiem in the time-column', () => {
+  it('pins the start clock to the right of the row', () => {
     render(<CalendarOverlaySection events={[makeTimedEvent()]} allDayEvents={[]} />);
     expandSection();
     expect(screen.getByText('2:00')).toBeOnTheScreen();
-    expect(screen.getByText('PM')).toBeOnTheScreen();
   });
 
-  it('renders a duration + end time line', () => {
+  it('stacks the meridiem and end time under the start clock', () => {
     render(<CalendarOverlaySection events={[makeTimedEvent()]} allDayEvents={[]} />);
     expandSection();
-    // 14:00 → 15:00 is one hour, ending 3:00 PM
-    expect(screen.getByText('1h · until 3:00 PM')).toBeOnTheScreen();
+    // 14:00 → 15:00, so the tail carries both meridiems and the 3:00 finish.
+    expect(screen.getByText('PM – 3:00 PM')).toBeOnTheScreen();
+  });
+
+  it('leaves only the span on the left, under the title', () => {
+    render(<CalendarOverlaySection events={[makeTimedEvent()]} allDayEvents={[]} />);
+    expandSection();
+    expect(screen.getByText('1h')).toBeOnTheScreen();
+  });
+
+  it('states a long span in hours and minutes, never bare minutes', () => {
+    const long = makeTimedEvent({
+      endMs: new Date('2024-01-15T15:55:00').getTime(),
+    });
+    render(<CalendarOverlaySection events={[long]} allDayEvents={[]} />);
+    expandSection();
+    expect(screen.getByText('1h 55m')).toBeOnTheScreen();
+    expect(screen.queryByText('115m')).toBeNull();
+  });
+
+  it('drops every meridiem for a 24-hour user', () => {
+    setClockHour12(false);
+    try {
+      render(<CalendarOverlaySection events={[makeTimedEvent()]} allDayEvents={[]} />);
+      expandSection();
+      expect(screen.getByText('14:00')).toBeOnTheScreen();
+      expect(screen.getByText('– 15:00')).toBeOnTheScreen();
+      expect(screen.queryByText(/PM/)).toBeNull();
+    } finally {
+      setClockHour12(true);
+    }
   });
 
   it('renders multiple timed event rows', () => {
@@ -170,20 +201,17 @@ describe('CalendarOverlaySection — mixed (expanded)', () => {
   });
 });
 
-// ── Header refresh affordance (spec §C.2) ───────────────────────────────────
-// The glyph only exists when a caller wires `onRefresh`. The "updated Nm ago"
-// stamp is silent under the 2-minute staleness threshold and appears above it —
-// quiet in normal use, present exactly when a tap is worth it.
+// ── Header: staleness stamp, and NO refresh button ──────────────────────────
+// The calendar re-reads on screen focus, on app foreground, and on Today's
+// pull-to-refresh (all three in useDayCapacity). A permanent refresh glyph was a
+// fourth path to the same call, so it is gone. The "updated Nm ago" stamp stays:
+// it is information — silent under the 2-minute threshold, present above it.
 
-describe('CalendarOverlaySection — refresh affordance', () => {
+describe('CalendarOverlaySection — header', () => {
   const NOW = new Date('2024-01-15T12:00:00').getTime();
   const MIN = 60_000;
 
-  function renderWithRefresh(props: {
-    lastFetchedAtMs?: number | null;
-    onRefresh?: () => void;
-    refreshing?: boolean;
-  }) {
+  function renderHeader(props: { lastFetchedAtMs?: number | null }) {
     return render(
       <CalendarOverlaySection
         events={[makeTimedEvent()]}
@@ -194,57 +222,32 @@ describe('CalendarOverlaySection — refresh affordance', () => {
     );
   }
 
-  it('renders no refresh glyph when no onRefresh handler is wired', () => {
-    renderWithRefresh({ lastFetchedAtMs: NOW - 10 * MIN });
-    expect(screen.queryByLabelText(/refresh calendar/i)).toBeNull();
-  });
-
-  it('renders the refresh glyph when onRefresh is wired', () => {
-    renderWithRefresh({ onRefresh: jest.fn(), lastFetchedAtMs: NOW });
-    expect(screen.getByLabelText(/refresh calendar/i)).toBeOnTheScreen();
-  });
-
-  it('calls onRefresh when the glyph is pressed', () => {
-    const onRefresh = jest.fn();
-    renderWithRefresh({ onRefresh, lastFetchedAtMs: NOW });
-    fireEvent.press(screen.getByLabelText(/refresh calendar/i));
-    expect(onRefresh).toHaveBeenCalledTimes(1);
-  });
-
-  it('pressing the glyph does NOT expand or collapse the section', () => {
-    renderWithRefresh({ onRefresh: jest.fn(), lastFetchedAtMs: NOW });
-    fireEvent.press(screen.getByLabelText(/refresh calendar/i));
-    expect(screen.queryByText('Team sync')).toBeNull();
+  it('renders no refresh control, however stale the read is', () => {
+    renderHeader({ lastFetchedAtMs: NOW - 60 * MIN });
+    expect(screen.queryByLabelText(/refresh/i)).toBeNull();
   });
 
   it('shows no age stamp while the read is fresh', () => {
-    renderWithRefresh({ onRefresh: jest.fn(), lastFetchedAtMs: NOW - MIN });
+    renderHeader({ lastFetchedAtMs: NOW - MIN });
     expect(screen.queryByText(/updated/i)).toBeNull();
   });
 
   it('shows the age stamp once the read is stale', () => {
-    renderWithRefresh({ onRefresh: jest.fn(), lastFetchedAtMs: NOW - 6 * MIN });
+    renderHeader({ lastFetchedAtMs: NOW - 6 * MIN });
     expect(screen.getByText('updated 6m ago')).toBeOnTheScreen();
   });
 
   it('shows no age stamp when the calendar was never read', () => {
-    renderWithRefresh({ onRefresh: jest.fn(), lastFetchedAtMs: null });
+    renderHeader({ lastFetchedAtMs: null });
     expect(screen.queryByText(/updated/i)).toBeNull();
   });
 
-  it('ignores presses while a refresh is already in flight', () => {
-    const onRefresh = jest.fn();
-    renderWithRefresh({ onRefresh, lastFetchedAtMs: NOW, refreshing: true });
-    fireEvent.press(screen.getByLabelText(/refresh calendar/i));
-    expect(onRefresh).not.toHaveBeenCalled();
-  });
-
-  it('keeps the event rows unchanged — the header is the only edit', () => {
-    renderWithRefresh({ onRefresh: jest.fn(), lastFetchedAtMs: NOW - 6 * MIN });
+  it('keeps the event rows readable while the stamp is showing', () => {
+    renderHeader({ lastFetchedAtMs: NOW - 6 * MIN });
     expandSection();
     expect(screen.getByText('Team sync')).toBeOnTheScreen();
     expect(screen.getByText('2:00')).toBeOnTheScreen();
-    expect(screen.getByText('1h · until 3:00 PM')).toBeOnTheScreen();
+    expect(screen.getByText('PM – 3:00 PM')).toBeOnTheScreen();
   });
 });
 

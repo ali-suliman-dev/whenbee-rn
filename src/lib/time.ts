@@ -63,6 +63,31 @@ export function formatWindowRange(startMin: number, endMin: number, hour12 = hou
   return ms === me ? `${s} – ${e} ${me}` : `${s} ${ms} – ${e} ${me}`;
 }
 
+const MERIDIEM_OF = (epochMs: number): 'AM' | 'PM' =>
+  new Date(epochMs).getHours() < 12 ? 'AM' : 'PM';
+
+/**
+ * The two halves of a calendar agenda row's right-hand time column: a bold start
+ * clock over a quiet tail that carries the meridiem and the end time.
+ *
+ *   12h → { clock: '1:00',  tail: 'PM – 2:30 PM' }
+ *   24h → { clock: '13:00', tail: '– 14:30' }
+ *
+ * The meridiem is never invented in 24h mode — a 24h user writes 13, not 1 PM —
+ * and it is repeated on both ends in 12h mode so the tail is readable on its own
+ * (the start meridiem belongs to the clock stacked above it).
+ */
+export function formatEventClockPair(
+  startMs: number,
+  endMs: number,
+  hour12 = hour12Default,
+): { clock: string; tail: string } {
+  const clock = formatClock(startMs, hour12);
+  const end = formatClock(endMs, hour12);
+  if (!hour12) return { clock, tail: `– ${end}` };
+  return { clock, tail: `${MERIDIEM_OF(startMs)} – ${end} ${MERIDIEM_OF(endMs)}` };
+}
+
 /**
  * The Live-Timer centre clock. Under an hour it reads `M:SS` (e.g. "1:05"); at an
  * hour or more it switches to `H:MM` with an `h` separator ("1h05") so a long

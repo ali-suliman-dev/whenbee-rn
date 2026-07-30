@@ -585,8 +585,6 @@ export default function Today() {
                   events={cap.events}
                   allDayEvents={cap.allDayEvents}
                   lastFetchedAtMs={cap.lastFetchedAtMs}
-                  onRefresh={() => void cap.refresh()}
-                  refreshing={cap.refreshing}
                 />
 
                 {daySoFar ? <DaySoFarCard recap={daySoFar} /> : null}

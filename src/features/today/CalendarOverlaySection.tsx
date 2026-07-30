@@ -6,6 +6,7 @@ import { useTheme } from '@/src/theme/useTheme';
 import { type } from '@/src/theme/typography';
 import { haptics } from '@/src/lib/haptics';
 import type { CalendarEvent } from '@/src/services/calendar';
+import { fmtHm, formatEventClockPair } from '@/src/lib/time';
 import { formatCalendarAge, CALENDAR_AGE_TICK_MS } from './useDayCapacity';
 
 // ──────────────────────────────────────────────────────────────────────────────
@@ -16,11 +17,16 @@ import { formatCalendarAge, CALENDAR_AGE_TICK_MS } from './useDayCapacity';
 // (no exit animation, per the Fabric exiting-crash invariant). Keeping it closed
 // keeps the Today screen quiet — calendar is context, not the day's work.
 //
-// Each timed event is an agenda row: a left time-column (start clock + AM/PM) and a
-// thin rail, then the title + duration. This reads as a *scheduled block* — visually
-// distinct from the startable indigo task rows above, so it's never mistaken for a
-// Whenbee task. All-day events appear as a quiet "All day · …" sub-line and are
-// excluded from capacity math (that happens in useDayCapacity).
+// Each timed event is an agenda row built on the SAME skeleton as a Today task row
+// (`TaskRow`): title + support on the left, the number pinned right as a value over
+// a quiet tail, one gap, no divider. That shared grid is the point — the whole list
+// reads on one axis. The row still says "scheduled block" rather than "startable
+// task" through weight and colour, not through a different layout.
+//
+// The right column is start clock over "meridiem – end time", in the user's own
+// clock format (`formatEventClockPair`): a 24h user reads "13:00" / "– 14:30" and
+// is never shown an AM/PM they don't use. All-day events appear as a quiet
+// "All day · …" sub-line and are excluded from capacity math (in useDayCapacity).
 //
 // This section is display-only — it never writes to the calendar. Pro users only
 // (the caller gates visibility; useDayCapacity returns [] for free users, so this
@@ -29,12 +35,11 @@ import { formatCalendarAge, CALENDAR_AGE_TICK_MS } from './useDayCapacity';
 // Tap on a timed row: best-effort deep link to `calshow:<startMs>` (iOS opens the
 // Calendar app to that timestamp). If Linking.openURL rejects, the tap is a no-op.
 //
-// The header carries a refresh glyph grouped right with the chevron, plus a quiet
-// "updated 6m ago" stamp that only appears once the read is stale. Fresh: the
-// glyph sits at inkSoft on a transparent chip and there is no stamp. Stale: the
-// chip fills with primaryChip and the glyph lifts to primaryBright. The chip's
-// geometry is identical in both states, so going stale changes colour only —
-// nothing in the row shifts.
+// The header carries the chevron and, once the read is stale, a quiet
+// "updated 6m ago" stamp. There is deliberately NO refresh button: the calendar
+// re-reads on screen focus, on app foreground, and on Today's pull-to-refresh —
+// a permanent glyph for a fourth path was chrome with no job. The stamp stays
+// because it is information, not a control.
 // ──────────────────────────────────────────────────────────────────────────────
 
 export interface CalendarOverlaySectionProps {
@@ -44,40 +49,13 @@ export interface CalendarOverlaySectionProps {
   allDayEvents: CalendarEvent[];
   /** Epoch ms of the last calendar read; drives the staleness stamp. */
   lastFetchedAtMs?: number | null;
-  /** Re-reads the calendar. Omit to render no refresh glyph at all. */
-  onRefresh?: () => void;
-  /** True while a refresh is in flight — the glyph dims and stops accepting taps. */
-  refreshing?: boolean;
   /** Clock injection point for tests. Defaults to the live clock. */
   nowMs?: number;
 }
 
-/** Format an epoch ms as a short local time string, e.g. "2:00 PM" or "9:30 AM". */
-function fmtTime(epochMs: number): string {
-  const d = new Date(epochMs);
-  const h24 = d.getHours();
-  const min = d.getMinutes().toString().padStart(2, '0');
-  const meridiem = h24 < 12 ? 'AM' : 'PM';
-  const h12 = h24 % 12 === 0 ? 12 : h24 % 12;
-  return `${h12}:${min} ${meridiem}`;
-}
-
-/** Split a start epoch into its clock ("1:30") and meridiem ("PM") for the time-column. */
-function fmtClock(epochMs: number): { clock: string; meridiem: string } {
-  const d = new Date(epochMs);
-  const h24 = d.getHours();
-  const min = d.getMinutes().toString().padStart(2, '0');
-  const h12 = h24 % 12 === 0 ? 12 : h24 % 12;
-  return { clock: `${h12}:${min}`, meridiem: h24 < 12 ? 'AM' : 'PM' };
-}
-
-/** Compact duration + end time, e.g. "1h 30m · until 3:00 PM" or "30m · until 4:30 PM". */
-function fmtDuration(startMs: number, endMs: number): string {
-  const totalMin = Math.max(0, Math.round((endMs - startMs) / 60000));
-  const h = Math.floor(totalMin / 60);
-  const m = totalMin % 60;
-  const dur = h > 0 ? (m > 0 ? `${h}h ${m}m` : `${h}h`) : `${m}m`;
-  return `${dur} · until ${fmtTime(endMs)}`;
+/** How long an event runs, e.g. "1h 30m" — the row's left-hand support line. */
+function fmtSpan(startMs: number, endMs: number): string {
+  return fmtHm(Math.max(0, (endMs - startMs) / 60000));
 }
 
 /** Attempt to open the iOS Calendar app at a given epoch; silently no-ops if unavailable. */
@@ -93,8 +71,6 @@ export function CalendarOverlaySection({
   events,
   allDayEvents,
   lastFetchedAtMs = null,
-  onRefresh,
-  refreshing = false,
   nowMs,
 }: CalendarOverlaySectionProps): React.ReactElement | null {
   const t = useTheme();
@@ -112,7 +88,6 @@ export function CalendarOverlaySection({
   }, [clockPinned]);
 
   const ageLabel = formatCalendarAge(lastFetchedAtMs, nowMs ?? tickMs);
-  const stale = ageLabel !== null;
 
   const count = events.length + allDayEvents.length;
   if (count === 0) return null;
@@ -120,12 +95,6 @@ export function CalendarOverlaySection({
   function toggle() {
     haptics.light();
     setExpanded((v) => !v);
-  }
-
-  function handleRefresh() {
-    if (refreshing) return;
-    haptics.light();
-    onRefresh?.();
   }
 
   const header: ViewStyle = {
@@ -140,31 +109,21 @@ export function CalendarOverlaySection({
     ...(type.eyebrowSm as unknown as TextStyle),
     color: t.colors.inkSoft,
   };
-  // The right-hand cluster: age stamp, refresh glyph, chevron — one gap, no
-  // per-child margins, so the three stay on a shared centre line.
+  // The right-hand cluster: age stamp + chevron — one gap, no per-child margins,
+  // so the two stay on a shared centre line.
   const headerActions: ViewStyle = {
     flexDirection: 'row',
     alignItems: 'center',
-    // Exactly 2 × iconTap.slopX, so the two glyphs' touch regions meet edge to
-    // edge and neither can steal the other's taps.
     gap: t.space[4],
   };
   const ageStamp: TextStyle = {
     ...(type.caption as unknown as TextStyle),
     color: t.colors.inkFaint,
   };
-  /** Shared 32pt box behind a header glyph — identical geometry for both. */
   const glyphBox: ViewStyle = {
     padding: t.size.iconTap.pad,
     borderRadius: t.radii.full,
     borderCurve: 'continuous',
-  };
-  const refreshChip: ViewStyle = {
-    ...glyphBox,
-    // Transparent when fresh: same box, colour is the only thing that changes,
-    // so going stale never shifts anything in the row.
-    backgroundColor: stale ? t.colors.primaryChip : 'transparent',
-    opacity: refreshing ? t.opacity.disabled : 1,
   };
   const glyphSlop = {
     top: t.size.iconTap.slopY,
@@ -173,36 +132,18 @@ export function CalendarOverlaySection({
     right: t.size.iconTap.slopX,
   };
 
+  // Row geometry is TaskRow's, value for value — same gap, padding and minimum
+  // height — so a calendar block and a task sit on one grid instead of two.
   const row: ViewStyle = {
     flexDirection: 'row',
-    alignItems: 'stretch',
+    alignItems: 'center',
     gap: t.space[3],
     backgroundColor: t.colors.surface,
     borderRadius: t.radii.card,
     borderCurve: 'continuous',
     paddingHorizontal: t.space[4],
     paddingVertical: t.space[3],
-  };
-  const timeCol: ViewStyle = {
-    minWidth: t.size.calTimeCol,
-    justifyContent: 'center',
-  };
-  const clockText: TextStyle = {
-    fontFamily: 'Inter-Bold' as TextStyle['fontFamily'],
-    fontSize: t.fontSize.base,
-    color: t.colors.ink,
-    fontVariant: ['tabular-nums'],
-  };
-  const meridiemText: TextStyle = {
-    ...(type.caption as unknown as TextStyle),
-    fontSize: t.fontSize.xs,
-    color: t.colors.inkFaint,
-    marginTop: t.space[0.5],
-  };
-  const rail: ViewStyle = {
-    width: t.space[0.5],
-    borderRadius: t.radii.full,
-    backgroundColor: t.colors.inkFaint,
+    minHeight: t.size.control.lg,
   };
   const body: ViewStyle = { flex: 1, justifyContent: 'center', gap: t.space[0.5] };
   const eventTitle: TextStyle = {
@@ -211,6 +152,24 @@ export function CalendarOverlaySection({
   };
   const durationText: TextStyle = {
     ...(type.caption as unknown as TextStyle),
+    color: t.colors.inkFaint,
+  };
+  // The right time column — TaskRow's `timeWrap`: value on top, quiet tail under,
+  // both right-aligned so every row's numbers share one edge.
+  const timeWrap: ViewStyle = {
+    alignSelf: 'flex-end',
+    alignItems: 'flex-end',
+    gap: t.space[0.5],
+  };
+  const clockText: TextStyle = {
+    fontFamily: 'Inter-Bold' as TextStyle['fontFamily'],
+    fontSize: t.fontSize.md,
+    color: t.colors.ink,
+    fontVariant: ['tabular-nums'],
+  };
+  const tailText: TextStyle = {
+    ...(type.caption as unknown as TextStyle),
+    fontSize: t.fontSize.xs,
     color: t.colors.inkFaint,
   };
   const allDayText: TextStyle = {
@@ -240,26 +199,6 @@ export function CalendarOverlaySection({
             </Animated.Text>
           ) : null}
 
-          {onRefresh ? (
-            <Pressable
-              onPress={handleRefresh}
-              accessibilityRole="button"
-              accessibilityState={{ busy: refreshing, disabled: refreshing }}
-              accessibilityLabel={
-                ageLabel ? `Refresh calendar, ${ageLabel}` : 'Refresh calendar'
-              }
-              hitSlop={glyphSlop}
-            >
-              <View style={refreshChip}>
-                <Ionicons
-                  name="refresh"
-                  size={t.iconSize.sm}
-                  color={stale ? t.colors.primaryBright : t.colors.inkSoft}
-                />
-              </View>
-            </Pressable>
-          ) : null}
-
           <Pressable
             onPress={toggle}
             accessibilityRole="button"
@@ -283,27 +222,27 @@ export function CalendarOverlaySection({
               some accounts) — fall back to "Busy" so the row never renders blank. */}
           {events.map((evt) => {
             const title = evt.title?.trim() || 'Busy';
-            const { clock, meridiem } = fmtClock(evt.startMs);
+            const span = fmtSpan(evt.startMs, evt.endMs);
+            const { clock, tail } = formatEventClockPair(evt.startMs, evt.endMs);
             return (
               <Pressable
                 key={evt.id}
                 accessibilityRole="button"
-                accessibilityLabel={`${title}, ${clock} ${meridiem}, ${fmtDuration(evt.startMs, evt.endMs)}, open in Calendar`}
+                accessibilityLabel={`${title}, ${span}, ${clock} ${tail}, open in Calendar`}
                 onPress={() => openInCalendar(evt.startMs)}
               >
                 <View style={row}>
-                  <View style={timeCol}>
-                    <Text style={clockText}>{clock}</Text>
-                    <Text style={meridiemText}>{meridiem}</Text>
-                  </View>
-                  <View style={rail} />
                   <View style={body}>
                     <Text style={eventTitle} numberOfLines={1}>
                       {title}
                     </Text>
                     <Text style={durationText} numberOfLines={1}>
-                      {fmtDuration(evt.startMs, evt.endMs)}
+                      {span}
                     </Text>
+                  </View>
+                  <View style={timeWrap}>
+                    <Text style={clockText}>{clock}</Text>
+                    <Text style={tailText}>{tail}</Text>
                   </View>
                 </View>
               </Pressable>
