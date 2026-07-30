@@ -79,6 +79,9 @@ const NOW_BEFORE_WAKING = MIDNIGHT + 7 * 60 * MIN;
 /** A test "now" at 09:00 — inside the waking window, so the anchor drives placement. */
 const NOW_MID_MORNING = MIDNIGHT + 9 * 60 * MIN;
 
+/** A test "now" at 05:00 — before a pinned early start, so the pin (not now) drives dayStartMs. */
+const NOW_EARLY_MORNING = MIDNIGHT + 5 * 60 * MIN;
+
 // ── Factories ─────────────────────────────────────────────────────────────────
 
 function makeQueued(overrides: {
@@ -399,6 +402,43 @@ describe('useDayPlan', () => {
       await act(async () => {});
 
       expect(result.current.plan?.startBy).toBe(result.current.derivedStartByMs);
+    });
+
+    it('a start pinned before the waking floor is used as the day start', async () => {
+      setAnchor({ planAnchor: 'start', startAtMin: 6 * 60 + 30 }); // 06:30
+      const { result } = renderHook(() => useDayPlan(NOW_EARLY_MORNING));
+      await act(async () => {});
+
+      expect(firstTaskStart(result.current.plan)).toBe(MIDNIGHT + (6 * 60 + 30) * MIN);
+    });
+
+    it('the waking floor still applies to the live Now anchor', async () => {
+      setAnchor({ planAnchor: 'start', startAtMin: null });
+      const { result } = renderHook(() => useDayPlan(NOW_EARLY_MORNING));
+      await act(async () => {});
+
+      expect(firstTaskStart(result.current.plan)).toBe(MIDNIGHT + 8 * 60 * MIN);
+    });
+
+    it('the waking floor still applies when the finish is the pinned end', async () => {
+      setAnchor({ planAnchor: 'finish', startAtMin: 6 * 60 + 30 }); // 06:30, ignored
+      const { result } = renderHook(() => useDayPlan(NOW_EARLY_MORNING));
+      await act(async () => {});
+
+      const taskItems = (result.current.plan?.timeline ?? []).filter((i) => i.kind === 'task');
+      expect(taskItems.length).toBeGreaterThan(0);
+      for (const item of taskItems) {
+        expect(item.startAt).toBeGreaterThanOrEqual(MIDNIGHT + 8 * 60 * MIN);
+      }
+    });
+
+    it('a pinned start in the past is still floored to now + lead', async () => {
+      const afternoon = MIDNIGHT + (14 * 60 + 15) * MIN;
+      setAnchor({ planAnchor: 'start', startAtMin: 9 * 60 + 30 }); // 09:30, already gone by
+      const { result } = renderHook(() => useDayPlan(afternoon));
+      await act(async () => {});
+
+      expect(firstTaskStart(result.current.plan)).toBe(afternoon + 5 * MIN);
     });
 
     it('derivedFinishMs is the end of the last block in the forward fill', async () => {
