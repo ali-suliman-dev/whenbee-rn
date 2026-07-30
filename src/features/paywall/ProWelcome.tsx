@@ -238,7 +238,14 @@ export function ProWelcome({ plan, purchasedAt }: { plan: string; purchasedAt: s
       <ScrollView
         contentContainerStyle={{
           gap: t.space[5],
-          paddingTop: t.space[6],
+          // `justifyContent: 'center'` centres inside the PADDING box, so the two
+          // paddings must match or the column is pushed off-centre by their
+          // difference. The bottom inset still has to be reserved (it keeps the
+          // CTA off the home indicator once the column overflows), so it is
+          // mirrored on top rather than dropped. Previously it was bottom-only,
+          // which lifted everything by the full inset — 34pt on iOS (obvious),
+          // ~0 on Android gesture nav, hence the iOS-only report.
+          paddingTop: t.space[6] + insets.bottom,
           paddingBottom: t.space[6] + insets.bottom,
           flexGrow: 1,
           justifyContent: 'center',
