@@ -1,0 +1,298 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<title>Whenbee — Calendar section: row layout + refresh affordance</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Inter:wght@600;700&display=swap" rel="stylesheet">
+<style>
+  /* Real tokens from src/theme/tokens.ts — light mode */
+  :root{
+    --bg:#F4F2FC; --surface:#FFFFFF; --surfaceSunken:#F1EEFB;
+    --ink:#20233A; --inkSoft:#5C5F73; --inkFaint:#9B9DAB;
+    --primary:#6B5BE6; --primaryBright:#5A4BD4; --primaryChip:rgba(107,91,230,0.16);
+    --r-card:16px; --r-full:999px;
+    --s05:2px; --s1:4px; --s2:8px; --s3:12px; --s4:16px; --s5:20px; --s6:24px;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{background:#E7E4F2;font-family:'Plus Jakarta Sans',sans-serif;color:var(--ink);padding:40px 24px 80px}
+  h1{font-size:22px;font-weight:800;letter-spacing:-.4px;margin-bottom:6px}
+  .lede{font-size:14px;color:#4b4d63;max-width:900px;line-height:1.55;margin-bottom:28px}
+  h2{font-size:15px;font-weight:800;letter-spacing:-.2px;margin:38px 0 4px}
+  .note{font-size:13px;color:#4b4d63;line-height:1.5;max-width:900px;margin-bottom:16px}
+  .rail{display:flex;gap:26px;flex-wrap:wrap;align-items:flex-start}
+
+  .col{display:flex;flex-direction:column;gap:10px}
+  .tag{font-size:11px;font-weight:800;letter-spacing:1.2px;text-transform:uppercase;color:#6d6f85}
+  .tag.rec{color:var(--primaryBright)}
+  .cap{font-size:12px;color:#5b5d72;line-height:1.45;max-width:393px}
+
+  /* Phone frame — 393pt wide, 1pt = 1px, so every value below is the real token value */
+  .phone{width:393px;background:var(--bg);border-radius:26px;padding:14px 20px 22px;
+         box-shadow:0 1px 0 rgba(32,35,58,.08), 0 18px 40px -18px rgba(32,35,58,.35)}
+  .statusbar{display:flex;justify-content:space-between;font-size:11px;font-weight:700;color:var(--ink);opacity:.55;margin-bottom:14px}
+
+  /* ── section header ─────────────────────────────────────── */
+  .hdr{display:flex;align-items:center;justify-content:space-between;margin-top:var(--s2)}
+  .eyebrow{font-size:9px;line-height:13px;font-weight:700;letter-spacing:1.2px;text-transform:uppercase;color:var(--inkSoft)}
+  .actions{display:flex;align-items:center;gap:var(--s4)}
+  .glyph{padding:var(--s2);border-radius:var(--r-full);display:flex;line-height:0}
+  .glyph svg{width:16px;height:16px;display:block}
+  .stamp{font-size:12px;line-height:18px;font-weight:500;color:var(--inkFaint)}
+  .chip-stale{background:var(--primaryChip)}
+  .stampbtn{display:flex;align-items:center;gap:var(--s1);background:var(--primaryChip);
+            border-radius:var(--r-full);padding:3px var(--s2) 3px 7px}
+  .stampbtn .stamp{color:var(--primaryBright);font-weight:700}
+  .stampbtn svg{width:12px;height:12px}
+
+  /* ── rows ───────────────────────────────────────────────── */
+  .rows{display:flex;flex-direction:column;gap:var(--s2);margin-top:var(--s2)}
+  .row{display:flex;background:var(--surface);border-radius:var(--r-card);
+       padding:var(--s3) var(--s4);min-height:44px;gap:var(--s3)}
+  .row.center{align-items:center}
+  .row.stretch{align-items:stretch}
+  .body{flex:1;display:flex;flex-direction:column;justify-content:center;gap:var(--s05);min-width:0}
+  .evt-title{font-size:14px;line-height:20px;font-weight:500;color:var(--inkSoft);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .evt-title.ink{color:var(--ink)}
+  .evt-sub{font-size:12px;line-height:18px;font-weight:500;color:var(--inkFaint)}
+
+  /* right time column — mirrors TaskRow's value stack */
+  .timewrap{align-self:flex-end;display:flex;flex-direction:column;align-items:flex-end;gap:var(--s05)}
+  .clock{font-family:Inter,sans-serif;font-weight:700;font-size:16px;color:var(--ink);font-variant-numeric:tabular-nums}
+  .clock.sm{font-size:14px}
+  .meri{font-size:10px;line-height:14px;font-weight:500;color:var(--inkSoft)}
+  .inline{display:flex;align-items:baseline;gap:var(--s05)}
+
+  /* legacy left time column (current build) */
+  .timecol{min-width:52px;display:flex;flex-direction:column;justify-content:center}
+  .timecol .clock{font-size:14px}
+  .timecol .meri{font-size:10px;color:var(--inkFaint);margin-top:var(--s05)}
+  .rail-line{width:2px;border-radius:var(--r-full);background:var(--inkFaint)}
+
+  /* reference task row (image 5) */
+  .taskrow .t-title{font-size:12px;line-height:22px;font-weight:700;color:var(--ink)}
+  .taskrow .t-cat{font-size:10px;line-height:18px;font-weight:500;color:var(--inkSoft)}
+  .num{font-family:Inter,sans-serif;font-weight:700;font-size:16px;color:var(--ink);font-variant-numeric:tabular-nums}
+  .unit{font-size:10px;line-height:18px;font-weight:500;color:var(--inkSoft)}
+  .refbadge{display:inline-block;font-size:10px;font-weight:800;letter-spacing:.6px;text-transform:uppercase;
+            color:var(--primaryBright);background:var(--primaryChip);border-radius:var(--r-full);padding:3px 8px;margin-bottom:6px}
+</style>
+</head>
+<body>
+
+<h1>Calendar section — row layout + the refresh control</h1>
+<p class="lede">
+  Every value below is the real token (<code>src/theme/tokens.ts</code>) at 1pt = 1px, 393pt frame, light mode — so what you see is what renders.
+  Three things to sign off: <b>(1)</b> which row layout, <b>(2)</b> what happens to the refresh glyph, <b>(3)</b> what the left sub-line says once the time moves right.
+</p>
+
+<h2>0 · Where it sits today (for reference)</h2>
+<p class="note">Left: what ships now. Right: the task row you asked me to mirror — title-left, value-right, no divider, right column is <i>value over quiet support</i>.</p>
+<div class="rail">
+  <div class="col">
+    <span class="tag">Current build</span>
+    <div class="phone">
+      <div class="statusbar"><span>9:41</span><span>Today</span></div>
+      <div class="hdr">
+        <span class="eyebrow">Calendar · 2</span>
+        <div class="actions">
+          <span class="glyph"><svg viewBox="0 0 24 24" fill="none" stroke="#5C5F73" stroke-width="2.2" stroke-linecap="round"><path d="M20 11a8 8 0 1 0-2.3 5.6"/><path d="M20 4v7h-7"/></svg></span>
+          <span class="glyph"><svg viewBox="0 0 24 24" fill="none" stroke="#5C5F73" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 15l-6-6-6 6"/></svg></span>
+        </div>
+      </div>
+      <div class="rows">
+        <div class="row stretch">
+          <div class="timecol"><span class="clock">10:00</span><span class="meri">AM</span></div>
+          <div class="rail-line"></div>
+          <div class="body"><span class="evt-title">New Event 1</span><span class="evt-sub">1h · until 11:00 AM</span></div>
+        </div>
+        <div class="row stretch">
+          <div class="timecol"><span class="clock">1:00</span><span class="meri">PM</span></div>
+          <div class="rail-line"></div>
+          <div class="body"><span class="evt-title">Cal task</span><span class="evt-sub">1h 30m · until 2:30 PM</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="col">
+    <span class="tag">The row you want it to match</span>
+    <div class="phone">
+      <div class="statusbar"><span>9:41</span><span>Today</span></div>
+      <div class="rows">
+        <div class="row center taskrow">
+          <div class="body"><span class="t-title">Test</span><span class="t-cat">Admin &amp; email · ends ~09:50</span></div>
+          <div class="timewrap">
+            <span class="inline"><span class="num">~30</span><span class="unit">min</span></span>
+            <span class="unit">guessed 15</span>
+          </div>
+        </div>
+      </div>
+    </div>
+    <p class="cap">Anatomy: <b>flex body left</b> (title 12/bold ink + support 10 inkSoft) · <b>right stack</b> (value 16 Inter-Bold ink + support 10 inkSoft), <code>align-self:flex-end</code>, no divider, gap 12.</p>
+  </div>
+</div>
+
+<h2>1 · Row layout — pick one</h2>
+<p class="note">All three drop the rail divider and the left time column. They differ in how the clock and its meridiem sit on the right, and in what the left sub-line carries.</p>
+<div class="rail">
+
+  <div class="col">
+    <span class="tag rec">A · Stacked — exact twin of the task row (recommended)</span>
+    <div class="phone">
+      <div class="statusbar"><span>9:41</span><span>Today</span></div>
+      <div class="hdr"><span class="eyebrow">Calendar · 2</span>
+        <div class="actions"><span class="glyph"><svg viewBox="0 0 24 24" fill="none" stroke="#5C5F73" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 15l-6-6-6 6"/></svg></span></div>
+      </div>
+      <div class="rows">
+        <div class="row center">
+          <div class="body"><span class="evt-title ink">New Event 1</span><span class="evt-sub">1h · until 11:00 AM</span></div>
+          <div class="timewrap"><span class="clock">10:00</span><span class="meri">AM</span></div>
+        </div>
+        <div class="row center">
+          <div class="body"><span class="evt-title ink">Cal task</span><span class="evt-sub">1h 30m · until 2:30 PM</span></div>
+          <div class="timewrap"><span class="clock">1:00</span><span class="meri">PM</span></div>
+        </div>
+      </div>
+    </div>
+    <p class="cap">Same skeleton as the task row: value on top, quiet support beneath, right-aligned. Clocks are tabular so 10:00 and 1:00 line up on the right edge. Title lifts to full <code>ink</code> so the row stops looking half-disabled.</p>
+  </div>
+
+  <div class="col">
+    <span class="tag">B · Inline clock — “10:00 AM” on one baseline</span>
+    <div class="phone">
+      <div class="statusbar"><span>9:41</span><span>Today</span></div>
+      <div class="hdr"><span class="eyebrow">Calendar · 2</span>
+        <div class="actions"><span class="glyph"><svg viewBox="0 0 24 24" fill="none" stroke="#5C5F73" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 15l-6-6-6 6"/></svg></span></div>
+      </div>
+      <div class="rows">
+        <div class="row center">
+          <div class="body"><span class="evt-title ink">New Event 1</span><span class="evt-sub">1h · until 11:00 AM</span></div>
+          <div class="timewrap"><span class="inline"><span class="clock">10:00</span><span class="meri">AM</span></span></div>
+        </div>
+        <div class="row center">
+          <div class="body"><span class="evt-title ink">Cal task</span><span class="evt-sub">1h 30m · until 2:30 PM</span></div>
+          <div class="timewrap"><span class="inline"><span class="clock">1:00</span><span class="meri">PM</span></span></div>
+        </div>
+      </div>
+    </div>
+    <p class="cap">Reads as one time, one line — closest to how a clock is normally written, and the shortest row. Cost: the right edge no longer aligns (AM vs PM widths differ) and it breaks the task row's two-line right stack.</p>
+  </div>
+
+  <div class="col">
+    <span class="tag">C · Stacked + span on the left</span>
+    <div class="phone">
+      <div class="statusbar"><span>9:41</span><span>Today</span></div>
+      <div class="hdr"><span class="eyebrow">Calendar · 2</span>
+        <div class="actions"><span class="glyph"><svg viewBox="0 0 24 24" fill="none" stroke="#5C5F73" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 15l-6-6-6 6"/></svg></span></div>
+      </div>
+      <div class="rows">
+        <div class="row center">
+          <div class="body"><span class="evt-title ink">New Event 1</span><span class="evt-sub">1h</span></div>
+          <div class="timewrap"><span class="clock">10:00</span><span class="meri">AM – 11:00 AM</span></div>
+        </div>
+        <div class="row center">
+          <div class="body"><span class="evt-title ink">Cal task</span><span class="evt-sub">1h 30m</span></div>
+          <div class="timewrap"><span class="clock">1:00</span><span class="meri">PM – 2:30 PM</span></div>
+        </div>
+      </div>
+    </div>
+    <p class="cap">Keeps <i>all</i> the time on the right and leaves the left as title + duration only. Honest, but the second line gets long and the "PM – 2:30 PM" repeat is noisy. Shown so you can rule it out.</p>
+  </div>
+</div>
+
+<h2>2 · The left sub-line, once the clock moves right</h2>
+<p class="note">In A and B the sub-line still says “1h · until 11:00 AM”. That is two times in one row — start on the right, end on the left. Two ways to settle it:</p>
+<div class="rail">
+  <div class="col">
+    <span class="tag rec">A1 · Keep the end time (recommended)</span>
+    <div class="phone">
+      <div class="statusbar"><span>9:41</span><span>Today</span></div>
+      <div class="rows">
+        <div class="row center">
+          <div class="body"><span class="evt-title ink">New Event 1</span><span class="evt-sub">1h · until 11:00 AM</span></div>
+          <div class="timewrap"><span class="clock">10:00</span><span class="meri">AM</span></div>
+        </div>
+      </div>
+    </div>
+    <p class="cap">Reads as a sentence: “New Event 1, one hour, until 11 — starting 10:00 AM.” Nothing is lost, and the end time is the thing you actually plan around.</p>
+  </div>
+  <div class="col">
+    <span class="tag">A2 · Duration only</span>
+    <div class="phone">
+      <div class="statusbar"><span>9:41</span><span>Today</span></div>
+      <div class="rows">
+        <div class="row center">
+          <div class="body"><span class="evt-title ink">New Event 1</span><span class="evt-sub">1h</span></div>
+          <div class="timewrap"><span class="clock">10:00</span><span class="meri">AM</span></div>
+        </div>
+      </div>
+    </div>
+    <p class="cap">Quietest possible row. Cost: you lose “when does this free up”, which is the one number the day-capacity story is built on.</p>
+  </div>
+</div>
+
+<h2>3 · The refresh glyph</h2>
+<p class="note">
+  I verified the plumbing first: pull-to-refresh on Today calls the <b>same</b> <code>cap.refresh()</code> the glyph calls — it does a real device-calendar re-read (<code>useDayCapacity.ts</code>). On top of that the calendar re-reads on <b>screen focus</b> and on <b>app foreground</b>. So the glyph is a fourth way to do something that already happens three ways automatically.
+</p>
+<div class="rail">
+  <div class="col">
+    <span class="tag rec">R1 · Remove it (recommended)</span>
+    <div class="phone">
+      <div class="statusbar"><span>9:41</span><span>Today</span></div>
+      <div class="hdr"><span class="eyebrow">Calendar · 2</span>
+        <div class="actions"><span class="glyph"><svg viewBox="0 0 24 24" fill="none" stroke="#5C5F73" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 15l-6-6-6 6"/></svg></span></div>
+      </div>
+      <div class="rows">
+        <div class="row center"><div class="body"><span class="evt-title ink">New Event 1</span><span class="evt-sub">1h · until 11:00 AM</span></div><div class="timewrap"><span class="clock">10:00</span><span class="meri">AM</span></div></div>
+      </div>
+    </div>
+    <p class="cap">Header goes back to one control — the same shape as every other section header. Pull-to-refresh stays. The “updated 6m ago” stamp can stay too (see R2) — it's information, not a button.</p>
+  </div>
+
+  <div class="col">
+    <span class="tag">R2 · Remove the glyph, keep the stale stamp</span>
+    <div class="phone">
+      <div class="statusbar"><span>9:41</span><span>Today</span></div>
+      <div class="hdr"><span class="eyebrow">Calendar · 2</span>
+        <div class="actions">
+          <span class="stamp">updated 6m ago</span>
+          <span class="glyph"><svg viewBox="0 0 24 24" fill="none" stroke="#5C5F73" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 15l-6-6-6 6"/></svg></span>
+        </div>
+      </div>
+      <div class="rows">
+        <div class="row center"><div class="body"><span class="evt-title ink">New Event 1</span><span class="evt-sub">1h · until 11:00 AM</span></div><div class="timewrap"><span class="clock">10:00</span><span class="meri">AM</span></div></div>
+      </div>
+    </div>
+    <p class="cap">Only appears once the read is &gt;2 min old. Tells you the data may have moved and points you at the pull you already know. Zero new chrome when fresh.</p>
+  </div>
+
+  <div class="col">
+    <span class="tag">R3 · Fold the glyph into the stamp, stale-only</span>
+    <div class="phone">
+      <div class="statusbar"><span>9:41</span><span>Today</span></div>
+      <div class="hdr"><span class="eyebrow">Calendar · 2</span>
+        <div class="actions">
+          <span class="stampbtn"><svg viewBox="0 0 24 24" fill="none" stroke="#5A4BD4" stroke-width="2.6" stroke-linecap="round"><path d="M20 11a8 8 0 1 0-2.3 5.6"/><path d="M20 4v7h-7"/></svg><span class="stamp">6m ago</span></span>
+          <span class="glyph"><svg viewBox="0 0 24 24" fill="none" stroke="#5C5F73" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 15l-6-6-6 6"/></svg></span>
+        </div>
+      </div>
+      <div class="rows">
+        <div class="row center"><div class="body"><span class="evt-title ink">New Event 1</span><span class="evt-sub">1h · until 11:00 AM</span></div><div class="timewrap"><span class="clock">10:00</span><span class="meri">AM</span></div></div>
+      </div>
+    </div>
+    <p class="cap">One tappable stale-chip instead of a naked glyph + separate stamp. Nothing when fresh; when stale, the label and the button are the same object. Keeps a one-tap refresh for the case where you just edited an event in the Calendar app.</p>
+  </div>
+</div>
+
+<h2>My call</h2>
+<p class="note" style="max-width:760px">
+  <b>A + A1 + R1.</b> A makes the calendar row a structural twin of the task row, so the whole Today list reads on one grid — title left, number right, no dividers.
+  A1 keeps the end time, which is the number the capacity story runs on. R1 because refresh already happens on focus, on foreground, and on pull — a permanent glyph for it is chrome with no job.
+  If you'd rather not lose the explicit tap, take <b>R3</b>: it costs nothing while fresh and is honest when it isn't.
+</p>
+
+</body>
+</html>
