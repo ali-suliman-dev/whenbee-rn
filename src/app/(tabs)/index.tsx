@@ -98,7 +98,7 @@ export default function Today() {
 
   // Day plan — read here for the plan-entry strip + the export wire. DayTimeline
   // re-reads it inside the sheet.
-  const { plan: dayPlan, status: planStatus } = useDayPlan();
+  const { plan: dayPlan, status: planStatus, planAnchor } = useDayPlan();
 
   // Fire the opt-in "start by" reminder off the live plan (no-op unless both the
   // reminders + start-by toggles are on and the start-by is still in the future).
@@ -543,6 +543,7 @@ export default function Today() {
                         <PlanButton
                           hasPlan={hasPlan}
                           startByClock={startByClock}
+                          planAnchor={planAnchor}
                           onPress={
                             hasPlan
                               ? () => {

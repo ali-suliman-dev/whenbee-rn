@@ -25,13 +25,25 @@ import type { PlanResult, LearnedFocusWindow } from '@/src/domain/types';
 
 jest.mock('@/src/features/today/useDayPlan', () => ({
   useDayPlan: jest.fn(),
+  // Real implementation — DayTimeline needs this to anchor doneByMin to the
+  // selected day's local midnight (see the boundary-clock fix).
+  localMidnight: (dayKey: string) => {
+    const [y, m, d] = dayKey.split('-').map(Number) as [number, number, number];
+    return new Date(y, m - 1, d, 0, 0, 0, 0).getTime();
+  },
 }));
 
 const mockMoveToTomorrow = jest.fn();
 const mockReorderTasks = jest.fn();
 jest.mock('@/src/stores/dayTasksStore', () => ({
   useDayTasksStore: (selector: (s: any) => any) =>
-    selector({ moveToTomorrow: mockMoveToTomorrow, reorderTasks: mockReorderTasks }),
+    selector({
+      moveToTomorrow: mockMoveToTomorrow,
+      reorderTasks: mockReorderTasks,
+      // Matches NOW's date below so localMidnight(selectedDate) lines up with
+      // the fixed clock the fixtures use (atTime).
+      selectedDate: '2026-06-24',
+    }),
 }));
 
 jest.mock('@/src/features/planner/useLearnedFocusWindow', () => ({
@@ -460,6 +472,64 @@ describe('DayTimeline — overflow in place', () => {
 });
 
 // ═════════════════════════════════════════════════════════════════════════════
+// Regression — the boundary must read the user's CHOSEN done-by (doneByMin),
+// never the first overflow row's own startAt. The engine's overflow-chain
+// reseed (Task 3) clamps that row's clock to max(latestEnd, deadline, nowMs) —
+// once "now" is past the deadline, the row's startAt IS the current time, not
+// the done-by the user set. Reading the boundary off the row used to render
+// the current clock labelled "DONE BY".
+// ═════════════════════════════════════════════════════════════════════════════
+
+describe('DayTimeline — boundary reads the chosen done-by, not the row clock', () => {
+  function makeLateReseedPlan(): PlanResult {
+    // done-by is 22:00 (1320min), but the day is already past it — the engine
+    // reseeds the first overflow row's startAt to "now" (23:30), not 22:00.
+    return {
+      startBy: atTime(22, 0),
+      totalMin: 30,
+      verdict: {
+        kind: 'cut-one',
+        startBy: atTime(22, 0),
+        cut: { id: 'task-late', label: 'Late task' },
+        savedMin: 30,
+      },
+      timeline: [
+        {
+          id: 'task-late',
+          label: 'Late task',
+          startAt: atTime(23, 30),
+          endAt: atTime(23, 30) + 30 * 60_000, // 00:00 the next calendar day
+          kind: 'overflow',
+        },
+      ],
+    };
+  }
+
+  beforeEach(() => {
+    mockUseDayPlan.mockReturnValue({ ...anchorDefaults,
+      plan: makeLateReseedPlan(),
+      status: 'ready',
+      doneByMin: 1320, // 22:00 — the user's actual chosen done-by
+      hasFinishTarget: true,
+      setDoneBy: mockSetDoneBy,
+    });
+  });
+
+  it('shows the user\'s chosen done-by clock, not the overflow row\'s own start', () => {
+    render(<DayTimeline />);
+    expect(screen.getByText(`${formatClock(atTime(22, 0))} DONE BY`)).toBeOnTheScreen();
+    expect(screen.queryByText(`${formatClock(atTime(23, 30))} DONE BY`)).toBeNull();
+  });
+
+  it('measures "over" minutes against the chosen done-by, not the row start', () => {
+    render(<DayTimeline />);
+    // 00:00 the next day is 120 minutes past the 22:00 done-by — not "+0m over"
+    // (what the bug produced by measuring the row against its own startAt).
+    expect(screen.getByText('+2h over')).toBeOnTheScreen();
+  });
+});
+
+// ═════════════════════════════════════════════════════════════════════════════
 // Test 4a — no finish target: the boundary sentence never fabricates a
 // deadline the user didn't choose. The overflow cards still show (the day
 // really did run out) with the same amber, neutral treatment; only the
@@ -703,6 +773,28 @@ describe('DayTimeline — hideHeader', () => {
   it('renders the "Start by" header by default (hideHeader omitted)', () => {
     render(<DayTimeline />);
     expect(screen.getByText(/Start by/)).toBeOnTheScreen();
+  });
+});
+
+// ═════════════════════════════════════════════════════════════════════════════
+// Regression (Finding 3, 2026-07-30) — a forward (start-anchored) plan's header
+// clock is a derived first-block start, not a deadline. The footer in
+// (modals)/plan.tsx already words this correctly ("Starting" vs "Start by");
+// this header must match, not just the finish-anchored default above.
+// ═════════════════════════════════════════════════════════════════════════════
+
+describe('DayTimeline — header wording follows planAnchor', () => {
+  it('reads "Starting" (never "Start by") when the plan is anchored to the start', () => {
+    mockUseDayPlan.mockReturnValue({ ...anchorDefaults,
+      plan: makeFitsPlan(),
+      status: 'ready',
+      doneByMin: 1080,
+      planAnchor: 'start',
+      setDoneBy: mockSetDoneBy,
+    });
+    render(<DayTimeline />);
+    expect(screen.getByText(`Starting ${formatClock(atTime(9, 0))}`)).toBeOnTheScreen();
+    expect(screen.queryByText(/Start by/)).toBeNull();
   });
 });
 

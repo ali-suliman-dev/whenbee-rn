@@ -10,6 +10,7 @@ import Animated, { useAnimatedStyle, useSharedValue, withTiming } from 'react-na
 import { Ionicons } from '@expo/vector-icons';
 import { haptics } from '@/src/lib/haptics';
 import { useTheme } from '@/src/theme/useTheme';
+import type { PlanAnchorSide } from '@/src/stores/dayTasksStore';
 
 interface PlanStripProps {
   /** Start-by clock in the user's meridiem format, e.g. "12:35pm". */
@@ -18,11 +19,24 @@ interface PlanStripProps {
   doneByClock: string | null;
   /** Whether the start-by nudge is currently on (reflects settingsStore.startByEnabled). */
   reminderOn: boolean;
+  /**
+   * Which end of the day is fixed. A 'start' plan's clock is a derived first-
+   * block start, not a deadline — the strip reads "Starting" for it, never
+   * "Start by" (that word implies a deadline the user set). Defaults to
+   * 'finish', the historical behaviour, so existing callers are unaffected.
+   */
+  planAnchor?: PlanAnchorSide;
   /** Reopen the plan sheet. */
   onPress: () => void;
 }
 
-export function PlanStrip({ startByClock, doneByClock, reminderOn, onPress }: PlanStripProps) {
+export function PlanStrip({
+  startByClock,
+  doneByClock,
+  reminderOn,
+  planAnchor = 'finish',
+  onPress,
+}: PlanStripProps) {
   const t = useTheme();
   const scale = useSharedValue(1);
   const aStyle = useAnimatedStyle(() => ({ transform: [{ scale: scale.get() }] }));
@@ -64,8 +78,9 @@ export function PlanStrip({ startByClock, doneByClock, reminderOn, onPress }: Pl
   };
   const dot: TextStyle = { fontSize: t.fontSize.sm, color: t.colors.inkFaint };
 
+  const startWord = planAnchor === 'start' ? 'Starting' : 'Start by';
   const a11yLabel =
-    `Today's plan. Start by ${startByClock}. Reminder ${reminderOn ? 'on' : 'off'}.` +
+    `Today's plan. ${startWord} ${startByClock}. Reminder ${reminderOn ? 'on' : 'off'}.` +
     (doneByClock ? ` Done by ${doneByClock}.` : '') +
     ' Tap to open.';
 
@@ -81,7 +96,7 @@ export function PlanStrip({ startByClock, doneByClock, reminderOn, onPress }: Pl
     >
       <Animated.View style={[stripStyle, aStyle]}>
         <Ionicons name="map-outline" size={t.iconSize.sm} color={t.colors.primary} />
-        <Text style={strongText}>Start by {startByClock}</Text>
+        <Text style={strongText}>{startWord} {startByClock}</Text>
         <Text style={dot}>·</Text>
         <Ionicons
           name={reminderOn ? 'notifications' : 'notifications-outline'}

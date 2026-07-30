@@ -36,7 +36,7 @@ import ReorderableList, {
   type ReorderableListRenderItemInfo,
 } from 'react-native-reorderable-list';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
-import { useDayPlan } from './useDayPlan';
+import { useDayPlan, localMidnight } from './useDayPlan';
 import { useLearnedFocusWindow } from '@/src/features/planner/useLearnedFocusWindow';
 import { useDayTasksStore } from '@/src/stores/dayTasksStore';
 import { useEntitlement } from '@/src/features/paywall/useEntitlement';
@@ -622,10 +622,11 @@ export function DayTimeline({ hideHeader = false }: DayTimelineProps = {}) {
   const isPro = useEntitlement((s) => s.isPro);
 
   // ── Data ──────────────────────────────────────────────────────────────────
-  const { plan, status, doneByMin, hasFinishTarget, setDoneBy } = useDayPlan();
+  const { plan, status, doneByMin, hasFinishTarget, setDoneBy, planAnchor } = useDayPlan();
   const focusWindow = useLearnedFocusWindow();
   const moveToTomorrow = useDayTasksStore((s) => s.moveToTomorrow);
   const reorderTasks = useDayTasksStore((s) => s.reorderTasks);
+  const selectedDate = useDayTasksStore((s) => s.selectedDate);
 
   // ── Optimistic reorder order (kills the drop "flash") ─────────────────────
   // On drop, react-native-reorderable-list expects the list `data` to reflect
@@ -702,18 +703,27 @@ export function DayTimeline({ hideHeader = false }: DayTimelineProps = {}) {
   const enterAnim = reducedMotion || entrancesDone ? undefined : FadeIn.duration(t.motion.base);
 
   // ── Where the day runs over ───────────────────────────────────────────────
-  // Both clocks come straight off the rows, never from a re-derived deadline: the
-  // engine starts the overflow chain AT the done-by, so the first overflow block's
-  // startAt IS that deadline, and the furthest overflow end is the real finish the
-  // sentence offers to push to. Reading them from the rendered list (not the plan)
-  // is what makes the boundary follow an optimistic drop in the same frame.
+  // The done-by clock is the user's OWN choice (doneByMin), never inferred from
+  // a row: the engine's overflow chain reseeds the first overflow block's
+  // startAt to max(latestEnd, deadline, nowMs) so it can never land in the
+  // past, which means that row's clock stops being the deadline once "now" has
+  // passed it — reading it as the boundary would show the current time
+  // labelled "DONE BY". doneByMin is a minute-of-day, so it's anchored to
+  // today's local midnight the same way DoneByChip turns it into a clock.
+  // The furthest overflow end is still read off the rows — that one IS the
+  // real finish the sentence offers to push to, and reading it from the
+  // rendered list (not the plan) is what makes it follow an optimistic drop
+  // in the same frame.
   // The exact array handed to the list this render, boundary row included: the
   // reorder event's from/to index into THIS, not into the plan timeline.
   const listDataRef = useRef<TimelineListRow[]>([]);
 
   const rows = displayTimeline ?? [];
   const boundaryIndex = firstOverflowIndex(rows);
-  const doneByMs = rows[boundaryIndex]?.startAt ?? null;
+  const doneByMs =
+    hasFinishTarget && doneByMin !== null
+      ? localMidnight(selectedDate) + doneByMin * 60_000
+      : null;
   const overrunFinishMs = rows.reduce(
     (latest, item) => (item.kind === 'overflow' ? Math.max(latest, item.endAt) : latest),
     0,
@@ -820,12 +830,16 @@ export function DayTimeline({ hideHeader = false }: DayTimelineProps = {}) {
 
   return (
     <View style={containerStyle}>
-      {/* Header: start-by clock + done-by chip */}
+      {/* Header: start-by/starting clock + done-by chip. A 'start'-anchored plan's
+          clock is a derived first-block start, not a deadline — worded "Starting"
+          to match, never "Start by" (see (modals)/plan.tsx's footer, worded the
+          same way). */}
       {!hideHeader ? (
         <View style={headerStyle}>
           {'startBy' in plan.verdict && plan.verdict.startBy ? (
             <AppText style={startByStyle}>
-              Start by {formatClock(plan.verdict.startBy)}
+              {planAnchor === 'start' ? 'Starting' : 'Start by'}{' '}
+              {formatClock(plan.verdict.startBy)}
             </AppText>
           ) : (
             <View />

@@ -14,17 +14,30 @@ import Animated, { useAnimatedStyle, useSharedValue, withTiming } from 'react-na
 import { Ionicons } from '@expo/vector-icons';
 import { haptics } from '@/src/lib/haptics';
 import { useTheme } from '@/src/theme/useTheme';
+import type { PlanAnchorSide } from '@/src/stores/dayTasksStore';
 
 interface PlanButtonProps {
   /** Whether a plan currently exists for the selected day. */
   hasPlan: boolean;
   /** Start-by clock in 24-hour form (e.g. "15:00"), or null when unplanned. */
   startByClock: string | null;
+  /**
+   * Which end of the day is fixed. A 'start' plan's clock is a derived first-
+   * block start, not a deadline — the a11y label reads "Starting" for it, never
+   * "Start by" (that word implies a deadline the user set). Defaults to
+   * 'finish', the historical behaviour, so existing callers are unaffected.
+   */
+  planAnchor?: PlanAnchorSide;
   /** Planned → reopen the plan sheet. Unplanned → handlePlanMyDay (Pro-gated). */
   onPress: () => void;
 }
 
-export function PlanButton({ hasPlan, startByClock, onPress }: PlanButtonProps) {
+export function PlanButton({
+  hasPlan,
+  startByClock,
+  planAnchor = 'finish',
+  onPress,
+}: PlanButtonProps) {
   const t = useTheme();
   const scale = useSharedValue(1);
   const aStyle = useAnimatedStyle(() => ({ transform: [{ scale: scale.get() }] }));
@@ -44,7 +57,8 @@ export function PlanButton({ hasPlan, startByClock, onPress }: PlanButtonProps) 
 
   const active = hasPlan && startByClock != null;
   const label = active ? startByClock : 'Plan';
-  const a11yLabel = active ? `Plan. Start by ${startByClock}. Tap to open.` : 'Plan my day';
+  const startWord = planAnchor === 'start' ? 'Starting' : 'Start by';
+  const a11yLabel = active ? `Plan. ${startWord} ${startByClock}. Tap to open.` : 'Plan my day';
 
   const pillStyle: ViewStyle = {
     flexDirection: 'row',

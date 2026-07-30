@@ -21,4 +21,37 @@ describe('PlanStrip', () => {
     fireEvent.press(screen.getByTestId('plan-strip'));
     expect(onPress).toHaveBeenCalledTimes(1);
   });
+
+  // Regression (Finding 3, 2026-07-30): a forward (start-anchored) plan's clock
+  // is a derived first-block start, not a deadline — the strip must never
+  // call it "Start by" in that case, in either the visible text or the a11y label.
+  it('words the line "Starting" when the plan is anchored to the start', () => {
+    render(
+      <PlanStrip
+        startByClock="12:35pm"
+        doneByClock={null}
+        reminderOn
+        planAnchor="start"
+        onPress={() => {}}
+      />,
+    );
+    expect(screen.getByText('Starting 12:35pm')).toBeOnTheScreen();
+    expect(screen.queryByText('Start by 12:35pm')).toBeNull();
+    expect(
+      screen.getByLabelText(/^Today's plan\. Starting 12:35pm\. Reminder on\./),
+    ).toBeOnTheScreen();
+  });
+
+  it('keeps the line "Start by" when the plan is anchored to the finish', () => {
+    render(
+      <PlanStrip
+        startByClock="12:35pm"
+        doneByClock={null}
+        reminderOn
+        planAnchor="finish"
+        onPress={() => {}}
+      />,
+    );
+    expect(screen.getByText('Start by 12:35pm')).toBeOnTheScreen();
+  });
 });

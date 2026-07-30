@@ -40,8 +40,13 @@ import {
 
 const MS_PER_MIN = 60_000;
 
-/** Local midnight (epoch ms) for a 'YYYY-MM-DD' key. */
-function localMidnight(dayKey: string): number {
+/**
+ * Local midnight (epoch ms) for a 'YYYY-MM-DD' key. Exported so any surface
+ * that needs to turn a minute-of-day value (like `doneByMin`) into a real
+ * clock uses the SAME day basis this hook does, instead of drifting to
+ * `new Date()`'s actual today (see DayTimeline's done-by boundary).
+ */
+export function localMidnight(dayKey: string): number {
   const [y, m, d] = dayKey.split('-').map(Number) as [number, number, number];
   return new Date(y, m - 1, d, 0, 0, 0, 0).getTime();
 }
