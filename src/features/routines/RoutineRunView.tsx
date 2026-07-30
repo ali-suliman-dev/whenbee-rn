@@ -8,7 +8,7 @@ import { AppText } from '@/src/components/AppText';
 import { AppButton } from '@/src/components/AppButton';
 import { PlanRail } from '@/src/features/planner/PlanRail';
 import type { RailNodeState } from '@/src/features/planner/RailNode';
-import { formatMmSs } from '@/src/lib/time';
+import { formatMmSs, fmtHm } from '@/src/lib/time';
 import { stepHonestMinutes, routineHonestTotal, seededPriorFor } from '@/src/engine';
 import { useRoutinesStore, type RunStepStatus } from '@/src/stores/routinesStore';
 import { useCalibrationStore } from '@/src/stores/calibrationStore';
@@ -296,7 +296,7 @@ function StepCard({
       <AppText style={titleStyle} numberOfLines={1}>{label}</AppText>
       <AppText style={catStyle} numberOfLines={1}>
         {category}
-        {status === 'done' && actualMin !== undefined ? ` · ${actualMin}m` : ''}
+        {status === 'done' && actualMin !== undefined ? ` · ${fmtHm(actualMin)}` : ''}
         {status === 'skipped' ? ' · skipped' : ''}
       </AppText>
       {isNow ? (
@@ -363,8 +363,8 @@ function RunRecap({
   // either way — amber accent only, never red. (Spec §10.)
   const ranLong = actualMin > honestMin;
   const text = ranLong
-    ? `${name} took ${actualMin} min this time. I'll update the start-by so it's more accurate next week.`
-    : `${name} done in ${actualMin} min — right on track. I'll keep that in mind for next time.`;
+    ? `${name} took ${fmtHm(actualMin)} this time. I'll update the start-by so it's more accurate next week.`
+    : `${name} done in ${fmtHm(actualMin)} — right on track. I'll keep that in mind for next time.`;
 
   return (
     <View style={card}>

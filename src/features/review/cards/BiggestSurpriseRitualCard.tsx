@@ -5,6 +5,7 @@ import { Card } from '@/src/components/Card';
 import { useTheme } from '@/src/theme/useTheme';
 import { type } from '@/src/theme/typography';
 import type { ReviewBiggestSurprise, ConfidenceBand } from '@/src/domain/types';
+import { fmtHm } from '@/src/lib/time';
 
 // ──────────────────────────────────────────────────────────────────────────────
 // BiggestSurpriseRitualCard — a ritual-aware version of the Patterns
@@ -272,7 +273,7 @@ export function BiggestSurpriseRitualCard({ surprise, band, loggedCount }: Props
           </Text>
           {' 80% of the time — it came in at '}
           <Text style={styles.descAmber}>{surprise.actualMin}m</Text>
-          {`, past your ${surprise.estimateMin}m guess`}
+          {`, past your ${fmtHm(surprise.estimateMin)} guess`}
           {insideRange ? ' but inside your range.' : ', beyond your usual range.'}
         </Text>
 

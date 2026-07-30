@@ -12,6 +12,7 @@ import { AppText } from '@/src/components/AppText';
 import { haptics } from '@/src/lib/haptics';
 import { useTheme } from '@/src/theme/useTheme';
 import { type } from '@/src/theme/typography';
+import { fmtHm } from '@/src/lib/time';
 
 // ──────────────────────────────────────────────────────────────────────────────
 // PaceLabel — the no-guilt pace pill pinned above the controls.
@@ -115,7 +116,7 @@ export function PaceLabel({
   };
 
   let copy: string;
-  if (isOver) copy = overMin > 0 ? `${overMin}m over your guess — now you know` : 'Past your guess — now you know';
+  if (isOver) copy = overMin > 0 ? `${fmtHm(overMin)} over your guess — now you know` : 'Past your guess — now you know';
   else if (phase === 'closing') copy = 'Almost at your guess';
   else copy = 'You’ve got time';
 

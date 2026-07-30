@@ -7,7 +7,7 @@ import { AppButton } from '@/src/components/AppButton';
 import { useTheme } from '@/src/theme/useTheme';
 import { type } from '@/src/theme/typography';
 import { haptics } from '@/src/lib/haptics';
-import { formatClock } from '@/src/lib/time';
+import { formatClock, fmtHm } from '@/src/lib/time';
 import { FinishTimeWheel } from '@/src/features/planner/FinishTimeWheel';
 import { buildForgotPresets } from '@/src/features/timer/forgotPresets';
 
@@ -75,13 +75,13 @@ export function ForgotStopSheet({
             <>
               <AppText style={heading}>When did you actually stop?</AppText>
               <AppText style={body}>
-                {`The timer kept running past your finish. Pick when you really stopped — I’ll log that, not the full ${Math.floor(elapsedMin)}m.`}
+                {`The timer kept running past your finish. Pick when you really stopped — I’ll log that, not the full ${fmtHm(elapsedMin)}.`}
               </AppText>
               <View style={{ gap: t.space[2.5] }}>
                 {presets.map((p) => (
                   <AppButton
                     key={p.offsetMin}
-                    label={`~${p.offsetMin} min ago  ·  ${p.actualMin}m`}
+                    label={`~${p.offsetMin} min ago  ·  ${fmtHm(p.actualMin)}`}
                     variant="amber"
                     size="md"
                     fullWidth
@@ -129,7 +129,7 @@ export function ForgotStopSheet({
                 />
               </View>
               <AppButton
-                label={`Log ${formatClock(clampedFinishMs)}  ·  ${pickedActualMin}m`}
+                label={`Log ${formatClock(clampedFinishMs)}  ·  ${fmtHm(pickedActualMin)}`}
                 variant="amber"
                 size="md"
                 fullWidth

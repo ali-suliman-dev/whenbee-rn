@@ -22,6 +22,7 @@ import Animated, {
   useSharedValue,
   withTiming,
 } from 'react-native-reanimated';
+import { fmtHm } from '@/src/lib/time';
 
 export function RewardReaskRow() {
   const t = useTheme();
@@ -51,7 +52,7 @@ export function RewardReaskRow() {
   const title =
     trigger === 'granted'
       ? 'Add the honest-finish ping?'
-      : `This ran ${overrunMin}m past your guess`;
+      : `This ran ${fmtHm(overrunMin)} past your guess`;
   const sub =
     trigger === 'granted'
       ? 'Notifications are already allowed. One tap.'

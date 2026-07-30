@@ -13,7 +13,7 @@ import { AppButton } from '@/src/components/AppButton';
 import { useTheme } from '@/src/theme/useTheme';
 import { type } from '@/src/theme/typography';
 import { haptics } from '@/src/lib/haptics';
-import { formatClock } from '@/src/lib/time';
+import { formatClock, fmtHm } from '@/src/lib/time';
 import { FinishTimeWheel } from '@/src/features/planner/FinishTimeWheel';
 import { useForgotStore } from '@/src/stores/forgotStore';
 import { useCalibrationStore } from '@/src/stores/calibrationStore';
@@ -185,7 +185,7 @@ export function ForgotCard(): React.JSX.Element | null {
               </AppText>
               <View style={{ gap: t.space[2.5] }}>
                 <AppButton
-                  label={`Log honest finish · ${pending.recoveredActualMin}m`}
+                  label={`Log honest finish · ${fmtHm(pending.recoveredActualMin)}`}
                   variant="amber"
                   size="md"
                   fullWidth
@@ -195,7 +195,7 @@ export function ForgotCard(): React.JSX.Element | null {
                   }}
                 />
                 <AppButton
-                  label={`Log your first guess · ${pending.guessMin}m`}
+                  label={`Log your first guess · ${fmtHm(pending.guessMin)}`}
                   variant="ghost"
                   size="md"
                   fullWidth
@@ -245,7 +245,7 @@ export function ForgotCard(): React.JSX.Element | null {
                 />
               </View>
               <AppButton
-                label={`Log ${formatClock(clampedFinishMs)} · ${pickedActualMin}m`}
+                label={`Log ${formatClock(clampedFinishMs)} · ${fmtHm(pickedActualMin)}`}
                 variant="amber"
                 size="md"
                 fullWidth

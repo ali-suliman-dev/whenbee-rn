@@ -20,6 +20,7 @@ import Animated, {
   withTiming,
 } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { fmtHm } from '@/src/lib/time';
 
 // ──────────────────────────────────────────────────────────────────────────────
 // Reward (Screen 4) — the dopamine payoff: logging IS the reward. One read path,
@@ -177,9 +178,9 @@ export default function Reward() {
   // Neutral, glanceable delta — replaces the old gray "you guessed…" sentence.
   const deltaLabel =
     r.deltaDirection === 'over'
-      ? `${r.deltaMin} min over your guess`
+      ? `${fmtHm(r.deltaMin)} over your guess`
       : r.deltaDirection === 'under'
-        ? `${r.deltaMin} min under your guess`
+        ? `${fmtHm(r.deltaMin)} under your guess`
         : 'right on your guess';
 
   return (

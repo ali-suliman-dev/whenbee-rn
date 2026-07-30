@@ -10,6 +10,7 @@ import Animated, {
 import { useTheme } from '@/src/theme/useTheme';
 import { type } from '@/src/theme/typography';
 import { AppText } from './AppText';
+import { fmtHm } from '@/src/lib/time';
 
 // ──────────────────────────────────────────────────────────────────────────────
 // OverflowBar — shows guess vs. honest duration as a two-segment track.
@@ -58,10 +59,10 @@ export function OverflowBar({
         }}
       >
         <AppText variant="caption" style={{ color: t.colors.inkSoft }}>
-          {`${guessMin}m`}
+          {fmtHm(guessMin)}
         </AppText>
         <AppText style={[(type.bigNumber as unknown as TextStyle), { color: t.colors.accent }]}>
-          {`${honestMin}m`}
+          {fmtHm(honestMin)}
         </AppText>
       </View>
 
@@ -100,7 +101,7 @@ export function OverflowBar({
             color: t.colors.accent,
           }}
         >
-          {`+${honestMin - guessMin} min reality`}
+          {`+${fmtHm(honestMin - guessMin)} reality`}
         </Animated.Text>
       </View>
 

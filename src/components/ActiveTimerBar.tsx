@@ -6,6 +6,7 @@ import { useTheme } from '@/src/theme/useTheme';
 import { type } from '@/src/theme/typography';
 import { AppText } from './AppText';
 import { useTimerStore } from '@/src/stores/timerStore';
+import { fmtHm } from '@/src/lib/time';
 
 // ──────────────────────────────────────────────────────────────────────────────
 // ActiveTimerBar — a slim persistent pill shown while a timer is running, so a
@@ -112,7 +113,7 @@ export function ActiveTimerBar() {
         {taskLabel || 'Timing now'}
       </AppText>
       <AppText style={elapsedStyle}>{elapsedLabel(elapsedSec)}</AppText>
-      {isOver ? <AppText style={overStyle}>{`+${overMin}m over`}</AppText> : null}
+      {isOver ? <AppText style={overStyle}>{`+${fmtHm(overMin)} over`}</AppText> : null}
       <Ionicons name="chevron-forward" size={t.iconSize.sm} color={isOver ? t.colors.accentEdge : t.colors.inkSoft} />
     </Pressable>
   );
