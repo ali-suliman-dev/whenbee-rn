@@ -730,15 +730,34 @@ function buildTimeline(
     });
   }
 
-  // Add intra-window breathers: a breather exists between two adjacent tasks
-  // that are placed in the same window.
+  // Add intra-window breathers: a breather exists between two tasks that
+  // are ACTUALLY clock-adjacent within the same window — not merely
+  // queue-adjacent. Gap-fill (pass 2) and the pull-back pass (pass 3) place
+  // tasks by where they fit, not by queue order, so a task can land right
+  // next to another task that is nowhere near it in the queue (e.g. the
+  // queue's middle task jumps to a different window, leaving two distant
+  // tasks clock-adjacent in the window it left). The fill's cursor
+  // arithmetic already reserved the breather for that actual placement —
+  // grouping by window and sorting by real start time is what finds it,
+  // instead of missing it as a silent, unexplained hole in the timeline.
   if (breatherMs > 0) {
-    for (let i = 0; i < effectives.length - 1; i++) {
-      const pCur = placed[i];
-      const pNext = placed[i + 1];
-      if (!pCur || !pNext) continue;
-      if (pCur.windowIdx === pNext.windowIdx) {
-        // Breather fills the gap between task[i].endAt and task[i+1].startAt.
+    const byWindow = new Map<number, number[]>();
+    for (let i = 0; i < effectives.length; i++) {
+      const p = placed[i];
+      if (!p) continue;
+      const occupants = byWindow.get(p.windowIdx) ?? [];
+      occupants.push(i);
+      byWindow.set(p.windowIdx, occupants);
+    }
+
+    for (const occupants of byWindow.values()) {
+      occupants.sort((a, b) => placed[a]!.startAt - placed[b]!.startAt);
+      for (let k = 0; k < occupants.length - 1; k++) {
+        const i = occupants[k]!;
+        const pCur = placed[i]!;
+        const pNext = placed[occupants[k + 1]!]!;
+        // Breather fills the gap between the clock-earlier task's endAt and
+        // the clock-later task's startAt.
         const gapStart = pCur.endAt;
         const gapEnd = pNext.startAt;
         if (gapEnd > gapStart) {
@@ -835,20 +854,29 @@ function overflowSlot(
   return 0;
 }
 
-/** Compute total effective minutes including intra-window breathers. */
+/**
+ * Compute total effective minutes including intra-window breathers.
+ *
+ * Counted by ACTUAL occupancy per window (N occupants → N-1 reserved
+ * breathers), not by queue-adjacent pairs: gap-fill and the pull-back pass
+ * can place queue-distant tasks next to each other in the same window, and
+ * each one still reserved its breather in the fill's cursor arithmetic — a
+ * queue-adjacency count silently drops those minutes from the total.
+ */
 function computeTotalMin(
   effectives: readonly EffectiveTask[],
   placed: PlacedTask[],
   breatherMin: number,
 ): number {
   const taskMin = effectives.reduce((sum, e) => sum + e.effectiveMin, 0);
+  const occupantsPerWindow = new Map<number, number>();
+  for (const p of placed) {
+    if (!p) continue;
+    occupantsPerWindow.set(p.windowIdx, (occupantsPerWindow.get(p.windowIdx) ?? 0) + 1);
+  }
   let breatherCount = 0;
-  for (let i = 0; i < effectives.length - 1; i++) {
-    const pCur = placed[i];
-    const pNext = placed[i + 1];
-    if (pCur && pNext && pCur.windowIdx === pNext.windowIdx) {
-      breatherCount += 1;
-    }
+  for (const count of occupantsPerWindow.values()) {
+    if (count > 1) breatherCount += count - 1;
   }
   return taskMin + breatherCount * breatherMin;
 }

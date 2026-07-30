@@ -1121,3 +1121,71 @@ describe('Case 24: Backward fill recomputes the breather after a window jump', (
     expect(breathers[0]).toMatchObject({ startAt: at(155), endAt: at(170) });
   });
 });
+
+// ---------------------------------------------------------------------------
+// Case 25: A gap-filled task can land next to a QUEUE-DISTANT neighbour in the
+// same window. `buildTimeline`'s breather rows and `computeTotalMin` used to
+// only look at queue-adjacent pairs (effectives[i], effectives[i+1]) sharing a
+// window — but pass 2 (gap-fill) and pass 3 (pull-back) both place tasks by
+// actual clock position, not queue order, so a breather the fill genuinely
+// reserved between two clock-adjacent-but-queue-distant tasks rendered as an
+// unexplained hole with no row, and totalMin silently dropped those minutes.
+// (Finding 2 of the 2026-07-30 final review.)
+// ---------------------------------------------------------------------------
+describe('Case 25: Breather rows and totalMin follow ACTUAL placement order, not queue order', () => {
+  it('forward: a gap-filled task lands between two queue-distant occupants of the same window — the reserved gap gets a row', () => {
+    // Windows [0,120] and [130,370] (a 10min meeting at [120,130]).
+    // a(90) placed [0,90] in window0 (pass 1). b(240) jumps to window1,
+    // exactly filling it ([130,370]). c(20) gap-fills into window0's
+    // leftover, landing at [100,120] — right after 'a', but 'a' and 'c' are
+    // NOT queue-adjacent (b sits between them in the queue). The fill still
+    // reserved the 10min breather between them (cursor arithmetic), so the
+    // rendered timeline has a real, silent gap from 90 to 100 without this fix.
+    const result = planDayAroundAnchors({
+      deadline: at(370),
+      nowMs: at(-1000),
+      dayStartMs: DAY_START,
+      tasks: [task('a', 90), task('b', 240), task('c', 20)],
+      anchors: [anchor('mtg', 120, 130)],
+      bufferMin: 0,
+      breatherMin: 10,
+      fill: { direction: 'forward', startAtMs: at(0) },
+    });
+
+    const breathers = result.timeline.filter((i) => i.kind === 'breather');
+    // One breather between 'a' and 'c' (same window, clock-adjacent). None
+    // between 'c' and 'b', or 'a'/'b' — those are window jumps.
+    expect(breathers).toHaveLength(1);
+    expect(breathers[0]).toMatchObject({ startAt: at(90), endAt: at(100) });
+
+    // totalMin must include the reserved breather: 90 + 240 + 20 + 10 = 360.
+    expect(result.totalMin).toBe(360);
+  });
+
+  it('backward: a gap-filled task lands between two queue-distant occupants of the same window — the reserved gap gets a row', () => {
+    // Mirror of Case 21's backward gap-fill: windows [0,240] and [250,370]
+    // (a 10min meeting at [240,250]). Queue [c(20), b(240), a(90)]. 'a' (last
+    // in queue, tried first) lands at the tail of window1: [280,370]. 'b'
+    // jumps to window0, exactly filling it: [0,240]. 'c' (first in queue,
+    // tried last) gap-fills into window1's leftover before 'a': [250,270] —
+    // 'c' and 'a' share window1 but are NOT queue-adjacent ('b' sits between
+    // them), and the reserved 10min gap needs a row exactly like a
+    // queue-adjacent pair would get.
+    const result = planDayAroundAnchors({
+      deadline: at(370),
+      nowMs: at(0),
+      dayStartMs: DAY_START,
+      tasks: [task('c', 20), task('b', 240), task('a', 90)],
+      anchors: [anchor('mtg', 240, 250)],
+      bufferMin: 0,
+      breatherMin: 10,
+      fill: { direction: 'backward' },
+    });
+
+    const breathers = result.timeline.filter((i) => i.kind === 'breather');
+    expect(breathers).toHaveLength(1);
+    expect(breathers[0]).toMatchObject({ startAt: at(270), endAt: at(280) });
+
+    expect(result.totalMin).toBe(360);
+  });
+});
