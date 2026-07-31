@@ -8,6 +8,7 @@
 // needs 'declined'). Opacity-only entrance; reduced-motion → final state.
 
 import { AppButton } from '@/src/components/AppButton';
+import { formatDuration } from '@/src/i18n/formatDuration';
 import { useTranslation } from 'react-i18next';
 import { Card } from '@/src/components/Card';
 import { useNotifReask } from '@/src/features/notifications/useNotifReask';
@@ -23,11 +24,11 @@ import Animated, {
   useSharedValue,
   withTiming,
 } from 'react-native-reanimated';
-import { fmtHm } from '@/src/lib/time';
 
 export function RewardReaskRow() {
   const t = useTheme();
   const { t: trw } = useTranslation('reward');
+  const { t: translate } = useTranslation();
   const guessMin = useRewardStore((s) => s.guessMin);
   const actualMin = useRewardStore((s) => s.actualMin);
   const { show, trigger, overrunMin, onAccept, onDismiss } = useNotifReask({
@@ -54,7 +55,7 @@ export function RewardReaskRow() {
   const title =
     trigger === 'granted'
       ? 'Add the honest-finish ping?'
-      : `This ran ${fmtHm(overrunMin)} past your guess`;
+      : trw('reask.overran', { duration: formatDuration(overrunMin, translate) });
   const sub =
     trigger === 'granted'
       ? 'Notifications are already allowed. One tap.'

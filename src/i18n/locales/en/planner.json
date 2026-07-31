@@ -9,7 +9,10 @@
       "beAt": "be at"
     },
     "hourA11y": "Hour",
-    "minuteA11y": "Minute"
+    "minuteA11y": "Minute",
+    "editA11y": "Edit time, currently {{clock}}",
+    "hintWheel": "Show the time wheel",
+    "hintType": "Type an exact time"
   },
   "focusCurve": {
     "a11y": "Focus window curve",
@@ -30,7 +33,10 @@
     "footer": "Whenbee plans your day around this stretch.",
     "checkAgainstTimers": "I'll check that against your timers.",
     "editWindowA11y": "Edit focus window",
-    "editWindow": "Edit window"
+    "editWindow": "Edit window",
+    "earlyRead": "An early read from {{count}} sessions — keep timing and I'll sharpen it as your hours cluster.",
+    "heldRead": "Your last {{count}} sessions agree, and it has held for {{weeks}} weeks.",
+    "whyWithNarrative": "{{narrative}}{{contrast}}. Your last {{count}} sessions agree, and it has held for {{weeks}} weeks."
   },
   "planSheet": {
     "heading": "Today's plan",
@@ -40,6 +46,8 @@
     "clearA11y": "Clear plan",
     "startAt": "Start at",
     "finishBy": "Finish by",
-    "now": "Now"
+    "now": "Now",
+    "nudgeA11yOn": "Start nudge on{{suffix}}. Tap to turn off.",
+    "nudgeA11yOff": "Start nudge off. Tap to turn on."
   }
 }

@@ -212,25 +212,25 @@ export function ProWelcome({ plan, purchasedAt }: { plan: string; purchasedAt: s
     switch (reminder) {
       case 'scheduled':
         return (
-          <Row icon="notifications-outline" strong={`Reminder set for ${reminderDay}.`} rest="We'll nudge you before the trial ends." />
+          <Row icon="notifications-outline" strong={tr('proWelcome.reminderSet', { day: reminderDay })} rest={tr('proWelcome.reminderRest')} />
         );
       case 'ask':
         return (
           <Row
             icon="notifications-outline"
-            strong="Get the Day-5 reminder."
-            rest="One nudge before the trial ends, nothing else."
+            strong={tr('proWelcome.askStrong')}
+            rest={tr('proWelcome.askRest')}
             onPress={() => void onAskReminder()}
           />
         );
       case 'denied':
       case 'unavailable':
         return (
-          <Row icon="notifications-outline" strong="Reminder needs notifications." rest="You can still cancel anytime in Settings." />
+          <Row icon="notifications-outline" strong={tr('proWelcome.deniedStrong')} rest={tr('proWelcome.deniedRest')} />
         );
       default:
         return (
-          <Row icon="notifications-outline" strong="Setting up your reminder…" rest={`Trial ends ${chargeDay}.`} />
+          <Row icon="notifications-outline" strong={tr('proWelcome.reminderPending')} rest={tr('proWelcome.trialEnds', { day: chargeDay })} />
         );
     }
   })();
@@ -266,9 +266,9 @@ export function ProWelcome({ plan, purchasedAt }: { plan: string; purchasedAt: s
         <Animated.View style={cardAnim}>
           <View style={card}>
             {isSub ? (
-              <Row icon="checkmark" strong="7-day free trial started." rest={`Nothing is charged before ${chargeDay}.`} />
+              <Row icon="checkmark" strong={tr('proWelcome.trialStarted')} rest={tr('proWelcome.nothingCharged', { day: chargeDay })} />
             ) : (
-              <Row icon="checkmark" strong="Pro is yours, forever." rest="One payment, no renewals." />
+              <Row icon="checkmark" strong={tr('proWelcome.lifetimeStrong')} rest={tr('proWelcome.lifetimeRest')} />
             )}
             {reminderRow ? (
               <>

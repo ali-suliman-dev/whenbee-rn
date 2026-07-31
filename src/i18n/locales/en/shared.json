@@ -41,7 +41,16 @@
       "honestAboutDelta": "Honest estimate about {{minutes}} minutes, {{delta}} more than your guess",
       "startingSuffix": "{{base}}, starting estimate, sharpens as you log"
     },
-    "youGuessed": "you guessed {{duration}}"
+    "youGuessed": "you guessed {{duration}}",
+    "lastFewPrefix": "Your last few {{category}} tasks landed around ",
+    "a11yGeneric": "Tasks like this usually land around {{value}}. No need to pad your guess — this range does it for you.",
+    "a11yCategory": "Your last few {{category}} tasks usually land around {{value}}. Not a target, just what usually happens.",
+    "similar": "similar",
+    "leadGeneric": "Tasks like this usually land around ",
+    "footerPre": "No need to pad your guess. This range does it for you. Sharpens as you log.",
+    "footerPost": "Not a target, just what usually happens. Keep guessing with your gut.",
+    "spokenRange": "{{low}} to {{high}} minutes",
+    "spokenPoint": "{{count}} minutes"
   },
   "a11y": {
     "addTask": "Add a task",
@@ -56,5 +65,12 @@
   },
   "timeField": {
     "a11y": "Duration in minutes"
+  },
+  "activeTimerBar": {
+    "a11y": "Timing now: {{label}}, {{elapsed}} elapsed",
+    "a11yOver": ", {{count}} minutes over your honest estimate",
+    "a11yTail": ". Tap to reopen.",
+    "aTask": "a task",
+    "timingNow": "Timing now"
   }
 }

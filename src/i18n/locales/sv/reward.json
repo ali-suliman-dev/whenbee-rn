@@ -70,6 +70,7 @@
   },
   "reask": {
     "decline": "Nej tack",
-    "accept": "Slå på"
+    "accept": "Slå på",
+    "overran": "Den drog {{duration}} förbi din gissning"
   }
 }

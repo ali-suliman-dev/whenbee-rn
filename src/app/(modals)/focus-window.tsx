@@ -111,10 +111,15 @@ export default function FocusWindowDetail() {
   // At low confidence the window is a coarse early read — "sessions agree / has
   // held" would overclaim, so say what's actually true and what happens next.
   const why = coarse
-    ? `An early read from ${win.sampleCount} sessions — keep timing and I'll sharpen it as your hours cluster.`
+    ? tr('detail.earlyRead', { count: win.sampleCount })
     : ins
-      ? `${whyNarrative(ins.peakMin)}${contrastClause}. Your last ${win.sampleCount} sessions agree, and it has held for ${weeks} weeks.`
-      : `Your last ${win.sampleCount} sessions agree, and it has held for ${weeks} weeks.`;
+      ? tr('detail.whyWithNarrative', {
+          narrative: whyNarrative(ins.peakMin),
+          contrast: contrastClause,
+          count: win.sampleCount,
+          weeks,
+        })
+      : tr('detail.heldRead', { count: win.sampleCount, weeks });
 
   return (
     <Screen edges={['left', 'right']} horizontalPadding={false}>

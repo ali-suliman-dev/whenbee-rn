@@ -9,7 +9,10 @@
       "beAt": "vara där senast"
     },
     "hourA11y": "Timme",
-    "minuteA11y": "Minut"
+    "minuteA11y": "Minut",
+    "editA11y": "Redigera tid, just nu {{clock}}",
+    "hintWheel": "Visa tidshjulet",
+    "hintType": "Skriv en exakt tid"
   },
   "focusCurve": {
     "a11y": "Fokusfönsterkurva",
@@ -30,7 +33,10 @@
     "footer": "Whenbee planerar din dag runt den här stunden.",
     "checkAgainstTimers": "Jag stämmer av det mot dina timers.",
     "editWindowA11y": "Redigera fokusfönstret",
-    "editWindow": "Redigera fönstret"
+    "editWindow": "Redigera fönstret",
+    "earlyRead": "En tidig avläsning från {{count}} pass — fortsätt tima så skärper jag den när dina timmar samlar sig.",
+    "heldRead": "Dina senaste {{count}} pass är överens, och det har hållit i {{weeks}} veckor.",
+    "whyWithNarrative": "{{narrative}}{{contrast}}. Dina senaste {{count}} pass är överens, och det har hållit i {{weeks}} veckor."
   },
   "planSheet": {
     "heading": "Dagens plan",
@@ -40,6 +46,8 @@
     "clearA11y": "Rensa planen",
     "startAt": "Börja",
     "finishBy": "Klar senast",
-    "now": "Nu"
+    "now": "Nu",
+    "nudgeA11yOn": "Startknuff på{{suffix}}. Tryck för att stänga av.",
+    "nudgeA11yOff": "Startknuff av. Tryck för att slå på."
   }
 }

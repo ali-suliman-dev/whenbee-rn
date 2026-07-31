@@ -170,6 +170,18 @@
   "proWelcome": {
     "sub": "Varje ärligt tal du förtjänat funkar nu överallt där du planerar.",
     "title": "Du är Pro.",
-    "cta": "Visa min ärliga dag"
+    "cta": "Visa min ärliga dag",
+    "reminderSet": "Påminnelse satt till {{day}}.",
+    "reminderRest": "Vi knuffar dig innan provperioden tar slut.",
+    "reminderPending": "Ställer in din påminnelse…",
+    "trialEnds": "Provperioden slutar {{day}}.",
+    "trialStarted": "7 dagars gratis provperiod har börjat.",
+    "nothingCharged": "Inget dras före {{day}}.",
+    "askStrong": "Få påminnelsen dag 5.",
+    "askRest": "En knuff innan provperioden tar slut, inget mer.",
+    "deniedStrong": "Påminnelsen kräver notiser.",
+    "deniedRest": "Du kan fortfarande avsluta när som helst i Inställningar.",
+    "lifetimeStrong": "Pro är ditt, för alltid.",
+    "lifetimeRest": "En betalning, inga förnyelser."
   }
 }

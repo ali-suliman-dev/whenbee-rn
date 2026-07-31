@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Pressable, View, type TextStyle, type ViewStyle } from 'react-native';
 import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
@@ -25,6 +26,7 @@ function elapsedLabel(sec: number): string {
 
 export function ActiveTimerBar() {
   const t = useTheme();
+  const { t: ts } = useTranslation('shared');
   const isRunning = useTimerStore((s) => s.isRunning);
   const startedAt = useTimerStore((s) => s.startedAt);
   const taskLabel = useTimerStore((s) => s.taskLabel);
@@ -103,14 +105,19 @@ export function ActiveTimerBar() {
     <Pressable
       onPress={reopen}
       accessibilityRole="button"
-      accessibilityLabel={`Timing now: ${taskLabel ?? 'a task'}, ${elapsedLabel(elapsedSec)} elapsed${
-        isOver ? `, ${overMin} minutes over your honest estimate` : ''
-      }. Tap to reopen.`}
+      accessibilityLabel={
+        ts('activeTimerBar.a11y', {
+          label: taskLabel ?? ts('activeTimerBar.aTask'),
+          elapsed: elapsedLabel(elapsedSec),
+        }) +
+        (isOver ? ts('activeTimerBar.a11yOver', { count: overMin }) : '') +
+        ts('activeTimerBar.a11yTail')
+      }
       style={bar}
     >
       <View style={dot} />
       <AppText style={labelStyle} numberOfLines={1}>
-        {taskLabel || 'Timing now'}
+        {taskLabel || ts('activeTimerBar.timingNow')}
       </AppText>
       <AppText style={elapsedStyle}>{elapsedLabel(elapsedSec)}</AppText>
       {isOver ? <AppText style={overStyle}>{`+${fmtHm(overMin)} over`}</AppText> : null}

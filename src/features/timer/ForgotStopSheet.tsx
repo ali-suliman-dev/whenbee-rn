@@ -1,3 +1,4 @@
+import { formatDuration } from '@/src/i18n/formatDuration';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { View, Pressable, StyleSheet, type ViewStyle, type TextStyle } from 'react-native';
@@ -39,6 +40,7 @@ export function ForgotStopSheet({
 }: ForgotStopSheetProps): React.JSX.Element {
   const t = useTheme();
   const { t: tr } = useTranslation('timer');
+  const { t: translate } = useTranslation();
   const insets = useSafeAreaInsets();
   const reducedMotion = useReducedMotion();
 
@@ -77,7 +79,9 @@ export function ForgotStopSheet({
             <>
               <AppText style={heading}>{tr('forgotStop.headingStopped')}</AppText>
               <AppText style={body}>
-                {`The timer kept running past your finish. Pick when you really stopped — I’ll log that, not the full ${fmtHm(elapsedMin)}.`}
+                {tr('forgotStop.overranBody', {
+                  duration: formatDuration(elapsedMin, translate),
+                })}
               </AppText>
               <View style={{ gap: t.space[2.5] }}>
                 {presets.map((p) => (

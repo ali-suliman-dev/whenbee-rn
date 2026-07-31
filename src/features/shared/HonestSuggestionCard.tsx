@@ -143,21 +143,21 @@ export function HonestSuggestionCard({
   const valueText =
     showRange && range ? `${range.lowMinutes}–${range.highMinutes}${NBSP}min` : pointValue;
 
-  const categoryLabel = categoryName?.toLowerCase() ?? 'similar';
+  const categoryLabel = categoryName?.toLowerCase() ?? tr('honestSuggestionCard.similar');
   const sentenceLead = preEstimate
-    ? 'Tasks like this usually land around '
-    : `Your last few ${categoryLabel} tasks landed around `;
+    ? tr('honestSuggestionCard.leadGeneric')
+    : tr('honestSuggestionCard.lastFewPrefix', { category: categoryLabel });
   const footerText = preEstimate
-    ? 'No need to pad your guess. This range does it for you. Sharpens as you log.'
-    : 'Not a target, just what usually happens. Keep guessing with your gut.';
+    ? tr('honestSuggestionCard.footerPre')
+    : tr('honestSuggestionCard.footerPost');
 
   const spokenValue =
     showRange && range
-      ? `${range.lowMinutes} to ${range.highMinutes} minutes`
-      : `${honestMinutes} minutes`;
+      ? tr('honestSuggestionCard.spokenRange', { low: range.lowMinutes, high: range.highMinutes })
+      : tr('honestSuggestionCard.spokenPoint', { count: honestMinutes });
   const a11yLabel = preEstimate
-    ? `Tasks like this usually land around ${spokenValue}. No need to pad your guess — this range does it for you.`
-    : `Your last few ${categoryLabel} tasks usually land around ${spokenValue}. Not a target, just what usually happens.`;
+    ? tr('honestSuggestionCard.a11yGeneric', { value: spokenValue })
+    : tr('honestSuggestionCard.a11yCategory', { category: categoryLabel, value: spokenValue });
 
   return (
     <View style={card} accessibilityLabel={a11yLabel}>

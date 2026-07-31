@@ -255,9 +255,17 @@
   "timeline": {
     "tomorrowChip": "Tomorrow",
     "overrunSentence": "Past here you run over. Push it to <clock>{{clock}}</clock>, or move a task to tomorrow.",
-    "reorderHint": "Long-press and drag to reorder this task"
+    "reorderHint": "Long-press and drag to reorder this task",
+    "doneBy": "Done by {{clock}}",
+    "setDoneBy": "Set done-by time"
   },
   "planStrip": {
     "doneBy": "done by {{clock}}"
+  },
+  "planReminder": {
+    "on": "Nudge me at {{clock}}",
+    "off": "Remind me to start",
+    "a11yOn": "Start reminder on, {{clock}}. Tap to turn off.",
+    "a11yOff": "Start reminder off. Tap to turn on."
   }
 }

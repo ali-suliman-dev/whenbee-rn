@@ -220,7 +220,10 @@ export function DayRecapCard({ recap, rows }: DayRecapCardProps) {
         onPress={toggle}
         accessibilityRole="button"
         accessibilityState={{ expanded }}
-        accessibilityLabel={`All tasks · ${dayLabel}. ${expanded ? 'Tap to collapse.' : 'Tap to expand.'}`}
+        accessibilityLabel={tr('dayRecap.allTasksA11y', {
+          day: dayLabel,
+          action: expanded ? tr('dayRecap.collapseAction') : tr('dayRecap.expandAction'),
+        })}
         hitSlop={t.size.hitSlop}
         style={disclosure}
       >

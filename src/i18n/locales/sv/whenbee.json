@@ -89,5 +89,10 @@
   "discoveriesRoute": {
     "heading": "Saker du har lärt dig",
     "sub": "{{count}} sanningar Whenbee hittade i din spårning"
+  },
+  "honeycomb": {
+    "a11yRipening_one": "Din honungskaka — nivå {{tier}}, {{count}} logg till {{nextTier}}, {{logs}} loggade",
+    "a11yRipening_other": "Din honungskaka — nivå {{tier}}, {{count}} loggar till {{nextTier}}, {{logs}} loggade",
+    "a11yRipened": "Din honungskaka — nivå {{tier}}, helt mogen, {{logs}} loggade"
   }
 }

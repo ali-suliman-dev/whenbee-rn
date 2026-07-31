@@ -553,9 +553,9 @@ function DoneByChip({
   }, []);
 
   const label = useMemo(() => {
-    if (doneByMin === null) return 'Set done-by time';
-    return `Done by ${formatClock(localMidnightMs + doneByMin * 60_000)}`;
-  }, [doneByMin, localMidnightMs]);
+    if (doneByMin === null) return tr('timeline.setDoneBy');
+    return tr('timeline.doneBy', { clock: formatClock(localMidnightMs + doneByMin * 60_000) });
+  }, [doneByMin, localMidnightMs, tr]);
 
   const chipStyle: ViewStyle = {
     flexDirection: 'row',

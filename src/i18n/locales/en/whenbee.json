@@ -89,5 +89,10 @@
   "discoveriesRoute": {
     "heading": "Things you’ve learned",
     "sub": "{{count}} truths Whenbee found in your tracking"
+  },
+  "honeycomb": {
+    "a11yRipening_one": "Your honeycomb — tier {{tier}}, {{count}} log to {{nextTier}}, {{logs}} logged",
+    "a11yRipening_other": "Your honeycomb — tier {{tier}}, {{count}} logs to {{nextTier}}, {{logs}} logged",
+    "a11yRipened": "Your honeycomb — tier {{tier}}, fully ripened, {{logs}} logged"
   }
 }

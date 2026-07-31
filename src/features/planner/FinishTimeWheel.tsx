@@ -704,8 +704,12 @@ export function FinishTimeWheel({
       {editable ? (
         <Pressable
           accessibilityRole="button"
-          accessibilityLabel={`Edit time, currently ${pad2(curHour)}:${pad2(curMin)}`}
-          accessibilityHint={typing ? 'Show the time wheel' : 'Type an exact time'}
+          accessibilityLabel={tr('finishTimeWheel.editA11y', {
+            clock: `${pad2(curHour)}:${pad2(curMin)}`,
+          })}
+          accessibilityHint={
+            typing ? tr('finishTimeWheel.hintWheel') : tr('finishTimeWheel.hintType')
+          }
           onPress={toggleTyping}
         >
           <View

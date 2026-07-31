@@ -41,7 +41,16 @@
       "honestAboutDelta": "Ärlig uppskattning cirka {{minutes}} minuter, {{delta}} mer än din gissning",
       "startingSuffix": "{{base}}, startuppskattning, blir skarpare när du loggar"
     },
-    "youGuessed": "du gissade {{duration}}"
+    "youGuessed": "du gissade {{duration}}",
+    "lastFewPrefix": "Dina senaste {{category}}-uppgifter landade runt ",
+    "a11yGeneric": "Uppgifter som den här landar oftast runt {{value}}. Du behöver inte lägga på marginal — intervallet gör det åt dig.",
+    "a11yCategory": "Dina senaste {{category}}-uppgifter landar oftast runt {{value}}. Inget mål, bara vad som brukar hända.",
+    "similar": "liknande",
+    "leadGeneric": "Uppgifter som den här landar oftast runt ",
+    "footerPre": "Du behöver inte lägga på marginal. Intervallet gör det åt dig. Det skärps när du loggar.",
+    "footerPost": "Inget mål, bara vad som brukar hända. Fortsätt gissa med magkänslan.",
+    "spokenRange": "{{low}} till {{high}} minuter",
+    "spokenPoint": "{{count}} minuter"
   },
   "a11y": {
     "addTask": "Lägg till en uppgift",
@@ -56,5 +65,12 @@
   },
   "timeField": {
     "a11y": "Längd i minuter"
+  },
+  "activeTimerBar": {
+    "a11y": "Timar nu: {{label}}, {{elapsed}} har gått",
+    "a11yOver": ", {{count}} minuter över din ärliga uppskattning",
+    "a11yTail": ". Tryck för att öppna igen.",
+    "aTask": "en uppgift",
+    "timingNow": "Timar nu"
   }
 }

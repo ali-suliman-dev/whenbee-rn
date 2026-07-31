@@ -255,9 +255,17 @@
   "timeline": {
     "tomorrowChip": "Imorgon",
     "overrunSentence": "Efter det här drar du över. Flytta fram till <clock>{{clock}}</clock>, eller skjut en uppgift till imorgon.",
-    "reorderHint": "Håll in och dra för att flytta uppgiften"
+    "reorderHint": "Håll in och dra för att flytta uppgiften",
+    "doneBy": "Klar {{clock}}",
+    "setDoneBy": "Ange klar-senast-tid"
   },
   "planStrip": {
     "doneBy": "klar {{clock}}"
+  },
+  "planReminder": {
+    "on": "Knuffa mig {{clock}}",
+    "off": "Påminn mig att börja",
+    "a11yOn": "Startpåminnelse på, {{clock}}. Tryck för att stänga av.",
+    "a11yOff": "Startpåminnelse av. Tryck för att slå på."
   }
 }

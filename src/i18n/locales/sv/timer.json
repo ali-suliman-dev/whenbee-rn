@@ -55,10 +55,18 @@
     "notSureSkipA11y": "Vet inte än — hoppa över loggningen av passet",
     "notSureStopA11y": "Vet inte än — stoppa utan en tränad logg",
     "pickExact": "Välj exakt tid",
-    "stillGoing": "Håller på än"
+    "stillGoing": "Håller på än",
+    "overranBody": "Timern fortsatte förbi din sluttid. Välj när du faktiskt slutade — jag loggar det, inte hela {{duration}}."
   },
   "ledger": {
     "yourGuess": "Din gissning",
     "honest": "Ärligt"
+  },
+  "forgotCard": {
+    "heading": "Avslutade ”{{label}}” medan du var borta",
+    "logHonest": "Logga ärlig sluttid · {{duration}}",
+    "logGuess": "Logga din första gissning · {{duration}}",
+    "bodySeen": "Den drog förbi din ärliga sluttid, så jag pausade den. När slutade du egentligen?",
+    "bodyFirst": "Den drog långt förbi din uppskattning, så jag pausade den. När slutade du egentligen? Du kan ändra när jag kliver in i Inställningar."
   }
 }

@@ -70,6 +70,7 @@
   },
   "reask": {
     "decline": "No thanks",
-    "accept": "Turn on"
+    "accept": "Turn on",
+    "overran": "This ran {{duration}} past your guess"
   }
 }

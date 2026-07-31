@@ -338,8 +338,10 @@ export default function PlanRoute() {
                 onValueChange={(v) => void toggleNudge(v)}
                 accessibilityLabel={
                   nudgeEnabled
-                    ? `Start nudge on${startByLabel ? `, ${startByLabel}` : ''}. Tap to turn off.`
-                    : 'Start nudge off. Tap to turn on.'
+                    ? tr('planSheet.nudgeA11yOn', {
+                        suffix: startByLabel ? `, ${startByLabel}` : '',
+                      })
+                    : tr('planSheet.nudgeA11yOff')
                 }
               />
             </View>

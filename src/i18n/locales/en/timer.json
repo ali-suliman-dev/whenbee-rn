@@ -55,10 +55,18 @@
     "notSureSkipA11y": "Not sure yet — skip logging this session",
     "notSureStopA11y": "Not sure yet — stop without a trained log",
     "pickExact": "Pick the exact time",
-    "stillGoing": "Still going"
+    "stillGoing": "Still going",
+    "overranBody": "The timer kept running past your finish. Pick when you really stopped — I’ll log that, not the full {{duration}}."
   },
   "ledger": {
     "yourGuess": "Your guess",
     "honest": "Honest"
+  },
+  "forgotCard": {
+    "heading": "Wrapped up \"{{label}}\" while you were away",
+    "logHonest": "Log honest finish · {{duration}}",
+    "logGuess": "Log your first guess · {{duration}}",
+    "bodySeen": "It ran past your honest finish, so I paused it. When did you actually stop?",
+    "bodyFirst": "It ran well past your estimate, so I paused it. When did you actually stop? You can change when I step in from Settings."
   }
 }

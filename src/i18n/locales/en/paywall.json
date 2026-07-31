@@ -170,6 +170,18 @@
   "proWelcome": {
     "sub": "Every honest number you earned now works everywhere you plan.",
     "title": "You're Pro.",
-    "cta": "See my honest day"
+    "cta": "See my honest day",
+    "reminderSet": "Reminder set for {{day}}.",
+    "reminderRest": "We'll nudge you before the trial ends.",
+    "reminderPending": "Setting up your reminder…",
+    "trialEnds": "Trial ends {{day}}.",
+    "trialStarted": "7-day free trial started.",
+    "nothingCharged": "Nothing is charged before {{day}}.",
+    "askStrong": "Get the Day-5 reminder.",
+    "askRest": "One nudge before the trial ends, nothing else.",
+    "deniedStrong": "Reminder needs notifications.",
+    "deniedRest": "You can still cancel anytime in Settings.",
+    "lifetimeStrong": "Pro is yours, forever.",
+    "lifetimeRest": "One payment, no renewals."
   }
 }
