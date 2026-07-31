@@ -71,3 +71,43 @@ describe('resolvePurchasesModule', () => {
     expect(m.isStub).toBe(false);
   });
 });
+
+describe('native purchasePackage timing', () => {
+  const pkg = { id: '$rc_monthly', duration: 'monthly' as const, priceString: '59 kr', productId: 'wb_pro_monthly' };
+  const offerings = {
+    current: { identifier: 'default', availablePackages: [{ identifier: '$rc_monthly' }] },
+  };
+  const proInfo = { entitlements: { active: { 'Whenbee Pro': {} } } };
+
+  beforeEach(() => jest.useFakeTimers());
+  afterEach(() => jest.useRealTimers());
+
+  it('rejects when the pre-sheet offering lookup hangs', async () => {
+    const native = {
+      getOfferings: () => new Promise(() => {}),
+      purchasePackage: jest.fn(),
+    };
+    const m = resolvePurchasesModule(false, () => native as never);
+
+    const attempt = m.purchasePackage(pkg);
+    const assertion = expect(attempt).rejects.toThrow(/offering/i);
+    await jest.advanceTimersByTimeAsync(20_000);
+    await assertion;
+    expect(native.purchasePackage).not.toHaveBeenCalled();
+  });
+
+  // The store sheet is user-paced: reading the plan, picking a card, or a 3DS
+  // step can take minutes. It must never be timed out into a false error.
+  it('resolves a slow store sheet without reporting an error', async () => {
+    const native = {
+      getOfferings: async () => offerings,
+      purchasePackage: () =>
+        new Promise((resolve) => setTimeout(() => resolve({ customerInfo: proInfo }), 120_000)),
+    };
+    const m = resolvePurchasesModule(false, () => native as never);
+
+    const attempt = m.purchasePackage(pkg);
+    await jest.advanceTimersByTimeAsync(120_000);
+    await expect(attempt).resolves.toEqual({ isPro: true });
+  });
+});

@@ -223,7 +223,9 @@
     "taskNameLabel": "Uppgiftsnamn (valfritt)",
     "categoryLabel": "Kategori",
     "savingHint": "Att spara lär appen ditt ärliga tempo.",
-    "skipForNow": "Hoppa över för nu"
+    "skipForNow": "Hoppa över för nu",
+    "namePlaceholder": "Namnge den (valfritt)",
+    "nameA11y": "Uppgiftens namn"
   },
   "quickTaskChips": {
     "tapToStartAgain": "Tryck för att starta igen"

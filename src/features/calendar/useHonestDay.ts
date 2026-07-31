@@ -1,4 +1,6 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
+import { AppState } from 'react-native';
+import { useFocusEffect } from 'expo-router';
 import { getCalendar, type CalendarAdjustment, type CalendarEvent } from '@/src/services/calendar';
 import { analytics } from '@/src/services/analytics';
 import { GLOBAL_PRIOR } from '@/src/engine';
@@ -12,6 +14,11 @@ import { buildHonestDay, type HonestDayResult } from './buildHonestDay';
 // from the live per-category multipliers. NOTHING writes to the calendar here.
 // The single write is `apply()`, which the confirm button calls; it fires
 // `calendar_padded` only after a successful write.
+//
+// The read repeats on sheet focus, on app foreground, and on `refresh()`
+// (pull-to-refresh) — the OS calendar is edited outside Whenbee, so a single
+// mount read goes stale as soon as the user leaves. Every one of those paths is
+// read-only; the write stays behind `apply()` alone.
 // ──────────────────────────────────────────────────────────────────────────────
 
 /** Realistic end of a working day (local hour). Past this, the day "won't fit". */
@@ -24,6 +31,10 @@ export interface UseHonestDay {
   result: HonestDayResult | null;
   /** Writes the confirmed honest times. Returns the number of events written. */
   apply: () => Promise<number>;
+  /** Re-reads today's events and re-anchors to the current clock. Never writes. */
+  refresh: () => Promise<void>;
+  /** True while a user-initiated refresh is in flight (drives RefreshControl). */
+  refreshing: boolean;
 }
 
 /** Epoch ms for REALISTIC_DAY_END_HOUR on the day containing `nowMs`. */
@@ -42,36 +53,87 @@ function adjustmentsFrom(result: HonestDayResult): CalendarAdjustment[] {
   }));
 }
 
+/**
+ * @param nowMs Anchor for "today" at first render. The default `Date.now()` is
+ *   pinned once (the `usePatterns` nowRef pattern) — threading a fresh clock
+ *   through the effect deps would re-read the calendar on every render. A reload
+ *   re-anchors to the real clock so a sheet left open overnight stays honest.
+ */
 export function useHonestDay(nowMs: number = Date.now()): UseHonestDay {
   const statsByCategory = useCalibrationStore((s) => s.statsByCategory);
   const [status, setStatus] = useState<HonestDayStatus>('loading');
   const [events, setEvents] = useState<CalendarEvent[]>([]);
+  const [refreshing, setRefreshing] = useState(false);
+
+  const anchorMsRef = useRef(nowMs);
+  // Monotonic token — a read commits only if it is still the newest one started.
+  const fetchIdRef = useRef(0);
+
+  const readEvents = useCallback(async (atMs: number): Promise<void> => {
+    const fetchId = ++fetchIdRef.current;
+    const calendar = getCalendar();
+    const granted = await calendar.requestReadAccess();
+    if (fetchId !== fetchIdRef.current) return;
+    if (!granted) {
+      setStatus('denied');
+      return;
+    }
+    const todays = await calendar.getTodaysEvents(atMs);
+    if (fetchId !== fetchIdRef.current) return;
+    setEvents(todays);
+    setStatus(todays.length === 0 ? 'empty' : 'ready');
+  }, []);
+
+  /** Re-anchor to the current clock and read again. The shared reload path. */
+  const reload = useCallback(async (): Promise<void> => {
+    anchorMsRef.current = Date.now();
+    await readEvents(anchorMsRef.current);
+  }, [readEvents]);
 
   useEffect(() => {
-    let active = true;
-    (async () => {
-      const calendar = getCalendar();
-      const granted = await calendar.requestReadAccess();
-      if (!active) return;
-      if (!granted) {
-        setStatus('denied');
-        return;
-      }
-      const todays = await calendar.getTodaysEvents(nowMs);
-      if (!active) return;
-      setEvents(todays);
-      setStatus(todays.length === 0 ? 'empty' : 'ready');
-    })();
+    void readEvents(anchorMsRef.current);
+    // Invalidate any in-flight read so a late resolve can't clobber newer state.
     return () => {
-      active = false;
+      fetchIdRef.current += 1;
     };
-  }, [nowMs]);
+  }, [readEvents]);
+
+  // Re-read on a genuine leave-and-return. The first focus is skipped — the
+  // mount read above already covered it.
+  const blurredRef = useRef(false);
+  useFocusEffect(
+    useCallback(() => {
+      if (blurredRef.current) {
+        blurredRef.current = false;
+        void reload();
+      }
+      return () => {
+        blurredRef.current = true;
+      };
+    }, [reload]),
+  );
+
+  useEffect(() => {
+    const sub = AppState.addEventListener('change', (next) => {
+      if (next === 'active') void reload();
+    });
+    return () => sub.remove();
+  }, [reload]);
+
+  const refresh = useCallback(async (): Promise<void> => {
+    setRefreshing(true);
+    try {
+      await reload();
+    } finally {
+      setRefreshing(false);
+    }
+  }, [reload]);
 
   const result =
     status === 'ready'
       ? buildHonestDay(events, statsByCategory, {
-          nowMs,
-          dayEndMs: realisticDayEndMs(nowMs),
+          nowMs: anchorMsRef.current,
+          dayEndMs: realisticDayEndMs(anchorMsRef.current),
           defaultMultiplier: GLOBAL_PRIOR,
         })
       : null;
@@ -95,5 +157,5 @@ export function useHonestDay(nowMs: number = Date.now()): UseHonestDay {
     return written;
   }, [result]);
 
-  return { status, result, apply };
+  return { status, result, apply, refresh, refreshing };
 }

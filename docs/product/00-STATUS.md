@@ -14,7 +14,7 @@
 | `npm run typecheck` | ❌ **FAIL** | 2 errors, one root cause — see Blocker #1 in [02-GAP-ANALYSIS](02-GAP-ANALYSIS.md). CI is currently red. |
 | `npm test` | ✅ (assumed) | 102 test files across engine/db/stores/services/features; suite is extensive. Not re-run in this audit. |
 
-**Installed native deps confirmed:** `react-native-purchases@^10.3.0`, `posthog-react-native@^4.46.32`, `@sentry/react-native@~7.2.0`, `expo-sqlite@~16.0.10`, `expo-calendar@~15.0.8`, `expo-notifications@~0.32.17`, `react-native-reanimated@~4.1.0`, `react-native-svg`, `react-native-view-shot`, `zustand@^5`, `@bacons/apple-targets` (widget/Live Activity), `@expo/ui`, `expo-glass-effect`. **No Drizzle** (hand-rolled SQL migrations + repos). **No `@supabase/supabase-js`** (feedback board deferred, as planned).
+**Installed native deps confirmed:** `react-native-purchases@^10.3.0`, `posthog-react-native@^4.46.32`, `expo-sqlite@~16.0.10`, `expo-calendar@~15.0.8`, `expo-notifications@~0.32.17`, `react-native-reanimated@~4.1.0`, `react-native-svg`, `react-native-view-shot`, `zustand@^5`, `@bacons/apple-targets` (widget/Live Activity), `@expo/ui`, `expo-glass-effect`. **No Drizzle** (hand-rolled SQL migrations + repos). **No `@supabase/supabase-js`** (feedback board deferred, as planned).
 
 ## Per-area verdicts
 
@@ -32,7 +32,7 @@
 | 10 | Onboarding | **IMPLEMENTED** | `app/(onboarding)/*` (welcome, categories, ready), `onboardingStore.ts` (kv-gated, TDZ-safe rehydrate). |
 | 11 | Settings (categories, reminders, privacy, restore, manage-sub, data reset) | **IMPLEMENTED** (feedback board ABSENT) | `app/settings.tsx`, `categories.tsx`, `privacy.tsx`, `useAccountActions` (restore + manage-subscription), `useAccountReset`. Feedback board correctly absent. |
 | 12 | Widgets / Live Activity / native presence | **PARTIAL** | Swift targets scaffolded (`targets/widget/*`), `services/liveActivity.ts` fully wired — but `WhenbeePresence` native module not linked, so every call is a **stub no-op** until the device build. See `docs/NATIVE-PRESENCE.md`. |
-| 13 | Analytics (PostHog funnel) + Sentry | **IMPLEMENTED** | `services/analytics.ts` (typed funnel, fire-and-forget), `services/sentry.ts` (guarded init, error boundary). Both no-op safely without env keys. |
+| 13 | Analytics (PostHog funnel) + error tracking | **IMPLEMENTED** | `services/analytics.ts` (typed funnel, fire-and-forget), `providers/AppProviders.tsx` (`PostHogErrorBoundary` + `errorTracking.autocapture`, guarded init). Both no-op safely without env keys. Note: `services/sentry.ts` no longer exists — Sentry was removed; error reporting is PostHog-only. |
 | 14 | Notifications | **IMPLEMENTED** | `services/timerNotifications.ts` — local-only "estimate is up" ping + Start-By nudge, lazy native-module probe (Expo-Go/test safe). Honors no-network-in-loop. |
 
 ## Discrepancies between CLAUDE.md and reality (to reconcile)

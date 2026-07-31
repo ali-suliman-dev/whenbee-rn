@@ -1,7 +1,8 @@
 import '../global.css';
-import { useEffect, useState, type ComponentProps } from 'react';
-import { AppState, Appearance } from 'react-native';
+import { useEffect, type ComponentProps, useState } from 'react';
+import { AppState, Appearance, View } from 'react-native';
 import { Stack } from 'expo-router';
+import { StatusBar } from 'expo-status-bar';
 import * as SplashScreen from 'expo-splash-screen';
 import { useFonts } from 'expo-font';
 import { I18nextProvider } from 'react-i18next';
@@ -14,12 +15,27 @@ import { useDayTasksStore } from '@/src/stores/dayTasksStore';
 import { setClockHour12 } from '@/src/lib/time';
 import { prefers24Hour } from '@/src/lib/clockPrefs';
 import { useNotificationSetup } from '@/src/features/notifications/useNotificationSetup';
+import { useForgotCheck } from '@/src/features/timer/useForgotCheck';
+import { ForgotCard } from '@/src/features/timer/ForgotCard';
+import { PendingTimerOpener } from '@/src/features/timer/PendingTimerOpener';
 
 // Match every clock readout (Started/Done, planner, calendar) to the device's
 // "24-Hour Time" toggle. Read once at module load — it's a synchronous native const.
 setClockHour12(!prefers24Hour());
 
 SplashScreen.preventAutoHideAsync();
+
+// Anchor the root stack to (tabs). Modal routes ((modals)/*) are presented on
+// THIS stack as `formSheet`. Without an anchor, loading a modal route directly —
+// a deep link, or a Metro/JS reload while a sheet is open — rebuilds the nav
+// state with the modal as the ONLY screen: the background is wiped, so the
+// sheet has nothing behind it and no dismiss target → the user is locked in.
+// The anchor guarantees (tabs) is always placed beneath, so every sheet stays
+// draggable-to-dismiss and returns to the tabs. See expo-router "Handle
+// deep-linked modals".
+export const unstable_settings = {
+  initialRouteName: '(tabs)',
+};
 
 // Navigator lives in its own component so it can read the theme and apply it to
 // the (otherwise native-default white) Settings header in dark mode. Swipe-back
@@ -36,10 +52,41 @@ function useSheetScreenOptions(): ComponentProps<typeof Stack.Screen>['options']
   return {
     presentation: 'formSheet',
     headerShown: false,
-    sheetAllowedDetents: [0.9],
+    sheetAllowedDetents: [0.95],
     sheetCornerRadius: t.radii.sheet,
     gestureEnabled: true,
+    // The native formSheet host view defaults to white; it shows through wherever
+    // the JS content doesn't paint (below a short list → a white gap under the
+    // dark sheet). Paint the native container the theme bg so the sheet is one
+    // continuous colour top to bottom. paddingHorizontal supplies the side
+    // gutters for EVERY sheet uniformly (scroll content AND pinned footers) —
+    // sheet screens pass horizontalPadding={false} to <Screen> and take their
+    // gutters from here, because react-native-screens silently drops the LEFT
+    // padding of a padded JS child inside a native sheet. See Screen.tsx.
+    contentStyle: { backgroundColor: t.colors.bg, paddingHorizontal: t.space[5] },
   };
+}
+
+// Overlay host for the forgot-to-stop recovery card. Sits above the navigator so
+// it can appear over any screen; `pointerEvents="box-none"` lets touches pass
+// through the empty space and only the card itself (once rendered) is tappable.
+// Bottom-pinned content must add the safe-area inset or it sits under the home
+// indicator — see the footers/tab-bar gotcha. `useForgotCheck()` itself is
+// mounted in `RootLayout` (not here) so its effect runs after the boot effects
+// that restore the timer snapshot — child effects fire before a parent's own,
+// so hosting the hook in this sibling component would run it too early.
+function ForgotOverlay() {
+  // Passthrough full-screen host — ForgotCard renders its own scrim + bottom
+  // card and owns all layout (so the scrim can reach the screen edges). box-none
+  // lets taps through the empty space until the card (and its scrim) mount.
+  return (
+    <View
+      pointerEvents="box-none"
+      style={{ position: 'absolute', left: 0, right: 0, top: 0, bottom: 0 }}
+    >
+      <ForgotCard />
+    </View>
+  );
 }
 
 function RootNavigator() {
@@ -61,6 +108,11 @@ function RootNavigator() {
   useNotificationSetup();
 
   return (
+    <>
+    {/* Completes cold-boot timer deep links (+native-intent parks them; a
+        post-boot push presents the formSheet where an initial-state restore
+        silently can't — see timerDeepLinkGate). */}
+    <PendingTimerOpener />
     <Stack
       screenOptions={{
         headerShown: false,
@@ -121,13 +173,25 @@ function RootNavigator() {
       <Stack.Screen name="(modals)/review" options={sheet} />
       <Stack.Screen name="(modals)/focus-window" options={sheet} />
       <Stack.Screen name="(modals)/timer" options={sheet} />
+      <Stack.Screen name="(modals)/plan" options={sheet} />
+      <Stack.Screen name="(modals)/feedback" options={sheet} />
+      <Stack.Screen name="(modals)/whats-new" options={sheet} />
       <Stack.Screen name="(modals)/reward" options={{ presentation: 'fullScreenModal', headerShown: false }} />
+      <Stack.Screen name="(modals)/pro-welcome" options={{ presentation: 'fullScreenModal', headerShown: false, gestureEnabled: false }} />
       <Stack.Screen name="(modals)/report" options={{ presentation: 'fullScreenModal', headerShown: false }} />
     </Stack>
+    </>
   );
 }
 
 export default function RootLayout() {
+  // System status bar (clock/battery/signal icons) has no relation to app
+  // theme tokens — it's a separate native surface with its own icon-color
+  // setting. Nothing mounted a <StatusBar> before, so Android kept whatever
+  // fixed default the native template shipped with (light icons), which read
+  // as invisible on light mode. Drive it from the same theme mode so icons
+  // stay dark-on-light / light-on-dark like everything else.
+  const statusBarTheme = useTheme();
   const [fontsLoaded, fontError] = useFonts({
     'Jakarta-Regular':   require('../assets/fonts/PlusJakartaSans-Regular.ttf'),
     'Jakarta-Medium':    require('../assets/fonts/PlusJakartaSans-Medium.ttf'),
@@ -162,6 +226,12 @@ export default function RootLayout() {
     store.reconcilePresenceOnBoot();
   }, []);
 
+  // Detect a session that ran past the honest number while the app was away and
+  // auto-close it into `forgotStore`. Must run after `resumeFromKv` above so the
+  // restored snapshot exists to evaluate — hooks in one component fire their
+  // effects in declaration order, so this call stays below the boot effect.
+  useForgotCheck();
+
   // Boot the day-tasks store and refresh "today" when the app returns to the
   // foreground (handles the midnight boundary: the selected day re-points to the
   // new calendar date without user action).
@@ -178,10 +248,10 @@ export default function RootLayout() {
   }
 
   return (
-    <I18nextProvider i18n={i18n}>
-      <AppProviders>
-        <RootNavigator />
-      </AppProviders>
-    </I18nextProvider>
+    <AppProviders>
+      <StatusBar style={statusBarTheme.mode === 'dark' ? 'light' : 'dark'} />
+      <RootNavigator />
+      <ForgotOverlay />
+    </AppProviders>
   );
 }

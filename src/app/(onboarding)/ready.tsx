@@ -1,35 +1,24 @@
 import { useState } from 'react';
-import { View, TextInput, KeyboardAvoidingView, Platform } from 'react-native';
+import { View, TextInput, KeyboardAvoidingView, Platform, Pressable, type TextStyle } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import { Screen } from '@/src/components/Screen';
 import { AppText } from '@/src/components/AppText';
 import { AppButton } from '@/src/components/AppButton';
-import { Card } from '@/src/components/Card';
-import { HoneyTrail } from '@/src/components/HoneyTrail';
 import { OnboardingBackdrop } from '@/src/components/OnboardingBackdrop';
-import { OnboardingFooterCard } from '@/src/components/OnboardingFooterCard';
-import { ReasonGlyph } from '@/src/features/reward/ReasonGlyph';
 import { useTheme } from '@/src/theme/useTheme';
+import { type } from '@/src/theme/typography';
 import { useOnboarding } from '@/src/features/onboarding/useOnboarding';
-import { usePersonalize } from '@/src/features/onboarding/usePersonalize';
+import { usePersonalize, archetypeTitleFor } from '@/src/features/onboarding/usePersonalize';
+import { ArchetypeCrest } from '@/src/features/onboarding/ArchetypeCrest';
+import { RipeningRail } from '@/src/features/onboarding/RipeningRail';
 import { StepProgress } from '@/src/features/onboarding/StepProgress';
 import { onboardingStepIndex, ONBOARDING_TOTAL } from '@/src/features/onboarding/onboardingFlow';
 import { Reveal } from '@/src/features/onboarding/Reveal';
 import { MAX_CUSTOM_NAME } from '@/src/features/onboarding/categories';
-import type { TFunction } from 'i18next';
-
-// Raw (now) → Honest (goal) look-ahead. Not a setup wall — a goal preview.
-function masteryTrail(tr: TFunction<'onboarding'>) {
-  return [
-    { label: tr('ready.trail.raw'), state: 'now' as const },
-    { label: tr('ready.trail.setting'), state: 'ahead' as const },
-    { label: tr('ready.trail.ripening'), state: 'ahead' as const },
-    { label: tr('ready.trail.thickening'), state: 'ahead' as const },
-    { label: tr('ready.trail.honest'), state: 'ahead' as const },
-  ];
-}
+import { useSettingsStore } from '@/src/stores/settingsStore';
+import { useOnce } from '@/src/lib/useOnce';
 
 export default function Ready() {
   const t = useTheme();
@@ -37,13 +26,20 @@ export default function Ready() {
   const insets = useSafeAreaInsets();
   const { complete } = useOnboarding();
   const { saveName } = usePersonalize();
-  const [nickname, setNickname] = useState('');
+  const archetypeSeed = useSettingsStore((s) => s.archetypeSeed);
+  const [name, setName] = useState('');
+  const [expanded, setExpanded] = useState(false);
 
-  function timeFirstThing() {
-    saveName(nickname.trim() || undefined);
+  const timeFirstThing = useOnce(() => {
+    saveName(name.trim() || undefined);
     complete();
+    // Anchor (tabs) beneath first: (modals) live on the root stack, so pushing
+    // the sheet without the anchor traps the user in the drawer on dismiss.
     router.replace('/(tabs)');
-  }
+    router.push('/(modals)/add-task');
+  });
+
+  const archetypeTitle = archetypeSeed ? archetypeTitleFor(archetypeSeed.m0) : undefined;
 
   return (
     <Screen backdrop={<OnboardingBackdrop />}>
@@ -52,105 +48,138 @@ export default function Ready() {
         style={{ flex: 1 }}
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
       >
-        <View style={{ flex: 1, gap: t.space[4], paddingTop: t.space[3] }}>
+        <View style={{ flex: 1, paddingTop: t.space[3] }}>
           <Reveal index={0}>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: t.space[3] }}>
+              <ArchetypeCrest beeSize={t.iconSize['2xl']} showSeal={false} />
+              <View>
+                <AppText style={{ fontSize: t.fontSize.sm, color: t.colors.inkFaint }}>
+                  {archetypeTitle ? 'Your time-style' : "You're calibrated"}
+                </AppText>
+                {archetypeTitle ? (
+                  <AppText
+                    style={{
+                      fontSize: t.fontSize.sm,
+                      fontWeight: t.fontWeight.bold as '700',
+                      letterSpacing: t.letterSpacing.wide,
+                      textTransform: 'uppercase',
+                      color: t.colors.accent,
+                      marginTop: t.space[0.5],
+                    }}
+                  >
+                    {archetypeTitle}
+                  </AppText>
+                ) : null}
+              </View>
+            </View>
+          </Reveal>
+
+          <Reveal index={1} style={{ marginTop: t.space[4] }}>
             <AppText
               style={{
                 fontSize: t.fontSize.xl,
                 fontWeight: t.fontWeight.bold as '700',
+                lineHeight: t.fontSize.xl * t.lineHeight.tight,
+                letterSpacing: t.letterSpacing.tight,
                 color: t.colors.ink,
-                letterSpacing: -0.6,
               }}
             >
-              {tr('ready.title')}
-            </AppText>
-          </Reveal>
-          <Reveal index={1}>
-            <AppText
-              variant="body"
-              style={{ color: t.colors.inkSoft, lineHeight: t.fontSize.base * 1.5 }}
-            >
-              {tr('ready.subtitle')}
-            </AppText>
-          </Reveal>
-
-          {/* Mastery preview — Raw (now) → Honest (where you're headed). A look-ahead. */}
-          <Reveal index={2}>
-            <Card>
-              <AppText
-                variant="label"
-                style={{ marginBottom: t.space[3], color: t.colors.inkSoft }}
-              >
-                {tr('ready.trailLabel')}
-              </AppText>
-              <HoneyTrail nodes={masteryTrail(tr)} lively />
-              {/* Trail legend: accuracy is monotonic, no guilt/streak. */}
+              Your first{' '}
               <AppText
                 style={{
-                  fontSize: t.fontSize.sm,
-                  color: t.colors.inkFaint,
-                  marginTop: t.space[3],
+                  fontSize: t.fontSize.xl,
+                  fontWeight: t.fontWeight.bold as '700',
+                  letterSpacing: t.letterSpacing.tight,
+                  color: t.colors.accent,
                 }}
               >
-                {tr('ready.trailCaption')}
-              </AppText>
-            </Card>
+                honest
+              </AppText>{' '}
+              times are already set.
+            </AppText>
           </Reveal>
 
-          <View style={{ flex: 1 }} />
-
-          <Reveal index={3}>
-            <OnboardingFooterCard
-              glyph={<ReasonGlyph kind="pulled" active={false} ambient size={t.iconSize.lg} />}
+          <Reveal index={2} style={{ marginTop: t.space[4] }}>
+            <AppText
+              variant="body"
+              style={{ color: t.colors.inkSoft, lineHeight: t.fontSize.base * t.lineHeight.relaxed }}
             >
-              {tr('ready.footer')}
-            </OnboardingFooterCard>
+              I read them from your time-style, so you start with real numbers, not
+              blank guesses. Log a task and they sharpen.
+            </AppText>
           </Reveal>
 
-          {/* Optional nickname — quiet, skippable, folded in above the CTA. */}
-          <Reveal index={4}>
-            <View style={{ gap: t.space[2] }}>
-              <View style={{ flexDirection: 'row', alignItems: 'baseline', gap: t.space[2] }}>
-                <AppText
-                  style={{
-                    fontSize: t.fontSize.sm,
-                    color: t.colors.inkSoft,
-                    fontWeight: t.fontWeight.medium as '500',
-                  }}
-                >
-                  {tr('ready.nicknameLabel')}
-                </AppText>
-                <AppText
-                  style={{ fontSize: t.fontSize.xs, color: t.colors.inkFaint }}
-                >
-                  {tr('ready.nicknameOptional')}
-                </AppText>
-              </View>
+          {/* Optional name — 6C quiet link. No container, no border; expands to
+              the real input on tap. The link is the APP asking ("What should I
+              call you?"), matching the body copy's voice: the screen also speaks
+              in the user's first person ("Time my first thing"), so a link that
+              said "give me a name" had no fixed referent — and the app has a real
+              companion-naming screen, so half of readers named the bee. The
+              placeholder stays deliberately open ("Anything you answer to"): the
+              field is just as happy with a handle as a first name. */}
+          <Reveal index={3} style={{ marginTop: t.space[4] }}>
+            {expanded ? (
               <TextInput
-                value={nickname}
-                onChangeText={setNickname}
-                onSubmitEditing={() => {/* save happens on CTA */}}
-                placeholder={tr('ready.nicknamePlaceholder')}
+                value={name}
+                onChangeText={setName}
+                autoFocus
+                placeholder="Anything you answer to"
                 placeholderTextColor={t.colors.inkFaint}
                 maxLength={MAX_CUSTOM_NAME}
                 returnKeyType="done"
-                accessibilityLabel={tr('ready.nicknameAccessibilityLabel')}
+                accessibilityLabel="Your name"
                 style={{
                   height: t.size.control.md,
                   fontSize: t.fontSize.base,
                   color: t.colors.ink,
                   borderWidth: t.borderWidth.chip,
                   borderColor: t.colors.border,
-                  borderRadius: t.radii.sm,
+                  borderRadius: t.radii.md,
                   paddingHorizontal: t.space[3],
                 }}
               />
-            </View>
+            ) : (
+              <Pressable
+                onPress={() => setExpanded(true)}
+                accessibilityRole="button"
+                accessibilityLabel="What should I call you?"
+                accessibilityHint="Optional"
+              >
+                <View
+                  style={{
+                    flexDirection: 'row',
+                    alignItems: 'center',
+                    gap: t.space[2],
+                    paddingVertical: t.space[1],
+                  }}
+                >
+                  <AppText style={{ fontSize: t.fontSize.md, fontWeight: t.fontWeight.semibold as '600', color: t.colors.primary }}>
+                    ＋
+                  </AppText>
+                  <AppText style={{ fontSize: t.fontSize.base, fontWeight: t.fontWeight.medium as '500', color: t.colors.primary }}>
+                    What should I call you?
+                  </AppText>
+                  <AppText style={{ fontSize: t.fontSize.sm, color: t.colors.inkFaint }}>optional</AppText>
+                </View>
+              </Pressable>
+            )}
+          </Reveal>
+
+          <View style={{ flex: 1 }} />
+
+          <Reveal index={4} style={{ marginBottom: t.space[6] }}>
+            <RipeningRail />
           </Reveal>
         </View>
 
-        <Reveal index={5} style={{ paddingTop: t.space[4] }}>
-          <AppButton label={tr('ready.cta')} fullWidth onPress={timeFirstThing} />
+        <Reveal index={5}>
+          <AppText style={{ ...(type.caption as TextStyle), color: t.colors.inkSoft, textAlign: 'center' }}>
+            <AppText style={{ ...(type.captionBold as TextStyle), color: t.colors.ink }}>Made by one person. </AppText>
+            Tell me what to add, it&apos;s in Settings.
+          </AppText>
+        </Reveal>
+        <Reveal index={6} style={{ paddingTop: t.space[4] }}>
+          <AppButton label="Time my first thing →" fullWidth onPress={timeFirstThing} />
         </Reveal>
         <View style={{ height: insets.bottom }} />
       </KeyboardAvoidingView>

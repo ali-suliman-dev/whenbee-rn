@@ -1,0 +1,321 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Whenbee — v3, anchor control</title>
+<style>
+  :root{
+    --bg:#14151D; --surface:#1F2130; --raised:#292B3C; --sunken:#15161F;
+    --hairline:rgba(255,255,255,0.08);
+    --ink:#F4F1EA; --inkSoft:#ADA9B5; --inkFaint:rgba(244,241,234,0.40);
+    --primary:#8275F0; --primaryBright:#B3A7FF; --primaryEdge:#6B5BE6;
+    --primaryChip:rgba(130,117,240,0.20); --primarySoft:rgba(130,117,240,0.22);
+    --accent:#EEAE4D; --accentEdge:#C68A30; --accentSoft:rgba(238,174,77,0.18);
+    --accentChip:#2E2A20; --onAmber:#20233A; --danger:#E06464;
+    --lbg:#F4F2FC; --lsurface:#FFFFFF; --link:#20233A; --linkSoft:#5C5F73; --linkFaint:#9B9DAB;
+    --lprimary:#6B5BE6; --laccent:#EEAE4D; --lraisedEdge:#DAD3EC; --lhairline:#DAD5C9;
+    --s1:4px; --s1_5:6px; --s2:8px; --s2_5:10px; --s3:12px; --s4:16px; --s5:20px; --s6:24px; --s8:32px;
+    --rSm:8px; --rMd:12px; --rCard:16px; --rSheet:20px; --rFull:999px;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{background:#0B0C12;color:var(--ink);
+    font-family:'Plus Jakarta Sans',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
+    padding:40px 28px 90px;line-height:1.4}
+  .wrap{max-width:1560px;margin:0 auto}
+  h1{font-size:30px;font-weight:800;letter-spacing:-0.75px;margin-bottom:6px}
+  .lede{color:var(--inkSoft);font-size:15px;max-width:820px;margin-bottom:38px}
+  section{margin-bottom:62px}
+  .shead{display:flex;align-items:baseline;gap:12px;margin-bottom:6px}
+  .snum{font-family:Menlo,monospace;font-size:12px;color:var(--accent);letter-spacing:1px}
+  h2{font-size:22px;font-weight:800;letter-spacing:-0.5px}
+  .sdesc{color:var(--inkSoft);font-size:14px;max-width:880px;margin-bottom:22px}
+  .note{background:var(--surface);padding:14px 16px;border-radius:var(--rMd);
+    color:var(--inkSoft);font-size:13.5px;max-width:880px;margin-bottom:24px}
+  .note b{color:var(--ink)}
+  code{font-family:Menlo,monospace;font-size:12px;color:var(--primaryBright);background:var(--sunken);padding:1px 5px;border-radius:4px}
+  .row{display:flex;gap:26px;flex-wrap:wrap;align-items:flex-start}
+  .opt{width:352px}
+  .otag{display:inline-flex;align-items:center;gap:7px;margin-bottom:9px;font-size:11px;
+    letter-spacing:0.8px;text-transform:uppercase;font-weight:800;color:var(--inkSoft)}
+  .pick{background:var(--accent);color:var(--onAmber);padding:2px 8px;border-radius:var(--rFull);font-size:9px}
+  .onote{color:var(--inkSoft);font-size:12.5px;margin-top:11px}
+  .onote b{color:var(--ink)}
+  .con{color:#C99;font-size:12.5px;margin-top:4px}
+  .shipped{display:inline-block;background:#2A3F33;color:#7DD6A6;font-size:9px;font-weight:800;
+    letter-spacing:0.8px;padding:2px 8px;border-radius:var(--rFull)}
+
+  .ph{width:352px;background:var(--bg);border:1px solid var(--hairline);
+    border-radius:var(--rSheet) var(--rSheet) 26px 26px;padding:var(--s3) var(--s5) var(--s5);
+    display:flex;flex-direction:column}
+  .grab{width:36px;height:4px;border-radius:var(--rFull);background:var(--hairline);margin:0 auto}
+  .phead{display:flex;align-items:center;justify-content:space-between;padding:var(--s5) 0 var(--s3)}
+  .ptitle{font-size:22px;font-weight:800;letter-spacing:-0.5px}
+  .clear{display:flex;align-items:center;gap:var(--s1);color:var(--danger);font-size:14px;font-weight:500}
+
+  .tl{display:flex;flex-direction:column;margin-top:var(--s3)}
+  .blk{display:flex;gap:var(--s3);align-items:stretch;padding:var(--s1_5) 0}
+  .clock{width:46px;font-family:Menlo,monospace;font-size:12.5px;color:var(--primaryBright);padding-top:14px;text-align:right}
+  .clock.a{color:var(--accent)} .clock.g{color:var(--inkFaint)}
+  .card{flex:1;background:var(--surface);border-radius:var(--rCard);padding:var(--s3) var(--s4);
+    min-height:70px;display:flex;align-items:center;justify-content:space-between;gap:var(--s3)}
+  .card .t{font-size:14.5px;font-weight:600}
+  .card .m{font-size:11.5px;color:var(--inkSoft);margin-top:3px}
+  .card.evt{background:transparent;min-height:46px;padding:var(--s2) var(--s4)}
+  .card.evt .t{font-style:italic;color:var(--inkSoft);font-weight:500;font-size:13.5px}
+  .card.over{background:var(--accentChip)} .card.over .t{color:var(--accent)}
+  .grip{display:flex;flex-direction:column;gap:3px;opacity:.5}
+  .grip i{display:block;width:14px;height:1.5px;background:var(--inkSoft);border-radius:2px}
+  .tag{font-size:10px;letter-spacing:0.6px;text-transform:uppercase;font-weight:800;color:var(--accent);margin-top:4px;display:block}
+  .inline{font-size:12px;font-weight:700;color:var(--accent);background:var(--accentSoft);
+    padding:7px 12px;border-radius:var(--rFull);white-space:nowrap}
+  .boundary{display:flex;align-items:center;gap:var(--s2_5);padding:var(--s3) 0 var(--s1)}
+  .bline{flex:1;height:1px;background:rgba(238,174,77,0.28)}
+  .blab{font-family:Menlo,monospace;font-size:10.5px;color:var(--accent);letter-spacing:0.6px;text-transform:uppercase}
+  .msg{font-size:13px;color:var(--inkSoft);padding:var(--s1) 0 var(--s2);line-height:1.5}
+  .msg b{color:var(--ink)}
+
+  .foot{border-top:1px solid var(--hairline);padding-top:var(--s3);margin-top:var(--s4);
+    display:flex;flex-direction:column;gap:var(--s3)}
+  .times{display:flex;align-items:baseline;gap:var(--s1_5);font-size:12px;color:var(--inkSoft)}
+  .times b{font-family:Menlo,monospace;color:var(--ink);font-weight:400;font-size:12px}
+  .times b.a{color:var(--accent)} .times i{color:var(--inkFaint);font-style:normal}
+  .cells{display:flex;flex-direction:column;gap:var(--s2_5)}
+  .cell{display:flex;align-items:center;gap:var(--s2_5);padding:var(--s2_5) var(--s3);
+    min-height:44px;border-radius:var(--rMd);background:var(--raised);font-size:14px}
+  .cell .lab{flex:1;color:var(--ink);font-weight:500}
+  .cell .ic{color:var(--inkSoft);font-size:15px;width:20px;text-align:center}
+  .cell .chev{color:var(--inkFaint);font-size:13px}
+  .cell .val{font-family:Menlo,monospace;font-size:13.5px;color:var(--ink);font-weight:600}
+  .cell .out{font-family:Menlo,monospace;font-size:12px;color:var(--inkFaint)}
+  /* chooser rows */
+  .ch{border-radius:var(--rMd);overflow:hidden;background:var(--sunken)}
+  .chrow{display:flex;align-items:center;gap:var(--s2_5);padding:var(--s3);min-height:52px}
+  .chrow + .chrow{border-top:1px solid var(--hairline)}
+  .chrow.on{background:var(--raised)}
+  .dot{width:18px;height:18px;border-radius:var(--rFull);border:1.5px solid var(--inkFaint);flex:none}
+  .dot.on{border-color:var(--primary);background:radial-gradient(var(--primary) 0 5px,transparent 5px)}
+  .chmain{flex:1}
+  .chlab{font-size:14px;font-weight:600;color:var(--inkSoft)}
+  .chrow.on .chlab{color:var(--ink)}
+  .chout{font-family:Menlo,monospace;font-size:11.5px;color:var(--inkFaint);margin-top:2px}
+  .chrow.on .chout{color:var(--accent)}
+  .timebtn{display:flex;align-items:center;gap:6px;background:var(--surface);padding:7px 11px;
+    border-radius:var(--rFull);font-family:Menlo,monospace;font-size:13.5px;color:var(--ink);font-weight:600}
+  .timebtn.off{color:var(--inkFaint);background:transparent}
+  .swap{width:32px;height:32px;border-radius:var(--rFull);background:var(--primaryChip);
+    color:var(--primaryBright);display:grid;place-items:center;font-size:14px;flex:none}
+  .seglab{font-size:10px;letter-spacing:0.8px;text-transform:uppercase;font-weight:800;color:var(--inkFaint);margin-bottom:var(--s2)}
+  .seg{display:flex;background:var(--sunken);border-radius:var(--rMd);padding:3px;gap:3px}
+  .seg div{flex:1;text-align:center;padding:9px 6px;border-radius:var(--rSm);font-size:12.5px;color:var(--inkSoft);font-weight:600}
+  .seg div.on{background:var(--raised);color:var(--ink)}
+  .sw{width:44px;height:26px;border-radius:var(--rFull);background:#3A3D52;position:relative}
+  .sw.on{background:var(--primary)}
+  .sw::after{content:'';position:absolute;top:2px;left:2px;width:22px;height:22px;border-radius:var(--rFull);background:#fff}
+  .sw.on::after{left:20px}
+  .cta{background:var(--primary);color:#fff;text-align:center;font-weight:800;font-size:16px;
+    padding:13px;border-radius:var(--rFull);box-shadow:0 7px 0 var(--primaryEdge);margin-top:var(--s1)}
+
+  table{border-collapse:collapse;width:100%;max-width:880px;font-size:13.5px;margin-top:8px}
+  th,td{text-align:left;padding:9px 14px;border-bottom:1px solid var(--hairline);vertical-align:top}
+  th{color:var(--inkFaint);font-size:10px;letter-spacing:0.8px;text-transform:uppercase}
+  td b{color:var(--ink)} td{color:var(--inkSoft)}
+  tr.win td{background:rgba(238,174,77,0.06)}
+
+  /* paywall light chips */
+  .plight{width:352px;background:var(--lbg);border:1px solid var(--lhairline);border-radius:26px;padding:var(--s5);color:var(--link)}
+  .prow{display:flex;gap:var(--s3)}
+  .ptime{width:40px;text-align:right;font-size:12px;color:var(--linkFaint);padding-top:var(--s2)}
+  .prail{width:30px;display:flex;flex-direction:column;align-items:center}
+  .pcoin{width:30px;height:30px;border-radius:var(--rFull);background:var(--lsurface);
+    display:grid;place-items:center;color:var(--lprimary);font-size:13px;border-bottom:2px solid var(--lraisedEdge)}
+  .pcoin.amb{background:var(--laccent);color:var(--onAmber);border-bottom-color:var(--accentEdge)}
+  .pdots{flex:1;width:2px;background:repeating-linear-gradient(to bottom,var(--linkFaint) 0 2px,transparent 2px 6px);margin:4px 0;opacity:.55}
+  .pbody{flex:1;padding-top:var(--s1);padding-bottom:var(--s4)}
+  .phead2{font-size:14px;font-weight:800;color:var(--link);margin-bottom:var(--s1_5)}
+  .pchips{display:flex;flex-wrap:wrap;gap:var(--s1_5)}
+  .pchip{border-radius:var(--rFull);padding:4px 10px;font-size:12px;font-weight:800;background:var(--lsurface);color:var(--link)}
+  .pchip.ind{color:var(--lprimary)}
+  .pchip.honey{background:var(--laccent);color:var(--onAmber)}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<h1>v3 — the anchor control</h1>
+<p class="lede">One question, two answers: <b>start as soon as I can</b>, or <b>be finished by a set time</b>. Done-by stops being a separate cell and becomes half of that question.</p>
+
+<!-- 01 -->
+<section>
+  <div class="shead"><span class="snum">01</span><h2>Merging done-by into the mode</h2></div>
+  <p class="sdesc">You pinned P2 (a cell, not a segmented control) and asked for the two concepts merged. All three below are cells; all three delete the standalone Done-by row, because "done by 15:30" <em>is</em> one of the two answers — keeping it separate is what made the old screen confusing.</p>
+
+  <div class="note">
+    <b>The underlying idea, stated plainly:</b> you're choosing which end of the day is fixed. Fix the <b>start</b> (now) and the app tells you the finish. Fix the <b>finish</b> (a time) and the app tells you the start-by. Every layout below makes the fixed end tappable and shows the derived end as quiet mono text — so the control always reads as <em>"I set this, Whenbee worked out that."</em>
+  </div>
+
+  <div class="row">
+
+    <div class="opt">
+      <div class="otag">D1 · Two-row chooser <span class="pick">recommended</span></div>
+      <div class="ph">
+        <div class="grab"></div>
+        <div class="phead"><div class="ptitle">Today&apos;s plan</div><div class="clear">⟳ Clear</div></div>
+        <div class="tl">
+          <div class="blk"><div class="clock a">09:05</div><div class="card"><div><div class="t">Draft proposal</div><div class="m">1h 20m</div></div><div class="grip"><i></i><i></i><i></i></div></div></div>
+          <div class="blk"><div class="clock">10:30</div><div class="card"><div><div class="t">Review PRs</div><div class="m">50m</div></div><div class="grip"><i></i><i></i><i></i></div></div></div>
+          <div class="blk"><div class="clock g">13:00</div><div class="card evt"><div class="t">📅 Client call · 1h</div></div></div>
+          <div class="blk"><div class="clock">14:05</div><div class="card"><div><div class="t">Invoices</div><div class="m">50m</div></div><div class="grip"><i></i><i></i><i></i></div></div></div>
+        </div>
+        <div class="foot">
+          <div class="ch">
+            <div class="chrow on">
+              <span class="dot on"></span>
+              <span class="chmain"><span class="chlab">Start as soon as I can</span><div class="chout">finish 14:55</div></span>
+            </div>
+            <div class="chrow">
+              <span class="dot"></span>
+              <span class="chmain"><span class="chlab">Be finished by</span><div class="chout">start 11:00</div></span>
+              <span class="timebtn off">15:30 ›</span>
+            </div>
+          </div>
+          <div class="cells">
+            <div class="cell"><span class="ic">🔔</span><span class="lab">Nudge me to start</span><span class="sw on"></span></div>
+          </div>
+          <div class="cta">Done</div>
+        </div>
+      </div>
+      <p class="onote"><b>Both answers on screen at once, each showing what it costs you.</b> You never have to flip a switch to find out what the other mode would give — 14:55 and 11:00 are both visible, so the choice is a comparison, not a guess.</p>
+      <p class="onote">Tapping <code>15:30 ›</code> opens the same picker as today and selects that row in one gesture. The selected row lifts to <code>surfaceRaised</code>, its derived clock goes amber; the unselected row's clock stays <code>inkFaint</code>.</p>
+    </div>
+
+    <div class="opt">
+      <div class="otag">D2 · One cell, swap glyph</div>
+      <div class="ph">
+        <div class="grab"></div>
+        <div class="phead"><div class="ptitle">Today&apos;s plan</div><div class="clear">⟳ Clear</div></div>
+        <div class="tl">
+          <div class="blk"><div class="clock a">09:05</div><div class="card"><div><div class="t">Draft proposal</div><div class="m">1h 20m</div></div><div class="grip"><i></i><i></i><i></i></div></div></div>
+          <div class="blk"><div class="clock">10:30</div><div class="card"><div><div class="t">Review PRs</div><div class="m">50m</div></div><div class="grip"><i></i><i></i><i></i></div></div></div>
+          <div class="blk"><div class="clock g">13:00</div><div class="card evt"><div class="t">📅 Client call · 1h</div></div></div>
+          <div class="blk"><div class="clock">14:05</div><div class="card"><div><div class="t">Invoices</div><div class="m">50m</div></div><div class="grip"><i></i><i></i><i></i></div></div></div>
+        </div>
+        <div class="foot">
+          <div class="cells">
+            <div class="cell">
+              <span class="ic">▶</span>
+              <span class="lab">Starting now<div class="out" style="margin-top:2px">finish 14:55</div></span>
+              <span class="swap">⇄</span>
+            </div>
+            <div class="cell" style="opacity:.45">
+              <span class="ic">◷</span>
+              <span class="lab">Finishing by <span class="val">15:30</span><div class="out" style="margin-top:2px">start 11:00</div></span>
+              <span class="swap" style="background:transparent;color:var(--inkFaint)">⇄</span>
+            </div>
+          </div>
+          <div class="cells" style="margin-top:var(--s2_5)">
+            <div class="cell"><span class="ic">🔔</span><span class="lab">Nudge me to start</span><span class="sw on"></span></div>
+          </div>
+          <div class="cta">Done</div>
+        </div>
+      </div>
+      <p class="onote"><b>One live cell; the faded one below is the alternate state</b> (shown here only so you can compare — in the app you'd see just the top row). Tap the row to edit the time, tap <code>⇄</code> to swap which end is fixed.</p>
+      <p class="con">Most compact, but the mode becomes invisible: with one row on screen you can't see what the other option would buy you. That's exactly the blindness D1 fixes.</p>
+    </div>
+
+    <div class="opt">
+      <div class="otag">D3 · Question + one cell</div>
+      <div class="ph">
+        <div class="grab"></div>
+        <div class="phead"><div class="ptitle">Today&apos;s plan</div><div class="clear">⟳ Clear</div></div>
+        <div class="tl">
+          <div class="blk"><div class="clock a">09:05</div><div class="card"><div><div class="t">Draft proposal</div><div class="m">1h 20m</div></div><div class="grip"><i></i><i></i><i></i></div></div></div>
+          <div class="blk"><div class="clock">10:30</div><div class="card"><div><div class="t">Review PRs</div><div class="m">50m</div></div><div class="grip"><i></i><i></i><i></i></div></div></div>
+          <div class="blk"><div class="clock g">13:00</div><div class="card evt"><div class="t">📅 Client call · 1h</div></div></div>
+          <div class="blk"><div class="clock">14:05</div><div class="card"><div><div class="t">Invoices</div><div class="m">50m</div></div><div class="grip"><i></i><i></i><i></i></div></div></div>
+        </div>
+        <div class="foot">
+          <div>
+            <div class="seglab">Which end is fixed?</div>
+            <div class="seg"><div class="on">The start</div><div>The finish</div></div>
+          </div>
+          <div class="cells">
+            <div class="cell"><span class="ic">▶</span><span class="lab">Starting now</span><span class="out">finish 14:55</span></div>
+            <div class="cell"><span class="ic">🔔</span><span class="lab">Nudge me to start</span><span class="sw on"></span></div>
+          </div>
+          <div class="cta">Done</div>
+        </div>
+      </div>
+      <p class="onote"><b>Names the concept out loud.</b> "Which end is fixed?" is the actual mental model, and once you've read it the whole control is obvious forever. The cell below just reports the result.</p>
+      <p class="con">A segmented control is what you asked me to move away from, and the eyebrow is a fifth element in a footer that already carries four. Included because the copy is the clearest of the three.</p>
+    </div>
+  </div>
+</section>
+
+<!-- 02 COPY -->
+<section>
+  <div class="shead"><span class="snum">02</span><h2>Copy sets</h2></div>
+  <p class="sdesc">The layout above uses set 2. Swap in any row — the structure doesn't change.</p>
+  <table>
+    <tr><th>Set</th><th>Fix the start</th><th>Fix the finish</th><th>Read</th></tr>
+    <tr><td><b>1 · terse</b></td><td><b>Start now</b></td><td><b>Done by 15:30</b></td><td>Shortest. "Start now" can read as a command — like it'll launch a timer.</td></tr>
+    <tr class="win"><td><b>2 · first-person</b></td><td><b>Start as soon as I can</b></td><td><b>Be finished by 15:30</b></td><td>Unambiguous about intent, not action. Nothing here sounds like a button that starts something. My pick.</td></tr>
+    <tr><td><b>3 · outcome</b></td><td><b>Get the earliest start</b></td><td><b>Hit 15:30</b></td><td>Says what you gain. "Hit" is punchy but slightly target-y — near the language the honest-number redesign moved away from.</td></tr>
+    <tr><td><b>4 · plain-clock</b></td><td><b>Begin now, end 14:55</b></td><td><b>End 15:30, begin 11:00</b></td><td>No mode language at all, just two sentences. Densest information, weakest as a label.</td></tr>
+  </table>
+  <p class="onote" style="max-width:880px">Whichever set: the <b>derived</b> clock is always mono, quiet, and prefixed with a lowercase verb (<code>finish 14:55</code> / <code>start 11:00</code>) so it never gets mistaken for something you set. The <b>fixed</b> clock is the only tappable number.</p>
+</section>
+
+<!-- 03 OVERFLOW DRAG -->
+<section>
+  <div class="shead"><span class="snum">03</span><h2>Overflow tasks stay draggable <span class="shipped">NOTED — NO DESIGN CHANGE</span></h2></div>
+  <p class="sdesc">Understood: the block below the done-by line is not a jail. Drag freely in both directions, and the plan re-derives.</p>
+  <div class="note">
+    <b>The rule I'll build to:</b> overflow rows are ordinary <code>ReorderableList</code> cells — same grip, same drag, same drop. Drag one up and the engine re-runs; if it now fits above the line it becomes a normal block, and whatever got pushed out takes its place below. Drag a fitting task down and it becomes the overflow one.<br><br>
+    <b>The one guard:</b> a task dragged above the line that <em>still</em> doesn't fit doesn't get silently rejected or snapped back — it lands where you put it and the boundary line moves up to sit above it, so the drop always sticks and the day just re-reads. Nothing bounces, nothing is refused. The line is a readout of where the day runs over, not a wall.
+  </div>
+  <p class="onote" style="max-width:880px">Note this drops out of the same optimistic-order path <code>DayTimeline.tsx</code> already uses for drops (the stable task-id string reconcile), so no new lag.</p>
+</section>
+
+<!-- 04 CHIPS -->
+<section>
+  <div class="shead"><span class="snum">04</span><h2>Chip text takes the coin colour <span class="shipped">BUILT</span></h2></div>
+  <div class="row">
+    <div class="opt">
+      <div class="otag">Before · ink on white</div>
+      <div class="plight">
+        <div class="prow"><div class="ptime">7:00</div><div class="prail"><div class="pcoin">↻</div><div class="pdots"></div></div>
+          <div class="pbody"><div class="phead2">The morning starts honest</div>
+            <div class="pchips"><span class="pchip">Routines</span><span class="pchip">Goal coach</span></div></div></div>
+        <div class="prow"><div class="ptime">13:00</div><div class="prail"><div class="pcoin">▤</div><div class="pdots"></div></div>
+          <div class="pbody"><div class="phead2">Before you say yes to more</div>
+            <div class="pchips"><span class="pchip">Day capacity</span><span class="pchip">Confidence band</span></div></div></div>
+        <div class="prow"><div class="ptime">Sun</div><div class="prail"><div class="pcoin amb">▤</div></div>
+          <div class="pbody" style="padding-bottom:var(--s1)"><div class="phead2">The week, understood</div>
+            <div class="pchips"><span class="pchip honey">Weekly review</span><span class="pchip honey">PDF export</span></div></div></div>
+      </div>
+      <p class="onote">Labels at <code>ink</code> #20233A — same weight as the headings above them, so the chips compete with the moment titles.</p>
+    </div>
+
+    <div class="opt">
+      <div class="otag">After · indigo on white <span class="pick">built</span></div>
+      <div class="plight">
+        <div class="prow"><div class="ptime">7:00</div><div class="prail"><div class="pcoin">↻</div><div class="pdots"></div></div>
+          <div class="pbody"><div class="phead2">The morning starts honest</div>
+            <div class="pchips"><span class="pchip ind">Routines</span><span class="pchip ind">Goal coach</span></div></div></div>
+        <div class="prow"><div class="ptime">13:00</div><div class="prail"><div class="pcoin">▤</div><div class="pdots"></div></div>
+          <div class="pbody"><div class="phead2">Before you say yes to more</div>
+            <div class="pchips"><span class="pchip ind">Day capacity</span><span class="pchip ind">Confidence band</span></div></div></div>
+        <div class="prow"><div class="ptime">Sun</div><div class="prail"><div class="pcoin amb">▤</div></div>
+          <div class="pbody" style="padding-bottom:var(--s1)"><div class="phead2">The week, understood</div>
+            <div class="pchips"><span class="pchip honey">Weekly review</span><span class="pchip honey">PDF export</span></div></div></div>
+      </div>
+      <p class="onote"><b>Chip label = the coin glyph's colour.</b> Indigo <code>primary</code> #6B5BE6 on white (6.6:1), ink on honey. Each moment now reads as one coloured unit, and the ink headings clearly outrank the chips.</p>
+      <p class="onote">Dark mode keeps ink labels — indigo on <code>primaryWash</code> over the deep bg lands under 3:1.</p>
+    </div>
+  </div>
+</section>
+
+</div>
+</body>
+</html>

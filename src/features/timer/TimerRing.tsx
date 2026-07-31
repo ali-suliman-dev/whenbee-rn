@@ -18,10 +18,15 @@ const AnimatedCircle = Animated.createAnimatedComponent(Circle);
 // The animated layer reads `elapsedSec` / `overProgress` shared values on the UI
 // thread (driven by useTimer's frame callback):
 //   • progress ring  — strokeDashoffset fills toward the honest estimate; amber on overrun
-//   • center numeral — m:ss, driven by the shared value (AnimatedNumeral, no setState)
-// A single STATIC faint tick marks where the user's GUESS falls on the ring (so
-// the gap between "what I guessed" and "the honest target the ring fills toward"
-// is visible). No orbiting dot — it read as a notch in the track.
+//   • center numeral — m:ss (1h05 past an hour), driven by the shared value
+//     (AnimatedNumeral, no setState)
+//
+// A single STATIC faint tick marks where the user's GUESS falls on the ring (so the
+// gap between "what I guessed" and "the honest target the ring fills toward" is
+// visible). No orbiting dot — it read as a notch in the track. (An amber honest-range
+// straddle arc was tried here but pulled: the [low,high] band always crosses the
+// 12-o'clock start seam, so it wrapped over the ring's start and read as broken. The
+// finish spread still shows precisely in the ledger's finish row.)
 // ──────────────────────────────────────────────────────────────────────────────
 
 const SIZE = 258;
@@ -40,6 +45,8 @@ export function TimerRing({
   elapsedSec: SharedValue<number>;
   overProgress: SharedValue<number>;
   estimateSec: number;
+  /** The original guess (minutes) — marked as a static tick on the ring so the gap
+   *  to the honest target the ring fills toward is visible. */
   guessMin: number;
 }) {
   const t = useTheme();
@@ -54,11 +61,19 @@ export function TimerRing({
     return f > 1 ? 1 : f;
   }, [estimateSec]);
 
-  // m:ss clock for the center numeral — ticks every second so time visibly moves.
-  // Formatted on the UI thread (worklet) and written straight to the native text,
-  // so there is still zero per-second React re-render.
+  // Centre clock — M:SS under an hour, "1h05" past one (the `h` separator so it
+  // can't be misread as minutes:seconds, and long sessions never overflow to
+  // "200:00"). Formatted on the UI thread (worklet) and written straight to the
+  // native text, so there is still zero per-second React re-render. Kept inline
+  // and self-contained — see `formatTimerClock` in lib/time for the tested mirror
+  // (a helper called inside a worklet needs a 'worklet' directive and can crash).
   const clock = useDerivedValue(() => {
     const total = elapsedSec.value;
+    if (total >= 3600) {
+      const h = Math.floor(total / 3600);
+      const m = Math.floor((total % 3600) / 60);
+      return `${h}h${m < 10 ? '0' : ''}${m}`;
+    }
     const m = Math.floor(total / 60);
     const s = total % 60;
     return `${m}:${s < 10 ? '0' : ''}${s}`;

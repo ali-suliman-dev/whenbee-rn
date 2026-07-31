@@ -20,6 +20,12 @@ interface UseCategoryDetailResult {
   adaptSpeed: AdaptSpeed;
   setAdaptSpeed: (speed: AdaptSpeed) => void;
   resetCategory: () => Promise<void>;
+  /** Deletes this category entirely — its tracked entry and all logged stats.
+   *  Does NOT navigate; the screen owns navigation after this resolves. */
+  deleteCategory: () => Promise<void>;
+  /** False when this is the user's last remaining category — deletion must
+   *  always leave at least one category behind. */
+  canDelete: boolean;
   /** True for the single render after this category first reaches 'honest'
    *  confidence and hasn't graduated before. Drives the one-time GraduationMoment. */
   justGraduated: boolean;
@@ -39,7 +45,10 @@ export function useCategoryDetail(categoryId: string): UseCategoryDetailResult {
   const isGraduated = useCalibrationStore((s) => s.isGraduated);
   const markGraduated = useCalibrationStore((s) => s.markGraduated);
   const loadReasonInsights = useCalibrationStore((s) => s.loadReasonInsights);
+  const deleteCategoryAction = useCalibrationStore((s) => s.deleteCategory);
   const setAdaptSpeedAction = useCategoriesStore((s) => s.setAdaptSpeed);
+  const removeCategory = useCategoriesStore((s) => s.removeCategory);
+  const categories = useCategoriesStore((s) => s.categories);
   const isPro = useEntitlement((s) => s.isPro);
 
   // The chosen learning mode lives in the categories store; default Balanced.
@@ -118,12 +127,21 @@ export function useCategoryDetail(categoryId: string): UseCategoryDetailResult {
     await refresh();
   }, [categoryId, resetCategoryAction, refresh]);
 
+  const deleteCategory = useCallback(async () => {
+    await deleteCategoryAction(categoryId);
+    removeCategory(categoryId);
+  }, [categoryId, deleteCategoryAction, removeCategory]);
+
+  const canDelete = categories.length > 1;
+
   return {
     detail,
     loading,
     adaptSpeed,
     setAdaptSpeed,
     resetCategory,
+    deleteCategory,
+    canDelete,
     justGraduated,
     clearJustGraduated,
     reasonNote,

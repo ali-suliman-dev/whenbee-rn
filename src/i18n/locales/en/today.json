@@ -223,7 +223,9 @@
     "taskNameLabel": "Task name (optional)",
     "categoryLabel": "Category",
     "savingHint": "Saving teaches your honest pace.",
-    "skipForNow": "Skip for now"
+    "skipForNow": "Skip for now",
+    "namePlaceholder": "Name it (optional)",
+    "nameA11y": "Task name"
   },
   "quickTaskChips": {
     "tapToStartAgain": "Tap to start again"

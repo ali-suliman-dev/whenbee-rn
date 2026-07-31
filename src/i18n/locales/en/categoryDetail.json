@@ -111,7 +111,8 @@
     "eyebrowRange": "YOUR HONEST RANGE",
     "narrowed": "<strong>Tightened from {{low}}–{{high}}</strong> as you logged.",
     "metaGuess": " your guess",
-    "metaSeal": "honest now"
+    "metaSeal": "honest now",
+    "landNear": "Most tasks land near <point>~{{minutes}} min</point>."
   },
   "maturityMeter": {
     "settled": "A few more runs and this settles to one number.",

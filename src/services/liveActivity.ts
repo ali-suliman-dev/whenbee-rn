@@ -2,7 +2,7 @@
 // liveActivity — RN-side bridge to the native presence surfaces (Home-screen
 // widget + ActivityKit Live Activity / Dynamic Island). See targets/widget/*.
 //
-// Mirrors the house guarded-service pattern (purchases.ts / sentry.ts /
+// Mirrors the house guarded-service pattern (purchases.ts /
 // timerNotifications.ts): every export is a NO-OP in Expo Go and in unit tests,
 // so the Expo-Go-testable JS app never depends on native presence. The core
 // guess → timer → learn loop must never break for a widget write.
@@ -42,6 +42,10 @@ export interface WidgetSnapshot {
   category: string;
   /** Honest finish as a wall-clock string already formatted by JS, e.g. "7:10". */
   honestFinishClock: string;
+  /** Projected finish at the ORIGINAL guess, JS-formatted wall-clock (e.g. "3:50").
+   *  '' when unknown. The widget shows it as a quiet "guessed …" row under the
+   *  honest hero — the guess-vs-honest pairing only Whenbee can show. */
+  guessClock: string;
   /** Deep link the widget's one-tap Start button opens, e.g. "whenbee://timer?taskId=1". */
   startDeepLink: string;
   /** Unix seconds when this was written (lets the widget detect a stale snapshot). */
@@ -62,6 +66,9 @@ export interface LiveActivityAttributes {
   finishEpoch: number;
   /** Unix seconds when the timer started; the ring fills from here to finishEpoch. */
   startEpoch: number;
+  /** Unix seconds of the projected finish at the ORIGINAL guess. The Android
+   *  notification appends "· guessed <clock>"; 0 = unknown → no guess suffix. */
+  guessFinishEpoch: number;
   /** Whether to start the rich (ring + accents) Live Activity. Decided in JS at
    *  start time from the entitlement; the live countdown digits stay free either way. */
   isProRich: boolean;
@@ -74,6 +81,10 @@ export interface LiveActivityAttributes {
  */
 export interface NativePresenceModule {
   isStub: boolean;
+  /** Generic keyed widget write — each widget owns its own slice (see `WidgetDataStore`). */
+  writeWidgetData: (key: string, json: string) => void;
+  /** Generic keyed widget clear. */
+  clearWidgetData: (key: string) => void;
   writeSnapshot: (snapshot: WidgetSnapshot) => void;
   clearSnapshot: () => void;
   startLiveActivity: (attributes: LiveActivityAttributes) => void;
@@ -83,6 +94,8 @@ export interface NativePresenceModule {
 
 const stub: NativePresenceModule = {
   isStub: true,
+  writeWidgetData: () => {},
+  clearWidgetData: () => {},
   writeSnapshot: () => {},
   clearSnapshot: () => {},
   startLiveActivity: () => {},
@@ -114,7 +127,12 @@ function loadNativePresence(): NativePresenceModule | null {
 }
 
 let cached: NativePresenceModule | null = null;
-function getNativePresence(): NativePresenceModule {
+/**
+ * Resolve (and cache) the native presence module. Exported so other guarded
+ * presence bridges (e.g. `services/presence/widgetData.ts`) can reuse the same
+ * resolved module instead of duplicating the Expo-Go / Android / stub probe.
+ */
+export function getNativePresence(): NativePresenceModule {
   if (!cached) cached = resolveNativePresence(isExpoGo, loadNativePresence);
   return cached;
 }

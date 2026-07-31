@@ -48,7 +48,7 @@ export default function Patterns() {
   const reduced = useReducedMotion();
   const router = useRouter();
   const { view } = usePatterns();
-  const { summary: reviewSummary, period: reviewPeriod, isFresh: reviewFresh } = useReview();
+  const { summary: reviewSummary, period: reviewPeriod } = useReview();
   const { insights } = useReasonInsights();
   const { insights: contextInsights } = useContextInsights();
   const [tab, setTab] = useState<PatternsTab>('numbers');
@@ -152,7 +152,23 @@ export default function Patterns() {
         contentContainerStyle={{ gap: t.space[4], paddingBottom: t.space[12] }}
         showsVerticalScrollIndicator={false}
       >
-        {showEmpty ? <PatternsEmpty /> : null}
+        {/* Empty state — a quiz-seeded provisional archetype still shows, so a
+            brand-new user meets their time type from onboarding instead of a
+            blank screen. The copy below it stops promising what's already shown. */}
+        {showEmpty ? (
+          view.archetype ? (
+            <>
+              <Animated.View entering={rise()}>
+                <ArchetypeHero card={view.archetype} calibrationMap={view.calibrationMap} />
+              </Animated.View>
+              <Animated.View entering={rise()}>
+                <PatternsEmpty archetypeShown />
+              </Animated.View>
+            </>
+          ) : (
+            <PatternsEmpty />
+          )
+        ) : null}
 
         {view && !view.empty ? (
           <>
@@ -173,7 +189,7 @@ export default function Patterns() {
             {/* 2 · REVIEW RITUAL — always pinned under hero */}
             <Animated.View entering={rise()}>
               <ProGate fallback={reviewSummary ? <ReviewRitualLocked period={reviewPeriod} /> : null}>
-                {reviewSummary ? <ReviewRitualCard summary={reviewSummary} isFresh={reviewFresh} /> : null}
+                {reviewSummary ? <ReviewRitualCard summary={reviewSummary} /> : null}
               </ProGate>
             </Animated.View>
 

@@ -1,4 +1,5 @@
 import { render, screen, waitFor, fireEvent } from '@testing-library/react-native';
+import { FW_BIN_COUNT as mockFwBinCount } from '@/src/engine';
 import Patterns from '@/src/app/(tabs)/patterns';
 import { useCalibrationStore, type PatternsData } from '@/src/stores/calibrationStore';
 import { useEntitlement } from '@/src/features/paywall/useEntitlement';
@@ -9,14 +10,20 @@ import { kv } from '@/src/lib/kv';
 // screen tests don't hit the sqlite path — the card's own tests cover its states.
 jest.mock('@/src/features/planner/useLearnedFocusWindow', () => ({
   useLearnedFocusWindow: () => ({
-    basis: 'prior' as const,
+    basis: 'forming' as const,
     startMin: 540,
     endMin: 690,
-    scoreByBin: Array(38).fill(0),
+    scoreByBin: Array(mockFwBinCount).fill(0),
     sampleCount: 0,
     distinctDays: 0,
     confidence: 0,
+    confidenceTier: 'low' as const,
+    coarseBlockLabel: '',
     held: false,
+    gates: {
+      sessions: { have: 0, need: 15 },
+      days: { have: 0, need: 5 },
+    },
   }),
 }));
 
@@ -128,6 +135,34 @@ describe('Patterns screen', () => {
     expect(screen.getByLabelText('Admin & email readiness: honest, 3 of 3')).toBeOnTheScreen();
     // Warm, no-guilt framing line (single honest area).
     expect(screen.getByText('One area reads honest now. The rest are catching up.')).toBeOnTheScreen();
+  });
+
+  it('shows the quiz-seeded provisional archetype on a zero-log empty state', async () => {
+    const { useSettingsStore } = jest.requireActual<typeof import('@/src/stores/settingsStore')>(
+      '@/src/stores/settingsStore',
+    );
+    useSettingsStore.setState({ archetypeSeed: { m0: 2.2, source: 'quiz', tookAt: NOW } });
+    try {
+      setPatternsData({ categories: [], logs: [], nameOf: (id) => id });
+
+      render(<Patterns />);
+
+      await waitFor(() => {
+        // The onboarding time type shows even before the first log…
+        expect(screen.getByText('YOUR TIME PERSONALITY')).toBeOnTheScreen();
+      });
+      // Title renders in the card AND the off-screen ShareableCard copy.
+      expect(screen.getAllByText('The Dreamer').length).toBeGreaterThan(0);
+      // …with the trimmed footnote (no duplicate personality promise, no big empty hero).
+      expect(screen.queryByText('Your patterns are on the way')).toBeNull();
+      expect(
+        screen.getByText(
+          'Time a few tasks and this fills in with your sharpest category and the surprises worth noticing.',
+        ),
+      ).toBeOnTheScreen();
+    } finally {
+      useSettingsStore.setState({ archetypeSeed: undefined });
+    }
   });
 
   it('shows the archetype placeholder for a logged-but-unearned user', async () => {

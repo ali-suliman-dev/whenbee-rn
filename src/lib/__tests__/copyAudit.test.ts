@@ -1,4 +1,4 @@
-import { readFileSync, readdirSync } from 'node:fs';
+import { existsSync, readFileSync, readdirSync } from 'node:fs';
 import { join, relative, sep } from 'node:path';
 import { execFileSync } from 'node:child_process';
 import { resources, SUPPORTED_LANGS } from '../../i18n/resources';
@@ -52,6 +52,9 @@ function listSourceFiles(): string[] {
     const norm = f.split(sep).join('/');
     if (/\.(test|spec)\.tsx?$/.test(norm)) return false;
     if (norm.includes('/__tests__/')) return false;
+    // `git ls-files` lists TRACKED paths, so a file deleted in the working tree
+    // but not yet staged still shows up and would blow up readFileSync below.
+    if (!existsSync(f)) return false;
     return true;
   });
 }
@@ -193,7 +196,7 @@ describe('locale copy is guilt-free', () => {
 // Files where a `danger`/`error` colour token is legitimate — real system errors
 // only (failed purchase / restore). Add a path here ONLY for genuine error UI.
 const DANGER_ALLOW: readonly string[] = [
-  'src/features/paywall/Paywall.tsx', // purchase/restore failure message
+  'src/features/paywall/InlineNotice.tsx', // purchase/restore failure band
   // Settings "Danger zone" — deliberate, user-initiated destructive actions
   // (Reset progress / Erase everything). Red here is genuine danger semantics,
   // never a guilt signal on a honey/reward surface (the protected-surface test

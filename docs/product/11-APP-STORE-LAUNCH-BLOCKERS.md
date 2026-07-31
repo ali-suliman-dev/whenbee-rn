@@ -73,12 +73,12 @@ Every code-touching item lists the skills to invoke first (project rule: skills 
 
 **Guideline:** 5.1.1 + App Privacy accuracy. What you declare must match what you collect.
 
-**What's wrong:** The generated privacy manifest declares `NSPrivacyCollectedDataTypes` **empty** and `NSPrivacyTracking false`, but the app sends anonymous usage events to PostHog and crash reports to Sentry. Empty declaration + real collection = post-review rejection.
-**Evidence:** `src/services/analytics.ts` (PostHog typed events), `src/services/sentry.ts` (`enableNative: true`). Manifest is regenerated, so the fix is in config, not the `ios/` file.
+**What's wrong:** The generated privacy manifest declares `NSPrivacyCollectedDataTypes` **empty** and `NSPrivacyTracking false`, but the app sends anonymous usage events and crash/error reports to PostHog. Empty declaration + real collection = post-review rejection.
+**Evidence:** `src/services/analytics.ts` (PostHog typed events), `src/providers/AppProviders.tsx` (`PostHogErrorBoundary` + `errorTracking.autocapture`). Manifest is regenerated, so the fix is in config, not the `ios/` file.
 
 **What's actually collected (use this for the nutrition labels):**
 - **Usage Data** (PostHog) — anonymous product-analytics events: numeric metrics (guess minutes, actual minutes, sharpness, ratio), category names, event names. **No task text, no account, no IDFA.** Not linked to identity. Not used for tracking.
-- **Crash Data / Diagnostics** (Sentry) — stack traces, device/OS metadata. Not linked to identity. Not used for tracking.
+- **Crash Data / Diagnostics** (PostHog error tracking) — stack traces, device/OS metadata. Not linked to identity. Not used for tracking.
 
 **Fix:**
 1. Declare the two data types in the privacy manifest. The reliable way under Expo CNG is a config plugin / `expo-build-properties` privacy-manifest entry, or a small custom config plugin that injects `NSPrivacyCollectedDataTypes`. Each entry: `linkage = false`, `tracking = false`, purpose = App Functionality (PostHog) / App Functionality + Analytics as appropriate.
@@ -254,9 +254,9 @@ What we collect, and why
    logged", "trial started", along with numbers like a time guess, an actual
    duration, and a category name. These are not linked to your identity. We never
    send the text of your tasks, your name, or any device advertising identifier.
-2. Crash and error reports (Sentry). When something breaks, we receive a technical
-   report — what failed and basic device/OS info — so we can fix it. No personal
-   data, no task content.
+2. Crash and error reports (PostHog). When something breaks, we receive a technical
+   report — what failed and basic device/OS info — so we can fix it, processed in
+   the EU alongside our analytics. No personal data, no task content.
 
 What we do NOT do
 - No advertising, no ad networks, no IDFA.

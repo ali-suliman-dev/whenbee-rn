@@ -1,22 +1,26 @@
 import { useState } from 'react';
-import { type TextStyle, type ViewStyle, View } from 'react-native';
+import { type TextStyle, type ViewStyle, View, Pressable } from 'react-native';
 import { useTranslation } from 'react-i18next';
-import {
+import Animated, {
   useDerivedValue,
   useAnimatedReaction,
   runOnJS,
+  FadeIn,
+  useReducedMotion,
   type SharedValue,
 } from 'react-native-reanimated';
 import { AppText } from '@/src/components/AppText';
+import { haptics } from '@/src/lib/haptics';
 import { useTheme } from '@/src/theme/useTheme';
 import { type } from '@/src/theme/typography';
+import { fmtHm } from '@/src/lib/time';
 
 // ──────────────────────────────────────────────────────────────────────────────
 // PaceLabel — the no-guilt pace pill pinned above the controls.
 //
-//   under  → "On track — you've got time"          (soft-indigo pill)
-//   ≤3 min → "Closing in on your guess… that's fine" (soft-indigo pill)
-//   over   → "+N over your guess — that's ok, now we know" (soft-amber pill)
+//   under  → "You've got time"                (soft-indigo pill)
+//   ≤3 min → "Almost at your guess"           (soft-indigo pill)
+//   over   → "N over your guess — now you know" (soft-amber pill)
 //
 // It reads elapsedSec on the UI thread but only sets React state when the *phase*
 // (or the over-amount) actually changes — NOT every second. So the second-by-
@@ -26,28 +30,60 @@ import { type } from '@/src/theme/typography';
 
 type Phase = 'under' | 'closing' | 'over';
 
+// Pure so it can drive both the UI-thread derived value and the state's lazy
+// initializer (the initial render — before any reaction has fired — must
+// already reflect the real elapsedSec, not a hardcoded guess).
+function computePace(
+  elapsedSec: number,
+  estimateSec: number,
+  forgotSec: number,
+): { phase: Phase; over: number; pastGuess: boolean } {
+  'worklet';
+  const left = Math.floor((estimateSec - elapsedSec) / 60);
+  let p: Phase;
+  if (elapsedSec >= estimateSec) p = 'over';
+  else if (left <= 3) p = 'closing';
+  else p = 'under';
+  const over = p === 'over' ? Math.floor((elapsedSec - estimateSec) / 60) : 0;
+  return { phase: p, over, pastGuess: elapsedSec >= forgotSec };
+}
+
 export function PaceLabel({
   elapsedSec,
   estimateSec,
+  guessSec,
+  onForgotPress,
 }: {
   elapsedSec: SharedValue<number>;
   estimateSec: number;
+  /**
+   * When the user's own guess is spent — the threshold the "Forgot to stop?"
+   * link waits for. Deliberately NOT estimateSec: a walked-away timer on a
+   * 20-minute guess with a 45-minute honest number would otherwise have no way
+   * back for 25 minutes, long past the point the offer helps. Falls back to
+   * estimateSec when no guess exists (quick-start).
+   */
+  guessSec?: number;
+  onForgotPress?: () => void;
 }) {
   const t = useTheme();
-  const { t: tr } = useTranslation('timer');
-  const [phase, setPhase] = useState<Phase>('under');
-  const [overMin, setOverMin] = useState(0);
+  const reducedMotion = useReducedMotion();
+  const forgotSec = guessSec ?? estimateSec;
+  const [phase, setPhase] = useState<Phase>(
+    () => computePace(elapsedSec.value, estimateSec, forgotSec).phase,
+  );
+  const [overMin, setOverMin] = useState(
+    () => computePace(elapsedSec.value, estimateSec, forgotSec).over,
+  );
+  const [pastGuess, setPastGuess] = useState(
+    () => computePace(elapsedSec.value, estimateSec, forgotSec).pastGuess,
+  );
 
   // Phase + over-amount as derived values (UI thread).
-  const view = useDerivedValue(() => {
-    const left = Math.floor((estimateSec - elapsedSec.value) / 60);
-    let p: Phase;
-    if (elapsedSec.value >= estimateSec) p = 'over';
-    else if (left <= 3) p = 'closing';
-    else p = 'under';
-    const over = p === 'over' ? Math.floor((elapsedSec.value - estimateSec) / 60) : 0;
-    return { phase: p, over };
-  }, [estimateSec]);
+  const view = useDerivedValue(
+    () => computePace(elapsedSec.value, estimateSec, forgotSec),
+    [estimateSec, forgotSec],
+  );
 
   // Only push to JS state when the visible copy would actually change.
   useAnimatedReaction(
@@ -56,6 +92,9 @@ export function PaceLabel({
       if (!prev || curr.phase !== prev.phase || curr.over !== prev.over) {
         runOnJS(setPhase)(curr.phase);
         runOnJS(setOverMin)(curr.over);
+      }
+      if (!prev || curr.pastGuess !== prev.pastGuess) {
+        runOnJS(setPastGuess)(curr.pastGuess);
       }
     },
     [],
@@ -78,13 +117,51 @@ export function PaceLabel({
   };
 
   let copy: string;
-  if (isOver) copy = tr('pace.over', { count: overMin });
-  else if (phase === 'closing') copy = tr('pace.closing');
-  else copy = tr('pace.onTrack');
+  if (isOver) copy = overMin > 0 ? `${fmtHm(overMin)} over your guess — now you know` : 'Past your guess — now you know';
+  else if (phase === 'closing') copy = 'Almost at your guess';
+  else copy = 'You’ve got time';
 
-  return (
+  const pill = (
     <View style={wrap} accessibilityLiveRegion="polite">
       <AppText style={baseStyle}>{copy}</AppText>
+    </View>
+  );
+
+  if (!pastGuess || !onForgotPress) return pill;
+
+  // Reads as an inline text link: underlined + full ink (a muted underline looks
+  // disabled). Stays a quiet recovery affordance beside the amber pace pill — no
+  // amber, no weight bump, so it never competes with the pill.
+  const forgotStyle: TextStyle = {
+    ...(type.caption as TextStyle),
+    color: t.colors.ink,
+    textDecorationLine: 'underline',
+  };
+
+  const rowStyle: ViewStyle = {
+    flexDirection: 'row',
+    alignItems: 'center',
+    alignSelf: 'center',
+    gap: t.space[3],
+  };
+
+  return (
+    <View style={rowStyle}>
+      {pill}
+      <Animated.View entering={reducedMotion ? undefined : FadeIn.duration(t.motion.fast)}>
+        <Pressable
+          onPress={() => {
+            haptics.light();
+            onForgotPress();
+          }}
+          accessibilityRole="button"
+          accessibilityLabel="Forgot to stop the timer earlier"
+          hitSlop={t.size.hitSlop}
+          style={{ paddingVertical: t.space[1] }}
+        >
+          <AppText style={forgotStyle}>Forgot to stop?</AppText>
+        </Pressable>
+      </Animated.View>
     </View>
   );
 }

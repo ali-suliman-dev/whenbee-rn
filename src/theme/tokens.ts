@@ -17,7 +17,7 @@ import { Easing } from 'react-native-reanimated';
 export const tokens = {
   // 4-based rhythm + sub-8 micro steps (kills inline gap: 2/3/6). 2.5:10 is the
   // half-step the chip vertical padding needs to clear the 44pt target.
-  space: { 0: 0, 0.5: 2, 1: 4, 1.5: 6, 2: 8, 2.5: 10, 3: 12, 4: 16, 5: 20, 6: 24, 8: 32, 10: 40, 12: 48, 16: 64 },
+  space: { 0: 0, 0.5: 2, 1: 4, 1.5: 6, 2: 8, 2.5: 10, 3: 12, 3.5: 14, 4: 16, 5: 20, 6: 24, 8: 32, 10: 40, 12: 48, 16: 64 },
 
   // Control-height system — HIG-compliant touch targets (44pt floor). Buttons and
   // tappable controls size from here, so nothing is ad-hoc under the 44pt minimum.
@@ -35,18 +35,40 @@ export const tokens = {
   // `hitSlop` = extra tap area added via the Pressable hitSlop prop so that small
   // touch targets (secondary buttons, skip links) comfortably meet the 44pt HIG
   // floor without visually enlarging the element.
-  size: { control: { xxs: 28, xs: 32, sm: 36, md: 44, lg: 52 }, coin: 40, wheelCol: 72, wheelRow: 32, shareCard: 340, timelineCol: 110, planCardMin: 70, gripW: 14, hitSlop: 8, sparkline: 32, honestBand: 180 },
+  // `iconTap` = geometry for a BARE icon glyph used as a control (e.g. the
+  // refresh + chevron pair in the Today calendar header). `pad` around an
+  // `iconSize.sm` (16pt) glyph makes a 32pt box; `slopX`/`slopY` on top of it
+  // give a 48×44 touch target, clearing the 44pt HIG floor without growing the
+  // row. `slopX` is exactly half the `space[4]` gap between two adjacent glyphs,
+  // so their slop regions meet but never OVERLAP — overlapping hit areas let the
+  // later-rendered glyph silently swallow its neighbour's taps.
+  // `emptyArt` = mascot illustration size in a full-bleed empty state (e.g. the
+  // dozing bee in What's New). `emptyCopy` = matching empty-state body-copy
+  // max-width, so the line length stays readable under a centred title.
+  // `radio` = geometry of a single-select radio marker (the plan-anchor chooser):
+  // `dot` is the outer circle, `ring` its unselected stroke width, `core` the
+  // filled centre when selected. The stroke is NOT `borderWidth.thin` on purpose
+  // — that knob is 0 app-wide (cards run borderless) and a radio needs an edge.
+  // `chooserRow` = minimum height of a chooser row: above the 44pt HIG floor with
+  // room for the derived clock line underneath the label.
+  // `glyphDish` = the leading illustration well on a reward context-question
+  // option row (34px rounded-square). `optionRadio` = that same row's trailing
+  // single-select marker — a bigger sibling of `radio` (20px dot / 1.8 ring)
+  // tuned for the wider full-width row rather than a compact chooser line.
+  size: { control: { xxs: 28, xs: 32, sm: 36, md: 44, lg: 52 }, coin: 40, momentCoin: 30, checkCoin: 20, wheelCol: 72, wheelRow: 32, shareCard: 340, timelineCol: 110, planCardMin: 70, calTimeCol: 52, gripW: 14, hitSlop: 8, iconTap: { pad: 8, slopX: 8, slopY: 6 }, sparkline: 32, honestBand: 180, progressPill: 4, chipMinWidth: 120, quizTileWidth: '47%', emptyArt: 132, emptyCopy: 230, radio: { dot: 18, ring: 1.5, core: 8 }, chooserRow: 52, glyphDish: 34, optionRadio: { dot: 20, ring: 1.8, core: 9 } },
 
   // Icon sizing scale — replaces inline 12/16/18/20/22/24/30 across the app.
-  iconSize: { xs: 12, sm: 16, md: 20, lg: 24, xl: 32 },
+  iconSize: { xs: 12, sm: 16, md: 20, lg: 24, xl: 32, '2xl': 64 },
 
   // One honest radius set with clear semantics — every CARD uses `card`.
   //   sm   tags / small chips
   //   md   inputs, segmented controls
+  //   panel nested inset panels (e.g. the ripening ticket strip) — a step
+  //        between `md` and `card` since it lives INSIDE a card
   //   card all cards (one value, no exceptions)
   //   sheet modals / bottom sheets
   //   full true pills, FAB, dots, the tab indicator
-  radii: { none: 0, sm: 8, md: 12, card: 16, sheet: 20, full: 999 },
+  radii: { none: 0, sm: 8, md: 12, panel: 14, card: 16, sheet: 20, full: 999 },
 
   // `card` is the ONE knob for every card's edge — change it once to restyle (or
   // set 0 to remove) all card borders app-wide. hairline/thin/thick stay for
@@ -55,10 +77,20 @@ export const tokens = {
   // `share` = the ShareableCard's defined 1px edge. It is kept OFF the global card
   // knob on purpose: a shared image needs a visible edge against any background,
   // even when in-app cards run borderless.
-  borderWidth: { hairline: 0, thin: 0, thick: 2, card: 0, share: 1, chip: 1 },
+  // `selected` = the option-row inset selection ring on the reward
+  // context-question card (~1.5px, matches Chip's selection-border weight).
+  // `ghost` = the dashed border on empty-slot affordances (1.5px, semantic).
+  // `coin` = the honey-chip bottom coin-edge on the ripening ticket strip (a touch
+  // deeper than `thick` so a pill-sized chip still reads tactile).
+  borderWidth: { hairline: 0, thin: 0, thick: 2, card: 0, share: 1, chip: 1, selected: 1.5, ghost: 1.5, coin: 3 },
 
-  // Replaces scattered 0.3 / 0.4 / 0.6 opacities.
-  opacity: { disabled: 0.4, pressed: 0.6, wash: 0.78 },
+  // Replaces scattered 0.3 / 0.4 / 0.6 opacities. `rangeArc` = the faint amber
+  // straddle arc on the Live-Timer ring marking the honest [low, high] spread.
+  opacity: { disabled: 0.4, pressed: 0.6, wash: 0.78, rangeArc: 0.5 },
+
+  // Ripening Rail — five-step even fade from full accent to a whisper of it
+  // (Ready screen look-ahead). Mode-independent; identical in light/dark.
+  ripeningFade: [1, 0.5, 0.34, 0.22, 0.12],
 
   // Onboarding aurora glow opacities (mode-independent alphas; colours come from colors.primary/primaryEdge).
   gradients: { backdropTop: 0.22, backdropCorner: 0.16 },
@@ -82,7 +114,14 @@ export const tokens = {
   fontSize: {
     '2xs': 8, xs: 10, sm: 12, base: 14, md: 16, lg: 20, xl: 24, '2xl': 30, '3xl': 38,
     // finer steps the role scale needs
-    crumb: 9, micro: 10, caption: 12, bodySm: 14, bodyLg: 16, titleSm: 18, subtitle: 22, title: 26, honestLg: 36, honest: 40, honestHero: 46, timerClock: 64, timer: 78,
+    crumb: 9, micro: 10, caption: 12, bodySm: 14, bodyLg: 16, titleSm: 18, subtitle: 22, title: 26, honestCard: 32, honestLg: 36, honest: 40, honestHero: 46, timerClock: 64, timer: 78,
+    // ghostWatermark = the oversized faint hex glyph behind the ripening ticket
+    // strip (RipeningProCard) — display-scale decoration, not legible text.
+    ghostWatermark: 88,
+    // ticketTitle/ticketSub = the ripening ticket strip's two-line copy block —
+    // sit a half-step below caption/micro so the strip reads compact next to
+    // the honey chip beside it.
+    ticketTitle: 13, ticketSub: 11,
   },
   fontWeight: { regular: '400', medium: '500', semibold: '600', bold: '700' },
   // `Menlo` is Apple-only — on Android an unknown family renders nothing, so the
@@ -93,7 +132,9 @@ export const tokens = {
   // rather than loose. `tight` is the standard display-headline tightening.
   // M4: normal/wide added for plan-screen labels (PlanTaskCard "RUNNING" tag,
   // PlanRail now-pill text). tight stays for display headings.
-  letterSpacing: { tight: -0.5, normal: 0.2, wide: 0.8 },
+  // `display` is a deeper tightening reserved for the largest hero headlines
+  // (onboarding welcome) where `tight` alone reads too loose at that size.
+  letterSpacing: { display: -0.75, tight: -0.5, normal: 0.2, wide: 0.8 },
 
   // Soft elevation for raised/focal cards (CSS box-shadow renders cross-platform).
   // `lift` is a genuinely soft drop (real blur radius + elevation) for a focal
@@ -133,6 +174,10 @@ export const tokens = {
     // primarySoft). Tones the guess down from a solid indigo block so Start is the
     // single filled indigo on Today. lineW = stroke width, gapW = clear gap between.
     gapStripe: { lineW: 2, gapW: 4 },
+    // tally = the ripening-card feature tally bar (RipeningProCard) — one rounded
+    // segment per Pro feature, thinner than the honey-fill `track` so the row of
+    // segments reads as a ticket-strip meter, not another progress bar.
+    tally: 5,
   },
 
   // The thin indigo left-edge on actionable Today rows (TaskRow) — a semantic
@@ -171,6 +216,18 @@ export const tokens = {
     // rest between blinks; beeLook = one slow eye glance; beeLookHold = the dwell at
     // each glance (longer = calmer). All tuned slow so the bee reads serene, not busy.
     beeWingBuzz: 720, beeBlink: 130, beeBlinkGap: 5200, beeLook: 1400, beeLookHold: 2200,
+    // Dozing bee (What's-new empty state). beeBreath = one half of a sleeping
+    // breath (in OR out) — ~23 breaths/min at 2600ms, a resting human rate, so it
+    // reads alive rather than animated. zzz = one full rise-and-fade of a single
+    // "z"; zzzStagger = the delay between them, ~1/3 of a cycle so the three
+    // never peak together (motion-design 1/3 rule). Scale + opacity only.
+    beeBreath: 2600, zzz: 3600, zzzStagger: 1200,
+    // contextBeat = how long a tapped answer in the reward screen's quick
+    // questions holds its "landed" look (selected row + glyph) before the
+    // question collapses to its receipt. Its own knob, not `reveal`: this beat
+    // exists to be WATCHED, so it is tuned by eye and must not drag every other
+    // reveal with it.
+    contextBeat: 700,
     // Wax-seal ritual choreography (RitualSeal). Calm, no overshoot: the border
     // draws closed FIRST, then honey wells up, a soft bloom passes, the ✦ fades
     // in, and an amber sparkle bursts radially. Durations + start delays (ms).
@@ -183,6 +240,10 @@ export const tokens = {
     arcIn: 1000, arcOut: 840,
     // Shared physics — deduped from AppButton + FAB.
     spring: { damping: 13, stiffness: 340 },
+    // Wheel-picker row snap. Overshoot-clamped + higher damping than `spring`
+    // so the drum settles onto a row without the jiggle/bounce that an
+    // underdamped spring produces. Smooth ease-out settle, no wobble.
+    wheelSnap: { damping: 22, stiffness: 220, overshootClamping: true },
     // Named curves — declared once, not re-typed per file.
     easing: { standard: Easing.bezier(0.4, 0, 0.2, 1), calm: Easing.inOut(Easing.sin), honey: Easing.bezier(0.22, 1, 0.36, 1), premium: Easing.bezier(0.4, 0, 0.2, 1), out: Easing.bezier(0.23, 1, 0.32, 1) },
   },
@@ -197,10 +258,13 @@ export const tokens = {
       surfaceRaised: '#FFFFFF', // focal card (pair with soft shadow)
       surfaceRaisedEdge: '#DAD3EC', // coin-edge under a raised NEUTRAL surface (tactile option tiles)
       surfaceSunken: '#F1EEFB', // wells / inset tracks
+      taskCardBg: '#E9E4F6', // recessed fill for draggable plan task rows (distinct from event rows)
       // surfaceSunken: '#E4DEF7', // wells / inset tracks
       // surfaceSunken: '#ECE8DE', // wells / inset tracks
       hairline: '#DAD5C9', // 1px internal dividers (reads at 3:1 non-text)
       border: '#CFC9BA', // stronger edge for cards that must read
+      ghostBorder: '#CFC8EA', // dashed border for empty-slot affordances
+      radio: '#CFC8EA', // unselected single-select marker ring (reward context questions)
       divider: 'rgba(0,0,0,0.10)', // section separator — a darker recessed line (not a tint)
       shineOverlay: 'rgba(255,255,255,0.55)', // inner top-edge specular (glass lift)
 
@@ -211,6 +275,7 @@ export const tokens = {
 
       // ── accents (indigo hero / amber true accent) ──
       primary: '#6B5BE6',
+      primaryBright: '#5A4BD4', // higher-emphasis indigo for small mono data (plan clocks) on light
       primaryEdge: '#463B9E',
       primarySoft: '#E4E0FA', // low-emphasis indigo fill
       primaryWash: '#EFEDFC', // faintest indigo tint — lighter than primarySoft, still reads off white
@@ -228,6 +293,12 @@ export const tokens = {
       honeyWash: '#FBF2DF', // solid warm panel — the honest-number hero surface (one continuous tint, no gradient seam)
       accentChip: '#F3E2C0', // solid warm chip (tier/status pill) — a step deeper than accentSoft
       accentCoin: 'rgba(238,174,77,0.32)', // tint disc that still reads on accentSoft
+      accentGhost: 'rgba(238,174,77,0.10)', // faint watermark hex behind the ripening ticket strip
+      sheenChip: 'rgba(255,255,255,0.35)', // top specular strip on the honey "Get Pro" chip
+      // Amber rule for a boundary the eye should find but never be alarmed by —
+      // the done-by line on the day timeline. Faint on purpose: running over is a
+      // fact to read, not a warning to react to.
+      accentLine: 'rgba(238,174,77,0.28)',
       // RayBurst sunburst wedge fill. A deeper periwinkle than primarySoft so the
       // rays actually read on cream (primarySoft was near-invisible on the page bg).
       rayFill: '#BFB2F0',
@@ -237,14 +308,23 @@ export const tokens = {
       driftSettled: '#EEAE4D', // = accent (amber)
       driftCurious: '#6B5BE6', // = primary (indigo)
       amberText: '#8A5A12', // AA amber-on-light text
+      // Lighter honey amber — 3.6:1 on white, AA-LARGE only. WCAG "large" bold
+      // text starts at 14pt/18.66px, so bold text must be ≥20px (fontSize.lg) to
+      // clear the boundary with margin — 18px (titleSm) bold is 0.66px short and
+      // formally fails. Do NOT use on small/regular text (footer spans, the ⚡
+      // glyph, the overrun clock) — those stay on amberText, which clears AA at
+      // any weight/size.
+      honeyText: '#B87A16',
       success: '#33B07C',
       successSoft: '#E2F4EA',
       danger: '#D14343',
       dangerEdge: '#A82F2F', // darker depth edge for a filled danger control
+      dangerSoft: 'rgba(209,67,67,0.08)', // inline error band fill (paywall purchase errors)
 
       // ── utility ──
       scrim: 'rgba(20,21,29,0.45)', // modal/sheet overlay
       scrimStrong: 'rgba(16,17,24,0.58)', // darken layer over a BlurView backdrop (focal reward modal)
+      scrimOverlay: 'rgba(14,16,34,0.62)', // cool blue-leaning dim behind a focal recovery card (ForgotCard)
       shadowSoft: 'rgba(32,35,58,0.12)',
       // Inverse pill (toasts) — always the OPPOSITE of the mode so it pops:
       // light mode → dark pill + warm-white text.
@@ -253,6 +333,10 @@ export const tokens = {
       night: '#1C1E2E', // dark chip on light (aha card)
       nightSoft: '#2C2E40',
       onIndigo: '#FFFFFF', // text on indigo fill (AA 5.1:1 — warm white only hit 4.37)
+      // ── disabled controls ── (see the dark palette for the rationale)
+      controlDisabled: '#E9E4F6', // inert lavender-grey — reads off white AND off the cream bg
+      onControlDisabled: '#6E7183', // 3.88:1 on controlDisabled
+      controlDisabledEdge: '#DAD5C9', // = hairline
       onAmber: '#20233A', // text on amber fill (AA 7.9:1)
       ringTrack: '#E4DFD3', // sits just off cream
       // Soft-edge backing coin behind the ring bee (WhenbeeAvatar 'soft'). Pure white
@@ -280,8 +364,11 @@ export const tokens = {
       surfaceRaised: '#292B3C',
       surfaceRaisedEdge: '#1B1C27', // coin-edge under a raised NEUTRAL surface (tactile option tiles)
       surfaceSunken: '#15161F',
+      taskCardBg: '#0F1016', // darker fill for draggable plan task rows (distinct from event rows)
       hairline: 'rgba(255,255,255,0.08)', // internal dividers only
       border: 'rgba(255,255,255,0.14)', // cards that must read
+      ghostBorder: 'rgba(255,255,255,0.18)', // dashed border for empty-slot affordances
+      radio: 'rgba(255,255,255,0.25)', // unselected single-select marker ring (reward context questions)
       divider: 'rgba(0,0,0,0.32)', // section separator — a darker recessed line on the deep bg
       shineOverlay: 'rgba(255,255,255,0.07)', // inner top-edge specular (glass lift)
 
@@ -292,6 +379,7 @@ export const tokens = {
 
       // ── accents ──
       primary: '#8275F0',
+      primaryBright: '#B3A7FF', // higher-emphasis indigo for small mono data (plan clocks) on dark
       primaryEdge: '#6B5BE6',
       // Ordered to mirror the light set's primary* keys (parity test: light/dark
       // share identical key order). Values are unchanged.
@@ -312,6 +400,10 @@ export const tokens = {
       honeyWash: '#2B2620', // solid warm-dark panel — the honest-number hero surface (one continuous tint, no gradient seam)
       accentChip: '#2E2A20', // solid warm-dark chip (tier/status pill) — reads as a coin on the deep bg
       accentCoin: 'rgba(238,174,77,0.28)', // tint disc that still reads on accentSoft
+      accentGhost: 'rgba(238,174,77,0.07)', // faint watermark hex behind the ripening ticket strip
+      sheenChip: 'rgba(255,255,255,0.35)', // top specular strip on the honey "Get Pro" chip
+      // See the light-mode note — same rule, same restraint.
+      accentLine: 'rgba(238,174,77,0.28)',
       // RayBurst wedge fill — indigo lifted just off the deep bg (the #8 look).
       rayFill: 'rgba(130,117,240,0.30)',
       // Companion drift-health tint (amber/indigo only — never red). Matches the
@@ -319,14 +411,22 @@ export const tokens = {
       driftSettled: '#EEAE4D', // = accent (amber)
       driftCurious: '#8275F0', // = primary (indigo, dark variant)
       amberText: '#EEAE4D',
+      // Same as amberText — dark mode already reads light amber on a deep ground,
+      // so honey needs no separate lift here. Still AA-large-only by convention
+      // (bold text ≥20px / fontSize.lg — see the light-mode note); kept distinct
+      // from amberText so consumers stay explicit about which contrast contract
+      // they're opting into.
+      honeyText: '#EEAE4D',
       success: '#33B07C',
       successSoft: 'rgba(51,176,124,0.18)',
       danger: '#E06464',
       dangerEdge: '#B84A4A', // darker depth edge for a filled danger control
+      dangerSoft: 'rgba(224,100,100,0.14)', // inline error band fill (paywall purchase errors)
 
       // ── utility ──
       scrim: 'rgba(10,11,16,0.60)',
       scrimStrong: 'rgba(12,13,20,0.78)', // cool darken layer over a BlurView backdrop — heavy enough to mute warm content bleed (focal reward modal)
+      scrimOverlay: 'rgba(9,11,26,0.76)', // cool blue-leaning dim behind a focal recovery card (ForgotCard)
       shadowSoft: 'rgba(0,0,0,0.45)',
       // dark mode → light pill + dark text, so the toast reads against the deep bg.
       inverseSurface: '#ECE8DE',
@@ -334,6 +434,13 @@ export const tokens = {
       night: '#1C1E2E',
       nightSoft: '#2C2E40',
       onIndigo: '#14151D', // dark text on the lighter dark-mode indigo (AA)
+      // ── disabled controls ──
+      // A disabled pill mutes its FACE, never its label: onIndigo is a DARK ink,
+      // so dimming it toward the bright indigo makes it sink into the fill
+      // (1.92:1) instead of greying out. Inert face + legible label = 3.28:1.
+      controlDisabled: '#292B3C', // = surfaceRaised — visibly inert, not the live indigo
+      onControlDisabled: 'rgba(244,241,234,0.40)', // = inkFaint — 3.28:1 on controlDisabled
+      controlDisabledEdge: 'rgba(255,255,255,0.08)', // = hairline — the face is only 1.3:1 off bg
       onAmber: '#20233A',
       ringTrack: 'rgba(255,255,255,0.08)',
       companionCoin: '#292B3C', // = surfaceRaised (a raised lift on the deep bg)
@@ -385,6 +492,11 @@ export const tokens = {
   seal: { size: 38 },
   // Flat motes flicked outward on the cap (solid squares — no glow).
   mote: { size: 5, count: 8, distance: 96 },
+
+  // The Today "Your day so far" recap card's compact honey-ripeness readout —
+  // a hairline-height fill bar beneath the HONEY stat value (see HoneyBar for
+  // the fill approach this borrows: honeyWash track, accent fill).
+  miniHoneyBar: { height: 3, width: 56 },
 
   // Companion presence — the 6-stage Whenbee growth (Part 2 Group E). Both scales
   // are indexed by stage 1..6 (array index = stage - 1). They are pure geometry, so
@@ -494,11 +606,15 @@ export const tokens = {
   // pill horizontal padding.
   proTeaser: { previewH: 118, barGap: 9, barRadius: 4, scrimOpacity: 0.28, barOpacity: 0.55, pillPadX: 11 },
 
-  // CapacityChip geometry — the quiet Honest-Day collapsed/expanded chip on Today.
-  // barH = height of the two-segment capacity bar track; iconDisc = ⚡ disc diameter;
-  // segRadius = rounded cap on each bar segment; pillPadX = horizontal padding inside
-  // the "Pro" pill teaser.
-  capacity: { barH: 6, iconDisc: 20, segRadius: 3, pillPadX: 8 },
+  // Day-read bar geometry — HonestLandingCard's now→landing bar, in-day / booked
+  // / overflow segments alike, so every segment reads as part of the same bar.
+  // barH = height of the segmented track; iconDisc = ⚡ disc diameter (also used by
+  // TodayFocusHook, so the two cards' leading discs match); segRadius = the
+  // track/segment cap — kept at barH ÷ 2 so the bar reads as a capsule, not a
+  // slightly-rounded rectangle.
+  // legendDot = the small colour-key circle in the landing bar's legend row
+  // (tasks/booked/over) — one size, reused for all three entries.
+  capacity: { barH: 10, iconDisc: 20, segRadius: 5, legendDot: 6 },
 
   // Discovery marker geometry — the honey-hex sign (amber + = runs longer, green
   // − = runs faster) on each gallery card. One size; consumed via t.discovery.hex.
@@ -528,6 +644,25 @@ export const tokens = {
     bloom: '#7C6DE8', sheen: '#FFFFFF', border: 'rgba(255,255,255,0.08)', crestGlow: '#FFFFFF',
     // On-card highlight sweep + the soft amber row-divider hairline (stat-sheet).
     shine: 'rgba(255,255,255,0.05)', amberHairline: 'rgba(238,174,77,0.18)',
+    // Accent colours the two cards pull for the hero multiplier numeral, its `×`,
+    // and the card-2 eyebrow. Mode-aware — dark values here, light in `revealLight`.
+    // (Dark keeps its exact prior look: number = brand.honeyFill, × / eyebrow = accent.)
+    statOn: '#F5C03F', statXOn: '#EEAE4D', eyebrowAccentOn: '#EEAE4D',
+  },
+
+  // Light-mode override for the reveal COLOUR fields ONLY (geometry — crestW/bee/
+  // coinHex/coinEdge — stays shared from `reveal`). In light the two "time
+  // personality" cards (ArchetypeReveal, ArchetypeHero) go "lavender-lift": a flat
+  // lavender surface that separates from the page bg by TINT alone (no shadow, no
+  // border — mirrors how the dark card lifts off near-black). The coloured bloom is
+  // killed (it read as a muddy stain on a light surface); the sheen sweep stays.
+  // COLOURS ONLY — animation, fonts, sizes and layout are unchanged. Merged over
+  // `reveal` in light mode by resolveTheme.
+  revealLight: {
+    gradTop: '#EBE5F8', gradMid: '#E1D9F3', gradBot: '#D6CBEE',
+    inkOn: '#20233A', blurbOn: '#5C5F73', eyebrowOn: '#8A5A12',
+    bloom: 'transparent', border: 'rgba(42,36,64,0.10)', amberHairline: 'rgba(238,174,77,0.36)',
+    statOn: '#C68A30', statXOn: '#C68A30', eyebrowAccentOn: '#8A5A12',
   },
 
   // Quiz step progress comb (QuizProgressComb) — one flat-top honey cell per quiz
@@ -555,7 +690,9 @@ export const tokens = {
     bandOpacity: 0.5,  // window band fill opacity
     areaOpacity: 0.18, // gradient area fill alpha
     yPad: 4,           // lower y inset: y(v) = viewH - v*(viewH-yBase) - yPad
-    yBase: 8,          // upper y inset: headroom above peak
+    yBase: 26,         // upper y inset: reserved headroom so the peak sits below
+                       // the top gridline, leaving room for the peak label above the dot
+    gridTop: 6,        // y of the topmost gridline (frames the headroom band)
     dash: '4 4',       // strokeDasharray for the 'forming' dashed curve
     axisH: 16,         // time-axis row height (pt)
     axisGap: 2,        // marginTop between SVG and axis row (pt)
@@ -563,9 +700,21 @@ export const tokens = {
     detailH: 140,      // taller SVG for the detail sheet
     gridW: 1,          // horizontal gridline weight
     yLabelW: 30,       // Y-axis gutter width (pt)
-    peakLabelGap: 4,   // vertical gap between the peak dot and its label
-    peakLabelMinY: 10, // minimum y for the peak label (keeps it off the top edge)
+    peakLabelGap: 5,   // vertical gap between the peak dot and its label
+    peakLabelMinY: 9,  // minimum y for the peak label (keeps it off the top edge)
+    coarseWidenPx: 24, // bandVariant="coarse": outward extension (SVG units, each side)
+    dashEdge: '3 3',   // bandVariant="coarse": strokeDasharray for the dashed edge lines
+    dashEdgeW: 2,      // bandVariant="coarse": dashed edge line stroke weight
   },
+
+  // Focus-unlock ladder geometry (FocusGateRow). One place for the gate-marker
+  // disc + its glyph/ring/pip so the row inlines no raw px.
+  //   marker     = the round gate marker diameter (pt) — done ✓ / active ring / upcoming
+  //   markerIcon = the checkmark glyph size inside a completed marker
+  //   ring       = the active marker's indigo ring width
+  //   dot        = the active marker's centre "you are here" dot AND each progress pip diameter
+  //   strokeW    = the done marker's ✓ glyph stroke weight
+  focusLadder: { marker: 26, markerIcon: 14, ring: 2, dot: 6, strokeW: 2 },
 
   // Calendar strip geometry. All strip sizing in one place.
   //   rowPadV       vertical padding above/below the 7-cell row (inside the strip container)
@@ -642,6 +791,7 @@ export const tokens = {
     bandGuideTop: 22, bandGuideW: 1, bandGuideDash: '1 3',
     bandDotSize: 14, bandDotTop: 26, bandDotBorder: 2,
     bandFallbackBarH: 56,
+    meterH: 12, // "one thing to try" split-meter bar height (planned + top-up)
   },
 
   // ── brand illustration palette ──────────────────────────────────────────────
@@ -658,7 +808,13 @@ export const tokens = {
       bodyLo: '#4F3CE2', // bottom shade
       stripe: '#F6B442', // amber band / head (≈ accent)
       stripeLo: '#EA980B', // head shadow (≈ accentEdge)
-      wing: '#FCE7C5', // pale wing cream
+      wing: '#FCE7C5', // pale wing cream — the canonical/dark wing (reads on the deep bg)
+      // Light-theme-only wing: the pale cream above nearly vanishes on the light
+      // ground (#F4F2FC → ~1.1:1), so light mode uses a deeper warm cream. This is
+      // the ONE mode-aware bee color — BeeMascot picks it via `t.mode`; every other
+      // bee color stays fixed so the mascot still reads as one bee. RitualSeal keeps
+      // using `wing` (the cream) unchanged.
+      wingLight: '#F7DEB2', // deeper warm cream — light-mode wing only
       ink: '#262D40', // eyes / smile / stinger (≈ ink)
       antenna: '#191E2B', // antenna stalks + tips
       antennaHi: '#474B55', // antenna tip highlight

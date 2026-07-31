@@ -22,10 +22,18 @@ export const type = {
   body: { fontFamily: 'Jakarta-Regular', fontSize: fs.base, lineHeight: 23 },
   bodySm: { fontFamily: 'Jakarta-Medium', fontSize: fs.caption, lineHeight: 20 },
   bodySmBold: { fontFamily: 'Jakarta-Bold', fontSize: fs.bodySm, lineHeight: 20 },
+  // Semibold sibling of `bodySmBold` — the option-row label weight the reward
+  // context questions want (semibold, not the heavier bold).
+  bodySmSemibold: { fontFamily: 'Jakarta-SemiBold', fontSize: fs.bodySm, lineHeight: 20 },
   caption: { fontFamily: 'Jakarta-Medium', fontSize: fs.caption, lineHeight: 18 },
   captionBold: { fontFamily: 'Jakarta-Bold', fontSize: fs.caption, lineHeight: 18 },
   micro: { fontFamily: 'Jakarta-Regular', fontSize: fs.micro, lineHeight: 16 },
   eyebrow: { fontFamily: 'Jakarta-Bold', fontSize: fs.xs, lineHeight: 14, letterSpacing: 2, textTransform: 'uppercase' as const },
+  // One step smaller than `eyebrow` — the Today screen's four section labels
+  // (TASKS, DONE TODAY, Calendar, TODAY'S ROUTINES). Tracking is tightened
+  // (not kept at eyebrow's 2px) because wide letter-spacing at a smaller size
+  // inflates perceived size back toward eyebrow's footprint.
+  eyebrowSm: { fontFamily: 'Jakarta-Bold', fontSize: fs.crumb, lineHeight: 13, letterSpacing: 1.2, textTransform: 'uppercase' as const },
   // Tiny (10px) word-part label — the rail/histogram axis + plan/goal/guess
   // labels ("planned", "guess", "38m"/"73m" axis ends). Semibold for legibility
   // at this size against the faint numeric neighbour it usually sits beside.
@@ -36,6 +44,10 @@ export const type = {
   // Caption-sized (12px) tabular numeral — the bold number embedded inside a
   // `caption`/`bodySm` span (e.g. "1.8×" in the ratio chip, "64" in "64 logs").
   numCaption: { fontFamily: 'Inter-Bold', fontSize: fs.caption, lineHeight: 18, letterSpacing: -0.2, fontVariant: ['tabular-nums'] as const },
+  // Base-sized (14px) tabular numeral — the value in the Live-Timer info-row
+  // ledger ("5m → ~5m", "13:50"). SemiBold so clocks/durations read as data and
+  // stay column-aligned against their muted `labelXs` row label.
+  numLedger: { fontFamily: 'Inter-SemiBold', fontSize: fs.base, lineHeight: 18, letterSpacing: -0.2, fontVariant: ['tabular-nums'] as const },
   timerNumeral: { fontFamily: 'Inter-SemiBold', fontSize: fs.timer, lineHeight: 78, letterSpacing: -2.3, fontVariant: ['tabular-nums'] as const },
   timerClock: { fontFamily: 'Inter-SemiBold', fontSize: fs.timerClock, lineHeight: 70, letterSpacing: -1.5, fontVariant: ['tabular-nums'] as const },
   honestNumberLg: { fontFamily: 'Inter-Bold', fontSize: fs.honestLg, lineHeight: 38, letterSpacing: -0.9, fontVariant: ['tabular-nums'] as const },

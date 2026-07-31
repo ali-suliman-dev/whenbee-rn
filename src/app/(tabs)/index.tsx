@@ -1,5 +1,5 @@
-import { View, Text, Pressable, ScrollView, type TextStyle } from 'react-native';
-import { useState, useCallback, useEffect, useRef } from 'react';
+import { View, Text, Pressable, ScrollView, RefreshControl, type TextStyle } from 'react-native';
+import { useState, useCallback, useEffect, useMemo } from 'react';
 import { router } from 'expo-router';
 import Animated, { FadeIn } from 'react-native-reanimated';
 import { useTranslation } from 'react-i18next';
@@ -22,13 +22,13 @@ import type { HoneycombCell } from '@/src/components/honeycomb/Honeycomb';
 import { TodayEmptyState } from '@/src/features/today/TodayEmptyState';
 import { RetroLogChip } from '@/src/features/today/RetroLogChip';
 import { QuickTaskChips } from '@/src/components/quick/QuickTaskChips';
-import { SwitchTaskSheet } from '@/src/features/today/SwitchTaskSheet';
 import { ActionSheet, type ActionSheetItem } from '@/src/components/ActionSheet';
+import { canEditRow } from '@/src/features/today/canEditRow';
 import { useCategoriesStore } from '@/src/stores/categoriesStore';
 import { useCalibrationStore } from '@/src/stores/calibrationStore';
 import { useTimerStore } from '@/src/stores/timerStore';
 import { useSettingsStore } from '@/src/stores/settingsStore';
-import { projectedFinish, formatClockMeridiem } from '@/src/lib/time';
+import { projectedFinish, formatClockMeridiem, formatClock } from '@/src/lib/time';
 import { useDayTasksStore } from '@/src/stores/dayTasksStore';
 import { toLocalDayKey, addDays, compareDayKeys } from '@/src/lib/day';
 import { kv } from '@/src/lib/kv';
@@ -36,18 +36,23 @@ import { useFocusedValue } from '@/src/hooks/useFocusedValue';
 import { useGreeting } from '@/src/features/today/useGreeting';
 import { TodayFocusHook } from '@/src/features/today/TodayFocusHook';
 import { CalendarStrip } from '@/src/features/today/calendarStrip/CalendarStrip';
-import { PlanMyDayButton } from '@/src/features/today/PlanMyDayButton';
+import { PlanButton } from '@/src/features/today/PlanButton';
 import { ShelfSection } from '@/src/features/today/ShelfSection';
 import { DayRecapCard } from '@/src/features/today/DayRecapCard';
 import { useDayRecap } from '@/src/features/today/useDayRecap';
-import { CapacityChip } from '@/src/features/today/CapacityChip';
+import { DaySoFarCard } from '@/src/features/today/DaySoFarCard';
+import { useDaySoFar } from '@/src/features/today/useDaySoFar';
+import { HonestLandingCard, type LandingAction } from '@/src/features/today/HonestLandingCard';
+import { useHonestLanding, useEventMinAhead } from '@/src/features/today/useHonestLanding';
 import { CalendarOverlaySection } from '@/src/features/today/CalendarOverlaySection';
 import { useDayCapacity } from '@/src/features/today/useDayCapacity';
-import { DayTimeline } from '@/src/features/today/DayTimeline';
+import { useCapacityWidgetPublisher } from '@/src/features/today/useCapacityWidgetPublisher';
+import { useBiasWidgetPublisher } from '@/src/features/today/useBiasWidgetPublisher';
 import { useEntitlement } from '@/src/features/paywall/useEntitlement';
 import { useScheduledRoutines } from '@/src/features/today/useScheduledRoutines';
 import { ScheduledRoutineBlock } from '@/src/features/today/ScheduledRoutineBlock';
 import { useDayPlan } from '@/src/features/today/useDayPlan';
+import { useStartByReminder } from '@/src/features/today/useStartByReminder';
 import { useLocalizedFormat } from '@/src/i18n/useLocalizedFormat';
 
 // Date label for a day-key, e.g. "Fri · Jun 12" — the day + date, no clock.
@@ -62,89 +67,6 @@ function dateLabel(key: string, fmt: ReturnType<typeof useLocalizedFormat>): str
 function weekdayName(key: string, fmt: ReturnType<typeof useLocalizedFormat>): string {
   const [y, m, d] = key.split('-').map(Number) as [number, number, number];
   return fmt.weekdayLong(new Date(y, m - 1, d));
-}
-
-// ─────────────────────────────────────────────────────────────────────────────
-// ViewToggle — segmented List ⇄ Timeline control
-// ─────────────────────────────────────────────────────────────────────────────
-
-interface ViewToggleProps {
-  viewMode: 'list' | 'timeline';
-  onSelect: (m: 'list' | 'timeline') => void;
-  /** Called instead of onSelect('timeline') when the user is on the free tier. */
-  onTimelineGated?: () => void;
-  isPro: boolean;
-}
-
-function ViewToggle({ viewMode, onSelect, onTimelineGated, isPro }: ViewToggleProps) {
-  const t = useTheme();
-  const { t: tr } = useTranslation('today');
-
-  const trackStyle = {
-    flexDirection: 'row' as const,
-    alignItems: 'center' as const,
-    minHeight: t.size.control.sm,
-    backgroundColor: t.colors.surfaceSunken,
-    borderRadius: t.radii.full,
-    // Android squares rounded corners on press-layer promotion — pin the clip.
-    overflow: 'hidden' as const,
-    padding: 3,
-    alignSelf: 'flex-start' as const,
-  };
-
-  function pillStyle(active: boolean) {
-    return {
-      paddingHorizontal: t.space[4],
-      paddingVertical: t.space[2],
-      borderRadius: t.radii.full,
-      overflow: 'hidden' as const,
-      backgroundColor: active ? t.colors.surface : 'transparent',
-    };
-  }
-
-  function labelStyle(active: boolean): TextStyle {
-    return {
-      fontSize: t.fontSize.sm,
-      fontWeight: active ? t.fontWeight.semibold : t.fontWeight.regular,
-      color: active ? t.colors.ink : t.colors.inkSoft,
-      fontFamily: t.fontFamily.ui,
-    };
-  }
-
-  return (
-    <View style={trackStyle} accessibilityRole="tablist">
-      <Pressable
-        testID="view-toggle-list"
-        onPress={() => onSelect('list')}
-        accessibilityRole="tab"
-        accessibilityLabel={tr('viewToggle.listA11y')}
-        accessibilityState={{ selected: viewMode === 'list' }}
-        hitSlop={4}
-      >
-        <View style={pillStyle(viewMode === 'list')}>
-          <Text style={labelStyle(viewMode === 'list')}>{tr('viewToggle.list')}</Text>
-        </View>
-      </Pressable>
-      <Pressable
-        testID="view-toggle-timeline"
-        onPress={() => {
-          if (!isPro) {
-            onTimelineGated?.();
-          } else {
-            onSelect('timeline');
-          }
-        }}
-        accessibilityRole="tab"
-        accessibilityLabel={isPro ? tr('viewToggle.timelineA11y') : tr('viewToggle.timelineProA11y')}
-        accessibilityState={{ selected: viewMode === 'timeline' }}
-        hitSlop={4}
-      >
-        <View style={pillStyle(viewMode === 'timeline')}>
-          <Text style={labelStyle(viewMode === 'timeline')}>{tr('viewToggle.timeline')}</Text>
-        </View>
-      </Pressable>
-    </View>
-  );
 }
 
 export default function Today() {
@@ -162,8 +84,7 @@ export default function Today() {
     hasEverLogged,
   } = useToday();
   const selectedDate = useDayTasksStore((s) => s.selectedDate);
-  const viewMode = useDayTasksStore((s) => s.viewMode);
-  const setViewMode = useDayTasksStore((s) => s.setViewMode);
+  const dayMeta = useDayTasksStore((s) => s.dayMeta);
   const markPlanned = useDayTasksStore((s) => s.markPlanned);
   const isPro = useEntitlement((s) => s.isPro);
   const today = toLocalDayKey(Date.now());
@@ -177,30 +98,26 @@ export default function Today() {
   const headerTitle = selectedDate === today ? tr('header.todayTitle') : weekdayName(selectedDate, fmt);
   const headerSubtitle = dateLabel(selectedDate, fmt);
 
-  // Reset to List whenever the selected day changes — prevents being stranded
-  // in a stale Timeline from a previous day's plan.
-  const prevSelectedDate = useRef(selectedDate);
-  useEffect(() => {
-    if (prevSelectedDate.current !== selectedDate) {
-      prevSelectedDate.current = selectedDate;
-      setViewMode('list');
-    }
-  }, [selectedDate, setViewMode]);
+  // Day plan — read here for the plan-entry strip + the export wire. DayTimeline
+  // re-reads it inside the sheet.
+  const { plan: dayPlan, status: planStatus, planAnchor } = useDayPlan();
 
-  // Day plan — consumed here only for the export wire; DayTimeline re-reads it
-  // internally. We call the hook once so the plan is available in handlePlanMyDay.
-  const { plan: dayPlan } = useDayPlan();
+  // Fire the opt-in "start by" reminder off the live plan (no-op unless both the
+  // reminders + start-by toggles are on and the start-by is still in the future).
+  useStartByReminder(dayPlan);
 
   // Recap for past days — null when today or future.
   const recap = useDayRecap();
+  // "Your day so far" recap — null unless today reads sparse-done (nothing
+  // running, nothing queued, at least one thing logged). Mounted above
+  // DoneSection; unmounts plainly the moment a timer starts or a task queues.
+  const daySoFar = useDaySoFar({ done, totalCount, isToday });
 
   const isTimerRunning = useTimerStore((s) => s.isRunning);
-  const runningTaskLabel = useTimerStore((s) => s.taskLabel);
-  const [pendingRow, setPendingRow] = useState<TodayRow | null>(null);
+  const runningTaskId = useTimerStore((s) => s.taskId);
   const dailyRitualEnabled = useSettingsStore((s) => s.dailyRitualEnabled);
   const quickStartEnabled = useSettingsStore((s) => s.quickStartEnabled);
   const removeTask = useDayTasksStore((s) => s.removeTask);
-  const promoteToFocus = useDayTasksStore((s) => s.promoteToFocus);
   const shelfTasks = useDayTasksStore((s) => s.shelfTasks);
 
   // Keep the shelf fresh: load on mount and whenever tasks change.
@@ -208,14 +125,27 @@ export default function Today() {
     void useDayTasksStore.getState().loadShelf();
   }, [totalCount]);
 
-  // First-run peek: teach the hidden swipe once, then never again. The flag is
-  // burned only after the peek actually animates (see onPeeked below) — never on
-  // a bare mount — so the one-shot can't be spent without the user seeing it.
-  const [peekFirstRow] = useState(() => kv.getString('today.seenSwipeHint') == null);
-  const markSwipeHintSeen = useCallback(() => kv.set('today.seenSwipeHint', '1'), []);
+  // First-run coach: teach the long-press row-actions gesture once, then never
+  // again. Shown on the first queued row only.
+  const [showLongPressHint, setShowLongPressHint] = useState(
+    () => kv.getString('today.seenLongPressHintV1') == null,
+  );
+  const dismissLongPressHint = useCallback(() => {
+    setShowLongPressHint(false);
+    kv.set('today.seenLongPressHintV1', '1');
+  }, []);
+  // Retire after one session: persist the flag the first time the hint shows, so
+  // a tap-only user who never long-presses still won't see it again next launch.
+  // It stays visible for the rest of THIS session (state is untouched) until an
+  // interaction dismisses it.
+  useEffect(() => {
+    if (showLongPressHint) kv.set('today.seenLongPressHintV1', '1');
+  }, [showLongPressHint]);
   const [deletingId, setDeletingId] = useState<string | null>(null);
   // Cross-platform row menus (ActionSheetIOS is iOS-only → crashes Android).
-  const [rowActions, setRowActions] = useState<{ id: string; label: string } | null>(null);
+  const [rowActions, setRowActions] = useState<{ id: string; label: string; done: boolean } | null>(
+    null,
+  );
   const [dayPickerId, setDayPickerId] = useState<string | null>(null);
   const [showCoachMark, setShowCoachMark] = useState(
     () => kv.getString('today.seenCoachMarkV1') == null,
@@ -226,9 +156,9 @@ export default function Today() {
     kv.set('today.seenCoachMarkV1', '1');
   }, []);
 
-  // "Plan my day" — Pro feature. Free users are routed to the paywall.
-  // Pro users: stamps planComputedAt, syncs the timed plan to the Whenbee calendar
-  // (fire-and-forget, guarded inside the store action), then cross-fades to Timeline.
+  // "Plan my day" — Pro feature. Free users → paywall. Pro users: stamp
+  // planComputedAt, run the calendar-export wire (guarded), then open the plan
+  // sheet. Today itself never flips a view — the plan is a thing the user summoned.
   const handlePlanMyDay = useCallback(() => {
     haptics.light();
     if (!isPro) {
@@ -236,23 +166,18 @@ export default function Today() {
       return;
     }
     void markPlanned();
-    setViewMode('timeline');
 
-    // Export wire (C1 / B2): if the calendar export is on, push the computed
-    // timed plan to the Whenbee calendar. The store action is fully guarded
-    // (isExpoGo + Pro + exportEnabled + whenbeeCalendarId) so this is safe to
-    // call unconditionally — it's a no-op when any guard fails.
-    //
-    // We build PlannedExportTask from the plan's 'task' timeline items.
-    // calendarEventId comes from the store's dayTasks (the db source of truth).
+    // Export wire (C1 / B2): when calendar export is on, push the computed timed
+    // plan to the Whenbee calendar. The store action is fully guarded (isExpoGo +
+    // Pro + exportEnabled + whenbeeCalendarId), so this is safe to call
+    // unconditionally — a no-op when any guard fails.
     if (dayPlan !== null) {
       const { exportEnabled } = useSettingsStore.getState().calendar;
       if (exportEnabled) {
         const currentDayTasks = useDayTasksStore.getState().dayTasks;
         const calEventIdByTaskId = new Map(
-          currentDayTasks.map((t) => [t.id, t.calendarEventId ?? null]),
+          currentDayTasks.map((task) => [task.id, task.calendarEventId ?? null]),
         );
-
         const timedTasks = dayPlan.timeline
           .filter((item) => item.kind === 'task')
           .map((item) => ({
@@ -262,27 +187,12 @@ export default function Today() {
             endMs: item.endAt,
             calendarEventId: calEventIdByTaskId.get(item.id) ?? null,
           }));
-
         void useDayTasksStore.getState().syncExportForSelectedDay(timedTasks);
       }
     }
-  }, [isPro, markPlanned, setViewMode, dayPlan]);
 
-  // Toggle between list and timeline views.
-  // Free users tapping Timeline hit the paywall gate via onTimelineGated.
-  const handleViewSelect = useCallback(
-    (m: 'list' | 'timeline') => {
-      haptics.light();
-      setViewMode(m);
-    },
-    [setViewMode],
-  );
-
-  // Called from ViewToggle when a free user taps the Timeline pill.
-  const handleTimelineGated = useCallback(() => {
-    haptics.light();
-    router.push({ pathname: '/(modals)/paywall', params: { trigger: 'plan_my_day' } });
-  }, []);
+    router.push('/(modals)/plan');
+  }, [isPro, markPlanned, dayPlan]);
 
   // The done-list coach-mark auto-dismiss now lives in DoneSection (it only runs
   // once the list is expanded, so a collapsed list never burns the one-shot).
@@ -307,8 +217,8 @@ export default function Today() {
     setDayPickerId(id);
   }
 
-  function promptRowActions(id: string, label: string) {
-    setRowActions({ id, label });
+  function promptRowActions(id: string, label: string, done = false) {
+    setRowActions({ id, label, done });
   }
 
   function navigateToTimer(row: TodayRow) {
@@ -324,27 +234,13 @@ export default function Today() {
     });
   }
 
-  function startRow(row: TodayRow) {
-    if (isTimerRunning) {
-      haptics.light();
-      setPendingRow(row);
-    } else {
-      navigateToTimer(row);
-    }
-  }
-
-  function confirmSwitch() {
-    if (pendingRow === null) return;
-    haptics.medium();
-    const row = pendingRow;
-    setPendingRow(null);
-    void promoteToFocus(row.id);
-    navigateToTimer(row);
-  }
-
-  function cancelSwitch() {
+  function editRow(id: string) {
     haptics.light();
-    setPendingRow(null);
+    router.push({ pathname: '/(modals)/add-task', params: { editId: id } });
+  }
+
+  function startRow(row: TodayRow) {
+    navigateToTimer(row);
   }
 
   // Build the honey strip from the tracked categories + their cached stats. One
@@ -369,15 +265,96 @@ export default function Today() {
   // Single call — avoids computing leadHoney(shownCells) twice in JSX.
   const lead = leadHoney(shownCells);
 
-  // Day capacity — single call here so CapacityChip and CalendarOverlaySection
+  // Day capacity — single call here so the landing card and CalendarOverlaySection
   // share the same resolved events (avoids double calendar fetches).
   const cap = useDayCapacity();
+  // Keeps the "Does Today Fit?" Home-screen widget (Pro) live off the same
+  // resolved capacity read above — never recomputes it. See
+  // useCapacityWidgetPublisher for the Pro-gate-at-source rule.
+  useCapacityWidgetPublisher(cap);
+  // Keeps the "Your Bias" Home-screen widget (Pro) live — self-subscribes to
+  // calibration stats + entitlement, so it's mounted with no args (see
+  // useBiasWidgetPublisher for the Pro-gate-at-source rule).
+  useBiasWidgetPublisher();
+
+  // When the day lands, off the same honest numbers the rows show — one card for
+  // free and Pro alike. `useEventMinAhead` folds the resolved calendar into it on
+  // the shared minute tick, so the meetings slice shrinks as the day runs rather
+  // than freezing at the value it had when the screen mounted. `cap.events` is
+  // empty for free users (the calendar is never fetched) and the hook zeroes
+  // calendar minutes for non-Pro on top of that.
+  const eventMinAhead = useEventMinAhead(cap.events);
+  const landing = useHonestLanding(eventMinAhead);
+
+  const onLandingAction = useCallback(
+    (kind: LandingAction) => {
+      if (kind === 'add-task' || kind === 'start-one') {
+        router.push('/(modals)/add-task');
+        return;
+      }
+      if (kind === 'pad-calendar') {
+        router.push({ pathname: '/(modals)/honest-day' });
+        return;
+      }
+      if (kind === 'connect-calendar') {
+        // Free-only action (the card never emits it for a Pro user) — the
+        // calendar toggle itself lives in settings, but a free tapper can't use
+        // it, so send them straight to the gate. Same trigger the settings
+        // calendar toggle uses for a free tap, since it's pitching the same
+        // feature.
+        router.push({ pathname: '/(modals)/paywall', params: { trigger: 'calendar_export' } });
+        return;
+      }
+      const store = useDayTasksStore.getState();
+      if (kind === 'move-tail') {
+        const tail = landing.landing.tail;
+        if (tail) void store.moveToTomorrow(tail.id);
+        return;
+      }
+      if (kind === 'move-to-tomorrow') {
+        // Clears the whole overflow. Each move reloads the day and overwrites
+        // store state, so they run one at a time — firing them together
+        // interleaves the reloads and leaves the list half-moved.
+        const ids = landing.landing.ends.map((e) => e.id);
+        void ids.reduce(
+          (chain, id) => chain.then(() => store.moveToTomorrow(id)),
+          Promise.resolve(),
+        );
+        return;
+      }
+      // Exhaustiveness guard: if a new `LandingAction` variant is ever added
+      // without a branch above, this line fails to compile instead of silently
+      // falling through into a data-mutating default (the bug this guard was
+      // added to fix — `connect-calendar` used to fall through into
+      // move-to-tomorrow's bulk move).
+      const _exhaustive: never = kind;
+      throw new Error(`Unhandled landing action: ${String(_exhaustive)}`);
+    },
+    [landing],
+  );
+
+  // Per-row "ends ~8:40pm" labels ride the same today-only gate as the card: the
+  // ends are cumulative finishes measured from the CURRENT clock, so on a future
+  // selection they would label tomorrow's rows with tonight's times.
+  const endsById = useMemo(
+    () =>
+      isToday
+        ? new Map(landing.landing.ends.map((e) => [e.id, formatClockMeridiem(e.endMs)]))
+        : new Map<string, string>(),
+    [isToday, landing.landing.ends],
+  );
 
   const sectionLabel: TextStyle = {
-    ...(type.eyebrow as unknown as TextStyle),
+    ...(type.eyebrowSm as unknown as TextStyle),
     color: t.colors.inkSoft,
     marginTop: t.space[1],
   };
+
+  // Plan entry: a plan exists for the selected day when it was computed AND the
+  // engine currently resolves a ready plan. PlanButton mirrors this glanceable state.
+  const hasPlan = dayMeta?.planComputedAt != null && planStatus === 'ready';
+  const startByClock =
+    hasPlan && dayPlan && dayPlan.startBy !== null ? formatClock(dayPlan.startBy, false) : null;
 
   return (
     <Screen>
@@ -388,6 +365,14 @@ export default function Today() {
             paddingBottom: t.space[8],
           }}
           showsVerticalScrollIndicator={false}
+          refreshControl={
+            <RefreshControl
+              refreshing={cap.refreshing}
+              onRefresh={() => void cap.refresh()}
+              tintColor={t.colors.primary}
+              colors={[t.colors.primary]}
+            />
+          }
         >
           <ScreenHeader
             title={headerTitle}
@@ -432,11 +417,22 @@ export default function Today() {
               scrolls with content, lets the user jump to any day in the ±52 wk range. */}
           <CalendarStrip />
 
-          {/* Capacity chip — only on today/future (past shows DayRecapCard instead)
-              and only once the day has tasks; an empty day has no load to weigh.
-              Passes the pre-resolved cap result so the chip skips its own fetch. */}
-          {!isPastDay && totalCount > 0 ? (
-            <CapacityChip weekdayLabel={headerTitle} cap={cap} />
+          {/* The day's read — TODAY only, and only once the day has tasks; an empty
+              day has nothing to weigh. A landing time is a statement about the
+              running clock ("done ~9:50pm", "50m past your day"), so it has no
+              meaning on a day that hasn't started: the hook reads now/end-of-day
+              from TODAY while the task list is the selected day, which on a future
+              selection produced a card describing tonight over tomorrow's tasks —
+              and a footer whose "Move N to tomorrow" moved the wrong day's work.
+              Same card for everyone: Pro just hands it more data. */}
+          {isToday && totalCount > 0 ? (
+            <HonestLandingCard
+              result={landing}
+              doneCount={done.length}
+              doneHonestMin={done.reduce((sum, r) => sum + (r.actualMin ?? r.honestMin), 0)}
+              eventMinAhead={eventMinAhead}
+              onAction={onLandingAction}
+            />
           ) : null}
 
           {/* Daily ritual (opt-in) lived in the honey HUD footer; the HUD is gone,
@@ -466,7 +462,7 @@ export default function Today() {
               {/* A live session takes the focus slot itself (the same footprint as the
                   Next card, so nothing jumps), carrying its guess→plan context + the
                   live elapsed. Otherwise the Next card invites the next start. */}
-              {isTimerRunning ? (
+              {isTimerRunning && isToday ? (
                 <RunningFocusCard categoryName={categoryName} />
               ) : isToday && focus && summary ? (
                 <Pressable
@@ -519,102 +515,93 @@ export default function Today() {
             </>
           )}
 
-          {/* List ⇄ Timeline toggle + day body — only on today/future days.
-              Past days use DayRecapCard above and never show the planner lens. */}
+          {/* Plan entry + day body — only on today/future days. Past days use
+              DayRecapCard above and never show the planner. */}
           {!isPastDay ? (
             <>
-              {/* Control row: List ⇄ Timeline segmented control (left) + the
-                  "Plan my day" action (right edge). Only once the day has tasks —
-                  there's nothing to switch lenses on or plan when it's empty. The
-                  action persists across both lenses — label swaps to "Re-plan" in
-                  Timeline so the planner can be re-run in place after the list changes. */}
-              {totalCount > 0 ? (
-                <View
-                  style={{
-                    flexDirection: 'row',
-                    justifyContent: 'space-between',
-                    alignItems: 'center',
-                    gap: t.space[3],
-                  }}
-                >
-                  <ViewToggle
-                    viewMode={viewMode}
-                    onSelect={handleViewSelect}
-                    onTimelineGated={handleTimelineGated}
-                    isPro={isPro}
-                  />
-                  <PlanMyDayButton
-                    onPress={handlePlanMyDay}
-                    isPro={isPro}
-                    label={viewMode === 'timeline' ? tr('planMyDay.replan') : tr('planMyDay.plan')}
-                  />
-                </View>
-              ) : null}
+              {/* List body — the task list + calendar overlay (the only lens now). */}
+              <Animated.View entering={FadeIn.duration(t.motion.base)}>
+                {/* Scheduled routine blocks — Pro, derived read (no DB rows). */}
+                {isPro && scheduledRoutineBlocks.length > 0 ? (
+                  <View style={{ gap: t.space[2], marginBottom: t.space[2] }}>
+                    <Text style={sectionLabel}>{"TODAY'S ROUTINES"}</Text>
+                    {scheduledRoutineBlocks.map((block) => (
+                      <ScheduledRoutineBlock key={block.routineId} block={block} />
+                    ))}
+                  </View>
+                ) : null}
 
-              {viewMode === 'timeline' && isPro ? (
-                /* Timeline lens — Pro only; DayTimeline is self-contained (reads useDayPlan). */
-                <Animated.View entering={FadeIn.duration(t.motion.base)}>
-                  <DayTimeline />
-                </Animated.View>
-              ) : (
-                /* List lens — the existing task list + calendar overlay. */
-                <Animated.View entering={FadeIn.duration(t.motion.base)}>
-                  {/* Scheduled routine blocks — one per routine scheduled for
-                      this weekday. Derived read: no task rows written to the DB.
-                      Each block is collapsible and has a "Run" affordance. Only
-                      shown for Pro users on today/future days (isPastDay is
-                      already guarded by the outer !isPastDay condition). */}
-                  {isPro && scheduledRoutineBlocks.length > 0 ? (
-                    <View style={{ gap: t.space[2], marginBottom: t.space[2] }}>
-                      <Text style={sectionLabel}>{tr('sections.todaysRoutines')}</Text>
-                      {scheduledRoutineBlocks.map((block) => (
-                        <ScheduledRoutineBlock key={block.routineId} block={block} />
-                      ))}
-                    </View>
-                  ) : null}
-
-                  {upNext.length > 0 ? (
-                    <View style={{ gap: t.space[2] }}>
-                      <Text style={sectionLabel}>{tr('sections.upNext')}</Text>
-                      {upNext.map((row, idx) => (
-                        <TaskRow
-                          key={row.id}
-                          title={row.label}
-                          categoryLabel={row.categoryLabel}
-                          guessMin={row.guessMin}
-                          honestMin={row.honestMin}
-                          carriedFrom={row.carriedFrom}
-                          onPress={() => startRow(row)}
-                          onDelete={() => deleteTask(row.id)}
-                          onLongPress={() => promptRowActions(row.id, row.label)}
-                          onMove={() => void useDayTasksStore.getState().moveToTomorrow(row.id)}
-                          peekHint={peekFirstRow && idx === 0}
-                          onPeeked={markSwipeHintSeen}
-                          isExiting={deletingId === row.id}
+                {upNext.length > 0 ? (
+                  <View style={{ gap: t.space[2] }}>
+                    <View
+                      style={{
+                        flexDirection: 'row',
+                        alignItems: 'center',
+                        justifyContent: 'space-between',
+                      }}
+                    >
+                      <Text style={sectionLabel}>TASKS</Text>
+                      {totalCount > 0 ? (
+                        <PlanButton
+                          hasPlan={hasPlan}
+                          startByClock={startByClock}
+                          planAnchor={planAnchor}
+                          onPress={
+                            hasPlan
+                              ? () => {
+                                  haptics.light();
+                                  router.push('/(modals)/plan');
+                                }
+                              : handlePlanMyDay
+                          }
                         />
-                      ))}
+                      ) : null}
                     </View>
-                  ) : null}
+                    {upNext.map((row, idx) => (
+                      <TaskRow
+                        key={row.id}
+                        title={row.label}
+                        categoryLabel={row.categoryLabel}
+                        guessMin={row.guessMin}
+                        honestMin={row.honestMin}
+                        carriedFrom={row.carriedFrom}
+                        onPress={() => startRow(row)}
+                        onDelete={() => deleteTask(row.id)}
+                        onLongPress={() => { dismissLongPressHint(); promptRowActions(row.id, row.label); }}
+                        onMove={() => void useDayTasksStore.getState().moveToTomorrow(row.id)}
+                        showCoachMark={showLongPressHint && idx === 0}
+                        coachLabel="Press & hold for options"
+                        onCoachMarkDismiss={dismissLongPressHint}
+                        isExiting={deletingId === row.id}
+                        endsAtLabel={endsById.has(row.id) ? `ends ~${endsById.get(row.id)}` : undefined}
+                        isTail={isToday && landing.landing.tail?.id === row.id}
+                      />
+                    ))}
+                  </View>
+                ) : null}
 
-                  {done.length > 0 ? (
-                    <DoneSection
-                      rows={done}
-                      deletingId={deletingId}
-                      onDelete={deleteTask}
-                      onLongPress={promptRowActions}
-                      showCoachMark={showCoachMark}
-                      onCoachMarkDismiss={dismissCoachMark}
-                    />
-                  ) : null}
+                {/* Read-only calendar overlay — Pro + showEvents only (cap returns []
+                    for free users so this naturally renders nothing for them).
+                    Sits above Done so finished work reads last. */}
+                <CalendarOverlaySection
+                  events={cap.events}
+                  allDayEvents={cap.allDayEvents}
+                  lastFetchedAtMs={cap.lastFetchedAtMs}
+                />
 
-                  {/* Read-only calendar overlay — Pro + showEvents only (cap returns []
-                      for free users so this naturally renders nothing for them). */}
-                  <CalendarOverlaySection
-                    events={cap.events}
-                    allDayEvents={cap.allDayEvents}
+                {daySoFar ? <DaySoFarCard recap={daySoFar} /> : null}
+
+                {done.length > 0 ? (
+                  <DoneSection
+                    rows={done}
+                    deletingId={deletingId}
+                    onDelete={deleteTask}
+                    onLongPress={(id, label) => promptRowActions(id, label, true)}
+                    showCoachMark={showCoachMark}
+                    onCoachMarkDismiss={dismissCoachMark}
                   />
-                </Animated.View>
-              )}
+                ) : null}
+              </Animated.View>
             </>
           ) : null}
 
@@ -639,20 +626,13 @@ export default function Today() {
 
           {totalCount === 0 && !isTimerRunning ? null : (
             <RetroLogChip
-              label={tr('retroChip.label')}
+              firstText="Finished something else? "
+              secondText="Log it too"
               onPress={() => router.push('/(modals)/retro')}
             />
           )}
         </ScrollView>
       </View>
-
-      <SwitchTaskSheet
-        visible={pendingRow !== null}
-        leavingLabel={runningTaskLabel ?? tr('switchSheetFallback.currentTask')}
-        startingLabel={pendingRow?.label ?? ''}
-        onConfirm={confirmSwitch}
-        onCancel={cancelSwitch}
-      />
 
       <ActionSheet
         visible={rowActions !== null}
@@ -661,9 +641,12 @@ export default function Today() {
         items={
           rowActions
             ? [
-                { label: tr('actions.moveToTomorrow'), onPress: () => void useDayTasksStore.getState().moveToTomorrow(rowActions.id) },
-                { label: tr('actions.pickADay'), onPress: () => showDayPicker(rowActions.id) },
-                { label: tr('actions.remove'), destructive: true, onPress: () => setDeletingId(rowActions.id) },
+                ...(canEditRow(isTimerRunning, runningTaskId, rowActions.id, rowActions.done)
+                  ? [{ label: 'Edit', onPress: () => editRow(rowActions.id) }]
+                  : []),
+                { label: 'Move to tomorrow', onPress: () => void useDayTasksStore.getState().moveToTomorrow(rowActions.id) },
+                { label: 'Pick a day…', onPress: () => showDayPicker(rowActions.id) },
+                { label: 'Remove', destructive: true, onPress: () => setDeletingId(rowActions.id) },
               ]
             : []
         }

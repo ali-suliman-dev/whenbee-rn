@@ -13,7 +13,9 @@ import { useCalibrationStore } from '@/src/stores/calibrationStore';
 import { useEntitlement } from '@/src/features/paywall/useEntitlement';
 import { useFocusedValue } from '@/src/hooks/useFocusedValue';
 import { analytics } from '@/src/services/analytics';
-import { TIERS, logsToNextTier } from '@/src/engine';
+import { TIERS, logsToNextTier, tierBandProgress, FEATURE_MIN_LOGS } from '@/src/engine';
+import type { ProFeatureId } from '@/src/engine';
+import { waitLabelFor } from '@/src/components/ripening-pro/copy';
 import { useWhenbeeHub } from './useWhenbeeHub';
 import { WhenbeeAvatar } from './WhenbeeAvatar';
 import { HoneyRing } from './HoneyRing';
@@ -45,6 +47,7 @@ import { LifeDriftCard } from './LifeDriftCard';
 export function WhenbeeHub() {
   const t = useTheme();
   const { t: tr } = useTranslation('whenbee');
+  const { t: patternsT } = useTranslation('patterns');
   const vm = useWhenbeeHub();
   const categories = useCategoriesStore((s) => s.categories);
   const stats = useCalibrationStore((s) => s.statsByCategory);
@@ -118,16 +121,32 @@ export function WhenbeeHub() {
     tierIdx >= 0 && tierIdx < TIERS.length - 1 ? (TIERS[tierIdx + 1] ?? null) : null;
 
   // Four key features shown in the card; waitLabels are honest, no-guilt.
+  // 'confidence-band' is always first and always the next-up feature while this
+  // card is in the ripening state (its readiness IS pitchUnlocked, which is
+  // false whenever this branch renders) — its tally/pip progress is the real
+  // in-tier-band fraction, never a fabricated number. The other, log-gated
+  // features get a real "N logs to go" (or calendar-register) wait label.
   const { perFeatureReady } = vm.proReadiness;
-  const soonWait = tr('hub.ripeningWait.soon');
+  const bandProgress = tierBandProgress(vm.leadSharpness);
+  const confidenceBandProgress = bandProgress.total > 0 ? bandProgress.done / bandProgress.total : undefined;
+  const remainingLogsFor = (id: Exclude<ProFeatureId, 'confidence-band'>) =>
+    Math.max(0, FEATURE_MIN_LOGS[id] - vm.honestLogCount);
   const ripeningFeatures = [
-    { id: 'confidence-band' as const, ready: perFeatureReady['confidence-band'], waitLabel: soonWait },
-    { id: 'steals-your-time' as const, ready: perFeatureReady['steals-your-time'], waitLabel: soonWait },
-    { id: 'day-capacity' as const, ready: perFeatureReady['day-capacity'], waitLabel: soonWait },
+    { id: 'confidence-band' as const, ready: perFeatureReady['confidence-band'], progress: confidenceBandProgress },
+    {
+      id: 'steals-your-time' as const,
+      ready: perFeatureReady['steals-your-time'],
+      waitLabel: waitLabelFor(patternsT, 'steals-your-time', remainingLogsFor('steals-your-time')),
+    },
+    {
+      id: 'day-capacity' as const,
+      ready: perFeatureReady['day-capacity'],
+      waitLabel: waitLabelFor(patternsT, 'day-capacity', remainingLogsFor('day-capacity')),
+    },
     {
       id: 'honest-week' as const,
       ready: perFeatureReady['honest-week'],
-      waitLabel: tr('hub.ripeningWait.aboutAWeek'),
+      waitLabel: waitLabelFor(patternsT, 'honest-week', remainingLogsFor('honest-week')),
     },
   ];
 
@@ -212,12 +231,16 @@ export function WhenbeeHub() {
       ) : (
         <RipeningProCard
           pitchUnlocked={vm.proReadiness.pitchUnlocked}
-          honeyPct={vm.honeyPct}
           nextTierName={nextTierName}
           logsToNext={logsToNextTier(vm.leadSharpness)}
           features={ripeningFeatures}
           onSeePro={() => {
-            analytics.capture('pro_reveal_tap', { surface: 'whenbee_hub' });
+            // Same callback both states share — the event name distinguishes the
+            // ripening honey chip (a soft preview tap) from the reveal-state CTA.
+            analytics.capture(
+              vm.proReadiness.pitchUnlocked ? 'pro_reveal_tap' : 'ripening_get_pro_tapped',
+              { surface: 'whenbee_hub' },
+            );
             router.push({ pathname: '/(modals)/paywall', params: { trigger: 'pro_reveal' } });
           }}
           onPreview={() => {

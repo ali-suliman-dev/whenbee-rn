@@ -138,3 +138,45 @@ describe('useCategoryDetail — graduation', () => {
     await waitFor(() => expect(result.current.justGraduated).toBe(false));
   });
 });
+
+describe('useCategoryDetail — delete', () => {
+  it('canDelete is false with one category, true with more', async () => {
+    const db = createMemoryDatabase();
+    useCalibrationStore.getState().setDatabase(db);
+    useCategoriesStore.getState().setCategories([
+      { id: 'cleaning', name: 'Cleaning', adaptSpeed: 'balanced' },
+    ]);
+    const one = renderHook(() => useCategoryDetail('cleaning'));
+    await waitFor(() => expect(one.result.current.loading).toBe(false));
+    expect(one.result.current.canDelete).toBe(false);
+
+    useCategoriesStore.getState().setCategories([
+      { id: 'cleaning', name: 'Cleaning', adaptSpeed: 'balanced' },
+      { id: 'admin', name: 'Admin', adaptSpeed: 'balanced' },
+    ]);
+    const two = renderHook(() => useCategoryDetail('cleaning'));
+    await waitFor(() => expect(two.result.current.loading).toBe(false));
+    expect(two.result.current.canDelete).toBe(true);
+  });
+
+  it('deleteCategory drops the entry from the tracked list and wipes its stats', async () => {
+    const db = createMemoryDatabase();
+    useCalibrationStore.getState().setDatabase(db);
+    useCategoriesStore.getState().setCategories([
+      { id: 'cleaning', name: 'Cleaning', adaptSpeed: 'balanced' },
+      { id: 'admin', name: 'Admin', adaptSpeed: 'balanced' },
+    ]);
+    await db.upsertCategoryStat({
+      categoryId: 'cleaning', n: 3, logEwma: 0.4, mEffective: 2.0, sharpness: 30,
+      priorMult: 1, adaptSpeed: 'balanced', updatedAt: 1, reclaimedMinutes: 0,
+      sw: 0, swx: 0, swy: 0, swxx: 0, swxy: 0,
+    });
+
+    const { result } = renderHook(() => useCategoryDetail('cleaning'));
+    await waitFor(() => expect(result.current.loading).toBe(false));
+    await act(async () => { await result.current.deleteCategory(); });
+
+    expect(useCategoriesStore.getState().categories.map((c) => c.id)).not.toContain('cleaning');
+    expect(await db.getCategoryStat('cleaning')).toBeNull();
+  });
+});

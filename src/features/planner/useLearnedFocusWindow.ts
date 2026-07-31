@@ -27,13 +27,13 @@ const FOCUS_SCAN_LIMIT = 500;
 /**
  * Returns the current learned (or prior-fallback) focus window.
  *
- * Side-effect: if `!focusWindowUserSet` and the engine returns a `personal`
+ * Side-effect: if `!focusWindowUserSet` and the engine returns a `revealed`
  * window that isn't `held`, calls `setLearnedFocusWindow` to persist it.
  *
  * @param nowMs - Epoch ms for the current moment. Defaults to `Date.now()`.
  *   Exposed as a parameter so tests can inject a fixed clock without mocking.
  */
-export function useLearnedFocusWindow(nowMs?: number): LearnedFocusWindow {
+export function useLearnedFocusWindow(nowMs?: number): LearnedFocusWindow & { hydrated: boolean } {
   // Resolve nowMs once at the hook boundary (Date.now() allowed here — the engine
   // is clock-free, but the hook is a React layer and may use the clock).
   const now = nowMs ?? Date.now();
@@ -50,6 +50,11 @@ export function useLearnedFocusWindow(nowMs?: number): LearnedFocusWindow {
 
   // ── event loading ────────────────────────────────────────────────────────────
   const [events, setEvents] = useState<FocusEventInput[]>([]);
+  // `hydrated` gates consumers so they don't render a transient `forming` state
+  // (built from the initial empty `events`) before the first async load lands —
+  // that flash is what made FocusPeakCard briefly show its Pro-badge ladder and
+  // then snap to the settled card.
+  const [hydrated, setHydrated] = useState(false);
   // Stable reference to avoid stale closure in the effect below.
   const loadRef = useRef(loadFocusEvents);
   loadRef.current = loadFocusEvents;
@@ -70,6 +75,7 @@ export function useLearnedFocusWindow(nowMs?: number): LearnedFocusWindow {
           dayKey: Math.floor((r.startedAt as number) / 86_400_000),
         }));
       setEvents(mapped);
+      setHydrated(true);
     });
     return () => {
       cancelled = true;
@@ -112,7 +118,7 @@ export function useLearnedFocusWindow(nowMs?: number): LearnedFocusWindow {
 
   // ── auto-persist effect ───────────────────────────────────────────────────────
   // Write the learned window into settingsStore when:
-  //   1. The engine gained enough data to say 'personal', AND
+  //   1. The engine gained enough data to say 'revealed', AND
   //   2. The user hasn't manually overridden their window, AND
   //   3. Hysteresis didn't hold the previous window (the window actually moved), AND
   //   4. The window values actually differ from what is already stored.
@@ -123,7 +129,7 @@ export function useLearnedFocusWindow(nowMs?: number): LearnedFocusWindow {
   useEffect(() => {
     if (
       !focusWindowUserSet &&
-      result.basis === 'personal' &&
+      result.basis === 'revealed' &&
       !result.held &&
       (result.startMin !== focusShownStartMin || result.endMin !== focusShownEndMin)
     ) {
@@ -136,5 +142,5 @@ export function useLearnedFocusWindow(nowMs?: number): LearnedFocusWindow {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [result, focusWindowUserSet, focusShownStartMin, focusShownEndMin, setLearnedFocusWindow]);
 
-  return result;
+  return { ...result, hydrated };
 }

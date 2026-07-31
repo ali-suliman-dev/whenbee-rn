@@ -3,15 +3,18 @@ import type { WidgetSnapshot, LiveActivityAttributes } from '@/src/services/live
 
 const snapshot: WidgetSnapshot = {
   nextTaskLabel: 'Write the report', category: 'Deep work', honestFinishClock: '7:10',
+  guessClock: '6:30',
   startDeepLink: 'whenbee://timer?taskId=1', updatedAtEpoch: 1000, honestFinishEpoch: 3700, isPro: true,
 };
-const attrs: LiveActivityAttributes = { taskLabel: 'Write', finishEpoch: 3700, startEpoch: 1000, isProRich: true };
+const attrs: LiveActivityAttributes = {
+  taskLabel: 'Write', finishEpoch: 3700, startEpoch: 1000, guessFinishEpoch: 3400, isProRich: true,
+};
 
 function makeDeps(overrides: Partial<AndroidPresenceDeps> = {}): jest.Mocked<AndroidPresenceDeps> {
   return {
     notif: {
-      writeWidgetSnapshot: jest.fn(),
-      clearWidgetSnapshot: jest.fn(),
+      writeWidgetData: jest.fn(),
+      clearWidgetData: jest.fn(),
       startTimerNotification: jest.fn(),
       updateTimerNotification: jest.fn(),
       stopTimerNotification: jest.fn(),
@@ -24,16 +27,28 @@ test('isStub is false — Android presence is a real surface', () => {
   expect(createAndroidPresence(makeDeps()).isStub).toBe(false);
 });
 
-test('writeSnapshot forwards a JSON-serialized snapshot to the native widget writer', () => {
+test('writeSnapshot routes to the generic writer under the "nextTask" key', () => {
   const deps = makeDeps();
   createAndroidPresence(deps).writeSnapshot(snapshot);
-  expect(deps.notif!.writeWidgetSnapshot).toHaveBeenCalledWith(JSON.stringify(snapshot));
+  expect(deps.notif!.writeWidgetData).toHaveBeenCalledWith('nextTask', JSON.stringify(snapshot));
 });
 
-test('clearSnapshot forwards to the native widget clearer', () => {
+test('clearSnapshot routes to the generic clearer under the "nextTask" key', () => {
   const deps = makeDeps();
   createAndroidPresence(deps).clearSnapshot();
-  expect(deps.notif!.clearWidgetSnapshot).toHaveBeenCalledTimes(1);
+  expect(deps.notif!.clearWidgetData).toHaveBeenCalledWith('nextTask');
+});
+
+test('writeWidgetData forwards key + json to the native writer', () => {
+  const deps = makeDeps();
+  createAndroidPresence(deps).writeWidgetData('capacity', '{"a":1}');
+  expect(deps.notif!.writeWidgetData).toHaveBeenCalledWith('capacity', '{"a":1}');
+});
+
+test('clearWidgetData forwards the key to the native clearer', () => {
+  const deps = makeDeps();
+  createAndroidPresence(deps).clearWidgetData('capacity');
+  expect(deps.notif!.clearWidgetData).toHaveBeenCalledWith('capacity');
 });
 
 test('startLiveActivity forwards attrs to the native notification', () => {
@@ -60,6 +75,8 @@ test('every call no-ops safely when the native module is absent', () => {
   expect(() => {
     p.writeSnapshot(snapshot);
     p.clearSnapshot();
+    p.writeWidgetData('capacity', '{"a":1}');
+    p.clearWidgetData('capacity');
     p.startLiveActivity(attrs);
     p.updateLiveActivity({ isOverrun: true });
     p.endLiveActivity();
@@ -69,12 +86,25 @@ test('every call no-ops safely when the native module is absent', () => {
 test('a throwing dep never escapes writeSnapshot', () => {
   const deps = makeDeps({
     notif: {
-      writeWidgetSnapshot: jest.fn(() => { throw new Error('binder down'); }),
-      clearWidgetSnapshot: jest.fn(),
+      writeWidgetData: jest.fn(() => { throw new Error('binder down'); }),
+      clearWidgetData: jest.fn(),
       startTimerNotification: jest.fn(),
       updateTimerNotification: jest.fn(),
       stopTimerNotification: jest.fn(),
     },
   });
   expect(() => createAndroidPresence(deps).writeSnapshot(snapshot)).not.toThrow();
+});
+
+test('a throwing dep never escapes writeWidgetData', () => {
+  const deps = makeDeps({
+    notif: {
+      writeWidgetData: jest.fn(() => { throw new Error('binder down'); }),
+      clearWidgetData: jest.fn(),
+      startTimerNotification: jest.fn(),
+      updateTimerNotification: jest.fn(),
+      stopTimerNotification: jest.fn(),
+    },
+  });
+  expect(() => createAndroidPresence(deps).writeWidgetData('capacity', '{"a":1}')).not.toThrow();
 });

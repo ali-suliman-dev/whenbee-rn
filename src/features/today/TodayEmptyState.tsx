@@ -46,12 +46,9 @@ export function TodayEmptyState({ variant, weekday, onPrimary, onLog }: TodayEmp
       ? tr('emptyState.future.sub')
       : tr('emptyState.daily.sub');
 
-  const primaryLabel = isFirstRun
-    ? tr('emptyState.firstRun.primary')
-    : isFuture
-      ? tr('emptyState.future.primary')
-      : tr('emptyState.daily.primary');
-  const chipLabel = isFirstRun ? tr('emptyState.firstRun.chip') : tr('emptyState.daily.chip');
+  const primaryLabel = isFirstRun ? 'Start now' : isFuture ? 'Plan ahead' : 'Plan a task';
+  const chipFirstText = isFirstRun ? 'Already finished something? ' : 'Or log something ';
+  const chipSecondText = isFirstRun ? 'Log it' : 'you finished';
 
   const block: ViewStyle = { alignItems: 'center', gap: t.space[2], marginTop: t.space[8] };
   const eyebrow: TextStyle = { ...(type.eyebrow as unknown as TextStyle), color: t.colors.inkSoft };
@@ -76,7 +73,11 @@ export function TodayEmptyState({ variant, weekday, onPrimary, onLog }: TodayEmp
 
       <AppButton label={primaryLabel} variant="indigo" fullWidth onPress={onPrimary} />
 
-      <RetroLogChip label={chipLabel} onPress={onLog} />
+      <RetroLogChip
+        firstText={chipFirstText}
+        secondText={chipSecondText}
+        onPress={onLog}
+      />
     </View>
   );
 }

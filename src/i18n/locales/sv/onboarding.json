@@ -54,7 +54,7 @@
       "sink": {
         "prompt": "Var försvinner tiden mest för dig?",
         "options": {
-          "meetings": "Möten",
+          "meetings": "Samtal och möten",
           "chores": "Sysslor",
           "errands": "Ärenden",
           "deepwork": "Fokusarbete"
@@ -95,7 +95,7 @@
   "archetypeReveal": {
     "eyebrow": "DIN TIDSPERSONLIGHET",
     "echoLine": "Utifrån dina svar: {{echo}}",
-    "multCaption": "din gissning, i snitt",
+    "multCaption": "din startuppskattning",
     "note": "En första bild utifrån dina svar. Varje uppgift du tidtar gör den skarpare — och din typ kan ändras i takt med dina siffror.",
     "cta": "Skärp den med mina uppgifter →"
   },

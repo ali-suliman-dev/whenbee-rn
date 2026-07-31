@@ -8,7 +8,7 @@ describe('categoryStatsRepo', () => {
   it('seeds a cold-start row (n=0, prior mEffective) and never returns null', async () => {
     const db = createMemoryDatabase();
     const repo = makeCategoryStatsRepo(db);
-    const row = await repo.get('cleaning');
+    const row = await repo.get('cleaning', undefined);
     expect(row).not.toBeNull();
     expect(row.categoryId).toBe('cleaning');
     expect(row.n).toBe(0);
@@ -42,13 +42,13 @@ describe('categoryStatsRepo', () => {
       swxy: 1215,
     };
     await repo.upsert(row);
-    expect(await repo.get('cleaning')).toEqual(row);
+    expect(await repo.get('cleaning', undefined)).toEqual(row);
   });
 
   it('seeds the global prior for unknown categories', async () => {
     const db = createMemoryDatabase();
     const repo = makeCategoryStatsRepo(db);
-    const row = await repo.get('made-up-category');
+    const row = await repo.get('made-up-category', undefined);
     expect(row.n).toBe(0);
     expect(row.mEffective).toBe(row.priorMult);
     expect(row.mEffective).toBeGreaterThan(0);
@@ -58,7 +58,7 @@ describe('categoryStatsRepo', () => {
     const db = createMemoryDatabase();
     const spy = jest.spyOn(db, 'getCategoryStat');
     const repo = makeCategoryStatsRepo(db);
-    await repo.get('cleaning');
+    await repo.get('cleaning', undefined);
     expect(spy).toHaveBeenCalledTimes(1);
   });
 

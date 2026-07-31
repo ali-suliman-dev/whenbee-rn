@@ -3,36 +3,29 @@ import { View, Text, Pressable, type ViewStyle, type TextStyle } from 'react-nat
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import { useTranslation } from 'react-i18next';
-import { Card } from '@/src/components/Card';
 import { useTheme } from '@/src/theme/useTheme';
 import { type } from '@/src/theme/typography';
 import { analytics } from '@/src/services/analytics';
 import type { ReviewSummary } from '@/src/domain/types';
 
 // ──────────────────────────────────────────────────────────────────────────────
-// ReviewRitualCard (Pro) — the Patterns entry to the recap. Two calm states:
-//   ready (isFresh) → an amber envelope: "Your honest week is ready" + a lead and
-//                     an open CTA. The one scarce-amber moment on the screen.
-//   quiet (seen)    → a plain row + chevron, re-openable, always recomputed live.
-// Tapping opens the modal. No streak, no red, no "you missed". Fires
-// review_card_shown once on mount.
+// ReviewRitualCard (Pro) — the Patterns entry to the recap. Always the full
+// envelope card: amber eyebrow + "Your honest week is ready." + a lead and an
+// open CTA, on the standard dark surface. Re-openable, recomputed live every
+// visit — it never collapses to a quiet row. Tapping opens the modal. No streak,
+// no red, no "you missed". Fires review_card_shown once on mount.
 // ──────────────────────────────────────────────────────────────────────────────
 
-export function ReviewRitualCard({
-  summary,
-  isFresh,
-}: {
-  summary: ReviewSummary;
-  isFresh: boolean;
-}) {
+export function ReviewRitualCard({ summary }: { summary: ReviewSummary }) {
   const t = useTheme();
   const { t: tt } = useTranslation('review');
   const isMonth = summary.period.kind === 'month';
+  const periodKey = isMonth ? 'month' : 'week';
 
   useEffect(() => {
     analytics.capture('review_card_shown', {
       period_kind: summary.period.kind,
-      state: isFresh ? 'ready' : 'quiet',
+      state: 'ready',
       is_pro: true,
     });
     // Mount-only: one impression per render of the card.
@@ -43,37 +36,19 @@ export function ReviewRitualCard({
     router.push({ pathname: '/(modals)/review', params: { source: 'card' } });
   }
 
-  const periodKey = isMonth ? 'month' : 'week';
-  const quietRowText = tt(`ritualCard.quietRow.${periodKey}`);
+  const periodWord = isMonth ? 'month' : 'week';
 
-  // ── Quiet row (already opened this period) ──────────────────────────────────
-  if (!isFresh) {
-    const row: ViewStyle = { flexDirection: 'row', alignItems: 'center', gap: t.space[3] };
-    const label: TextStyle = { ...(type.bodySmBold as unknown as TextStyle), color: t.colors.ink, flex: 1 };
-    return (
-      <Pressable
-        onPress={open}
-        accessibilityRole="button"
-        accessibilityLabel={tt('ritualCard.openQuietLabel', { label: quietRowText })}
-      >
-        <Card tone="flat" style={row}>
-          <Ionicons name="leaf-outline" size={t.iconSize.md} color={t.colors.inkSoft} />
-          <Text style={label}>{quietRowText}</Text>
-          <Ionicons name="chevron-forward" size={t.iconSize.sm} color={t.colors.inkSoft} />
-        </Card>
-      </Pressable>
-    );
-  }
-
-  // ── Ready envelope (unopened — the scarce amber moment) ─────────────────────
   const eyebrowRow: ViewStyle = { flexDirection: 'row', alignItems: 'center', gap: t.space[2] };
   const eyebrow: TextStyle = { ...(type.eyebrow as unknown as TextStyle), color: t.colors.amberText };
   const headline: TextStyle = { ...(type.subtitle as unknown as TextStyle), color: t.colors.ink };
   const lead: TextStyle = { ...(type.body as unknown as TextStyle), color: t.colors.inkSoft };
   const ctaRow: ViewStyle = { flexDirection: 'row', alignItems: 'center', gap: t.space[1.5] };
   const ctaText: TextStyle = { ...(type.bodySmBold as unknown as TextStyle), color: t.colors.amberText };
+  // Surface (not accentSoft) so the ready card sits on the same dark card
+  // colour as its siblings above (personality / when-you're-sharp) — the amber
+  // eyebrow, icon and CTA carry the "ready" warmth without a tinted surface.
   const envelope: ViewStyle = {
-    backgroundColor: t.colors.accentSoft,
+    backgroundColor: t.colors.surface,
     borderRadius: t.radii.card,
     borderCurve: 'continuous',
     padding: t.space[4],

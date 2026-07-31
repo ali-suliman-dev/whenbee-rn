@@ -1,0 +1,470 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Whenbee — 2026-07-27 fix + redesign batch</title>
+<style>
+  :root{
+    --bg:#14151D; --surface:#1F2130; --raised:#292B3C; --sunken:#15161F;
+    --hairline:rgba(255,255,255,0.08);
+    --ink:#F4F1EA; --inkSoft:#ADA9B5; --inkFaint:rgba(244,241,234,0.40);
+    --primary:#8275F0; --primarySoft:rgba(130,117,240,0.22); --primaryWash:rgba(130,117,240,0.10);
+    --accent:#EEAE4D; --accentLine:rgba(238,174,77,0.28); --amberText:#EEAE4D;
+    --danger:#E06464;
+    --ok:#5BC48A;
+    --r-card:16px; --r-md:12px; --r-sm:8px; --r-full:999px;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{
+    background:#0C0D13; color:var(--ink);
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Inter,sans-serif;
+    padding:40px 24px 80px; line-height:1.5;
+  }
+  .wrap{max-width:1180px;margin:0 auto}
+  h1{font-size:26px;font-weight:700;letter-spacing:-.02em;margin-bottom:6px}
+  .sub{color:var(--inkSoft);font-size:14px;margin-bottom:34px}
+  h2{font-size:17px;font-weight:650;margin:0 0 4px;letter-spacing:-.01em}
+  .note{color:var(--inkSoft);font-size:13px;max-width:74ch}
+  .note code{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:12px;color:var(--ink);background:var(--sunken);padding:1px 5px;border-radius:5px}
+
+  section{margin:0 0 44px;padding:22px;background:var(--bg);border:1px solid var(--hairline);border-radius:18px}
+  .head{display:flex;align-items:flex-start;gap:12px;margin-bottom:18px}
+  .tag{flex-shrink:0;font-size:10px;font-weight:700;letter-spacing:.08em;padding:4px 9px;border-radius:var(--r-full);text-transform:uppercase;margin-top:2px}
+  .tag.fixed{background:rgba(91,196,138,.16);color:var(--ok)}
+  .tag.ask{background:var(--primarySoft);color:var(--primary)}
+  .tag.pick{background:rgba(238,174,77,.16);color:var(--accent)}
+
+  .pair{display:grid;grid-template-columns:1fr 1fr;gap:18px;align-items:start}
+  @media(max-width:900px){.pair{grid-template-columns:1fr}}
+  .col>.cap{font-size:11px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;margin-bottom:8px}
+  .cap.bad{color:var(--danger)} .cap.good{color:var(--ok)}
+
+  .phone{background:var(--bg);border:1px solid var(--hairline);border-radius:20px;padding:14px}
+
+  /* generic card bits */
+  .card{background:var(--surface);border:1px solid var(--hairline);border-radius:var(--r-card);padding:12px 14px}
+  .card.raised{background:var(--raised)}
+  .eyebrow{font-size:10px;font-weight:700;letter-spacing:.09em;text-transform:uppercase;color:var(--inkSoft)}
+  .mono{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-variant-numeric:tabular-nums}
+  .row{display:flex;align-items:center;justify-content:space-between;gap:10px}
+
+  /* ── plan rail ── */
+  .rail{display:flex;gap:10px}
+  .gutter{width:52px;flex-shrink:0;text-align:right;font-size:11px;color:var(--inkFaint);padding-top:12px}
+  .body{flex:1}
+  .task{background:var(--surface);border:1px solid var(--hairline);border-radius:var(--r-card);padding:10px 12px;display:flex;justify-content:space-between;align-items:center;gap:10px}
+  .task.amber{border-color:var(--accentLine)}
+  .task .t{font-size:13.5px;font-weight:650}
+  .task .m{font-size:11.5px;color:var(--inkSoft);margin-top:2px}
+  .donebtn{font-size:11px;font-weight:700;color:var(--inkSoft);border:1px solid var(--hairline);border-radius:var(--r-full);padding:4px 11px;flex-shrink:0}
+  .boundary{padding:12px 0 8px}
+  .bline{display:flex;align-items:center;gap:10px}
+  .blabel{font-size:11px;letter-spacing:.06em;color:var(--amberText);font-family:ui-monospace,Menlo,monospace;flex-shrink:0}
+  .brule{flex:1;height:1px;background:var(--accentLine)}
+  .bsent{font-size:12px;color:var(--inkSoft);margin-top:8px}
+  .bsent b{color:var(--ink);font-weight:600}
+
+  .lifted{transform:translateY(-14px) rotate(-1.1deg);box-shadow:0 14px 30px rgba(0,0,0,.5);opacity:.97}
+  .ghostslot{border:1px dashed var(--hairline);border-radius:var(--r-card);height:52px;background:rgba(255,255,255,.02)}
+  .fingertip{position:relative}
+  .fingertip::after{content:"";position:absolute;right:-6px;top:50%;width:26px;height:26px;border-radius:50%;background:rgba(130,117,240,.30);border:1.5px solid var(--primary);transform:translateY(-50%)}
+
+  /* ── anchor chooser ── */
+  .group{background:var(--sunken);border-radius:var(--r-md);overflow:hidden}
+  .arow{display:flex;align-items:center;gap:10px;padding:10px 12px;min-height:52px}
+  .arow.sel{background:var(--raised)}
+  .arow+.arow{border-top:1px solid var(--hairline)}
+  .dot{width:18px;height:18px;border-radius:50%;border:2px solid var(--inkFaint);flex-shrink:0;display:grid;place-items:center}
+  .arow.sel .dot{border-color:var(--primary)}
+  .dot i{width:8px;height:8px;border-radius:50%;background:var(--primary);display:none}
+  .arow.sel .dot i{display:block}
+  .amain{flex:1;min-width:0}
+  .alabel{font-size:13.5px;font-weight:650;color:var(--inkSoft)}
+  .arow.sel .alabel{color:var(--ink)}
+  .aderived{font-size:11px;font-family:ui-monospace,Menlo,monospace;color:var(--inkFaint);margin-top:2px}
+  .arow.sel .aderived{color:var(--accent)}
+  .pill{display:flex;align-items:center;gap:5px;padding:6px 12px;border-radius:var(--r-full);font-family:ui-monospace,Menlo,monospace;font-size:12px;font-weight:700;color:var(--inkFaint)}
+  .arow.sel .pill{background:var(--surface);color:var(--ink)}
+  .pill.squared{border-radius:2px}
+
+  /* ── landing card ── */
+  .bar{height:10px;border-radius:var(--r-full);overflow:hidden;display:flex;background:var(--sunken);margin:10px 0 6px}
+  .bar i{display:block;height:100%}
+  .scale{display:flex;justify-content:space-between;font-size:10.5px;color:var(--inkFaint);font-family:ui-monospace,Menlo,monospace}
+  .foot{display:flex;justify-content:space-between;align-items:center;gap:10px;border-top:1px solid var(--hairline);margin-top:11px;padding-top:11px}
+  .foot .f{font-size:12px;color:var(--inkSoft)}
+  .foot .f b{color:var(--ink);font-weight:650}
+  .foot .a{font-size:12px;font-weight:700;color:var(--primary);flex-shrink:0}
+  .ups{display:flex;align-items:center;gap:8px;margin-top:9px}
+  .ups .u{flex:1;font-size:11.5px;color:var(--inkSoft)}
+  .ups .a{font-size:11.5px;font-weight:700;color:var(--primary)}
+  .strike{position:relative;opacity:.55}
+  .strike::after{content:"";position:absolute;inset:auto 0 50% 0;height:1px;background:var(--danger)}
+
+  /* ── running card ── */
+  .gap{height:8px;border-radius:var(--r-full);background:var(--sunken);position:relative;overflow:hidden}
+  .gap i{position:absolute;left:0;top:0;bottom:0;background:var(--primarySoft)}
+  .gap u{position:absolute;top:-3px;width:3px;height:14px;border-radius:2px;background:var(--ink)}
+  .labels{display:flex;justify-content:space-between;margin-top:9px;font-size:12px;font-weight:700}
+
+  /* ── routines ── */
+  .rname{font-size:16px;font-weight:680;letter-spacing:-.01em}
+  .rmeta{font-size:11.5px;color:var(--inkSoft);margin-top:3px}
+  .rtot{font-family:ui-monospace,Menlo,monospace;font-size:22px;font-weight:700;line-height:1;letter-spacing:-.01em}
+  .rtot small{font-size:.58em;color:var(--inkSoft);font-weight:600;margin-left:2px}
+  .chip{font-size:10.5px;color:var(--inkSoft);background:var(--sunken);border-radius:var(--r-sm);padding:2px 8px}
+  .swipe{display:flex;align-items:stretch;gap:0;border-radius:var(--r-card);overflow:hidden}
+  .swipe .del{background:var(--danger);color:#fff;font-size:11px;font-weight:800;display:grid;place-items:center;width:86px;flex-shrink:0}
+  .manage{background:var(--surface);border:1px solid var(--hairline);border-radius:var(--r-card);overflow:hidden}
+  .mrow{display:flex;align-items:center;justify-content:space-between;padding:12px 14px;font-size:13.5px}
+  .mrow+.mrow{border-top:1px solid var(--hairline)}
+  .mrow.dngr{color:var(--danger);font-weight:650}
+  .grip{color:var(--inkFaint);font-size:15px;letter-spacing:-2px;flex-shrink:0}
+  .breather{display:flex;align-items:center;gap:8px;font-size:11.5px;color:var(--inkFaint);padding:7px 0}
+  .breather .set{border:1px solid var(--hairline);border-radius:var(--r-full);padding:3px 10px;color:var(--inkSoft);font-size:11px;font-weight:650}
+  .segs{display:flex;gap:6px}
+  .seg{border:1px solid var(--hairline);border-radius:var(--r-full);padding:4px 12px;font-size:11.5px;font-weight:650;color:var(--inkSoft)}
+  .seg.on{background:var(--primarySoft);border-color:transparent;color:var(--ink)}
+
+  .opts{display:grid;grid-template-columns:1fr 1fr;gap:18px;margin-top:16px}
+  @media(max-width:900px){.opts{grid-template-columns:1fr}}
+  .opt{border:1px solid var(--hairline);border-radius:14px;padding:16px;background:var(--bg)}
+  .opt h3{font-size:13px;font-weight:700;margin-bottom:3px}
+  .opt .why{font-size:12px;color:var(--inkSoft);margin-bottom:13px}
+  .rec{font-size:10px;font-weight:800;color:var(--ok);letter-spacing:.06em}
+  ul.k{margin:12px 0 0 16px;font-size:12.5px;color:var(--inkSoft)}
+  ul.k li{margin-bottom:5px}
+  ul.k b{color:var(--ink);font-weight:620}
+  .warn{border-left:2px solid var(--accent);padding:10px 0 10px 13px;margin-top:14px;font-size:12.5px;color:var(--inkSoft)}
+  .warn b{color:var(--accent)}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<h1>Fix + redesign batch — 27 Jul 2026</h1>
+<p class="sub">Dark mode, real tokens from <code style="font-family:ui-monospace">tokens.ts</code>. Green = already done. Indigo = needs your yes. Amber = pick one.</p>
+
+<!-- 1 ───────────────────────────────────────────────── -->
+<section>
+  <div class="head">
+    <span class="tag ask">needs your yes</span>
+    <div><h2>1 · Past-due text drags along with the task</h2>
+    <p class="note">Cause: the boundary block (<code>OverflowBoundary</code>) is rendered <i>inside</i> the first over-running row's cell, so the reorder list lifts it with the card. Fix: it stays put — the lifted card carries only the task and its Done button.</p></div>
+  </div>
+  <div class="pair">
+    <div class="col"><div class="cap bad">now — the whole block lifts</div>
+      <div class="phone"><div class="rail">
+        <div class="gutter">6:40pm</div>
+        <div class="body">
+          <div class="lifted fingertip">
+            <div class="boundary" style="padding-top:0">
+              <div class="bline"><span class="blabel">6:40PM DONE BY</span><span class="brule"></span></div>
+              <div class="bsent">Past here you run over. Push it to <b>7:55pm</b>, or move a task to tomorrow.</div>
+            </div>
+            <div class="task amber"><div><div class="t">Reply to Marcus</div><div class="m">Deep work · 35m · 22m over</div></div><span class="donebtn">Done</span></div>
+          </div>
+          <div class="ghostslot" style="margin-top:10px"></div>
+        </div>
+      </div></div>
+    </div>
+    <div class="col"><div class="cap good">after — only the card lifts</div>
+      <div class="phone"><div class="rail">
+        <div class="gutter">6:40pm</div>
+        <div class="body">
+          <div class="boundary" style="padding-top:0">
+            <div class="bline"><span class="blabel">6:40PM DONE BY</span><span class="brule"></span></div>
+            <div class="bsent">Past here you run over. Push it to <b>7:55pm</b>, or move a task to tomorrow.</div>
+          </div>
+          <div class="ghostslot"></div>
+          <div class="lifted fingertip" style="margin-top:10px">
+            <div class="task amber"><div><div class="t">Reply to Marcus</div><div class="m">Deep work · 35m · 22m over</div></div><span class="donebtn">Done</span></div>
+          </div>
+        </div>
+      </div></div>
+    </div>
+  </div>
+  <ul class="k">
+    <li><b>Behaviour while dragging:</b> the amber line + sentence hold their place and fade to ~40%. On drop they re-attach above whichever row is now first past the done-by — same as today.</li>
+    <li>Your Done button stays on the card. That one is meant to travel with it.</li>
+  </ul>
+</section>
+
+<!-- 2 ───────────────────────────────────────────────── -->
+<section>
+  <div class="head">
+    <span class="tag fixed">fixed</span>
+    <div><h2>2 · Start / Finish by pills lose their radius</h2>
+    <p class="note">Same Android bug we hit on the done-by chip: <code>borderRadius</code> with no <code>overflow:'hidden'</code> — the press layer gets promoted (tapping either row promotes <i>both</i>) and squares the corners. Pinned the clip in <code>PlanAnchorChooser.tsx</code>.</p></div>
+  </div>
+  <div class="pair">
+    <div class="col"><div class="cap bad">now — corners square on tap</div>
+      <div class="phone"><div class="group">
+        <div class="arow sel"><span class="dot"><i></i></span><div class="amain"><div class="alabel">Start at</div><div class="aderived">finish 7:55pm</div></div><span class="pill squared">6:10pm ›</span></div>
+        <div class="arow"><span class="dot"><i></i></span><div class="amain"><div class="alabel">Finish by</div><div class="aderived">start by 5:05pm</div></div><span class="pill squared">7:30pm ›</span></div>
+      </div></div>
+    </div>
+    <div class="col"><div class="cap good">after</div>
+      <div class="phone"><div class="group">
+        <div class="arow sel"><span class="dot"><i></i></span><div class="amain"><div class="alabel">Start at</div><div class="aderived">finish 7:55pm</div></div><span class="pill">6:10pm ›</span></div>
+        <div class="arow"><span class="dot"><i></i></span><div class="amain"><div class="alabel">Finish by</div><div class="aderived">start by 5:05pm</div></div><span class="pill">7:30pm ›</span></div>
+      </div></div>
+    </div>
+  </div>
+</section>
+
+<!-- 3 ───────────────────────────────────────────────── -->
+<section>
+  <div class="head">
+    <span class="tag ask">needs your yes</span>
+    <div><h2>3 · "6 more logs to tighten" comes out of the Roughly-done card</h2>
+    <p class="note">Dropping that footer branch. The line under the divider then falls through to the next true fact (booked time, a tail that lands late, or what's logged) — and the free Pro line is the only offer left.</p></div>
+  </div>
+  <div class="pair">
+    <div class="col"><div class="cap bad">now — two competing offers</div>
+      <div class="phone"><div class="card raised">
+        <div class="row"><div><span class="eyebrow">Roughly done</span> <span class="mono" style="font-size:19px;font-weight:700">9:10pm</span></div><span style="color:var(--inkFaint)">⌄</span></div>
+        <div class="bar"><i style="width:58%;background:var(--primary)"></i><i style="width:14%;background:var(--accent)"></i></div>
+        <div class="scale"><span>now · 7:10pm</span><span>10:00pm</span></div>
+        <div class="foot strike"><span class="f"><b>6 more logs</b> and this tightens</span><span class="a">Start one</span></div>
+        <div class="ups"><span style="color:var(--inkFaint)">🔒</span><span class="u">See what's already booked</span><span class="a">Add it</span></div>
+      </div></div>
+    </div>
+    <div class="col"><div class="cap good">after — one offer</div>
+      <div class="phone"><div class="card raised">
+        <div class="row"><div><span class="eyebrow">Roughly done</span> <span class="mono" style="font-size:19px;font-weight:700">9:10pm</span></div><span style="color:var(--inkFaint)">⌄</span></div>
+        <div class="bar"><i style="width:58%;background:var(--primary)"></i><i style="width:14%;background:var(--accent)"></i></div>
+        <div class="scale"><span>now · 7:10pm</span><span>10:00pm</span></div>
+        <div class="foot"><span class="f"><b>2h 10m</b> already booked today</span><span class="a">Pad calendar</span></div>
+        <div class="ups"><span style="color:var(--inkFaint)">🔒</span><span class="u">See what's already booked</span><span class="a">Add it</span></div>
+      </div></div>
+    </div>
+  </div>
+  <ul class="k">
+    <li>Say the word and I'll drop the whole footer row on the warming state instead, leaving only the Pro line — tell me which.</li>
+  </ul>
+</section>
+
+<!-- 4 ───────────────────────────────────────────────── -->
+<section>
+  <div class="head">
+    <span class="tag ask">needs your yes</span>
+    <div><h2>4 · Running card — kill the indigo on "guessed"</h2>
+    <p class="note">Swap of two colour tokens only. Nothing moves.</p></div>
+  </div>
+  <div class="pair">
+    <div class="col"><div class="cap bad">now</div>
+      <div class="phone"><div class="card raised">
+        <div class="row" style="align-items:flex-end">
+          <div><div style="display:flex;align-items:center;gap:8px"><i style="width:6px;height:6px;border-radius:50%;background:var(--primary);display:block"></i><span class="eyebrow">Now · Deep work</span></div>
+          <div style="font-size:16px;font-weight:680;margin-top:5px">Reply to Marcus</div></div>
+          <div style="text-align:right"><div class="eyebrow" style="color:var(--inkFaint)">Elapsed</div><div class="mono" style="font-size:24px;font-weight:700">18:24</div></div>
+        </div>
+        <div class="gap" style="margin-top:14px"><i style="width:46%"></i><u style="left:52%"></u></div>
+        <div class="labels"><span style="color:var(--inkSoft)">plan ~1h 35m</span><span style="color:var(--primary)">guessed 45m</span></div>
+      </div></div>
+    </div>
+    <div class="col"><div class="cap good">after</div>
+      <div class="phone"><div class="card raised">
+        <div class="row" style="align-items:flex-end">
+          <div><div style="display:flex;align-items:center;gap:8px"><i style="width:6px;height:6px;border-radius:50%;background:var(--primary);display:block"></i><span class="eyebrow">Now · Deep work</span></div>
+          <div style="font-size:16px;font-weight:680;margin-top:5px">Reply to Marcus</div></div>
+          <div style="text-align:right"><div class="eyebrow" style="color:var(--inkFaint)">Elapsed</div><div class="mono" style="font-size:24px;font-weight:700">18:24</div></div>
+        </div>
+        <div class="gap" style="margin-top:14px"><i style="width:46%"></i><u style="left:52%"></u></div>
+        <div class="labels"><span style="color:var(--ink)">plan ~1h 35m</span><span style="color:var(--inkSoft)">guessed 45m</span></div>
+      </div></div>
+    </div>
+  </div>
+  <ul class="k">
+    <li><b>plan ~1h 35m</b> (the honest number) → white <code>ink</code> — it becomes the loudest thing in the row, which is right.</li>
+    <li><b>guessed 45m</b> → grey <code>inkSoft</code>, exactly the grey "plan" wore before. Indigo stops implying the guess is the thing to chase.</li>
+  </ul>
+</section>
+
+<!-- 5 ───────────────────────────────────────────────── -->
+<section>
+  <div class="head">
+    <span class="tag fixed">fixed</span>
+    <div><h2>5 · The running card followed you into other days</h2>
+    <p class="note">The hero slot's other two states were both gated to today; the running card wasn't. A live timer is a today fact — now it only renders on today. Regression test added.</p></div>
+  </div>
+  <div class="pair">
+    <div class="col"><div class="cap bad">now — Thursday, still showing today's timer</div>
+      <div class="phone">
+        <div class="row" style="margin-bottom:12px"><div style="font-size:20px;font-weight:700">Thursday</div><div class="chip">tomorrow</div></div>
+        <div class="card raised"><div class="row"><div><span class="eyebrow">Now · Deep work</span><div style="font-size:15px;font-weight:680;margin-top:4px">Reply to Marcus</div></div><div class="mono" style="font-size:20px;font-weight:700">18:24</div></div></div>
+      </div>
+    </div>
+    <div class="col"><div class="cap good">after — Thursday shows Thursday</div>
+      <div class="phone">
+        <div class="row" style="margin-bottom:12px"><div style="font-size:20px;font-weight:700">Thursday</div><div class="chip">tomorrow</div></div>
+        <div class="card"><div style="font-size:14px;font-weight:650">Nothing planned yet</div><div style="font-size:12px;color:var(--inkSoft);margin-top:3px">Add what Thursday's really made of.</div></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- 6 ───────────────────────────────────────────────── -->
+<section>
+  <div class="head">
+    <span class="tag pick">pick one</span>
+    <div><h2>6 · Routines — the list card</h2>
+    <p class="note">Today the name and the total are the same visual weight, the basis caption ("based on typical patterns") says nothing actionable, and there's no way to delete. Same skeleton, re-ranked: <b>name is the headline, the honest total is the value, everything else is a quiet meta line.</b></p></div>
+  </div>
+  <div class="pair">
+    <div class="col"><div class="cap bad">now</div>
+      <div class="phone">
+        <div class="card" style="margin-bottom:10px">
+          <div class="row"><span style="font-size:15px">Morning routine</span><span class="chip">5 steps</span></div>
+          <div style="display:flex;gap:8px;align-items:baseline;margin-top:6px"><span style="font-size:20px;font-weight:700">42 min</span><span style="font-size:12px;color:var(--inkSoft)">based on typical patterns</span></div>
+          <div style="font-size:12px;color:var(--inkSoft);margin-top:6px">🕐 Start by 7:12</div>
+        </div>
+        <div style="font-size:11.5px;color:var(--danger);text-align:center">no way to delete this, at all</div>
+      </div>
+    </div>
+    <div class="col"><div class="cap good">after</div>
+      <div class="phone">
+        <div class="card" style="margin-bottom:10px">
+          <div class="row" style="align-items:flex-start">
+            <div style="min-width:0">
+              <div class="rname">Morning routine</div>
+              <div class="rmeta">5 steps · leave by 7:55am</div>
+            </div>
+            <div style="text-align:right;flex-shrink:0">
+              <div class="rtot">42<small>min</small></div>
+              <div style="font-size:10px;color:var(--inkFaint);margin-top:3px">honest</div>
+            </div>
+          </div>
+          <div style="border-top:1px solid var(--hairline);margin-top:11px;padding-top:9px;font-size:11.5px;color:var(--inkSoft)">Start by <span class="mono" style="color:var(--ink)">7:12am</span> to make it</div>
+        </div>
+        <div class="card">
+          <div class="row" style="align-items:flex-start">
+            <div style="min-width:0"><div class="rname">Leaving the house</div><div class="rmeta">3 steps · no finish set</div></div>
+            <div style="text-align:right;flex-shrink:0"><div class="rtot">18<small>min</small></div><div style="font-size:10px;color:var(--inkFaint);margin-top:3px">honest</div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <ul class="k">
+    <li><b>Name gets the headline size</b> (16px/680) — it's what you're scanning for. The total drops to mono so it reads as data, with <code>min</code> as a small grey suffix instead of same-size text.</li>
+    <li><b>"based on typical patterns" is gone.</b> It's replaced by the word <b>honest</b> under the number and, where a finish exists, one sentence that's actually useful: <i>Start by 7:12am to make it</i>.</li>
+    <li>Every card is the same three-part shape, so names line up and totals share a baseline down the list.</li>
+  </ul>
+
+  <div class="opts">
+    <div class="opt">
+      <h3>Delete — A · Swipe left on the card <span class="rec">← recommended</span></h3>
+      <p class="why">Same gesture that already deletes a <i>step</i> inside a routine, and the same one on task rows. Nothing new to learn, no new element on the card.</p>
+      <div class="swipe">
+        <div style="flex:1" class="card" ><div class="row" style="align-items:flex-start"><div><div class="rname">Morning routine</div><div class="rmeta">5 steps · leave by 7:55am</div></div><div class="rtot">42<small>min</small></div></div></div>
+        <div class="del">Delete</div>
+      </div>
+      <ul class="k"><li>Confirm via the app's <code>ConfirmSheet</code> — never a native alert.</li><li>Store already has <code>removeRoutine()</code>; it's pure wiring.</li></ul>
+    </div>
+    <div class="opt">
+      <h3>Delete — B · "Manage this routine" card inside it</h3>
+      <p class="why">Mirrors how a category is deleted today (a grouped card on the detail screen, not the list). Harder to fire by accident; costs a tap.</p>
+      <div class="manage">
+        <div class="mrow"><span>Duplicate</span><span style="color:var(--inkFaint)">›</span></div>
+        <div class="mrow dngr"><span>Delete routine</span><span>›</span></div>
+      </div>
+      <ul class="k"><li>Consistent with the category-delete precedent you approved.</li><li>Slower for the "I made three junk test routines" case.</li></ul>
+    </div>
+  </div>
+  <p class="note" style="margin-top:12px">I'd take <b>A</b>, and add B's row too if you want duplicate anyway. They're not exclusive.</p>
+</section>
+
+<!-- 7 ───────────────────────────────────────────────── -->
+<section>
+  <div class="head">
+    <span class="tag ask">needs your yes</span>
+    <div><h2>7 · Routine steps — drag to reorder, no new furniture</h2>
+    <p class="note">You asked for no extra UI just to drag. Long-press is free on these rows right now (tap = edit, swipe = delete, long-press = nothing), so long-press lifts the card and you move it. The store's <code>reorderSteps()</code> already exists, unused.</p></div>
+  </div>
+  <div class="pair">
+    <div class="col"><div class="cap bad">now — meta line is three facts jammed together</div>
+      <div class="phone"><div class="rail">
+        <div class="gutter">7:12</div>
+        <div class="body">
+          <div class="task"><div><div class="t">Shower</div><div class="m">Getting ready · 12m honest · 7:12</div></div></div>
+          <div class="breather" style="padding-left:2px">+5m in-between</div>
+          <div class="task"><div><div class="t">Coffee + breakfast</div><div class="m">Kitchen · 15m honest · 7:29</div></div></div>
+        </div>
+      </div></div>
+    </div>
+    <div class="col"><div class="cap good">after — clock in the gutter, minutes as the value</div>
+      <div class="phone"><div class="rail">
+        <div class="gutter">7:12<br><span style="opacity:.5;font-size:10px">am</span></div>
+        <div class="body">
+          <div class="task"><div><div class="t">Shower</div><div class="m">Getting ready</div></div><div style="text-align:right"><div class="mono" style="font-size:15px;font-weight:700">12<small style="font-size:.6em;color:var(--inkSoft)">m</small></div></div></div>
+          <div class="breather"><span class="grip">⋯</span> <span>5m in-between</span> <span class="set">change</span></div>
+          <div class="task lifted fingertip"><div><div class="t">Coffee + breakfast</div><div class="m">Kitchen</div></div><div class="mono" style="font-size:15px;font-weight:700">15<small style="font-size:.6em;color:var(--inkSoft)">m</small></div></div>
+          <div class="ghostslot" style="margin-top:8px"></div>
+        </div>
+      </div></div>
+    </div>
+  </div>
+  <ul class="k">
+    <li><b>Minutes become the right-hand value</b> in mono with a small <code>m</code> — same shape as the list card, so both screens read the same way. The word "honest" leaves the row; it's stated once at the top total.</li>
+    <li><b>The clock leaves the row text</b> — it's already in the rail gutter to the left. Saying it twice is what makes the line feel cluttered.</li>
+    <li><b>Long-press → lift → drag.</b> Grip appears only on the lifted card. Reduced motion: no wobble, card just follows.</li>
+  </ul>
+</section>
+
+<!-- 8 ───────────────────────────────────────────────── -->
+<section>
+  <div class="head">
+    <span class="tag pick">pick one — and read the catch</span>
+    <div><h2>8 · The 5 minutes in-between, made changeable</h2>
+    <p class="note">Right now that gap is <b>not a setting</b>. It's Whenbee's learned transition factor made visible: total honest time minus the sum of the steps, spread evenly across the gaps. That's why it says 5 — nobody chose 5.</p></div>
+  </div>
+
+  <div class="warn"><b>The catch, plainly:</b> if you set the gap by hand, the routine total stops being fully learned — it becomes <i>your steps + your gaps</i>. The transition factor then has nothing left to express. That's a real trade: more control, slightly less honesty. Both options below keep the learned number visible so you can see what you're overriding.</div>
+
+  <div class="opts">
+    <div class="opt">
+      <h3>A · Tap the breather row itself <span class="rec">← recommended</span></h3>
+      <p class="why">No new element — the row is already on screen. Tapping opens the same 0 / 5 / 10 / 20 chips the planner already uses, plus "let Whenbee decide".</p>
+      <div class="phone" style="padding:12px">
+        <div class="breather" style="justify-content:space-between"><span>5m in-between</span><span class="set">change</span></div>
+        <div style="border-top:1px solid var(--hairline);margin-top:8px;padding-top:10px">
+          <div class="eyebrow" style="margin-bottom:8px">Gap between steps</div>
+          <div class="segs"><span class="seg">0</span><span class="seg">5</span><span class="seg">10</span><span class="seg">20</span><span class="seg on">Learned · 5m</span></div>
+        </div>
+      </div>
+      <ul class="k"><li>Applies to <b>every</b> gap in the routine — one value, not per-gap.</li><li>Default stays <b>Learned</b>, so nothing changes unless you touch it.</li></ul>
+    </div>
+    <div class="opt">
+      <h3>B · A row in the routine's header</h3>
+      <p class="why">Sits next to the finish time as a proper setting of the routine, away from the rail.</p>
+      <div class="phone" style="padding:12px">
+        <div class="manage">
+          <div class="mrow"><span>Finish by</span><span class="mono" style="color:var(--inkSoft)">7:55am ›</span></div>
+          <div class="mrow"><span>Gap between steps</span><span class="mono" style="color:var(--inkSoft)">Learned · 5m ›</span></div>
+        </div>
+      </div>
+      <ul class="k"><li>More discoverable as a setting; costs a row of vertical space above the rail.</li><li>Breaks the "the thing you tap is the thing you see" link the rail row has.</li></ul>
+    </div>
+  </div>
+  <p class="note" style="margin-top:12px">Third option if you'd rather not trade honesty at all: <b>leave it derived</b> and just relabel the row to say why it's there — <i>"5m for the switch"</i>. Tell me if that's enough.</p>
+</section>
+
+<section style="border-color:var(--primarySoft)">
+  <h2 style="margin-bottom:10px">What I need back from you</h2>
+  <ul class="k" style="margin-left:16px">
+    <li><b>1</b> boundary stays put while dragging — yes?</li>
+    <li><b>3</b> "6 more logs" removed — footer falls through to the next fact, or drop the footer row entirely on that state?</li>
+    <li><b>4</b> plan → white, guessed → grey — yes?</li>
+    <li><b>6</b> routine card re-rank + delete via <b>A swipe</b> / <b>B manage row</b> / both?</li>
+    <li><b>7</b> long-press drag + minutes-as-value — yes?</li>
+    <li><b>8</b> gap control: <b>A rail row</b> / <b>B header row</b> / <b>leave derived, relabel</b>?</li>
+  </ul>
+  <p class="note" style="margin-top:14px">2 and 5 are already fixed on main with tests. Nothing in 6–8 is built yet — and building it needs a branch, which I'll ask for before starting.</p>
+</section>
+
+</div>
+</body>
+</html>

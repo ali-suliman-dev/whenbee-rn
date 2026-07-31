@@ -219,8 +219,12 @@
       "value_one": "{{count}} uppgift",
       "value_other": "{{count}} uppgifter"
     },
-    "mostAccurate": { "label": "Mest träffsäker" },
-    "runsLongest": { "label": "Tar längst tid" }
+    "mostAccurate": {
+      "label": "Mest träffsäker"
+    },
+    "runsLongest": {
+      "label": "Tar längst tid"
+    }
   },
   "archetypeTraits": {
     "runsLabel": "Kör",
@@ -267,10 +271,11 @@
     "ripening": {
       "eyebrow": "Pro · mognar",
       "pillPrefix": "Mognar vid",
-      "title": "Ditt ärliga intervall",
-      "sub": "Intervallet Whenbee kommer visa dig — när den har sett tillräckligt av din tajmning för att betyda något.",
       "settling": "Sätter sig fortfarande…",
-      "footer": "Varje uppgift du loggar skärper tyst intervallet. Inget att hålla jämna steg med."
+      "footer": "Ingen streak, ingen brådska. Logga som vanligt så kommer du dit.",
+      "ticketTitle": "Äg Pro från dag ett",
+      "ticketSub": "Allt här tänds i samma stund det är klart.",
+      "chipLabel": "Skaffa Pro"
     },
     "reveal": {
       "eyebrow": "Pro · klar",
@@ -295,6 +300,26 @@
     "card": {
       "honeyPct": "{{pct}}% honung",
       "logsToNext": "~{{count}} loggar kvar"
+    },
+    "header": {
+      "none": {
+        "title": "Dina Pro-funktioner är på väg.",
+        "sub": "Var och en öppnas när dina loggar kan backa upp den."
+      },
+      "first": {
+        "title": "Din första Pro-funktion är klar.",
+        "sub": "Resten öppnas när du loggar fler uppgifter."
+      },
+      "some": {
+        "title": "{{ready}} av {{total}} Pro-funktioner är klara.",
+        "sub": "Resten öppnas när du loggar fler uppgifter."
+      }
+    },
+    "logsToGo_one": "{{count}} logg kvar",
+    "logsToGo_other": "{{count}} loggar kvar",
+    "wait": {
+      "aboutAWeek": "ungefär en vecka",
+      "aboutAMonth": "ungefär en månad"
     }
   }
 }

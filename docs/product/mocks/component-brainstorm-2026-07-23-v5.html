@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Whenbee · Brainstorm v5 — ripening card: three takes, no amber slab</title>
+<style>
+  .dk{
+    --bg:#14151D; --surface:#1F2130; --sunken:#15161F;
+    --ink:#F4F1EA; --inksoft:#ADA9B5; --inkfaint:rgba(244,241,234,.40);
+    --primary:#8275F0; --primary-edge:#6B5BE6; --primary-soft:rgba(130,117,240,.22); --primary-wash:rgba(130,117,240,.10);
+    --accent:#EEAE4D; --accent-edge:#C68A30; --accent-soft:rgba(238,174,77,.18); --honey-wash:#2B2620;
+    --amber-text:#EEAE4D; --hairline:rgba(255,255,255,.08);
+    --r-card:16px; --r-sheet:20px;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;background:#1C1E2E;color:#F4F1EA;padding:40px 32px 80px}
+  h1{font-size:26px;letter-spacing:-0.5px;margin-bottom:6px}
+  .sub{color:#ADA9B5;font-size:14px;max-width:880px;line-height:1.55;margin-bottom:26px}
+  .row{display:flex;gap:34px;flex-wrap:wrap;align-items:flex-start;margin-bottom:8px}
+  .col{width:392px}
+  .dirlabel{font-size:15px;font-weight:700;margin:0 0 2px;letter-spacing:-0.2px}
+  .dirsub{font-size:12.5px;color:#ADA9B5;line-height:1.5;margin-bottom:12px;min-height:56px}
+  .notes{margin-top:12px;font-size:12.5px;color:#CFCAE0;line-height:1.55;background:#242436;border-radius:12px;padding:14px 16px}
+  .notes b{color:#F5C03F;font-weight:600}
+  .notes ul{margin:6px 0 0 16px}
+  .notes li{margin-bottom:4px}
+  .verdict{max-width:880px;font-size:13.5px;color:#E8E4F4;line-height:1.6;background:#2A2A40;border-left:3px solid #F5C03F;border-radius:10px;padding:14px 18px;margin:14px 0 8px}
+  .verdict b{color:#F5C03F}
+
+  .phone{width:392px;height:856px;border-radius:44px;overflow:hidden;position:relative;
+         box-shadow:0 18px 50px rgba(0,0,0,.5);border:6px solid #0c0c12;background:var(--bg);
+         display:flex;flex-direction:column}
+  .screen{flex:1;padding:54px 20px 0;overflow:hidden;position:relative;display:flex;flex-direction:column;gap:14px}
+  .notch{position:absolute;top:12px;left:50%;transform:translateX(-50%);width:110px;height:26px;background:#000;border-radius:20px;z-index:9}
+  .title{font-size:38px;font-weight:800;letter-spacing:-0.75px;color:var(--ink);line-height:1.05}
+  .card{background:var(--surface);border-radius:var(--r-card);padding:14px 16px}
+  .sect{font-size:11px;letter-spacing:1.2px;font-weight:700;color:var(--inksoft);display:flex;justify-content:space-between;align-items:center}
+  .tabbar{margin:auto -20px 0;padding:10px 22px 26px;display:flex;align-items:flex-end;justify-content:space-between;position:relative}
+  .tab{font-size:10.5px;color:var(--inksoft);text-align:center;width:56px}
+  .tab .ic{font-size:19px;display:block;margin-bottom:3px}
+  .tab.on{color:var(--primary)}
+  .fab{width:52px;height:52px;border-radius:16px;background:var(--primary);color:#fff;font-size:24px;
+       display:flex;align-items:center;justify-content:center;margin-top:-26px;box-shadow:0 6px 0 var(--primary-edge)}
+  .hub-hdr{display:flex;flex-direction:column;align-items:center;gap:4px;padding-top:2px}
+  .hub-bee{font-size:56px}
+  .hub-tier{font-size:12px;color:var(--inksoft)}
+
+  .rp-card{background:var(--surface);border-radius:var(--r-sheet);padding:16px;display:flex;flex-direction:column;gap:12px}
+  .rp-top{display:flex;justify-content:space-between;align-items:center}
+  .rp-eb{display:flex;align-items:center;gap:6px;font-size:10.5px;letter-spacing:1px;font-weight:700;color:var(--amber-text)}
+  .rp-pill{background:var(--accent-soft);color:var(--amber-text);font-size:10.5px;font-weight:700;padding:4px 10px;border-radius:999px}
+  .rp-title{font-size:19px;font-weight:800;color:var(--ink);letter-spacing:-0.3px}
+  .rp-sub{font-size:12.5px;color:var(--inksoft);line-height:1.5;margin-top:3px}
+  .rp-foot{font-size:11.5px;color:var(--inkfaint);line-height:1.5}
+
+  .ck-list{display:flex;flex-direction:column;gap:11px}
+  .ck-row{display:flex;align-items:center;gap:10px}
+  .ck-pip{width:20px;height:20px;border-radius:50%;flex:none;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:800}
+  .ck-pip.done{background:var(--accent);color:#1F2130}
+  .ck-pip.part{background:var(--surface);border:2px solid var(--accent);color:var(--amber-text)}
+  .ck-pip.wait{background:var(--sunken);border:1.5px solid var(--primary-soft)}
+  .ck-lab{font-size:13.5px;color:var(--ink);flex:1;font-weight:600}
+  .ck-lab.dim{color:var(--inkfaint);font-weight:500}
+  .ck-st{font-size:11.5px;color:var(--amber-text);font-weight:700}
+  .ck-st.dim{color:var(--inkfaint);font-weight:500}
+
+  /* V1 inline momentum */
+  .ck-body{flex:1;display:flex;flex-direction:column;gap:4px}
+  .rowbar{height:3px;border-radius:2px;background:var(--honey-wash);width:120px;overflow:hidden}
+  .rowbar i{display:block;height:100%;background:linear-gradient(90deg,#F5C03F,#EEAE4D);border-radius:2px}
+
+  /* V2 header tally */
+  .tally{display:flex;align-items:center;gap:8px;margin-top:9px}
+  .segs{display:flex;gap:4px;flex:1}
+  .seg{height:5px;border-radius:3px;flex:1;background:var(--honey-wash)}
+  .seg.full{background:linear-gradient(90deg,#F5C03F,#EEAE4D)}
+  .seg.half{background:linear-gradient(90deg,#F5C03F 0 52%,#2B2620 52%)}
+  .tally .n{font-size:11.5px;font-weight:700;color:var(--amber-text)}
+
+  /* V3 spotlight */
+  .spot{background:var(--sunken);border-radius:12px;padding:10px 12px;display:flex;align-items:center;gap:10px}
+  .spot .hx{color:var(--accent);font-size:14px}
+  .spot .tx{font-size:12.5px;color:var(--inksoft);flex:1}
+  .spot .tx b{color:var(--ink);font-weight:700}
+  .spot .ct{font-size:11.5px;font-weight:700;color:var(--amber-text)}
+</style>
+</head>
+<body class="dk">
+
+<h1>Brainstorm v5 — ripening card, round 2</h1>
+<p class="sub">The amber slab is dead. Three takes below — same checklist skeleton, three different homes for the "how close am I" info.
+Copy rebuilt with conversion psychology (goal-gradient: lead with what's already IN, keep the next step countable and near) + humanizer (no em dash, no emoji in copy, short flat sentences) + retention framing (progress feels owned, never owed).
+Locked meanwhile: recap headline phrase = plain <b>accent #EEAE4D</b> text (your call, applied), REALLY TOOK rename, dark reward 1·I flow.</p>
+
+<div class="row">
+
+  <!-- V1 -->
+  <div class="col">
+    <p class="dirlabel">R1 · Inline momentum (recommended)</p>
+    <p class="dirsub">No bottom section at all. The "next up" row carries its own honey micro-bar and count — progress lives exactly on the thing that's ripening. Card ends on the quiet footer.</p>
+    <div class="phone"><div class="notch"></div><div class="screen">
+      <div class="hub-hdr"><div class="hub-bee">🐝</div><div class="title" style="font-size:24px">Whenbee</div><div class="hub-tier">Ripening · 27% honey</div></div>
+      <div class="rp-card">
+        <div class="rp-top">
+          <div class="rp-eb">⬡ PRO · RIPENING</div>
+          <div class="rp-pill">Ripens at Ripening</div>
+        </div>
+        <div>
+          <div class="rp-title">Pro is ripening with you.</div>
+          <div class="rp-sub">Your logs switch these on, one by one.</div>
+        </div>
+        <div class="ck-list">
+          <div class="ck-row"><div class="ck-pip done">✓</div><div class="ck-lab">Honest range</div><div class="ck-st">In</div></div>
+          <div class="ck-row"><div class="ck-pip part">2</div>
+            <div class="ck-body"><div class="ck-lab">What steals your time</div><div class="rowbar"><i style="width:60%"></i></div></div>
+            <div class="ck-st">2 logs away</div>
+          </div>
+          <div class="ck-row"><div class="ck-pip wait"></div><div class="ck-lab dim">When you're sharpest</div><div class="ck-st dim">5 logs</div></div>
+          <div class="ck-row"><div class="ck-pip wait"></div><div class="ck-lab dim">Day capacity check</div><div class="ck-st dim">about a week</div></div>
+        </div>
+        <div class="rp-foot">No streak, no rush. It ripens as you log.</div>
+      </div>
+      <div class="card" style="opacity:.55"><div class="sect"><span>YOUR AREAS</span></div></div>
+      <div class="tabbar">
+        <div class="tab"><span class="ic">⌂</span>Today</div>
+        <div class="tab"><span class="ic">▦</span>Routines</div>
+        <div class="fab">+</div>
+        <div class="tab on"><span class="ic">🐝</span>Whenbee</div>
+        <div class="tab"><span class="ic">〰</span>Patterns</div>
+      </div>
+    </div></div>
+    <div class="notes"><b>Copy + structure:</b>
+      <ul>
+        <li>Sub: "Your logs switch these on, one by one." — mechanism + agency in eight words; no "when your logs can back it up" clause-stacking.</li>
+        <li>Ready status: "In" — shorter and warmer than "Ready", pairs with "2 logs away".</li>
+        <li>Micro-bar shows THIS read's own progress (real: logs toward its threshold) — goal-gradient on the exact object, not a card-level abstraction.</li>
+        <li>Footer: "No streak, no rush. It ripens as you log." — six + five words, flat and human.</li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- V2 -->
+  <div class="col">
+    <p class="dirlabel">R2 · Header tally</p>
+    <p class="dirsub">"How close" moves UP: a 4-segment honey tally right under the title — one segment per read, first full, second half-poured. Checklist stays plain, nothing below it but the footer.</p>
+    <div class="phone"><div class="notch"></div><div class="screen">
+      <div class="hub-hdr"><div class="hub-bee">🐝</div><div class="title" style="font-size:24px">Whenbee</div><div class="hub-tier">Ripening · 27% honey</div></div>
+      <div class="rp-card">
+        <div class="rp-top">
+          <div class="rp-eb">⬡ PRO · RIPENING</div>
+          <div class="rp-pill">Ripens at Ripening</div>
+        </div>
+        <div>
+          <div class="rp-title">One read in. Three ripening.</div>
+          <div class="rp-sub">Every log pours a little more in.</div>
+          <div class="tally">
+            <div class="segs"><div class="seg full"></div><div class="seg half"></div><div class="seg"></div><div class="seg"></div></div>
+            <div class="n">1 of 4</div>
+          </div>
+        </div>
+        <div class="ck-list">
+          <div class="ck-row"><div class="ck-pip done">✓</div><div class="ck-lab">Honest range</div><div class="ck-st">In</div></div>
+          <div class="ck-row"><div class="ck-pip part">2</div><div class="ck-lab">What steals your time</div><div class="ck-st">2 logs away</div></div>
+          <div class="ck-row"><div class="ck-pip wait"></div><div class="ck-lab dim">When you're sharpest</div><div class="ck-st dim">5 logs</div></div>
+          <div class="ck-row"><div class="ck-pip wait"></div><div class="ck-lab dim">Day capacity check</div><div class="ck-st dim">about a week</div></div>
+        </div>
+        <div class="rp-foot">No streak, no rush. It ripens as you log.</div>
+      </div>
+      <div class="card" style="opacity:.55"><div class="sect"><span>YOUR AREAS</span></div></div>
+      <div class="tabbar">
+        <div class="tab"><span class="ic">⌂</span>Today</div>
+        <div class="tab"><span class="ic">▦</span>Routines</div>
+        <div class="fab">+</div>
+        <div class="tab on"><span class="ic">🐝</span>Whenbee</div>
+        <div class="tab"><span class="ic">〰</span>Patterns</div>
+      </div>
+    </div></div>
+    <div class="notes"><b>Copy + structure:</b>
+      <ul>
+        <li>Title becomes the progress claim: "One read in. Three ripening." — the endowment lands in the headline (you already OWN one), the strongest goal-gradient placement.</li>
+        <li>Sub: "Every log pours a little more in." — the honey metaphor doing the persuasion, no numbers repeated.</li>
+        <li>Half-poured second segment = live momentum; segments fill left to right, honey never drains (monotonic).</li>
+        <li>Risk: two progress systems on one screen (tally + honey ring above) — check on device.</li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- V3 -->
+  <div class="col">
+    <p class="dirlabel">R3 · Quiet next-up line</p>
+    <p class="dirsub">Keeps a bottom callout for "what's next" but drains all the yellow out of it: a sunken neutral well, one amber hex, ink text. Reads as information, not a banner.</p>
+    <div class="phone"><div class="notch"></div><div class="screen">
+      <div class="hub-hdr"><div class="hub-bee">🐝</div><div class="title" style="font-size:24px">Whenbee</div><div class="hub-tier">Ripening · 27% honey</div></div>
+      <div class="rp-card">
+        <div class="rp-top">
+          <div class="rp-eb">⬡ PRO · RIPENING</div>
+          <div class="rp-pill">Ripens at Ripening</div>
+        </div>
+        <div>
+          <div class="rp-title">Pro is ripening with you.</div>
+          <div class="rp-sub">Your logs switch these on, one by one.</div>
+        </div>
+        <div class="ck-list">
+          <div class="ck-row"><div class="ck-pip done">✓</div><div class="ck-lab">Honest range</div><div class="ck-st">In</div></div>
+          <div class="ck-row"><div class="ck-pip part">2</div><div class="ck-lab">What steals your time</div><div class="ck-st">2 logs away</div></div>
+          <div class="ck-row"><div class="ck-pip wait"></div><div class="ck-lab dim">When you're sharpest</div><div class="ck-st dim">5 logs</div></div>
+          <div class="ck-row"><div class="ck-pip wait"></div><div class="ck-lab dim">Day capacity check</div><div class="ck-st dim">about a week</div></div>
+        </div>
+        <div class="spot">
+          <span class="hx">⬢</span>
+          <span class="tx">Next: <b>What steals your time</b>. Two honest logs and it opens.</span>
+        </div>
+        <div class="rp-foot">No streak, no rush. It ripens as you log.</div>
+      </div>
+      <div class="card" style="opacity:.55"><div class="sect"><span>YOUR AREAS</span></div></div>
+      <div class="tabbar">
+        <div class="tab"><span class="ic">⌂</span>Today</div>
+        <div class="tab"><span class="ic">▦</span>Routines</div>
+        <div class="fab">+</div>
+        <div class="tab on"><span class="ic">🐝</span>Whenbee</div>
+        <div class="tab"><span class="ic">〰</span>Patterns</div>
+      </div>
+    </div></div>
+    <div class="notes"><b>Copy + structure:</b>
+      <ul>
+        <li>Callout survives but in neutral clothes: sunken well, ink text, one small hex as the only warm pixel. The old version failed because it was amber-on-amber-on-amber.</li>
+        <li>"Next: What steals your time. Two honest logs and it opens." — names the prize, counts the distance, stops. "Opens" beats "unlocks" (no lock ever existed).</li>
+        <li>Slight redundancy: the same "2 logs" appears in the row above — the callout earns its place only if it adds the feature's name recognition; kill it if it feels doubled on device.</li>
+      </ul>
+    </div>
+  </div>
+</div>
+
+<div class="verdict"><b>Recommendation — R1 inline momentum.</b> It deletes the section you hate instead of repainting it, and moves the goal-gradient onto the exact row that's about to open — progress reads as a property of the thing, not a marketing banner. R2 is the boldest (headline owns the win) but doubles up with the honey ring above the card; R3 is the safest evolution if you still want a named "next" callout. Copy shared by all three: "Your logs switch these on, one by one." / status ladder In → 2 logs away → 5 logs → about a week / "No streak, no rush. It ripens as you log."</div>
+
+</body>
+</html>

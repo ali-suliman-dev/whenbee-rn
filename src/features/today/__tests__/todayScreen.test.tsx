@@ -1,9 +1,11 @@
 import { render, screen, fireEvent } from '@testing-library/react-native';
+import { FW_BIN_COUNT as mockFwBinCount } from '@/src/engine';
 import { ActionSheetIOS } from 'react-native';
 import { router } from 'expo-router';
 import Today from '@/src/app/(tabs)/index';
 import { useCalibrationStore, type ReclaimSummary } from '@/src/stores/calibrationStore';
 import { useDayTasksStore } from '@/src/stores/dayTasksStore';
+import { useTimerStore } from '@/src/stores/timerStore';
 import type { DayTask } from '@/src/engine/daySelectors';
 import { useDayCapacity } from '@/src/features/today/useDayCapacity';
 import { useEntitlement } from '@/src/features/paywall/useEntitlement';
@@ -66,11 +68,12 @@ jest.mock('@/src/features/today/calendarStrip/CalendarStrip', () => ({
 jest.spyOn(ActionSheetIOS, 'showActionSheetWithOptions').mockImplementation(() => {});
 
 // TodayFocusHook uses useLearnedFocusWindow which triggers an async sqlite load.
-// Stub it with a prior-basis window so TodayFocusHook renders null (gate: basis !== 'personal').
+// Stub it with a forming-basis window so TodayFocusHook renders null (gate: basis !== 'revealed').
 jest.mock('@/src/features/planner/useLearnedFocusWindow', () => ({
   useLearnedFocusWindow: () => ({
-    startMin: 540, endMin: 690, basis: 'prior' as const,
-    confidence: 0.3, scoreByBin: new Array(38).fill(0.3), sampleCount: 0, distinctDays: 0, held: false,
+    startMin: 540, endMin: 690, basis: 'forming' as const,
+    confidence: 0.3, confidenceTier: 'low' as const, coarseBlockLabel: '',
+    scoreByBin: new Array(mockFwBinCount).fill(0.3), sampleCount: 0, distinctDays: 0, held: false,
   }),
 }));
 
@@ -140,6 +143,9 @@ beforeEach(() => {
     events: [],
     allDayEvents: [],
     isPro: false,
+    lastFetchedAtMs: null,
+    refresh: jest.fn(async () => {}),
+    refreshing: false,
   });
   // Reset to the pinned today so isPastDay is always false unless a test explicitly
   // sets a past date. Must use FIXED_TODAY (local key) — not a UTC ISO string — so
@@ -156,6 +162,17 @@ beforeEach(() => {
     statsByCategory: {},
     hydrate: async () => {},
     loadReclaimSummary: async () => summary({ lifetimeMin: 0, lifetimeNectar: 0 }),
+  });
+  // No live session by default — a leaked isRunning changes the hero slot and the
+  // row affordances for every test that follows.
+  useTimerStore.setState({
+    isRunning: false,
+    taskLabel: null,
+    category: null,
+    estimateMin: 0,
+    guessMin: 0,
+    startedAt: null,
+    taskId: null,
   });
 });
 
@@ -211,17 +228,19 @@ describe('Today screen', () => {
     expect(screen.queryByText("What's on today?")).toBeNull();
   });
 
-  it('renders the capacity chip teaser on today (free user)', () => {
-    // selectedDate is today (set in beforeEach). The chip only weighs a day that
+  it('a free user sees the landing card, never the capacity verdict', async () => {
+    // selectedDate is today (set in beforeEach). The card only weighs a day that
     // has tasks, so seed one.
     const task = makeQueued({ id: 'c1', label: 'Leave for work', category: 'getting_ready', guessMin: 15 });
     useDayTasksStore.setState({ dayTasks: [task], selectFocusTask: () => task });
     render(<Today />);
-    // Free user sees the "will fit" teaser from CapacityChip.
-    expect(screen.getByTestId('capacity-teaser')).toBeOnTheScreen();
+    // Free users land on the honest-landing card; the old fixed-window capacity
+    // verdict (which always read "· fits") is gone from this path.
+    expect(await screen.findByTestId('honest-landing')).toBeOnTheScreen();
+    expect(screen.queryByTestId('capacity-free')).toBeNull();
   });
 
-  it('renders the capacity chip collapsed for a Pro user on today', () => {
+  it('renders the same landing card for a Pro user — Pro is more data, not another card', () => {
     useEntitlement.setState({ isPro: true });
     mockUseDayCapacity.mockReturnValue({
       status: 'ready',
@@ -229,22 +248,43 @@ describe('Today screen', () => {
       events: [],
       allDayEvents: [],
       isPro: true,
+      lastFetchedAtMs: null,
+      refresh: jest.fn(async () => {}),
+      refreshing: false,
     });
     const task = makeQueued({ id: 'c2', label: 'Leave for work', category: 'getting_ready', guessMin: 15 });
     useDayTasksStore.setState({ dayTasks: [task], selectFocusTask: () => task });
     render(<Today />);
-    expect(screen.getByTestId('capacity-chip-collapsed')).toBeOnTheScreen();
+    expect(screen.getByTestId('honest-landing')).toBeOnTheScreen();
   });
 
-  it('does NOT render the capacity chip on an empty today', () => {
-    // No tasks → nothing to weigh, so the chip stays hidden even on today.
+  it('free calendar upsell routes to the paywall and never moves a task to tomorrow', () => {
+    // Regression for a real bug: 'connect-calendar' fell through an unguarded
+    // if-chain in onLandingAction straight into the 'move-to-tomorrow' branch,
+    // which bulk-moved every queued task. Assert BOTH halves: routes to the
+    // paywall, AND the move action is never invoked.
+    const moveToTomorrow = jest.fn(async () => {});
+    const task = makeQueued({ id: 'c3', label: 'Leave for work', category: 'getting_ready', guessMin: 15 });
+    useDayTasksStore.setState({ dayTasks: [task], selectFocusTask: () => task, moveToTomorrow });
+    render(<Today />);
+
+    fireEvent.press(screen.getByText('Add mine'));
+
+    expect(router.push).toHaveBeenCalledWith({
+      pathname: '/(modals)/paywall',
+      params: { trigger: 'calendar_export' },
+    });
+    expect(moveToTomorrow).not.toHaveBeenCalled();
+  });
+
+  it('does NOT render the day read on an empty today', () => {
+    // No tasks → nothing to weigh, so the card stays hidden even on today.
     useDayTasksStore.setState({ dayTasks: [], selectFocusTask: () => null });
     render(<Today />);
-    expect(screen.queryByTestId('capacity-teaser')).toBeNull();
-    expect(screen.queryByTestId('capacity-chip-collapsed')).toBeNull();
+    expect(screen.queryByTestId('honest-landing')).toBeNull();
   });
 
-  it('does NOT render the capacity chip on a past day', () => {
+  it('does NOT render the day read on a past day', () => {
     // 2023-11-13 is a past date.
     useDayTasksStore.setState({
       selectedDate: '2023-11-13',
@@ -252,8 +292,71 @@ describe('Today screen', () => {
       selectFocusTask: () => null,
     });
     render(<Today />);
-    expect(screen.queryByTestId('capacity-chip-collapsed')).toBeNull();
-    expect(screen.queryByTestId('capacity-teaser')).toBeNull();
+    expect(screen.queryByTestId('honest-landing')).toBeNull();
+  });
+
+  it('does NOT render the day read on a FUTURE day, even with tasks queued', () => {
+    // The landing card reads the clock and end-of-day from TODAY while the task
+    // list is the SELECTED day. On a future selection that produced a card about
+    // tonight over tomorrow's tasks — and, past end of day, a "Move N to tomorrow"
+    // that moved the wrong day's work. A landing time only means anything today.
+    const task = makeQueued({ id: 'f1', label: 'Ship the deck', category: 'getting_ready', guessMin: 45 });
+    useDayTasksStore.setState({
+      selectedDate: '2026-06-25', // the day after FIXED_TODAY
+      dayTasks: [task],
+      selectFocusTask: () => task,
+    });
+    render(<Today />);
+    expect(screen.queryByTestId('honest-landing')).toBeNull();
+  });
+
+  it('does NOT carry the running-timer card onto another day', () => {
+    // The hero slot's other two states (FocusCard, empty) are gated on isToday;
+    // the running card was not, so a live session followed the user into every
+    // future day. A timer running right now is a fact about today only.
+    const task = makeQueued({ id: 'r1', label: 'Ship the deck', category: 'getting_ready', guessMin: 45 });
+    useTimerStore.setState({
+      isRunning: true,
+      taskLabel: 'Ship the deck',
+      category: 'getting_ready',
+      estimateMin: 45,
+      guessMin: 45,
+      startedAt: FIXED_NOW - 5 * 60_000,
+      taskId: 'r1',
+    });
+    useDayTasksStore.setState({
+      selectedDate: '2026-06-25', // the day after FIXED_TODAY
+      dayTasks: [task],
+      selectFocusTask: () => task,
+    });
+
+    render(<Today />);
+    expect(screen.queryByLabelText(/^Timing /)).toBeNull();
+  });
+
+  it('does NOT label a future day’s rows with tonight’s finishing times or the amber tail', async () => {
+    // Same root cause as the card: `ends` are cumulative finishes measured from
+    // the CURRENT clock, so on a future day they would name times from today —
+    // and flag a "tail" row against an end-of-day the selected date never reaches.
+    // Mirrors the today-day wiring test below, one day later.
+    useCalibrationStore.setState({
+      statsByCategory: {
+        getting_ready: { mEffective: 2.0, n: 8, sharpness: 70, tier: 'Ripening', fit: { a: 0, b: 2.0 } },
+      },
+    });
+    const focus = makeQueued({ id: 'f2', label: 'Leave for work', category: 'getting_ready', guessMin: 100, createdAt: T0 });
+    const upNext = makeQueued({ id: 'f3', label: 'Pack bag', category: 'getting_ready', guessMin: 200, createdAt: T0 + 1 });
+    useDayTasksStore.setState({
+      selectedDate: '2026-06-25', // the day after FIXED_TODAY
+      dayTasks: [focus, upNext],
+      selectFocusTask: () => focus,
+    });
+
+    render(<Today />);
+    await screen.findByText('Pack bag');
+
+    expect(screen.queryByTestId('taskrow-ends')).toBeNull();
+    expect(screen.queryByTestId('taskrow-ends-tail')).toBeNull();
   });
 
   it('leads up-next rows with the honest estimate and supports with the guess', async () => {
@@ -273,13 +376,38 @@ describe('Today screen', () => {
     expect(await screen.findByText('~50')).toBeOnTheScreen();
     expect(screen.getByText('guessed 25')).toBeOnTheScreen();
   });
+
+  it('wires each up-next row to its honest end time, and flags the tail row that crosses end of day', async () => {
+    // dayEndMin defaults to 21:00 (DEFAULT_DAY_END_MIN); FIXED_NOW is noon, so
+    // there are 540 minutes of runway before end of day.
+    useCalibrationStore.setState({
+      statsByCategory: {
+        getting_ready: { mEffective: 2.0, n: 8, sharpness: 70, tier: 'Ripening', fit: { a: 0, b: 2.0 } },
+      },
+    });
+    // Focus task: honestMin 100 * 2 = 200min → lands 15:20, still inside the day.
+    const focus = makeQueued({ id: 'g1', label: 'Leave for work', category: 'getting_ready', guessMin: 100, createdAt: T0 });
+    // Up-next task: cumulative honestMin 200 + (200*2=400) = 600min → lands 22:00,
+    // past the 21:00 end of day — this is the row that must carry the tail.
+    const upNext = makeQueued({ id: 'g2', label: 'Pack bag', category: 'getting_ready', guessMin: 200, createdAt: T0 + 1 });
+    useDayTasksStore.setState({ dayTasks: [focus, upNext], selectFocusTask: () => focus });
+
+    render(<Today />);
+
+    await screen.findByText('Leave for work');
+    expect(screen.getByText(/ends ~10:00pm/)).toBeOnTheScreen();
+    expect(screen.getByTestId('taskrow-ends-tail')).toBeOnTheScreen();
+    // Only the up-next row is the tail — the focus task isn't rendered as a TaskRow at all,
+    // so there is exactly one end-time clause on the screen.
+    expect(screen.queryByTestId('taskrow-ends')).toBeNull();
+  });
 });
 
 // ─────────────────────────────────────────────────────────────────────────────
-// B3 — List ⇄ Timeline toggle + "Plan my day"
+// Option 1 — Today is list-only; "Plan my day" opens the plan sheet
 // ─────────────────────────────────────────────────────────────────────────────
 
-describe('List ⇄ Timeline toggle (B3)', () => {
+describe('Today is list-only (Option 1)', () => {
   function seedTodayWithTask() {
     const task = makeQueued({
       id: 't1',
@@ -291,86 +419,56 @@ describe('List ⇄ Timeline toggle (B3)', () => {
       dayTasks: [task],
       shelfTasks: [],
       selectedDate: new Date().toISOString().slice(0, 10),
-      viewMode: 'list',
+      dayMeta: null,
       selectFocusTask: () => task,
       loadShelf: async () => {},
-      setViewMode: jest.fn((m: 'list' | 'timeline') =>
-        useDayTasksStore.setState({ viewMode: m }),
-      ),
       markPlanned: jest.fn(async () => {}),
     });
   }
 
-  it('shows the List/Timeline toggle on today (not a past day)', () => {
+  it('never shows a List/Timeline segmented control on today', () => {
     seedTodayWithTask();
-    render(<Today />);
-    expect(screen.getByTestId('view-toggle-list')).toBeOnTheScreen();
-    expect(screen.getByTestId('view-toggle-timeline')).toBeOnTheScreen();
-  });
-
-  it('does NOT show the toggle on a past day', () => {
-    useDayTasksStore.setState({
-      selectedDate: '2023-11-13',
-      dayTasks: [],
-      viewMode: 'list',
-      selectFocusTask: () => null,
-      loadShelf: async () => {},
-    });
     render(<Today />);
     expect(screen.queryByTestId('view-toggle-list')).toBeNull();
     expect(screen.queryByTestId('view-toggle-timeline')).toBeNull();
   });
 
-  it('Pro: tapping "Plan my day" calls markPlanned and switches viewMode to timeline', () => {
+  it('does NOT show a Plan my day entry on a past day', () => {
+    useDayTasksStore.setState({
+      selectedDate: '2023-11-13',
+      dayTasks: [],
+      dayMeta: null,
+      selectFocusTask: () => null,
+      loadShelf: async () => {},
+    });
+    render(<Today />);
+    expect(screen.queryByTestId('plan-button')).toBeNull();
+  });
+
+  it('Pro: tapping "Plan my day" calls markPlanned and opens the plan sheet', () => {
     useEntitlement.setState({ isPro: true });
     seedTodayWithTask();
     const { getByTestId } = render(<Today />);
-    fireEvent.press(getByTestId('plan-my-day-btn'));
-    expect(useDayTasksStore.getState().viewMode).toBe('timeline');
+    fireEvent.press(getByTestId('plan-button'));
+    expect(useDayTasksStore.getState().markPlanned).toHaveBeenCalledTimes(1);
+    expect(router.push).toHaveBeenCalledWith('/(modals)/plan');
   });
 
-  it('Pro: renders DayTimeline when viewMode is timeline', () => {
-    useEntitlement.setState({ isPro: true });
+  it('always shows the list body (TASKS), never the Timeline lens', () => {
     seedTodayWithTask();
-    useDayTasksStore.setState({ viewMode: 'timeline' });
-    render(<Today />);
-    expect(screen.getByTestId('day-timeline-root')).toBeOnTheScreen();
-  });
-
-  it('shows the list body (UP NEXT) when viewMode is list', () => {
-    seedTodayWithTask();
-    useDayTasksStore.setState({ viewMode: 'list' });
     const task = makeQueued({ id: 'u1', label: 'Review PR', category: 'work', guessMin: 20 });
     useDayTasksStore.setState({ dayTasks: [task], selectFocusTask: () => null });
     render(<Today />);
-    // UP NEXT section header visible in list mode
     expect(screen.queryByTestId('day-timeline-root')).toBeNull();
-    expect(screen.getByText('UP NEXT')).toBeOnTheScreen();
-  });
-
-  it('Pro: tapping Timeline toggle switches viewMode to timeline', () => {
-    useEntitlement.setState({ isPro: true });
-    seedTodayWithTask();
-    const { getByTestId } = render(<Today />);
-    fireEvent.press(getByTestId('view-toggle-timeline'));
-    expect(useDayTasksStore.getState().viewMode).toBe('timeline');
-  });
-
-  it('tapping List toggle from timeline switches back to list', () => {
-    useEntitlement.setState({ isPro: true });
-    seedTodayWithTask();
-    useDayTasksStore.setState({ viewMode: 'timeline' });
-    const { getByTestId } = render(<Today />);
-    fireEvent.press(getByTestId('view-toggle-list'));
-    expect(useDayTasksStore.getState().viewMode).toBe('list');
+    expect(screen.getByText('TASKS')).toBeOnTheScreen();
   });
 });
 
 // ─────────────────────────────────────────────────────────────────────────────
-// C1 — Pro gate: Plan-my-day + Timeline are Pro
+// C1 — Pro gate: Plan-my-day
 // ─────────────────────────────────────────────────────────────────────────────
 
-describe('C1 — Pro gate: Plan-my-day + Timeline', () => {
+describe('C1 — Pro gate: Plan-my-day', () => {
   function seedTodayWithTask() {
     const task = makeQueued({
       id: 'c1',
@@ -382,12 +480,9 @@ describe('C1 — Pro gate: Plan-my-day + Timeline', () => {
       dayTasks: [task],
       shelfTasks: [],
       selectedDate: new Date().toISOString().slice(0, 10),
-      viewMode: 'list',
+      dayMeta: null,
       selectFocusTask: () => task,
       loadShelf: async () => {},
-      setViewMode: jest.fn((m: 'list' | 'timeline') =>
-        useDayTasksStore.setState({ viewMode: m }),
-      ),
       markPlanned: jest.fn(async () => {}),
     });
   }
@@ -402,60 +497,31 @@ describe('C1 — Pro gate: Plan-my-day + Timeline', () => {
     useEntitlement.setState({ isPro: false });
     seedTodayWithTask();
     const { getByTestId } = render(<Today />);
-    fireEvent.press(getByTestId('plan-my-day-btn'));
+    fireEvent.press(getByTestId('plan-button'));
     expect(router.push).toHaveBeenCalledWith({
       pathname: '/(modals)/paywall',
       params: { trigger: 'plan_my_day' },
     });
   });
 
-  it('free: tapping "Plan my day" does NOT switch viewMode to timeline', () => {
+  it('free: tapping "Plan my day" does NOT open the plan sheet', () => {
     useEntitlement.setState({ isPro: false });
     seedTodayWithTask();
     const { getByTestId } = render(<Today />);
-    fireEvent.press(getByTestId('plan-my-day-btn'));
-    expect(useDayTasksStore.getState().viewMode).toBe('list');
-  });
-
-  it('free: DayTimeline is NOT rendered even when viewMode is timeline', () => {
-    useEntitlement.setState({ isPro: false });
-    seedTodayWithTask();
-    // Manually put the store into timeline mode — simulates a stale session state.
-    useDayTasksStore.setState({ viewMode: 'timeline' });
-    render(<Today />);
-    expect(screen.queryByTestId('day-timeline-root')).toBeNull();
-  });
-
-  it('free: tapping Timeline toggle routes to paywall, does not flip viewMode', () => {
-    useEntitlement.setState({ isPro: false });
-    seedTodayWithTask();
-    const { getByTestId } = render(<Today />);
-    fireEvent.press(getByTestId('view-toggle-timeline'));
-    expect(router.push).toHaveBeenCalledWith({
-      pathname: '/(modals)/paywall',
-      params: { trigger: 'plan_my_day' },
-    });
-    expect(useDayTasksStore.getState().viewMode).toBe('list');
+    fireEvent.press(getByTestId('plan-button'));
+    expect(router.push).not.toHaveBeenCalledWith('/(modals)/plan');
   });
 
   // ── Pro user ───────────────────────────────────────────────────────────────
 
-  it('Pro: tapping "Plan my day" flips to Timeline, does NOT route to paywall', () => {
+  it('Pro: tapping "Plan my day" opens the plan sheet, does NOT route to paywall', () => {
     useEntitlement.setState({ isPro: true });
     seedTodayWithTask();
     const { getByTestId } = render(<Today />);
-    fireEvent.press(getByTestId('plan-my-day-btn'));
+    fireEvent.press(getByTestId('plan-button'));
     expect(router.push).not.toHaveBeenCalledWith(
       expect.objectContaining({ pathname: '/(modals)/paywall' }),
     );
-    expect(useDayTasksStore.getState().viewMode).toBe('timeline');
-  });
-
-  it('Pro: DayTimeline renders when viewMode is timeline', () => {
-    useEntitlement.setState({ isPro: true });
-    seedTodayWithTask();
-    useDayTasksStore.setState({ viewMode: 'timeline' });
-    render(<Today />);
-    expect(screen.getByTestId('day-timeline-root')).toBeOnTheScreen();
+    expect(router.push).toHaveBeenCalledWith('/(modals)/plan');
   });
 });

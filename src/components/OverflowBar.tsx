@@ -11,6 +11,7 @@ import { useTranslation } from 'react-i18next';
 import { useTheme } from '@/src/theme/useTheme';
 import { type } from '@/src/theme/typography';
 import { AppText } from './AppText';
+import { fmtHm } from '@/src/lib/time';
 
 // ──────────────────────────────────────────────────────────────────────────────
 // OverflowBar — shows guess vs. honest duration as a two-segment track.
@@ -60,10 +61,10 @@ export function OverflowBar({
         }}
       >
         <AppText variant="caption" style={{ color: t.colors.inkSoft }}>
-          {tr('overflowBar.minutesShort', { minutes: guessMin })}
+          {fmtHm(guessMin)}
         </AppText>
         <AppText style={[(type.bigNumber as unknown as TextStyle), { color: t.colors.accent }]}>
-          {tr('overflowBar.minutesShort', { minutes: honestMin })}
+          {fmtHm(honestMin)}
         </AppText>
       </View>
 
@@ -102,7 +103,7 @@ export function OverflowBar({
             color: t.colors.accent,
           }}
         >
-          {tr('overflowBar.realityDelta', { delta: honestMin - guessMin })}
+          {`+${fmtHm(honestMin - guessMin)} reality`}
         </Animated.Text>
       </View>
 

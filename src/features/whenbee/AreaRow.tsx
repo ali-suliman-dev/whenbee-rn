@@ -36,7 +36,7 @@ export function AreaRow({
   };
   const nameText: TextStyle = {
     ...(type.bodyLg as unknown as TextStyle),
-    fontSize: t.fontSize.sm,
+    fontSize: t.fontSize.base,
     color: t.colors.ink,
     minWidth: 66,
   };
@@ -55,10 +55,10 @@ export function AreaRow({
   };
   const multText: TextStyle = {
     fontFamily: 'Inter-Bold',
-    fontSize: t.fontSize.sm,
+    fontSize: t.fontSize.base,
     color: t.colors.primary,
     fontVariant: ['tabular-nums'],
-    minWidth: 34,
+    minWidth: 40,
     textAlign: 'right',
   };
 

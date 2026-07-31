@@ -7,7 +7,9 @@ import { renderHook } from '@testing-library/react-native';
 import { useScheduledRoutines } from '../useScheduledRoutines';
 import { useRoutinesStore } from '@/src/stores/routinesStore';
 import { useCalibrationStore } from '@/src/stores/calibrationStore';
+import { useSettingsStore } from '@/src/stores/settingsStore';
 import type { RoutineWithSteps } from '@/src/db';
+import type { ArchetypeSeed } from '@/src/domain/types';
 
 // ── Mock stores ──────────────────────────────────────────────────────────────
 
@@ -18,6 +20,10 @@ jest.mock('@/src/stores/routinesStore', () => ({
 
 jest.mock('@/src/stores/calibrationStore', () => ({
   useCalibrationStore: jest.fn(),
+}));
+
+jest.mock('@/src/stores/settingsStore', () => ({
+  useSettingsStore: jest.fn(),
 }));
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
@@ -68,10 +74,12 @@ function mockStores(
   opts: {
     stepMByKey?: Record<string, number>;
     statsByCategory?: Record<string, { mEffective: number }>;
+    archetypeSeed?: ArchetypeSeed;
   } = {},
 ) {
   const stepMByKey = opts.stepMByKey ?? {};
   const statsByCategory = opts.statsByCategory ?? {};
+  const archetypeSeed = opts.archetypeSeed;
 
   (useRoutinesStore as unknown as jest.Mock).mockImplementation(
     (sel: (s: { routines: RoutineWithSteps[]; stepMByKey: Record<string, number> }) => unknown) =>
@@ -81,6 +89,10 @@ function mockStores(
   (useCalibrationStore as unknown as jest.Mock).mockImplementation(
     (sel: (s: { statsByCategory: Record<string, { mEffective: number }> }) => unknown) =>
       sel({ statsByCategory }),
+  );
+
+  (useSettingsStore as unknown as jest.Mock).mockImplementation(
+    (sel: (s: { archetypeSeed: ArchetypeSeed | undefined }) => unknown) => sel({ archetypeSeed }),
   );
 }
 
@@ -197,6 +209,28 @@ describe('useScheduledRoutines', () => {
       const { result } = renderHook(() => useScheduledRoutines(WEDNESDAY));
       expect(result.current.blocks[0]?.honestTotalMin).toBe(40);
       expect(result.current.blocks[0]?.startByMin).toBe(560);
+    });
+
+    it('falls back to the SEEDED prior (not the population prior) for a cold category', () => {
+      const routine = makeRoutine({
+        id: 'r1',
+        name: 'Morning flow',
+        scheduleDays: [3],
+        doneByMinuteOfDay: 480,
+        steps: [{ id: 's1', category: 'creative', guessMin: 20 }],
+      });
+
+      // No stepMByKey entry and no statsByCategory entry for 'creative' → the hook
+      // must fall through to seededPriorFor, not the raw priorFor.
+      mockStores([routine]);
+      const { result: unseeded } = renderHook(() => useScheduledRoutines(WEDNESDAY));
+      const unseededTotal = unseeded.current.blocks[0]!.honestTotalMin;
+
+      mockStores([routine], { archetypeSeed: { m0: 3.0, source: 'quiz', tookAt: 1 } });
+      const { result: seeded } = renderHook(() => useScheduledRoutines(WEDNESDAY));
+      const seededTotal = seeded.current.blocks[0]!.honestTotalMin;
+
+      expect(seededTotal).not.toBe(unseededTotal);
     });
 
     it('returns startByMin = null when doneByMinuteOfDay is null', () => {

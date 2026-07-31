@@ -115,18 +115,30 @@
       "other": "Plan"
     },
     "note": {
-      "yearly": "7-day free trial, then billed yearly",
-      "lifetime": "Pay once. No subscription, ever.",
-      "monthly": "7-day free trial, then billed monthly"
+      "lifetime": "Pay once. Yours forever.",
+      "yearly": "7 days free, then billed yearly",
+      "yearlyWithPrice": "7 days free, then {{price}} a year",
+      "monthly": "7 days free, then billed monthly"
     },
     "savingsFallback": "Save 42%",
     "savingsLabel": "Save {{pct}}%",
-    "accessibilityLabel": "{{title}}, {{note}}, {{price}}"
+    "accessibilityLabel": "{{title}}, {{note}}, {{price}}",
+    "mostPopular": "MOST POPULAR",
+    "perMonth": "per month"
   },
   "trialTimeline": {
-    "today": { "head": "Today", "desc": "Full Pro, free" },
-    "day5": { "head": "Day 5", "desc": "We remind you" },
-    "day7": { "head": "Day 7", "desc": "Trial ends" }
+    "today": {
+      "head": "Today",
+      "desc": "Full Pro, free"
+    },
+    "day5": {
+      "head": "Day 5",
+      "desc": "We remind you"
+    },
+    "day7": {
+      "head": "Day 7",
+      "desc": "Trial ends"
+    }
   },
   "plans": {
     "loading": "Loading plans…",

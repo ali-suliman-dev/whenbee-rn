@@ -7,12 +7,14 @@ import type { Task } from '@/src/domain/types';
 
 const mockReplace = jest.fn();
 const mockBack = jest.fn();
+let mockParams: Record<string, string> = {};
 jest.mock('expo-router', () => ({
   router: {
     replace: (...a: unknown[]) => mockReplace(...a),
     back: (...a: unknown[]) => mockBack(...a),
   },
-  useLocalSearchParams: () => ({}),
+  useLocalSearchParams: () => mockParams,
+  useNavigation: () => ({ isFocused: () => true, addListener: () => () => {} }),
 }));
 
 // Capture tasks added via the async addTask mock so tests can assert on them.
@@ -28,6 +30,7 @@ beforeEach(() => {
   nowSpy = jest.spyOn(Date, 'now').mockReturnValue(TODAY_MS);
   mockReplace.mockClear();
   mockBack.mockClear();
+  mockParams = {};
   capturedTasks = [];
 
   // Mock useDayTasksStore so addTask is async and returns a Task.
@@ -71,16 +74,41 @@ afterEach(() => {
 });
 
 describe('Add Task screen', () => {
+  it('shows the once-ever coach tip on the very FIRST suggestion (no chase move needed)', () => {
+    const { kv } = jest.requireActual<typeof import('@/src/lib/kv')>('@/src/lib/kv');
+    kv.delete('coach.antiChase.seen');
+    render(<AddTask />);
+    fireEvent.press(screen.getByText('Getting ready'));
+    expect(
+      screen.getByText('No need to pad it yourself. Guess how long it feels, and Whenbee adds the reality part.'),
+    ).toBeOnTheScreen();
+    // Once-ever flag persisted on show.
+    expect(kv.getString('coach.antiChase.seen')).toBe('1');
+  });
+
+  it('does not re-show the coach tip once the seen flag is set', () => {
+    const { kv } = jest.requireActual<typeof import('@/src/lib/kv')>('@/src/lib/kv');
+    kv.set('coach.antiChase.seen', '1');
+    render(<AddTask />);
+    fireEvent.press(screen.getByText('Getting ready'));
+    expect(
+      screen.queryByText('No need to pad it yourself. Guess how long it feels, and Whenbee adds the reality part.'),
+    ).toBeNull();
+  });
+
   it('shows a live honest preview reflecting the cached multiplier', () => {
     render(<AddTask />);
     fireEvent.press(screen.getByText('Getting ready'));
-    // default guess 15 × cached 2.0 = round5(30) = 30; honey card shows the honest
-    // number as the hero on one line.
-    expect(screen.getByText('~30')).toBeOnTheScreen();
-    expect(screen.getByText('Honestly')).toBeOnTheScreen();
-    expect(screen.getByText('+15m')).toBeOnTheScreen();
+    // default guess 15 × cached 2.0 = round5(30) = 30; the card reads as a calm,
+    // read-only forecast (trained state → "Usually, for you"), no delta/arrow.
+    expect(screen.getByText('30 min')).toBeOnTheScreen();
+    expect(screen.getByText('Usually, for you')).toBeOnTheScreen();
+    expect(screen.getByText('you guessed 15m')).toBeOnTheScreen();
+    expect(screen.queryByText('+15m')).toBeNull();
     expect(
-      screen.getByLabelText('Honest estimate about 30 minutes, 15 more than your guess'),
+      screen.getByLabelText(
+        'Your last few getting ready tasks usually land around 30 minutes. Not a target, just what usually happens.',
+      ),
     ).toBeOnTheScreen();
   });
 
@@ -138,5 +166,46 @@ describe('Add Task screen', () => {
     });
     expect(mockReplace).not.toHaveBeenCalled();
     expect(capturedTasks).toHaveLength(0);
+  });
+});
+
+describe('edit mode', () => {
+  const editing: Task = {
+    id: 'edit-1', label: 'Reply to Marcus', category: 'admin', guessMin: 30,
+    plannedDate: '2026-06-24', status: 'queued', orderIndex: 1, doneByMin: null,
+    createdAt: 1, completedAt: null, actualMin: null, fromRoutineId: null, calendarEventId: null,
+  };
+  const updateSpy = jest.fn(async () => {});
+
+  beforeEach(() => {
+    mockParams = { editId: 'edit-1' };
+    useDayTasksStore.setState({
+      getTaskById: jest.fn(async () => editing),
+      updateTask: updateSpy,
+    } as unknown as Parameters<typeof useDayTasksStore.setState>[0]);
+    updateSpy.mockClear();
+  });
+  afterEach(() => { mockParams = {}; });
+
+  test('renders Edit-task chrome and prefilled title', async () => {
+    render(<AddTask />);
+    expect(await screen.findByText('Edit task')).toBeTruthy();
+    expect(screen.getByText('Save')).toBeTruthy();
+    expect(screen.getByDisplayValue('Reply to Marcus')).toBeTruthy();
+  });
+
+  test('Save patches via updateTask', async () => {
+    render(<AddTask />);
+    await screen.findByText('Edit task');
+    // In edit mode the fields load async (getTaskById), and Save is disabled until
+    // title+category are set (canSubmit). The heading renders on the first sync
+    // frame (it only reads isEditing), so we must wait for the loaded title before
+    // pressing Save — otherwise the press hits a still-disabled button (no-op).
+    await screen.findByDisplayValue('Reply to Marcus');
+    await act(async () => { fireEvent.press(screen.getByText('Save')); });
+    expect(updateSpy).toHaveBeenCalledWith(
+      'edit-1',
+      expect.objectContaining({ label: 'Reply to Marcus', category: 'admin', guessMin: 30 }),
+    );
   });
 });

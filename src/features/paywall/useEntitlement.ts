@@ -5,11 +5,13 @@ import { getPurchases, type Package } from '../../services/purchases';
 /**
  * QA override: when set, Pro stays unlocked across launches and survives
  * hydrate() (which would otherwise reset to the real RevenueCat entitlement
- * on a device with no purchase). Toggled from Settings → Developer in every
- * build so the founder can test gated screens on-device.
+ * on a device with no purchase). Toggled from Settings → Developer, which is
+ * itself `__DEV__`-gated. The `__DEV__` guard here is defense-in-depth: in a
+ * production build the override is inert even if a stale flag exists in KV,
+ * so the real RevenueCat entitlement always wins.
  */
 const PRO_OVERRIDE_KEY = 'dev_pro_override';
-const isProOverridden = (): boolean => kv.getString(PRO_OVERRIDE_KEY) === '1';
+const isProOverridden = (): boolean => __DEV__ && kv.getString(PRO_OVERRIDE_KEY) === '1';
 
 interface EntitlementState {
   isPro: boolean;
@@ -32,8 +34,10 @@ export const useEntitlement = create<EntitlementState>((set) => ({
     set({ isPro, ready: true });
   },
   setPro: (isPro) => {
-    if (isPro) kv.set(PRO_OVERRIDE_KEY, '1');
-    else kv.delete(PRO_OVERRIDE_KEY);
+    if (__DEV__) {
+      if (isPro) kv.set(PRO_OVERRIDE_KEY, '1');
+      else kv.delete(PRO_OVERRIDE_KEY);
+    }
     set({ isPro });
   },
   purchase: async (pkg) => {

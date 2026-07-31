@@ -1,13 +1,15 @@
 import { useEffect, useRef, useState } from 'react';
-import { View, Text, TextInput, Pressable, ScrollView, KeyboardAvoidingView, Platform, ActionSheetIOS, type ViewStyle, type TextStyle } from 'react-native';
+import { View, Text, TextInput, Pressable, KeyboardAvoidingView, Platform, useWindowDimensions, type ViewStyle, type TextStyle } from 'react-native';
 import { router, useLocalSearchParams } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Screen } from '@/src/components/Screen';
+import { SheetScrollView } from '@/src/components/SheetScrollView';
 import { AppButton } from '@/src/components/AppButton';
 import { SheetGrabber } from '@/src/components/SheetGrabber';
 import { Toast } from '@/src/components/Toast';
+import { ActionSheet, type ActionSheetItem } from '@/src/components/ActionSheet';
 import { TaskTitleField } from '@/src/components/TaskTitleField';
 import { useTheme } from '@/src/theme/useTheme';
 import { type } from '@/src/theme/typography';
@@ -15,6 +17,7 @@ import { useAddTask } from '@/src/features/add-task/useAddTask';
 import { CategoryChips } from '@/src/features/shared/CategoryChips';
 import { TimeField } from '@/src/features/shared/TimeField';
 import { HonestSuggestionCard } from '@/src/features/shared/HonestSuggestionCard';
+import { AntiChaseCoachCard } from '@/src/features/add-task/AntiChaseCoachCard';
 import { GoalCoachCard } from '@/src/features/add-task/GoalCoachCard';
 import { useDayTasksStore } from '@/src/stores/dayTasksStore';
 import { toLocalDayKey, addDays, weekdayOf } from '@/src/lib/day';
@@ -56,11 +59,14 @@ export default function AddTask() {
   const t = useTheme();
   const { t: tr } = useTranslation('addTask');
   const insets = useSafeAreaInsets();
+  const { height: winH } = useWindowDimensions();
   const toastDismissMs = t.motion.pulse; // let the toast land before the sheet closes
   // Arrived from the trio mic quick-action → title pre-filled from the transcript.
-  const { title: spokenTitle } = useLocalSearchParams<{ title?: string }>();
-  const a = useAddTask(spokenTitle);
+  // editId (from the queue's edit action) switches the hook + screen into edit mode.
+  const { title: spokenTitle, editId } = useLocalSearchParams<{ title?: string; editId?: string }>();
+  const a = useAddTask(spokenTitle, editId);
   const [toastVisible, setToastVisible] = useState(false);
+  const [datePickerVisible, setDatePickerVisible] = useState(false);
   const [addingCategory, setAddingCategory] = useState(false);
   const [newCategory, setNewCategory] = useState('');
   const dismissTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -73,41 +79,38 @@ export default function AddTask() {
   );
   const today = toLocalDayKey(Date.now());
 
+  // Edit mode: adopt the task's stored day once it loads (undefined = still loading).
+  useEffect(() => {
+    if (a.isEditing && a.loadedDate !== undefined) setTargetDate(a.loadedDate);
+  }, [a.isEditing, a.loadedDate]);
+
   useEffect(() => {
     return () => {
       if (dismissTimer.current) clearTimeout(dismissTimer.current);
     };
   }, []);
 
-  function openDatePicker() {
-    // Build: Today, Tomorrow, next 5 weekdays, then "No day yet"
-    const days = Array.from({ length: 7 }, (_, i) => ({
-      key: addDays(today, i),
-      label: dayLabel(addDays(today, i), i),
-    }));
-    const options = [...days.map((d) => d.label), tr('day.noDayYet'), tr('datePicker.cancel')];
-    ActionSheetIOS.showActionSheetWithOptions(
-      {
-        title: tr('datePicker.sheetTitle'),
-        options,
-        cancelButtonIndex: options.length - 1,
-      },
-      (idx) => {
-        if (idx < days.length) {
-          const chosen = days[idx];
-          if (chosen) setTargetDate(chosen.key);
-        } else if (idx === days.length) {
-          // "No day yet" — shelf
-          setTargetDate(null);
-        }
-        // last index = Cancel → no change
-      },
-    );
-  }
+  // Day options for the "when" picker: Today, Tomorrow, next 5 weekdays, then shelf.
+  // Rendered via the cross-platform <ActionSheet> — ActionSheetIOS is iOS-only and
+  // crashes on Android.
+  const dayPickerItems: ActionSheetItem[] = [
+    ...Array.from({ length: 7 }, (_, i) => {
+      const key = addDays(today, i);
+      return { label: dayLabel(key, i), onPress: () => setTargetDate(key) };
+    }),
+    { label: 'No day yet', onPress: () => setTargetDate(null) },
+  ];
 
   async function handleAddToToday() {
     const added = await a.addToToday(targetDate);
     if (!added) return;
+    setToastVisible(true);
+    dismissTimer.current = setTimeout(() => router.back(), toastDismissMs);
+  }
+
+  async function handleSave() {
+    const ok = await a.save(targetDate);
+    if (!ok) return;
     setToastVisible(true);
     dismissTimer.current = setTimeout(() => router.back(), toastDismissMs);
   }
@@ -159,6 +162,7 @@ export default function AddTask() {
     color: t.colors.ink,
   };
   const fieldLabel: TextStyle = { ...(type.eyebrow as unknown as TextStyle), color: t.colors.inkSoft };
+  const promptLabel: TextStyle = { ...(type.heading as unknown as TextStyle), color: t.colors.ink };
 
   // inputText is kept for the inline new-category TextInput below.
   const inputText: TextStyle = {
@@ -166,15 +170,6 @@ export default function AddTask() {
     fontSize: t.fontSize.base,
     color: t.colors.ink,
   };
-
-  // Quiet ✦ hint under the chips when the category was auto-guessed from the title.
-  const guessHint: ViewStyle = {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: t.space[1.5],
-    paddingHorizontal: t.space[1],
-  };
-  const guessHintText: TextStyle = { ...(type.micro as unknown as TextStyle), color: t.colors.inkSoft };
 
   // Inline "new category" row — appears under the chips when "+ New" is tapped.
   const newCatRow: ViewStyle = {
@@ -199,54 +194,102 @@ export default function AddTask() {
     backgroundColor: newCategory.trim().length > 0 ? t.colors.primary : t.colors.surfaceSunken,
   };
 
+  // Footer is a normal flow child pinned to the bottom by marginTop:'auto'. The
+  // empty gap that auto-margin creates ABOVE it is plain sheet background — NOT the
+  // ScrollView — so dragging there takes the sheet down (that dead space used to be
+  // inside the scroll child and swallowed the drag). When the fields overflow, the
+  // ScrollView (flexShrink) takes the space instead and the gap collapses to zero.
   const footerStyle: ViewStyle = {
+    marginTop: 'auto',
+    backgroundColor: t.colors.bg,
     borderTopWidth: t.borderWidth.hairline,
     borderTopColor: t.colors.hairline,
     paddingTop: t.space[3],
-    paddingBottom: insets.bottom + t.space[3],
+    // Clear the bottom system inset (home indicator / gesture bar) plus a small gap.
+    paddingBottom: insets.bottom + (Platform.OS === 'ios' ? t.space[3] : t.space[2]),
     gap: t.space[2],
   };
 
   return (
     // Drawer sits below the status bar already — no top safe-area inset, or the
     // sheet gets a large empty gap above its content on Android.
-    <Screen edges={['left', 'right']}>
+    <Screen edges={['left', 'right']} horizontalPadding={false}>
+      {/* react-native-screens' formSheet collapses a flex:1 child to its content
+          height. A `minHeight` here only sets a floor, so once the content (honest
+          card + coaches) is taller than the sheet the column GROWS past the 0.95
+          detent — the flex:1 ScrollView then expands to fit instead of scrolling, and
+          the footer is pushed below the sheet where it can't be reached. A FIXED
+          height caps the column at the sheet, so the ScrollView is bounded and scrolls
+          while the footer stays pinned. behavior='padding' still lifts it over the
+          keyboard within that fixed frame. */}
       <KeyboardAvoidingView
-        style={{ flex: 1 }}
-        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        // iOS: the formSheet's content area is a real 0.95 detent; rn-screens
+        // collapses a flex:1 child to content height there, so pin the column to a
+        // fixed height (winH·0.95 minus the home indicator) to keep the footer down.
+        // Android: the sheet presents FULL-SCREEN (react-native-screens' Android
+        // fallback), so a winH·0.95 cap left a permanent ~5% dead zone below the
+        // pinned footer. flex:1 fills the actual presented area, so the footer pins
+        // to the true bottom.
+        style={Platform.OS === 'ios' ? { height: winH * 0.95 - insets.bottom } : { flex: 1 }}
+        // iOS: 'padding' lifts the fixed-height column over the keyboard.
+        // Android: the activity is windowSoftInputMode=adjustResize, so the native
+        // window ALREADY shrinks for the keyboard — the flex:1 column shrinks with
+        // it and the absolute footer rises on its own. A KAV behavior here would
+        // DOUBLE-compensate: it captured the shrunken height while the keyboard was
+        // up, then restored the column to that stale smaller height on dismiss,
+        // leaving a large gap under the CTAs. Defer to adjustResize (undefined).
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
       >
-        <ScrollView
-          style={{ flex: 1 }}
-          contentContainerStyle={{ gap: t.space[5], paddingTop: t.space[3], paddingBottom: t.space[4] }}
-          showsVerticalScrollIndicator={false}
-        >
+        {/* Fixed drag header — OUTSIDE the ScrollView, so it is NOT the sheet's
+            scrolling child. On Android that keeps the top of the sheet (grabber +
+            the "Adding to…" row) a real drag-to-dismiss zone while the fields below
+            scroll. Tapping the date chip still works — a tap and a sheet-drag are
+            different gestures. */}
+        <View style={{ paddingTop: t.space[4], paddingBottom: t.space[3], gap: t.space[2] }}>
           <SheetGrabber />
-
-          <View style={{ gap: t.space[2] }}>
-            <View style={targetRow}>
-              <Text style={targetLabel} accessibilityLabel={tr('header.addingTo', { day: targetDayLabel(targetDate, today) })}>
-                {tr('header.addingTo', { day: targetDayLabel(targetDate, today) })}
-              </Text>
-              <Pressable
-                onPress={openDatePicker}
-                accessibilityRole="button"
-                accessibilityLabel={tr('header.changeDayA11y')}
-                hitSlop={t.size.hitSlop}
-              >
-                <View style={dateChip}>
-                  <Text style={dateChipText}>
-                    {targetDate === null ? tr('day.noDayYet') : targetDayLabel(targetDate, today)}
-                  </Text>
-                  <Ionicons name="chevron-down" size={t.iconSize.xs} color={t.colors.inkSoft} />
-                </View>
-              </Pressable>
-            </View>
-            <Text style={heading}>{tr('header.title')}</Text>
-            <Text style={sub}>{tr('header.subtitle')}</Text>
+          <View style={targetRow}>
+            <Text style={targetLabel} accessibilityLabel={`${a.isEditing ? 'Scheduled for' : 'Adding to'} ${targetDayLabel(targetDate, today)}`}>
+              {`${a.isEditing ? 'Scheduled for' : 'Adding to'} ${targetDayLabel(targetDate, today)}`}
+            </Text>
+            <Pressable
+              onPress={() => setDatePickerVisible(true)}
+              accessibilityRole="button"
+              accessibilityLabel="Change target day"
+              hitSlop={t.size.hitSlop}
+            >
+              <View style={dateChip}>
+                <Text style={dateChipText}>
+                  {targetDate === null ? 'No day yet' : targetDayLabel(targetDate, today)}
+                </Text>
+                <Ionicons name="chevron-down" size={t.iconSize.xs} color={t.colors.inkSoft} />
+              </View>
+            </Pressable>
           </View>
+          {a.isEditing ? (
+            <>
+              <Text style={heading}>Edit task</Text>
+              <Text style={sub}>Adjust the details.</Text>
+            </>
+          ) : null}
+        </View>
 
+        {/* flexShrink (not flex:1): the ScrollView is only as tall as its content
+            when the fields fit, leaving the space below as a sheet-drag zone; it
+            shrinks and scrolls only when the fields overflow. */}
+        <SheetScrollView
+          style={{ flexShrink: 1 }}
+          contentContainerStyle={{
+            gap: t.space[5],
+            paddingTop: t.space[2],
+            paddingBottom: t.space[4],
+          }}
+          showsVerticalScrollIndicator={false}
+          keyboardShouldPersistTaps="handled"
+        >
           <View style={{ gap: t.space[2] }}>
-            <Text style={fieldLabel}>{tr('taskField.label')}</Text>
+            <Text style={a.isEditing ? fieldLabel : promptLabel}>
+              {a.isEditing ? 'TASK' : 'What are you working on?'}
+            </Text>
             <TaskTitleField
               variant="boxed"
               value={a.title}
@@ -270,16 +313,6 @@ export default function AddTask() {
               guessedId={a.guessedCategory}
               usage={a.usage}
             />
-            {a.guessedCategory && a.category === a.guessedCategory ? (
-              <View style={guessHint}>
-                <Ionicons name="bulb-outline" size={t.iconSize.sm} color={t.colors.primary} />
-                <Text style={guessHintText}>
-                  {tr('categoryField.guessedHint', {
-                    category: a.categories.find((c) => c.id === a.guessedCategory)?.name,
-                  })}
-                </Text>
-              </View>
-            ) : null}
             {addingCategory ? (
               <View style={newCatRow}>
                 <TextInput
@@ -311,9 +344,14 @@ export default function AddTask() {
           </View>
 
           <View style={{ gap: t.space[2] }}>
-            <Text style={fieldLabel}>{tr('guessField.label')}</Text>
+            <Text style={fieldLabel}>YOUR GUT GUESS</Text>
             <TimeField value={a.guessMin} onChange={a.setGuessMin} />
           </View>
+
+          {/* One-time coach tip — sits ABOVE the honest card so the reframe
+              ("guess the feel, we add reality") lands before the number does.
+              Shows on the very first suggestion, or on the chase move. */}
+          {a.antiChaseVisible ? <AntiChaseCoachCard onDismiss={a.dismissAntiChase} /> : null}
 
           {a.suggestion ? (
             <HonestSuggestionCard
@@ -322,51 +360,80 @@ export default function AddTask() {
               confidence={a.suggestion.confidence}
               range={a.suggestion.range}
               preEstimate={a.preEstimate}
+              categoryName={a.categories.find((c) => c.id === a.category)?.name}
             />
           ) : null}
 
-          {/* Goal coach — only when this category has an active goal. A separate
-              card below the honest card; ties the honest number to the goal. */}
-          {a.suggestion && a.goalCoach ? (
+          {/* Goal coach — read-only status + lever for this category's active goal.
+              Never renders for free users (goals are Pro-gated at creation) and
+              never depends on the guess. */}
+          {a.goalCoach ? (
             <GoalCoachCard
               categoryName={a.categories.find((c) => c.id === a.category)?.name ?? ''}
-              targetBand={a.goalCoach.targetBand}
-              worstValue={a.goalCoach.worstValue}
-              honestMinutes={a.suggestion.honestMinutes}
-              guessMinutes={a.guessMin}
-              onApply={a.applyHonest}
+              info={a.goalCoach}
             />
           ) : null}
-        </ScrollView>
+        </SheetScrollView>
 
-        {/* Pinned CTA footer — sits in the lower-third thumb zone, rises with keyboard */}
+        {/* Pinned CTA footer — flow child sunk to the bottom via marginTop:'auto'
+            (see footerStyle). Rises with the keyboard inside the KAV frame. */}
         <View style={footerStyle}>
-          <AppButton
-            label={tr('cta.addAndStart')}
-            variant="indigo"
-            fullWidth
-            disabled={!a.canSubmit}
-            onPress={() => a.onAddAndStart(targetDate)}
-          />
-          <AppButton
-            label={addCtaLabel}
-            variant="ghost"
-            fullWidth
-            disabled={!a.canSubmit}
-            onPress={handleAddToToday}
-          />
+          {a.isEditing ? (
+            <>
+              <AppButton
+                label="Save"
+                variant="indigo"
+                fullWidth
+                disabled={!a.canSubmit || a.loadedDate === undefined}
+                onPress={handleSave}
+              />
+              <AppButton
+                label="Save & start"
+                variant="ghost"
+                fullWidth
+                disabled={!a.canSubmit || a.loadedDate === undefined}
+                onPress={() => void a.saveAndStart(targetDate)}
+              />
+            </>
+          ) : (
+            <>
+              <AppButton
+                label="Add & start timer"
+                variant="indigo"
+                fullWidth
+                disabled={!a.canSubmit}
+                onPress={() => a.onAddAndStart(targetDate)}
+              />
+              <AppButton
+                label={addCtaLabel}
+                variant="ghost"
+                fullWidth
+                disabled={!a.canSubmit}
+                onPress={handleAddToToday}
+              />
+            </>
+          )}
         </View>
       </KeyboardAvoidingView>
 
       <Toast
         message={
-          targetDate === null
-            ? tr('toast.savedToShelf')
+          a.isEditing
+            ? 'Saved'
+            : targetDate === null
+            ? 'Saved to shelf'
             : targetDate === today
             ? tr('toast.addedToToday')
             : tr('toast.addedToDay', { day: targetDayLabel(targetDate, today) })
         }
         visible={toastVisible}
+      />
+
+      <ActionSheet
+        visible={datePickerVisible}
+        title="When should this happen?"
+        items={dayPickerItems}
+        onCancel={() => setDatePickerVisible(false)}
       />
     </Screen>
   );

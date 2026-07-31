@@ -14,6 +14,7 @@ import type { Task } from '@/src/domain/types';
 import { kv } from '@/src/lib/kv';
 import { syncDayPlanToCalendar } from '@/src/services/calendarExport';
 import { getCalendar } from '@/src/services/calendar';
+import { cancelStartBy } from '@/src/services/timerNotifications';
 import { useSettingsStore } from '@/src/stores/settingsStore';
 import { useEntitlement } from '@/src/features/paywall/useEntitlement';
 
@@ -29,9 +30,58 @@ export interface PlannedExportTask {
 const MIGRATED_FLAG = 'tasks-migrated-v1';
 const LEGACY_KV_KEY = 'today-tasks'; // the old persist() store key
 
+/** kv key for the "this day has a manual drag order" flag — keyed per day so
+ *  reordering one day never affects another. Value is the literal string '1';
+ *  absence (or any other value) means "no manual order, planner may reshuffle". */
+function manualOrderKvKey(date: string): string {
+  return `plan-manual-order:${date}`;
+}
+
+/** kv key for the day's pinned start minute-of-day. Value is the minute as a
+ *  string, or '' for the live "Now" anchor. Absent = never set = Now. */
+function startAtKvKey(date: string): string {
+  return `plan-start-at:${date}`;
+}
+
+/** kv key for which end of the day the user pinned. Absent = 'finish', which is
+ *  how every day behaved before the anchor control existed. */
+function planAnchorKvKey(date: string): string {
+  return `plan-anchor:${date}`;
+}
+
+/**
+ * Why the anchor lives in kv rather than the `day_meta` table alongside
+ * `doneByMin`: it is per-day *plan scaffolding*, exactly like `hasManualOrder`
+ * above, and kv is synchronous — the chooser can select a row and re-render in
+ * the same frame without an async db round-trip. Promoting it to a `day_meta`
+ * column later is a pure migration; nothing outside this store reads the keys.
+ */
+function readStartAtMin(kvGet: (k: string) => string | null, date: string): number | null {
+  const raw = kvGet(startAtKvKey(date));
+  if (raw === null || raw === '') return null;
+  const min = Number(raw);
+  return Number.isFinite(min) ? min : null;
+}
+
+function readPlanAnchor(kvGet: (k: string) => string | null, date: string): PlanAnchorSide {
+  return kvGet(planAnchorKvKey(date)) === 'start' ? 'start' : 'finish';
+}
+
 // ---------------------------------------------------------------------------
 // Public types
 // ---------------------------------------------------------------------------
+
+/**
+ * Which end of the day the user pinned. The other end is derived by the planner.
+ *
+ * This is STORED, not derived from whether `doneByMin` is set, because the two
+ * fields are independently meaningful: a user can set a finish time and then tap
+ * "Use now" on the start row, at which point `doneByMin !== null` AND the start
+ * is live, and nothing in the values themselves says which row they are steering
+ * by. Deriving would have to guess; the guess would be wrong exactly when the
+ * user has taken the most care.
+ */
+export type PlanAnchorSide = 'start' | 'finish';
 
 export interface DayTasksState {
   selectedDate: string;
@@ -39,6 +89,24 @@ export interface DayTasksState {
   dayTasks: DayTask[];
   /** Day-level planning metadata for the currently selected date. Null until loaded. */
   dayMeta: { doneByMin: number | null; planComputedAt: number | null } | null;
+  /**
+   * Whether the selected date has a user-set manual drag order. When true,
+   * useDayPlan sorts queued tasks by orderIndex and skips the deep-first
+   * orderForFocus reshuffle. Persisted per-day via kv (see manualOrderKvKey).
+   */
+  hasManualOrder: boolean;
+  /**
+   * Minute-of-day the selected day's work starts, or null for the live "Now"
+   * anchor. Mirrors `dayMeta.doneByMin`'s nullable minute-of-day shape from the
+   * other end of the day.
+   *
+   * null is NOT "unset" — it is Now, an anchor that re-derives from the clock on
+   * every render (09:05 this morning, 14:20 this afternoon). A spun minute is
+   * pinned and does not move. Never silently convert one into the other.
+   */
+  startAtMin: number | null;
+  /** Which end of the day is fixed for the selected date. See PlanAnchorSide. */
+  planAnchor: PlanAnchorSide;
   /** Sorted YYYY-MM-DD keys of all queued-task planned dates — powers calendar dot hints. */
   datesWithTasks: string[];
   /** Tasks with no planned date (shelf / "no day yet"). Populated by loadShelf(). */
@@ -48,10 +116,27 @@ export interface DayTasksState {
   selectDate: (date: string) => Promise<void>;
   goToToday: (nowMs?: number) => Promise<void>;
   setViewMode: (m: 'list' | 'timeline') => void;
-  /** Persist a "done by" minute-of-day target for the selected date and reload dayMeta. */
+  /** Persist a "done by" minute-of-day target for the selected date and reload
+   *  dayMeta. Setting a finish time also selects the finish row — the only way
+   *  to reach this is a tap on that row. */
   setDoneBy: (min: number | null) => Promise<void>;
+  /**
+   * Persist the selected day's start anchor and select the start row. Pass null
+   * for "Use now" (the live anchor). Synchronous: kv is a sync store, so the
+   * chooser re-renders in the same frame.
+   */
+  setStartAt: (min: number | null) => void;
+  /** Select which end of the day is fixed, leaving both values untouched. */
+  setPlanAnchor: (side: PlanAnchorSide) => void;
   /** Stamp planComputedAt = now for the selected date (called when a plan is triggered). */
   markPlanned: (nowMs?: number) => Promise<void>;
+  /**
+   * Plan-only reset for the selected date (the plan sheet's "Clear" action):
+   * nulls planComputedAt and doneByMin, and drops the manual drag order. The
+   * day's queued tasks are untouched — clearing wipes plan scaffolding, not
+   * the task list.
+   */
+  clearPlan: () => Promise<void>;
   addTask: (input: {
     label: string;
     category: string;
@@ -65,7 +150,25 @@ export interface DayTasksState {
   ) => Promise<void>;
   moveTask: (id: string, toDate: string | null, nowMs?: number) => Promise<void>;
   removeTask: (id: string, nowMs?: number) => Promise<void>;
+  /**
+   * Patch an editable QUEUED task (label/category/guess/day). Never touches a
+   * completed row's actual — the engine trains only on completed rows, so this
+   * cannot move a multiplier. Reloads the day + shelf so the UI reflects it.
+   */
+  updateTask: (
+    id: string,
+    patch: { label?: string; category?: string; guessMin?: number; plannedDate?: string | null },
+    nowMs?: number,
+  ) => Promise<void>;
+  /** Read a single task by id (edit-drawer prefill). Null when absent. */
+  getTaskById: (id: string) => Promise<Task | null>;
   promoteToFocus: (id: string, nowMs?: number) => Promise<void>;
+  /**
+   * Persist a user-driven drag order for the selected date: assigns ascending
+   * orderIndex to `orderedIds` in the given order, then marks the day as
+   * having a manual order (see `hasManualOrder`) so the planner honors it.
+   */
+  reorderTasks: (orderedIds: string[], nowMs?: number) => Promise<void>;
   /** Move a task to tomorrow (today + 1). Convenience over moveTask. */
   moveToTomorrow: (id: string, nowMs?: number) => Promise<void>;
   selectFocusTask: () => DayTask | null;
@@ -173,6 +276,17 @@ export function makeDayTasksStore(deps: Deps): UseBoundStore<StoreApi<DayTasksSt
     return { dayTasks, datesWithTasks };
   }
 
+  /** The kv-backed plan scaffolding for a date: drag order + which end is pinned. */
+  function scaffoldingFor(
+    date: string,
+  ): Pick<DayTasksState, 'hasManualOrder' | 'startAtMin' | 'planAnchor'> {
+    return {
+      hasManualOrder: kvGet(manualOrderKvKey(date)) === '1',
+      startAtMin: readStartAtMin(kvGet, date),
+      planAnchor: readPlanAnchor(kvGet, date),
+    };
+  }
+
   /** Load the day-level meta for a date from the repo (null when no row exists). */
   async function loadDayMeta(
     date: string,
@@ -195,6 +309,9 @@ export function makeDayTasksStore(deps: Deps): UseBoundStore<StoreApi<DayTasksSt
     viewMode: 'list',
     dayTasks: [],
     dayMeta: null,
+    hasManualOrder: false,
+    startAtMin: null,
+    planAnchor: 'finish',
     datesWithTasks: [],
     shelfTasks: [],
     loading: false,
@@ -234,6 +351,7 @@ export function makeDayTasksStore(deps: Deps): UseBoundStore<StoreApi<DayTasksSt
       set({
         ...dayAndDots,
         dayMeta: dayMetaRow,
+        ...scaffoldingFor(today),
         shelfTasks: shelfRaw.map((t) => ({ ...t, carriedFrom: null })),
         loading: false,
       });
@@ -245,7 +363,12 @@ export function makeDayTasksStore(deps: Deps): UseBoundStore<StoreApi<DayTasksSt
         loadDayAndDots(date, today),
         loadDayMeta(date),
       ]);
-      set({ selectedDate: date, ...dayAndDots, dayMeta: dayMetaRow });
+      set({
+        selectedDate: date,
+        ...dayAndDots,
+        dayMeta: dayMetaRow,
+        ...scaffoldingFor(date),
+      });
     },
 
     async goToToday(nowMs) {
@@ -254,7 +377,12 @@ export function makeDayTasksStore(deps: Deps): UseBoundStore<StoreApi<DayTasksSt
         loadDayAndDots(today, today),
         loadDayMeta(today),
       ]);
-      set({ selectedDate: today, ...dayAndDots, dayMeta: dayMetaRow });
+      set({
+        selectedDate: today,
+        ...dayAndDots,
+        dayMeta: dayMetaRow,
+        ...scaffoldingFor(today),
+      });
     },
 
     setViewMode(m) {
@@ -263,14 +391,47 @@ export function makeDayTasksStore(deps: Deps): UseBoundStore<StoreApi<DayTasksSt
 
     async setDoneBy(min) {
       const { selectedDate } = get();
+      get().setPlanAnchor('finish');
       await repo.setDoneBy(selectedDate, min);
       set({ dayMeta: await loadDayMeta(selectedDate) });
+    },
+
+    setStartAt(min) {
+      const { selectedDate } = get();
+      kvSet(startAtKvKey(selectedDate), min === null ? '' : String(min));
+      set({ startAtMin: min });
+      get().setPlanAnchor('start');
+    },
+
+    setPlanAnchor(side) {
+      kvSet(planAnchorKvKey(get().selectedDate), side);
+      set({ planAnchor: side });
     },
 
     async markPlanned(nowMs) {
       const { selectedDate } = get();
       await repo.setPlanComputedAt(selectedDate, nowMs ?? Date.now());
       set({ dayMeta: await loadDayMeta(selectedDate) });
+    },
+
+    async clearPlan() {
+      const { selectedDate } = get();
+      // Sequential, not Promise.all: both calls read-modify-write the same
+      // dayMeta row (getDayMeta → upsertDayMeta), so running them concurrently
+      // races — whichever read wins re-writes the other's stale field back.
+      await repo.setPlanComputedAt(selectedDate, null);
+      await repo.setDoneBy(selectedDate, null);
+      kvSet(manualOrderKvKey(selectedDate), '0');
+      // The anchor is plan scaffolding too: back to a live Now start with the
+      // finish row selected, which is how an untouched day reads.
+      kvSet(startAtKvKey(selectedDate), '');
+      kvSet(planAnchorKvKey(selectedDate), 'finish');
+      set({
+        dayMeta: await loadDayMeta(selectedDate),
+        hasManualOrder: false,
+        startAtMin: null,
+        planAnchor: 'finish',
+      });
     },
 
     async addTask({ label, category, guessMin, date, nowMs }) {
@@ -333,12 +494,36 @@ export function makeDayTasksStore(deps: Deps): UseBoundStore<StoreApi<DayTasksSt
         }
       }
 
+      // Only a queued task feeds the start-by plan (see useDayPlan) — capture
+      // that from the in-memory state before the row is gone. Removing a
+      // completed/running task must not touch a still-valid reminder for the
+      // rest of the plan.
+      const wasQueued = get().dayTasks.find((t) => t.id === id)?.status === 'queued';
+
       await repo.remove(id);
+      // The deleted task may have had a scheduled "start by" reminder — cancel it
+      // now so the OS never fires a notification for a task that no longer
+      // exists. The Today screen's effect re-schedules a fresh one from the
+      // reloaded plan below if the day still has tasks.
+      if (wasQueued) await cancelStartBy();
       const today = toLocalDayKey(nowMs ?? Date.now());
       await Promise.all([
         loadDayAndDots(get().selectedDate, today).then((d) => set(d)),
         refreshShelf(),
       ]);
+    },
+
+    async updateTask(id, patch, nowMs) {
+      await repo.update(id, patch);
+      const today = toLocalDayKey(nowMs ?? Date.now());
+      await Promise.all([
+        loadDayAndDots(get().selectedDate, today).then((d) => set(d)),
+        refreshShelf(),
+      ]);
+    },
+
+    async getTaskById(id) {
+      return repo.get(id);
     },
 
     async promoteToFocus(id, nowMs) {
@@ -350,6 +535,23 @@ export function makeDayTasksStore(deps: Deps): UseBoundStore<StoreApi<DayTasksSt
       await repo.update(id, { orderIndex: minOrder - 1 });
       const today = toLocalDayKey(nowMs ?? Date.now());
       set(await loadDayAndDots(get().selectedDate, today));
+    },
+
+    async reorderTasks(orderedIds, nowMs) {
+      if (orderedIds.length === 0) return;
+      // Ascending orderIndex from a stable base so the given order is preserved
+      // relative to itself; unrelated tasks (other days) are untouched.
+      const base = nowMs ?? Date.now();
+      await Promise.all(
+        orderedIds.map((id, idx) => repo.update(id, { orderIndex: base + idx })),
+      );
+      const { selectedDate } = get();
+      kvSet(manualOrderKvKey(selectedDate), '1');
+      const today = toLocalDayKey(nowMs ?? Date.now());
+      set({
+        ...(await loadDayAndDots(selectedDate, today)),
+        hasManualOrder: true,
+      });
     },
 
     async moveToTomorrow(id, nowMs) {

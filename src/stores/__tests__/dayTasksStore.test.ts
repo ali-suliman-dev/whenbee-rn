@@ -78,6 +78,32 @@ test('C1 regression: task planned yesterday, completed today → in today, not o
   expect(onYesterday).toBeUndefined();
 });
 
+test('updateTask patches an editable queued task and reload reflects it', async () => {
+  const { store } = freshStore();
+  await store.getState().init(NOW);
+  const task = await store.getState().addTask({ label: 'Draf', category: 'admin', guessMin: 20, nowMs: NOW });
+
+  await store.getState().updateTask(
+    task.id,
+    { label: 'Draft outline', category: 'deep-work', guessMin: 45 },
+    NOW,
+  );
+
+  const row = store.getState().dayTasks.find((t) => t.id === task.id);
+  expect(row?.label).toBe('Draft outline');
+  expect(row?.category).toBe('deep-work');
+  expect(row?.guessMin).toBe(45);
+  expect(row?.status).toBe('queued'); // never flipped to completed
+});
+
+test('getTaskById returns the stored task or null', async () => {
+  const { store } = freshStore();
+  await store.getState().init(NOW);
+  const task = await store.getState().addTask({ label: 'Gym', category: 'health', guessMin: 60, nowMs: NOW });
+  expect((await store.getState().getTaskById(task.id))?.label).toBe('Gym');
+  expect(await store.getState().getTaskById('nope')).toBeNull();
+});
+
 test('addTask returns the created task', async () => {
   const { store } = freshStore();
   await store.getState().init(NOW);
@@ -322,4 +348,75 @@ test('B1: goToToday loads dayMeta for today', async () => {
   await store.getState().goToToday(NOW);
   const meta = store.getState().dayMeta;
   expect(meta?.doneByMin).toBe(16 * 60);
+});
+
+// ── Task 4A: reorderTasks + manual-order flag ─────────────────────────────────
+
+test('reorderTasks assigns ascending orderIndex in the given order and sets hasManualOrder', async () => {
+  const { store } = freshStore();
+  await store.getState().init(NOW);
+  const a = await store.getState().addTask({ label: 'A', category: 'admin', guessMin: 10, nowMs: NOW });
+  const b = await store.getState().addTask({ label: 'B', category: 'admin', guessMin: 10, nowMs: NOW + 1 });
+
+  expect(store.getState().hasManualOrder).toBe(false);
+  await store.getState().reorderTasks([b.id, a.id], NOW + 100);
+
+  const byId = new Map(store.getState().dayTasks.map((t) => [t.id, t]));
+  expect(byId.get(b.id)!.orderIndex).toBeLessThan(byId.get(a.id)!.orderIndex);
+  expect(store.getState().hasManualOrder).toBe(true);
+  expect(store.getState().dayTasks.map((t) => t.id)).toEqual([b.id, a.id]);
+});
+
+test('reorderTasks manual-order flag is keyed per day and persists across selectDate/goToToday', async () => {
+  const { store } = freshStore();
+  await store.getState().init(NOW);
+  const a = await store.getState().addTask({ label: 'A', category: 'admin', guessMin: 10, nowMs: NOW });
+  const b = await store.getState().addTask({ label: 'B', category: 'admin', guessMin: 10, nowMs: NOW + 1 });
+  await store.getState().reorderTasks([b.id, a.id], NOW + 100);
+
+  // A different day has no manual order.
+  await store.getState().selectDate('2026-06-25');
+  expect(store.getState().hasManualOrder).toBe(false);
+
+  // Returning to today re-reads the persisted flag.
+  await store.getState().goToToday(NOW);
+  expect(store.getState().hasManualOrder).toBe(true);
+});
+
+// ── Clear plan (plan-only reset — keeps queued tasks) ─────────────────────────
+
+test('clearPlan resets planComputedAt, doneByMin and manual order but keeps queued tasks', async () => {
+  const { store } = freshStore();
+  await store.getState().init(NOW);
+  const a = await store.getState().addTask({ label: 'A', category: 'admin', guessMin: 10, nowMs: NOW });
+  const b = await store.getState().addTask({ label: 'B', category: 'admin', guessMin: 10, nowMs: NOW + 1 });
+  await store.getState().markPlanned(NOW);
+  await store.getState().setDoneBy(18 * 60);
+  await store.getState().reorderTasks([b.id, a.id], NOW + 100);
+
+  expect(store.getState().dayMeta?.planComputedAt).toBe(NOW);
+  expect(store.getState().hasManualOrder).toBe(true);
+
+  await store.getState().clearPlan();
+
+  const meta = store.getState().dayMeta;
+  expect(meta?.planComputedAt).toBeNull();
+  expect(meta?.doneByMin).toBeNull();
+  expect(store.getState().hasManualOrder).toBe(false);
+  expect(store.getState().dayTasks.map((t) => t.id).sort()).toEqual([a.id, b.id].sort());
+});
+
+test('clearPlan is keyed per day — the manual-order flag clears for the selected date only', async () => {
+  const { store, flags } = freshStore();
+  await store.getState().init(NOW);
+  await store.getState().addTask({ label: 'A', category: 'admin', guessMin: 10, nowMs: NOW });
+  await store.getState().markPlanned(NOW);
+  flags.set('plan-manual-order:2026-06-24', '1');
+  await store.getState().selectDate('2026-06-24');
+  expect(store.getState().hasManualOrder).toBe(true);
+
+  await store.getState().clearPlan();
+
+  expect(flags.get('plan-manual-order:2026-06-24')).toBe('0');
+  expect(store.getState().hasManualOrder).toBe(false);
 });

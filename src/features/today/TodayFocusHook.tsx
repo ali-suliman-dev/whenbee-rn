@@ -1,4 +1,4 @@
-import { Pressable, View, Text, type ViewStyle, type TextStyle } from 'react-native';
+import { Pressable, View, type ViewStyle, type TextStyle } from 'react-native';
 import Animated, { useSharedValue, useAnimatedStyle, withTiming } from 'react-native-reanimated';
 import { router } from 'expo-router';
 import { useTranslation } from 'react-i18next';
@@ -6,6 +6,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '@/src/theme/useTheme';
 import { type } from '@/src/theme/typography';
 import { AppText } from '@/src/components/AppText';
+import { ProCoin } from '@/src/components/ProCoin';
 import { formatWindowRange } from '@/src/lib/time';
 import { useEntitlement } from '@/src/features/paywall/useEntitlement';
 import { useLearnedFocusWindow } from '@/src/features/planner/useLearnedFocusWindow';
@@ -15,7 +16,7 @@ import { useSettingsStore } from '@/src/stores/settingsStore';
 // TodayFocusHook — quiet one-line focus-window insight on the Today List.
 //
 // Render gates:
-//   1. basis === 'personal'  — engine has learned a real window
+//   1. basis === 'revealed'  — engine has learned a real window
 //   2. Current time is before the window end
 //
 // Gate 3 (queued tasks) is intentionally REMOVED: the insight is useful even
@@ -23,7 +24,7 @@ import { useSettingsStore } from '@/src/stores/settingsStore';
 // Previously gate 3 required ≥1 queued task; that created a confusing gap where
 // calibrated users with a clear day saw nothing. Removed in Phase 5 Task A1.
 //
-// One-line chip, mirroring CapacityChip: ◑ contrast glyph in a 20px indigo disc +
+// One-line chip, mirroring HonestLandingCard: ◑ contrast glyph in a 20px indigo disc +
 // bodySm + numberOfLines=1. Indigo disc separates Focus (Pro/brand) from the amber
 // Honest-day chip.
 //
@@ -59,8 +60,8 @@ export function TodayFocusHook({ nowMs }: TodayFocusHookProps): React.ReactEleme
 
   const { basis, startMin, endMin } = window;
 
-  // Gate 1: must have a learned personal window
-  if (basis !== 'personal') return null;
+  // Gate 1: must have a revealed window
+  if (basis !== 'revealed') return null;
 
   // Gate 2: must be before the window end
   const now = new Date(nowMs);
@@ -92,7 +93,7 @@ export function TodayFocusHook({ nowMs }: TodayFocusHookProps): React.ReactEleme
       ? tr('focusHook.proA11y', { range: rangeText })
       : tr('focusHook.freeA11y');
 
-  // ── styles (mirror CapacityChip: disc + bodySm + one line) ─────────────────
+  // ── styles (mirror HonestLandingCard: disc + bodySm + one line) ────────────
   const rowStyle: ViewStyle = {
     flexDirection: 'row',
     alignItems: 'center',
@@ -130,18 +131,6 @@ export function TodayFocusHook({ nowMs }: TodayFocusHookProps): React.ReactEleme
     color: t.colors.inkFaint,
   };
 
-  // ── Pro pill for free path ────────────────────────────────────────────────
-  const pillStyle: ViewStyle = {
-    backgroundColor: t.colors.accent,
-    paddingHorizontal: t.space[1.5],
-    paddingVertical: t.space[0.5],
-    borderRadius: t.radii.full,
-  };
-  const pillTextStyle: TextStyle = {
-    ...(type.captionBold as unknown as TextStyle),
-    color: t.colors.onAmber,
-  };
-
   return (
     <Pressable
       accessibilityRole="button"
@@ -166,9 +155,7 @@ export function TodayFocusHook({ nowMs }: TodayFocusHookProps): React.ReactEleme
               <AppText style={insightStyle} numberOfLines={1}>
                 {tr('focusHook.freeInsight')}
               </AppText>
-              <View style={pillStyle}>
-                <Text style={pillTextStyle}>{tr('focusHook.proPill')}</Text>
-              </View>
+              <ProCoin label="Pro" />
             </>
           )}
         </View>

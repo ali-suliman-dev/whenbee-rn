@@ -19,9 +19,9 @@ describe('HonestCard — range band hero', () => {
     expect(screen.getByText('YOUR HONEST RANGE')).toBeOnTheScreen();
     expect(screen.getByText('still sharpening your pace')).toBeOnTheScreen();
     expect(screen.getByText(/4 more runs/)).toBeOnTheScreen();
-    // Free: the precise convergence point is HIDDEN behind the Pro teaser — no ~30 leaked.
-    expect(screen.queryByText('~30')).toBeNull();
-    expect(screen.getByText('Pro')).toBeOnTheScreen();
+    // Free: the convergence point is Pro-gated — the "lands near ~30" line never renders.
+    expect(screen.queryByText('~30 min')).toBeNull();
+    expect(screen.queryByText(/land near/)).toBeNull();
     // No tight number / multiplier chip while learning.
     expect(screen.queryByText('2.0')).toBeNull();
   });
@@ -62,13 +62,21 @@ describe('HonestCard — range band hero', () => {
     expect(screen.queryByText('honest now')).toBeNull();
   });
 
-  it('hides the precise convergence tick from free users (Pro gate)', () => {
-    render(<HonestCard {...base} confidence="setting" range={{ lowMinutes: 20, highMinutes: 40 }} isPro={false} />);
-    expect(screen.queryByTestId('convergence-tick')).toBeNull();
+  it('shows the honest point line for Pro once setting', () => {
+    render(<HonestCard {...base} confidence="setting" range={{ lowMinutes: 20, highMinutes: 40 }} isPro />);
+    // round_to_5(15 × 2.0) style point = honestMinutes (30) → "~30 min".
+    expect(screen.getByText('~30 min')).toBeOnTheScreen();
+    expect(screen.getByText(/land near/)).toBeOnTheScreen();
   });
 
-  it('shows the precise convergence tick for Pro users', () => {
-    render(<HonestCard {...base} confidence="setting" range={{ lowMinutes: 20, highMinutes: 40 }} isPro />);
-    expect(screen.getByTestId('convergence-tick')).toBeOnTheScreen();
+  it('hides the honest point line from free users (Pro gate)', () => {
+    render(<HonestCard {...base} confidence="setting" range={{ lowMinutes: 20, highMinutes: 40 }} isPro={false} />);
+    expect(screen.queryByText('~30 min')).toBeNull();
+  });
+
+  it('hides the honest point line at raw even for Pro (too few logs to assert)', () => {
+    render(<HonestCard {...base} n={1} confidence="raw" range={{ lowMinutes: 20, highMinutes: 45 }} isPro />);
+    expect(screen.queryByText('~30 min')).toBeNull();
+    expect(screen.queryByText(/land near/)).toBeNull();
   });
 });

@@ -1,6 +1,15 @@
 import { createMemoryDatabase, makeRoutinesRepo, makeRecurringRepo, type Database } from '@/src/db';
 import { useRoutinesStore } from '../routinesStore';
-import { ROUTINE_PERSONAL_MIN_RUNS } from '@/src/engine';
+import { useSettingsStore } from '../settingsStore';
+import {
+  ROUTINE_PERSONAL_MIN_RUNS,
+  blendWithPrior,
+  clampRatio,
+  updateEwma,
+  alphaFor,
+  priorFor,
+  seededPriorFor,
+} from '@/src/engine';
 
 // Mirror the namespaced per-step recurring key the store uses.
 const stepKey = (routineId: string, stepId: string) => `routine:${routineId}:${stepId}`;
@@ -86,6 +95,41 @@ describe('routinesStore — run training', () => {
     const after = await repo.get(id);
     expect(after?.routine.runCount).toBe(0);
     expect(after?.routine.transitionFactor).toBeCloseTo(1.15, 6);
+  });
+
+  it('a step trained for the first time blends against the SEEDED prior, not the population prior', async () => {
+    const db = await freshStore();
+    useSettingsStore.getState().setArchetypeSeed({ m0: 3.0, source: 'quiz', tookAt: 1 });
+
+    const s = useRoutinesStore.getState();
+    s.setName('Creative block');
+    s.addStep({ label: 'Sketch', category: 'creative', guessMin: 20 });
+    const id = await useRoutinesStore.getState().saveDraft();
+
+    const repo = makeRoutinesRepo(db);
+    const saved = await repo.get(id);
+    const [step] = saved!.steps;
+
+    await useRoutinesStore.getState().startRun(id);
+    useRoutinesStore.getState().completeStep(step!.id, 24);
+    await useRoutinesStore.getState().finishRun();
+
+    const recurring = makeRecurringRepo(db);
+    const trained = await recurring.get(stepKey(id, step!.id));
+    expect(trained?.n).toBe(1);
+
+    const seed = useSettingsStore.getState().archetypeSeed;
+    const ratio = clampRatio(20, 24);
+    const alpha = alphaFor('balanced', 'timed');
+    const logEwma = updateEwma(0, ratio, alpha);
+
+    const seededM = blendWithPrior(1, logEwma, seededPriorFor('creative', seed));
+    const unseededM = blendWithPrior(1, logEwma, priorFor('creative'));
+
+    expect(trained?.mEffective).toBeCloseTo(seededM, 6);
+    expect(trained?.mEffective).not.toBeCloseTo(unseededM, 6);
+
+    useSettingsStore.getState().reset();
   });
 
   it('abandoning a run clears the active-run slice without training', async () => {

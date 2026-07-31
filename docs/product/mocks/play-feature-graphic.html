@@ -1,0 +1,757 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<title>Whenbee — Play feature graphic (1024×500) · 3 directions</title>
+<style>
+  @font-face {
+    font-family: 'Jakarta';
+    src: url('file:///Users/alisuliman/Business/income/Apps/Whenbee/src/assets/fonts/PlusJakartaSans-ExtraBold.ttf');
+    font-weight: 800;
+  }
+  @font-face {
+    font-family: 'Jakarta';
+    src: url('file:///Users/alisuliman/Business/income/Apps/Whenbee/src/assets/fonts/PlusJakartaSans-Bold.ttf');
+    font-weight: 700;
+  }
+  @font-face {
+    font-family: 'Jakarta';
+    src: url('file:///Users/alisuliman/Business/income/Apps/Whenbee/src/assets/fonts/PlusJakartaSans-SemiBold.ttf');
+    font-weight: 600;
+  }
+  @font-face {
+    font-family: 'Jakarta';
+    src: url('file:///Users/alisuliman/Business/income/Apps/Whenbee/src/assets/fonts/PlusJakartaSans-Medium.ttf');
+    font-weight: 500;
+  }
+
+  /* ── brand tokens, lifted verbatim from src/theme/tokens.ts + app.json ───── */
+  :root {
+    --primary:      #6B5BE6;
+    --primary-edge: #463B9E;
+    --indigo-deep:  #2B2460;   /* app.json splash dark */
+    --indigo-mid:   #41378B;   /* app.json splash bg */
+    --accent:       #EEAE4D;   /* honey amber */
+    --accent-edge:  #C68A30;
+    --honey-wash:   #FBF2DF;
+    --cream:        #F4F2FC;
+    --ink:          #20233A;
+    --ink-soft:     #5C5F73;
+    --amber-text:   #8A5A12;
+
+    /* dark-mode surfaces — the tactile/coin-edge directions are built on these */
+    --d-bg:          #14151D;
+    --d-surface:     #1F2130;
+    --d-raised:      #292B3C;
+    --d-raised-edge: #1B1C27;
+    --d-sunken:      #15161F;
+    --d-ink:         #F4F1EA;
+    --d-ink-soft:    #ADA9B5;
+    --d-primary:     #8275F0;
+    --d-honey-wash:  #2B2620;
+    --d-accent-chip: #2E2A20;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'Jakarta', system-ui, sans-serif;
+    background: #14121F;
+    color: #fff;
+    padding: 48px 40px 80px;
+  }
+
+  h1.page {
+    font-size: 20px; font-weight: 700; letter-spacing: -0.01em;
+    margin-bottom: 6px;
+  }
+  p.page {
+    font-size: 13px; font-weight: 500; color: #8E8AA6; margin-bottom: 40px;
+    line-height: 1.6;
+  }
+
+  .label {
+    font-size: 11px; font-weight: 700; letter-spacing: 0.14em;
+    text-transform: uppercase; color: #7D78A0; margin-bottom: 10px;
+  }
+  .note {
+    font-size: 12.5px; font-weight: 500; color: #8E8AA6;
+    margin: 12px 0 44px; line-height: 1.65; max-width: 1024px;
+  }
+  .note b { color: #C9C4E4; font-weight: 700; }
+
+  /* ── the canvas: exactly 1024×500, no rounding, no border ───────────────── */
+  .fg {
+    width: 1024px; height: 500px;
+    position: relative; overflow: hidden;
+  }
+
+  /* Play crops the outer edges on some surfaces. Everything that must survive
+     lives inside this 72px inset. Toggle .safe-on to visualise it. */
+  .safe {
+    position: absolute; inset: 72px;
+    pointer-events: none; opacity: 0;
+    outline: 1px dashed rgba(255,255,255,0.5);
+  }
+  body.safe-on .safe { opacity: 1; }
+
+  /* ═══ DIRECTION A — editorial indigo ═════════════════════════════════════ */
+  .a {
+    background:
+      radial-gradient(120% 130% at 82% 40%, #4B3FA0 0%, rgba(75,63,160,0) 62%),
+      linear-gradient(135deg, #241C52 0%, #3B2F86 100%);
+  }
+  .a .copy {
+    position: absolute; left: 72px; top: 50%; transform: translateY(-50%);
+    width: 512px;
+  }
+  .a .eyebrow {
+    display: inline-block;
+    font-size: 11px; font-weight: 700; letter-spacing: 0.18em;
+    text-transform: uppercase; color: var(--accent);
+    margin-bottom: 22px;
+  }
+  .a h2 {
+    font-size: 58px; font-weight: 800; line-height: 1.06;
+    letter-spacing: -0.032em; color: #fff;
+  }
+  .a h2 em {
+    font-style: normal; color: var(--accent);
+    position: relative;
+  }
+  .a p {
+    margin-top: 22px;
+    font-size: 22px; font-weight: 500; line-height: 1.45;
+    color: rgba(255,255,255,0.68); letter-spacing: -0.01em;
+  }
+  .a .bee {
+    position: absolute; right: 22px; top: 50%;
+    transform: translateY(-50%);
+    width: 420px; height: 420px;
+    filter: drop-shadow(0 24px 60px rgba(0,0,0,0.42));
+  }
+  .a .halo {
+    position: absolute; right: 96px; top: 50%;
+    transform: translateY(-50%);
+    width: 300px; height: 300px; border-radius: 50%;
+    background: radial-gradient(circle, rgba(238,174,77,0.22) 0%, rgba(238,174,77,0) 70%);
+  }
+
+  /* ═══ DIRECTION B — the proof, on honey (PINNED) ════════════════════════ */
+  .b { background: var(--honey-wash); }
+  .b .grid {
+    position: absolute; inset: 0;
+    display: grid; grid-template-columns: 1fr 400px;
+    align-items: center;
+  }
+  .b .left { padding: 0 0 0 72px; }
+  .b .eyebrow {
+    font-size: 11px; font-weight: 700; letter-spacing: 0.18em;
+    text-transform: uppercase; color: var(--amber-text);
+    display: block; margin-bottom: 20px;
+  }
+  .b h2 {
+    font-size: 46px; font-weight: 800; line-height: 1.08;
+    letter-spacing: -0.03em; color: var(--ink); max-width: 560px;
+  }
+  .b .ledger { margin-top: 34px; display: flex; align-items: flex-end; gap: 20px; }
+  .b .cell { display: flex; flex-direction: column; gap: 6px; }
+  .b .cell .k {
+    font-size: 12px; font-weight: 700; letter-spacing: 0.1em;
+    text-transform: uppercase; color: var(--ink-soft);
+  }
+  .b .cell .v {
+    font-size: 40px; font-weight: 800; letter-spacing: -0.03em;
+    color: var(--ink); line-height: 1;
+  }
+  .b .cell.real .v { color: var(--amber-text); }
+  .b .arrow { font-size: 30px; font-weight: 700; color: var(--accent-edge); padding-bottom: 4px; }
+  .b .mult {
+    margin-left: 6px; align-self: flex-end;
+    background: var(--accent); color: #3A2609;
+    font-size: 17px; font-weight: 800; letter-spacing: -0.01em;
+    padding: 8px 15px; border-radius: 999px;
+    box-shadow: 0 3px 0 var(--accent-edge);
+  }
+  .b .right { position: relative; height: 100%; display: flex; align-items: center; justify-content: center; }
+  .b .disc {
+    position: absolute; width: 340px; height: 340px; border-radius: 50%;
+    background: linear-gradient(140deg, #3B2F86 0%, #241C52 100%);
+  }
+  .b .bee { position: relative; width: 300px; height: 300px; }
+
+  /* ── shared tactile primitives for F / G / H ───────────────────────────── */
+  .tac { background: linear-gradient(180deg, #262845 0%, #1A1B2B 100%); }
+  .tac .rule {
+    position: absolute; left: 0; right: 0; top: 0; height: 5px;
+    background: linear-gradient(90deg, var(--accent) 0%, var(--primary) 52%, rgba(107,91,230,0) 100%);
+  }
+  .tac .chip {
+    display: inline-flex; align-items: center; gap: 8px;
+    font-size: 10.5px; font-weight: 700; letter-spacing: 0.2em;
+    text-transform: uppercase; color: var(--d-ink-soft);
+    background: var(--d-surface);
+    border: 1px solid rgba(255,255,255,0.07);
+    box-shadow: 0 2px 0 var(--d-raised-edge), inset 0 1px 0 rgba(255,255,255,0.06);
+    padding: 7px 13px; border-radius: 999px;
+  }
+  .tac .chip i { width: 6px; height: 6px; border-radius: 50%; background: var(--accent); }
+  .tac .tile {
+    background: linear-gradient(180deg, #2E3043 0%, var(--d-raised) 100%);
+    box-shadow: 0 5px 0 var(--d-raised-edge), inset 0 1px 0 rgba(255,255,255,0.10);
+    border-radius: 20px;
+  }
+  .tac .coin {
+    background: var(--accent); color: #34210A;
+    font-weight: 800; letter-spacing: -0.01em;
+    border-radius: 999px;
+    box-shadow: 0 4px 0 var(--accent-edge), inset 0 1px 0 rgba(255,255,255,0.35);
+  }
+
+  /* ═══ DIRECTION F — it learns every area separately ══════════════════════ */
+  .f .inner {
+    position: absolute; inset: 0; padding: 0 72px;
+    display: flex; flex-direction: column; justify-content: center;
+  }
+  .f .top { display: flex; align-items: center; justify-content: space-between; }
+  .f .brand { display: flex; align-items: center; gap: 14px; }
+  .f .beedisc {
+    width: 92px; height: 92px; border-radius: 50%;
+    background: linear-gradient(140deg, #3B2F86 0%, #241C52 100%);
+    box-shadow: 0 5px 0 #1A1440, inset 0 1px 0 rgba(255,255,255,0.12);
+    display: flex; align-items: center; justify-content: center;
+  }
+  .f .beedisc img { width: 74px; height: 74px; }
+  .f h2 {
+    font-size: 38px; font-weight: 800; line-height: 1.1;
+    letter-spacing: -0.032em; color: var(--d-ink);
+  }
+  .f h2 em { font-style: normal; color: var(--accent); }
+  .f .row { display: flex; gap: 18px; margin-top: 38px; }
+  .f .tile { flex: 1; padding: 22px 22px 24px; }
+  .f .tile .k {
+    font-size: 11px; font-weight: 700; letter-spacing: 0.14em;
+    text-transform: uppercase; color: var(--d-ink-soft);
+  }
+  .f .tile .bar {
+    margin: 16px 0 15px; height: 8px; border-radius: 999px;
+    background: var(--d-sunken);
+    box-shadow: inset 0 1px 2px rgba(0,0,0,0.55);
+    overflow: hidden;
+  }
+  .f .tile .bar span { display: block; height: 100%; border-radius: 999px; background: var(--accent); }
+  .f .tile .m {
+    display: flex; align-items: baseline; gap: 9px;
+  }
+  .f .tile .m b {
+    font-size: 32px; font-weight: 800; letter-spacing: -0.03em; color: var(--d-ink);
+  }
+  .f .tile .m small { font-size: 13px; font-weight: 600; color: var(--d-ink-soft); }
+  .f .tile.hot .m b { color: var(--accent); }
+
+  /* ═══ DIRECTION G — the ring, and where the day lands ════════════════════ */
+  .g .inner {
+    position: absolute; inset: 0; padding: 0 72px;
+    display: flex; align-items: center; gap: 56px;
+  }
+  .g .ringwrap { flex-shrink: 0; position: relative; width: 320px; height: 320px; }
+  .g .ringwrap .plate {
+    position: absolute; inset: 0; border-radius: 50%;
+    background: rgba(255,255,255,0.045);
+    border: 1px solid rgba(255,255,255,0.08);
+  }
+  .g svg { position: absolute; inset: 14px; }
+  .g .mid {
+    position: absolute; inset: 0; display: flex; flex-direction: column;
+    align-items: center; justify-content: center; gap: 5px;
+  }
+  /* the bee rides the ring at the hand-off point: end of the guess arc,
+     start of the amber overrun — i.e. exactly where the day goes wrong. */
+  .g .rider {
+    position: absolute; right: -6px; bottom: 42px;
+    width: 96px; height: 96px; border-radius: 50%;
+    background: linear-gradient(140deg, #3B2F86 0%, #241C52 100%);
+    box-shadow: 0 5px 0 #1A1440, inset 0 1px 0 rgba(255,255,255,0.14),
+                0 0 0 7px #21233A;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .g .rider img { width: 78px; height: 78px; }
+  .g .mid .k {
+    font-size: 10.5px; font-weight: 700; letter-spacing: 0.16em;
+    text-transform: uppercase; color: var(--d-ink-soft);
+  }
+  .g .mid .v {
+    font-size: 46px; font-weight: 800; letter-spacing: -0.035em;
+    color: var(--d-ink); line-height: 1;
+  }
+  .g .copy { flex: 1; }
+  .g h2 {
+    margin-top: 22px;
+    font-size: 42px; font-weight: 800; line-height: 1.09;
+    letter-spacing: -0.034em; color: var(--d-ink); max-width: 430px;
+  }
+  .g h2 em { font-style: normal; color: var(--accent); }
+  .g .land {
+    margin-top: 24px; display: inline-flex; align-items: center; gap: 11px;
+    font-size: 17px; padding: 11px 19px;
+  }
+  .g .key { margin-top: 26px; display: flex; gap: 22px; }
+  .g .key div {
+    display: flex; align-items: center; gap: 9px;
+    font-size: 13px; font-weight: 600; color: var(--d-ink-soft);
+  }
+  .g .key s { width: 16px; height: 5px; border-radius: 999px; display: inline-block; }
+
+  /* ═══ DIRECTION H — it stays on your lock screen ═════════════════════════ */
+  .h .inner {
+    position: absolute; inset: 0; padding: 0 72px;
+    display: flex; align-items: center; gap: 54px;
+  }
+  .h .copy { flex: 1; }
+  .h h2 {
+    margin-top: 22px;
+    font-size: 42px; font-weight: 800; line-height: 1.09;
+    letter-spacing: -0.034em; color: var(--d-ink); max-width: 420px;
+  }
+  .h h2 em { font-style: normal; color: var(--accent); }
+  .h .phone {
+    flex-shrink: 0; width: 356px; padding: 12px;
+    border-radius: 34px;
+    background: rgba(255,255,255,0.05);
+    border: 1px solid rgba(255,255,255,0.09);
+  }
+  .h .screen {
+    border-radius: 24px; padding: 16px 15px 18px;
+    background: linear-gradient(180deg, #101119 0%, #191B29 100%);
+    box-shadow: inset 0 1px 0 rgba(255,255,255,0.07);
+  }
+  .h .status {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 0 4px 14px;
+  }
+  .h .status .clock { font-size: 12px; font-weight: 700; color: var(--d-ink-soft); }
+  .h .status .live {
+    display: inline-flex; align-items: center; gap: 6px;
+    background: var(--d-accent-chip); color: var(--accent);
+    font-size: 11.5px; font-weight: 800; letter-spacing: -0.01em;
+    padding: 4px 9px; border-radius: 999px;
+    border: 1px solid rgba(238,174,77,0.28);
+  }
+  .h .status .live i { width: 5px; height: 5px; border-radius: 50%; background: var(--accent); }
+  .h .card { padding: 15px 16px 17px; border-radius: 18px; }
+  .h .card .head { display: flex; align-items: center; gap: 11px; }
+  /* the app icon, exactly where Android renders it on an ongoing notification */
+  .h .card .ico {
+    width: 30px; height: 30px; border-radius: 50%; flex-shrink: 0;
+    background: linear-gradient(140deg, #3B2F86 0%, #241C52 100%);
+    box-shadow: inset 0 1px 0 rgba(255,255,255,0.14);
+    display: flex; align-items: center; justify-content: center;
+  }
+  .h .card .ico img { width: 25px; height: 25px; }
+  .h .card .t {
+    flex: 1; font-size: 15px; font-weight: 700;
+    color: var(--d-ink); letter-spacing: -0.01em;
+  }
+  .h .status .live img { width: 13px; height: 13px; }
+  .h .card .r { font-size: 20px; font-weight: 800; color: var(--accent); letter-spacing: -0.02em; }
+  .h .card .bar {
+    margin: 13px 0 12px; height: 7px; border-radius: 999px;
+    background: var(--d-sunken); box-shadow: inset 0 1px 2px rgba(0,0,0,0.55);
+    overflow: hidden;
+  }
+  .h .card .bar span { display: block; height: 100%; border-radius: 999px; background: var(--accent); }
+  .h .card .acts { display: flex; gap: 8px; }
+  .h .card .acts span {
+    flex: 1; text-align: center; font-size: 12.5px; font-weight: 700;
+    color: var(--d-ink-soft); padding: 8px 0; border-radius: 10px;
+    background: rgba(255,255,255,0.05);
+    border: 1px solid rgba(255,255,255,0.07);
+  }
+  .h .card .acts span.on { color: var(--accent); background: var(--d-accent-chip); border-color: rgba(238,174,77,0.24); }
+
+  /* ═══ DIRECTION D — machined plate ═══════════════════════════════════════
+     The "coin edge" language from AppButton, scaled up: every surface is a
+     physical object with a darker bottom edge and a 1px top highlight. Nested
+     enclosure (outer tray → inner plate) so it reads as hardware, not a card. */
+  .d {
+    background:
+      radial-gradient(90% 120% at 12% 22%, rgba(107,91,230,0.20) 0%, rgba(107,91,230,0) 62%),
+      linear-gradient(180deg, #262845 0%, #1A1B2B 100%);
+  }
+  .d .rule {
+    position: absolute; left: 0; right: 0; top: 0; height: 5px;
+    background: linear-gradient(90deg, var(--accent) 0%, var(--primary) 52%, rgba(107,91,230,0) 100%);
+  }
+  .d .inner {
+    position: absolute; inset: 0; padding: 0 72px;
+    display: flex; align-items: center; gap: 52px;
+  }
+  .d .copy { flex: 1; }
+  .d .eyebrow {
+    display: inline-flex; align-items: center; gap: 8px;
+    font-size: 10.5px; font-weight: 700; letter-spacing: 0.2em;
+    text-transform: uppercase; color: var(--d-ink-soft);
+    background: var(--d-surface);
+    border: 1px solid rgba(255,255,255,0.07);
+    box-shadow: 0 2px 0 var(--d-raised-edge), inset 0 1px 0 rgba(255,255,255,0.06);
+    padding: 7px 13px; border-radius: 999px; margin-bottom: 24px;
+  }
+  .d .eyebrow i {
+    width: 6px; height: 6px; border-radius: 50%;
+    background: var(--accent); display: inline-block;
+  }
+  .d h2 {
+    font-size: 44px; font-weight: 800; line-height: 1.09;
+    letter-spacing: -0.034em; color: var(--d-ink); max-width: 456px;
+  }
+  .d h2 em { font-style: normal; color: var(--accent); }
+
+  /* outer tray */
+  .d .tray {
+    flex-shrink: 0; width: 372px; padding: 10px;
+    border-radius: 30px;
+    background: rgba(255,255,255,0.045);
+    border: 1px solid rgba(255,255,255,0.07);
+  }
+  /* inner plate — the machined face */
+  .d .plate {
+    border-radius: 21px; padding: 24px 26px 26px;
+    background: linear-gradient(180deg, #2E3043 0%, var(--d-raised) 100%);
+    box-shadow: 0 5px 0 var(--d-raised-edge), inset 0 1px 0 rgba(255,255,255,0.10);
+  }
+  .d .plate .cap {
+    font-size: 10.5px; font-weight: 700; letter-spacing: 0.16em;
+    text-transform: uppercase; color: var(--d-ink-soft);
+  }
+  .d .plate .task {
+    margin-top: 8px; font-size: 20px; font-weight: 700;
+    color: var(--d-ink); letter-spacing: -0.015em;
+  }
+  .d .hair { height: 1px; background: rgba(255,255,255,0.09); margin: 18px 0; }
+  .d .row { display: flex; align-items: flex-end; justify-content: space-between; }
+  .d .stat { display: flex; flex-direction: column; gap: 7px; }
+  .d .stat .k {
+    font-size: 10.5px; font-weight: 700; letter-spacing: 0.13em;
+    text-transform: uppercase; color: var(--d-ink-soft);
+  }
+  .d .stat .v {
+    font-size: 34px; font-weight: 800; line-height: 1;
+    letter-spacing: -0.03em; color: var(--d-ink);
+  }
+  .d .stat.hot .v { color: var(--accent); }
+  /* the honey coin — amber face sitting on its darker edge */
+  .d .coin {
+    background: var(--accent); color: #34210A;
+    font-size: 16px; font-weight: 800; letter-spacing: -0.01em;
+    padding: 9px 16px; border-radius: 999px;
+    box-shadow: 0 4px 0 var(--accent-edge), inset 0 1px 0 rgba(255,255,255,0.35);
+  }
+
+  /* ═══ DIRECTION E — honey coin ═══════════════════════════════════════════
+     One object, machined. The bee sits in a double-bezel amber coin with a
+     real 6px bottom edge, on a near-black indigo ground. Type is the slab. */
+  .e { background: radial-gradient(110% 140% at 22% 30%, #23253A 0%, #101119 70%); }
+  .e .inner {
+    position: absolute; inset: 0; padding: 0 72px;
+    display: flex; align-items: center; gap: 56px;
+  }
+  .e .copy { flex: 1; }
+  .e .eyebrow {
+    display: block;
+    font-size: 10.5px; font-weight: 700; letter-spacing: 0.2em;
+    text-transform: uppercase; color: var(--accent); margin-bottom: 20px;
+  }
+  .e h2 {
+    font-size: 44px; font-weight: 800; line-height: 1.09;
+    letter-spacing: -0.034em; color: var(--d-ink); max-width: 470px;
+  }
+  .e h2 em { font-style: normal; color: var(--accent); }
+  .e .strip {
+    margin-top: 26px; display: inline-flex; align-items: stretch;
+    border-radius: 14px; overflow: hidden;
+    border: 1px solid rgba(255,255,255,0.10);
+    box-shadow: 0 4px 0 rgba(0,0,0,0.45), inset 0 1px 0 rgba(255,255,255,0.07);
+  }
+  .e .strip span {
+    padding: 11px 17px; font-size: 15.5px; font-weight: 700;
+    letter-spacing: -0.005em; color: var(--d-ink-soft);
+    background: var(--d-surface); display: flex; align-items: center;
+  }
+  .e .strip span + span { border-left: 1px solid rgba(255,255,255,0.09); }
+  .e .strip span.on { background: var(--d-honey-wash); color: var(--accent); }
+
+  /* the coin: outer bezel → amber face → inner ring */
+  .e .bezel {
+    flex-shrink: 0; position: relative;
+    width: 344px; height: 344px; border-radius: 50%;
+    padding: 9px;
+    background: rgba(255,255,255,0.05);
+    border: 1px solid rgba(255,255,255,0.09);
+  }
+  .e .face {
+    width: 100%; height: 100%; border-radius: 50%;
+    background: linear-gradient(175deg, #F5BC63 0%, var(--accent) 46%, #E39F35 100%);
+    box-shadow: 0 7px 0 var(--accent-edge), inset 0 2px 0 rgba(255,255,255,0.45);
+    display: flex; align-items: center; justify-content: center;
+  }
+  .e .face::after {
+    content: ''; position: absolute; inset: 30px; border-radius: 50%;
+    border: 1.5px solid rgba(52,33,10,0.16);
+  }
+  .e .bee {
+    position: relative; width: 250px; height: 250px; z-index: 1;
+    filter: drop-shadow(0 10px 18px rgba(88,54,6,0.34));
+  }
+
+</style>
+</head>
+<body>
+
+<h1 class="page">Whenbee — Google Play feature graphic</h1>
+<p class="page">
+  Each canvas below is exactly <b>1024 × 500</b>, the size Play requires — what you see is what
+  uploads. Everything sits inside a 72px safe inset because Play crops the outer edges on some
+  surfaces. No store badges, no star ratings, no price, no ranking claims (all banned by Play policy).
+  Colours and type come from <code>src/theme/tokens.ts</code> and <code>app.json</code>; the bee is
+  the shipped <code>bee.svg</code>. <b>A and B are pinned.</b>
+</p>
+
+<!-- ── A ─────────────────────────────────────────────────────────────────── -->
+<div class="label">Direction A — editorial indigo</div>
+<div class="fg a">
+  <div class="halo"></div>
+  <img class="bee" src="file:///Users/alisuliman/Business/income/Apps/Whenbee/src/assets/illustrations/bee.svg" alt="" />
+  <div class="copy">
+    <span class="eyebrow">Whenbee</span>
+    <h2>Find out how long it <em>really</em> takes.</h2>
+    <p>Guess it. Time it. See your own number.</p>
+  </div>
+  <div class="safe"></div>
+</div>
+<div class="note">
+  The app's own skin: deep indigo ground, honey accent on the one word that carries the promise.
+  Reads as product, not poster. Closest to what a user sees after installing, so the listing and the
+  app agree. <b>PINNED by the founder, 2026-07-28.</b>
+</div>
+
+
+<!-- ── B ─────────────────────────────────────────────────────────────────── -->
+<div class="label">Direction B — the proof, on honey · PINNED</div>
+<div class="fg b">
+  <div class="grid">
+    <div class="left">
+      <span class="eyebrow">Whenbee</span>
+      <h2>You're wrong about time.<br />Here's by how much.</h2>
+      <div class="ledger">
+        <div class="cell"><span class="k">You guessed</span><span class="v">15m</span></div>
+        <div class="arrow">→</div>
+        <div class="cell real"><span class="k">It really took</span><span class="v">41m</span></div>
+        <div class="mult">2.7×</div>
+      </div>
+    </div>
+    <div class="right">
+      <div class="disc"></div>
+      <img class="bee" src="file:///Users/alisuliman/Business/income/Apps/Whenbee/src/assets/illustrations/bee.svg" alt="" />
+    </div>
+  </div>
+  <div class="safe"></div>
+</div>
+<div class="note">
+  Leads with the gap instead of a claim. Numbers are the <b>seeded demo set from doc 16</b>
+  (Reply to emails, 15 → 41, 2.7×), so banner, screenshots and app tell one story.
+  <b>PINNED by the founder, 2026-07-28.</b>
+</div>
+
+<!-- ── F ─────────────────────────────────────────────────────────────────── -->
+<div class="label">Direction F — it learns each area separately</div>
+<div class="fg tac f">
+  <div class="rule"></div>
+  <div class="inner">
+    <div class="top">
+      <h2>One multiplier<br />per <em>area of life</em>.</h2>
+      <div class="brand">
+        <span class="chip"><i></i>Whenbee</span>
+        <div class="beedisc">
+          <img src="file:///Users/alisuliman/Business/income/Apps/Whenbee/src/assets/illustrations/bee.svg" alt="" />
+        </div>
+      </div>
+    </div>
+    <div class="row">
+      <div class="tile hot">
+        <div class="k">Admin</div>
+        <div class="bar"><span style="width:100%"></span></div>
+        <div class="m"><b>2.7×</b><small>slower than you think</small></div>
+      </div>
+      <div class="tile">
+        <div class="k">Deep work</div>
+        <div class="bar"><span style="width:59%"></span></div>
+        <div class="m"><b>1.6×</b><small>a little over</small></div>
+      </div>
+      <div class="tile">
+        <div class="k">Gym</div>
+        <div class="bar"><span style="width:37%"></span></div>
+        <div class="m"><b>1.0×</b><small>you nail this one</small></div>
+      </div>
+    </div>
+  </div>
+  <div class="safe"></div>
+</div>
+<div class="note">
+  Answers "what does it actually do?" in <b>eight words plus three tiles</b>. Each tile is a machined
+  plate on its own edge with an inset well for the bar, so the tactile language carries the
+  information instead of decorating it. Gym at 1.0× is deliberate — a set where everything overruns
+  reads as rigged, and one accurate area proves the app measures rather than assumes.
+</div>
+
+<!-- ── G ─────────────────────────────────────────────────────────────────── -->
+<div class="label">Direction G — the ring, and where the day lands</div>
+<div class="fg tac g">
+  <div class="rule"></div>
+  <div class="inner">
+    <div class="ringwrap">
+      <div class="plate"></div>
+      <svg viewBox="0 0 292 292" width="292" height="292">
+        <circle cx="146" cy="146" r="124" fill="none" stroke="#15161F" stroke-width="24" />
+        <circle cx="146" cy="146" r="124" fill="none" stroke="#8275F0" stroke-width="24"
+                stroke-linecap="round" stroke-dasharray="285 779" transform="rotate(-90 146 146)" />
+        <circle cx="146" cy="146" r="124" fill="none" stroke="#EEAE4D" stroke-width="24"
+                stroke-linecap="round" stroke-dasharray="212 779" stroke-dashoffset="-297"
+                transform="rotate(-90 146 146)" />
+      </svg>
+      <div class="mid">
+        <span class="k">Honest number</span>
+        <span class="v">41m</span>
+      </div>
+      <div class="rider">
+        <img src="file:///Users/alisuliman/Business/income/Apps/Whenbee/src/assets/illustrations/bee.svg" alt="" />
+      </div>
+    </div>
+    <div class="copy">
+      <span class="chip"><i></i>Whenbee</span>
+      <h2>You guessed 15.<br />It plans for <em>41</em>.</h2>
+      <div class="coin land">Done by 3:40</div>
+      <div class="key">
+        <div><s style="background:#8275F0"></s>Your guess</div>
+        <div><s style="background:#EEAE4D"></s>What it really takes</div>
+      </div>
+    </div>
+  </div>
+  <div class="safe"></div>
+</div>
+<div class="note">
+  Two facts, no paragraph: <b>it is a real timer</b> (the ring, which also backs the
+  <code>USE_EXACT_ALARM</code> declaration) and <b>it forecasts a landing time</b> — the single most
+  useful output, shown as a honey coin. The indigo arc is the guess, the amber arc is the part the
+  user never budgets for, and the key names both in four words.
+</div>
+
+<!-- ── H ─────────────────────────────────────────────────────────────────── -->
+<div class="label">Direction H — it stays on your lock screen</div>
+<div class="fg tac h">
+  <div class="rule"></div>
+  <div class="inner">
+    <div class="copy">
+      <span class="chip"><i></i>Whenbee</span>
+      <h2>The timer you <em>can't</em> forget to stop.</h2>
+    </div>
+    <div class="phone">
+      <div class="screen">
+        <div class="status">
+          <span class="clock">3:04</span>
+          <span class="live"><i></i>12:41</span>
+        </div>
+        <div class="tile card">
+          <div class="head">
+            <span class="ico"><img src="file:///Users/alisuliman/Business/income/Apps/Whenbee/src/assets/illustrations/bee.svg" alt="" /></span>
+            <span class="t">Reply to emails</span>
+            <span class="r">12:41</span>
+          </div>
+          <div class="bar"><span style="width:64%"></span></div>
+          <div class="acts">
+            <span class="on">Stop &amp; log</span>
+            <span>Add 5m</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="safe"></div>
+</div>
+<div class="note">
+  The <b>Android-only differentiator</b>: a promoted Live Update — status-bar chip beside the clock,
+  pinned card on the lock screen, live countdown. No competitor in the scraped set has it, and it is
+  the honest answer to the biggest failure mode (starting a timer and forgetting it). Nine words
+  carry it because the picture is the feature.
+</div>
+
+<div class="label" style="margin-top:56px">Earlier tactile pass — not pinned</div>
+
+<!-- ── D ─────────────────────────────────────────────────────────────────── -->
+<div class="label">Direction D — machined plate</div>
+<div class="fg d">
+  <div class="rule"></div>
+  <div class="inner">
+    <div class="copy">
+      <span class="eyebrow"><i></i>Whenbee</span>
+      <h2>Your guess.<br />The <em>honest</em> number.</h2>
+    </div>
+    <div class="tray">
+      <div class="plate">
+        <div class="cap">Admin</div>
+        <div class="task">Reply to emails</div>
+        <div class="hair"></div>
+        <div class="row">
+          <div class="stat">
+            <span class="k">You guessed</span>
+            <span class="v">15m</span>
+          </div>
+          <div class="stat hot">
+            <span class="k">It really took</span>
+            <span class="v">41m</span>
+          </div>
+          <div class="coin">2.7×</div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="safe"></div>
+</div>
+<div class="note">
+  The <b>coin-edge language from <code>AppButton</code></b>, scaled up: every surface is a physical
+  object with a darker bottom edge and a 1px top highlight, and the plate sits nested inside an outer
+  tray. Amber chip is a real honey coin on its <code>accentEdge</code>. Shows the actual product
+  moment rather than describing it, and it is unmistakably the same hardware as the app.
+</div>
+
+<!-- ── E ─────────────────────────────────────────────────────────────────── -->
+<div class="label">Direction E — honey coin</div>
+<div class="fg e">
+  <div class="inner">
+    <div class="copy">
+      <span class="eyebrow">Whenbee</span>
+      <h2>You'll still be wrong.<br />Just not <em>surprised</em>.</h2>
+      <div class="strip">
+        <span class="on">Guess</span>
+        <span>Time it</span>
+        <span>Your number</span>
+      </div>
+    </div>
+    <div class="bezel">
+      <div class="face">
+        <img class="bee" src="file:///Users/alisuliman/Business/income/Apps/Whenbee/src/assets/illustrations/bee.svg" alt="" />
+      </div>
+    </div>
+  </div>
+  <div class="safe"></div>
+</div>
+<div class="note">
+  One machined object: outer bezel, amber face on a real 6px <code>accentEdge</code>, inner ring
+  struck into the surface like a coin. The three-step strip is a real segmented control on its own
+  edge — it teaches the whole loop (guess → time it → your number) in three words, and
+  <b>states no number</b>, so nothing here can read as a performance claim. Headline is the voice
+  doc's anti-shame position stated plainly: you stay wrong, you stop being ambushed.
+</div>
+
+
+</body>
+</html>

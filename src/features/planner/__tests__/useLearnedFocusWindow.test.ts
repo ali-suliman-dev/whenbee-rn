@@ -4,7 +4,7 @@
  * Strategy: mock the three stores the hook reads (calibrationStore,
  * settingsStore, useCalibrationStore's statsByCategory) and inject a rich
  * morning-peak dataset (≥20 distinct days, 600–660 min cluster). Assert that
- * the returned LearnedFocusWindow has basis === 'personal' and that the effect
+ * the returned LearnedFocusWindow has basis === 'revealed' and that the effect
  * writes the learned window into settingsStore.
  */
 import { renderHook, act } from '@testing-library/react-native';
@@ -94,17 +94,17 @@ async function flushAsync(): Promise<void> {
   });
 }
 
-test('returns a personal window for a rich morning-peak dataset', async () => {
+test('returns a revealed window for a rich morning-peak dataset', async () => {
   const { result } = renderHook(() => useLearnedFocusWindow(NOW_MS));
   await flushAsync();
-  expect(result.current.basis).toBe('personal');
+  expect(result.current.basis).toBe('revealed');
 });
 
 test('writes the learned window into settingsStore when not user-set', async () => {
   const { result } = renderHook(() => useLearnedFocusWindow(NOW_MS));
   await flushAsync();
 
-  expect(result.current.basis).toBe('personal');
+  expect(result.current.basis).toBe('revealed');
   // The effect should have written the window into the settings store
   const s = useSettingsStore.getState();
   expect(s.windowStartMin).not.toBeNull();
@@ -126,7 +126,7 @@ test('does NOT overwrite settings when focusWindowUserSet is true', async () => 
   expect(useSettingsStore.getState().windowEndMin).toBe(540);
 });
 
-test('returns prior basis when there is insufficient data', () => {
+test('returns forming basis when there is insufficient data', () => {
   useCalibrationStore.setState({
     statsByCategory: {
       admin: { mEffective: 1.0, n: 1, sharpness: 0, tier: 'Raw', fit: { a: 0, b: 1.0 } },
@@ -135,5 +135,5 @@ test('returns prior basis when there is insufficient data', () => {
   } as unknown as Parameters<typeof useCalibrationStore.setState>[0]);
 
   const { result } = renderHook(() => useLearnedFocusWindow(NOW_MS));
-  expect(result.current.basis).toBe('prior');
+  expect(result.current.basis).toBe('forming');
 });

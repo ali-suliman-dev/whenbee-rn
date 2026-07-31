@@ -58,8 +58,8 @@
     "tookEyebrow": "IT REALLY TOOK",
     "honeyLabel": "HONEY",
     "delta": {
-      "over": "{{count}} min over your guess",
-      "under": "{{count}} min under your guess",
+      "over": "{{duration}} over your guess",
+      "under": "{{duration}} under your guess",
       "equal": "right on your guess"
     },
     "seeYourBee": "See your bee"

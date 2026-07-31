@@ -6,8 +6,16 @@
 // in the parent (RoutineBuildView). FadeIn only — no spring/bounce/translate.
 
 import { useEffect, useState, type ReactElement } from 'react';
-import { StyleSheet, View, Pressable, type ViewStyle, type TextStyle } from 'react-native';
+import {
+  KeyboardAvoidingView,
+  StyleSheet,
+  View,
+  Pressable,
+  type ViewStyle,
+  type TextStyle,
+} from 'react-native';
 import Animated, { FadeIn, ReduceMotion } from 'react-native-reanimated';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTranslation } from 'react-i18next';
 import { useTheme } from '@/src/theme/useTheme';
 import { type } from '@/src/theme/typography';
@@ -59,6 +67,7 @@ export function StepEditorSheet({
 }: StepEditorSheetProps): ReactElement | null {
   const t = useTheme();
   const { t: tr } = useTranslation('routines');
+  const insets = useSafeAreaInsets();
   const categories = usePickerCategories();
   const statsByCategory = useCalibrationStore((s) => s.statsByCategory);
 
@@ -107,15 +116,24 @@ export function StepEditorSheet({
 
   const backdrop: ViewStyle = {
     ...StyleSheet.absoluteFillObject,
+    // The Routines route pads its surface by t.space[5] (see (tabs)/routines.tsx),
+    // which would inset this overlay. Cancel it so the sheet is full-bleed edge-to-edge.
+    left: -t.space[5],
+    right: -t.space[5],
     backgroundColor: t.colors.scrim,
-    justifyContent: 'flex-end',
   };
+  // KeyboardAvoidingView pins the sheet to the bottom and, on keyboard-open,
+  // pads by the REAL keyboard↔sheet overlap (adjustResize is neutralised by
+  // edge-to-edge, so the OS won't lift it and useAnimatedKeyboard over-lifts).
+  const avoider: ViewStyle = { flex: 1, justifyContent: 'flex-end' };
   const sheet: ViewStyle = {
     backgroundColor: t.colors.surface,
     borderTopLeftRadius: t.radii.sheet,
     borderTopRightRadius: t.radii.sheet,
     borderCurve: 'continuous',
     paddingHorizontal: t.space[4],
+    // Android renders no SheetGrabber, so add explicit top breathing room.
+    paddingTop: t.space[5],
     paddingBottom: t.space[6],
     gap: t.space[4],
   };
@@ -138,9 +156,14 @@ export function StepEditorSheet({
         onPress={onCancel}
         accessibilityLabel={tr('stepSheet.dismissA11y')}
       />
-      <View style={sheet}>
-        <SheetGrabber />
-        <AppText style={titleStyle}>{mode === 'add' ? tr('stepSheet.titleAdd') : tr('stepSheet.titleEdit')}</AppText>
+      <KeyboardAvoidingView
+        style={avoider}
+        behavior="padding"
+        keyboardVerticalOffset={insets.bottom + t.space[5]}
+      >
+        <View style={sheet}>
+          <SheetGrabber />
+        <AppText style={titleStyle}>{mode === 'add' ? 'Add a step' : 'Edit step'}</AppText>
         <TaskTitleField
           variant="boxed"
           value={label}
@@ -168,7 +191,8 @@ export function StepEditorSheet({
             onPress={handleSubmit}
           />
         </View>
-      </View>
+        </View>
+      </KeyboardAvoidingView>
     </Animated.View>
   );
 }

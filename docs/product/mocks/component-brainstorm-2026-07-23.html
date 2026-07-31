@@ -1,0 +1,708 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Whenbee · Component brainstorm — chips, sparse Today, retro row, Pro ripening</title>
+<style>
+  /* ── Real token values from src/theme/tokens.ts (light) ─────────────────── */
+  :root{
+    --bg:#F4F2FC; --surface:#FFFFFF; --sunken:#F1EEFB; --taskcard:#E9E4F6;
+    --ink:#20233A; --inksoft:#5C5F73; --inkfaint:#9B9DAB;
+    --primary:#6B5BE6; --primary-edge:#463B9E; --primary-soft:#E4E0FA; --primary-wash:#EFEDFC;
+    --accent:#EEAE4D; --accent-edge:#C68A30; --accent-soft:#FBEFD6; --honey-wash:#FBF2DF;
+    --accent-chip:#F3E2C0; --amber-text:#8A5A12; --on-indigo:#FFFFFF;
+    --r-card:16px; --r-sheet:20px; --r-full:999px;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;background:#1C1E2E;color:#F4F1EA;padding:40px 32px 80px}
+  h1{font-size:26px;letter-spacing:-0.5px;margin-bottom:6px}
+  h2{font-size:20px;letter-spacing:-0.3px;margin:46px 0 6px;color:#F5C03F}
+  .sub{color:#ADA9B5;font-size:14px;max-width:860px;line-height:1.55;margin-bottom:26px}
+  .row{display:flex;gap:34px;flex-wrap:wrap;align-items:flex-start;margin-bottom:8px}
+  .col{width:392px}
+  .dirlabel{font-size:15px;font-weight:700;margin:0 0 2px;letter-spacing:-0.2px}
+  .dirsub{font-size:12.5px;color:#ADA9B5;line-height:1.5;margin-bottom:12px;min-height:56px}
+  .notes{margin-top:12px;font-size:12.5px;color:#CFCAE0;line-height:1.55;background:#242436;border-radius:12px;padding:14px 16px}
+  .notes b{color:#F5C03F;font-weight:600}
+  .notes ul{margin:6px 0 0 16px}
+  .notes li{margin-bottom:4px}
+  .verdict{max-width:860px;font-size:13.5px;color:#E8E4F4;line-height:1.6;background:#2A2A40;border-left:3px solid #F5C03F;border-radius:10px;padding:14px 18px;margin:14px 0 8px}
+  .verdict b{color:#F5C03F}
+
+  /* ── Phone frame ── */
+  .phone{width:392px;height:820px;border-radius:44px;overflow:hidden;position:relative;
+         box-shadow:0 18px 50px rgba(0,0,0,.5);border:6px solid #0c0c12;background:var(--bg);
+         display:flex;flex-direction:column}
+  .screen{flex:1;padding:54px 20px 0;overflow:hidden;position:relative;display:flex;flex-direction:column;gap:14px}
+  .notch{position:absolute;top:12px;left:50%;transform:translateX(-50%);width:110px;height:26px;background:#000;border-radius:20px;z-index:9}
+
+  /* ══════════════════════ REWARD SCREEN SHARED ══════════════════════ */
+  .rw-bee{display:flex;flex-direction:column;align-items:center;margin-top:2px}
+  .rw-beebox{position:relative;width:130px;height:120px;display:flex;align-items:center;justify-content:center}
+  .rw-rays{position:absolute;inset:-18px;background:
+      repeating-conic-gradient(from 0deg, rgba(107,91,230,.10) 0 6deg, transparent 6deg 18deg);
+      border-radius:50%;filter:blur(1px)}
+  .rw-beeimg{font-size:64px;position:relative}
+  .rw-nectar{position:absolute;top:-4px;right:-26px;background:var(--accent);color:#5A3E10;font-size:12px;font-weight:700;
+      padding:4px 11px;border-radius:999px;box-shadow:0 2px 0 var(--accent-edge)}
+  .rw-h1{font-size:26px;font-weight:800;color:var(--ink);text-align:center;letter-spacing:-0.4px;margin-top:8px}
+  .rw-eyebrow{font-size:11px;letter-spacing:1.5px;font-weight:700;color:var(--inksoft);text-align:center;margin-top:10px}
+  .rw-min{text-align:center;color:var(--ink)}
+  .rw-min b{font-size:44px;font-weight:800;letter-spacing:-1px}
+  .rw-min span{font-size:18px;color:var(--inksoft);margin-left:4px}
+  .rw-badge{align-self:center;background:var(--sunken);color:var(--inksoft);font-size:12.5px;padding:6px 14px;border-radius:999px}
+  .rw-honey{background:var(--surface);border-radius:var(--r-card);padding:13px 16px 14px}
+  .rw-hrow{display:flex;justify-content:space-between;align-items:baseline}
+  .rw-hlabel{font-size:11px;letter-spacing:1.2px;font-weight:700;color:var(--inksoft)}
+  .rw-hlabel small{color:var(--inkfaint);font-weight:500;letter-spacing:0;font-size:11px}
+  .rw-hpct{font-size:20px;font-weight:800;color:var(--amber-text)}
+  .rw-hpct small{font-size:11px;font-weight:600;color:var(--inkfaint)}
+  .rw-hbar{height:9px;border-radius:5px;background:var(--honey-wash);margin-top:8px;overflow:hidden}
+  .rw-hfill{height:100%;width:27%;border-radius:5px;background:linear-gradient(90deg,#F5C03F,#EEAE4D)}
+  .rw-ctx{background:var(--surface);border-radius:var(--r-card);padding:14px 16px;display:flex;flex-direction:column;gap:10px}
+  .rw-ctxhdr{font-size:13px;color:var(--inksoft)}
+  .rw-ctxhdr.on{color:var(--amber-text)}
+  .rw-ctxhdr .hint{color:var(--inkfaint);font-size:11.5px}
+  .rw-div{height:1px;background:#EDE9DC;margin:2px 0}
+  .rw-foot{font-size:12.5px;color:var(--inksoft);text-align:center;margin-top:auto;padding-top:6px}
+  .rw-cta{margin:10px 0 26px;height:50px;border-radius:14px;background:var(--primary);color:#fff;
+      display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:700;box-shadow:0 5px 0 var(--primary-edge)}
+  .chips{display:flex;gap:8px}
+  .chip{flex:1;display:flex;align-items:center;justify-content:center;gap:6px;
+      padding:9px 6px;border-radius:999px;font-size:13.5px;font-weight:600;color:var(--ink)}
+  .g{width:18px;height:18px;flex:none}
+  .g svg{display:block;width:100%;height:100%}
+
+  /* — Option 1A · Coin chips — */
+  .c-coin .chip{background:var(--surface);border:1px solid #E7E3F4;border-bottom:3px solid #D6D0EC;
+      box-shadow:0 1px 2px rgba(70,59,158,.06)}
+  .c-coin .chip.sel{background:var(--primary-wash);border-color:var(--primary);border-bottom-color:var(--primary-edge);color:var(--primary)}
+  .c-coin .chip.pressed{transform:translateY(2px) scale(.97);border-bottom-width:1px;opacity:.9}
+
+  /* — Option 1B · Dish chips — */
+  .c-dish .chip{background:var(--surface);box-shadow:0 4px 14px rgba(70,59,158,.10);padding:8px 6px}
+  .c-dish .dish{width:26px;height:26px;border-radius:50%;background:var(--sunken);display:flex;align-items:center;justify-content:center;flex:none}
+  .c-dish .chip.sel{background:var(--primary-wash);box-shadow:inset 0 0 0 1.5px var(--primary)}
+  .c-dish .chip.sel .dish{background:#fff}
+
+  /* — Option 1C · Answer chips — */
+  .c-ans .chip{background:transparent;border:1.5px solid #D8D2EE;color:var(--inksoft)}
+  .c-ans .chip.sel{background:var(--primary);border-color:var(--primary);color:#fff;box-shadow:0 3px 0 var(--primary-edge)}
+  .c-ans .chip.sel .g svg *{stroke:#fff!important;fill:none}
+
+  /* ══════════════════════ TODAY SCREEN SHARED ══════════════════════ */
+  .greet{font-size:12px;color:var(--inksoft)}
+  .hdr{display:flex;justify-content:space-between;align-items:flex-start}
+  .title{font-size:38px;font-weight:800;letter-spacing:-0.75px;color:var(--ink);line-height:1.05}
+  .date{font-size:12px;color:var(--inksoft);margin-top:2px}
+  .avatar{position:relative;width:58px;height:58px;margin-left:auto}
+  .ring{width:58px;height:58px;border-radius:50%;background:conic-gradient(var(--accent) 0 33%, #E4DFD3 33% 100%);
+        display:flex;align-items:center;justify-content:center}
+  .ring-in{width:49px;height:49px;border-radius:50%;background:#fff;display:flex;align-items:center;justify-content:center;font-size:20px}
+  .tier{font-size:10.5px;color:var(--inksoft);text-align:center;margin-top:3px}
+  .hdr-right{display:flex;align-items:flex-start;gap:14px}
+  .gear{font-size:20px;color:var(--inksoft);margin-top:16px}
+  .card{background:var(--surface);border-radius:var(--r-card);padding:14px 16px}
+  .cal{display:flex;justify-content:space-between;padding:12px 8px}
+  .day{width:44px;text-align:center;border-radius:14px;padding:7px 0}
+  .day .wd{font-size:11px;color:var(--inkfaint)}
+  .day .num{font-size:17px;font-weight:600;color:var(--ink);margin-top:2px}
+  .day.sel{background:var(--primary-soft)}
+  .day.sel .wd,.day.sel .num{color:var(--primary)}
+  .dot{width:4px;height:4px;border-radius:2px;background:var(--primary);margin:4px auto 0}
+  .sect{font-size:11px;letter-spacing:1.2px;font-weight:700;color:var(--inksoft);display:flex;justify-content:space-between;align-items:center}
+  .sect .chev{color:var(--inkfaint)}
+  .donerow{background:var(--surface);border-radius:var(--r-card);padding:13px 16px;display:flex;align-items:center;gap:10px}
+  .donerow .ck{width:22px;height:22px;border-radius:50%;background:var(--accent-soft);color:var(--amber-text);
+      display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:800;flex:none}
+  .donerow .tt{font-size:14.5px;font-weight:600;color:var(--ink);flex:1}
+  .donerow .mm{font-size:12px;color:var(--inksoft)}
+  .tabbar{margin:auto -20px 0;padding:10px 22px 26px;display:flex;align-items:flex-end;justify-content:space-between;position:relative}
+  .tab{font-size:10.5px;color:var(--inksoft);text-align:center;width:56px}
+  .tab .ic{font-size:19px;display:block;margin-bottom:3px}
+  .tab.on{color:var(--primary)}
+  .fab{width:52px;height:52px;border-radius:16px;background:var(--primary);color:#fff;font-size:24px;
+       display:flex;align-items:center;justify-content:center;margin-top:-26px;box-shadow:0 6px 0 var(--primary-edge)}
+
+  /* — 2A recap card — */
+  .recap{background:var(--surface);border-radius:var(--r-sheet);padding:18px;box-shadow:0 10px 30px rgba(70,59,158,.10)}
+  .recap .eyebrow{font-size:10px;letter-spacing:.9px;font-weight:700;color:var(--inkfaint)}
+  .recap .line{font-size:19px;font-weight:700;color:var(--ink);letter-spacing:-0.3px;margin-top:6px;line-height:1.3}
+  .recap .line b{color:var(--amber-text)}
+  .statrow{display:flex;margin-top:14px}
+  .stat{flex:1;display:flex;flex-direction:column;gap:2px}
+  .stat .k{font-size:10.5px;letter-spacing:.6px;font-weight:700;color:var(--inkfaint)}
+  .stat .v{font-size:19px;font-weight:800;color:var(--ink)}
+  .stat .v small{font-size:11px;font-weight:600;color:var(--inksoft)}
+  .recap .next{margin-top:14px;background:var(--honey-wash);border-radius:12px;padding:9px 12px;font-size:12.5px;color:var(--amber-text)}
+  .recap .next b{font-weight:700}
+
+  /* — 2B companion — */
+  .comp{display:flex;flex-direction:column;align-items:center;text-align:center;padding:16px 8px 6px}
+  .comp .bee{font-size:84px;filter:drop-shadow(0 10px 24px rgba(238,174,77,.35))}
+  .comp .say{margin-top:12px;font-size:16.5px;font-weight:600;color:var(--ink);line-height:1.45;max-width:270px}
+  .comp .sub2{margin-top:5px;font-size:12.5px;color:var(--inksoft)}
+  .comp .acts{display:flex;gap:10px;margin-top:16px}
+  .comp .act{padding:10px 16px;border-radius:999px;background:var(--surface);font-size:13.5px;font-weight:600;color:var(--primary);
+      border-bottom:2.5px solid #D6D0EC;border-top:1px solid #EDEAF8;border-left:1px solid #EDEAF8;border-right:1px solid #EDEAF8}
+
+  /* — 2C timeline — */
+  .tl{display:flex;flex-direction:column;gap:0;padding:2px 0}
+  .tlrow{display:flex;gap:12px;min-height:52px}
+  .tl .hh{width:44px;font-size:11px;color:var(--inkfaint);text-align:right;padding-top:2px}
+  .tl .lane{flex:1;border-left:2px solid #E5E1F2;padding:0 0 10px 12px;position:relative}
+  .tl .blob{background:var(--surface);border-radius:12px;padding:10px 13px;display:flex;align-items:center;gap:9px}
+  .tl .blob .ck{width:19px;height:19px;border-radius:50%;background:var(--accent-soft);color:var(--amber-text);font-size:10.5px;font-weight:800;display:flex;align-items:center;justify-content:center}
+  .tl .blob .tt{font-size:13.5px;font-weight:600;color:var(--ink);flex:1}
+  .tl .blob .mm{font-size:11.5px;color:var(--inksoft)}
+  .tl .open{border:1.5px dashed #D8D2EE;border-radius:12px;padding:11px 13px;font-size:12.5px;color:var(--inksoft)}
+  .tl .open b{color:var(--primary);font-weight:600}
+  .tl .nowdot{position:absolute;left:-5px;top:4px;width:8px;height:8px;border-radius:4px;background:var(--primary)}
+
+  /* — retro row treatments — */
+  .retro-now{background:var(--surface);border-radius:var(--r-card);padding:13px 16px;display:flex;align-items:center;gap:10px;font-size:14px;color:var(--ink)}
+  .retro-ghost{border:1.5px dashed #CFC8EA;border-radius:var(--r-card);padding:12px 16px;display:flex;align-items:center;gap:10px;
+      font-size:13.5px;color:var(--inksoft);background:rgba(255,255,255,.45)}
+  .retro-ghost .plus{width:24px;height:24px;border-radius:8px;background:var(--primary-wash);color:var(--primary);display:flex;align-items:center;justify-content:center;font-weight:700}
+  .retro-inline{font-size:12.5px;font-weight:600;color:var(--primary)}
+
+  /* ══════════════════════ HUB / RIPENING SHARED ══════════════════════ */
+  .hub-hdr{display:flex;flex-direction:column;align-items:center;gap:4px;padding-top:2px}
+  .hub-bee{font-size:56px}
+  .hub-tier{font-size:12px;color:var(--inksoft)}
+  .rp-card{background:var(--surface);border-radius:var(--r-sheet);padding:16px;display:flex;flex-direction:column;gap:12px}
+  .rp-top{display:flex;justify-content:space-between;align-items:center}
+  .rp-eb{display:flex;align-items:center;gap:6px;font-size:10.5px;letter-spacing:1px;font-weight:700;color:var(--amber-text)}
+  .rp-pill{background:var(--accent-soft);color:var(--amber-text);font-size:10.5px;font-weight:700;padding:4px 10px;border-radius:999px}
+  .rp-title{font-size:19px;font-weight:800;color:var(--ink);letter-spacing:-0.3px}
+  .rp-sub{font-size:12.5px;color:var(--inksoft);line-height:1.5;margin-top:3px}
+  .rp-foot{font-size:11.5px;color:var(--inkfaint);line-height:1.5}
+  .rp-eta{background:var(--honey-wash);border-radius:12px;padding:9px 12px;font-size:12.5px;color:var(--amber-text)}
+  .rp-eta b{font-weight:700}
+
+  /* — 4A honeycomb — */
+  .hexrow{display:flex;gap:14px;justify-content:center;padding:6px 0 2px}
+  .hexcell{display:flex;flex-direction:column;align-items:center;gap:6px;width:88px;text-align:center}
+  .hex{width:52px;height:58px;clip-path:polygon(50% 0,100% 25%,100% 75%,50% 100%,0 75%,0 25%);
+      background:var(--sunken);position:relative;overflow:hidden;display:flex;align-items:center;justify-content:center}
+  .hex .fill{position:absolute;left:0;right:0;bottom:0;background:linear-gradient(180deg,#F5C03F,#EEAE4D)}
+  .hex .mk{position:relative;font-size:15px;font-weight:800;color:#fff}
+  .hex.done{background:var(--accent-soft)}
+  .hex .mk.dim{color:var(--amber-text);font-size:11px;font-weight:700;text-shadow:0 0 4px rgba(255,255,255,.8)}
+  .hexcell .fl{font-size:11px;color:var(--inksoft);line-height:1.3}
+  .hexcell.rdy .fl{color:var(--ink);font-weight:600}
+
+  /* — 4B checklist — */
+  .ck-list{display:flex;flex-direction:column;gap:10px}
+  .ck-row{display:flex;align-items:center;gap:10px}
+  .ck-pip{width:20px;height:20px;border-radius:50%;flex:none;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:800}
+  .ck-pip.done{background:var(--accent);color:#fff}
+  .ck-pip.part{background:var(--surface);border:2px solid var(--accent);color:var(--amber-text)}
+  .ck-pip.wait{background:var(--sunken);border:1.5px solid var(--primary-soft)}
+  .ck-lab{font-size:13.5px;color:var(--ink);flex:1;font-weight:600}
+  .ck-lab.dim{color:var(--inkfaint);font-weight:500}
+  .ck-st{font-size:11.5px;color:var(--amber-text);font-weight:700}
+  .ck-st.dim{color:var(--inkfaint);font-weight:500}
+  .ck-mini{height:4px;border-radius:2px;background:var(--honey-wash);overflow:hidden;margin-top:4px}
+  .ck-mini i{display:block;height:100%;background:linear-gradient(90deg,#F5C03F,#EEAE4D);border-radius:2px}
+
+  /* — 4C frosted peek — */
+  .peek{position:relative;border-radius:14px;overflow:hidden;background:var(--primary-wash);padding:20px 16px 16px}
+  .peek .band{height:10px;border-radius:5px;background:var(--sunken);position:relative}
+  .peek .seg{position:absolute;left:30%;width:40%;top:0;bottom:0;border-radius:5px;background:var(--primary-soft)}
+  .peek .pdot{position:absolute;left:49%;top:-2px;width:14px;height:14px;border-radius:7px;background:var(--primary);border:2px solid #fff}
+  .peek .ticks{display:flex;justify-content:space-between;padding:0 26% 6px;font-size:11px;color:var(--primary);font-weight:600}
+  .peek .frost{position:absolute;inset:0;backdrop-filter:blur(7px);background:rgba(244,242,252,.35);
+      display:flex;align-items:center;justify-content:center}
+  .peek .frostlab{background:rgba(255,255,255,.85);border-radius:999px;padding:6px 14px;font-size:12px;font-weight:600;color:var(--inksoft)}
+</style>
+</head>
+<body>
+
+<h1>Component brainstorm — 2026-07-23</h1>
+<p class="sub">Four components, three directions each, rendered with the current light tokens (theme-direction pick from the pop brainstorm is independent — these compose with A/B/C).
+Research inputs: Toggl/ATracker/Structured/Tiimo for manual logging; Gentler Streak/Finch for the no-guilt sparse day; Whoop/Strava "needs more data" states + Duolingo readiness patterns for ripening.</p>
+
+<!-- ═══════════════════════ SECTION 1 · REWARD CONTEXT CHIPS ═══════════════════════ -->
+<h2>1 · Reward context chips — "these are tappable"</h2>
+<p class="sub">Problem: the flat primary-wash pills read as status labels, not options; the glyph micro-animations vanish against the lavender wash.
+All three directions put the glyph on a lighter dish so its stroke animation reads, and add an explicit-but-quiet "optional" hint so nobody feels obligated.</p>
+
+<div class="row">
+
+  <!-- 1A -->
+  <div class="col">
+    <p class="dirlabel">1A · Coin chips (recommended)</p>
+    <p class="dirsub">Borrow the app's own tactile grammar: every real button in Whenbee has a coin edge. A 3px bottom edge + white face instantly says "key you can press" — without stealing CTA weight (no fill, no indigo).</p>
+    <div class="phone"><div class="notch"></div><div class="screen">
+      <div class="rw-bee"><div class="rw-beebox"><div class="rw-rays"></div><div class="rw-beeimg">🐝</div><div class="rw-nectar">+1 nectar</div></div></div>
+      <div class="rw-h1">That's the honest number.</div>
+      <div class="rw-eyebrow">IT REALLY TOOK</div>
+      <div class="rw-min"><b>23</b><span>min</span></div>
+      <div class="rw-badge">18 min over your guess</div>
+      <div class="rw-honey">
+        <div class="rw-hrow"><div class="rw-hlabel">HONEY <small>· 2.3×</small></div><div class="rw-hpct">27 <small>%</small></div></div>
+        <div class="rw-hbar"><div class="rw-hfill"></div></div>
+      </div>
+      <div class="rw-ctx c-coin">
+        <div class="rw-ctxhdr">Where did the time go? <span class="hint">· tap one, or skip</span></div>
+        <div class="chips">
+          <div class="chip"><span class="g"><svg viewBox="0 0 18 18"><path d="M9 2a5 5 0 0 1 5 5v3l1.5 2.5H2.5L4 10V7a5 5 0 0 1 5-5z" fill="none" stroke="#6B5BE6" stroke-width="1.5" stroke-linejoin="round"/><path d="M7.5 15a1.5 1.5 0 0 0 3 0" fill="none" stroke="#6B5BE6" stroke-width="1.5"/></svg></span>Paused</div>
+          <div class="chip sel"><span class="g"><svg viewBox="0 0 18 18"><rect x="6" y="6" width="6" height="6" rx="1.5" fill="none" stroke="#6B5BE6" stroke-width="1.5"/><path d="M3 6V3h3M12 3h3v3M15 12v3h-3M6 15H3v-3" fill="none" stroke="#EEAE4D" stroke-width="1.5" stroke-linecap="round"/></svg></span>Grew</div>
+          <div class="chip"><span class="g"><svg viewBox="0 0 18 18"><rect x="3" y="2.5" width="7" height="13" rx="1.5" fill="none" stroke="#6B5BE6" stroke-width="1.5"/><path d="M10 9h6m0 0-2.4-2.4M16 9l-2.4 2.4" fill="none" stroke="#EEAE4D" stroke-width="1.5" stroke-linecap="round"/></svg></span>Pulled</div>
+        </div>
+        <div class="rw-div"></div>
+        <div class="rw-ctxhdr">Energy this session? <span class="hint">· optional</span></div>
+        <div class="chips">
+          <div class="chip pressed"><span class="g"><svg viewBox="0 0 18 18"><rect x="2" y="5.5" width="12" height="7" rx="2" fill="none" stroke="#6B5BE6" stroke-width="1.5"/><rect x="4" y="7.5" width="3" height="3" rx="1" fill="#EEAE4D"/><path d="M15.5 8v2" stroke="#6B5BE6" stroke-width="1.5" stroke-linecap="round"/></svg></span>Low</div>
+          <div class="chip"><span class="g"><svg viewBox="0 0 18 18"><rect x="2" y="5.5" width="12" height="7" rx="2" fill="none" stroke="#6B5BE6" stroke-width="1.5"/><rect x="4" y="7.5" width="3" height="3" rx="1" fill="#EEAE4D"/><rect x="8" y="7.5" width="3" height="3" rx="1" fill="#EEAE4D"/><path d="M15.5 8v2" stroke="#6B5BE6" stroke-width="1.5" stroke-linecap="round"/></svg></span>OK</div>
+          <div class="chip"><span class="g"><svg viewBox="0 0 18 18"><rect x="2" y="5.5" width="12" height="7" rx="2" fill="none" stroke="#6B5BE6" stroke-width="1.5"/><rect x="3.6" y="7.5" width="2.6" height="3" rx="1" fill="#EEAE4D"/><rect x="6.9" y="7.5" width="2.6" height="3" rx="1" fill="#EEAE4D"/><rect x="10.2" y="7.5" width="2.6" height="3" rx="1" fill="#EEAE4D"/><path d="M15.5 8v2" stroke="#6B5BE6" stroke-width="1.5" stroke-linecap="round"/></svg></span>High</div>
+        </div>
+      </div>
+      <div class="rw-foot">One honest log a day. No streak to keep.</div>
+      <div class="rw-cta">See your bee</div>
+    </div></div>
+    <div class="notes"><b>Why it works:</b>
+      <ul>
+        <li>Same physical grammar as AppButton's coin edge → "pressable" is learned once, recognized here for free.</li>
+        <li>White face = glyph stroke animations finally read on light theme (indigo + amber on white, not wash-on-wash).</li>
+        <li>"Low" chip shows the <b>pressed</b> state: edge compresses (translateY 2px, edge 3→1px) — the key physically goes down. Cheap to build: border tokens only.</li>
+        <li>Selected = wash fill + indigo edge, label goes indigo. Still quieter than any CTA.</li>
+        <li>Header hint "tap one, or skip" kills the "do I have to?" anxiety without a tutorial.</li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- 1B -->
+  <div class="col">
+    <p class="dirlabel">1B · Dish chips (floating)</p>
+    <p class="dirsub">Elevation as affordance: chips float on a soft indigo-tinted shadow (the only floats in the card), and each glyph sits in a sunken dish — animation gets a stage of its own.</p>
+    <div class="phone"><div class="notch"></div><div class="screen">
+      <div class="rw-bee"><div class="rw-beebox"><div class="rw-rays"></div><div class="rw-beeimg">🐝</div><div class="rw-nectar">+1 nectar</div></div></div>
+      <div class="rw-h1">That's the honest number.</div>
+      <div class="rw-eyebrow">IT REALLY TOOK</div>
+      <div class="rw-min"><b>23</b><span>min</span></div>
+      <div class="rw-badge">18 min over your guess</div>
+      <div class="rw-honey">
+        <div class="rw-hrow"><div class="rw-hlabel">HONEY <small>· 2.3×</small></div><div class="rw-hpct">27 <small>%</small></div></div>
+        <div class="rw-hbar"><div class="rw-hfill"></div></div>
+      </div>
+      <div class="rw-ctx c-dish">
+        <div class="rw-ctxhdr on">Good to know.</div>
+        <div class="chips">
+          <div class="chip"><span class="dish"><span class="g"><svg viewBox="0 0 18 18"><path d="M9 2a5 5 0 0 1 5 5v3l1.5 2.5H2.5L4 10V7a5 5 0 0 1 5-5z" fill="none" stroke="#6B5BE6" stroke-width="1.5" stroke-linejoin="round"/></svg></span></span>Paused</div>
+          <div class="chip sel"><span class="dish"><span class="g"><svg viewBox="0 0 18 18"><rect x="6" y="6" width="6" height="6" rx="1.5" fill="none" stroke="#6B5BE6" stroke-width="1.5"/><path d="M3 6V3h3M12 3h3v3M15 12v3h-3M6 15H3v-3" fill="none" stroke="#EEAE4D" stroke-width="1.5" stroke-linecap="round"/></svg></span></span>Grew</div>
+          <div class="chip"><span class="dish"><span class="g"><svg viewBox="0 0 18 18"><rect x="3" y="2.5" width="7" height="13" rx="1.5" fill="none" stroke="#6B5BE6" stroke-width="1.5"/><path d="M10 9h6m0 0-2.4-2.4M16 9l-2.4 2.4" fill="none" stroke="#EEAE4D" stroke-width="1.5" stroke-linecap="round"/></svg></span></span>Pulled</div>
+        </div>
+        <div class="rw-div"></div>
+        <div class="rw-ctxhdr">Energy this session? <span class="hint">· optional</span></div>
+        <div class="chips">
+          <div class="chip"><span class="dish"><span class="g"><svg viewBox="0 0 18 18"><rect x="2" y="5.5" width="12" height="7" rx="2" fill="none" stroke="#6B5BE6" stroke-width="1.5"/><rect x="4" y="7.5" width="3" height="3" rx="1" fill="#EEAE4D"/></svg></span></span>Low</div>
+          <div class="chip sel"><span class="dish"><span class="g"><svg viewBox="0 0 18 18"><rect x="2" y="5.5" width="12" height="7" rx="2" fill="none" stroke="#6B5BE6" stroke-width="1.5"/><rect x="4" y="7.5" width="3" height="3" rx="1" fill="#EEAE4D"/><rect x="8" y="7.5" width="3" height="3" rx="1" fill="#EEAE4D"/></svg></span></span>OK</div>
+          <div class="chip"><span class="dish"><span class="g"><svg viewBox="0 0 18 18"><rect x="2" y="5.5" width="12" height="7" rx="2" fill="none" stroke="#6B5BE6" stroke-width="1.5"/><rect x="3.6" y="7.5" width="2.6" height="3" rx="1" fill="#EEAE4D"/><rect x="6.9" y="7.5" width="2.6" height="3" rx="1" fill="#EEAE4D"/><rect x="10.2" y="7.5" width="2.6" height="3" rx="1" fill="#EEAE4D"/></svg></span></span>High</div>
+        </div>
+      </div>
+      <div class="rw-foot">One honest log a day. No streak to keep.</div>
+      <div class="rw-cta">See your bee</div>
+    </div></div>
+    <div class="notes"><b>Why it works / risks:</b>
+      <ul>
+        <li>Float = tappable is the Material-era instinct; the tinted shadow keeps it soft, not app-store-button loud.</li>
+        <li>The dish (26px sunken circle) gives every glyph a constant stage — animation contrast is guaranteed on any theme.</li>
+        <li>Selected = wash + inset indigo ring, dish flips to white. Shown post-tap: header already reads "Good to know."</li>
+        <li><b>Risk:</b> shadows on 6 small elements is a lot of float for one card — needs restraint if the theme direction (A/B/C) also adds a focal shadow.</li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- 1C -->
+  <div class="col">
+    <p class="dirlabel">1C · Answer chips (quiz grammar)</p>
+    <p class="dirsub">Style them like quiz answers — outline at rest, filled indigo when picked. Everyone has answered a quiz; nobody mistakes answer options for labels.</p>
+    <div class="phone"><div class="notch"></div><div class="screen">
+      <div class="rw-bee"><div class="rw-beebox"><div class="rw-rays"></div><div class="rw-beeimg">🐝</div><div class="rw-nectar">+1 nectar</div></div></div>
+      <div class="rw-h1">That's the honest number.</div>
+      <div class="rw-eyebrow">IT REALLY TOOK</div>
+      <div class="rw-min"><b>23</b><span>min</span></div>
+      <div class="rw-badge">18 min over your guess</div>
+      <div class="rw-honey">
+        <div class="rw-hrow"><div class="rw-hlabel">HONEY <small>· 2.3×</small></div><div class="rw-hpct">27 <small>%</small></div></div>
+        <div class="rw-hbar"><div class="rw-hfill"></div></div>
+      </div>
+      <div class="rw-ctx c-ans">
+        <div class="rw-ctxhdr">Where did the time go? <span class="hint">· tap one, or skip</span></div>
+        <div class="chips">
+          <div class="chip"><span class="g"><svg viewBox="0 0 18 18"><path d="M9 2a5 5 0 0 1 5 5v3l1.5 2.5H2.5L4 10V7a5 5 0 0 1 5-5z" fill="none" stroke="#6B5BE6" stroke-width="1.5" stroke-linejoin="round"/></svg></span>Paused</div>
+          <div class="chip sel"><span class="g"><svg viewBox="0 0 18 18"><rect x="6" y="6" width="6" height="6" rx="1.5" fill="none" stroke="#fff" stroke-width="1.5"/><path d="M3 6V3h3M12 3h3v3M15 12v3h-3M6 15H3v-3" fill="none" stroke="#fff" stroke-width="1.5" stroke-linecap="round"/></svg></span>Grew</div>
+          <div class="chip"><span class="g"><svg viewBox="0 0 18 18"><rect x="3" y="2.5" width="7" height="13" rx="1.5" fill="none" stroke="#6B5BE6" stroke-width="1.5"/><path d="M10 9h6m0 0-2.4-2.4M16 9l-2.4 2.4" fill="none" stroke="#EEAE4D" stroke-width="1.5" stroke-linecap="round"/></svg></span>Pulled</div>
+        </div>
+        <div class="rw-div"></div>
+        <div class="rw-ctxhdr">Energy this session? <span class="hint">· optional</span></div>
+        <div class="chips">
+          <div class="chip"><span class="g"><svg viewBox="0 0 18 18"><rect x="2" y="5.5" width="12" height="7" rx="2" fill="none" stroke="#6B5BE6" stroke-width="1.5"/><rect x="4" y="7.5" width="3" height="3" rx="1" fill="#EEAE4D"/></svg></span>Low</div>
+          <div class="chip"><span class="g"><svg viewBox="0 0 18 18"><rect x="2" y="5.5" width="12" height="7" rx="2" fill="none" stroke="#6B5BE6" stroke-width="1.5"/><rect x="4" y="7.5" width="3" height="3" rx="1" fill="#EEAE4D"/><rect x="8" y="7.5" width="3" height="3" rx="1" fill="#EEAE4D"/></svg></span>OK</div>
+          <div class="chip"><span class="g"><svg viewBox="0 0 18 18"><rect x="2" y="5.5" width="12" height="7" rx="2" fill="none" stroke="#6B5BE6" stroke-width="1.5"/><rect x="3.6" y="7.5" width="2.6" height="3" rx="1" fill="#EEAE4D"/><rect x="6.9" y="7.5" width="2.6" height="3" rx="1" fill="#EEAE4D"/><rect x="10.2" y="7.5" width="2.6" height="3" rx="1" fill="#EEAE4D"/></svg></span>High</div>
+        </div>
+      </div>
+      <div class="rw-foot">One honest log a day. No streak to keep.</div>
+      <div class="rw-cta">See your bee</div>
+    </div></div>
+    <div class="notes"><b>Why it works / risks:</b>
+      <ul>
+        <li>Strongest "pick one" signal of the three — outline options + one filled answer is universal quiz language (and matches the onboarding quiz).</li>
+        <li><b>Risks:</b> filled-indigo selection competes with the indigo CTA below (one-primary-per-screen rule bends); outline chips fight the "borderless" direction; glyphs at rest sit on transparent lavender — the animation-visibility problem only half-solved.</li>
+      </ul>
+    </div>
+  </div>
+</div>
+
+<div class="verdict"><b>Recommendation — 1A Coin chips.</b> It solves both stated problems (affordance + glyph visibility on white) using a grammar the app already taught the user, costs only border/background tokens on the existing <code>Chip</code>, keeps selection quieter than the CTA, and composes cleanly with whichever light-theme direction wins. 1B is the fallback if the coin edge reads too "buttony" on device; 1C conflicts with two standing design rules.</div>
+
+<!-- ═══════════════════════ SECTION 2 · SPARSE TODAY ═══════════════════════ -->
+<h2>2 · Today with one done task — from void to "day so far"</h2>
+<p class="sub">The screen currently shows a header, a week strip, a collapsed "DONE TODAY · 1", one grey utility row, and 60% empty lavender.
+Gentler Streak and Finch both solve the sparse day the same way: <b>the day's story so far replaces the missing plan</b> — a recap, a companion beat, or an open canvas. Never guilt, never "you have nothing planned".</p>
+
+<div class="row">
+
+  <!-- 2A -->
+  <div class="col">
+    <p class="dirlabel">2A · "Your day so far" recap (recommended)</p>
+    <p class="dirsub">Gentler-Streak pattern: when the plan is empty, the done work becomes the hero. One floating recap card tells today's story with real numbers, and honey progress gives it a pulse.</p>
+    <div class="phone"><div class="notch"></div><div class="screen">
+      <div class="hdr">
+        <div><div class="greet">Good morning</div><div class="title">Today</div><div class="date">Thu · Jul 23</div></div>
+        <div class="hdr-right"><div class="gear">⚙</div>
+          <div><div class="avatar"><div class="ring"><div class="ring-in">🐝</div></div></div><div class="tier">Raw</div></div>
+        </div>
+      </div>
+      <div class="card cal">
+        <div class="day"><div class="wd">Mon</div><div class="num">20</div></div>
+        <div class="day"><div class="wd">Tue</div><div class="num">21</div></div>
+        <div class="day"><div class="wd">Wed</div><div class="num">22</div></div>
+        <div class="day sel"><div class="wd">Thu</div><div class="num">23</div><div class="dot"></div></div>
+        <div class="day"><div class="wd">Fri</div><div class="num">24</div></div>
+        <div class="day"><div class="wd">Sat</div><div class="num">25</div></div>
+        <div class="day"><div class="wd">Sun</div><div class="num">26</div></div>
+      </div>
+      <div class="recap">
+        <div class="eyebrow">YOUR DAY SO FAR</div>
+        <div class="line">One honest log in. <b>23 real minutes</b> on the books.</div>
+        <div class="statrow">
+          <div class="stat"><span class="k">LOGGED</span><span class="v">1 <small>task</small></span></div>
+          <div class="stat"><span class="k">REAL TIME</span><span class="v">23 <small>min</small></span></div>
+          <div class="stat"><span class="k">HONEY</span><span class="v" style="color:var(--amber-text)">27 <small>%</small></span></div>
+        </div>
+        <div class="next">🍯 <b>~2 more logs</b> and your Admin multiplier settles in.</div>
+      </div>
+      <div class="sect"><span>DONE TODAY · 1</span><span class="chev">⌄</span></div>
+      <div class="donerow"><div class="ck">✓</div><div class="tt">Test</div><div class="mm">guessed 5 · took 23</div></div>
+      <div class="retro-ghost"><div class="plus">+</div><div>Finished something else? <b style="color:var(--primary)">Log it too</b></div></div>
+      <div class="tabbar">
+        <div class="tab on"><span class="ic">⌂</span>Today</div>
+        <div class="tab"><span class="ic">▦</span>Routines</div>
+        <div class="fab">+</div>
+        <div class="tab"><span class="ic">🐝</span>Whenbee</div>
+        <div class="tab"><span class="ic">〰</span>Patterns</div>
+      </div>
+    </div></div>
+    <div class="notes"><b>Why it works:</b>
+      <ul>
+        <li>Sparse ≠ empty: the day already has a story (1 log, 23 real min, honey moved) — telling it back is pure payoff, zero guilt. This is Gentler Streak's exact home pattern: a status visual + <b>one plain sentence interpreting today</b>, with rest treated as a valid state, not an absence.</li>
+        <li>The amber "next" strip is the countable-milestone pattern the founder already approved for unlock ladders — it gives the screen a live edge without a streak.</li>
+        <li>Done row surfaces (not collapsed) — proof of work stays visible.</li>
+        <li>All numbers are real model values (n, actualMin, honey pct, logs-to-next-tier) — nothing fabricated.</li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- 2B -->
+  <div class="col">
+    <p class="dirlabel">2B · Companion beat (Finch)</p>
+    <p class="dirsub">Finch pattern: when the list runs out, the character takes the stage. The bee gets the empty space, says something true about today, and offers two quiet doors.</p>
+    <div class="phone"><div class="notch"></div><div class="screen">
+      <div class="hdr">
+        <div><div class="greet">Good morning</div><div class="title">Today</div><div class="date">Thu · Jul 23</div></div>
+        <div class="hdr-right"><div class="gear">⚙</div>
+          <div><div class="avatar"><div class="ring"><div class="ring-in">🐝</div></div></div><div class="tier">Raw</div></div>
+        </div>
+      </div>
+      <div class="card cal">
+        <div class="day"><div class="wd">Mon</div><div class="num">20</div></div>
+        <div class="day"><div class="wd">Tue</div><div class="num">21</div></div>
+        <div class="day"><div class="wd">Wed</div><div class="num">22</div></div>
+        <div class="day sel"><div class="wd">Thu</div><div class="num">23</div><div class="dot"></div></div>
+        <div class="day"><div class="wd">Fri</div><div class="num">24</div></div>
+        <div class="day"><div class="wd">Sat</div><div class="num">25</div></div>
+        <div class="day"><div class="wd">Sun</div><div class="num">26</div></div>
+      </div>
+      <div class="sect"><span>DONE TODAY · 1</span><span class="chev">⌄</span></div>
+      <div class="donerow"><div class="ck">✓</div><div class="tt">Test</div><div class="mm">guessed 5 · took 23</div></div>
+      <div class="comp">
+        <div class="bee">🐝</div>
+        <div class="say">One honest log already. The hive's happy — the rest of the day is yours.</div>
+        <div class="sub2">Add a task when you're ready. Or don't.</div>
+        <div class="acts">
+          <div class="act">Plan one thing</div>
+          <div class="act">Log something done</div>
+        </div>
+      </div>
+      <div class="tabbar">
+        <div class="tab on"><span class="ic">⌂</span>Today</div>
+        <div class="tab"><span class="ic">▦</span>Routines</div>
+        <div class="fab">+</div>
+        <div class="tab"><span class="ic">🐝</span>Whenbee</div>
+        <div class="tab"><span class="ic">〰</span>Patterns</div>
+      </div>
+    </div></div>
+    <div class="notes"><b>Why it works / risks:</b>
+      <ul>
+        <li>The bee IS the brand — giving it the dead space converts "empty" into "alive". Finch's whole retention engine is this beat.</li>
+        <li>Copy is stage-aware and true ("one honest log already") — it can rotate by time of day and stage; never nags.</li>
+        <li>"Log something done" quietly REPLACES the grey retro row — it becomes one of the two doors (see §3).</li>
+        <li><b>Risks:</b> two pill actions near the FAB adds affordance density; bee art must carry more poses eventually or the beat goes stale.</li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- 2C -->
+  <div class="col">
+    <p class="dirlabel">2C · Open canvas (day timeline)</p>
+    <p class="dirsub">Structured/Amie pattern: the day is a timeline even when it's sparse. The done task sits at its real time, "now" is marked, and the open evening is an invitation, not a void.</p>
+    <div class="phone"><div class="notch"></div><div class="screen">
+      <div class="hdr">
+        <div><div class="greet">Good morning</div><div class="title">Today</div><div class="date">Thu · Jul 23</div></div>
+        <div class="hdr-right"><div class="gear">⚙</div>
+          <div><div class="avatar"><div class="ring"><div class="ring-in">🐝</div></div></div><div class="tier">Raw</div></div>
+        </div>
+      </div>
+      <div class="card cal">
+        <div class="day"><div class="wd">Mon</div><div class="num">20</div></div>
+        <div class="day"><div class="wd">Tue</div><div class="num">21</div></div>
+        <div class="day"><div class="wd">Wed</div><div class="num">22</div></div>
+        <div class="day sel"><div class="wd">Thu</div><div class="num">23</div><div class="dot"></div></div>
+        <div class="day"><div class="wd">Fri</div><div class="num">24</div></div>
+        <div class="day"><div class="wd">Sat</div><div class="num">25</div></div>
+        <div class="day"><div class="wd">Sun</div><div class="num">26</div></div>
+      </div>
+      <div class="tl">
+        <div class="tlrow"><div class="hh">07:47</div><div class="lane">
+          <div class="blob"><div class="ck">✓</div><div class="tt">Test</div><div class="mm">guessed 5 · took 23</div></div>
+        </div></div>
+        <div class="tlrow"><div class="hh">now</div><div class="lane"><div class="nowdot"></div>
+          <div class="open">Morning's open. <b>+ Give something an honest guess</b></div>
+        </div></div>
+        <div class="tlrow"><div class="hh"></div><div class="lane" style="border-left-style:dashed;border-left-color:#EDEAF8">
+          <div class="open" style="border-style:solid;border-color:transparent;background:rgba(255,255,255,.35);color:var(--inkfaint)">You logged Deep work around 2pm yesterday.</div>
+        </div></div>
+      </div>
+      <div class="retro-now"><span style="font-size:16px">🕐</span><div style="flex:1">Finished something else? Log it too</div><span style="color:var(--inkfaint)">›</span></div>
+      <div class="tabbar">
+        <div class="tab on"><span class="ic">⌂</span>Today</div>
+        <div class="tab"><span class="ic">▦</span>Routines</div>
+        <div class="fab">+</div>
+        <div class="tab"><span class="ic">🐝</span>Whenbee</div>
+        <div class="tab"><span class="ic">〰</span>Patterns</div>
+      </div>
+    </div></div>
+    <div class="notes"><b>Why it works / risks:</b>
+      <ul>
+        <li>A timeline with one entry still looks like a DAY — the axis itself is content. The "now" dot makes the screen feel live twice an hour with zero new data.</li>
+        <li>The history hint ("Deep work around 2pm yesterday") is a real, gentle re-engagement hook — only from actual logs, no fabrication.</li>
+        <li><b>Risks:</b> biggest build of the three (new layout mode for the sparse case); duplicate-feeling with the plan timeline once tasks exist; hint needs careful no-guilt copy review.</li>
+      </ul>
+    </div>
+  </div>
+</div>
+
+<div class="verdict"><b>Recommendation — 2A now, 2B as the follow-up beat.</b> 2A reuses data the stores already expose, keeps one clear hierarchy (recap = hero), and directly monetizes the "one log" moment into visible calibration progress. 2B is the higher-ceiling emotional play — worth doing when the bee has 2-3 more poses; the two compose (recap card + smaller bee beat under it). 2C is the most ambitious re-think of Today and deserves its own session if it tempts you.</div>
+
+<!-- ═══════════════════════ SECTION 3 · RETRO LOG ROW ═══════════════════════ -->
+<h2>3 · "Finished something else? Log it too" — keep it, and here's why</h2>
+<p class="sub">Verdict first, styling second.</p>
+<div class="verdict">
+<b>Should manual after-the-fact logging exist? Yes — emphatically.</b>
+<ul style="margin:8px 0 8px 18px;line-height:1.6">
+<li><b>Category standard (verified 2026-07):</b> Toggl Track ships <b>"Manual Mode"</b> as a first-class peer of the timer — the "+" sits directly under the play button, framed as "for when you forget to turn on the timer". ATracker markets "log time after the fact" on its App Store listing; even auto-tracking Rize keeps a manual "+" on Home; Timery lets you tap any start time to edit. The only apps WITHOUT it are commitment timers (Forest, Opal, Session) whose mechanic is live presence — and Session users beg for retro-add in reviews. Whenbee is calibration-first = tracking-side of that split.</li>
+<li><b>It feeds calibration:</b> retro logs are not dead weight — they train the model at half weight (<code>RETRO_ALPHA_FACTOR = 0.5</code> in <code>engine/constants.ts</code>, memory is noisier). More honest data, appropriately discounted. Removing the affordance would slow every user's ripening.</li>
+<li><b>It rescues the miss case:</b> the target user (time optimist) will regularly forget to start the timer. Retro is the no-guilt recovery path — killing it punishes exactly the person the app is for.</li>
+</ul>
+<b>Placement:</b> keep it on Today, but demote it from "grey card that looks like a dead setting" to a styled ghost-slot (below). On the reward screen and in 2B it can also live as a secondary door.
+</div>
+
+<div class="row">
+  <div class="col">
+    <p class="dirlabel">3A · Ghost task slot (recommended)</p>
+    <p class="dirsub">Style it as an empty task row waiting to be filled — dashed outline, plus-coin, indigo verb. Reads "slot", not "setting".</p>
+    <div style="background:var(--bg);border-radius:20px;padding:18px">
+      <div class="retro-ghost"><div class="plus">+</div><div style="flex:1;color:var(--inksoft)">Finished something else? <b style="color:var(--primary);font-weight:600">Log it too</b></div></div>
+    </div>
+    <div class="notes">Dashed border = the app's existing "add" grammar (Chip's add variant is already dashed indigo). The verb is the only colored text → the tap target is obvious. Cheapest change of the three.</div>
+  </div>
+  <div class="col">
+    <p class="dirlabel">3B · Done-section footer action</p>
+    <p class="dirsub">Fold it into the DONE section as a text action — it's conceptually "add to done", so put it where done lives.</p>
+    <div style="background:var(--bg);border-radius:20px;padding:18px;display:flex;flex-direction:column;gap:10px">
+      <div class="sect"><span>DONE TODAY · 1</span><span class="retro-inline">+ Log another</span></div>
+      <div class="donerow"><div class="ck">✓</div><div class="tt">Test</div><div class="mm">guessed 5 · took 23</div></div>
+    </div>
+    <div class="notes">Tightest information architecture; frees a whole row of vertical space. Risk: far less discoverable when DONE is empty/collapsed — needs the ghost slot as the zero-done fallback anyway.</div>
+  </div>
+  <div class="col">
+    <p class="dirlabel">3C · Coin-edge utility row</p>
+    <p class="dirsub">Keep the row, give it the coin edge + a warm clock coin — same tactile grammar as 1A, clearly pressable, still quiet.</p>
+    <div style="background:var(--bg);border-radius:20px;padding:18px">
+      <div class="retro-now" style="border:1px solid #E7E3F4;border-bottom:3px solid #D6D0EC;border-radius:16px"><span style="width:26px;height:26px;border-radius:50%;background:var(--accent-soft);display:flex;align-items:center;justify-content:center;font-size:13px">🕐</span><div style="flex:1">Finished something else? Log it too</div><span style="color:var(--inkfaint)">›</span></div>
+    </div>
+    <div class="notes">Lowest-risk visual: same row, honest affordance. Pairs naturally if 1A wins (one pressable grammar app-wide).</div>
+  </div>
+</div>
+
+<!-- ═══════════════════════ SECTION 4 · PRO RIPENING ═══════════════════════ -->
+<h2>4 · Pro · Ripening — earn it, see it coming, never gated</h2>
+<p class="sub">Current card: one ghost band + honey bar + "~2 more logs". The founder's memory of checkmarks is real — the readiness checklist exists but only renders AFTER unlock.
+All three directions bring per-feature readiness forward into the ripening state (Whoop/Strava "calibrating…" pattern: show what's brewing and exactly how far away it is), and add one honest time-expectation line. Copy is humanized: short, specific, zero hype, zero guilt.</p>
+
+<div class="row">
+
+  <!-- 4A -->
+  <div class="col">
+    <p class="dirlabel">4A · Honeycomb readiness (recommended)</p>
+    <p class="dirsub">Each Pro feature is a hex cell filling with honey. Full cell = amber check. The brand's own material does the progress-telling — no generic bars.</p>
+    <div class="phone"><div class="notch"></div><div class="screen">
+      <div class="hub-hdr"><div class="hub-bee">🐝</div><div class="title" style="font-size:24px">Whenbee</div><div class="hub-tier">Ripening · 27% honey</div></div>
+      <div class="rp-card">
+        <div class="rp-top">
+          <div class="rp-eb">⬡ PRO · RIPENING</div>
+          <div class="rp-pill">Ripens at Ripening</div>
+        </div>
+        <div>
+          <div class="rp-title">Three reads are ripening.</div>
+          <div class="rp-sub">They unlock themselves as your logs add up — nothing to buy into yet, nothing to keep up with.</div>
+        </div>
+        <div class="hexrow">
+          <div class="hexcell rdy">
+            <div class="hex done"><div class="fill" style="height:100%"></div><div class="mk">✓</div></div>
+            <div class="fl">Honest<br>range</div>
+          </div>
+          <div class="hexcell">
+            <div class="hex"><div class="fill" style="height:55%"></div><div class="mk dim">~2</div></div>
+            <div class="fl">Steals your<br>time</div>
+          </div>
+          <div class="hexcell">
+            <div class="hex"><div class="fill" style="height:25%"></div><div class="mk dim">~5</div></div>
+            <div class="fl">When you're<br>sharpest</div>
+          </div>
+        </div>
+        <div class="rp-eta">🍯 <b>~2 logs</b> to the next one. Most people get there in a day or two.</div>
+        <div class="rp-foot">Each task you log quietly sharpens the range. Nothing to keep up with.</div>
+      </div>
+      <div class="card" style="opacity:.55"><div class="sect"><span>YOUR AREAS</span></div></div>
+      <div class="tabbar">
+        <div class="tab"><span class="ic">⌂</span>Today</div>
+        <div class="tab"><span class="ic">▦</span>Routines</div>
+        <div class="fab">+</div>
+        <div class="tab on"><span class="ic">🐝</span>Whenbee</div>
+        <div class="tab"><span class="ic">〰</span>Patterns</div>
+      </div>
+    </div></div>
+    <div class="notes"><b>Why it works:</b>
+      <ul>
+        <li>Honey filling hexes = the one progress metaphor only Whenbee can use. Feels earned, looks premium, zero nag.</li>
+        <li>Countable milestones on every cell (✓ / ~2 / ~5) — the founder's unlock-ladder rule, satisfied per feature.</li>
+        <li>The "day or two" line answers "how long is this going to take?" honestly — expectation kills abandonment.</li>
+        <li>Fill animates upward on each log (path/height + opacity only — no slide-in, no bounce; honey never goes down = monotonic invariant).</li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- 4B -->
+  <div class="col">
+    <p class="dirlabel">4B · Readiness checklist, early</p>
+    <p class="dirsub">Bring the existing FeatureReadinessList into the ripening state: per-feature pips (check / partial ring / hollow), wait labels, one mini honey bar. Least new UI, most information.</p>
+    <div class="phone"><div class="notch"></div><div class="screen">
+      <div class="hub-hdr"><div class="hub-bee">🐝</div><div class="title" style="font-size:24px">Whenbee</div><div class="hub-tier">Ripening · 27% honey</div></div>
+      <div class="rp-card">
+        <div class="rp-top">
+          <div class="rp-eb">⬡ PRO · RIPENING</div>
+          <div class="rp-pill">Ripens at Ripening</div>
+        </div>
+        <div>
+          <div class="rp-title">Pro is ripening with you.</div>
+          <div class="rp-sub">Each read switches on when your logs can back it up.</div>
+        </div>
+        <div class="ck-list">
+          <div class="ck-row"><div class="ck-pip done">✓</div><div class="ck-lab">Honest range</div><div class="ck-st">Ready</div></div>
+          <div class="ck-row"><div class="ck-pip part">2</div><div class="ck-lab">What steals your time</div><div class="ck-st dim">~2 logs</div></div>
+          <div class="ck-row"><div class="ck-pip wait"></div><div class="ck-lab dim">When you're sharpest</div><div class="ck-st dim">~5 logs</div></div>
+          <div class="ck-row"><div class="ck-pip wait"></div><div class="ck-lab dim">Day capacity check</div><div class="ck-st dim">~1 week</div></div>
+        </div>
+        <div class="ck-mini"><i style="width:27%"></i></div>
+        <div class="rp-eta">🍯 First one's already in. <b>~2 logs</b> gets you the next — that's a normal day, not a project.</div>
+        <div class="rp-foot">No streak, no rush. It ripens on its own as you log.</div>
+      </div>
+      <div class="card" style="opacity:.55"><div class="sect"><span>YOUR AREAS</span></div></div>
+      <div class="tabbar">
+        <div class="tab"><span class="ic">⌂</span>Today</div>
+        <div class="tab"><span class="ic">▦</span>Routines</div>
+        <div class="fab">+</div>
+        <div class="tab on"><span class="ic">🐝</span>Whenbee</div>
+        <div class="tab"><span class="ic">〰</span>Patterns</div>
+      </div>
+    </div></div>
+    <div class="notes"><b>Why it works:</b>
+      <ul>
+        <li>The checkmarks the founder remembered — now visible BEFORE unlock, where they do the persuasion work.</li>
+        <li>Three pip states (amber check / numbered amber ring / hollow) = a real ladder; the numbered ring says "next up" without urgency.</li>
+        <li>Mostly reuses <code>FeatureReadinessList</code> — smallest build of the three; the pips just need the "partial" state.</li>
+        <li>"a normal day, not a project" — the honest-timeframe line, humanized.</li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- 4C -->
+  <div class="col">
+    <p class="dirlabel">4C · Frosted peek</p>
+    <p class="dirsub">Curiosity play: the real range UI sits behind frost. Every log thins the blur; at ripeness it clears. "2 more logs and this blur comes off."</p>
+    <div class="phone"><div class="notch"></div><div class="screen">
+      <div class="hub-hdr"><div class="hub-bee">🐝</div><div class="title" style="font-size:24px">Whenbee</div><div class="hub-tier">Ripening · 27% honey</div></div>
+      <div class="rp-card">
+        <div class="rp-top">
+          <div class="rp-eb">⬡ PRO · RIPENING</div>
+          <div class="rp-pill">Ripens at Ripening</div>
+        </div>
+        <div>
+          <div class="rp-title">Your honest range</div>
+          <div class="rp-sub">It's taking shape under there.</div>
+        </div>
+        <div class="peek">
+          <div class="ticks"><span>·</span><span>·</span></div>
+          <div class="band"><div class="seg"></div><div class="pdot"></div></div>
+          <div class="frost"><div class="frostlab">2 more logs and this clears</div></div>
+        </div>
+        <div class="rp-eta">🍯 You're closer than it looks — <b>most people clear it in a day or two</b> of normal logging.</div>
+        <div class="rp-foot">Each task you log quietly sharpens the range. Nothing to keep up with.</div>
+      </div>
+      <div class="card" style="opacity:.55"><div class="sect"><span>YOUR AREAS</span></div></div>
+      <div class="tabbar">
+        <div class="tab"><span class="ic">⌂</span>Today</div>
+        <div class="tab"><span class="ic">▦</span>Routines</div>
+        <div class="fab">+</div>
+        <div class="tab on"><span class="ic">🐝</span>Whenbee</div>
+        <div class="tab"><span class="ic">〰</span>Patterns</div>
+      </div>
+    </div></div>
+    <div class="notes"><b>Why it works / risks:</b>
+      <ul>
+        <li>Blur-that-thins-per-log is the sexiest tease of the three — progress you can literally see through.</li>
+        <li>⚠ <b>Pro-gate-leak rule:</b> what's under the frost must be the GHOST placeholder (fixed 30–70% geometry, no tick values) — never the user's real band, or the blur leaks position. Shown here with placeholder dots only.</li>
+        <li><b>Risks:</b> research flag — blurred previews read as <b>paywall bait</b> when paired with an upsell CTA; they only read as "earnable" when paired with a data count (Whoop "3 more sleeps"). This card has no CTA, so it's the acceptable variant — but it must NEVER gain a buy button while blurred. Also: native blur is uneven on Android (needs a wash-overlay fallback), and it sells one feature more than the bundle.</li>
+      </ul>
+    </div>
+  </div>
+</div>
+
+<div class="verdict"><b>Recommendation — 4A honeycomb, with 4B's pip states as the fallback if hex cells crowd the card on device.</b> Both follow the researched premium formula (Whoop calibration ladder / Oura "learning your normal"): <b>name the phase, show a fixed countable threshold, give the data-quality reason, keep a coarse version visible</b> — that combination reads as "the product is working for you", while indefinite thresholds and blur+CTA read as nagging. A makes ripening feel like the brand (honey as the progress material); B is 80% of the value for 40% of the build (reuses <code>FeatureReadinessList</code>); C is a garnish that could later live INSIDE A/B as the range preview — never with a CTA attached. Copy passed through humanizer: short lines, real numbers, "a day or two" honesty, no hype, no guilt.</div>
+
+</body>
+</html>

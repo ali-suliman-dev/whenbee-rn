@@ -18,6 +18,8 @@ import type { NativePresenceModule, WidgetSnapshot } from '../liveActivity';
 function fakeNative(): NativePresenceModule {
   return {
     isStub: false,
+    writeWidgetData: jest.fn(),
+    clearWidgetData: jest.fn(),
     writeSnapshot: jest.fn(),
     clearSnapshot: jest.fn(),
     startLiveActivity: jest.fn(),
@@ -31,6 +33,7 @@ const VALID_SNAPSHOT: WidgetSnapshot = {
   nextTaskLabel: 'x',
   category: 'c',
   honestFinishClock: '7:10',
+  guessClock: '6:30',
   startDeepLink: 'whenbee://timer',
   updatedAtEpoch: 1000,
   honestFinishEpoch: 2000,

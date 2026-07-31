@@ -4,7 +4,30 @@
  * TDD: written BEFORE the fix to prove the Critical off-by-one bug exists, then
  * passing once `clampWheelIndex` is correctly wired in DurationWheel.
  */
-import { clampWheelIndex } from '../wheelShared';
+import { clampWheelIndex, clampToRange } from '../wheelShared';
+
+describe('clampToRange', () => {
+  it('returns lo when n is below lo', () => {
+    expect(clampToRange(2, 5, 10)).toBe(5);
+    expect(clampToRange(-100, 0, 3)).toBe(0);
+  });
+
+  it('returns hi when n is above hi', () => {
+    expect(clampToRange(20, 5, 10)).toBe(10);
+    expect(clampToRange(100, 0, 3)).toBe(3);
+  });
+
+  it('returns n when it is inside [lo, hi] (inclusive)', () => {
+    expect(clampToRange(7, 5, 10)).toBe(7);
+    expect(clampToRange(5, 5, 10)).toBe(5);
+    expect(clampToRange(10, 5, 10)).toBe(10);
+  });
+
+  it('guards an inverted range (lo > hi) by returning lo', () => {
+    expect(clampToRange(7, 10, 5)).toBe(10);
+    expect(clampToRange(0, 10, 5)).toBe(10);
+  });
+});
 
 describe('clampWheelIndex', () => {
   it('returns 0 for negative input', () => {

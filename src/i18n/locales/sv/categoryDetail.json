@@ -111,7 +111,8 @@
     "eyebrowRange": "DITT ÄRLIGA INTERVALL",
     "narrowed": "<strong>Snävades in från {{low}}–{{high}}</strong> när du loggade.",
     "metaGuess": " din gissning",
-    "metaSeal": "ärligt nu"
+    "metaSeal": "ärligt nu",
+    "landNear": "De flesta uppgifter landar nära <point>~{{minutes}} min</point>."
   },
   "maturityMeter": {
     "settled": "Några körningar till så stabiliseras det till ett tal.",

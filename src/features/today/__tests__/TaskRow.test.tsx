@@ -1,5 +1,7 @@
 import { render, screen, fireEvent } from '@testing-library/react-native';
+import { StyleSheet } from 'react-native';
 import { TaskRow } from '@/src/features/today/TaskRow';
+import { useTheme } from '@/src/theme/useTheme';
 
 jest.mock('react-native-gesture-handler/ReanimatedSwipeable', () => {
   // eslint-disable-next-line @typescript-eslint/no-require-imports
@@ -133,5 +135,118 @@ describe('TaskRow', () => {
       />,
     );
     expect(screen.queryByText(/from/i)).toBeNull();
+  });
+
+  test('renders a custom coach label when provided', () => {
+    render(
+      <TaskRow title="Reply" categoryLabel="Email" guessMin={30} honestMin={35}
+        onPress={() => {}} showCoachMark coachLabel="Press & hold for options" />,
+    );
+    expect(screen.getByText('Press & hold for options')).toBeTruthy();
+  });
+
+  test('defaults the coach label to the swipe hint', () => {
+    render(
+      <TaskRow title="Reply" categoryLabel="Email" guessMin={30} honestMin={35}
+        onPress={() => {}} showCoachMark />,
+    );
+    expect(screen.getByText('← swipe to remove')).toBeTruthy();
+  });
+
+  test('a queued row shows its honest end time beside the category', () => {
+    render(
+      <TaskRow
+        title="Finish invoice batch"
+        categoryLabel="Admin"
+        guessMin={30}
+        honestMin={45}
+        endsAtLabel="ends ~7:55pm"
+      />,
+    );
+    expect(screen.getByText(/ends ~7:55pm/)).toBeTruthy();
+  });
+
+  test('the tail row marks its end time as the one past end of day', () => {
+    render(
+      <TaskRow
+        title="Draft the deck"
+        categoryLabel="Deep work"
+        guessMin={60}
+        honestMin={90}
+        endsAtLabel="ends ~9:50pm"
+        isTail
+      />,
+    );
+    expect(screen.getByTestId('taskrow-ends-tail')).toBeTruthy();
+  });
+
+  test('a done row never shows an end-time clause, even when endsAtLabel is set', () => {
+    render(
+      <TaskRow
+        title="Done task"
+        categoryLabel="Admin & email"
+        guessMin={10}
+        honestMin={12}
+        actualMin={11}
+        done
+        endsAtLabel="ends ~8:10pm"
+      />,
+    );
+    expect(screen.queryByText(/ends/i)).toBeNull();
+    expect(screen.queryByTestId('taskrow-ends')).toBeNull();
+    expect(screen.queryByTestId('taskrow-ends-tail')).toBeNull();
+    // Done rows never build an accessibilityLabel that references the end-time
+    // clause — the "interactive" a11y label template that includes endsAtLabel
+    // is only used on the queued (non-done) branch.
+    expect(screen.queryByLabelText(/ends/i)).toBeNull();
+  });
+
+  test('coexistence: category, carriedFrom, and endsAtLabel all render on one row', () => {
+    render(
+      <TaskRow
+        title="Ship the report"
+        categoryLabel="Deep work"
+        guessMin={40}
+        honestMin={60}
+        carriedFrom="2026-06-22"
+        endsAtLabel="ends ~8:10pm"
+      />,
+    );
+    expect(screen.getByText(/Deep work/)).toBeTruthy();
+    expect(screen.getByText(/from Mon/)).toBeTruthy();
+    expect(screen.getByText(/ends ~8:10pm/)).toBeTruthy();
+  });
+
+  test('the tail clause resolves to the theme amber, and a non-tail clause does not', () => {
+    let theme: ReturnType<typeof useTheme> | undefined;
+    function ThemeProbe() {
+      theme = useTheme();
+      return null;
+    }
+    render(
+      <>
+        <ThemeProbe />
+        <TaskRow
+          title="Draft the deck"
+          categoryLabel="Deep work"
+          guessMin={60}
+          honestMin={90}
+          endsAtLabel="ends ~9:50pm"
+          isTail
+        />
+        <TaskRow
+          title="Reply to email"
+          categoryLabel="Admin"
+          guessMin={10}
+          honestMin={15}
+          endsAtLabel="ends ~2:00pm"
+        />
+      </>,
+    );
+    expect(theme).toBeDefined();
+    const tailStyle = StyleSheet.flatten(screen.getByTestId('taskrow-ends-tail').props.style);
+    const plainStyle = StyleSheet.flatten(screen.getByTestId('taskrow-ends').props.style);
+    expect(tailStyle.color).toBe(theme?.colors.amberText);
+    expect(plainStyle.color).not.toBe(theme?.colors.amberText);
   });
 });

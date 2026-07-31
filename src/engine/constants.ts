@@ -1,8 +1,12 @@
 // Calibration engine constants. PURE TS — no RN/Expo/clock.
-import type { AdaptSpeed, GuardrailMultiple, Tier } from '../domain/types';
+import type { AdaptSpeed, GuardrailMultiple, Tier, ForgotStepIn } from '../domain/types';
 
 export const RATIO_FLOOR = 1 / 6; // clamp so one disaster can't poison the model
 export const RATIO_CEIL = 6;
+
+/** Single switch for the Live-Timer ring's amber honest-range straddle arc.
+ *  Flip to false to remove the whole arc (geometry + render) in one place. */
+export const TIMER_RANGE_ARC_ENABLED = true;
 
 export const BLEND_PSEUDO_COUNT = 4; // k pseudo-observations of the prior
 export const GLOBAL_PRIOR = 1.8; // fallback multiplier for new custom categories
@@ -106,12 +110,23 @@ export const ACCURACY_TREND_MIN_LOGS = 12; // below this, UI falls back to 2-poi
 export const ACCURACY_TREND_BUCKETS = 6; // max ordered windows in the series
 
 // ── Archetype quiz seed (provisional time-personality before data) ───────────
-/** Seed multiplier per Q1 pace answer (self-perceived bias, NOT a duration). */
-export const ARCHETYPE_SEED_PACE = { about: 1.15, bit: 1.5, lot: 2.1, lose: 3.0 } as const;
+/** Seed multiplier per Q1 pace answer (self-perceived bias, NOT a duration).
+ *  Grounded in planning-fallacy research: chronic under-estimators run ~1.3–2×
+ *  their guess, rarely more as a *sustained average*. The top rung (lose) sits at
+ *  2.2 so the reveal number stays believable — a 3×+ "average" reads as invented
+ *  and undercuts the whole honest-number promise. Real logs override it fast. */
+export const ARCHETYPE_SEED_PACE = { about: 1.1, bit: 1.35, lot: 1.7, lose: 2.2 } as const;
 /** Q2 'rabbit holes' multiplies the seed by this (capped at RATIO_CEIL). */
 export const ARCHETYPE_SEED_RABBIT_BUMP = 1.15;
 /** Seed acts as a prior worth this many pseudo-logs; real logs wash it out. */
 export const ARCHETYPE_SEED_PSEUDO = 5;
+/** The population's average multiplier — the point where a quiz seed neither
+ *  stretches nor shrinks a category prior. Equal to GLOBAL_PRIOR by definition:
+ *  that IS our population fallback. */
+export const POPULATION_MEAN_M = GLOBAL_PRIOR;
+/** Q3 'where does time run away' — the named category gets this extra weight.
+ *  Deliberately gentle: it is a self-report, not a measurement. */
+export const ARCHETYPE_SEED_SINK_BUMP = 1.12;
 // ── Per-category goals (Pro, no-guilt) ───────────────────────────────────────
 /** Need at least this many counted logs before a category can have a goal. */
 export const GOAL_MIN_LOGS = 5;
@@ -128,6 +143,19 @@ export const DEFAULT_GUARDRAIL: GuardrailMultiple = 'off';
 /** Never fire a nudge before this many elapsed minutes, regardless of factor. */
 export const GUARDRAIL_MIN_THRESHOLD_MIN = 25;
 
+// ── Forgot-to-stop protection (free safety net) ──────────────────────────────
+/** Nudge multiple of the honest number per preset. Auto-close follows a grace
+ *  window later. 'early' is the earliest, 'room' the most forgiving. */
+export const FORGOT_STEP_IN_FACTORS: Record<ForgotStepIn, number> = {
+  room: 2,
+  balanced: 1.5,
+  early: 1.25,
+};
+/** Default on a fresh install — the free net is ON by default. */
+export const DEFAULT_FORGOT_STEP_IN: ForgotStepIn = 'balanced';
+/** Minutes of continued no-interaction past the nudge before auto-close. */
+export const FORGOT_GRACE_MIN = 20;
+
 // ── Focus-window planner (Pro) ────────────────────────────────────────────────
 // No tight-ratio threshold: the verdict is binary (everything fits, or something
 // spills). The window length is whatever the user set; there is no default window.
@@ -136,8 +164,8 @@ export const GUARDRAIL_MIN_THRESHOLD_MIN = 25;
 // ── Learned focus window (Pro) — spec 14 ──────────────────────────────────────
 export const FW_WAKING_START_MIN = 300;            // 05:00
 export const FW_WAKING_END_MIN = 1440;             // 24:00
-export const FW_BIN_MIN = 30;
-export const FW_BIN_COUNT = (FW_WAKING_END_MIN - FW_WAKING_START_MIN) / FW_BIN_MIN; // 38
+export const FW_BIN_MIN = 60;
+export const FW_BIN_COUNT = (FW_WAKING_END_MIN - FW_WAKING_START_MIN) / FW_BIN_MIN; // 19
 export const FW_S_CLAMP = Math.log(3);
 export const FW_MIN_ACTUAL_MIN = 3;
 export const FW_MIN_PLAUSIBLE_RATIO = 0.1;
@@ -172,6 +200,7 @@ export const FW_PRIOR_WINDOW = { startMin: 540, endMin: 690 } as const; // 09:00
 // ── Focus insights (detail-view "why" metrics) ───────────────────────────────
 export const FW_CONF_HIGH = 0.75;      // confidence ≥ → "High"
 export const FW_CONF_BUILDING = 0.5;   // confidence ≥ → "Building", else "Low"
+export const FW_CONF_DAY_WEIGHT = 0.55; // confidence blend: day-progress vs permutation strength
 export const FW_INSIGHT_MIN_EVENTS = 5; // min events on EACH side for accuracy/duration
 
 export const FW_CONTRAST_MAX = 9;       // display ceiling for the "N× sharper" ratio
@@ -214,5 +243,24 @@ export const WAKING_WINDOW_MIN = 840;
 // ── Daily waking window bounds (Plan-my-day / Timeline) ───────────────────────
 /** Earliest schedulable minute of day (08:00). */
 export const WAKING_START_MIN = 8 * 60; // 480
-/** Latest schedulable minute of day (22:00) — the default "done by" fallback. */
+/** Latest schedulable minute of day (22:00) — the last hour a task may still
+ *  START within the waking window. Still used for that; no longer doubles as
+ *  the scheduler deadline when the user hasn't set a finish time (see
+ *  DAY_END_MIN below). */
 export const WAKING_END_MIN = 22 * 60; // 1320
+
+/**
+ * End of the local day (midnight + 24h), expressed as minutes-of-day. Used as
+ * the engine's `deadline` only when the user has never set a "done by" time —
+ * it is a bound so the scheduler has somewhere to stop, not a target the user
+ * is measured against. Never render this as a stated finish time.
+ */
+export const DAY_END_MIN = 24 * 60; // 1440
+
+/**
+ * Grace between "now" and the earliest minute the planner may schedule against.
+ * A plan whose start-by has already passed is useless, but demanding a big
+ * head-start is worse — it declares a day "won't fit" that the user could still
+ * start on. 5 min = enough to put the phone down and begin, nothing more.
+ */
+export const MIN_START_LEAD_MIN = 5;

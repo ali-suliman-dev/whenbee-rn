@@ -1,17 +1,16 @@
-import { useRef } from 'react';
-import {
-  View,
-  TextInput,
-  Pressable,
-  type ViewStyle,
-  type TextStyle,
-} from 'react-native';
-import Animated, { FadeInDown, useReducedMotion } from 'react-native-reanimated';
+import { View, Pressable, type ViewStyle, type TextStyle } from 'react-native';
+import Animated, {
+  FadeInDown,
+  useAnimatedKeyboard,
+  useAnimatedStyle,
+  useReducedMotion,
+} from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTranslation } from 'react-i18next';
 import { useTheme } from '@/src/theme/useTheme';
 import { AppText } from '@/src/components/AppText';
 import { AppButton } from '@/src/components/AppButton';
+import { TaskTitleField } from '@/src/components/TaskTitleField';
 import {
   CategoryChips,
   usePickerCategories,
@@ -56,7 +55,14 @@ export function PostStopCaptureSheet({
   const { t: tr } = useTranslation('today');
   const insets = useSafeAreaInsets();
   const reducedMotion = useReducedMotion();
-  const inputRef = useRef<TextInput>(null);
+
+  // The sheet is absolute-positioned at the bottom (not a modal), so a
+  // KeyboardAvoidingView can't lift it — track the keyboard height directly and
+  // translate the sheet up by it so the name field + CTAs clear the keyboard.
+  const keyboard = useAnimatedKeyboard();
+  const keyboardLift = useAnimatedStyle(() => ({
+    transform: [{ translateY: -keyboard.height.get() }],
+  }));
 
   // Category picker data + frequency sort hints (same approach as AddTask).
   const categories = usePickerCategories();
@@ -129,15 +135,19 @@ export function PostStopCaptureSheet({
     marginBottom: t.space[2],
   };
 
-  const inputStyle: TextStyle = {
-    height: t.size.control.md,
-    fontSize: t.fontSize.base,
-    color: t.colors.ink,
+  // The sheet's sunken field look, handed to TaskTitleField so the only visible
+  // change from the old bare TextInput is the mic that now sits inside it.
+  const inputContainerStyle: ViewStyle = {
+    minHeight: t.size.control.md,
     backgroundColor: t.colors.surfaceSunken,
     borderRadius: t.radii.md,
     borderWidth: t.borderWidth.hairline,
     borderColor: t.colors.hairline,
     paddingHorizontal: t.space[3],
+  };
+  const inputTextStyle: TextStyle = {
+    fontSize: t.fontSize.base,
+    color: t.colors.ink,
   };
 
   const skipStyle: TextStyle = {
@@ -157,9 +167,9 @@ export function PostStopCaptureSheet({
       {/* Scrim — non-interactive (tapping it does nothing; user must choose Save or Skip) */}
       <View style={scrimStyle} pointerEvents="none" />
 
-      {/* Sheet — slides up from the bottom, entering-only */}
+      {/* Sheet — slides up from the bottom, entering-only. Lifts with the keyboard. */}
       <Animated.View
-        style={sheetStyle}
+        style={[sheetStyle, keyboardLift]}
         entering={reducedMotion ? undefined : FadeInDown.duration(t.motion.sheet)}
         accessibilityViewIsModal
         accessibilityLabel="Name this task"
@@ -175,19 +185,20 @@ export function PostStopCaptureSheet({
           <AppText style={sublineStyle}>{tr('postStopCapture.subline')}</AppText>
         </View>
 
-        {/* Name input (optional — user can skip) */}
+        {/* Name input (optional — user can skip). TaskTitleField so this sheet
+            gets the same on-device voice capture as add-task: it asks the same
+            question, and typing a name you just finished doing is the moment
+            speaking beats typing. */}
         <View>
           <AppText style={labelStyle}>{tr('postStopCapture.taskNameLabel')}</AppText>
-          <TextInput
-            ref={inputRef}
-            style={inputStyle}
+          <TaskTitleField
             value={label}
             onChangeText={onLabelChange}
-            placeholder="Name it (optional)"
-            placeholderTextColor={t.colors.inkFaint}
+            placeholder={tr('postStopCapture.namePlaceholder')}
             returnKeyType="done"
-            blurOnSubmit
-            accessibilityLabel="Task name"
+            accessibilityLabel={tr('postStopCapture.nameA11y')}
+            containerStyle={inputContainerStyle}
+            textStyle={inputTextStyle}
           />
         </View>
 

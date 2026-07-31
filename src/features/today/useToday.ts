@@ -3,12 +3,12 @@ import { useFocusEffect } from 'expo-router';
 import { useCalibrationStore } from '@/src/stores/calibrationStore';
 import { useDayTasksStore } from '@/src/stores/dayTasksStore';
 import { useTimerStore } from '@/src/stores/timerStore';
-import { resolveSuggestion, priorFor, CATEGORY_NAMES, type CompanionStage } from '@/src/engine';
+import { useSettingsStore } from '@/src/stores/settingsStore';
+import { resolveSuggestion, seededPriorFor, type CompanionStage } from '@/src/engine';
 import { analytics } from '@/src/services/analytics';
-import { formatClock, projectedFinish } from '@/src/lib/time';
 import { toLocalDayKey } from '@/src/lib/day';
-import { publishWidgetSnapshot, clearWidgetSnapshot } from '@/src/services/liveActivity';
-import { useEntitlement } from '@/src/features/paywall/useEntitlement';
+import { categoryName } from '@/src/features/today/categoryName';
+import { useWidgetPublisher } from '@/src/features/today/useWidgetPublisher';
 import type { CalibrationSummary } from '@/src/domain/types';
 import type { DayTask } from '@/src/engine/daySelectors';
 
@@ -58,19 +58,6 @@ interface UseTodayResult {
   focusPreEstimate: boolean;
 }
 
-/** Title-case a custom-category slug (e.g. "deep_work" → "Deep Work"). */
-function titleCaseSlug(slug: string): string {
-  return slug
-    .split(/[_\-\s]+/)
-    .filter(Boolean)
-    .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
-    .join(' ');
-}
-
-function categoryName(id: string): string {
-  return CATEGORY_NAMES[id] ?? titleCaseSlug(id);
-}
-
 export function useToday(): UseTodayResult {
   const hydrate = useCalibrationStore((s) => s.hydrate);
   const statsByCategory = useCalibrationStore((s) => s.statsByCategory);
@@ -81,6 +68,7 @@ export function useToday(): UseTodayResult {
   const isViewingToday = selectedDate === toLocalDayKey(Date.now());
   const isTimerRunning = useTimerStore((s) => s.isRunning);
   const runningTaskId = useTimerStore((s) => s.taskId);
+  const archetypeSeed = useSettingsStore((s) => s.archetypeSeed);
 
   const [companionStage, setCompanionStage] = useState<CompanionStage>(1);
   const [companionSeed, setCompanionSeed] = useState(1);
@@ -113,7 +101,7 @@ export function useToday(): UseTodayResult {
     const cached = statsByCategory[task.category];
     const category = cached
       ? { fit: cached.fit, n: cached.n }
-      : { fit: { a: 0, b: priorFor(task.category) }, n: 0 };
+      : { fit: { a: 0, b: seededPriorFor(task.category, archetypeSeed) }, n: 0 };
     return resolveSuggestion({ guessMinutes: task.guessMin, category, recurring: null });
   };
 
@@ -176,28 +164,11 @@ export function useToday(): UseTodayResult {
 
   // Publish the next-task snapshot to the Home-screen widget. The honest finish
   // is "now + honest minutes" — the time the focus task would honestly wrap if
-  // started now (the same number Today shows). No-op in Expo Go / tests.
+  // started now (the same number Today shows). Reactive to timer/entitlement/
+  // mEffective too, so e.g. a purchase lights the widget immediately. No-op in
+  // Expo Go / tests. See useWidgetPublisher for the full trigger set.
   const honestMin = summary?.honestMinutes ?? null;
-  useEffect(() => {
-    const now = Date.now();
-    const epoch = Math.round(now / 1000);
-    // No next task: clear to the quiet empty widget.
-    if (!focus || honestMin === null) {
-      clearWidgetSnapshot();
-      return;
-    }
-    const honestFinishEpoch = Math.round(projectedFinish(now, honestMin) / 1000);
-    publishWidgetSnapshot({
-      nextTaskLabel: focus.label,
-      category: categoryName(focus.category),
-      honestFinishClock: formatClock(projectedFinish(now, honestMin)),
-      startDeepLink: `whenbee://timer?taskId=${focus.id}`,
-      updatedAtEpoch: epoch,
-      honestFinishEpoch,
-      // Read non-reactively: a widget write must not re-render Today on entitlement change.
-      isPro: useEntitlement.getState().isPro,
-    });
-  }, [focus, honestMin]);
+  useWidgetPublisher({ focus, honestMin });
 
   return {
     focus,

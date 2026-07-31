@@ -1,5 +1,13 @@
-import { useState } from 'react';
-import { View, TextInput, Pressable, Keyboard, type ViewStyle } from 'react-native';
+import { useEffect, useState } from 'react';
+import {
+  View,
+  TextInput,
+  Pressable,
+  Keyboard,
+  KeyboardAvoidingView,
+  Platform,
+  type ViewStyle,
+} from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import { useTranslation } from 'react-i18next';
@@ -12,9 +20,12 @@ import { OnboardingFooterCard } from '@/src/components/OnboardingFooterCard';
 import { BeeGlyph } from '@/src/components/BeeGlyph';
 import { useTheme } from '@/src/theme/useTheme';
 import { useOnboarding } from '@/src/features/onboarding/useOnboarding';
+import { useOnboardingStore } from '@/src/stores/onboardingStore';
 import { StepProgress } from '@/src/features/onboarding/StepProgress';
 import { onboardingStepIndex, ONBOARDING_TOTAL } from '@/src/features/onboarding/onboardingFlow';
 import { Reveal } from '@/src/features/onboarding/Reveal';
+import { useOnce } from '@/src/lib/useOnce';
+import { sinkCategoryFor, CATEGORY_NAMES } from '@/src/engine';
 import {
   getOnboardingCategories,
   slugify,
@@ -26,11 +37,85 @@ export default function Categories() {
   const { t: tr } = useTranslation('onboarding');
   const insets = useSafeAreaInsets();
   const { picked, isPicked, togglePick, trackCategoriesCommitted } = useOnboarding();
+  const sink = useOnboardingStore((s) => s.quizAnswers.sink);
   const [adding, setAdding] = useState(false);
   const [draft, setDraft] = useState('');
+  const [customError, setCustomError] = useState<string | null>(null);
+
+  // The user already named this area on quiz/2 ("where does time run away from
+  // you most"). Asking again here would be the same question twice — preselect
+  // it and let them adjust. Mount-only: re-running would fight the user
+  // un-picking it after they land on the screen.
+  useEffect(() => {
+    if (sink === undefined) return;
+    const id = sinkCategoryFor(sink);
+    if (!isPicked(id)) togglePick({ id, name: CATEGORY_NAMES[id] ?? id });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const canContinue = picked.length >= 1;
   const onboardingCategories = getOnboardingCategories(tr);
+
+  // Shared validation core: what would committing the current draft produce?
+  // Both the explicit (onSubmitEditing, shows errors) and implicit (blur/
+  // Continue, silent) commit paths read this so they can't drift apart.
+  function draftResult(): { id: string; name: string } | null {
+    const name = draft.trim();
+    if (name.length === 0) return null;
+    const id = slugify(name);
+    if (id.length === 0) return null;
+    if (isPicked(id)) return null;
+    return { id, name };
+  }
+
+  function commitCustom() {
+    const name = draft.trim();
+    if (name.length === 0) {
+      // Empty is a change of mind, not a mistake — close quietly.
+      setDraft('');
+      setCustomError(null);
+      setAdding(false);
+      return;
+    }
+    const id = slugify(name);
+    if (id.length === 0) {
+      setCustomError('Try letters or numbers');
+      return;
+    }
+    if (isPicked(id)) {
+      setCustomError('Already tracking that one');
+      return;
+    }
+    togglePick({ id, name });
+    setDraft('');
+    setCustomError(null);
+    setAdding(false);
+  }
+
+  // A blur or Continue tap isn't an explicit submit, so it never scolds — a
+  // valid typed name is silently kept, an invalid/empty one is silently
+  // dropped. Without this, a valid name the user forgot to press return on
+  // vanishes without a trace, which is the exact bug this screen exists to
+  // prevent.
+  function flushValidDraft() {
+    if (!adding) return;
+    const result = draftResult();
+    if (result) togglePick(result);
+    setDraft('');
+    setCustomError(null);
+    setAdding(false);
+  }
+
+  function onOutsideTap() {
+    flushValidDraft();
+    Keyboard.dismiss();
+  }
+
+  const onContinue = useOnce(() => {
+    flushValidDraft();
+    trackCategoriesCommitted();
+    router.push('/(onboarding)/ready');
+  });
 
   // Count-aware nudge: encourage one or two more early, then affirm once there's
   // plenty — so "one more" never lingers after the grid is full.
@@ -39,16 +124,6 @@ export default function Categories() {
     return n === 1
       ? tr('categories.pickedLine.coupleMore', { count: n })
       : tr('categories.pickedLine.oneMore', { count: n });
-  }
-
-  function commitCustom() {
-    const name = draft.trim();
-    const id = slugify(name);
-    if (name.length > 0 && id.length > 0 && !isPicked(id)) {
-      togglePick({ id, name });
-    }
-    setDraft('');
-    setAdding(false);
   }
 
   // Custom picks that aren't part of the seed grid, so they render as their own chips.
@@ -64,16 +139,21 @@ export default function Categories() {
     backgroundColor: t.colors.primarySoft,
     borderWidth: t.borderWidth.thin,
     borderColor: t.colors.primary,
-    minWidth: 120,
+    minWidth: t.size.chipMinWidth,
   };
 
   return (
     <Screen backdrop={<OnboardingBackdrop />}>
+      <KeyboardAvoidingView
+        style={{ flex: 1 }}
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+      >
       <StepProgress current={onboardingStepIndex('categories')} total={ONBOARDING_TOTAL} />
       {/* Tapping anywhere outside the inline "+ New" input dismisses the keyboard. */}
       <Pressable
         accessible={false}
-        onPress={Keyboard.dismiss}
+        testID="categories-outside-tap"
+        onPress={onOutsideTap}
         style={{ flex: 1, gap: t.space[4], paddingTop: t.space[2] }}
       >
         <Reveal index={0}>
@@ -82,7 +162,7 @@ export default function Categories() {
               fontSize: t.fontSize.xl,
               fontWeight: t.fontWeight.bold as '700',
               color: t.colors.ink,
-              letterSpacing: -0.6,
+              letterSpacing: t.letterSpacing.tight,
             }}
           >
             {tr('categories.title')}
@@ -119,10 +199,12 @@ export default function Categories() {
                 <TextInput
                   autoFocus
                   value={draft}
-                  onChangeText={setDraft}
+                  onChangeText={(text) => {
+                    setDraft(text);
+                    if (customError) setCustomError(null);
+                  }}
                   onSubmitEditing={commitCustom}
-                  onBlur={commitCustom}
-                  placeholder={tr('categories.namePlaceholder')}
+                  placeholder="Name it…"
                   placeholderTextColor={t.colors.inkSoft}
                   maxLength={MAX_CUSTOM_NAME}
                   returnKeyType="done"
@@ -136,10 +218,25 @@ export default function Categories() {
                 />
               </View>
             ) : (
-              <Chip label={tr('categories.addYourOwn')} variant="add" onPress={() => setAdding(true)} />
+              <Chip
+                label="Add your own"
+                variant="add"
+                onPress={() => {
+                  setCustomError(null);
+                  setAdding(true);
+                }}
+              />
             )}
           </View>
         </Reveal>
+        {customError ? (
+          <AppText style={{ fontSize: t.fontSize.sm, color: t.colors.amberText }}>
+            {customError}
+          </AppText>
+        ) : null}
+        <AppText style={{ fontSize: t.fontSize.sm, color: t.colors.inkFaint }}>
+          Change or remove these any time in the Whenbee tab.
+        </AppText>
         <View style={{ flex: 1 }} />
         {picked.length > 0 ? (
           <Reveal>
@@ -153,17 +250,27 @@ export default function Categories() {
       </Pressable>
 
       <Reveal index={3} style={{ paddingTop: t.space[4] }}>
+        {!canContinue ? (
+          <AppText
+            style={{
+              fontSize: t.fontSize.sm,
+              color: t.colors.inkFaint,
+              textAlign: 'center',
+              marginBottom: t.space[2],
+            }}
+          >
+            Pick at least one to continue
+          </AppText>
+        ) : null}
         <AppButton
           label={tr('categories.continueCta')}
           fullWidth
           disabled={!canContinue}
-          onPress={() => {
-            trackCategoriesCommitted();
-            router.push('/(onboarding)/ready');
-          }}
+          onPress={onContinue}
         />
       </Reveal>
       <View style={{ height: insets.bottom }} />
+      </KeyboardAvoidingView>
     </Screen>
   );
 }

@@ -93,7 +93,7 @@ describe('calibrationStore', () => {
     expect(events[0]?.actualMin).toBe(30);
 
     // stat persisted
-    const persisted = await makeCategoryStatsRepo(db).get('cleaning');
+    const persisted = await makeCategoryStatsRepo(db).get('cleaning', undefined);
     expect(persisted.n).toBe(1);
   });
 
@@ -128,7 +128,7 @@ describe('calibrationStore', () => {
     expect((afterFit as { b: number }).b).toBeLessThan(priorFor('admin'));
 
     // sanity: db carries the trained affine sums.
-    const persisted = await makeCategoryStatsRepo(db).get('admin');
+    const persisted = await makeCategoryStatsRepo(db).get('admin', undefined);
     expect(persisted.n).toBe(12);
     expect(persisted.sw).toBeGreaterThan(0);
   });
@@ -178,7 +178,7 @@ describe('calibrationStore', () => {
     expect(events).toHaveLength(1);
 
     // persisted stat untouched (n stays 0)
-    const persisted = await makeCategoryStatsRepo(db).get('cleaning');
+    const persisted = await makeCategoryStatsRepo(db).get('cleaning', undefined);
     expect(persisted.n).toBe(0);
   });
 
@@ -230,7 +230,7 @@ describe('calibrationStore', () => {
     const rec = await db.getRecurringStat('cleaning:dishes');
     expect(rec).toBeNull();
     // the category itself is still trained.
-    const stat = await makeCategoryStatsRepo(db).get('cleaning');
+    const stat = await makeCategoryStatsRepo(db).get('cleaning', undefined);
     expect(stat.n).toBe(1);
   });
 });
@@ -334,7 +334,7 @@ describe('calibrationStore — resetCategory', () => {
     expect(await db.listEventsByCategory('cleaning', 30)).toHaveLength(0);
 
     // stat reseeded to n=0 / prior
-    const stat = await makeCategoryStatsRepo(db).get('cleaning');
+    const stat = await makeCategoryStatsRepo(db).get('cleaning', undefined);
     expect(stat.n).toBe(0);
     expect(stat.logEwma).toBe(0);
     expect(stat.sharpness).toBe(0);
@@ -375,7 +375,7 @@ describe('calibrationStore — reclaim deposit (Task A.4)', () => {
     expect(companion.reclaimedMinutesLifetime).toBe(15);
 
     // category reclaimedMinutes incremented (starts at 0, +15 = 15)
-    const stat = await makeCategoryStatsRepo(db).get('cleaning');
+    const stat = await makeCategoryStatsRepo(db).get('cleaning', undefined);
     expect(stat.reclaimedMinutes).toBe(15);
   });
 
@@ -614,14 +614,14 @@ describe('calibrationStore — setReason is capture-only (Task B.5 invariant)', 
     });
 
     const before = useCalibrationStore.getState().statsByCategory.cleaning;
-    const persistedBefore = await makeCategoryStatsRepo(db).get('cleaning');
+    const persistedBefore = await makeCategoryStatsRepo(db).get('cleaning', undefined);
     expect(before).toBeDefined();
 
     // Capture a reason against the just-logged event.
     await useCalibrationStore.getState().setReason(res.eventId, 'interrupted', 'manual');
 
     const after = useCalibrationStore.getState().statsByCategory.cleaning;
-    const persistedAfter = await makeCategoryStatsRepo(db).get('cleaning');
+    const persistedAfter = await makeCategoryStatsRepo(db).get('cleaning', undefined);
 
     // The model is byte-for-byte unchanged — the reason is a pure side channel.
     expect(after?.mEffective).toBe(before?.mEffective);
@@ -762,5 +762,37 @@ describe('calibrationStore — funnel analytics (Task C.1)', () => {
     expect(props).toHaveProperty('ratio');
     expect(props).toHaveProperty('sharpness_after');
     expect(props).toHaveProperty('tier_after');
+  });
+});
+
+describe('calibrationStore — deleteCategory', () => {
+  it('removes the stat row, events, cache key, and goal', async () => {
+    const db = freshDb();
+
+    await db.upsertCategoryStat({
+      categoryId: 'cleaning', n: 5, logEwma: 0.7, mEffective: 2.4, sharpness: 60,
+      priorMult: priorFor('cleaning'), adaptSpeed: 'balanced', updatedAt: T0,
+      reclaimedMinutes: 0,
+      sw: 0, swx: 0, swy: 0, swxx: 0, swxy: 0,
+    });
+    await db.insertTaskEvent(seedEvent({ id: 'd1', createdAt: T0 }));
+    useCalibrationStore.setState({
+      statsByCategory: {
+        cleaning: { mEffective: 2.4, n: 5, sharpness: 60, tier: 'Ripening', fit: { a: 0, b: 2.4 } },
+      },
+    });
+    useCalibrationStore.getState().setGoal('cleaning', 20);
+    expect(useCalibrationStore.getState().loadGoal('cleaning')).not.toBeNull();
+
+    await useCalibrationStore.getState().deleteCategory('cleaning');
+
+    // raw stat row gone (distinct from reset, which upserts an n=0 row)
+    expect(await db.getCategoryStat('cleaning')).toBeNull();
+    // events gone
+    expect(await db.listEventsByCategory('cleaning', 30)).toHaveLength(0);
+    // cache key removed
+    expect(useCalibrationStore.getState().statsByCategory.cleaning).toBeUndefined();
+    // goal cleared
+    expect(useCalibrationStore.getState().loadGoal('cleaning')).toBeNull();
   });
 });

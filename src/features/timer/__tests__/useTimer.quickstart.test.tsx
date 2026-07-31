@@ -22,6 +22,7 @@ import { useCalibrationStore } from '@/src/stores/calibrationStore';
 import { useDayTasksStore } from '@/src/stores/dayTasksStore';
 import { useRewardStore } from '@/src/stores/rewardStore';
 import type { LogResult } from '@/src/stores/calibrationStore';
+import { kv } from '@/src/lib/kv';
 
 // ── router + route params ─────────────────────────────────────────────────────
 
@@ -61,6 +62,10 @@ beforeEach(() => {
   mockReplace.mockClear();
   mockDismiss.mockClear();
   mockParams = {};
+  // The mocked KV store (jest.setup.js) is a module-level Map that survives
+  // across tests in this file — a persisted session from one test's quickStart()
+  // would otherwise leak into the next test's TimerGate hydration (resumeFromKv).
+  kv.delete('whenbee.activeTimer');
   useTimerStore.setState({
     taskLabel: null,
     category: null,

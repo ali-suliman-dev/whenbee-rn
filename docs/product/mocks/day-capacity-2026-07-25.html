@@ -1,0 +1,599 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Whenbee · Day-capacity band — free-path directions</title>
+<style>
+  /* ── Real dark-mode token values from src/theme/tokens.ts ───────────────── */
+  :root{
+    --bg:#14151D; --surface:#1F2130; --raised:#292B3C; --sunken:#15161F;
+    --hairline:rgba(255,255,255,0.08);
+    --ink:#F4F1EA; --inksoft:#ADA9B5; --inkfaint:rgba(244,241,234,0.40);
+    --primary:#8275F0; --primary-edge:#6B5BE6;
+    --accent:#EEAE4D; --accent-soft:rgba(238,174,77,0.18); --accent-chip:#2E2A20;
+    --amber-text:#EEAE4D;
+    --r-sm:8px; --r-md:12px; --r-panel:14px; --r-card:16px; --r-full:999px;
+    /* space scale */
+    --s1:4px; --s2:8px; --s2h:10px; --s3:12px; --s4:16px; --s5:20px; --s6:24px;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+       background:#0C0D14;color:#F4F1EA;padding:40px 32px 90px}
+  h1{font-size:26px;letter-spacing:-0.6px;margin-bottom:8px}
+  .lede{color:#ADA9B5;font-size:14px;max-width:940px;line-height:1.6;margin-bottom:10px}
+  .lede b{color:#EEAE4D;font-weight:600}
+  .scenario{max-width:940px;font-size:13px;color:#E8E4F4;line-height:1.6;background:#1A1B27;
+       border-left:3px solid #8275F0;border-radius:10px;padding:13px 17px;margin:18px 0 30px}
+  .scenario b{color:#8275F0}
+  .row{display:flex;gap:30px;flex-wrap:wrap;align-items:flex-start}
+  .col{width:372px}
+  .dirlabel{font-size:15.5px;font-weight:700;letter-spacing:-0.2px;margin-bottom:3px}
+  .dirlabel .tag{font-size:10.5px;font-weight:700;letter-spacing:1px;padding:3px 8px;
+       border-radius:999px;margin-left:8px;vertical-align:2px}
+  .tag.bad{background:#3A2020;color:#E88}
+  .tag.rec{background:#241F45;color:#A99BFF}
+  .tag.new{background:#2E2A20;color:#EEAE4D}
+  .dirsub{font-size:12.5px;color:#9E9AA8;line-height:1.55;margin-bottom:14px;min-height:60px}
+  .notes{margin-top:14px;font-size:12.5px;color:#CFCAE0;line-height:1.6;background:#1A1B27;
+       border-radius:12px;padding:13px 15px}
+  .notes b{color:#EEAE4D;font-weight:600}
+  .notes ul{margin:6px 0 0 15px}
+  .notes li{margin-bottom:5px}
+
+  /* ── Phone frame ── */
+  .phone{width:372px;height:790px;border-radius:42px;overflow:hidden;position:relative;
+         box-shadow:0 18px 50px rgba(0,0,0,.6);border:6px solid #05050A;background:var(--bg);
+         display:flex;flex-direction:column}
+  .notch{position:absolute;top:11px;left:50%;transform:translateX(-50%);width:104px;height:25px;
+         background:#000;border-radius:20px;z-index:9}
+  .screen{flex:1;padding:52px 18px 0;overflow:hidden;display:flex;flex-direction:column;gap:12px}
+
+  /* ── Header ── */
+  .hdr{display:flex;justify-content:space-between;align-items:flex-start}
+  .title{font-size:38px;font-weight:800;letter-spacing:-0.75px;color:var(--ink);line-height:1.05}
+  .date{font-size:12px;color:var(--inksoft);margin-top:3px}
+  .hdr-right{display:flex;align-items:center;gap:13px;margin-top:7px}
+  .gear{font-size:19px;color:var(--inksoft)}
+  .ring{width:52px;height:52px;border-radius:50%;
+        background:conic-gradient(var(--accent) 0 34%, rgba(255,255,255,.10) 34% 100%);
+        display:flex;align-items:center;justify-content:center}
+  .ring-in{width:44px;height:44px;border-radius:50%;background:var(--surface);
+           display:flex;align-items:center;justify-content:center;font-size:19px}
+
+  /* ── Calendar strip ── */
+  .cal{display:flex;justify-content:space-between;padding:2px 2px}
+  .day{width:40px;text-align:center;border-radius:13px;padding:6px 0}
+  .day .wd{font-size:10.5px;color:var(--inkfaint)}
+  .day .num{font-size:16px;font-weight:600;color:var(--ink);margin-top:2px}
+  .day.sel{background:rgba(130,117,240,.20)}
+  .day.sel .wd,.day.sel .num{color:var(--primary)}
+
+  /* ── Generic card ── */
+  .card{background:var(--surface);border-radius:var(--r-card)}
+  .pad{padding:13px var(--s4)}
+
+  /* ── Task rows ── */
+  .task{background:var(--surface);border-radius:var(--r-card);padding:12px var(--s4);
+        display:flex;align-items:center;gap:11px}
+  .play{width:34px;height:34px;border-radius:50%;background:rgba(130,117,240,.16);flex:none;
+        display:flex;align-items:center;justify-content:center;color:var(--primary);font-size:12px}
+  .task .tt{flex:1}
+  .task .t1{font-size:14.5px;font-weight:600;color:var(--ink)}
+  .task .t2{font-size:11.5px;color:var(--inkfaint);margin-top:2px}
+  .task .mins{font-size:14px;font-weight:700;color:var(--ink);font-variant-numeric:tabular-nums}
+  .task .mins small{display:block;font-size:10px;font-weight:500;color:var(--inkfaint);
+        text-align:right;margin-top:1px}
+  .sect{font-size:10.5px;letter-spacing:1.2px;font-weight:700;color:var(--inksoft);
+        margin-top:2px;display:flex;justify-content:space-between}
+
+  /* ── Tab bar ── */
+  .tabbar{margin:auto -18px 0;padding:11px 26px 24px;display:flex;align-items:flex-end;
+          justify-content:space-between;border-top:1px solid var(--hairline);background:var(--bg)}
+  .tab{font-size:10px;color:var(--inkfaint);text-align:center;width:52px}
+  .tab .ic{font-size:19px;display:block;margin-bottom:2px}
+  .tab.on{color:var(--primary)}
+  .fab{width:54px;height:54px;border-radius:50%;background:var(--primary);color:#fff;
+       display:flex;align-items:center;justify-content:center;font-size:26px;font-weight:300;
+       box-shadow:0 5px 0 var(--primary-edge);margin-bottom:2px}
+
+  /* ══════════════ 0 · CURRENT (baseline) ══════════════ */
+  .cap0{display:flex;align-items:center;gap:var(--s2);background:var(--surface);
+        border-radius:var(--r-card);padding:10px var(--s2) 10px var(--s4)}
+  .disc{width:24px;height:24px;border-radius:50%;background:var(--accent-chip);flex:none;
+        display:flex;align-items:center;justify-content:center;font-size:11px;color:var(--amber-text)}
+  .cap0 .lbl{flex:1;font-size:14px;color:var(--ink)}
+  .cap0 .lbl span{color:var(--inksoft)}
+  .cap0 .x{font-size:13px;color:var(--inkfaint);padding:0 8px}
+
+  /* ══════════════ A · RUNWAY ══════════════ */
+  .runway{background:var(--surface);border-radius:var(--r-card);padding:14px var(--s4) 15px}
+  .rw-top{display:flex;align-items:center;gap:var(--s2)}
+  .rw-headline{flex:1;font-size:14px;color:var(--ink);line-height:1.35}
+  .rw-headline b{font-weight:700}
+  .rw-headline em{font-style:normal;color:var(--amber-text);font-weight:700}
+  .rw-bar{height:10px;border-radius:5px;background:var(--sunken);margin-top:12px;
+          display:flex;overflow:hidden;position:relative}
+  .rw-seg-done{background:rgba(255,255,255,.10)}
+  .rw-seg-fit{background:var(--primary)}
+  .rw-seg-over{background:var(--accent)}
+  .rw-nowmark{position:absolute;top:-4px;bottom:-4px;width:2px;background:var(--ink);opacity:.85}
+  .rw-scale{display:flex;justify-content:space-between;margin-top:7px;
+            font-size:10.5px;color:var(--inkfaint);font-variant-numeric:tabular-nums}
+  .rw-foot{display:flex;justify-content:space-between;align-items:center;margin-top:11px;
+           padding-top:10px;border-top:1px solid var(--hairline)}
+  .rw-foot .left{font-size:12.5px;color:var(--inksoft)}
+  .rw-foot .left b{color:var(--ink);font-weight:700;font-variant-numeric:tabular-nums}
+  .rw-foot .act{font-size:12px;font-weight:700;color:var(--primary)}
+
+  /* ══════════════ B · LANDING TIME ══════════════ */
+  .land{background:var(--surface);border-radius:var(--r-card);padding:15px var(--s4) 14px}
+  .land-eyebrow{font-size:10.5px;letter-spacing:1.2px;font-weight:700;color:var(--inksoft)}
+  .land-row{display:flex;align-items:baseline;gap:9px;margin-top:8px}
+  .land-time{font-size:32px;font-weight:800;letter-spacing:-0.9px;color:var(--amber-text);
+             font-variant-numeric:tabular-nums;line-height:1;white-space:nowrap}
+  .land-time.ok{color:var(--ink)}
+  .land-delta{font-size:13px;font-weight:600;color:var(--inksoft)}
+  .land-sub{font-size:12.5px;color:var(--inksoft);margin-top:9px;line-height:1.45}
+  .land-sub b{color:var(--ink);font-weight:600}
+  .land-line{height:3px;border-radius:2px;background:var(--sunken);margin-top:13px;position:relative}
+  .land-fill{position:absolute;left:0;top:0;bottom:0;border-radius:2px;background:var(--primary)}
+  .land-spill{position:absolute;top:0;bottom:0;border-radius:2px;background:var(--accent)}
+  .land-pin{position:absolute;top:-5px;width:1.5px;height:13px;background:var(--inkfaint)}
+  .land-pinlbl{position:absolute;top:12px;font-size:10px;color:var(--inkfaint);
+               transform:translateX(-50%);white-space:nowrap}
+  .land-foot{display:flex;justify-content:space-between;align-items:center;
+             margin-top:30px;padding-top:10px;border-top:1px solid var(--hairline)}
+  .land-foot .l{font-size:12.5px;color:var(--inksoft)}
+  .land-foot .act{font-size:12px;font-weight:700;color:var(--primary)}
+
+  /* ══════════════ C · TODAY LEDGER (merged) ══════════════ */
+  .ledger{background:var(--surface);border-radius:var(--r-card);padding:15px var(--s4) 14px}
+  .lg-h{font-size:15.5px;font-weight:700;color:var(--ink);letter-spacing:-0.2px;line-height:1.35}
+  .lg-h em{font-style:normal;color:var(--amber-text)}
+  .lg-sub{font-size:12px;color:var(--inkfaint);margin-top:4px}
+  .lg-split{display:flex;margin-top:14px}
+  .lg-c{flex:1;display:flex;flex-direction:column;gap:var(--s1)}
+  .lg-c.div{border-left:1px solid var(--hairline);padding-left:var(--s3)}
+  .lg-v{font-size:20px;font-weight:800;color:var(--ink);letter-spacing:-0.4px;
+        font-variant-numeric:tabular-nums;line-height:1}
+  .lg-v small{font-size:11.5px;font-weight:600;color:var(--inkfaint);margin-left:3px}
+  .lg-l{font-size:10.5px;color:var(--inksoft);display:flex;align-items:center;gap:5px}
+  .lg-dot{width:6px;height:6px;border-radius:3px;flex:none}
+  .lg-bar{height:10px;border-radius:5px;background:var(--sunken);margin-top:15px;
+          display:flex;overflow:hidden;position:relative}
+  .lg-scale{display:flex;justify-content:space-between;margin-top:7px;font-size:10.5px;
+            color:var(--inkfaint);font-variant-numeric:tabular-nums}
+  .lg-foot{display:flex;justify-content:space-between;align-items:center;margin-top:11px;
+           padding-top:10px;border-top:1px solid var(--hairline)}
+  .lg-foot .l{font-size:12.5px;color:var(--inksoft)}
+  .lg-foot .l b{color:var(--amber-text);font-weight:700}
+  .lg-foot .act{font-size:12px;font-weight:700;color:var(--primary)}
+
+  /* second-row states */
+  .stateshelf{margin-top:34px}
+  .stitle{font-size:19px;letter-spacing:-0.3px;margin:44px 0 6px;color:#EEAE4D}
+  .stategrid{display:flex;gap:20px;flex-wrap:wrap;margin-top:16px}
+  .statecell{width:340px}
+  .statecap{font-size:12px;color:#9E9AA8;margin-bottom:9px}
+  .statecap b{color:#F4F1EA;font-weight:600}
+  .fauxbg{background:var(--bg);border-radius:20px;padding:16px}
+</style>
+</head>
+<body>
+
+<h1>Day-capacity band — what the free path should actually say</h1>
+<p class="lede">
+  Today's free chip divides by a <b>hardcoded 14-hour waking window</b> (<code>WAKING_WINDOW_MIN = 840</code>).
+  "over" needs 14 h of queued work, "snug" needs 11 h 12 m. So a free user reads
+  <b>"· fits"</b> essentially forever — the component structurally cannot deliver the app's
+  one message. Three replacements below, each in full Today context, dark mode, real tokens.
+</p>
+
+<div class="scenario">
+  <b>Same scenario in all four frames.</b> It's <b>7:10 PM</b>. End of day is set to <b>9:00 PM</b>
+  (the user's own <code>dayEndMin</code>, already in <code>settingsStore</code>). Three tasks left,
+  honest total <b>2 h 40 m</b>. Two done today (guessed 50 m, actually 1 h 15 m).
+  Truth: the day <b>does not fit</b> — it runs ~50 m past. Watch what each frame says.
+</div>
+
+<div class="row">
+
+  <!-- ══════════════════ 0 · CURRENT ══════════════════ -->
+  <div class="col">
+    <div class="dirlabel">Now — shipping today <span class="tag bad">FALSE POSITIVE</span></div>
+    <div class="dirsub">Sum of queued honest minutes ÷ fixed 14 h. Verdict is a constant.
+      Says the day fits while it's 7:10 PM with 2 h 40 m of work and 1 h 50 m of daylight.</div>
+
+    <div class="phone"><div class="notch"></div><div class="screen">
+      <div class="hdr">
+        <div><div class="title">Today</div><div class="date">Fri, 25 Jul</div></div>
+        <div class="hdr-right"><div class="gear">⚙</div>
+          <div class="ring"><div class="ring-in">🐝</div></div></div>
+      </div>
+      <div class="cal">
+        <div class="day"><div class="wd">M</div><div class="num">21</div></div>
+        <div class="day"><div class="wd">T</div><div class="num">22</div></div>
+        <div class="day"><div class="wd">W</div><div class="num">23</div></div>
+        <div class="day"><div class="wd">T</div><div class="num">24</div></div>
+        <div class="day sel"><div class="wd">F</div><div class="num">25</div></div>
+        <div class="day"><div class="wd">S</div><div class="num">26</div></div>
+        <div class="day"><div class="wd">S</div><div class="num">27</div></div>
+      </div>
+
+      <!-- CURRENT CHIP -->
+      <div class="cap0">
+        <div class="disc">⚡</div>
+        <div class="lbl">Honest day 2h 40m <span>· fits</span></div>
+        <div class="x">✕</div>
+      </div>
+
+      <div class="sect"><span>UP NEXT</span></div>
+      <div class="task"><div class="play">▶</div><div class="tt">
+        <div class="t1">Finish invoice batch</div><div class="t2">Admin · guessed 30m</div></div>
+        <div class="mins">45m<small>honest</small></div></div>
+      <div class="task"><div class="play">▶</div><div class="tt">
+        <div class="t1">Reply to Marcus</div><div class="t2">Admin · guessed 15m</div></div>
+        <div class="mins">25m<small>honest</small></div></div>
+      <div class="task"><div class="play">▶</div><div class="tt">
+        <div class="t1">Draft the deck</div><div class="t2">Deep work · guessed 60m</div></div>
+        <div class="mins">1h 30m<small>honest</small></div></div>
+
+      <div class="sect" style="margin-top:6px"><span>DONE · 2</span></div>
+      <div class="task" style="opacity:.55"><div class="play" style="background:var(--accent-chip);color:var(--amber-text)">✓</div>
+        <div class="tt"><div class="t1">Standup</div><div class="t2">Meetings</div></div>
+        <div class="mins">35m</div></div>
+
+      <div class="tabbar">
+        <div class="tab on"><span class="ic">☀</span>Today</div>
+        <div class="tab"><span class="ic">▦</span>Plan</div>
+        <div class="fab">＋</div>
+        <div class="tab"><span class="ic">📈</span>Patterns</div>
+        <div class="tab"><span class="ic">🍯</span>Whenbee</div>
+      </div>
+    </div></div>
+
+    <div class="notes">
+      <b>Why it fails</b>
+      <ul>
+        <li>Denominator never moves — 840 min regardless of clock.</li>
+        <li>Completed tasks leave the numerator → gets <b>more</b> optimistic as the day burns.</li>
+        <li>Ignores <code>dayEndMin</code>, which the Start-By planner already uses.</li>
+        <li>✕ is session-permanent. A chip that only ever reassures gets dismissed once, forever.</li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- ══════════════════ A · RUNWAY ══════════════════ -->
+  <div class="col">
+    <div class="dirlabel">A · Runway <span class="tag new">SMALLEST FIX</span></div>
+    <div class="dirsub">Same chip shape, honest denominator: <b>now → your end of day</b>.
+      A two-tone bar fills the remaining runway; the amber tail is the part that
+      doesn't fit. Keeps the collapsed/expanded pattern intact.</div>
+
+    <div class="phone"><div class="notch"></div><div class="screen">
+      <div class="hdr">
+        <div><div class="title">Today</div><div class="date">Fri, 25 Jul</div></div>
+        <div class="hdr-right"><div class="gear">⚙</div>
+          <div class="ring"><div class="ring-in">🐝</div></div></div>
+      </div>
+      <div class="cal">
+        <div class="day"><div class="wd">M</div><div class="num">21</div></div>
+        <div class="day"><div class="wd">T</div><div class="num">22</div></div>
+        <div class="day"><div class="wd">W</div><div class="num">23</div></div>
+        <div class="day"><div class="wd">T</div><div class="num">24</div></div>
+        <div class="day sel"><div class="wd">F</div><div class="num">25</div></div>
+        <div class="day"><div class="wd">S</div><div class="num">26</div></div>
+        <div class="day"><div class="wd">S</div><div class="num">27</div></div>
+      </div>
+
+      <!-- RUNWAY -->
+      <div class="runway">
+        <div class="rw-top">
+          <div class="disc">⚡</div>
+          <div class="rw-headline"><b>2h 40m</b> of work left · <em>1h 50m</em> of day left</div>
+        </div>
+        <div class="rw-bar">
+          <div class="rw-seg-fit" style="flex:110"></div>
+          <div class="rw-seg-over" style="flex:50"></div>
+        </div>
+        <div class="rw-scale"><span>now · 7:10 PM</span><span>9:00 PM</span><span>9:50 PM</span></div>
+        <div class="rw-foot">
+          <div class="left">Runs <b>~50m</b> past your day</div>
+          <div class="act">Move one →</div>
+        </div>
+      </div>
+
+      <div class="sect"><span>UP NEXT</span></div>
+      <div class="task"><div class="play">▶</div><div class="tt">
+        <div class="t1">Finish invoice batch</div><div class="t2">Admin · guessed 30m</div></div>
+        <div class="mins">45m<small>honest</small></div></div>
+      <div class="task"><div class="play">▶</div><div class="tt">
+        <div class="t1">Reply to Marcus</div><div class="t2">Admin · guessed 15m</div></div>
+        <div class="mins">25m<small>honest</small></div></div>
+      <div class="task" style="outline:1.5px solid var(--accent-soft)"><div class="play">▶</div><div class="tt">
+        <div class="t1">Draft the deck</div><div class="t2">Deep work · the one past 9:00</div></div>
+        <div class="mins">1h 30m<small>honest</small></div></div>
+
+      <div class="tabbar">
+        <div class="tab on"><span class="ic">☀</span>Today</div>
+        <div class="tab"><span class="ic">▦</span>Plan</div>
+        <div class="fab">＋</div>
+        <div class="tab"><span class="ic">📈</span>Patterns</div>
+        <div class="tab"><span class="ic">🍯</span>Whenbee</div>
+      </div>
+    </div></div>
+
+    <div class="notes">
+      <b>What changes in code</b>
+      <ul>
+        <li><code>wakingWindowMin</code> → <code>max(0, dayEndMin − nowMin)</code>. One line in <code>useDayCapacity</code>.</li>
+        <li>Engine <code>honestDayLoad</code> untouched — it already returns <code>overByMin</code> / <code>openMin</code>.</li>
+        <li>Bar is real: both segments are measured minutes, no invented shape.</li>
+        <li>Pro still adds meetings as a third segment + Pad calendar — pitch survives.</li>
+        <li><b>Risk:</b> late at night the window → 0 and every day reads "over". Needs a floor rule.</li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- ══════════════════ B · LANDING TIME ══════════════════ -->
+  <div class="col">
+    <div class="dirlabel">B · Landing time <span class="tag rec">RECOMMENDED</span></div>
+    <div class="dirsub">Drops "capacity" as a concept. Answers the question people actually
+      hold: <b>when am I done?</b> One clock time, compared against their own end of day.
+      No fraction, no percentage, nothing to interpret.</div>
+
+    <div class="phone"><div class="notch"></div><div class="screen">
+      <div class="hdr">
+        <div><div class="title">Today</div><div class="date">Fri, 25 Jul</div></div>
+        <div class="hdr-right"><div class="gear">⚙</div>
+          <div class="ring"><div class="ring-in">🐝</div></div></div>
+      </div>
+      <div class="cal">
+        <div class="day"><div class="wd">M</div><div class="num">21</div></div>
+        <div class="day"><div class="wd">T</div><div class="num">22</div></div>
+        <div class="day"><div class="wd">W</div><div class="num">23</div></div>
+        <div class="day"><div class="wd">T</div><div class="num">24</div></div>
+        <div class="day sel"><div class="wd">F</div><div class="num">25</div></div>
+        <div class="day"><div class="wd">S</div><div class="num">26</div></div>
+        <div class="day"><div class="wd">S</div><div class="num">27</div></div>
+      </div>
+
+      <!-- LANDING -->
+      <div class="land">
+        <div class="land-eyebrow">HONESTLY, YOU FINISH</div>
+        <div class="land-row">
+          <div class="land-time">9:50 PM</div>
+          <div class="land-delta">50m past your 9:00</div>
+        </div>
+        <div class="land-sub">Three tasks left, <b>2h 40m</b> honest. Drop <b>Draft the deck</b>
+          and you land 8:20.</div>
+        <div class="land-line">
+          <div class="land-fill" style="left:0;width:63%"></div>
+          <div class="land-spill" style="left:63%;width:29%"></div>
+          <div class="land-pin" style="left:63%"></div>
+          <div class="land-pinlbl" style="left:63%">9:00 PM</div>
+        </div>
+        <div class="land-foot">
+          <div class="l">2 done · 1h 15m banked</div>
+          <div class="act">Move one →</div>
+        </div>
+      </div>
+
+      <div class="sect"><span>UP NEXT</span></div>
+      <div class="task"><div class="play">▶</div><div class="tt">
+        <div class="t1">Finish invoice batch</div><div class="t2">Admin · ends ~7:55</div></div>
+        <div class="mins">45m<small>honest</small></div></div>
+      <div class="task"><div class="play">▶</div><div class="tt">
+        <div class="t1">Reply to Marcus</div><div class="t2">Admin · ends ~8:20</div></div>
+        <div class="mins">25m<small>honest</small></div></div>
+      <div class="task"><div class="play">▶</div><div class="tt">
+        <div class="t1">Draft the deck</div>
+        <div class="t2" style="color:var(--amber-text)">Deep work · ends ~9:50</div></div>
+        <div class="mins">1h 30m<small>honest</small></div></div>
+
+      <div class="tabbar">
+        <div class="tab on"><span class="ic">☀</span>Today</div>
+        <div class="tab"><span class="ic">▦</span>Plan</div>
+        <div class="fab">＋</div>
+        <div class="tab"><span class="ic">📈</span>Patterns</div>
+        <div class="tab"><span class="ic">🍯</span>Whenbee</div>
+      </div>
+    </div></div>
+
+    <div class="notes">
+      <b>Why this one</b>
+      <ul>
+        <li>Reuses <code>planBackward</code> + <code>cutLadder</code> — the finish-time math already ships free.</li>
+        <li>"9:50 PM" needs no interpretation. "· snug" does.</li>
+        <li>Names the task to move instead of asking the user to work it out.</li>
+        <li>Per-row end times make the whole list one continuous forecast.</li>
+        <li><b>Cost:</b> new component + per-row time slot; biggest surface change of the three.</li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- ══════════════════ C · TODAY LEDGER ══════════════════ -->
+  <div class="col">
+    <div class="dirlabel">C · Today ledger <span class="tag new">MERGES 2 CARDS</span></div>
+    <div class="dirsub">One card for the whole day: what's behind you (guessed vs honest —
+      today's <code>DaySoFarCard</code>) and what's ahead (landing time). Kills the duplicate
+      day-math sitting in two places on one screen.</div>
+
+    <div class="phone"><div class="notch"></div><div class="screen">
+      <div class="hdr">
+        <div><div class="title">Today</div><div class="date">Fri, 25 Jul</div></div>
+        <div class="hdr-right"><div class="gear">⚙</div>
+          <div class="ring"><div class="ring-in">🐝</div></div></div>
+      </div>
+      <div class="cal">
+        <div class="day"><div class="wd">M</div><div class="num">21</div></div>
+        <div class="day"><div class="wd">T</div><div class="num">22</div></div>
+        <div class="day"><div class="wd">W</div><div class="num">23</div></div>
+        <div class="day"><div class="wd">T</div><div class="num">24</div></div>
+        <div class="day sel"><div class="wd">F</div><div class="num">25</div></div>
+        <div class="day"><div class="wd">S</div><div class="num">26</div></div>
+        <div class="day"><div class="wd">S</div><div class="num">27</div></div>
+      </div>
+
+      <!-- LEDGER -->
+      <div class="ledger">
+        <div class="lg-h">On this pace you finish <em>9:50 PM</em></div>
+        <div class="lg-sub">50m past the 9:00 you set</div>
+
+        <div class="lg-split">
+          <div class="lg-c">
+            <div class="lg-v">1h 15m</div>
+            <div class="lg-l"><span class="lg-dot" style="background:var(--accent)"></span>done · honest</div>
+          </div>
+          <div class="lg-c div">
+            <div class="lg-v">50m</div>
+            <div class="lg-l"><span class="lg-dot" style="background:var(--primary)"></span>you guessed</div>
+          </div>
+          <div class="lg-c div">
+            <div class="lg-v">2h 40m</div>
+            <div class="lg-l"><span class="lg-dot" style="background:rgba(255,255,255,.28)"></span>still ahead</div>
+          </div>
+        </div>
+
+        <div class="lg-bar">
+          <!-- Real minutes: 8:00 AM→7:10 PM spent = 670 · 7:10→9:00 ahead = 110 · spill = 50 -->
+          <div style="flex:670;background:rgba(255,255,255,.16)"></div>
+          <div style="flex:110;background:var(--primary)"></div>
+          <div style="flex:50;background:var(--accent)"></div>
+        </div>
+        <div class="lg-scale"><span>8:00 AM</span><span style="margin-right:16.5%">now</span><span>9:00 PM</span></div>
+
+        <div class="lg-foot">
+          <div class="l"><b>Draft the deck</b> is the one past 9:00</div>
+          <div class="act">Move it →</div>
+        </div>
+      </div>
+
+      <div class="sect"><span>UP NEXT</span></div>
+      <div class="task"><div class="play">▶</div><div class="tt">
+        <div class="t1">Finish invoice batch</div><div class="t2">Admin · guessed 30m</div></div>
+        <div class="mins">45m<small>honest</small></div></div>
+      <div class="task"><div class="play">▶</div><div class="tt">
+        <div class="t1">Reply to Marcus</div><div class="t2">Admin · guessed 15m</div></div>
+        <div class="mins">25m<small>honest</small></div></div>
+      <div class="task"><div class="play">▶</div><div class="tt">
+        <div class="t1">Draft the deck</div><div class="t2">Deep work · guessed 60m</div></div>
+        <div class="mins">1h 30m<small>honest</small></div></div>
+
+      <div class="tabbar">
+        <div class="tab on"><span class="ic">☀</span>Today</div>
+        <div class="tab"><span class="ic">▦</span>Plan</div>
+        <div class="fab">＋</div>
+        <div class="tab"><span class="ic">📈</span>Patterns</div>
+        <div class="tab"><span class="ic">🍯</span>Whenbee</div>
+      </div>
+    </div></div>
+
+    <div class="notes">
+      <b>Trade</b>
+      <ul>
+        <li>One day-object instead of <code>CapacityChip</code> + <code>DaySoFarCard</code> on the same scroll.</li>
+        <li>Guessed-vs-honest gap sits directly beside the consequence — strongest teaching moment.</li>
+        <li>Bar spans the whole day (spent · ahead · spill), so "now" has a real position.</li>
+        <li><b>Risk:</b> densest card on Today. Three numbers + bar + footer on an empty morning is a lot of card for very little to say.</li>
+      </ul>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════ STATE SHELF ══════════════════════ -->
+<h2 class="stitle">B in its other states — the cases that decide it</h2>
+<p class="lede">A verdict component lives or dies on the quiet days, not the dramatic one above.</p>
+
+<div class="stategrid">
+
+  <div class="statecell">
+    <div class="statecap"><b>Morning, plenty of room.</b> 8:40 AM, 2 h 15 m queued, 12 h 20 m of day.
+      Nothing to warn about — so it stops shouting and just states the landing.</div>
+    <div class="fauxbg">
+      <div class="land">
+        <div class="land-eyebrow">HONESTLY, YOU FINISH</div>
+        <div class="land-row">
+          <div class="land-time ok">10:55 AM</div>
+          <div class="land-delta">well inside your 9:00</div>
+        </div>
+        <div class="land-sub">Three tasks, <b>2h 15m</b> honest. Room for about
+          <b>3 more</b> like these.</div>
+        <div class="land-foot" style="margin-top:16px">
+          <div class="l">Nothing logged yet</div>
+          <div class="act">Add a task →</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="statecell">
+    <div class="statecap"><b>Cold start — no calibration yet.</b> Day 1, no logs, multiplier is a
+      seeded prior. Show the honest landing but say out loud it's a guess about a guess.</div>
+    <div class="fauxbg">
+      <div class="land">
+        <div class="land-eyebrow">ROUGHLY, YOU FINISH</div>
+        <div class="land-row">
+          <div class="land-time ok">4:20 – 5:40 PM</div>
+        </div>
+        <div class="land-sub">Still a starting estimate — <b>4 more logs</b> and this
+          narrows to your real pace.</div>
+        <div class="land-foot" style="margin-top:16px">
+          <div class="l">Based on people who plan like you</div>
+          <div class="act">Start one →</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="statecell">
+    <div class="statecap"><b>Past your end of day already.</b> 10:30 PM, work still queued.
+      No red, no scold — the offer is tomorrow, and it's one tap.</div>
+    <div class="fauxbg">
+      <div class="land">
+        <div class="land-eyebrow">TODAY'S DONE AT</div>
+        <div class="land-row">
+          <div class="land-time">9:00 PM</div>
+          <div class="land-delta">1h 30m ago</div>
+        </div>
+        <div class="land-sub"><b>1h 55m</b> still queued. Most of it lands better
+          tomorrow morning.</div>
+        <div class="land-foot" style="margin-top:16px">
+          <div class="l">2 done · 1h 15m banked</div>
+          <div class="act">Move 2 to tomorrow →</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="statecell">
+    <div class="statecap"><b>Pro, with calendar.</b> Same day, meetings now counted.
+      The free card gains a meetings line — the Pro delta is real data, not a shape change.</div>
+    <div class="fauxbg">
+      <div class="land">
+        <div class="land-eyebrow">HONESTLY, YOU FINISH</div>
+        <div class="land-row">
+          <div class="land-time">11:20 PM</div>
+          <div class="land-delta">2h 20m past your 9:00</div>
+        </div>
+        <div class="land-sub"><b>2h 40m</b> of tasks + <b>1h 30m</b> of meetings between
+          now and then.</div>
+        <div class="land-line">
+          <div class="land-fill" style="left:0;width:42%"></div>
+          <div class="land-spill" style="left:42%;width:16%;background:var(--primary-edge)"></div>
+          <div class="land-spill" style="left:58%;width:34%"></div>
+          <div class="land-pin" style="left:58%"></div>
+          <div class="land-pinlbl" style="left:58%">9:00 PM</div>
+        </div>
+        <div class="land-foot" style="margin-top:30px">
+          <div class="l">Pad calendar</div>
+          <div class="act">Move one →</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+</body>
+</html>

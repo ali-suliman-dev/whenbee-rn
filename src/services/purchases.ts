@@ -1,12 +1,22 @@
+import { Platform } from 'react-native';
 import type {
   CustomerInfo,
   PurchasesOfferings,
   PurchasesPackage as RcPackage,
 } from 'react-native-purchases';
 import { isExpoGo } from '@/src/lib/isExpoGo';
+import { env } from '@/src/lib/env';
 
-/** RevenueCat entitlement identifier that unlocks Pro (Honest-Day calendar). */
-const PRO_ENTITLEMENT_ID = 'pro';
+/**
+ * RevenueCat entitlement identifier that unlocks Pro. This MUST match the
+ * entitlement's lookup_key in RevenueCat exactly — the SDK keys
+ * `customerInfo.entitlements.active` by it. The live project's active
+ * entitlement (granting monthly/yearly/lifetime) is `Whenbee Pro`; a legacy
+ * `pro` entitlement is archived and its lookup_key is reserved but unreachable,
+ * so we point at the active one. If the RC entitlement is ever consolidated
+ * back to `pro`, change this string to match.
+ */
+const PRO_ENTITLEMENT_ID = 'Whenbee Pro';
 
 /** Duration tag the paywall uses to label and order packages. */
 export type PackageDuration = 'monthly' | 'yearly' | 'lifetime' | 'other';
@@ -110,6 +120,25 @@ function createStub(): PurchasesModule {
   };
 }
 
+/**
+ * Ceiling for the offering lookup that runs BEFORE the store sheet opens — a
+ * plain network call that can hang. The sheet itself is deliberately not
+ * bounded: checkout is user-paced (reading the plan, picking a card, a 3DS
+ * step) and timing it out reports a failure over a purchase that then succeeds.
+ */
+const OFFERINGS_TIMEOUT_MS = 15_000;
+
+function withTimeout<T>(work: Promise<T>, ms: number, message: string): Promise<T> {
+  return new Promise<T>((resolve, reject) => {
+    const timer = setTimeout(() => reject(new Error(message)), ms);
+    const settle = <A>(fn: (arg: A) => void) => (arg: A) => {
+      clearTimeout(timer);
+      fn(arg);
+    };
+    work.then(settle(resolve), settle(reject));
+  });
+}
+
 function createNative(Purchases: NativePurchases): PurchasesModule {
   return {
     isStub: false,
@@ -117,7 +146,11 @@ function createNative(Purchases: NativePurchases): PurchasesModule {
     getEntitlement: async () => ({ isPro: isProActive(await Purchases.getCustomerInfo()) }),
     getOfferings: async () => toOffering(await Purchases.getOfferings()),
     purchasePackage: async (pkg: Package) => {
-      const offerings = await Purchases.getOfferings();
+      const offerings = await withTimeout(
+        Purchases.getOfferings(),
+        OFFERINGS_TIMEOUT_MS,
+        'Timed out reading the current offering',
+      );
       const rcPackage = offerings.current?.availablePackages.find((p) => p.identifier === pkg.id);
       if (!rcPackage) throw new Error(`Package not found in current offering: ${pkg.id}`);
       const { customerInfo } = await Purchases.purchasePackage(rcPackage);
@@ -143,3 +176,29 @@ export function getPurchases(): PurchasesModule {
   if (!cached) cached = resolvePurchasesModule(isExpoGo, loadNativePurchases);
   return cached;
 }
+
+/**
+ * Initialize RevenueCat once with the current platform's public SDK key from
+ * env. Idempotent — safe to call on every boot. Returns false (and configures
+ * nothing) in Expo Go / tests (stub module) or when no key is set for the
+ * platform, so the app never crashes; the paywall just runs against the stub
+ * or stays locked. MUST run before `useEntitlement.hydrate()` so that
+ * `getCustomerInfo()` has a configured SDK.
+ */
+let configured = false;
+export function configurePurchases(): boolean {
+  if (configured) return true;
+  const module = getPurchases();
+  if (module.isStub) return false;
+  const apiKey = Platform.OS === 'ios' ? env.revenueCatIosKey : env.revenueCatAndroidKey;
+  if (!apiKey) return false;
+  // RevenueCat Test Store keys ("test_…") are debug-only: the native SDK
+  // hard-closes a RELEASE build if configured with one ("wrong API key … the
+  // app will close"). Skip configuring in release so the app still opens;
+  // purchases stay inert until a real production key (appl_/goog_) is set.
+  if (!__DEV__ && apiKey.startsWith('test_')) return false;
+  module.configure(apiKey);
+  configured = true;
+  return true;
+}
+

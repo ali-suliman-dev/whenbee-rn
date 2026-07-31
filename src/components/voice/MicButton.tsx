@@ -1,10 +1,17 @@
 // Trailing mic affordance for a task-title field. Bare Pressable wrapper (the
 // reactCompiler + nativewind gotcha drops function-form styles), all visuals on
-// an inner Animated.View. SF Symbol glyph for a native iOS feel. Idle = mic,
-// listening = mic.fill in primary. Voice is always optional — never required.
+// an inner Animated.View. Idle = mic, listening = filled mic in primary. Voice is
+// always optional — never required.
+//
+// The glyph is platform-split on purpose: `SymbolView` renders SF Symbols, which
+// exist ONLY on iOS. With no fallback it drew nothing on Android — an invisible,
+// still-tappable 34pt box beside every task-title field, which read as "this app
+// has no voice input". Ionicons is the set the rest of the app already uses, so
+// the Android glyph matches its neighbours rather than approximating the iOS one.
 
-import { Pressable } from 'react-native';
+import { Platform, Pressable } from 'react-native';
 import { SymbolView } from 'expo-symbols';
+import { Ionicons } from '@expo/vector-icons';
 import Animated, { useAnimatedStyle, useSharedValue, withSpring } from 'react-native-reanimated';
 import { useTranslation } from 'react-i18next';
 import { useTheme } from '@/src/theme/useTheme';
@@ -22,6 +29,7 @@ export const MicButton = ({ status, onPress }: MicButtonProps) => {
   const active = status === 'listening';
 
   const animStyle = useAnimatedStyle(() => ({ transform: [{ scale: scale.get() }] }));
+  const tint = active ? t.colors.primary : t.colors.inkSoft;
 
   return (
     <Pressable
@@ -38,11 +46,11 @@ export const MicButton = ({ status, onPress }: MicButtonProps) => {
           animStyle,
         ]}
       >
-        <SymbolView
-          name={active ? 'mic.fill' : 'mic'}
-          size={t.iconSize.md}
-          tintColor={active ? t.colors.primary : t.colors.inkSoft}
-        />
+        {Platform.OS === 'ios' ? (
+          <SymbolView name={active ? 'mic.fill' : 'mic'} size={t.iconSize.md} tintColor={tint} />
+        ) : (
+          <Ionicons name={active ? 'mic' : 'mic-outline'} size={t.iconSize.md} color={tint} />
+        )}
       </Animated.View>
     </Pressable>
   );

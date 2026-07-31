@@ -2,11 +2,13 @@ import { renderHook, act } from '@testing-library/react-native';
 import { useRoutines } from '../useRoutines';
 import { useRoutinesStore } from '@/src/stores/routinesStore';
 import { useCalibrationStore } from '@/src/stores/calibrationStore';
+import { useSettingsStore } from '@/src/stores/settingsStore';
 import { createMemoryDatabase } from '@/src/db';
 
 function resetStores() {
   useRoutinesStore.setState({ db: null, routines: [], stepMByKey: {}, activeRun: null });
   useCalibrationStore.setState({ logs: 0, statsByCategory: {} });
+  useSettingsStore.getState().reset();
 }
 
 beforeEach(resetStores);
@@ -90,5 +92,32 @@ describe('useRoutines', () => {
     });
     const { result } = renderHook(() => useRoutines({ nowMs: Date.now() }));
     expect(result.current.summaries[0]!.startByMs).toBeNull();
+  });
+
+  it('falls back to the SEEDED prior (not the population prior) for a cold, unwarmed category', async () => {
+    const db = createMemoryDatabase();
+    useRoutinesStore.getState().setDatabase(db);
+    useRoutinesStore.getState().resetDraft();
+
+    const s = useRoutinesStore.getState();
+    s.setName('Creative block');
+    s.addStep({ label: 'Sketch', category: 'creative', guessMin: 20 });
+    await act(async () => {
+      await useRoutinesStore.getState().saveDraft();
+    });
+    // No calibrationStore entry for 'creative' → the hook must fall through to
+    // seededPriorFor, not the raw priorFor.
+    useCalibrationStore.setState({ statsByCategory: {} });
+
+    const { result: unseeded } = renderHook(() => useRoutines({ nowMs: Date.UTC(2026, 5, 21, 8, 0) }));
+    const unseededTotal = unseeded.current.summaries[0]!.summary.honestTotalMin;
+
+    act(() => {
+      useSettingsStore.getState().setArchetypeSeed({ m0: 3.0, source: 'quiz', tookAt: 1 });
+    });
+    const { result: seeded } = renderHook(() => useRoutines({ nowMs: Date.UTC(2026, 5, 21, 8, 0) }));
+    const seededTotal = seeded.current.summaries[0]!.summary.honestTotalMin;
+
+    expect(seededTotal).not.toBe(unseededTotal);
   });
 });

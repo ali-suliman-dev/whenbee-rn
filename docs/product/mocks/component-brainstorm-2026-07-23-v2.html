@@ -1,0 +1,417 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Whenbee · Brainstorm v2 — context section overhaul + refined day recap</title>
+<style>
+  /* ── Real token values from src/theme/tokens.ts (light) ─────────────────── */
+  :root{
+    --bg:#F4F2FC; --surface:#FFFFFF; --sunken:#F1EEFB; --taskcard:#E9E4F6;
+    --ink:#20233A; --inksoft:#5C5F73; --inkfaint:#9B9DAB;
+    --primary:#6B5BE6; --primary-edge:#463B9E; --primary-soft:#E4E0FA; --primary-wash:#EFEDFC;
+    --accent:#EEAE4D; --accent-edge:#C68A30; --accent-soft:#FBEFD6; --honey-wash:#FBF2DF;
+    --accent-chip:#F3E2C0; --amber-text:#8A5A12; --on-indigo:#FFFFFF;
+    --r-card:16px; --r-sheet:20px; --r-full:999px;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;background:#1C1E2E;color:#F4F1EA;padding:40px 32px 80px}
+  h1{font-size:26px;letter-spacing:-0.5px;margin-bottom:6px}
+  h2{font-size:20px;letter-spacing:-0.3px;margin:46px 0 6px;color:#F5C03F}
+  .sub{color:#ADA9B5;font-size:14px;max-width:860px;line-height:1.55;margin-bottom:26px}
+  .row{display:flex;gap:34px;flex-wrap:wrap;align-items:flex-start;margin-bottom:8px}
+  .col{width:392px}
+  .dirlabel{font-size:15px;font-weight:700;margin:0 0 2px;letter-spacing:-0.2px}
+  .dirsub{font-size:12.5px;color:#ADA9B5;line-height:1.5;margin-bottom:12px;min-height:56px}
+  .notes{margin-top:12px;font-size:12.5px;color:#CFCAE0;line-height:1.55;background:#242436;border-radius:12px;padding:14px 16px}
+  .notes b{color:#F5C03F;font-weight:600}
+  .notes ul{margin:6px 0 0 16px}
+  .notes li{margin-bottom:4px}
+  .verdict{max-width:860px;font-size:13.5px;color:#E8E4F4;line-height:1.6;background:#2A2A40;border-left:3px solid #F5C03F;border-radius:10px;padding:14px 18px;margin:14px 0 8px}
+  .verdict b{color:#F5C03F}
+
+  /* ── Phone frame ── */
+  .phone{width:392px;height:856px;border-radius:44px;overflow:hidden;position:relative;
+         box-shadow:0 18px 50px rgba(0,0,0,.5);border:6px solid #0c0c12;background:var(--bg);
+         display:flex;flex-direction:column}
+  .screen{flex:1;padding:54px 20px 0;overflow:hidden;position:relative;display:flex;flex-direction:column;gap:14px}
+  .notch{position:absolute;top:12px;left:50%;transform:translateX(-50%);width:110px;height:26px;background:#000;border-radius:20px;z-index:9}
+
+  /* ══════════ REWARD SCREEN SHARED ══════════ */
+  .rw-bee{display:flex;flex-direction:column;align-items:center;margin-top:2px}
+  .rw-beebox{position:relative;width:120px;height:106px;display:flex;align-items:center;justify-content:center}
+  .rw-rays{position:absolute;inset:-16px;background:
+      repeating-conic-gradient(from 0deg, rgba(107,91,230,.10) 0 6deg, transparent 6deg 18deg);
+      border-radius:50%;filter:blur(1px)}
+  .rw-beeimg{font-size:58px;position:relative}
+  .rw-nectar{position:absolute;top:-4px;right:-28px;background:var(--accent);color:#5A3E10;font-size:12px;font-weight:700;
+      padding:4px 11px;border-radius:999px;box-shadow:0 2px 0 var(--accent-edge)}
+  .rw-h1{font-size:24px;font-weight:800;color:var(--ink);text-align:center;letter-spacing:-0.4px;margin-top:6px}
+  .rw-eyebrow{font-size:11px;letter-spacing:1.5px;font-weight:700;color:var(--inksoft);text-align:center;margin-top:8px}
+  .rw-min{text-align:center;color:var(--ink)}
+  .rw-min b{font-size:40px;font-weight:800;letter-spacing:-1px}
+  .rw-min span{font-size:17px;color:var(--inksoft);margin-left:4px}
+  .rw-badge{align-self:center;background:var(--sunken);color:var(--inksoft);font-size:12.5px;padding:5px 13px;border-radius:999px}
+  .rw-honey{background:var(--surface);border-radius:var(--r-card);padding:12px 16px 13px}
+  .rw-hrow{display:flex;justify-content:space-between;align-items:baseline}
+  .rw-hlabel{font-size:11px;letter-spacing:1.2px;font-weight:700;color:var(--inksoft)}
+  .rw-hlabel small{color:var(--inkfaint);font-weight:500;letter-spacing:0;font-size:11px}
+  .rw-hpct{font-size:19px;font-weight:800;color:var(--amber-text)}
+  .rw-hpct small{font-size:11px;font-weight:600;color:var(--inkfaint)}
+  .rw-hbar{height:8px;border-radius:4px;background:var(--honey-wash);margin-top:7px;overflow:hidden}
+  .rw-hfill{height:100%;width:27%;border-radius:4px;background:linear-gradient(90deg,#F5C03F,#EEAE4D)}
+  .rw-foot{font-size:12.5px;color:var(--inksoft);text-align:center;margin-top:auto;padding-top:6px}
+  .rw-cta{margin:10px 0 24px;height:50px;border-radius:14px;background:var(--primary);color:#fff;
+      display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:700;box-shadow:0 5px 0 var(--primary-edge)}
+  .g{flex:none}
+  .g svg{display:block;width:100%;height:100%}
+
+  /* ══════════ D1 · ONE QUESTION AT A TIME ══════════ */
+  .q1-card{background:var(--surface);border-radius:var(--r-sheet);padding:15px 16px;display:flex;flex-direction:column;gap:10px}
+  .q1-done{display:flex;align-items:center;gap:8px;font-size:13px;color:var(--inksoft)}
+  .q1-done .ok{width:20px;height:20px;border-radius:50%;background:var(--accent);color:#fff;font-size:11px;font-weight:800;
+      display:flex;align-items:center;justify-content:center}
+  .q1-done b{color:var(--ink);font-weight:700}
+  .q1-div{height:1px;background:#EFECF9}
+  .q1-ask{display:flex;align-items:center;justify-content:space-between}
+  .q1-q{font-size:15.5px;font-weight:700;color:var(--ink);letter-spacing:-0.2px}
+  .q1-skip{font-size:12.5px;color:var(--inkfaint);font-weight:600}
+  .q1-opt{display:flex;align-items:center;gap:11px;background:var(--bg);border-radius:14px;padding:10px 13px}
+  .q1-opt .dish{width:34px;height:34px;border-radius:11px;background:var(--surface);display:flex;align-items:center;justify-content:center;flex:none;
+      box-shadow:0 1px 3px rgba(70,59,158,.10)}
+  .q1-opt .dish .g{width:20px;height:20px}
+  .q1-opt .lb{font-size:14.5px;font-weight:600;color:var(--ink);flex:1}
+  .q1-opt .hint{font-size:11.5px;color:var(--inkfaint)}
+  .q1-opt .radio{width:20px;height:20px;border-radius:50%;border:1.8px solid #CFC8EA;flex:none}
+  .q1-opt.on{background:var(--primary-wash);box-shadow:inset 0 0 0 1.5px var(--primary)}
+  .q1-opt.on .radio{border-color:var(--primary);background:radial-gradient(circle at center,var(--primary) 0 5px,transparent 5.5px)}
+  .q1-count{font-size:11px;color:var(--inkfaint);text-align:center}
+
+  /* ══════════ D2 · GLYPH TILES ══════════ */
+  .t-card{background:var(--surface);border-radius:var(--r-sheet);padding:15px 16px;display:flex;flex-direction:column;gap:11px}
+  .t-q{font-size:15px;font-weight:700;color:var(--ink);letter-spacing:-0.2px}
+  .t-q small{font-size:11.5px;color:var(--inkfaint);font-weight:500;margin-left:6px}
+  .tiles{display:flex;gap:10px}
+  .tile{flex:1;background:var(--bg);border-radius:16px;padding:12px 6px 10px;display:flex;flex-direction:column;align-items:center;gap:7px;position:relative}
+  .tile .dish{width:44px;height:44px;border-radius:50%;background:var(--surface);display:flex;align-items:center;justify-content:center;
+      box-shadow:0 2px 6px rgba(70,59,158,.12)}
+  .tile .dish .g{width:26px;height:26px}
+  .tile .lb{font-size:12.5px;font-weight:600;color:var(--inksoft)}
+  .tile.on{background:var(--primary-wash);box-shadow:inset 0 0 0 1.5px var(--primary)}
+  .tile.on .lb{color:var(--primary)}
+  .tile.on .badge{position:absolute;top:-6px;right:-4px;width:19px;height:19px;border-radius:50%;background:var(--primary);color:#fff;
+      font-size:10.5px;font-weight:800;display:flex;align-items:center;justify-content:center;border:2px solid var(--surface)}
+  .t-div{height:1px;background:#EFECF9;margin:2px 0}
+
+  /* ══════════ D3 · REACTION TRAY ══════════ */
+  .r-wrap{display:flex;flex-direction:column;gap:10px}
+  .r-ask{font-size:14.5px;font-weight:700;color:var(--ink);text-align:center}
+  .r-ask small{display:block;font-size:11.5px;color:var(--inkfaint);font-weight:500;margin-top:2px}
+  .tray{align-self:center;background:var(--surface);border-radius:999px;padding:9px 13px;display:flex;gap:14px;
+      box-shadow:0 8px 24px rgba(70,59,158,.16)}
+  .r-btn{display:flex;flex-direction:column;align-items:center;gap:4px;width:64px}
+  .r-btn .cir{width:46px;height:46px;border-radius:50%;background:var(--bg);display:flex;align-items:center;justify-content:center}
+  .r-btn .cir .g{width:26px;height:26px}
+  .r-btn .lb{font-size:11px;font-weight:600;color:var(--inksoft)}
+  .r-btn.on .cir{background:var(--primary-wash);box-shadow:inset 0 0 0 1.5px var(--primary)}
+  .r-btn.on .lb{color:var(--primary);font-weight:700}
+
+  /* ══════════ TODAY SHARED (for §2) ══════════ */
+  .greet{font-size:12px;color:var(--inksoft)}
+  .hdr{display:flex;justify-content:space-between;align-items:flex-start}
+  .title{font-size:38px;font-weight:800;letter-spacing:-0.75px;color:var(--ink);line-height:1.05}
+  .date{font-size:12px;color:var(--inksoft);margin-top:2px}
+  .avatar{position:relative;width:58px;height:58px;margin-left:auto}
+  .ring{width:58px;height:58px;border-radius:50%;background:conic-gradient(var(--accent) 0 33%, #E4DFD3 33% 100%);
+        display:flex;align-items:center;justify-content:center}
+  .ring-in{width:49px;height:49px;border-radius:50%;background:#fff;display:flex;align-items:center;justify-content:center;font-size:20px}
+  .tier{font-size:10.5px;color:var(--inksoft);text-align:center;margin-top:3px}
+  .hdr-right{display:flex;align-items:flex-start;gap:14px}
+  .gear{font-size:20px;color:var(--inksoft);margin-top:16px}
+  .card{background:var(--surface);border-radius:var(--r-card);padding:14px 16px}
+  .cal{display:flex;justify-content:space-between;padding:12px 8px}
+  .day{width:44px;text-align:center;border-radius:14px;padding:7px 0}
+  .day .wd{font-size:11px;color:var(--inkfaint)}
+  .day .num{font-size:17px;font-weight:600;color:var(--ink);margin-top:2px}
+  .day.sel{background:var(--primary-soft)}
+  .day.sel .wd,.day.sel .num{color:var(--primary)}
+  .dot{width:4px;height:4px;border-radius:2px;background:var(--primary);margin:4px auto 0}
+  .sect{font-size:11px;letter-spacing:1.2px;font-weight:700;color:var(--inksoft);display:flex;justify-content:space-between;align-items:center}
+  .sect .chev{color:var(--inkfaint)}
+  .donerow{background:var(--surface);border-radius:var(--r-card);padding:13px 16px;display:flex;align-items:center;gap:10px}
+  .donerow .ck{width:22px;height:22px;border-radius:50%;background:var(--accent-soft);color:var(--amber-text);
+      display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:800;flex:none}
+  .donerow .tt{font-size:14.5px;font-weight:600;color:var(--ink);flex:1}
+  .donerow .mm{font-size:12px;color:var(--inksoft)}
+  .tabbar{margin:auto -20px 0;padding:10px 22px 26px;display:flex;align-items:flex-end;justify-content:space-between;position:relative}
+  .tab{font-size:10.5px;color:var(--inksoft);text-align:center;width:56px}
+  .tab .ic{font-size:19px;display:block;margin-bottom:3px}
+  .tab.on{color:var(--primary)}
+  .fab{width:52px;height:52px;border-radius:16px;background:var(--primary);color:#fff;font-size:24px;
+       display:flex;align-items:center;justify-content:center;margin-top:-26px;box-shadow:0 6px 0 var(--primary-edge)}
+  .retro-ghost{border:1.5px dashed #CFC8EA;border-radius:var(--r-card);padding:12px 16px;display:flex;align-items:center;gap:10px;
+      font-size:13.5px;color:var(--inksoft);background:rgba(255,255,255,.45)}
+  .retro-ghost .plus{width:24px;height:24px;border-radius:8px;background:var(--primary-wash);color:var(--primary);display:flex;align-items:center;justify-content:center;font-weight:700}
+
+  /* — refined recap card — */
+  .recap2{background:var(--surface);border-radius:var(--r-card);padding:15px 16px 13px}
+  .recap2 .eyebrow{font-size:10px;letter-spacing:.9px;font-weight:700;color:var(--inkfaint)}
+  .recap2 .line{font-size:16.5px;font-weight:700;color:var(--ink);letter-spacing:-0.25px;margin-top:5px;line-height:1.35}
+  .recap2 .line b{color:var(--amber-text)}
+  .recap2 .hair{height:1px;background:#EFECF9;margin:11px 0 9px}
+  .recap2 .mile{font-size:12.5px;color:var(--inksoft);display:flex;align-items:center;gap:7px}
+  .recap2 .mile .hex{color:var(--accent);font-size:13px}
+  .recap2 .mile b{color:var(--amber-text);font-weight:700}
+  /* focus card (active-task state) */
+  .focus{padding:18px 18px 16px;border-radius:var(--r-sheet);background:var(--surface)}
+  .eyebrow{font-size:10px;letter-spacing:.8px;font-weight:600;color:var(--inkfaint)}
+  .focus .frow{display:flex;justify-content:space-between;align-items:baseline;margin-top:8px}
+  .task{font-size:20px;font-weight:700;color:var(--ink)}
+  .est{font-size:12px;color:var(--inksoft)}
+  .est b{font-size:30px;font-weight:800;color:var(--ink);letter-spacing:-0.5px}
+  .bar{height:8px;border-radius:4px;background:#C8C2F0;margin:14px 0 10px;position:relative;overflow:hidden}
+  .bar .fill{position:absolute;inset:0;width:34%;background:repeating-linear-gradient(135deg,var(--primary) 0 2px,#A89EE4 2px 6px)}
+  .meta{display:flex;justify-content:space-between;font-size:12.5px}
+  .meta .l{color:var(--inksoft)} .meta .r{color:var(--ink);font-weight:600}
+  .cta{margin-top:14px;height:44px;border-radius:999px;background:var(--primary);color:var(--on-indigo);
+       display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:700;box-shadow:0 8px 0 var(--primary-edge)}
+</style>
+</head>
+<body>
+
+<h1>Brainstorm v2 — 2026-07-23</h1>
+<p class="sub">Round-2 per founder feedback. Locked: <b>4B readiness checklist</b> (Pro ripening) and <b>3A ghost task slot</b> (retro row).
+Reworked here: §1 the reward context section rebuilt at SECTION level (three structurally different layouts, not border variants — and selection never recolors a glyph, so the micro-animations keep playing), §2 the day recap refined (stat row gone, amber block gone) + its visibility rule.</p>
+
+<!-- ═══════════ SECTION 1 · CONTEXT SECTION OVERHAUL ═══════════ -->
+<h2>1 · Context section — rebuilt, not re-bordered</h2>
+<p class="sub">Three different STRUCTURES. Shared rules: the question is now the loud element (15px bold ink, not a grey caption); every glyph lives on its own white dish (animations finally have a stage on light theme);
+selection is shown by the CONTAINER (wash + inset ring / radio / badge) — the glyph is never repainted, so its draw animation is identical in every state.</p>
+
+<div class="row">
+
+  <!-- D1 -->
+  <div class="col">
+    <p class="dirlabel">1·I — One question at a time (flow)</p>
+    <p class="dirsub">The section becomes a tiny two-step flow. Q1 answered → collapses to a one-line receipt; Q2 slides nothing — it just fades in as full-width option rows with radios. Radios = the oldest "pick one" signal there is.</p>
+    <div class="phone"><div class="notch"></div><div class="screen">
+      <div class="rw-bee"><div class="rw-beebox"><div class="rw-rays"></div><div class="rw-beeimg">🐝</div><div class="rw-nectar">+1 nectar</div></div></div>
+      <div class="rw-h1">That's the honest number.</div>
+      <div class="rw-eyebrow">IT REALLY TOOK</div>
+      <div class="rw-min"><b>23</b><span>min</span></div>
+      <div class="rw-badge">18 min over your guess</div>
+      <div class="rw-honey">
+        <div class="rw-hrow"><div class="rw-hlabel">HONEY <small>· 2.3×</small></div><div class="rw-hpct">27 <small>%</small></div></div>
+        <div class="rw-hbar"><div class="rw-hfill"></div></div>
+      </div>
+      <div class="q1-card">
+        <div class="q1-done"><div class="ok">✓</div><div>It <b>grew</b> on you — good to know.</div></div>
+        <div class="q1-div"></div>
+        <div class="q1-ask"><div class="q1-q">How was your energy?</div><div class="q1-skip">Skip</div></div>
+        <div class="q1-opt"><div class="dish"><span class="g" style="width:20px;height:20px"><svg viewBox="0 0 18 18"><rect x="2" y="5.5" width="12" height="7" rx="2" fill="none" stroke="#6B5BE6" stroke-width="1.5"/><rect x="4" y="7.5" width="3" height="3" rx="1" fill="#EEAE4D"/><path d="M15.5 8v2" stroke="#6B5BE6" stroke-width="1.5" stroke-linecap="round"/></svg></span></div><div class="lb">Low</div><div class="hint">running on fumes</div><div class="radio"></div></div>
+        <div class="q1-opt on"><div class="dish"><span class="g" style="width:20px;height:20px"><svg viewBox="0 0 18 18"><rect x="2" y="5.5" width="12" height="7" rx="2" fill="none" stroke="#6B5BE6" stroke-width="1.5"/><rect x="4" y="7.5" width="3" height="3" rx="1" fill="#EEAE4D"/><rect x="8" y="7.5" width="3" height="3" rx="1" fill="#EEAE4D"/><path d="M15.5 8v2" stroke="#6B5BE6" stroke-width="1.5" stroke-linecap="round"/></svg></span></div><div class="lb">OK</div><div class="hint">normal day</div><div class="radio"></div></div>
+        <div class="q1-opt"><div class="dish"><span class="g" style="width:20px;height:20px"><svg viewBox="0 0 18 18"><rect x="2" y="5.5" width="12" height="7" rx="2" fill="none" stroke="#6B5BE6" stroke-width="1.5"/><rect x="3.6" y="7.5" width="2.6" height="3" rx="1" fill="#EEAE4D"/><rect x="6.9" y="7.5" width="2.6" height="3" rx="1" fill="#EEAE4D"/><rect x="10.2" y="7.5" width="2.6" height="3" rx="1" fill="#EEAE4D"/><path d="M15.5 8v2" stroke="#6B5BE6" stroke-width="1.5" stroke-linecap="round"/></svg></span></div><div class="lb">High</div><div class="hint">fully charged</div><div class="radio"></div></div>
+        <div class="q1-count">2 of 2 · one tap each, both optional</div>
+      </div>
+      <div class="rw-foot">One honest log a day. No streak to keep.</div>
+      <div class="rw-cta">See your bee</div>
+    </div></div>
+    <div class="notes"><b>What changed structurally:</b>
+      <ul>
+        <li>Two cramped 3-pill rows → ONE question with full-width 44pt option rows. Radio + row = unmistakably a form you answer, never an illustration.</li>
+        <li>Each option gains a 2-3 word flavor hint ("running on fumes") — makes rows feel human and worth reading, not just taggable metadata.</li>
+        <li>Answered question collapses to a receipt line ("It grew on you — good to know.") — closure + saves the space back.</li>
+        <li>One-at-a-time = highest completion pattern in forms; "Skip" is always visible, zero pressure.</li>
+        <li>Rows fade in (opacity only, staggered 50ms) — no slides, no bounce.</li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- D2 -->
+  <div class="col">
+    <p class="dirlabel">1·II — Glyph tiles (mood-picker grammar)</p>
+    <p class="dirsub">Daylio / How-We-Feel grammar: a board of big tappable tiles, glyph as the hero at 26px on a floating white dish. A mood-picker is the one UI everyone on earth has tapped.</p>
+    <div class="phone"><div class="notch"></div><div class="screen">
+      <div class="rw-bee"><div class="rw-beebox"><div class="rw-rays"></div><div class="rw-beeimg">🐝</div><div class="rw-nectar">+1 nectar</div></div></div>
+      <div class="rw-h1">That's the honest number.</div>
+      <div class="rw-eyebrow">IT REALLY TOOK</div>
+      <div class="rw-min"><b>23</b><span>min</span></div>
+      <div class="rw-badge">18 min over your guess</div>
+      <div class="rw-honey">
+        <div class="rw-hrow"><div class="rw-hlabel">HONEY <small>· 2.3×</small></div><div class="rw-hpct">27 <small>%</small></div></div>
+        <div class="rw-hbar"><div class="rw-hfill"></div></div>
+      </div>
+      <div class="t-card">
+        <div class="t-q">Where did the time go?<small>tap one · optional</small></div>
+        <div class="tiles">
+          <div class="tile"><div class="dish"><span class="g"><svg viewBox="0 0 18 18"><path d="M9 2a5 5 0 0 1 5 5v3l1.5 2.5H2.5L4 10V7a5 5 0 0 1 5-5z" fill="none" stroke="#6B5BE6" stroke-width="1.5" stroke-linejoin="round"/><path d="M7.5 15a1.5 1.5 0 0 0 3 0" fill="none" stroke="#6B5BE6" stroke-width="1.5"/></svg></span></div><div class="lb">Paused</div></div>
+          <div class="tile on"><div class="badge">✓</div><div class="dish"><span class="g"><svg viewBox="0 0 18 18"><rect x="6" y="6" width="6" height="6" rx="1.5" fill="none" stroke="#6B5BE6" stroke-width="1.5"/><path d="M3 6V3h3M12 3h3v3M15 12v3h-3M6 15H3v-3" fill="none" stroke="#EEAE4D" stroke-width="1.5" stroke-linecap="round"/></svg></span></div><div class="lb">Grew</div></div>
+          <div class="tile"><div class="dish"><span class="g"><svg viewBox="0 0 18 18"><rect x="3" y="2.5" width="7" height="13" rx="1.5" fill="none" stroke="#6B5BE6" stroke-width="1.5"/><path d="M10 9h6m0 0-2.4-2.4M16 9l-2.4 2.4" fill="none" stroke="#EEAE4D" stroke-width="1.5" stroke-linecap="round"/></svg></span></div><div class="lb">Pulled</div></div>
+        </div>
+        <div class="t-div"></div>
+        <div class="t-q">Energy this session?<small>optional</small></div>
+        <div class="tiles">
+          <div class="tile"><div class="dish"><span class="g"><svg viewBox="0 0 18 18"><rect x="2" y="5.5" width="12" height="7" rx="2" fill="none" stroke="#6B5BE6" stroke-width="1.5"/><rect x="4" y="7.5" width="3" height="3" rx="1" fill="#EEAE4D"/><path d="M15.5 8v2" stroke="#6B5BE6" stroke-width="1.5" stroke-linecap="round"/></svg></span></div><div class="lb">Low</div></div>
+          <div class="tile"><div class="dish"><span class="g"><svg viewBox="0 0 18 18"><rect x="2" y="5.5" width="12" height="7" rx="2" fill="none" stroke="#6B5BE6" stroke-width="1.5"/><rect x="4" y="7.5" width="3" height="3" rx="1" fill="#EEAE4D"/><rect x="8" y="7.5" width="3" height="3" rx="1" fill="#EEAE4D"/><path d="M15.5 8v2" stroke="#6B5BE6" stroke-width="1.5" stroke-linecap="round"/></svg></span></div><div class="lb">OK</div></div>
+          <div class="tile"><div class="dish"><span class="g"><svg viewBox="0 0 18 18"><rect x="2" y="5.5" width="12" height="7" rx="2" fill="none" stroke="#6B5BE6" stroke-width="1.5"/><rect x="3.6" y="7.5" width="2.6" height="3" rx="1" fill="#EEAE4D"/><rect x="6.9" y="7.5" width="2.6" height="3" rx="1" fill="#EEAE4D"/><rect x="10.2" y="7.5" width="2.6" height="3" rx="1" fill="#EEAE4D"/><path d="M15.5 8v2" stroke="#6B5BE6" stroke-width="1.5" stroke-linecap="round"/></svg></span></div><div class="lb">High</div></div>
+        </div>
+      </div>
+      <div class="rw-foot">One honest log a day. No streak to keep.</div>
+      <div class="rw-cta">See your bee</div>
+    </div></div>
+    <div class="notes"><b>What changed structurally:</b>
+      <ul>
+        <li>Pills → a tile BOARD. 44px floating dish per glyph: the animation goes from invisible garnish to the main character of each tile.</li>
+        <li>Selected = wash + inset ring + corner check badge. Glyph untouched — its amber/indigo draw animation plays the same before, during, after selection (the exact problem 1C had).</li>
+        <li>Question promoted to 15px bold ink with inline "tap one · optional" — reads as an ask, not a label.</li>
+        <li>Idle invitation (build note): dishes get the existing glyph micro-life (a slow 8s blink/flicker on ONE random tile) — movement is the strongest "I'm alive, touch me" cue and the glyphs already have these animations.</li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- D3 -->
+  <div class="col">
+    <p class="dirlabel">1·III — Reaction tray (tapback grammar)</p>
+    <p class="dirsub">The section stops being a card at all: a floating pill tray of round icon buttons, exactly like an iMessage/Slack reaction picker hovering over the log. Reaction pickers are 100% understood as tappable.</p>
+    <div class="phone"><div class="notch"></div><div class="screen">
+      <div class="rw-bee"><div class="rw-beebox"><div class="rw-rays"></div><div class="rw-beeimg">🐝</div><div class="rw-nectar">+1 nectar</div></div></div>
+      <div class="rw-h1">That's the honest number.</div>
+      <div class="rw-eyebrow">IT REALLY TOOK</div>
+      <div class="rw-min"><b>23</b><span>min</span></div>
+      <div class="rw-badge">18 min over your guess</div>
+      <div class="rw-honey">
+        <div class="rw-hrow"><div class="rw-hlabel">HONEY <small>· 2.3×</small></div><div class="rw-hpct">27 <small>%</small></div></div>
+        <div class="rw-hbar"><div class="rw-hfill"></div></div>
+      </div>
+      <div class="r-wrap">
+        <div class="r-ask">Where did the time go?<small>tap to tag it · optional</small></div>
+        <div class="tray">
+          <div class="r-btn"><div class="cir"><span class="g"><svg viewBox="0 0 18 18"><path d="M9 2a5 5 0 0 1 5 5v3l1.5 2.5H2.5L4 10V7a5 5 0 0 1 5-5z" fill="none" stroke="#6B5BE6" stroke-width="1.5" stroke-linejoin="round"/><path d="M7.5 15a1.5 1.5 0 0 0 3 0" fill="none" stroke="#6B5BE6" stroke-width="1.5"/></svg></span></div><div class="lb">Paused</div></div>
+          <div class="r-btn on"><div class="cir"><span class="g"><svg viewBox="0 0 18 18"><rect x="6" y="6" width="6" height="6" rx="1.5" fill="none" stroke="#6B5BE6" stroke-width="1.5"/><path d="M3 6V3h3M12 3h3v3M15 12v3h-3M6 15H3v-3" fill="none" stroke="#EEAE4D" stroke-width="1.5" stroke-linecap="round"/></svg></span></div><div class="lb">Grew</div></div>
+          <div class="r-btn"><div class="cir"><span class="g"><svg viewBox="0 0 18 18"><rect x="3" y="2.5" width="7" height="13" rx="1.5" fill="none" stroke="#6B5BE6" stroke-width="1.5"/><path d="M10 9h6m0 0-2.4-2.4M16 9l-2.4 2.4" fill="none" stroke="#EEAE4D" stroke-width="1.5" stroke-linecap="round"/></svg></span></div><div class="lb">Pulled</div></div>
+        </div>
+        <div class="r-ask" style="margin-top:2px">Energy?<small>optional</small></div>
+        <div class="tray">
+          <div class="r-btn"><div class="cir"><span class="g"><svg viewBox="0 0 18 18"><rect x="2" y="5.5" width="12" height="7" rx="2" fill="none" stroke="#6B5BE6" stroke-width="1.5"/><rect x="4" y="7.5" width="3" height="3" rx="1" fill="#EEAE4D"/></svg></span></div><div class="lb">Low</div></div>
+          <div class="r-btn"><div class="cir"><span class="g"><svg viewBox="0 0 18 18"><rect x="2" y="5.5" width="12" height="7" rx="2" fill="none" stroke="#6B5BE6" stroke-width="1.5"/><rect x="4" y="7.5" width="3" height="3" rx="1" fill="#EEAE4D"/><rect x="8" y="7.5" width="3" height="3" rx="1" fill="#EEAE4D"/></svg></span></div><div class="lb">OK</div></div>
+          <div class="r-btn"><div class="cir"><span class="g"><svg viewBox="0 0 18 18"><rect x="2" y="5.5" width="12" height="7" rx="2" fill="none" stroke="#6B5BE6" stroke-width="1.5"/><rect x="3.6" y="7.5" width="2.6" height="3" rx="1" fill="#EEAE4D"/><rect x="6.9" y="7.5" width="2.6" height="3" rx="1" fill="#EEAE4D"/><rect x="10.2" y="7.5" width="2.6" height="3" rx="1" fill="#EEAE4D"/></svg></span></div><div class="lb">High</div></div>
+        </div>
+      </div>
+      <div class="rw-foot">One honest log a day. No streak to keep.</div>
+      <div class="rw-cta">See your bee</div>
+    </div></div>
+    <div class="notes"><b>What changed structurally / risks:</b>
+      <ul>
+        <li>No card, no pills — a floating tray with round 46px icon buttons. The float + circles = reaction-picker language, the most universally tappable-looking UI that exists.</li>
+        <li>Glyphs at 26px on the tray circles — same animation-stage win as tiles.</li>
+        <li><b>Risks:</b> two trays stacked is a lot of float; labels at 11px are small (accessibility check needed); playful register may read lighter than "honest number" wants.</li>
+      </ul>
+    </div>
+  </div>
+</div>
+
+<div class="verdict"><b>Recommendation — 1·II Glyph tiles, with 1·I's collapse-to-receipt as an optional layer later.</b> Tiles are the biggest visual break from "illustration-looking pills": a board of floating dishes reads as a game you play, the glyph animations become the hero at 26px on pure white, and selection (wash + ring + badge) never touches the glyph — so the draw animations survive every state, the flaw that killed 1C. 1·I wins on completion psychology (one question, radios, flavor hints) but costs sequencing logic; if tiles feel too static on device, graft 1·I's receipt-collapse on top. 1·III is the wild card — great energy, but two floating trays fight the honey card for depth.</div>
+
+<!-- ═══════════ SECTION 2 · REFINED DAY RECAP ═══════════ -->
+<h2>2 · "Your day so far" — refined + visibility rule</h2>
+<p class="sub">Feedback applied: the 3-column stat row (chaotic) is gone — both numbers now live inside ONE sentence. The amber milestone block (unsure colors) is gone — the milestone is a quiet hairline-separated caption with a small honey mark, amber only on the two words that matter.
+Card is shorter, flatter, calmer.</p>
+
+<div class="row">
+
+  <div class="col">
+    <p class="dirlabel">2A′ · Refined recap — sparse day (card SHOWS)</p>
+    <p class="dirsub">No active timer, no unfinished planned tasks → recap is the hero. One sentence, one quiet milestone line.</p>
+    <div class="phone"><div class="notch"></div><div class="screen">
+      <div class="hdr">
+        <div><div class="greet">Good morning</div><div class="title">Today</div><div class="date">Thu · Jul 23</div></div>
+        <div class="hdr-right"><div class="gear">⚙</div>
+          <div><div class="avatar"><div class="ring"><div class="ring-in">🐝</div></div></div><div class="tier">Raw</div></div>
+        </div>
+      </div>
+      <div class="card cal">
+        <div class="day"><div class="wd">Mon</div><div class="num">20</div></div>
+        <div class="day"><div class="wd">Tue</div><div class="num">21</div></div>
+        <div class="day"><div class="wd">Wed</div><div class="num">22</div></div>
+        <div class="day sel"><div class="wd">Thu</div><div class="num">23</div><div class="dot"></div></div>
+        <div class="day"><div class="wd">Fri</div><div class="num">24</div></div>
+        <div class="day"><div class="wd">Sat</div><div class="num">25</div></div>
+        <div class="day"><div class="wd">Sun</div><div class="num">26</div></div>
+      </div>
+      <div class="recap2">
+        <div class="eyebrow">YOUR DAY SO FAR</div>
+        <div class="line">One honest log — <b>23 real minutes</b> on the books.</div>
+        <div class="hair"></div>
+        <div class="mile"><span class="hex">⬡</span><span><b>~2 more logs</b> and Admin settles in.</span></div>
+      </div>
+      <div class="sect"><span>DONE TODAY · 1</span><span class="chev">⌄</span></div>
+      <div class="donerow"><div class="ck">✓</div><div class="tt">Test</div><div class="mm">guessed 5 · took 23</div></div>
+      <div class="retro-ghost"><div class="plus">+</div><div>Finished something else? <b style="color:var(--primary);font-weight:600">Log it too</b></div></div>
+      <div class="tabbar">
+        <div class="tab on"><span class="ic">⌂</span>Today</div>
+        <div class="tab"><span class="ic">▦</span>Routines</div>
+        <div class="fab">+</div>
+        <div class="tab"><span class="ic">🐝</span>Whenbee</div>
+        <div class="tab"><span class="ic">〰</span>Patterns</div>
+      </div>
+    </div></div>
+    <div class="notes"><b>Refinements vs v1:</b>
+      <ul>
+        <li>3-col LOGGED/REAL TIME/HONEY row → deleted. The sentence carries both numbers; honey lives in the avatar ring + Whenbee tab where it already has a home.</li>
+        <li>Amber wash block → hairline + caption. Amber appears ONLY on "23 real minutes" and "~2 more logs" — two warm touches, no colored slab.</li>
+        <li>Card height ~152px → ~110px; padding 18→15; headline 19→16.5px. No shadow — flat surface like every other card.</li>
+        <li>Milestone stays countable (the unlock-ladder rule) but whispers now.</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="col">
+    <p class="dirlabel">2A′ · Same day, active task (card HIDES)</p>
+    <p class="dirsub">A timer is running (or any unfinished planned task exists) → the recap unmounts entirely. The Next/timer card owns the screen; no competition.</p>
+    <div class="phone"><div class="notch"></div><div class="screen">
+      <div class="hdr">
+        <div><div class="greet">Good morning</div><div class="title">Today</div><div class="date">Thu · Jul 23</div></div>
+        <div class="hdr-right"><div class="gear">⚙</div>
+          <div><div class="avatar"><div class="ring"><div class="ring-in">🐝</div></div></div><div class="tier">Raw</div></div>
+        </div>
+      </div>
+      <div class="card cal">
+        <div class="day"><div class="wd">Mon</div><div class="num">20</div></div>
+        <div class="day"><div class="wd">Tue</div><div class="num">21</div></div>
+        <div class="day"><div class="wd">Wed</div><div class="num">22</div></div>
+        <div class="day sel"><div class="wd">Thu</div><div class="num">23</div><div class="dot"></div></div>
+        <div class="day"><div class="wd">Fri</div><div class="num">24</div></div>
+        <div class="day"><div class="wd">Sat</div><div class="num">25</div></div>
+        <div class="day"><div class="wd">Sun</div><div class="num">26</div></div>
+      </div>
+      <div class="focus">
+        <div class="eyebrow">NEXT · ADMIN &amp; EMAIL</div>
+        <div class="frow"><div class="task">Inbox zero</div><div class="est"><b>~12</b> min</div></div>
+        <div class="bar"><div class="fill"></div></div>
+        <div class="meta"><span class="l">guessed 10</span><span class="r">finish ~08:31</span></div>
+        <div class="cta">▶&nbsp; Running…</div>
+      </div>
+      <div class="sect"><span>DONE TODAY · 1</span><span class="chev">⌄</span></div>
+      <div class="donerow"><div class="ck">✓</div><div class="tt">Test</div><div class="mm">guessed 5 · took 23</div></div>
+      <div class="retro-ghost"><div class="plus">+</div><div>Finished something else? <b style="color:var(--primary);font-weight:600">Log it too</b></div></div>
+      <div class="tabbar">
+        <div class="tab on"><span class="ic">⌂</span>Today</div>
+        <div class="tab"><span class="ic">▦</span>Routines</div>
+        <div class="fab">+</div>
+        <div class="tab"><span class="ic">🐝</span>Whenbee</div>
+        <div class="tab"><span class="ic">〰</span>Patterns</div>
+      </div>
+    </div></div>
+    <div class="notes"><b>Visibility rule (as requested):</b>
+      <ul>
+        <li>Recap renders ONLY when: <b>no active timer</b> AND <b>no unfinished planned task for today</b> AND <b>≥1 completed log today</b>.</li>
+        <li>Timer starts or a task is added → recap unmounts (plain unmount, no exit animation — Fabric rule). Task finishes / list empties again → recap fades back in with updated numbers.</li>
+        <li>Zero logs + zero plan (fresh morning) → recap does NOT show; that state keeps the existing first-run/plan empty treatment.</li>
+      </ul>
+    </div>
+  </div>
+</div>
+
+<div class="verdict"><b>Locked this round:</b> Pro ripening → <b>4B readiness checklist early</b> (3 pip states, mini honey bar, "a normal day, not a project" ETA line). Retro row → <b>3A ghost task slot</b>. Both unchanged from v1 mock. §1 and §2A′ above await the pick.</div>
+
+</body>
+</html>

@@ -1,0 +1,227 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Whenbee — v6, Now placement</title>
+<style>
+  :root{
+    --bg:#14151D; --surface:#1F2130; --raised:#292B3C; --sunken:#15161F;
+    --hairline:rgba(255,255,255,0.08); --scrim:rgba(10,11,16,0.60);
+    --ink:#F4F1EA; --inkSoft:#ADA9B5; --inkFaint:rgba(244,241,234,0.40);
+    --primary:#8275F0; --primaryBright:#B3A7FF; --primaryEdge:#6B5BE6;
+    --primaryChip:rgba(130,117,240,0.20);
+    --accent:#EEAE4D; --accentEdge:#C68A30; --onAmber:#20233A; --danger:#E06464;
+    --s1:4px; --s1_5:6px; --s2:8px; --s2_5:10px; --s3:12px; --s4:16px; --s5:20px; --s6:24px;
+    --rSm:8px; --rMd:12px; --rCard:16px; --rSheet:20px; --rFull:999px;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{background:#0B0C12;color:var(--ink);
+    font-family:'Plus Jakarta Sans',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
+    padding:40px 28px 90px;line-height:1.4}
+  .wrap{max-width:1560px;margin:0 auto}
+  h1{font-size:30px;font-weight:800;letter-spacing:-0.75px;margin-bottom:6px}
+  .lede{color:var(--inkSoft);font-size:15px;max-width:860px;margin-bottom:38px}
+  section{margin-bottom:60px}
+  .shead{display:flex;align-items:baseline;gap:12px;margin-bottom:6px}
+  .snum{font-family:Menlo,monospace;font-size:12px;color:var(--accent);letter-spacing:1px}
+  h2{font-size:22px;font-weight:800;letter-spacing:-0.5px}
+  .sdesc{color:var(--inkSoft);font-size:14px;max-width:900px;margin-bottom:22px}
+  .note{background:var(--surface);padding:14px 16px;border-radius:var(--rMd);
+    color:var(--inkSoft);font-size:13.5px;max-width:900px;margin-bottom:24px}
+  .note b{color:var(--ink)}
+  code{font-family:Menlo,monospace;font-size:12px;color:var(--primaryBright);background:var(--sunken);padding:1px 5px;border-radius:4px}
+  .row{display:flex;gap:26px;flex-wrap:wrap;align-items:flex-start}
+  .opt{width:352px}
+  .otag{display:inline-flex;align-items:center;gap:7px;margin-bottom:9px;font-size:11px;
+    letter-spacing:0.8px;text-transform:uppercase;font-weight:800;color:var(--inkSoft)}
+  .pick{background:var(--accent);color:var(--onAmber);padding:2px 8px;border-radius:var(--rFull);font-size:9px}
+  .lock{background:#2A3F33;color:#7DD6A6;padding:2px 8px;border-radius:var(--rFull);font-size:9px;font-weight:800;letter-spacing:0.8px}
+  .onote{color:var(--inkSoft);font-size:12.5px;margin-top:11px}
+  .onote b{color:var(--ink)}
+  .con{color:#C99;font-size:12.5px;margin-top:4px}
+
+  .stage{width:352px;height:500px;border-radius:26px;overflow:hidden;position:relative;
+    background:var(--bg);border:1px solid var(--hairline)}
+  .under{position:absolute;inset:0;padding:var(--s5);filter:saturate(.7)}
+  .scrimlay{position:absolute;inset:0;background:var(--scrim)}
+  .sheet{position:absolute;left:0;right:0;bottom:0;background:var(--surface);
+    border-radius:var(--rSheet) var(--rSheet) 0 0;padding:var(--s6) var(--s4) var(--s6);
+    display:flex;flex-direction:column;gap:var(--s5)}
+  .grab{width:36px;height:4px;border-radius:var(--rFull);background:var(--hairline);margin:0 auto}
+  .stitle{font-size:12px;color:var(--inkSoft);font-weight:500}
+  .titlerow{display:flex;align-items:center;justify-content:space-between;gap:var(--s3);min-height:32px}
+
+  .wheelwrap{padding:var(--s3) 0;display:flex;justify-content:center;align-items:center;gap:var(--s3);position:relative}
+  .pillband{position:absolute;left:var(--s5);right:var(--s5);height:40px;border-radius:var(--rMd);
+    background:var(--raised);top:50%;transform:translateY(-50%)}
+  .col{width:72px;display:flex;flex-direction:column;align-items:center;position:relative;z-index:1}
+  .col span{font-family:Menlo,monospace;font-size:18px;line-height:40px;height:40px;color:var(--inkFaint)}
+  .col span.f2{opacity:.28} .col span.f1{opacity:.55}
+  .col span.sel{color:var(--ink);font-size:24px;font-weight:700}
+  .colon{font-family:Menlo,monospace;font-size:22px;color:var(--inkSoft);z-index:1}
+  .acts{display:flex;justify-content:flex-end;gap:var(--s2);align-items:center}
+  .acts.split{justify-content:space-between}
+  .btn{padding:9px 16px;border-radius:var(--rFull);font-size:13px;font-weight:800}
+  .btn.ghost{color:var(--inkSoft)}
+  .btn.ind{background:var(--primary);color:#fff;box-shadow:0 4px 0 var(--primaryEdge)}
+  .ghostlink{font-size:13px;font-weight:800;color:var(--primaryBright)}
+  .nowchip{padding:6px 13px;border-radius:var(--rFull);font-size:12.5px;font-weight:800;
+    background:var(--sunken);color:var(--inkSoft);border:1px solid var(--hairline);white-space:nowrap}
+  .nowchip.on{background:var(--primaryChip);color:var(--primaryBright);border-color:transparent}
+
+  .blk{display:flex;gap:var(--s3);padding:var(--s1_5) 0}
+  .clock{width:46px;font-family:Menlo,monospace;font-size:12.5px;color:var(--primaryBright);padding-top:14px;text-align:right}
+  .clock.a{color:var(--accent)}
+  .card{flex:1;background:var(--surface);border-radius:var(--rCard);padding:var(--s3) var(--s4);min-height:70px}
+  .card .t{font-size:14.5px;font-weight:600}
+  .card .m{font-size:11.5px;color:var(--inkSoft);margin-top:3px}
+  .ptitle{font-size:22px;font-weight:800;letter-spacing:-0.5px;margin-bottom:var(--s3)}
+  table{border-collapse:collapse;width:100%;max-width:900px;font-size:13.5px;margin-top:8px}
+  th,td{text-align:left;padding:9px 14px;border-bottom:1px solid var(--hairline);vertical-align:top}
+  th{color:var(--inkFaint);font-size:10px;letter-spacing:0.8px;text-transform:uppercase}
+  td b{color:var(--ink)} td{color:var(--inkSoft)}
+  .mono{font-family:Menlo,monospace}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<h1>v6 — where "Now" sits</h1>
+<p class="lede">F2 pinned, plus the two title-line variants you asked for. Everything else is unchanged: real overlay, scrim, grabber, HH : MM pan-wheel, Done in the bottom-right.</p>
+
+<div class="note">
+  <b>The one thing placement decides.</b> The footer slot fires an <em>action</em> — tap it and the wheel jumps to now. The title-line slot can also hold a <em>state</em> — it can show you the row is currently on Now, before you touch anything. That matters because Now is a live anchor (<code>startAt: null</code>, re-derives every render) while a spun time is fixed. If nothing on screen distinguishes them, reopening the sheet tomorrow tells you nothing about which one you're in.
+</div>
+
+<section>
+  <div class="shead"><span class="snum">01</span><h2>The three placements</h2></div>
+
+  <div class="row">
+
+    <div class="opt">
+      <div class="otag">F2 · Footer button <span class="lock">PINNED</span></div>
+      <div class="stage">
+        <div class="under">
+          <div class="ptitle">Today&apos;s plan</div>
+          <div class="blk"><div class="clock a">09:30</div><div class="card"><div class="t">Draft proposal</div><div class="m">1h 20m</div></div></div>
+          <div class="blk"><div class="clock">10:55</div><div class="card"><div class="t">Review PRs</div><div class="m">50m</div></div></div>
+        </div>
+        <div class="scrimlay"></div>
+        <div class="sheet">
+          <div class="grab"></div>
+          <div class="stitle">Start at</div>
+          <div class="wheelwrap">
+            <div class="pillband"></div>
+            <div class="col"><span class="f2">07</span><span class="f1">08</span><span class="sel">09</span><span class="f1">10</span><span class="f2">11</span></div>
+            <div class="colon">:</div>
+            <div class="col"><span class="f2">20</span><span class="f1">25</span><span class="sel">30</span><span class="f1">35</span><span class="f2">40</span></div>
+          </div>
+          <div class="acts split"><span class="btn ghost">Use now</span><span class="btn ind">Done</span></div>
+        </div>
+      </div>
+      <p class="onote"><b>Zero new structure.</b> Reuses the exact slot <code>Clear</code> holds today — same ghost <code>AppButton</code>, same row, just a different label on the start row. The wheel is the hero, uninterrupted.</p>
+      <p class="onote">Title stays a bare quiet caption, so the sheet reads identically to every other picker in the app.</p>
+    </div>
+
+    <div class="opt">
+      <div class="otag">G1 · Title line, quiet link <span class="pick">of the two</span></div>
+      <div class="stage">
+        <div class="under">
+          <div class="ptitle">Today&apos;s plan</div>
+          <div class="blk"><div class="clock a">09:30</div><div class="card"><div class="t">Draft proposal</div><div class="m">1h 20m</div></div></div>
+          <div class="blk"><div class="clock">10:55</div><div class="card"><div class="t">Review PRs</div><div class="m">50m</div></div></div>
+        </div>
+        <div class="scrimlay"></div>
+        <div class="sheet">
+          <div class="grab"></div>
+          <div class="titlerow">
+            <span class="stitle">Start at</span>
+            <span class="ghostlink">Use now</span>
+          </div>
+          <div class="wheelwrap">
+            <div class="pillband"></div>
+            <div class="col"><span class="f2">07</span><span class="f1">08</span><span class="sel">09</span><span class="f1">10</span><span class="f2">11</span></div>
+            <div class="colon">:</div>
+            <div class="col"><span class="f2">20</span><span class="f1">25</span><span class="sel">30</span><span class="f1">35</span><span class="f2">40</span></div>
+          </div>
+          <div class="acts"><span class="btn ind">Done</span></div>
+        </div>
+      </div>
+      <p class="onote"><b>Label-left, shortcut-right — the same header shape as every section in the app</b> (Today's <code>CALENDAR · 3</code> row, the plan header's <code>Clear</code>). It reads instantly as "here's what this is, here's the quick way out".</p>
+      <p class="onote">Frees the footer to hold only <code>Done</code>, so the action row has one primary and nothing competing with it.</p>
+      <p class="con">Still an action, not a state — reopen tomorrow and nothing says whether you're on Now or on a pinned 09:30.</p>
+    </div>
+
+    <div class="opt">
+      <div class="otag">G2 · Title line, stateful chip</div>
+      <div class="stage">
+        <div class="under">
+          <div class="ptitle">Today&apos;s plan</div>
+          <div class="blk"><div class="clock a">09:30</div><div class="card"><div class="t">Draft proposal</div><div class="m">1h 20m</div></div></div>
+          <div class="blk"><div class="clock">10:55</div><div class="card"><div class="t">Review PRs</div><div class="m">50m</div></div></div>
+        </div>
+        <div class="scrimlay"></div>
+        <div class="sheet">
+          <div class="grab"></div>
+          <div class="titlerow">
+            <span class="stitle">Start at</span>
+            <span class="nowchip">Now · 09:05</span>
+          </div>
+          <div class="wheelwrap">
+            <div class="pillband"></div>
+            <div class="col"><span class="f2">07</span><span class="f1">08</span><span class="sel">09</span><span class="f1">10</span><span class="f2">11</span></div>
+            <div class="colon">:</div>
+            <div class="col"><span class="f2">20</span><span class="f1">25</span><span class="sel">30</span><span class="f1">35</span><span class="f2">40</span></div>
+          </div>
+          <div class="acts"><span class="btn ind">Done</span></div>
+        </div>
+      </div>
+      <p class="onote"><b>Same position as G1, but it carries the live time and can light up.</b> Here it's unselected (grey outline) because the wheel is on a pinned 09:30 — and it's telling you what Now would be, so the trade is visible before you tap.</p>
+      <p class="con">A chip beside a 12px caption is heavier than the title itself, which inverts the hierarchy slightly. Next phone shows it selected.</p>
+    </div>
+
+    <div class="opt">
+      <div class="otag">G2 · selected state</div>
+      <div class="stage">
+        <div class="under">
+          <div class="ptitle">Today&apos;s plan</div>
+          <div class="blk"><div class="clock a">09:05</div><div class="card"><div class="t">Draft proposal</div><div class="m">1h 20m</div></div></div>
+          <div class="blk"><div class="clock">10:30</div><div class="card"><div class="t">Review PRs</div><div class="m">50m</div></div></div>
+        </div>
+        <div class="scrimlay"></div>
+        <div class="sheet">
+          <div class="grab"></div>
+          <div class="titlerow">
+            <span class="stitle">Start at</span>
+            <span class="nowchip on">Now · 09:05</span>
+          </div>
+          <div class="wheelwrap" style="opacity:.45">
+            <div class="pillband"></div>
+            <div class="col"><span class="f2">07</span><span class="f1">08</span><span class="sel">09</span><span class="f1">10</span><span class="f2">11</span></div>
+            <div class="colon">:</div>
+            <div class="col"><span class="f2">55</span><span class="f1">00</span><span class="sel">05</span><span class="f1">10</span><span class="f2">15</span></div>
+          </div>
+          <div class="acts"><span class="btn ind">Done</span></div>
+        </div>
+      </div>
+      <p class="onote"><b>This is the state F2 and G1 cannot show.</b> Chip filled indigo, wheel dimmed to 45% and mirroring the live time — you can see at a glance that the row is following the clock rather than pinned. Touch the wheel and the chip releases, wheel goes full opacity.</p>
+      <p class="onote">The dim is the whole trick: the wheel still shows a number, but a 45% wheel doesn't read as "you set this".</p>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="shead"><span class="snum">02</span><h2>Label</h2></div>
+  <table>
+    <tr><th>Label</th><th>Read</th></tr>
+    <tr><td><b>Use now</b></td><td>Unambiguously an action. Reads well in the footer (F2) and as a link (G1). Slightly odd inside a chip, where a verb implies the chip is a button rather than a state.</td></tr>
+    <tr><td><b>Now</b> / <b>Now · 09:05</b></td><td>Reads as a value, which is right for a chip that can be selected. The appended clock also answers "what would that actually be?" without a tap. Best for G2, weak as a footer button — a lone "Now" beside "Done" looks like a second confirm.</td></tr>
+    <tr><td><b>Start now</b></td><td>Clear, but "Start" collides with the timer — on a screen that plans a day rather than launching one, it risks reading as a play button. I'd avoid it here.</td></tr>
+  </table>
+  <p class="onote" style="max-width:900px">So the label follows the placement: <b>F2/G1 → "Use now"</b>, <b>G2 → "Now · 09:05"</b>.</p>
+</section>
+
+</div>
+</body>
+</html>

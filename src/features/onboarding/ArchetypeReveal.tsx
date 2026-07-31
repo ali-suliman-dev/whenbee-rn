@@ -146,10 +146,14 @@ export function ArchetypeReveal({
     paddingTop: t.space[8],
     paddingBottom: t.space[6],
     alignItems: 'center',
-    ...Platform.select({
-      ios: { shadowColor: '#000', shadowOpacity: 0.38, shadowRadius: t.shadow.lift.radius, shadowOffset: { width: 0, height: t.shadow.lift.offset } },
-      default: { elevation: t.shadow.lift.elevation },
-    }),
+    // Dark only: the collectible lifts off near-black with a soft drop. In light the
+    // card is flat (no shadow) and separates from the page by its lavender tint alone.
+    ...(t.mode === 'dark'
+      ? Platform.select({
+          ios: { shadowColor: '#000', shadowOpacity: 0.38, shadowRadius: t.shadow.lift.radius, shadowOffset: { width: 0, height: t.shadow.lift.offset } },
+          default: { elevation: t.shadow.lift.elevation },
+        })
+      : null),
   };
   const eyebrowStyle: TextStyle = { ...(type.eyebrow as unknown as TextStyle), color: t.reveal.eyebrowOn, textAlign: 'center', marginTop: t.space[4] };
   // Echo line: answer-echo above the title. bodySm / reveal.blurbOn, centered.
@@ -161,8 +165,8 @@ export function ArchetypeReveal({
   // as one quiet centred line beneath.
   const statBlock: ViewStyle = { alignItems: 'center', marginTop: t.space[4] };
   const multRow: ViewStyle = { flexDirection: 'row', alignItems: 'baseline' };
-  const multStyle: TextStyle = { ...(type.honestNumberLg as unknown as TextStyle), color: t.brand.honeyFill };
-  const multX: TextStyle = { ...(type.honestNumberMd as unknown as TextStyle), color: t.brand.honeyFill, opacity: 0.85, marginLeft: t.space[0.5] };
+  const multStyle: TextStyle = { ...(type.honestNumberLg as unknown as TextStyle), color: t.reveal.statOn };
+  const multX: TextStyle = { ...(type.honestNumberMd as unknown as TextStyle), color: t.reveal.statOn, opacity: 0.85, marginLeft: t.space[0.5] };
   const multCaption: TextStyle = { ...(type.micro as unknown as TextStyle), color: t.reveal.blurbOn, textAlign: 'center', marginTop: t.space[1.5] };
   const blurbStyle: TextStyle = { ...(type.bodySm as unknown as TextStyle), color: t.reveal.blurbOn, textAlign: 'center', marginTop: t.space[5], maxWidth: t.size.shareCard * 0.82 };
   // Quiet note beneath the card (on the screen, not the card): tells the user the
@@ -223,8 +227,9 @@ export function ArchetypeReveal({
           </Svg>
         ) : null}
 
-        {/* One-pass diagonal light sweep on reveal (epic but calm). Decorative; sits
-            over the surface, under the content, and never loops. */}
+        {/* Diagonal light sweep on reveal (epic but calm). Decorative; sits over the
+            surface, under the content, and loops forever (withRepeat(-1) below) —
+            a calm glance across the card every SWEEP_CYCLE, not a one-shot. */}
         {size.w > 0 && !reduced ? (
           <Animated.View
             pointerEvents="none"

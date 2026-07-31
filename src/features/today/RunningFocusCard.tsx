@@ -17,6 +17,7 @@ import { Card } from '@/src/components/Card';
 import { useTheme } from '@/src/theme/useTheme';
 import { type } from '@/src/theme/typography';
 import { GapLine } from './GapLine';
+import { formatTimerClock, fmtHm } from '@/src/lib/time';
 import { useTimerStore } from '@/src/stores/timerStore';
 
 // ──────────────────────────────────────────────────────────────────────────────
@@ -32,12 +33,6 @@ import { useTimerStore } from '@/src/stores/timerStore';
 interface RunningFocusCardProps {
   /** Resolve a category slug → display label (shared with Today). */
   categoryName: (id: string) => string;
-}
-
-function clockLabel(sec: number): string {
-  const m = Math.floor(sec / 60);
-  const s = sec % 60;
-  return `${m}:${String(s).padStart(2, '0')}`;
 }
 
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
@@ -151,15 +146,17 @@ export function RunningFocusCard({ categoryName }: RunningFocusCardProps) {
   const labelsRow: ViewStyle = { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' };
   // Bold the guess/plan anchors. A named font family (Jakarta-Medium from caption)
   // ignores fontWeight on iOS, so swap the family to the bold cut directly.
+  // The honest number leads (full ink); the guess supports it in muted grey.
+  // Indigo on the guess read as "chase this" — the opposite of the point.
   const guessLabel: TextStyle = {
     ...(type.caption as unknown as TextStyle),
     fontFamily: 'Jakarta-Bold',
-    color: t.colors.primary,
+    color: t.colors.inkSoft,
   };
   const planLabel: TextStyle = {
     ...(type.caption as unknown as TextStyle),
     fontFamily: 'Jakarta-Bold',
-    color: t.colors.inkSoft,
+    color: t.colors.ink,
   };
 
   return (
@@ -168,11 +165,7 @@ export function RunningFocusCard({ categoryName }: RunningFocusCardProps) {
       onPressIn={pressIn}
       onPressOut={pressOut}
       accessibilityRole="button"
-      accessibilityLabel={tr('runningFocusCard.a11y', {
-        label: taskLabel ?? tr('runningFocusCard.aTask'),
-        elapsed: clockLabel(elapsedSec),
-        honestMin,
-      })}
+      accessibilityLabel={`Timing ${taskLabel ?? 'a task'}, ${formatTimerClock(elapsedSec)} elapsed of about ${honestMin} minutes. Tap to reopen.`}
       style={pressStyle}
     >
       <Card tone="raised" style={{ gap: t.space[4] }}>
@@ -187,8 +180,8 @@ export function RunningFocusCard({ categoryName }: RunningFocusCardProps) {
             </Text>
           </View>
           <View style={rightCol}>
-            <Text style={miniHdr}>{tr('runningFocusCard.elapsedHeader')}</Text>
-            <Text style={clock}>{clockLabel(elapsedSec)}</Text>
+            <Text style={miniHdr}>ELAPSED</Text>
+            <Text style={clock}>{formatTimerClock(elapsedSec)}</Text>
           </View>
         </View>
 
@@ -198,8 +191,8 @@ export function RunningFocusCard({ categoryName }: RunningFocusCardProps) {
             ~0" pair is meaningless noise there, so drop it. */}
         {!isQuickStart ? (
           <View style={labelsRow}>
-            <Text style={guessLabel}>{tr('runningFocusCard.guessed', { count: guessMin })}</Text>
-            <Text style={planLabel}>{tr('runningFocusCard.plan', { count: honestMin })}</Text>
+            <Text style={planLabel}>plan ~{fmtHm(honestMin)}</Text>
+            <Text style={guessLabel}>guessed {fmtHm(guessMin)}</Text>
           </View>
         ) : null}
       </Card>

@@ -53,6 +53,9 @@ interface TaskRowProps {
   isExiting?: boolean;
   /** Show "← swipe to remove" coach overlay (first done row, first session). */
   showCoachMark?: boolean;
+  /** Coach-mark text. Defaults to the swipe hint; the Today list passes the
+   *  long-press hint on the first queued row. */
+  coachLabel?: string;
   /** Called when the swipeable begins opening — parent dismisses the coach mark. */
   onCoachMarkDismiss?: () => void;
   /** Original plannedDate when this task carried over from a past day (e.g. '2026-06-22').
@@ -62,6 +65,10 @@ interface TaskRowProps {
   /** Move this task — currently only 'tomorrow' is passed from the swipe action.
    *  Only shown on queued rows (not done). Calls with a light-medium haptic. */
   onMove?: (target: 'tomorrow') => void;
+  /** Honest finish clock for this row, e.g. "ends ~7:55pm". Queued rows only. */
+  endsAtLabel?: string;
+  /** True when this is the row that crosses the user's end of day — amber clause. */
+  isTail?: boolean;
 }
 
 // Short weekday name for a YYYY-MM-DD key, e.g. '2026-06-22' → 'Mon' — locale-aware.
@@ -84,9 +91,12 @@ export function TaskRow({
   onPeeked,
   isExiting = false,
   showCoachMark = false,
+  coachLabel = '← swipe to remove',
   onCoachMarkDismiss,
   carriedFrom,
   onMove,
+  endsAtLabel,
+  isTail = false,
 }: TaskRowProps) {
   const t = useTheme();
   const { t: tr } = useTranslation('today');
@@ -244,7 +254,7 @@ export function TaskRow({
     paddingHorizontal: t.space[2],
     paddingVertical: t.space[0.5],
   };
-  const coachLabel: TextStyle = {
+  const coachLabelStyle: TextStyle = {
     color: t.colors.inverseText,
     fontSize: t.fontSize.xs,
     fontWeight: t.fontWeight.bold as TextStyle['fontWeight'],
@@ -262,14 +272,21 @@ export function TaskRow({
         <Text style={titleText} numberOfLines={1}>
           {title}
         </Text>
-        <View style={{ flexDirection: 'row', alignItems: 'center', gap: t.space[0.5] }}>
-          <Text style={catText}>{categoryLabel}</Text>
-          {!done && carriedFrom ? (
-            <Text style={catText}>
-              {tr('taskRow.carriedFrom', { day: shortWeekday(carriedFrom, fmt.weekdayShort) })}
+        <Text style={catText} numberOfLines={1} ellipsizeMode="tail">
+          {categoryLabel}
+          {!done && carriedFrom
+            ? tr('taskRow.carriedFrom', { day: shortWeekday(carriedFrom, fmt.weekdayShort) })
+            : null}
+          {!done && endsAtLabel ? (
+            <Text
+              testID={isTail ? 'taskrow-ends-tail' : 'taskrow-ends'}
+              style={isTail ? { color: t.colors.amberText } : {}}
+            >
+              {' · '}
+              {endsAtLabel}
             </Text>
           ) : null}
-        </View>
+        </Text>
       </View>
 
       {done ? (
@@ -296,7 +313,7 @@ export function TaskRow({
       {showCoachMark ? (
         <Animated.View style={[coachWrap, markStyle]} pointerEvents="none">
           <View style={coachPill}>
-            <Text style={coachLabel}>{tr('taskRow.swipeCoachMark')}</Text>
+            <Text style={coachLabelStyle}>{coachLabel}</Text>
           </View>
         </Animated.View>
       ) : null}
@@ -348,7 +365,7 @@ export function TaskRow({
       onLongPress={onLongPress}
       delayLongPress={300}
       accessibilityRole="button"
-      accessibilityLabel={tr('taskRow.startA11y', { title, category: categoryLabel, honestMin, guessMin })}
+      accessibilityLabel={`${title}, ${categoryLabel}, plan for ${honestMin} minutes, you guessed ${guessMin}${endsAtLabel ? `, ${endsAtLabel}` : ''}. Tap to start.`}
     >
       {content}
     </Pressable>

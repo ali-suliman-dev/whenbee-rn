@@ -1,13 +1,13 @@
 import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
 import { zustandKv } from '@/src/lib/kv';
-import { DEFAULT_DAY_END_MIN, DEFAULT_GUARDRAIL } from '@/src/engine/constants';
-import type { GuardrailMultiple } from '@/src/domain/types';
-import type { QuietHours } from '@/src/lib/notifyTiming';
 import {
-  type StripVariant,
-  DEFAULT_STRIP_VARIANT,
-} from '@/src/features/today/calendarStrip/stripVariant';
+  DEFAULT_DAY_END_MIN,
+  DEFAULT_GUARDRAIL,
+  DEFAULT_FORGOT_STEP_IN,
+} from '@/src/engine/constants';
+import type { GuardrailMultiple, ForgotStepIn, ArchetypeSeed } from '@/src/domain/types';
+import type { QuietHours } from '@/src/lib/notifyTiming';
 
 export type ColorModePref = 'system' | 'light' | 'dark';
 
@@ -64,15 +64,15 @@ interface SettingsState {
   /** Gentle "one honest thing a day" line on Today. Off by default; no streak, no guilt. */
   dailyRitualEnabled: boolean;
   setDailyRitualEnabled: (v: boolean) => void;
-  /** "Tap to start again" quick-start chips on Today (repeat tasks you've run before). On by default. */
+  /** "Tap to start again" quick-start chips on Today (repeat tasks you've run before). Off by default. */
   quickStartEnabled: boolean;
   setQuickStartEnabled: (v: boolean) => void;
-  /** Optional nickname for greetings/companion lines. No name = greeting only. */
+  /** Optional name for greetings/companion lines. No name = greeting only. */
   displayName?: string;
   setDisplayName: (name: string | undefined) => void;
   /** Provisional archetype seed from the onboarding quiz; washes out as data grows. */
-  archetypeSeed?: { m0: number; source: 'quiz'; tookAt: number };
-  setArchetypeSeed: (seed: { m0: number; source: 'quiz'; tookAt: number }) => void;
+  archetypeSeed?: ArchetypeSeed;
+  setArchetypeSeed: (seed: ArchetypeSeed) => void;
   /** End-of-day, minutes after local midnight (0–1439). Durable, set once, reused
    *  daily. Independent of any per-plan planner deadline. */
   dayEndMin: number;
@@ -102,6 +102,14 @@ interface SettingsState {
    *  the gentle check-in is opt-in and Pro-only. Reads the model, trains nothing. */
   hyperfocusGuard: GuardrailMultiple;
   setHyperfocusGuard: (v: GuardrailMultiple) => void;
+  /** Free forgot-to-stop protection preset — how soon Whenbee steps in. On by
+   *  default ('balanced'). Distinct from the Pro hyperfocusGuard. */
+  forgotStepIn: ForgotStepIn;
+  setForgotStepIn: (v: ForgotStepIn) => void;
+  /** True once the auto-close has acted at least once (drives the one-time
+   *  contextual explainer). */
+  forgotProtectSeen: boolean;
+  markForgotProtectSeen: () => void;
   /** Whether the end-of-day feature is active. On by default. */
   dayEndEnabled: boolean;
   setDayEndEnabled: (v: boolean) => void;
@@ -117,11 +125,6 @@ interface SettingsState {
   setExportEnabled: (enabled: boolean) => void;
   /** Store (or clear) the native id of the app-owned "Whenbee" calendar. */
   setWhenbeeCalendarId: (id: string | null) => void;
-  /** TEMP A/B (remove after decision): which calendar-strip design renders.
-   *  Lets the founder compare both variants live on-device. See
-   *  src/features/today/calendarStrip/stripVariant.ts. */
-  stripVariant: StripVariant;
-  setStripVariant: (v: StripVariant) => void;
   /** Return every preference to its first-run default (full data-reset path). */
   reset: () => void;
 }
@@ -135,7 +138,7 @@ export const useSettingsStore = create<SettingsState>()(
       setRemindersEnabled: (remindersEnabled) => set({ remindersEnabled }),
       honestReachedEnabled: true,
       setHonestReachedEnabled: (honestReachedEnabled) => set({ honestReachedEnabled }),
-      startByEnabled: true,
+      startByEnabled: false,
       setStartByEnabled: (startByEnabled) => set({ startByEnabled }),
       quietHours: { enabled: true, startMin: 1260, endMin: 480 },
       setQuietHours: (quietHours) => set({ quietHours }),
@@ -143,7 +146,7 @@ export const useSettingsStore = create<SettingsState>()(
       setNotificationSound: (notificationSound) => set({ notificationSound }),
       dailyRitualEnabled: false,
       setDailyRitualEnabled: (dailyRitualEnabled) => set({ dailyRitualEnabled }),
-      quickStartEnabled: true,
+      quickStartEnabled: false,
       setQuickStartEnabled: (quickStartEnabled) => set({ quickStartEnabled }),
       displayName: undefined,
       setDisplayName: (displayName) => set({ displayName: displayName?.trim() ? displayName.trim() : undefined }),
@@ -173,6 +176,10 @@ export const useSettingsStore = create<SettingsState>()(
         }),
       hyperfocusGuard: DEFAULT_GUARDRAIL,
       setHyperfocusGuard: (hyperfocusGuard) => set({ hyperfocusGuard }),
+      forgotStepIn: DEFAULT_FORGOT_STEP_IN,
+      setForgotStepIn: (forgotStepIn) => set({ forgotStepIn }),
+      forgotProtectSeen: false,
+      markForgotProtectSeen: () => set({ forgotProtectSeen: true }),
       dayEndEnabled: true,
       setDayEndEnabled: (dayEndEnabled) => set({ dayEndEnabled }),
       calendar: DEFAULT_CALENDAR,
@@ -190,14 +197,12 @@ export const useSettingsStore = create<SettingsState>()(
         set((s) => ({ calendar: { ...s.calendar, exportEnabled } })),
       setWhenbeeCalendarId: (whenbeeCalendarId) =>
         set((s) => ({ calendar: { ...s.calendar, whenbeeCalendarId } })),
-      stripVariant: DEFAULT_STRIP_VARIANT,
-      setStripVariant: (stripVariant) => set({ stripVariant }),
       reset: () =>
         set({
           colorMode: 'system',
           remindersEnabled: false,
           dailyRitualEnabled: false,
-          quickStartEnabled: true,
+          quickStartEnabled: false,
           displayName: undefined,
           archetypeSeed: undefined,
           dayEndMin: DEFAULT_DAY_END_MIN,
@@ -205,21 +210,32 @@ export const useSettingsStore = create<SettingsState>()(
           windowStartMin: null,
           windowEndMin: null,
           hyperfocusGuard: DEFAULT_GUARDRAIL,
+          forgotStepIn: DEFAULT_FORGOT_STEP_IN,
+          forgotProtectSeen: false,
           focusWindowUserSet: false,
           focusShownStartMin: null,
           focusShownEndMin: null,
           focusLastMoveAtMs: null,
           calendar: DEFAULT_CALENDAR,
           honestReachedEnabled: true,
-          startByEnabled: true,
+          startByEnabled: false,
           quietHours: { enabled: true, startMin: 1260, endMin: 480 },
           notificationSound: 'default',
-          stripVariant: DEFAULT_STRIP_VARIANT,
         }),
     }),
     {
       name: 'settings',
       storage: createJSONStorage(() => zustandKv),
+      version: 1,
+      // v0 → v1: startByEnabled's default flipped true→false. Pre-v1 blobs may
+      // carry a persisted `true` from the old default; force it off so existing
+      // users aren't silently opted into start-by notifications. All other
+      // fields pass through untouched.
+      migrate: (persisted, version) => {
+        const p = (persisted ?? {}) as Partial<SettingsState>;
+        if (version < 1) return { ...p, startByEnabled: false };
+        return p;
+      },
       // Deep-backfill the calendar slice so that pre-Phase-7 persisted blobs
       // (which only have showEvents/enabledCalendarIds) rehydrate the new export
       // fields as their defaults instead of `undefined`, which would violate the

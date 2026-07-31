@@ -14,7 +14,7 @@ export interface PickedCategory {
 export const QUIZ_STEPS = ['pace', 'mid', 'sink', 'focus'] as const satisfies readonly (keyof QuizAnswers)[];
 
 interface OnboardingState {
-  /** The boot gate flag. `hasOnboarded` is its public alias. */
+  /** The boot gate flag consulted at app launch to decide whether onboarding shows. */
   completed: boolean;
   hydrated: boolean;
   /** Categories selected on Step 1, in pick order. */

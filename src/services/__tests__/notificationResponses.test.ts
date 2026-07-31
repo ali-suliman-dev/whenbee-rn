@@ -35,6 +35,31 @@ describe('handleNotificationResponse', () => {
     expect(calls.timer[0].honestMin).toBeGreaterThanOrEqual(15);
   });
 
+  it('Snooze 5 (start-by) forwards taskId/category/guessMin/honestMin from data', async () => {
+    const deadlineMs = Date.now() + 30 * 60_000;
+    await handleNotificationResponse({
+      actionIdentifier: 'SNOOZE_5',
+      data: {
+        kind: 'startBy',
+        firstTaskLabel: 'Write report',
+        deadlineMs,
+        taskId: 't1',
+        category: 'deep_work',
+        guessMin: 30,
+        honestMin: 42,
+      },
+    });
+    expect(calls.startBy).toHaveLength(1);
+    expect(calls.startBy[0]).toMatchObject({
+      firstTaskLabel: 'Write report',
+      deadlineMs,
+      taskId: 't1',
+      category: 'deep_work',
+      guessMin: 30,
+      honestMin: 42,
+    });
+  });
+
   it('foreground actions only log (navigation handled by setup)', async () => {
     await handleNotificationResponse({ actionIdentifier: 'LOG', data: { kind: 'honest' } });
     expect(calls.timer).toHaveLength(0);

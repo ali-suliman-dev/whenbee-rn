@@ -1,14 +1,17 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { router } from 'expo-router';
 import i18n from '@/src/i18n';
-import { useCalibrationStore } from '@/src/stores/calibrationStore';
+import { useCalibrationStore, type GoalCoachInfo } from '@/src/stores/calibrationStore';
 import { useCategoriesStore } from '@/src/stores/categoriesStore';
 import { useDayTasksStore } from '@/src/stores/dayTasksStore';
 import { useVocabStore } from '@/src/stores/vocabStore';
-import { resolveSuggestion, priorFor } from '@/src/engine';
+import { useSettingsStore } from '@/src/stores/settingsStore';
+import { resolveSuggestion, seededPriorFor } from '@/src/engine';
 import { usePickerCategories, type PickerCategory } from '@/src/features/shared/CategoryChips';
 import { guessCategory } from '@/src/features/shared/categoryGuess';
+import { shouldShowAntiChase } from '@/src/features/add-task/antiChase';
 import { analytics } from '@/src/services/analytics';
+import { kv } from '@/src/lib/kv';
 import type { CalibrationSummary } from '@/src/domain/types';
 
 // ──────────────────────────────────────────────────────────────────────────────
@@ -41,11 +44,14 @@ export interface UseAddTaskResult {
   suggestion: CalibrationSummary | null;
   /** True when the suggestion is based on the population prior (cold category, n < 3). */
   preEstimate: boolean;
-  /** Add-screen goal coach for the active category (target band + biggest lever),
-   *  or null when the category has no active goal. Loaded on category change. */
-  goalCoach: { targetBand: number; worstValue: string | null } | null;
-  /** Write the honest suggestion into the guess field (the coach "Use Xm" action). */
-  applyHonest: () => void;
+  /** Read-only goal-coach status for the current category (or null). Depends
+   *  only on the category — never the live guess (spec 2026-07-13). */
+  goalCoach: GoalCoachInfo | null;
+  /** True while the once-ever anti-chase coach is showing (user raised the guess
+   *  toward/past the honest number). Dismissible; never fires again once seen. */
+  antiChaseVisible: boolean;
+  /** Dismiss the anti-chase coach for this session. */
+  dismissAntiChase: () => void;
   canSubmit: boolean;
   /** Adds the task and navigates to the timer.
    *  @param date - override the target date (default: store selectedDate). */
@@ -55,24 +61,44 @@ export interface UseAddTaskResult {
    *  the "Added to today" toast before dismissing.
    *  @param date - override the target date (default: store selectedDate). */
   addToToday: (date?: string | null) => Promise<boolean>;
+  /** True when this hook instance is editing an existing queued task
+   *  (a valid `editId` was passed in). */
+  isEditing: boolean;
+  /** The edited task's `plannedDate` once loaded — `undefined` until the
+   *  prefill read completes, `null` when the task is on the shelf. */
+  loadedDate: string | null | undefined;
+  /** Patches the edited task in place. Returns true on success so the screen
+   *  can show a toast and dismiss.
+   *  @param date - override the target date (default: the loaded plannedDate). */
+  save: (date?: string | null) => Promise<boolean>;
+  /** Patches the edited task, then routes to the timer with it pre-filled.
+   *  @param date - override the target date (default: the loaded plannedDate). */
+  saveAndStart: (date?: string | null) => Promise<void>;
 }
 
 const DEFAULT_GUESS = 15;
+/** Once-ever flag: the anti-chase coach has been shown. */
+const ANTI_CHASE_SEEN_KEY = 'coach.antiChase.seen';
 
-export function useAddTask(initialTitle?: string): UseAddTaskResult {
+export function useAddTask(initialTitle?: string, editId?: string): UseAddTaskResult {
   const hydrate = useCalibrationStore((s) => s.hydrate);
   const statsByCategory = useCalibrationStore((s) => s.statsByCategory);
   const loadGoalCoach = useCalibrationStore((s) => s.loadGoalCoach);
   const addTask = useDayTasksStore((s) => s.addTask);
+  const updateTask = useDayTasksStore((s) => s.updateTask);
   const addCategoryToStore = useCategoriesStore((s) => s.addCategory);
   const categories = usePickerCategories();
   const learned = useVocabStore((s) => s.map);
   const bank = useVocabStore((s) => s.bank);
+  const archetypeSeed = useSettingsStore((s) => s.archetypeSeed);
 
   const [title, setTitleState] = useState('');
   const [category, setCategoryState] = useState<string | null>(null);
   const [guessedCategory, setGuessedCategory] = useState<string | null>(null);
-  const [guessMin, setGuessMin] = useState<number>(DEFAULT_GUESS);
+  const [guessMin, setGuessMinState] = useState<number>(DEFAULT_GUESS);
+  const [antiChaseVisible, setAntiChaseVisible] = useState(false);
+  const [isEditing] = useState(() => typeof editId === 'string' && editId.length > 0);
+  const [loadedDate, setLoadedDate] = useState<string | null | undefined>(undefined);
   // Flips once the user taps a chip — from then on we stop auto-guessing so a
   // manual pick is never silently overwritten as they keep editing the title.
   const manualRef = useRef(false);
@@ -101,6 +127,23 @@ export function useAddTask(initialTitle?: string): UseAddTaskResult {
     // eslint-disable-next-line react-hooks/exhaustive-deps -- one-shot seed; setTitle is re-created each render and the ref guards re-entry
   }, [initialTitle]);
 
+  // Edit mode: hydrate the fields from the stored task exactly once. Sets manualRef
+  // so the title-driven category auto-guess never overwrites the stored category.
+  const editSeededRef = useRef(false);
+  useEffect(() => {
+    if (!isEditing || !editId || editSeededRef.current) return;
+    editSeededRef.current = true;
+    void useDayTasksStore.getState().getTaskById(editId).then((task) => {
+      if (!task) return;
+      manualRef.current = true;
+      setTitleState(task.label);
+      setGuessedCategory(null);
+      setCategoryState(task.category);
+      setGuessMinState(task.guessMin);
+      setLoadedDate(task.plannedDate);
+    });
+  }, [isEditing, editId]);
+
   // Any manual pick wins and clears the ✦ guess marker.
   const setCategory = (id: string) => {
     manualRef.current = true;
@@ -126,12 +169,12 @@ export function useAddTask(initialTitle?: string): UseAddTaskResult {
   const suggestion = useMemo<CalibrationSummary | null>(() => {
     if (category === null) return null;
     const cached = statsByCategory[category];
-    const prior = cached?.priorMult ?? priorFor(category);
+    const prior = cached?.priorMult ?? seededPriorFor(category, archetypeSeed);
     const cat = cached
       ? { fit: cached.fit, n: cached.n, clampedRatios: cached.clampedRatios ?? [] }
       : { fit: { a: 0, b: prior }, n: 0, clampedRatios: [] };
     return resolveSuggestion({ guessMinutes: guessMin, category: cat, recurring: null, prior });
-  }, [category, guessMin, statsByCategory]);
+  }, [category, guessMin, statsByCategory, archetypeSeed]);
 
   // honest_suggestion_shown: fire once per surfacing (category+guess), not per
   // keystroke. De-duped by the value the user is currently looking at.
@@ -151,27 +194,59 @@ export function useAddTask(initialTitle?: string): UseAddTaskResult {
 
   // Goal coach for the active category — a bounded read on category change (NOT
   // per keystroke). Null whenever the category has no active, un-met goal.
-  const [goalCoach, setGoalCoach] = useState<{ targetBand: number; worstValue: string | null } | null>(
-    null,
-  );
+  const [goalCoach, setGoalCoach] = useState<GoalCoachInfo | null>(null);
+  const goalCoachSeen = useRef<Set<string>>(new Set());
   useEffect(() => {
-    let alive = true;
     if (category === null) {
       setGoalCoach(null);
       return;
     }
+    let alive = true;
     void loadGoalCoach(category).then((res) => {
-      if (alive) setGoalCoach(res);
+      if (!alive) return;
+      setGoalCoach(res);
+      if (res && !goalCoachSeen.current.has(category)) {
+        goalCoachSeen.current.add(category);
+        analytics.capture('goal_coach_shown', {
+          category,
+          target_band: res.targetBand,
+          best_band: res.bestBand,
+          has_lever: res.lever !== null,
+        });
+      }
     });
     return () => {
       alive = false;
     };
   }, [category, loadGoalCoach]);
 
-  // The coach "Use Xm" action — write the honest suggestion into the guess field.
-  const applyHonest = () => {
-    if (suggestion !== null) setGuessMin(suggestion.honestMinutes);
+  // Once-ever coach tip: surface it the FIRST time a hunch/honest suggestion
+  // appears at all (a brand-new user planning their first task must see it —
+  // the chase-move trigger below alone never fires for them), then never again.
+  const hasSuggestion = suggestion !== null;
+  useEffect(() => {
+    if (!hasSuggestion || antiChaseVisible) return;
+    if (kv.getString(ANTI_CHASE_SEEN_KEY) === '1') return;
+    setAntiChaseVisible(true);
+    kv.set(ANTI_CHASE_SEEN_KEY, '1');
+  }, [hasSuggestion, antiChaseVisible]);
+
+  // Wrapped guess setter — before applying the new value, check whether the user
+  // just raised their guess to/past the honest number (the chase move). If so, and
+  // they've never seen it, surface the one-time anti-chase coach and persist the
+  // once-ever flag.
+  const setGuessMin = (next: number) => {
+    const honest = suggestion?.honestMinutes ?? null;
+    if (honest !== null && !antiChaseVisible) {
+      const seen = kv.getString(ANTI_CHASE_SEEN_KEY) === '1';
+      if (shouldShowAntiChase({ prevGuess: guessMin, nextGuess: next, honestMinutes: honest, seen })) {
+        setAntiChaseVisible(true);
+        kv.set(ANTI_CHASE_SEEN_KEY, '1');
+      }
+    }
+    setGuessMinState(next);
   };
+  const dismissAntiChase = () => setAntiChaseVisible(false);
 
   const addCategory = (name: string): string => {
     const id = addCategoryToStore(name);
@@ -215,6 +290,30 @@ export function useAddTask(initialTitle?: string): UseAddTaskResult {
     });
   };
 
+  const save = async (date?: string | null): Promise<boolean> => {
+    if (!isEditing || !editId || !canSubmit || category === null) return false;
+    const resolvedDate = date === undefined ? loadedDate ?? null : date;
+    await updateTask(editId, { label: title.trim(), category, guessMin, plannedDate: resolvedDate });
+    bank(title.trim(), category);
+    return true;
+  };
+
+  const saveAndStart = async (date?: string | null): Promise<void> => {
+    const ok = await save(date);
+    if (!ok || editId === undefined || suggestion === null) return;
+    router.replace({
+      pathname: '/(modals)/timer',
+      params: {
+        taskId: editId,
+        label: title.trim(),
+        category: category as string,
+        estimateMin: String(suggestion.honestMinutes),
+        guessMin: String(guessMin),
+        suggestedHonestMin: String(suggestion.honestMinutes),
+      },
+    });
+  };
+
   return {
     categories,
     title,
@@ -229,9 +328,14 @@ export function useAddTask(initialTitle?: string): UseAddTaskResult {
     suggestion,
     preEstimate: suggestion?.basis === 'prior',
     goalCoach,
-    applyHonest,
+    antiChaseVisible,
+    dismissAntiChase,
     canSubmit,
     onAddAndStart,
     addToToday,
+    isEditing,
+    loadedDate,
+    save,
+    saveAndStart,
   };
 }

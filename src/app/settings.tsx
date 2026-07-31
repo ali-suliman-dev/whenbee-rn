@@ -1,9 +1,12 @@
-import { useCallback, useState, type ReactNode } from 'react';
-import { Alert, Modal, View, Text, Pressable, Switch, ScrollView, TextInput, type ViewStyle, type TextStyle } from 'react-native';
+import { useCallback, useEffect, useState, type ReactNode } from 'react';
+import { Alert, KeyboardAvoidingView, Modal, Platform, View, Text, Pressable, Switch, ScrollView, TextInput, type ViewStyle, type TextStyle } from 'react-native';
+import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTranslation } from 'react-i18next';
 import { router } from 'expo-router';
+import * as WebBrowser from 'expo-web-browser';
 import { Ionicons } from '@expo/vector-icons';
+import { LEGAL } from '@/src/lib/legal';
 import { Screen } from '@/src/components/Screen';
 import { AppText } from '@/src/components/AppText';
 import { AppButton } from '@/src/components/AppButton';
@@ -21,21 +24,24 @@ import { useSettingsStore, type ColorModePref } from '@/src/stores/settingsStore
 import { useCategoriesStore } from '@/src/stores/categoriesStore';
 import { useEntitlement } from '@/src/features/paywall/useEntitlement';
 import { useAccountActions, type RestoreOutcome } from '@/src/features/paywall/useAccountActions';
+import { usePaywallVariant } from '@/src/features/paywall/usePaywallVariant';
+import { useLandingVariant } from '@/src/features/today/useLandingVariant';
 import { useReminderSetting } from '@/src/features/settings/useReminderSetting';
 import { useReviewNotifySetting } from '@/src/features/settings/useReviewNotifySetting';
 import { useDayEndSetting } from '@/src/features/settings/useDayEndSetting';
 import { useQuietHours } from '@/src/features/settings/useQuietHours';
 import { useNotificationSound } from '@/src/features/settings/useNotificationSound';
 import { useAccountReset } from '@/src/features/settings/useAccountReset';
+import { useStartByToggle } from '@/src/features/today/useStartByToggle';
 import { usePresenceSection } from '@/src/features/settings/usePresenceSection';
 import { ProGate } from '@/src/features/paywall/ProGate';
 import { PresenceRingTeaser } from '@/src/components/PresenceRingTeaser';
 import { GuardrailSettingRow } from '@/src/features/settings/GuardrailSettingRow';
+import { ForgotStepInRow } from '@/src/features/settings/ForgotStepInRow';
 import { GuardrailLockedRow } from '@/src/features/settings/GuardrailLockedRow';
 import { CalendarSettingsSection } from '@/src/features/settings/CalendarSettingsSection';
-import { StripVariantSwitcher } from '@/src/features/settings/StripVariantSwitcher';
-import { LanguagePicker } from '@/src/features/settings/LanguagePicker';
 import { seedDemoData } from '@/src/features/dev/seedDemoData';
+import { useFeedback } from '@/src/features/feedback/useFeedback';
 
 const modes: ColorModePref[] = ['system', 'light', 'dark'];
 
@@ -138,12 +144,14 @@ export default function Settings() {
   const setPro = useEntitlement((s) => s.setPro);
   const categoryCount = useCategoriesStore((s) => s.categories.length);
   const { restoring, manageSubscription, restorePurchases } = useAccountActions();
+  const { variant: paywallVariant, setVariant: setPaywallVariant } = usePaywallVariant();
+  const { variant: landingVariant, setVariant: setLandingVariant } = useLandingVariant();
   const { enabled: remindersEnabled, toggle: toggleReminders } = useReminderSetting();
   const { enabled: reviewNotifyEnabled, toggle: toggleReviewNotify } = useReviewNotifySetting();
   const honestReachedEnabled = useSettingsStore((s) => s.honestReachedEnabled);
   const setHonestReachedEnabled = useSettingsStore((s) => s.setHonestReachedEnabled);
   const startByEnabled = useSettingsStore((s) => s.startByEnabled);
-  const setStartByEnabled = useSettingsStore((s) => s.setStartByEnabled);
+  const { toggle: toggleStartBy } = useStartByToggle();
   const {
     quietHours,
     update: updateQuietHours,
@@ -166,6 +174,14 @@ export default function Settings() {
   } = useDayEndSetting();
   const { resetting, resetProgress, eraseEverything } = useAccountReset();
   const { isPresenceAvailable, handlePresenceCta } = usePresenceSection();
+  const { hasUnread, loadChangelog } = useFeedback();
+
+  // Populate the shared changelog on mount so the unread dot reflects reality —
+  // returning here after What's-new marked it seen (or after a fresh publish)
+  // now shows the right state because the store is shared, not per-instance.
+  useEffect(() => {
+    void loadChangelog();
+  }, [loadChangelog]);
 
   const SOUND_OPTIONS: { value: 'honey' | 'default' | 'none'; label: string }[] = SOUND_VALUES.map(
     (value) => ({ value, label: tr(`soundOptions.${value}`) }),
@@ -213,6 +229,11 @@ export default function Settings() {
     if (next && !ok) showToast(REMINDER_DENIED);
   }
 
+  async function handleToggleStartBy(next: boolean) {
+    const ok = await toggleStartBy(next);
+    if (next && !ok) showToast(REMINDER_DENIED);
+  }
+
   async function handleResetProgress() {
     setSheet(null);
     await resetProgress();
@@ -242,6 +263,10 @@ export default function Settings() {
 
   return (
     <Screen edges={['left', 'right']}>
+      <KeyboardAvoidingView
+        style={{ flex: 1 }}
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+      >
       <ScrollView
         showsVerticalScrollIndicator={false}
         contentContainerStyle={{
@@ -285,14 +310,6 @@ export default function Settings() {
             ))}
           </View>
         </View>
-
-        <View style={{ gap: t.space[3] }}>
-          <LanguagePicker />
-        </View>
-
-        {/* TEMP A/B — calendar-strip design switcher. Remove after the decision
-            (see docs/product/specs/2026-06-25-calendar-strip-ab.md). */}
-        <StripVariantSwitcher />
 
         <View style={{ gap: t.space[3] }}>
           <AppText variant="label">{tr('yourWhenbee.label')}</AppText>
@@ -354,14 +371,29 @@ export default function Settings() {
           {/* Master reminders toggle */}
           <SettingRow
             icon="notifications-outline"
-            title={tr('notifications.reminders.title')}
-            note={tr('notifications.reminders.note')}
+            title="Reminders"
+            note="Pings for honest finish and more."
             trailing={
               <Switch
                 value={remindersEnabled}
                 onValueChange={handleToggleReminders}
                 trackColor={{ true: t.colors.primary, false: t.colors.hairline }}
                 accessibilityLabel={tr('notifications.reminders.a11y')}
+              />
+            }
+          />
+
+          {/* Start-by nudge — plan-owned, independent of the master. Always visible. */}
+          <SettingRow
+            icon="arrow-forward-circle-outline"
+            title="Start-by nudge"
+            note="A reminder when it's time to begin. Also toggled from your day plan."
+            trailing={
+              <Switch
+                value={startByEnabled}
+                onValueChange={handleToggleStartBy}
+                trackColor={{ true: t.colors.primary, false: t.colors.hairline }}
+                accessibilityLabel="Start-by nudge"
               />
             }
           />
@@ -382,19 +414,6 @@ export default function Settings() {
                   />
                 }
               />
-              <SettingRow
-                icon="arrow-forward-circle-outline"
-                title={tr('notifications.startBy.title')}
-                note={tr('notifications.startBy.note')}
-                trailing={
-                  <Switch
-                    value={startByEnabled}
-                    onValueChange={setStartByEnabled}
-                    trackColor={{ true: t.colors.primary, false: t.colors.hairline }}
-                    accessibilityLabel={tr('notifications.startBy.a11y')}
-                  />
-                }
-              />
               {isPro ? (
                 <SettingRow
                   icon="leaf-outline"
@@ -410,6 +429,7 @@ export default function Settings() {
                   }
                 />
               ) : null}
+              <ForgotStepInRow />
               <ProGate fallback={<GuardrailLockedRow />}>
                 <GuardrailSettingRow />
               </ProGate>
@@ -573,6 +593,44 @@ export default function Settings() {
             note={tr('data.privacy.note')}
             onPress={() => router.push('/privacy')}
           />
+          <SettingRow
+            icon="document-outline"
+            title="Terms of Use"
+            note="The plain-language agreement for using Whenbee."
+            onPress={() => WebBrowser.openBrowserAsync(LEGAL.termsUrl)}
+          />
+        </View>
+
+        <View style={{ gap: t.space[3] }}>
+          <AppText variant="label">Feedback</AppText>
+          <SettingRow
+            icon="chatbubble-ellipses-outline"
+            title="Send feedback"
+            note="An idea, a snag, or what's working. Comes straight to me."
+            onPress={() => router.push('/(modals)/feedback')}
+          />
+          <SettingRow
+            icon="newspaper-outline"
+            tint={t.colors.accent}
+            title="What's new"
+            note="What you asked for, and what I shipped."
+            onPress={() => router.push('/(modals)/whats-new')}
+            trailing={
+              hasUnread ? (
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: t.space[2] }}>
+                  <View
+                    style={{
+                      width: t.space[2.5],
+                      height: t.space[2.5],
+                      borderRadius: t.radii.full,
+                      backgroundColor: t.colors.accent,
+                    }}
+                  />
+                  <Ionicons name="chevron-forward" size={t.iconSize.sm} color={t.colors.inkSoft} />
+                </View>
+              ) : undefined
+            }
+          />
         </View>
 
         <View style={{ gap: t.space[3] }}>
@@ -630,7 +688,7 @@ export default function Settings() {
                   color: t.colors.inkSoft,
                 }}
               >
-                {tr('presence.ringOnCaption')}
+                Presence is on. Your honest finish shows on the Lock Screen while a timer runs.
               </AppText>
             </ProGate>
           </View>
@@ -677,22 +735,42 @@ export default function Settings() {
           />
         </View>
 
-        <View style={{ gap: t.space[3] }}>
-          <AppText variant="label">{tr('developer.label')}</AppText>
-          <SettingRow
-            icon="construct-outline"
-            title={tr('developer.unlockPro.title')}
-            note={tr('developer.unlockPro.note')}
-            trailing={
-              <Switch
-                value={isPro}
-                onValueChange={setPro}
-                trackColor={{ true: t.colors.primary, false: t.colors.hairline }}
-                accessibilityLabel={tr('developer.unlockPro.a11y')}
-              />
-            }
-          />
-          {__DEV__ && (
+        {__DEV__ && (
+          <View style={{ gap: t.space[3] }}>
+            <AppText variant="label">Developer</AppText>
+            <SettingRow
+              icon="construct-outline"
+              title="Unlock Pro (testing)"
+              note="Flip the Pro entitlement to preview every gated screen. For testing — leave off in normal use."
+              trailing={
+                <Switch
+                  value={isPro}
+                  onValueChange={setPro}
+                  trackColor={{ true: t.colors.primary, false: t.colors.hairline }}
+                  accessibilityLabel="Unlock Pro (testing)"
+                />
+              }
+            />
+            <SettingRow
+              icon="grid-outline"
+              title="Paywall feature layout"
+              note={
+                paywallVariant === 'day'
+                  ? "Showing 'A day with Pro'. Tap to switch to 'Plan · Do · Learn'."
+                  : "Showing 'Plan · Do · Learn'. Tap to switch to 'A day with Pro'."
+              }
+              onPress={() => setPaywallVariant(paywallVariant === 'day' ? 'groups' : 'day')}
+            />
+            <SettingRow
+              icon="today-outline"
+              title="Landing headline"
+              note={
+                landingVariant === 'd'
+                  ? "Showing 'Done ~9:50pm'. Tap to switch to '9:50pm. That's…'."
+                  : "Showing '9:50pm. That's…'. Tap to switch to 'Done ~9:50pm'."
+              }
+              onPress={() => setLandingVariant(landingVariant === 'd' ? 'dAlt' : 'd')}
+            />
             <SettingRow
               icon="flask-outline"
               title={tr('developer.seedDemo.title')}
@@ -700,9 +778,10 @@ export default function Settings() {
               onPress={handleSeedDemo}
               disabled={seeding}
             />
-          )}
-        </View>
+          </View>
+        )}
       </ScrollView>
+      </KeyboardAvoidingView>
 
       <ConfirmSheet
         visible={sheet === 'progress'}
@@ -739,7 +818,11 @@ export default function Settings() {
         animationType="fade"
         onRequestClose={closeDayEnd}
       >
-        <View style={{ flex: 1, justifyContent: 'flex-end' }}>
+        {/* A native Modal is its own window, NOT a descendant of the app-root
+            GestureHandlerRootView, so FinishTimeWheel's pan gesture never fires
+            inside it — the wheel is dead to both drag and tap. Re-establish a
+            gesture root here (same fix as FinishEditorSheet). */}
+        <GestureHandlerRootView style={{ flex: 1, justifyContent: 'flex-end' }}>
           <Pressable
             style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: t.colors.scrim }}
             accessibilityLabel={tr('dismissA11y')}
@@ -767,7 +850,7 @@ export default function Settings() {
             />
             <AppButton label={tr('dayEndModal.doneButton')} onPress={closeDayEnd} variant="amber" fullWidth />
           </View>
-        </View>
+        </GestureHandlerRootView>
       </Modal>
 
       {/* Quiet hours time editor — mirrors the day-end modal exactly */}
@@ -777,7 +860,8 @@ export default function Settings() {
         animationType="fade"
         onRequestClose={closeQuietEditor}
       >
-        <View style={{ flex: 1, justifyContent: 'flex-end' }}>
+        {/* Own gesture root — see the day-end modal above. */}
+        <GestureHandlerRootView style={{ flex: 1, justifyContent: 'flex-end' }}>
           <Pressable
             style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: t.colors.scrim }}
             accessibilityLabel={tr('dismissA11y')}
@@ -810,7 +894,7 @@ export default function Settings() {
             />
             <AppButton label={tr('quietHoursModal.doneButton')} onPress={closeQuietEditor} variant="amber" fullWidth />
           </View>
-        </View>
+        </GestureHandlerRootView>
       </Modal>
 
       <Toast message={toastMsg} visible={toastVisible} />

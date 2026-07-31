@@ -115,18 +115,30 @@
       "other": "Plan"
     },
     "note": {
-      "yearly": "7 dagars gratis provperiod, sedan årlig fakturering",
-      "lifetime": "Betala en gång. Ingen prenumeration, någonsin.",
-      "monthly": "7 dagars gratis provperiod, sedan månadsvis fakturering"
+      "lifetime": "Betala en gång. Din för alltid.",
+      "yearly": "7 dagar gratis, sedan årsvis betalning",
+      "yearlyWithPrice": "7 dagar gratis, sedan {{price}} per år",
+      "monthly": "7 dagar gratis, sedan månadsvis betalning"
     },
     "savingsFallback": "Spara 42 %",
     "savingsLabel": "Spara {{pct}} %",
-    "accessibilityLabel": "{{title}}, {{note}}, {{price}}"
+    "accessibilityLabel": "{{title}}, {{note}}, {{price}}",
+    "mostPopular": "POPULÄRAST",
+    "perMonth": "per månad"
   },
   "trialTimeline": {
-    "today": { "head": "Idag", "desc": "Full Pro, gratis" },
-    "day5": { "head": "Dag 5", "desc": "Vi påminner dig" },
-    "day7": { "head": "Dag 7", "desc": "Provperioden slutar" }
+    "today": {
+      "head": "Idag",
+      "desc": "Full Pro, gratis"
+    },
+    "day5": {
+      "head": "Dag 5",
+      "desc": "Vi påminner dig"
+    },
+    "day7": {
+      "head": "Dag 7",
+      "desc": "Provperioden slutar"
+    }
   },
   "plans": {
     "loading": "Laddar planer…",

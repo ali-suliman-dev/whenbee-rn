@@ -1,11 +1,9 @@
 // src/features/today/calendarStrip/useCalendarStripData.ts
-// Shared, variant-agnostic logic for the calendar strip.
+// Shared logic for the calendar strip.
 //
-// This is the paging + store wiring that BOTH strip variants (Focus Lens and
-// Sliding Segment) sit on top of — the ±52-week anchor array, the page width,
-// the scroll-to-selected effect, and the select-date passthrough. Keeping it
-// here means the two visual components only differ in how a week renders, never
-// in how the data flows. See docs/product/specs/2026-06-25-calendar-strip-ab.md.
+// The paging + store wiring the strip sits on top of — the ±52-week anchor
+// array, the page width, the scroll-to-selected effect, and the select-date
+// passthrough — kept separate from the visual component (CalendarStripSegment).
 
 import { useCallback, useEffect, useMemo, useRef } from 'react';
 import { Dimensions, type FlatList } from 'react-native';

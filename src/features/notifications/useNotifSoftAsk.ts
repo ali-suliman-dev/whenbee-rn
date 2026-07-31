@@ -9,13 +9,20 @@
 //   2. The soft-ask state is 'pending' (never shown / user has not responded).
 //   3. The OS notification permission is still 'undetermined' (not yet granted or denied).
 //
-// On "Sounds good": fires the existing ensureNotificationPermission (guarded),
-// then records 'accepted' in KV.
+// On "Turn on the ping": fires the existing ensureNotificationPermission
+// (guarded), records 'accepted' in KV, and — on grant — flips the master
+// remindersEnabled setting so the ping actually schedules.
 // On "Not now": records 'declined'. Re-entry path = Settings notification toggle.
 
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { useCalibrationStore } from '@/src/stores/calibrationStore';
-import { getNotifSoftAsk, setNotifSoftAsk, type NotifSoftAskStatus } from './notifSoftAskState';
+import { useSettingsStore } from '@/src/stores/settingsStore';
+import {
+  getNotifSoftAsk,
+  setNotifSoftAsk,
+  recordNotifSoftAskDecline,
+  type NotifSoftAskStatus,
+} from './notifSoftAskState';
 import {
   ensureNotificationPermission,
   getNotificationPermissionStatus,
@@ -26,7 +33,7 @@ import { analytics } from '@/src/services/analytics';
 export interface NotifSoftAskView {
   /** Whether the soft-ask card should be rendered. */
   show: boolean;
-  /** User tapped "Sounds good" — fires the OS permission prompt, records accepted. */
+  /** User tapped "Turn on the ping" — fires the OS permission prompt, records accepted. */
   onAccept: () => Promise<void>;
   /** User tapped "Not now" — records declined, hides the card. */
   onDecline: () => void;
@@ -68,14 +75,23 @@ export function useNotifSoftAsk(): NotifSoftAskView {
     setNotifSoftAsk('accepted');
     setStatus('accepted');
     analytics.capture('notif_softask_accepted');
-    await ensureNotificationPermission();
+    // OS grant alone is not enough — the timer-done ping is gated on the app's
+    // master Reminders setting (useTimer), so flip it on too. Mirrors
+    // useReminderSetting.toggle(true); stays off if the OS prompt is denied.
+    const granted = await ensureNotificationPermission();
+    if (granted) {
+      useSettingsStore.getState().setRemindersEnabled(true);
+      analytics.capture('reminder_enabled', {});
+    }
   }, []);
 
   const onDecline = useCallback(() => {
-    setNotifSoftAsk('declined');
+    // Stamp when + at what log count the decline happened — the once-ever
+    // re-ask (reaskGate) runs its ≥days/≥logs clocks from these.
+    recordNotifSoftAskDecline(lifetimeNectar ?? 0);
     setStatus('declined');
     analytics.capture('notif_softask_declined');
-  }, []);
+  }, [lifetimeNectar]);
 
   return { show, onAccept, onDecline };
 }

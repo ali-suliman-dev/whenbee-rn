@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Flat square play button — colors.primary (indigo), the app's one CTA accent.
+     Amber is reserved for honey/reward/optimism, never a plain action button.
+     Bottom coin-edge layer (primaryEdge) gives it a pressed-tactile read without a
+     glow/shadow filter — flat over heavy. -->
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+    <item android:top="2dp">
+        <shape android:shape="rectangle">
+            <solid android:color="#6B5BE6" />
+            <corners android:radius="10dp" />
+        </shape>
+    </item>
+    <item android:bottom="2dp">
+        <shape android:shape="rectangle">
+            <solid android:color="#8275F0" />
+            <corners android:radius="10dp" />
+        </shape>
+    </item>
+</layer-list>

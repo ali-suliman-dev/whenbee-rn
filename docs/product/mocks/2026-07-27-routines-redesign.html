@@ -1,0 +1,331 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Whenbee — Routines redesign</title>
+<style>
+  :root{
+    --bg:#14151D; --surface:#1F2130; --raised:#292B3C; --sunken:#15161F;
+    --hairline:rgba(255,255,255,0.08);
+    --ink:#F4F1EA; --inkSoft:#ADA9B5; --inkFaint:rgba(244,241,234,0.40);
+    --primary:#8275F0; --primarySoft:rgba(130,117,240,0.22); --primaryWash:rgba(130,117,240,0.10);
+    --accent:#EEAE4D; --accentSoft:rgba(238,174,77,0.18); --accentLine:rgba(238,174,77,0.28);
+    --danger:#E06464; --ok:#5BC48A;
+    --r-card:16px; --r-md:12px; --r-sm:8px; --r-full:999px;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{background:#0C0D13;color:var(--ink);font-family:-apple-system,BlinkMacSystemFont,Inter,sans-serif;padding:40px 24px 90px;line-height:1.5}
+  .wrap{max-width:1240px;margin:0 auto}
+  h1{font-size:26px;font-weight:700;letter-spacing:-.02em;margin-bottom:6px}
+  .sub{color:var(--inkSoft);font-size:14px;margin-bottom:34px;max-width:80ch}
+  h2{font-size:17px;font-weight:650;margin-bottom:4px;letter-spacing:-.01em}
+  .note{color:var(--inkSoft);font-size:13px;max-width:78ch}
+  code{font-family:ui-monospace,Menlo,monospace;font-size:12px;background:var(--sunken);padding:1px 5px;border-radius:5px}
+  section{margin-bottom:44px;padding:22px;background:var(--bg);border:1px solid var(--hairline);border-radius:18px}
+  .head{display:flex;gap:12px;align-items:flex-start;margin-bottom:20px}
+  .tag{flex-shrink:0;font-size:10px;font-weight:700;letter-spacing:.08em;padding:4px 9px;border-radius:var(--r-full);text-transform:uppercase;margin-top:2px}
+  .tag.pick{background:var(--accentSoft);color:var(--accent)}
+  .tag.ask{background:var(--primarySoft);color:var(--primary)}
+  .rec{font-size:10px;font-weight:800;color:var(--ok);letter-spacing:.06em}
+
+  .grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:18px;align-items:start}
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:18px;align-items:start}
+  @media(max-width:1000px){.grid3,.grid2{grid-template-columns:1fr}}
+  .col>.cap{font-size:11px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;margin-bottom:9px;color:var(--inkSoft)}
+  .cap.bad{color:var(--danger)} .cap.good{color:var(--ok)}
+  .phone{background:var(--bg);border:1px solid var(--hairline);border-radius:20px;padding:14px}
+  .mono{font-family:ui-monospace,Menlo,monospace;font-variant-numeric:tabular-nums}
+  .row{display:flex;align-items:center;justify-content:space-between;gap:10px}
+  .card{background:var(--surface);border:1px solid var(--hairline);border-radius:var(--r-card);padding:13px 14px}
+  .eyebrow{font-size:10px;font-weight:700;letter-spacing:.09em;text-transform:uppercase;color:var(--inkSoft)}
+
+  .rname{font-size:16px;font-weight:680;letter-spacing:-.01em}
+  .rtot{font-family:ui-monospace,Menlo,monospace;font-weight:700;line-height:1}
+  .rtot small{font-size:.55em;font-weight:600;margin-left:1px}
+
+  /* colour-coded facts */
+  .fact{display:inline-flex;align-items:center;gap:5px;border-radius:var(--r-full);padding:3px 9px;font-size:11.5px;font-weight:650}
+  .fact.time{background:var(--accentSoft);color:var(--accent)}
+  .fact.start{background:var(--primarySoft);color:var(--primary)}
+  .fact.steps{background:rgba(255,255,255,.06);color:var(--inkSoft)}
+  .facts{display:flex;gap:6px;flex-wrap:wrap;margin-top:10px}
+
+  .trash{width:32px;height:32px;border-radius:var(--r-full);display:grid;place-items:center;color:var(--inkFaint);border:1px solid var(--hairline);flex-shrink:0;font-size:14px}
+  .trash.red{color:var(--danger);border-color:rgba(224,100,100,.35)}
+
+  .stripe{border-left:3px solid var(--accent);padding-left:12px}
+  .bigtime{font-family:ui-monospace,Menlo,monospace;font-size:30px;font-weight:700;line-height:1;color:var(--accent)}
+  .bigtime small{font-size:.42em;color:var(--inkSoft);font-weight:600;margin-left:2px}
+
+  .manage{background:var(--surface);border:1px solid var(--hairline);border-radius:var(--r-card);overflow:hidden;margin-top:12px}
+  .mrow{display:flex;align-items:center;justify-content:space-between;padding:13px 14px;font-size:13.5px}
+  .mrow+.mrow{border-top:1px solid var(--hairline)}
+  .mrow.dngr{color:var(--danger);font-weight:650}
+  .mrow .v{color:var(--inkSoft);font-family:ui-monospace,Menlo,monospace;font-size:12.5px}
+
+  /* rail */
+  .rail{display:flex;gap:10px}
+  .gutter{width:54px;flex-shrink:0;text-align:right;font-size:11px;color:var(--inkFaint);padding-top:13px;font-family:ui-monospace,Menlo,monospace}
+  .gutter.hot{color:var(--primary)}
+  .body{flex:1}
+  .task{background:var(--surface);border:1px solid var(--hairline);border-radius:var(--r-card);padding:11px 13px;display:flex;justify-content:space-between;align-items:center;gap:10px}
+  .task .t{font-size:13.5px;font-weight:650}
+  .task .m{font-size:11.5px;color:var(--inkSoft);margin-top:2px}
+  .breather{display:flex;align-items:center;gap:8px;font-size:11.5px;color:var(--inkFaint);padding:8px 0 8px 2px}
+  .breather.tappable{color:var(--inkSoft)}
+  .dashed{flex:1;height:1px;background:repeating-linear-gradient(90deg,var(--hairline) 0 5px,transparent 5px 10px)}
+  .chgv{font-size:11px;font-weight:700;color:var(--primary)}
+  .lifted{transform:translateY(-12px) rotate(-1deg);box-shadow:0 14px 30px rgba(0,0,0,.5)}
+  .ghostslot{border:1px dashed var(--hairline);border-radius:var(--r-card);height:50px;background:rgba(255,255,255,.02);margin-top:8px}
+
+  .segs{display:flex;gap:6px;flex-wrap:wrap}
+  .seg{border:1px solid var(--hairline);border-radius:var(--r-full);padding:5px 13px;font-size:12px;font-weight:650;color:var(--inkSoft)}
+  .seg.on{background:var(--primarySoft);border-color:transparent;color:var(--ink)}
+  .sheet{background:var(--raised);border-radius:18px 18px 0 0;padding:16px 14px 18px;margin-top:10px}
+  .grab{width:34px;height:4px;border-radius:2px;background:var(--hairline);margin:0 auto 14px}
+
+  ul.k{margin:14px 0 0 16px;font-size:12.5px;color:var(--inkSoft)}
+  ul.k li{margin-bottom:6px}
+  ul.k b{color:var(--ink);font-weight:620}
+  .warn{border-left:2px solid var(--accent);padding:10px 0 10px 13px;margin-top:16px;font-size:12.5px;color:var(--inkSoft)}
+  .warn b{color:var(--accent)}
+  .opt{border:1px solid var(--hairline);border-radius:14px;padding:16px;background:var(--bg)}
+  .opt h3{font-size:13px;font-weight:700;margin-bottom:3px}
+  .opt .why{font-size:12px;color:var(--inkSoft);margin-bottom:14px}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<h1>Routines — card looks, delete, and where the gap control lives</h1>
+<p class="sub">Three directions for the card, then the Manage-this-routine card and the breather placement. Everything here is unbuilt. The three facts you named — <b>how long</b>, <b>when it starts</b>, <b>how many steps</b> — get the colour; nothing else does.</p>
+
+<!-- CARD DIRECTIONS -->
+<section>
+  <div class="head"><span class="tag pick">pick one</span>
+  <div><h2>1 · The routine card — three directions</h2>
+  <p class="note">All three carry the same three facts and a visible delete. They differ in <i>how loudly the time speaks</i>. Colour language stays the app's: <span style="color:var(--accent)">amber = duration</span> (the honest number is amber everywhere in Whenbee), <span style="color:var(--primary)">indigo = the clock you act on</span>, grey = count.</p></div></div>
+
+  <div class="grid3">
+    <div class="col"><div class="cap">A · Chip row <span class="rec">← recommended</span></div>
+      <div class="phone">
+        <div class="card" style="margin-bottom:10px">
+          <div class="row" style="align-items:flex-start">
+            <div style="min-width:0"><div class="rname">Morning routine</div></div>
+            <div class="trash">🗑</div>
+          </div>
+          <div class="facts">
+            <span class="fact time">42 min</span>
+            <span class="fact start">starts 7:12am</span>
+            <span class="fact steps">5 steps</span>
+          </div>
+        </div>
+        <div class="card">
+          <div class="row" style="align-items:flex-start">
+            <div class="rname">Leaving the house</div>
+            <div class="trash">🗑</div>
+          </div>
+          <div class="facts">
+            <span class="fact time">18 min</span>
+            <span class="fact steps">3 steps</span>
+          </div>
+        </div>
+      </div>
+      <ul class="k">
+        <li>All three facts are <b>equally scannable</b>, each with its own colour. Nothing to decode.</li>
+        <li>A routine with no finish time simply drops the indigo chip — the row reflows, no empty slot.</li>
+        <li>Most colour of the three. Two cards on screen = six chips; that's the risk.</li>
+      </ul>
+    </div>
+
+    <div class="col"><div class="cap">B · Time leads</div>
+      <div class="phone">
+        <div class="card stripe" style="margin-bottom:10px">
+          <div class="row" style="align-items:flex-start">
+            <div>
+              <div class="bigtime">42<small>min</small></div>
+              <div class="rname" style="margin-top:8px">Morning routine</div>
+              <div style="font-size:11.5px;color:var(--inkSoft);margin-top:3px">
+                <span style="color:var(--primary);font-weight:650">7:12am</span> → 7:55am · 5 steps
+              </div>
+            </div>
+            <div class="trash">🗑</div>
+          </div>
+        </div>
+        <div class="card stripe">
+          <div class="row" style="align-items:flex-start">
+            <div>
+              <div class="bigtime">18<small>min</small></div>
+              <div class="rname" style="margin-top:8px">Leaving the house</div>
+              <div style="font-size:11.5px;color:var(--inkSoft);margin-top:3px">no finish set · 3 steps</div>
+            </div>
+            <div class="trash">🗑</div>
+          </div>
+        </div>
+      </div>
+      <ul class="k">
+        <li><b>Duration is the headline</b>, amber, unmissable. The amber edge stripe makes the whole card read as a time object.</li>
+        <li>Start → finish as one span in indigo tells you the window, not just the start.</li>
+        <li>Costs vertical space; the name loses top billing.</li>
+      </ul>
+    </div>
+
+    <div class="col"><div class="cap">C · Split value</div>
+      <div class="phone">
+        <div class="card" style="margin-bottom:10px">
+          <div class="row" style="align-items:flex-start">
+            <div style="min-width:0">
+              <div class="rname">Morning routine</div>
+              <div style="font-size:11.5px;color:var(--inkSoft);margin-top:3px">5 steps</div>
+            </div>
+            <div style="text-align:right;flex-shrink:0">
+              <div class="rtot" style="font-size:24px;color:var(--accent)">42<small>min</small></div>
+              <div class="mono" style="font-size:11.5px;color:var(--primary);margin-top:4px">from 7:12am</div>
+            </div>
+          </div>
+          <div style="border-top:1px solid var(--hairline);margin-top:11px;padding-top:9px" class="row">
+            <span style="font-size:11.5px;color:var(--inkFaint)">Runs on weekdays</span>
+            <span class="trash red" style="width:auto;height:auto;border:0;font-size:11.5px;font-weight:650">Delete</span>
+          </div>
+        </div>
+        <div class="card">
+          <div class="row" style="align-items:flex-start">
+            <div><div class="rname">Leaving the house</div><div style="font-size:11.5px;color:var(--inkSoft);margin-top:3px">3 steps</div></div>
+            <div style="text-align:right"><div class="rtot" style="font-size:24px;color:var(--accent)">18<small>min</small></div><div class="mono" style="font-size:11.5px;color:var(--inkFaint);margin-top:4px">no finish set</div></div>
+          </div>
+        </div>
+      </div>
+      <ul class="k">
+        <li>Name left, both numbers right — <b>totals share a baseline</b> straight down the list, easiest to compare.</li>
+        <li>Delete is a worded action in a footer strip, not an icon — least likely to be hit by accident.</li>
+        <li>Quietest of the three. Might be too quiet for what you asked for.</li>
+      </ul>
+    </div>
+  </div>
+  <p class="note" style="margin-top:16px"><b>My call: A.</b> You asked for the eye to catch the three facts — three coloured chips is the most direct answer, and it degrades cleanly when a fact is missing. B is the boldest but buries the name. C is the most elegant and the least loud.</p>
+</section>
+
+<!-- MANAGE CARD -->
+<section>
+  <div class="head"><span class="tag pick">pick a placement</span>
+  <div><h2>2 · "Manage this routine" — inside the routine</h2>
+  <p class="note">You want this <i>as well as</i> the delete on the card. Inside the routine builder it can carry more than delete. Question is where it sits.</p></div></div>
+
+  <div class="grid2">
+    <div class="col"><div class="cap">Placement A · Bottom of the builder, after the rail <span class="rec">← recommended</span></div>
+      <div class="phone">
+        <div style="font-size:11px;color:var(--inkSoft);margin-bottom:6px">‹ Routines</div>
+        <div class="eyebrow" style="margin-bottom:4px">Routine name</div>
+        <div style="font-size:19px;font-weight:680;border-bottom:1px solid var(--hairline);padding-bottom:7px">Morning routine</div>
+        <div style="margin:16px 0 6px" class="row"><span class="eyebrow">Honest total</span><span class="rtot" style="font-size:22px;color:var(--accent)">42<small>min</small></span></div>
+        <div class="rail" style="margin-top:6px">
+          <div class="gutter hot">7:12</div>
+          <div class="body">
+            <div class="task"><div><div class="t">Shower</div><div class="m">Getting ready</div></div><div class="mono" style="font-weight:700">12<small style="font-size:.6em;color:var(--inkSoft)">m</small></div></div>
+            <div class="breather tappable"><span>5m in-between</span><span class="dashed"></span><span class="chgv">change</span></div>
+            <div class="task"><div><div class="t">Coffee</div><div class="m">Kitchen</div></div><div class="mono" style="font-weight:700">15<small style="font-size:.6em;color:var(--inkSoft)">m</small></div></div>
+            <div style="font-size:12.5px;font-weight:700;color:var(--primary);padding:12px 0 2px">＋ add step</div>
+          </div>
+        </div>
+        <div class="manage">
+          <div class="eyebrow" style="padding:12px 14px 0">Manage this routine</div>
+          <div class="mrow" style="border:0"><span>Duplicate</span><span style="color:var(--inkFaint)">›</span></div>
+          <div class="mrow"><span>Reset what it's learned</span><span style="color:var(--inkFaint)">›</span></div>
+          <div class="mrow dngr"><span>Delete routine</span><span>›</span></div>
+        </div>
+      </div>
+      <ul class="k">
+        <li>Matches the <b>category-detail pattern</b> you already approved: destructive things live at the bottom of the thing they affect, past the content.</li>
+        <li>You have to scroll past your steps to reach Delete — that scroll is the safety.</li>
+        <li>Room to grow (Duplicate, Reset learning) without touching the list card.</li>
+      </ul>
+    </div>
+
+    <div class="col"><div class="cap">Placement B · Behind a ⋯ in the builder header</div>
+      <div class="phone">
+        <div class="row" style="margin-bottom:12px"><span style="font-size:11px;color:var(--inkSoft)">‹ Routines</span><span style="color:var(--inkSoft);font-size:16px">⋯</span></div>
+        <div class="sheet"><div class="grab"></div>
+          <div class="eyebrow" style="margin-bottom:10px">Morning routine</div>
+          <div class="manage" style="margin-top:0">
+            <div class="mrow"><span>Duplicate</span><span style="color:var(--inkFaint)">›</span></div>
+            <div class="mrow"><span>Reset what it's learned</span><span style="color:var(--inkFaint)">›</span></div>
+            <div class="mrow dngr"><span>Delete routine</span><span>›</span></div>
+          </div>
+        </div>
+      </div>
+      <ul class="k">
+        <li>Zero vertical cost, always reachable without scrolling.</li>
+        <li>A <code>⋯</code> hides things — you said you want it <b>visible</b>. This is the opposite of that instinct.</li>
+        <li>Would use the cross-platform <code>ActionSheet</code>, never <code>ActionSheetIOS</code>.</li>
+      </ul>
+    </div>
+  </div>
+  <p class="note" style="margin-top:16px">Both placements confirm through the app's <code>ConfirmSheet</code> — never a native alert. Deleting a routine also cancels its scheduled start-by alerts and drops its learned transition factor; the steps' own category stats are untouched, so nothing you've calibrated is lost.</p>
+</section>
+
+<!-- BREATHER -->
+<section>
+  <div class="head"><span class="tag ask">placement for your sign-off</span>
+  <div><h2>3 · The in-between gap — where the control lives (option A, as you chose)</h2>
+  <p class="note">The row is already on the rail between every pair of steps. It becomes tappable; the whole row is the target, with a quiet <span style="color:var(--primary)">change</span> on the right so it reads as an action rather than a caption.</p></div></div>
+
+  <div class="grid2">
+    <div class="col"><div class="cap bad">now — a caption that looks like nothing</div>
+      <div class="phone"><div class="rail">
+        <div class="gutter">7:12</div>
+        <div class="body">
+          <div class="task"><div><div class="t">Shower</div><div class="m">Getting ready · 12m honest · 7:12</div></div></div>
+          <div class="breather">+5m in-between</div>
+          <div class="task"><div><div class="t">Coffee</div><div class="m">Kitchen · 15m honest · 7:29</div></div></div>
+        </div>
+      </div></div>
+    </div>
+    <div class="col"><div class="cap good">after — same row, now a control</div>
+      <div class="phone"><div class="rail">
+        <div class="gutter hot">7:12</div>
+        <div class="body">
+          <div class="task"><div><div class="t">Shower</div><div class="m">Getting ready</div></div><div class="mono" style="font-weight:700">12<small style="font-size:.6em;color:var(--inkSoft)">m</small></div></div>
+          <div class="breather tappable"><span>5m in-between</span><span class="dashed"></span><span class="chgv">change</span></div>
+          <div class="task"><div><div class="t">Coffee</div><div class="m">Kitchen</div></div><div class="mono" style="font-weight:700">15<small style="font-size:.6em;color:var(--inkSoft)">m</small></div></div>
+        </div>
+      </div>
+      <div class="sheet">
+        <div class="grab"></div>
+        <div class="eyebrow" style="margin-bottom:4px">Gap between steps</div>
+        <div style="font-size:12px;color:var(--inkSoft);margin-bottom:13px">Applies to every gap in this routine.</div>
+        <div class="segs">
+          <span class="seg on">Learned · 5m</span>
+          <span class="seg">0</span><span class="seg">5</span><span class="seg">10</span><span class="seg">20</span>
+        </div>
+        <div style="font-size:11.5px;color:var(--inkFaint);margin-top:13px">Learned uses what your run-throughs actually cost between steps.</div>
+      </div>
+      </div>
+    </div>
+  </div>
+
+  <ul class="k">
+    <li><b>Tap target is the whole row</b>, not the word — no new element added to the rail, which is what you asked for.</li>
+    <li><b>Default stays "Learned"</b> and is listed first, so nothing changes unless you deliberately override.</li>
+    <li>One value for the whole routine, not per-gap. Per-gap is a lot of taps for a small payoff.</li>
+    <li>Once overridden, the total on the builder + list card recomputes as <i>steps + your gaps</i> and the row reads <b>5m in-between</b> with no "Learned" tag.</li>
+  </ul>
+
+  <div class="warn"><b>Reminder of the trade you're accepting:</b> that gap is currently Whenbee's learned transition factor made visible. Setting it by hand means the routine total is partly your number, not fully a learned one. "Learned" stays the default so this only applies to routines you deliberately tune.</div>
+</section>
+
+<!-- SUMMARY -->
+<section style="border-color:var(--primarySoft)">
+  <h2 style="margin-bottom:10px">What I need back</h2>
+  <ul class="k" style="margin-left:16px">
+    <li><b>Card direction:</b> A chip row / B time leads / C split value</li>
+    <li><b>Manage card placement:</b> A bottom of builder / B ⋯ in header</li>
+    <li><b>Manage card rows:</b> Duplicate + Reset learning + Delete — or Delete only?</li>
+    <li><b>Gap sheet:</b> as drawn, or different chip values than 0 / 5 / 10 / 20?</li>
+  </ul>
+  <p class="note" style="margin-top:14px">Already on main and green (2373 tests): past-due boundary no longer drags, "6 more logs" gone, running-card colours, running card no longer follows you across days, Start/Finish pill radius, and the "Forgot to stop?" link now appears at your <b>guess</b> instead of the honest number. Routines is the only unbuilt piece — it needs a branch, which I'll ask for once you've picked.</p>
+</section>
+
+</div>
+</body>
+</html>

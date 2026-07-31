@@ -4,11 +4,12 @@ import {
   routineHonestTotal,
   routineBasis,
   planBackward,
-  priorFor,
+  seededPriorFor,
   DEFAULT_BUFFER_MIN,
 } from '@/src/engine';
 import { useRoutinesStore, routineStepKey } from '@/src/stores/routinesStore';
 import { useCalibrationStore } from '@/src/stores/calibrationStore';
+import { useSettingsStore } from '@/src/stores/settingsStore';
 import type { RoutineSummary } from '@/src/domain/types';
 
 // ──────────────────────────────────────────────────────────────────────────────
@@ -55,21 +56,22 @@ export function useRoutines(args: UseRoutinesArgs = {}) {
   const stepMByKey = useRoutinesStore((s) => s.stepMByKey);
   const loadRoutines = useRoutinesStore((s) => s.loadRoutines);
   const statsByCategory = useCalibrationStore((s) => s.statsByCategory);
+  const archetypeSeed = useSettingsStore((s) => s.archetypeSeed);
 
   useEffect(() => {
     void loadRoutines();
   }, [loadRoutines]);
 
-  /** The step's resolved multiplier: earned recurring M → category M → prior. */
+  /** The step's resolved multiplier: earned recurring M → category M → seeded prior. */
   const resolveStepM = useMemo(
     () =>
       (routineId: string, stepId: string, category: string): number => {
         const recurringM = stepMByKey[routineStepKey(routineId, stepId)];
         if (recurringM !== undefined) return recurringM;
         const cat = statsByCategory[category];
-        return cat?.mEffective ?? priorFor(category);
+        return cat?.mEffective ?? seededPriorFor(category, archetypeSeed);
       },
-    [stepMByKey, statsByCategory],
+    [stepMByKey, statsByCategory, archetypeSeed],
   );
 
   const summaries: RoutineCardModel[] = useMemo(

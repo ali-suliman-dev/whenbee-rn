@@ -6,21 +6,22 @@ import Animated, {
   withTiming,
   useReducedMotion,
 } from 'react-native-reanimated';
+import { haptics } from '@/src/lib/haptics';
 import { useTranslation } from 'react-i18next';
 import { useTheme } from '@/src/theme/useTheme';
 import { type } from '@/src/theme/typography';
-import { HoneyBar } from '@/src/features/reward/HoneyBar';
 import type { ProFeatureId } from '@/src/engine';
 import { RipeningBand } from './RipeningBand';
 import { FeatureReadinessList } from './FeatureReadinessList';
-import { RIPENING_COPY, REVEAL_COPY } from './copy';
+import { RIPENING_COPY, REVEAL_COPY, ripeningHeaderCopy } from './copy';
 
 // ──────────────────────────────────────────────────────────────────────────────
 // RipeningProCard — two-state pure presentational card.
 //
 // Ripening (!pitchUnlocked):
-//   Header pill + title + sub + RipeningBand (settling) + HoneyBar + meta + footer.
-//   No CTA — zero pressure; the user is just logging, the model is sharpening.
+//   Header pill + count-aware title/sub + feature tally bar + FeatureReadinessList
+//   + a ticket-strip footer (calm copy + honey "Get Pro" chip). No hard CTA — the
+//   chip previews the paywall, it never gates or pressures.
 //
 // Reveal (pitchUnlocked):
 //   Header pill + headline + sub + RipeningBand (revealed) + FeatureReadinessList
@@ -34,10 +35,16 @@ import { RIPENING_COPY, REVEAL_COPY } from './copy';
 
 export interface RipeningProCardProps {
   pitchUnlocked: boolean;
-  honeyPct: number;
   nextTierName: string | null;
   logsToNext: number;
-  features: { id: ProFeatureId; ready: boolean; waitLabel?: string }[];
+  features: {
+    id: ProFeatureId;
+    ready: boolean;
+    waitLabel?: string;
+    /** Real 0..1 progress fraction for the single next-up feature only. Never
+     *  fabricated — omit rather than guess when no real fraction is derivable. */
+    progress?: number;
+  }[];
   onSeePro: () => void;
   onPreview: () => void;
 }
@@ -46,7 +53,6 @@ export interface RipeningProCardProps {
 
 export function RipeningProCard({
   pitchUnlocked,
-  honeyPct,
   nextTierName,
   logsToNext,
   features,
@@ -82,6 +88,26 @@ export function RipeningProCard({
   const revealStyle = useAnimatedStyle(() => ({
     opacity: revealOpacity.get(),
     transform: [{ translateY: revealTranslateY.get() }],
+  }));
+
+  // ── honey chip press dip (ripening state) ─────────────────────────────────
+  // AppButton-style scale dip: ease-out, no overshoot (plain withTiming, not a
+  // spring). Reduced-motion skips the dip entirely.
+  const chipScale = useSharedValue(1);
+
+  function handleChipPressIn() {
+    haptics.light();
+    if (reducedMotion) return;
+    chipScale.set(withTiming(t.scale.pressIn, { duration: t.motion.press, easing: t.motion.easing.out }));
+  }
+
+  function handleChipPressOut() {
+    if (reducedMotion) return;
+    chipScale.set(withTiming(1, { duration: t.motion.press, easing: t.motion.easing.out }));
+  }
+
+  const chipStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: chipScale.get() }],
   }));
 
   // ── card shell ────────────────────────────────────────────────────────────
@@ -142,19 +168,118 @@ export function RipeningProCard({
     color: t.colors.inkSoft,
   };
 
-  const metaRow: ViewStyle = {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-  };
-
-  const metaText: TextStyle = {
-    ...(type.caption as unknown as TextStyle),
-    color: t.colors.inkSoft,
-  };
-
   const footerText: TextStyle = {
     ...(type.caption as unknown as TextStyle),
     color: t.colors.inkSoft,
+  };
+
+  // Tally bar: one rounded segment per feature + a trailing "{n} of {total}" caption.
+  const tallyRow: ViewStyle = {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: t.space[2],
+  };
+
+  const tallyTrack: ViewStyle = {
+    flex: 1,
+    flexDirection: 'row',
+    gap: t.space[1],
+  };
+
+  const tallySegmentTrack: ViewStyle = {
+    flex: 1,
+    height: t.progress.tally,
+    borderRadius: t.radii.full,
+    backgroundColor: t.colors.honeyWash,
+    overflow: 'hidden',
+  };
+
+  const tallySegmentFill: ViewStyle = {
+    height: '100%',
+    borderRadius: t.radii.full,
+    backgroundColor: t.colors.accent,
+  };
+
+  const tallyCaptionText: TextStyle = {
+    ...(type.captionBold as unknown as TextStyle),
+    color: t.colors.amberText,
+  };
+
+  // On light, a bare amberText caption reads muddy — give it an accentSoft pill.
+  // Dark amberText is fine bare (per the global amber rule).
+  const tallyCaptionPill: ViewStyle = {
+    backgroundColor: t.colors.accentSoft,
+    paddingHorizontal: t.space[1.5],
+    paddingVertical: t.space[0.5],
+    borderRadius: t.radii.full,
+  };
+
+  // Ticket strip: the calm ownership footer that replaces the old HoneyBar/meta row.
+  // overflow: 'hidden' clips the oversized ghost watermark (negative top/right
+  // offsets) to the strip's rounded bounds so it reads as an inset watermark,
+  // not a shape bleeding past the card edge.
+  const ticketStrip: ViewStyle = {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: t.space[3],
+    backgroundColor: t.colors.surfaceSunken,
+    borderRadius: t.radii.panel,
+    padding: t.space[3],
+    position: 'relative',
+    overflow: 'hidden',
+  };
+
+  // Ghost hex watermark — decorative, never intercepts touches.
+  const ticketGhost: TextStyle = {
+    position: 'absolute',
+    top: -t.space[4],
+    right: -t.space[2],
+    fontSize: t.fontSize.ghostWatermark,
+    color: t.colors.accentGhost,
+  };
+
+  const ticketLeft: ViewStyle = { flex: 1, gap: t.space[0.5] };
+
+  const ticketTitleText: TextStyle = {
+    fontFamily: 'Jakarta-Bold',
+    fontSize: t.fontSize.ticketTitle,
+    color: t.colors.ink,
+  };
+
+  const ticketSubText: TextStyle = {
+    fontFamily: 'Jakarta-Regular',
+    fontSize: t.fontSize.ticketSub,
+    lineHeight: Math.round(t.fontSize.ticketSub * t.lineHeight.normal),
+    color: t.colors.inkSoft,
+  };
+
+  // Honey "Get Pro" chip — coin-edge pill, no price text (RevenueCat owns that).
+  const chipInner: ViewStyle = {
+    position: 'relative',
+    backgroundColor: t.colors.accent,
+    borderRadius: t.radii.full,
+    paddingVertical: t.space[2],
+    paddingHorizontal: t.space[4],
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderBottomWidth: t.borderWidth.coin,
+    borderBottomColor: t.colors.accentEdge,
+  };
+
+  const chipSheen: ViewStyle = {
+    position: 'absolute',
+    top: t.space[0.5],
+    left: '8%',
+    right: '40%',
+    height: '38%',
+    borderRadius: t.radii.full,
+    backgroundColor: t.colors.sheenChip,
+  };
+
+  const chipLabelText: TextStyle = {
+    ...(type.bodySm as unknown as TextStyle),
+    fontFamily: 'Jakarta-Bold',
+    color: t.colors.onAmber,
   };
 
   // ── reveal state styles ───────────────────────────────────────────────────
@@ -198,6 +323,13 @@ export function RipeningProCard({
 
   const eyebrow = pitchUnlocked ? revealCopy.eyebrow : ripeningCopy.eyebrow;
 
+  // ── ripening header + tally derivations ───────────────────────────────────
+  const readyCount = features.filter((f) => f.ready).length;
+  const totalFeatures = features.length;
+  const header = ripeningHeaderCopy(tr, readyCount, totalFeatures);
+  const nextUpId = features.find((f) => !f.ready)?.id;
+  const tallyCaption = `${readyCount} of ${totalFeatures}`;
+
   return (
     <View style={card}>
       {/* ── header row ──────────────────────────────────────────────────── */}
@@ -227,7 +359,7 @@ export function RipeningProCard({
           <RipeningBand revealed />
 
           {/* Feature readiness list */}
-          <FeatureReadinessList items={features} />
+          <FeatureReadinessList items={features} logsToNext={logsToNext} />
 
           {/* Amber coin-edge CTA */}
           <Pressable onPress={onSeePro} accessibilityRole="button">
@@ -244,25 +376,66 @@ export function RipeningProCard({
       ) : (
         /* ── RIPENING STATE ─────────────────────────────────────────────── */
         <>
-          {/* Title + sub */}
+          {/* Title + sub — count-aware (0 / 1 / N of total ready) */}
           <View style={{ gap: t.space[1] }}>
-            <Text style={titleText}>{ripeningCopy.title}</Text>
-            <Text style={subText}>{ripeningCopy.sub}</Text>
+            <Text style={titleText}>{header.title}</Text>
+            <Text style={subText}>{header.sub}</Text>
           </View>
 
-          {/* Settling band */}
-          <RipeningBand revealed={false} />
-
-          {/* HoneyBar + meta row */}
-          <View style={{ gap: t.space[1] }}>
-            <HoneyBar pct={honeyPct} />
-            <View style={metaRow}>
-              <Text style={metaText}>{tr('ripeningPro.card.honeyPct', { pct: honeyPct })}</Text>
-              <Text style={metaText}>{tr('ripeningPro.card.logsToNext', { count: logsToNext })}</Text>
+          {/* Tally bar — one segment per feature; ready = full accent, the
+              single next-up feature = partial fill at its real progress
+              fraction, others = an empty honeyWash track. Never fabricated —
+              a next-up feature with no real fraction just renders empty. */}
+          <View style={tallyRow}>
+            <View style={tallyTrack}>
+              {features.map((f) => (
+                <View key={f.id} style={tallySegmentTrack}>
+                  {f.ready ? (
+                    <View style={[tallySegmentFill, { width: '100%' }]} />
+                  ) : f.id === nextUpId && f.progress != null ? (
+                    <View style={[tallySegmentFill, { width: `${Math.round(f.progress * 100)}%` }]} />
+                  ) : null}
+                </View>
+              ))}
             </View>
+            {t.mode === 'light' ? (
+              <View style={tallyCaptionPill}>
+                <Text style={tallyCaptionText}>{tallyCaption}</Text>
+              </View>
+            ) : (
+              <Text style={tallyCaptionText}>{tallyCaption}</Text>
+            )}
           </View>
 
-          {/* Footer — no CTA */}
+          {/* Feature readiness list — done / next-up (partial) / wait pips */}
+          <FeatureReadinessList items={features} logsToNext={logsToNext} />
+
+          {/* Ticket strip — calm ownership frame + honey "Get Pro" chip. */}
+          <View style={ticketStrip}>
+            <Text style={ticketGhost} pointerEvents="none">
+              ⬢
+            </Text>
+            <View style={ticketLeft}>
+              <Text style={ticketTitleText}>{ripeningCopy.ticketTitle}</Text>
+              <Text style={ticketSubText}>{ripeningCopy.ticketSub}</Text>
+            </View>
+            <Pressable
+              onPress={onSeePro}
+              onPressIn={handleChipPressIn}
+              onPressOut={handleChipPressOut}
+              accessibilityRole="button"
+              accessibilityLabel={ripeningCopy.chipLabel}
+            >
+              <Animated.View style={chipStyle}>
+                <View style={chipInner}>
+                  <View style={chipSheen} pointerEvents="none" />
+                  <Text style={chipLabelText}>{ripeningCopy.chipLabel}</Text>
+                </View>
+              </Animated.View>
+            </Pressable>
+          </View>
+
+          {/* Footer — no CTA pressure, just the plain fact */}
           <Text style={footerText}>{ripeningCopy.footer}</Text>
         </>
       )}

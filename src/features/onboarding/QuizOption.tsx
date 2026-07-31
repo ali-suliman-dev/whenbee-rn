@@ -136,8 +136,8 @@ export function QuizOption({
       onPress={handlePress}
       onPressIn={handlePressIn}
       onPressOut={handlePressOut}
-      accessibilityRole="button"
-      accessibilityState={{ selected }}
+      accessibilityRole="radio"
+      accessibilityState={{ checked: selected }}
       style={wrapper}
     >
       <View style={edgeBase} />

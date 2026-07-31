@@ -17,13 +17,14 @@ import {
   recurringHasEnoughData,
   alphaFor,
   clampRatio,
-  priorFor,
+  seededPriorFor,
   TRANSITION_PRIOR,
   stepHonestMinutes,
   routineHonestTotal,
 } from '@/src/engine';
 import type { Routine, RoutineStep, RoutineStepKey } from '@/src/domain/types';
 import { analytics } from '@/src/services/analytics';
+import { useSettingsStore } from '@/src/stores/settingsStore';
 import {
   scheduleRoutineAlerts,
   cancelRoutineAlerts,
@@ -176,7 +177,7 @@ async function computeStartByMinuteOfDay(
       if (stat && recurringHasEnoughData(stat.n)) {
         m = stat.mEffective;
       } else {
-        const cat = await catStats.get(step.category);
+        const cat = await catStats.get(step.category, useSettingsStore.getState().archetypeSeed);
         m = cat.mEffective;
       }
       return stepHonestMinutes(step.guessMin, m);
@@ -194,7 +195,7 @@ async function computeStartByMinuteOfDay(
 async function resolveStepMBefore(db: Database, key: string, category: string): Promise<number> {
   const recurring = await makeRecurringRepo(db).get(key);
   if (recurring && recurringHasEnoughData(recurring.n)) return recurring.mEffective;
-  const cat = await makeCategoryStatsRepo(db).get(category);
+  const cat = await makeCategoryStatsRepo(db).get(category, useSettingsStore.getState().archetypeSeed);
   return cat.mEffective;
 }
 
@@ -213,7 +214,7 @@ async function trainStep(
 ): Promise<void> {
   const repo = makeRecurringRepo(db);
   const prev = await repo.get(key);
-  const prior = priorFor(category);
+  const prior = seededPriorFor(category, useSettingsStore.getState().archetypeSeed);
   const ratio = clampRatio(estimateMin, actualMin);
   // Timed run → the timed alpha for the category's learning speed (balanced default).
   const alpha = alphaFor('balanced', 'timed');
@@ -412,6 +413,9 @@ export const useRoutinesStore = create<RoutinesState>()(
             taskLabel: `${loaded.routine.name} · ${firstStep.label}`,
             finishEpoch,
             startEpoch: Math.round(now / 1000),
+            // A routine has no separate original-guess vs honest projection, so pass 0
+            // (= unknown) — the notification then shows no redundant "guessed" suffix.
+            guessFinishEpoch: 0,
             isProRich: false, // entitlement not imported here; the device LA picks it up
           });
         }

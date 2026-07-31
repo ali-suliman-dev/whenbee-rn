@@ -16,6 +16,7 @@ import { StepProgress } from '@/src/features/onboarding/StepProgress';
 import { onboardingStepIndex, ONBOARDING_TOTAL } from '@/src/features/onboarding/onboardingFlow';
 import { BrandLockup } from '@/src/features/onboarding/BrandLockup';
 import { Reveal } from '@/src/features/onboarding/Reveal';
+import { useOnce } from '@/src/lib/useOnce';
 
 export default function Welcome() {
   const t = useTheme();
@@ -29,6 +30,7 @@ export default function Welcome() {
     firedRef.current = true;
     trackWelcomeShown();
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  const onGetStarted = useOnce(() => router.push('/(onboarding)/quiz/0'));
   return (
     <Screen backdrop={<OnboardingBackdrop />}>
       <StepProgress current={onboardingStepIndex('welcome')} total={ONBOARDING_TOTAL} />
@@ -40,20 +42,20 @@ export default function Welcome() {
           <AppText
             style={{
               fontSize: t.fontSize['2xl'],
-              lineHeight: t.fontSize['2xl'] * 1.1,
+              lineHeight: t.fontSize['2xl'] * t.lineHeight.tight,
               fontWeight: t.fontWeight.bold as '700',
               color: t.colors.ink,
-              letterSpacing: -0.75,
+              letterSpacing: t.letterSpacing.display,
             }}
           >
             {tr('welcome.titlePrefix')}
             <AppText
               style={{
                 fontSize: t.fontSize['2xl'],
-                lineHeight: t.fontSize['2xl'] * 1.1,
+                lineHeight: t.fontSize['2xl'] * t.lineHeight.tight,
                 fontWeight: t.fontWeight.bold as '700',
                 color: t.colors.primary,
-                letterSpacing: -0.75,
+                letterSpacing: t.letterSpacing.display,
               }}
             >
               {tr('welcome.titleEmphasis')}
@@ -63,7 +65,7 @@ export default function Welcome() {
         <Reveal index={2}>
           <AppText
             variant="body"
-            style={{ color: t.colors.inkSoft, lineHeight: t.fontSize.base * 1.5 }}
+            style={{ color: t.colors.inkSoft, lineHeight: t.fontSize.base * t.lineHeight.relaxed }}
           >
             {tr('welcome.subtitle')}
           </AppText>
@@ -90,7 +92,7 @@ export default function Welcome() {
         <AppButton
           label={tr('welcome.cta')}
           fullWidth
-          onPress={() => router.push('/(onboarding)/quiz/0')}
+          onPress={onGetStarted}
         />
       </Reveal>
       <View style={{ height: insets.bottom }} />

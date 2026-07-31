@@ -13,6 +13,13 @@ import { useCalibrationStore } from '@/src/stores/calibrationStore';
 import type { DayTask } from '@/src/engine/daySelectors';
 import type { CalendarEvent } from '@/src/services/calendar';
 
+// useDayPlan → useDayCapacity, which re-reads the calendar on screen focus.
+jest.mock('expo-router', () => ({
+  useFocusEffect: (cb: () => void | (() => void)) => {
+    cb();
+  },
+}));
+
 // ── Stable mock references ───────────────────────────────────────────────────
 
 const mockGetEventsForDay = jest.fn<Promise<CalendarEvent[]>, [string, (readonly string[] | undefined)?]>();
@@ -69,6 +76,12 @@ const MIN = 60_000;
 /** A test "now" at 07:00 — before the waking window (08:00), so dayStartMs = 08:00. */
 const NOW_BEFORE_WAKING = MIDNIGHT + 7 * 60 * MIN;
 
+/** A test "now" at 09:00 — inside the waking window, so the anchor drives placement. */
+const NOW_MID_MORNING = MIDNIGHT + 9 * 60 * MIN;
+
+/** A test "now" at 05:00 — before a pinned early start, so the pin (not now) drives dayStartMs. */
+const NOW_EARLY_MORNING = MIDNIGHT + 5 * 60 * MIN;
+
 // ── Factories ─────────────────────────────────────────────────────────────────
 
 function makeQueued(overrides: {
@@ -118,6 +131,7 @@ beforeEach(() => {
     selectedDate: SELECTED_DATE,
     dayTasks: [],
     dayMeta: null,
+    hasManualOrder: false,
     setDoneBy: jest.fn(),
   });
 
@@ -144,6 +158,13 @@ describe('useDayPlan', () => {
       await act(async () => {});
 
       expect(result.current.doneByMin).toBeNull();
+    });
+
+    it('hasFinishTarget is false when no done-by is stored', async () => {
+      const { result } = renderHook(() => useDayPlan(NOW_BEFORE_WAKING));
+      await act(async () => {});
+
+      expect(result.current.hasFinishTarget).toBe(false);
     });
   });
 
@@ -178,18 +199,48 @@ describe('useDayPlan', () => {
       expect(taskItems.map((i) => i.label)).toContain('Reply emails');
     });
 
-    it('tasks are scheduled within the waking window [08:00, 22:00)', async () => {
+    it('tasks start no earlier than the 08:00 waking floor', async () => {
       const { result } = renderHook(() => useDayPlan(NOW_BEFORE_WAKING));
       await act(async () => {});
 
       const wakingStart = MIDNIGHT + 8 * 60 * MIN;
-      const wakingEnd = MIDNIGHT + 22 * 60 * MIN;
       const taskItems = result.current.plan?.timeline.filter((i) => i.kind === 'task') ?? [];
 
       for (const item of taskItems) {
         expect(item.startAt).toBeGreaterThanOrEqual(wakingStart);
-        expect(item.endAt).toBeLessThanOrEqual(wakingEnd);
       }
+    });
+  });
+
+  // ── Task 6: no fabricated 22:00 deadline when the user never set a finish ────
+  describe('no finish target (dayMeta null)', () => {
+    it('the deadline is the end of the day when no finish is set (a task at 22:30 is placed, not overflowed)', async () => {
+      // 'writing' category prior is 2.3 (see src/engine/priors.ts); a 170-minute
+      // guess resolves to an exact 390-minute honest number (170 * 2.3 = 391,
+      // rounds to 390). Backward-filled from the 08:00 waking floor, that lands
+      // the task ending exactly at 22:30 (08:00 + 390min) — a placement the old
+      // fabricated-22:00-deadline code would have flagged as overflow. A tail
+      // meeting from 22:30–23:00 closes the free window there so the single
+      // task packs against it rather than against the real end of day.
+      mockGetEventsForDay.mockResolvedValue([makeTimedEvent('m-tail', 22.5, 30)]);
+      useDayTasksStore.setState({
+        selectedDate: SELECTED_DATE,
+        dayTasks: [
+          makeQueued({ id: 't1', label: 'Long task', category: 'writing', guessMin: 170 }),
+        ],
+        dayMeta: null,
+        setDoneBy: jest.fn(),
+      });
+
+      const { result } = renderHook(() => useDayPlan(NOW_BEFORE_WAKING));
+      await act(async () => {});
+
+      const taskItems = result.current.plan?.timeline.filter((i) => i.kind === 'task') ?? [];
+      const overflowItems = result.current.plan?.timeline.filter((i) => i.kind === 'overflow') ?? [];
+
+      expect(overflowItems).toHaveLength(0);
+      expect(taskItems).toHaveLength(1);
+      expect(taskItems[0]?.endAt).toBe(MIDNIGHT + (22 * 60 + 30) * MIN);
     });
   });
 
@@ -249,6 +300,27 @@ describe('useDayPlan', () => {
       expect(result.current.doneByMin).toBe(18 * 60);
     });
 
+    it('hasFinishTarget is true and the deadline is the stored minute when a finish is set', async () => {
+      useDayTasksStore.setState({
+        selectedDate: SELECTED_DATE,
+        dayTasks: [
+          makeQueued({ id: 't1', label: 'Quick task', category: 'admin', guessMin: 15 }),
+        ],
+        dayMeta: { doneByMin: 10 * 60, planComputedAt: null },
+        setDoneBy: jest.fn(),
+      });
+
+      const { result } = renderHook(() => useDayPlan(NOW_BEFORE_WAKING));
+      await act(async () => {});
+
+      expect(result.current.hasFinishTarget).toBe(true);
+      const deadline = MIDNIGHT + 10 * 60 * MIN;
+      const taskItems = result.current.plan?.timeline.filter((i) => i.kind === 'task') ?? [];
+      for (const item of taskItems) {
+        expect(item.endAt).toBeLessThanOrEqual(deadline);
+      }
+    });
+
     it('uses doneByMin as the deadline when planning', async () => {
       // Set done-by to 10:00 (600 min) — tight window
       useDayTasksStore.setState({
@@ -269,6 +341,277 @@ describe('useDayPlan', () => {
       for (const item of taskItems) {
         expect(item.endAt).toBeLessThanOrEqual(deadline);
       }
+    });
+  });
+
+  // ── Task 4B: manual order feeds the planner (skips orderForFocus reshuffle) ──
+  describe('manual order', () => {
+    // Two light (non-deep) tasks so orderForFocus's deep-first partition is a
+    // no-op (stable identity) regardless of the focus window — isolating the
+    // hasManualOrder branch as the only thing that can change the order.
+    // dayTasks array order is [t1, t2] but orderIndex is reversed (t2 < t1).
+    function makeReversedOrderTasks(): DayTask[] {
+      return [
+        { ...makeQueued({ id: 't1', label: 'First in array', category: 'admin', guessMin: 20 }), orderIndex: 2 },
+        { ...makeQueued({ id: 't2', label: 'Second in array', category: 'admin', guessMin: 20 }), orderIndex: 1 },
+      ];
+    }
+
+    it('without the manual-order flag, keeps array order (orderForFocus identity for two light tasks)', async () => {
+      useDayTasksStore.setState({
+        selectedDate: SELECTED_DATE,
+        dayTasks: makeReversedOrderTasks(),
+        dayMeta: null,
+        hasManualOrder: false,
+        setDoneBy: jest.fn(),
+      });
+
+      const { result } = renderHook(() => useDayPlan(NOW_BEFORE_WAKING));
+      await act(async () => {});
+
+      const taskItems = result.current.plan?.timeline.filter((i) => i.kind === 'task') ?? [];
+      expect(taskItems.map((i) => i.label)).toEqual(['First in array', 'Second in array']);
+    });
+
+    it('with the manual-order flag, sorts by orderIndex and skips the reshuffle', async () => {
+      useDayTasksStore.setState({
+        selectedDate: SELECTED_DATE,
+        dayTasks: makeReversedOrderTasks(),
+        dayMeta: null,
+        hasManualOrder: true,
+        setDoneBy: jest.fn(),
+      });
+
+      const { result } = renderHook(() => useDayPlan(NOW_BEFORE_WAKING));
+      await act(async () => {});
+
+      const taskItems = result.current.plan?.timeline.filter((i) => i.kind === 'task') ?? [];
+      // orderIndex order is t2 (1) then t1 (2) — the reverse of array order.
+      expect(taskItems.map((i) => i.label)).toEqual(['Second in array', 'First in array']);
+    });
+  });
+
+  describe('the plan anchor', () => {
+    /** Two light tasks so the whole day fits comfortably in either direction. */
+    function twoTasks() {
+      return [
+        makeQueued({ id: 't1', label: 'Task A', category: 'admin', guessMin: 30 }),
+        makeQueued({ id: 't2', label: 'Task B', category: 'admin', guessMin: 30 }),
+      ];
+    }
+
+    function setAnchor(patch: { startAtMin?: number | null; planAnchor?: 'start' | 'finish' }) {
+      useDayTasksStore.setState({
+        selectedDate: SELECTED_DATE,
+        dayTasks: twoTasks(),
+        dayMeta: null,
+        hasManualOrder: false,
+        startAtMin: patch.startAtMin ?? null,
+        planAnchor: patch.planAnchor ?? 'finish',
+        setDoneBy: jest.fn(),
+        setStartAt: jest.fn(),
+        setPlanAnchor: jest.fn(),
+      });
+    }
+
+    /** Earliest task block in the returned plan. */
+    function firstTaskStart(plan: { timeline: { kind: string; startAt: number }[] } | null): number {
+      const tasks = (plan?.timeline ?? []).filter((i) => i.kind === 'task');
+      return Math.min(...tasks.map((i) => i.startAt));
+    }
+
+    it('exposes both derived clocks at once so the chooser can compare them', async () => {
+      setAnchor({ planAnchor: 'finish' });
+      const { result } = renderHook(() => useDayPlan(NOW_MID_MORNING));
+      await act(async () => {});
+
+      expect(typeof result.current.derivedFinishMs).toBe('number');
+      expect(typeof result.current.derivedStartByMs).toBe('number');
+    });
+
+    it('defaults to the finish anchor, so the plan still fills backward', async () => {
+      setAnchor({ planAnchor: 'finish' });
+      const { result } = renderHook(() => useDayPlan(NOW_MID_MORNING));
+      await act(async () => {});
+
+      expect(result.current.planAnchor).toBe('finish');
+      expect(result.current.plan?.startBy).toBe(result.current.derivedStartByMs);
+    });
+
+    it('anchoring the start on Now begins the plan a short lead from now', async () => {
+      setAnchor({ planAnchor: 'start', startAtMin: null });
+      const { result } = renderHook(() => useDayPlan(NOW_MID_MORNING));
+      await act(async () => {});
+
+      expect(firstTaskStart(result.current.plan)).toBe(NOW_MID_MORNING + 5 * MIN);
+    });
+
+    it('a pinned start time begins the plan there', async () => {
+      setAnchor({ planAnchor: 'start', startAtMin: 10 * 60 });
+      const { result } = renderHook(() => useDayPlan(NOW_MID_MORNING));
+      await act(async () => {});
+
+      expect(firstTaskStart(result.current.plan)).toBe(MIDNIGHT + 10 * 60 * MIN);
+    });
+
+    it('the finish anchor ignores the pinned start and still fills backward', async () => {
+      setAnchor({ planAnchor: 'finish', startAtMin: 10 * 60 });
+      const { result } = renderHook(() => useDayPlan(NOW_MID_MORNING));
+      await act(async () => {});
+
+      expect(result.current.plan?.startBy).toBe(result.current.derivedStartByMs);
+    });
+
+    it('a start pinned before the waking floor is used as the day start', async () => {
+      setAnchor({ planAnchor: 'start', startAtMin: 6 * 60 + 30 }); // 06:30
+      const { result } = renderHook(() => useDayPlan(NOW_EARLY_MORNING));
+      await act(async () => {});
+
+      expect(firstTaskStart(result.current.plan)).toBe(MIDNIGHT + (6 * 60 + 30) * MIN);
+    });
+
+    it('the waking floor still applies to the live Now anchor', async () => {
+      setAnchor({ planAnchor: 'start', startAtMin: null });
+      const { result } = renderHook(() => useDayPlan(NOW_EARLY_MORNING));
+      await act(async () => {});
+
+      expect(firstTaskStart(result.current.plan)).toBe(MIDNIGHT + 8 * 60 * MIN);
+    });
+
+    it('the waking floor still applies when the finish is the pinned end', async () => {
+      setAnchor({ planAnchor: 'finish', startAtMin: 6 * 60 + 30 }); // 06:30, ignored
+      const { result } = renderHook(() => useDayPlan(NOW_EARLY_MORNING));
+      await act(async () => {});
+
+      const taskItems = (result.current.plan?.timeline ?? []).filter((i) => i.kind === 'task');
+      expect(taskItems.length).toBeGreaterThan(0);
+      for (const item of taskItems) {
+        expect(item.startAt).toBeGreaterThanOrEqual(MIDNIGHT + 8 * 60 * MIN);
+      }
+    });
+
+    it('a pinned start in the past is still floored to now + lead', async () => {
+      const afternoon = MIDNIGHT + (14 * 60 + 15) * MIN;
+      setAnchor({ planAnchor: 'start', startAtMin: 9 * 60 + 30 }); // 09:30, already gone by
+      const { result } = renderHook(() => useDayPlan(afternoon));
+      await act(async () => {});
+
+      expect(firstTaskStart(result.current.plan)).toBe(afternoon + 5 * MIN);
+    });
+
+    it('derivedStartByMs (the finish-preview clock) does not depend on which anchor is selected', async () => {
+      // A meeting sits between the pin (06:30) and the waking floor (08:00),
+      // and the two tasks are sized so the smaller one alone just barely
+      // overflows the 60-minute 08:00-09:00 capacity (65 effective minutes:
+      // 60 honest + the 5-minute per-task buffer) but fits comfortably once
+      // the meeting reopens the 07:30-09:00 window (90 minutes). Fixed b:1
+      // stats make honestMin == guessMin, so the sizing is exact.
+      //
+      // If the backward pass's floor ever became pin-aware (06:30, only when
+      // 'start' happens to be selected), the meeting would survive
+      // normalizeAnchors' clip instead of being excluded, split the free
+      // windows, and let the cut-ladder land a real startBy — while the
+      // 'finish'-selected render (always the plain 08:00 floor) excludes the
+      // meeting and reports no viable startBy at all (push-deadline). Same
+      // day, same pin, only the selected tab differs: the two must agree.
+      //
+      // The two renders are taken one at a time (unmounting the first before
+      // flipping `planAnchor`): both hooks read the SAME global store, so
+      // leaving the first mounted while the second's setup mutates shared
+      // state would make both re-render onto the final state and trivially
+      // "agree" no matter what the code does.
+      useCalibrationStore.setState({
+        statsByCategory: {
+          admin: { mEffective: 1, n: 100, sharpness: 0, tier: 'Raw', fit: { a: 0, b: 1 } },
+        },
+      });
+      mockGetEventsForDay.mockResolvedValue([makeTimedEvent('early', 7, 30)]); // 07:00-07:30
+      const tightTasks = [
+        makeQueued({ id: 't1', label: 'Task A', category: 'admin', guessMin: 85 }),
+        makeQueued({ id: 't2', label: 'Task B', category: 'admin', guessMin: 60 }),
+      ];
+      const baseState = {
+        selectedDate: SELECTED_DATE,
+        dayTasks: tightTasks,
+        dayMeta: { doneByMin: 9 * 60, planComputedAt: null }, // deadline 09:00
+        hasManualOrder: false,
+        startAtMin: 6 * 60 + 30, // 06:30 — earlier than the 08:00 waking floor
+        setDoneBy: jest.fn(),
+        setStartAt: jest.fn(),
+        setPlanAnchor: jest.fn(),
+      };
+
+      useDayTasksStore.setState({ ...baseState, planAnchor: 'start' });
+      const startSelected = renderHook(() => useDayPlan(NOW_EARLY_MORNING));
+      await act(async () => {});
+      const startDerivedStartByMs = startSelected.result.current.derivedStartByMs;
+      startSelected.unmount();
+
+      useDayTasksStore.setState({ ...baseState, planAnchor: 'finish' });
+      const finishSelected = renderHook(() => useDayPlan(NOW_EARLY_MORNING));
+      await act(async () => {});
+      const finishDerivedStartByMs = finishSelected.result.current.derivedStartByMs;
+      finishSelected.unmount();
+
+      expect(startDerivedStartByMs).toBe(finishDerivedStartByMs);
+    });
+
+    it('derivedFinishMs is the end of the last block in the forward fill', async () => {
+      setAnchor({ planAnchor: 'start', startAtMin: 10 * 60 });
+      const { result } = renderHook(() => useDayPlan(NOW_MID_MORNING));
+      await act(async () => {});
+
+      const ends = (result.current.plan?.timeline ?? [])
+        .filter((i) => i.kind === 'task')
+        .map((i) => i.endAt);
+      expect(result.current.derivedFinishMs).toBe(Math.max(...ends));
+    });
+
+    it('a start still ahead of now is not reported as passed', async () => {
+      setAnchor({ planAnchor: 'start', startAtMin: 10 * 60 });
+      const { result } = renderHook(() => useDayPlan(NOW_MID_MORNING));
+      await act(async () => {});
+
+      expect(result.current.startHasPassed).toBe(false);
+      expect(result.current.effectiveStartMs).toBe(MIDNIGHT + 10 * 60 * MIN);
+    });
+
+    // Edge case: "09:30 has passed · starting 14:20". Their number is kept as-is.
+    it('a start that has passed keeps the user\'s minute and reports the floored start', async () => {
+      const afternoon = MIDNIGHT + (14 * 60 + 15) * MIN;
+      setAnchor({ planAnchor: 'start', startAtMin: 9 * 60 + 30 });
+      const { result } = renderHook(() => useDayPlan(afternoon));
+      await act(async () => {});
+
+      expect(result.current.startAtMin).toBe(9 * 60 + 30);
+      expect(result.current.startHasPassed).toBe(true);
+      expect(result.current.effectiveStartMs).toBe(afternoon + 5 * MIN);
+    });
+
+    it('the live Now anchor is never reported as passed', async () => {
+      setAnchor({ planAnchor: 'start', startAtMin: null });
+      const { result } = renderHook(() => useDayPlan(NOW_MID_MORNING));
+      await act(async () => {});
+
+      expect(result.current.startHasPassed).toBe(false);
+    });
+
+    it('setStartAt and setPlanAnchor delegate to the store', async () => {
+      const mockSetStartAt = jest.fn();
+      const mockSetPlanAnchor = jest.fn();
+      setAnchor({});
+      useDayTasksStore.setState({ setStartAt: mockSetStartAt, setPlanAnchor: mockSetPlanAnchor });
+
+      const { result } = renderHook(() => useDayPlan(NOW_MID_MORNING));
+      await act(async () => {});
+
+      act(() => {
+        result.current.setStartAt(9 * 60 + 30);
+        result.current.setPlanAnchor('finish');
+      });
+
+      expect(mockSetStartAt).toHaveBeenCalledWith(9 * 60 + 30);
+      expect(mockSetPlanAnchor).toHaveBeenCalledWith('finish');
     });
   });
 

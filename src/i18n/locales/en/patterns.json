@@ -219,8 +219,12 @@
       "value_one": "{{count}} task",
       "value_other": "{{count}} tasks"
     },
-    "mostAccurate": { "label": "Most accurate" },
-    "runsLongest": { "label": "Runs longest" }
+    "mostAccurate": {
+      "label": "Most accurate"
+    },
+    "runsLongest": {
+      "label": "Runs longest"
+    }
   },
   "archetypeTraits": {
     "runsLabel": "Runs",
@@ -267,10 +271,11 @@
     "ripening": {
       "eyebrow": "Pro · ripening",
       "pillPrefix": "Ripens at",
-      "title": "Your honest range",
-      "sub": "The range Whenbee will show you — once it has seen enough of your timing to mean something.",
       "settling": "Still settling…",
-      "footer": "Each task you log quietly sharpens the range. Nothing to keep up with."
+      "footer": "No streak, no rush. Logging normally gets you there.",
+      "ticketTitle": "Own Pro from day one",
+      "ticketSub": "Everything here lights up the moment it's ready.",
+      "chipLabel": "Get Pro"
     },
     "reveal": {
       "eyebrow": "Pro · ready",
@@ -295,6 +300,26 @@
     "card": {
       "honeyPct": "{{pct}}% honey",
       "logsToNext": "~{{count}} more logs"
+    },
+    "header": {
+      "none": {
+        "title": "Your Pro features are on the way.",
+        "sub": "Each one opens once your logs can back it up."
+      },
+      "first": {
+        "title": "Your first Pro feature is ready.",
+        "sub": "The rest open as you log more tasks."
+      },
+      "some": {
+        "title": "{{ready}} of {{total}} Pro features are ready.",
+        "sub": "The rest open as you log more tasks."
+      }
+    },
+    "logsToGo_one": "{{count}} log to go",
+    "logsToGo_other": "{{count}} logs to go",
+    "wait": {
+      "aboutAWeek": "about a week",
+      "aboutAMonth": "about a month"
     }
   }
 }

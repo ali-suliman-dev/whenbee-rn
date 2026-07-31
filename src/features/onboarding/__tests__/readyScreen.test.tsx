@@ -5,7 +5,7 @@ import { useOnboardingStore } from '@/src/stores/onboardingStore';
 import { useSettingsStore } from '@/src/stores/settingsStore';
 
 jest.mock('expo-router', () => ({
-  router: { replace: jest.fn() },
+  router: { replace: jest.fn(), push: jest.fn() },
   useFocusEffect: (cb: () => void | (() => void)) => cb(),
   useNavigation: () => ({
     isFocused: () => true,
@@ -14,39 +14,102 @@ jest.mock('expo-router', () => ({
 }));
 
 const replaceMock = router.replace as jest.Mock;
+const pushMock = router.push as jest.Mock;
 
 describe('Onboarding Step 2 — Ready screen', () => {
   beforeEach(() => {
     replaceMock.mockClear();
+    pushMock.mockClear();
     useOnboardingStore.setState({ completed: false, picked: [] });
+    useSettingsStore.getState().reset();
   });
 
-  test('ready shows trail, legend, promise, nickname field, CTA', () => {
+  test('ready shows the archetype crest, headline, ripening rail, name link, CTA', () => {
+    useSettingsStore.setState({
+      archetypeSeed: { m0: 1.7, source: 'quiz', tookAt: Date.now() },
+    });
     render(<Ready />);
+    expect(screen.getByText('Your time-style')).toBeTruthy();
+    expect(screen.getByText('The Sprint Optimist')).toBeTruthy();
+    expect(screen.getByText(/Your first/)).toBeTruthy();
+    expect(screen.getByText('honest')).toBeTruthy();
+    expect(screen.getByText(/times are already set/)).toBeTruthy();
+    expect(screen.getByText(/I read them from your time-style/i)).toBeTruthy();
+    // Ripening rail — five stages, no guilt/streak framing
     expect(screen.getByText('Raw')).toBeTruthy();
-    // Trail legend — new copy from §E
-    expect(screen.getByText(/Your accuracy ripens as you log/i)).toBeTruthy();
-    expect(screen.getByText(/no streak to break/i)).toBeTruthy();
-    expect(screen.getByText(/Empty days are fine/i)).toBeTruthy();
-    // Optional nickname field
-    expect(screen.getByText(/Anything I should call you/i)).toBeTruthy();
-    expect(screen.getByLabelText('Your nickname')).toBeTruthy();
-    // CTA — new label from §E
+    expect(screen.getByText('Honest')).toBeTruthy();
+    // The "forgot to time something" tip is gone
+    expect(screen.queryByText(/Forgot to time something/i)).toBeNull();
+    // Optional name — 6C quiet link, tap-to-reveal
+    expect(screen.getByLabelText('What should I call you?')).toBeTruthy();
+    expect(screen.getByText('What should I call you?')).toBeTruthy();
+    expect(screen.queryByLabelText('Your name')).toBeNull();
     expect(screen.getByText(/Time my first thing/)).toBeTruthy();
   });
 
-  test('CTA with no nickname calls replace to tabs', () => {
+  test('falls back to a neutral kicker with no archetype title when the quiz was skipped', () => {
+    render(<Ready />);
+    expect(screen.getByText("You're calibrated")).toBeTruthy();
+    expect(screen.queryByText('Your time-style')).toBeNull();
+  });
+
+  test('tapping "What should I call you?" reveals the input', () => {
+    render(<Ready />);
+    expect(screen.queryByLabelText('Your name')).toBeNull();
+    fireEvent.press(screen.getByLabelText('What should I call you?'));
+    expect(screen.getByLabelText('Your name')).toBeTruthy();
+  });
+
+  test('CTA with no name calls replace to tabs', () => {
     render(<Ready />);
     fireEvent.press(screen.getByText(/Time my first thing/));
     expect(replaceMock).toHaveBeenCalledWith('/(tabs)');
   });
 
-  test('CTA with a nickname saves it before completing', () => {
+  test('expanding then leaving the name empty still completes without a name', () => {
+    useSettingsStore.setState({ displayName: undefined });
     render(<Ready />);
-    fireEvent.changeText(screen.getByLabelText('Your nickname'), 'Jordan');
+    fireEvent.press(screen.getByLabelText('What should I call you?'));
+    fireEvent.press(screen.getByText(/Time my first thing/));
+    expect(useOnboardingStore.getState().completed).toBe(true);
+    expect(useSettingsStore.getState().displayName).toBeUndefined();
+  });
+
+  test('CTA with a name saves it before completing', () => {
+    render(<Ready />);
+    fireEvent.press(screen.getByLabelText('What should I call you?'));
+    fireEvent.changeText(screen.getByLabelText('Your name'), 'Jordan');
     fireEvent.press(screen.getByText(/Time my first thing/));
     expect(replaceMock).toHaveBeenCalledWith('/(tabs)');
     expect(useOnboardingStore.getState().completed).toBe(true);
     expect(useSettingsStore.getState().displayName).toBe('Jordan');
+  });
+
+  test('double-tapping the CTA only completes onboarding once', () => {
+    render(<Ready />);
+    const cta = screen.getByText(/Time my first thing/);
+    fireEvent.press(cta);
+    fireEvent.press(cta);
+    expect(replaceMock).toHaveBeenCalledTimes(1);
+  });
+
+  test('hands off into the add-task sheet, not a bare tab screen', () => {
+    render(<Ready />);
+    fireEvent.press(screen.getByText(/Time my first thing/));
+    expect(replaceMock).toHaveBeenCalledWith('/(tabs)');
+    expect(pushMock).toHaveBeenCalledWith('/(modals)/add-task');
+    // anchor (tabs) beneath the modal before opening it
+    const replaceOrder = replaceMock.mock.invocationCallOrder[0];
+    const pushOrder = pushMock.mock.invocationCallOrder[0];
+    expect(replaceOrder).toBeDefined();
+    expect(pushOrder).toBeDefined();
+    expect(replaceOrder).toBeLessThan(pushOrder as number);
+  });
+
+  test('completes onboarding before handing off', () => {
+    render(<Ready />);
+    fireEvent.press(screen.getByText(/Time my first thing/));
+    expect(useOnboardingStore.getState().completed).toBe(true);
+    expect(pushMock).toHaveBeenCalledWith('/(modals)/add-task');
   });
 });

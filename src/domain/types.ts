@@ -5,6 +5,24 @@
 /** Honey/ripeness tier, mapped from sharpness thresholds [0,40,64,82,93]. */
 export type Tier = 'Raw' | 'Setting' | 'Ripening' | 'Thickening' | 'Honest';
 
+// ── Onboarding quiz answer vocabularies ───────────────────────────────────────
+/** The onboarding quiz's answer vocabularies. Canonical here: the engine's
+ *  QuizAnswers, the settings seed, and the planner all reference these. */
+export type PaceAnswer = 'about' | 'bit' | 'lot' | 'lose';
+export type MidAnswer = 'track' | 'rabbit';
+export type FocusAnswer = 'morning' | 'evening' | 'varies';
+export type SinkAnswer = 'meetings' | 'chores' | 'errands' | 'deepwork';
+
+/** A self-reported read from the onboarding quiz. Anchors a cold category's
+ *  prior until real logs outweigh it. Never a measurement — always decays out. */
+export type ArchetypeSeed = {
+  m0: number;
+  /** Q3's answer — bumps only the mapped category. */
+  sink?: SinkAnswer;
+  source: 'quiz';
+  tookAt: number;
+};
+
 /** Per-category learning speed; maps ONLY to the EWMA alpha. */
 export type AdaptSpeed = 'steady' | 'balanced' | 'reactive';
 
@@ -162,8 +180,16 @@ export interface PlanTaskRunState {
   suggestedHonestMin: number;
 }
 
-/** Discriminates between a scheduled task block, a between-task breather gap, or a fixed calendar event anchor. */
-export type PlanTimelineKind = 'task' | 'breather' | 'event';
+/**
+ * Discriminates between a scheduled task block, a between-task breather gap, a
+ * fixed calendar event anchor, or a queued task that runs past the done-by.
+ *
+ * `overflow` is still the user's task, still in their queue order — the fill just
+ * had no room for it before the deadline. Its clocks continue past the done-by so
+ * `endAt - deadline` is a real "how far over", and it is never dropped from the
+ * timeline: a task you queued and cannot see is worse than a day that runs long.
+ */
+export type PlanTimelineKind = 'task' | 'breather' | 'event' | 'overflow';
 
 /** One ordered task fed to the backward pass. `durationMin` is the honest block. */
 export interface PlanTaskInput {
@@ -199,9 +225,18 @@ export type PlanVerdict =
   /** Even keeping only the single smallest task won't fit → push the deadline. */
   | { kind: 'push-deadline'; feasibleDeadline: number; overshootMin: number };
 
-/** The full result of one backward pass. Never mutates the inputs. */
+/**
+ * The full result of one backward pass. Never mutates the inputs.
+ *
+ * `startBy` is `null` when nothing could be placed at all (no queued tasks, or
+ * zero free windows / no task fits anywhere) — there is no honest clock to
+ * report, so it is never fabricated from the deadline. Readers must treat
+ * `null` as "render nothing", never fall back to a clock, a dash, or an
+ * empty string that still occupies the row's layout. `PlanVerdict.startBy` is
+ * a separate contract and stays a plain `number`.
+ */
 export interface PlanResult {
-  startBy: number;
+  startBy: number | null;
   timeline: PlanTimelineItem[];
   verdict: PlanVerdict;
   totalMin: number;
@@ -230,6 +265,38 @@ export interface CategoryGoal {
 
 /** Hyperfocus guardrail trigger multiple of the honest number, or off. */
 export type GuardrailMultiple = 'off' | '1.5x' | '2x' | '3x';
+
+/** Free forgot-to-stop protection preset — how soon Whenbee steps in past the
+ *  honest number. Maps to a multiple in the engine. Default 'balanced'. */
+export type ForgotStepIn = 'room' | 'balanced' | 'early';
+
+/** A forgotten running session detected on foreground, parked for recovery.
+ *  Only ever built for a CATEGORIZED session (category non-null). */
+export interface PendingAutoClose {
+  taskLabel: string;
+  category: string;
+  guessMin: number;
+  /** The honest number the user saw — the recovery default. */
+  honestMin: number;
+  startedAt: number;
+  /** Runaway elapsed active minutes at detection (display only, never trained). */
+  elapsedMin: number;
+  /** Predicted honest finish, rounded — the default recovered duration. */
+  recoveredActualMin: number;
+  /**
+   * The Today/plan task this session was linked to, or null for an ad-hoc session.
+   * Carried so a "still going" reopen keeps the linkage (the task gets marked done
+   * on final stop instead of silently orphaned).
+   */
+  taskId: string | null;
+  /** The ring target (honest suggestion the timer fills toward) at start. */
+  estimateMin: number;
+  /**
+   * Accumulated paused-span milliseconds at detection. Carried so a reopen resumes
+   * with the prior paused time intact instead of recounting those minutes as active.
+   */
+  pausedAccumMs: number;
+}
 
 // ── Voice intake ────────────────────────────────────────────────────────────
 
@@ -272,15 +339,39 @@ export interface LearnFocusInput {
   seed?: number;
 }
 
+/** One milestone in the 2-gate focus-unlock ladder: `have` vs `need`. */
+export interface FocusGate {
+  have: number;
+  need: number;
+}
+
+/** The 2-gate focus-unlock ladder — enough timed sessions, spread over enough days.
+ *  (The old "clear peak" gate is gone: precision is now graded by `confidenceTier`,
+ *  never gated.) */
+export interface FocusGates {
+  sessions: FocusGate;
+  days: FocusGate;
+}
+
+/** How sharp the revealed window is. Grades precision; never a lock. */
+export type FocusConfidenceTier = 'low' | 'building' | 'steady';
+
 export interface LearnedFocusWindow {
   startMin: number;
   endMin: number;
-  basis: 'personal' | 'prior';
-  confidence: number;                 // 0–1, for wording only (never shown as %)
-  scoreByBin: number[];               // 38 bins, normalised [0,1] for the curve
+  /** `forming` = 2 gates not yet met (the ladder). `revealed` = a window is shown,
+   *  precision graded by `confidenceTier`. */
+  basis: 'forming' | 'revealed';
+  confidence: number;                 // 0–1, meter fill + wording (never shown as %)
+  confidenceTier: FocusConfidenceTier;
+  /** Coarse time-of-day bucket ("Mornings" etc.) for the low-confidence reveal and
+   *  the forming hint. Empty string when no peak bucket is known yet. */
+  coarseBlockLabel: string;
+  scoreByBin: number[];               // 19 bins, normalised [0,1] for the curve
   sampleCount: number;
   distinctDays: number;
   held: boolean;                      // true → hysteresis kept the shown window
+  gates: FocusGates;
 }
 
 // ── Focus-window planner (Pro) ────────────────────────────────────────────────

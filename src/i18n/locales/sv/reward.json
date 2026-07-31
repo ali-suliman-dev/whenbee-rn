@@ -58,8 +58,8 @@
     "tookEyebrow": "DET TOG FAKTISKT",
     "honeyLabel": "HONUNG",
     "delta": {
-      "over": "{{count}} min över din gissning",
-      "under": "{{count}} min under din gissning",
+      "over": "{{duration}} över din gissning",
+      "under": "{{duration}} under din gissning",
       "equal": "exakt din gissning"
     },
     "seeYourBee": "Se ditt bi"

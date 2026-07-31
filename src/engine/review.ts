@@ -165,8 +165,23 @@ function hashId(id: string): number {
   return Math.abs(h);
 }
 
-/** The deterministic reflection question for a period. */
-function reflectionFor(period: ReviewPeriod): string {
+/**
+ * The reflection prompt for a period. Data-specific when the week earned a
+ * signal — the strongest tightening (a quiet win) leads, else the biggest
+ * surprise — so the recap closes on THIS week's own story rather than a generic
+ * prompt. Falls back to a deterministic question from the static set when the
+ * period earned nothing to name (thin/zero history), keeping it stable per id.
+ */
+function reflectionFor(
+  period: ReviewPeriod,
+  tightened: TightenedRow[],
+  biggestSurprise: ReviewBiggestSurprise | null,
+): string {
+  const win = tightened[0];
+  if (win) return `${win.categoryName} is quietly getting sharper. What changed?`;
+  if (biggestSurprise) {
+    return `${biggestSurprise.categoryName} drifted the most this week. What was going on?`;
+  }
   const i = hashId(period.id) % REVIEW_REFLECTION_QUESTIONS.length;
   return REVIEW_REFLECTION_QUESTIONS[i] ?? REVIEW_REFLECTION_QUESTIONS[0];
 }
@@ -265,17 +280,20 @@ export interface BuildReviewSummaryInput {
  * the cards that were earned. Deterministic for a fixed input + period.
  */
 export function buildReviewSummary(input: BuildReviewSummaryInput): ReviewSummary {
+  const hasLogs = input.loggedCount > 0;
+  const tightened = hasLogs ? deriveTightened(input.tightenedEntries) : [];
+  const biggestSurprise = hasLogs ? input.biggestSurprise : null;
   return {
     period: input.period,
     loggedCount: input.loggedCount,
     loggedMinutes: input.loggedMinutes,
-    accuracyLine: input.loggedCount > 0 ? input.accuracyLine : null,
-    sharpestPhrase: input.loggedCount > 0 ? input.sharpestPhrase : null,
-    tightened: input.loggedCount > 0 ? deriveTightened(input.tightenedEntries) : [],
-    biggestSurprise: input.loggedCount > 0 ? input.biggestSurprise : null,
-    reflection: reflectionFor(input.period),
-    weekRead: input.loggedCount > 0 ? input.weekRead : null,
-    forwardAction: input.loggedCount > 0 ? input.forwardAction : null,
-    confidenceBand: input.loggedCount > 0 ? input.confidenceBand : null,
+    accuracyLine: hasLogs ? input.accuracyLine : null,
+    sharpestPhrase: hasLogs ? input.sharpestPhrase : null,
+    tightened,
+    biggestSurprise,
+    reflection: reflectionFor(input.period, tightened, biggestSurprise),
+    weekRead: hasLogs ? input.weekRead : null,
+    forwardAction: hasLogs ? input.forwardAction : null,
+    confidenceBand: hasLogs ? input.confidenceBand : null,
   };
 }

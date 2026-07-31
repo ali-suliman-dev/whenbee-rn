@@ -1,4 +1,5 @@
 import { render, screen, fireEvent, waitFor } from '@testing-library/react-native';
+import { router } from 'expo-router';
 import CategoryDetailScreen from '@/src/app/category/[category]';
 import { useCalibrationStore } from '@/src/stores/calibrationStore';
 import { useCategoriesStore } from '@/src/stores/categoriesStore';
@@ -7,6 +8,11 @@ import { kv } from '@/src/lib/kv';
 
 const setAdaptSpeed = jest.fn();
 
+// NB: the mock factory must not close over an outer `const` — `CategoryDetailScreen`
+// (imported above) transitively requires 'expo-router' before any later top-level
+// `const` in this file is assigned, so a captured outer binding would be
+// undefined when the factory runs. Keep the jest.fn() inline and read it back off
+// the imported `router` object instead.
 jest.mock('expo-router', () => ({
   router: { back: jest.fn(), push: jest.fn() },
   useLocalSearchParams: () => ({ category: 'cleaning' }),
@@ -61,6 +67,7 @@ async function seed(opts: { withInsight: boolean }): Promise<Database> {
 
 beforeEach(() => {
   setAdaptSpeed.mockClear();
+  (router.back as jest.Mock).mockClear();
   kv.delete('calibration.graduatedCategories');
   useCalibrationStore.setState({ graduatedCategories: new Set() });
   useCategoriesStore.setState({
@@ -132,5 +139,29 @@ describe('CategoryDetailScreen', () => {
     fireEvent.press(reactive);
 
     await waitFor(() => expect(setAdaptSpeed).toHaveBeenCalledWith('cleaning', 'reactive'));
+  });
+
+  it('deletes the area and navigates back when more than one category is tracked', async () => {
+    await seed({ withInsight: true });
+    useCategoriesStore.setState({
+      categories: [
+        { id: 'cleaning', name: 'Cleaning', adaptSpeed: 'balanced' },
+        { id: 'cooking', name: 'Cooking', adaptSpeed: 'balanced' },
+      ],
+      setAdaptSpeed,
+    });
+
+    render(<CategoryDetailScreen />);
+
+    const deleteRow = await screen.findByLabelText('Delete area');
+    fireEvent.press(deleteRow);
+
+    // Once the confirm sheet opens, "Delete area" appears twice: the row label
+    // (still mounted behind the sheet) and the sheet's confirm button — the
+    // button is the last match.
+    const matches = await screen.findAllByText('Delete area');
+    fireEvent.press(matches[matches.length - 1]);
+
+    await waitFor(() => expect(router.back).toHaveBeenCalled());
   });
 });

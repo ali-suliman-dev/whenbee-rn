@@ -1,8 +1,9 @@
 import { useMemo } from 'react';
 import { useRoutinesStore, routineStepKey } from '@/src/stores/routinesStore';
 import { useCalibrationStore } from '@/src/stores/calibrationStore';
+import { useSettingsStore } from '@/src/stores/settingsStore';
 import { weekdayOf } from '@/src/lib/day';
-import { stepHonestMinutes, routineHonestTotal, priorFor } from '@/src/engine';
+import { stepHonestMinutes, routineHonestTotal, seededPriorFor } from '@/src/engine';
 
 // ──────────────────────────────────────────────────────────────────────────────
 // useScheduledRoutines — derived read hook (NO db writes, NO duplicate task rows)
@@ -39,6 +40,7 @@ export function useScheduledRoutines(selectedDate: string): UseScheduledRoutines
   const routines = useRoutinesStore((s) => s.routines);
   const stepMByKey = useRoutinesStore((s) => s.stepMByKey);
   const statsByCategory = useCalibrationStore((s) => s.statsByCategory);
+  const archetypeSeed = useSettingsStore((s) => s.archetypeSeed);
 
   const blocks = useMemo((): ScheduledRoutineBlock[] => {
     const targetWeekday = weekdayOf(selectedDate);
@@ -58,7 +60,7 @@ export function useScheduledRoutines(selectedDate: string): UseScheduledRoutines
             m = recurringM;
           } else {
             const cat = statsByCategory[step.category];
-            m = cat?.mEffective ?? priorFor(step.category);
+            m = cat?.mEffective ?? seededPriorFor(step.category, archetypeSeed);
           }
           return {
             stepId: step.id,
@@ -86,7 +88,7 @@ export function useScheduledRoutines(selectedDate: string): UseScheduledRoutines
           steps: perStepHonest,
         };
       });
-  }, [routines, stepMByKey, statsByCategory, selectedDate]);
+  }, [routines, stepMByKey, statsByCategory, archetypeSeed, selectedDate]);
 
   return { blocks };
 }

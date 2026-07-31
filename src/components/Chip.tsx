@@ -196,8 +196,9 @@ export function Chip({
       onPressIn={handlePressIn}
       onPressOut={handlePressOut}
       accessibilityRole="button"
+      accessibilityLabel={label}
       accessibilityState={{ selected }}
-      hitSlop={6}
+      hitSlop={t.size.hitSlop}
     >
       <Animated.View style={pressStyle} onLayout={handleLayout}>
         <Animated.View style={[container, isAdd ? null : tint, containerStyle]}>

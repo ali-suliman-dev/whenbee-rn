@@ -1,8 +1,9 @@
 import { useState } from 'react';
-import { ScrollView, View } from 'react-native';
+import { View, RefreshControl } from 'react-native';
 import { router } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import { Screen } from '@/src/components/Screen';
+import { SheetScrollView } from '@/src/components/SheetScrollView';
 import { ScreenHeader } from '@/src/components/ScreenHeader';
 import { AppText } from '@/src/components/AppText';
 import { AppButton } from '@/src/components/AppButton';
@@ -23,7 +24,7 @@ function NotPro() {
   // paywall. If they land here anyway, send them on rather than show the feature.
   const { t: tr } = useTranslation('calendar');
   return (
-    <Screen edges={['left', 'right']}>
+    <Screen edges={['left', 'right']} horizontalPadding={false}>
       <View style={{ paddingTop: 24, gap: 16 }}>
         <AppText variant="title">{tr('notPro.title')}</AppText>
         <AppButton
@@ -41,7 +42,7 @@ function NotPro() {
 function HonestDayContent() {
   const t = useTheme();
   const { t: tr } = useTranslation('calendar');
-  const { status, result, apply } = useHonestDay();
+  const { status, result, apply, refresh, refreshing } = useHonestDay();
   const [applying, setApplying] = useState(false);
 
   async function handleApply() {
@@ -55,10 +56,18 @@ function HonestDayContent() {
   }
 
   return (
-    <Screen edges={['left', 'right']}>
-      <ScrollView
+    <Screen edges={['left', 'right']} horizontalPadding={false}>
+      <SheetScrollView
         contentContainerStyle={{ gap: t.space[5], paddingTop: t.space[4], paddingBottom: t.space[12] }}
         showsVerticalScrollIndicator={false}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={() => void refresh()}
+            tintColor={t.colors.primary}
+            colors={[t.colors.primary]}
+          />
+        }
       >
         <ScreenHeader title={tr('screen.title')} subtitle={tr('screen.subtitle')} />
 
@@ -86,7 +95,7 @@ function HonestDayContent() {
             onCancel={() => router.back()}
           />
         ) : null}
-      </ScrollView>
+      </SheetScrollView>
     </Screen>
   );
 }

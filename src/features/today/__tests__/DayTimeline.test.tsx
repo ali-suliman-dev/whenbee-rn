@@ -9,8 +9,11 @@
  */
 
 import React from 'react';
-import { render, screen, fireEvent } from '@testing-library/react-native';
+import { StyleSheet } from 'react-native';
+import { render, screen, fireEvent, act } from '@testing-library/react-native';
 import * as Reanimated from 'react-native-reanimated';
+import ReorderableList from 'react-native-reorderable-list';
+import { FW_BIN_COUNT } from '@/src/engine';
 import { DayTimeline } from '@/src/features/today/DayTimeline';
 import { useDayPlan } from '@/src/features/today/useDayPlan';
 import { useLearnedFocusWindow } from '@/src/features/planner/useLearnedFocusWindow';
@@ -22,12 +25,25 @@ import type { PlanResult, LearnedFocusWindow } from '@/src/domain/types';
 
 jest.mock('@/src/features/today/useDayPlan', () => ({
   useDayPlan: jest.fn(),
+  // Real implementation — DayTimeline needs this to anchor doneByMin to the
+  // selected day's local midnight (see the boundary-clock fix).
+  localMidnight: (dayKey: string) => {
+    const [y, m, d] = dayKey.split('-').map(Number) as [number, number, number];
+    return new Date(y, m - 1, d, 0, 0, 0, 0).getTime();
+  },
 }));
 
 const mockMoveToTomorrow = jest.fn();
+const mockReorderTasks = jest.fn();
 jest.mock('@/src/stores/dayTasksStore', () => ({
   useDayTasksStore: (selector: (s: any) => any) =>
-    selector({ moveToTomorrow: mockMoveToTomorrow }),
+    selector({
+      moveToTomorrow: mockMoveToTomorrow,
+      reorderTasks: mockReorderTasks,
+      // Matches NOW's date below so localMidnight(selectedDate) lines up with
+      // the fixed clock the fixtures use (atTime).
+      selectedDate: '2026-06-24',
+    }),
 }));
 
 jest.mock('@/src/features/planner/useLearnedFocusWindow', () => ({
@@ -60,6 +76,24 @@ jest.mock('@/src/features/paywall/useEntitlement', () => ({
 // ── Typed mock references ─────────────────────────────────────────────────────
 
 const mockUseDayPlan = useDayPlan as jest.MockedFunction<typeof useDayPlan>;
+
+/** The anchor-chooser half of useDayPlan's contract. These tests predate it and
+ *  assert nothing about it, so they take the neutral defaults. */
+const anchorDefaults = {
+  startAtMin: null,
+  setStartAt: jest.fn(),
+  planAnchor: 'finish' as const,
+  setPlanAnchor: jest.fn(),
+  derivedFinishMs: null,
+  derivedStartByMs: null,
+  effectiveStartMs: 0,
+  startHasPassed: false,
+  // Every existing fixture below sets a real doneByMin, so a real finish
+  // target is the correct default here; the "no finish target" suite
+  // overrides both this and doneByMin together.
+  hasFinishTarget: true,
+};
+
 const mockUseFocusWindow = useLearnedFocusWindow as jest.MockedFunction<
   typeof useLearnedFocusWindow
 >;
@@ -89,29 +123,43 @@ function atTime(h: number, m: number): number {
 
 // ── Fixtures ──────────────────────────────────────────────────────────────────
 
-function makePriorFocusWindow(): LearnedFocusWindow {
+function makeFormingFocusWindow(): LearnedFocusWindow & { hydrated: boolean } {
   return {
     startMin: 540,
     endMin: 720,
-    basis: 'prior',
+    basis: 'forming',
     confidence: 0.3,
-    scoreByBin: new Array(38).fill(0) as number[],
+    confidenceTier: 'low',
+    coarseBlockLabel: '',
+    scoreByBin: new Array(FW_BIN_COUNT).fill(0) as number[],
     sampleCount: 0,
     distinctDays: 0,
     held: false,
+    hydrated: true,
+    gates: {
+      sessions: { have: 0, need: 15 },
+      days: { have: 0, need: 5 },
+    },
   };
 }
 
-function makePersonalFocusWindow(): LearnedFocusWindow {
+function makeRevealedFocusWindow(): LearnedFocusWindow & { hydrated: boolean } {
   return {
     startMin: 540,
     endMin: 720,
-    basis: 'personal',
+    basis: 'revealed',
     confidence: 0.8,
-    scoreByBin: new Array(38).fill(0.5) as number[],
+    confidenceTier: 'steady',
+    coarseBlockLabel: 'Mornings',
+    scoreByBin: new Array(FW_BIN_COUNT).fill(0.5) as number[],
     sampleCount: 12,
     distinctDays: 8,
     held: false,
+    hydrated: true,
+    gates: {
+      sessions: { have: 12, need: 15 },
+      days: { have: 8, need: 5 },
+    },
   };
 }
 
@@ -146,30 +194,87 @@ function makeFitsPlan(): PlanResult {
   };
 }
 
-function makeCutOnePlan(): PlanResult {
+/**
+ * A day that runs over: one task fits up to the 15:30 done-by, one does not and
+ * lands as an `overflow` block ending 16:20 — 50 minutes past.
+ *
+ * The engine starts the overflow chain AT the deadline, so the first overflow
+ * row's startAt IS the done-by; the component reads both boundary clocks from
+ * these rows rather than re-deriving a deadline.
+ */
+function makeOverflowPlan(): PlanResult {
   return {
-    startBy: atTime(9, 0),
-    totalMin: 90,
+    startBy: atTime(14, 40),
+    totalMin: 100,
     verdict: {
       kind: 'cut-one',
-      startBy: atTime(9, 0),
+      startBy: atTime(14, 40),
       cut: { id: 'task-big', label: 'Big project' },
-      savedMin: 60,
+      savedMin: 50,
     },
     timeline: [
       {
         id: 'task-1',
         label: 'Quick email',
-        startAt: atTime(9, 0),
-        endAt: atTime(9, 15),
+        startAt: atTime(14, 40),
+        endAt: atTime(15, 30),
         kind: 'task',
       },
       {
-        id: 'event-1',
-        label: 'Sync meeting',
-        startAt: atTime(10, 0),
-        endAt: atTime(10, 30),
-        kind: 'event',
+        id: 'task-big',
+        label: 'Big project',
+        startAt: atTime(15, 30),
+        endAt: atTime(16, 20),
+        kind: 'overflow',
+      },
+    ],
+  };
+}
+
+/** Three overflow blocks stacked past the same boundary — the "does it still read
+ *  calm?" case. One boundary, three identical rows, no second design. */
+function makeThreeOverflowPlan(): PlanResult {
+  return {
+    startBy: atTime(14, 40),
+    totalMin: 210,
+    verdict: {
+      kind: 'multi-cut',
+      startBy: atTime(14, 40),
+      cuts: [
+        { id: 'task-big', label: 'Big project' },
+        { id: 'task-calls', label: 'Return calls' },
+        { id: 'task-review', label: 'Review deck' },
+      ],
+      savedMin: 120,
+    },
+    timeline: [
+      {
+        id: 'task-1',
+        label: 'Quick email',
+        startAt: atTime(14, 40),
+        endAt: atTime(15, 30),
+        kind: 'task',
+      },
+      {
+        id: 'task-big',
+        label: 'Big project',
+        startAt: atTime(15, 30),
+        endAt: atTime(16, 20),
+        kind: 'overflow',
+      },
+      {
+        id: 'task-calls',
+        label: 'Return calls',
+        startAt: atTime(16, 20),
+        endAt: atTime(16, 50),
+        kind: 'overflow',
+      },
+      {
+        id: 'task-review',
+        label: 'Review deck',
+        startAt: atTime(16, 50),
+        endAt: atTime(17, 30),
+        kind: 'overflow',
       },
     ],
   };
@@ -179,7 +284,7 @@ function makeCutOnePlan(): PlanResult {
 
 beforeEach(() => {
   jest.clearAllMocks();
-  mockUseFocusWindow.mockReturnValue(makePriorFocusWindow());
+  mockUseFocusWindow.mockReturnValue(makeFormingFocusWindow());
   mockMoveToTomorrow.mockResolvedValue(undefined);
 });
 
@@ -189,7 +294,7 @@ beforeEach(() => {
 
 describe('DayTimeline — fits plan', () => {
   beforeEach(() => {
-    mockUseDayPlan.mockReturnValue({
+    mockUseDayPlan.mockReturnValue({ ...anchorDefaults,
       plan: makeFitsPlan(),
       status: 'ready',
       doneByMin: 1080,
@@ -215,84 +320,386 @@ describe('DayTimeline — fits plan', () => {
 });
 
 // ═════════════════════════════════════════════════════════════════════════════
-// Test 2 — personal focus window → focus band renders
+// Task 4C — drag-to-reorder: only task rows get a grip; renders inside the
+// ReorderableList without crashing. The drag GESTURE itself can't be driven
+// from a unit test (no real touch/pan simulation here) — this only asserts
+// the render seam (grip present/absent) and that the component mounts under
+// the real react-native-reorderable-list + GestureHandler stack. The actual
+// drag feel needs on-device verification.
 // ═════════════════════════════════════════════════════════════════════════════
 
-describe('DayTimeline — focus band with personal window', () => {
+describe('DayTimeline — drag-to-reorder grip', () => {
   beforeEach(() => {
-    mockUseDayPlan.mockReturnValue({
+    mockUseDayPlan.mockReturnValue({ ...anchorDefaults,
       plan: makeFitsPlan(),
       status: 'ready',
       doneByMin: 1080,
       setDoneBy: mockSetDoneBy,
     });
-    mockUseFocusWindow.mockReturnValue(makePersonalFocusWindow());
   });
 
-  it('renders the focus band element when basis is personal', () => {
+  it('renders a drag handle on the task row', () => {
+    render(<DayTimeline />);
+    expect(screen.getByTestId('timeline-drag-handle-task-1')).toBeOnTheScreen();
+  });
+
+  it('does NOT render a drag handle on event or breather rows', () => {
+    render(<DayTimeline />);
+    expect(screen.queryByTestId('timeline-drag-handle-event-1')).toBeNull();
+    expect(screen.queryByTestId('timeline-drag-handle-breather-1')).toBeNull();
+  });
+
+  it('mounts the reorderable list without crashing (full timeline: task + breather + event)', () => {
+    render(<DayTimeline />);
+    expect(screen.getByText('Write report')).toBeOnTheScreen();
+    expect(screen.getByText('Team standup')).toBeOnTheScreen();
+  });
+});
+
+// ═════════════════════════════════════════════════════════════════════════════
+// Test 2 — revealed focus window → focus band renders
+// ═════════════════════════════════════════════════════════════════════════════
+
+describe('DayTimeline — focus band with revealed window', () => {
+  beforeEach(() => {
+    mockUseDayPlan.mockReturnValue({ ...anchorDefaults,
+      plan: makeFitsPlan(),
+      status: 'ready',
+      doneByMin: 1080,
+      setDoneBy: mockSetDoneBy,
+    });
+    mockUseFocusWindow.mockReturnValue(makeRevealedFocusWindow());
+  });
+
+  it('renders the focus band element when basis is revealed', () => {
     render(<DayTimeline />);
     expect(screen.getByTestId('timeline-focus-band')).toBeOnTheScreen();
   });
 });
 
 // ═════════════════════════════════════════════════════════════════════════════
-// Test 3 — prior focus window → NO focus band
+// Test 3 — forming focus window → NO focus band
 // ═════════════════════════════════════════════════════════════════════════════
 
-describe('DayTimeline — no focus band when basis is prior', () => {
+describe('DayTimeline — no focus band when basis is forming', () => {
   beforeEach(() => {
-    mockUseDayPlan.mockReturnValue({
+    mockUseDayPlan.mockReturnValue({ ...anchorDefaults,
       plan: makeFitsPlan(),
       status: 'ready',
       doneByMin: 1080,
       setDoneBy: mockSetDoneBy,
     });
-    mockUseFocusWindow.mockReturnValue(makePriorFocusWindow());
+    mockUseFocusWindow.mockReturnValue(makeFormingFocusWindow());
   });
 
-  it('does NOT render the focus band when basis is prior', () => {
+  it('does NOT render the focus band when basis is forming', () => {
     render(<DayTimeline />);
     expect(screen.queryByTestId('timeline-focus-band')).toBeNull();
   });
 });
 
 // ═════════════════════════════════════════════════════════════════════════════
-// Test 4 — cut-one overflow: calm copy, no guilt words, move action present
+// Test 4 — overflow IN PLACE. The banner named a task it never showed; this
+// replaces it with the task itself, rendered below a done-by boundary.
 // ═════════════════════════════════════════════════════════════════════════════
 
-describe('DayTimeline — cut-one overflow banner', () => {
+describe('DayTimeline — overflow in place', () => {
   beforeEach(() => {
-    mockUseDayPlan.mockReturnValue({
-      plan: makeCutOnePlan(),
+    mockUseDayPlan.mockReturnValue({ ...anchorDefaults,
+      plan: makeOverflowPlan(),
       status: 'ready',
-      doneByMin: 1080,
+      doneByMin: 930, // 15:30
       setDoneBy: mockSetDoneBy,
     });
   });
 
-  it('renders the overflow banner', () => {
+  it('SHOWS the overflowing task instead of only naming it in a banner', () => {
     render(<DayTimeline />);
-    expect(screen.getByTestId('timeline-overflow-banner')).toBeOnTheScreen();
+    expect(screen.getByText('Big project')).toBeOnTheScreen();
+    expect(screen.getByTestId('timeline-overflow-task-big')).toBeOnTheScreen();
   });
 
-  it('overflow copy contains NO guilt words (overdue, behind, failed)', () => {
+  it('no longer renders the old banner', () => {
+    render(<DayTimeline />);
+    expect(screen.queryByTestId('timeline-overflow-banner')).toBeNull();
+  });
+
+  it('renders the done-by boundary with the deadline clock', () => {
+    render(<DayTimeline />);
+    expect(screen.getByTestId('timeline-overflow-boundary')).toBeOnTheScreen();
+    expect(
+      screen.getByText(`${formatClock(atTime(15, 30))} DONE BY`),
+    ).toBeOnTheScreen();
+  });
+
+  it('names BOTH exits in one sentence, with the real overrun clock', () => {
+    render(<DayTimeline />);
+    expect(screen.getByText(/Past here you run over/)).toBeOnTheScreen();
+    // The push-to clock is the furthest overflow end, not the done-by.
+    expect(screen.getByText(formatClock(atTime(16, 20)))).toBeOnTheScreen();
+    expect(screen.getByText(/move a task to tomorrow/)).toBeOnTheScreen();
+  });
+
+  it('states how far past the done-by the block runs', () => {
+    render(<DayTimeline />);
+    expect(screen.getByText('+50m over')).toBeOnTheScreen();
+  });
+
+  it('the Tomorrow chip moves that exact task', () => {
+    render(<DayTimeline />);
+    fireEvent.press(screen.getByTestId('timeline-move-tomorrow-task-big'));
+    expect(mockMoveToTomorrow).toHaveBeenCalledWith('task-big');
+  });
+
+  it('copy carries no guilt and no alarm (overdue/behind/failed/late/warning)', () => {
     render(<DayTimeline />);
     const json = JSON.stringify(screen.toJSON()).toLowerCase();
     expect(json).not.toMatch(/overdue/);
     expect(json).not.toMatch(/behind/);
     expect(json).not.toMatch(/failed/);
+    expect(json).not.toMatch(/too late/);
+    expect(json).not.toMatch(/warning/);
   });
 
-  it('overflow banner has a move action', () => {
+  it('draws the boundary as a flat rule — never a left border or inset edge', () => {
     render(<DayTimeline />);
-    expect(screen.getByTestId('timeline-move-action')).toBeOnTheScreen();
+    const block = screen.getByTestId('timeline-overflow-task-big');
+    const style = StyleSheet.flatten(block.props.style) as Record<string, unknown>;
+    expect(style.borderLeftWidth).toBeUndefined();
+    expect(style.borderWidth).toBeUndefined();
+    expect(style.boxShadow).toBeUndefined();
+  });
+});
+
+// ═════════════════════════════════════════════════════════════════════════════
+// Regression — the boundary must read the user's CHOSEN done-by (doneByMin),
+// never the first overflow row's own startAt. The engine's overflow-chain
+// reseed (Task 3) clamps that row's clock to max(latestEnd, deadline, nowMs) —
+// once "now" is past the deadline, the row's startAt IS the current time, not
+// the done-by the user set. Reading the boundary off the row used to render
+// the current clock labelled "DONE BY".
+// ═════════════════════════════════════════════════════════════════════════════
+
+describe('DayTimeline — boundary reads the chosen done-by, not the row clock', () => {
+  function makeLateReseedPlan(): PlanResult {
+    // done-by is 22:00 (1320min), but the day is already past it — the engine
+    // reseeds the first overflow row's startAt to "now" (23:30), not 22:00.
+    return {
+      startBy: atTime(22, 0),
+      totalMin: 30,
+      verdict: {
+        kind: 'cut-one',
+        startBy: atTime(22, 0),
+        cut: { id: 'task-late', label: 'Late task' },
+        savedMin: 30,
+      },
+      timeline: [
+        {
+          id: 'task-late',
+          label: 'Late task',
+          startAt: atTime(23, 30),
+          endAt: atTime(23, 30) + 30 * 60_000, // 00:00 the next calendar day
+          kind: 'overflow',
+        },
+      ],
+    };
+  }
+
+  beforeEach(() => {
+    mockUseDayPlan.mockReturnValue({ ...anchorDefaults,
+      plan: makeLateReseedPlan(),
+      status: 'ready',
+      doneByMin: 1320, // 22:00 — the user's actual chosen done-by
+      hasFinishTarget: true,
+      setDoneBy: mockSetDoneBy,
+    });
   });
 
-  it('tapping the move action calls moveToTomorrow with the cut task id', () => {
+  it('shows the user\'s chosen done-by clock, not the overflow row\'s own start', () => {
     render(<DayTimeline />);
-    const moveBtn = screen.getByTestId('timeline-move-action');
-    fireEvent.press(moveBtn);
-    expect(mockMoveToTomorrow).toHaveBeenCalledWith('task-big');
+    expect(screen.getByText(`${formatClock(atTime(22, 0))} DONE BY`)).toBeOnTheScreen();
+    expect(screen.queryByText(`${formatClock(atTime(23, 30))} DONE BY`)).toBeNull();
+  });
+
+  it('measures "over" minutes against the chosen done-by, not the row start', () => {
+    render(<DayTimeline />);
+    // 00:00 the next day is 120 minutes past the 22:00 done-by — not "+0m over"
+    // (what the bug produced by measuring the row against its own startAt).
+    expect(screen.getByText('+2h over')).toBeOnTheScreen();
+  });
+});
+
+// ═════════════════════════════════════════════════════════════════════════════
+// Test 4a — no finish target: the boundary sentence never fabricates a
+// deadline the user didn't choose. The overflow cards still show (the day
+// really did run out) with the same amber, neutral treatment; only the
+// "Past here you run over" readout is suppressed.
+// ═════════════════════════════════════════════════════════════════════════════
+
+describe('DayTimeline — no finish target', () => {
+  beforeEach(() => {
+    mockUseDayPlan.mockReturnValue({ ...anchorDefaults,
+      plan: makeOverflowPlan(),
+      status: 'ready',
+      doneByMin: null,
+      hasFinishTarget: false,
+      setDoneBy: mockSetDoneBy,
+    });
+  });
+
+  it('the overflow boundary is not rendered without a finish target', () => {
+    render(<DayTimeline />);
+    expect(screen.queryByTestId('timeline-overflow-boundary')).toBeNull();
+    expect(screen.queryByText(/Past here you run over/)).toBeNull();
+  });
+
+  it('still shows the overflowing task, amber and with the Tomorrow affordance', () => {
+    render(<DayTimeline />);
+    expect(screen.getByText('Big project')).toBeOnTheScreen();
+    expect(screen.getByTestId('timeline-overflow-task-big')).toBeOnTheScreen();
+    expect(screen.getByTestId('timeline-move-tomorrow-task-big')).toBeOnTheScreen();
+  });
+});
+
+describe('DayTimeline — with a finish target', () => {
+  beforeEach(() => {
+    mockUseDayPlan.mockReturnValue({ ...anchorDefaults,
+      plan: makeOverflowPlan(),
+      status: 'ready',
+      doneByMin: 930, // 15:30
+      hasFinishTarget: true,
+      setDoneBy: mockSetDoneBy,
+    });
+  });
+
+  it('it is rendered with one', () => {
+    render(<DayTimeline />);
+    expect(screen.getByTestId('timeline-overflow-boundary')).toBeOnTheScreen();
+  });
+});
+
+// ═════════════════════════════════════════════════════════════════════════════
+// Test 4b — three overflowing tasks: the treatment holds. One boundary, three
+// identical rows, no second design and no escalation.
+// ═════════════════════════════════════════════════════════════════════════════
+
+describe('DayTimeline — three overflowing tasks', () => {
+  beforeEach(() => {
+    mockUseDayPlan.mockReturnValue({ ...anchorDefaults,
+      plan: makeThreeOverflowPlan(),
+      status: 'ready',
+      doneByMin: 930,
+      setDoneBy: mockSetDoneBy,
+    });
+  });
+
+  it('renders every overflowing task', () => {
+    render(<DayTimeline />);
+    expect(screen.getByText('Big project')).toBeOnTheScreen();
+    expect(screen.getByText('Return calls')).toBeOnTheScreen();
+    expect(screen.getByText('Review deck')).toBeOnTheScreen();
+  });
+
+  it('draws exactly ONE boundary, above the first overflowing row', () => {
+    render(<DayTimeline />);
+    expect(screen.getAllByTestId('timeline-overflow-boundary')).toHaveLength(1);
+  });
+
+  it('each row states its own overrun, cumulative from the done-by', () => {
+    render(<DayTimeline />);
+    expect(screen.getByText('+50m over')).toBeOnTheScreen();
+    expect(screen.getByText('+1h 20m over')).toBeOnTheScreen();
+    expect(screen.getByText('+2h over')).toBeOnTheScreen();
+  });
+
+  it('offers the push-to clock of the LAST block, and still no guilt words', () => {
+    render(<DayTimeline />);
+    expect(screen.getByText(formatClock(atTime(17, 30)))).toBeOnTheScreen();
+    const json = JSON.stringify(screen.toJSON()).toLowerCase();
+    expect(json).not.toMatch(/overdue|behind|failed|warning/);
+  });
+});
+
+// ═════════════════════════════════════════════════════════════════════════════
+// Test 4c — drag, both directions. Overflow rows are ordinary cells, and a drop
+// is never refused: the optimistic order renders immediately and the boundary
+// moves to wherever the first overflowing row now sits.
+// ═════════════════════════════════════════════════════════════════════════════
+
+describe('DayTimeline — dragging across the boundary', () => {
+  beforeEach(() => {
+    mockUseDayPlan.mockReturnValue({ ...anchorDefaults,
+      plan: makeOverflowPlan(),
+      status: 'ready',
+      doneByMin: 930,
+      setDoneBy: mockSetDoneBy,
+    });
+  });
+
+  /** Drive the list's reorder contract directly — the pan gesture itself cannot
+   *  be simulated here, but every rule under test hangs off this callback. */
+  function drop(from: number, to: number): void {
+    const list = screen.UNSAFE_getByType(ReorderableList);
+    act(() => {
+      (list.props as { onReorder: (e: { from: number; to: number }) => void }).onReorder({
+        from,
+        to,
+      });
+    });
+  }
+
+  it('gives an overflow row the same grip as a fitting task', () => {
+    render(<DayTimeline />);
+    expect(screen.getByTestId('timeline-drag-handle-task-big')).toBeOnTheScreen();
+    expect(screen.getByTestId('timeline-drag-handle-task-1')).toBeOnTheScreen();
+  });
+
+  // The done-by boundary is a row of its own (so a drag can't carry it away with
+  // the card), which means it occupies a list index: [task-1, BOUNDARY, task-big].
+  // Reorder events index that list; the boundary is stripped before anything is
+  // persisted.
+  const OVERFLOW_ROW = 2;
+  const FITTING_ROW = 0;
+
+  it('persists overflow rows in the new order — they are never dropped from it', () => {
+    render(<DayTimeline />);
+    drop(OVERFLOW_ROW, FITTING_ROW); // overflow row dragged above the fitting one
+    expect(mockReorderTasks).toHaveBeenCalledWith(['task-big', 'task-1']);
+  });
+
+  it('never persists the boundary row itself as a task', () => {
+    render(<DayTimeline />);
+    drop(OVERFLOW_ROW, FITTING_ROW);
+    const persisted = mockReorderTasks.mock.calls[0]?.[0] as string[];
+    expect(persisted.some((id) => id.includes('boundary'))).toBe(false);
+  });
+
+  it('a drop above the line STICKS even while the plan still says otherwise', () => {
+    render(<DayTimeline />);
+    drop(OVERFLOW_ROW, FITTING_ROW);
+    // useDayPlan is mocked and keeps returning the OLD order — exactly the async
+    // round-trip window the optimistic override exists to cover. The dragged row
+    // must stay where it was dropped, not snap back.
+    const labels = screen
+      .getAllByText(/Big project|Quick email/)
+      .map((node) => node.props.children);
+    expect(labels[0]).toBe('Big project');
+  });
+
+  it('moves the boundary UP above a row that still does not fit', () => {
+    render(<DayTimeline />);
+    drop(OVERFLOW_ROW, FITTING_ROW);
+    // The overflowing row is now first, so the day runs over from the very top:
+    // the line is a readout of where that happens, not a wall that refuses it.
+    const boundary = screen.getByTestId('timeline-overflow-boundary');
+    expect(boundary).toBeOnTheScreen();
+    expect(screen.getByText('Big project')).toBeOnTheScreen();
+  });
+
+  it('a fitting task dragged below the line becomes the overflowing one', () => {
+    render(<DayTimeline />);
+    drop(FITTING_ROW, OVERFLOW_ROW);
+    expect(mockReorderTasks).toHaveBeenCalledWith(['task-big', 'task-1']);
   });
 });
 
@@ -302,10 +709,11 @@ describe('DayTimeline — cut-one overflow banner', () => {
 
 describe('DayTimeline — empty plan', () => {
   beforeEach(() => {
-    mockUseDayPlan.mockReturnValue({
+    mockUseDayPlan.mockReturnValue({ ...anchorDefaults,
       plan: null,
       status: 'empty',
       doneByMin: null,
+      hasFinishTarget: false,
       setDoneBy: mockSetDoneBy,
     });
   });
@@ -323,7 +731,7 @@ describe('DayTimeline — empty plan', () => {
 
 describe('DayTimeline — DoneByChip local-time label', () => {
   beforeEach(() => {
-    mockUseDayPlan.mockReturnValue({
+    mockUseDayPlan.mockReturnValue({ ...anchorDefaults,
       plan: makeFitsPlan(),
       status: 'ready',
       doneByMin: 1080, // 18:00 local (6 PM)
@@ -343,6 +751,54 @@ describe('DayTimeline — DoneByChip local-time label', () => {
 });
 
 // ═════════════════════════════════════════════════════════════════════════════
+// Test 8 — hideHeader: header block suppressed, rows still render
+// ═════════════════════════════════════════════════════════════════════════════
+
+describe('DayTimeline — hideHeader', () => {
+  beforeEach(() => {
+    mockUseDayPlan.mockReturnValue({ ...anchorDefaults,
+      plan: makeFitsPlan(),
+      status: 'ready',
+      doneByMin: 1080,
+      setDoneBy: mockSetDoneBy,
+    });
+  });
+
+  it('renders no "Start by" header when hideHeader is true, but still renders task rows', () => {
+    render(<DayTimeline hideHeader />);
+    expect(screen.queryByText(/Start by/)).toBeNull();
+    expect(screen.getByText('Write report')).toBeOnTheScreen();
+  });
+
+  it('renders the "Start by" header by default (hideHeader omitted)', () => {
+    render(<DayTimeline />);
+    expect(screen.getByText(/Start by/)).toBeOnTheScreen();
+  });
+});
+
+// ═════════════════════════════════════════════════════════════════════════════
+// Regression (Finding 3, 2026-07-30) — a forward (start-anchored) plan's header
+// clock is a derived first-block start, not a deadline. The footer in
+// (modals)/plan.tsx already words this correctly ("Starting" vs "Start by");
+// this header must match, not just the finish-anchored default above.
+// ═════════════════════════════════════════════════════════════════════════════
+
+describe('DayTimeline — header wording follows planAnchor', () => {
+  it('reads "Starting" (never "Start by") when the plan is anchored to the start', () => {
+    mockUseDayPlan.mockReturnValue({ ...anchorDefaults,
+      plan: makeFitsPlan(),
+      status: 'ready',
+      doneByMin: 1080,
+      planAnchor: 'start',
+      setDoneBy: mockSetDoneBy,
+    });
+    render(<DayTimeline />);
+    expect(screen.getByText(`Starting ${formatClock(atTime(9, 0))}`)).toBeOnTheScreen();
+    expect(screen.queryByText(/Start by/)).toBeNull();
+  });
+});
+
+// ═════════════════════════════════════════════════════════════════════════════
 // Test 7 — Pro guard: renders nothing when isPro is false
 // ═════════════════════════════════════════════════════════════════════════════
 
@@ -355,7 +811,7 @@ describe('DayTimeline — Pro guard', () => {
     useEntitlement.mockImplementation((selector: (s: any) => any) =>
       selector({ isPro: false }),
     );
-    mockUseDayPlan.mockReturnValue({
+    mockUseDayPlan.mockReturnValue({ ...anchorDefaults,
       plan: makeFitsPlan(),
       status: 'ready',
       doneByMin: 1080,

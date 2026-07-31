@@ -2,6 +2,7 @@
   "expo": {
     "name": "Whenbee",
     "slug": "whenbee",
+    "owner": "alx-organization",
     "version": "0.1.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
@@ -12,6 +13,9 @@
       "bundleIdentifier": "com.whenbee.app",
       "supportsTablet": true,
       "appleTeamId": "KXJDWZ2PKA",
+      "config": {
+        "usesNonExemptEncryption": false
+      },
       "entitlements": {
         "com.apple.developer.usernotifications.time-sensitive": true
       }
@@ -19,13 +23,12 @@
     "android": {
       "package": "com.whenbee.app",
       "adaptiveIcon": {
-        "backgroundColor": "#E6F4FE",
+        "backgroundColor": "#41378B",
         "foregroundImage": "./assets/images/android-icon-foreground.png",
-        "backgroundImage": "./assets/images/android-icon-background.png",
-        "monochromeImage": "./assets/images/android-icon-monochrome.png"
+        "backgroundImage": "./assets/images/android-icon-background.png"
       },
       "predictiveBackGestureEnabled": false,
-      "versionCode": 1,
+      "versionCode": 3,
       "permissions": [
         "android.permission.POST_NOTIFICATIONS",
         "android.permission.POST_PROMOTED_NOTIFICATIONS"
@@ -43,15 +46,29 @@
       [
         "expo-splash-screen",
         {
-          "backgroundColor": "#208AEF",
-          "android": {
+          "image": "./assets/images/splash-icon.png",
+          "imageWidth": 190,
+          "resizeMode": "contain",
+          "backgroundColor": "#41378B",
+          "dark": {
             "image": "./assets/images/splash-icon.png",
-            "imageWidth": 76
+            "imageWidth": 190,
+            "resizeMode": "contain",
+            "backgroundColor": "#2B2460"
+          },
+          "android": {
+            "image": "./assets/images/splash-icon-android.png",
+            "imageWidth": 200,
+            "resizeMode": "contain",
+            "backgroundColor": "#41378B",
+            "dark": {
+              "image": "./assets/images/splash-icon-android.png",
+              "backgroundColor": "#2B2460"
+            }
           }
         }
       ],
       "expo-font",
-      "expo-secure-store",
       "expo-web-browser",
       [
         "expo-calendar",
@@ -59,13 +76,8 @@
           "calendarPermission": "Whenbee reads today's events so it can show your honest day, and only writes back the times you confirm."
         }
       ],
-      [
-        "@sentry/react-native/expo",
-        {
-          "organization": "your-org",
-          "project": "whenbee"
-        }
-      ],
+      "./plugins/withNoRemindersPermission",
+      "./plugins/withStripUnusedAndroidPermissions",
       "expo-localization",
       [
         "expo-speech-recognition",
@@ -91,6 +103,11 @@
     "experiments": {
       "typedRoutes": true,
       "reactCompiler": true
+    },
+    "extra": {
+      "eas": {
+        "projectId": "4be512ee-fdc9-429e-8e14-d27d7b187be6"
+      }
     }
   }
 }

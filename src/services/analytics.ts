@@ -28,6 +28,10 @@ type EventSource = 'today' | 'fab' | 'addtask' | 'timed' | 'retro';
  *  stays dependency-free. Matches `GuardrailMultiple`. */
 type GuardrailSetting = 'off' | '1.5x' | '2x' | '3x';
 
+/** Forgot-to-stop step-in preset, mirrored locally so analytics stays
+ *  dependency-free. Matches `ForgotStepIn`. */
+type ForgotStepInSetting = 'room' | 'balanced' | 'early';
+
 /** Map of every analytics event to its props shape (the type contract). */
 export interface AppEventProps {
   // ── Lifecycle (kept; aliases of §2 app_installed / onboarding_completed) ──────
@@ -54,6 +58,12 @@ export interface AppEventProps {
     counted?: boolean;
   };
   first_log: { time_since_install_sec: number };
+  forgot_stop_logged: {
+    method: 'preset' | 'wheel';
+    corrected_min: number;
+    elapsed_min: number;
+    delta_min: number;
+  };
   honey_ripened: { sharpness_before: number; sharpness_after: number; delta: number };
   tier_up: { from_tier: TierName; to_tier: TierName };
   cell_capped: { tier: TierName };
@@ -93,6 +103,8 @@ export interface AppEventProps {
   notif_softask_shown: Record<string, never>;
   notif_softask_accepted: Record<string, never>;
   notif_softask_declined: Record<string, never>;
+  /** Once-ever re-ask after a declined soft-ask (overrun receipt / granted piggyback). */
+  notif_reask: { action: 'shown' | 'accepted' | 'dismissed'; trigger: 'overrun' | 'granted' | null };
 
   // ── Whenbee personalization ──────────────────────────────────────────────────
   whenbee_personalized: { attribute: string; skipped: boolean };
@@ -116,6 +128,8 @@ export interface AppEventProps {
   };
   honest_range_locked_tap: { surface: 'add_task' | 'category_detail' };
   honest_range_narrowed: { was_width_min: number; now_width_min: number };
+  // Pro user opens the weekly recap from the category screen's Honest Week row.
+  honest_week_open: { surface: 'category_detail' };
 
   // ── Monetization ─────────────────────────────────────────────────────────────
   // Ripening Pro card impression events (WhenbeeHub, non-Pro path).
@@ -124,6 +138,8 @@ export interface AppEventProps {
   // Ripening Pro card CTA taps.
   pro_reveal_tap: { surface: 'whenbee_hub' };
   pro_preview_tap: { surface: 'whenbee_hub' };
+  // Ripening-state honey "Get Pro" chip tap (soft paywall preview, not a hard CTA).
+  ripening_get_pro_tapped: { surface: 'whenbee_hub' };
   paywall_view: {
     trigger:
       | 'make_day_honest'
@@ -142,6 +158,7 @@ export interface AppEventProps {
       | 'calendar_export'
       | 'day_capacity';
     readiness?: 'pre' | 'honest';
+    feature_variant?: 'day' | 'groups';
   };
   founder_reserve: { result: 'reserved' };
   plan_selected: { plan: 'yearly' | 'lifetime' | 'monthly' };
@@ -149,6 +166,11 @@ export interface AppEventProps {
   purchase: { plan: string; price: number; result: string };
   restore_purchases: { plan?: string; price?: number; result: string };
   manage_subscription: { source: 'settings' | 'paywall' };
+  // Post-purchase welcome screen + the Day-5 trial-reminder promise.
+  pro_welcome_view: { plan: string };
+  pro_welcome_cta: Record<string, never>;
+  trial_reminder_scheduled: Record<string, never>;
+  trial_reminder_skipped: { reason: string };
 
   // ── On-device share ──────────────────────────────────────────────────────────
   plan_shared: { surface: 'plan' | 'archetype'; is_pro: boolean; result: 'shared' | 'gated' | 'error' };
@@ -167,6 +189,8 @@ export interface AppEventProps {
   calendar_padded: { events_count: number; day_end_shift_min: number };
   reminder_enabled: Record<string, never>;
   reminder_disabled: Record<string, never>;
+  startby_reminder_enabled: Record<string, never>;
+  startby_reminder_disabled: Record<string, never>;
   notification_action: { category: string; action: string };
   notification_permission: { tier: 'provisional' | 'full' | 'denied' };
   quiet_hours_toggled: { enabled: boolean };
@@ -181,6 +205,7 @@ export interface AppEventProps {
   goal_met: { category: string; target_band: number; logs_to_meet: number };
   goal_replaced: { category: string; from_band: number; to_band: number };
   goal_kept: { category: string; band: number };
+  goal_coach_shown: { category: string; target_band: number; best_band: number; has_lever: boolean };
 
   // ── Hyperfocus guardrail (Pro) ────────────────────────────────────────────────
   guardrail_armed: { setting: GuardrailSetting; threshold_min: number; honest_min: number };
@@ -188,6 +213,9 @@ export interface AppEventProps {
   guardrail_resolved: { action: 'keep_going' | 'wrap_up'; elapsed_min: number };
   guardrail_setting_changed: { from: GuardrailSetting; to: GuardrailSetting };
   guardrail_paywall: Record<string, never>;
+
+  // ── Forgot-to-stop preset (free) ──────────────────────────────────────────────
+  forgot_step_in_changed: { from: ForgotStepInSetting; to: ForgotStepInSetting };
 
   // ── Focus-window planner (Pro) ────────────────────────────────────────────────
   focus_window_viewed: { verdict: 'fits' | 'spills' | 'unset'; fit_count: number; total_count: number; window_min: number; is_pro: boolean };

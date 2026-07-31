@@ -1,4 +1,4 @@
-import { render } from '@testing-library/react-native';
+import { render, fireEvent, screen } from '@testing-library/react-native';
 import { router } from 'expo-router';
 import Welcome from '@/src/app/(onboarding)/welcome';
 
@@ -24,5 +24,14 @@ describe('Welcome screen', () => {
     expect(getByText(/example/i)).toBeTruthy(); // OverflowBar caption
     expect(getByText(/stays on this phone/i)).toBeTruthy();
     expect(getByText(/Get started/)).toBeTruthy();
+  });
+
+  test('double-tapping Get started pushes the quiz only once', () => {
+    render(<Welcome />);
+    const cta = screen.getByText(/Get started/);
+    fireEvent.press(cta);
+    fireEvent.press(cta);
+    expect(pushMock).toHaveBeenCalledTimes(1);
+    expect(pushMock).toHaveBeenCalledWith('/(onboarding)/quiz/0');
   });
 });

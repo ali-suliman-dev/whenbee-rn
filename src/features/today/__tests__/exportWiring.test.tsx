@@ -13,6 +13,7 @@
 // All calendar ops are mocked. No native modules load.
 
 import { render, fireEvent, act } from '@testing-library/react-native';
+import { FW_BIN_COUNT as mockFwBinCount } from '@/src/engine';
 import { ActionSheetIOS } from 'react-native';
 import { router } from 'expo-router';
 import Today from '@/src/app/(tabs)/index';
@@ -62,9 +63,11 @@ jest.mock('@/src/features/planner/useLearnedFocusWindow', () => ({
   useLearnedFocusWindow: () => ({
     startMin: 540,
     endMin: 690,
-    basis: 'prior' as const,
+    basis: 'forming' as const,
     confidence: 0.3,
-    scoreByBin: new Array(38).fill(0.3),
+    confidenceTier: 'low' as const,
+    coarseBlockLabel: '',
+    scoreByBin: new Array(mockFwBinCount).fill(0.3),
     sampleCount: 0,
     distinctDays: 0,
     held: false,
@@ -229,6 +232,9 @@ beforeEach(() => {
     events: [],
     allDayEvents: [],
     isPro: false,
+    lastFetchedAtMs: null,
+    refresh: jest.fn(async () => {}),
+    refreshing: false,
   });
 
   useCalibrationStore.setState({
@@ -257,7 +263,7 @@ describe('C1 — export wiring: Plan-my-day → syncExportForSelectedDay', () =>
     const { getByTestId } = render(<Today />);
 
     await act(async () => {
-      fireEvent.press(getByTestId('plan-my-day-btn'));
+      fireEvent.press(getByTestId('plan-button'));
     });
 
     expect(syncExportSpy).toHaveBeenCalledTimes(1);
@@ -289,7 +295,7 @@ describe('C1 — export wiring: Plan-my-day → syncExportForSelectedDay', () =>
     const { getByTestId } = render(<Today />);
 
     await act(async () => {
-      fireEvent.press(getByTestId('plan-my-day-btn'));
+      fireEvent.press(getByTestId('plan-button'));
     });
 
     expect(syncExportSpy).not.toHaveBeenCalled();
@@ -310,7 +316,7 @@ describe('C1 — export wiring: Plan-my-day → syncExportForSelectedDay', () =>
     const { getByTestId } = render(<Today />);
 
     await act(async () => {
-      fireEvent.press(getByTestId('plan-my-day-btn'));
+      fireEvent.press(getByTestId('plan-button'));
     });
 
     expect(router.push).toHaveBeenCalledWith({
@@ -336,7 +342,7 @@ describe('C1 — export wiring: Plan-my-day → syncExportForSelectedDay', () =>
     const { getByTestId } = render(<Today />);
 
     await act(async () => {
-      fireEvent.press(getByTestId('plan-my-day-btn'));
+      fireEvent.press(getByTestId('plan-button'));
     });
 
     expect(syncExportSpy).not.toHaveBeenCalled();
@@ -361,7 +367,7 @@ describe('[WRITE-SAFETY] C1 — export wiring write-safety', () => {
     const { getByTestId } = render(<Today />);
 
     await act(async () => {
-      fireEvent.press(getByTestId('plan-my-day-btn'));
+      fireEvent.press(getByTestId('plan-button'));
     });
 
     expect(syncExportSpy).toHaveBeenCalledTimes(1);
@@ -390,7 +396,7 @@ describe('[WRITE-SAFETY] C1 — export wiring write-safety', () => {
     const { getByTestId } = render(<Today />);
 
     await act(async () => {
-      fireEvent.press(getByTestId('plan-my-day-btn'));
+      fireEvent.press(getByTestId('plan-button'));
     });
 
     expect(syncExportSpy).not.toHaveBeenCalled();

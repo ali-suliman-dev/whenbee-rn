@@ -7,13 +7,16 @@ import type { NativePresenceModule, WidgetSnapshot, LiveActivityAttributes } fro
 
 export interface AndroidPresenceDeps {
   notif: {
-    writeWidgetSnapshot: (json: string) => void;
-    clearWidgetSnapshot: () => void;
+    writeWidgetData: (key: string, json: string) => void;
+    clearWidgetData: (key: string) => void;
     startTimerNotification: (attrs: Record<string, unknown>) => void;
     updateTimerNotification: (state: Record<string, unknown>) => void;
     stopTimerNotification: () => void;
   } | null;
 }
+
+/** SharedPreferences key the next-task widget reads (mirrors WidgetDataStore keys). */
+const NEXT_TASK_WIDGET_KEY = 'nextTask';
 
 const swallow = (fn: () => void): void => {
   try {
@@ -26,9 +29,13 @@ const swallow = (fn: () => void): void => {
 export function createAndroidPresence(deps: AndroidPresenceDeps): NativePresenceModule {
   return {
     isStub: false,
+    writeWidgetData: (key: string, json: string) =>
+      swallow(() => deps.notif?.writeWidgetData(key, json)),
+    clearWidgetData: (key: string) => swallow(() => deps.notif?.clearWidgetData(key)),
+    // Back-compat: the next-task snapshot is just one keyed slice.
     writeSnapshot: (snapshot: WidgetSnapshot) =>
-      swallow(() => deps.notif?.writeWidgetSnapshot(JSON.stringify(snapshot))),
-    clearSnapshot: () => swallow(() => deps.notif?.clearWidgetSnapshot()),
+      swallow(() => deps.notif?.writeWidgetData(NEXT_TASK_WIDGET_KEY, JSON.stringify(snapshot))),
+    clearSnapshot: () => swallow(() => deps.notif?.clearWidgetData(NEXT_TASK_WIDGET_KEY)),
     startLiveActivity: (attributes: LiveActivityAttributes) =>
       swallow(() => deps.notif?.startTimerNotification({ ...attributes })),
     updateLiveActivity: (state: { isOverrun: boolean }) =>

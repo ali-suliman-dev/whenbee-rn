@@ -27,11 +27,12 @@ export function formatClock(epochMs: number, hour12 = hour12Default): string {
   return `${h12}:${minutes}`;
 }
 
-/** Local 12-hour clock with meridiem: "9:42am", "5:00pm", "12:00pm" (noon). */
-export function formatClockMeridiem(epochMs: number): string {
+/** Local clock with meridiem in 12h mode ("5:00pm"); bare 24h clock ("17:00") otherwise. */
+export function formatClockMeridiem(epochMs: number, hour12 = hour12Default): string {
+  if (!hour12) return formatClock(epochMs, false);
   const d = new Date(epochMs);
   const meridiem = d.getHours() < 12 ? 'am' : 'pm';
-  return `${formatClock(epochMs)}${meridiem}`;
+  return `${formatClock(epochMs, true)}${meridiem}`;
 }
 
 /** Minutes-after-midnight → local clock. 12h: "1:30" · 24h: "13:30". */
@@ -62,6 +63,67 @@ export function formatWindowRange(startMin: number, endMin: number, hour12 = hou
   return ms === me ? `${s} – ${e} ${me}` : `${s} ${ms} – ${e} ${me}`;
 }
 
+const MERIDIEM_OF = (epochMs: number): 'AM' | 'PM' =>
+  new Date(epochMs).getHours() < 12 ? 'AM' : 'PM';
+
+/**
+ * The two halves of a calendar agenda row's right-hand time column: a bold start
+ * clock over a quiet tail that carries the meridiem and the end time.
+ *
+ *   12h → { clock: '1:00',  tail: 'PM – 2:30 PM' }
+ *   24h → { clock: '13:00', tail: '– 14:30' }
+ *
+ * The meridiem is never invented in 24h mode — a 24h user writes 13, not 1 PM —
+ * and it is repeated on both ends in 12h mode so the tail is readable on its own
+ * (the start meridiem belongs to the clock stacked above it).
+ */
+export function formatEventClockPair(
+  startMs: number,
+  endMs: number,
+  hour12 = hour12Default,
+): { clock: string; tail: string } {
+  const clock = formatClock(startMs, hour12);
+  const end = formatClock(endMs, hour12);
+  if (!hour12) return { clock, tail: `– ${end}` };
+  return { clock, tail: `${MERIDIEM_OF(startMs)} – ${end} ${MERIDIEM_OF(endMs)}` };
+}
+
+/**
+ * The Live-Timer centre clock. Under an hour it reads `M:SS` (e.g. "1:05"); at an
+ * hour or more it switches to `H:MM` with an `h` separator ("1h05") so a long
+ * session can never be misread as minutes:seconds and "200:00" overflow is gone.
+ *
+ * Pure mirror of the TimerRing worklet — kept as a plain fn for test coverage and
+ * any non-animated caller. The worklet stays self-contained (a helper called
+ * inside a worklet needs a 'worklet' directive and can crash on Fabric).
+ */
+export function formatTimerClock(totalSeconds: number): string {
+  const total = Math.max(0, Math.floor(totalSeconds));
+  if (total >= 3600) {
+    const h = Math.floor(total / 3600);
+    const m = Math.floor((total % 3600) / 60);
+    return `${h}h${m < 10 ? '0' : ''}${m}`;
+  }
+  const m = Math.floor(total / 60);
+  const s = total % 60;
+  return `${m}:${s < 10 ? '0' : ''}${s}`;
+}
+
+/**
+ * Honest-number display for cards. Under an hour it's plain minutes with a "min"
+ * unit ("45" · "min"); at an hour or more it switches to compact "Xh Ym" ("3h 45m",
+ * or "3h" on the hour) so a big number like "225 min" reads clearly and takes less
+ * width beside a task title. Returns { value, unit } for <HonestNumber> — the unit
+ * is omitted in the hours form (the h/m carry it).
+ */
+export function formatHonestMinutes(minutes: number): { value: string; unit?: string } {
+  const m = Math.max(0, Math.round(minutes));
+  if (m < 60) return { value: `${m}`, unit: 'min' };
+  const h = Math.floor(m / 60);
+  const rem = m % 60;
+  return { value: rem === 0 ? `${h}h` : `${h}h ${rem}m` };
+}
+
 /** "mm:ss" with a 2-digit second; minutes are not capped (e.g. "61:01"). */
 export function formatMmSs(totalSeconds: number): string {
   const whole = Math.max(0, Math.floor(totalSeconds));
@@ -90,6 +152,7 @@ export function dayEndEpochFor(nowMs: number, dayEndMin: number): number {
 /**
  * Format a minute count as a compact "Xh Ym" string. Examples:
  *   75 → "1h 15m"    60 → "1h"    45 → "45m"    0 → "0m"
+ * Used across the day-read surfaces to display task/event durations.
  *
  * @deprecated Hardcodes English "h"/"m" unit words. Use `formatDuration` from
  * `@/src/i18n/formatDuration` (takes the i18next `t` function) for any
@@ -102,6 +165,21 @@ export function fmtHm(totalMin: number): string {
   if (h > 0 && m > 0) return `${h}h ${m}m`;
   if (h > 0) return `${h}h`;
   return `${m}m`;
+}
+
+/**
+ * A duration gap stated as a fact, never a score. `+35m` reads as a grade;
+ * `35m over` reads as something that happened. Direction lives in the word,
+ * so no caller ever renders a leading + or −.
+ */
+export function fmtDelta(deltaMin: number): {
+  text: string;
+  direction: 'over' | 'under' | 'even';
+} {
+  const rounded = Math.round(deltaMin);
+  if (rounded === 0) return { text: 'even', direction: 'even' };
+  if (rounded > 0) return { text: `${fmtHm(rounded)} over`, direction: 'over' };
+  return { text: `${fmtHm(-rounded)} under`, direction: 'under' };
 }
 
 /** Whole minutes remaining vs the estimate; negative on overrun. */

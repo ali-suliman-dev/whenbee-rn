@@ -1,6 +1,8 @@
-import { View, Text, ScrollView, type TextStyle } from 'react-native';
+import { View, Text, type TextStyle } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTranslation } from 'react-i18next';
 import { Screen } from '@/src/components/Screen';
+import { SheetScrollView } from '@/src/components/SheetScrollView';
 import { SheetGrabber } from '@/src/components/SheetGrabber';
 import { AppButton } from '@/src/components/AppButton';
 import { TaskTitleField } from '@/src/components/TaskTitleField';
@@ -20,6 +22,7 @@ import { TimeField } from '@/src/features/shared/TimeField';
 export default function Retro() {
   const t = useTheme();
   const { t: tt } = useTranslation('review');
+  const insets = useSafeAreaInsets();
   const r = useRetro();
 
   const heading: TextStyle = { ...(type.subtitle as unknown as TextStyle), color: t.colors.ink };
@@ -32,18 +35,31 @@ export default function Retro() {
   };
 
   return (
-    <Screen edges={['left', 'right']}>
-      <ScrollView
-        contentContainerStyle={{ gap: t.space[5], paddingTop: t.space[3], paddingBottom: t.space[6] }}
-        showsVerticalScrollIndicator={false}
-      >
+    <Screen edges={['left', 'right']} horizontalPadding={false}>
+      {/* Fixed drag header — OUTSIDE the ScrollView so it is NOT the sheet's
+          scrolling child. On Android that makes the whole top of the sheet (grabber
+          + heading) a real drag-to-dismiss zone; the scroll child below only
+          scrolls. Equal top/bottom breathing room (space[5]) top and bottom. */}
+      <View style={{ paddingTop: t.space[5], paddingBottom: t.space[4], gap: t.space[3] }}>
         <SheetGrabber />
-
         <View style={{ gap: t.space[1] }}>
           <Text style={heading}>{tt('retro.heading')}</Text>
           <Text style={sub}>{tt('retro.sub')}</Text>
         </View>
+      </View>
 
+      {/* flexShrink (not flex:1): the ScrollView is only as tall as its fields when
+          they fit, so the space below is plain sheet background — a drag-to-dismiss
+          zone, not scroll child. It shrinks and scrolls only when the fields
+          overflow. */}
+      <SheetScrollView
+        style={{ flexShrink: 1 }}
+        contentContainerStyle={{
+          gap: t.space[5],
+          paddingBottom: t.space[4],
+        }}
+        showsVerticalScrollIndicator={false}
+      >
         <View style={{ gap: t.space[2] }}>
           <Text style={fieldLabel}>{tt('retro.whatWasItLabel')}</Text>
           <TaskTitleField
@@ -75,18 +91,21 @@ export default function Retro() {
           <Text style={fieldLabel}>{tt('retro.actualLabel')}</Text>
           <TimeField value={r.actualMin} onChange={r.setActualMin} />
         </View>
+      </SheetScrollView>
 
-        <View style={{ gap: t.space[3], paddingTop: t.space[2] }}>
-          <AppButton
-            label={tt('retro.saveCta')}
-            variant="indigo"
-            fullWidth
-            disabled={!r.canSave}
-            onPress={() => void r.onSave()}
-          />
-          <Text style={saveHint}>{tt('retro.saveHint')}</Text>
-        </View>
-      </ScrollView>
+      {/* Hint + primary action — OUTSIDE the ScrollView, pinned to the bottom by
+          marginTop:'auto'. The gap that auto-margin opens above it is sheet
+          background, so dragging there dismisses; the fields still scroll above. */}
+      <View style={{ gap: t.space[3], marginTop: 'auto', paddingBottom: insets.bottom + t.space[2] }}>
+        <Text style={saveHint}>{tt('retro.saveHint')}</Text>
+        <AppButton
+          label={tt('retro.saveCta')}
+          variant="indigo"
+          fullWidth
+          disabled={!r.canSave}
+          onPress={() => void r.onSave()}
+        />
+      </View>
     </Screen>
   );
 }

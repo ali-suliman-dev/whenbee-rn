@@ -43,8 +43,12 @@ export function keeperReached(input: { cappedCellCount: number; trackedCount: nu
 }
 
 const DRIFT_TRIGGER = 0.4;
+/** Drift needs a baseline to drift FROM. Below this many recent ratios the
+ *  category is still calibrating — a first log 3× over its guess is normal
+ *  learning, never drift — so the register stays 'settled'. */
+const DRIFT_MIN_WINDOW = 5;
 export function driftHealthFromRecent(recentClampedRatios: number[]): DriftHealth {
-  if (recentClampedRatios.length === 0) return 'settled';
+  if (recentClampedRatios.length < DRIFT_MIN_WINDOW) return 'settled';
   const meanAbsLn =
     recentClampedRatios.reduce((sum, r) => sum + Math.abs(Math.log(r)), 0) / recentClampedRatios.length;
   return meanAbsLn > DRIFT_TRIGGER ? 'curious' : 'settled';

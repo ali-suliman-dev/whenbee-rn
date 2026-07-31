@@ -62,7 +62,7 @@ async function seedCompletedLogs(
       }),
     );
   }
-  const existing = await statsRepo.get(categoryId);
+  const existing = await statsRepo.get(categoryId, undefined);
   await statsRepo.upsert({
     categoryId,
     n: ratios.length,
@@ -139,7 +139,7 @@ describe('calibrationStore — firstHonestRange capture (narrowing anchor)', () 
     const db = freshStore();
     const statsRepo = makeCategoryStatsRepo(db);
     await logOnce(db, 'cleaning', 20, 30); // n=1 → still raw
-    const stat = await statsRepo.get('cleaning');
+    const stat = await statsRepo.get('cleaning', undefined);
     expect(stat.firstHonestRange).toBeNull();
   });
 
@@ -151,13 +151,13 @@ describe('calibrationStore — firstHonestRange capture (narrowing anchor)', () 
     await logOnce(db, 'cleaning', 20, 28);
     await logOnce(db, 'cleaning', 20, 34);
 
-    const captured = (await statsRepo.get('cleaning')).firstHonestRange;
+    const captured = (await statsRepo.get('cleaning', undefined)).firstHonestRange;
     expect(captured).not.toBeNull();
     expect(captured?.lowMinutes).toBeLessThan(captured?.highMinutes ?? 0);
 
     // A later log must NOT overwrite the frozen anchor.
     await logOnce(db, 'cleaning', 20, 20);
-    const after = (await statsRepo.get('cleaning')).firstHonestRange;
+    const after = (await statsRepo.get('cleaning', undefined)).firstHonestRange;
     expect(after).toEqual(captured);
   });
 });

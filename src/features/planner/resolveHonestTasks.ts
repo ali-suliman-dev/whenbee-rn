@@ -1,5 +1,6 @@
-import { resolveSuggestion, priorFor, PERSONAL_MIN_LOGS } from '@/src/engine';
+import { resolveSuggestion, seededPriorFor, PERSONAL_MIN_LOGS } from '@/src/engine';
 import type { AffineFit } from '@/src/engine/affine';
+import type { ArchetypeSeed } from '@/src/domain/types';
 
 // ──────────────────────────────────────────────────────────────────────────────
 // resolveHonestTasks — the shared honest-number resolver for planning surfaces.
@@ -42,6 +43,9 @@ export interface ResolveHonestTasksInput {
   draftTasks: readonly DraftTaskInput[];
   todayTasks: readonly TodayTaskInput[];
   statsByCategory: Record<string, ResolverStat>;
+  /** The quiz archetype seed, or undefined when no quiz was taken (falls back
+   *  to the plain population prior — unchanged pre-quiz behavior). */
+  seed: ArchetypeSeed | undefined;
 }
 
 /** One task resolved to its honest block, with a done flag for context. */
@@ -62,18 +66,19 @@ function resolveTodayHonest(
   category: string,
   guessMin: number,
   statsByCategory: Record<string, ResolverStat>,
+  seed: ArchetypeSeed | undefined,
 ): { honestMin: number; isPersonal: boolean } {
   const cached = statsByCategory[category];
   const cat = cached
     ? { fit: cached.fit, n: cached.n }
-    : { fit: { a: 0, b: priorFor(category) }, n: 0 };
+    : { fit: { a: 0, b: seededPriorFor(category, seed) }, n: 0 };
   const honestMin = resolveSuggestion({ guessMinutes: guessMin, category: cat, recurring: null })
     .honestMinutes;
   return { honestMin, isPersonal: cat.n >= PERSONAL_MIN_LOGS };
 }
 
 export function resolveHonestTasks(input: ResolveHonestTasksInput): ResolveHonestTasksResult {
-  const { draftTasks, todayTasks, statsByCategory } = input;
+  const { draftTasks, todayTasks, statsByCategory, seed } = input;
 
   const draftIds = new Set(draftTasks.map((t) => t.id));
   let anyPersonal = false;
@@ -86,7 +91,7 @@ export function resolveHonestTasks(input: ResolveHonestTasksInput): ResolveHones
   const todayResolved: ResolvedHonestTask[] = todayTasks
     .filter((t) => !draftIds.has(t.id))
     .map((t) => {
-      const { honestMin, isPersonal } = resolveTodayHonest(t.category, t.guessMin, statsByCategory);
+      const { honestMin, isPersonal } = resolveTodayHonest(t.category, t.guessMin, statsByCategory, seed);
       if (isPersonal) anyPersonal = true;
       return { id: t.id, label: t.label, honestMin, done: t.status === 'done' };
     });

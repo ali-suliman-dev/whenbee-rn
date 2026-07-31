@@ -7,23 +7,36 @@ import { useTheme } from '@/src/theme/useTheme';
 import { type } from '@/src/theme/typography';
 import { AppText } from '@/src/components/AppText';
 import { AppButton } from '@/src/components/AppButton';
+import { ProCoinPill } from '@/src/components/ProCoinPill';
 import { formatWindowRange } from '@/src/lib/time';
-import { FW_GATE_MIN_COMPLETED } from '@/src/engine/constants';
 import { useEntitlement } from '@/src/features/paywall/useEntitlement';
 import { FocusCurve } from '@/src/features/planner/FocusCurve';
+import { FocusConfidenceMeter } from '@/src/features/planner/FocusConfidenceMeter';
+import { FocusGateRow, type FocusGateState } from '@/src/features/planner/FocusGateRow';
+import { FocusRewardPreview } from '@/src/features/planner/FocusRewardPreview';
 import { FocusWindowEditorSheet } from '@/src/features/planner/FocusWindowEditorSheet';
 import { useLearnedFocusWindow } from '@/src/features/planner/useLearnedFocusWindow';
 import { useFocusInsights } from '@/src/features/patterns/useFocusInsights';
-import { whyNarrative } from '@/src/features/patterns/focusCopy';
+import {
+  whyNarrative,
+  sessionsGateCopy,
+  daysGateCopy,
+  daysUpcomingCopy,
+  focusUnlockedTag,
+  focusRewardCaption,
+  coarseHintCopy,
+  FOCUS_GATE_LABELS,
+} from '@/src/features/patterns/focusCopy';
 import { useSettingsStore } from '@/src/stores/settingsStore';
 
 // ──────────────────────────────────────────────────────────────────────────────
 // FocusPeakCard — the pinned, compact "When you're sharp" card on Patterns.
 //
-// Three mutually exclusive states:
-//   forming            (basis === 'prior')           — dashed curve + maturity progress
-//   locked (free)      (basis === 'personal' && !Pro) — frosted curve + teaser + Unlock CTA
-//   personal + Pro                                    — window range + curve + why-line, taps to detail
+// Mutually exclusive states:
+//   forming                (basis === 'forming')            — 2-gate unlock ladder
+//   revealed, low conf.    (basis === 'revealed', low)      — coarse block + coarse curve + meter
+//   revealed, Pro          (basis === 'revealed', !low)     — window range + precise curve + meter
+//   locked (free)          (basis === 'revealed' && !Pro)   — frosted curve + teaser + Unlock CTA
 // ──────────────────────────────────────────────────────────────────────────────
 
 export function FocusPeakCard() {
@@ -57,20 +70,105 @@ export function FocusPeakCard() {
     </View>
   );
 
-  // ── forming ──
-  if (basis === 'prior') {
+  const headerRow: ViewStyle = {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  };
+
+  // ── loading — focus events haven't loaded yet ──
+  // Until the first async load lands, `win` reflects empty events (basis
+  // 'forming'), which would flash the Pro-badge ladder before snapping to the
+  // real state. Hold a same-height skeleton so the card settles once, quietly.
+  if (!win.hydrated) {
     return (
       <View style={card}>
         <Eyebrow />
-        <FocusCurve scoreByBin={scoreByBin} variant="forming" yAxis />
-        <AppText style={title}>{tr('focusPeakCard.forming.title')}</AppText>
-        <AppText style={meta} testID="focus-maturity">
-          {tr('focusPeakCard.forming.progress', { count: sampleCount, gate: FW_GATE_MIN_COMPLETED })}
-        </AppText>
+        <View
+          style={{
+            height: t.focusCurve.viewH,
+            backgroundColor: t.colors.surfaceSunken,
+            borderRadius: t.radii.md,
+          }}
+        />
+      </View>
+    );
+  }
+
+  // ── forming — the 2-gate unlock ladder ──
+  if (basis === 'forming') {
+    const { gates } = win;
+    const sDone = gates.sessions.have >= gates.sessions.need;
+    const dDone = gates.days.have >= gates.days.need;
+
+    const unlocked = (sDone ? 1 : 0) + (dDone ? 1 : 0);
+    const gatesLeft = 2 - unlocked;
+
+    // Exactly one active row: the first gate (in order) that isn't done.
+    const sessionsState: FocusGateState = sDone ? 'done' : 'active';
+    const daysState: FocusGateState = dDone ? 'done' : !sDone ? 'upcoming' : 'active';
+
+    const sessionsCopy = sessionsGateCopy(gates.sessions.have, gates.sessions.need);
+    const daysCopy =
+      daysState === 'upcoming'
+        ? daysUpcomingCopy(gates.days.have, gates.days.need)
+        : daysGateCopy(gates.days.have, gates.days.need);
+
+    const cardTitle = sDone && dDone ? 'Almost there' : 'Learning your focus hours';
+    const hint = coarseHintCopy(win.coarseBlockLabel);
+    const hintText = hint || "Keep timing and I'll find the hours you focus best.";
+
+    const tagStyle: TextStyle = {
+      ...(type.caption as unknown as TextStyle),
+      color: t.colors.inkSoft,
+    };
+    const ladderHead: ViewStyle = { flexDirection: 'row', justifyContent: 'flex-end' };
+
+    return (
+      <View style={card}>
+        <View style={headerRow}>
+          <Eyebrow />
+          {isPro ? null : <ProCoinPill icon="ribbon" />}
+        </View>
+        <FocusRewardPreview scoreByBin={scoreByBin} caption={focusRewardCaption(gatesLeft)} />
+        <View style={{ gap: t.space[1.5] }}>
+          <AppText style={title}>{cardTitle}</AppText>
+          <AppText style={body}>{hintText}</AppText>
+        </View>
+        <View>
+          <View style={ladderHead}>
+            <AppText style={tagStyle}>{focusUnlockedTag(unlocked)}</AppText>
+          </View>
+          <FocusGateRow
+            first
+            state={sessionsState}
+            label={FOCUS_GATE_LABELS.sessions}
+            valueText={sessionsCopy.valueText}
+            sub={sessionsCopy.sub}
+            pips={
+              sessionsState === 'active'
+                ? { filled: gates.sessions.have, total: gates.sessions.need }
+                : undefined
+            }
+          />
+          <FocusGateRow
+            state={daysState}
+            label={FOCUS_GATE_LABELS.days}
+            valueText={daysCopy.valueText}
+            sub={daysCopy.sub}
+            pips={
+              daysState === 'active'
+                ? { filled: gates.days.have, total: gates.days.need }
+                : undefined
+            }
+          />
+        </View>
         <AppButton
           label={tr('focusPeakCard.forming.setHoursCta')}
           variant="ghost"
-          size="sm"
+          tone="sunken"
+          size="md"
+          fullWidth
           onPress={() => setEditing(true)}
           accessibilityLabel={tr('focusPeakCard.forming.setHoursA11y')}
         />
@@ -95,10 +193,10 @@ export function FocusPeakCard() {
   const weeks = Math.max(1, Math.round(win.distinctDays / 7));
   const footerMeta =
     win.distinctDays >= 7
-      ? tr('focusPeakCard.personal.footerMetaWeeks', { count: sampleCount, weeks })
-      : tr('focusPeakCard.personal.footerMetaDays', { count: sampleCount, days: win.distinctDays });
+      ? `${sampleCount} sessions · steady for ${weeks} weeks`
+      : `${sampleCount} sessions · ${win.distinctDays} days`;
 
-  // ── locked (free + personal) ──
+  // ── locked (free + revealed) ──
   if (!isPro) {
     const frost: ViewStyle = {
       position: 'absolute',
@@ -119,27 +217,76 @@ export function FocusPeakCard() {
       <View style={card} testID="focus-locked-teaser">
         <Eyebrow />
         <View>
-          <FocusCurve scoreByBin={scoreByBin} variant="locked" yAxis />
-          <View style={frost} pointerEvents="none" importantForAccessibility="no" accessibilityElementsHidden>
+          <FocusCurve scoreByBin={scoreByBin} variant="locked" grid />
+          <View
+            style={frost}
+            pointerEvents="none"
+            importantForAccessibility="no"
+            accessibilityElementsHidden
+          >
             <Ionicons name="lock-closed" size={t.iconSize.lg} color={t.colors.onIndigo} />
           </View>
         </View>
         <AppText style={body}>{teaser}</AppText>
         <AppText style={meta}>{tr('focusPeakCard.locked.meta', { count: sampleCount })}</AppText>
         <Pressable
-          onPress={() => router.push({ pathname: '/(modals)/paywall', params: { trigger: 'focus_window' } })}
+          onPress={() =>
+            router.push({ pathname: '/(modals)/paywall', params: { trigger: 'focus_window' } })
+          }
           accessibilityRole="button"
           accessibilityLabel={tr('focusPeakCard.locked.unlockA11y')}
         >
           <AppText style={{ ...(type.captionBold as TextStyle), color: t.colors.primary }}>
-            {tr('focusPeakCard.locked.unlockCta')}
+            Unlock my focus window ›
           </AppText>
         </Pressable>
       </View>
     );
   }
 
-  // ── personal + Pro ──
+  // ── revealed + Pro, low confidence — coarse block, not yet precise ──
+  if (win.confidenceTier === 'low') {
+    const blockLabel = win.coarseBlockLabel;
+    return (
+      <Pressable
+        onPress={() => router.push('/(modals)/focus-window')}
+        accessibilityRole="button"
+        accessibilityLabel="Open focus window detail"
+      >
+        <View style={card}>
+          <Eyebrow />
+          <View style={{ gap: t.space[1.5] }}>
+            <AppText style={title}>{blockLabel}</AppText>
+            <AppText style={meta}>{`around ${formatWindowRange(ws, we)}`}</AppText>
+          </View>
+          <FocusCurve
+            scoreByBin={scoreByBin}
+            variant="learned"
+            windowStartMin={ws}
+            windowEndMin={we}
+            peakMin={insights?.peakMin}
+            bandVariant="coarse"
+            grid
+          />
+          <FocusConfidenceMeter tier={win.confidenceTier} fill={win.confidence} />
+          <View
+            style={{
+              flexDirection: 'row',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+            }}
+          >
+            <AppText style={meta}>{`${sampleCount} sessions · ${win.distinctDays} days`}</AppText>
+            <AppText style={{ ...(type.captionBold as TextStyle), color: t.colors.primary }}>
+              See details ›
+            </AppText>
+          </View>
+        </View>
+      </Pressable>
+    );
+  }
+
+  // ── revealed + Pro, building/steady — precise window ──
   return (
     <Pressable
       onPress={() => router.push('/(modals)/focus-window')}
@@ -148,7 +295,10 @@ export function FocusPeakCard() {
     >
       <View style={card}>
         <Eyebrow />
-        <AppText style={{ ...(type.honestNumberMd as unknown as TextStyle), color: t.colors.ink }} testID="focus-window-range">
+        <AppText
+          style={{ ...(type.honestNumberMd as unknown as TextStyle), color: t.colors.ink }}
+          testID="focus-window-range"
+        >
           {formatWindowRange(ws, we)}
         </AppText>
         <FocusCurve
@@ -157,24 +307,34 @@ export function FocusPeakCard() {
           windowStartMin={ws}
           windowEndMin={we}
           peakMin={insights?.peakMin}
-          yAxis
+          bandVariant="precise"
+          grid
         />
         {whyLead ? (
           <AppText style={{ ...(type.body as TextStyle), color: t.colors.ink }}>
             {whyLead}
             {contrastAccent != null ? ', ' : ''}
             {contrastAccent != null ? (
-              <AppText style={{ ...(type.body as TextStyle), color: t.colors.accent, fontWeight: t.fontWeight.bold as TextStyle['fontWeight'] }}>
+              <AppText
+                style={{
+                  ...(type.body as TextStyle),
+                  color: t.colors.accent,
+                  fontWeight: t.fontWeight.bold as TextStyle['fontWeight'],
+                }}
+              >
                 {contrastAccent}
               </AppText>
             ) : null}
             {contrastRest}.
           </AppText>
         ) : null}
-        <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+        <FocusConfidenceMeter tier={win.confidenceTier} fill={win.confidence} />
+        <View
+          style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}
+        >
           <AppText style={meta}>{footerMeta}</AppText>
           <AppText style={{ ...(type.captionBold as TextStyle), color: t.colors.primary }}>
-            {tr('focusPeakCard.personal.open')}
+            Open ›
           </AppText>
         </View>
       </View>

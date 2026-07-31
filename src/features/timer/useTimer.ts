@@ -34,8 +34,8 @@ import {
 } from '@/src/services/liveActivity';
 import { shouldSuppressHonestBanner, guardCollidesWithHonest, honestReachedFireMs } from '@/src/lib/notifyTiming';
 import { useEntitlement } from '@/src/features/paywall/useEntitlement';
-import { guardrailThresholdMin, confidenceFor, honestRangeFor } from '@/src/engine';
-import type { AdaptSpeed, CalibrationConfidence, HonestRange } from '@/src/domain/types';
+import { guardrailThresholdMin, nudgeThresholdMin, confidenceFor, honestRangeFor } from '@/src/engine';
+import type { AdaptSpeed, CalibrationConfidence, HonestRange, LogSource } from '@/src/domain/types';
 
 // ──────────────────────────────────────────────────────────────────────────────
 // useTimer — the Live Timer's whole brain. Keeps timer.tsx thin.
@@ -137,6 +137,10 @@ export interface UseTimerResult {
   keepGoing: () => void;
   /** Dismiss the check-in card and run the normal Stop-and-log flow. */
   wrapUp: () => Promise<void>;
+  /** Manual forgot-to-stop: log a corrected completed retro at finishMs, then reward. */
+  onForgotStopAndLog: (finishMs: number, method: 'preset' | 'wheel') => Promise<void>;
+  /** Manual forgot-to-stop escape: log a partial (never trains) and dismiss. */
+  onForgotNotSure: () => Promise<void>;
 }
 
 export function useTimer(params: TimerParams): UseTimerResult {
@@ -148,6 +152,11 @@ export function useTimer(params: TimerParams): UseTimerResult {
   const stop = useTimerStore((s) => s.stop);
   const cancel = useTimerStore((s) => s.cancel);
   const isQuickStart = useTimerStore((s) => s.isQuickStart);
+  // Reactive: observe the store's own startedAt so the screen tears down cleanly if
+  // the session is cleared EXTERNALLY (useForgotCheck.stopSilently on unlock past
+  // the close threshold) — the captured startedAtRef + frame callback would
+  // otherwise keep ticking a zombie sheet over the recovery card. See the effect below.
+  const storeStartedAt = useTimerStore((s) => s.startedAt);
   const applyLog = useCalibrationStore((s) => s.applyLog);
 
   // ATTACH vs RESTART: if a session is already running for THIS task (reopened from
@@ -163,6 +172,16 @@ export function useTimer(params: TimerParams): UseTimerResult {
   const startedFresh = useRef(false);
   const overrunTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const startedAtRef = useRef<number | null>(null);
+  // Set true the instant THIS screen initiates a stop (Stop & log / Abandon /
+  // freeze-for-capture), BEFORE it clears the store. The external-clear reaction
+  // below reads it to distinguish "we stopped" from "the store was cleared out from
+  // under us" (e.g. useForgotCheck's stopSilently on unlock past the close
+  // threshold). Prevents the recovery flow from also writing a fake/double log.
+  const stoppingLocallyRef = useRef(false);
+  // Flips true once this session is observed live in the store, so the reaction
+  // treats startedAt→null as a genuine external clear (not the pre-start() mount
+  // race where the store hasn't been written yet).
+  const sessionActiveRef = useRef(false);
   // once-guards for the first-task activation events (fire at most once per session,
   // guarding against StrictMode double-invoke and any edge-case re-renders).
   const firstTaskStartedFiredRef = useRef(false);
@@ -231,6 +250,8 @@ export function useTimer(params: TimerParams): UseTimerResult {
       taskLabel: label,
       finishEpoch: Math.round(projectedFinish(startedAt, suggestedHonestMin) / 1000),
       startEpoch: Math.round(startedAt / 1000),
+      guessFinishEpoch:
+        guessMin === suggestedHonestMin ? 0 : Math.round(projectedFinish(startedAt, guessMin) / 1000),
       isProRich: useEntitlement.getState().isPro,
     });
     // Schedule the overrun flip for when wall-clock crosses the honest finish.
@@ -243,18 +264,22 @@ export function useTimer(params: TimerParams): UseTimerResult {
       updateFinishTimeActivity({ isOverrun: true });
     }, delay);
 
-    // Hyperfocus guardrail (Pro, opt-in): arm at session start. Non-reactive reads —
-    // this effect runs once. Gate on Pro + the setting; a session that already nudged
-    // (resumed after a kill) never re-arms. The foreground threshold is stashed in a
-    // ref regardless of reminders; the BACKGROUND ping rides the same reminders gate
-    // the "estimate is up" ping uses (notifications are opt-in).
+    // Gentle nudge / hyperfocus guardrail: arm at session start. Non-reactive reads —
+    // this effect runs once. A session that already nudged (resumed after a kill)
+    // never re-arms. Pro's hyperfocusGuard (when not 'off') wins — it's the earlier,
+    // user-chosen multiple; otherwise every user (free included) gets the gentle
+    // forgot-to-stop nudge at the forgotStepIn preset. The foreground threshold is
+    // stashed in a ref regardless of reminders; the BACKGROUND ping rides the same
+    // reminders gate the "estimate is up" ping uses (notifications are opt-in).
     const guardSetting = useSettingsStore.getState().hyperfocusGuard;
     const guardPro = useEntitlement.getState().isPro;
+    const stepIn = useSettingsStore.getState().forgotStepIn;
     const alreadyNudged = useTimerStore.getState().guardNudged;
-    const guardThresholdMin =
-      guardPro && !alreadyNudged
+    const guardThresholdMin = alreadyNudged
+      ? null
+      : guardPro && guardSetting !== 'off'
         ? guardrailThresholdMin({ honestMin: suggestedHonestMin, setting: guardSetting })
-        : null;
+        : nudgeThresholdMin({ honestMin: suggestedHonestMin, stepIn });
     if (guardThresholdMin != null) {
       analytics.capture('guardrail_armed', {
         setting: guardSetting,
@@ -320,7 +345,7 @@ export function useTimer(params: TimerParams): UseTimerResult {
   const elapsedSec = useSharedValue(0);
   const overProgress = useSharedValue(0);
 
-  useFrameCallback(() => {
+  const frameCallback = useFrameCallback(() => {
     'worklet';
     // Active seconds = wall time since start, minus any paused span. The Timer
     // screen has no pause UI in this cut, so pausedAccum stays 0; reading it from
@@ -355,6 +380,37 @@ export function useTimer(params: TimerParams): UseTimerResult {
   // path). The timer is NOT stopped on unmount — only on explicit stop/abandon —
   // but if a new sheet instance mounts it will schedule its own flip.
   useEffect(() => () => clearOverrunTimer(), [clearOverrunTimer]);
+
+  // ── External-clear teardown (zombie-sheet guard) ────────────────────────────
+  // The clock is driven off the captured startedAtRef + a self-arming frame
+  // callback, so the sheet keeps ticking even after the STORE session is cleared.
+  // If that clear came from OUTSIDE this screen — useForgotCheck.stopSilently()
+  // firing on unlock past the close threshold — the running sheet would occlude the
+  // recovery ForgotCard and its "Stop & log" would train a fake 1-min completion
+  // AND double-log a session already parked for recovery. React to the store's own
+  // startedAt: once we've seen this session live, a transition to null that we did
+  // NOT initiate (stoppingLocallyRef unset) means an external clear → stop ticking,
+  // cancel this session's pings, and dismiss WITHOUT logging (the ForgotCard owns
+  // the recovery log).
+  useEffect(() => {
+    if (storeStartedAt !== null) {
+      sessionActiveRef.current = true;
+      return;
+    }
+    // startedAt is null. Ignore the pre-start() mount race (never went live) and any
+    // clear WE initiated (normal Stop/Abandon/capture — they own their own teardown).
+    if (!sessionActiveRef.current || stoppingLocallyRef.current) return;
+    frameCallback.setActive(false);
+    clearOverrunTimer();
+    void cancelTimerDone();
+    void cancelGuardCheckIn();
+    endFinishTimeActivity();
+    // Do NOT applyLog here — the ForgotCard writes the recovery log on the user's
+    // choice. Consistent with onAbandon/minimize, dismiss the modal route.
+    router.dismiss();
+    // frameCallback + clearOverrunTimer are stable; react only to startedAt changes.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [storeStartedAt]);
 
   // ── Hyperfocus guardrail — foreground driver ────────────────────────────────
   // Fire EXACTLY ONCE the moment elapsed crosses the armed threshold, mirroring the
@@ -393,7 +449,62 @@ export function useTimer(params: TimerParams): UseTimerResult {
     [fireGuard],
   );
 
+  // Shared tail for every "completed" stop path: write the calibration log, fire
+  // the first-completion activation event, set the reward, flip Today + plan
+  // bookkeeping, then navigate to the reward. Both the normal Stop (timed) and the
+  // manual Forgot (retro) funnel through here — only actualMin + source differ.
+  const logCompletedAndReward = useCallback(
+    async (args: { actualMin: number; source: LogSource; label: string; category: string }) => {
+      const { actualMin, source, label: resolvedLabel, category: resolvedCategory } = args;
+      const adaptSpeed: AdaptSpeed =
+        useCategoriesStore.getState().categories.find((c) => c.id === resolvedCategory)?.adaptSpeed ??
+        'balanced';
+
+      const result = await applyLog({
+        category: resolvedCategory,
+        estimateMin: guessMin,
+        actualMin,
+        status: 'completed',
+        source,
+        adaptSpeed,
+        label: resolvedLabel,
+        suggestedHonestMin,
+        startedAt: startedAtRef.current ?? undefined,
+      });
+
+      if (!firstTaskCompletedFiredRef.current) {
+        void useCalibrationStore.getState().loadReclaimSummary().then((summary) => {
+          if (summary.companion.lifetimeNectar === 1 && !firstTaskCompletedFiredRef.current) {
+            firstTaskCompletedFiredRef.current = true;
+            analytics.capture('first_task_completed');
+          }
+        }).catch(() => { /* analytics fire-and-forget; never break the core loop */ });
+      }
+
+      useRewardStore.getState().setReward({ actualMin, guessMin, category: resolvedCategory, label: resolvedLabel, result });
+
+      if (taskId) {
+        useDayTasksStore.getState().completeTask(taskId, { completedAt: Date.now(), actualMin });
+        void useDayTasksStore.getState().reload();
+      }
+      if (taskId) {
+        const planStore = usePlanStore.getState();
+        const planActive = planStore.active;
+        if (planActive !== null) {
+          const planTask = planActive.tasks.find((t) => t.id === taskId);
+          if (planTask?.status === 'running') planStore.completeTask(taskId, actualMin);
+        }
+      }
+
+      router.replace('/(modals)/reward');
+    },
+    [applyLog, guessMin, suggestedHonestMin, taskId],
+  );
+
   const onStopAndLog = useCallback(async (labelOverride?: string, categoryOverride?: string) => {
+    // Mark BEFORE clearing the store so the external-clear reaction treats the
+    // upcoming stop()/reward-nav as ours (no dismiss, no fake log).
+    stoppingLocallyRef.current = true;
     clearOverrunTimer();
     // For quick-start sessions the clock was already frozen by onFreezeForCapture
     // before the capture sheet was shown. Use the pre-computed value; for normal
@@ -416,70 +527,60 @@ export function useTimer(params: TimerParams): UseTimerResult {
     // closure-captured route params for normal (non-quick-start) timer stops.
     const resolvedLabel = labelOverride ?? label;
     const resolvedCategory = categoryOverride ?? category;
+    await logCompletedAndReward({ actualMin, source: 'timed', label: resolvedLabel, category: resolvedCategory });
+  }, [stop, logCompletedAndReward, category, label, clearOverrunTimer]);
 
+  // Manual "I forgot to stop — I finished at finishMs". stop(finishMs) derives the
+  // corrected actualMin from that timestamp; the log is source:'retro' (half weight)
+  // because a reconstructed finish is approximate. Mirrors onStopAndLog's teardown.
+  const onForgotStopAndLog = useCallback(
+    async (finishMs: number, method: 'preset' | 'wheel') => {
+      stoppingLocallyRef.current = true;
+      clearOverrunTimer();
+      const { actualMin } = stop(finishMs);
+      void cancelTimerDone();
+      void cancelGuardCheckIn();
+      endFinishTimeActivity();
+      const elapsedMin = Math.max(0, Math.floor((Date.now() - (startedAtRef.current ?? Date.now())) / 60_000));
+      analytics.capture('forgot_stop_logged', {
+        method,
+        corrected_min: actualMin,
+        elapsed_min: elapsedMin,
+        delta_min: Math.max(0, elapsedMin - actualMin),
+      });
+      await logCompletedAndReward({ actualMin, source: 'retro', label, category });
+    },
+    [stop, clearOverrunTimer, logCompletedAndReward, label, category],
+  );
+
+  // "Not sure yet" — stop now, record a PARTIAL retro (never trains, excluded from
+  // the model) as best-effort history, then dismiss to Today. No reward (nothing to
+  // celebrate) and never a guilt beat.
+  const onForgotNotSure = useCallback(async () => {
+    stoppingLocallyRef.current = true;
+    clearOverrunTimer();
+    const { actualMin } = stop(Date.now());
+    void cancelTimerDone();
+    void cancelGuardCheckIn();
+    endFinishTimeActivity();
     const adaptSpeed: AdaptSpeed =
-      useCategoriesStore.getState().categories.find((c) => c.id === resolvedCategory)?.adaptSpeed ??
-      'balanced';
-
-    // estimateMin here = the user's GUESS (ratio = actual / guess), NOT the
-    // honest suggestion the ring filled toward.
-    // suggestedHonestMin = the honest number the user SAW (defaults to estimateMin
-    // which IS the honest number passed from Today / Add-Task).
-    const result = await applyLog({
-      category: resolvedCategory,
-      estimateMin: guessMin,
-      actualMin,
-      status: 'completed',
-      source: 'timed',
-      adaptSpeed,
-      label: resolvedLabel,
-      suggestedHonestMin,
-      startedAt: startedAtRef.current ?? undefined,
-    });
-
-    // first_task_completed — THE ACTIVATION EVENT. Fires exactly once after the
-    // user's genuine first-ever calibration completes (lifetimeNectar === 1 after
-    // the log, sourced from the persisted companion row via loadReclaimSummary).
-    // Fire-and-forget: swallow DB errors so analytics never breaks the core loop.
-    if (!firstTaskCompletedFiredRef.current) {
-      void useCalibrationStore.getState().loadReclaimSummary().then((summary) => {
-        if (summary.companion.lifetimeNectar === 1 && !firstTaskCompletedFiredRef.current) {
-          firstTaskCompletedFiredRef.current = true;
-          analytics.capture('first_task_completed');
-        }
-      }).catch(() => { /* analytics fire-and-forget; never break the core loop */ });
+      useCategoriesStore.getState().categories.find((c) => c.id === category)?.adaptSpeed ?? 'balanced';
+    try {
+      await applyLog({
+        category,
+        estimateMin: guessMin,
+        actualMin,
+        status: 'partial',
+        source: 'retro',
+        adaptSpeed,
+        label,
+        startedAt: startedAtRef.current ?? undefined,
+      });
+    } catch {
+      /* history log is best-effort; teardown + dismiss must still happen */
     }
-
-    useRewardStore.getState().setReward({
-      actualMin,
-      guessMin,
-      category: resolvedCategory,
-      label: resolvedLabel,
-      result,
-    });
-
-    // Keep the task on Today — flip it to done (checked off) so the day shows
-    // progress instead of the row vanishing. actualMin powers the "took N" receipt.
-    if (taskId) {
-      useDayTasksStore.getState().completeTask(taskId, { completedAt: Date.now(), actualMin });
-      void useDayTasksStore.getState().reload();
-    }
-
-    // If this task is the active plan's running task, mark it done in the plan
-    // run-state (pure UI bookkeeping — calibration already happened via applyLog above).
-    if (taskId) {
-      const planStore = usePlanStore.getState();
-      const planActive = planStore.active;
-      if (planActive !== null) {
-        const planTask = planActive.tasks.find((t) => t.id === taskId);
-        if (planTask?.status === 'running') {
-          planStore.completeTask(taskId, actualMin);
-        }
-      }
-    }
-
-    router.replace('/(modals)/reward');
-  }, [stop, applyLog, category, guessMin, label, taskId, suggestedHonestMin, clearOverrunTimer]);
+    router.dismiss();
+  }, [stop, clearOverrunTimer, applyLog, category, guessMin, label]);
 
   /**
    * Freeze the elapsed time WITHOUT writing a calibration log. Stores the
@@ -490,6 +591,10 @@ export function useTimer(params: TimerParams): UseTimerResult {
    * Only the quick-start capture sheet calls this; normal timers skip it.
    */
   const onFreezeForCapture = useCallback((): { actualMin: number } => {
+    // The quick-start capture flow clears the store here, then keeps this screen
+    // mounted while the capture sheet resolves — mark local so the external-clear
+    // reaction doesn't mistake that for a forgot-close and dismiss mid-capture.
+    stoppingLocallyRef.current = true;
     const result = stop(Date.now());
     frozenActualMinRef.current = result.actualMin;
     void cancelTimerDone();
@@ -499,6 +604,9 @@ export function useTimer(params: TimerParams): UseTimerResult {
   }, [stop]);
 
   const onAbandon = useCallback(async () => {
+    // Mark BEFORE cancel() clears the store so the external-clear reaction stays out
+    // of the way — onAbandon already dismisses the route itself.
+    stoppingLocallyRef.current = true;
     clearOverrunTimer();
     cancel();
     void cancelTimerDone();
@@ -575,5 +683,7 @@ export function useTimer(params: TimerParams): UseTimerResult {
     guardDue,
     keepGoing,
     wrapUp,
+    onForgotStopAndLog,
+    onForgotNotSure,
   };
 }

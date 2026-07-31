@@ -54,7 +54,7 @@
       "sink": {
         "prompt": "Where does time run away from you most?",
         "options": {
-          "meetings": "Meetings",
+          "meetings": "Calls & meetings",
           "chores": "Chores",
           "errands": "Errands",
           "deepwork": "Deep work"
@@ -95,7 +95,7 @@
   "archetypeReveal": {
     "eyebrow": "YOUR TIME PERSONALITY",
     "echoLine": "From your answers: {{echo}}",
-    "multCaption": "your guess, on average",
+    "multCaption": "your starting estimate",
     "note": "A first read from your answers. Every task you time makes it sharper — and your type can move as your numbers do.",
     "cta": "Sharpen it on my tasks →"
   },

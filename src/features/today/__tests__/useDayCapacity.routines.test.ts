@@ -10,6 +10,13 @@ import { useEntitlement } from '@/src/features/paywall/useEntitlement';
 import { useRoutinesStore } from '@/src/stores/routinesStore';
 import type { RoutineWithSteps } from '@/src/db';
 
+// `useDayCapacity` re-reads the calendar on screen focus (see useDayCapacity).
+jest.mock('expo-router', () => ({
+  useFocusEffect: (cb: () => void | (() => void)) => {
+    cb();
+  },
+}));
+
 // ── Mock calendar (no events in these tests) ─────────────────────────────────
 
 const mockGetEventsForDay = jest.fn<Promise<[]>, [string, unknown]>().mockResolvedValue([]);

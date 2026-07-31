@@ -11,8 +11,8 @@
 // scale up) so it reads as emerging from behind the button — and reverses the
 // same way on close. No spring overshoot → it settles dead still, no wiggle.
 //
-// Bubble order (left→right, a11y reading order): Voice | Timer | Type.
-// The center bubble (Timer) is primary-filled, slightly larger, and leads the
+// Bubble order (left→right, a11y reading order): Timer | Voice | Type.
+// The center bubble (Voice) is primary-filled, slightly larger, and leads the
 // cascade (last to retract).
 
 import { useCallback, useEffect, useRef } from 'react';
@@ -56,8 +56,8 @@ interface BubbleDef {
 }
 
 const BUBBLES: readonly BubbleDef[] = [
-  { key: 'voice', icon: 'mic',    label: 'Voice',  isCenter: false },
-  { key: 'timer', icon: 'play',   label: 'Start timer',  isCenter: true  },
+  { key: 'timer', icon: 'play',   label: 'Start timer',  isCenter: false },
+  { key: 'voice', icon: 'mic',    label: 'Voice',  isCenter: true  },
   { key: 'type',  icon: 'pencil', label: 'Type',   isCenter: false },
 ] as const;
 

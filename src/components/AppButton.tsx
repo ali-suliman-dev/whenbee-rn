@@ -46,6 +46,7 @@ export function AppButton({
   variant = 'indigo',
   size = 'md',
   depth = 'standard',
+  tone = 'surface',
   disabled = false,
   fullWidth = false,
   icon,
@@ -59,6 +60,10 @@ export function AppButton({
   size?: Size;
   /** Coin-edge depth for FILLED variants. `shallow` = a thinner, calmer edge. */
   depth?: 'standard' | 'shallow';
+  /** GHOST-only face color. `sunken` reads as an inset dark tile — use when the
+   *  button sits directly on a card whose bg is `colors.surface` (the default
+   *  ghost face), where the two would otherwise be indistinguishable. */
+  tone?: 'surface' | 'sunken';
   disabled?: boolean;
   fullWidth?: boolean;
   icon?: ReactNode;
@@ -95,14 +100,14 @@ export function AppButton({
   const bg: Record<NewVariant, string> = {
     indigo: t.colors.primary,
     amber: t.colors.accent,
-    ghost: t.colors.surface,
+    ghost: tone === 'sunken' ? t.colors.surfaceSunken : t.colors.surface,
     danger: t.colors.danger,
   };
   const fg: Record<NewVariant, string> = {
     indigo: t.colors.onIndigo,
     amber: t.colors.onAmber,
     ghost: t.colors.ink,
-    danger: '#FFFFFF',
+    danger: t.colors.onIndigo, // was '#FFFFFF' — hardcoded hex, now a token
   };
   const edge: Record<NewVariant, string> = {
     indigo: t.colors.primaryEdge,
@@ -110,6 +115,14 @@ export function AppButton({
     ghost: 'transparent',
     danger: t.colors.dangerEdge,
   };
+
+  // A disabled control mutes its FACE, never its label. onIndigo/onAmber are DARK
+  // inks — fading them toward a bright fill makes them sink in (1.92:1) rather
+  // than grey out. Inert face + full-opacity label reads as 3.28:1 and is
+  // unmistakably not the live control.
+  const faceColor = disabled ? t.colors.controlDisabled : bg[resolved];
+  const labelColor = disabled ? t.colors.onControlDisabled : fg[resolved];
+  const edgeColor = disabled ? t.colors.controlDisabledEdge : edge[resolved];
 
   // Filled pills drop onto the edge; ghost squeezes. One shared value per path.
   const pressY = useSharedValue(0);
@@ -155,25 +168,33 @@ export function AppButton({
     height: PILL_H,
     borderRadius: t.radii.md,
     borderCurve: 'continuous',
-    backgroundColor: edge[resolved],
+    backgroundColor: edgeColor,
   };
 
   const pillContainer: ViewStyle = {
     height: PILL_H,
     borderRadius: t.radii.md,
     borderCurve: 'continuous',
-    backgroundColor: bg[resolved],
-    // Disabled keeps the FACE and edge fully solid/opaque (a real raised coin
-    // edge) — only the LABEL mutes. Never put opacity on the face or wrapper:
-    // it composites the whole pill and the edge stops reading as an edge.
-    // Android drops the corner clip on press-layer promotion, squaring the pill.
-    // overflow:hidden pins the rounded clip. (Edge is a sibling, not clipped.)
-    overflow: 'hidden',
+    backgroundColor: faceColor,
+    // Disabled mutes the FACE (see faceColor above). Never put opacity on the
+    // face or wrapper: it composites the whole pill and the edge stops reading
+    // as an edge.
+    // Keep overflow VISIBLE. `overflow:'hidden'` here dropped the label Text on
+    // Android for FILLED variants inside a react-native-screens formSheet: the
+    // clipped face composites to a hardware texture that fails to draw its Text
+    // children when the absolute coin-edge sibling is present (the label went
+    // invisible only when the button was enabled). The content never spills the
+    // pill, so no clip is needed; corner-rounding on press is instead preserved by
+    // keeping the press transform on the OUTER wrapper (below), so the rounded
+    // face is never the promoted layer.
+    overflow: 'visible',
     alignItems: 'center',
     justifyContent: 'center',
     paddingHorizontal: padX,
-    // Ghost reads as a flat outlined control — hairline border, no depth.
-    ...(isGhost ? { borderWidth: t.borderWidth.hairline, borderColor: t.colors.border } : null),
+    // The disabled face sits only ~1.3:1 off the page — a hairline holds its shape.
+    ...(isGhost || disabled
+      ? { borderWidth: t.borderWidth.hairline, borderColor: disabled ? edgeColor : t.colors.border }
+      : null),
   };
 
   return (
@@ -188,30 +209,39 @@ export function AppButton({
       onPressOut={handlePressOut}
       style={wrapper}
     >
-      {/* Solid colored depth edge behind FILLED pills only */}
-      {isGhost ? null : <View style={edgeBase} />}
+      {/* Solid colored depth edge behind FILLED pills only. A disabled pill is
+          flat: it is not a live coin, so it gets no raised edge. */}
+      {isGhost || disabled ? null : <View style={edgeBase} />}
 
-      {/* Pill surface (face + edge stay fully solid) */}
-      <Animated.View style={[pillContainer, pillStyle]}>
-        {/* Only the CONTENT dims when disabled — face + coin edge stay opaque. */}
-        <View
-          style={{
-            flexDirection: 'row',
-            alignItems: 'center',
-            gap: t.space[2],
-            opacity: disabled ? t.opacity.disabled : 1,
-          }}
-        >
-          {icon ?? null}
-          <AppText
+      {/* The press transform lives on the OUTER view; the rounded overflow-clip on
+          the INNER static face. On Android an overflow:hidden view that ALSO carries
+          the transform is promoted to a hardware layer that DROPS its Text children
+          whenever the absolute coin-edge sibling is present (i.e. enabled filled
+          variants) — that's why the label went invisible only when enabled. Keeping
+          the clip off the animated layer draws the label while preserving both the
+          press drop and the rounded corners. */}
+      <Animated.View style={pillStyle}>
+        <View testID="appbutton-face" style={pillContainer}>
+          <View
+            testID="appbutton-content"
             style={{
-              fontSize: labelSize,
-              fontWeight: t.fontWeight.bold as TextStyle['fontWeight'],
-              color: fg[resolved],
+              flexDirection: 'row',
+              alignItems: 'center',
+              gap: t.space[2],
+              opacity: 1,
             }}
           >
-            {label}
-          </AppText>
+            {icon ?? null}
+            <AppText
+              style={{
+                fontSize: labelSize,
+                fontWeight: t.fontWeight.bold as TextStyle['fontWeight'],
+                color: labelColor,
+              }}
+            >
+              {label}
+            </AppText>
+          </View>
         </View>
       </Animated.View>
     </Pressable>

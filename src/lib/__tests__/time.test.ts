@@ -1,5 +1,8 @@
 import {
   formatClock,
+  formatClockMeridiem,
+  formatTimerClock,
+  formatHonestMinutes,
   formatMmSs,
   projectedFinish,
   minutesLeft,
@@ -9,6 +12,8 @@ import {
   formatClockMin,
   formatWindowRange,
   setClockHour12,
+  fmtDelta,
+  formatEventClockPair,
 } from '@/src/lib/time';
 
 // Build a deterministic local epoch from explicit Y/M/D h:m so the formatted
@@ -151,6 +156,41 @@ describe('formatClockMin', () => {
   });
 });
 
+describe('formatTimerClock', () => {
+  it('reads M:SS under an hour, zero-padding the seconds', () => {
+    expect(formatTimerClock(0)).toBe('0:00');
+    expect(formatTimerClock(65)).toBe('1:05');
+    expect(formatTimerClock(3599)).toBe('59:59');
+  });
+  it('switches to H:MM with an h separator at an hour and beyond', () => {
+    expect(formatTimerClock(3600)).toBe('1h00');
+    expect(formatTimerClock(3660)).toBe('1h01');
+    expect(formatTimerClock(7325)).toBe('2h02');
+  });
+  it('floors fractional seconds and never goes negative', () => {
+    expect(formatTimerClock(65.9)).toBe('1:05');
+    expect(formatTimerClock(-5)).toBe('0:00');
+  });
+});
+
+describe('formatHonestMinutes', () => {
+  it('shows plain minutes with a "min" unit under an hour', () => {
+    expect(formatHonestMinutes(25)).toEqual({ value: '25', unit: 'min' });
+    expect(formatHonestMinutes(59)).toEqual({ value: '59', unit: 'min' });
+    expect(formatHonestMinutes(0)).toEqual({ value: '0', unit: 'min' });
+  });
+  it('switches to compact Xh Ym at an hour and beyond, with no unit', () => {
+    expect(formatHonestMinutes(60)).toEqual({ value: '1h' });
+    expect(formatHonestMinutes(115)).toEqual({ value: '1h 55m' });
+    expect(formatHonestMinutes(225)).toEqual({ value: '3h 45m' });
+    expect(formatHonestMinutes(120)).toEqual({ value: '2h' });
+  });
+  it('rounds fractional minutes and never goes negative', () => {
+    expect(formatHonestMinutes(24.6)).toEqual({ value: '25', unit: 'min' });
+    expect(formatHonestMinutes(-5)).toEqual({ value: '0', unit: 'min' });
+  });
+});
+
 describe('formatWindowRange', () => {
   it('12h same half → one trailing meridiem', () => {
     expect(formatWindowRange(810, 960, true)).toBe('1:30 – 4:00 pm');
@@ -161,5 +201,88 @@ describe('formatWindowRange', () => {
   });
   it('24h → no meridiem', () => {
     expect(formatWindowRange(810, 960, false)).toBe('13:30 – 16:00');
+  });
+});
+
+describe('formatClockMeridiem', () => {
+  afterEach(() => setClockHour12(true)); // restore the module default
+
+  test('12-hour mode keeps the meridiem', () => {
+    setClockHour12(true);
+    const at = new Date(2026, 6, 25, 21, 50).getTime();
+    expect(formatClockMeridiem(at)).toBe('9:50pm');
+  });
+
+  test('24-hour mode drops the meridiem instead of appending it to a 24h clock', () => {
+    setClockHour12(false);
+    const at = new Date(2026, 6, 25, 21, 50).getTime();
+    expect(formatClockMeridiem(at)).toBe('21:50');
+  });
+});
+
+describe('fmtDelta', () => {
+  it('words a positive delta as over', () => {
+    expect(fmtDelta(35)).toEqual({ text: '35m over', direction: 'over' });
+  });
+
+  it('words a negative delta as under, without a minus sign', () => {
+    expect(fmtDelta(-20)).toEqual({ text: '20m under', direction: 'under' });
+  });
+
+  it('crosses the hour boundary via fmtHm', () => {
+    expect(fmtDelta(65)).toEqual({ text: '1h 5m over', direction: 'over' });
+    expect(fmtDelta(-120)).toEqual({ text: '2h under', direction: 'under' });
+  });
+
+  it('reports zero as even with no duration', () => {
+    expect(fmtDelta(0)).toEqual({ text: 'even', direction: 'even' });
+  });
+
+  it('rounds fractional minutes before wording them', () => {
+    expect(fmtDelta(34.6)).toEqual({ text: '35m over', direction: 'over' });
+  });
+});
+
+describe('formatEventClockPair', () => {
+  const start = at(13, 0);
+  const end = at(14, 30);
+
+  it('splits a 12h start into the clock and a meridiem-led tail with the end time', () => {
+    expect(formatEventClockPair(start, end, true)).toEqual({
+      clock: '1:00',
+      tail: 'PM – 2:30 PM',
+    });
+  });
+
+  it('keeps the end meridiem even when it matches the start', () => {
+    expect(formatEventClockPair(at(10, 0), at(11, 0), true)).toEqual({
+      clock: '10:00',
+      tail: 'AM – 11:00 AM',
+    });
+  });
+
+  it('carries a meridiem change across noon', () => {
+    expect(formatEventClockPair(at(11, 30), at(13, 0), true)).toEqual({
+      clock: '11:30',
+      tail: 'AM – 1:00 PM',
+    });
+  });
+
+  it('drops every meridiem in 24h mode and keeps the leading-zero clock', () => {
+    expect(formatEventClockPair(start, end, false)).toEqual({
+      clock: '13:00',
+      tail: '– 14:30',
+    });
+    expect(formatEventClockPair(at(9, 5), at(9, 35), false)).toEqual({
+      clock: '09:05',
+      tail: '– 09:35',
+    });
+  });
+
+  it('follows the app-wide clock setting when no flag is passed', () => {
+    setClockHour12(false);
+    expect(formatEventClockPair(start, end)).toEqual({ clock: '13:00', tail: '– 14:30' });
+    setClockHour12(true);
+    expect(formatEventClockPair(start, end)).toEqual({ clock: '1:00', tail: 'PM – 2:30 PM' });
   });
 });

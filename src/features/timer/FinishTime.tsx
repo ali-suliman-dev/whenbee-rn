@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { View, type TextStyle, type ViewStyle } from 'react-native';
+import { type TextStyle, View, type ViewStyle } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import {
   useDerivedValue,
@@ -8,26 +8,26 @@ import {
   type SharedValue,
 } from 'react-native-reanimated';
 import { AppText } from '@/src/components/AppText';
-import { HonestBand } from '@/src/components/HonestBand';
+import { InfoRow, LedgerValue } from '@/src/features/timer/InfoRow';
 import { useTheme } from '@/src/theme/useTheme';
-import { type } from '@/src/theme/typography';
 import { formatClock } from '@/src/lib/time';
 import { analytics } from '@/src/services/analytics';
 import type { CalibrationConfidence, HonestRange } from '@/src/domain/types';
 
 // ──────────────────────────────────────────────────────────────────────────────
-// FinishTime — the finish-time anchor (binding amendment).
+// FinishTime — the STARTED + FINISH rows of the Live-Timer info ledger.
 //
-//   Started 9:14 · Done ~9:42                       (= start + estimate)
-//   on overrun → "now finishing ~9:51" re-projects forward, in amber.
+//   STARTED                                          9:14
+//   FINISH ~                                         9:42          (= start + estimate)
+//   on overrun → the FINISH value re-projects forward, in amber ("~9:51").
 //
 // Surface C (Pro): while the model is still LEARNING this category, the honest
-// finish is a RANGE, not a point — "Done 9:42–9:57" + a slim HonestBand that
-// narrows under the row. The point finish returns once the category settles
-// ('honest') or for free users. The overrun reprojection ALWAYS wins: once the
+// finish is a RANGE, not a point — "9:42–9:57" + a quiet "still learning" tag
+// beside it. The point finish returns once the category settles ('honest') or for
+// free users. The overrun reprojection ALWAYS wins: once the
 // task runs past its honest finish, the range/band hides and the amber
-// "now finishing ~" reprojection takes over (the range is a forecast; once
-// you're over, the live reprojection is the honest read).
+// reprojected clock takes over (the range is a forecast; once you're over, the
+// live reprojection is the honest read).
 //
 // The re-projected clock only changes once a minute, and we only push to JS state
 // when the displayed minute actually changes — so this is not a per-second
@@ -116,23 +116,15 @@ export function FinishTime({
     [applyFinish],
   );
 
-  const wrap: ViewStyle = { alignItems: 'center', gap: t.space[1.5] };
-  const row: ViewStyle = {
-    flexDirection: 'row',
-    justifyContent: 'center',
-    alignItems: 'center',
-    gap: t.space[2],
-    flexWrap: 'wrap',
-  };
-  const bandRow: ViewStyle = { width: t.size.honestBand, maxWidth: '100%' };
-
-  const labelStyle: TextStyle = { ...(type.caption as TextStyle), color: t.colors.inkSoft };
-  const overStyle: TextStyle = { ...(type.caption as TextStyle), color: t.colors.amberText };
-  // The range numerals read in the amber accent, tabular so the two clocks align.
-  const rangeStyle: TextStyle = {
-    ...(type.caption as TextStyle),
-    color: t.colors.amberText,
-    fontVariant: ['tabular-nums'],
+  // A quiet uppercase "still learning" tag rides beside the finish range so the
+  // spread reads as a forecast the model is refining, not an imprecise clock.
+  const learningTag: TextStyle = {
+    fontSize: t.fontSize['2xs'],
+    fontWeight: t.fontWeight.bold as TextStyle['fontWeight'],
+    letterSpacing: t.letterSpacing.wide,
+    textTransform: 'uppercase',
+    color: t.colors.inkFaint,
+    marginLeft: t.space[2],
   };
 
   const a11yRange = range
@@ -142,32 +134,24 @@ export function FinishTime({
     : undefined;
 
   return (
-    <View style={wrap}>
-      <View style={row}>
-        <AppText style={labelStyle}>{tr('finish.started', { clock: startedClock })}</AppText>
-        <AppText style={labelStyle}>·</AppText>
+    <>
+      <InfoRow label="Started">
+        <LedgerValue>{startedClock}</LedgerValue>
+      </InfoRow>
+      <InfoRow label="Finish ~">
         {over ? (
-          <AppText style={overStyle}>{tr('finish.reprojecting', { clock: reprojectClock })}</AppText>
+          <LedgerValue amber>~{reprojectClock}</LedgerValue>
         ) : showRange && range ? (
-          <AppText style={rangeStyle} accessibilityLabel={a11yRange}>
-            {tr('finish.rangeDone', { low: finishLowClock, high: finishHighClock })}
-          </AppText>
+          <>
+            <LedgerValue amber accessibilityLabel={a11yRange}>
+              {finishLowClock}–{finishHighClock}
+            </LedgerValue>
+            <AppText style={learningTag}>still learning</AppText>
+          </>
         ) : (
-          <AppText style={labelStyle}>{tr('finish.pointDone', { clock: finishClock })}</AppText>
+          <LedgerValue>{finishClock}</LedgerValue>
         )}
-      </View>
-      {showRange && range ? (
-        <View style={bandRow}>
-          <HonestBand
-            range={range}
-            // The honest finish the ring fills toward (estimateSec → minutes); the
-            // band's tick lands on it, inside its [low, high] spread.
-            point={Math.round(estimateSec / 60)}
-            confidence={confidence ?? 'setting'}
-            height={t.progress.gapTrack}
-          />
-        </View>
-      ) : null}
-    </View>
+      </InfoRow>
+    </>
   );
 }

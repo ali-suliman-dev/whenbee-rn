@@ -6,13 +6,21 @@ import { analytics } from '@/src/services/analytics';
 
 // Maps a seed multiplier to the same 4-rung ladder deriveArchetype uses, so the
 // reveal label matches what Patterns will show. Kept in lockstep with the engine
-// ladder thresholds (Steady<1.3, Gentle<1.8, Sprint<2.6, Dreamer>=2.6).
+// ladder thresholds (Steady<1.2, Gentle<1.5, Sprint<2.0, Dreamer>=2.0).
 // Thresholds and titles MUST stay in sync with `archetypeFor` in usePatterns.ts.
-function rungFor(m: number, tr: TFunction<'onboarding'>): { title: string; blurb: string } {
-  if (m < 1.3) return { title: tr('archetype.steady.title'), blurb: tr('archetype.steady.blurb') };
-  if (m < 1.8) return { title: tr('archetype.gentle.title'), blurb: tr('archetype.gentle.blurb') };
-  if (m < 2.6) return { title: tr('archetype.sprint.title'), blurb: tr('archetype.sprint.blurb') };
-  return { title: tr('archetype.dreamer.title'), blurb: tr('archetype.dreamer.blurb') };
+export function archetypeTitleFor(m: number): string {
+  if (m < 1.2) return 'The Steady Reader';
+  if (m < 1.5) return 'The Gentle Optimist';
+  if (m < 2.0) return 'The Sprint Optimist';
+  return 'The Dreamer';
+}
+
+function rungFor(m: number): { title: string; blurb: string } {
+  const title = archetypeTitleFor(m);
+  if (m < 1.2) return { title, blurb: 'Your guesses already land close to reality. I\'ll sharpen this with every task you log.' };
+  if (m < 1.5) return { title, blurb: 'You lean hopeful, then mostly catch up. A little padding does it.' };
+  if (m < 2.0) return { title, blurb: 'Your mind moves fast; the doing takes a touch longer. Now you know by how much.' };
+  return { title, blurb: 'Big plans, generous timelines. Your honest numbers keep them grounded.' };
 }
 
 export interface RevealCard {
@@ -42,11 +50,19 @@ export function usePersonalize() {
     saveQuiz: (answers: QuizAnswers): RevealCard => {
       const m0 = seedMultiplierFor(answers);
       // tookAt is stamped here at the hook layer (allowed — not the engine).
-      setArchetypeSeed({ m0, source: 'quiz', tookAt: Date.now() });
-      const { title, blurb } = rungFor(m0, tr);
-      analytics.capture('quiz_completed', { archetype: title });
+      setArchetypeSeed({ m0, sink: answers.sink, source: 'quiz', tookAt: Date.now() });
+      const { title, blurb } = rungFor(m0);
+      // quiz_completed is NOT fired here — saveQuiz is a data write, not an event
+      // owner. A caller re-running this (e.g. a re-mounted reveal screen after a
+      // back-swipe) would otherwise double-count the funnel. Callers fire
+      // trackQuizCompleted() themselves, once, at the point that actually means
+      // "the user completed the quiz" for their flow.
       return { title, blurb, multiplier: m0 };
     },
+    /** Fire once per quiz completion — moved out of saveQuiz so a re-mount (or a
+     *  re-take from Settings/the Hub) doesn't silently double- or under-count. */
+    trackQuizCompleted: (payload: { archetype: string }) =>
+      analytics.capture('quiz_completed', payload),
     trackQuizSkipped: () => analytics.capture('quiz_skipped'),
     trackReopened: () => analytics.capture('archetype_reopened'),
   };

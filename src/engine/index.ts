@@ -1,6 +1,6 @@
 // Public barrel for the pure calibration engine.
 export * from './constants';
-export { CATEGORY_PRIORS, CATEGORY_NAMES, priorFor } from './priors';
+export { priorFor, seededPriorFor, CATEGORY_PRIORS, CATEGORY_NAMES } from './priors';
 export { clampRatio } from './ratio';
 export { alphaFor, alphaRegFor, updateEwma } from './ewma';
 export * from './affine';
@@ -9,7 +9,7 @@ export { blendWithPrior, honestNumber, roundHonest, recurringHasEnoughData, reso
 export { sharpnessFromWindow, tierFor, logsToNextTier, tierBandProgress } from './sharpness';
 export type { TierBandProgress } from './sharpness';
 export { effortFloor, honeyMaturity } from './honeyMaturity';
-export { proReadiness } from './proReadiness';
+export { proReadiness, FEATURE_MIN_LOGS } from './proReadiness';
 export type { ProFeatureId } from './proReadiness';
 export { detectInsight } from './insight';
 export { shouldBankDiscovery } from './discovery';
@@ -28,11 +28,13 @@ export type { AccuracyTrend } from './accuracyTrend';
 export { correlateContext } from './context';
 export type { ContextSample, ContextCorrelation } from './context';
 export { confidenceFor, honestRangeFor, quantile, reservePriceVisible } from './confidence';
+export { pickTopBias } from './widgetBias';
+export type { BiasStat, TopBias } from './widgetBias';
 export {
   companionStageFor, capabilityFor, keeperReached, driftHealthFromRecent, COMPANION_KEEPER_QUOTA,
 } from './companion';
 export type { CompanionStage, CompanionCapability, DriftHealth } from './companion';
-export { seedMultiplierFor, provisionalArchetypeMultiplier, buildRevealEcho } from './archetypeSeed';
+export { seedMultiplierFor, provisionalArchetypeMultiplier, buildRevealEcho, sinkCategoryFor } from './archetypeSeed';
 export type { QuizAnswers } from './archetypeSeed';
 export { greetingFor, greetingPart } from './greeting';
 export type { GreetingPart } from './greeting';
@@ -49,6 +51,7 @@ export type { PostLogQuality, PostLogInput } from './postLogQuality';
 export { focusWindowMinutes, fitFocusWindow, promoteIntoWindow } from './focusWindow';
 export type { FocusWindowTask, FocusWindowInput } from './focusWindow';
 export { guardrailFactor, guardrailThresholdMin } from './guardrail';
+export { nudgeThresholdMin, closeThresholdMin, autoCloseDecision } from './autoClose';
 export { reportAccuracy, reportAccuracySpark, topSurprises, steadiestCategory } from './report';
 export type { ReportEventInput, ReportSurprise } from './report';
 export { stepHonestMinutes, routineHonestTotal, routineBasis, distributeRoutineRun } from './routine';
@@ -64,12 +67,29 @@ export {
   REVIEW_REFLECTION_QUESTIONS,
 } from './review';
 export type { TightenedEntry, BuildReviewSummaryInput } from './review';
-export { learnFocusWindow } from './focusWindowLearn';
+export { learnFocusWindow, peakBucketLabel, permutationStrength } from './focusWindowLearn';
 export { computeFocusInsights, confidenceLabel } from './focusWindowInsights';
 export type { FocusInsights } from './focusWindowInsights';
-export type { LearnFocusInput, LearnedFocusWindow, FocusEventInput } from '@/src/domain/types';
+export type {
+  LearnFocusInput,
+  LearnedFocusWindow,
+  FocusEventInput,
+  FocusGate,
+  FocusGates,
+  FocusConfidenceTier,
+} from '@/src/domain/types';
 export { tasksForSelectedDay, type DayTask, type DaySelectorInput } from './daySelectors';
 export { honestDayLoad, type DayLoadInput, type DayLoadResult } from './honestDayLoad';
+export { honestLanding } from './honestLanding';
+export type {
+  LandingInput,
+  LandingResult,
+  LandingKind,
+  LandingTask,
+  TaskEnd,
+} from './honestLanding';
+export { landingRange } from './honestLanding';
+export type { LandingRangeInput, LandingRangeResult } from './honestLanding';
 export { planDayAroundAnchors } from './planDayAroundAnchors';
 export type { PlanAnchor, PlanDayInput } from './planDayAroundAnchors';
 export { orderForFocus } from './focusOrder';

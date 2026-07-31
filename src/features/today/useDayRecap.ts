@@ -12,12 +12,12 @@ export interface DayRecap {
   date: string;
   /** Number of tasks with status === 'done' on that day. */
   doneCount: number;
-  /** Total tasks planned for the day (done + queued). */
-  plannedCount: number;
-  /** Sum of actualMin over done tasks (null actualMin → 0). */
-  realFocusMin: number;
   /** Sum of (actualMin − guessMin) for done tasks where actualMin is known. */
   vsGuessMin: number;
+  /** Sum of guessMin over done tasks with a known actualMin. Pairs with honestMin. */
+  guessedMin: number;
+  /** Sum of actualMin over done tasks with a known actualMin. Pairs with guessedMin. */
+  honestMin: number;
 }
 
 /** Returns a banked recap for the selected day, or null if today/future. */
@@ -32,20 +32,21 @@ export function useDayRecap(): DayRecap | null {
 
   const done = dayTasks.filter((t) => t.status === 'done');
   const doneCount = done.length;
-  const plannedCount = dayTasks.length;
-
-  const realFocusMin = done.reduce((sum, t) => sum + (t.actualMin ?? 0), 0);
 
   const vsGuessMin = done.reduce((sum, t) => {
     if (t.actualMin == null) return sum;
     return sum + (t.actualMin - t.guessMin);
   }, 0);
 
+  const logged = done.filter((t) => t.actualMin != null);
+  const guessedMin = logged.reduce((sum, t) => sum + t.guessMin, 0);
+  const honestMin = logged.reduce((sum, t) => sum + (t.actualMin ?? 0), 0);
+
   return {
     date: selectedDate,
     doneCount,
-    plannedCount,
-    realFocusMin,
     vsGuessMin,
+    guessedMin,
+    honestMin,
   };
 }

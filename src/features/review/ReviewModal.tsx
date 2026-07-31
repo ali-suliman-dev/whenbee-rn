@@ -1,10 +1,10 @@
 import { useEffect } from 'react';
-import { ScrollView } from 'react-native';
 import Animated, { FadeInDown, useReducedMotion } from 'react-native-reanimated';
 import { router } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTranslation } from 'react-i18next';
 import { Screen } from '@/src/components/Screen';
+import { SheetScrollView } from '@/src/components/SheetScrollView';
 import { SheetGrabber } from '@/src/components/SheetGrabber';
 import { AppButton } from '@/src/components/AppButton';
 import { useTheme } from '@/src/theme/useTheme';
@@ -92,15 +92,15 @@ export function ReviewModal({ source = 'card' }: { source?: ReviewSource }) {
 
   if (!summary) {
     return (
-      <Screen edges={['left', 'right']}>
+      <Screen edges={['left', 'right']} horizontalPadding={false}>
         <SheetGrabber />
       </Screen>
     );
   }
 
   return (
-    <Screen edges={['left', 'right']}>
-      <ScrollView
+    <Screen edges={['left', 'right']} horizontalPadding={false}>
+      <SheetScrollView
         contentContainerStyle={{
           gap: t.space[4],
           paddingTop: t.space[2],
@@ -153,8 +153,8 @@ export function ReviewModal({ source = 'card' }: { source?: ReviewSource }) {
         {/* 8 · Closing reflection (always present). */}
         {Card(<ReflectionCard question={summary.reflection} />)}
 
-        <AppButton label={tt('done')} variant="amber" size="lg" fullWidth onPress={complete} />
-      </ScrollView>
+        <AppButton label="Done" variant="amber" size="lg" fullWidth onPress={complete} />
+      </SheetScrollView>
     </Screen>
   );
 }

@@ -1,5 +1,5 @@
+import { copyFor, isTrigger } from '../paywallCopy';
 import i18n from '@/src/i18n';
-import { copyFor, isTrigger, getStackRows } from '../paywallCopy';
 
 describe('paywallCopy', () => {
   const t = i18n.getFixedT('en', 'paywall');
@@ -11,27 +11,29 @@ describe('paywallCopy', () => {
     expect(isTrigger(undefined)).toBe(false);
   });
 
-  it('pre framing is trigger-specific (goals leads coach, calendar leads calendar)', () => {
+  it('pre framing is trigger-specific', () => {
     const goals = copyFor(t, 'goals', 'pre');
-    expect(goals.lead).toBe('coach');
-    expect(goals.proof).toBe('coach');
-    expect(goals.title.length).toBeGreaterThan(0);
+    expect(goals.title).toBe('You set the aim. Now get a coach.');
+    expect(goals.sub.length).toBeGreaterThan(0);
 
     const cal = copyFor(t, 'make_day_honest', 'pre');
-    expect(cal.lead).toBe('calendar');
-    expect(cal.proof).toBe('calendar');
+    expect(cal.title).toBe('Your real day, before you live it.');
   });
 
-  it('honest framing overrides the title to the earned line but keeps trigger lead/proof', () => {
+  it('honest framing overrides title and sub to the earned lines', () => {
     const c = copyFor(t, 'goals', 'honest');
-    expect(c.title).toBe(t('honest.title'));
-    expect(c.lead).toBe('coach');
+    expect(c.title).toBe('Your numbers are real now.');
+    expect(c.sub).toContain('You did the logging');
   });
 
-  it('every trigger resolves to an existing stack key', () => {
-    const keys = new Set(getStackRows(t).map((r) => r.key));
-    (['make_day_honest','settings_upgrade','steals_your_time','pro_reveal','pro_preview','goals','focus_window','hyperfocus_guard','pdf_export','routines','review_ritual','calendar_export','persistent_presence','day_capacity','honest_range'] as const)
-      .forEach((tr) => expect(keys.has(copyFor(t, tr, 'pre').lead)).toBe(true));
+  it('every trigger resolves to non-empty copy', () => {
+    (
+      ['make_day_honest','settings_upgrade','steals_your_time','pro_reveal','pro_preview','goals','focus_window','hyperfocus_guard','pdf_export','routines','review_ritual','calendar_export','persistent_presence','day_capacity','honest_range'] as const
+    ).forEach((tr) => {
+      const c = copyFor(t, tr, 'pre');
+      expect(c.title.length).toBeGreaterThan(0);
+      expect(c.sub.length).toBeGreaterThan(0);
+    });
   });
 
   it('eyebrow is the constant Pro label', () => {

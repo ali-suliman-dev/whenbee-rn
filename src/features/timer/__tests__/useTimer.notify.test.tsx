@@ -23,6 +23,7 @@ import { useRewardStore } from '@/src/stores/rewardStore';
 import { useSettingsStore } from '@/src/stores/settingsStore';
 import { useEntitlement } from '@/src/features/paywall/useEntitlement';
 import type { LogResult } from '@/src/stores/calibrationStore';
+import { kv } from '@/src/lib/kv';
 
 // ── router + route params ─────────────────────────────────────────────────────
 
@@ -122,6 +123,11 @@ function resetAll(): void {
   mockGuardrailThresholdMin = null; // guard not armed by default
   presence.available = false;
   presence.active = false;
+
+  // The mocked KV store (jest.setup.js) is a module-level Map that survives
+  // across tests in this file — a persisted session from a prior test's start()
+  // would otherwise leak into the next test's TimerGate hydration (resumeFromKv).
+  kv.delete('whenbee.activeTimer');
 
   useTimerStore.setState({
     taskLabel: null,
@@ -245,5 +251,44 @@ describe('useTimer notification scheduling', () => {
     expect(mockScheduleGuardCheckIn).toHaveBeenCalledTimes(0);
     // Honest banner should still fire (guard suppression is independent).
     expect(mockScheduleTimerDone).toHaveBeenCalledTimes(1);
+  });
+
+  /**
+   * Case 4: a FREE user (not Pro) still gets the gentle forgot-to-stop nudge,
+   * armed off the `forgotStepIn` preset rather than the Pro `hyperfocusGuard`.
+   * 'balanced' factor is 1.5x, so a 60-min honest anchor arms at 90 min —
+   * comfortably clear of the honest-reached collision window.
+   */
+  it('arms the free forgot-to-stop nudge for a non-Pro user at the forgotStepIn threshold', async () => {
+    presence.available = false;
+    presence.active = false;
+
+    mockParams = {
+      taskId: 'task-notify-free',
+      label: 'Write test',
+      category: 'work',
+      estimateMin: '60',
+      guessMin: '40',
+      suggestedHonestMin: '60',
+    };
+
+    useSettingsStore.setState({
+      remindersEnabled: true,
+      honestReachedEnabled: true,
+      hyperfocusGuard: 'off',
+      forgotStepIn: 'balanced',
+    });
+
+    // Not Pro — the Pro guardrail path must not be the one that arms.
+    useEntitlement.setState({ isPro: false });
+
+    render(<Timer />);
+    await flushMicrotasks();
+
+    // The free nudge is armed and scheduled at the forgotStepIn threshold (90 min).
+    expect(mockScheduleGuardCheckIn).toHaveBeenCalledTimes(1);
+    expect(mockScheduleGuardCheckIn).toHaveBeenCalledWith(
+      expect.objectContaining({ thresholdMin: 90 }),
+    );
   });
 });

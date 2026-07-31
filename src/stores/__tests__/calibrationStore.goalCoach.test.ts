@@ -62,35 +62,110 @@ describe('loadGoalCoach', () => {
     expect(await useCalibrationStore.getState().loadGoalCoach('cleaning')).toBeNull();
   });
 
-  it('returns the target band + the worst time-of-day lever for an active goal', async () => {
-    const db = freshDb();
-    seedStat('cleaning', 70, 8); // band 30
-    useCalibrationStore.getState().setGoal('cleaning', 25); // target acc 75, not met (70 < 75)
+  it('returns null once live sharpness meets the target (reconciled met)', async () => {
+    freshDb();
+    seedStat('cleaning', 70, 8);
+    useCalibrationStore.getState().setGoal('cleaning', 25); // target accuracy 75
+    seedStat('cleaning', 80, 9); // live sharpness now beats 75 → loadGoal latches met
+    expect(await useCalibrationStore.getState().loadGoalCoach('cleaning')).toBeNull();
+  });
 
-    // Mornings miss wide (ratio 2 → acc 50); evenings are tight (ratio 1 → acc 100).
+  it('maps goal fields: bands from accuracy, forward-only progress', async () => {
+    freshDb();
+    seedStat('cleaning', 70, 8); // baseline accuracy 70
+    useCalibrationStore.getState().setGoal('cleaning', 25); // target accuracy 75
+    seedStat('cleaning', 72, 9); // best reconciles to 72 → progress (72−70)/(75−70) = 0.4
+
+    const coach = await useCalibrationStore.getState().loadGoalCoach('cleaning');
+    expect(coach).not.toBeNull();
+    expect(coach!.targetBand).toBe(25);
+    expect(coach!.bestBand).toBe(28); // 100 − 72
+    expect(coach!.progress).toBeCloseTo(0.4);
+  });
+
+  it('counts inside-band logs over the newest ≤7 completed logs', async () => {
+    const db = freshDb();
+    seedStat('cleaning', 70, 8);
+    useCalibrationStore.getState().setGoal('cleaning', 25); // inside ⇔ error ≤ 25%
+
+    // 4 wide (ratio 2 → error 50%, outside), older; then 4 tight (ratio 1 → 0%, inside), newer.
+    for (let i = 0; i < 4; i++) {
+      await db.insertTaskEvent(event({ estimateMin: 15, actualMin: 30, createdAt: 2_000_000 + i }));
+    }
+    for (let i = 0; i < 4; i++) {
+      await db.insertTaskEvent(event({ estimateMin: 15, actualMin: 15, createdAt: 3_000_000 + i }));
+    }
+
+    const coach = await useCalibrationStore.getState().loadGoalCoach('cleaning');
+    // Window = newest 7 = 4 tight + 3 wide.
+    expect(coach!.windowCount).toBe(7);
+    expect(coach!.insideCount).toBe(4);
+  });
+
+  it('window shrinks to the available completed logs', async () => {
+    const db = freshDb();
+    seedStat('cleaning', 70, 8);
+    useCalibrationStore.getState().setGoal('cleaning', 25);
+    await db.insertTaskEvent(event({ estimateMin: 20, actualMin: 21, createdAt: 2_000_000 })); // ~5% in
+    await db.insertTaskEvent(event({ estimateMin: 15, actualMin: 30, createdAt: 2_000_001 })); // 50% out
+    await db.insertTaskEvent(event({ estimateMin: 15, actualMin: 15, createdAt: 2_000_002 })); // 0% in
+
+    const coach = await useCalibrationStore.getState().loadGoalCoach('cleaning');
+    expect(coach!.windowCount).toBe(3);
+    expect(coach!.insideCount).toBe(2);
+  });
+
+  it('windowCount 0 with a goal but no completed logs', async () => {
+    freshDb();
+    seedStat('cleaning', 70, 8);
+    useCalibrationStore.getState().setGoal('cleaning', 25);
+    const coach = await useCalibrationStore.getState().loadGoalCoach('cleaning');
+    expect(coach!.windowCount).toBe(0);
+    expect(coach!.insideCount).toBe(0);
+    expect(coach!.lever).toBeNull();
+  });
+
+  it('maps the lever to best/worst values with bands on the goal scale', async () => {
+    const db = freshDb();
+    seedStat('cleaning', 70, 8);
+    useCalibrationStore.getState().setGoal('cleaning', 25);
+    // Mornings ratio 2 → accuracy 50; evenings ratio 1 → accuracy 100. Gap 50 ≥ 12, buckets 4 ≥ 4.
     for (let i = 0; i < 4; i++) {
       await db.insertTaskEvent(event({ estimateMin: 15, actualMin: 30, createdAt: morning(i) }));
       await db.insertTaskEvent(event({ estimateMin: 15, actualMin: 15, createdAt: evening(i) }));
     }
 
     const coach = await useCalibrationStore.getState().loadGoalCoach('cleaning');
-    expect(coach).not.toBeNull();
-    expect(coach!.targetBand).toBe(25);
-    expect(coach!.worstValue).toBe('mornings');
+    expect(coach!.lever).toEqual({
+      bestValue: 'evenings',
+      worstValue: 'mornings',
+      bestBand: 0, // 100 − 100
+      worstBand: 50, // 100 − 50
+    });
   });
 
-  it('returns null worstValue when no time pattern clears the gate', async () => {
+  it('lever is null when no time pattern clears the gate', async () => {
     const db = freshDb();
     seedStat('cleaning', 70, 8);
     useCalibrationStore.getState().setGoal('cleaning', 25);
-    // All same accuracy → no gap → null lever, but the goal target still returns.
     for (let i = 0; i < 4; i++) {
       await db.insertTaskEvent(event({ estimateMin: 15, actualMin: 30, createdAt: morning(i) }));
       await db.insertTaskEvent(event({ estimateMin: 15, actualMin: 30, createdAt: evening(i) }));
     }
     const coach = await useCalibrationStore.getState().loadGoalCoach('cleaning');
-    expect(coach!.targetBand).toBe(25);
-    expect(coach!.worstValue).toBeNull();
+    expect(coach!.lever).toBeNull();
+  });
+
+  it('is deterministic for a fixed category — guess churn cannot exist in the API', async () => {
+    // The spec's §4 invariant: the coach depends only on categoryId. The API has no
+    // guess parameter (type-level guarantee); this documents value-determinism too.
+    const db = freshDb();
+    seedStat('cleaning', 70, 8);
+    useCalibrationStore.getState().setGoal('cleaning', 25);
+    await db.insertTaskEvent(event({ estimateMin: 15, actualMin: 15, createdAt: 2_000_000 }));
+    const a = await useCalibrationStore.getState().loadGoalCoach('cleaning');
+    const b = await useCalibrationStore.getState().loadGoalCoach('cleaning');
+    expect(b).toEqual(a);
   });
 });
 
