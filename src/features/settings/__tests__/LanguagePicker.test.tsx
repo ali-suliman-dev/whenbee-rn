@@ -68,3 +68,27 @@ describe('LanguagePicker', () => {
     expect(mockChangeLanguage).toHaveBeenCalledWith('en');
   });
 });
+
+// ──────────────────────────────────────────────────────────────────────────────
+// Wiring guard.
+//
+// Every test above renders <LanguagePicker /> directly, so they all stayed green
+// while a merge silently dropped the component from the Settings screen — the
+// control existed, worked, and was unreachable. Assert the screen actually
+// mounts it. A source check rather than a full screen render: settings.tsx pulls
+// in the whole store/provider tree, and this only needs to answer "is it wired".
+// ──────────────────────────────────────────────────────────────────────────────
+describe('Settings wiring', () => {
+  it('renders the language picker on the Settings screen', () => {
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    const { readFileSync } = require('node:fs');
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    const { join } = require('node:path');
+    const settings = readFileSync(
+      join(__dirname, '..', '..', '..', 'app', 'settings.tsx'),
+      'utf8',
+    );
+    expect(settings).toContain('<LanguagePicker />');
+    expect(settings).toMatch(/import \{ LanguagePicker \} from/);
+  });
+});

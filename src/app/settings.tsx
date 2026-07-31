@@ -38,6 +38,7 @@ import { ProGate } from '@/src/features/paywall/ProGate';
 import { PresenceRingTeaser } from '@/src/components/PresenceRingTeaser';
 import { GuardrailSettingRow } from '@/src/features/settings/GuardrailSettingRow';
 import { ForgotStepInRow } from '@/src/features/settings/ForgotStepInRow';
+import { LanguagePicker } from '@/src/features/settings/LanguagePicker';
 import { GuardrailLockedRow } from '@/src/features/settings/GuardrailLockedRow';
 import { CalendarSettingsSection } from '@/src/features/settings/CalendarSettingsSection';
 import { seedDemoData } from '@/src/features/dev/seedDemoData';
@@ -309,6 +310,10 @@ export default function Settings() {
               />
             ))}
           </View>
+        </View>
+
+        <View style={{ gap: t.space[3] }}>
+          <LanguagePicker />
         </View>
 
         <View style={{ gap: t.space[3] }}>
