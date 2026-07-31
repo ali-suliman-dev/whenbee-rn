@@ -93,7 +93,7 @@
     "submit:prod": "eas submit --profile production --platform android --latest",
     "submit:closed": "eas submit --profile closed --platform android --latest",
     "release:android": "eas build --profile production --platform android --submit",
-    "release:closed": "eas build --profile production --platform android --submit --submit-profile closed",
+    "release:closed": "eas build --profile production --platform android --auto-submit-with-profile closed",
     "web": "expo start --web",
     "lint": "eslint . --max-warnings=0",
     "format": "prettier --write .",
