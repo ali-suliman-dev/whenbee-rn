@@ -163,7 +163,9 @@ export function StepEditorSheet({
       >
         <View style={sheet}>
           <SheetGrabber />
-        <AppText style={titleStyle}>{mode === 'add' ? 'Add a step' : 'Edit step'}</AppText>
+        <AppText style={titleStyle}>
+          {mode === 'add' ? tr('stepSheet.titleAdd') : tr('stepSheet.titleEdit')}
+        </AppText>
         <TaskTitleField
           variant="boxed"
           value={label}

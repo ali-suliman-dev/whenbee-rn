@@ -22,6 +22,8 @@
     "body": "När jag släpper något du bett om landar det här."
   },
   "whatsNew": {
-    "title": "Nyheter"
+    "title": "Nyheter",
+    "shipped": "Släppt",
+    "planned": "Planerat"
   }
 }

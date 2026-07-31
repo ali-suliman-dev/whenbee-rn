@@ -165,7 +165,9 @@
     "terms": "Terms",
     "privacy": "Privacy",
     "privacyA11y": "Privacy Policy",
-    "termsA11y": "Terms of Use"
+    "termsA11y": "Terms of Use",
+    "lifetimeNote": "One payment. No renewals, ever.",
+    "subNote": "No payment now. Cancel anytime."
   },
   "proWelcome": {
     "sub": "Every honest number you earned now works everywhere you plan.",

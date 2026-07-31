@@ -23,12 +23,14 @@
     "title": "Ny uppgift",
     "subtitle": "Vad jobbar du med?",
     "editTitle": "Redigera uppgift",
-    "editSubtitle": "Justera detaljerna."
+    "editSubtitle": "Justera detaljerna.",
+    "scheduledFor": "Schemalagd {{day}}"
   },
   "taskField": {
     "label": "UPPGIFT",
     "placeholder": "t.ex. Svara på det där mejlet",
-    "a11y": "Uppgiftens titel"
+    "a11y": "Uppgiftens titel",
+    "promptLabel": "Vad jobbar du med?"
   },
   "categoryField": {
     "label": "KATEGORI",

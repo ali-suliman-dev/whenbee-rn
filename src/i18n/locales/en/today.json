@@ -257,10 +257,14 @@
     "overrunSentence": "Past here you run over. Push it to <clock>{{clock}}</clock>, or move a task to tomorrow.",
     "reorderHint": "Long-press and drag to reorder this task",
     "doneBy": "Done by {{clock}}",
-    "setDoneBy": "Set done-by time"
+    "setDoneBy": "Set done-by time",
+    "starting": "Starting",
+    "startBy": "Start by"
   },
   "planStrip": {
-    "doneBy": "done by {{clock}}"
+    "doneBy": "done by {{clock}}",
+    "nudgeOn": "nudge on",
+    "nudgeOff": "nudge off"
   },
   "planReminder": {
     "on": "Nudge me at {{clock}}",

@@ -106,4 +106,31 @@ describe('copy props', () => {
     }
     expect(hits).toEqual([]);
   });
+
+  // The lint rule reads JSX TEXT and the check above reads JSX ATTRIBUTES.
+  // Neither sees a string literal inside a JSX EXPRESSION:
+  //
+  //   <Text>{isMonth ? 'YOUR HONEST MONTH' : 'YOUR HONEST WEEK'}</Text>
+  //
+  // which is how a hardcoded eyebrow survived a full extraction pass. A ternary
+  // picking between two sentences is copy; make it a key with a variant instead.
+  it('renders no hardcoded user-facing string from a JSX ternary', () => {
+    // `{ … ? '…' : '…' }` where at least one branch reads like a sentence.
+    const ternary = /\{[^{}]*\?[^{}]*?(['"])([^'"]{2,})\1[^{}]*:[^{}]*?(['"])([^'"]{2,})\3[^{}]*\}/g;
+    const hits: string[] = [];
+    for (const file of listSourceFiles()) {
+      if (!file.endsWith('.tsx')) continue;
+      const source = readFileSync(file, 'utf8');
+      source.split('\n').forEach((line, i) => {
+        const trimmed = line.trimStart();
+        if (trimmed.startsWith('//') || trimmed.startsWith('*') || trimmed.startsWith('/*')) return;
+        for (const m of line.matchAll(ternary)) {
+          const [, , left, , right] = m as unknown as [string, string, string, string, string];
+          if (!looksLikeCopy(left) && !looksLikeCopy(right)) continue;
+          hits.push(`${file.split('/Whenbee/')[1]}:${i + 1} — '${left}' / '${right}'`);
+        }
+      });
+    }
+    expect(hits).toEqual([]);
+  });
 });

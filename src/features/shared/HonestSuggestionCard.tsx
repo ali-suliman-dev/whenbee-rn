@@ -162,7 +162,11 @@ export function HonestSuggestionCard({
   return (
     <View style={card} accessibilityLabel={a11yLabel}>
       <View style={topRow}>
-        <AppText style={eyebrow}>{preEstimate ? 'A starting hunch' : 'Usually, for you'}</AppText>
+        <AppText style={eyebrow}>
+          {preEstimate
+            ? tr('honestSuggestionCard.eyebrowPre')
+            : tr('honestSuggestionCard.eyebrowPost')}
+        </AppText>
         <AppText style={guessNote}>{tr('honestSuggestionCard.youGuessed', { duration: formatDuration(guessMinutes, translate) })}</AppText>
       </View>
 

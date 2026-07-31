@@ -47,7 +47,7 @@ export function PaywallFooter({
   return (
     <View style={wrap}>
       <Text style={reassure}>
-        {isLifetime ? 'One payment. No renewals, ever.' : 'No payment now. Cancel anytime.'}
+        {isLifetime ? tr('footer.lifetimeNote') : tr('footer.subNote')}
       </Text>
       {/* The free-tier promise used to live here. It moved into the header sub
           (paywallCopy.FREE_PROMISE) — the footer is now purely transactional. */}

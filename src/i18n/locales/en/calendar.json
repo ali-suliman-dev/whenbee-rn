@@ -34,6 +34,8 @@
     "busyFallback": "Busy",
     "a11y": "Calendar, {{count}} events. {{action}}",
     "collapseAction": "Tap to collapse.",
-    "expandAction": "Tap to expand."
+    "expandAction": "Tap to expand.",
+    "collapseA11y": "Collapse calendar",
+    "expandA11y": "Expand calendar"
   }
 }

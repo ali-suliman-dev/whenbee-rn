@@ -78,6 +78,7 @@ export default function WhatsNew() {
 
 function ChangelogCard({ entry }: { entry: ChangelogEntry }) {
   const t = useTheme();
+  const { t: tr } = useTranslation('feedback');
   const shipped = entry.status === 'shipped';
   return (
     <View
@@ -99,7 +100,7 @@ function ChangelogCard({ entry }: { entry: ChangelogEntry }) {
           }}
         >
           <AppText style={{ ...(type.eyebrowSm as TextStyle), color: shipped ? t.colors.amberText : t.colors.primary }}>
-            {shipped ? 'Shipped' : 'Planned'}
+            {shipped ? tr('whatsNew.shipped') : tr('whatsNew.planned')}
           </AppText>
         </View>
       </View>

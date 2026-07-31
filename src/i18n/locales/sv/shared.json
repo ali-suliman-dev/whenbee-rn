@@ -50,7 +50,9 @@
     "footerPre": "Du behöver inte lägga på marginal. Intervallet gör det åt dig. Det skärps när du loggar.",
     "footerPost": "Inget mål, bara vad som brukar hända. Fortsätt gissa med magkänslan.",
     "spokenRange": "{{low}} till {{high}} minuter",
-    "spokenPoint": "{{count}} minuter"
+    "spokenPoint": "{{count}} minuter",
+    "eyebrowPre": "En första känsla",
+    "eyebrowPost": "Oftast, för dig"
   },
   "a11y": {
     "addTask": "Lägg till en uppgift",

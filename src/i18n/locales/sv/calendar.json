@@ -34,6 +34,8 @@
     "busyFallback": "Upptagen",
     "a11y": "Kalender, {{count}} händelser. {{action}}",
     "collapseAction": "Tryck för att fälla ihop.",
-    "expandAction": "Tryck för att expandera."
+    "expandAction": "Tryck för att expandera.",
+    "collapseA11y": "Fäll ihop kalendern",
+    "expandA11y": "Expandera kalendern"
   }
 }

@@ -23,12 +23,14 @@
     "title": "New task",
     "subtitle": "What are you working on?",
     "editTitle": "Edit task",
-    "editSubtitle": "Adjust the details."
+    "editSubtitle": "Adjust the details.",
+    "scheduledFor": "Scheduled for {{day}}"
   },
   "taskField": {
     "label": "TASK",
     "placeholder": "e.g. Reply to that email",
-    "a11y": "Task title"
+    "a11y": "Task title",
+    "promptLabel": "What are you working on?"
   },
   "categoryField": {
     "label": "CATEGORY",

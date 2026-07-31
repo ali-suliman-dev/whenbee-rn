@@ -105,7 +105,9 @@ export function PlanStrip({
           size={t.iconSize.xs}
           color={reminderOn ? t.colors.primary : t.colors.inkSoft}
         />
-        <Text style={softText}>{reminderOn ? 'nudge on' : 'nudge off'}</Text>
+        <Text style={softText}>
+          {reminderOn ? tr('planStrip.nudgeOn') : tr('planStrip.nudgeOff')}
+        </Text>
         {doneByClock ? (
           <>
             <Text style={dot}>·</Text>

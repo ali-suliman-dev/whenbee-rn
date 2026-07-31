@@ -50,7 +50,9 @@
     "footerPre": "No need to pad your guess. This range does it for you. Sharpens as you log.",
     "footerPost": "Not a target, just what usually happens. Keep guessing with your gut.",
     "spokenRange": "{{low}} to {{high}} minutes",
-    "spokenPoint": "{{count}} minutes"
+    "spokenPoint": "{{count}} minutes",
+    "eyebrowPre": "A starting hunch",
+    "eyebrowPost": "Usually, for you"
   },
   "a11y": {
     "addTask": "Add a task",

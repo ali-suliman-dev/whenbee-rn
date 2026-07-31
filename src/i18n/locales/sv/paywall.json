@@ -165,7 +165,9 @@
     "terms": "Villkor",
     "privacy": "Integritet",
     "privacyA11y": "Integritetspolicy",
-    "termsA11y": "Användarvillkor"
+    "termsA11y": "Användarvillkor",
+    "lifetimeNote": "En betalning. Inga förnyelser, någonsin.",
+    "subNote": "Ingen betalning nu. Avsluta när du vill."
   },
   "proWelcome": {
     "sub": "Varje ärligt tal du förtjänat funkar nu överallt där du planerar.",

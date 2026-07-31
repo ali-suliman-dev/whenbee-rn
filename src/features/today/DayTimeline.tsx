@@ -633,6 +633,7 @@ export interface DayTimelineProps {
  */
 export function DayTimeline({ hideHeader = false }: DayTimelineProps = {}) {
   const t = useTheme();
+  const { t: tr } = useTranslation('today');
   const reducedMotion = useReducedMotion();
 
   // ── Pro guard (defence-in-depth — should be unreachable for free users) ──
@@ -855,7 +856,7 @@ export function DayTimeline({ hideHeader = false }: DayTimelineProps = {}) {
         <View style={headerStyle}>
           {'startBy' in plan.verdict && plan.verdict.startBy ? (
             <AppText style={startByStyle}>
-              {planAnchor === 'start' ? 'Starting' : 'Start by'}{' '}
+              {planAnchor === 'start' ? tr('timeline.starting') : tr('timeline.startBy')}{' '}
               {formatClock(plan.verdict.startBy)}
             </AppText>
           ) : (

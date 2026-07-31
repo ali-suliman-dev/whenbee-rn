@@ -207,7 +207,7 @@ export function CalendarOverlaySection({
           <Pressable
             onPress={toggle}
             accessibilityRole="button"
-            accessibilityLabel={expanded ? 'Collapse calendar' : 'Expand calendar'}
+            accessibilityLabel={expanded ? tr('overlay.collapseA11y') : tr('overlay.expandA11y')}
             hitSlop={glyphSlop}
           >
             <View style={glyphBox}>

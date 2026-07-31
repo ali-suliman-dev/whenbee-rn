@@ -53,7 +53,7 @@ export function ReviewRitualLocked({ period }: { period: ReviewPeriod }) {
     <Card tone="flat" style={{ gap: t.space[3] }}>
       <View style={eyebrowRow}>
         <Ionicons name="mail-unread-outline" size={t.iconSize.sm} color={t.colors.accent} />
-        <Text style={eyebrow}>{isMonth ? 'YOUR HONEST MONTH' : 'YOUR HONEST WEEK'}</Text>
+        <Text style={eyebrow}>{tt(`eyebrow.${periodKey}`)}</Text>
       </View>
       <Text style={label}>{period.label}</Text>
       <View style={previewWrap}>

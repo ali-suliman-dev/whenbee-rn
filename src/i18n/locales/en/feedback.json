@@ -22,6 +22,8 @@
     "body": "When I ship something you asked for, it lands right here."
   },
   "whatsNew": {
-    "title": "What's new"
+    "title": "What's new",
+    "shipped": "Shipped",
+    "planned": "Planned"
   }
 }

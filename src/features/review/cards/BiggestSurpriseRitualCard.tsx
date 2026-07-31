@@ -276,7 +276,9 @@ export function BiggestSurpriseRitualCard({ surprise, band, loggedCount }: Props
           {' 80% of the time — it came in at '}
           <Text style={styles.descAmber}>{surprise.actualMin}m</Text>
           {`, past your ${fmtHm(surprise.estimateMin)} guess`}
-          {insideRange ? ' but inside your range.' : ', beyond your usual range.'}
+          {insideRange
+            ? tt('biggestSurprise.descInsideSuffix')
+            : tt('biggestSurprise.descOutsideSuffix')}
         </Text>
 
         <View style={styles.bottomRow}>

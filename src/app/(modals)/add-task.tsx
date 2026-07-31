@@ -94,6 +94,10 @@ export default function AddTask() {
   // Day options for the "when" picker: Today, Tomorrow, next 5 weekdays, then shelf.
   // Rendered via the cross-platform <ActionSheet> — ActionSheetIOS is iOS-only and
   // crashes on Android.
+  const headerTargetLabel = a.isEditing
+    ? tr('header.scheduledFor', { day: targetDayLabel(targetDate, today) })
+    : tr('header.addingTo', { day: targetDayLabel(targetDate, today) });
+
   const dayPickerItems: ActionSheetItem[] = [
     ...Array.from({ length: 7 }, (_, i) => {
       const key = addDays(today, i);
@@ -249,8 +253,11 @@ export default function AddTask() {
         <View style={{ paddingTop: t.space[4], paddingBottom: t.space[3], gap: t.space[2] }}>
           <SheetGrabber />
           <View style={targetRow}>
-            <Text style={targetLabel} accessibilityLabel={`${a.isEditing ? 'Scheduled for' : 'Adding to'} ${targetDayLabel(targetDate, today)}`}>
-              {`${a.isEditing ? 'Scheduled for' : 'Adding to'} ${targetDayLabel(targetDate, today)}`}
+            <Text
+              style={targetLabel}
+              accessibilityLabel={headerTargetLabel}
+            >
+              {headerTargetLabel}
             </Text>
             <Pressable
               onPress={() => setDatePickerVisible(true)}
@@ -289,7 +296,7 @@ export default function AddTask() {
         >
           <View style={{ gap: t.space[2] }}>
             <Text style={a.isEditing ? fieldLabel : promptLabel}>
-              {a.isEditing ? 'TASK' : 'What are you working on?'}
+              {a.isEditing ? tr('taskField.label') : tr('taskField.promptLabel')}
             </Text>
             <TaskTitleField
               variant="boxed"

@@ -257,10 +257,14 @@
     "overrunSentence": "Efter det här drar du över. Flytta fram till <clock>{{clock}}</clock>, eller skjut en uppgift till imorgon.",
     "reorderHint": "Håll in och dra för att flytta uppgiften",
     "doneBy": "Klar {{clock}}",
-    "setDoneBy": "Ange klar-senast-tid"
+    "setDoneBy": "Ange klar-senast-tid",
+    "starting": "Startar",
+    "startBy": "Börja senast"
   },
   "planStrip": {
-    "doneBy": "klar {{clock}}"
+    "doneBy": "klar {{clock}}",
+    "nudgeOn": "knuff på",
+    "nudgeOff": "knuff av"
   },
   "planReminder": {
     "on": "Knuffa mig {{clock}}",
