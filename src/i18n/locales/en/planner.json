@@ -27,6 +27,19 @@
   },
   "detail": {
     "eyebrow": "WHEN YOU'RE SHARP",
-    "footer": "Whenbee plans your day around this stretch."
+    "footer": "Whenbee plans your day around this stretch.",
+    "checkAgainstTimers": "I'll check that against your timers.",
+    "editWindowA11y": "Edit focus window",
+    "editWindow": "Edit window"
+  },
+  "planSheet": {
+    "heading": "Today's plan",
+    "clear": "Clear",
+    "finish": "finish",
+    "nudge": "Nudge me to start",
+    "clearA11y": "Clear plan",
+    "startAt": "Start at",
+    "finishBy": "Finish by",
+    "now": "Now"
   }
 }

@@ -17,7 +17,8 @@ import { Card } from '@/src/components/Card';
 import { useTheme } from '@/src/theme/useTheme';
 import { type } from '@/src/theme/typography';
 import { GapLine } from './GapLine';
-import { formatTimerClock, fmtHm } from '@/src/lib/time';
+import { formatTimerClock } from '@/src/lib/time';
+import { formatDuration } from '@/src/i18n/formatDuration';
 import { useTimerStore } from '@/src/stores/timerStore';
 
 // ──────────────────────────────────────────────────────────────────────────────
@@ -40,6 +41,7 @@ const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 export function RunningFocusCard({ categoryName }: RunningFocusCardProps) {
   const t = useTheme();
   const { t: tr } = useTranslation('today');
+  const { t: translate } = useTranslation();
   const reduced = useReducedMotion();
 
   const isRunning = useTimerStore((s) => s.isRunning);
@@ -191,8 +193,8 @@ export function RunningFocusCard({ categoryName }: RunningFocusCardProps) {
             ~0" pair is meaningless noise there, so drop it. */}
         {!isQuickStart ? (
           <View style={labelsRow}>
-            <Text style={planLabel}>plan ~{fmtHm(honestMin)}</Text>
-            <Text style={guessLabel}>guessed {fmtHm(guessMin)}</Text>
+            <Text style={planLabel}>{tr('runningFocusCard.plan', { duration: formatDuration(honestMin, translate) })}</Text>
+            <Text style={guessLabel}>{tr('runningFocusCard.guessed', { duration: formatDuration(guessMin, translate) })}</Text>
           </View>
         ) : null}
       </Card>

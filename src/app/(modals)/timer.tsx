@@ -423,10 +423,10 @@ function TimerScreen({ session }: { session: TimerSessionParams }) {
           <AppText style={taskName}>{label}</AppText>
 
           <View style={ledger}>
-            <InfoRow first label="Your guess">
+            <InfoRow first label={tr('ledger.yourGuess')}>
               <LedgerValue>{guessRounded}m</LedgerValue>
             </InfoRow>
-            <InfoRow label="Honest">
+            <InfoRow label={tr('ledger.honest')}>
               <LedgerValue amber>~{honestRounded}m</LedgerValue>
             </InfoRow>
             <FinishTime

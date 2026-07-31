@@ -1,7 +1,7 @@
 import 'intl-pluralrules'; // Hermes lacks Intl.PluralRules; polyfill before i18next init.
 import i18n from 'i18next';
 import { initReactI18next } from 'react-i18next';
-import { resources, FALLBACK_LANG, SUPPORTED_LANGS } from './resources';
+import { resources, FALLBACK_LANG, SUPPORTED_LANGS, NAMESPACES } from './resources';
 import { detectLanguage } from './detectLanguage';
 
 export const initI18n = async (): Promise<void> => {
@@ -15,7 +15,7 @@ export const initI18n = async (): Promise<void> => {
       fallbackLng: FALLBACK_LANG,
       supportedLngs: SUPPORTED_LANGS as unknown as string[],
       defaultNS: 'common',
-      ns: ['common', 'onboarding', 'paywall', 'settings', 'today', 'addTask', 'timer', 'notifications', 'patterns', 'voice', 'categoryDetail', 'review', 'routines', 'whenbee', 'planner', 'reward', 'calendar', 'shared', 'legal', 'categories', 'report'], // extend as namespaces are added.
+      ns: NAMESPACES, // derived from the en bundle — a new namespace needs no edit here.
       interpolation: { escapeValue: false }, // RN has no XSS; i18next default escapes.
       returnNull: false,
     });

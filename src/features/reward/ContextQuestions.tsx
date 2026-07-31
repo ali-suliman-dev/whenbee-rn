@@ -1,4 +1,5 @@
 import { AppText } from '@/src/components/AppText';
+import { useTranslation } from 'react-i18next';
 import { analytics } from '@/src/services/analytics';
 import { haptics } from '@/src/lib/haptics';
 import { useCalibrationStore } from '@/src/stores/calibrationStore';
@@ -97,6 +98,7 @@ export function ContextQuestions({
   reasonDirection: RunDirection | null;
 }) {
   const t = useTheme();
+  const { t: tr } = useTranslation('reward');
   const reducedMotion = useReducedMotion();
   const setReason = useCalibrationStore((s) => s.setReason);
   const setContext = useCalibrationStore((s) => s.setContext);
@@ -234,11 +236,11 @@ export function ContextQuestions({
             {pendingValue === null ? (
               <Pressable
                 accessibilityRole="button"
-                accessibilityLabel="Skip"
+                accessibilityLabel={tr('reason.skip')}
                 hitSlop={t.size.hitSlop}
                 onPress={() => handleSkip(activeQuestion)}
               >
-                <Text style={skipText}>Skip</Text>
+                <Text style={skipText}>{tr('reason.skip')}</Text>
               </Pressable>
             ) : null}
           </View>

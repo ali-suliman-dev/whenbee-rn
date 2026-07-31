@@ -7,7 +7,7 @@ import {
   focusRewardCaption,
   confidenceLabel,
   coarseHintCopy,
-  FOCUS_GATE_LABELS,
+  focusGateLabels,
 } from '../focusCopy';
 
 describe('whyNarrative', () => {
@@ -115,8 +115,8 @@ describe('focus copy (reveal-early)', () => {
   });
 
   it('has no peak gate label', () => {
-    expect(FOCUS_GATE_LABELS).toEqual({ sessions: 'Timed sessions', days: 'Different days' });
-    expect('peak' in FOCUS_GATE_LABELS).toBe(false);
+    expect(focusGateLabels()).toEqual({ sessions: 'Timed sessions', days: 'Different days' });
+    expect('peak' in focusGateLabels()).toBe(false);
   });
 
   it('labels each confidence tier without guilt', () => {
@@ -126,7 +126,7 @@ describe('focus copy (reveal-early)', () => {
   });
 
   it('names the coarse block in the forming hint', () => {
-    expect(coarseHintCopy('Mornings')).toBe(
+    expect(coarseHintCopy('mornings')).toBe(
       "Leaning toward mornings — keep timing and I'll sharpen it.",
     );
     expect(coarseHintCopy('')).toBe('');

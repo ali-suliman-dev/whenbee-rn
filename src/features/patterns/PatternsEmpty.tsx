@@ -36,10 +36,7 @@ export function PatternsEmpty({ archetypeShown = false }: { archetypeShown?: boo
   if (archetypeShown) {
     return (
       <View style={wrap}>
-        <Text style={body}>
-          Time a few tasks and this fills in with your sharpest category and the surprises worth
-          noticing.
-        </Text>
+        <Text style={body}>{tr('patternsEmpty.bodyAfterArchetype')}</Text>
       </View>
     );
   }

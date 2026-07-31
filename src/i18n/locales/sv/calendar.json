@@ -27,5 +27,13 @@
   "notPro": {
     "title": "Att fylla ut kalendern är en Pro-funktion",
     "cta": "Se vad Pro låser upp"
+  },
+  "overlay": {
+    "sectionLabel": "KALENDER · {{count}}",
+    "allDay": "Heldag · {{titles}}",
+    "busyFallback": "Upptagen",
+    "a11y": "Kalender, {{count}} händelser. {{action}}",
+    "collapseAction": "Tryck för att fälla ihop.",
+    "expandAction": "Tryck för att expandera."
   }
 }

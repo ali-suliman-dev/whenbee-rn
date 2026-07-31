@@ -115,6 +115,10 @@ interface RoutinesState {
 
   setDatabase: (db: Database) => void;
   loadRoutines: () => Promise<void>;
+  /** Re-issue every routine's start-by alert. Notification text is baked in at
+   *  schedule time, so a language change leaves already-queued alerts in the old
+   *  language until they are re-scheduled — this is what does that. */
+  rescheduleAllAlerts: () => Promise<void>;
 
   // ── Build draft ──────────────────────────────────────────────────────────────
   setName: (name: string) => void;
@@ -511,6 +515,16 @@ export const useRoutinesStore = create<RoutinesState>()(
         }
         endFinishTimeActivity();
         set({ activeRun: null });
+      },
+
+      rescheduleAllAlerts: async () => {
+        const db = await resolveDb(get, set);
+        const repo = makeRoutinesRepo(db);
+        for (const { routine, steps } of await repo.list()) {
+          const startByMin = await computeStartByMinuteOfDay(db, routine, steps);
+          if (startByMin !== null) await scheduleRoutineAlerts(routine, startByMin);
+          else await cancelRoutineAlerts(routine.id);
+        }
       },
 
       reset: () => set({ routines: [], stepMByKey: {}, draft: emptyDraft, activeRun: null }),

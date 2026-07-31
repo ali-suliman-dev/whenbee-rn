@@ -1,0 +1,27 @@
+{
+  "sheet": {
+    "title": "Tell me what to build",
+    "lead": "It's just me building Whenbee. Your note comes straight to me.",
+    "kindLabel": "What kind?",
+    "noteLabel": "Your note",
+    "notePlaceholder": "A rough idea, something that bugged you, or what's working…",
+    "send": "Send"
+  },
+  "kind": {
+    "idea": "Idea",
+    "problem": "Problem",
+    "love": "Love"
+  },
+  "sent": {
+    "title": "Got it. Thank you.",
+    "body": "That came straight to me. When it turns into something, you'll see it under What's new.",
+    "done": "Done"
+  },
+  "whatsNewEmpty": {
+    "title": "All quiet for now",
+    "body": "When I ship something you asked for, it lands right here."
+  },
+  "whatsNew": {
+    "title": "What's new"
+  }
+}

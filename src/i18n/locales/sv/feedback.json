@@ -1,0 +1,27 @@
+{
+  "sheet": {
+    "title": "Berätta vad jag ska bygga",
+    "lead": "Det är bara jag som bygger Whenbee. Din rad kommer direkt till mig.",
+    "kindLabel": "Vad gäller det?",
+    "noteLabel": "Din rad",
+    "notePlaceholder": "En lös idé, något som skavde, eller vad som funkar…",
+    "send": "Skicka"
+  },
+  "kind": {
+    "idea": "Idé",
+    "problem": "Problem",
+    "love": "Gillar"
+  },
+  "sent": {
+    "title": "Mottaget. Tack.",
+    "body": "Det kom direkt till mig. Blir det något av det ser du det under Nyheter.",
+    "done": "Klar"
+  },
+  "whatsNewEmpty": {
+    "title": "Lugnt just nu",
+    "body": "När jag släpper något du bett om landar det här."
+  },
+  "whatsNew": {
+    "title": "Nyheter"
+  }
+}

@@ -59,7 +59,7 @@
     "label": "Notifications",
     "reminders": {
       "title": "Reminders",
-      "note": "Pings for honest finish, start-by nudges, and more.",
+      "note": "Pings for honest finish and more.",
       "a11y": "Reminders"
     },
     "honestReached": {
@@ -158,7 +158,8 @@
     "note": "Your next task and its honest finish stay visible, even when Whenbee is closed.",
     "widgetHelpButton": "How to add the widget",
     "availableCaption": "Available on the App Store build.",
-    "ringOnCaption": "Ring is on. Your honest finish shows on the Lock Screen while the timer runs."
+    "ringOnCaption": "Ring is on. Your honest finish shows on the Lock Screen while the timer runs.",
+    "onNote": "Presence is on. Your honest finish shows on the Lock Screen while a timer runs."
   },
   "widgetHelpAlert": {
     "title": "How to add the widget",
@@ -196,7 +197,9 @@
     "seedDemo": {
       "title": "Seed demo data",
       "note": "Lay down ~2 months of logs across four categories so every Pro surface has something to show. Sim-only — resets the demo categories each run."
-    }
+    },
+    "landingHeadline": "Landing headline",
+    "paywallLayout": "Paywall feature layout"
   },
   "toasts": {
     "resetDone": "Reset done. Fresh slate.",
@@ -253,5 +256,23 @@
     "fallbackNote": "Switches the Today strip",
     "tabA11y": "{{label}} calendar style",
     "caption": "{{note}}. Switches the Today strip instantly."
+  },
+  "forgotStepIn": {
+    "title": "Forgot to stop",
+    "caption": "If a timer runs long while you’re away, Whenbee wraps it and asks when you finished.",
+    "options": {
+      "room": "Lots of room",
+      "balanced": "Balanced",
+      "early": "Step in early"
+    }
+  },
+  "sections": {
+    "feedback": "Feedback",
+    "sendFeedback": "Send feedback",
+    "whatsNewNote": "What you asked for, and what I shipped."
+  },
+  "legal": {
+    "termsTitle": "Terms of Use",
+    "termsNote": "The plain-language agreement for using Whenbee."
   }
 }

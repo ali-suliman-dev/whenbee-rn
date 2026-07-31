@@ -294,7 +294,7 @@ export function Paywall({ trigger, readiness = 'pre' }: { trigger?: string; read
         )}
 
         {isExpoGo ? (
-          <Text style={fineText}>Running in Expo Go — purchases are simulated.</Text>
+          <Text style={fineText}>{tr('plans.expoGoNotice')}</Text>
         ) : null}
       </SheetScrollView>
     </Screen>

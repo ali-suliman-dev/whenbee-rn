@@ -1,13 +1,12 @@
 import { useEffect, useRef } from 'react';
-import { StyleSheet, View, type TextStyle, type ViewStyle, Pressable } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
-import { router } from 'expo-router';
+import { StyleSheet, View, type TextStyle, type ViewStyle } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { AppText } from '@/src/components/AppText';
 import { useEntitlement } from '@/src/features/paywall/useEntitlement';
 import { useTheme } from '@/src/theme/useTheme';
 import { analytics } from '@/src/services/analytics';
 import { formatHonestMinutes } from '@/src/lib/time';
+import { formatDuration } from '@/src/i18n/formatDuration';
 import type { CalibrationConfidence, HonestRange } from '@/src/domain/types';
 
 // ──────────────────────────────────────────────────────────────────────────────
@@ -57,6 +56,7 @@ export function HonestSuggestionCard({
 }) {
   const t = useTheme();
   const { t: tr } = useTranslation('shared');
+  const { t: translate } = useTranslation();
   const isPro = useEntitlement((s) => s.isPro);
 
   // Pre-data everyone sees a soft range (never a precise target); post-data the
@@ -163,7 +163,7 @@ export function HonestSuggestionCard({
     <View style={card} accessibilityLabel={a11yLabel}>
       <View style={topRow}>
         <AppText style={eyebrow}>{preEstimate ? 'A starting hunch' : 'Usually, for you'}</AppText>
-        <AppText style={guessNote}>you guessed {guessMinutes}m</AppText>
+        <AppText style={guessNote}>{tr('honestSuggestionCard.youGuessed', { duration: formatDuration(guessMinutes, translate) })}</AppText>
       </View>
 
       <AppText style={sentence}>

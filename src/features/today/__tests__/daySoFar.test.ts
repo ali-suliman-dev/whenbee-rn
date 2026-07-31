@@ -1,4 +1,4 @@
-import { daySoFarVisible, countLine, gapMilestone } from '../daySoFar';
+import { daySoFarVisible, gapMilestone } from '../daySoFar';
 
 describe('daySoFarVisible', () => {
   // All 8 combinations of the 3 booleans (unfinishedCount and completedCount are
@@ -25,39 +25,17 @@ describe('daySoFarVisible', () => {
   });
 });
 
-describe('countLine', () => {
-  it('singular for exactly one log', () => {
-    expect(countLine(1)).toBe('One honest log in.');
-  });
-  it('pluralizes for more than one', () => {
-    expect(countLine(2)).toBe('2 honest logs in.');
-    expect(countLine(11)).toBe('11 honest logs in.');
-  });
-});
-
 describe('gapMilestone', () => {
-  it('frames an over-guess day as the gap Whenbee is learning (amber fact, no scold)', () => {
-    expect(gapMilestone(100, 130)).toEqual({
-      text: "+30m over your guess today — that gap is what Whenbee's learning.",
-      boldPrefix: '+30m over',
-    });
+  it('reports an over-guess day as an over gap (a fact, never a scold)', () => {
+    expect(gapMilestone(100, 130)).toEqual({ direction: 'over', gapMin: 30 });
   });
-  it('formats the over gap in h/m for longer overruns', () => {
-    expect(gapMilestone(60, 155)).toEqual({
-      text: "+1h 35m over your guess today — that gap is what Whenbee's learning.",
-      boldPrefix: '+1h 35m over',
-    });
+  it('keeps the raw gap in minutes so the view can format it per locale', () => {
+    expect(gapMilestone(60, 155)).toEqual({ direction: 'over', gapMin: 95 });
   });
-  it('celebrates an under-guess day', () => {
-    expect(gapMilestone(120, 90)).toEqual({
-      text: '30m under your guess today — nicely called.',
-      boldPrefix: '30m under',
-    });
+  it('reports an under-guess day', () => {
+    expect(gapMilestone(120, 90)).toEqual({ direction: 'under', gapMin: 30 });
   });
-  it('reads spot-on with no bold span when guess equals honest', () => {
-    expect(gapMilestone(45, 45)).toEqual({
-      text: 'Spot on your guess today.',
-      boldPrefix: null,
-    });
+  it('reports spot-on with a zero gap when guess equals honest', () => {
+    expect(gapMilestone(45, 45)).toEqual({ direction: 'equal', gapMin: 0 });
   });
 });

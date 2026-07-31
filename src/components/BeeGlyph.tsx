@@ -1,4 +1,5 @@
 import { useCallback } from 'react';
+import { useTranslation } from 'react-i18next';
 import { View } from 'react-native';
 import Animated, {
   cancelAnimation,
@@ -44,6 +45,7 @@ const WING_BOB = 0.04;
 
 export function BeeGlyph({ size = 32, animated = true }: { size?: number; animated?: boolean }) {
   const t = useTheme();
+  const { t: ts } = useTranslation('shared');
   const reduced = useReducedMotion();
 
   const indigo = t.colors.primary;
@@ -156,7 +158,7 @@ export function BeeGlyph({ size = 32, animated = true }: { size?: number; animat
     <View
       style={{ width: size, height: size }}
       accessibilityRole="image"
-      accessibilityLabel="Your Whenbee companion"
+      accessibilityLabel={ts('a11y.companion')}
     >
       {/* Wings layer (behind) — flutters in place */}
       <Animated.View

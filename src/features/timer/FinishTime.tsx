@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { type TextStyle, View, type ViewStyle } from 'react-native';
+import { type TextStyle } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import {
   useDerivedValue,
@@ -135,10 +135,10 @@ export function FinishTime({
 
   return (
     <>
-      <InfoRow label="Started">
+      <InfoRow label={tr('finish.startedLabel')}>
         <LedgerValue>{startedClock}</LedgerValue>
       </InfoRow>
-      <InfoRow label="Finish ~">
+      <InfoRow label={tr('finish.finishLabel')}>
         {over ? (
           <LedgerValue amber>~{reprojectClock}</LedgerValue>
         ) : showRange && range ? (
@@ -146,7 +146,7 @@ export function FinishTime({
             <LedgerValue amber accessibilityLabel={a11yRange}>
               {finishLowClock}–{finishHighClock}
             </LedgerValue>
-            <AppText style={learningTag}>still learning</AppText>
+            <AppText style={learningTag}>{tr('finish.stillLearning')}</AppText>
           </>
         ) : (
           <LedgerValue>{finishClock}</LedgerValue>

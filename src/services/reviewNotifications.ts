@@ -91,8 +91,8 @@ export function scheduleWeeklyReview(periodId: string): Promise<void> {
     try {
       await cancelWeeklyReviewInner();
       const notifContent: NotificationContentInputWithThread = {
-        title: 'Your honest week is ready',
-        body: "Your week in honest numbers, whenever you've got a minute.",
+        title: i18n.t('notifications:review.title'),
+        body: i18n.t('notifications:review.body'),
         sound: resolveNotificationSound(useSettingsStore.getState().notificationSound),
         categoryIdentifier: CAT.REVIEW,
         threadIdentifier: THREAD.REVIEW,

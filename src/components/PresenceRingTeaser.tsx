@@ -101,14 +101,14 @@ export function PresenceRingTeaser({ onCtaPress }: { onCtaPress: () => void }) {
     <View style={{ paddingTop: t.space[3], gap: t.space[3] }}>
       {/* Value statement */}
       <AppText style={bodyStyle}>
-        Your honest finish, live on the Lock Screen while a timer runs.
+        {tr('presenceRingTeaser.body')}
       </AppText>
 
       {/* Static bar preview — fills toward a demo finish time, mirroring the
           real Lock Screen surface. */}
       <View accessible={false}>
         <View style={endcapRow}>
-          <AppText style={nowLabel}>Now</AppText>
+          <AppText style={nowLabel}>{tr('presenceRingTeaser.now')}</AppText>
           <AppText style={finishLabel}>7:10</AppText>
         </View>
         <View style={track}>
@@ -118,7 +118,7 @@ export function PresenceRingTeaser({ onCtaPress }: { onCtaPress: () => void }) {
 
       {/* Primary CTA */}
       <AppButton
-        label="Unlock Lock Screen presence"
+        label={tr('presenceRingTeaser.cta')}
         onPress={onCtaPress}
         variant="amber"
         fullWidth

@@ -129,15 +129,15 @@
   "trialTimeline": {
     "today": {
       "head": "Today",
-      "desc": "Full Pro, free"
+      "desc": "All of Pro, free. Nothing is charged."
     },
     "day5": {
       "head": "Day 5",
-      "desc": "We remind you"
+      "desc": "<strong>We remind you</strong> the trial is ending."
     },
     "day7": {
       "head": "Day 7",
-      "desc": "Trial ends"
+      "desc": "Trial ends. Cancel before and you pay nothing."
     }
   },
   "plans": {
@@ -158,5 +158,18 @@
     "freeStripRest": "No card, no renewal — that is your real trial. Pro just adds the payoff.",
     "trustLine": "Built by people who are late to everything. It is the tool we needed first.",
     "expoGoNotice": "Running in Expo Go — purchases are simulated."
+  },
+  "footer": {
+    "renew": "Plans renew until cancelled.",
+    "restore": "Restore Purchases",
+    "terms": "Terms",
+    "privacy": "Privacy",
+    "privacyA11y": "Privacy Policy",
+    "termsA11y": "Terms of Use"
+  },
+  "proWelcome": {
+    "sub": "Every honest number you earned now works everywhere you plan.",
+    "title": "You're Pro.",
+    "cta": "See my honest day"
   }
 }

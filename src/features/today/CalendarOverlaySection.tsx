@@ -75,6 +75,7 @@ export function CalendarOverlaySection({
   nowMs,
 }: CalendarOverlaySectionProps): React.ReactElement | null {
   const t = useTheme();
+  const { t: tr } = useTranslation('calendar');
   const [expanded, setExpanded] = useState(false);
   // The stamp is a function of elapsed time, so it needs a heartbeat to cross the
   // staleness threshold on its own. A caller-supplied `nowMs` pins the clock
@@ -187,10 +188,13 @@ export function CalendarOverlaySection({
           onPress={toggle}
           accessibilityRole="button"
           accessibilityState={{ expanded }}
-          accessibilityLabel={`Calendar, ${count} ${count === 1 ? 'event' : 'events'}. ${expanded ? 'Tap to collapse.' : 'Tap to expand.'}`}
+          accessibilityLabel={tr('overlay.a11y', {
+            count,
+            action: expanded ? tr('overlay.collapseAction') : tr('overlay.expandAction'),
+          })}
           hitSlop={t.size.hitSlop}
         >
-          <Text style={label}>CALENDAR · {count}</Text>
+          <Text style={label}>{tr('overlay.sectionLabel', { count })}</Text>
         </Pressable>
 
         <View style={headerActions}>
@@ -253,7 +257,11 @@ export function CalendarOverlaySection({
           {/* All-day events sub-line — excluded from capacity math */}
           {allDayEvents.length > 0 ? (
             <Text style={allDayText}>
-              All day · {allDayEvents.map((e) => e.title?.trim() || 'Busy').join(', ')}
+              {tr('overlay.allDay', {
+                titles: allDayEvents
+                  .map((e) => e.title?.trim() || tr('overlay.busyFallback'))
+                  .join(', '),
+              })}
             </Text>
           ) : null}
         </Animated.View>

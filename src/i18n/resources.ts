@@ -1,99 +1,40 @@
-import enCommon from './locales/en/common.json';
-import svCommon from './locales/sv/common.json';
-import enOnboarding from './locales/en/onboarding.json';
-import svOnboarding from './locales/sv/onboarding.json';
-import enPaywall from './locales/en/paywall.json';
-import svPaywall from './locales/sv/paywall.json';
-import enSettings from './locales/en/settings.json';
-import svSettings from './locales/sv/settings.json';
-import enToday from './locales/en/today.json';
-import svToday from './locales/sv/today.json';
-import enAddTask from './locales/en/addTask.json';
-import svAddTask from './locales/sv/addTask.json';
-import enTimer from './locales/en/timer.json';
-import svTimer from './locales/sv/timer.json';
-import enNotifications from './locales/en/notifications.json';
-import svNotifications from './locales/sv/notifications.json';
-import enPatterns from './locales/en/patterns.json';
-import svPatterns from './locales/sv/patterns.json';
-import enVoice from './locales/en/voice.json';
-import svVoice from './locales/sv/voice.json';
-import enCategoryDetail from './locales/en/categoryDetail.json';
-import svCategoryDetail from './locales/sv/categoryDetail.json';
-import enReview from './locales/en/review.json';
-import svReview from './locales/sv/review.json';
-import enRoutines from './locales/en/routines.json';
-import svRoutines from './locales/sv/routines.json';
-import enWhenbee from './locales/en/whenbee.json';
-import svWhenbee from './locales/sv/whenbee.json';
-import enPlanner from './locales/en/planner.json';
-import svPlanner from './locales/sv/planner.json';
-import enReward from './locales/en/reward.json';
-import svReward from './locales/sv/reward.json';
-import enCalendar from './locales/en/calendar.json';
-import svCalendar from './locales/sv/calendar.json';
-import enShared from './locales/en/shared.json';
-import svShared from './locales/sv/shared.json';
-import enLegal from './locales/en/legal.json';
-import svLegal from './locales/sv/legal.json';
-import enCategories from './locales/en/categories.json';
-import svCategories from './locales/sv/categories.json';
-import enReport from './locales/en/report.json';
-import svReport from './locales/sv/report.json';
-// NOTE: as each namespace is added in later tasks, import it here for both langs.
+import en from './locales/en';
+import sv from './locales/sv';
+
+// ──────────────────────────────────────────────────────────────────────────────
+// The language registry. One line per language, nothing per namespace.
+//
+// Namespaces are listed once per language, inside `locales/<lang>/index.ts`.
+// This file only answers "which languages exist, and which is the fallback",
+// so ADDING A LANGUAGE IS THREE EDITS:
+//   1. copy `locales/en/` to `locales/<code>/` and translate the JSON
+//   2. copy `locales/en/index.ts` alongside it (same body, same relative paths)
+//   3. add the code to SUPPORTED_LANGS and the import + entry below
+// The i18next `ns` array, the key types, and the parity test all follow
+// automatically — `en` is the single source of truth for shape.
+// ──────────────────────────────────────────────────────────────────────────────
 
 export const SUPPORTED_LANGS = ['en', 'sv'] as const;
 export type AppLang = (typeof SUPPORTED_LANGS)[number];
 export const FALLBACK_LANG: AppLang = 'en';
 
-export const resources = {
-  en: {
-    common: enCommon,
-    onboarding: enOnboarding,
-    paywall: enPaywall,
-    settings: enSettings,
-    today: enToday,
-    addTask: enAddTask,
-    timer: enTimer,
-    notifications: enNotifications,
-    patterns: enPatterns,
-    voice: enVoice,
-    categoryDetail: enCategoryDetail,
-    review: enReview,
-    routines: enRoutines,
-    whenbee: enWhenbee,
-    planner: enPlanner,
-    reward: enReward,
-    calendar: enCalendar,
-    shared: enShared,
-    legal: enLegal,
-    categories: enCategories,
-    report: enReport,
-  },
-  sv: {
-    common: svCommon,
-    onboarding: svOnboarding,
-    paywall: svPaywall,
-    settings: svSettings,
-    today: svToday,
-    addTask: svAddTask,
-    timer: svTimer,
-    notifications: svNotifications,
-    patterns: svPatterns,
-    voice: svVoice,
-    categoryDetail: svCategoryDetail,
-    review: svReview,
-    routines: svRoutines,
-    whenbee: svWhenbee,
-    planner: svPlanner,
-    reward: svReward,
-    calendar: svCalendar,
-    shared: svShared,
-    legal: svLegal,
-    categories: svCategories,
-    report: svReport,
-  },
-} as const;
+export const resources = { en, sv } as const;
+
+/**
+ * Each language's name IN ITS OWN LANGUAGE. A language picker always lists
+ * endonyms — a Swedish speaker looking for Swedish scans for "Svenska", not for
+ * "Swedish" translated into whatever language the app happens to be in — so
+ * these deliberately live here as data rather than as per-language keys in the
+ * settings namespace. Adding a language means adding one line here, and the
+ * picker picks it up with no further edits.
+ */
+export const LANGUAGE_ENDONYM: Record<AppLang, string> = {
+  en: 'English',
+  sv: 'Svenska',
+};
+
+/** Every namespace the app ships, derived from the fallback language's bundle. */
+export const NAMESPACES = Object.keys(resources[FALLBACK_LANG]) as (keyof typeof en)[];
 
 export const isSupportedLang = (v: string): v is AppLang =>
   (SUPPORTED_LANGS as readonly string[]).includes(v);

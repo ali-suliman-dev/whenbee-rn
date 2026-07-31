@@ -199,7 +199,7 @@ describe('reveal-early focus window', () => {
   it('reveals a window as soon as both gates clear, even at low confidence', () => {
     const w = learnFocusWindow({ events: morningEvents(15, 5), fitByCategory: workFit, shown: null });
     expect(w.basis).toBe('revealed');
-    expect(w.coarseBlockLabel).toBe('Mornings');
+    expect(w.coarseBlockLabel).toBe('mornings');
     expect(['low', 'building', 'steady']).toContain(w.confidenceTier);
     expect(w.startMin).toBeLessThan(w.endMin);
   });
@@ -236,10 +236,12 @@ describe('reveal-early focus window', () => {
     expect(a).toEqual(b); // determinism (seed derived from signals, no ambient clock)
   });
 
-  it('buckets peak times into coarse blocks', () => {
-    expect(peakBucketLabel(540)).toBe('Mornings');    // 09:00
-    expect(peakBucketLabel(720)).toBe('Midday');      // 12:00
-    expect(peakBucketLabel(900)).toBe('Afternoons');  // 15:00
-    expect(peakBucketLabel(1080)).toBe('Evenings');   // 18:00
+  // The engine returns stable IDs, never display words — `focusCopy.coarseBlockLabel`
+  // turns these into localized labels.
+  it('buckets peak times into coarse block ids', () => {
+    expect(peakBucketLabel(540)).toBe('mornings');    // 09:00
+    expect(peakBucketLabel(720)).toBe('midday');      // 12:00
+    expect(peakBucketLabel(900)).toBe('afternoons');  // 15:00
+    expect(peakBucketLabel(1080)).toBe('evenings');   // 18:00
   });
 });

@@ -6,8 +6,9 @@
     "example": "An example — yours come from your own timers."
   },
   "presenceRingTeaser": {
-    "body": "Watch the ring fill toward your real finish on the Lock Screen.",
-    "cta": "Unlock the honest ring"
+    "body": "Your honest finish, live on the Lock Screen while a timer runs.",
+    "cta": "Unlock Lock Screen presence",
+    "now": "Now"
   },
   "proUpsellCard": {
     "tag": "Pro"
@@ -39,6 +40,21 @@
       "honestAbout": "Honest estimate about {{minutes}} minutes",
       "honestAboutDelta": "Honest estimate about {{minutes}} minutes, {{delta}} more than your guess",
       "startingSuffix": "{{base}}, starting estimate, sharpens as you log"
-    }
+    },
+    "youGuessed": "you guessed {{duration}}"
+  },
+  "a11y": {
+    "addTask": "Add a task",
+    "honeyCoinSeal": "Honey coin seal",
+    "companion": "Your Whenbee companion",
+    "locked": "Locked — stored on this device",
+    "dismiss": "Dismiss",
+    "honey": "Honey"
+  },
+  "categoryChips": {
+    "new": "New"
+  },
+  "timeField": {
+    "a11y": "Duration in minutes"
   }
 }

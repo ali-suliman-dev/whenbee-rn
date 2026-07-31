@@ -59,7 +59,7 @@
     "label": "Aviseringar",
     "reminders": {
       "title": "Påminnelser",
-      "note": "Pling vid ärlig sluttid, start-i-tid-knuffar och mer.",
+      "note": "Signaler för ärlig sluttid och mer.",
       "a11y": "Påminnelser"
     },
     "honestReached": {
@@ -158,7 +158,8 @@
     "note": "Din nästa uppgift och dess ärliga sluttid syns kvar, även när Whenbee är stängd.",
     "widgetHelpButton": "Så lägger du till widgeten",
     "availableCaption": "Tillgängligt i App Store-versionen.",
-    "ringOnCaption": "Ringen är på. Din ärliga sluttid visas på låsskärmen medan timern går."
+    "ringOnCaption": "Ringen är på. Din ärliga sluttid visas på låsskärmen medan timern går.",
+    "onNote": "Närvaro är på. Din ärliga sluttid visas på låsskärmen medan en timer går."
   },
   "widgetHelpAlert": {
     "title": "Så lägger du till widgeten",
@@ -196,7 +197,9 @@
     "seedDemo": {
       "title": "Fyll i demodata",
       "note": "Lägg in ~2 månaders loggar över fyra kategorier så att varje Pro-yta har något att visa. Endast i simulatorn — återställer demokategorierna varje gång."
-    }
+    },
+    "landingHeadline": "Landningsrubrik",
+    "paywallLayout": "Betalväggens funktionslayout"
   },
   "toasts": {
     "resetDone": "Återställt. Ny start.",
@@ -253,5 +256,23 @@
     "fallbackNote": "Byter Idag-raden",
     "tabA11y": "Kalenderstil {{label}}",
     "caption": "{{note}}. Byter Idag-raden direkt."
+  },
+  "forgotStepIn": {
+    "title": "Glömde stoppa",
+    "caption": "Om en timer får rulla länge medan du är borta avslutar Whenbee den och frågar när du blev klar.",
+    "options": {
+      "room": "Gott om utrymme",
+      "balanced": "Balanserat",
+      "early": "Kliv in tidigt"
+    }
+  },
+  "sections": {
+    "feedback": "Feedback",
+    "sendFeedback": "Skicka feedback",
+    "whatsNewNote": "Det du bad om, och det jag släppte."
+  },
+  "legal": {
+    "termsTitle": "Användarvillkor",
+    "termsNote": "Avtalet för att använda Whenbee, på vanlig svenska."
   }
 }

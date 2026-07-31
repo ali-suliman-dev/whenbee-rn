@@ -26,7 +26,9 @@
       "errands": "Ärenden",
       "cooking": "Matlagning",
       "outTheDoor": "Ut genom dörren"
-    }
+    },
+    "manageHint": "Ändra eller ta bort dem när som helst i Whenbee-fliken.",
+    "pickAtLeastOne": "Välj minst en för att fortsätta"
   },
   "quiz": {
     "subtext": "Inget rätt svar här. Välj det som stämmer mest dagligen, så lär jag mig av det.",
@@ -68,26 +70,19 @@
           "varies": "Det varierar"
         }
       }
-    }
+    },
+    "pickOne": "Välj ett för att fortsätta"
   },
   "ready": {
-    "title": "Ett tryck för att starta. Ett tryck för att mogna.",
-    "subtitle": "Från din första gissning visar jag ärliga tider. Varje uppgift du loggar gör dem skarpare, och jag skäller aldrig på dig för ett glapp.",
-    "trailLabel": "Vart du är på väg",
-    "trailCaption": "Din träffsäkerhet mognar allt eftersom du loggar. Den blir bara bättre — ingen räcka att bryta.",
-    "trail": {
-      "raw": "Rå",
-      "setting": "Sätter sig",
-      "ripening": "Mognar",
-      "thickening": "Tjocknar",
-      "honest": "Ärlig"
-    },
-    "footer": "Tomma dagar är helt okej. Glömde du tidsätta något? Lägg till det med ett tryck.",
-    "nicknameLabel": "Vad ska jag kalla dig?",
+    "headline": "Dina första <honest>ärliga</honest> tider är redan satta.",
+    "body": "Jag läser av dem från din tidsstil, så du börjar med riktiga siffror i stället för blanka gissningar. Logga en uppgift så skärps de.",
+    "nicknameLink": "Vad ska jag kalla dig?",
     "nicknameOptional": "valfritt",
-    "nicknamePlaceholder": "Ditt smeknamn",
-    "nicknameAccessibilityLabel": "Ditt smeknamn",
-    "cta": "Tidsätt min första sak →"
+    "nicknameHint": "Valfritt",
+    "nicknamePlaceholder": "Vad som helst du svarar på",
+    "nicknameAccessibilityLabel": "Ditt namn",
+    "footer": "<strong>Byggd av en person. </strong>Säg vad jag ska lägga till, det finns i Inställningar.",
+    "cta": "Tima min första grej →"
   },
   "archetypeCrest": {
     "accessibilityLabel": "Ditt tidspersonlighetsmärke"

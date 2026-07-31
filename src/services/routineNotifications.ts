@@ -107,7 +107,7 @@ export function scheduleRoutineAlerts(
         const id = await N.scheduleNotificationAsync({
           content: {
             title: routine.name,
-            body: `Start ${routine.name} now to finish on time.`,
+            body: i18n.t('notifications:routine.body', { name: routine.name }),
           },
           trigger: {
             type: N.SchedulableTriggerInputTypes.WEEKLY,

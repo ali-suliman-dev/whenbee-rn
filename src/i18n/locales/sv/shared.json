@@ -6,8 +6,9 @@
     "example": "Ett exempel — dina egna siffror kommer från dina timers."
   },
   "presenceRingTeaser": {
-    "body": "Se ringen fyllas mot din verkliga sluttid på låsskärmen.",
-    "cta": "Lås upp den ärliga ringen"
+    "body": "Din ärliga sluttid, live på låsskärmen medan en timer går.",
+    "cta": "Lås upp närvaro på låsskärmen",
+    "now": "Nu"
   },
   "proUpsellCard": {
     "tag": "Pro"
@@ -39,6 +40,21 @@
       "honestAbout": "Ärlig uppskattning cirka {{minutes}} minuter",
       "honestAboutDelta": "Ärlig uppskattning cirka {{minutes}} minuter, {{delta}} mer än din gissning",
       "startingSuffix": "{{base}}, startuppskattning, blir skarpare när du loggar"
-    }
+    },
+    "youGuessed": "du gissade {{duration}}"
+  },
+  "a11y": {
+    "addTask": "Lägg till en uppgift",
+    "honeyCoinSeal": "Honungsmyntets sigill",
+    "companion": "Din Whenbee-följeslagare",
+    "locked": "Låst — sparat på den här enheten",
+    "dismiss": "Stäng",
+    "honey": "Honung"
+  },
+  "categoryChips": {
+    "new": "Ny"
+  },
+  "timeField": {
+    "a11y": "Längd i minuter"
   }
 }

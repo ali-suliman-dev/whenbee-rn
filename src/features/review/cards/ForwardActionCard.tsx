@@ -1,6 +1,4 @@
-import { View, Text, StyleSheet, type TextStyle, type LayoutChangeEvent } from 'react-native';
-import { useCallback, useState } from 'react';
-import Svg, { Line, Circle } from 'react-native-svg';
+import { View, Text, StyleSheet, type TextStyle } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { Card } from '@/src/components/Card';
 import { useTheme } from '@/src/theme/useTheme';

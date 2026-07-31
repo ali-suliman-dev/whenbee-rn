@@ -36,7 +36,6 @@ export function ReviewRitualCard({ summary }: { summary: ReviewSummary }) {
     router.push({ pathname: '/(modals)/review', params: { source: 'card' } });
   }
 
-  const periodWord = isMonth ? 'month' : 'week';
 
   const eyebrowRow: ViewStyle = { flexDirection: 'row', alignItems: 'center', gap: t.space[2] };
   const eyebrow: TextStyle = { ...(type.eyebrow as unknown as TextStyle), color: t.colors.amberText };

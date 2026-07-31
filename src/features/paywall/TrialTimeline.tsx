@@ -1,6 +1,6 @@
 import { View, Text, type ViewStyle, type TextStyle } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { useTranslation } from 'react-i18next';
+import { Trans, useTranslation } from 'react-i18next';
 import { useTheme } from '@/src/theme/useTheme';
 import { type } from '@/src/theme/typography';
 import { DottedRail } from './DottedRail';
@@ -13,14 +13,19 @@ import { DottedRail } from './DottedRail';
 // Rendered by the caller only when the selected plan is a subscription.
 // ──────────────────────────────────────────────────────────────────────────────
 
+// Step ids only — the head/desc copy lives in `paywall.trialTimeline.*`, and the
+// emphasised span inside the Day-5 line is a <strong> component inside the
+// translated sentence (never a pre-split prefix, which no other language keeps
+// in the same position).
 const STEPS = [
-  { head: 'Today', desc: 'All of Pro, free. Nothing is charged.', today: true, bold: null },
-  { head: 'Day 5', desc: ' the trial is ending.', today: false, bold: 'We remind you' },
-  { head: 'Day 7', desc: 'Trial ends. Cancel before and you pay nothing.', today: false, bold: null },
+  { id: 'today', today: true },
+  { id: 'day5', today: false },
+  { id: 'day7', today: false },
 ] as const;
 
 export function TrialTimeline() {
   const t = useTheme();
+  const { t: tr } = useTranslation('paywall');
 
   const row: ViewStyle = { flexDirection: 'row', gap: t.space[3] };
   const railCol: ViewStyle = { width: t.iconSize.xl, alignItems: 'center' };
@@ -67,7 +72,7 @@ export function TrialTimeline() {
       {STEPS.map((s, i) => {
         const last = i === STEPS.length - 1;
         return (
-          <View key={s.head} style={row}>
+          <View key={s.id} style={row}>
             <View style={railCol}>
               {s.today ? (
                 <View style={halo}>
@@ -81,10 +86,13 @@ export function TrialTimeline() {
               {last ? null : <DottedRail />}
             </View>
             <View style={last ? stxLast : stx}>
-              <Text style={head}>{s.head}</Text>
+              <Text style={head}>{tr(`trialTimeline.${s.id}.head`)}</Text>
               <Text style={desc}>
-                {s.bold ? <Text style={descBold}>{s.bold}</Text> : null}
-                {s.desc}
+                <Trans
+                  i18nKey={`trialTimeline.${s.id}.desc`}
+                  ns="paywall"
+                  components={{ strong: <Text style={descBold} /> }}
+                />
               </Text>
             </View>
           </View>

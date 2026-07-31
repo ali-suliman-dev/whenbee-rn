@@ -1,4 +1,5 @@
 import { render } from '@testing-library/react-native';
+import { coarseBlockLabel } from '@/src/features/patterns/focusCopy';
 import FocusWindowDetail from '../focus-window';
 import { useLearnedFocusWindow } from '@/src/features/planner/useLearnedFocusWindow';
 import { useFocusInsights } from '@/src/features/patterns/useFocusInsights';
@@ -10,7 +11,7 @@ jest.mock('@/src/features/patterns/useFocusInsights');
 jest.mock('@/src/stores/onboardingStore');
 
 const win = { startMin: 810, endMin: 960, basis: 'revealed' as const, confidence: 0.8,
-  confidenceTier: 'steady' as const, coarseBlockLabel: 'Afternoons',
+  confidenceTier: 'steady' as const, coarseBlockLabel: 'afternoons',
   scoreByBin: Array.from({ length: FW_BIN_COUNT }, (_, i) => (i === 9 ? 1 : 0.3)), sampleCount: 137, distinctDays: 21, held: false,
   gates: { sessions: { have: 137, need: 15 }, days: { have: 21, need: 5 } } };
 
@@ -50,7 +51,7 @@ it('renders Tier-2 rows when available', () => {
 
 it('low confidence: honest early-read copy, coarse block hero, tier-true meter', () => {
   (useLearnedFocusWindow as jest.Mock).mockReturnValue({
-    ...win, confidence: 0.4, confidenceTier: 'low' as const, coarseBlockLabel: 'Mornings',
+    ...win, confidence: 0.4, confidenceTier: 'low' as const, coarseBlockLabel: 'mornings',
     sampleCount: 26, distinctDays: 14,
   });
   (useFocusInsights as jest.Mock).mockReturnValue(null);
@@ -114,6 +115,6 @@ describe('stated focus block (no logged evidence yet)', () => {
     expect(queryByText('You said mornings')).toBeNull();
     expect(queryByText("I'll check that against your timers.")).toBeNull();
     // falls back to today's existing coarse hero (the engine's own coarseBlockLabel)
-    expect(getByText(win.coarseBlockLabel)).toBeTruthy();
+    expect(getByText(coarseBlockLabel(win.coarseBlockLabel))).toBeTruthy();
   });
 });

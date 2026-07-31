@@ -371,8 +371,8 @@ export default function Settings() {
           {/* Master reminders toggle */}
           <SettingRow
             icon="notifications-outline"
-            title="Reminders"
-            note="Pings for honest finish and more."
+            title={tr('notifications.reminders.title')}
+            note={tr('notifications.reminders.note')}
             trailing={
               <Switch
                 value={remindersEnabled}
@@ -386,14 +386,14 @@ export default function Settings() {
           {/* Start-by nudge — plan-owned, independent of the master. Always visible. */}
           <SettingRow
             icon="arrow-forward-circle-outline"
-            title="Start-by nudge"
+            title={tr('notifications.startBy.title')}
             note="A reminder when it's time to begin. Also toggled from your day plan."
             trailing={
               <Switch
                 value={startByEnabled}
                 onValueChange={handleToggleStartBy}
                 trackColor={{ true: t.colors.primary, false: t.colors.hairline }}
-                accessibilityLabel="Start-by nudge"
+                accessibilityLabel={tr('notifications.startBy.title')}
               />
             }
           />
@@ -595,17 +595,17 @@ export default function Settings() {
           />
           <SettingRow
             icon="document-outline"
-            title="Terms of Use"
-            note="The plain-language agreement for using Whenbee."
+            title={tr('legal.termsTitle')}
+            note={tr('legal.termsNote')}
             onPress={() => WebBrowser.openBrowserAsync(LEGAL.termsUrl)}
           />
         </View>
 
         <View style={{ gap: t.space[3] }}>
-          <AppText variant="label">Feedback</AppText>
+          <AppText variant="label">{tr('sections.feedback')}</AppText>
           <SettingRow
             icon="chatbubble-ellipses-outline"
-            title="Send feedback"
+            title={tr('sections.sendFeedback')}
             note="An idea, a snag, or what's working. Comes straight to me."
             onPress={() => router.push('/(modals)/feedback')}
           />
@@ -613,7 +613,7 @@ export default function Settings() {
             icon="newspaper-outline"
             tint={t.colors.accent}
             title="What's new"
-            note="What you asked for, and what I shipped."
+            note={tr('sections.whatsNewNote')}
             onPress={() => router.push('/(modals)/whats-new')}
             trailing={
               hasUnread ? (
@@ -688,7 +688,7 @@ export default function Settings() {
                   color: t.colors.inkSoft,
                 }}
               >
-                Presence is on. Your honest finish shows on the Lock Screen while a timer runs.
+                {tr('presence.onNote')}
               </AppText>
             </ProGate>
           </View>
@@ -737,23 +737,23 @@ export default function Settings() {
 
         {__DEV__ && (
           <View style={{ gap: t.space[3] }}>
-            <AppText variant="label">Developer</AppText>
+            <AppText variant="label">{tr('developer.label')}</AppText>
             <SettingRow
               icon="construct-outline"
-              title="Unlock Pro (testing)"
-              note="Flip the Pro entitlement to preview every gated screen. For testing — leave off in normal use."
+              title={tr('developer.unlockPro.title')}
+              note={tr('developer.unlockPro.note')}
               trailing={
                 <Switch
                   value={isPro}
                   onValueChange={setPro}
                   trackColor={{ true: t.colors.primary, false: t.colors.hairline }}
-                  accessibilityLabel="Unlock Pro (testing)"
+                  accessibilityLabel={tr('developer.unlockPro.title')}
                 />
               }
             />
             <SettingRow
               icon="grid-outline"
-              title="Paywall feature layout"
+              title={tr('developer.paywallLayout')}
               note={
                 paywallVariant === 'day'
                   ? "Showing 'A day with Pro'. Tap to switch to 'Plan · Do · Learn'."
@@ -763,7 +763,7 @@ export default function Settings() {
             />
             <SettingRow
               icon="today-outline"
-              title="Landing headline"
+              title={tr('developer.landingHeadline')}
               note={
                 landingVariant === 'd'
                   ? "Showing 'Done ~9:50pm'. Tap to switch to '9:50pm. That's…'."

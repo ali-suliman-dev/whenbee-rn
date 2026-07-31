@@ -16,7 +16,7 @@ import { FocusWindowEditorSheet } from '@/src/features/planner/FocusWindowEditor
 import { useLearnedFocusWindow } from '@/src/features/planner/useLearnedFocusWindow';
 import { statedFocusBlock } from '@/src/features/planner/statedFocusBlock';
 import { useFocusInsights } from '@/src/features/patterns/useFocusInsights';
-import { whyNarrative } from '@/src/features/patterns/focusCopy';
+import { whyNarrative, coarseBlockLabel } from '@/src/features/patterns/focusCopy';
 import { useSettingsStore } from '@/src/stores/settingsStore';
 import { useOnboardingStore } from '@/src/stores/onboardingStore';
 import { formatWindowRange, formatClockMin } from '@/src/lib/time';
@@ -155,13 +155,13 @@ export default function FocusWindowDetail() {
                     </AppText>
                   </AppText>
                   <AppText style={{ ...(type.caption as unknown as TextStyle), color: t.colors.inkFaint }}>
-                    I&apos;ll check that against your timers.
+                    {tr('detail.checkAgainstTimers')}
                   </AppText>
                 </>
               ) : coarse ? (
                 <>
                   <AppText style={{ ...(type.display as unknown as TextStyle), color: t.colors.ink }}>
-                    {win.coarseBlockLabel}
+                    {coarseBlockLabel(win.coarseBlockLabel)}
                   </AppText>
                   <AppText style={{ ...(type.body as unknown as TextStyle), color: t.colors.inkSoft }}>
                     {'around '}
@@ -239,7 +239,7 @@ export default function FocusWindowDetail() {
           {`${evidence} of evidence`}
         </AppText>
 
-        <AppButton label="Edit window" variant="ghost" size="md" fullWidth onPress={() => setEditing(true)} accessibilityLabel="Edit focus window" />
+        <AppButton label={tr('detail.editWindow')} variant="ghost" size="md" fullWidth onPress={() => setEditing(true)} accessibilityLabel={tr('detail.editWindowA11y')} />
         <AppText style={{ ...(type.caption as unknown as TextStyle), color: t.colors.inkFaint, textAlign: 'center' }}>
           {tr('detail.footer')}
         </AppText>

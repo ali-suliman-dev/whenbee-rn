@@ -218,7 +218,7 @@ export function BiggestSurpriseRitualCard({ surprise, band, loggedCount }: Props
                 },
               ]}
             >
-              {surprise.estimateMin}m guess
+              {tt('biggestSurprise.guessLabel', { min: surprise.estimateMin })}
             </Text>
             <Text
               onLayout={onRealFlagLayout}
@@ -232,7 +232,7 @@ export function BiggestSurpriseRitualCard({ surprise, band, loggedCount }: Props
                 },
               ]}
             >
-              {surprise.actualMin}m real
+              {tt('biggestSurprise.realLabel', { min: surprise.actualMin })}
             </Text>
             <View
               style={[

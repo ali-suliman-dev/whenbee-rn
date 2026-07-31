@@ -22,9 +22,12 @@
     "caption": "mot ditt mål på ±{{band}} %"
   },
   "notifSoftAsk": {
-    "body": "Vill du ha en mild påminnelse när en timer tar slut? Inga räckor, inget tjat — bara det ärliga talet när det gäller.",
+    "body": "När en timer når ditt riktiga tal, inte din gissning, knackar Whenbee till en gång. Inget att hålla igång, inget gnäll.",
     "accept": "Låter bra",
-    "decline": "Inte nu"
+    "decline": "Inte nu",
+    "eyebrow": "Ett tryck, när det räknas",
+    "title": "En tyst signal vid din ärliga sluttid",
+    "acceptA11y": "Slå på signalen"
   },
   "energy": {
     "options": {
@@ -47,7 +50,8 @@
     "under": {
       "focused": "Flow",
       "overestimated": "Snabbt"
-    }
+    },
+    "skip": "Hoppa över"
   },
   "screen": {
     "empty": {
@@ -63,5 +67,9 @@
       "equal": "exakt din gissning"
     },
     "seeYourBee": "Se ditt bi"
+  },
+  "reask": {
+    "decline": "Nej tack",
+    "accept": "Slå på"
   }
 }

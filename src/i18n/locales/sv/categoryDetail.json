@@ -126,7 +126,9 @@
     "heading": "Din ärliga vecka, varje söndag.",
     "body": "Se var timmarna verkligen tog vägen — planera nästa vecka utifrån sanningen, inte en gissning.",
     "cta": "Starta min ärliga vecka",
-    "trust": "Avsluta när du vill · lärs på enheten"
+    "trust": "Avsluta när du vill · lärs på enheten",
+    "linkLabel": "Din ärliga vecka",
+    "openA11y": "Öppna din ärliga vecka"
   },
   "recentList": {
     "header": "Senaste uppgifter",
@@ -146,5 +148,12 @@
     "halfDaysAgo": "{{days}} dagar",
     "now": "nu",
     "axisIdeal": "ideal"
+  },
+  "manageArea": {
+    "header": "Hantera området",
+    "resetTitle": "Nollställ inlärningen",
+    "resetSub": "Rensar gissningshistoriken, behåller din honung",
+    "deleteTitle": "Ta bort området",
+    "deleteSub": "Tar bort området och dess data"
   }
 }

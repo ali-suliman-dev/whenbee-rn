@@ -1,4 +1,5 @@
 import { Pressable, View } from 'react-native';
+import { useTranslation } from 'react-i18next';
 import Animated, {
   Extrapolation,
   interpolate,
@@ -43,6 +44,7 @@ interface Props {
 
 export function TabBarAddButton({ config, onPress: onPressProp }: Props) {
   const t = useTheme();
+  const { t: ts } = useTranslation('shared');
   const reducedMotion = useReducedMotion();
 
   const EDGE_DEPTH = 4;
@@ -103,7 +105,7 @@ export function TabBarAddButton({ config, onPress: onPressProp }: Props) {
       onPressIn={onPressIn}
       onPressOut={onPressOut}
       accessibilityRole="button"
-      accessibilityLabel="Add a task"
+      accessibilityLabel={ts('a11y.addTask')}
       style={isElevated ? elevatedWrapper : dividerWrapper}
     >
       {/*

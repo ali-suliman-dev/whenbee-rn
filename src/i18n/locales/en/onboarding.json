@@ -26,7 +26,9 @@
       "errands": "Errands",
       "cooking": "Cooking",
       "outTheDoor": "Out the door"
-    }
+    },
+    "manageHint": "Change or remove these any time in the Whenbee tab.",
+    "pickAtLeastOne": "Pick at least one to continue"
   },
   "quiz": {
     "subtext": "No right answer here. Pick what's true most days, and I'll learn from it.",
@@ -68,25 +70,18 @@
           "varies": "It varies"
         }
       }
-    }
+    },
+    "pickOne": "Pick one to continue"
   },
   "ready": {
-    "title": "One tap to start. One tap to ripen.",
-    "subtitle": "From your first guess, I'll show honest times. Each task you log makes them sharper, and I'll never scold you for a gap.",
-    "trailLabel": "Where you're headed",
-    "trailCaption": "Your accuracy ripens as you log. It only ever ripens — no streak to break.",
-    "trail": {
-      "raw": "Raw",
-      "setting": "Setting",
-      "ripening": "Ripening",
-      "thickening": "Thickening",
-      "honest": "Honest"
-    },
-    "footer": "Empty days are fine. Forgot to time something? Add it in one tap.",
-    "nicknameLabel": "Anything I should call you?",
+    "headline": "Your first <honest>honest</honest> times are already set.",
+    "body": "I read them from your time-style, so you start with real numbers, not blank guesses. Log a task and they sharpen.",
+    "nicknameLink": "What should I call you?",
     "nicknameOptional": "optional",
-    "nicknamePlaceholder": "Your nickname",
-    "nicknameAccessibilityLabel": "Your nickname",
+    "nicknameHint": "Optional",
+    "nicknamePlaceholder": "Anything you answer to",
+    "nicknameAccessibilityLabel": "Your name",
+    "footer": "<strong>Made by one person. </strong>Tell me what to add, it's in Settings.",
     "cta": "Time my first thing →"
   },
   "archetypeCrest": {

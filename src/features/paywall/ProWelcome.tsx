@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Pressable, ScrollView, Text, View, type TextStyle, type ViewStyle } from 'react-native';
 import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
@@ -112,6 +113,7 @@ function Row({
 
 export function ProWelcome({ plan, purchasedAt }: { plan: string; purchasedAt: string }) {
   const t = useTheme();
+  const { t: tr } = useTranslation('paywall');
   const insets = useSafeAreaInsets();
 
   const parsed = new Date(purchasedAt);
@@ -257,8 +259,8 @@ export function ProWelcome({ plan, purchasedAt }: { plan: string; purchasedAt: s
         </View>
 
         <Animated.View style={[{ gap: t.space[2] }, headerAnim]}>
-          <Text style={title}>{"You're Pro."}</Text>
-          <Text style={sub}>Every honest number you earned now works everywhere you plan.</Text>
+          <Text style={title}>{tr('proWelcome.title')}</Text>
+          <Text style={sub}>{tr('proWelcome.sub')}</Text>
         </Animated.View>
 
         <Animated.View style={cardAnim}>
@@ -283,7 +285,7 @@ export function ProWelcome({ plan, purchasedAt }: { plan: string; purchasedAt: s
           </View>
         </Animated.View>
 
-        <AppButton label="See my honest day" variant="amber" fullWidth onPress={onSeeMyDay} />
+        <AppButton label={tr('proWelcome.cta')} variant="amber" fullWidth onPress={onSeeMyDay} />
       </ScrollView>
     </Screen>
   );

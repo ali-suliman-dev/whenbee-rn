@@ -150,7 +150,7 @@ export function FeatureReadinessList({ items, logsToNext }: FeatureReadinessList
             <Text style={label}>{featureLabel(tr, item.id)}</Text>
 
             {item.ready ? (
-              <Text style={statusReady}>Ready</Text>
+              <Text style={statusReady}>{tr('ripeningPro.featureList.readyStatus')}</Text>
             ) : isNextUp ? (
               <Text style={statusMuted}>{logsToGoLabel(tr, logsToNext)}</Text>
             ) : item.waitLabel ? (

@@ -1,4 +1,5 @@
 import { useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { View, type TextStyle } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Screen } from '@/src/components/Screen';
@@ -19,6 +20,7 @@ import type { ChangelogEntry } from '@/src/features/feedback/types';
 
 export default function WhatsNew() {
   const t = useTheme();
+  const { t: tr } = useTranslation('feedback');
   const insets = useSafeAreaInsets();
   const { changelog, loading, loadChangelog, markChangelogSeen } = useFeedback();
 
@@ -43,7 +45,7 @@ export default function WhatsNew() {
       <View style={{ paddingTop: t.space[5], paddingBottom: t.space[3] }}>
         <SheetGrabber />
         <AppText style={{ ...(type.title as TextStyle), color: t.colors.ink }}>
-          What&apos;s new
+          {tr('whatsNew.title')}
         </AppText>
       </View>
 

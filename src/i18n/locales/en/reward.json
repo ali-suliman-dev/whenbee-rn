@@ -22,9 +22,12 @@
     "caption": "toward your ±{{band}}% goal"
   },
   "notifSoftAsk": {
-    "body": "Want a gentle nudge when a timer ends? No streaks, no scolding — just the honest number when it counts.",
+    "body": "When a timer hits your real number, not your guess, Whenbee taps you once. No streaks, no scolding.",
     "accept": "Sounds good",
-    "decline": "Not now"
+    "decline": "Not now",
+    "eyebrow": "One tap, when it counts",
+    "title": "A quiet ping at your honest finish",
+    "acceptA11y": "Turn on the ping"
   },
   "energy": {
     "options": {
@@ -47,7 +50,8 @@
     "under": {
       "focused": "Flow",
       "overestimated": "Fast"
-    }
+    },
+    "skip": "Skip"
   },
   "screen": {
     "empty": {
@@ -63,5 +67,9 @@
       "equal": "right on your guess"
     },
     "seeYourBee": "See your bee"
+  },
+  "reask": {
+    "decline": "No thanks",
+    "accept": "Turn on"
   }
 }

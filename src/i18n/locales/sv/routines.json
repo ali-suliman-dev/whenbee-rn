@@ -12,7 +12,12 @@
   },
   "locked": {
     "sampleName": "Morgonrutin",
-    "sampleSteps": ["Dusch", "Klä på dig", "Frukost", "Packa väskan"],
+    "sampleSteps": [
+      "Dusch",
+      "Klä på dig",
+      "Frukost",
+      "Packa väskan"
+    ],
     "sampleTotalMinutes": "{{count}} min",
     "sampleStartBy": "Börja senast {{time}}",
     "body": "Spara din morgon en gång. Whenbee lär sig hur lång tid det hela faktiskt tar, så \"börja senast\" blir ett tal du kan lita på.",
@@ -65,7 +70,10 @@
     "dismissA11y": "Stäng",
     "title": "Klar senast",
     "clear": "Rensa",
-    "done": "Klar"
+    "done": "Klar",
+    "useNow": "Använd nu",
+    "useNowA11y": "Använd nu",
+    "useNowHint": "Utgår från nuvarande tid och följer med klockan"
   },
   "stepSheet": {
     "dismissA11y": "Stäng",

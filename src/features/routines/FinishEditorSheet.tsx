@@ -139,7 +139,7 @@ export function FinishEditorSheet({
           <Pressable
             style={StyleSheet.absoluteFillObject}
             onPress={onClose}
-            accessibilityLabel="Dismiss"
+            accessibilityLabel={tr('finishSheet.dismissA11y')}
           />
           <View style={sheet}>
             <SheetGrabber />
@@ -152,11 +152,11 @@ export function FinishEditorSheet({
                   testID="finish-editor-use-now"
                   onPress={onUseNow}
                   accessibilityRole="button"
-                  accessibilityLabel="Use now"
-                  accessibilityHint="Starts from the current time and keeps moving with the clock"
+                  accessibilityLabel={tr('finishSheet.useNowA11y')}
+                  accessibilityHint={tr('finishSheet.useNowHint')}
                   hitSlop={t.size.hitSlop}
                 >
-                  <AppText style={useNowStyle}>Use now</AppText>
+                  <AppText style={useNowStyle}>{tr('finishSheet.useNow')}</AppText>
                 </Pressable>
               </View>
             ) : (
@@ -172,9 +172,9 @@ export function FinishEditorSheet({
             </View>
             <View style={{ flexDirection: 'row', justifyContent: 'flex-end', gap: t.space[2] }}>
               {valueMs !== null ? (
-                <AppButton label="Clear" variant="ghost" size="2xs" onPress={onClear} />
+                <AppButton label={tr('finishSheet.clear')} variant="ghost" size="2xs" onPress={onClear} />
               ) : null}
-              <AppButton label="Done" variant="indigo" size="sm" onPress={onClose} />
+              <AppButton label={tr('finishSheet.done')} variant="indigo" size="sm" onPress={onClose} />
             </View>
           </View>
         </Animated.View>

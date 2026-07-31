@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { View, Text, Pressable, StyleSheet, type ViewStyle, type TextStyle } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '@/src/theme/useTheme';
@@ -26,6 +27,7 @@ export function ManageAreaCard({
   onConfirmDelete,
 }: ManageAreaCardProps) {
   const t = useTheme();
+  const { t: tr } = useTranslation('categoryDetail');
   const s = styles(t);
   const [confirm, setConfirm] = useState<'reset' | 'delete' | null>(null);
   // Delete is a genuine destructive action, so red is intended here (not a guilt
@@ -34,18 +36,18 @@ export function ManageAreaCard({
 
   return (
     <View style={s.card}>
-      <Text style={s.header}>Manage this area</Text>
+      <Text style={s.header}>{tr('manageArea.header')}</Text>
 
       <Pressable
         style={s.row}
         accessibilityRole="button"
-        accessibilityLabel="Reset learning"
+        accessibilityLabel={tr('manageArea.resetTitle')}
         onPress={() => setConfirm('reset')}
       >
         <Ionicons name="refresh-outline" size={t.iconSize.sm} color={t.colors.inkSoft} />
         <View style={s.rowText}>
-          <Text style={s.rowTitle}>Reset learning</Text>
-          <Text style={s.rowSub}>Clears the guess history, keeps your honey</Text>
+          <Text style={s.rowTitle}>{tr('manageArea.resetTitle')}</Text>
+          <Text style={s.rowSub}>{tr('manageArea.resetSub')}</Text>
         </View>
         <Ionicons name="chevron-forward" size={t.iconSize.sm} color={t.colors.inkFaint} />
       </Pressable>
@@ -54,13 +56,13 @@ export function ManageAreaCard({
         <Pressable
           style={[s.row, s.rowDivider]}
           accessibilityRole="button"
-          accessibilityLabel="Delete area"
+          accessibilityLabel={tr('manageArea.deleteTitle')}
           onPress={() => setConfirm('delete')}
         >
           <Ionicons name="trash-outline" size={t.iconSize.sm} color={dangerTint} />
           <View style={s.rowText}>
-            <Text style={[s.rowTitle, s.rowTitleDanger]}>Delete area</Text>
-            <Text style={s.rowSub}>Removes this area and its data</Text>
+            <Text style={[s.rowTitle, s.rowTitleDanger]}>{tr('manageArea.deleteTitle')}</Text>
+            <Text style={s.rowSub}>{tr('manageArea.deleteSub')}</Text>
           </View>
           <Ionicons name="chevron-forward" size={t.iconSize.sm} color={t.colors.inkFaint} />
         </Pressable>
@@ -75,8 +77,8 @@ export function ManageAreaCard({
           'Whenbee starts over learning this area.',
           'Your honey and tier stay — only the guess history resets.',
         ]}
-        confirmLabel="Reset"
-        cancelLabel="Keep it"
+        confirmLabel={tr('screen.resetConfirm.confirm')}
+        cancelLabel={tr('screen.resetConfirm.keep')}
         onConfirm={() => {
           setConfirm(null);
           onConfirmReset();
@@ -90,8 +92,8 @@ export function ManageAreaCard({
         glyphKind="erase"
         title={`Delete ${categoryName}?`}
         bullets={['Removes this area along with its logs, learning, and goal.', "This can't be undone."]}
-        confirmLabel="Delete area"
-        cancelLabel="Keep it"
+        confirmLabel={tr('manageArea.deleteTitle')}
+        cancelLabel={tr('screen.resetConfirm.keep')}
         onConfirm={() => {
           setConfirm(null);
           onConfirmDelete();

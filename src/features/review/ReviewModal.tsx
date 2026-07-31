@@ -153,7 +153,7 @@ export function ReviewModal({ source = 'card' }: { source?: ReviewSource }) {
         {/* 8 · Closing reflection (always present). */}
         {Card(<ReflectionCard question={summary.reflection} />)}
 
-        <AppButton label="Done" variant="amber" size="lg" fullWidth onPress={complete} />
+        <AppButton label={tt('done')} variant="amber" size="lg" fullWidth onPress={complete} />
       </SheetScrollView>
     </Screen>
   );

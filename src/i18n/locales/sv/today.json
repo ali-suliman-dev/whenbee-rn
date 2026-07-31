@@ -83,7 +83,8 @@
     "allTasksA11y": "Alla uppgifter · {{day}}. {{action}}",
     "collapseAction": "Tryck för att fälla ihop.",
     "expandAction": "Tryck för att expandera.",
-    "allTasksHeader": "ALLA UPPGIFTER · {{day}}"
+    "allTasksHeader": "ALLA UPPGIFTER · {{day}}",
+    "allTasksLabel": "ALLA UPPGIFTER · {{day}}"
   },
   "dayTimeline": {
     "overflow": {
@@ -144,8 +145,8 @@
     "a11y": "Tar tid på {{label}}, {{elapsed}} förflutit av ungefär {{honestMin}} minuter. Tryck för att öppna igen.",
     "eyebrow": "NU · {{category}}",
     "elapsedHeader": "FÖRFLUTET",
-    "guessed": "gissade {{count}} min",
-    "plan": "plan ~{{count}} min"
+    "guessed": "gissade {{duration}}",
+    "plan": "plan ~{{duration}}"
   },
   "scheduledRoutine": {
     "minutesSuffix": "{{count}}m",
@@ -225,7 +226,8 @@
     "savingHint": "Att spara lär appen ditt ärliga tempo.",
     "skipForNow": "Hoppa över för nu",
     "namePlaceholder": "Namnge den (valfritt)",
-    "nameA11y": "Uppgiftens namn"
+    "nameA11y": "Uppgiftens namn",
+    "nameThisTask": "Namnge uppgiften"
   },
   "quickTaskChips": {
     "tapToStartAgain": "Tryck för att starta igen"
@@ -234,5 +236,28 @@
     "morning": "God morgon",
     "afternoon": "God eftermiddag",
     "evening": "God kväll"
+  },
+  "daySoFar": {
+    "eyebrow": "DIN DAG HITTILLS",
+    "headline_one": "En ärlig logg inne. Gissade {{guessed}}, tog egentligen <honest>{{honest}}</honest>.",
+    "headline_other": "{{count}} ärliga loggar inne. Gissade {{guessed}}, tog egentligen <honest>{{honest}}</honest>.",
+    "unit_one": "uppgift",
+    "unit_other": "uppgifter",
+    "loggedLabel": "LOGGAT",
+    "guessedLabel": "GISSAT",
+    "honestLabel": "ÄRLIGT",
+    "milestone": {
+      "equal": "Precis på din gissning idag.",
+      "over": "<strong>+{{gap}} över</strong> din gissning idag — den luckan är det Whenbee lär sig av.",
+      "under": "<strong>{{gap}} under</strong> din gissning idag — snyggt kallat."
+    }
+  },
+  "timeline": {
+    "tomorrowChip": "Imorgon",
+    "overrunSentence": "Efter det här drar du över. Flytta fram till <clock>{{clock}}</clock>, eller skjut en uppgift till imorgon.",
+    "reorderHint": "Håll in och dra för att flytta uppgiften"
+  },
+  "planStrip": {
+    "doneBy": "klar {{clock}}"
   }
 }

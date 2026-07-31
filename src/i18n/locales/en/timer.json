@@ -21,7 +21,10 @@
     "rangeDone": "Done {{low}}–{{high}}",
     "pointDone": "Done ~{{clock}}",
     "rangeA11y": "Honest finish range {{low}} to {{high}}.",
-    "rangeA11yLearning": "Honest finish range {{low}} to {{high}}, still learning."
+    "rangeA11yLearning": "Honest finish range {{low}} to {{high}}, still learning.",
+    "stillLearning": "still learning",
+    "finishLabel": "Finish ~",
+    "startedLabel": "Started"
   },
   "ring": {
     "a11y_one": "Timer running. Honest target about {{count}} minute. Elapsed time is shown in the center.",
@@ -35,8 +38,27 @@
     "wrapUp": "Wrap up"
   },
   "pace": {
-    "over": "+{{count}} over your guess — that's ok, now we know",
-    "closing": "Closing in on your guess… that’s fine",
-    "onTrack": "On track — you’ve got time"
+    "over": "{{duration}} over your guess — now you know",
+    "closing": "Almost at your guess",
+    "onTrack": "You’ve got time",
+    "forgotToStop": "Forgot to stop?",
+    "overNoAmount": "Past your guess — now you know",
+    "forgotA11y": "Forgot to stop the timer earlier"
+  },
+  "forgotStop": {
+    "headingStopped": "When did you actually stop?",
+    "headingFinished": "When did you finish?",
+    "spinBody": "Spin to the time you actually stopped.",
+    "notSure": "Not sure yet",
+    "back": "Back",
+    "backA11y": "Back to the quick options",
+    "notSureSkipA11y": "Not sure yet — skip logging this session",
+    "notSureStopA11y": "Not sure yet — stop without a trained log",
+    "pickExact": "Pick the exact time",
+    "stillGoing": "Still going"
+  },
+  "ledger": {
+    "yourGuess": "Your guess",
+    "honest": "Honest"
   }
 }

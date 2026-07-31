@@ -204,7 +204,7 @@ export default function Categories() {
                     if (customError) setCustomError(null);
                   }}
                   onSubmitEditing={commitCustom}
-                  placeholder="Name it…"
+                  placeholder={tr('categories.namePlaceholder')}
                   placeholderTextColor={t.colors.inkSoft}
                   maxLength={MAX_CUSTOM_NAME}
                   returnKeyType="done"
@@ -219,7 +219,7 @@ export default function Categories() {
               </View>
             ) : (
               <Chip
-                label="Add your own"
+                label={tr('categories.addYourOwn')}
                 variant="add"
                 onPress={() => {
                   setCustomError(null);
@@ -235,7 +235,7 @@ export default function Categories() {
           </AppText>
         ) : null}
         <AppText style={{ fontSize: t.fontSize.sm, color: t.colors.inkFaint }}>
-          Change or remove these any time in the Whenbee tab.
+          {tr('categories.manageHint')}
         </AppText>
         <View style={{ flex: 1 }} />
         {picked.length > 0 ? (
@@ -259,7 +259,7 @@ export default function Categories() {
               marginBottom: t.space[2],
             }}
           >
-            Pick at least one to continue
+            {tr('categories.pickAtLeastOne')}
           </AppText>
         ) : null}
         <AppButton

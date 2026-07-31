@@ -1,4 +1,5 @@
 import { Pressable, type ViewStyle, type TextStyle } from 'react-native';
+import { useTranslation } from 'react-i18next';
 import { Text } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
@@ -17,6 +18,7 @@ import { analytics } from '@/src/services/analytics';
 
 export function ProHonestWeekLink() {
   const t = useTheme();
+  const { t: tr } = useTranslation('categoryDetail');
 
   function open() {
     analytics.capture('honest_week_open', { surface: 'category_detail' });
@@ -27,10 +29,10 @@ export function ProHonestWeekLink() {
   const label: TextStyle = { ...(type.bodySmBold as unknown as TextStyle), color: t.colors.ink, flex: 1 };
 
   return (
-    <Pressable onPress={open} accessibilityRole="button" accessibilityLabel="Open your Honest Week">
+    <Pressable onPress={open} accessibilityRole="button" accessibilityLabel={tr('proHonestWeekTease.openA11y')}>
       <Card tone="flat" style={row}>
         <Ionicons name="mail-unread-outline" size={t.iconSize.md} color={t.colors.accent} />
-        <Text style={label}>Your Honest Week</Text>
+        <Text style={label}>{tr('proHonestWeekTease.linkLabel')}</Text>
         <Ionicons name="chevron-forward" size={t.iconSize.sm} color={t.colors.inkSoft} />
       </Card>
     </Pressable>

@@ -126,7 +126,9 @@
     "heading": "Your Honest Week, every Sunday.",
     "body": "See where the hours really went — plan next week from the truth, not a guess.",
     "cta": "Start my Honest Week",
-    "trust": "Cancel anytime · learned on-device"
+    "trust": "Cancel anytime · learned on-device",
+    "linkLabel": "Your Honest Week",
+    "openA11y": "Open your Honest Week"
   },
   "recentList": {
     "header": "Recent tasks",
@@ -146,5 +148,12 @@
     "halfDaysAgo": "{{days}}d",
     "now": "now",
     "axisIdeal": "ideal"
+  },
+  "manageArea": {
+    "header": "Manage this area",
+    "resetTitle": "Reset learning",
+    "resetSub": "Clears the guess history, keeps your honey",
+    "deleteTitle": "Delete area",
+    "deleteSub": "Removes this area and its data"
   }
 }

@@ -1,4 +1,5 @@
 import { useCallback, useMemo, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import {
   Pressable,
   Switch,
@@ -37,6 +38,8 @@ import { useDayTasksStore } from '@/src/stores/dayTasksStore';
 
 export default function PlanRoute() {
   const t = useTheme();
+  const { t: tc } = useTranslation();
+  const { t: tr } = useTranslation('planner');
   const insets = useSafeAreaInsets();
   const { height: winH } = useWindowDimensions();
 
@@ -231,13 +234,13 @@ export default function PlanRoute() {
         <SheetGrabber />
 
         <View style={[headerRow, { paddingTop: t.space[5], paddingBottom: t.space[3] }]}>
-          <AppText style={heading}>Today&apos;s plan</AppText>
+          <AppText style={heading}>{tr('planSheet.heading')}</AppText>
           {plan != null ? (
             <Pressable
               testID="plan-clear-button"
               onPress={() => setClearConfirmOpen(true)}
               accessibilityRole="button"
-              accessibilityLabel="Clear plan"
+              accessibilityLabel={tr('planSheet.clearA11y')}
               hitSlop={t.size.hitSlop}
             >
               <View style={clearButtonStyle}>
@@ -246,7 +249,7 @@ export default function PlanRoute() {
                   size={t.iconSize.sm}
                   color={t.colors.danger} // audit-ok: destructive — the Clear-plan reset action
                 />
-                <Text style={clearLabelStyle}>Clear</Text>
+                <Text style={clearLabelStyle}>{tr('planSheet.clear')}</Text>
               </View>
             </Pressable>
           ) : null}
@@ -284,7 +287,7 @@ export default function PlanRoute() {
               {finishAtMs !== null ? (
                 <>
                   {startByLabel ? <Text style={timesSepStyle}>·</Text> : null}
-                  <Text style={timesWordStyle}>finish</Text>
+                  <Text style={timesWordStyle}>{tr('planSheet.finish')}</Text>
                   {/* Accent when the day genuinely runs past the done-by target —
                       the gap between this clock and the target IS the message.
                       Amber, never red: the day ran long, nobody failed. */}
@@ -328,7 +331,7 @@ export default function PlanRoute() {
                 size={t.iconSize.md}
                 color={t.colors.inkSoft}
               />
-              <Text style={cellLabelStyle}>Nudge me to start</Text>
+              <Text style={cellLabelStyle}>{tr('planSheet.nudge')}</Text>
               <Switch
                 testID="plan-nudge-switch"
                 value={nudgeEnabled}
@@ -342,7 +345,7 @@ export default function PlanRoute() {
             </View>
           </View>
 
-          <AppButton label="Done" variant="indigo" fullWidth onPress={() => router.back()} />
+          <AppButton label={tc('done')} variant="indigo" fullWidth onPress={() => router.back()} />
         </View>
       </GestureHandlerRootView>
 
@@ -350,7 +353,7 @@ export default function PlanRoute() {
           meaningless — and Clear is a no-op here since Now IS the empty state. */}
       <FinishEditorSheet
         visible={openPicker === 'start'}
-        title="Start at"
+        title={tr('planSheet.startAt')}
         valueMs={startAtMs}
         onChange={handleStartChange}
         onClear={useNowStart}
@@ -360,7 +363,7 @@ export default function PlanRoute() {
 
       <FinishEditorSheet
         visible={openPicker === 'finish'}
-        title="Finish by"
+        title={tr('planSheet.finishBy')}
         valueMs={doneByMs}
         onChange={handleDoneByChange}
         onClear={clearDoneBy}
@@ -377,7 +380,7 @@ export default function PlanRoute() {
           'Clears any hand-sorted order',
           'Your tasks stay in the queue',
         ]}
-        confirmLabel="Clear plan"
+        confirmLabel={tr('planSheet.clearA11y')}
         onConfirm={handleClearConfirm}
         onCancel={() => setClearConfirmOpen(false)}
       />

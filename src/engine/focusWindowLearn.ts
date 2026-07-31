@@ -190,12 +190,17 @@ function tierFor(confidence: number, significant: boolean): 'low' | 'building' |
   return 'low';
 }
 
-/** Coarse time-of-day bucket for the low-confidence reveal + forming hint. */
-export function peakBucketLabel(peakMin: number): string {
-  if (peakMin < 660) return 'Mornings';       // before 11:00
-  if (peakMin < 780) return 'Midday';         // 11:00–13:00
-  if (peakMin < 1020) return 'Afternoons';    // 13:00–17:00
-  return 'Evenings';                          // after 17:00
+/** The coarse blocks `peakBucketLabel` can return. */
+export type FocusBlockId = 'mornings' | 'midday' | 'afternoons' | 'evenings';
+
+/** Coarse time-of-day bucket for the low-confidence reveal + forming hint.
+ *  Returns a STABLE ID, never a display word — the engine is pure domain logic
+ *  and carries no copy. `focusCopy.coarseBlockLabel` turns this into a label. */
+export function peakBucketLabel(peakMin: number): FocusBlockId {
+  if (peakMin < 660) return 'mornings';       // before 11:00
+  if (peakMin < 780) return 'midday';         // 11:00–13:00
+  if (peakMin < 1020) return 'afternoons';    // 13:00–17:00
+  return 'evenings';                          // after 17:00
 }
 
 // ── Task 8: Hysteresis + assemble learnFocusWindow ───────────────────────────

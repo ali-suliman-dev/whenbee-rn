@@ -5,6 +5,7 @@
 // scale live on the inner Animated.View (shared value via .get()/.set()). No bounce.
 
 import { useCallback } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Pressable, Text, View, type TextStyle, type ViewStyle } from 'react-native';
 import Animated, { useAnimatedStyle, useSharedValue, withTiming } from 'react-native-reanimated';
 import { Ionicons } from '@expo/vector-icons';
@@ -38,6 +39,7 @@ export function PlanStrip({
   onPress,
 }: PlanStripProps) {
   const t = useTheme();
+  const { t: tr } = useTranslation('today');
   const scale = useSharedValue(1);
   const aStyle = useAnimatedStyle(() => ({ transform: [{ scale: scale.get() }] }));
 
@@ -107,7 +109,7 @@ export function PlanStrip({
         {doneByClock ? (
           <>
             <Text style={dot}>·</Text>
-            <Text style={softText}>done by {doneByClock}</Text>
+            <Text style={softText}>{tr('planStrip.doneBy', { clock: doneByClock })}</Text>
           </>
         ) : null}
         <View style={{ flex: 1 }} />

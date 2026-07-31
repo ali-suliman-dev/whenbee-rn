@@ -1,3 +1,4 @@
+import type { AppLang } from './resources';
 // Locale-aware date/number formatters, hoisted per locale.
 //
 // `Intl.DateTimeFormat`/`Intl.NumberFormat` construction is not free — the
@@ -17,11 +18,15 @@ type Formatters = {
 
 const cache = new Map<string, Formatters>();
 
-/** App language code (e.g. 'en', 'sv') → BCP-47 locale for `Intl` formatters. */
-const BCP47: Record<string, string> = { en: 'en-US', sv: 'sv-SE' };
+/** App language code (e.g. 'en', 'sv') → BCP-47 locale for `Intl` formatters.
+ *  Typed as Record<AppLang, …> ON PURPOSE: adding a language to SUPPORTED_LANGS
+ *  without a locale here is a COMPILE error, not a silent fall back to en-US
+ *  date and number formats. */
+const BCP47: Record<AppLang, string> = { en: 'en-US', sv: 'sv-SE' };
 
 /** Resolve the BCP-47 locale for an app language code, defaulting to en-US. */
-export const localeForLang = (lang: string): string => BCP47[lang] ?? 'en-US';
+export const localeForLang = (lang: string): string =>
+  BCP47[lang as AppLang] ?? 'en-US';
 
 export const makeFormatters = (locale: string): Formatters => {
   const hit = cache.get(locale);

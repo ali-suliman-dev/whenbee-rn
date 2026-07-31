@@ -83,7 +83,8 @@
     "allTasksA11y": "All tasks · {{day}}. {{action}}",
     "collapseAction": "Tap to collapse.",
     "expandAction": "Tap to expand.",
-    "allTasksHeader": "ALL TASKS · {{day}}"
+    "allTasksHeader": "ALL TASKS · {{day}}",
+    "allTasksLabel": "ALL TASKS · {{day}}"
   },
   "dayTimeline": {
     "overflow": {
@@ -144,8 +145,8 @@
     "a11y": "Timing {{label}}, {{elapsed}} elapsed of about {{honestMin}} minutes. Tap to reopen.",
     "eyebrow": "NOW · {{category}}",
     "elapsedHeader": "ELAPSED",
-    "guessed": "guessed {{count}} min",
-    "plan": "plan ~{{count}} min"
+    "guessed": "guessed {{duration}}",
+    "plan": "plan ~{{duration}}"
   },
   "scheduledRoutine": {
     "minutesSuffix": "{{count}}m",
@@ -225,7 +226,8 @@
     "savingHint": "Saving teaches your honest pace.",
     "skipForNow": "Skip for now",
     "namePlaceholder": "Name it (optional)",
-    "nameA11y": "Task name"
+    "nameA11y": "Task name",
+    "nameThisTask": "Name this task"
   },
   "quickTaskChips": {
     "tapToStartAgain": "Tap to start again"
@@ -234,5 +236,28 @@
     "morning": "Good morning",
     "afternoon": "Good afternoon",
     "evening": "Good evening"
+  },
+  "daySoFar": {
+    "eyebrow": "YOUR DAY SO FAR",
+    "headline_one": "One honest log in. Guessed {{guessed}}, really took <honest>{{honest}}</honest>.",
+    "headline_other": "{{count}} honest logs in. Guessed {{guessed}}, really took <honest>{{honest}}</honest>.",
+    "unit_one": "task",
+    "unit_other": "tasks",
+    "loggedLabel": "LOGGED",
+    "guessedLabel": "GUESSED",
+    "honestLabel": "HONEST",
+    "milestone": {
+      "equal": "Spot on your guess today.",
+      "over": "<strong>+{{gap}} over</strong> your guess today — that gap is what Whenbee's learning.",
+      "under": "<strong>{{gap}} under</strong> your guess today — nicely called."
+    }
+  },
+  "timeline": {
+    "tomorrowChip": "Tomorrow",
+    "overrunSentence": "Past here you run over. Push it to <clock>{{clock}}</clock>, or move a task to tomorrow.",
+    "reorderHint": "Long-press and drag to reorder this task"
+  },
+  "planStrip": {
+    "doneBy": "done by {{clock}}"
   }
 }

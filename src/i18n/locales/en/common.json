@@ -4,7 +4,15 @@
   "done": "Done",
   "edit": "Edit",
   "delete": "Delete",
-  "duration": { "h": "{{count}}h", "m": "{{count}}m" },
+  "duration": {
+    "h": "{{count}}h",
+    "m": "{{count}}m"
+  },
   "toTier": " to {{tier}}",
-  "fullyRipened": "Fully ripened"
+  "fullyRipened": "Fully ripened",
+  "screenTitle": {
+    "settings": "Settings",
+    "categories": "Categories",
+    "privacy": "Privacy"
+  }
 }

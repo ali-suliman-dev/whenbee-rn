@@ -1,5 +1,13 @@
 {
-  "weekdayShort": ["Sön", "Mån", "Tis", "Ons", "Tor", "Fre", "Lör"],
+  "weekdayShort": [
+    "Sön",
+    "Mån",
+    "Tis",
+    "Ons",
+    "Tor",
+    "Fre",
+    "Lör"
+  ],
   "day": {
     "today": "Idag",
     "tomorrow": "Imorgon",
@@ -13,7 +21,9 @@
     "addingTo": "Läggs till {{day}}",
     "changeDayA11y": "Byt måldag",
     "title": "Ny uppgift",
-    "subtitle": "Vad jobbar du med?"
+    "subtitle": "Vad jobbar du med?",
+    "editTitle": "Redigera uppgift",
+    "editSubtitle": "Justera detaljerna."
   },
   "taskField": {
     "label": "UPPGIFT",
@@ -28,13 +38,14 @@
     "addCategoryA11y": "Lägg till kategori"
   },
   "guessField": {
-    "label": "DIN GISSNING"
+    "label": "DIN MAGKÄNSLA"
   },
   "cta": {
     "addAndStart": "Lägg till & starta timer",
     "addToShelf": "Lägg till i hyllan",
     "addToToday": "Lägg till idag",
-    "addToDay": "Lägg till {{day}}"
+    "addToDay": "Lägg till {{day}}",
+    "save": "Spara & starta"
   },
   "toast": {
     "savedToShelf": "Sparad i hyllan",
@@ -42,13 +53,18 @@
     "addedToDay": "Tillagd {{day}}"
   },
   "goalCoach": {
-    "a11y": "Målcoach: sikta inom {{band}} procent",
-    "eyebrow": "MÅL · COACH",
-    "targetBadge": "inom ±{{band}}%",
-    "lineWithLever": "{{lever}} tar längst tid för dig inom {{category}} — <bold>~{{honest}}m</bold> håller dig inom <bold>±{{band}}%</bold>.",
-    "lineNoLever": "<bold>~{{honest}}m</bold> håller dig inom <bold>±{{band}}%</bold>.",
-    "useMinutesA11y": "Använd {{count}} minuter",
-    "useButton": "Använd {{count}}m",
-    "keepLabel": "eller behåll {{count}}m"
+    "eyebrow": "MÅL · {{category}}",
+    "chip": "mål ±{{band}}%",
+    "bestSoFar": "ditt bästa hittills",
+    "insideBand_one": "{{inside}} av din senaste {{count}} logg landade inom bandet",
+    "insideBand_other": "{{inside}} av dina senaste {{count}} loggar landade inom bandet",
+    "lever": "Du landar närmast din gissning på <strong>{{best}}</strong> — inom <strong>±{{bestBand}}%</strong>, mot ±{{worstBand}}% på {{worst}}.",
+    "a11y": "Mål för {{category}}: bäst inom {{bestBand}} procent, mål {{targetBand}} procent.",
+    "a11yInside_one": " {{inside}} av din senaste {{count}} logg inom bandet.",
+    "a11yInside_other": " {{inside}} av dina senaste {{count}} loggar inom bandet.",
+    "a11yLever": " Du landar närmast din gissning på {{best}}, inom {{bestBand}} procent, mot {{worstBand}} procent på {{worst}}."
+  },
+  "antiChase": {
+    "body": "Du behöver inte lägga på marginal själv. Gissa hur långt det känns, så lägger Whenbee till verklighetsdelen."
   }
 }

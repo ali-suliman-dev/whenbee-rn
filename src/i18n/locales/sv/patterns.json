@@ -28,8 +28,9 @@
     "shareLabel": "Dela min personlighet",
     "placeholder": {
       "title": "Möt din tidspersonlighet",
-      "body": "Svara på några snabba frågor, eller fortsätt logga så listar jag ut det.",
-      "cta": "Ta det 20-sekunders testet"
+      "body": "Ett quiz på 20 sekunder sätter namn på den nu — eller fortsätt logga så listar jag ut det.",
+      "cta": "Gör quizet",
+      "hint": "~20 sek"
     }
   },
   "biggestSurprise": {
@@ -109,13 +110,15 @@
       "openA11y": "Öppna detaljer för fokusfönster",
       "footerMetaWeeks": "{{count}} pass · stabilt i {{weeks}} veckor",
       "footerMetaDays": "{{count}} pass · {{days}} dagar",
-      "open": "Öppna ›"
+      "open": "Öppna ›",
+      "seeDetails": "Se detaljer ›"
     },
     "contrastSuffix": " över din dipp"
   },
   "patternsEmpty": {
     "title": "Dina mönster är på väg",
-    "body": "Ta tiden på några uppgifter, så är det här du möter din tidspersonlighet, din skarpaste kategori och överraskningarna värda att lägga märke till."
+    "body": "Ta tiden på några uppgifter, så är det här du möter din tidspersonlighet, din skarpaste kategori och överraskningarna värda att lägga märke till.",
+    "bodyAfterArchetype": "Tima några uppgifter så fylls det här i med din skarpaste kategori och de överraskningar som är värda att märka."
   },
   "patternsSegment": {
     "numbers": "Siffror",
@@ -247,6 +250,40 @@
       "midday": "Du hittar din rytm runt lunchtid",
       "afternoon": "Morgnarna värms upp långsamt — du toppar efter lunch",
       "evening": "Du är en sen brinnare — du toppar på kvällen"
+    },
+    "gateLabels": {
+      "sessions": "Timade pass",
+      "days": "Olika dagar"
+    },
+    "sessions": {
+      "doneValue": "{{have}} ✓",
+      "doneSub": "Gott om loggar för mig att lära av.",
+      "progressValue": "{{have}}/{{need}}",
+      "togo_one": "{{count}} timat pass kvar.",
+      "togo_other": "{{count}} timade pass kvar."
+    },
+    "days": {
+      "doneSub": "Utspritt över {{count}} dagar — ingen engångsslump.",
+      "togo_one": "{{count}} dag till med ett loggat pass.",
+      "togo_other": "{{count}} dagar till med ett loggat pass.",
+      "upcomingSub": "Härnäst: en spridning över olika dagar."
+    },
+    "unlockedTag": "{{count}} av 2 upplåsta",
+    "rewardCaption": {
+      "more": "Fortsätt logga — dina skarpaste timmar håller på att ta form.",
+      "last": "En signal till avslöjar dina skarpaste timmar."
+    },
+    "confidence": {
+      "low": "Lär sig fortfarande · skärps",
+      "building": "Bygger · blir skarpare",
+      "steady": "Stabilt · låst till din rytm"
+    },
+    "coarseHint": "Lutar mot {{block}} — fortsätt tima så skärper jag det.",
+    "block": {
+      "mornings": "förmiddagar",
+      "midday": "mitt på dagen",
+      "afternoons": "eftermiddagar",
+      "evenings": "kvällar"
     }
   },
   "archetype": {
@@ -272,7 +309,7 @@
       "eyebrow": "Pro · mognar",
       "pillPrefix": "Mognar vid",
       "settling": "Sätter sig fortfarande…",
-      "footer": "Ingen streak, ingen brådska. Logga som vanligt så kommer du dit.",
+      "footer": "Inget att hålla igång, ingen brådska. Logga som vanligt så kommer du dit.",
       "ticketTitle": "Äg Pro från dag ett",
       "ticketSub": "Allt här tänds i samma stund det är klart.",
       "chipLabel": "Skaffa Pro"
@@ -321,5 +358,18 @@
       "aboutAWeek": "ungefär en vecka",
       "aboutAMonth": "ungefär en månad"
     }
+  },
+  "buckets": {
+    "mornings": "morgnarna",
+    "midday": "mitt på dagen",
+    "afternoons": "eftermiddagarna",
+    "evenings": "kvällarna",
+    "lateNights": "sena nätterna"
+  },
+  "screen": {
+    "title": "Mönster",
+    "subtitle": "Vad din tid hela tiden säger dig.",
+    "progressSection": "Dina framsteg",
+    "numbersSection": "Dina siffror"
   }
 }

@@ -11,6 +11,8 @@ import { useTranslation } from 'react-i18next';
 import { Ionicons } from '@expo/vector-icons';
 
 import i18n from '@/src/i18n';
+import type { TFunction } from 'i18next';
+import { SUPPORTED_LANGS, LANGUAGE_ENDONYM } from '@/src/i18n/resources';
 import { getLanguagePreference, setLanguagePreference, type LanguagePreference } from '@/src/i18n/languagePreference';
 import { detectLanguage } from '@/src/i18n/detectLanguage';
 import { AppText } from '@/src/components/AppText';
@@ -18,7 +20,15 @@ import { SheetGrabber } from '@/src/components/SheetGrabber';
 import { useTheme } from '@/src/theme/useTheme';
 import { type } from '@/src/theme/typography';
 
-const OPTION_VALUES: readonly LanguagePreference[] = ['system', 'en', 'sv'];
+// Derived, never hand-listed: a language added to SUPPORTED_LANGS shows up here
+// automatically (the old hardcoded array silently omitted new languages).
+const OPTION_VALUES: readonly LanguagePreference[] = ['system', ...SUPPORTED_LANGS];
+
+/** 'system' resolves through the settings namespace; a real language uses its
+ *  own endonym, which is never translated. */
+function optionLabelFor(value: LanguagePreference, tr: TFunction<'settings'>): string {
+  return value === 'system' ? tr('language.system') : LANGUAGE_ENDONYM[value];
+}
 
 export function LanguagePicker() {
   const t = useTheme();
@@ -27,7 +37,7 @@ export function LanguagePicker() {
   const [open, setOpen] = useState(false);
   const [preference, setPreference] = useState<LanguagePreference>(() => getLanguagePreference());
 
-  const currentLabel = tr(`language.${preference}`);
+  const currentLabel = optionLabelFor(preference, tr);
 
   function choose(value: LanguagePreference) {
     setLanguagePreference(value);
@@ -104,7 +114,7 @@ export function LanguagePicker() {
             <View style={{ gap: t.space[1] }}>
               {OPTION_VALUES.map((value) => {
                 const selected = value === preference;
-                const label = tr(`language.${value}`);
+                const label = optionLabelFor(value, tr);
                 return (
                   <Pressable
                     key={value}

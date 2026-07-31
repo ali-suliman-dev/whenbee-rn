@@ -1,4 +1,5 @@
 import { View, type TextStyle, type ViewStyle } from 'react-native';
+import { useTranslation } from 'react-i18next';
 import { Ionicons } from '@expo/vector-icons';
 import { Chip } from '@/src/components/Chip';
 import { AppText } from '@/src/components/AppText';
@@ -17,14 +18,11 @@ import type { ForgotStepIn } from '@/src/domain/types';
 // the free net first, the Pro control second.
 // ──────────────────────────────────────────────────────────────────────────────
 
-const OPTIONS: { value: ForgotStepIn; label: string }[] = [
-  { value: 'room', label: 'Lots of room' },
-  { value: 'balanced', label: 'Balanced' },
-  { value: 'early', label: 'Step in early' },
-];
+const OPTIONS: ForgotStepIn[] = ['room', 'balanced', 'early'];
 
 export function ForgotStepInRow() {
   const t = useTheme();
+  const { t: tr } = useTranslation('settings');
   const forgotStepIn = useSettingsStore((s) => s.forgotStepIn);
   const setForgotStepIn = useSettingsStore((s) => s.setForgotStepIn);
 
@@ -53,20 +51,19 @@ export function ForgotStepInRow() {
       <View style={{ flexDirection: 'row', alignItems: 'center', gap: t.space[3] }}>
         <Ionicons name="exit-outline" size={t.iconSize.md} color={t.colors.inkSoft} />
         <View style={{ gap: t.space[0.5] }}>
-          <AppText style={titleStyle}>Forgot to stop</AppText>
+          <AppText style={titleStyle}>{tr('forgotStepIn.title')}</AppText>
           <AppText style={captionStyle}>
-            If a timer runs long while you&rsquo;re away, Whenbee wraps it and asks when you
-            finished.
+            {tr('forgotStepIn.caption')}
           </AppText>
         </View>
       </View>
       <View style={options}>
         {OPTIONS.map((o) => (
           <Chip
-            key={o.value}
-            label={o.label}
-            selected={forgotStepIn === o.value}
-            onPress={() => select(o.value)}
+            key={o}
+            label={tr(`forgotStepIn.options.${o}`)}
+            selected={forgotStepIn === o}
+            onPress={() => select(o)}
           />
         ))}
       </View>

@@ -103,7 +103,21 @@ interface Rule {
 }
 
 const NEGATION_WINDOW = 40;
-const NEGATION = /\b(no|not|never|without|n't|nor)\b[^.?!]*$/i;
+// Negations are matched per SHIPPED LANGUAGE, not just English: a Swedish string
+// reframing a banned mechanic ("Inget att hålla igång") is the invariant being
+// stated, exactly like "No streak to break" — an English-only matcher would flag
+// every translation of a line whose English original passes. Extend this union
+// when a language is added (de: kein/nicht/nie/ohne · fr: ne/pas/jamais/sans ·
+// es: no/nunca/sin/ninguna).
+const NEGATION = new RegExp(
+  String.raw`\b(` +
+    // en
+    String.raw`no|not|never|without|n't|nor` +
+    // sv
+    String.raw`|ingen|inga|inget|inte|aldrig|utan` +
+    String.raw`)\b[^.?!]*$`,
+  'i',
+);
 
 const BANNED: Rule[] = [
   { name: 'streak mechanic', pattern: /\bstreaks?\b/i, allowNegated: true },

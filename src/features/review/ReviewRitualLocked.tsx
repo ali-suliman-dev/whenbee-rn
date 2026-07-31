@@ -62,8 +62,8 @@ export function ReviewRitualLocked({ period }: { period: ReviewPeriod }) {
         </Text>
         <View style={scrim} pointerEvents="none" />
       </View>
-      <AppButton label="Unlock with Pro" variant="amber" size="md" fullWidth onPress={openPaywall} />
-      <Text style={foot}>Cancel anytime · learned on-device</Text>
+      <AppButton label={tt('locked.unlockCta')} variant="amber" size="md" fullWidth onPress={openPaywall} />
+      <Text style={foot}>{tt('locked.footnote')}</Text>
     </Card>
   );
 }

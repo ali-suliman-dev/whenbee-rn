@@ -116,12 +116,12 @@ export function scheduleTimerDone(opts: {
       const calibrated = opts.hasCalibration ?? true;
       const content = calibrated
         ? {
-            title: "You're near the finish",
-            body: `This is about when ${opts.label} usually wraps. Log it when you're done.`,
+            title: i18n.t('notifications:timerDone.calibratedTitle'),
+            body: i18n.t('notifications:timerDone.calibratedBody', { label: opts.label }),
           }
         : {
-            title: `Time check for ${opts.label}`,
-            body: `This was your estimate for ${opts.label}. Log it whenever you wrap.`,
+            title: i18n.t('notifications:timerDone.uncalibratedTitle', { label: opts.label }),
+            body: i18n.t('notifications:timerDone.uncalibratedBody', { label: opts.label }),
           };
       const sound = resolveNotificationSound(useSettingsStore.getState().notificationSound);
       const notifContent: NotificationContentInputWithThread = {
@@ -186,8 +186,11 @@ export function scheduleStartBy(opts: {
       if (secondsFromNow <= 0) return;
       const sound = resolveNotificationSound(useSettingsStore.getState().notificationSound);
       const notifContent: NotificationContentInputWithThread = {
-        title: `Start by ${formatClock(opts.startByMs)}`,
-        body: `Start ${opts.firstTaskLabel} now and you'll finish by ${formatClock(opts.deadlineMs)}.`,
+        title: i18n.t('notifications:startBy.title', { time: formatClock(opts.startByMs) }),
+        body: i18n.t('notifications:startBy.body', {
+          label: opts.firstTaskLabel,
+          deadline: formatClock(opts.deadlineMs),
+        }),
         sound,
         interruptionLevel: 'timeSensitive',
         categoryIdentifier: CAT.START_BY,
@@ -257,8 +260,8 @@ export function scheduleGuardCheckIn(opts: {
       if (secondsFromNow <= 0) return;
       const sound = resolveNotificationSound(useSettingsStore.getState().notificationSound);
       const notifContent: NotificationContentInputWithThread = {
-        title: `Still on ${opts.label}?`,
-        body: `You've been at it about ${opts.thresholdMin} minutes. No pressure, just a nudge.`,
+        title: i18n.t('notifications:guard.title', { label: opts.label }),
+        body: i18n.t('notifications:guard.body', { minutes: opts.thresholdMin }),
         sound,
         categoryIdentifier: CAT.GUARD,
         threadIdentifier: THREAD.GUARD,

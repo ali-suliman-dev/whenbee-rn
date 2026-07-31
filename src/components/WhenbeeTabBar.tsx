@@ -1,4 +1,5 @@
 import { useEffect, useState, type ComponentProps } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Modal, Pressable, View, type LayoutChangeEvent, type TextStyle, type ViewStyle } from 'react-native';
 import Animated, {
   useSharedValue,
@@ -62,6 +63,7 @@ const INDICATOR_W = 26;
 
 export function WhenbeeTabBar({ state, descriptors, navigation }: BottomTabBarProps) {
   const t = useTheme();
+  const { t: ts } = useTranslation('shared');
   const insets = useSafeAreaInsets();
   const reducedMotion = useReducedMotion();
 
@@ -186,7 +188,7 @@ export function WhenbeeTabBar({ state, descriptors, navigation }: BottomTabBarPr
             <Pressable
               style={{ flex: 1, backgroundColor: t.colors.scrim }}
               onPress={requestCloseArc}
-              accessibilityLabel="Dismiss"
+              accessibilityLabel={ts('a11y.dismiss')}
               accessibilityRole="button"
             />
           </View>

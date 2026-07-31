@@ -1,4 +1,5 @@
 import { useMemo } from 'react';
+import { useTranslation } from 'react-i18next';
 import { ScrollView, type ViewStyle } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { Chip } from '@/src/components/Chip';
@@ -76,6 +77,7 @@ export function CategoryChips({
   usage?: Record<string, number>;
 }) {
   const t = useTheme();
+  const { t: ts } = useTranslation('shared');
 
   const sorted = useMemo(
     () => sortPickerCategories(categories, usage ?? {}, guessedId),
@@ -112,7 +114,7 @@ export function CategoryChips({
       ))}
       {onAddNew ? (
         <Chip
-          label="New"
+          label={ts('categoryChips.new')}
           variant="add"
           icon={<Ionicons name="add" size={t.iconSize.sm} color={t.colors.inkSoft} />}
           onPress={onAddNew}

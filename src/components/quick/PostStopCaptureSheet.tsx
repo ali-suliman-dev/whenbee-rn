@@ -52,6 +52,7 @@ export function PostStopCaptureSheet({
   onSkip,
 }: PostStopCaptureSheetProps) {
   const t = useTheme();
+  const { t: tc } = useTranslation();
   const { t: tr } = useTranslation('today');
   const insets = useSafeAreaInsets();
   const reducedMotion = useReducedMotion();
@@ -172,7 +173,7 @@ export function PostStopCaptureSheet({
         style={[sheetStyle, keyboardLift]}
         entering={reducedMotion ? undefined : FadeInDown.duration(t.motion.sheet)}
         accessibilityViewIsModal
-        accessibilityLabel="Name this task"
+        accessibilityLabel={tr('postStopCapture.nameThisTask')}
       >
         {/* Grab handle */}
         <View style={grabberWrap} accessible={false}>
@@ -219,7 +220,7 @@ export function PostStopCaptureSheet({
         {/* Save CTA */}
         {/* The AppButton label is the a11y text; it already has role="button". */}
         <AppButton
-          label="Save"
+          label={tc('save')}
           variant="indigo"
           size="md"
           fullWidth
@@ -230,7 +231,7 @@ export function PostStopCaptureSheet({
         <Pressable
           onPress={onSkip}
           accessibilityRole="button"
-          accessibilityLabel="Skip for now"
+          accessibilityLabel={tr('postStopCapture.skipForNow')}
           hitSlop={t.size.hitSlop}
         >
           <View style={{ alignItems: 'center', paddingVertical: t.space[1] }}>

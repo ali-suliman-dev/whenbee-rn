@@ -55,6 +55,11 @@ module.exports = [
       'i18next/no-literal-string': [
         'error',
         {
+          // JSX TEXT only. The plugin's 'jsx-only' mode also inspects every string
+          // inside a JSX expression — including the KEY passed to `t(...)` — so it
+          // is unusable here. Hardcoded copy in a JSX ATTRIBUTE (accessibilityLabel,
+          // placeholder, title, label…) is caught instead by the targeted
+          // `copyProps` audit in src/lib/__tests__/copyProps.test.ts.
           mode: 'jsx-text-only',
           'should-validate-template': false,
           callees: { exclude: ['t', 'i18n', 'require', 'useTheme'] },
@@ -62,7 +67,7 @@ module.exports = [
             exclude: [
               ...i18nextDefaults.words.exclude,
               'Whenbee',
-              '(?:✦|⬡|✓)',
+              '(?:✦|⬡|⬢|✓|＋|z)', // decorative glyphs/pips, not copy (the sleeping 'z' in WhatsNewEmpty's art)
               '(?:m\\s*→?|now|x)',
             ],
           },

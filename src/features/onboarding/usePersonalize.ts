@@ -1,5 +1,4 @@
-import { useTranslation } from 'react-i18next';
-import type { TFunction } from 'i18next';
+import i18n from '@/src/i18n';
 import { useSettingsStore } from '@/src/stores/settingsStore';
 import { seedMultiplierFor, type QuizAnswers } from '@/src/engine';
 import { analytics } from '@/src/services/analytics';
@@ -8,19 +7,25 @@ import { analytics } from '@/src/services/analytics';
 // reveal label matches what Patterns will show. Kept in lockstep with the engine
 // ladder thresholds (Steady<1.2, Gentle<1.5, Sprint<2.0, Dreamer>=2.0).
 // Thresholds and titles MUST stay in sync with `archetypeFor` in usePatterns.ts.
+/** Multiplier → archetype id. PURE: the thresholds are the contract, the words
+ *  are not — copy lives in `onboarding.archetype.<id>`. */
+export function archetypeIdFor(m: number): 'steady' | 'gentle' | 'sprint' | 'dreamer' {
+  if (m < 1.2) return 'steady';
+  if (m < 1.5) return 'gentle';
+  if (m < 2.0) return 'sprint';
+  return 'dreamer';
+}
+
 export function archetypeTitleFor(m: number): string {
-  if (m < 1.2) return 'The Steady Reader';
-  if (m < 1.5) return 'The Gentle Optimist';
-  if (m < 2.0) return 'The Sprint Optimist';
-  return 'The Dreamer';
+  return i18n.t(`onboarding:archetype.${archetypeIdFor(m)}.title`);
 }
 
 function rungFor(m: number): { title: string; blurb: string } {
-  const title = archetypeTitleFor(m);
-  if (m < 1.2) return { title, blurb: 'Your guesses already land close to reality. I\'ll sharpen this with every task you log.' };
-  if (m < 1.5) return { title, blurb: 'You lean hopeful, then mostly catch up. A little padding does it.' };
-  if (m < 2.0) return { title, blurb: 'Your mind moves fast; the doing takes a touch longer. Now you know by how much.' };
-  return { title, blurb: 'Big plans, generous timelines. Your honest numbers keep them grounded.' };
+  const id = archetypeIdFor(m);
+  return {
+    title: i18n.t(`onboarding:archetype.${id}.title`),
+    blurb: i18n.t(`onboarding:archetype.${id}.blurb`),
+  };
 }
 
 export interface RevealCard {
@@ -32,7 +37,6 @@ export interface RevealCard {
 export function usePersonalize() {
   const setDisplayName = useSettingsStore((s) => s.setDisplayName);
   const setArchetypeSeed = useSettingsStore((s) => s.setArchetypeSeed);
-  const { t: tr } = useTranslation('onboarding');
   return {
     trackShown: () => analytics.capture('personalize_shown'),
     /** Fire once when quiz step 0 first renders — marks quiz entry in the funnel. */

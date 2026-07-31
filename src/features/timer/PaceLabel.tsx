@@ -13,7 +13,7 @@ import { AppText } from '@/src/components/AppText';
 import { haptics } from '@/src/lib/haptics';
 import { useTheme } from '@/src/theme/useTheme';
 import { type } from '@/src/theme/typography';
-import { fmtHm } from '@/src/lib/time';
+import { formatDuration } from '@/src/i18n/formatDuration';
 
 // ──────────────────────────────────────────────────────────────────────────────
 // PaceLabel — the no-guilt pace pill pinned above the controls.
@@ -67,6 +67,8 @@ export function PaceLabel({
   onForgotPress?: () => void;
 }) {
   const t = useTheme();
+  const { t: tr } = useTranslation('timer');
+  const { t: translate } = useTranslation();
   const reducedMotion = useReducedMotion();
   const forgotSec = guessSec ?? estimateSec;
   const [phase, setPhase] = useState<Phase>(
@@ -117,9 +119,13 @@ export function PaceLabel({
   };
 
   let copy: string;
-  if (isOver) copy = overMin > 0 ? `${fmtHm(overMin)} over your guess — now you know` : 'Past your guess — now you know';
-  else if (phase === 'closing') copy = 'Almost at your guess';
-  else copy = 'You’ve got time';
+  if (isOver) {
+    copy =
+      overMin > 0
+        ? tr('pace.over', { duration: formatDuration(overMin, translate) })
+        : tr('pace.overNoAmount');
+  } else if (phase === 'closing') copy = tr('pace.closing');
+  else copy = tr('pace.onTrack');
 
   const pill = (
     <View style={wrap} accessibilityLiveRegion="polite">
@@ -155,11 +161,11 @@ export function PaceLabel({
             onForgotPress();
           }}
           accessibilityRole="button"
-          accessibilityLabel="Forgot to stop the timer earlier"
+          accessibilityLabel={tr('pace.forgotA11y')}
           hitSlop={t.size.hitSlop}
           style={{ paddingVertical: t.space[1] }}
         >
-          <AppText style={forgotStyle}>Forgot to stop?</AppText>
+          <AppText style={forgotStyle}>{tr('pace.forgotToStop')}</AppText>
         </Pressable>
       </Animated.View>
     </View>

@@ -129,15 +129,15 @@
   "trialTimeline": {
     "today": {
       "head": "Idag",
-      "desc": "Full Pro, gratis"
+      "desc": "Hela Pro, gratis. Inget dras."
     },
     "day5": {
       "head": "Dag 5",
-      "desc": "Vi påminner dig"
+      "desc": "<strong>Vi påminner dig</strong> om att provperioden tar slut."
     },
     "day7": {
       "head": "Dag 7",
-      "desc": "Provperioden slutar"
+      "desc": "Provperioden slutar. Avbryt innan så betalar du ingenting."
     }
   },
   "plans": {
@@ -158,5 +158,18 @@
     "freeStripRest": "Inget kort, ingen förnyelse — det är din riktiga provperiod. Pro lägger bara till belöningen.",
     "trustLine": "Byggd av folk som är sena till allt. Det är verktyget vi själva behövde först.",
     "expoGoNotice": "Körs i Expo Go — köp är simulerade."
+  },
+  "footer": {
+    "renew": "Abonnemang förnyas tills du säger upp.",
+    "restore": "Återställ köp",
+    "terms": "Villkor",
+    "privacy": "Integritet",
+    "privacyA11y": "Integritetspolicy",
+    "termsA11y": "Användarvillkor"
+  },
+  "proWelcome": {
+    "sub": "Varje ärligt tal du förtjänat funkar nu överallt där du planerar.",
+    "title": "Du är Pro.",
+    "cta": "Visa min ärliga dag"
   }
 }

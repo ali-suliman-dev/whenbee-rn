@@ -19,6 +19,7 @@
 // animate in.
 
 import { type ReactElement } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Pressable, Text, View, type TextStyle, type ViewStyle } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '@/src/theme/useTheme';
@@ -252,6 +253,7 @@ export function PlanAnchorChooser({
   onEditFinish,
 }: PlanAnchorChooserProps): ReactElement {
   const t: Theme = useTheme();
+  const { t: tpl } = useTranslation('planner');
 
   const group: ViewStyle = {
     borderRadius: t.radii.md,
@@ -264,8 +266,8 @@ export function PlanAnchorChooser({
     <View testID="plan-anchor-chooser" style={group} accessibilityRole="radiogroup">
       <AnchorRow
         testID="plan-anchor-start"
-        label="Start at"
-        valueText={startAtMs === null ? 'Now' : formatClock(startAtMs)}
+        label={tpl('planSheet.startAt')}
+        valueText={startAtMs === null ? tpl('planSheet.now') : formatClock(startAtMs)}
         derivedText={startDerivedText(startAtMs, effectiveStartMs, startHasPassed, derivedFinishMs)}
         editHint="Tap to pick when you start. Whenbee works out your finish."
         selected={selected === 'start'}
@@ -275,7 +277,7 @@ export function PlanAnchorChooser({
       />
       <AnchorRow
         testID="plan-anchor-finish"
-        label="Finish by"
+        label={tpl('planSheet.finishBy')}
         valueText={finishByMs === null ? 'Set' : formatClock(finishByMs)}
         derivedText={finishDerivedText(finishByMs, derivedStartByMs)}
         editHint="Tap to pick when you need to be done. Whenbee works out your latest start."

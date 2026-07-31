@@ -57,6 +57,7 @@ function targetDayLabel(targetDate: string | null, today: string): string {
 
 export default function AddTask() {
   const t = useTheme();
+  const { t: tc } = useTranslation();
   const { t: tr } = useTranslation('addTask');
   const insets = useSafeAreaInsets();
   const { height: winH } = useWindowDimensions();
@@ -254,7 +255,7 @@ export default function AddTask() {
             <Pressable
               onPress={() => setDatePickerVisible(true)}
               accessibilityRole="button"
-              accessibilityLabel="Change target day"
+              accessibilityLabel={tr('header.changeDayA11y')}
               hitSlop={t.size.hitSlop}
             >
               <View style={dateChip}>
@@ -267,8 +268,8 @@ export default function AddTask() {
           </View>
           {a.isEditing ? (
             <>
-              <Text style={heading}>Edit task</Text>
-              <Text style={sub}>Adjust the details.</Text>
+              <Text style={heading}>{tr('header.editTitle')}</Text>
+              <Text style={sub}>{tr('header.editSubtitle')}</Text>
             </>
           ) : null}
         </View>
@@ -344,7 +345,7 @@ export default function AddTask() {
           </View>
 
           <View style={{ gap: t.space[2] }}>
-            <Text style={fieldLabel}>YOUR GUT GUESS</Text>
+            <Text style={fieldLabel}>{tr('guessField.label')}</Text>
             <TimeField value={a.guessMin} onChange={a.setGuessMin} />
           </View>
 
@@ -381,14 +382,14 @@ export default function AddTask() {
           {a.isEditing ? (
             <>
               <AppButton
-                label="Save"
+                label={tc('save')}
                 variant="indigo"
                 fullWidth
                 disabled={!a.canSubmit || a.loadedDate === undefined}
                 onPress={handleSave}
               />
               <AppButton
-                label="Save & start"
+                label={tr('cta.save')}
                 variant="ghost"
                 fullWidth
                 disabled={!a.canSubmit || a.loadedDate === undefined}
@@ -398,7 +399,7 @@ export default function AddTask() {
           ) : (
             <>
               <AppButton
-                label="Add & start timer"
+                label={tr('cta.addAndStart')}
                 variant="indigo"
                 fullWidth
                 disabled={!a.canSubmit}
@@ -431,7 +432,7 @@ export default function AddTask() {
 
       <ActionSheet
         visible={datePickerVisible}
-        title="When should this happen?"
+        title={tr('datePicker.sheetTitle')}
         items={dayPickerItems}
         onCancel={() => setDatePickerVisible(false)}
       />

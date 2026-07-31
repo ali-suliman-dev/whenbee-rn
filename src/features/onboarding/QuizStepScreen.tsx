@@ -147,7 +147,7 @@ export function QuizStepScreen({ step }: { step: number }): React.JSX.Element | 
               marginBottom: t.space[2],
             }}
           >
-            Pick one to continue
+            {tr('quiz.pickOne')}
           </AppText>
         ) : null}
         <AppButton

@@ -27,6 +27,19 @@
   },
   "detail": {
     "eyebrow": "NÄR DU ÄR SOM SKARPAST",
-    "footer": "Whenbee planerar din dag runt den här stunden."
+    "footer": "Whenbee planerar din dag runt den här stunden.",
+    "checkAgainstTimers": "Jag stämmer av det mot dina timers.",
+    "editWindowA11y": "Redigera fokusfönstret",
+    "editWindow": "Redigera fönstret"
+  },
+  "planSheet": {
+    "heading": "Dagens plan",
+    "clear": "Rensa",
+    "finish": "klart",
+    "nudge": "Knuffa mig att börja",
+    "clearA11y": "Rensa planen",
+    "startAt": "Börja",
+    "finishBy": "Klar senast",
+    "now": "Nu"
   }
 }

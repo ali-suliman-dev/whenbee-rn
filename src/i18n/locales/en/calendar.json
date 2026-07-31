@@ -27,5 +27,13 @@
   "notPro": {
     "title": "Padding your calendar is a Pro feature",
     "cta": "See what Pro unlocks"
+  },
+  "overlay": {
+    "sectionLabel": "CALENDAR · {{count}}",
+    "allDay": "All day · {{titles}}",
+    "busyFallback": "Busy",
+    "a11y": "Calendar, {{count}} events. {{action}}",
+    "collapseAction": "Tap to collapse.",
+    "expandAction": "Tap to expand."
   }
 }

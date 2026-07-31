@@ -21,7 +21,10 @@
     "rangeDone": "Klar {{low}}–{{high}}",
     "pointDone": "Klar ~{{clock}}",
     "rangeA11y": "Ärligt tidsspann {{low}} till {{high}}.",
-    "rangeA11yLearning": "Ärligt tidsspann {{low}} till {{high}}, lär sig fortfarande."
+    "rangeA11yLearning": "Ärligt tidsspann {{low}} till {{high}}, lär sig fortfarande.",
+    "stillLearning": "lär sig fortfarande",
+    "finishLabel": "Klar ~",
+    "startedLabel": "Startade"
   },
   "ring": {
     "a11y_one": "Timer igång. Ärligt mål cirka {{count}} minut. Förfluten tid visas i mitten.",
@@ -35,8 +38,27 @@
     "wrapUp": "Runda av"
   },
   "pace": {
-    "over": "+{{count}} över din gissning — helt okej, nu vet vi",
-    "closing": "Närmar dig din gissning… helt okej",
-    "onTrack": "På rätt spår — du har gott om tid"
+    "over": "{{duration}} över din gissning — nu vet du",
+    "closing": "Nästan vid din gissning",
+    "onTrack": "Du har tid",
+    "forgotToStop": "Glömde du stoppa?",
+    "overNoAmount": "Förbi din gissning — nu vet du",
+    "forgotA11y": "Glömde stoppa timern tidigare"
+  },
+  "forgotStop": {
+    "headingStopped": "När slutade du egentligen?",
+    "headingFinished": "När blev du klar?",
+    "spinBody": "Snurra till tiden du faktiskt slutade.",
+    "notSure": "Vet inte än",
+    "back": "Tillbaka",
+    "backA11y": "Tillbaka till snabbvalen",
+    "notSureSkipA11y": "Vet inte än — hoppa över loggningen av passet",
+    "notSureStopA11y": "Vet inte än — stoppa utan en tränad logg",
+    "pickExact": "Välj exakt tid",
+    "stillGoing": "Håller på än"
+  },
+  "ledger": {
+    "yourGuess": "Din gissning",
+    "honest": "Ärligt"
   }
 }

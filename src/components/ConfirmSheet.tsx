@@ -1,4 +1,5 @@
 import { useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Modal, Pressable, View, type ViewStyle, type TextStyle } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Animated, {
@@ -45,6 +46,7 @@ export function ConfirmSheet({
   onCancel,
 }: ConfirmSheetProps) {
   const t = useTheme();
+  const { t: ts } = useTranslation('shared');
   const insets = useSafeAreaInsets();
   const reduced = useReducedMotion();
 
@@ -100,7 +102,7 @@ export function ConfirmSheet({
             scrimStyle,
           ]}
         >
-          <Pressable style={{ flex: 1 }} accessibilityLabel="Dismiss" onPress={onCancel} />
+          <Pressable style={{ flex: 1 }} accessibilityLabel={ts('a11y.dismiss')} onPress={onCancel} />
         </Animated.View>
 
         <Animated.View style={[sheet, sheetStyle]}>

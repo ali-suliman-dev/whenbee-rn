@@ -25,7 +25,8 @@ import {
   focusUnlockedTag,
   focusRewardCaption,
   coarseHintCopy,
-  FOCUS_GATE_LABELS,
+  focusGateLabels,
+  coarseBlockLabel,
 } from '@/src/features/patterns/focusCopy';
 import { useSettingsStore } from '@/src/stores/settingsStore';
 
@@ -142,7 +143,7 @@ export function FocusPeakCard() {
           <FocusGateRow
             first
             state={sessionsState}
-            label={FOCUS_GATE_LABELS.sessions}
+            label={focusGateLabels().sessions}
             valueText={sessionsCopy.valueText}
             sub={sessionsCopy.sub}
             pips={
@@ -153,7 +154,7 @@ export function FocusPeakCard() {
           />
           <FocusGateRow
             state={daysState}
-            label={FOCUS_GATE_LABELS.days}
+            label={focusGateLabels().days}
             valueText={daysCopy.valueText}
             sub={daysCopy.sub}
             pips={
@@ -237,7 +238,7 @@ export function FocusPeakCard() {
           accessibilityLabel={tr('focusPeakCard.locked.unlockA11y')}
         >
           <AppText style={{ ...(type.captionBold as TextStyle), color: t.colors.primary }}>
-            Unlock my focus window ›
+            {tr('focusPeakCard.locked.unlockCta')}
           </AppText>
         </Pressable>
       </View>
@@ -246,12 +247,12 @@ export function FocusPeakCard() {
 
   // ── revealed + Pro, low confidence — coarse block, not yet precise ──
   if (win.confidenceTier === 'low') {
-    const blockLabel = win.coarseBlockLabel;
+    const blockLabel = coarseBlockLabel(win.coarseBlockLabel);
     return (
       <Pressable
         onPress={() => router.push('/(modals)/focus-window')}
         accessibilityRole="button"
-        accessibilityLabel="Open focus window detail"
+        accessibilityLabel={tr('focusPeakCard.personal.openA11y')}
       >
         <View style={card}>
           <Eyebrow />
@@ -278,7 +279,7 @@ export function FocusPeakCard() {
           >
             <AppText style={meta}>{`${sampleCount} sessions · ${win.distinctDays} days`}</AppText>
             <AppText style={{ ...(type.captionBold as TextStyle), color: t.colors.primary }}>
-              See details ›
+              {tr('focusPeakCard.personal.seeDetails')}
             </AppText>
           </View>
         </View>
@@ -334,7 +335,7 @@ export function FocusPeakCard() {
         >
           <AppText style={meta}>{footerMeta}</AppText>
           <AppText style={{ ...(type.captionBold as TextStyle), color: t.colors.primary }}>
-            Open ›
+            {tr('focusPeakCard.personal.open')}
           </AppText>
         </View>
       </View>

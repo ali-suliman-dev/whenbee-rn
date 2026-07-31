@@ -37,18 +37,16 @@ import ReorderableList, {
 } from 'react-native-reorderable-list';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { useDayPlan, localMidnight } from './useDayPlan';
-import { useTranslation } from 'react-i18next';
-import type { TFunction } from 'i18next';
+import { Trans, useTranslation } from 'react-i18next';
 import { useLearnedFocusWindow } from '@/src/features/planner/useLearnedFocusWindow';
 import { useDayTasksStore } from '@/src/stores/dayTasksStore';
 import { useEntitlement } from '@/src/features/paywall/useEntitlement';
 import { useTheme } from '@/src/theme/useTheme';
 import { AppText } from '@/src/components/AppText';
 import { FinishEditorSheet } from '@/src/features/routines/FinishEditorSheet';
-import { formatClock, fmtHm, formatClockMeridiem } from '@/src/lib/time';
-import { ActionSheet, type ActionSheetItem } from '@/src/components/ActionSheet';
+import { formatClock, fmtHm } from '@/src/lib/time';
 import { formatDuration } from '@/src/i18n/formatDuration';
-import type { PlanTimelineItem, PlanVerdict } from '@/src/domain/types';
+import type { PlanTimelineItem } from '@/src/domain/types';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Constants
@@ -341,7 +339,7 @@ function RowContent({
             onLongPress={onDragHandleLongPress}
             accessibilityRole="button"
             accessibilityLabel={`Reorder ${item.label}`}
-            accessibilityHint="Long-press and drag to reorder this task"
+            accessibilityHint={tr('timeline.reorderHint')}
             hitSlop={t.size.hitSlop}
           >
             <MaterialCommunityIcons
@@ -365,7 +363,7 @@ function RowContent({
           hitSlop={t.size.hitSlop}
         >
           <View style={chipFace}>
-            <AppText style={chipText}>Tomorrow</AppText>
+            <AppText style={chipText}>{tr('timeline.tomorrowChip')}</AppText>
           </View>
         </Pressable>
       </View>
@@ -436,7 +434,7 @@ function RowContent({
           onLongPress={onDragHandleLongPress}
           accessibilityRole="button"
           accessibilityLabel={`Reorder ${item.label}`}
-          accessibilityHint="Long-press and drag to reorder this task"
+          accessibilityHint={tr('timeline.reorderHint')}
           hitSlop={t.size.hitSlop}
         >
           <MaterialCommunityIcons
@@ -520,9 +518,12 @@ function OverflowBoundary({
         <View style={ruleStyle} />
       </View>
       <AppText style={sentenceStyle}>
-        Past here you run over. Push it to{' '}
-        <AppText style={clockStyle}>{overrunClock}</AppText>, or move a task to
-        tomorrow.
+        <Trans
+          i18nKey="timeline.overrunSentence"
+          ns="today"
+          values={{ clock: overrunClock }}
+          components={{ clock: <AppText style={clockStyle} /> }}
+        />
       </AppText>
     </View>
   );
@@ -632,7 +633,6 @@ export interface DayTimelineProps {
  */
 export function DayTimeline({ hideHeader = false }: DayTimelineProps = {}) {
   const t = useTheme();
-  const { t: tr } = useTranslation('today');
   const reducedMotion = useReducedMotion();
 
   // ── Pro guard (defence-in-depth — should be unreachable for free users) ──

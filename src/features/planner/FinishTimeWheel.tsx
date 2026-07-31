@@ -654,7 +654,7 @@ export function FinishTimeWheel({
           inkColor={t.colors.ink}
           inkFaintColor={t.colors.inkFaint}
           fontSize={t.fontSize.base}
-          accessibilityLabel="Hour"
+          accessibilityLabel={tr('finishTimeWheel.hourA11y')}
           accessibilityMin={hours[0]?.value ?? 0}
           accessibilityMax={hours[hours.length - 1]?.value ?? 23}
           accessibilityValue={curHour}
@@ -672,7 +672,7 @@ export function FinishTimeWheel({
           inkColor={t.colors.ink}
           inkFaintColor={t.colors.inkFaint}
           fontSize={t.fontSize.base}
-          accessibilityLabel="Minute"
+          accessibilityLabel={tr('finishTimeWheel.minuteA11y')}
           accessibilityMin={minutes[curMinuteRange.lo]?.value ?? 0}
           accessibilityMax={minutes[curMinuteRange.hi]?.value ?? 59}
           accessibilityValue={curMin}

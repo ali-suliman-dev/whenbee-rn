@@ -17,7 +17,6 @@ import { useTranslation } from 'react-i18next';
 import { useTheme } from '@/src/theme/useTheme';
 import { type } from '@/src/theme/typography';
 import { haptics } from '@/src/lib/haptics';
-import { weekdayOf } from '@/src/lib/day';
 import { fmtHm } from '@/src/lib/time';
 import { recapHeadline, recapScale } from './dayRecapCopy';
 import { StatColumn } from './StatColumn';
@@ -209,9 +208,9 @@ export function DayRecapCard({ recap, rows }: DayRecapCardProps) {
 
       {/* Stats — three columns matching the day-so-far card's treatment. */}
       <View style={statsRow}>
-        <StatColumn value={String(recap.doneCount)} unit={recap.doneCount === 1 ? 'task' : 'tasks'} label="LOGGED" />
-        <StatColumn value={fmtHm(recap.guessedMin)} label="GUESSED" dotColor={t.colors.primary} divided />
-        <StatColumn value={fmtHm(recap.honestMin)} label="HONEST" dotColor={t.colors.accent} divided />
+        <StatColumn value={String(recap.doneCount)} unit={recap.doneCount === 1 ? 'task' : 'tasks'} label={tr('daySoFar.loggedLabel')} />
+        <StatColumn value={fmtHm(recap.guessedMin)} label={tr('daySoFar.guessedLabel')} dotColor={t.colors.primary} divided />
+        <StatColumn value={fmtHm(recap.honestMin)} label={tr('daySoFar.honestLabel')} dotColor={t.colors.accent} divided />
       </View>
 
       {/* Disclosure toggle */}
@@ -225,7 +224,7 @@ export function DayRecapCard({ recap, rows }: DayRecapCardProps) {
         hitSlop={t.size.hitSlop}
         style={disclosure}
       >
-        <Text style={disclosureLabel}>ALL TASKS · {dayLabel.toUpperCase()}</Text>
+        <Text style={disclosureLabel}>{tr('dayRecap.allTasksLabel', { day: dayLabel.toUpperCase() })}</Text>
         <Ionicons
           name={expanded ? 'chevron-up' : 'chevron-down'}
           size={t.iconSize.sm}

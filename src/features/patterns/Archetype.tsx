@@ -205,14 +205,12 @@ export function ArchetypePlaceholder({ onTakeQuiz }: { onTakeQuiz: () => void })
   };
   return (
     <View style={cardStyle}>
-      <Text style={eyebrowStyle}>YOUR TIME PERSONALITY</Text>
-      <Text style={titleStyle}>Meet your time personality</Text>
-      <Text style={bodyStyle}>
-        A 20-second quiz names it now — or keep logging and I&apos;ll figure it out.
-      </Text>
+      <Text style={eyebrowStyle}>{tr('archetypeHero.eyebrow')}</Text>
+      <Text style={titleStyle}>{tr('archetypeHero.placeholder.title')}</Text>
+      <Text style={bodyStyle}>{tr('archetypeHero.placeholder.body')}</Text>
       <View style={ctaRow}>
-        <AppButton label="Take the quiz" variant="indigo" size="sm" onPress={onTakeQuiz} />
-        <Text style={hintStyle}>~20 sec</Text>
+        <AppButton label={tr('archetypeHero.placeholder.cta')} variant="indigo" size="sm" onPress={onTakeQuiz} />
+        <Text style={hintStyle}>{tr('archetypeHero.placeholder.hint')}</Text>
       </View>
     </View>
   );

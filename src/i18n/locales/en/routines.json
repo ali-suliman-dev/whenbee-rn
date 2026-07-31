@@ -12,7 +12,12 @@
   },
   "locked": {
     "sampleName": "Morning routine",
-    "sampleSteps": ["Shower", "Get dressed", "Breakfast", "Pack up"],
+    "sampleSteps": [
+      "Shower",
+      "Get dressed",
+      "Breakfast",
+      "Pack up"
+    ],
     "sampleTotalMinutes": "{{count}} min",
     "sampleStartBy": "Start by {{time}}",
     "body": "Save your morning once. Whenbee learns how long the whole thing really takes, so \"start by\" is a number you can trust.",
@@ -65,7 +70,10 @@
     "dismissA11y": "Dismiss",
     "title": "Finish by",
     "clear": "Clear",
-    "done": "Done"
+    "done": "Done",
+    "useNow": "Use now",
+    "useNowA11y": "Use now",
+    "useNowHint": "Starts from the current time and keeps moving with the clock"
   },
   "stepSheet": {
     "dismissA11y": "Dismiss",

@@ -1,4 +1,5 @@
 import { useCallback } from 'react';
+import { useTranslation } from 'react-i18next';
 import { View } from 'react-native';
 import Animated, {
   cancelAnimation,
@@ -34,6 +35,7 @@ const LIFT = 4; // how far the shackle eases up (of the 24-box) — clearly visi
 
 export function LockGlyph({ size = 24 }: { size?: number }) {
   const t = useTheme();
+  const { t: ts } = useTranslation('shared');
   const reduced = useReducedMotion();
 
   // Shackle eases up then back down, forever — smooth, no snap.
@@ -61,7 +63,7 @@ export function LockGlyph({ size = 24 }: { size?: number }) {
     <View
       style={{ width: size, height: size }}
       accessibilityRole="image"
-      accessibilityLabel="Locked — stored on this device"
+      accessibilityLabel={ts('a11y.locked')}
     >
       {/* Static layer: lock body + keyhole */}
       <Svg

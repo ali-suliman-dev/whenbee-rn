@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Modal, Pressable, ScrollView, useWindowDimensions, View, type ViewStyle, type TextStyle } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Animated, {
@@ -44,6 +45,7 @@ export function ActionSheet({
   cancelLabel = 'Cancel',
 }: ActionSheetProps) {
   const t = useTheme();
+  const { t: ts } = useTranslation('shared');
   const insets = useSafeAreaInsets();
   const reduced = useReducedMotion();
   const { height: screenH } = useWindowDimensions();
@@ -118,7 +120,7 @@ export function ActionSheet({
             scrimStyle,
           ]}
         >
-          <Pressable style={{ flex: 1 }} accessibilityLabel="Dismiss" onPress={onCancel} />
+          <Pressable style={{ flex: 1 }} accessibilityLabel={ts('a11y.dismiss')} onPress={onCancel} />
         </Animated.View>
 
         <Animated.View style={[sheet, sheetStyle]} accessibilityViewIsModal>
