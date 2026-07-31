@@ -8,6 +8,7 @@ import { useFonts } from 'expo-font';
 import { I18nextProvider, useTranslation } from 'react-i18next';
 import i18n, { initI18n } from '@/src/i18n';
 import { useRelocalizeNotifications } from '@/src/features/notifications/useRelocalizeNotifications';
+import { useSystemLanguageSync } from '@/src/i18n/useSystemLanguageSync';
 import { AppProviders } from '@/src/providers/AppProviders';
 import { useTheme } from '@/src/theme/useTheme';
 import { useSettingsStore } from '@/src/stores/settingsStore';
@@ -221,6 +222,8 @@ export default function RootLayout() {
   // A queued notification carries its resolved TEXT, so a language change has to
   // re-issue the long-lived ones or they stay in the old language for days.
   useRelocalizeNotifications();
+  // Follow the device language on foreground while the preference is 'system'.
+  useSystemLanguageSync();
 
   // Restore a running timer that survived a full app close (the snapshot carries
   // wall-clock startedAt, so elapsed stays correct). Run once at boot.
