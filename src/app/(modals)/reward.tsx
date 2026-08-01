@@ -8,6 +8,7 @@ import { GoalRewardFeedback } from '@/src/features/reward/GoalRewardFeedback';
 import { NotifSoftAskCard } from '@/src/features/reward/NotifSoftAskCard';
 import { RewardReaskRow } from '@/src/features/reward/RewardReaskRow';
 import { RewardBee } from '@/src/features/reward/RewardBee';
+import { NextUnlock } from '@/src/features/whenbee/NextUnlock';
 import { useReward } from '@/src/features/reward/useReward';
 import { type } from '@/src/theme/typography';
 import { useTheme } from '@/src/theme/useTheme';
@@ -227,9 +228,11 @@ export default function Reward() {
           />
         ) : null}
 
-        {/* Zone 4 — payoff card (honey + multiplier as one complete unit).
-            Two rows: header (HONEY · multiplier + %), the honey bar.
-            The payoff lands as a single beat — no dangling delay. */}
+        {/* Zone 4 — payoff card (calibration + multiplier as one complete unit).
+            Three rows: header (CALIBRATION · multiplier + %), the honey bar,
+            then NextUnlock — what this log bought (next capability, or the
+            sealed line at the cap). The payoff lands as a single beat, card
+            gap absorbs the new row — no dangling delay, no marginTop. */}
         <View style={payoffCard}>
           <View style={honeyHeaderRow}>
             <View style={honeyLabelRow}>
@@ -242,6 +245,7 @@ export default function Reward() {
             <HonestNumber value={String(r.honeyPct)} unit="%" size="inline" tone="amberText" />
           </View>
           <HoneyBar pct={r.honeyPct} />
+          <NextUnlock />
         </View>
 
         {/* Goal coach — post-log feedback for a goaled category (self-relative,

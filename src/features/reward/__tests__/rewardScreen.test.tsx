@@ -2,7 +2,7 @@ import { render, screen } from '@testing-library/react-native';
 import Reward from '@/src/app/(modals)/reward';
 import { useRewardStore } from '@/src/stores/rewardStore';
 import { useCalibrationStore } from '@/src/stores/calibrationStore';
-import type { LogResult } from '@/src/stores/calibrationStore';
+import type { LogResult, CachedStat } from '@/src/stores/calibrationStore';
 
 const mockDismiss = jest.fn();
 const mockPush = jest.fn();
@@ -34,7 +34,7 @@ beforeEach(() => {
   mockDismiss.mockClear();
   mockPush.mockClear();
   useRewardStore.getState().clear();
-  useCalibrationStore.setState({ logs: 0 });
+  useCalibrationStore.setState({ logs: 0, statsByCategory: {} });
   // Stub loadReclaimSummary so the NotifSoftAskCard (rendered inside Reward)
   // never hits SQLite, which is unavailable in the Jest environment.
   useCalibrationStore.setState({
@@ -189,6 +189,48 @@ describe('Reward screen', () => {
     render(<Reward />);
     expect(screen.getByText('What made it quick?')).toBeOnTheScreen();
     expect(screen.getByText('Flow')).toBeOnTheScreen();
+  });
+
+  it('shows what this log unlocks next, mid-ladder', () => {
+    // Same fixture as CalibrationCard's mid-ladder test: sharpness 64 lands
+    // exactly on the Ripening threshold; 18 points to Thickening (82) →
+    // ceil(18/4) = 5 logs; the NEXT stage (4) unlocks the honest-day forecast.
+    useCalibrationStore.setState({
+      statsByCategory: {
+        cleaning: { sharpness: 64, tier: 'Ripening' } as unknown as CachedStat,
+      },
+      logs: 20,
+    });
+    useRewardStore.getState().setReward({
+      actualMin: 16,
+      guessMin: 15,
+      category: 'cleaning',
+      label: null,
+      result: baseResult,
+    });
+    render(<Reward />);
+    expect(
+      screen.getByText('5 more logs and Honest-Day forecast on the widget'),
+    ).toBeOnTheScreen();
+  });
+
+  it('shows the sealed line in place of the away-count once calibration is capped', () => {
+    useCalibrationStore.setState({
+      statsByCategory: {
+        cleaning: { sharpness: 100, tier: 'Honest' } as unknown as CachedStat,
+      },
+      logs: 40,
+    });
+    useRewardStore.getState().setReward({
+      actualMin: 16,
+      guessMin: 15,
+      category: 'cleaning',
+      label: null,
+      result: baseResult,
+    });
+    render(<Reward />);
+    expect(screen.getByText('Calibrated ✦')).toBeOnTheScreen();
+    expect(screen.queryByText(/more logs/)).toBeNull();
   });
 
   it('hides the reason row when the run landed close to the guess', () => {
