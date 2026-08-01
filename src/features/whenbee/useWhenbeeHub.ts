@@ -44,8 +44,6 @@ export interface WhenbeeHubVM {
   discoveryCount: number;
   /** Re-pull the async summary (call on screen focus — deposits don't push). */
   refresh: () => void;
-  /** Set (or clear, when blank) the companion's display name, then refresh. */
-  renameCompanion: (name: string | null) => void;
   /** True when the companion's drift register is 'curious' and the gentle re-check
    *  card hasn't been dismissed this drift cycle. */
   showDriftRecheck: boolean;
@@ -86,7 +84,6 @@ const EMPTY_DISCOVERIES: Pick<WhenbeeHubVM, 'discoveries' | 'discoveryCount'> = 
 export function useWhenbeeHub(): WhenbeeHubVM {
   const loadReclaimSummary = useCalibrationStore((s) => s.loadReclaimSummary);
   const loadDiscoveries = useCalibrationStore((s) => s.loadDiscoveries);
-  const nameCompanion = useCalibrationStore((s) => s.nameCompanion);
   const statsByCategory = useCalibrationStore((s) => s.statsByCategory);
   const getProReadiness = useCalibrationStore((s) => s.getProReadiness);
   const categories = useCategoriesStore((s) => s.categories);
@@ -97,12 +94,6 @@ export function useWhenbeeHub(): WhenbeeHubVM {
   // deposit during the live loop updates the bank but does NOT push to this hook.
   const [focusTick, setFocusTick] = useState(0);
   const refresh = useCallback(() => setFocusTick((n) => n + 1), []);
-  const renameCompanion = useCallback(
-    (name: string | null) => {
-      void nameCompanion(name).then(refresh);
-    },
-    [nameCompanion, refresh],
-  );
   const [driftDismissed, setDriftDismissed] = useState(() => kv.getString(DRIFT_DISMISS_KEY) === '1');
 
   // Companion presence + honest-log count are an async read; refresh on
@@ -198,7 +189,6 @@ export function useWhenbeeHub(): WhenbeeHubVM {
     tier,
     cells,
     refresh,
-    renameCompanion,
     showDriftRecheck,
     dismissDriftRecheck,
     proReadiness,

@@ -23,17 +23,15 @@ import type { BlindSpot } from './useWhenbeeHub';
 // ──────────────────────────────────────────────────────────────────────────────
 
 export function LifeDriftCard({
-  companionName,
   blindSpot,
   onDismiss,
 }: {
-  companionName: string | null;
   blindSpot: BlindSpot | null;
   onDismiss: () => void;
 }) {
   const t = useTheme();
   const { t: tr } = useTranslation('whenbee');
-  const who = companionName ?? 'Whenbee';
+  const who = 'Whenbee';
   const area = blindSpot?.name ?? null;
 
   const scale = useSharedValue(1);

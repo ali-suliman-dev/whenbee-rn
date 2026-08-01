@@ -19,7 +19,7 @@ function model(overrides: Partial<ReportModel> = {}): ReportModel {
   return {
     window: { kind: '30d', sinceMs: 0, label: 'Last 30 days' },
     generatedAtMs: Date.UTC(2026, 5, 21), // 21 June 2026
-    companionName: null,
+    personName: null,
     accuracyPct: 72,
     accuracySpark: [60, 64, 68, 70, 71, 72],
     totalLogs: 24,

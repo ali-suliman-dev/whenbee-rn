@@ -47,7 +47,6 @@ function vm(overrides: Partial<WhenbeeHubVM> = {}): WhenbeeHubVM {
     discoveries: [],
     discoveryCount: 0,
     refresh: jest.fn(),
-    renameCompanion: jest.fn(),
     showDriftRecheck: false,
     dismissDriftRecheck: jest.fn(),
     proReadiness: { pitchUnlocked: false, perFeatureReady: {} as WhenbeeHubVM['proReadiness']['perFeatureReady'] },

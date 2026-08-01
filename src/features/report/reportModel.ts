@@ -41,8 +41,8 @@ export interface ReportModel {
   window: ReportWindow;
   /** When the report was generated (ms) — printed in the subline. */
   generatedAtMs: number;
-  /** The companion's name, when the user set one (for "Prepared by …"). */
-  companionName: string | null;
+  /** The user's own display name, when they've set one (for "Prepared by …"). */
+  personName: string | null;
   /** Overall accuracy 0–100 (reuses the shipped sharpness formula). */
   accuracyPct: number;
   /** Short accuracy sparkline series for the hero. */

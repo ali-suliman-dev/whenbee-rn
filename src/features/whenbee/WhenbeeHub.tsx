@@ -186,11 +186,7 @@ export function WhenbeeHub() {
 
       {/* Conditional gentle cards (no-guilt, never punitive) */}
       {vm.showDriftRecheck ? (
-        <LifeDriftCard
-          companionName={vm.companion.name}
-          blindSpot={vm.blindSpot}
-          onDismiss={vm.dismissDriftRecheck}
-        />
+        <LifeDriftCard blindSpot={vm.blindSpot} onDismiss={vm.dismissDriftRecheck} />
       ) : null}
       {vm.blindSpot ? <BlindSpotCard blindSpot={vm.blindSpot} /> : null}
 

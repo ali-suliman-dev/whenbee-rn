@@ -428,8 +428,6 @@ interface CalibrationState {
   applyLog: (input: ApplyLogParams) => Promise<LogResult>;
   loadCategoryDetail: (categoryId: string) => Promise<CategoryDetail>;
   loadReclaimSummary: () => Promise<ReclaimSummary>;
-  /** Set (or clear, when blank) the companion's optional display name. */
-  nameCompanion: (name: string | null) => Promise<void>;
   /** The banked distinct-discovery gallery, newest-first, plus the live count. */
   loadDiscoveries: () => Promise<{ discoveries: Discovery[]; discoveryCount: number }>;
   /** Cross-category snapshot for the read-only Patterns self-insight surface. */
@@ -1100,11 +1098,6 @@ export const useCalibrationStore = create<CalibrationState>((set, get) => ({
       companion: presence,
       discoveryCount: companion.discoveryCount,
     };
-  },
-
-  nameCompanion: async (name: string | null) => {
-    const db = await resolveDb(get, set);
-    await makeCompanionRepo(db).setName(name);
   },
 
   loadDiscoveries: async () => {
