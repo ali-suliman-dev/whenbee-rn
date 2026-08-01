@@ -9,6 +9,7 @@
 // No bounce.
 
 import { useCallback } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Pressable, Text, type TextStyle, type ViewStyle } from 'react-native';
 import Animated, { useAnimatedStyle, useSharedValue, withTiming } from 'react-native-reanimated';
 import { Ionicons } from '@expo/vector-icons';
@@ -39,6 +40,7 @@ export function PlanButton({
   onPress,
 }: PlanButtonProps) {
   const t = useTheme();
+  const { t: tr } = useTranslation('today');
   const scale = useSharedValue(1);
   const aStyle = useAnimatedStyle(() => ({ transform: [{ scale: scale.get() }] }));
 
@@ -56,9 +58,11 @@ export function PlanButton({
   }, [onPress]);
 
   const active = hasPlan && startByClock != null;
-  const label = active ? startByClock : 'Plan';
-  const startWord = planAnchor === 'start' ? 'Starting' : 'Start by';
-  const a11yLabel = active ? `Plan. ${startWord} ${startByClock}. Tap to open.` : 'Plan my day';
+  const label = active ? startByClock : tr('planButton.label');
+  const startWord = planAnchor === 'start' ? tr('timeline.starting') : tr('timeline.startBy');
+  const a11yLabel = active
+    ? tr('planButton.a11y', { startWord, clock: startByClock })
+    : tr('planMyDay.plan');
 
   const pillStyle: ViewStyle = {
     flexDirection: 'row',

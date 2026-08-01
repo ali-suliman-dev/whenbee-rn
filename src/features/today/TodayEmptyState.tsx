@@ -46,9 +46,19 @@ export function TodayEmptyState({ variant, weekday, onPrimary, onLog }: TodayEmp
       ? tr('emptyState.future.sub')
       : tr('emptyState.daily.sub');
 
-  const primaryLabel = isFirstRun ? 'Start now' : isFuture ? 'Plan ahead' : 'Plan a task';
-  const chipFirstText = isFirstRun ? 'Already finished something? ' : 'Or log something ';
-  const chipSecondText = isFirstRun ? 'Log it' : 'you finished';
+  const primaryLabel = isFirstRun
+    ? tr('emptyState.firstRun.primary')
+    : isFuture
+      ? tr('emptyState.future.primary')
+      : tr('emptyState.daily.primary');
+  // The future variant reuses the daily chip: both invite a retro log of
+  // something already finished, and the wording doesn't depend on the day.
+  const chipFirstText = isFirstRun
+    ? tr('emptyState.firstRun.chipLead')
+    : tr('emptyState.daily.chipLead');
+  const chipSecondText = isFirstRun
+    ? tr('emptyState.firstRun.chipAction')
+    : tr('emptyState.daily.chipAction');
 
   const block: ViewStyle = { alignItems: 'center', gap: t.space[2], marginTop: t.space[8] };
   const eyebrow: TextStyle = { ...(type.eyebrow as unknown as TextStyle), color: t.colors.inkSoft };

@@ -1,5 +1,6 @@
 import { View, Text, type ViewStyle, type TextStyle } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { useTranslation } from 'react-i18next';
 import { useTheme } from '@/src/theme/useTheme';
 import { type } from '@/src/theme/typography';
 import { featuresByMoment, type ProFeatureMoment } from './proFeatures';
@@ -14,36 +15,39 @@ import { DottedRail } from './DottedRail';
 
 interface Moment {
   moment: ProFeatureMoment;
-  time: string;
-  heading: string;
+  /** Clock times are 24-hour digits, identical in every supported language. The
+   *  weekday beat is a word, so it carries a `paywall` key instead. */
+  time: string | { key: 'moments.weekTime' };
+  /** `paywall` namespace key for the heading, never English text. */
+  headingKey: `moments.${ProFeatureMoment}`;
   icon: keyof typeof Ionicons.glyphMap;
   amber?: boolean;
 }
 
 const MOMENTS: readonly Moment[] = [
-  { moment: 'morning', time: '7:00', heading: 'The morning starts honest', icon: 'repeat-outline' },
+  { moment: 'morning', time: '7:00', headingKey: 'moments.morning', icon: 'repeat-outline' },
   {
     moment: 'deepwork',
     time: '9:30',
-    heading: 'Deep work, kept company',
+    headingKey: 'moments.deepwork',
     icon: 'notifications-outline',
   },
   {
     moment: 'midday',
     time: '13:00',
-    heading: 'Before you say yes to more',
+    headingKey: 'moments.midday',
     icon: 'battery-half-outline',
   },
   {
     moment: 'evening',
     time: '17:00',
-    heading: 'The evening actually fits',
+    headingKey: 'moments.evening',
     icon: 'calendar-outline',
   },
   {
     moment: 'week',
-    time: 'Sun',
-    heading: 'The week, understood',
+    time: { key: 'moments.weekTime' },
+    headingKey: 'moments.week',
     icon: 'document-text-outline',
     amber: true,
   },
@@ -51,6 +55,7 @@ const MOMENTS: readonly Moment[] = [
 
 export function DayWithPro() {
   const t = useTheme();
+  const { t: tr } = useTranslation('paywall');
 
   const wrap: ViewStyle = { paddingHorizontal: t.space[1] };
   const row: ViewStyle = { flexDirection: 'row', gap: t.space[3] };
@@ -122,7 +127,9 @@ export function DayWithPro() {
         return (
           <View key={m.moment} style={row}>
             <View style={timeCol}>
-              <Text style={timeText}>{m.time}</Text>
+              <Text style={timeText}>
+                {typeof m.time === 'string' ? m.time : tr(m.time.key)}
+              </Text>
             </View>
             <View style={railCol}>
               <View style={coinEdge(amber)}>
@@ -137,11 +144,11 @@ export function DayWithPro() {
               {last ? null : <DottedRail />}
             </View>
             <View style={last ? bodyLast : body}>
-              <Text style={heading}>{m.heading}</Text>
+              <Text style={heading}>{tr(m.headingKey)}</Text>
               <View style={chips}>
                 {featuresByMoment(m.moment).map((f) => (
                   <View key={f.key} style={chip(amber)}>
-                    <Text style={chipText()}>{f.label}</Text>
+                    <Text style={chipText()}>{tr(f.labelKey)}</Text>
                   </View>
                 ))}
               </View>

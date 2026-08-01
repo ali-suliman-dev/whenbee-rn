@@ -365,7 +365,22 @@ export function TaskRow({
       onLongPress={onLongPress}
       delayLongPress={300}
       accessibilityRole="button"
-      accessibilityLabel={`${title}, ${categoryLabel}, plan for ${honestMin} minutes, you guessed ${guessMin}${endsAtLabel ? `, ${endsAtLabel}` : ''}. Tap to start.`}
+      accessibilityLabel={
+        endsAtLabel
+          ? tr('taskRow.startA11yEnds', {
+              title,
+              category: categoryLabel,
+              honestMin,
+              guessMin,
+              ends: endsAtLabel,
+            })
+          : tr('taskRow.startA11y', {
+              title,
+              category: categoryLabel,
+              honestMin,
+              guessMin,
+            })
+      }
     >
       {content}
     </Pressable>

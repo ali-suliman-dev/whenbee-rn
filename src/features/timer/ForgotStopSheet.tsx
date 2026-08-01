@@ -9,7 +9,7 @@ import { AppButton } from '@/src/components/AppButton';
 import { useTheme } from '@/src/theme/useTheme';
 import { type } from '@/src/theme/typography';
 import { haptics } from '@/src/lib/haptics';
-import { formatClock, fmtHm } from '@/src/lib/time';
+import { formatClock } from '@/src/lib/time';
 import { FinishTimeWheel } from '@/src/features/planner/FinishTimeWheel';
 import { buildForgotPresets } from '@/src/features/timer/forgotPresets';
 
@@ -87,7 +87,10 @@ export function ForgotStopSheet({
                 {presets.map((p) => (
                   <AppButton
                     key={p.offsetMin}
-                    label={`~${p.offsetMin} min ago  ·  ${fmtHm(p.actualMin)}`}
+                    label={tr('forgotStop.presetOption', {
+                      minutes: p.offsetMin,
+                      duration: formatDuration(p.actualMin, translate),
+                    })}
                     variant="amber"
                     size="md"
                     fullWidth
@@ -135,7 +138,10 @@ export function ForgotStopSheet({
                 />
               </View>
               <AppButton
-                label={`Log ${formatClock(clampedFinishMs)}  ·  ${fmtHm(pickedActualMin)}`}
+                label={tr('forgotStop.logAt', {
+                  clock: formatClock(clampedFinishMs),
+                  duration: formatDuration(pickedActualMin, translate),
+                })}
                 variant="amber"
                 size="md"
                 fullWidth

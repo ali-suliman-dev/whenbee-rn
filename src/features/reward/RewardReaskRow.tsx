@@ -54,12 +54,9 @@ export function RewardReaskRow() {
 
   const title =
     trigger === 'granted'
-      ? 'Add the honest-finish ping?'
+      ? trw('reask.grantedTitle')
       : trw('reask.overran', { duration: formatDuration(overrunMin, translate) });
-  const sub =
-    trigger === 'granted'
-      ? 'Notifications are already allowed. One tap.'
-      : 'Want a quiet tap at your honest finish?';
+  const sub = trigger === 'granted' ? trw('reask.grantedSub') : trw('reask.overranSub');
 
   const titleText: TextStyle = {
     ...(type.bodySmBold as unknown as TextStyle),

@@ -28,7 +28,7 @@ export interface ConfirmSheetProps {
   title: string;
   bullets: string[];
   confirmLabel: string;
-  /** Cancel button label. Defaults to 'Cancel'. */
+  /** Cancel button label. Defaults to the translated "Cancel". */
   cancelLabel?: string;
   onConfirm: () => void;
   onCancel: () => void;
@@ -41,12 +41,16 @@ export function ConfirmSheet({
   title,
   bullets,
   confirmLabel,
-  cancelLabel = 'Cancel',
+  cancelLabel,
   onConfirm,
   onCancel,
 }: ConfirmSheetProps) {
   const t = useTheme();
   const { t: ts } = useTranslation('shared');
+  const { t: tc } = useTranslation('common');
+  // Defaulted here, not in the signature: a default parameter can't call a hook,
+  // so an English literal there would freeze the label for every caller.
+  const cancelText = cancelLabel ?? tc('cancel');
   const insets = useSafeAreaInsets();
   const reduced = useReducedMotion();
 
@@ -127,7 +131,7 @@ export function ConfirmSheet({
               variant={tone === 'danger' ? 'danger' : 'amber'}
               fullWidth
             />
-            <AppButton label={cancelLabel} onPress={onCancel} variant="ghost" fullWidth />
+            <AppButton label={cancelText} onPress={onCancel} variant="ghost" fullWidth />
           </View>
         </Animated.View>
       </View>

@@ -44,7 +44,7 @@ import { useEntitlement } from '@/src/features/paywall/useEntitlement';
 import { useTheme } from '@/src/theme/useTheme';
 import { AppText } from '@/src/components/AppText';
 import { FinishEditorSheet } from '@/src/features/routines/FinishEditorSheet';
-import { formatClock, fmtHm } from '@/src/lib/time';
+import { formatClock } from '@/src/lib/time';
 import { formatDuration } from '@/src/i18n/formatDuration';
 import type { PlanTimelineItem } from '@/src/domain/types';
 
@@ -319,7 +319,7 @@ function RowContent({
       fontWeight: t.fontWeight.semibold as TextStyle['fontWeight'],
       color: t.colors.amberText,
     };
-    const overLabel = `+${fmtHm(overMin)} over`;
+    const overLabel = tr('timeline.overBy', { duration: formatDuration(overMin, translate) });
 
     return (
       <View
@@ -327,18 +327,17 @@ function RowContent({
         testID={`timeline-overflow-${item.id}`}
         accessible
         accessibilityRole="text"
-        accessibilityLabel={
-          hasFinishTarget
-            ? `${item.label}, runs ${fmtHm(overMin)} past your done-by time`
-            : `${item.label}, runs ${fmtHm(overMin)} past when today ends`
-        }
+        accessibilityLabel={tr(
+          hasFinishTarget ? 'timeline.overflowA11yDoneBy' : 'timeline.overflowA11yDayEnd',
+          { label: item.label, duration: formatDuration(overMin, translate) },
+        )}
       >
         {onDragHandleLongPress ? (
           <Pressable
             testID={`timeline-drag-handle-${item.id}`}
             onLongPress={onDragHandleLongPress}
             accessibilityRole="button"
-            accessibilityLabel={`Reorder ${item.label}`}
+            accessibilityLabel={tr('timeline.reorderA11y', { label: item.label })}
             accessibilityHint={tr('timeline.reorderHint')}
             hitSlop={t.size.hitSlop}
           >
@@ -359,7 +358,7 @@ function RowContent({
           testID={`timeline-move-tomorrow-${item.id}`}
           onPress={() => onMoveToTomorrow(item.id)}
           accessibilityRole="button"
-          accessibilityLabel={`Move ${item.label} to tomorrow`}
+          accessibilityLabel={tr('taskRow.moveA11y', { title: item.label })}
           hitSlop={t.size.hitSlop}
         >
           <View style={chipFace}>
@@ -433,7 +432,7 @@ function RowContent({
           testID={`timeline-drag-handle-${item.id}`}
           onLongPress={onDragHandleLongPress}
           accessibilityRole="button"
-          accessibilityLabel={`Reorder ${item.label}`}
+          accessibilityLabel={tr('timeline.reorderA11y', { label: item.label })}
           accessibilityHint={tr('timeline.reorderHint')}
           hitSlop={t.size.hitSlop}
         >
@@ -470,6 +469,7 @@ function OverflowBoundary({
   overrunFinishMs: number;
 }) {
   const t = useTheme();
+  const { t: tr } = useTranslation('today');
 
   const wrapStyle: ViewStyle = {
     paddingHorizontal: t.space[3],
@@ -514,7 +514,9 @@ function OverflowBoundary({
   return (
     <View style={wrapStyle} testID="timeline-overflow-boundary">
       <View style={ruleRowStyle}>
-        <AppText style={labelStyle}>{`${formatClock(doneByMs)} DONE BY`}</AppText>
+        <AppText style={labelStyle}>
+          {tr('timeline.doneByRule', { clock: formatClock(doneByMs) })}
+        </AppText>
         <View style={ruleStyle} />
       </View>
       <AppText style={sentenceStyle}>

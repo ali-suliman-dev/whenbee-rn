@@ -15,8 +15,8 @@
   },
   "goalFeedback": {
     "headline": {
-      "tightestWeek": "That one landed within {{band}}% — your tightest this week.",
-      "tighterThanUsual": "That one landed within {{band}}% — tighter than usual.",
+      "tightestWeek": "That one landed within {{band}}%. Your tightest this week.",
+      "tighterThanUsual": "That one landed within {{band}}%. Tighter than usual.",
       "typical": "That one landed within {{band}}%."
     },
     "caption": "toward your ±{{band}}% goal"
@@ -35,13 +35,17 @@
       "ok": "OK",
       "high": "High"
     },
-    "noted": "Noted.",
-    "prompt": "Energy this session? (optional)"
+    "hints": {
+      "low": "running on fumes",
+      "ok": "normal day",
+      "high": "fully charged"
+    },
+    "header": "How was your energy?",
+    "receipt": "Energy: <b>{{level}}</b>. Noted."
   },
   "reason": {
     "overHeader": "Where did the time go?",
     "underHeader": "What made it quick?",
-    "confirmHeader": "Good to know.",
     "over": {
       "interrupted": "Paused",
       "underestimated": "Grew",
@@ -51,8 +55,23 @@
       "focused": "Flow",
       "overestimated": "Fast"
     },
+    "hints": {
+      "interrupted": "stopped mid-run",
+      "underestimated": "bigger than it looked",
+      "contextSwitch": "something took you away",
+      "focused": "locked in",
+      "overestimated": "smaller than it looked"
+    },
+    "receipts": {
+      "interrupted": "<b>Paused</b> along the way. Good to know.",
+      "underestimated": "It <b>grew</b> on you. Good to know.",
+      "contextSwitch": "Something <b>pulled</b> you away. Good to know.",
+      "focused": "You found <b>flow</b>. Good to know.",
+      "overestimated": "<b>Quicker</b> than you thought. Good to know."
+    },
     "skip": "Skip"
   },
+  "stepCounter": "{{step}} of {{total}} · one tap, or skip",
   "screen": {
     "empty": {
       "title": "Nothing to celebrate yet",
@@ -60,6 +79,7 @@
     },
     "backToToday": "Back to today",
     "tookEyebrow": "IT REALLY TOOK",
+    "unitMin": "min",
     "honeyLabel": "HONEY",
     "delta": {
       "over": "{{duration}} over your guess",
@@ -71,6 +91,9 @@
   "reask": {
     "decline": "No thanks",
     "accept": "Turn on",
-    "overran": "This ran {{duration}} past your guess"
+    "overran": "This ran {{duration}} past your guess",
+    "grantedTitle": "Add the honest-finish ping?",
+    "grantedSub": "Notifications are already allowed. One tap.",
+    "overranSub": "Want a quiet tap at your honest finish?"
   }
 }

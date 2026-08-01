@@ -56,7 +56,7 @@
   },
   "discoveries": {
     "gallery": {
-      "emptyTitle": "Nothing here yet — and that's fine.",
+      "emptyTitle": "Nothing here yet. That's fine.",
       "emptyBody": "Discoveries show up as Whenbee learns your patterns, usually after about five logs in an area. Keep tracking and they'll start landing here.",
       "direction": {
         "longer": "longer",
@@ -68,7 +68,7 @@
       },
       "proofLonger": "You plan 15m · really runs ~{{minutes}}m",
       "proofFaster": "You plan 15m · really only ~{{minutes}}m",
-      "a11y": "{{category}} runs {{times}} times {{direction}} — {{proof}}"
+      "a11y": "{{category}} runs {{times}} times {{direction}}. {{proof}}"
     },
     "preview": {
       "eyebrow": "LATEST DISCOVERY",
@@ -76,8 +76,8 @@
       "moreCount": "+{{count}} more",
       "seeAll": "See all {{count}}",
       "a11y": "See all {{count}} things you've learned",
-      "sentenceLonger": "You plan 15 minutes — it really takes about {{minutes}}.",
-      "sentenceFaster": "You plan 15 minutes — it really takes only about {{minutes}}."
+      "sentenceLonger": "You plan 15 minutes. It really takes about {{minutes}}.",
+      "sentenceFaster": "You plan 15 minutes. It really takes only about {{minutes}}."
     }
   },
   "companion": {
@@ -91,8 +91,8 @@
     "sub": "{{count}} truths Whenbee found in your tracking"
   },
   "honeycomb": {
-    "a11yRipening_one": "Your honeycomb — tier {{tier}}, {{count}} log to {{nextTier}}, {{logs}} logged",
-    "a11yRipening_other": "Your honeycomb — tier {{tier}}, {{count}} logs to {{nextTier}}, {{logs}} logged",
-    "a11yRipened": "Your honeycomb — tier {{tier}}, fully ripened, {{logs}} logged"
+    "a11yRipening_one": "Your honeycomb, tier {{tier}}, {{count}} log to {{nextTier}}, {{logs}} logged",
+    "a11yRipening_other": "Your honeycomb, tier {{tier}}, {{count}} logs to {{nextTier}}, {{logs}} logged",
+    "a11yRipened": "Your honeycomb, tier {{tier}}, fully ripened, {{logs}} logged"
   }
 }

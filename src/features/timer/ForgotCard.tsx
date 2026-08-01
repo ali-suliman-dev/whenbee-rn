@@ -15,7 +15,7 @@ import { AppButton } from '@/src/components/AppButton';
 import { useTheme } from '@/src/theme/useTheme';
 import { type } from '@/src/theme/typography';
 import { haptics } from '@/src/lib/haptics';
-import { formatClock, fmtHm } from '@/src/lib/time';
+import { formatClock } from '@/src/lib/time';
 import { FinishTimeWheel } from '@/src/features/planner/FinishTimeWheel';
 import { useForgotStore } from '@/src/stores/forgotStore';
 import { useCalibrationStore } from '@/src/stores/calibrationStore';
@@ -251,7 +251,10 @@ export function ForgotCard(): React.JSX.Element | null {
                 />
               </View>
               <AppButton
-                label={`Log ${formatClock(clampedFinishMs)} · ${fmtHm(pickedActualMin)}`}
+                label={tr('forgotCard.logAt', {
+                  clock: formatClock(clampedFinishMs),
+                  duration: formatDuration(pickedActualMin, translate),
+                })}
                 variant="amber"
                 size="md"
                 fullWidth

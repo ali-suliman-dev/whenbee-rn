@@ -76,6 +76,7 @@ export function CalendarOverlaySection({
 }: CalendarOverlaySectionProps): React.ReactElement | null {
   const t = useTheme();
   const { t: tr } = useTranslation('calendar');
+  const { t: translate } = useTranslation();
   const [expanded, setExpanded] = useState(false);
   // The stamp is a function of elapsed time, so it needs a heartbeat to cross the
   // staleness threshold on its own. A caller-supplied `nowMs` pins the clock
@@ -89,7 +90,7 @@ export function CalendarOverlaySection({
     return () => clearInterval(id);
   }, [clockPinned]);
 
-  const ageLabel = formatCalendarAge(lastFetchedAtMs, nowMs ?? tickMs);
+  const ageLabel = formatCalendarAge(lastFetchedAtMs, nowMs ?? tickMs, translate);
 
   const count = events.length + allDayEvents.length;
   if (count === 0) return null;
@@ -226,14 +227,14 @@ export function CalendarOverlaySection({
           {/* Timed event rows. Calendar events can have an empty title (busy blocks,
               some accounts) — fall back to "Busy" so the row never renders blank. */}
           {events.map((evt) => {
-            const title = evt.title?.trim() || 'Busy';
+            const title = evt.title?.trim() || tr('overlay.busyFallback');
             const span = fmtSpan(evt.startMs, evt.endMs);
             const { clock, tail } = formatEventClockPair(evt.startMs, evt.endMs);
             return (
               <Pressable
                 key={evt.id}
                 accessibilityRole="button"
-                accessibilityLabel={`${title}, ${span}, ${clock} ${tail}, open in Calendar`}
+                accessibilityLabel={tr('overlay.eventA11y', { title, span, clock, tail })}
                 onPress={() => openInCalendar(evt.startMs)}
               >
                 <View style={row}>

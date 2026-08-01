@@ -348,6 +348,7 @@ function ColumnWheel({
 const KEYS: (string | null)[] = ['1', '2', '3', '4', '5', '6', '7', '8', '9', null, '0', '⌫'];
 
 function Keypad({ onDigit, onBackspace }: { onDigit: (d: string) => void; onBackspace: () => void }) {
+  const { t: tk } = useTranslation('planner');
   const t = useTheme();
 
   const key: ViewStyle = {
@@ -376,7 +377,7 @@ function Keypad({ onDigit, onBackspace }: { onDigit: (d: string) => void; onBack
           <View key={k} style={cell}>
             <Pressable
               accessibilityRole="button"
-              accessibilityLabel={isBack ? 'Delete' : `Digit ${k}`}
+              accessibilityLabel={isBack ? tk('keypad.delete') : tk('keypad.digit', { digit: k })}
               onPress={() => {
                 haptics.light();
                 if (isBack) onBackspace();

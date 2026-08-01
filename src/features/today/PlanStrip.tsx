@@ -80,11 +80,13 @@ export function PlanStrip({
   };
   const dot: TextStyle = { fontSize: t.fontSize.sm, color: t.colors.inkFaint };
 
-  const startWord = planAnchor === 'start' ? 'Starting' : 'Start by';
-  const a11yLabel =
-    `Today's plan. ${startWord} ${startByClock}. Reminder ${reminderOn ? 'on' : 'off'}.` +
-    (doneByClock ? ` Done by ${doneByClock}.` : '') +
-    ' Tap to open.';
+  const startWord = planAnchor === 'start' ? tr('timeline.starting') : tr('timeline.startBy');
+  const a11yLabel = tr('planStrip.a11y', {
+    startWord,
+    clock: startByClock,
+    state: reminderOn ? tr('planStrip.a11yStateOn') : tr('planStrip.a11yStateOff'),
+    doneBy: doneByClock ? tr('planStrip.a11yDoneBy', { clock: doneByClock }) : '',
+  });
 
   return (
     <Pressable

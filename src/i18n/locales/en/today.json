@@ -15,7 +15,7 @@
     "listA11y": "List view",
     "timeline": "Timeline",
     "timelineA11y": "Timeline view",
-    "timelineProA11y": "Timeline view — Pro feature"
+    "timelineProA11y": "Timeline view, Pro feature"
   },
   "planMyDay": {
     "plan": "Plan my day",
@@ -23,10 +23,12 @@
   },
   "sections": {
     "todaysRoutines": "TODAY'S ROUTINES",
-    "upNext": "UP NEXT"
+    "upNext": "UP NEXT",
+    "tasks": "TASKS"
   },
   "retroChip": {
-    "label": "Finished? Log it. Ripens your honey."
+    "lead": "Finished something else? ",
+    "action": "Log it too"
   },
   "switchSheetFallback": {
     "currentTask": "current task"
@@ -50,7 +52,7 @@
   },
   "capacityChip": {
     "todayLabel": "Today",
-    "teaserA11y": "See if {{weekday}} will fit — Pro feature",
+    "teaserA11y": "See if {{weekday}} will fit. Pro feature.",
     "teaserText": "See if {{weekday}} will fit",
     "proPill": "Pro",
     "verdict": {
@@ -65,10 +67,10 @@
     "dismissA11y": "Dismiss capacity chip",
     "legendTasks": "tasks {{duration}}",
     "legendMeetings": "meetings {{duration}}",
-    "overCopy": "~{{count}}h heavy — move one?",
+    "overCopy": "~{{count}}h heavy. Move one?",
     "calendarNudge": "Turn on calendar in Settings to count meetings",
     "openSuffix": "open",
-    "padCalendarA11y": "Pad my calendar — add honest buffers to today's events",
+    "padCalendarA11y": "Pad my calendar: add honest buffers to today's events",
     "padCalendarPill": "Pad calendar"
   },
   "dayRecap": {
@@ -84,14 +86,25 @@
     "collapseAction": "Tap to collapse.",
     "expandAction": "Tap to expand.",
     "allTasksHeader": "ALL TASKS · {{day}}",
-    "allTasksLabel": "ALL TASKS · {{day}}"
+    "allTasksLabel": "ALL TASKS · {{day}}",
+    "recap": {
+      "nothingLogged": "Nothing logged that day.",
+      "even": "Landed right on the day you pictured.",
+      "overLead": "Ran ",
+      "underLead": "Came in ",
+      "trail": " the day you pictured.",
+      "gapOver": "{{duration}} over",
+      "gapUnder": "{{duration}} under",
+      "scaleLeft": "guessed {{duration}}",
+      "scaleRight": "real {{duration}}"
+    }
   },
   "dayTimeline": {
     "overflow": {
-      "cutOne": "This won't all fit today — move \"{{label}}\" to tomorrow?",
-      "multiCut_one": "{{count}} task won't fit today — move them to tomorrow?",
-      "multiCut_other": "{{count}} tasks won't fit today — move them to tomorrow?",
-      "pushDeadline": "You'd need until {{time}} to fit everything — move one to tomorrow?"
+      "cutOne": "This won't all fit today. Move \"{{label}}\" to tomorrow?",
+      "multiCut_one": "{{count}} task won't fit today. Move it to tomorrow?",
+      "multiCut_other": "{{count}} tasks won't fit today. Move them to tomorrow?",
+      "pushDeadline": "You'd need until {{time}} to fit everything. Move one to tomorrow?"
     },
     "meetingA11y": "Meeting: {{label}}, {{start}} to {{end}}",
     "meetingA11yHint": "Read-only calendar event",
@@ -124,14 +137,14 @@
   },
   "honeycombStrip": {
     "title": "Your honeycomb",
-    "a11y": "Your honeycomb — {{pct}}% honey, tier {{tier}}, {{logs}} logs",
+    "a11y": "Your honeycomb, {{pct}}% honey, tier {{tier}}, {{logs}} logs",
     "subline_one": "{{pct}}% honey · {{count}} log",
     "subline_other": "{{pct}}% honey · {{count}} logs",
     "nextLine_one": "{{count}} log to {{tier}}",
     "nextLine_other": "{{count}} logs to {{tier}}"
   },
   "planMyDayButton": {
-    "proSuffixA11y": "{{label}} — Pro feature"
+    "proSuffixA11y": "{{label}}, Pro feature"
   },
   "ritualSeal": {
     "doneA11y": "Logged one honest thing today.",
@@ -184,7 +197,10 @@
     "deleteA11y": "Delete {{title}}",
     "remove": "Remove",
     "startA11y": "{{title}}, {{category}}, plan for {{honestMin}} minutes, you guessed {{guessMin}}. Tap to start.",
-    "titleCategoryA11y": "{{title}}, {{category}}"
+    "startA11yEnds": "{{title}}, {{category}}, plan for {{honestMin}} minutes, you guessed {{guessMin}}, {{ends}}. Tap to start.",
+    "titleCategoryA11y": "{{title}}, {{category}}",
+    "longPressCoach": "Press & hold for options",
+    "endsAt": "ends ~{{clock}}"
   },
   "emptyState": {
     "eyebrow": "Nothing on yet",
@@ -192,24 +208,26 @@
       "lead": "Time your first thing",
       "sub": "Guess how long it'll take, hit start, and I'll show you the honest number.",
       "primary": "Start now",
-      "chip": "Already finished something? Log it"
+      "chipLead": "Already finished something? ",
+      "chipAction": "Log it"
     },
     "daily": {
       "lead": "What's on today?",
       "sub": "Add a task and I'll show its honest finish, plus whether the day actually fits.",
       "primary": "Plan a task",
-      "chip": "Or log something you finished"
+      "chipLead": "Or log something ",
+      "chipAction": "you finished"
     },
     "future": {
       "lead": "{{weekday}}'s wide open",
-      "sub": "Add what future-you should tackle — it carries over free if life happens.",
+      "sub": "Add what future-you should tackle. It carries over free if life happens.",
       "primary": "Plan ahead",
       "fallbackWeekday": "That day"
     }
   },
   "focusHook": {
-    "proA11y": "Sharpest {{range}} — your window for hard tasks",
-    "freeA11y": "Your focus window is ready — upgrade to Pro to see your sharpest hours",
+    "proA11y": "Sharpest {{range}}, your window for hard tasks",
+    "freeA11y": "Your focus window is ready. Upgrade to Pro to see your sharpest hours.",
     "sharpestLead": "Sharpest",
     "hardTasksSuffix": "· hard tasks",
     "freeInsight": "Your focus window is ready",
@@ -217,6 +235,39 @@
   },
   "headerRing": {
     "a11y": "Whenbee, honey tier {{tier}}. Tap to open your honeycomb."
+  },
+  "honestLanding": {
+    "headline": {
+      "pastLead": "Your day ended ",
+      "pastClock": "{{duration}} ago",
+      "pastTrail": " · {{duration}} still queued",
+      "roughlyLead": "Roughly done ",
+      "doneLead": "Done ",
+      "clearTrail": " · {{duration}} still open",
+      "overTrail": " · {{duration}} past your day",
+      "overTrailAlt": ". That's {{duration}} past your day."
+    },
+    "scale": {
+      "now": "now · {{clock}}"
+    },
+    "footer": {
+      "doneLogged": "{{done}} done · {{duration}} logged",
+      "moveToTomorrow": "Move {{n}} to tomorrow",
+      "tailLands": "{{label}} lands after {{dayEnd}}",
+      "moveIt": "Move it",
+      "booked": "{{duration}} already booked today",
+      "padCalendar": "Pad calendar",
+      "addTask": "Add a task"
+    },
+    "legend": {
+      "tasks": "tasks",
+      "booked": "booked",
+      "over": "over"
+    },
+    "upsell": {
+      "text": "Assumes an empty calendar",
+      "action": "Add mine"
+    }
   },
   "postStopCapture": {
     "headline": "What did you work on?",
@@ -230,7 +281,8 @@
     "nameThisTask": "Name this task"
   },
   "quickTaskChips": {
-    "tapToStartAgain": "Tap to start again"
+    "tapToStartAgain": "Tap to start again",
+    "startA11y": "Start {{label}}, about {{minutes}} minutes"
   },
   "greeting": {
     "morning": "Good morning",
@@ -248,8 +300,8 @@
     "honestLabel": "HONEST",
     "milestone": {
       "equal": "Spot on your guess today.",
-      "over": "<strong>+{{gap}} over</strong> your guess today — that gap is what Whenbee's learning.",
-      "under": "<strong>{{gap}} under</strong> your guess today — nicely called."
+      "over": "<strong>+{{gap}} over</strong> your guess today. That gap is what Whenbee's learning.",
+      "under": "<strong>{{gap}} under</strong> your guess today. Nicely called."
     }
   },
   "timeline": {
@@ -259,12 +311,25 @@
     "doneBy": "Done by {{clock}}",
     "setDoneBy": "Set done-by time",
     "starting": "Starting",
-    "startBy": "Start by"
+    "startBy": "Start by",
+    "overBy": "+{{duration}} over",
+    "doneByRule": "{{clock}} DONE BY",
+    "reorderA11y": "Reorder {{label}}",
+    "overflowA11yDoneBy": "{{label}}, runs {{duration}} past your done-by time",
+    "overflowA11yDayEnd": "{{label}}, runs {{duration}} past when today ends"
   },
   "planStrip": {
     "doneBy": "done by {{clock}}",
     "nudgeOn": "nudge on",
-    "nudgeOff": "nudge off"
+    "nudgeOff": "nudge off",
+    "a11y": "Today's plan. {{startWord}} {{clock}}. Reminder {{state}}.{{doneBy}} Tap to open.",
+    "a11yStateOn": "on",
+    "a11yStateOff": "off",
+    "a11yDoneBy": " Done by {{clock}}."
+  },
+  "planButton": {
+    "label": "Plan",
+    "a11y": "Plan. {{startWord}} {{clock}}. Tap to open."
   },
   "planReminder": {
     "on": "Nudge me at {{clock}}",

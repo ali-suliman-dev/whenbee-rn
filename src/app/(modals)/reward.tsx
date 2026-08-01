@@ -203,7 +203,7 @@ export default function Reward() {
             size="lg"
             tone="ink"
             value={String(r.actualMin)}
-            unit="min"
+            unit={tr('screen.unitMin')}
             unitSize={t.fontSize.lg}
           />
           <View style={deltaChip}>

@@ -34,6 +34,7 @@ export interface ActionSheetProps {
   title?: string;
   items: ActionSheetItem[];
   onCancel: () => void;
+  /** Cancel row label. Defaults to the translated "Cancel". */
   cancelLabel?: string;
 }
 
@@ -42,10 +43,14 @@ export function ActionSheet({
   title,
   items,
   onCancel,
-  cancelLabel = 'Cancel',
+  cancelLabel,
 }: ActionSheetProps) {
   const t = useTheme();
   const { t: ts } = useTranslation('shared');
+  const { t: tc } = useTranslation('common');
+  // Defaulted here, not in the signature: a default parameter can't call a hook,
+  // so an English literal there would freeze the label for every caller.
+  const cancelText = cancelLabel ?? tc('cancel');
   const insets = useSafeAreaInsets();
   const reduced = useReducedMotion();
   const { height: screenH } = useWindowDimensions();
@@ -152,14 +157,14 @@ export function ActionSheet({
 
           <Pressable
             accessibilityRole="button"
-            accessibilityLabel={cancelLabel}
+            accessibilityLabel={cancelText}
             onPressIn={() => setPressed(-1)}
             onPressOut={() => setPressed(null)}
             onPress={onCancel}
           >
             <View style={rowInner(pressed === -1)}>
               <AppText variant="body" style={{ ...rowLabel(), fontWeight: t.fontWeight.bold as TextStyle['fontWeight'] }}>
-                {cancelLabel}
+                {cancelText}
               </AppText>
             </View>
           </Pressable>

@@ -72,11 +72,8 @@ export function ManageAreaCard({
         visible={confirm === 'reset'}
         tone="caution"
         glyphKind="progress"
-        title={`Reset ${categoryName}'s learning?`}
-        bullets={[
-          'Whenbee starts over learning this area.',
-          'Your honey and tier stay — only the guess history resets.',
-        ]}
+        title={tr('manageArea.resetConfirmTitle', { category: categoryName })}
+        bullets={tr('manageArea.resetConfirmBullets', { returnObjects: true }) as string[]}
         confirmLabel={tr('screen.resetConfirm.confirm')}
         cancelLabel={tr('screen.resetConfirm.keep')}
         onConfirm={() => {
@@ -90,8 +87,8 @@ export function ManageAreaCard({
         visible={confirm === 'delete'}
         tone="danger"
         glyphKind="erase"
-        title={`Delete ${categoryName}?`}
-        bullets={['Removes this area along with its logs, learning, and goal.', "This can't be undone."]}
+        title={tr('manageArea.deleteConfirmTitle', { category: categoryName })}
+        bullets={tr('manageArea.deleteConfirmBullets', { returnObjects: true }) as string[]}
         confirmLabel={tr('manageArea.deleteTitle')}
         cancelLabel={tr('screen.resetConfirm.keep')}
         onConfirm={() => {

@@ -49,13 +49,13 @@ describe('DaySoFarCard', () => {
   it('states the over-guess gap milestone', () => {
     render(<DaySoFarCard recap={makeRecap({ guessedMin: 100, totalMin: 130 })} />);
     // The "+30m over" prefix is a separate bold Text node; assert the remainder.
-    expect(screen.getByText(/your guess today — that gap is what Whenbee's learning\./)).toBeOnTheScreen();
+    expect(screen.getByText(/your guess today\. That gap is what Whenbee's learning\./)).toBeOnTheScreen();
     expect(screen.getByText('+30m over')).toBeOnTheScreen();
   });
 
   it('celebrates an under-guess day', () => {
     render(<DaySoFarCard recap={makeRecap({ guessedMin: 120, totalMin: 90 })} />);
-    expect(screen.getByText(/your guess today — nicely called\./)).toBeOnTheScreen();
+    expect(screen.getByText(/your guess today\. Nicely called\./)).toBeOnTheScreen();
     expect(screen.getByText('30m under')).toBeOnTheScreen();
   });
 

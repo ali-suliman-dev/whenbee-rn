@@ -30,6 +30,7 @@ import { GoalLocked } from '@/src/features/category-detail/GoalLocked';
 import { ManageAreaCard } from '@/src/features/category-detail/ManageAreaCard';
 import { ProGate } from '@/src/features/paywall/ProGate';
 import { TIERS } from '@/src/engine';
+import type { Tier } from '@/src/domain/types';
 
 // ──────────────────────────────────────────────────────────────────────────────
 // Category Detail / Tune — pushes over the tab shell (no tab bar), back chevron.
@@ -39,6 +40,12 @@ import { TIERS } from '@/src/engine';
 // the recent receipts. Framed as power, never failure. No guilt, no red, no
 // streaks — over-runs read amber.
 // ──────────────────────────────────────────────────────────────────────────────
+
+/** Engine Tier → its lowercase i18n key segment (the engine stays English-only,
+ *  so the tier word is localized here at the UI boundary like every other one). */
+function tierKey(tier: Tier): 'raw' | 'setting' | 'ripening' | 'thickening' | 'honest' {
+  return tier.toLowerCase() as 'raw' | 'setting' | 'ripening' | 'thickening' | 'honest';
+}
 
 export default function CategoryDetailScreen() {
   const t = useTheme();
@@ -74,7 +81,7 @@ export default function CategoryDetailScreen() {
 
   async function handleReset() {
     await resetCategory();
-    showToast('Learning reset — your honey stays');
+    showToast(tr('screen.toastResetDone'));
   }
 
   async function handleDelete() {
@@ -105,7 +112,9 @@ export default function CategoryDetailScreen() {
             {detail?.tier ? (
               <View style={styles(t).tierPill}>
                 <HoneyHex size={t.space[2.5]} />
-                <Text style={styles(t).tierPillText}>{detail.tier}</Text>
+                <Text style={styles(t).tierPillText}>
+                  {tr(`tiers.${tierKey(detail.tier)}`)}
+                </Text>
               </View>
             ) : null}
           </View>

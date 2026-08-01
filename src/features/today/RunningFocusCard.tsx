@@ -167,7 +167,11 @@ export function RunningFocusCard({ categoryName }: RunningFocusCardProps) {
       onPressIn={pressIn}
       onPressOut={pressOut}
       accessibilityRole="button"
-      accessibilityLabel={`Timing ${taskLabel ?? 'a task'}, ${formatTimerClock(elapsedSec)} elapsed of about ${honestMin} minutes. Tap to reopen.`}
+      accessibilityLabel={tr('runningFocusCard.a11y', {
+        label: taskLabel ?? tr('runningFocusCard.aTask'),
+        elapsed: formatTimerClock(elapsedSec),
+        honestMin,
+      })}
       style={pressStyle}
     >
       <Card tone="raised" style={{ gap: t.space[4] }}>
@@ -182,7 +186,7 @@ export function RunningFocusCard({ categoryName }: RunningFocusCardProps) {
             </Text>
           </View>
           <View style={rightCol}>
-            <Text style={miniHdr}>ELAPSED</Text>
+            <Text style={miniHdr}>{tr('runningFocusCard.elapsedHeader')}</Text>
             <Text style={clock}>{formatTimerClock(elapsedSec)}</Text>
           </View>
         </View>

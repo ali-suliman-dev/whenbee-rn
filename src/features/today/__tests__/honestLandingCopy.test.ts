@@ -5,16 +5,24 @@ import {
   landingLegend,
   landingUpsell,
 } from '@/src/features/today/honestLandingCopy';
-import type { FooterCopy } from '@/src/features/today/honestLandingCopy';
+import type { FooterCopy, LandingT } from '@/src/features/today/honestLandingCopy';
 import type { LandingResult, LandingTask } from '@/src/engine';
+import i18n from '@/src/i18n';
+
+// The real, initialized i18n instance (jest.setup boots it in a global
+// beforeAll) — every assertion below therefore reads production English copy.
+const tr = i18n.t as unknown as LandingT;
 
 /**
  * `landingFooter` returns null on the states that render no line at all. Every
  * test below except the null one asserts on a line that must exist, so failing
  * loudly here beats sprinkling `!` across the file.
  */
-const footerOf = (...args: Parameters<typeof landingFooter>): FooterCopy => {
-  const f = landingFooter(...args);
+const footerOf = (
+  landing: Parameters<typeof landingFooter>[0],
+  ctx: Parameters<typeof landingFooter>[1],
+): FooterCopy => {
+  const f = landingFooter(landing, ctx, tr);
   if (!f) throw new Error('expected a footer line, got none');
   return f;
 };
@@ -34,14 +42,14 @@ const over: LandingResult = {
 };
 
 test('over headline leads with the landing, then the cost — no "by", no second clock', () => {
-  const c = landingHeadline(over, {});
+  const c = landingHeadline(over, {}, tr);
   expect(c.lead).toBe('Done ');
   expect(c.clock).toBe('~9:50pm');
   expect(c.trail).toBe(' · 50m past your day');
 });
 
 test('the D-alt variant is a string swap, not a different shape', () => {
-  const c = landingHeadline(over, { variant: 'dAlt' });
+  const c = landingHeadline(over, { variant: 'dAlt' }, tr);
   expect(c.lead).toBe('');
   expect(c.clock).toBe('~9:50pm');
   expect(c.trail).toBe(". That's 50m past your day.");
@@ -57,12 +65,12 @@ test('clear headline states the slack instead of a cost', () => {
     tail: null,
     ends: [],
   };
-  const c = landingHeadline(clear, {});
+  const c = landingHeadline(clear, {}, tr);
   expect(c.trail).toBe(' · 10h still open');
 });
 
 test('cold start reads as a range and never claims one time', () => {
-  const c = landingHeadline(over, { rangeLowMs: NOW + 200 * MIN, rangeHighMs: NOW + 280 * MIN });
+  const c = landingHeadline(over, { rangeLowMs: NOW + 200 * MIN, rangeHighMs: NOW + 280 * MIN }, tr);
   expect(c.lead).toBe('Roughly done ');
   expect(c.clock).toBe('10:30pm – 11:50pm');
   expect(c.trail).toBe('');
@@ -78,7 +86,7 @@ test('past headline states the fact without a scold', () => {
     tail: null,
     ends: [],
   };
-  const c = landingHeadline(past, {});
+  const c = landingHeadline(past, {}, tr);
   expect(c.lead).toBe('Your day ended ');
   expect(c.clock).toBe('1h 30m ago');
   expect(c.trail).toBe(' · 1h 55m still queued');
@@ -94,7 +102,7 @@ test('empty headline renders no clock — a regression to the epoch fallback fai
     tail: null,
     ends: [],
   };
-  const c = landingHeadline(empty, {});
+  const c = landingHeadline(empty, {}, tr);
   expect(c.clock).not.toMatch(/\d/);
 });
 
@@ -108,7 +116,7 @@ test('a past day wins over a supplied range — the range never overrides the fa
     tail: null,
     ends: [],
   };
-  const c = landingHeadline(past, { rangeLowMs: NOW + 200 * MIN, rangeHighMs: NOW + 280 * MIN });
+  const c = landingHeadline(past, { rangeLowMs: NOW + 200 * MIN, rangeHighMs: NOW + 280 * MIN }, tr);
   expect(c.lead).toBe('Your day ended ');
   expect(c.clock).toBe('1h 30m ago');
 });
@@ -159,7 +167,7 @@ test('a clear day with nothing logged renders NO footer at all', () => {
     ends: [],
   };
   expect(
-    landingFooter(clear, { doneCount: 0, doneHonestMin: 0, logsToWarm: 0, dayEndShort: '9' }),
+    landingFooter(clear, { doneCount: 0, doneHonestMin: 0, logsToWarm: 0, dayEndShort: '9' }, tr),
   ).toBeNull();
 });
 
@@ -202,7 +210,7 @@ test('past footer makes NO offer when there is nothing left to move', () => {
 const DAY_END = new Date(2026, 6, 25, 21, 0).getTime();
 
 test('the over scale labels the present moment and names all three times', () => {
-  expect(landingScale(over, { nowMs: NOW, dayEndMs: DAY_END })).toEqual([
+  expect(landingScale(over, { nowMs: NOW, dayEndMs: DAY_END }, tr)).toEqual([
     'now · 7:10pm',
     '9:00pm',
     '9:50pm',
@@ -212,7 +220,7 @@ test('the over scale labels the present moment and names all three times', () =>
 test('a range in the headline drops the exact landing from the scale', () => {
   // The headline reads "Roughly done 9:10pm – 10:30pm" here. A scale that then
   // said "9:50pm" would assert the very minute the headline just disclaimed.
-  expect(landingScale(over, { nowMs: NOW, dayEndMs: DAY_END, hasRange: true })).toEqual([
+  expect(landingScale(over, { nowMs: NOW, dayEndMs: DAY_END, hasRange: true }, tr)).toEqual([
     'now · 7:10pm',
     '9:00pm',
   ]);
@@ -228,14 +236,14 @@ test('the clear scale keeps the "now" anchor — two bare clocks would have none
     tail: null,
     ends: [],
   };
-  expect(landingScale(clear, { nowMs: NOW, dayEndMs: DAY_END })).toEqual(['now · 7:10pm', '9:00pm']);
+  expect(landingScale(clear, { nowMs: NOW, dayEndMs: DAY_END }, tr)).toEqual(['now · 7:10pm', '9:00pm']);
 });
 
 test('the states that render no bar get no scale', () => {
   const past: LandingResult = { ...over, kind: 'past' };
   const empty: LandingResult = { ...over, kind: 'empty', landingMs: null, tail: null };
-  expect(landingScale(past, { nowMs: NOW, dayEndMs: DAY_END })).toEqual([]);
-  expect(landingScale(empty, { nowMs: NOW, dayEndMs: DAY_END })).toEqual([]);
+  expect(landingScale(past, { nowMs: NOW, dayEndMs: DAY_END }, tr)).toEqual([]);
+  expect(landingScale(empty, { nowMs: NOW, dayEndMs: DAY_END }, tr)).toEqual([]);
 });
 
 test('a Pro day with meetings offers the calendar instead of another task, stating the TRUE booked total', () => {
@@ -298,7 +306,7 @@ test('booked time never outranks naming the tail task', () => {
 
 describe('landingLegend', () => {
   it('names calendar time booked, never meetings', () => {
-    const legend = landingLegend({ taskMin: 95, bookedMin: 120, overMin: 0 });
+    const legend = landingLegend({ taskMin: 95, bookedMin: 120, overMin: 0 }, tr);
     expect(legend).toEqual([
       { key: 'tasks', value: '1h 35m', label: 'tasks' },
       { key: 'booked', value: '2h', label: 'booked' },
@@ -307,26 +315,26 @@ describe('landingLegend', () => {
   });
 
   it('adds the over entry only when the day runs past its end', () => {
-    const legend = landingLegend({ taskMin: 400, bookedMin: 255, overMin: 40 });
+    const legend = landingLegend({ taskMin: 400, bookedMin: 255, overMin: 40 }, tr);
     expect(legend.map((e) => e.key)).toEqual(['tasks', 'booked', 'over']);
   });
 
   it('returns nothing when no calendar time exists', () => {
-    expect(landingLegend({ taskMin: 95, bookedMin: 0, overMin: 0 })).toEqual([]);
+    expect(landingLegend({ taskMin: 95, bookedMin: 0, overMin: 0 }, tr)).toEqual([]);
   });
 
   it('drops the tasks entry when the booked span swallows the whole in-day segment', () => {
     // meetMs clamped to the full in-day span leaves taskInDayMs at 0 — no indigo
     // segment renders on the bar, so a "tasks" dot would explain a colour that
     // isn't on screen.
-    const legend = landingLegend({ taskMin: 0, bookedMin: 60, overMin: 0 });
+    const legend = landingLegend({ taskMin: 0, bookedMin: 60, overMin: 0 }, tr);
     expect(legend).toEqual([{ key: 'booked', value: '1h', label: 'booked' }]);
   });
 });
 
 describe('landingUpsell', () => {
   it('names the assumption behind the number without blaming anyone', () => {
-    expect(landingUpsell()).toEqual({
+    expect(landingUpsell(tr)).toEqual({
       text: 'Assumes an empty calendar',
       action: 'Add mine',
     });

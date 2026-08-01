@@ -1,6 +1,6 @@
 import { useOnboardingStore, type PickedCategory } from '@/src/stores/onboardingStore';
 import { useCategoriesStore } from '@/src/stores/categoriesStore';
-import { CATEGORY_NAMES } from '@/src/engine';
+import { categoryName, isBuiltInCategory } from '@/src/features/shared/categoryName';
 import { analytics } from '@/src/services/analytics';
 import { DEFAULT_CATEGORY_IDS } from './categories';
 
@@ -42,11 +42,11 @@ export function useOnboarding() {
     const list =
       picked.length > 0
         ? picked
-        : DEFAULT_CATEGORY_IDS.map((id) => ({ id, name: CATEGORY_NAMES[id] ?? id }));
+        : DEFAULT_CATEGORY_IDS.map((id) => ({ id, name: categoryName(id) }));
     setCategories(list.map((p) => ({ id: p.id, name: p.name, adaptSpeed: 'balanced' })));
     markComplete();
     // A picked id that isn't a seed slug is a custom category the user typed.
-    const customAdded = picked.some((p) => !(p.id in CATEGORY_NAMES));
+    const customAdded = picked.some((p) => !isBuiltInCategory(p.id));
     analytics.capture('onboarding_completed', {
       categories_picked: picked.length,
       custom_category_added: customAdded,

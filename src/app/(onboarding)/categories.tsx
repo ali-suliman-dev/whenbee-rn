@@ -25,7 +25,8 @@ import { StepProgress } from '@/src/features/onboarding/StepProgress';
 import { onboardingStepIndex, ONBOARDING_TOTAL } from '@/src/features/onboarding/onboardingFlow';
 import { Reveal } from '@/src/features/onboarding/Reveal';
 import { useOnce } from '@/src/lib/useOnce';
-import { sinkCategoryFor, CATEGORY_NAMES } from '@/src/engine';
+import { sinkCategoryFor } from '@/src/engine';
+import { categoryName } from '@/src/features/shared/categoryName';
 import {
   getOnboardingCategories,
   slugify,
@@ -49,7 +50,10 @@ export default function Categories() {
   useEffect(() => {
     if (sink === undefined) return;
     const id = sinkCategoryFor(sink);
-    if (!isPicked(id)) togglePick({ id, name: CATEGORY_NAMES[id] ?? id });
+    // The id is what's persisted and what the engine trains on; the name is only
+    // ever a display projection, so it must be the LOCALIZED one (this used to
+    // stamp the engine's English label into storage, permanently).
+    if (!isPicked(id)) togglePick({ id, name: categoryName(id) });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -79,11 +83,11 @@ export default function Categories() {
     }
     const id = slugify(name);
     if (id.length === 0) {
-      setCustomError('Try letters or numbers');
+      setCustomError(tr('categories.customError.invalid'));
       return;
     }
     if (isPicked(id)) {
-      setCustomError('Already tracking that one');
+      setCustomError(tr('categories.customError.duplicate'));
       return;
     }
     togglePick({ id, name });

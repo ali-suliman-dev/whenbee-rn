@@ -11,7 +11,7 @@
     },
     "analytics": {
       "title": "Anonymous crash and usage counts",
-      "body": "To find bugs and see which screens get used, Whenbee sends anonymous events — taps and crashes, never your task names, times, or categories."
+      "body": "To find bugs and see which screens get used, Whenbee sends anonymous events: taps and crashes, never your task names, times, or categories."
     },
     "calendar": {
       "title": "Your calendar, read on request",

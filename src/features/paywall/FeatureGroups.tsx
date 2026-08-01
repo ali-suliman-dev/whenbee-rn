@@ -1,5 +1,6 @@
 import { View, Text, type ViewStyle, type TextStyle } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { useTranslation } from 'react-i18next';
 import { useTheme } from '@/src/theme/useTheme';
 import { type } from '@/src/theme/typography';
 import { featuresByGroup, type ProFeature, type ProFeatureGroup } from './proFeatures';
@@ -11,10 +12,11 @@ import { featuresByGroup, type ProFeature, type ProFeatureGroup } from './proFea
 // with the amber CTA.
 // ──────────────────────────────────────────────────────────────────────────────
 
-const GROUPS: readonly { group: ProFeatureGroup; heading: string }[] = [
-  { group: 'plan', heading: 'Plan honestly' },
-  { group: 'run', heading: 'Run the day' },
-  { group: 'learn', heading: 'Learn your patterns' },
+/** Group order + the `paywall` key carrying each heading (never English text). */
+const GROUPS: readonly { group: ProFeatureGroup; headingKey: `groups.${ProFeatureGroup}` }[] = [
+  { group: 'plan', headingKey: 'groups.plan' },
+  { group: 'run', headingKey: 'groups.run' },
+  { group: 'learn', headingKey: 'groups.learn' },
 ];
 
 function pairs(features: ProFeature[]): ProFeature[][] {
@@ -25,6 +27,7 @@ function pairs(features: ProFeature[]): ProFeature[][] {
 
 export function FeatureGroups() {
   const t = useTheme();
+  const { t: tr } = useTranslation('paywall');
 
   const wrap: ViewStyle = { gap: t.space[3], paddingHorizontal: t.space[1] };
   const groupWrap: ViewStyle = { gap: t.space[2] };
@@ -53,9 +56,9 @@ export function FeatureGroups() {
 
   return (
     <View style={wrap}>
-      {GROUPS.map(({ group, heading: text }) => (
+      {GROUPS.map(({ group, headingKey }) => (
         <View key={group} style={groupWrap}>
-          <Text style={heading}>{text}</Text>
+          <Text style={heading}>{tr(headingKey)}</Text>
           {pairs(featuresByGroup(group)).map((pair, i) => (
             <View key={i} style={row}>
               {pair.map((f) => (
@@ -63,7 +66,7 @@ export function FeatureGroups() {
                   <View style={coin}>
                     <Ionicons name="checkmark" size={t.iconSize.xs} color={t.colors.primary} />
                   </View>
-                  <Text style={label}>{f.label}</Text>
+                  <Text style={label}>{tr(f.labelKey)}</Text>
                 </View>
               ))}
             </View>

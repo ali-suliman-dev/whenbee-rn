@@ -7,7 +7,7 @@
   "restoreMessage": {
     "success": "Pro restored.",
     "none": "No earlier purchase found.",
-    "error": "Couldn't reach the store — try again."
+    "error": "Couldn't reach the store. Try again."
   },
   "reminderDenied": "Allow notifications in iOS Settings to get reminders.",
   "dismissA11y": "Dismiss",
@@ -99,7 +99,7 @@
     },
     "quickStart": {
       "title": "Tap to start again",
-      "note": "A row of tasks you run often, up top on Today — one tap re-runs them. Turn off for a cleaner screen.",
+      "note": "A row of tasks you run often, up top on Today. One tap re-runs them. Turn off for a cleaner screen.",
       "a11y": "Tap to start again"
     }
   },
@@ -137,7 +137,7 @@
       "removeConfirmMessage": "This removes all events Whenbee added to its own calendar. Your other calendars aren't touched.",
       "removeConfirmKeep": "Keep events",
       "removeConfirmConfirm": "Remove and turn off",
-      "lockedA11y": "Add plan to a Whenbee calendar — Pro feature. Tap to upgrade.",
+      "lockedA11y": "Add plan to a Whenbee calendar. Pro feature. Tap to upgrade.",
       "proLabel": "Pro"
     }
   },
@@ -191,12 +191,12 @@
     "label": "Developer",
     "unlockPro": {
       "title": "Unlock Pro (testing)",
-      "note": "Flip the Pro entitlement to preview every gated screen. For testing — leave off in normal use.",
+      "note": "Flip the Pro entitlement to preview every gated screen. For testing: leave off in normal use.",
       "a11y": "Unlock Pro (testing)"
     },
     "seedDemo": {
       "title": "Seed demo data",
-      "note": "Lay down ~2 months of logs across four categories so every Pro surface has something to show. Sim-only — resets the demo categories each run."
+      "note": "Lay down ~2 months of logs across four categories so every Pro surface has something to show. Sim-only: resets the demo categories each run."
     },
     "landingHeadline": "Landing headline",
     "paywallLayout": "Paywall feature layout"

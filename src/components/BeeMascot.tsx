@@ -11,6 +11,7 @@ import Animated, {
   withTiming,
 } from 'react-native-reanimated';
 import Svg, { Path, Rect, Circle, G, Defs, RadialGradient, Stop } from 'react-native-svg';
+import { useTranslation } from 'react-i18next';
 import { useTheme } from '@/src/theme/useTheme';
 import { useAmbientMotion } from '@/src/hooks/useAmbientMotion';
 
@@ -112,6 +113,7 @@ export function BeeMascot({
   sleepy?: boolean;
 }) {
   const t = useTheme();
+  const { t: ts } = useTranslation('shared');
   const c = t.brand.bee;
   const reduced = useReducedMotion();
 
@@ -420,7 +422,7 @@ export function BeeMascot({
 
   const a11y = {
     accessibilityRole: 'image' as const,
-    accessibilityLabel: 'Your Whenbee companion',
+    accessibilityLabel: ts('a11y.companion'),
   };
 
   // Static path (every shared usage, and celebrate under reduced-motion): one

@@ -155,7 +155,7 @@ export function TodayFocusHook({ nowMs }: TodayFocusHookProps): React.ReactEleme
               <AppText style={insightStyle} numberOfLines={1}>
                 {tr('focusHook.freeInsight')}
               </AppText>
-              <ProCoin label="Pro" />
+              <ProCoin label={tr('focusHook.proPill')} />
             </>
           )}
         </View>

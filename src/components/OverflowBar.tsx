@@ -29,6 +29,7 @@ export function OverflowBar({
 }) {
   const t = useTheme();
   const { t: tr } = useTranslation('shared');
+  const { t: tc } = useTranslation('common');
   const reduced = useReducedMotion();
   const pct = Math.max(0, Math.min(1, guessMin / honestMin));
   const fill = useSharedValue(reduced ? 1 : 0);
@@ -103,7 +104,7 @@ export function OverflowBar({
             color: t.colors.accent,
           }}
         >
-          {`+${fmtHm(honestMin - guessMin)} reality`}
+          {tc('overflowDelta', { delta: fmtHm(honestMin - guessMin) })}
         </Animated.Text>
       </View>
 

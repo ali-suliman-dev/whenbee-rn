@@ -43,25 +43,40 @@ import { usePaywallVariant } from './usePaywallVariant';
 /** Earned-readiness framing for the lead heading. */
 type Readiness = 'pre' | 'honest';
 
+/** A notice carries translation KEYS, not sentences — it is built outside the
+ *  render and resolved against the live language when it is shown. */
 interface Notice {
   tone: 'danger' | 'neutral';
-  title?: string;
-  message: string;
+  titleKey?: 'plans.purchaseErrorTitle' | 'plans.declinedTitle' | 'plans.restoreErrorTitle';
+  messageKey: 'plans.purchaseError' | 'plans.declinedError' | 'plans.restoreNone' | 'plans.restoreError';
   retryable: boolean;
 }
 
 const GENERIC_PURCHASE_NOTICE: Notice = {
   tone: 'danger',
-  title: "That didn't go through.",
-  message: "You weren't charged. Check your connection and try once more.",
+  titleKey: 'plans.purchaseErrorTitle',
+  messageKey: 'plans.purchaseError',
   retryable: true,
 };
 
 const DECLINED_PURCHASE_NOTICE: Notice = {
   tone: 'danger',
-  title: 'Your payment method was declined.',
-  message: "You weren't charged. Check it in your store settings, then try again.",
+  titleKey: 'plans.declinedTitle',
+  messageKey: 'plans.declinedError',
   retryable: true,
+};
+
+const RESTORE_NONE_NOTICE: Notice = {
+  tone: 'neutral',
+  messageKey: 'plans.restoreNone',
+  retryable: false,
+};
+
+const RESTORE_ERROR_NOTICE: Notice = {
+  tone: 'danger',
+  titleKey: 'plans.restoreErrorTitle',
+  messageKey: 'plans.restoreError',
+  retryable: false,
 };
 
 /** Map a package to its analytics plan name. */
@@ -176,21 +191,10 @@ export function Paywall({ trigger, readiness = 'pre' }: { trigger?: string; read
       const isPro = useEntitlement.getState().isPro;
       analytics.capture('restore_purchases', { result: isPro ? 'success' : 'none' });
       if (isPro) routeToWelcome('restore');
-      else
-        setNotice({
-          tone: 'neutral',
-          message:
-            'No earlier purchase on this account. If you subscribed with another one, switch and restore there.',
-          retryable: false,
-        });
+      else setNotice(RESTORE_NONE_NOTICE);
     } catch {
       analytics.capture('restore_purchases', { result: 'error' });
-      setNotice({
-        tone: 'danger',
-        title: "Couldn't reach the store.",
-        message: 'Try again in a moment.',
-        retryable: false,
-      });
+      setNotice(RESTORE_ERROR_NOTICE);
     } finally {
       setBusy(false);
     }
@@ -199,12 +203,12 @@ export function Paywall({ trigger, readiness = 'pre' }: { trigger?: string; read
   // CTA label tracks the selection and the error state.
   const isLifetime = selected?.duration === 'lifetime';
   const ctaLabel = busy
-    ? 'One moment…'
+    ? tr('plans.ctaBusy')
     : notice?.retryable
-      ? 'Try again'
+      ? tr('plans.ctaRetry')
       : isLifetime && selected
-        ? `Get Pro forever · ${selected.priceString}`
-        : 'Try 7 days free';
+        ? tr('plans.ctaLifetime', { price: selected.priceString })
+        : tr('plans.ctaTrial');
 
   const copy = copyFor(tr, resolvedTrigger, readiness);
   const showTimeline = selected ? selected.duration !== 'lifetime' : true;
@@ -274,7 +278,11 @@ export function Paywall({ trigger, readiness = 'pre' }: { trigger?: string; read
             {showTimeline ? <TrialTimeline /> : null}
 
             {notice ? (
-              <InlineNotice tone={notice.tone} title={notice.title} message={notice.message} />
+              <InlineNotice
+                tone={notice.tone}
+                title={notice.titleKey === undefined ? undefined : tr(notice.titleKey)}
+                message={tr(notice.messageKey)}
+              />
             ) : null}
 
             <AppButton

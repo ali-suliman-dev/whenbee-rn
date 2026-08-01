@@ -17,7 +17,7 @@ import { useTranslation } from 'react-i18next';
 import { useTheme } from '@/src/theme/useTheme';
 import { type } from '@/src/theme/typography';
 import { haptics } from '@/src/lib/haptics';
-import { fmtHm } from '@/src/lib/time';
+import { formatDuration } from '@/src/i18n/formatDuration';
 import { recapHeadline, recapScale } from './dayRecapCopy';
 import { StatColumn } from './StatColumn';
 import { useLocalizedFormat } from '@/src/i18n/useLocalizedFormat';
@@ -55,6 +55,7 @@ export interface DayRecapCardProps {
 export function DayRecapCard({ recap, rows }: DayRecapCardProps) {
   const t = useTheme();
   const { t: tr } = useTranslation('today');
+  const { t: translate } = useTranslation();
   const fmt = useLocalizedFormat();
   const [expanded, setExpanded] = useState(false);
 
@@ -65,8 +66,8 @@ export function DayRecapCard({ recap, rows }: DayRecapCardProps) {
   // that's still an empty day for this card's purposes.
   const isEmpty = recap.doneCount === 0;
 
-  const headline = recapHeadline(recap);
-  const scale = recapScale(recap.guessedMin, recap.honestMin);
+  const headline = recapHeadline(recap, translate);
+  const scale = recapScale(recap.guessedMin, recap.honestMin, translate);
   // No guilt: over reads in accent, under in a quiet ink-soft — never danger/red,
   // since running under a guess isn't a win any more than over is a loss.
   const gapColor = headline.direction === 'over' ? t.colors.accent : t.colors.inkSoft;
@@ -208,9 +209,9 @@ export function DayRecapCard({ recap, rows }: DayRecapCardProps) {
 
       {/* Stats — three columns matching the day-so-far card's treatment. */}
       <View style={statsRow}>
-        <StatColumn value={String(recap.doneCount)} unit={recap.doneCount === 1 ? 'task' : 'tasks'} label={tr('daySoFar.loggedLabel')} />
-        <StatColumn value={fmtHm(recap.guessedMin)} label={tr('daySoFar.guessedLabel')} dotColor={t.colors.primary} divided />
-        <StatColumn value={fmtHm(recap.honestMin)} label={tr('daySoFar.honestLabel')} dotColor={t.colors.accent} divided />
+        <StatColumn value={String(recap.doneCount)} unit={tr('daySoFar.unit', { count: recap.doneCount })} label={tr('daySoFar.loggedLabel')} />
+        <StatColumn value={formatDuration(recap.guessedMin, translate)} label={tr('daySoFar.guessedLabel')} dotColor={t.colors.primary} divided />
+        <StatColumn value={formatDuration(recap.honestMin, translate)} label={tr('daySoFar.honestLabel')} dotColor={t.colors.accent} divided />
       </View>
 
       {/* Disclosure toggle */}

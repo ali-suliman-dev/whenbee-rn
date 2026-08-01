@@ -72,6 +72,7 @@ function weekdayName(key: string, fmt: ReturnType<typeof useLocalizedFormat>): s
 export default function Today() {
   const t = useTheme();
   const { t: tr } = useTranslation('today');
+  const { t: translate } = useTranslation();
   const {
     focus,
     summary,
@@ -524,7 +525,7 @@ export default function Today() {
                 {/* Scheduled routine blocks — Pro, derived read (no DB rows). */}
                 {isPro && scheduledRoutineBlocks.length > 0 ? (
                   <View style={{ gap: t.space[2], marginBottom: t.space[2] }}>
-                    <Text style={sectionLabel}>{"TODAY'S ROUTINES"}</Text>
+                    <Text style={sectionLabel}>{tr('sections.todaysRoutines')}</Text>
                     {scheduledRoutineBlocks.map((block) => (
                       <ScheduledRoutineBlock key={block.routineId} block={block} />
                     ))}
@@ -540,7 +541,7 @@ export default function Today() {
                         justifyContent: 'space-between',
                       }}
                     >
-                      <Text style={sectionLabel}>TASKS</Text>
+                      <Text style={sectionLabel}>{tr('sections.tasks')}</Text>
                       {totalCount > 0 ? (
                         <PlanButton
                           hasPlan={hasPlan}
@@ -570,10 +571,14 @@ export default function Today() {
                         onLongPress={() => { dismissLongPressHint(); promptRowActions(row.id, row.label); }}
                         onMove={() => void useDayTasksStore.getState().moveToTomorrow(row.id)}
                         showCoachMark={showLongPressHint && idx === 0}
-                        coachLabel="Press & hold for options"
+                        coachLabel={tr('taskRow.longPressCoach')}
                         onCoachMarkDismiss={dismissLongPressHint}
                         isExiting={deletingId === row.id}
-                        endsAtLabel={endsById.has(row.id) ? `ends ~${endsById.get(row.id)}` : undefined}
+                        endsAtLabel={
+                          endsById.has(row.id)
+                            ? tr('taskRow.endsAt', { clock: endsById.get(row.id) })
+                            : undefined
+                        }
                         isTail={isToday && landing.landing.tail?.id === row.id}
                       />
                     ))}
@@ -626,8 +631,8 @@ export default function Today() {
 
           {totalCount === 0 && !isTimerRunning ? null : (
             <RetroLogChip
-              firstText="Finished something else? "
-              secondText="Log it too"
+              firstText={tr('retroChip.lead')}
+              secondText={tr('retroChip.action')}
               onPress={() => router.push('/(modals)/retro')}
             />
           )}
@@ -642,11 +647,11 @@ export default function Today() {
           rowActions
             ? [
                 ...(canEditRow(isTimerRunning, runningTaskId, rowActions.id, rowActions.done)
-                  ? [{ label: 'Edit', onPress: () => editRow(rowActions.id) }]
+                  ? [{ label: translate('edit'), onPress: () => editRow(rowActions.id) }]
                   : []),
-                { label: 'Move to tomorrow', onPress: () => void useDayTasksStore.getState().moveToTomorrow(rowActions.id) },
-                { label: 'Pick a day…', onPress: () => showDayPicker(rowActions.id) },
-                { label: 'Remove', destructive: true, onPress: () => setDeletingId(rowActions.id) },
+                { label: tr('actions.moveToTomorrow'), onPress: () => void useDayTasksStore.getState().moveToTomorrow(rowActions.id) },
+                { label: tr('actions.pickADay'), onPress: () => showDayPicker(rowActions.id) },
+                { label: tr('actions.remove'), destructive: true, onPress: () => setDeletingId(rowActions.id) },
               ]
             : []
         }

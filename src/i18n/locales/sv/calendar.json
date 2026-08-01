@@ -3,7 +3,7 @@
     "sectionLabel": "DIN ÄRLIGA DAG",
     "endsPlanned": "slutar {{time}}",
     "endsHonest": "slutar egentligen {{time}}",
-    "empty": "Inget i kalendern idag — lägg till en händelse så visas din ärliga dag här.",
+    "empty": "Inget i kalendern idag. Lägg till en händelse så dyker din ärliga dag upp här.",
     "blockByBlock": "BLOCK FÖR BLOCK",
     "apply": "Lägg till i min kalender",
     "applying": "Lägger till…",
@@ -16,16 +16,16 @@
     "text": "Det är en full dag. Korta ner ett block så får resten plats att andas."
   },
   "screen": {
-    "title": "Fyll ut min kalender",
-    "subtitle": "Dina verkliga marginaler, mappade på dagens schema. Inget ändras förrän du trycker på verkställ.",
+    "title": "Lägg marginal i kalendern",
+    "subtitle": "Dina verkliga marginaler, inlagda i dagens schema. Inget ändras förrän du trycker på Lägg till.",
     "loading": "Läser dagens plan…",
-    "denied": "Whenbee behöver tillgång till kalendern för att fylla ut den. Du kan aktivera det i Inställningar när du är redo.",
+    "denied": "Whenbee behöver tillgång till kalendern för att lägga in marginalerna. Du kan slå på det i Inställningar när du känner dig redo.",
     "maybeLater": "Kanske senare",
-    "empty": "Dagens kalender är tom. Lägg till några händelser och kom tillbaka — utfyllnaden väntar.",
+    "empty": "Dagens kalender är tom. Lägg till några händelser och kom tillbaka. Marginalerna väntar här.",
     "done": "Klar"
   },
   "notPro": {
-    "title": "Att fylla ut kalendern är en Pro-funktion",
+    "title": "Marginal i kalendern är en Pro-funktion",
     "cta": "Se vad Pro låser upp"
   },
   "overlay": {
@@ -34,8 +34,10 @@
     "busyFallback": "Upptagen",
     "a11y": "Kalender, {{count}} händelser. {{action}}",
     "collapseAction": "Tryck för att fälla ihop.",
-    "expandAction": "Tryck för att expandera.",
+    "expandAction": "Tryck för att fälla ut.",
     "collapseA11y": "Fäll ihop kalendern",
-    "expandA11y": "Expandera kalendern"
+    "expandA11y": "Expandera kalendern",
+    "updatedAgo": "uppdaterad för {{duration}} sedan",
+    "eventA11y": "{{title}}, {{span}}, {{clock}} {{tail}}, öppna i Kalender"
   }
 }

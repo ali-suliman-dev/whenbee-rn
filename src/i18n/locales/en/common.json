@@ -13,6 +13,26 @@
   "screenTitle": {
     "settings": "Settings",
     "categories": "Categories",
-    "privacy": "Privacy"
+    "privacy": "Privacy",
+    "today": "Today",
+    "routines": "Routines",
+    "whenbee": "Whenbee",
+    "patterns": "Patterns"
+  },
+  "quickAction": {
+    "timer": "Start timer",
+    "voice": "Voice",
+    "type": "Type"
+  },
+  "overflowDelta": "+{{delta}} reality",
+  "trailState": {
+    "done": "done",
+    "now": "now",
+    "ahead": "ahead"
+  },
+  "a11y": {
+    "honeycombCell": "{{label}} cell, {{pct}}% honey, tier {{tier}}",
+    "trailNode": "{{label}}: {{state}}",
+    "ringBadge": "{{tier}}, {{pct}} percent. {{line}}. {{next}}"
   }
 }

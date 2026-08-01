@@ -5,7 +5,7 @@
     "openRoutineA11y": "Öppna {{name}}",
     "totalMinutes": "{{count}} min",
     "startBy": "Börja senast {{time}}",
-    "intro": "En guidad sekvens som körs på en timer — den säger vad du ska göra nu och för dig sedan vidare.",
+    "intro": "En guidad sekvens som går på en timer. Den säger vad du ska göra nu och för dig sedan vidare.",
     "tryIt": "Prova",
     "tryExampleA11y": "Prova exemplet {{name}}",
     "newRoutine": "Ny rutin"
@@ -20,14 +20,14 @@
     ],
     "sampleTotalMinutes": "{{count}} min",
     "sampleStartBy": "Börja senast {{time}}",
-    "body": "Spara din morgon en gång. Whenbee lär sig hur lång tid det hela faktiskt tar, så \"börja senast\" blir ett tal du kan lita på.",
+    "body": "Spara din morgon en gång. Whenbee lär sig hur lång tid det hela faktiskt tar, så ”börja senast” blir ett tal du kan lita på.",
     "cta": "Se Whenbee Pro"
   },
   "build": {
     "backA11y": "Tillbaka till rutiner",
     "back": "Rutiner",
     "nameLabel": "Rutinens namn",
-    "namePlaceholder": "Namnge den här rutinen",
+    "namePlaceholder": "Namnge rutinen",
     "addStep": "＋ Steg",
     "save": "Spara",
     "saveA11y": "Spara rutin",
@@ -35,11 +35,11 @@
   },
   "rail": {
     "start": "start",
-    "doneBy": "klart senast",
+    "doneBy": "klar senast",
     "setFinishTime": "＋ ange en sluttid",
-    "doneByA11y": "Klart senast {{time}}",
+    "doneByA11y": "Klar senast {{time}}",
     "setFinishTimeA11y": "Ange en sluttid",
-    "breather": "+{{count}} min mellanrum",
+    "breather": "+{{count}} min emellan",
     "addStepTail": "＋ lägg till steg",
     "addStepA11y": "Lägg till ett steg",
     "remove": "Ta bort",
@@ -48,7 +48,7 @@
     "honestMinutes": "{{count}} min ärligt"
   },
   "run": {
-    "resumed": "Fortsatte där du slutade — inget gick förlorat.",
+    "resumed": "Vi fortsätter där du slutade. Inget gick förlorat.",
     "progress": "{{done}} av {{total}} klara",
     "stop": "Stoppa",
     "stopA11y": "Stoppa rutinen",
@@ -63,8 +63,8 @@
     "skippedMeta": "hoppade över",
     "remainingA11y": "{{min}} minuter {{sec}} sekunder kvar",
     "overA11y": "{{min}} minuter {{sec}} sekunder över",
-    "recapLong": "{{name}} tog {{actual}} min den här gången. Jag uppdaterar \"börja senast\" så det stämmer bättre nästa vecka.",
-    "recapOnTime": "{{name}} klar på {{actual}} min — precis som väntat. Jag har det i åtanke till nästa gång."
+    "recapLong": "{{name}} tog {{actual}} min den här gången. Jag uppdaterar ”börja senast” så det stämmer bättre nästa vecka.",
+    "recapOnTime": "{{name}} klar på {{actual}} min, precis som väntat. Jag har det i åtanke till nästa gång."
   },
   "finishSheet": {
     "dismissA11y": "Stäng",
@@ -79,7 +79,7 @@
     "dismissA11y": "Stäng",
     "titleAdd": "Lägg till ett steg",
     "titleEdit": "Redigera steg",
-    "namePlaceholder": "Steg-namn",
+    "namePlaceholder": "Namn på steget",
     "cancel": "Avbryt",
     "submitAdd": "Lägg till steg",
     "submitEdit": "Spara steg"

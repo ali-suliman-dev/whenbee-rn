@@ -1,6 +1,11 @@
 {
   "eyebrow": "Timing now",
   "defaultTaskLabel": "Focus session",
+  "overBadge": "+{{duration}} over",
+  "switchFallback": {
+    "runningTimer": "your timer",
+    "quickTimer": "a quick timer"
+  },
   "minimizeA11y": "Minimize timer",
   "abandonA11y": "Abandon task",
   "reframe": {
@@ -11,7 +16,7 @@
   "stopAndLog": "Stop & log",
   "abandonConfirm": {
     "title": "Abandon this task?",
-    "message": "No guilt — it just won’t count toward your honey.",
+    "message": "No guilt. It just won’t count toward your honey.",
     "keepTiming": "Keep timing",
     "abandon": "Abandon"
   },
@@ -38,11 +43,11 @@
     "wrapUp": "Wrap up"
   },
   "pace": {
-    "over": "{{duration}} over your guess — now you know",
+    "over": "{{duration}} over your guess. Now you know",
     "closing": "Almost at your guess",
     "onTrack": "You’ve got time",
     "forgotToStop": "Forgot to stop?",
-    "overNoAmount": "Past your guess — now you know",
+    "overNoAmount": "Past your guess. Now you know",
     "forgotA11y": "Forgot to stop the timer earlier"
   },
   "forgotStop": {
@@ -52,11 +57,13 @@
     "notSure": "Not sure yet",
     "back": "Back",
     "backA11y": "Back to the quick options",
-    "notSureSkipA11y": "Not sure yet — skip logging this session",
-    "notSureStopA11y": "Not sure yet — stop without a trained log",
+    "notSureSkipA11y": "Not sure yet, skip logging this session",
+    "notSureStopA11y": "Not sure yet, stop without a trained log",
     "pickExact": "Pick the exact time",
+    "presetOption": "~{{minutes}} min ago  ·  {{duration}}",
+    "logAt": "Log {{clock}}  ·  {{duration}}",
     "stillGoing": "Still going",
-    "overranBody": "The timer kept running past your finish. Pick when you really stopped — I’ll log that, not the full {{duration}}."
+    "overranBody": "The timer kept running past your finish. Pick when you really stopped. I’ll log that, not the full {{duration}}."
   },
   "ledger": {
     "yourGuess": "Your guess",
@@ -66,6 +73,7 @@
     "heading": "Wrapped up \"{{label}}\" while you were away",
     "logHonest": "Log honest finish · {{duration}}",
     "logGuess": "Log your first guess · {{duration}}",
+    "logAt": "Log {{clock}} · {{duration}}",
     "bodySeen": "It ran past your honest finish, so I paused it. When did you actually stop?",
     "bodyFirst": "It ran well past your estimate, so I paused it. When did you actually stop? You can change when I step in from Settings."
   }

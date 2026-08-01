@@ -5,7 +5,7 @@
     "openRoutineA11y": "Open {{name}}",
     "totalMinutes": "{{count}} min",
     "startBy": "Start by {{time}}",
-    "intro": "A guided sequence that runs on a timer — it tells you what to do now, then moves you on.",
+    "intro": "A guided sequence that runs on a timer. It tells you what to do now, then moves you on.",
     "tryIt": "Try it",
     "tryExampleA11y": "Try the {{name}} example",
     "newRoutine": "New routine"
@@ -48,7 +48,7 @@
     "honestMinutes": "{{count}}m honest"
   },
   "run": {
-    "resumed": "Picked up where you stopped — nothing lost.",
+    "resumed": "Picked up where you stopped. Nothing lost.",
     "progress": "{{done}} of {{total}} done",
     "stop": "Stop",
     "stopA11y": "Stop routine",
@@ -64,7 +64,7 @@
     "remainingA11y": "{{min}} minutes {{sec}} seconds remaining",
     "overA11y": "{{min}} minutes {{sec}} seconds over",
     "recapLong": "{{name}} took {{actual}} min this time. I'll update the start-by so it's more accurate next week.",
-    "recapOnTime": "{{name}} done in {{actual}} min — right on track. I'll keep that in mind for next time."
+    "recapOnTime": "{{name}} done in {{actual}} min, right on track. I'll keep that in mind for next time."
   },
   "finishSheet": {
     "dismissA11y": "Dismiss",

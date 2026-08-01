@@ -37,6 +37,7 @@ function QuickChip({
   onPress: (chip: QuickTaskChip) => void;
   index: number;
 }) {
+  const { t: tq } = useTranslation('today');
   const t = useTheme();
   const reducedMotion = useReducedMotion();
   const pressScale = useSharedValue(1);
@@ -93,7 +94,10 @@ function QuickChip({
       onPressIn={handlePressIn}
       onPressOut={handlePressOut}
       accessibilityRole="button"
-      accessibilityLabel={`Start ${chip.label}, about ${chip.honestMin} minutes`}
+      accessibilityLabel={tq('quickTaskChips.startA11y', {
+        label: chip.label,
+        minutes: chip.honestMin,
+      })}
     >
       <Animated.View
         style={pressStyle}

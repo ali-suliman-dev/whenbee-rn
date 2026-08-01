@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { categoryDisplayName } from '@/src/features/shared/categoryName';
 import {
   View,
   TextInput,
@@ -39,12 +40,13 @@ function CategoryRow({
 }) {
   const t = useTheme();
   const { t: tr } = useTranslation('categoryDetail');
-  const [draft, setDraft] = useState(category.name);
+  const displayName = categoryDisplayName(category.id, category.name);
+  const [draft, setDraft] = useState(displayName);
 
   function commit() {
     const trimmed = draft.trim();
     if (!trimmed) {
-      setDraft(category.name);
+      setDraft(displayName);
       return;
     }
     onRename(category.id, trimmed);
@@ -80,14 +82,14 @@ function CategoryRow({
         maxLength={MAX_CUSTOM_NAME}
         returnKeyType="done"
         placeholderTextColor={t.colors.inkSoft}
-        accessibilityLabel={tr('categoriesList.nameLabel', { name: category.name })}
+        accessibilityLabel={tr('categoriesList.nameLabel', { name: displayName })}
         style={input}
       />
       <Pressable
         onPress={() => onRemove(category.id)}
         disabled={!canRemove}
         accessibilityRole="button"
-        accessibilityLabel={tr('categoriesList.stopTrackingLabel', { name: category.name })}
+        accessibilityLabel={tr('categoriesList.stopTrackingLabel', { name: displayName })}
         accessibilityState={{ disabled: !canRemove }}
         hitSlop={8}
         style={{

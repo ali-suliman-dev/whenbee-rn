@@ -45,7 +45,8 @@ interface FinishEditorSheetProps {
   onChange: (ms: number) => void;
   onClear: () => void;
   onClose: () => void;
-  /** Quiet caption above the wheel — names which end of the day is being set. */
+  /** Quiet caption above the wheel: names which end of the day is being set.
+   *  Defaults to the translated "Finish by". */
   title?: string;
   /**
    * Start row only: drops the pinned time and hands the row back to the live
@@ -71,13 +72,17 @@ export function FinishEditorSheet({
   onChange,
   onClear,
   onClose,
-  title = 'Finish by',
+  title,
   onUseNow,
 }: FinishEditorSheetProps): ReactElement | null {
   const t = useTheme();
   const { t: tr } = useTranslation('routines');
 
   if (!visible) return null;
+
+  // Defaulted here, not in the signature: a default parameter can't call a hook,
+  // so an English literal there would freeze the caption for every caller.
+  const titleText = title ?? tr('finishSheet.title');
 
   // ─── Styles ─────────────────────────────────────────────────────────────────
 
@@ -147,7 +152,7 @@ export function FinishEditorSheet({
                 existing finish picker keeps the exact rhythm it shipped with. */}
             {onUseNow ? (
               <View style={titleRow}>
-                <AppText style={titleStyle}>{title}</AppText>
+                <AppText style={titleStyle}>{titleText}</AppText>
                 <Pressable
                   testID="finish-editor-use-now"
                   onPress={onUseNow}
@@ -160,7 +165,7 @@ export function FinishEditorSheet({
                 </Pressable>
               </View>
             ) : (
-              <AppText style={titleStyle}>{title}</AppText>
+              <AppText style={titleStyle}>{titleText}</AppText>
             )}
             <View style={wheelWrap}>
               <FinishTimeWheel

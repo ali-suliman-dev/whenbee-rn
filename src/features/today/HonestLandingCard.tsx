@@ -43,6 +43,7 @@ import Animated, {
   Easing,
 } from 'react-native-reanimated';
 import { Ionicons } from '@expo/vector-icons';
+import { useTranslation } from 'react-i18next';
 import { useTheme } from '@/src/theme/useTheme';
 import { type } from '@/src/theme/typography';
 import { formatClockMeridiem } from '@/src/lib/time';
@@ -110,6 +111,9 @@ export function HonestLandingCard({
   onAction,
 }: HonestLandingCardProps): React.ReactElement | null {
   const t = useTheme();
+  // Default (common) namespace: the copy module qualifies its own keys with
+  // `today:` and needs this `t` for the shared duration unit words.
+  const { t: translate } = useTranslation();
   const { variant } = useLandingVariant();
   const isPro = useEntitlement((s) => s.isPro);
   const { landing, range, logsToWarm, dayEndMs, nowMs } = result;
@@ -157,14 +161,14 @@ export function HonestLandingCard({
     });
   }
 
-  const headline = landingHeadline(landing, {
-    rangeLowMs: range?.lowMs,
-    rangeHighMs: range?.highMs,
-    variant,
-  });
+  const headline = landingHeadline(
+    landing,
+    { rangeLowMs: range?.lowMs, rangeHighMs: range?.highMs, variant },
+    translate,
+  );
   // A range in the headline suppresses the landing label on the scale — the card
   // must not disclaim a precise minute and then name one.
-  const scale = landingScale(landing, { nowMs, dayEndMs, hasRange: range !== null });
+  const scale = landingScale(landing, { nowMs, dayEndMs, hasRange: range !== null }, translate);
 
   // Bar geometry — every span is measured minutes, nothing is invented.
   // 'over': now → landing, with the end-of-day boundary as the colour change.
@@ -189,24 +193,28 @@ export function HonestLandingCard({
   const taskMin = Math.round(taskInDayMs / 60_000);
   const bookedMin = Math.round(meetMs / 60_000);
   const overMin = Math.round(overMs / 60_000);
-  const legend = landingLegend({ taskMin, bookedMin, overMin });
+  const legend = landingLegend({ taskMin, bookedMin, overMin }, translate);
 
-  const footer = landingFooter(landing, {
-    doneCount,
-    doneHonestMin,
-    logsToWarm,
-    dayEndShort: spokenDayEnd(dayEndMs),
-    // TRUE total, not the span-clamped `bookedMin` the bar/legend render — see
-    // the `bookedMinAll` doc in honestLandingCopy.ts.
-    bookedMinAll: eventMinAhead,
-  });
+  const footer = landingFooter(
+    landing,
+    {
+      doneCount,
+      doneHonestMin,
+      logsToWarm,
+      dayEndShort: spokenDayEnd(dayEndMs),
+      // TRUE total, not the span-clamped `bookedMin` the bar/legend render — see
+      // the `bookedMinAll` doc in honestLandingCopy.ts.
+      bookedMinAll: eventMinAhead,
+    },
+    translate,
+  );
 
   // The free calendar offer: a free user (or a Pro user who denied access —
   // they land back on `eventMinAhead: 0` too, but `isPro` keeps them from ever
   // seeing a pitch for something they already own) with no calendar time in the
   // picture and at least one task queued. Never on a past day — nothing to add.
   const showUpsell = !isPro && eventMinAhead === 0 && landing.kind !== 'past';
-  const upsell = showUpsell ? landingUpsell() : null;
+  const upsell = showUpsell ? landingUpsell(translate) : null;
 
   const card: ViewStyle = {
     backgroundColor: t.colors.surface,

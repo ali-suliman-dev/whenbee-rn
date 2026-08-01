@@ -49,6 +49,22 @@ const ICONS: Record<string, TabIconName> = {
   patterns: 'pulse',
 };
 
+// ─── Route → title key map ───────────────────────────────────────────────────
+//
+// Expo Router evaluates `<Tabs.Screen options={{ title }}>` outside React, so a
+// route title can never be translated there. The tab bar IS a component, so the
+// label is resolved here instead — keyed off the stable route name.
+
+const TAB_TITLE_KEYS = {
+  index: 'screenTitle.today',
+  routines: 'screenTitle.routines',
+  whenbee: 'screenTitle.whenbee',
+  patterns: 'screenTitle.patterns',
+} as const;
+
+type TabTitleKey = (typeof TAB_TITLE_KEYS)[keyof typeof TAB_TITLE_KEYS];
+type TabTitleTranslator = (key: TabTitleKey) => string;
+
 // ─── Indicator width ─────────────────────────────────────────────────────────
 
 const INDICATOR_W = 26;
@@ -253,6 +269,7 @@ function CentreElevatedBar({
   onToggleArc,
 }: BarProps & { tabW: number; onToggleArc: () => void }) {
   const insets = useSafeAreaInsets();
+  const { t: tc } = useTranslation('common');
   const leftRoutes = state.routes.slice(0, ADD_BTN.splitAt);
   const rightRoutes = state.routes.slice(ADD_BTN.splitAt);
 
@@ -274,7 +291,7 @@ function CentreElevatedBar({
       {leftRoutes.map((route, i) => (
         <TabItem
           key={route.key}
-          label={labelFor(descriptors, route)}
+          label={labelFor(tc, descriptors, route)}
           icon={ICONS[route.name] ?? 'home'}
           focused={state.index === i}
           onPress={() => pressTab(navigation, state, route, state.index === i)}
@@ -289,7 +306,7 @@ function CentreElevatedBar({
         return (
           <TabItem
             key={route.key}
-            label={labelFor(descriptors, route)}
+            label={labelFor(tc, descriptors, route)}
             icon={ICONS[route.name] ?? 'home'}
             focused={state.index === routeIndex}
             onPress={() => pressTab(navigation, state, route, state.index === routeIndex)}
@@ -314,6 +331,7 @@ function RightDividerBar({
   bar, indicator, indicatorStyle, onLayout,
 }: BarProps) {
   const t = useTheme();
+  const { t: tc } = useTranslation('common');
 
   const divider: ViewStyle = {
     width: 1,
@@ -332,7 +350,7 @@ function RightDividerBar({
       {state.routes.map((route, index) => (
         <TabItem
           key={route.key}
-          label={labelFor(descriptors, route)}
+          label={labelFor(tc, descriptors, route)}
           icon={ICONS[route.name] ?? 'home'}
           focused={state.index === index}
           onPress={() => pressTab(navigation, state, route, state.index === index)}
@@ -421,7 +439,13 @@ type BarProps = Pick<BottomTabBarProps, 'state' | 'descriptors' | 'navigation'> 
   onLayout: (e: LayoutChangeEvent) => void;
 };
 
-function labelFor(descriptors: BottomTabBarProps['descriptors'], route: { key: string; name: string }): string {
+function labelFor(
+  tc: TabTitleTranslator,
+  descriptors: BottomTabBarProps['descriptors'],
+  route: { key: string; name: string },
+): string {
+  const key = TAB_TITLE_KEYS[route.name as keyof typeof TAB_TITLE_KEYS];
+  if (key) return tc(key);
   const opts = descriptors[route.key]?.options;
   return typeof opts?.title === 'string' ? opts.title : route.name;
 }

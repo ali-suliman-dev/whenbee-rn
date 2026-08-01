@@ -3,7 +3,7 @@
     "sectionLabel": "YOUR HONEST DAY",
     "endsPlanned": "ends {{time}}",
     "endsHonest": "really ends {{time}}",
-    "empty": "Nothing on the calendar today — add an event and your honest day shows up here.",
+    "empty": "Nothing on the calendar today. Add an event and your honest day shows up here.",
     "blockByBlock": "BLOCK BY BLOCK",
     "apply": "Apply to my calendar",
     "applying": "Applying…",
@@ -21,7 +21,7 @@
     "loading": "Reading today's plan…",
     "denied": "Whenbee needs calendar access to pad your calendar. You can turn it on in Settings whenever you're ready.",
     "maybeLater": "Maybe later",
-    "empty": "Today's calendar is clear. Add a few events and come back — the padding will be waiting.",
+    "empty": "Today's calendar is clear. Add a few events and come back. The padding will be waiting.",
     "done": "Done"
   },
   "notPro": {
@@ -36,6 +36,8 @@
     "collapseAction": "Tap to collapse.",
     "expandAction": "Tap to expand.",
     "collapseA11y": "Collapse calendar",
-    "expandA11y": "Expand calendar"
+    "expandA11y": "Expand calendar",
+    "updatedAgo": "updated {{duration}} ago",
+    "eventA11y": "{{title}}, {{span}}, {{clock}} {{tail}}, open in Calendar"
   }
 }

@@ -22,7 +22,7 @@ test('features the latest discovery with count, multiplier and sentence', () => 
   expect(getByText('1 banked')).toBeTruthy();
   expect(getByText('2.3')).toBeTruthy();
   expect(getByText('Getting ready')).toBeTruthy();
-  expect(getByText('You plan 15 minutes — it really takes about 35.')).toBeTruthy();
+  expect(getByText('You plan 15 minutes. It really takes about 35.')).toBeTruthy();
   expect(getByText('See all 1')).toBeTruthy();
   // single discovery → no "+N more"
   expect(queryByText(/more/)).toBeNull();

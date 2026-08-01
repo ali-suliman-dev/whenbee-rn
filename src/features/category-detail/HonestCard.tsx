@@ -93,7 +93,7 @@ export function HonestCard({
         <View style={heroBlock}>
           <Text style={eyebrow}>{tr('honestCard.eyebrowRange')}</Text>
           <View style={numberRow}>
-            <HonestNumber size="xl" tone="ink" value={`${range.lowMinutes}–${range.highMinutes}`} unit="min" />
+            <HonestNumber size="xl" tone="ink" value={`${range.lowMinutes}–${range.highMinutes}`} unit={tr('honestCard.unitMin')} />
           </View>
           {showPoint ? (
             <Text style={landLine}>
@@ -126,7 +126,7 @@ export function HonestCard({
   // ── Honest (collapsed) state — A: number-as-hero on the bare page, no card ──
   return (
     <View style={heroNaked}>
-      <HonestNumber size="xl" tone="ink" value={`~${honestMinutes}`} unit="min" />
+      <HonestNumber size="xl" tone="ink" value={`~${honestMinutes}`} unit={tr('honestCard.unitMin')} />
       <View style={metaRow}>
         <HoneyHex size={t.fontSize.caption} />
         <Text style={metaBase}>

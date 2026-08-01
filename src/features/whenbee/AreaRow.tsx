@@ -73,7 +73,7 @@ export function AreaRow({
         <View style={track}>
           <View style={barFill} />
         </View>
-        <Text style={multText}>{multiplier !== undefined ? `${multiplier.toFixed(1)}×` : '—'}</Text>
+        <Text style={multText}>{multiplier !== undefined ? `${multiplier.toFixed(1)}×` : '–'}</Text>
         <Ionicons name="chevron-forward" size={t.iconSize.sm} color={t.colors.inkSoft} />
       </View>
     </Pressable>

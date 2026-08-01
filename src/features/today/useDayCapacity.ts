@@ -1,5 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { AppState } from 'react-native';
+import type { TFunction } from 'i18next';
+import { formatDuration } from '@/src/i18n/formatDuration';
 import { useFocusEffect } from 'expo-router';
 import { useCalibrationStore } from '@/src/stores/calibrationStore';
 import { useDayTasksStore } from '@/src/stores/dayTasksStore';
@@ -68,15 +70,19 @@ export const CALENDAR_AGE_TICK_MS = 30_000;
 export function formatCalendarAge(
   lastFetchedAtMs: number | null,
   nowMs: number,
+  t: TFunction<['common', 'calendar']>,
 ): string | null {
   if (lastFetchedAtMs === null) return null;
 
   const ageMs = nowMs - lastFetchedAtMs;
   if (ageMs < CALENDAR_STALE_AFTER_MS) return null;
 
+  // Deliberately coarse: whole minutes under the hour, then whole hours — the
+  // stamp says "roughly how stale", never "3h 20m". The minutes are rounded off
+  // BEFORE formatting so the hour form stays a bare "1h".
   const ageMin = Math.floor(ageMs / 60_000);
-  if (ageMin < 60) return `updated ${ageMin}m ago`;
-  return `updated ${Math.floor(ageMin / 60)}h ago`;
+  const coarseMin = ageMin < 60 ? ageMin : Math.floor(ageMin / 60) * 60;
+  return t('calendar:overlay.updatedAgo', { duration: formatDuration(coarseMin, t) });
 }
 
 export function useDayCapacity(_nowMs?: number): DayCapacityResult {

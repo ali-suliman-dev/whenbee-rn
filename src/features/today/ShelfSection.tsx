@@ -6,6 +6,7 @@ import { useTheme } from '@/src/theme/useTheme';
 import { type } from '@/src/theme/typography';
 import { TaskRow } from '@/src/features/today/TaskRow';
 import { useCategoriesStore } from '@/src/stores/categoriesStore';
+import { categoryDisplayName } from '@/src/features/shared/categoryName';
 import type { DayTask } from '@/src/engine/daySelectors';
 
 // ──────────────────────────────────────────────────────────────────────────────
@@ -30,7 +31,7 @@ export function ShelfSection({ shelfTasks, onMoveTask, onDeleteTask }: ShelfSect
 
   const categoryName = useCallback(
     (id: string): string =>
-      categories.find((c) => c.id === id)?.name ?? id,
+      categoryDisplayName(id, categories.find((c) => c.id === id)?.name),
     [categories],
   );
 

@@ -60,7 +60,7 @@
     "bestSoFar": "your best so far",
     "insideBand_one": "{{inside}} of your last {{count}} log landed inside the band",
     "insideBand_other": "{{inside}} of your last {{count}} logs landed inside the band",
-    "lever": "You land closest to your guess in the <strong>{{best}}</strong> — within <strong>±{{bestBand}}%</strong>, vs ±{{worstBand}}% in the {{worst}}.",
+    "lever": "You land closest to your guess in the <strong>{{best}}</strong>: within <strong>±{{bestBand}}%</strong>, vs ±{{worstBand}}% in the {{worst}}.",
     "a11y": "Goal for {{category}}: best within {{bestBand}} percent, target {{targetBand}} percent.",
     "a11yInside_one": " {{inside}} of your last {{count}} log inside the band.",
     "a11yInside_other": " {{inside}} of your last {{count}} logs inside the band.",

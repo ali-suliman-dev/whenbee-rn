@@ -16,6 +16,7 @@ import { Screen } from '@/src/components/Screen';
 import { BeeBurst } from '@/src/components/bee/BeeBurst';
 import { useTheme } from '@/src/theme/useTheme';
 import { type } from '@/src/theme/typography';
+import { localeForLang } from '@/src/i18n/format';
 import { analytics } from '@/src/services/analytics';
 import {
   getNotificationPermissionState,
@@ -37,8 +38,10 @@ import {
 
 type ReminderState = 'checking' | 'scheduled' | 'ask' | 'denied' | 'unavailable';
 
-function formatDay(d: Date): string {
-  return d.toLocaleDateString(undefined, { month: 'long', day: 'numeric' });
+/** The trial dates follow the APP language, not the device's. A Swedish user on
+ *  an English phone reads "5 augusti", not "August 5". */
+function formatDay(d: Date, lang: string): string {
+  return d.toLocaleDateString(localeForLang(lang), { month: 'long', day: 'numeric' });
 }
 
 /** Staggered opacity-only entrance (reduced motion → final state). */
@@ -113,14 +116,14 @@ function Row({
 
 export function ProWelcome({ plan, purchasedAt }: { plan: string; purchasedAt: string }) {
   const t = useTheme();
-  const { t: tr } = useTranslation('paywall');
+  const { t: tr, i18n } = useTranslation('paywall');
   const insets = useSafeAreaInsets();
 
   const parsed = new Date(purchasedAt);
   const purchased = Number.isNaN(parsed.getTime()) ? new Date() : parsed;
   const isSub = plan === 'yearly' || plan === 'monthly';
-  const reminderDay = formatDay(trialReminderDate(purchased));
-  const chargeDay = formatDay(trialChargeDate(purchased));
+  const reminderDay = formatDay(trialReminderDate(purchased), i18n.language);
+  const chargeDay = formatDay(trialChargeDate(purchased), i18n.language);
 
   const [reminder, setReminder] = useState<ReminderState>('checking');
 
@@ -279,8 +282,8 @@ export function ProWelcome({ plan, purchasedAt }: { plan: string; purchasedAt: s
             <View style={divider} />
             <Row
               icon="calendar-outline"
-              strong="Your day is honest now."
-              rest="Calendar, routines, insights, review, lock-screen timer."
+              strong={tr('proWelcome.dayStrong')}
+              rest={tr('proWelcome.dayRest')}
             />
           </View>
         </Animated.View>

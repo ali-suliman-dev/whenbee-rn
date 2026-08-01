@@ -8,14 +8,14 @@
   },
   "networkConsent": {
     "title": "Använda röstigenkänning online?",
-    "body": "Offline-röstigenkänning finns inte för det här språket på den här enheten än, så det du säger skulle skickas till Apple eller Google för att skrivas om till text. Inget annat om din dag lämnar telefonen.",
+    "body": "Röstigenkänning offline finns ännu inte för det här språket på den här enheten, så det du säger skulle skickas till Apple eller Google för att omvandlas till text. Inget annat om din dag lämnar telefonen.",
     "confirm": "Använd röstigenkänning online",
     "cancel": "Inte nu",
     "dismissA11y": "Stäng"
   },
   "download": {
-    "title": "Ladda ner röst offline?",
-    "body": "Lägg till det här språkets offline-röstmodell så att igenkänningen kan köras direkt på din enhet.",
+    "title": "Ladda ner röstigenkänning offline?",
+    "body": "Lägg till offline-röstmodellen för det här språket, så kan igenkänningen köras direkt på din enhet.",
     "cta": "Ladda ner",
     "cancel": "Inte nu",
     "dismissA11y": "Stäng"
