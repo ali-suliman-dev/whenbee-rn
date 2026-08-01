@@ -514,6 +514,10 @@ export const tokens = {
     // BeeMascot size (px) for the compact Today HUD — smaller than the hub/onboarding
     // bee so the companion reads as a quiet presence beside the honey bar.
     hudBee: 46,
+    // BeeMascot size (px) for the Progress-tab compact header — a small mark beside
+    // the screen title (Task 6, plain-calibration-copy plan: the bee is demoted from
+    // hero to mark). Sized to roughly the title's cap height, not a hero.
+    headerMark: 24,
     // BeeMascot size (px) for the onboarding quiz host — the companion "asking" each
     // question, centered above the prompt. Bigger than the HUD, smaller than the hub.
     quizBee: 92,
@@ -619,6 +623,14 @@ export const tokens = {
   // Discovery marker geometry — the honey-hex sign (amber + = runs longer, green
   // − = runs faster) on each gallery card. One size; consumed via t.discovery.hex.
   discovery: { hex: 30 },
+
+  // Unlock ladder (Progress tab) — the six-stage capability list (UnlockLadder,
+  // Task 6). `dot` = a reached/unreached rung's marker diameter; `halo` = the
+  // current rung's soft amber ring around its marker (two nested circles, not
+  // boxShadow — Fabric renders boxShadow as a hard line, not a soft glow).
+  // `gutter` = the fixed marker-column width so every rung's label lines up
+  // regardless of whether that rung is drawing the plain dot or the haloed one.
+  unlockLadder: { dot: 10, halo: 20, gutter: 20 },
 
   // Archetype reveal "collectible crest" geometry (ArchetypeCrest / ArchetypeReveal).
   // crestW = the symmetric flat-top hex WIDTH behind the bee (height derives w×√3/2);

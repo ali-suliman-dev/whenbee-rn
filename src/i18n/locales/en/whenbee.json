@@ -103,6 +103,10 @@
     "away_one": "{{count}} log away",
     "away_other": "{{count}} logs away",
     "row_one": "{{count}} more log and {{capability}}",
-    "row_other": "{{count}} more logs and {{capability}}"
+    "row_other": "{{count}} more logs and {{capability}}",
+    "rungReachedA11y": "{{capability}}, unlocked",
+    "rungCurrentA11y_one": "{{capability}}, current stage, {{count}} log away",
+    "rungCurrentA11y_other": "{{capability}}, current stage, {{count}} logs away",
+    "rungUpcomingA11y": "{{capability}}, not yet unlocked"
   }
 }

@@ -103,6 +103,10 @@
     "away_one": "{{count}} logg kvar",
     "away_other": "{{count}} loggar kvar",
     "row_one": "{{count}} logg till och {{capability}}",
-    "row_other": "{{count}} loggar till och {{capability}}"
+    "row_other": "{{count}} loggar till och {{capability}}",
+    "rungReachedA11y": "{{capability}}, upplåst",
+    "rungCurrentA11y_one": "{{capability}}, pågående steg, {{count}} logg kvar",
+    "rungCurrentA11y_other": "{{capability}}, pågående steg, {{count}} loggar kvar",
+    "rungUpcomingA11y": "{{capability}}, inte upplåst än"
   }
 }
