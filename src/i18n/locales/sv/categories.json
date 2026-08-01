@@ -1,12 +1,13 @@
 {
-  "getting_ready": "Att göra sig i ordning",
+  "getting_ready": "Göra sig i ordning",
   "cleaning": "Städning",
-  "admin": "Administration & e-post",
-  "email": "E-post",
+  "admin": "Admin & mejl",
+  "email": "Mejl",
   "errands": "Ärenden",
   "writing": "Skrivande",
   "creative": "Kreativt",
-  "calls": "Samtal",
+  "calls": "Telefonsamtal",
   "commute": "Pendling",
-  "cooking": "Matlagning"
+  "cooking": "Matlagning",
+  "out_the_door": "Ut genom dörren"
 }

@@ -6,9 +6,8 @@ import { Chip } from '@/src/components/Chip';
 import { useTheme } from '@/src/theme/useTheme';
 import { useCategoriesStore } from '@/src/stores/categoriesStore';
 import { useCalibrationStore } from '@/src/stores/calibrationStore';
-import { categoryName } from './categoryName';
+import { categoryDisplayName, categoryName } from './categoryName';
 import { sortPickerCategories } from './categoryGuess';
-import { CATEGORY_NAMES } from '@/src/engine';
 import type { AdaptSpeed } from '@/src/domain/types';
 
 // ──────────────────────────────────────────────────────────────────────────────
@@ -35,25 +34,31 @@ export interface PickerCategory {
 // defaults — they reappear here once used, and "+ New" covers the long tail.
 const SEED_IDS = ['admin', 'errands', 'cleaning', 'cooking', 'creative', 'getting_ready'];
 
-const SEED: PickerCategory[] = SEED_IDS.map((id) => ({
-  id,
-  name: CATEGORY_NAMES[id] ?? id,
-  adaptSpeed: 'balanced',
-}));
-
-/** Seed six, plus any category the user has used (has stats) or tracked custom. */
+/** Seed six, plus any category the user has used (has stats) or tracked custom.
+ *  Names resolve at RENDER time (never from a cached module constant) so a
+ *  language change re-labels every chip. */
 export function usePickerCategories(): PickerCategory[] {
   const tracked = useCategoriesStore((s) => s.categories);
   const stats = useCalibrationStore((s) => s.statsByCategory);
+  // Subscribes this hook to `languageChanged`, so every chip re-resolves its
+  // label the moment the user switches language (the names below are read at
+  // render time, never from a cached module constant).
+  useTranslation();
   const byId = new Map<string, PickerCategory>();
-  for (const c of SEED) byId.set(c.id, c);
+  for (const id of SEED_IDS) {
+    byId.set(id, { id, name: categoryName(id), adaptSpeed: 'balanced' });
+  }
   // Keep previously-used categories visible even if dropped from the seed display.
   for (const id of Object.keys(stats)) {
     if (!byId.has(id)) byId.set(id, { id, name: categoryName(id), adaptSpeed: 'balanced' });
   }
   // Tracked custom entries win their name/adaptSpeed.
   for (const c of tracked) {
-    byId.set(c.id, { id: c.id, name: c.name || categoryName(c.id), adaptSpeed: c.adaptSpeed });
+    byId.set(c.id, {
+      id: c.id,
+      name: categoryDisplayName(c.id, c.name),
+      adaptSpeed: c.adaptSpeed,
+    });
   }
   return Array.from(byId.values());
 }

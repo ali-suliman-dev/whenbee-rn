@@ -43,7 +43,6 @@ import {
   goalProgress,
   SHARPNESS_WINDOW,
   TIERS,
-  CATEGORY_NAMES,
 } from '@/src/engine';
 import type {
   CompanionStage,
@@ -76,6 +75,7 @@ import { analytics } from '@/src/services/analytics';
 import { kv } from '@/src/lib/kv';
 import { secondsSinceInstall } from '@/src/lib/install';
 import { useCategoriesStore } from './categoriesStore';
+import { categoryName } from '@/src/features/shared/categoryName';
 
 // kv flags that gate fire-once funnel events (first counted log; first aha per
 // category). Reading/writing kv is synchronous and Expo Go-safe.
@@ -392,16 +392,10 @@ export interface ReclaimSummary {
   discoveryCount: number;
 }
 
-/** Display name for a seed category; title-cases a custom slug otherwise. */
-function detailCategoryName(id: string): string {
-  const seed = CATEGORY_NAMES[id];
-  if (seed) return seed;
-  return id
-    .split(/[_\-\s]+/)
-    .filter(Boolean)
-    .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
-    .join(' ');
-}
+/** Display name for a category. Delegates to the ONE shared resolver so the
+ *  category-detail title, the Patterns rows and the Review rows localize instead
+ *  of echoing the engine's English CATEGORY_NAMES. */
+const detailCategoryName = categoryName;
 
 /** Add-screen goal coach — read-only status for the active goal (spec
  *  2026-07-13-goal-lever-coach): bands + forward-only progress + inside-band
