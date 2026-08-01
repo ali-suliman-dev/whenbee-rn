@@ -1,5 +1,11 @@
 # 21 — The bee, the honey, and whether either earns its place
 
+> **Status: implemented on branch `worktree-plain-calibration-copy`, 2026-08-01.** The
+> recommendations below shipped: honey/hive vocabulary renamed to plain calibration language
+> (en + sv); an unlock row added to Today and to the reward screen; an unlock ladder added to the
+> Progress tab; the hero bee demoted on the hub; the companion-naming screen removed. The analysis
+> below is left as originally written and is not re-argued here.
+
 Audit date: 2026-08-01. Scope: every surface where Whenbee uses the bee mascot or the honey/hive
 vocabulary. Question asked by the founder: *"I don't pay them any mind when I use the app. Is that
 a flaw, or just me?"*
