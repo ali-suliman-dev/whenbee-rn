@@ -6,6 +6,9 @@
     "thickening": "Nästan där",
     "honest": "Ärlig"
   },
+  "card": {
+    "a11y": "{{tier}}, {{pct}} procent kalibrerad. {{unlock}}"
+  },
   "ring": {
     "stage": {
       "raw": "Precis igång",

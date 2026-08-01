@@ -16,6 +16,7 @@ import { RunningFocusCard } from '@/src/features/today/RunningFocusCard';
 import { TaskRow } from '@/src/features/today/TaskRow';
 import { DoneSection } from '@/src/features/today/DoneSection';
 import { TodayHeaderRing } from '@/src/features/today/TodayHeaderRing';
+import { CalibrationCard } from '@/src/features/today/CalibrationCard';
 import { leadHoney } from '@/src/features/today/leadHoney';
 import { RitualSeal } from '@/src/features/today/RitualSeal';
 import type { HoneycombCell } from '@/src/components/honeycomb/Honeycomb';
@@ -413,6 +414,10 @@ export default function Today() {
               </View>
             }
           />
+
+          {/* Plain calibration read — tier word + percentage, a bar, and what
+              the next logs unlock. Sits directly under the header ring. */}
+          <CalibrationCard />
 
           {/* 7-day calendar strip — sits directly under the header title block,
               scrolls with content, lets the user jump to any day in the ±52 wk range. */}
