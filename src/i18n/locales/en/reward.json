@@ -81,6 +81,7 @@
     "tookEyebrow": "IT REALLY TOOK",
     "unitMin": "min",
     "honeyLabel": "CALIBRATION",
+    "payoffA11y": "Calibration, {{pct}} percent, multiplier {{multiplier}} times. {{unlock}}",
     "delta": {
       "over": "{{duration}} over your guess",
       "under": "{{duration}} under your guess",

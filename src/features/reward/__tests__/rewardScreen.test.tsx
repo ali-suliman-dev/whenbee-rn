@@ -214,6 +214,30 @@ describe('Reward screen', () => {
     ).toBeOnTheScreen();
   });
 
+  it('groups the payoff card into one combined a11y label (pct + multiplier + unlock)', () => {
+    // Same fixture as the "mid-ladder" test above: sharpness 64 / multiplier
+    // 2.2 / 5 more logs to Thickening.
+    useCalibrationStore.setState({
+      statsByCategory: {
+        cleaning: { sharpness: 64, tier: 'Ripening' } as unknown as CachedStat,
+      },
+      logs: 20,
+    });
+    useRewardStore.getState().setReward({
+      actualMin: 16,
+      guessMin: 15,
+      category: 'cleaning',
+      label: null,
+      result: baseResult,
+    });
+    render(<Reward />);
+    expect(
+      screen.getByLabelText(
+        'Calibration, 64 percent, multiplier 2.2 times. 5 more logs and Honest-Day forecast on the widget',
+      ),
+    ).toBeOnTheScreen();
+  });
+
   it('shows the sealed line in place of the away-count once calibration is capped', () => {
     useCalibrationStore.setState({
       statsByCategory: {

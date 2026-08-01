@@ -81,6 +81,7 @@
     "tookEyebrow": "DET TOG FAKTISKT",
     "unitMin": "min",
     "honeyLabel": "KALIBRERING",
+    "payoffA11y": "Kalibrering, {{pct}} procent, multiplikator {{multiplier}} gånger. {{unlock}}",
     "delta": {
       "over": "{{duration}} över din gissning",
       "under": "{{duration}} under din gissning",
