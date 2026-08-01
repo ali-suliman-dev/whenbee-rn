@@ -104,6 +104,7 @@
     "driftRecalibration": "Drift re-check when life shifts",
     "keeperStanding": "Keeper – every area calibrated",
     "away_one": "{{count}} log away",
-    "away_other": "{{count}} logs away"
+    "away_other": "{{count}} logs away",
+    "rowSuffix": "and {{capability}}"
   }
 }

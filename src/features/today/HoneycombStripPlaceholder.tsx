@@ -5,8 +5,8 @@ import type { TFunction } from 'i18next';
 import { useCalibrationStore } from '@/src/stores/calibrationStore';
 import { useTheme } from '@/src/theme/useTheme';
 import { type } from '@/src/theme/typography';
-import { TIERS, logsToNextTier } from '@/src/engine';
 import type { Tier } from '@/src/domain/types';
+import { aggregateCalibration } from '@/src/features/whenbee/calibrationAggregate';
 
 // ──────────────────────────────────────────────────────────────────────────────
 // HoneycombStripPlaceholder — the persistent gamification HUD on Today.
@@ -18,33 +18,10 @@ import type { Tier } from '@/src/domain/types';
 //
 // PLACEHOLDER QUALITY: this reads a simple aggregate from the calibration cache
 // (sum of logs; the lead category's tier drives the pill). Real per-cell
-// Honeycomb wiring lands in a later phase — functional, not final.
+// Honeycomb wiring lands in a later phase — functional, not final. The
+// aggregate itself lives in `calibrationAggregate.ts` — shared with
+// `useNextUnlock` so the "lead category drives the tier" rule has one owner.
 // ──────────────────────────────────────────────────────────────────────────────
-
-interface AggregateHoney {
-  pct: number;
-  logs: number;
-  tier: Tier;
-  nextTier: Tier | null;
-  logsToNext: number;
-}
-
-function aggregate(
-  stats: Record<string, { sharpness: number; tier: Tier }>,
-  logs: number,
-): AggregateHoney {
-  const entries = Object.values(stats);
-  // Lead = the most-ripened category drives the pill + next-tier line.
-  const lead = entries.reduce<{ sharpness: number; tier: Tier } | null>(
-    (best, s) => (best === null || s.sharpness > best.sharpness ? s : best),
-    null,
-  );
-  const sharpness = lead?.sharpness ?? 0;
-  const tier = lead?.tier ?? 'Raw';
-  const tierIdx = TIERS.indexOf(tier);
-  const nextTier = tierIdx >= 0 && tierIdx < TIERS.length - 1 ? TIERS[tierIdx + 1]! : null;
-  return { pct: Math.round(sharpness), logs, tier, nextTier, logsToNext: logsToNextTier(sharpness) };
-}
 
 /** Maps an engine Tier value to its translated display word. */
 function tierLabel(tier: Tier, tr: TFunction<'today'>): string {
@@ -58,7 +35,7 @@ export function HoneycombStripPlaceholder({ onPress }: { onPress: () => void }) 
   const stats = useCalibrationStore((s) => s.statsByCategory);
   const logs = useCalibrationStore((s) => s.logs);
 
-  const { pct, tier, nextTier, logsToNext } = aggregate(stats, logs);
+  const { pct, tier, nextTier, logsToNext } = aggregateCalibration(stats, logs);
 
   // Quieter than the FocusCard: a HUD, not the hero. Thin hairline, card radius.
   const card: ViewStyle = {

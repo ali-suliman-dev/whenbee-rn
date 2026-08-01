@@ -104,6 +104,7 @@
     "driftRecalibration": "Avdriftskoll när livet skiftar",
     "keeperStanding": "Väktare – varje område kalibrerat",
     "away_one": "{{count}} logg kvar",
-    "away_other": "{{count}} loggar kvar"
+    "away_other": "{{count}} loggar kvar",
+    "rowSuffix": "och {{capability}}"
   }
 }
