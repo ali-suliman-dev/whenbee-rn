@@ -9,7 +9,6 @@ import { NotifSoftAskCard } from '@/src/features/reward/NotifSoftAskCard';
 import { RewardReaskRow } from '@/src/features/reward/RewardReaskRow';
 import { RewardBee } from '@/src/features/reward/RewardBee';
 import { NextUnlock } from '@/src/features/whenbee/NextUnlock';
-import { useNextUnlock } from '@/src/features/whenbee/useNextUnlock';
 import { useReward } from '@/src/features/reward/useReward';
 import { type } from '@/src/theme/typography';
 import { useTheme } from '@/src/theme/useTheme';
@@ -42,9 +41,7 @@ export default function Reward() {
   const t = useTheme();
   const { t: tr } = useTranslation('reward');
   const { t: translate } = useTranslation();
-  const { t: trWhenbee } = useTranslation('whenbee');
   const r = useReward();
-  const { nextCapabilityLabel, logsToNext } = useNextUnlock();
   const insets = useSafeAreaInsets();
   const reducedMotion = useReducedMotion();
 
@@ -154,6 +151,16 @@ export default function Reward() {
     padding: t.space[4],
     gap: t.space[2.5], // medium tier — card internals (tightened with the row collapse)
   };
+  // The category's own calibration read: header row + bar, one a11y group. Its
+  // gap matches the card's so the two blocks share one vertical rhythm.
+  const payoffRead: ViewStyle = { gap: t.space[2.5] };
+  // The companion-wide unlock block; the eyebrow sits tight to its sentence so
+  // the pair reads as one labelled unit against the card's wider gap.
+  const unlockBlock: ViewStyle = { gap: t.space[1] };
+  const unlockEyebrow: TextStyle = {
+    ...(type.micro as unknown as TextStyle),
+    color: t.colors.inkFaint,
+  };
   const heroBlock: ViewStyle = { alignItems: 'center', gap: t.space[1.5] };
   const ctaBlock: ViewStyle = {
     // Not pinned: rides the bottom of the scroll flow. marginTop pushes it down
@@ -190,18 +197,14 @@ export default function Reward() {
         ? tr('screen.delta.under', { duration: formatDuration(r.deltaMin, translate) })
         : tr('screen.delta.equal');
 
-  // Combined a11y label for the payoff card — same pattern as CalibrationCard's
-  // `card.a11y`: one grouped label covering the calibration read (percentage +
-  // multiplier) and the unlock sentence, instead of leaving VoiceOver to piece
-  // together three separately-focused rows.
-  const unlockText =
-    nextCapabilityLabel === null
-      ? trWhenbee('ring.sealed')
-      : trWhenbee('ladder.row', { count: logsToNext, capability: nextCapabilityLabel });
+  // A11y label for the calibration read ONLY — this percentage and multiplier
+  // belong to the category just logged. The unlock row below speaks for the whole
+  // companion, so it keeps its own label (NextUnlock sets it): one label may
+  // never span two different subjects, or VoiceOver reads a sentence that claims
+  // a 30% area is 5 logs from a capability a 64% area is actually chasing.
   const payoffA11yLabel = tr('screen.payoffA11y', {
     pct: r.honeyPct,
     multiplier: r.multiplier.toFixed(1),
-    unlock: unlockText,
   });
 
   return (
@@ -245,24 +248,29 @@ export default function Reward() {
           />
         ) : null}
 
-        {/* Zone 4 — payoff card (calibration + multiplier as one complete unit).
-            Three rows: header (CALIBRATION · multiplier + %), the honey bar,
-            then NextUnlock — what this log bought (next capability, or the
-            sealed line at the cap). The payoff lands as a single beat, card
-            gap absorbs the new row — no dangling delay, no marginTop. */}
-        <View style={payoffCard} accessible accessibilityLabel={payoffA11yLabel}>
-          <View style={honeyHeaderRow}>
-            <View style={honeyLabelRow}>
-              <Text style={honeyLabel}>{tr('screen.honeyLabel')}</Text>
-              <Text style={honeyMultiplier}>
-                · {r.multiplier.toFixed(1)}
-                <Text style={honeyMultiplierUnit}>×</Text>
-              </Text>
+        {/* Zone 4 — payoff card, TWO subjects kept visibly apart.
+            Top block: this category's calibration (label · multiplier · % + bar),
+            grouped under one a11y label. Bottom block: the companion-wide unlock
+            row, introduced by its own eyebrow so the reader knows the number
+            above and the sentence below are not talking about the same thing. */}
+        <View style={payoffCard}>
+          <View style={payoffRead} accessible accessibilityLabel={payoffA11yLabel}>
+            <View style={honeyHeaderRow}>
+              <View style={honeyLabelRow}>
+                <Text style={honeyLabel}>{tr('screen.honeyLabel')}</Text>
+                <Text style={honeyMultiplier}>
+                  · {r.multiplier.toFixed(1)}
+                  <Text style={honeyMultiplierUnit}>×</Text>
+                </Text>
+              </View>
+              <HonestNumber value={String(r.honeyPct)} unit="%" size="inline" tone="amberText" />
             </View>
-            <HonestNumber value={String(r.honeyPct)} unit="%" size="inline" tone="amberText" />
+            <HoneyBar pct={r.honeyPct} />
           </View>
-          <HoneyBar pct={r.honeyPct} />
-          <NextUnlock />
+          <View style={unlockBlock}>
+            <Text style={unlockEyebrow}>{tr('screen.unlockEyebrow')}</Text>
+            <NextUnlock justUnlockedId={r.justUnlockedId} />
+          </View>
         </View>
 
         {/* Goal coach — post-log feedback for a goaled category (self-relative,

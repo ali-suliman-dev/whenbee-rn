@@ -2,6 +2,7 @@ import { render, screen } from '@testing-library/react-native';
 import Reward from '@/src/app/(modals)/reward';
 import { useRewardStore } from '@/src/stores/rewardStore';
 import { useCalibrationStore } from '@/src/stores/calibrationStore';
+import { useEntitlement } from '@/src/features/paywall/useEntitlement';
 import type { LogResult, CachedStat } from '@/src/stores/calibrationStore';
 
 const mockDismiss = jest.fn();
@@ -34,7 +35,8 @@ beforeEach(() => {
   mockDismiss.mockClear();
   mockPush.mockClear();
   useRewardStore.getState().clear();
-  useCalibrationStore.setState({ logs: 0, statsByCategory: {} });
+  useCalibrationStore.setState({ logs: 0, statsByCategory: {}, companionStage: 1 });
+  useEntitlement.setState({ isPro: false });
   // Stub loadReclaimSummary so the NotifSoftAskCard (rendered inside Reward)
   // never hits SQLite, which is unavailable in the Jest environment.
   useCalibrationStore.setState({
@@ -195,11 +197,36 @@ describe('Reward screen', () => {
     // Same fixture as CalibrationCard's mid-ladder test: sharpness 64 lands
     // exactly on the Ripening threshold; 18 points to Thickening (82) →
     // ceil(18/4) = 5 logs; the NEXT stage (4) unlocks the honest-day forecast.
+    // That capability is Pro, so a free user gets the Pro-honest sentence — the
+    // screen must not sell a paywalled feature as a logging reward.
     useCalibrationStore.setState({
       statsByCategory: {
         cleaning: { sharpness: 64, tier: 'Ripening' } as unknown as CachedStat,
       },
       logs: 20,
+      companionStage: 3,
+    });
+    useRewardStore.getState().setReward({
+      actualMin: 16,
+      guessMin: 15,
+      category: 'cleaning',
+      label: null,
+      result: baseResult,
+    });
+    render(<Reward />);
+    expect(
+      screen.getByText('5 more logs and Honest-Day forecast on the widget, a Pro feature'),
+    ).toBeOnTheScreen();
+  });
+
+  it('drops the Pro qualifier for a subscriber', () => {
+    useEntitlement.setState({ isPro: true });
+    useCalibrationStore.setState({
+      statsByCategory: {
+        cleaning: { sharpness: 64, tier: 'Ripening' } as unknown as CachedStat,
+      },
+      logs: 20,
+      companionStage: 3,
     });
     useRewardStore.getState().setReward({
       actualMin: 16,
@@ -214,28 +241,110 @@ describe('Reward screen', () => {
     ).toBeOnTheScreen();
   });
 
-  it('groups the payoff card into one combined a11y label (pct + multiplier + unlock)', () => {
-    // Same fixture as the "mid-ladder" test above: sharpness 64 / multiplier
-    // 2.2 / 5 more logs to Thickening.
+  it('says what THIS log unlocked on the log that crossed a tier', () => {
+    // tierBefore Setting → tierAfter Ripening is an upward crossing, and the
+    // companion's monotonic stage (3) is exactly the stage that crossing buys,
+    // so this log genuinely earned the rung. The payoff screen names it instead
+    // of handing the user the next demand.
     useCalibrationStore.setState({
       statsByCategory: {
         cleaning: { sharpness: 64, tier: 'Ripening' } as unknown as CachedStat,
       },
       logs: 20,
+      companionStage: 3,
     });
     useRewardStore.getState().setReward({
       actualMin: 16,
       guessMin: 15,
       category: 'cleaning',
       label: null,
-      result: baseResult,
+      result: { ...baseResult, leveledUp: true },
     });
     render(<Reward />);
+    // start-by-anchor is Pro, so a free user is told the truth about it rather
+    // than being handed it as an earned reward.
     expect(
-      screen.getByLabelText(
-        'Calibration, 64 percent, multiplier 2.2 times. 5 more logs and Honest-Day forecast on the widget',
-      ),
+      screen.getByText('You reached Reverse start-by anchor, it opens with Pro'),
     ).toBeOnTheScreen();
+    // …and it does NOT also show the next target on the same beat.
+    expect(screen.queryByText(/more logs and/)).toBeNull();
+  });
+
+  it('names the freshly-unlocked capability plainly for a subscriber', () => {
+    useEntitlement.setState({ isPro: true });
+    useCalibrationStore.setState({
+      statsByCategory: {
+        cleaning: { sharpness: 64, tier: 'Ripening' } as unknown as CachedStat,
+      },
+      logs: 20,
+      companionStage: 3,
+    });
+    useRewardStore.getState().setReward({
+      actualMin: 16,
+      guessMin: 15,
+      category: 'cleaning',
+      label: null,
+      result: { ...baseResult, leveledUp: true },
+    });
+    render(<Reward />);
+    expect(screen.getByText('Just unlocked: Reverse start-by anchor')).toBeOnTheScreen();
+  });
+
+  it('does not re-announce a rung the user passed long ago', () => {
+    // A second area catching up to Ripening while the companion is already at
+    // stage 5 crossed no NEW rung — no "just unlocked", just the next target.
+    useCalibrationStore.setState({
+      statsByCategory: {
+        cleaning: { sharpness: 64, tier: 'Ripening' } as unknown as CachedStat,
+      },
+      logs: 20,
+      companionStage: 5,
+    });
+    useRewardStore.getState().setReward({
+      actualMin: 16,
+      guessMin: 15,
+      category: 'cleaning',
+      label: null,
+      result: { ...baseResult, leveledUp: true },
+    });
+    render(<Reward />);
+    expect(screen.queryByText(/Just unlocked/)).toBeNull();
+    // Stage 5 is the top of the tier ladder → the sealed line, never a rung
+    // the monotonic stage already passed.
+    expect(screen.getByText('Calibrated ✦')).toBeOnTheScreen();
+  });
+
+  it('never spans two subjects in one a11y label: the card describes THIS category, the unlock row describes the companion', () => {
+    // The just-logged category sits at 30% while another area leads at 64%.
+    // The old combined label glued "30 percent" to an unlock sentence derived
+    // from the 64% lead and read it as one false claim.
+    useCalibrationStore.setState({
+      statsByCategory: {
+        admin: { sharpness: 30, tier: 'Setting' } as unknown as CachedStat,
+        cleaning: { sharpness: 64, tier: 'Ripening' } as unknown as CachedStat,
+      },
+      logs: 20,
+      companionStage: 3,
+    });
+    useRewardStore.getState().setReward({
+      actualMin: 16,
+      guessMin: 15,
+      category: 'admin',
+      label: null,
+      result: { ...baseResult, sharpness: 30 },
+    });
+    render(<Reward />);
+
+    // The card's own label: this category's number and multiplier, nothing else.
+    expect(
+      screen.getByLabelText('Calibration, 30 percent, multiplier 2.2 times.'),
+    ).toBeOnTheScreen();
+    // The unlock row is its own focusable unit, derived from the 64% lead.
+    expect(
+      screen.getByLabelText('5 more logs and Honest-Day forecast on the widget, a Pro feature'),
+    ).toBeOnTheScreen();
+    // And it is explicitly introduced as a different subject.
+    expect(screen.getByText('Across everything you track')).toBeOnTheScreen();
   });
 
   it('shows the sealed line in place of the away-count once calibration is capped', () => {

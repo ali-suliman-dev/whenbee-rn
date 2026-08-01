@@ -6,8 +6,9 @@ import { useCalibrationStore } from '@/src/stores/calibrationStore';
 import { haptics } from '@/src/services/haptics';
 import { rewardHeadline, isCapSeal } from './headline';
 import { categoryName } from '@/src/features/shared/categoryName';
+import { TIERS, capabilityFor } from '@/src/engine';
 import type { LogResult } from '@/src/stores/calibrationStore';
-import type { PostLogQuality } from '@/src/engine';
+import type { CompanionCapability, CompanionStage, PostLogQuality } from '@/src/engine';
 
 /** Reward-screen goal feedback: this log's band, a never-negative verdict, target. */
 export interface GoalLogFeedback {
@@ -55,6 +56,10 @@ export interface RewardView {
   /** 'over' / 'under' when the run diverged from the guess past the gate; else null. */
   reasonDirection: RunDirection | null;
   result: LogResult | null;
+  /** The capability this exact log unlocked, or null when it crossed no new rung.
+   *  Lets the payoff screen say what was just earned instead of only ever handing
+   *  the user the next demand. */
+  justUnlockedId: CompanionCapability['id'] | null;
   /** Goal coach feedback for this log (goaled category only); null otherwise. */
   goalFeedback: GoalLogFeedback | null;
   onSeeWhenbee: () => void;
@@ -65,6 +70,32 @@ export interface RewardView {
 // worth a why. |ratio − 1| > 0.25 → roughly a quarter over or under. Below that,
 // the gap is noise and the chips would just nag, so they stay hidden.
 const REASON_GATE = 0.25;
+
+/**
+ * The capability THIS log just bought, or null when it bought no new rung.
+ *
+ * Uses only what `LogResult` already carries (`tierBefore` / `tierAfter` — the
+ * same pair that drives the `tier_up` analytics event) plus the store's mirrored
+ * monotonic companion stage. No new plumbing, no new persistence.
+ *
+ * Three conditions, all required:
+ *   1. the tier moved UP (`leveledUp` alone also fires on a tier that fell);
+ *   2. the log was counted, i.e. it trained the model;
+ *   3. the stage this crossing implies IS the companion's current monotonic
+ *      stage — so a category catching up to a rung the user passed long ago
+ *      never re-announces it as new.
+ */
+function justUnlockedBy(
+  result: LogResult,
+  companionStage: CompanionStage,
+): CompanionCapability['id'] | null {
+  if (!result.counted || !result.leveledUp) return null;
+  const afterIdx = TIERS.indexOf(result.tierAfter);
+  if (afterIdx <= TIERS.indexOf(result.tierBefore)) return null;
+  const crossedStage = afterIdx + 1;
+  if (crossedStage !== companionStage) return null;
+  return capabilityFor(crossedStage as CompanionStage).id;
+}
 
 /** 'over' / 'under' when actual diverged from the guess past REASON_GATE; else null. */
 function reasonDirectionFor(actualMin: number, guessMin: number): RunDirection | null {
@@ -83,6 +114,7 @@ export function useReward(): RewardView {
   const result = useRewardStore((s) => s.result);
   const clear = useRewardStore((s) => s.clear);
   const logs = useCalibrationStore((s) => s.logs);
+  const companionStage = useCalibrationStore((s) => s.companionStage);
   const loadGoalLogFeedback = useCalibrationStore((s) => s.loadGoalLogFeedback);
 
   const hasReward = result !== null;
@@ -144,6 +176,7 @@ export function useReward(): RewardView {
       eventId: null,
       reasonDirection: null,
       result: null,
+      justUnlockedId: null,
       goalFeedback: null,
       onSeeWhenbee,
       onBackToToday,
@@ -178,6 +211,7 @@ export function useReward(): RewardView {
     eventId: result.eventId,
     reasonDirection: reasonDirectionFor(actualMin, guessMin),
     result,
+    justUnlockedId: justUnlockedBy(result, companionStage),
     goalFeedback,
     onSeeWhenbee,
     onBackToToday,

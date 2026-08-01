@@ -81,13 +81,14 @@
     "tookEyebrow": "IT REALLY TOOK",
     "unitMin": "min",
     "honeyLabel": "CALIBRATION",
-    "payoffA11y": "Calibration, {{pct}} percent, multiplier {{multiplier}} times. {{unlock}}",
+    "payoffA11y": "Calibration, {{pct}} percent, multiplier {{multiplier}} times.",
     "delta": {
       "over": "{{duration}} over your guess",
       "under": "{{duration}} under your guess",
       "equal": "right on your guess"
     },
-    "seeYourBee": "See your bee"
+    "seeYourBee": "See your bee",
+    "unlockEyebrow": "Across everything you track"
   },
   "reask": {
     "decline": "No thanks",

@@ -81,13 +81,14 @@
     "tookEyebrow": "DET TOG FAKTISKT",
     "unitMin": "min",
     "honeyLabel": "KALIBRERING",
-    "payoffA11y": "Kalibrering, {{pct}} procent, multiplikator {{multiplier}} gånger. {{unlock}}",
+    "payoffA11y": "Kalibrering, {{pct}} procent, multiplikator {{multiplier}} gånger.",
     "delta": {
       "over": "{{duration}} över din gissning",
       "under": "{{duration}} under din gissning",
       "equal": "precis på din gissning"
     },
-    "seeYourBee": "Se ditt bi"
+    "seeYourBee": "Se ditt bi",
+    "unlockEyebrow": "Över allt du följer"
   },
   "reask": {
     "decline": "Nej tack",
