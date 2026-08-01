@@ -94,6 +94,8 @@
   },
   "ladder": {
     "title": "What your logs unlock",
+    "headerStatus": "{{tier}} · {{pct}}%",
+    "keeperProgress": "{{done}} of {{total}} areas sealed",
     "runningFinishTime": "Live finish-time on your timer",
     "todayDoneTime": "Done-time on Today and Add task",
     "startByAnchor": "Reverse start-by anchor",
@@ -107,6 +109,7 @@
     "rungReachedA11y": "{{capability}}, unlocked",
     "rungCurrentA11y_one": "{{capability}}, current stage, {{count}} log away",
     "rungCurrentA11y_other": "{{capability}}, current stage, {{count}} logs away",
-    "rungUpcomingA11y": "{{capability}}, not yet unlocked"
+    "rungUpcomingA11y": "{{capability}}, not yet unlocked",
+    "rungKeeperProgressA11y": "{{capability}}, {{progress}}"
   }
 }

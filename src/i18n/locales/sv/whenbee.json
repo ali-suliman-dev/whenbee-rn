@@ -94,6 +94,8 @@
   },
   "ladder": {
     "title": "Vad dina loggar låser upp",
+    "headerStatus": "{{tier}} · {{pct}}%",
+    "keeperProgress": "{{done}} av {{total}} områden kalibrerade",
     "runningFinishTime": "Live sluttid på din timer",
     "todayDoneTime": "Klar-tid på Idag och Lägg till",
     "startByAnchor": "Omvänt börja-senast-ankare",
@@ -107,6 +109,7 @@
     "rungReachedA11y": "{{capability}}, upplåst",
     "rungCurrentA11y_one": "{{capability}}, pågående steg, {{count}} logg kvar",
     "rungCurrentA11y_other": "{{capability}}, pågående steg, {{count}} loggar kvar",
-    "rungUpcomingA11y": "{{capability}}, inte upplåst än"
+    "rungUpcomingA11y": "{{capability}}, inte upplåst än",
+    "rungKeeperProgressA11y": "{{capability}}, {{progress}}"
   }
 }

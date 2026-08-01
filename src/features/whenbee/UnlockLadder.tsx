@@ -3,7 +3,9 @@ import { useTranslation } from 'react-i18next';
 import { Card } from '@/src/components/Card';
 import { useTheme } from '@/src/theme/useTheme';
 import { type } from '@/src/theme/typography';
-import { TIERS, capabilityFor } from '@/src/engine';
+import { useCategoriesStore } from '@/src/stores/categoriesStore';
+import { useCalibrationStore } from '@/src/stores/calibrationStore';
+import { TIERS, capabilityFor, COMPANION_KEEPER_QUOTA } from '@/src/engine';
 import type { CompanionStage } from '@/src/engine';
 import { useNextUnlock } from './useNextUnlock';
 import { capabilityLabel } from './capabilityCopy';
@@ -21,19 +23,32 @@ import { capabilityLabel } from './capabilityCopy';
 //
 // Reads `useNextUnlock()` for the SAME tier/pct/logsToNext this card's Today
 // counterpart (`CalibrationCard`) shows — one source of truth for "how far
-// along am I" across screens. `keeper` (the companion's stage-6 standing, an
-// orthogonal quota — see `engine/companion.ts`'s `keeperReached`) is passed in
-// because it isn't derived from tier and would otherwise never surface here.
+// along am I" across screens. The header also carries the tier WORD, not just
+// the percentage (review fix round 1) — `RingBadge` used to be the only place
+// that said it, and it no longer renders on this tab.
+//
+// Rung 6 (Keeper) sits outside the tier ladder — `capabilityFor(6).tier` is
+// null; it's gated by `keeperReached`'s "every tracked category capped, at
+// least COMPANION_KEEPER_QUOTA of them" quota instead. Rather than leaving it
+// an unexplained faint dead end (this repo bans ambiguous locked states — see
+// the focus-unlock-ladder precedent), it carries its own countable "N of M
+// areas sealed" milestone, derived live from the already-subscribed
+// categories + statsByCategory (no new persistence — mirrors the exact
+// cappedCellCount/trackedCount math `calibrationStore` uses to set the
+// keeper flag, review fix round 1, branch (a)).
 //
 // No motion — every rung renders at its final state from mount (hard rule).
 // ──────────────────────────────────────────────────────────────────────────────
 
 const STAGES: CompanionStage[] = [1, 2, 3, 4, 5, 6];
+const KEEPER_STAGE: CompanionStage = 6;
 
 export function UnlockLadder({ keeper }: { keeper: boolean }) {
   const t = useTheme();
   const { t: tr } = useTranslation('whenbee');
-  const { tier, pct, logsToNext, sealed } = useNextUnlock();
+  const { tier, tierLabel, pct, logsToNext, sealed } = useNextUnlock();
+  const categories = useCategoriesStore((s) => s.categories);
+  const statsByCategory = useCalibrationStore((s) => s.statsByCategory);
 
   // Ground truth for "how many rungs are lit" — the tier ladder covers stages
   // 1..5 (companionStageFor(maxTier) = tierIdx + 1); stage 6 (Keeper) sits
@@ -44,6 +59,18 @@ export function UnlockLadder({ keeper }: { keeper: boolean }) {
   const effectiveSealed = sealed || keeper;
   const currentStage = effectiveSealed ? null : reachedStage + 1;
 
+  // Keeper's countable milestone: same shape as `keeperReached` (engine/companion.ts)
+  // — cap EVERY tracked category, with at least COMPANION_KEEPER_QUOTA tracked.
+  // `total` grows with either requirement so the fraction never overstates
+  // progress: a lone capped category with only 1 tracked still reads "1 of 3",
+  // never "1 of 1" (which would misleadingly look done).
+  const trackedCount = categories.length;
+  const cappedCellCount = categories.filter(
+    (c) => statsByCategory[c.id]?.tier === 'Honest',
+  ).length;
+  const keeperTotal = Math.max(trackedCount, COMPANION_KEEPER_QUOTA);
+  const keeperDone = Math.min(cappedCellCount, keeperTotal);
+
   const card: ViewStyle = { gap: t.space[4] };
   const headRow: ViewStyle = {
     flexDirection: 'row',
@@ -52,7 +79,7 @@ export function UnlockLadder({ keeper }: { keeper: boolean }) {
     gap: t.space[2],
   };
   const titleStyle: TextStyle = { ...(type.eyebrow as unknown as TextStyle), color: t.colors.inkSoft };
-  const pctStyle: TextStyle = {
+  const statusStyle: TextStyle = {
     ...(type.numLedger as unknown as TextStyle),
     color: t.colors.amberText,
   };
@@ -62,7 +89,7 @@ export function UnlockLadder({ keeper }: { keeper: boolean }) {
     <Card style={card}>
       <View style={headRow}>
         <Text style={titleStyle}>{tr('ladder.title')}</Text>
-        <Text style={pctStyle}>{`${pct}%`}</Text>
+        <Text style={statusStyle}>{tr('ladder.headerStatus', { tier: tierLabel, pct })}</Text>
       </View>
       <View style={rungs}>
         {STAGES.map((stage) => {
@@ -70,11 +97,17 @@ export function UnlockLadder({ keeper }: { keeper: boolean }) {
           const label = capabilityLabel(id, tr);
           const isReached = stage <= reachedStage;
           const isCurrent = stage === currentStage;
+          const isKeeperStage = stage === KEEPER_STAGE;
+          const keeperProgress =
+            isKeeperStage && !isReached
+              ? tr('ladder.keeperProgress', { done: keeperDone, total: keeperTotal })
+              : null;
           return (
             <Rung
               key={stage}
               label={label}
               awayCount={isCurrent ? logsToNext : null}
+              keeperProgress={keeperProgress}
               reached={isReached}
               current={isCurrent}
             />
@@ -88,12 +121,15 @@ export function UnlockLadder({ keeper }: { keeper: boolean }) {
 function Rung({
   label,
   awayCount,
+  keeperProgress,
   reached,
   current,
 }: {
   label: string;
-  /** Set only on the current rung — null everywhere else. */
+  /** Set only on the current (tier-ladder) rung — null everywhere else. */
   awayCount: number | null;
+  /** Set only on the unreached Keeper rung — the "N of M areas sealed" line. */
+  keeperProgress: string | null;
   reached: boolean;
   current: boolean;
 }) {
@@ -101,6 +137,11 @@ function Rung({
   const { t: tr } = useTranslation('whenbee');
   const { dot, halo, gutter } = t.unlockLadder;
   const away = awayCount !== null ? tr('ladder.away', { count: awayCount }) : null;
+  // Exactly one of these is ever set for a given rung — the tier-ladder away
+  // line (amber, urgent-adjacent) or the Keeper progress line (neutral, no
+  // "hurry" framing — it isn't next in the queue, just not yet earned).
+  const subText = away ?? keeperProgress;
+  const subTone = away ? t.colors.amberText : t.colors.inkSoft;
 
   const row: ViewStyle = { flexDirection: 'row', gap: t.space[3], alignItems: 'flex-start' };
   const gutterCol: ViewStyle = {
@@ -108,8 +149,9 @@ function Rung({
     alignItems: 'center',
     justifyContent: 'center',
     // Nudge the marker down to the label's cap-height rather than the row's
-    // full (possibly two-line) height.
-    height: t.space[5],
+    // full (possibly two-line) height. Sourced from the SAME token as the
+    // halo circle so the two can never drift apart (review fix round 1).
+    height: halo,
   };
   const markerColor = reached || current ? t.colors.accent : t.colors.surfaceSunken;
   const marker: ViewStyle = {
@@ -131,14 +173,16 @@ function Rung({
     ...(type.bodySmSemibold as unknown as TextStyle),
     color: current ? t.colors.amberText : reached ? t.colors.ink : t.colors.inkFaint,
   };
-  const awayStyle: TextStyle = { ...(type.caption as unknown as TextStyle), color: t.colors.amberText };
+  const subStyle: TextStyle = { ...(type.caption as unknown as TextStyle), color: subTone };
 
   const a11yLabel =
     current && awayCount !== null
       ? tr('ladder.rungCurrentA11y', { capability: label, count: awayCount })
-      : reached
-        ? tr('ladder.rungReachedA11y', { capability: label })
-        : tr('ladder.rungUpcomingA11y', { capability: label });
+      : keeperProgress !== null
+        ? tr('ladder.rungKeeperProgressA11y', { capability: label, progress: keeperProgress })
+        : reached
+          ? tr('ladder.rungReachedA11y', { capability: label })
+          : tr('ladder.rungUpcomingA11y', { capability: label });
 
   return (
     <View style={row} accessible accessibilityLabel={a11yLabel}>
@@ -153,7 +197,7 @@ function Rung({
       </View>
       <View style={content}>
         <Text style={labelStyle}>{label}</Text>
-        {away ? <Text style={awayStyle}>{away}</Text> : null}
+        {subText ? <Text style={subStyle}>{subText}</Text> : null}
       </View>
     </View>
   );
