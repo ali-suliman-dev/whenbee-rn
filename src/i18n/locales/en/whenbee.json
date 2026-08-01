@@ -94,5 +94,16 @@
     "a11yRipening_one": "Tier {{tier}}, {{count}} log to {{nextTier}}, {{logs}} logged",
     "a11yRipening_other": "Tier {{tier}}, {{count}} logs to {{nextTier}}, {{logs}} logged",
     "a11yRipened": "Tier {{tier}}, honest, {{logs}} logged"
+  },
+  "ladder": {
+    "title": "What your logs unlock",
+    "runningFinishTime": "Live finish-time on your timer",
+    "todayDoneTime": "Done-time on Today and Add task",
+    "startByAnchor": "Reverse start-by anchor",
+    "honestDayForecast": "Honest-Day forecast on the widget",
+    "driftRecalibration": "Drift re-check when life shifts",
+    "keeperStanding": "Keeper – every area calibrated",
+    "away_one": "{{count}} log away",
+    "away_other": "{{count}} logs away"
   }
 }

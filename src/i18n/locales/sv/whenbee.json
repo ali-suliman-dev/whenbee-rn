@@ -94,5 +94,16 @@
     "a11yRipening_one": "Nivå {{tier}}, {{count}} logg kvar till {{nextTier}}, {{logs}} loggade",
     "a11yRipening_other": "Nivå {{tier}}, {{count}} loggar kvar till {{nextTier}}, {{logs}} loggade",
     "a11yRipened": "Nivå {{tier}}, ärlig, {{logs}} loggade"
+  },
+  "ladder": {
+    "title": "Vad dina loggar låser upp",
+    "runningFinishTime": "Live sluttid på din timer",
+    "todayDoneTime": "Klar-tid på Idag och Lägg till",
+    "startByAnchor": "Omvänt börja-senast-ankare",
+    "honestDayForecast": "Ärlig dag-prognos på widgeten",
+    "driftRecalibration": "Avdriftskoll när livet skiftar",
+    "keeperStanding": "Väktare – varje område kalibrerat",
+    "away_one": "{{count}} logg kvar",
+    "away_other": "{{count}} loggar kvar"
   }
 }
