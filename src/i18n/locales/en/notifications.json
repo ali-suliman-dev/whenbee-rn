@@ -39,5 +39,15 @@
       "open": "Open review",
       "evening": "This evening"
     }
+  },
+  "trialEnding": {
+    "title": "Your Pro trial ends in 2 days",
+    "body": "Keep it or cancel in Settings. Either way, your calibration stays."
+  },
+  "presence": {
+    "finish": "Finish {clock}",
+    "overrun": "Over · honest finish was {clock}",
+    "guessSuffix": " · guessed {clock}",
+    "chipOver": "over"
   }
 }

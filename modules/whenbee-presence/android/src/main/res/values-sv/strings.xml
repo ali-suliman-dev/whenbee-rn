@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Swedish strings for the presence widgets. ADD-ONLY: this file introduces a new
+  locale bucket and changes no existing behaviour. `values/strings.xml` stays the
+  default. Strings that PresenceNotifier.kt builds inline in Kotlin are NOT
+  covered here and are still English on a Swedish device.
+-->
+<resources>
+    <string name="widget_label">Whenbee: Nästa uppgift</string>
+    <string name="widget_description">Din nästa uppgift och dess ärliga sluttid, med start i ett tryck.</string>
+    <string name="widget_wordmark">Whenbee</string>
+    <string name="widget_empty">Ingen uppgift på tur</string>
+    <string name="widget_start">Starta</string>
+    <string name="widget_honestly">Ärligt talat</string>
+
+    <!-- Running-timer notification channel (shown in Android system settings). -->
+    <string name="timer_channel_name">Timer som går</string>
+    <string name="timer_channel_description">Visar din timer på låsskärmen medan en uppgift pågår</string>
+
+    <!-- "Does Today Fit?" widget (Pro) -->
+    <string name="does_today_fit_label">Whenbee: Går dagen ihop?</string>
+    <string name="does_today_fit_description">Se direkt om dagens plan går ihop, med marginalen eller överskottet.</string>
+    <string name="does_today_fit_fits">Din dag går ihop</string>
+    <string name="does_today_fit_fits_caption">Det finns marginal</string>
+    <string name="does_today_fit_slack">%1$s över</string>
+    <string name="does_today_fit_over">Drar över med %1$s</string>
+    <string name="does_today_fit_over_caption">Lite tajt idag</string>
+    <string name="does_today_fit_locked">Går dagen ihop?</string>
+    <string name="does_today_fit_pro">Pro</string>
+
+    <!-- "Your Bias" widget (Pro) -->
+    <string name="your_bias_label">Whenbee: Din avvikelse</string>
+    <string name="your_bias_description">Kategorin du missar mest på och hur långt dina gissningar ligger fel, utifrån din egen tidtagning.</string>
+    <string name="your_bias_locked">Din avvikelse</string>
+    <string name="your_bias_pro">Pro</string>
+    <string name="your_bias_empty">Fortsätt logga så lär jag mig din avvikelse.</string>
+</resources>
