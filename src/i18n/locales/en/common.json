@@ -9,7 +9,7 @@
     "m": "{{count}}m"
   },
   "toTier": " to {{tier}}",
-  "fullyRipened": "Fully ripened",
+  "fullyRipened": "Honest",
   "screenTitle": {
     "settings": "Settings",
     "categories": "Categories",
@@ -31,7 +31,7 @@
     "ahead": "ahead"
   },
   "a11y": {
-    "honeycombCell": "{{label}} cell, {{pct}}% honey, tier {{tier}}",
+    "honeycombCell": "{{label}}, {{pct}}% calibrated, tier {{tier}}",
     "trailNode": "{{label}}: {{state}}",
     "ringBadge": "{{tier}}, {{pct}} percent. {{line}}. {{next}}"
   }

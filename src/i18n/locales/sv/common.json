@@ -9,7 +9,7 @@
     "m": "{{count}} min"
   },
   "toTier": " till {{tier}}",
-  "fullyRipened": "Helt mogen",
+  "fullyRipened": "Ärlig",
   "screenTitle": {
     "settings": "Inställningar",
     "categories": "Kategorier",
@@ -31,7 +31,7 @@
     "ahead": "längre fram"
   },
   "a11y": {
-    "honeycombCell": "{{label}}-cell, {{pct}} % honung, nivå {{tier}}",
+    "honeycombCell": "{{label}}, {{pct}} % kalibrerad, nivå {{tier}}",
     "trailNode": "{{label}}: {{state}}",
     "ringBadge": "{{tier}}, {{pct}} procent. {{line}}. {{next}}"
   }

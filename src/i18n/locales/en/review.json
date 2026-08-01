@@ -102,7 +102,7 @@
     "categoryLabel": "CATEGORY",
     "yourGuessLabel": "YOUR GUESS",
     "actualLabel": "WHAT IT REALLY TOOK",
-    "saveCta": "Save & ripen",
-    "saveHint": "+1 nectar · ripens your honey a little"
+    "saveCta": "Save",
+    "saveHint": "Logged. Your numbers get a little sharper."
   }
 }

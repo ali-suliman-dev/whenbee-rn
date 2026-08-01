@@ -335,7 +335,7 @@
       "readyStatus": "Ready"
     },
     "card": {
-      "honeyPct": "{{pct}}% honey",
+      "honeyPct": "{{pct}}% calibrated",
       "logsToNext": "~{{count}} more logs"
     },
     "header": {

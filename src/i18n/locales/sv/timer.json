@@ -16,7 +16,7 @@
   "stopAndLog": "Stoppa & logga",
   "abandonConfirm": {
     "title": "Avbryta den här uppgiften?",
-    "message": "Ingen skuld. Den räknas bara inte mot din honung.",
+    "message": "Ingen skuld. Den räknas bara inte mot din kalibrering.",
     "keepTiming": "Fortsätt ta tid",
     "abandon": "Ja, avbryt"
   },

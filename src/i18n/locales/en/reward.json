@@ -75,12 +75,12 @@
   "screen": {
     "empty": {
       "title": "Nothing to celebrate yet",
-      "subtitle": "Log something and the honey will ripen here."
+      "subtitle": "Log one task and your first real number shows up here."
     },
     "backToToday": "Back to today",
     "tookEyebrow": "IT REALLY TOOK",
     "unitMin": "min",
-    "honeyLabel": "HONEY",
+    "honeyLabel": "CALIBRATION",
     "delta": {
       "over": "{{duration}} over your guess",
       "under": "{{duration}} under your guess",

@@ -335,7 +335,7 @@
       "readyStatus": "Klar"
     },
     "card": {
-      "honeyPct": "{{pct}} % honung",
+      "honeyPct": "{{pct}} % kalibrerad",
       "logsToNext": "~{{count}} loggar kvar"
     },
     "header": {

@@ -1,9 +1,9 @@
 {
   "tiers": {
-    "raw": "Rå",
-    "setting": "Stelnar",
-    "ripening": "Mognar",
-    "thickening": "Tjocknar",
+    "raw": "Precis börjat",
+    "setting": "Lär sig",
+    "ripening": "Närmar sig",
+    "thickening": "Nästan där",
     "honest": "Ärlig"
   },
   "ring": {
@@ -14,7 +14,7 @@
       "thickening": "Du kan din tajmning",
       "honest": "Planer stämmer med verkligheten"
     },
-    "sealed": "Honungskakan förseglad ✦",
+    "sealed": "Kalibrerad ✦",
     "logsToNext_one": "~{{count}} logg kvar till {{tier}}",
     "logsToNext_other": "~{{count}} loggar kvar till {{tier}}"
   },
@@ -30,7 +30,7 @@
     },
     "cta": {
       "logFirst": "Logga din första uppgift",
-      "logFirstSub": "Planeringen av din ärliga dag låses upp när honungen stelnar.",
+      "logFirstSub": "Planeringen av din ärliga dag låses upp efter dina första loggar.",
       "dayHonest": "Gör hela min dag ärlig"
     },
     "ripeningWait": {
@@ -91,8 +91,8 @@
     "sub": "{{count}} sanningar som Whenbee hittat i din tidtagning"
   },
   "honeycomb": {
-    "a11yRipening_one": "Din honungskaka, nivå {{tier}}, {{count}} logg kvar till {{nextTier}}, {{logs}} loggade",
-    "a11yRipening_other": "Din honungskaka, nivå {{tier}}, {{count}} loggar kvar till {{nextTier}}, {{logs}} loggade",
-    "a11yRipened": "Din honungskaka, nivå {{tier}}, helt mogen, {{logs}} loggade"
+    "a11yRipening_one": "Nivå {{tier}}, {{count}} logg kvar till {{nextTier}}, {{logs}} loggade",
+    "a11yRipening_other": "Nivå {{tier}}, {{count}} loggar kvar till {{nextTier}}, {{logs}} loggade",
+    "a11yRipened": "Nivå {{tier}}, ärlig, {{logs}} loggade"
   }
 }

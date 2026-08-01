@@ -1,9 +1,9 @@
 {
   "tiers": {
-    "raw": "Raw",
-    "setting": "Setting",
-    "ripening": "Ripening",
-    "thickening": "Thickening",
+    "raw": "Just started",
+    "setting": "Learning",
+    "ripening": "Getting closer",
+    "thickening": "Nearly there",
     "honest": "Honest"
   },
   "ring": {
@@ -14,7 +14,7 @@
       "thickening": "You know your timing",
       "honest": "Plans match reality"
     },
-    "sealed": "Honeycomb sealed ✦",
+    "sealed": "Calibrated ✦",
     "logsToNext_one": "~{{count}} log to {{tier}}",
     "logsToNext_other": "~{{count}} logs to {{tier}}"
   },
@@ -30,7 +30,7 @@
     },
     "cta": {
       "logFirst": "Log your first task",
-      "logFirstSub": "Honest-day planning unlocks once your honey sets.",
+      "logFirstSub": "Honest-day planning unlocks after your first few logs.",
       "dayHonest": "Make my whole day honest"
     },
     "ripeningWait": {
@@ -91,8 +91,8 @@
     "sub": "{{count}} truths Whenbee found in your tracking"
   },
   "honeycomb": {
-    "a11yRipening_one": "Your honeycomb, tier {{tier}}, {{count}} log to {{nextTier}}, {{logs}} logged",
-    "a11yRipening_other": "Your honeycomb, tier {{tier}}, {{count}} logs to {{nextTier}}, {{logs}} logged",
-    "a11yRipened": "Your honeycomb, tier {{tier}}, fully ripened, {{logs}} logged"
+    "a11yRipening_one": "Tier {{tier}}, {{count}} log to {{nextTier}}, {{logs}} logged",
+    "a11yRipening_other": "Tier {{tier}}, {{count}} logs to {{nextTier}}, {{logs}} logged",
+    "a11yRipened": "Tier {{tier}}, honest, {{logs}} logged"
   }
 }

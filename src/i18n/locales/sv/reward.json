@@ -75,12 +75,12 @@
   "screen": {
     "empty": {
       "title": "Inget att fira än",
-      "subtitle": "Logga något så mognar honungen här."
+      "subtitle": "Logga en uppgift, så visas ditt första riktiga tal här."
     },
     "backToToday": "Tillbaka till idag",
     "tookEyebrow": "DET TOG FAKTISKT",
     "unitMin": "min",
-    "honeyLabel": "HONUNG",
+    "honeyLabel": "KALIBRERING",
     "delta": {
       "over": "{{duration}} över din gissning",
       "under": "{{duration}} under din gissning",

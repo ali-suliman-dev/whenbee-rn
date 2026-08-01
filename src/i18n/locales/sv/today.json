@@ -1,9 +1,9 @@
 {
   "tiers": {
-    "raw": "Rå",
-    "setting": "Stelnar",
-    "ripening": "Mognar",
-    "thickening": "Tjocknar",
+    "raw": "Precis börjat",
+    "setting": "Lär sig",
+    "ripening": "Närmar sig",
+    "thickening": "Nästan där",
     "honest": "Ärlig"
   },
   "header": {
@@ -136,10 +136,10 @@
     "startButton": "Starta"
   },
   "honeycombStrip": {
-    "title": "Din honungskaka",
-    "a11y": "Din honungskaka, {{pct}} % honung, nivå {{tier}}, {{logs}} loggar",
-    "subline_one": "{{pct}} % honung · {{count}} logg",
-    "subline_other": "{{pct}} % honung · {{count}} loggar",
+    "title": "Hur väl jag känner dig",
+    "a11y": "{{pct}} % kalibrerad, nivå {{tier}}, {{logs}} loggar",
+    "subline_one": "{{pct}} % kalibrerad · {{count}} logg",
+    "subline_other": "{{pct}} % kalibrerad · {{count}} loggar",
     "nextLine_one": "{{count}} logg till {{tier}}",
     "nextLine_other": "{{count}} loggar till {{tier}}"
   },
@@ -149,7 +149,7 @@
   "ritualSeal": {
     "doneA11y": "Loggade en ärlig sak idag.",
     "pendingA11y": "Logga en ärlig sak idag. Helt okej att hoppa över.",
-    "doneLabel": "Dagens honung har stelnat ✦",
+    "doneLabel": "Dagens har stelnat ✦",
     "pendingLabel": "Logga en ärlig sak"
   },
   "runningFocusCard": {
@@ -234,7 +234,7 @@
     "proPill": "Pro"
   },
   "headerRing": {
-    "a11y": "Whenbee, honungsnivå {{tier}}. Tryck för att öppna din honungskaka."
+    "a11y": "Kalibrering: {{tier}}. Tryck för att se vad dina loggar låser upp."
   },
   "honestLanding": {
     "headline": {

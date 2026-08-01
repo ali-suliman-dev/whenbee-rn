@@ -3,9 +3,9 @@
     "backLabel": "Tillbaka",
     "crumb": "Kategoriinsikter",
     "toastAdaptSet": "Anpassning ändrad till {{label}}",
-    "toastResetDone": "Börja om. Din honung finns kvar",
+    "toastResetDone": "Börja om. Ditt framsteg finns kvar",
     "resetConfirm": {
-      "copy": "Vill du återställa inlärningen för den här kategorin? Börja om. Din honung finns kvar.",
+      "copy": "Vill du återställa inlärningen för den här kategorin? Börja om. Ditt framsteg finns kvar.",
       "keepLabel": "Behåll inlärningen för den här kategorin",
       "keep": "Behåll den",
       "confirmLabel": "Bekräfta återställning av kategorins inlärning",
@@ -154,13 +154,13 @@
   "manageArea": {
     "header": "Hantera det här området",
     "resetTitle": "Återställ inlärningen",
-    "resetSub": "Rensar gissningshistoriken, behåller din honung",
+    "resetSub": "Rensar gissningshistoriken. Ditt framsteg och din nivå finns kvar.",
     "deleteTitle": "Ta bort området",
     "deleteSub": "Tar bort området och dess data",
     "resetConfirmTitle": "Vill du nollställa det jag lärt mig om {{category}}?",
     "resetConfirmBullets": [
       "Jag börjar om och lär mig området från början.",
-      "Din honung och din nivå finns kvar. Bara gissningshistoriken nollställs."
+      "Ditt framsteg finns kvar. Bara gissningshistoriken nollställs."
     ],
     "deleteConfirmTitle": "Vill du ta bort {{category}}?",
     "deleteConfirmBullets": [
@@ -169,10 +169,10 @@
     ]
   },
   "tiers": {
-    "raw": "Rå",
-    "setting": "Stelnar",
-    "ripening": "Mognar",
-    "thickening": "Tjocknar",
+    "raw": "Precis börjat",
+    "setting": "Lär sig",
+    "ripening": "Närmar sig",
+    "thickening": "Nästan där",
     "honest": "Ärlig"
   }
 }

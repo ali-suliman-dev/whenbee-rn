@@ -102,7 +102,7 @@
     "categoryLabel": "KATEGORI",
     "yourGuessLabel": "DIN GISSNING",
     "actualLabel": "VAD DET FAKTISKT TOG",
-    "saveCta": "Spara och mogna",
-    "saveHint": "+1 nektar · mognar din honung lite grann"
+    "saveCta": "Spara",
+    "saveHint": "Loggat. Dina siffror blir lite skarpare."
   }
 }
