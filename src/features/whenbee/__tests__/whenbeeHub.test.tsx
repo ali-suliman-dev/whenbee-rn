@@ -93,8 +93,8 @@ describe('WhenbeeHub', () => {
 
     render(<WhenbeeHub />);
 
-    // RingBadge: ringCopy(46) → tier "Setting"
-    expect(screen.getByText(/Setting/)).toBeTruthy();
+    // RingBadge: ringCopy(46) → tier "Setting" (displayed as "Learning")
+    expect(screen.getByText(/Learning/)).toBeTruthy();
     // Zone label
     expect(screen.getByText('Your areas')).toBeTruthy();
   });

@@ -36,7 +36,7 @@ beforeEach(() => {
 });
 
 describe('Retro screen', () => {
-  it('Save & ripen: applyLog completed/retro, hands off to reward, navigates', async () => {
+  it('Save: applyLog completed/retro, hands off to reward, navigates', async () => {
     render(<Retro />);
     const applyLog = useCalibrationStore.getState().applyLog as jest.Mock;
 
@@ -47,7 +47,7 @@ describe('Retro screen', () => {
     fireEvent.press(screen.getAllByRole('button', { name: '15m' })[0]); // guess
     fireEvent.press(screen.getAllByRole('button', { name: '30m' })[1]); // actual
 
-    fireEvent.press(screen.getByText('Save & ripen'));
+    fireEvent.press(screen.getByText('Save'));
     await Promise.resolve();
     await Promise.resolve();
 
@@ -75,7 +75,7 @@ describe('Retro screen', () => {
     // Only a category + guess, no actual → button disabled, applyLog never runs.
     fireEvent.press(screen.getByText('Cleaning'));
     fireEvent.press(screen.getAllByRole('button', { name: '15m' })[0]);
-    fireEvent.press(screen.getByText('Save & ripen'));
+    fireEvent.press(screen.getByText('Save'));
     await Promise.resolve();
 
     expect(applyLog).not.toHaveBeenCalled();

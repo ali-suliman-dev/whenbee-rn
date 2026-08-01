@@ -306,8 +306,8 @@
   },
   "ripeningPro": {
     "ripening": {
-      "eyebrow": "Pro · ripening",
-      "pillPrefix": "Ripens at",
+      "eyebrow": "Pro · almost ready",
+      "pillPrefix": "Unlocks at",
       "settling": "Still settling…",
       "footer": "No streak, no rush. Logging normally gets you there.",
       "ticketTitle": "Own Pro from day one",

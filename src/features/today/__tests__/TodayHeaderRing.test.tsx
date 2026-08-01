@@ -18,14 +18,14 @@ describe('TodayHeaderRing', () => {
     const { getByText } = render(
       <TodayHeaderRing sharpness={40} tier="Ripening" stage={3} seed={1} />,
     );
-    expect(getByText('Ripening')).toBeTruthy();
+    expect(getByText('Getting closer')).toBeTruthy();
   });
 
   it('routes to the whenbee hub on press', () => {
     const { getByLabelText } = render(
       <TodayHeaderRing sharpness={40} tier="Ripening" stage={3} seed={1} />,
     );
-    fireEvent.press(getByLabelText(/honey tier Ripening/i));
+    fireEvent.press(getByLabelText(/Calibration: Getting closer/i));
     expect(router.push).toHaveBeenCalledWith('/(tabs)/whenbee');
   });
 });
