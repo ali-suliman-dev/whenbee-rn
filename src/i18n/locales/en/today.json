@@ -149,7 +149,7 @@
   "ritualSeal": {
     "doneA11y": "Logged one honest thing today.",
     "pendingA11y": "Log one honest thing today. Skipping is fine.",
-    "doneLabel": "Today's set ✦",
+    "doneLabel": "Today's logs are in ✦",
     "pendingLabel": "Log one honest thing"
   },
   "runningFocusCard": {

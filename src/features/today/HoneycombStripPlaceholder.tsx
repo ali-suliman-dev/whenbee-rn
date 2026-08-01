@@ -12,8 +12,8 @@ import type { Tier } from '@/src/domain/types';
 // HoneycombStripPlaceholder — the persistent gamification HUD on Today.
 //
 // Tappable Card → Whenbee hub. Shows the aggregate honeycomb state:
-//   "Your honeycomb"  [tier pill]
-//   {pct}% honey · {logs} logs
+//   "How well I know you"  [tier pill]
+//   {pct}% calibrated · {logs} logs
 //   {n} logs to {nextTier} →     (indigo)
 //
 // PLACEHOLDER QUALITY: this reads a simple aggregate from the calibration cache

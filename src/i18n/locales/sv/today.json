@@ -149,7 +149,7 @@
   "ritualSeal": {
     "doneA11y": "Loggade en ärlig sak idag.",
     "pendingA11y": "Logga en ärlig sak idag. Helt okej att hoppa över.",
-    "doneLabel": "Dagens har stelnat ✦",
+    "doneLabel": "Dagens loggar är inne ✦",
     "pendingLabel": "Logga en ärlig sak"
   },
   "runningFocusCard": {
