@@ -83,12 +83,6 @@
       "sentenceFaster": "Du planerar 15 minuter. I verkligheten tar det bara omkring {{minutes}}."
     }
   },
-  "companion": {
-    "namePrompt": "Ge din kompis ett namn, om du vill. Du kan ändra det när som helst.",
-    "namePlaceholder": "t.ex. Surre",
-    "nameA11y": "Kompisens namn",
-    "save": "Spara"
-  },
   "discoveriesRoute": {
     "heading": "Saker du har lärt dig",
     "sub": "{{count}} sanningar som Whenbee hittat i din tidtagning"

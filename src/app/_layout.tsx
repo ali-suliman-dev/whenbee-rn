@@ -170,7 +170,6 @@ function RootNavigator() {
       <Stack.Screen name="(modals)/retro" options={sheet} />
       <Stack.Screen name="(modals)/paywall" options={sheet} />
       <Stack.Screen name="(modals)/honest-day" options={sheet} />
-      <Stack.Screen name="(modals)/companion" options={sheet} />
       <Stack.Screen name="(modals)/discoveries" options={sheet} />
       <Stack.Screen name="(modals)/archetype-quiz" options={sheet} />
       <Stack.Screen name="(modals)/review" options={sheet} />

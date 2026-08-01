@@ -49,10 +49,6 @@
       "title": "Re-take time-style quiz",
       "note": "Update your time-personality seed.",
       "a11y": "Re-take time-style quiz"
-    },
-    "nameCompanion": {
-      "title": "Name your Whenbee",
-      "note": "Give your companion a name."
     }
   },
   "notifications": {

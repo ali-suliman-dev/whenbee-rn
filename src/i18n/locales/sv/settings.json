@@ -49,10 +49,6 @@
       "title": "Gör om tidsstil-quizet",
       "note": "Uppdaterar utgångsläget för din tidsstil.",
       "a11y": "Gör om tidsstil-quizet"
-    },
-    "nameCompanion": {
-      "title": "Namnge din Whenbee",
-      "note": "Ge din kompis ett namn."
     }
   },
   "notifications": {

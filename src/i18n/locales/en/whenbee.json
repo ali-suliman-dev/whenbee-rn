@@ -83,12 +83,6 @@
       "sentenceFaster": "You plan 15 minutes. It really takes only about {{minutes}}."
     }
   },
-  "companion": {
-    "namePrompt": "Give your companion a name, if you like. You can change it any time.",
-    "namePlaceholder": "e.g. Buzz",
-    "nameA11y": "Companion name",
-    "save": "Save"
-  },
   "discoveriesRoute": {
     "heading": "Things you’ve learned",
     "sub": "{{count}} truths Whenbee found in your tracking"
