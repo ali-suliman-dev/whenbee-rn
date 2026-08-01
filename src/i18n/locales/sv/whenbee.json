@@ -105,6 +105,7 @@
     "keeperStanding": "Väktare – varje område kalibrerat",
     "away_one": "{{count}} logg kvar",
     "away_other": "{{count}} loggar kvar",
-    "rowSuffix": "och {{capability}}"
+    "row_one": "{{count}} logg till och {{capability}}",
+    "row_other": "{{count}} loggar till och {{capability}}"
   }
 }

@@ -105,6 +105,7 @@
     "keeperStanding": "Keeper – every area calibrated",
     "away_one": "{{count}} log away",
     "away_other": "{{count}} logs away",
-    "rowSuffix": "and {{capability}}"
+    "row_one": "{{count}} more log and {{capability}}",
+    "row_other": "{{count}} more logs and {{capability}}"
   }
 }

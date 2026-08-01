@@ -7,9 +7,15 @@ import { useNextUnlock } from './useNextUnlock';
 
 // ──────────────────────────────────────────────────────────────────────────────
 // NextUnlock — "what your next logs buy you", a one-line row: a key glyph,
-// then `<n logs away> and <capability>`. At the cap it renders the sealed
-// line instead. Shared by Today, the Progress tab, and the reward screen
-// (plain-calibration-copy plan, Task 3) via `useNextUnlock`.
+// then the full "<n> more logs and <capability>" sentence. At the cap it
+// renders the sealed line instead. Shared by Today, the Progress tab, and the
+// reward screen (plain-calibration-copy plan, Task 3) via `useNextUnlock`.
+//
+// The sentence is a SINGLE translation key (`ladder.row_one`/`row_other`),
+// never two independently-translated fragments glued together in JSX — word
+// order and capability-noun agreement stay entirely in the translator's
+// hands. The whole line is styled as one emphasised unit rather than
+// re-splitting the string to bold just the count.
 //
 // No animation (hard rule) — this row is always rendered at full opacity.
 // ──────────────────────────────────────────────────────────────────────────────
@@ -17,7 +23,7 @@ import { useNextUnlock } from './useNextUnlock';
 export function NextUnlock() {
   const t = useTheme();
   const { t: tr } = useTranslation('whenbee');
-  const unlock = useNextUnlock();
+  const { nextCapabilityLabel, logsToNext } = useNextUnlock();
 
   const row: ViewStyle = {
     flexDirection: 'row',
@@ -25,27 +31,29 @@ export function NextUnlock() {
     gap: t.space[2],
   };
   const line: TextStyle = {
-    ...(type.caption as unknown as TextStyle),
-    color: t.colors.inkSoft,
+    ...(type.bodySmSemibold as unknown as TextStyle),
+    color: t.colors.ink,
     flexShrink: 1,
   };
-  const awayPhrase: TextStyle = {
-    ...(type.captionBold as unknown as TextStyle),
-    color: t.colors.ink,
-  };
+
+  // Narrow on `nextCapabilityLabel` itself (not a separate `sealed` flag) so
+  // TypeScript proves it's a string in the sentence branch below — no `??`
+  // fallback, no `!` assertion.
+  if (nextCapabilityLabel === null) {
+    return (
+      <View style={row}>
+        <Ionicons name="key-outline" size={t.iconSize.sm} color={t.colors.amberText} />
+        <Text style={line}>{tr('ring.sealed')}</Text>
+      </View>
+    );
+  }
 
   return (
     <View style={row}>
       <Ionicons name="key-outline" size={t.iconSize.sm} color={t.colors.amberText} />
-      {unlock.sealed ? (
-        <Text style={line}>{tr('ring.sealed')}</Text>
-      ) : (
-        <Text style={line}>
-          <Text style={awayPhrase}>{tr('ladder.away', { count: unlock.logsToNext })}</Text>
-          {' '}
-          {tr('ladder.rowSuffix', { capability: unlock.nextCapabilityLabel ?? '' })}
-        </Text>
-      )}
+      <Text style={line}>
+        {tr('ladder.row', { count: logsToNext, capability: nextCapabilityLabel })}
+      </Text>
     </View>
   );
 }
