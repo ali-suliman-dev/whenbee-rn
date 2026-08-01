@@ -10,16 +10,7 @@
     "a11y": "{{tier}}, {{pct}} percent calibrated. {{unlock}}"
   },
   "ring": {
-    "stage": {
-      "raw": "Just getting started",
-      "setting": "Getting sharper",
-      "ripening": "Landing closer",
-      "thickening": "You know your timing",
-      "honest": "Plans match reality"
-    },
-    "sealed": "Calibrated ✦",
-    "logsToNext_one": "~{{count}} log to {{tier}}",
-    "logsToNext_other": "~{{count}} logs to {{tier}}"
+    "sealed": "Calibrated ✦"
   },
   "hub": {
     "discoveries": {
@@ -110,6 +101,14 @@
     "rungCurrentA11y_one": "{{capability}}, current stage, {{count}} log away",
     "rungCurrentA11y_other": "{{capability}}, current stage, {{count}} logs away",
     "rungUpcomingA11y": "{{capability}}, not yet unlocked",
-    "rungKeeperProgressA11y": "{{capability}}, {{progress}}"
+    "rungKeeperProgressA11y": "{{capability}}, {{progress}}",
+    "rowPro_one": "{{count}} more log and {{capability}}, a Pro feature",
+    "rowPro_other": "{{count}} more logs and {{capability}}, a Pro feature",
+    "justUnlocked": "Just unlocked: {{capability}}",
+    "justUnlockedPro": "You reached {{capability}}, it opens with Pro",
+    "rungReachedProA11y": "{{capability}}, reached, opens with Pro",
+    "rungCurrentProA11y_one": "{{capability}}, current stage, {{count}} log away, opens with Pro",
+    "rungCurrentProA11y_other": "{{capability}}, current stage, {{count}} logs away, opens with Pro",
+    "rungUpcomingProA11y": "{{capability}}, not yet unlocked, opens with Pro"
   }
 }

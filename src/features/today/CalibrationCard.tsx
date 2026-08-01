@@ -2,6 +2,7 @@ import { View, Text, type ViewStyle, type TextStyle } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { useTheme } from '@/src/theme/useTheme';
 import { useNextUnlock } from '@/src/features/whenbee/useNextUnlock';
+import { useUnlockSentence } from '@/src/features/whenbee/useUnlockSentence';
 import { NextUnlock } from '@/src/features/whenbee/NextUnlock';
 
 // ──────────────────────────────────────────────────────────────────────────────
@@ -20,12 +21,12 @@ import { NextUnlock } from '@/src/features/whenbee/NextUnlock';
 export function CalibrationCard() {
   const t = useTheme();
   const { t: tr } = useTranslation('whenbee');
-  const { tierLabel, pct, nextCapabilityLabel, logsToNext } = useNextUnlock();
-
-  const unlockText =
-    nextCapabilityLabel === null
-      ? tr('ring.sealed')
-      : tr('ladder.row', { count: logsToNext, capability: nextCapabilityLabel });
+  const { tierLabel, pct } = useNextUnlock();
+  // The SAME resolver <NextUnlock/> renders below, so the spoken label can never
+  // drift from the visible row (it used to compose its own copy and lost the
+  // Pro qualifier). Both subjects here are the aggregate, so one grouped label
+  // covering the card and the row is honest.
+  const unlockText = useUnlockSentence();
 
   const card: ViewStyle = {
     backgroundColor: t.colors.honeyWash,

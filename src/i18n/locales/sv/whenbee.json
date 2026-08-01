@@ -10,16 +10,7 @@
     "a11y": "{{tier}}, {{pct}} procent kalibrerad. {{unlock}}"
   },
   "ring": {
-    "stage": {
-      "raw": "Precis igång",
-      "setting": "Blir skarpare",
-      "ripening": "Landar närmare",
-      "thickening": "Du kan din tajmning",
-      "honest": "Planer stämmer med verkligheten"
-    },
-    "sealed": "Kalibrerad ✦",
-    "logsToNext_one": "~{{count}} logg kvar till {{tier}}",
-    "logsToNext_other": "~{{count}} loggar kvar till {{tier}}"
+    "sealed": "Kalibrerad ✦"
   },
   "hub": {
     "discoveries": {
@@ -97,7 +88,7 @@
     "headerStatus": "{{tier}} · {{pct}}%",
     "keeperProgress": "{{done}} av {{total}} områden kalibrerade",
     "runningFinishTime": "Live sluttid på din timer",
-    "todayDoneTime": "Klar-tid på Idag och Lägg till",
+    "todayDoneTime": "Klar-tid på Idag och Ny uppgift",
     "startByAnchor": "Omvänt börja-senast-ankare",
     "honestDayForecast": "Ärlig dag-prognos på widgeten",
     "driftRecalibration": "Avdriftskoll när livet skiftar",
@@ -110,6 +101,14 @@
     "rungCurrentA11y_one": "{{capability}}, pågående steg, {{count}} logg kvar",
     "rungCurrentA11y_other": "{{capability}}, pågående steg, {{count}} loggar kvar",
     "rungUpcomingA11y": "{{capability}}, inte upplåst än",
-    "rungKeeperProgressA11y": "{{capability}}, {{progress}}"
+    "rungKeeperProgressA11y": "{{capability}}, {{progress}}",
+    "rowPro_one": "{{count}} logg till och {{capability}}, en Pro-funktion",
+    "rowPro_other": "{{count}} loggar till och {{capability}}, en Pro-funktion",
+    "justUnlocked": "Nyss upplåst: {{capability}}",
+    "justUnlockedPro": "Du nådde {{capability}}, den öppnas med Pro",
+    "rungReachedProA11y": "{{capability}}, uppnått, öppnas med Pro",
+    "rungCurrentProA11y_one": "{{capability}}, pågående steg, {{count}} logg kvar, öppnas med Pro",
+    "rungCurrentProA11y_other": "{{capability}}, pågående steg, {{count}} loggar kvar, öppnas med Pro",
+    "rungUpcomingProA11y": "{{capability}}, inte upplåst än, öppnas med Pro"
   }
 }
