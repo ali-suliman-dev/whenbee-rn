@@ -50,7 +50,7 @@ export function BiggestSurpriseRitualCard({ surprise, band, loggedCount }: Props
   }, []);
 
   const ratio =
-    surprise.estimateMin > 0 ? (surprise.actualMin / surprise.estimateMin).toFixed(1) : '—';
+    surprise.estimateMin > 0 ? (surprise.actualMin / surprise.estimateMin).toFixed(1) : '–';
 
   const styles = StyleSheet.create({
     container: { gap: t.space[3] },
@@ -261,8 +261,12 @@ export function BiggestSurpriseRitualCard({ surprise, band, loggedCount }: Props
           </View>
 
           <View style={styles.axisRow}>
-            <Text style={styles.axisLabel}>{band.lowMin}m</Text>
-            <Text style={styles.axisLabel}>{band.highMin}m</Text>
+            <Text style={styles.axisLabel}>
+              {tt('biggestSurprise.minutesLabel', { min: band.lowMin })}
+            </Text>
+            <Text style={styles.axisLabel}>
+              {tt('biggestSurprise.minutesLabel', { min: band.highMin })}
+            </Text>
           </View>
         </View>
 
@@ -273,9 +277,11 @@ export function BiggestSurpriseRitualCard({ surprise, band, loggedCount }: Props
           <Text style={styles.descAmber}>
             {tt('biggestSurprise.rangeLabel', { low: band.lowMin, high: band.highMin })}
           </Text>
-          {' 80% of the time — it came in at '}
-          <Text style={styles.descAmber}>{surprise.actualMin}m</Text>
-          {`, past your ${fmtHm(surprise.estimateMin)} guess`}
+          {tt('biggestSurprise.descAfterRange')}
+          <Text style={styles.descAmber}>
+            {tt('biggestSurprise.minutesLabel', { min: surprise.actualMin })}
+          </Text>
+          {tt('biggestSurprise.descGuessSuffix', { guess: fmtHm(surprise.estimateMin) })}
           {insideRange
             ? tt('biggestSurprise.descInsideSuffix')
             : tt('biggestSurprise.descOutsideSuffix')}

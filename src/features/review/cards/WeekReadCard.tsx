@@ -13,6 +13,8 @@ interface Props {
   summary: ReviewSummary;
 }
 
+const VERDICTS: readonly string[] = ['tight', 'loose', 'mixed'];
+
 export function WeekReadCard({ summary }: Props) {
   const t = useTheme();
   const { t: tt } = useTranslation('review');
@@ -32,6 +34,13 @@ export function WeekReadCard({ summary }: Props) {
   const caption = hasVariance ? tt('weekRead.varianceCaption') : null;
 
   const days = tt('weekRead.dayLetters', { returnObjects: true }) as readonly string[];
+
+  // `verdict` is an ID out of the pure engine ('tight' | 'loose' | 'mixed'), not
+  // a sentence — the wording is ours, in the user's language. An unknown id
+  // (older cached shape) reads as mixed rather than surfacing a raw key.
+  const verdictText = tt(
+    `weekRead.verdict.${VERDICTS.includes(wr.verdict) ? wr.verdict : 'mixed'}` as never,
+  ) as string;
 
   const styles = StyleSheet.create({
     // One gap-based rhythm per axis (no mixed gap + margin): a clearly bigger
@@ -54,7 +63,7 @@ export function WeekReadCard({ summary }: Props) {
     <Card tone="flat">
       <View style={styles.container}>
         <View style={styles.verdictGroup}>
-          <Text style={styles.verdict}>{wr.verdict}</Text>
+          <Text style={styles.verdict}>{verdictText}</Text>
           <Text style={styles.subtitle}>
             {tt('weekRead.subtitlePrefix', { close: wr.areasClose, total: wr.areasTotal })}{' '}
             <Text style={styles.logCount}>{summary.loggedCount}</Text>

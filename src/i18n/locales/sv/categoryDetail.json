@@ -2,10 +2,10 @@
   "screen": {
     "backLabel": "Tillbaka",
     "crumb": "Kategoriinsikter",
-    "toastAdaptSet": "Anpassning inställd på {{label}}",
-    "toastResetDone": "Börja om — din honung finns kvar",
+    "toastAdaptSet": "Anpassning ändrad till {{label}}",
+    "toastResetDone": "Börja om. Din honung finns kvar",
     "resetConfirm": {
-      "copy": "Återställ inlärningen för den här kategorin? Börja om — din honung finns kvar.",
+      "copy": "Vill du återställa inlärningen för den här kategorin? Börja om. Din honung finns kvar.",
       "keepLabel": "Behåll inlärningen för den här kategorin",
       "keep": "Behåll den",
       "confirmLabel": "Bekräfta återställning av kategorins inlärning",
@@ -15,10 +15,10 @@
     "loading": "Läser dina mönster…"
   },
   "categoriesList": {
-    "lead": "Uppgifterna som Whenbee lär sig åt dig. Byt namn på vad som helst, eller ta bort det du inte längre gör. Tidigare loggar finns kvar ändå.",
+    "lead": "Uppgifterna som Whenbee lär sig åt dig. Byt namn på vad du vill, eller ta bort det du inte längre gör. Tidigare loggar finns kvar oavsett.",
     "nameLabel": "Kategorinamn, {{name}}",
     "stopTrackingLabel": "Sluta spåra {{name}}",
-    "newPlaceholder": "Namnge den…",
+    "newPlaceholder": "Ge den ett namn…",
     "newNameLabel": "Nytt kategorinamn",
     "addChip": "+ Ny kategori"
   },
@@ -31,58 +31,58 @@
     },
     "optionLabel": "Inlärningsläget {{label}}",
     "hints": {
-      "steady": "<em>Långsam att ändras</em>. Den lutar sig mot din <em>hela historik</em>, så den passar när ditt tempo håller sig <em>jämnt</em>.",
-      "balanced": "Standardinställningen. En <em>rättvis mix</em> av din historik och dina <em>senaste körningar</em>.",
+      "steady": "<em>Ändrar sig långsamt</em>. Den lutar sig mot <em>hela din historik</em>, så den passar när ditt tempo håller sig <em>jämnt</em>.",
+      "balanced": "Vardagsinställningen. En <em>lagom blandning</em> av din historik och dina <em>senaste körningar</em>.",
       "reactive": "<em>Kommer ikapp snabbt</em> när ditt tempo <em>ändras</em>, till exempel efter ny medicin, en tuff natt eller en ny rutin."
     }
   },
   "ahaCard": {
     "badgeLabel": "aha",
     "dismissLabel": "Stäng upptäckten",
-    "body_one": "Baserat på din senaste {{count}} avklarade {{categoryName}}-uppgift ligger du på ungefär {{multiplier}}×. Ingen skuld — din hjärna tänker snabbt, det är utförandet som tar längre tid.",
-    "body_other": "Baserat på dina {{count}} senaste avklarade {{categoryName}}-uppgifter ligger du på ungefär {{multiplier}}×. Ingen skuld — din hjärna tänker snabbt, det är utförandet som tar längre tid."
+    "body_one": "Baserat på {{count}} avklarad {{categoryName}}-uppgift ligger du på ungefär {{multiplier}}×. Ingen skuld. Din hjärna tänker snabbt, det är utförandet som tar längre tid.",
+    "body_other": "Baserat på dina {{count}} senaste avklarade {{categoryName}}-uppgifter ligger du på ungefär {{multiplier}}×. Ingen skuld. Din hjärna tänker snabbt, det är utförandet som tar längre tid."
   },
   "rangeBand": {
     "proLabel": "Pro",
-    "unlockLabel": "Lås upp var uppgifter hamnar med Pro"
+    "unlockLabel": "Lås upp var uppgifterna landar med Pro"
   },
   "goalCard": {
     "eyebrow": "MÅL",
     "eyebrowReached": "MÅL · UPPNÅTT",
-    "withinChip": "inom {{band}}%",
+    "withinChip": "inom {{band}} %",
     "notEnough": {
       "headline": "Några loggar till så kan du sikta här",
       "sub": "{{n}} av {{min}} loggade"
     },
     "picker": {
       "headline": "Välj hur nära du vill sikta",
-      "sub": "Du landar inom <strong>±{{band}}%</strong> nu — varje val är snävare.",
+      "sub": "Du landar inom <strong>±{{band}} %</strong> nu. Varje val är snävare.",
       "presetWithin": "inom",
       "drawerCaption": "sikta på att landa inom",
-      "endSpotOn": "exakt rätt",
-      "endNow": "±{{band}}% nu",
+      "endSpotOn": "precis rätt",
+      "endNow": "±{{band}} % nu",
       "notNow": "Inte nu",
       "setGoal": "Sätt mål"
     },
     "reached": {
       "headline": "Du klarade det",
-      "sub": "Dina {{categoryName}}-gissningar landade inom {{band}}%.",
-      "subCompact": "Uppnått — inom {{band}}%.",
+      "sub": "Dina uppskattningar för {{categoryName}} landade inom {{band}} %.",
+      "subCompact": "Uppnått, inom {{band}} %.",
       "keep": "Jag är nöjd här",
       "aimTighter": "Sikta snävare"
     },
     "active": {
-      "headline": "Närmar sig",
-      "bestSoFar": "Bäst hittills <strong>±{{band}}%</strong>",
-      "etaTail": " · ungefär <strong>{{eta}} loggar</strong> till ±{{band}}%",
-      "etaFallback": " · fortsätt logga, det snävas till",
+      "headline": "Du närmar dig",
+      "bestSoFar": "Bäst hittills <strong>±{{band}} %</strong>",
+      "etaTail": " · ungefär <strong>{{eta}} loggar</strong> kvar till ±{{band}} %",
+      "etaFallback": " · fortsätt logga, så snävas det in",
       "leverLabel": "Din största hävstång",
-      "leverText": "Din miss vid <strong>{{worstValue}}</strong> är störst — täta till den först."
+      "leverText": "Dina missar vid <strong>{{worstValue}}</strong> är störst. Börja där."
     },
     "empty": {
-      "accessibilityLabel": "Sätt ett mål — jag coachar dig dit",
+      "accessibilityLabel": "Sätt ett mål. Jag coachar dig dit",
       "headline": "Sätt ett mål så coachar jag dig dit",
-      "sub": "Du landar inom ±{{band}}% nu — sikta snävare."
+      "sub": "Du landar inom ±{{band}} % nu. Sikta snävare."
     }
   },
   "goalLocked": {
@@ -90,49 +90,51 @@
     "proLabel": "PRO",
     "headline": "Sätt ett mål så coachar jag dig dit",
     "sub": "Talet att gissa på, din största miss, hur nära du är.",
-    "accessibilityLabel": "Sätt ett mål för den här kategorin med Pro — jag coachar dig dit"
+    "accessibilityLabel": "Sätt ett mål för den här kategorin med Pro. Jag coachar dig dit"
   },
   "graduation": {
     "eyebrow": "KALIBRERING KLAR",
     "unit": "min",
     "title": "Det här talet är ärligt nu",
     "titleAccessibilityLabel": "Nu ett ärligt tal. Cirka {{minutes}} minuter.",
-    "sub": "Inlärningsstapeln fylldes — {{runs}} riktiga körningar bakom.",
-    "runsFallback": "tillräckligt",
+    "sub": "Inlärningen är klar efter {{runs}} riktiga körningar.",
+    "runsFallback": "tillräckligt många",
     "proofRuns": "{{count}} riktiga körningar",
     "dismissLabel": "Stäng",
     "cta": "Toppen"
   },
   "honestCard": {
     "tierMeaning": {
-      "raw": "lär bara känna ditt tempo",
-      "setting": "skärper fortfarande ditt tempo"
+      "raw": "jag håller på att lära känna ditt tempo",
+      "setting": "jag skärper fortfarande bilden av ditt tempo"
     },
     "eyebrowRange": "DITT ÄRLIGA INTERVALL",
-    "narrowed": "<strong>Snävades in från {{low}}–{{high}}</strong> när du loggade.",
+    "narrowed": "<strong>Har krympt från {{low}}–{{high}}</strong> sedan du började logga.",
     "metaGuess": " din gissning",
     "metaSeal": "ärligt nu",
-    "landNear": "De flesta uppgifter landar nära <point>~{{minutes}} min</point>."
+    "landNear": "De flesta uppgifter landar nära <point>~{{minutes}} min</point>.",
+    "reasonNote": "Att det drar över här beror oftast på {{reason}}.",
+    "unitMin": "min"
   },
   "maturityMeter": {
-    "settled": "Några körningar till så stabiliseras det till ett tal.",
-    "runsLeft_one": "<strong>{{count}} körning till</strong> skärper det till ett tal",
-    "runsLeft_other": "<strong>{{count}} körningar till</strong> skärper det till ett tal"
+    "settled": "Några körningar till så landar det här på ett enda tal.",
+    "runsLeft_one": "<strong>{{count}} körning till</strong> skärper det här till ett tal",
+    "runsLeft_other": "<strong>{{count}} körningar till</strong> skärper det här till ett tal"
   },
   "proHonestWeekTease": {
     "peekLabel": "Din ärliga vecka · 15–21 juni",
     "proLabel": "Pro",
     "eyebrow": "Whenbee Pro",
     "heading": "Din ärliga vecka, varje söndag.",
-    "body": "Se var timmarna verkligen tog vägen — planera nästa vecka utifrån sanningen, inte en gissning.",
+    "body": "Se var timmarna verkligen tog vägen. Planera nästa vecka utifrån sanningen, inte en gissning.",
     "cta": "Starta min ärliga vecka",
-    "trust": "Avsluta när du vill · lärs på enheten",
+    "trust": "Avsluta när du vill · allt lärs in på din enhet",
     "linkLabel": "Din ärliga vecka",
     "openA11y": "Öppna din ärliga vecka"
   },
   "recentList": {
-    "header": "Senaste uppgifter",
-    "empty": "Inga avklarade uppgifter än — de dyker upp när du loggar dem.",
+    "header": "Senaste uppgifterna",
+    "empty": "Inga avklarade uppgifter här än. De dyker upp när du loggar dem.",
     "guessed": "gissade {{estimate}}",
     "took": "tog {{actual}}"
   },
@@ -140,20 +142,37 @@
     "header": "Kalibreringstrend",
     "periodPill": "Senaste 30 dagarna",
     "caption": {
-      "stabilizing": "Din multiplikator stabiliseras — bra självinsikt.",
-      "steady": "Stabilt och jämnt — ditt tempo är förutsägbart här."
+      "stabilizing": "Din multiplikator stabiliseras. Bra självkännedom.",
+      "steady": "Stabilt och jämnt. Ditt tempo är förutsägbart här."
     },
-    "empty": "Inte tillräckligt med loggar än — din trend visas efter några till.",
-    "daysAgo": "{{days}} dagar sedan",
-    "halfDaysAgo": "{{days}} dagar",
+    "empty": "Inte tillräckligt med loggar än. Din trend visas efter några till.",
+    "daysAgo": "{{days}} d sedan",
+    "halfDaysAgo": "{{days}} d",
     "now": "nu",
     "axisIdeal": "ideal"
   },
   "manageArea": {
-    "header": "Hantera området",
-    "resetTitle": "Nollställ inlärningen",
+    "header": "Hantera det här området",
+    "resetTitle": "Återställ inlärningen",
     "resetSub": "Rensar gissningshistoriken, behåller din honung",
     "deleteTitle": "Ta bort området",
-    "deleteSub": "Tar bort området och dess data"
+    "deleteSub": "Tar bort området och dess data",
+    "resetConfirmTitle": "Vill du nollställa det jag lärt mig om {{category}}?",
+    "resetConfirmBullets": [
+      "Jag börjar om och lär mig området från början.",
+      "Din honung och din nivå finns kvar. Bara gissningshistoriken nollställs."
+    ],
+    "deleteConfirmTitle": "Vill du ta bort {{category}}?",
+    "deleteConfirmBullets": [
+      "Området försvinner tillsammans med sina loggar, sin inlärning och sitt mål.",
+      "Det går inte att ångra."
+    ]
+  },
+  "tiers": {
+    "raw": "Rå",
+    "setting": "Stelnar",
+    "ripening": "Mognar",
+    "thickening": "Tjocknar",
+    "honest": "Ärlig"
   }
 }

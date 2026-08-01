@@ -1,6 +1,8 @@
 import { useCallback, useRef, useState } from 'react';
 import { useFocusEffect } from 'expo-router';
 import i18n from '@/src/i18n';
+import { categoryDisplayName } from '@/src/features/shared/categoryName';
+import { accuracyLabel } from '@/src/i18n/bucketLabel';
 import {
   clampRatio,
   honestNumber,
@@ -25,7 +27,6 @@ import { makeCompanionRepo } from '@/src/db/repositories/companionRepo';
 import { useCalibrationStore } from '@/src/stores/calibrationStore';
 import { useCategoriesStore } from '@/src/stores/categoriesStore';
 import { useSettingsStore } from '@/src/stores/settingsStore';
-import { CATEGORY_NAMES } from '@/src/engine/priors';
 import type {
   ReportModel,
   ReportStatus,
@@ -99,9 +100,10 @@ function sharpestNoteFrom(samples: AccuracySample[]): string | null {
   const correlations = correlateAccuracy(samples);
   const top = correlations[0];
   if (!top) return null;
+  const label = accuracyLabel(top.betterLabel);
   return top.dimension === 'time'
-    ? i18n.t('report:sharpestNote.time', { label: top.betterLabel })
-    : i18n.t('report:sharpestNote.day', { label: top.betterLabel });
+    ? i18n.t('report:sharpestNote.time', { label })
+    : i18n.t('report:sharpestNote.day', { label });
 }
 
 /**
@@ -217,21 +219,12 @@ export function buildReportModel(deps: BuildReportModelDeps): BuildReportModelRe
   return { model, status: 'ready' };
 }
 
-/** Resolve a friendly category name (user rename → engine seed → titleized id). */
+/** Resolve a friendly category name. Delegates to the single shared resolver so a
+ *  built-in id follows the active language instead of the engine's English seed. */
 function makeNameResolver(): (id: string) => string {
   const entries = useCategoriesStore.getState().categories;
   const byId = new Map(entries.map((c) => [c.id, c.name]));
-  return (id: string) => {
-    const userName = byId.get(id);
-    if (userName && userName.trim().length > 0) return userName;
-    const seed = CATEGORY_NAMES[id];
-    if (seed) return seed;
-    return id
-      .split(/[_\-\s]+/)
-      .filter(Boolean)
-      .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
-      .join(' ');
-  };
+  return (id: string) => categoryDisplayName(id, byId.get(id));
 }
 
 export interface UseReportModelResult {

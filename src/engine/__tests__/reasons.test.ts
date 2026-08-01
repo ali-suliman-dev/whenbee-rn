@@ -1,4 +1,4 @@
-import { correlateReasons, reasonNoteFor, REASON_MIN_OVER_SAMPLES } from '@/src/engine';
+import { correlateReasons, dominantReasonFor, REASON_MIN_OVER_SAMPLES } from '@/src/engine';
 import type { ReasonSample } from '@/src/domain/types';
 
 function over(category: string, reason: string, hour = 10, weekday = 1): ReasonSample {
@@ -72,7 +72,7 @@ describe('correlateReasons', () => {
   });
 });
 
-describe('reasonNoteFor (B15)', () => {
+describe('dominantReasonFor (B15)', () => {
   it('returns null when the dominant share is below the note gate', () => {
     const samples = [
       over('cleaning', 'context_switch'),
@@ -81,15 +81,13 @@ describe('reasonNoteFor (B15)', () => {
       over('cleaning', 'interrupted'),
       over('cleaning', 'interrupted'),
     ];
-    expect(reasonNoteFor('cleaning', samples, { share: 0.7 })).toBeNull();
+    expect(dominantReasonFor('cleaning', samples, { share: 0.7 })).toBeNull();
   });
-  it('builds a kind, deterministic note for a dominated category', () => {
+  it('names the dominant reason SLUG (an id, not prose) for a dominated category', () => {
     const samples = Array.from({ length: 5 }, () => over('cleaning', 'context_switch'));
-    expect(reasonNoteFor('cleaning', samples)).toBe(
-      'Most overruns here trace back to getting pulled away.',
-    );
+    expect(dominantReasonFor('cleaning', samples)).toBe('context_switch');
   });
   it('never throws on an unknown category', () => {
-    expect(reasonNoteFor('cleaning', [])).toBeNull();
+    expect(dominantReasonFor('cleaning', [])).toBeNull();
   });
 });

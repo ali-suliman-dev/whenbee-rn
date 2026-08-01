@@ -4,6 +4,7 @@ import { Card } from '@/src/components/Card';
 import { useTheme } from '@/src/theme/useTheme';
 import { type } from '@/src/theme/typography';
 import { formatDuration } from '@/src/i18n/formatDuration';
+import { reviewPeriodLabel } from '../periodLabel';
 import type { ReviewSummary } from '@/src/domain/types';
 
 // ──────────────────────────────────────────────────────────────────────────────
@@ -30,7 +31,7 @@ export function CoverCard({ summary }: { summary: ReviewSummary }) {
   return (
     <Card tone="flat" style={block}>
       <Text style={eyebrow}>{eyebrowText}</Text>
-      <Text style={title}>{summary.period.label}</Text>
+      <Text style={title}>{reviewPeriodLabel(summary.period)}</Text>
       {summary.loggedCount > 0 ? (
         <Text style={count}>
           {tt('cover.loggedSummary', {

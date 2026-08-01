@@ -1,39 +1,39 @@
 {
   "screenTitle": "Exportera en rapport",
   "close": "Stäng",
-  "timeWindow": "TIDSFÖNSTER",
+  "timeWindow": "TIDSPERIOD",
   "window": {
     "last30": "Senaste 30 dagarna",
     "last90": "Senaste 90 dagarna",
-    "allTime": "Totalt"
+    "allTime": "Hela historiken"
   },
-  "includesLine": "Innehåller din träffsäkerhet, hur lång tid saker faktiskt tar dig per kategori, och dina största överraskningar.",
+  "includesLine": "Innehåller din träffsäkerhet, hur lång tid saker faktiskt tar dig per kategori och dina största överraskningar.",
   "createPdf": "Skapa PDF",
   "building": "Bygger din rapport…",
-  "madeOnPhone": "Skapad på din telefon. Inget lämnar din enhet om du inte delar det.",
+  "madeOnPhone": "Skapad på din telefon. Inget lämnar din enhet om du inte delar den.",
   "errorLine": "Kunde inte skapa rapporten just nu. Försök igen?",
   "thin": {
-    "heading": "Inte tillräckligt loggad tid än",
-    "body": "En rapport blir användbar efter cirka sex avslutade uppgifter i det här fönstret. Prova \"Totalt\", eller kom tillbaka efter några till.",
-    "useAllTime": "Använd totalt"
+    "heading": "Inte tillräckligt med loggad tid än",
+    "body": "En rapport blir användbar efter ungefär sex avklarade uppgifter i den här perioden. Prova ”Hela historiken”, eller kom tillbaka när du har loggat några till.",
+    "useAllTime": "Använd hela historiken"
   },
   "locked": {
-    "heading": "Ta med dina ärliga siffror till nästa möte",
-    "body": "Gör det Whenbee har lärt sig om din tid till en ren PDF du kan ge till en coach, terapeut eller läkare.",
+    "heading": "Ta med dina ärliga siffror till nästa besök",
+    "body": "Förvandla det Whenbee lärt sig om din tid till en snygg PDF som du kan lämna över till en coach, terapeut eller läkare.",
     "unlock": "Lås upp rapportexport",
     "onYourPhone": "På din telefon. Inget laddas upp."
   },
   "pdf": {
     "title": "Tidsrapport",
     "subline": "Skapad {{date}} · {{window}}",
-    "preparedBy": "Förberedd av Whenbee för {{name}}s data",
+    "preparedBy": "Sammanställd av Whenbee utifrån {{name}}s data",
     "eyebrowAccuracy": "Träffsäkerhet",
     "accuracyDefinition": "Hur nära dina tidsgissningar landade verkligheten, i genomsnitt.",
     "glance": {
       "tasksLogged": "Loggade uppgifter",
       "categoriesTracked": "Spårade kategorier",
-      "steadiestCategory": "Jämnaste kategori",
-      "none": "—"
+      "steadiestCategory": "Jämnaste kategorin",
+      "none": "–"
     },
     "biasTable": {
       "heading": "Hur lång tid saker faktiskt tar dig",
@@ -43,22 +43,22 @@
       "reallyTakes": "Det tar faktiskt",
       "bias": "Avvikelse"
     },
-    "omitted_one": "{{count}} kategori till håller fortfarande på att stabiliseras och lämnades utanför.",
-    "omitted_other": "{{count}} kategorier till håller fortfarande på att stabiliseras och lämnades utanför.",
+    "omitted_one": "{{count}} kategori till håller fortfarande på att sätta sig och togs inte med.",
+    "omitted_other": "{{count}} kategorier till håller fortfarande på att sätta sig och togs inte med.",
     "surprises": {
       "heading": "Största överraskningarna",
       "line": "gissade {{estimate}} min, tog {{actual}} min"
     },
     "sharpest": {
-      "heading": "När dina gissningar träffar närmast"
+      "heading": "När dina uppskattningar landar närmast"
     },
     "footer": {
       "left": "Whenbee · personlig tidsrapport",
-      "disclaimer": "Det här är personliga gissningar, inte ett kliniskt mått."
+      "disclaimer": "Det här är personliga uppskattningar, inte ett kliniskt mått."
     }
   },
   "sharpestNote": {
-    "time": "Dina gissningar träffar närmast under {{label}}.",
-    "day": "Dina gissningar träffar närmast under {{label}}."
+    "time": "Dina uppskattningar landar närmast på {{label}}.",
+    "day": "Dina uppskattningar landar närmast på {{label}}."
   }
 }

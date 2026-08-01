@@ -12,19 +12,6 @@ import {
   REASON_WEEKDAY_SHARE,
 } from './constants';
 
-// Kind, blame-free phrasing per known over-run slug (see ReasonChips OVER_OPTIONS).
-// Anything unmapped falls back so a new slug never crashes the read.
-const REASON_PHRASE: Record<string, string> = {
-  context_switch: 'getting pulled away',
-  interrupted: 'getting interrupted',
-  underestimated: 'the task being bigger than it looked',
-};
-const FALLBACK_PHRASE = 'a few recurring snags';
-
-export function reasonPhrase(reason: string): string {
-  return REASON_PHRASE[reason] ?? FALLBACK_PHRASE;
-}
-
 // Highest count, ties broken by lexical key order — deterministic regardless of
 // Map insertion order.
 function topCount<T extends string>(counts: Map<T, number>): { key: T; count: number } | null {
@@ -98,9 +85,10 @@ export function correlateReasons(samples: ReasonSample[]): ReasonCorrelation[] {
   return out.sort((a, b) => b.share - a.share || a.categoryId.localeCompare(b.categoryId));
 }
 
-// B15: a single kind sentence for one category's detail screen. Returns null
-// unless one cause clears the stricter note share — no half-confident claims.
-export function reasonNoteFor(
+// B15: the one over-run cause behind a category's detail note. Returns the
+// dominant reason SLUG (a stable id, never copy — the UI translates it) or null
+// unless one cause clears the stricter note share: no half-confident claims.
+export function dominantReasonFor(
   categoryId: string,
   samples: ReasonSample[],
   opts?: { share?: number },
@@ -113,5 +101,5 @@ export function reasonNoteFor(
   const top = topCount(counts);
   if (top === null) return null;
   if (top.count / overSamples.length < minShare) return null;
-  return `Most overruns here trace back to ${reasonPhrase(top.key)}.`;
+  return top.key;
 }

@@ -2,8 +2,7 @@
   "overflowBar": {
     "guessed": "you guessed",
     "minutesShort": "{{minutes}}m",
-    "realityDelta": "+{{delta}} min reality",
-    "example": "An example — yours come from your own timers."
+    "example": "An example. Yours come from your own timers."
   },
   "presenceRingTeaser": {
     "body": "Your honest finish, live on the Lock Screen while a timer runs.",
@@ -28,7 +27,7 @@
   "honestSuggestionCard": {
     "lead": "Honestly",
     "stillLearning": "still learning",
-    "roughly": "Still learning — roughly {{low}}–{{high}}m",
+    "roughly": "Still learning. Roughly {{low}}–{{high}}m",
     "more": " more",
     "range": "Range",
     "startingEstimate": "Starting estimate · sharpens as you log",
@@ -43,7 +42,7 @@
     },
     "youGuessed": "you guessed {{duration}}",
     "lastFewPrefix": "Your last few {{category}} tasks landed around ",
-    "a11yGeneric": "Tasks like this usually land around {{value}}. No need to pad your guess — this range does it for you.",
+    "a11yGeneric": "Tasks like this usually land around {{value}}. No need to pad your guess. This range does it for you.",
     "a11yCategory": "Your last few {{category}} tasks usually land around {{value}}. Not a target, just what usually happens.",
     "similar": "similar",
     "leadGeneric": "Tasks like this usually land around ",
@@ -58,12 +57,27 @@
     "addTask": "Add a task",
     "honeyCoinSeal": "Honey coin seal",
     "companion": "Your Whenbee companion",
-    "locked": "Locked — stored on this device",
+    "locked": "Locked, stored on this device",
     "dismiss": "Dismiss",
     "honey": "Honey"
   },
   "categoryChips": {
     "new": "New"
+  },
+  "reasons": {
+    "contextSwitch": "getting pulled away",
+    "interrupted": "getting interrupted",
+    "underestimated": "the task being bigger than it looked",
+    "fallback": "a few recurring snags"
+  },
+  "weekdays": {
+    "sunday": "Sunday",
+    "monday": "Monday",
+    "tuesday": "Tuesday",
+    "wednesday": "Wednesday",
+    "thursday": "Thursday",
+    "friday": "Friday",
+    "saturday": "Saturday"
   },
   "timeField": {
     "a11y": "Duration in minutes"

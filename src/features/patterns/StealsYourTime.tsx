@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next';
 import type { TFunction } from 'i18next';
 import { useTheme } from '@/src/theme/useTheme';
 import { type } from '@/src/theme/typography';
-import { reasonPhrase } from '@/src/engine';
+import { reasonPhrase } from '@/src/i18n/bucketLabel';
 import type { ReasonInsight } from '@/src/domain/types';
 import { PatternCard } from './PatternCard';
 

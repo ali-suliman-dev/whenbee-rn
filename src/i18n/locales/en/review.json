@@ -27,7 +27,7 @@
     "leadMonth": "A month is in. Here is where your time actually went.",
     "loggedSummary_one": "{{count}} task · {{logged}} logged",
     "loggedSummary_other": "{{count}} tasks · {{logged}} logged",
-    "emptyLead": "Nothing logged this time. No problem — the next one is always open."
+    "emptyLead": "Nothing logged this time. No problem. The next one is always open."
   },
   "accuracyRead": { "eyebrow": "HOW YOUR GUESSES LANDED" },
   "accuracyLine": {
@@ -57,7 +57,7 @@
   },
   "biggestSurprise": {
     "eyebrow": "YOUR BIGGEST SURPRISE",
-    "headingSuffix": " — biggest drift this week",
+    "headingSuffix": " drifted the most this week.",
     "guessLabel": "{{min}}m guess",
     "realLabel": "{{min}}m real",
     "minutesLabel": "{{min}}m",
@@ -66,18 +66,33 @@
     "logsSuffix": " logs",
     "descPrefix": "Your real ",
     "descMiddle": " time lands ",
-    "descAfterRange": " 80% of the time — it came in at ",
-    "descGuessSuffix": ", past your {{min}}m guess",
+    "descAfterRange": " 80% of the time. It came in at ",
+    "descGuessSuffix": ", past your {{guess}} guess",
     "descInsideSuffix": " but inside your range.",
     "descOutsideSuffix": ", beyond your usual range."
   },
   "weekRead": {
+    "verdict": {
+      "tight": "A tight week.",
+      "loose": "A loose week.",
+      "mixed": "A mixed week."
+    },
     "subtitlePrefix": "{{close}} of {{total}} areas landed close.",
     "subtitleSuffix": " logs.",
     "varianceCaption": "Weekdays sharpest · weekend light",
     "dayLetters": ["M", "T", "W", "T", "F", "S", "S"]
   },
-  "reflection": { "eyebrow": "ONE TO SIT WITH" },
+  "reflection": {
+    "eyebrow": "ONE TO SIT WITH",
+    "tightened": "{{category}} is quietly getting sharper. What changed?",
+    "surprise": "{{category}} drifted the most this week. What was going on?",
+    "questions": [
+      "Which task surprised you most?",
+      "What is one thing worth a little more time next period?",
+      "When did you feel most on-pace?",
+      "Which area is quietly getting sharper?"
+    ]
+  },
   "retro": {
     "heading": "How long did it really take?",
     "sub": "A rough number is plenty.",

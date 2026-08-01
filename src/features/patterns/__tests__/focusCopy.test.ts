@@ -21,13 +21,13 @@ describe('whyNarrative', () => {
   });
 
   it('buckets <1020 (13:00–17:00)', () => {
-    expect(whyNarrative(780)).toBe('Mornings warm up slow — you peak after lunch');
-    expect(whyNarrative(1019)).toBe('Mornings warm up slow — you peak after lunch');
+    expect(whyNarrative(780)).toBe('Mornings warm up slow. You peak after lunch');
+    expect(whyNarrative(1019)).toBe('Mornings warm up slow. You peak after lunch');
   });
 
   it('buckets the evening fallback (after 17:00)', () => {
-    expect(whyNarrative(1020)).toBe("You're a slow burn — you peak in the evening");
-    expect(whyNarrative(1400)).toBe("You're a slow burn — you peak in the evening");
+    expect(whyNarrative(1020)).toBe("You're a slow burn. You peak in the evening");
+    expect(whyNarrative(1400)).toBe("You're a slow burn. You peak in the evening");
   });
 
   it('every bucket string has no trailing period', () => {
@@ -84,7 +84,7 @@ describe('daysGateCopy', () => {
   it('done: value carries a check, sub names the day spread', () => {
     expect(daysGateCopy(6, 5)).toEqual({
       valueText: '6 ✓',
-      sub: 'Spread over 6 days — not a one-day fluke.',
+      sub: 'Spread over 6 days, not a one-day fluke.',
     });
   });
 
@@ -127,7 +127,7 @@ describe('focus copy (reveal-early)', () => {
 
   it('names the coarse block in the forming hint', () => {
     expect(coarseHintCopy('mornings')).toBe(
-      "Leaning toward mornings — keep timing and I'll sharpen it.",
+      "Leaning toward mornings. Keep timing and I'll sharpen it.",
     );
     expect(coarseHintCopy('')).toBe('');
   });
@@ -140,7 +140,7 @@ describe('focusRewardCaption', () => {
   });
 
   it('more than one gate left → the keep-logging line', () => {
-    expect(focusRewardCaption(2)).toBe('Keep logging — your sharpest hours are forming.');
-    expect(focusRewardCaption(3)).toBe('Keep logging — your sharpest hours are forming.');
+    expect(focusRewardCaption(2)).toBe('Keep logging. Your sharpest hours are forming.');
+    expect(focusRewardCaption(3)).toBe('Keep logging. Your sharpest hours are forming.');
   });
 });

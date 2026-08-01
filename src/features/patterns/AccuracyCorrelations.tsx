@@ -4,6 +4,7 @@ import type { TFunction } from 'i18next';
 import { useTheme } from '@/src/theme/useTheme';
 import { type } from '@/src/theme/typography';
 import type { AccuracyCorrelation } from '@/src/engine';
+import { accuracyLabel } from '@/src/i18n/bucketLabel';
 import { PatternCard } from './PatternCard';
 
 // ──────────────────────────────────────────────────────────────────────────────
@@ -15,17 +16,18 @@ import { PatternCard } from './PatternCard';
 // ──────────────────────────────────────────────────────────────────────────────
 
 function headlineFor(t: TFunction<'patterns'>, c: AccuracyCorrelation): string {
+  const label = accuracyLabel(c.betterLabel);
   return c.dimension === 'time'
-    ? t('accuracyCorrelations.headline.time', { label: c.betterLabel })
-    : t('accuracyCorrelations.headline.day', { label: c.betterLabel });
+    ? t('accuracyCorrelations.headline.time', { label })
+    : t('accuracyCorrelations.headline.day', { label });
 }
 
 function detailFor(t: TFunction<'patterns'>, c: AccuracyCorrelation): string {
   const values = {
     betterAccuracy: c.betterAccuracy,
-    betterLabel: c.betterLabel,
+    betterLabel: accuracyLabel(c.betterLabel),
     worseAccuracy: c.worseAccuracy,
-    worseLabel: c.worseLabel,
+    worseLabel: accuracyLabel(c.worseLabel),
   };
   return c.dimension === 'time'
     ? t('accuracyCorrelations.detail.time', values)

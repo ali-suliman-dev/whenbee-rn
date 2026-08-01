@@ -3,9 +3,9 @@
     "backLabel": "Back",
     "crumb": "Category insights",
     "toastAdaptSet": "Adaptation set to {{label}}",
-    "toastResetDone": "Start fresh — your honey stays",
+    "toastResetDone": "Start fresh. Your honey stays",
     "resetConfirm": {
-      "copy": "Reset this category's learning? Start fresh — your honey stays.",
+      "copy": "Reset this category's learning? Start fresh. Your honey stays.",
       "keepLabel": "Keep this category's learning",
       "keep": "Keep it",
       "confirmLabel": "Confirm reset category learning",
@@ -39,8 +39,8 @@
   "ahaCard": {
     "badgeLabel": "aha",
     "dismissLabel": "Dismiss discovery",
-    "body_one": "Based on your last {{count}} completed {{categoryName}} task, you run about {{multiplier}}×. No guilt — your brain thinks fast, execution just takes longer.",
-    "body_other": "Based on your last {{count}} completed {{categoryName}} tasks, you run about {{multiplier}}×. No guilt — your brain thinks fast, execution just takes longer."
+    "body_one": "Based on your last {{count}} completed {{categoryName}} task, you run about {{multiplier}}×. No guilt. Your brain thinks fast, execution just takes longer.",
+    "body_other": "Based on your last {{count}} completed {{categoryName}} tasks, you run about {{multiplier}}×. No guilt. Your brain thinks fast, execution just takes longer."
   },
   "rangeBand": {
     "proLabel": "Pro",
@@ -56,7 +56,7 @@
     },
     "picker": {
       "headline": "Pick how close to aim",
-      "sub": "You land within <strong>±{{band}}%</strong> now — every choice is tighter.",
+      "sub": "You land within <strong>±{{band}}%</strong> now. Every choice is tighter.",
       "presetWithin": "within",
       "drawerCaption": "aim to land within",
       "endSpotOn": "spot on",
@@ -67,7 +67,7 @@
     "reached": {
       "headline": "You did it",
       "sub": "Your {{categoryName}} estimates landed within {{band}}%.",
-      "subCompact": "Reached — within {{band}}%.",
+      "subCompact": "Reached, within {{band}}%.",
       "keep": "I'm happy here",
       "aimTighter": "Aim tighter"
     },
@@ -77,12 +77,12 @@
       "etaTail": " · about <strong>{{eta}} logs</strong> to ±{{band}}%",
       "etaFallback": " · keep logging, it tightens",
       "leverLabel": "Your biggest lever",
-      "leverText": "Your <strong>{{worstValue}}</strong> miss widest — tighten those first."
+      "leverText": "Your <strong>{{worstValue}}</strong> miss widest. Tighten those first."
     },
     "empty": {
-      "accessibilityLabel": "Set a goal — Whenbee coaches you there",
+      "accessibilityLabel": "Set a goal. Whenbee coaches you there",
       "headline": "Set a target and I'll coach you there",
-      "sub": "You land within ±{{band}}% now — aim tighter."
+      "sub": "You land within ±{{band}}% now. Aim tighter."
     }
   },
   "goalLocked": {
@@ -90,14 +90,14 @@
     "proLabel": "PRO",
     "headline": "Set a target and I'll coach you there",
     "sub": "The number to guess, your biggest miss, how close you are.",
-    "accessibilityLabel": "Set a goal for this category with Pro — Whenbee coaches you to it"
+    "accessibilityLabel": "Set a goal for this category with Pro. Whenbee coaches you to it"
   },
   "graduation": {
     "eyebrow": "CALIBRATION COMPLETE",
     "unit": "min",
     "title": "This number's honest now",
     "titleAccessibilityLabel": "Now an honest number. About {{minutes}} minutes.",
-    "sub": "The learning bar filled — {{runs}} real runs in.",
+    "sub": "The learning bar filled. {{runs}} real runs in.",
     "runsFallback": "enough",
     "proofRuns": "{{count}} real runs",
     "dismissLabel": "Dismiss",
@@ -112,7 +112,9 @@
     "narrowed": "<strong>Tightened from {{low}}–{{high}}</strong> as you logged.",
     "metaGuess": " your guess",
     "metaSeal": "honest now",
-    "landNear": "Most tasks land near <point>~{{minutes}} min</point>."
+    "landNear": "Most tasks land near <point>~{{minutes}} min</point>.",
+    "reasonNote": "Most overruns here trace back to {{reason}}.",
+    "unitMin": "min"
   },
   "maturityMeter": {
     "settled": "A few more runs and this settles to one number.",
@@ -124,7 +126,7 @@
     "proLabel": "Pro",
     "eyebrow": "Whenbee Pro",
     "heading": "Your Honest Week, every Sunday.",
-    "body": "See where the hours really went — plan next week from the truth, not a guess.",
+    "body": "See where the hours really went. Plan next week from the truth, not a guess.",
     "cta": "Start my Honest Week",
     "trust": "Cancel anytime · learned on-device",
     "linkLabel": "Your Honest Week",
@@ -132,7 +134,7 @@
   },
   "recentList": {
     "header": "Recent tasks",
-    "empty": "No completed tasks here yet — they'll show up as you log them.",
+    "empty": "No completed tasks here yet. They'll show up as you log them.",
     "guessed": "guessed {{estimate}}",
     "took": "took {{actual}}"
   },
@@ -140,10 +142,10 @@
     "header": "Calibration trend",
     "periodPill": "Last 30 days",
     "caption": {
-      "stabilizing": "Your multiplier is stabilizing — good self-awareness.",
-      "steady": "Steady and consistent — your pace is predictable here."
+      "stabilizing": "Your multiplier is stabilizing. Good self-awareness.",
+      "steady": "Steady and consistent. Your pace is predictable here."
     },
-    "empty": "Not enough logs yet — your trend appears after a few more.",
+    "empty": "Not enough logs yet. Your trend appears after a few more.",
     "daysAgo": "{{days}}d ago",
     "halfDaysAgo": "{{days}}d",
     "now": "now",
@@ -154,6 +156,23 @@
     "resetTitle": "Reset learning",
     "resetSub": "Clears the guess history, keeps your honey",
     "deleteTitle": "Delete area",
-    "deleteSub": "Removes this area and its data"
+    "deleteSub": "Removes this area and its data",
+    "resetConfirmTitle": "Reset what {{category}} has learned?",
+    "resetConfirmBullets": [
+      "Whenbee starts over learning this area.",
+      "Your honey and tier stay. Only the guess history resets."
+    ],
+    "deleteConfirmTitle": "Delete {{category}}?",
+    "deleteConfirmBullets": [
+      "Removes this area along with its logs, learning, and goal.",
+      "This can't be undone."
+    ]
+  },
+  "tiers": {
+    "raw": "Raw",
+    "setting": "Setting",
+    "ripening": "Ripening",
+    "thickening": "Thickening",
+    "honest": "Honest"
   }
 }

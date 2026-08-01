@@ -8,6 +8,7 @@ import { AppButton } from '@/src/components/AppButton';
 import { useTheme } from '@/src/theme/useTheme';
 import { type } from '@/src/theme/typography';
 import { analytics } from '@/src/services/analytics';
+import { reviewPeriodLabel } from './periodLabel';
 import type { ReviewPeriod } from '@/src/domain/types';
 
 // ──────────────────────────────────────────────────────────────────────────────
@@ -55,7 +56,7 @@ export function ReviewRitualLocked({ period }: { period: ReviewPeriod }) {
         <Ionicons name="mail-unread-outline" size={t.iconSize.sm} color={t.colors.accent} />
         <Text style={eyebrow}>{tt(`eyebrow.${periodKey}`)}</Text>
       </View>
-      <Text style={label}>{period.label}</Text>
+      <Text style={label}>{reviewPeriodLabel(period)}</Text>
       <View style={previewWrap}>
         <Text style={withheld} numberOfLines={2}>
           {tt(`locked.withheld.${periodKey}`)}
