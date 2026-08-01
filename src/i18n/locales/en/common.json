@@ -32,7 +32,6 @@
   },
   "a11y": {
     "honeycombCell": "{{label}}, {{pct}}% calibrated, tier {{tier}}",
-    "trailNode": "{{label}}: {{state}}",
-    "ringBadge": "{{tier}}, {{pct}} percent. {{line}}. {{next}}"
+    "trailNode": "{{label}}: {{state}}"
   }
 }

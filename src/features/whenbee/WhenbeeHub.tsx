@@ -4,7 +4,7 @@ import { useTranslation } from 'react-i18next';
 import { router, useFocusEffect } from 'expo-router';
 import { AppButton } from '@/src/components/AppButton';
 import { AppText } from '@/src/components/AppText';
-import { BeeMascot } from '@/src/components/BeeMascot';
+import { BeeMascot, type BeeVariant } from '@/src/components/BeeMascot';
 import { RipeningProCard } from '@/src/components/ripening-pro/RipeningProCard';
 import { ScreenHeader } from '@/src/components/ScreenHeader';
 import { useTheme } from '@/src/theme/useTheme';
@@ -148,7 +148,17 @@ export function WhenbeeHub() {
       {/* Compact header — title left, a small bee MARK right (not a hero). */}
       <ScreenHeader
         title={tc('screenTitle.whenbee')}
-        right={<BeeMascot size={t.companion.headerMark} glow={false} />}
+        right={
+          <BeeMascot
+            size={t.companion.headerMark}
+            // The mark reflects the companion's growth, same stage→variant
+            // mapping the Today header ring uses. Without it the bee is frozen
+            // at stage-1 art forever.
+            variant={`stage-${vm.companion.stage}` as BeeVariant}
+            seed={vm.companion.seed}
+            glow={false}
+          />
+        }
       />
 
       {/* DISCOVERIES zone — shown once any aha card has been banked */}

@@ -19,7 +19,7 @@ import type { HoneycombCell } from '@/src/components/honeycomb/Honeycomb';
 
 // Compact Today-header honey ring: the SAME animated HoneyRing as the hub, shrunk
 // to t.headerRing.size, with a nameless BeeMascot inside (no name overlay, no
-// RingBadge) and the tier word beneath. Tap → the Whenbee hub. Behind the bee sits
+// tier/percent badge) and the tier word beneath. Tap → the Whenbee hub. Behind the bee sits
 // the SAME soft BeeCoin the hub uses (colors.companionCoin) — shrunk to
 // headerRing.coinSize so it backs the bee inside the ring without enlarging the bee
 // or ring. Honey is monotonic; the ring only ever fills forward.
