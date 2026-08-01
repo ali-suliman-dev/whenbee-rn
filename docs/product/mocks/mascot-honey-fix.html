@@ -1,0 +1,593 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Whenbee — the bee stays, the honey vocabulary goes</title>
+<style>
+  /* ── tokens, straight from src/theme/tokens.ts (dark) ─────────────────────── */
+  :root{
+    --bg:#14151D; --surface:#1F2130; --raised:#292B3C; --sunken:#15161F;
+    --taskCard:#0F1016;
+    --hairline:rgba(255,255,255,0.08); --border:rgba(255,255,255,0.14);
+    --ghostBorder:rgba(255,255,255,0.18);
+    --ink:#F4F1EA; --inkSoft:#ADA9B5; --inkFaint:rgba(244,241,234,0.40);
+    --primary:#8275F0; --primaryBright:#B3A7FF; --primaryEdge:#6B5BE6;
+    --primarySoft:rgba(130,117,240,0.22); --primaryChip:rgba(130,117,240,0.20);
+    --accent:#EEAE4D; --accentEdge:#C68A30; --accentSoft:rgba(238,174,77,0.18);
+    --honeyWash:#2B2620; --accentChip:#2E2A20; --accentLine:rgba(238,174,77,0.28);
+    --success:#33B07C;
+    /* space */
+    --s1:4px; --s15:6px; --s2:8px; --s25:10px; --s3:12px; --s35:14px; --s4:16px;
+    --s5:20px; --s6:24px; --s8:32px; --s10:40px; --s12:48px;
+    /* radii */
+    --rSm:8px; --rMd:12px; --rPanel:14px; --rCard:16px; --rSheet:20px; --rFull:999px;
+    /* type */
+    --fCrumb:9px; --fXs:10px; --fSm:12px; --fBase:14px; --fMd:16px; --fTitleSm:18px;
+    --fLg:20px; --fSubtitle:22px; --fTitle:26px; --fHonest:40px;
+    --mono:ui-monospace,Menlo,monospace;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{
+    background:#0B0C11; color:var(--ink);
+    font:400 15px/1.5 -apple-system,BlinkMacSystemFont,"SF Pro Text","Segoe UI",system-ui,sans-serif;
+    -webkit-font-smoothing:antialiased; padding:var(--s10) var(--s6) var(--s12);
+  }
+
+  /* ── page chrome ──────────────────────────────────────────────────────────── */
+  .page{max-width:1500px;margin:0 auto}
+  .lede{max-width:660px;margin-bottom:var(--s10)}
+  .lede h1{font-size:var(--fTitle);letter-spacing:-0.5px;line-height:1.15;margin-bottom:var(--s3)}
+  .lede p{color:var(--inkSoft);font-size:var(--fMd);line-height:1.55}
+  .lede em{color:var(--accent);font-style:normal}
+
+  .toggle{
+    display:inline-flex;align-items:center;gap:var(--s25);margin-top:var(--s5);
+    background:var(--surface);border-radius:var(--rFull);padding:var(--s15);
+  }
+  .toggle button{
+    font:600 13px/1 inherit;color:var(--inkSoft);background:none;border:0;cursor:pointer;
+    padding:var(--s2) var(--s4);border-radius:var(--rFull);letter-spacing:0.2px;
+  }
+  .toggle button[aria-pressed="true"]{background:var(--primary);color:#fff}
+
+  .rail{display:flex;gap:var(--s10);align-items:flex-start;overflow-x:auto;padding-bottom:var(--s8)}
+  .slot{flex:0 0 auto;width:390px}
+  .slot h2{font-size:var(--fTitleSm);margin-bottom:var(--s1);letter-spacing:-0.2px}
+  .slot p.note{color:var(--inkSoft);font-size:var(--fSm);line-height:1.5;margin-bottom:var(--s4);min-height:54px}
+
+  /* ── phone ────────────────────────────────────────────────────────────────── */
+  .phone{
+    width:390px;height:844px;background:var(--bg);border-radius:44px;
+    padding:var(--s6) var(--s5) 0;position:relative;overflow:hidden;
+    box-shadow:0 0 0 9px #202230, 0 30px 60px rgba(0,0,0,0.55);
+  }
+  .notch{width:104px;height:26px;background:#000;border-radius:var(--rFull);
+    position:absolute;top:9px;left:50%;transform:translateX(-50%)}
+  .screen{height:100%;overflow:hidden;padding-top:var(--s6);padding-bottom:96px;
+    display:flex;flex-direction:column;gap:var(--s5)}
+  .screen.nonav{padding-bottom:var(--s6)}
+  .scrollfade{position:absolute;left:0;right:0;bottom:78px;height:52px;
+    background:linear-gradient(to bottom,rgba(20,21,29,0),var(--bg));pointer-events:none}
+
+  /* nav */
+  .tabbar{
+    position:absolute;left:0;right:0;bottom:0;height:78px;background:var(--surface);
+    display:flex;align-items:flex-start;justify-content:space-around;padding-top:var(--s3);
+  }
+  .tab{display:flex;flex-direction:column;align-items:center;gap:var(--s1);
+    font-size:var(--fXs);color:var(--inkFaint);letter-spacing:0.3px}
+  .tab .dot{width:20px;height:20px;border-radius:6px;background:rgba(255,255,255,0.14)}
+  .tab.on{color:var(--primaryBright)}
+  .tab.on .dot{background:var(--primary)}
+
+  /* type roles */
+  .eyebrow{font-size:var(--fXs);letter-spacing:1.2px;text-transform:uppercase;color:var(--inkFaint);font-weight:600}
+  .h-screen{font-size:var(--fSubtitle);letter-spacing:-0.4px;font-weight:600}
+  .h-card{font-size:var(--fMd);font-weight:600;letter-spacing:-0.1px}
+  .body{font-size:var(--fBase);color:var(--inkSoft);line-height:1.45}
+  .cap{font-size:var(--fSm);color:var(--inkSoft);line-height:1.4}
+  .faint{color:var(--inkFaint)}
+  .amber{color:var(--accent)}
+  .mono{font-family:var(--mono);font-variant-numeric:tabular-nums}
+
+  /* cards — borderless, per the house rule */
+  .card{background:var(--surface);border-radius:var(--rCard);padding:var(--s4)}
+  .card.raised{background:var(--raised)}
+  .card.honey{background:var(--honeyWash)}
+  .stack{display:flex;flex-direction:column;gap:var(--s3)}
+  .row{display:flex;align-items:center;gap:var(--s3)}
+  .between{display:flex;align-items:center;justify-content:space-between;gap:var(--s3)}
+
+  /* the bee */
+  .bee{display:block}
+  .ring{position:relative;width:64px;height:64px;flex:0 0 auto}
+  .ring svg{position:absolute;inset:0}
+  .ring .inner{position:absolute;inset:9px;border-radius:var(--rFull);
+    background:var(--accentChip);display:grid;place-items:center}
+
+  /* the unlock line — the centrepiece of the fix */
+  .unlock{
+    display:flex;gap:var(--s25);align-items:flex-start;
+    font-size:var(--fSm);line-height:1.4;color:var(--ink);
+  }
+  .unlock .key{width:14px;height:14px;flex:0 0 auto;margin-top:2px}
+  .unlock b{color:var(--accent);font-weight:600}
+
+  /* meters */
+  .bar{height:6px;border-radius:var(--rFull);background:rgba(255,255,255,0.10);overflow:hidden}
+  .bar > i{display:block;height:100%;border-radius:var(--rFull);
+    background:linear-gradient(90deg,var(--accentEdge),var(--accent))}
+  .pips{display:flex;gap:var(--s15)}
+  .pips i{flex:1;height:4px;border-radius:var(--rFull);background:rgba(255,255,255,0.10)}
+  .pips i.on{background:var(--accent)}
+
+  /* hex strip */
+  .hexrow{display:flex;gap:var(--s15)}
+  .hex{width:34px;height:38px;background:rgba(255,255,255,0.07);position:relative;overflow:hidden;
+    -webkit-clip-path:polygon(50% 0,100% 25%,100% 75%,50% 100%,0 75%,0 25%);
+    clip-path:polygon(50% 0,100% 25%,100% 75%,50% 100%,0 75%,0 25%)}
+  .hex i{position:absolute;left:0;right:0;bottom:0;top:auto;display:block;
+    background:var(--accent);opacity:0.85}
+
+  /* chips + buttons */
+  .chip{display:inline-flex;align-items:center;gap:var(--s15);background:var(--accentChip);
+    color:var(--accent);font-size:var(--fXs);font-weight:600;letter-spacing:0.4px;
+    padding:var(--s15) var(--s25);border-radius:var(--rFull);text-transform:uppercase}
+  .chip.indigo{background:var(--primaryChip);color:var(--primaryBright)}
+  .chip.quiet{background:rgba(255,255,255,0.07);color:var(--inkSoft)}
+  .btn{display:block;width:100%;text-align:center;font-size:var(--fMd);font-weight:600;
+    padding:var(--s3) var(--s5);border-radius:var(--rFull);background:var(--primary);color:#fff;
+    box-shadow:0 4px 0 var(--primaryEdge)}
+  .btn.amber{background:var(--accent);color:#2A1E08;box-shadow:0 4px 0 var(--accentEdge)}
+  .btn.ghost{background:none;color:var(--inkSoft);box-shadow:none;font-weight:500}
+
+  /* task rows */
+  .task{background:var(--taskCard);border-radius:var(--rCard);padding:var(--s35) var(--s4);
+    display:flex;align-items:center;justify-content:space-between;gap:var(--s3)}
+  .task .t{font-size:var(--fBase);font-weight:500}
+  .task .n{font-family:var(--mono);font-size:var(--fMd);color:var(--accent);font-variant-numeric:tabular-nums}
+
+  /* ladder (the unlock ladder made visible) */
+  .rung{display:grid;grid-template-columns:14px 1fr;gap:var(--s3);align-items:start}
+  .rung .mark{width:14px;height:14px;border-radius:var(--rFull);background:rgba(255,255,255,0.10);margin-top:3px}
+  .rung.done .mark{background:var(--accent)}
+  .rung.now .mark{background:var(--accent);box-shadow:0 0 0 4px var(--accentSoft)}
+  .rung .lbl{font-size:var(--fBase);font-weight:600}
+  .rung.todo .lbl,.rung.todo .sub{color:var(--inkFaint)}
+  .rung .sub{font-size:var(--fSm);color:var(--inkSoft);line-height:1.35}
+  .rung.now .lbl{color:var(--accent)}
+
+  /* sheet */
+  .sheet{position:absolute;left:0;right:0;bottom:0;background:var(--surface);
+    border-radius:var(--rSheet) var(--rSheet) 0 0;padding:var(--s3) var(--s5) var(--s8)}
+  .grabber{width:36px;height:4px;border-radius:var(--rFull);background:rgba(255,255,255,0.20);
+    margin:0 auto var(--s5)}
+  .scrim{position:absolute;inset:0;background:rgba(0,0,0,0.55)}
+  .bullet{display:grid;grid-template-columns:5px 1fr;gap:var(--s3);align-items:start}
+  .bullet span:first-child{width:5px;height:5px;border-radius:var(--rFull);background:var(--inkFaint);margin-top:8px}
+
+  /* before/after ledger */
+  .ledger{margin-top:var(--s12);max-width:900px}
+  .ledger h2{font-size:var(--fTitleSm);margin-bottom:var(--s4)}
+  table{width:100%;border-collapse:collapse;font-size:var(--fBase)}
+  th{text-align:left;font-size:var(--fXs);letter-spacing:1px;text-transform:uppercase;
+    color:var(--inkFaint);padding-bottom:var(--s3);font-weight:600}
+  td{padding:var(--s3) var(--s4) var(--s3) 0;border-top:1px solid var(--hairline);vertical-align:top;line-height:1.45}
+  td.was{color:var(--inkSoft);text-decoration:line-through;text-decoration-color:rgba(238,174,77,0.5)}
+  td.now{color:var(--ink)}
+  td.why{color:var(--inkFaint);font-size:var(--fSm)}
+
+  .cut{margin-top:var(--s10);max-width:900px}
+  .cut ul{list-style:none;display:flex;flex-direction:column;gap:var(--s3);margin-top:var(--s4)}
+  .cut li{display:grid;grid-template-columns:18px 1fr;gap:var(--s3);color:var(--inkSoft);line-height:1.5}
+  .cut li b{color:var(--ink);font-weight:600}
+  .x{color:var(--accent);font-weight:700}
+
+  @media (max-width:900px){ body{padding:var(--s6) var(--s4)} .rail{gap:var(--s6)} }
+</style>
+</head>
+<body>
+<div class="page">
+
+  <div class="lede">
+    <h1>The bee stays. The honey vocabulary goes.</h1>
+    <p>Every screen below applies the recommendations from
+      <em>doc 21</em>: keep the character, rename the metric into plain language, and staple the
+      next unlock to the number so calibration stops being a decoration and starts being a reason to log.</p>
+    <div class="toggle" role="group" aria-label="Copy version">
+      <button id="btn-after" aria-pressed="true">After</button>
+      <button id="btn-before" aria-pressed="false">Before (shipped today)</button>
+    </div>
+  </div>
+
+  <div class="rail">
+
+    <!-- ══════════════ 1 · TODAY ══════════════ -->
+    <section class="slot">
+      <h2>1 · Today</h2>
+      <p class="note">The bee keeps its ring — it's the app's face and costs nothing. What changes is
+        the line under it: a plain percentage, and the thing the next two logs turn on.</p>
+      <div class="phone">
+        <div class="notch"></div>
+        <div class="screen">
+
+          <div class="between">
+            <div>
+              <div class="eyebrow">Wednesday</div>
+              <div class="h-screen">Today</div>
+            </div>
+            <div class="ring">
+              <svg viewBox="0 0 64 64" aria-hidden="true">
+                <circle cx="32" cy="32" r="29" fill="none" stroke="rgba(255,255,255,0.10)" stroke-width="4"/>
+                <circle cx="32" cy="32" r="29" fill="none" stroke="#EEAE4D" stroke-width="4"
+                        stroke-linecap="round" stroke-dasharray="182" stroke-dashoffset="69"
+                        transform="rotate(-90 32 32)"/>
+              </svg>
+              <div class="inner">
+                <!-- the bee: unchanged art, unchanged role -->
+                <svg class="bee" width="26" height="26" viewBox="0 0 32 32" aria-label="Whenbee">
+                  <ellipse cx="11" cy="11" rx="8" ry="5.5" fill="rgba(244,241,234,0.22)" transform="rotate(-28 11 11)"/>
+                  <ellipse cx="21" cy="11" rx="8" ry="5.5" fill="rgba(244,241,234,0.22)" transform="rotate(28 21 11)"/>
+                  <ellipse cx="16" cy="19" rx="8" ry="9" fill="#EEAE4D"/>
+                  <path d="M9 16.5h14M9.5 21h13M12 25.5h8" stroke="#2A1E08" stroke-width="2.2" stroke-linecap="round"/>
+                  <circle cx="13" cy="13.5" r="1.3" fill="#2A1E08"/>
+                  <circle cx="19" cy="13.5" r="1.3" fill="#2A1E08"/>
+                </svg>
+              </div>
+            </div>
+          </div>
+
+          <!-- THE FIX: plain label + the unlock, right on the number -->
+          <div class="card honey stack" style="gap:var(--s25)">
+            <div class="between">
+              <span class="h-card" data-copy="tier-today">Getting closer</span>
+              <span class="mono amber" style="font-size:var(--fLg);font-weight:600">62%</span>
+            </div>
+            <div class="bar"><i style="width:62%"></i></div>
+            <div class="unlock">
+              <svg class="key" viewBox="0 0 16 16" aria-hidden="true"><path d="M6.5 9.5 3 13v1.5h2.5v-1.5H7v-1.5h1.2M10.5 2a4 4 0 1 1-4 4 4 4 0 0 1 4-4Z" fill="none" stroke="#EEAE4D" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+              <span data-copy="unlock-today"><b>2 more logs</b> and your start-by anchor turns on</span>
+            </div>
+          </div>
+
+          <div class="stack" style="gap:var(--s2)">
+            <div class="between">
+              <span class="eyebrow" data-copy="strip-title">How well I know you</span>
+              <span class="cap faint" data-copy="strip-sub">62% calibrated · 14 logs</span>
+            </div>
+            <div class="hexrow">
+              <div class="hex"><i style="height:88%"></i></div>
+              <div class="hex"><i style="height:62%"></i></div>
+              <div class="hex"><i style="height:45%"></i></div>
+              <div class="hex"><i style="height:34%"></i></div>
+              <div class="hex"><i style="height:26%"></i></div>
+              <div class="hex"></div>
+              <div class="hex"></div>
+            </div>
+          </div>
+
+          <div class="stack" style="gap:var(--s2)">
+            <div class="task">
+              <div><div class="t">Write the deck</div><div class="cap faint">you guessed 45m</div></div>
+              <div class="n">1h 05m</div>
+            </div>
+            <div class="task">
+              <div><div class="t">Inbox sweep</div><div class="cap faint">you guessed 15m</div></div>
+              <div class="n">22m</div>
+            </div>
+            <div class="task">
+              <div><div class="t">Gym</div><div class="cap faint">you guessed 60m</div></div>
+              <div class="n">1h 10m</div>
+            </div>
+          </div>
+
+          <div class="card stack" style="gap:var(--s25);margin-top:auto">
+            <span class="cap" data-copy="seal-title">Today's set ✦</span>
+            <span class="cap faint">Three logged. Your numbers moved a little.</span>
+          </div>
+
+        </div>
+        <div class="scrollfade"></div>
+        <div class="tabbar">
+          <div class="tab on"><span class="dot"></span>Today</div>
+          <div class="tab"><span class="dot"></span>Routines</div>
+          <div class="tab"><span class="dot"></span><span data-copy="tab-name">Progress</span></div>
+          <div class="tab"><span class="dot"></span>Patterns</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ══════════════ 2 · REWARD ══════════════ -->
+    <section class="slot">
+      <h2>2 · Reward, after a log</h2>
+      <p class="note">The bee's one real job: it shows up when something honest just happened. The
+        payoff card keeps the amber and loses the word HONEY — and gains the sentence that says what
+        this log bought you.</p>
+      <div class="phone">
+        <div class="notch"></div>
+        <div class="screen nonav" style="gap:var(--s6)">
+
+          <div style="text-align:center;padding-top:var(--s5)">
+            <svg width="86" height="86" viewBox="0 0 32 32" style="margin:0 auto var(--s4)" aria-label="Whenbee">
+              <circle cx="16" cy="16" r="15.4" fill="rgba(238,174,77,0.10)"/>
+              <ellipse cx="11" cy="10" rx="8" ry="5.5" fill="rgba(244,241,234,0.24)" transform="rotate(-28 11 10)"/>
+              <ellipse cx="21" cy="10" rx="8" ry="5.5" fill="rgba(244,241,234,0.24)" transform="rotate(28 21 10)"/>
+              <ellipse cx="16" cy="19" rx="8" ry="9" fill="#EEAE4D"/>
+              <path d="M9 16.5h14M9.5 21h13M12 25.5h8" stroke="#2A1E08" stroke-width="2.2" stroke-linecap="round"/>
+              <circle cx="13" cy="13.5" r="1.3" fill="#2A1E08"/>
+              <circle cx="19" cy="13.5" r="1.3" fill="#2A1E08"/>
+            </svg>
+            <div class="h-screen" style="margin-bottom:var(--s2)">Logged.</div>
+            <div class="body">Write the deck took <span class="amber">1h 05m</span>. You guessed 45m.</div>
+          </div>
+
+          <div style="text-align:center">
+            <div class="eyebrow" style="margin-bottom:var(--s2)">Your real multiplier here</div>
+            <div class="mono amber" style="font-size:var(--fHonest);font-weight:700;letter-spacing:-1px">1.4<span style="font-size:var(--fSubtitle)">×</span></div>
+          </div>
+
+          <div class="card honey stack">
+            <div class="between">
+              <span class="eyebrow amber" data-copy="reward-label">Calibration</span>
+              <span class="mono amber" style="font-size:var(--fLg);font-weight:600">68%</span>
+            </div>
+            <div class="bar"><i style="width:68%"></i></div>
+            <div class="unlock">
+              <svg class="key" viewBox="0 0 16 16" aria-hidden="true"><path d="M6.5 9.5 3 13v1.5h2.5v-1.5H7v-1.5h1.2M10.5 2a4 4 0 1 1-4 4 4 4 0 0 1 4-4Z" fill="none" stroke="#EEAE4D" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+              <span data-copy="unlock-reward"><b>Nearly there</b> — 2 more logs and Honest-Day lands on your widget</span>
+            </div>
+          </div>
+
+          <div class="card stack" style="gap:var(--s25)">
+            <span class="cap" data-copy="retro-hint">Logged. Your numbers get a little sharper.</span>
+            <span class="cap faint">Nothing to keep up. Nothing to lose.</span>
+          </div>
+
+          <div style="margin-top:auto;padding-bottom:var(--s12)">
+            <div class="btn">Done</div>
+          </div>
+
+        </div>
+      </div>
+    </section>
+
+    <!-- ══════════════ 3 · PROGRESS TAB ══════════════ -->
+    <section class="slot">
+      <h2>3 · Progress tab <span class="faint" style="font-weight:400">(was “Whenbee”)</span></h2>
+      <p class="note">A tab named after the app tells the user nothing. The bee drops from full-screen
+        hero to a header glyph, Discoveries lead, and the unlock ladder — the best thing in
+        <span class="mono" style="font-size:12px">companion.ts</span> — finally becomes visible.</p>
+      <div class="phone">
+        <div class="notch"></div>
+        <div class="screen">
+
+          <div class="between">
+            <div class="h-screen" data-copy="hub-title">Progress</div>
+            <!-- demoted bee: a mark, not a shrine -->
+            <svg width="28" height="28" viewBox="0 0 32 32" aria-label="Whenbee">
+              <ellipse cx="11" cy="11" rx="8" ry="5.5" fill="rgba(244,241,234,0.18)" transform="rotate(-28 11 11)"/>
+              <ellipse cx="21" cy="11" rx="8" ry="5.5" fill="rgba(244,241,234,0.18)" transform="rotate(28 21 11)"/>
+              <ellipse cx="16" cy="19" rx="8" ry="9" fill="rgba(238,174,77,0.85)"/>
+              <path d="M9 16.5h14M9.5 21h13M12 25.5h8" stroke="#2A1E08" stroke-width="2.2" stroke-linecap="round"/>
+            </svg>
+          </div>
+
+          <div class="card stack">
+            <div class="between">
+              <span class="eyebrow">Discoveries</span>
+              <span class="chip quiet">4 found</span>
+            </div>
+            <div class="h-card">You run 1.4× long on deep work — and dead on for errands.</div>
+            <span class="cap faint">Tap to see all four truths Whenbee found in your tracking.</span>
+          </div>
+
+          <!-- the ladder, in plain words, with what each rung buys -->
+          <div class="card stack" style="gap:var(--s4)">
+            <div class="between">
+              <span class="eyebrow" data-copy="ladder-title">What your logs unlock</span>
+              <span class="mono amber" style="font-size:var(--fBase);font-weight:600">62%</span>
+            </div>
+
+            <div class="stack" style="gap:var(--s3)">
+              <div class="rung done">
+                <span class="mark"></span>
+                <div><div class="lbl" data-copy="rung1">Just started</div>
+                  <div class="sub">Live finish-time on your timer</div></div>
+              </div>
+              <div class="rung done">
+                <span class="mark"></span>
+                <div><div class="lbl" data-copy="rung2">Learning</div>
+                  <div class="sub">Done-time on Today and Add task</div></div>
+              </div>
+              <div class="rung now">
+                <span class="mark"></span>
+                <div><div class="lbl" data-copy="rung3">Getting closer</div>
+                  <div class="sub" data-copy="rung3sub"><b class="amber">2 logs away</b> · reverse start-by anchor</div></div>
+              </div>
+              <div class="rung todo">
+                <span class="mark"></span>
+                <div><div class="lbl" data-copy="rung4">Nearly there</div>
+                  <div class="sub">Honest-Day forecast on the widget</div></div>
+              </div>
+              <div class="rung todo">
+                <span class="mark"></span>
+                <div><div class="lbl" data-copy="rung5">Honest</div>
+                  <div class="sub">Drift re-check when life shifts</div></div>
+              </div>
+            </div>
+          </div>
+
+          <div class="stack" style="gap:var(--s2)">
+            <span class="eyebrow">Your areas</span>
+            <div class="task">
+              <div><div class="t">Deep work</div><div class="cap faint" data-copy="area1">Getting closer · 9 logs</div></div>
+              <div class="n">1.4×</div>
+            </div>
+            <div class="task">
+              <div><div class="t">Errands</div><div class="cap faint" data-copy="area2">Honest · 12 logs</div></div>
+              <div class="n">1.0×</div>
+            </div>
+          </div>
+
+        </div>
+        <div class="scrollfade"></div>
+        <div class="tabbar">
+          <div class="tab"><span class="dot"></span>Today</div>
+          <div class="tab"><span class="dot"></span>Routines</div>
+          <div class="tab on"><span class="dot"></span><span data-copy="tab-name-2">Progress</span></div>
+          <div class="tab"><span class="dot"></span>Patterns</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ══════════════ 4 · RESET CONFIRM ══════════════ -->
+    <section class="slot">
+      <h2>4 · Reset confirm</h2>
+      <p class="note">The worst offender in the app today. At the one moment the user needs a plain
+        fact about what survives, the copy hands them a metaphor. Facts only here — the bee doesn't
+        get to be cute at a destructive action.</p>
+      <div class="phone">
+        <div class="notch"></div>
+        <div class="screen nonav" style="filter:blur(1.5px);opacity:0.5">
+          <div class="h-screen">Deep work</div>
+          <div class="card honey stack">
+            <span class="eyebrow">Your honest number</span>
+            <span class="mono amber" style="font-size:var(--fHonest);font-weight:700">1h 35m</span>
+          </div>
+          <div class="card stack"><span class="h-card">Manage this area</span></div>
+        </div>
+        <div class="scrim"></div>
+        <div class="sheet stack" style="gap:var(--s4)">
+          <div class="grabber"></div>
+          <div class="h-screen">Reset this area's learning?</div>
+          <div class="stack" style="gap:var(--s25)">
+            <div class="bullet"><span></span><span class="body" data-copy="reset1">Whenbee starts over learning this area.</span></div>
+            <div class="bullet"><span></span><span class="body" data-copy="reset2">Your progress and tier stay. Only the guess history resets.</span></div>
+            <div class="bullet"><span></span><span class="body" data-copy="reset3">Past logs stay in your history either way.</span></div>
+          </div>
+          <div class="stack" style="gap:var(--s2);margin-top:var(--s2)">
+            <div class="btn amber">Reset learning</div>
+            <div class="btn ghost">Keep it</div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ══════════════ 5 · CUT ══════════════ -->
+    <section class="slot">
+      <h2>5 · The screen that goes away</h2>
+      <p class="note">Companion naming has no analytics on it at all, and of the users who reached the
+        personal-name step, 29 of 31 skipped it. It's the one place the app promises a relationship it
+        doesn't deliver. Delete the screen; keep the bee.</p>
+      <div class="phone">
+        <div class="notch"></div>
+        <div class="screen nonav" style="opacity:0.34">
+          <div class="h-screen">Name your Whenbee</div>
+          <div style="text-align:center;padding:var(--s8) 0">
+            <svg width="96" height="96" viewBox="0 0 32 32" aria-hidden="true">
+              <ellipse cx="11" cy="10" rx="8" ry="5.5" fill="rgba(244,241,234,0.20)" transform="rotate(-28 11 10)"/>
+              <ellipse cx="21" cy="10" rx="8" ry="5.5" fill="rgba(244,241,234,0.20)" transform="rotate(28 21 10)"/>
+              <ellipse cx="16" cy="19" rx="8" ry="9" fill="#EEAE4D"/>
+              <path d="M9 16.5h14M9.5 21h13M12 25.5h8" stroke="#2A1E08" stroke-width="2.2" stroke-linecap="round"/>
+              <circle cx="13" cy="13.5" r="1.3" fill="#2A1E08"/>
+              <circle cx="19" cy="13.5" r="1.3" fill="#2A1E08"/>
+            </svg>
+          </div>
+          <div class="card"><span class="body faint">e.g. Buzz</span></div>
+          <div class="btn" style="margin-top:var(--s4)">Save</div>
+          <div class="btn ghost">Skip</div>
+        </div>
+        <div style="position:absolute;inset:0;display:grid;place-items:center;padding:var(--s8)">
+          <div style="text-align:center">
+            <div style="font-size:56px;line-height:1;color:var(--accent);margin-bottom:var(--s4)">✕</div>
+            <div class="h-screen" style="margin-bottom:var(--s2)">Cut</div>
+            <div class="body">29 of 31 skipped the name step.<br>Unmeasured, and it over-promises.</div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+  </div>
+
+  <!-- ══════════════ LEDGER ══════════════ -->
+  <div class="ledger">
+    <h2>Every string that changes</h2>
+    <table>
+      <thead><tr><th style="width:38%">Shipped today</th><th style="width:38%">Proposed</th><th>Why</th></tr></thead>
+      <tbody>
+        <tr><td class="was">HONEY</td><td class="now">CALIBRATION</td><td class="why">Names the thing the number measures</td></tr>
+        <tr><td class="was">62% honey</td><td class="now">62% calibrated</td><td class="why">Same</td></tr>
+        <tr><td class="was">Raw</td><td class="now">Just started</td><td class="why">Tier ladder in plain words</td></tr>
+        <tr><td class="was">Setting</td><td class="now">Learning</td><td class="why">Also kills the clash with the confidence enum</td></tr>
+        <tr><td class="was">Ripening</td><td class="now">Getting closer</td><td class="why">Same clash</td></tr>
+        <tr><td class="was">Thickening</td><td class="now">Nearly there</td><td class="why">Says how far, not what jam does</td></tr>
+        <tr><td class="was" style="text-decoration:none;color:var(--ink)">Honest</td><td class="now">Honest — unchanged</td><td class="why">Your core word, not a bee word</td></tr>
+        <tr><td class="was">Fully ripened</td><td class="now">Honest</td><td class="why">One name per state</td></tr>
+        <tr><td class="was">Honeycomb sealed ✦</td><td class="now">Calibrated ✦</td><td class="why">Same</td></tr>
+        <tr><td class="was">Your honeycomb</td><td class="now">How well I know you</td><td class="why">Says what the strip is for</td></tr>
+        <tr><td class="was">Today's honey set ✦</td><td class="now">Today's set ✦</td><td class="why">Keeps the ritual, drops the noun</td></tr>
+        <tr><td class="was">+1 nectar · ripens your honey a little</td><td class="now">Logged. Your numbers get a little sharper.</td><td class="why">A reward you can picture</td></tr>
+        <tr><td class="was">Log something and the honey will ripen here.</td><td class="now">Log one task and your first real number shows up here.</td><td class="why">Names the payoff</td></tr>
+        <tr><td class="was">Clears the guess history, keeps your honey</td><td class="now">Clears the guess history. Your progress and tier stay.</td><td class="why">Fact at a destructive action</td></tr>
+        <tr><td class="was">Your honey and tier stay. Only the guess history resets.</td><td class="now">Your progress stays. Only the guess history resets.</td><td class="why">Same</td></tr>
+        <tr><td class="was">It just won't count toward your honey.</td><td class="now">It just won't count toward your calibration.</td><td class="why">Same</td></tr>
+        <tr><td class="was">Honest-day planning unlocks once your honey sets.</td><td class="now">Honest-day planning unlocks after your first few logs.</td><td class="why">Countable, not poetic</td></tr>
+        <tr><td class="was">“Work cell, 62% honey, tier Ripening” (screen reader)</td><td class="now">“Work, 62% calibrated, 2 logs to Honest”</td><td class="why">A blind user gets facts, not nouns</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="cut">
+    <h2>And the three structural moves</h2>
+    <ul>
+      <li><span class="x">1</span><span><b>Staple the unlock to the number.</b> Header ring, honeycomb strip, reward payoff card. The ladder already exists in <span class="mono" style="font-size:13px">engine/companion.ts:28-33</span> — it's just on a different screen from the number it gates.</span></li>
+      <li><span class="x">2</span><span><b>Demote the bee from hero to mark</b> on the Whenbee tab, rename the tab to <b>Progress</b>, and lead with Discoveries. The bee keeps every momentary appearance: icon, onboarding, archetype crest, reward burst, empty states.</span></li>
+      <li><span class="x">3</span><span><b>Give the bee one rule.</b> It appears only when something honest just happened — a log, a tier-up, a discovery, a drift re-check. Never idle, never scolding, never needing upkeep. Rarity is what makes a mascot land.</span></li>
+    </ul>
+  </div>
+
+</div>
+
+<script>
+  // Before/after copy — every changed string, in one map.
+  const BEFORE = {
+    'tier-today':'Ripening',
+    'unlock-today':'62% honey · 14 logs',
+    'strip-title':'Your honeycomb',
+    'strip-sub':'62% honey · 14 logs',
+    'seal-title':"Today's honey set ✦",
+    'tab-name':'Whenbee',
+    'tab-name-2':'Whenbee',
+    'reward-label':'HONEY',
+    'unlock-reward':'Ripening · 2 logs to Thickening',
+    'retro-hint':'+1 nectar · ripens your honey a little',
+    'hub-title':'Whenbee',
+    'ladder-title':'Your honeycomb',
+    'rung1':'Raw','rung2':'Setting','rung3':'Ripening','rung4':'Thickening','rung5':'Honest',
+    'rung3sub':'2 logs to Thickening',
+    'area1':'Ripening · 9 logs',
+    'area2':'Fully ripened · 12 logs',
+    'reset1':'Whenbee starts over learning this area.',
+    'reset2':'Your honey and tier stay. Only the guess history resets.',
+    'reset3':'Past logs stay in your history either way.'
+  };
+  const nodes = [...document.querySelectorAll('[data-copy]')];
+  const AFTER = new Map(nodes.map(n => [n, n.innerHTML]));
+  const bA = document.getElementById('btn-after');
+  const bB = document.getElementById('btn-before');
+
+  function render(showBefore){
+    nodes.forEach(n => {
+      const key = n.dataset.copy;
+      n.innerHTML = showBefore ? (BEFORE[key] ?? AFTER.get(n)) : AFTER.get(n);
+    });
+    bA.setAttribute('aria-pressed', String(!showBefore));
+    bB.setAttribute('aria-pressed', String(showBefore));
+    document.body.dataset.mode = showBefore ? 'before' : 'after';
+  }
+  bA.addEventListener('click', () => render(false));
+  bB.addEventListener('click', () => render(true));
+</script>
+</body>
+</html>

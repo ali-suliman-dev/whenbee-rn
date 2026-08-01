@@ -1,5 +1,6 @@
 import { useEffect } from 'react';
 import { View, type ViewStyle, type TextStyle } from 'react-native';
+import { useTranslation } from 'react-i18next';
 import Animated, {
   useAnimatedStyle,
   useReducedMotion,
@@ -35,6 +36,7 @@ const DEMO_FILL = 0.65;
 
 export function PresenceRingTeaser({ onCtaPress }: { onCtaPress: () => void }) {
   const t = useTheme();
+  const { t: tr } = useTranslation('shared');
   const reducedMotion = useReducedMotion();
 
   // 0→DEMO_FILL, one-time on mount. Under ReduceMotion, start at the final state.
@@ -99,14 +101,14 @@ export function PresenceRingTeaser({ onCtaPress }: { onCtaPress: () => void }) {
     <View style={{ paddingTop: t.space[3], gap: t.space[3] }}>
       {/* Value statement */}
       <AppText style={bodyStyle}>
-        Your honest finish, live on the Lock Screen while a timer runs.
+        {tr('presenceRingTeaser.body')}
       </AppText>
 
       {/* Static bar preview — fills toward a demo finish time, mirroring the
           real Lock Screen surface. */}
       <View accessible={false}>
         <View style={endcapRow}>
-          <AppText style={nowLabel}>Now</AppText>
+          <AppText style={nowLabel}>{tr('presenceRingTeaser.now')}</AppText>
           <AppText style={finishLabel}>7:10</AppText>
         </View>
         <View style={track}>
@@ -116,7 +118,7 @@ export function PresenceRingTeaser({ onCtaPress }: { onCtaPress: () => void }) {
 
       {/* Primary CTA */}
       <AppButton
-        label="Unlock Lock Screen presence"
+        label={tr('presenceRingTeaser.cta')}
         onPress={onCtaPress}
         variant="amber"
         fullWidth

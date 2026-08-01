@@ -10,10 +10,11 @@ import Animated, {
 } from 'react-native-reanimated';
 import ReanimatedSwipeable, { type SwipeableMethods } from 'react-native-gesture-handler/ReanimatedSwipeable';
 import { Ionicons } from '@expo/vector-icons';
+import { useTranslation } from 'react-i18next';
 import { useTheme } from '@/src/theme/useTheme';
 import { type } from '@/src/theme/typography';
 import { haptics } from '@/src/lib/haptics';
-import { weekdayOf } from '@/src/lib/day';
+import { useLocalizedFormat } from '@/src/i18n/useLocalizedFormat';
 
 // ──────────────────────────────────────────────────────────────────────────────
 // TaskRow — one Today list task, in two states:
@@ -70,10 +71,10 @@ interface TaskRowProps {
   isTail?: boolean;
 }
 
-// Short weekday name for a YYYY-MM-DD key, e.g. '2026-06-22' → 'Mon'.
-const SHORT_WEEKDAY = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'] as const;
-function shortWeekday(key: string): string {
-  return SHORT_WEEKDAY[weekdayOf(key)] ?? key;
+// Short weekday name for a YYYY-MM-DD key, e.g. '2026-06-22' → 'Mon' — locale-aware.
+function shortWeekday(key: string, weekdayShort: (d: Date) => string): string {
+  const [y, m, d] = key.split('-').map(Number) as [number, number, number];
+  return weekdayShort(new Date(y, m - 1, d));
 }
 
 export function TaskRow({
@@ -98,6 +99,8 @@ export function TaskRow({
   isTail = false,
 }: TaskRowProps) {
   const t = useTheme();
+  const { t: tr } = useTranslation('today');
+  const fmt = useLocalizedFormat();
   const reducedMotion = useReducedMotion();
   const { width: screenWidth } = useWindowDimensions();
   const opacity = useSharedValue(1);
@@ -271,7 +274,9 @@ export function TaskRow({
         </Text>
         <Text style={catText} numberOfLines={1} ellipsizeMode="tail">
           {categoryLabel}
-          {!done && carriedFrom ? ` · from ${shortWeekday(carriedFrom)}` : null}
+          {!done && carriedFrom
+            ? tr('taskRow.carriedFrom', { day: shortWeekday(carriedFrom, fmt.weekdayShort) })
+            : null}
           {!done && endsAtLabel ? (
             <Text
               testID={isTail ? 'taskrow-ends-tail' : 'taskrow-ends'}
@@ -288,20 +293,20 @@ export function TaskRow({
         <View style={timeWrap}>
           {actualMin != null ? (
             <View style={lineRow}>
-              <Text style={unit}>took </Text>
+              <Text style={unit}>{tr('taskRow.tookPrefix')}</Text>
               <Text style={tookNum}>{actualMin}</Text>
-              <Text style={unit}>min</Text>
+              <Text style={unit}>{tr('taskRow.min')}</Text>
             </View>
           ) : null}
-          <Text style={unit}>guessed {guessMin}</Text>
+          <Text style={unit}>{tr('taskRow.guessed', { count: guessMin })}</Text>
         </View>
       ) : (
         <View style={timeWrap}>
           <View style={lineRow}>
             <Text style={leadNum}>~{honestMin}</Text>
-            <Text style={unit}> min</Text>
+            <Text style={unit}> {tr('taskRow.min')}</Text>
           </View>
-          <Text style={unit}>guessed {guessMin}</Text>
+          <Text style={unit}>{tr('taskRow.guessed', { count: guessMin })}</Text>
         </View>
       )}
 
@@ -325,11 +330,11 @@ export function TaskRow({
           onMove('tomorrow');
         }}
         accessibilityRole="button"
-        accessibilityLabel={`Move ${title} to tomorrow`}
+        accessibilityLabel={tr('taskRow.moveA11y', { title })}
         style={moveAction}
       >
         <Ionicons name="arrow-forward-outline" size={t.iconSize.xs} color={t.colors.paper} />
-        <Text style={moveLabel}>Tomorrow</Text>
+        <Text style={moveLabel}>{tr('taskRow.tomorrow')}</Text>
       </Pressable>
     );
   }
@@ -343,11 +348,11 @@ export function TaskRow({
           onDelete?.();
         }}
         accessibilityRole="button"
-        accessibilityLabel={`Delete ${title}`}
+        accessibilityLabel={tr('taskRow.deleteA11y', { title })}
         style={deleteAction}
       >
         <Ionicons name="trash-outline" size={t.iconSize.xs} color={t.colors.paper} />
-        <Text style={deleteLabel}>Remove</Text>
+        <Text style={deleteLabel}>{tr('taskRow.remove')}</Text>
       </Pressable>
     );
   }
@@ -360,7 +365,22 @@ export function TaskRow({
       onLongPress={onLongPress}
       delayLongPress={300}
       accessibilityRole="button"
-      accessibilityLabel={`${title}, ${categoryLabel}, plan for ${honestMin} minutes, you guessed ${guessMin}${endsAtLabel ? `, ${endsAtLabel}` : ''}. Tap to start.`}
+      accessibilityLabel={
+        endsAtLabel
+          ? tr('taskRow.startA11yEnds', {
+              title,
+              category: categoryLabel,
+              honestMin,
+              guessMin,
+              ends: endsAtLabel,
+            })
+          : tr('taskRow.startA11y', {
+              title,
+              category: categoryLabel,
+              honestMin,
+              guessMin,
+            })
+      }
     >
       {content}
     </Pressable>
@@ -374,7 +394,7 @@ export function TaskRow({
           onLongPress={onLongPress}
           delayLongPress={300}
           accessibilityRole="button"
-          accessibilityLabel={`${title}, ${categoryLabel}`}
+          accessibilityLabel={tr('taskRow.titleCategoryA11y', { title, category: categoryLabel })}
         >
           {content}
         </Pressable>

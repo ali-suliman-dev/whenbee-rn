@@ -1,4 +1,5 @@
 import { useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { View, type TextStyle } from 'react-native';
 import Svg, { Text as SvgText } from 'react-native-svg';
 import Animated, {
@@ -39,6 +40,7 @@ const ZZZ_RISE = 0.06;
 
 export function WhatsNewEmpty() {
   const t = useTheme();
+  const { t: tr } = useTranslation('feedback');
   const reduced = useReducedMotion();
   const ART_SIZE = t.size.emptyArt;
 
@@ -77,7 +79,7 @@ export function WhatsNewEmpty() {
         <Zzz index={2} artSize={ART_SIZE} x={0.97} y={0.1} fontSize={t.fontSize.sm} peak={0.45} />
       </View>
       <View style={{ alignItems: 'center', gap: t.space[1.5] }}>
-        <AppText style={{ ...(type.titleSm as TextStyle), color: t.colors.ink }}>All quiet for now</AppText>
+        <AppText style={{ ...(type.titleSm as TextStyle), color: t.colors.ink }}>{tr('whatsNewEmpty.title')}</AppText>
         <AppText
           style={{
             ...(type.bodySm as TextStyle),
@@ -86,7 +88,7 @@ export function WhatsNewEmpty() {
             maxWidth: t.size.emptyCopy,
           }}
         >
-          When I ship something you asked for, it lands right here.
+          {tr('whatsNewEmpty.body')}
         </AppText>
       </View>
     </View>

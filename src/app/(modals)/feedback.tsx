@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { View, TextInput, useWindowDimensions, type TextStyle } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
+import { useTranslation } from 'react-i18next';
 import { Ionicons } from '@expo/vector-icons';
 import { Screen } from '@/src/components/Screen';
 import { SheetGrabber } from '@/src/components/SheetGrabber';
@@ -22,14 +23,15 @@ import type { FeedbackKind } from '@/src/features/feedback/types';
 // for the background retry + offline queue — the user never sees a failure).
 // ──────────────────────────────────────────────────────────────────────────────
 
-const KINDS: { value: FeedbackKind; label: string; icon: keyof typeof Ionicons.glyphMap }[] = [
-  { value: 'idea', label: 'Idea', icon: 'bulb-outline' },
-  { value: 'problem', label: 'Problem', icon: 'alert-circle-outline' },
-  { value: 'love', label: 'Love', icon: 'heart-outline' },
+const KINDS: { value: FeedbackKind; icon: keyof typeof Ionicons.glyphMap }[] = [
+  { value: 'idea', icon: 'bulb-outline' },
+  { value: 'problem', icon: 'alert-circle-outline' },
+  { value: 'love', icon: 'heart-outline' },
 ];
 
 export default function FeedbackSheet() {
   const t = useTheme();
+  const { t: tr } = useTranslation('feedback');
   const insets = useSafeAreaInsets();
   const { height: winH } = useWindowDimensions();
   const { submit } = useFeedback();
@@ -67,20 +69,20 @@ export default function FeedbackSheet() {
         ) : (
           <>
             <AppText style={{ ...(type.title as TextStyle), color: t.colors.ink, marginBottom: t.space[1] }}>
-              Tell me what to build
+              {tr('sheet.title')}
             </AppText>
             <AppText style={{ ...(type.body as TextStyle), color: t.colors.inkSoft, marginBottom: t.space[5] }}>
-              It&apos;s just me building Whenbee. Your note comes straight to me.
+              {tr('sheet.lead')}
             </AppText>
 
             <AppText variant="label" style={{ marginBottom: t.space[2] }}>
-              What kind?
+              {tr('sheet.kindLabel')}
             </AppText>
             <View style={{ flexDirection: 'row', gap: t.space[2], marginBottom: t.space[5] }}>
               {KINDS.map((k) => (
                 <Chip
                   key={k.value}
-                  label={k.label}
+                  label={tr(`kind.${k.value}`)}
                   selected={kind === k.value}
                   onPress={() => setKind(k.value)}
                   icon={
@@ -95,7 +97,7 @@ export default function FeedbackSheet() {
             </View>
 
             <AppText variant="label" style={{ marginBottom: t.space[2] }}>
-              Your note
+              {tr('sheet.noteLabel')}
             </AppText>
             {/* Sunken fill alone read as a flat block, not something you type in.
                 A 1px edge + a taller box gives the field its own outline and makes
@@ -103,7 +105,7 @@ export default function FeedbackSheet() {
             <TextInput
               value={body}
               onChangeText={setBody}
-              placeholder="A rough idea, something that bugged you, or what's working…"
+              placeholder={tr('sheet.notePlaceholder')}
               placeholderTextColor={t.colors.inkFaint}
               multiline
               textAlignVertical="top"
@@ -122,7 +124,7 @@ export default function FeedbackSheet() {
             />
 
             <View style={{ flex: 1 }} />
-            <AppButton label="Send" onPress={handleSend} disabled={!canSend} fullWidth />
+            <AppButton label={tr('sheet.send')} onPress={handleSend} disabled={!canSend} fullWidth />
           </>
         )}
       </View>
@@ -132,6 +134,7 @@ export default function FeedbackSheet() {
 
 function SentState({ onDone }: { onDone: () => void }) {
   const t = useTheme();
+  const { t: tr } = useTranslation('feedback');
   return (
     <View style={{ flex: 1, alignItems: 'center' }}>
       {/* The mark sat flush against the sheet's top edge: a flex spacer below it
@@ -141,13 +144,13 @@ function SentState({ onDone }: { onDone: () => void }) {
       <View style={{ flex: 1, minHeight: t.space[8] }} />
       <View style={{ alignItems: 'center', gap: t.space[4] }}>
         <Ionicons name="checkmark-circle-outline" size={t.iconSize.xl * 2} color={t.colors.accent} />
-        <AppText style={{ ...(type.title as TextStyle), color: t.colors.ink }}>Got it. Thank you.</AppText>
+        <AppText style={{ ...(type.title as TextStyle), color: t.colors.ink }}>{tr('sent.title')}</AppText>
         <AppText style={{ ...(type.body as TextStyle), color: t.colors.inkSoft, textAlign: 'center', maxWidth: t.size.emptyCopy }}>
-          That came straight to me. When it turns into something, you&apos;ll see it under What&apos;s new.
+          {tr('sent.body')}
         </AppText>
       </View>
       <View style={{ flex: 1, minHeight: t.space[8] }} />
-      <AppButton label="Done" onPress={onDone} variant="ghost" />
+      <AppButton label={tr('sent.done')} onPress={onDone} variant="ghost" />
     </View>
   );
 }

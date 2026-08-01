@@ -1,4 +1,5 @@
 import { View, Text, Pressable, type ViewStyle, type TextStyle } from 'react-native';
+import { useTranslation } from 'react-i18next';
 import * as WebBrowser from 'expo-web-browser';
 import { LEGAL } from '@/src/lib/legal';
 import { useTheme } from '@/src/theme/useTheme';
@@ -21,6 +22,7 @@ export function PaywallFooter({
   onRestore: () => void;
 }) {
   const t = useTheme();
+  const { t: tr } = useTranslation('paywall');
 
   const wrap: ViewStyle = { alignItems: 'center', gap: t.space[2.5], paddingTop: t.space[0.5] };
   const reassure: TextStyle = {
@@ -45,39 +47,39 @@ export function PaywallFooter({
   return (
     <View style={wrap}>
       <Text style={reassure}>
-        {isLifetime ? 'One payment. No renewals, ever.' : 'No payment now. Cancel anytime.'}
+        {isLifetime ? tr('footer.lifetimeNote') : tr('footer.subNote')}
       </Text>
       {/* The free-tier promise used to live here. It moved into the header sub
           (paywallCopy.FREE_PROMISE) — the footer is now purely transactional. */}
-      {isLifetime ? null : <Text style={renew}>Plans renew until cancelled.</Text>}
+      {isLifetime ? null : <Text style={renew}>{tr('footer.renew')}</Text>}
       <View style={linkRow}>
         <Pressable
           onPress={onRestore}
           disabled={restoreDisabled}
           accessibilityRole="button"
-          accessibilityLabel="Restore purchases"
+          accessibilityLabel={tr('plans.restoreLinkA11y')}
           accessibilityState={{ disabled: restoreDisabled }}
           hitSlop={t.size.hitSlop}
         >
-          <Text style={link}>Restore Purchases</Text>
+          <Text style={link}>{tr('footer.restore')}</Text>
         </Pressable>
         <Text style={dot}>·</Text>
         <Pressable
           onPress={() => WebBrowser.openBrowserAsync(LEGAL.termsUrl)}
           accessibilityRole="link"
-          accessibilityLabel="Terms of Use"
+          accessibilityLabel={tr('footer.termsA11y')}
           hitSlop={t.size.hitSlop}
         >
-          <Text style={link}>Terms</Text>
+          <Text style={link}>{tr('footer.terms')}</Text>
         </Pressable>
         <Text style={dot}>·</Text>
         <Pressable
           onPress={() => WebBrowser.openBrowserAsync(LEGAL.privacyUrl)}
           accessibilityRole="link"
-          accessibilityLabel="Privacy Policy"
+          accessibilityLabel={tr('footer.privacyA11y')}
           hitSlop={t.size.hitSlop}
         >
-          <Text style={link}>Privacy</Text>
+          <Text style={link}>{tr('footer.privacy')}</Text>
         </Pressable>
       </View>
     </View>

@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { View, type ViewStyle, type TextStyle } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useTranslation } from 'react-i18next';
 import { Ionicons } from '@expo/vector-icons';
 import { Screen } from '@/src/components/Screen';
 import { SheetScrollView } from '@/src/components/SheetScrollView';
@@ -15,7 +16,7 @@ import { FocusWindowEditorSheet } from '@/src/features/planner/FocusWindowEditor
 import { useLearnedFocusWindow } from '@/src/features/planner/useLearnedFocusWindow';
 import { statedFocusBlock } from '@/src/features/planner/statedFocusBlock';
 import { useFocusInsights } from '@/src/features/patterns/useFocusInsights';
-import { whyNarrative } from '@/src/features/patterns/focusCopy';
+import { whyNarrative, coarseBlockLabel } from '@/src/features/patterns/focusCopy';
 import { useSettingsStore } from '@/src/stores/settingsStore';
 import { useOnboardingStore } from '@/src/stores/onboardingStore';
 import { formatWindowRange, formatClockMin } from '@/src/lib/time';
@@ -43,6 +44,7 @@ const TIER_PILL_LABEL = {
 
 export default function FocusWindowDetail() {
   const t = useTheme();
+  const { t: tr } = useTranslation('planner');
   const insets = useSafeAreaInsets();
   const win = useLearnedFocusWindow();
   const ins = useFocusInsights(win.startMin, win.endMin);
@@ -109,10 +111,15 @@ export default function FocusWindowDetail() {
   // At low confidence the window is a coarse early read — "sessions agree / has
   // held" would overclaim, so say what's actually true and what happens next.
   const why = coarse
-    ? `An early read from ${win.sampleCount} sessions — keep timing and I'll sharpen it as your hours cluster.`
+    ? tr('detail.earlyRead', { count: win.sampleCount })
     : ins
-      ? `${whyNarrative(ins.peakMin)}${contrastClause}. Your last ${win.sampleCount} sessions agree, and it has held for ${weeks} weeks.`
-      : `Your last ${win.sampleCount} sessions agree, and it has held for ${weeks} weeks.`;
+      ? tr('detail.whyWithNarrative', {
+          narrative: whyNarrative(ins.peakMin),
+          contrast: contrastClause,
+          count: win.sampleCount,
+          weeks,
+        })
+      : tr('detail.heldRead', { count: win.sampleCount, weeks });
 
   return (
     <Screen edges={['left', 'right']} horizontalPadding={false}>
@@ -130,7 +137,7 @@ export default function FocusWindowDetail() {
         <View style={{ gap: t.space[2.5] }}>
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: t.space[1.5] }}>
             <Ionicons name="flash" size={t.iconSize.xs} color={t.colors.primary} />
-            <AppText style={{ ...(type.eyebrow as unknown as TextStyle), color: t.colors.primary }}>WHEN YOU&apos;RE SHARP</AppText>
+            <AppText style={{ ...(type.eyebrow as unknown as TextStyle), color: t.colors.primary }}>{tr('detail.eyebrow')}</AppText>
           </View>
           <View
             style={{
@@ -153,13 +160,13 @@ export default function FocusWindowDetail() {
                     </AppText>
                   </AppText>
                   <AppText style={{ ...(type.caption as unknown as TextStyle), color: t.colors.inkFaint }}>
-                    I&apos;ll check that against your timers.
+                    {tr('detail.checkAgainstTimers')}
                   </AppText>
                 </>
               ) : coarse ? (
                 <>
                   <AppText style={{ ...(type.display as unknown as TextStyle), color: t.colors.ink }}>
-                    {win.coarseBlockLabel}
+                    {coarseBlockLabel(win.coarseBlockLabel)}
                   </AppText>
                   <AppText style={{ ...(type.body as unknown as TextStyle), color: t.colors.inkSoft }}>
                     {'around '}
@@ -237,9 +244,9 @@ export default function FocusWindowDetail() {
           {`${evidence} of evidence`}
         </AppText>
 
-        <AppButton label="Edit window" variant="ghost" size="md" fullWidth onPress={() => setEditing(true)} accessibilityLabel="Edit focus window" />
+        <AppButton label={tr('detail.editWindow')} variant="ghost" size="md" fullWidth onPress={() => setEditing(true)} accessibilityLabel={tr('detail.editWindowA11y')} />
         <AppText style={{ ...(type.caption as unknown as TextStyle), color: t.colors.inkFaint, textAlign: 'center' }}>
-          Whenbee plans your day around this stretch.
+          {tr('detail.footer')}
         </AppText>
 
         <FocusWindowEditorSheet

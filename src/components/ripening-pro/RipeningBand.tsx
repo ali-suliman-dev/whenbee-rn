@@ -6,6 +6,7 @@ import Animated, {
   useReducedMotion,
 } from 'react-native-reanimated';
 import { useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { AppText } from '@/src/components/AppText';
 import { useTheme } from '@/src/theme/useTheme';
 import { type } from '@/src/theme/typography';
@@ -49,6 +50,7 @@ interface RipeningBandProps {
 
 export function RipeningBand({ revealed, lowLabel, highLabel }: RipeningBandProps) {
   const t = useTheme();
+  const { t: tr } = useTranslation('patterns');
   const reducedMotion = useReducedMotion();
 
   // ── shared values ────────────────────────────────────────────────────────
@@ -216,7 +218,7 @@ export function RipeningBand({ revealed, lowLabel, highLabel }: RipeningBandProp
 
       {/* ── settling label ────────────────────────────────────────────────── */}
       {!revealed ? (
-        <AppText style={settlingText}>{RIPENING_COPY.settling}</AppText>
+        <AppText style={settlingText}>{RIPENING_COPY(tr).settling}</AppText>
       ) : null}
     </View>
   );

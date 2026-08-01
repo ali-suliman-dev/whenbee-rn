@@ -1,0 +1,92 @@
+{
+  "overflowBar": {
+    "guessed": "du gissade",
+    "minutesShort": "{{minutes}} min",
+    "example": "Ett exempel. Dina egna siffror kommer från din egen tidtagning."
+  },
+  "presenceRingTeaser": {
+    "body": "Din ärliga sluttid, direkt på låsskärmen medan tidtagningen pågår.",
+    "cta": "Lås upp närvaro på låsskärmen",
+    "now": "Nu"
+  },
+  "proUpsellCard": {
+    "tag": "Pro"
+  },
+  "shareableCard": {
+    "footer": "Skapad med Whenbee · allt lärs in på din enhet",
+    "finishBy": "klar senast {{time}}",
+    "archetypeEyebrow": "MIN TIDSPERSONLIGHET",
+    "averageMultiplier": "I snitt tar mina uppgifter {{multiplier}}× min första gissning."
+  },
+  "honestBandLockedTeaser": {
+    "caption": "Se vilket intervall dina uppgifter landar i, och hur det krymper.",
+    "label": "Ärligt intervall",
+    "proTag": "Pro",
+    "unlockA11y": "Lås upp det ärliga intervallet med Pro."
+  },
+  "honestSuggestionCard": {
+    "lead": "Ärligt",
+    "stillLearning": "lär mig fortfarande",
+    "roughly": "Lär mig fortfarande. Ungefär {{low}}–{{high}} min",
+    "more": " mer",
+    "range": "Intervall",
+    "startingEstimate": "Startuppskattning · blir skarpare när du loggar",
+    "unlockA11y": "Lås upp det ärliga intervallet med Pro.",
+    "a11y": {
+      "honestRange": "Ärligt intervall {{low}} till {{high}} minuter.",
+      "honestRangeLearning": "Ärligt intervall {{low}} till {{high}} minuter, jag lär mig fortfarande.",
+      "roughly": "Jag lär mig fortfarande. Ungefär {{low}} till {{high}} minuter.",
+      "honestAbout": "Ärlig uppskattning cirka {{minutes}} minuter",
+      "honestAboutDelta": "Ärlig uppskattning cirka {{minutes}} minuter, {{delta}} mer än din gissning",
+      "startingSuffix": "{{base}}, startuppskattning, blir skarpare när du loggar"
+    },
+    "youGuessed": "du gissade {{duration}}",
+    "lastFewPrefix": "Dina senaste uppgifter i {{category}} landade runt ",
+    "a11yGeneric": "Uppgifter som den här landar oftast runt {{value}}. Du behöver inte lägga på marginal. Intervallet gör det åt dig.",
+    "a11yCategory": "Dina senaste uppgifter i {{category}} landar oftast runt {{value}}. Inget mål, bara vad som brukar hända.",
+    "similar": "liknande",
+    "leadGeneric": "Uppgifter som den här landar oftast runt ",
+    "footerPre": "Du behöver inte lägga på marginal. Intervallet gör det åt dig. Det skärps när du loggar.",
+    "footerPost": "Inget mål, bara vad som brukar hända. Fortsätt gissa med magkänslan.",
+    "spokenRange": "{{low}} till {{high}} minuter",
+    "spokenPoint": "{{count}} minuter",
+    "eyebrowPre": "En första aning",
+    "eyebrowPost": "Oftast, för dig"
+  },
+  "a11y": {
+    "addTask": "Lägg till en uppgift",
+    "honeyCoinSeal": "Förseglat honungsmynt",
+    "companion": "Din Whenbee-kompis",
+    "locked": "Låst, sparat på den här enheten",
+    "dismiss": "Stäng",
+    "honey": "Honung"
+  },
+  "categoryChips": {
+    "new": "Ny"
+  },
+  "reasons": {
+    "contextSwitch": "att du dras iväg till annat",
+    "interrupted": "att du blir avbruten",
+    "underestimated": "att uppgiften var större än den såg ut",
+    "fallback": "några återkommande småsaker"
+  },
+  "weekdays": {
+    "sunday": "söndagar",
+    "monday": "måndagar",
+    "tuesday": "tisdagar",
+    "wednesday": "onsdagar",
+    "thursday": "torsdagar",
+    "friday": "fredagar",
+    "saturday": "lördagar"
+  },
+  "timeField": {
+    "a11y": "Längd i minuter"
+  },
+  "activeTimerBar": {
+    "a11y": "Tar tid på {{label}}, {{elapsed}} har gått",
+    "a11yOver": ", {{count}} minuter över din ärliga uppskattning",
+    "a11yTail": ". Tryck för att öppna igen.",
+    "aTask": "en uppgift",
+    "timingNow": "Tidtagning pågår"
+  }
+}

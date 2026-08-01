@@ -1,4 +1,5 @@
 import { View, Text, type TextStyle, type ViewStyle } from 'react-native';
+import { useTranslation } from 'react-i18next';
 import { Card } from '@/src/components/Card';
 import { AppButton } from '@/src/components/AppButton';
 import { useTheme } from '@/src/theme/useTheme';
@@ -24,6 +25,7 @@ export function FounderReserveCard({
   onReserve: () => void;
 }) {
   const t = useTheme();
+  const { t: tr } = useTranslation('paywall');
 
   const eyebrow: TextStyle = {
     ...(type.eyebrow as unknown as TextStyle),
@@ -44,16 +46,13 @@ export function FounderReserveCard({
   return (
     <Card tone="flat" style={card}>
       <View style={copy}>
-        <Text style={eyebrow}>Early founder price</Text>
-        <Text style={headline}>Lock the founder price — {priceString}</Text>
-        <Text style={sub}>
-          Set it aside now. Nothing is charged until your numbers turn honest, and then Pro is
-          yours at this price.
-        </Text>
+        <Text style={eyebrow}>{tr('founderReserve.eyebrow')}</Text>
+        <Text style={headline}>{tr('founderReserve.headline', { price: priceString })}</Text>
+        <Text style={sub}>{tr('founderReserve.sub')}</Text>
       </View>
 
       <AppButton
-        label={reserved ? 'Founder price locked in' : 'Lock founder price'}
+        label={reserved ? tr('founderReserve.ctaLocked') : tr('founderReserve.cta')}
         variant="amber"
         fullWidth
         disabled={reserved}

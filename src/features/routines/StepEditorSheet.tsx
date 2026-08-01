@@ -16,6 +16,7 @@ import {
 } from 'react-native';
 import Animated, { FadeIn, ReduceMotion } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useTranslation } from 'react-i18next';
 import { useTheme } from '@/src/theme/useTheme';
 import { type } from '@/src/theme/typography';
 import { tokens } from '@/src/theme/tokens';
@@ -65,6 +66,7 @@ export function StepEditorSheet({
   onCancel,
 }: StepEditorSheetProps): ReactElement | null {
   const t = useTheme();
+  const { t: tr } = useTranslation('routines');
   const insets = useSafeAreaInsets();
   const categories = usePickerCategories();
   const statsByCategory = useCalibrationStore((s) => s.statsByCategory);
@@ -152,7 +154,7 @@ export function StepEditorSheet({
       <Pressable
         style={StyleSheet.absoluteFillObject}
         onPress={onCancel}
-        accessibilityLabel="Dismiss"
+        accessibilityLabel={tr('stepSheet.dismissA11y')}
       />
       <KeyboardAvoidingView
         style={avoider}
@@ -161,12 +163,14 @@ export function StepEditorSheet({
       >
         <View style={sheet}>
           <SheetGrabber />
-        <AppText style={titleStyle}>{mode === 'add' ? 'Add a step' : 'Edit step'}</AppText>
+        <AppText style={titleStyle}>
+          {mode === 'add' ? tr('stepSheet.titleAdd') : tr('stepSheet.titleEdit')}
+        </AppText>
         <TaskTitleField
           variant="boxed"
           value={label}
           onChangeText={handleTitleChange}
-          placeholder="Step name"
+          placeholder={tr('stepSheet.namePlaceholder')}
           autoFocus
           returnKeyType="done"
           onSubmitEditing={handleSubmit}
@@ -180,9 +184,9 @@ export function StepEditorSheet({
         />
         <DurationWheel valueMin={guessMin} onChange={setGuessMin} fullWidth />
         <View style={actions}>
-          <AppButton label="Cancel" variant="ghost" size="2xs" onPress={onCancel} />
+          <AppButton label={tr('stepSheet.cancel')} variant="ghost" size="2xs" onPress={onCancel} />
           <AppButton
-            label={mode === 'add' ? 'Add step' : 'Save step'}
+            label={mode === 'add' ? tr('stepSheet.submitAdd') : tr('stepSheet.submitEdit')}
             variant="indigo"
             size="2xs"
             disabled={!canSubmit}

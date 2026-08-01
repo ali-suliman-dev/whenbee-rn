@@ -9,6 +9,7 @@
 // applyLog inputs, reward, day-task + plan completion, and presence teardown — but
 // reads every value from the store rather than a React hook's closure.
 import { router } from 'expo-router';
+import i18n from '@/src/i18n';
 import type { AdaptSpeed } from '@/src/domain/types';
 import { useTimerStore } from '@/src/stores/timerStore';
 import { useCalibrationStore } from '@/src/stores/calibrationStore';
@@ -42,7 +43,7 @@ export async function stopPresenceSessionAndLog(): Promise<PresenceStopResult> {
   const category = s.category ?? 'getting_ready';
   const guessMin = s.guessMin;
   const suggestedHonestMin = s.suggestedHonestMin;
-  const label = s.taskLabel ?? 'Focus session';
+  const label = s.taskLabel ?? i18n.t('timer:defaultTaskLabel');
   const taskId = s.taskId;
   const startedAt = s.startedAt;
 

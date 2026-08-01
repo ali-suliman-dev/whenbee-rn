@@ -4,6 +4,13 @@
 // reads local-day boundaries from it, exactly like the rest of the engine. No
 // reclaim, no score, no guilt. The hook layer does the db reads + the
 // feature-level derivations (biggest surprise, accuracy line) and feeds them in.
+//
+// NOTHING HERE IS USER-FACING COPY. The engine emits ids and structured data;
+// the UI turns them into sentences in the user's language. That includes the
+// period label: `ReviewPeriod.label` carries the locale-free period id as a
+// fallback, and the screens format the real one from `startMs`/`endMs` via
+// `src/features/review/periodLabel.ts` (month names come from `Intl`, never a
+// hardcoded table).
 import {
   REVIEW_TIGHTEN_GAP,
   REVIEW_MAX_TIGHTENED,
@@ -23,16 +30,26 @@ import type {
 const DAY_MS = 24 * 60 * 60 * 1000;
 
 /**
- * Reflective closing questions, lifted from the original WeeklyReview rotation.
- * Deterministic: the active question is chosen by a stable hash of the period id,
- * so the same period always shows the same prompt.
+ * How many generic reflective questions the rotation picks from. The wording
+ * lives in the locale bundles (`review:reflection.questions`), NOT here — the
+ * engine only decides WHICH one. Keep this in sync with the bundle array; an
+ * i18n test asserts both languages carry exactly this many questions.
  */
-export const REVIEW_REFLECTION_QUESTIONS = [
-  'Which task surprised you most?',
-  'What is one thing worth a little more time next period?',
-  'When did you feel most on-pace?',
-  'Which area is quietly getting sharper?',
-] as const;
+export const REVIEW_REFLECTION_QUESTION_COUNT = 4;
+
+/**
+ * What the closing reflection should say, as structured data. The engine picks
+ * the ANGLE (a quiet win, the week's drift, or a generic question by stable
+ * rotation); the UI owns the sentence in the user's language.
+ */
+export type ReviewReflection =
+  | { kind: 'tightened'; categoryName: string }
+  | { kind: 'surprise'; categoryName: string }
+  /** Index into `review:reflection.questions`, 0 … COUNT-1. */
+  | { kind: 'question'; index: number };
+
+/** How tight the window read, as an id. The UI picks the sentence. */
+export type WeekReadVerdict = 'tight' | 'loose' | 'mixed';
 
 /**
  * Geometric-mean multiplier from clamped ratios (matches the EWMA's log-space).
@@ -49,16 +66,6 @@ function multiplierFromRatios(ratios: number[]): number {
 function pad2(n: number): string {
   return n < 10 ? `0${n}` : `${n}`;
 }
-
-const MONTH_LABELS = [
-  'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
-  'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec',
-] as const;
-
-const MONTH_LONG = [
-  'January', 'February', 'March', 'April', 'May', 'June',
-  'July', 'August', 'September', 'October', 'November', 'December',
-] as const;
 
 /** ISO-ish week number from a date's day-of-year, for a stable `{year}-W{nn}` id. */
 function weekNumber(d: Date): number {
@@ -85,20 +92,8 @@ export function resolveWeekPeriod(nowMs: number): ReviewPeriod {
   const thisMonday = new Date(today.getFullYear(), today.getMonth(), today.getDate() - sinceMonday);
   const start = new Date(thisMonday.getFullYear(), thisMonday.getMonth(), thisMonday.getDate() - 7);
   const end = new Date(thisMonday.getFullYear(), thisMonday.getMonth(), thisMonday.getDate());
-  const startMs = start.getTime();
-  const endMs = end.getTime();
-  const lastDay = new Date(endMs - DAY_MS);
-  const label =
-    start.getMonth() === lastDay.getMonth()
-      ? `${MONTH_LABELS[start.getMonth()]} ${start.getDate()} – ${lastDay.getDate()}`
-      : `${MONTH_LABELS[start.getMonth()]} ${start.getDate()} – ${MONTH_LABELS[lastDay.getMonth()]} ${lastDay.getDate()}`;
-  return {
-    id: `${start.getFullYear()}-W${pad2(weekNumber(start))}`,
-    kind: 'week',
-    startMs,
-    endMs,
-    label,
-  };
+  const id = `${start.getFullYear()}-W${pad2(weekNumber(start))}`;
+  return { id, kind: 'week', startMs: start.getTime(), endMs: end.getTime(), label: id };
 }
 
 /** The previous calendar month: its 1st (inclusive) → this month's 1st (exclusive). */
@@ -106,13 +101,8 @@ export function resolveMonthPeriod(nowMs: number): ReviewPeriod {
   const now = new Date(nowMs);
   const start = new Date(now.getFullYear(), now.getMonth() - 1, 1);
   const end = new Date(now.getFullYear(), now.getMonth(), 1);
-  return {
-    id: `${start.getFullYear()}-${pad2(start.getMonth() + 1)}`,
-    kind: 'month',
-    startMs: start.getTime(),
-    endMs: end.getTime(),
-    label: `${MONTH_LONG[start.getMonth()]}`,
-  };
+  const id = `${start.getFullYear()}-${pad2(start.getMonth() + 1)}`;
+  return { id, kind: 'month', startMs: start.getTime(), endMs: end.getTime(), label: id };
 }
 
 /** `'month'` on day-of-month 1 (the monthly recap lands), `'week'` otherwise. */
@@ -166,31 +156,30 @@ function hashId(id: string): number {
 }
 
 /**
- * The reflection prompt for a period. Data-specific when the week earned a
- * signal — the strongest tightening (a quiet win) leads, else the biggest
- * surprise — so the recap closes on THIS week's own story rather than a generic
- * prompt. Falls back to a deterministic question from the static set when the
- * period earned nothing to name (thin/zero history), keeping it stable per id.
+ * Which reflection a period has earned. Data-specific when the window carried a
+ * signal: the strongest tightening (a quiet win) leads, else the biggest
+ * surprise, so the recap closes on THIS period's own story rather than a generic
+ * prompt. Falls back to a deterministic question index when the period earned
+ * nothing to name (thin/zero history), stable for a given period id.
  */
-function reflectionFor(
+export function deriveReflection(
   period: ReviewPeriod,
   tightened: TightenedRow[],
   biggestSurprise: ReviewBiggestSurprise | null,
-): string {
+): ReviewReflection {
   const win = tightened[0];
-  if (win) return `${win.categoryName} is quietly getting sharper. What changed?`;
+  if (win) return { kind: 'tightened', categoryName: win.categoryName };
   if (biggestSurprise) {
-    return `${biggestSurprise.categoryName} drifted the most this week. What was going on?`;
+    return { kind: 'surprise', categoryName: biggestSurprise.categoryName };
   }
-  const i = hashId(period.id) % REVIEW_REFLECTION_QUESTIONS.length;
-  return REVIEW_REFLECTION_QUESTIONS[i] ?? REVIEW_REFLECTION_QUESTIONS[0];
+  return { kind: 'question', index: hashId(period.id) % REVIEW_REFLECTION_QUESTION_COUNT };
 }
 
 /**
  * "Close" = ratio between 0.77 and 1.30
- * ≥ 60% → "A tight week."
- * ≤ 30% → "A loose week."
- * else  → "A mixed week."
+ * ≥ 60% → 'tight'
+ * ≤ 30% → 'loose'
+ * else  → 'mixed'
  */
 export function deriveWeekRead(
   entries: TightenedEntry[],
@@ -204,8 +193,7 @@ export function deriveWeekRead(
   const areasClose = closeEntries.length;
   const areasTotal = entries.length;
   const fraction = areasTotal > 0 ? areasClose / areasTotal : 0;
-  const verdict =
-    fraction >= 0.6 ? 'A tight week.' : fraction <= 0.3 ? 'A loose week.' : 'A mixed week.';
+  const verdict: WeekReadVerdict = fraction >= 0.6 ? 'tight' : fraction <= 0.3 ? 'loose' : 'mixed';
 
   const dailyLogCounts: [number, number, number, number, number, number, number] = [
     0, 0, 0, 0, 0, 0, 0,
@@ -278,8 +266,15 @@ export interface BuildReviewSummaryInput {
  * Compose a calm recap from a closed period. Degrades gracefully: zero logs gives
  * a present reflection but null/empty card fields; partial data passes through only
  * the cards that were earned. Deterministic for a fixed input + period.
+ *
+ * `formatReflection` is the UI's translator: the engine decides the reflection's
+ * ANGLE and hands the descriptor back out so the caller can word it. Keeping it
+ * an injected port is what lets this file stay free of copy in any language.
  */
-export function buildReviewSummary(input: BuildReviewSummaryInput): ReviewSummary {
+export function buildReviewSummary(
+  input: BuildReviewSummaryInput,
+  formatReflection: (reflection: ReviewReflection) => string,
+): ReviewSummary {
   const hasLogs = input.loggedCount > 0;
   const tightened = hasLogs ? deriveTightened(input.tightenedEntries) : [];
   const biggestSurprise = hasLogs ? input.biggestSurprise : null;
@@ -291,7 +286,7 @@ export function buildReviewSummary(input: BuildReviewSummaryInput): ReviewSummar
     sharpestPhrase: hasLogs ? input.sharpestPhrase : null,
     tightened,
     biggestSurprise,
-    reflection: reflectionFor(input.period, tightened, biggestSurprise),
+    reflection: formatReflection(deriveReflection(input.period, tightened, biggestSurprise)),
     weekRead: hasLogs ? input.weekRead : null,
     forwardAction: hasLogs ? input.forwardAction : null,
     confidenceBand: hasLogs ? input.confidenceBand : null,

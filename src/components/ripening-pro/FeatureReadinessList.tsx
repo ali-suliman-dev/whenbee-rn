@@ -1,5 +1,6 @@
 import { View, Text, type ViewStyle, type TextStyle } from 'react-native';
 import Svg, { Path } from 'react-native-svg';
+import { useTranslation } from 'react-i18next';
 import { useTheme } from '@/src/theme/useTheme';
 import { type } from '@/src/theme/typography';
 import type { ProFeatureId } from '@/src/engine';
@@ -50,6 +51,7 @@ function CheckIcon({ size, color }: { size: number; color: string }) {
 
 export function FeatureReadinessList({ items, logsToNext }: FeatureReadinessListProps) {
   const t = useTheme();
+  const { t: tr } = useTranslation('patterns');
 
   // The single "next-up" feature is the first not-yet-ready item in list order —
   // it gets the partial pip + the countable "{k} logs to go" status.
@@ -145,12 +147,12 @@ export function FeatureReadinessList({ items, logsToNext }: FeatureReadinessList
               <View style={waitPip} testID="feature-pip-wait" />
             )}
 
-            <Text style={label}>{featureLabel(item.id)}</Text>
+            <Text style={label}>{featureLabel(tr, item.id)}</Text>
 
             {item.ready ? (
-              <Text style={statusReady}>Ready</Text>
+              <Text style={statusReady}>{tr('ripeningPro.featureList.readyStatus')}</Text>
             ) : isNextUp ? (
-              <Text style={statusMuted}>{logsToGoLabel(logsToNext)}</Text>
+              <Text style={statusMuted}>{logsToGoLabel(tr, logsToNext)}</Text>
             ) : item.waitLabel ? (
               <Text style={statusMuted}>{item.waitLabel}</Text>
             ) : null}

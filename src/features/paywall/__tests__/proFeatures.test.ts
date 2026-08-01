@@ -1,4 +1,5 @@
 import { PRO_FEATURES, featuresByGroup, featuresByMoment } from '../proFeatures';
+import en from '@/src/i18n/locales/en/paywall.json';
 
 describe('proFeatures registry', () => {
   it('holds exactly 12 features with unique keys', () => {
@@ -7,10 +8,14 @@ describe('proFeatures registry', () => {
     expect(new Set(keys).size).toBe(12);
   });
 
-  it('every feature has a non-empty label and icon', () => {
+  it('every feature has an icon and a label key that resolves in the bundle', () => {
+    const labels = en.features as Record<string, string | undefined>;
     for (const f of PRO_FEATURES) {
-      expect(f.label.length).toBeGreaterThan(0);
       expect(f.icon.length).toBeGreaterThan(0);
+      // Labels are translated at the render site, so the registry must only ever
+      // carry a key — a raw English label here would ship untranslated copy.
+      expect(f.labelKey).toBe(`features.${f.key}`);
+      expect(labels[f.key]?.length ?? 0).toBeGreaterThan(0);
     }
   });
 

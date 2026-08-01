@@ -1,4 +1,5 @@
 import { AppText } from '@/src/components/AppText';
+import { useTranslation } from 'react-i18next';
 import { analytics } from '@/src/services/analytics';
 import { haptics } from '@/src/lib/haptics';
 import { useCalibrationStore } from '@/src/stores/calibrationStore';
@@ -53,36 +54,65 @@ interface EnergyQuestion {
 }
 type Question = ReasonQuestion | EnergyQuestion;
 
-const OVER_HEADER = 'Where did the time go?';
-const UNDER_HEADER = 'What made it quick?';
-const ENERGY_HEADER = 'How was your energy?';
-
 // Neutral, kind framings — curiosity, never blame. Over-run owns the "took
-// longer" reasons; under-run the "went faster" ones.
-const OVER_OPTIONS: readonly ReasonOption[] = [
-  { value: 'interrupted', label: 'Paused', hint: 'stopped mid-run', glyph: 'interrupted' },
-  { value: 'underestimated', label: 'Grew', hint: 'bigger than it looked', glyph: 'bigger' },
-  { value: 'context_switch', label: 'Pulled', hint: 'something took you away', glyph: 'pulled' },
-];
-const UNDER_OPTIONS: readonly ReasonOption[] = [
-  { value: 'focused', label: 'Flow', hint: 'locked in', glyph: 'zone' },
-  { value: 'overestimated', label: 'Fast', hint: 'smaller than it looked', glyph: 'smaller' },
-];
-const ENERGY_OPTIONS: readonly EnergyOption[] = [
-  { value: 'low', label: 'Low', hint: 'running on fumes' },
-  { value: 'ok', label: 'OK', hint: 'normal day' },
-  { value: 'high', label: 'High', hint: 'fully charged' },
-];
+// longer" reasons; under-run the "went faster" ones. The copy itself lives in
+// the `reward` bundle; a spec only carries the stored value, its bundle key and
+// its glyph, so every visible word stays translatable.
+type ReasonBundleKey =
+  | 'interrupted'
+  | 'underestimated'
+  | 'contextSwitch'
+  | 'focused'
+  | 'overestimated';
+/** The `reward` bundle key holding each option's short label. */
+type ReasonLabelKey =
+  | 'reason.over.interrupted'
+  | 'reason.over.underestimated'
+  | 'reason.over.contextSwitch'
+  | 'reason.under.focused'
+  | 'reason.under.overestimated';
+interface ReasonSpec {
+  value: string;
+  bundleKey: ReasonBundleKey;
+  labelKey: ReasonLabelKey;
+  glyph: ReasonGlyphKind;
+}
 
-// Receipt copy — a warm, honest close after a tap. The option's own word lands
-// bolded mid-sentence (matching the brief's exact strings).
-const REASON_RECEIPTS: Record<string, { prefix: string; bold: string; suffix: string }> = {
-  interrupted: { prefix: '', bold: 'Paused', suffix: ' along the way. Good to know.' },
-  underestimated: { prefix: 'It ', bold: 'grew', suffix: ' on you. Good to know.' },
-  context_switch: { prefix: 'Something ', bold: 'pulled', suffix: ' you away. Good to know.' },
-  focused: { prefix: 'You found ', bold: 'flow', suffix: '. Good to know.' },
-  overestimated: { prefix: '', bold: 'Quicker', suffix: ' than you thought. Good to know.' },
-};
+const OVER_SPECS: readonly ReasonSpec[] = [
+  {
+    value: 'interrupted',
+    bundleKey: 'interrupted',
+    labelKey: 'reason.over.interrupted',
+    glyph: 'interrupted',
+  },
+  {
+    value: 'underestimated',
+    bundleKey: 'underestimated',
+    labelKey: 'reason.over.underestimated',
+    glyph: 'bigger',
+  },
+  {
+    value: 'context_switch',
+    bundleKey: 'contextSwitch',
+    labelKey: 'reason.over.contextSwitch',
+    glyph: 'pulled',
+  },
+];
+const UNDER_SPECS: readonly ReasonSpec[] = [
+  { value: 'focused', bundleKey: 'focused', labelKey: 'reason.under.focused', glyph: 'zone' },
+  {
+    value: 'overestimated',
+    bundleKey: 'overestimated',
+    labelKey: 'reason.under.overestimated',
+    glyph: 'smaller',
+  },
+];
+const ENERGY_VALUES: readonly EnergyKind[] = ['low', 'ok', 'high'];
+
+/** Stored reason value → its key in the `reward` bundle. */
+const REASON_BUNDLE_KEY: Record<string, ReasonBundleKey> = Object.fromEntries(
+  [...OVER_SPECS, ...UNDER_SPECS].map((s) => [s.value, s.bundleKey]),
+);
 
 // Option rows fade in staggered by this much (opacity only, per the motion HARD RULE).
 const OPTION_STAGGER = 50;
@@ -97,6 +127,7 @@ export function ContextQuestions({
   reasonDirection: RunDirection | null;
 }) {
   const t = useTheme();
+  const { t: tr } = useTranslation('reward');
   const reducedMotion = useReducedMotion();
   const setReason = useCalibrationStore((s) => s.setReason);
   const setContext = useCalibrationStore((s) => s.setContext);
@@ -104,15 +135,29 @@ export function ContextQuestions({
   const questions = useMemo<Question[]>(() => {
     const list: Question[] = [];
     if (reasonDirection) {
+      const specs = reasonDirection === 'over' ? OVER_SPECS : UNDER_SPECS;
       list.push({
         key: 'reason',
-        header: reasonDirection === 'over' ? OVER_HEADER : UNDER_HEADER,
-        options: reasonDirection === 'over' ? OVER_OPTIONS : UNDER_OPTIONS,
+        header: reasonDirection === 'over' ? tr('reason.overHeader') : tr('reason.underHeader'),
+        options: specs.map((s) => ({
+          value: s.value,
+          label: tr(s.labelKey),
+          hint: tr(`reason.hints.${s.bundleKey}` as const),
+          glyph: s.glyph,
+        })),
       });
     }
-    list.push({ key: 'energy', header: ENERGY_HEADER, options: ENERGY_OPTIONS });
+    list.push({
+      key: 'energy',
+      header: tr('energy.header'),
+      options: ENERGY_VALUES.map((v) => ({
+        value: v,
+        label: tr(`energy.options.${v}` as const),
+        hint: tr(`energy.hints.${v}` as const),
+      })),
+    });
     return list;
-  }, [reasonDirection]);
+  }, [reasonDirection, tr]);
 
   const [stepIndex, setStepIndex] = useState(0);
   const [receipts, setReceipts] = useState<{ key: QuestionKey; value: string | null }[]>([]);
@@ -234,11 +279,11 @@ export function ContextQuestions({
             {pendingValue === null ? (
               <Pressable
                 accessibilityRole="button"
-                accessibilityLabel="Skip"
+                accessibilityLabel={tr('reason.skip')}
                 hitSlop={t.size.hitSlop}
                 onPress={() => handleSkip(activeQuestion)}
               >
-                <Text style={skipText}>Skip</Text>
+                <Text style={skipText}>{tr('reason.skip')}</Text>
               </Pressable>
             ) : null}
           </View>
@@ -280,7 +325,9 @@ export function ContextQuestions({
                 ))}
           </View>
           {questions.length > 1 ? (
-            <Text style={counterText}>{`${stepIndex + 1} of ${questions.length} · one tap, or skip`}</Text>
+            <Text style={counterText}>
+              {tr('stepCounter', { step: stepIndex + 1, total: questions.length })}
+            </Text>
           ) : null}
         </Animated.View>
       ) : null}
@@ -374,17 +421,40 @@ function OptionRow({
   );
 }
 
-function energyReceiptParts(value: string): { prefix: string; bold: string; suffix: string } {
-  const label = ENERGY_OPTIONS.find((o) => o.value === value)?.label ?? '';
-  return { prefix: 'Energy: ', bold: label, suffix: '. Noted.' };
+interface ReceiptParts {
+  prefix: string;
+  bold: string;
+  suffix: string;
+}
+
+// Receipt copy is ONE translatable sentence per answer, with the emphasised word
+// wrapped in <b>…</b>. Storing it whole (rather than as prefix/bold/suffix keys)
+// is what lets a translator move the emphasis to wherever the sentence needs it,
+// and keeps every value non-empty.
+const BOLD_SENTENCE = /^([\s\S]*?)<b>([\s\S]*?)<\/b>([\s\S]*)$/;
+
+function splitBold(sentence: string): ReceiptParts | null {
+  const m = BOLD_SENTENCE.exec(sentence);
+  if (m === null) return null;
+  return { prefix: m[1] ?? '', bold: m[2] ?? '', suffix: m[3] ?? '' };
 }
 
 function Receipt({ questionKey, value }: { questionKey: QuestionKey; value: string | null }) {
   const t = useTheme();
+  const { t: tr } = useTranslation('reward');
   if (value === null) return null;
 
-  const parts = questionKey === 'reason' ? REASON_RECEIPTS[value] : energyReceiptParts(value);
-  if (!parts) return null;
+  let sentence: string | null = null;
+  if (questionKey === 'reason') {
+    const bundleKey = REASON_BUNDLE_KEY[value];
+    if (bundleKey !== undefined) sentence = tr(`reason.receipts.${bundleKey}` as const);
+  } else if (ENERGY_VALUES.includes(value as EnergyKind)) {
+    sentence = tr('energy.receipt', {
+      level: tr(`energy.options.${value as EnergyKind}` as const),
+    });
+  }
+  const parts = sentence === null ? null : splitBold(sentence);
+  if (parts === null) return null;
 
   const row: ViewStyle = { flexDirection: 'row', alignItems: 'center', gap: t.space[2] };
   const coin: ViewStyle = {

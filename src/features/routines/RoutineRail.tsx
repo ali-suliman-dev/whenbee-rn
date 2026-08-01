@@ -1,5 +1,6 @@
 import { View, Pressable, type ViewStyle, type TextStyle } from 'react-native';
 import ReanimatedSwipeable from 'react-native-gesture-handler/ReanimatedSwipeable';
+import { useTranslation } from 'react-i18next';
 import { useTheme } from '@/src/theme/useTheme';
 import { type } from '@/src/theme/typography';
 import { AppText } from '@/src/components/AppText';
@@ -48,6 +49,7 @@ export function RoutineRail({
   onEditFinish,
 }: RoutineRailProps) {
   const t = useTheme();
+  const { t: tr } = useTranslation('routines');
   const { rows } = model;
 
   // ── Shared layout styles ───────────────────────────────────────────────────
@@ -146,10 +148,10 @@ export function RoutineRail({
       <Pressable
         onPress={() => onDeleteStep(id)}
         accessibilityRole="button"
-        accessibilityLabel={`Remove ${label}`}
+        accessibilityLabel={tr('rail.removeA11y', { label })}
         style={deleteActionStyle}
       >
-        <AppText style={deleteLabelStyle}>Remove</AppText>
+        <AppText style={deleteLabelStyle}>{tr('rail.remove')}</AppText>
       </Pressable>
     );
   }
@@ -170,7 +172,7 @@ export function RoutineRail({
             timeLabel={label}
           />
           <View style={contentCol}>
-            <AppText style={capStyle}>start</AppText>
+            <AppText style={capStyle}>{tr('rail.start')}</AppText>
           </View>
         </View>
       );
@@ -185,7 +187,7 @@ export function RoutineRail({
           onPress={onEditFinish}
           style={row}
           accessibilityRole="button"
-          accessibilityLabel={hasTime ? `Done by ${label}` : 'Set a finish time'}
+          accessibilityLabel={hasTime ? tr('rail.doneByA11y', { time: label }) : tr('rail.setFinishTimeA11y')}
         >
           <PlanRail
             state="next"
@@ -196,9 +198,9 @@ export function RoutineRail({
           />
           <View style={contentCol}>
             {hasTime ? (
-              <AppText style={capStyle}>done by</AppText>
+              <AppText style={capStyle}>{tr('rail.doneBy')}</AppText>
             ) : (
-              <AppText style={capCtaStyle}>＋ set a finish time</AppText>
+              <AppText style={capCtaStyle}>{tr('rail.setFinishTime')}</AppText>
             )}
           </View>
         </Pressable>
@@ -215,7 +217,7 @@ export function RoutineRail({
             prevState="next"
           />
           <View style={contentCol}>
-            <AppText style={breatherStyle}>+{r.min}m in-between</AppText>
+            <AppText style={breatherStyle}>{tr('rail.breather', { count: r.min })}</AppText>
           </View>
         </View>
       );
@@ -235,7 +237,7 @@ export function RoutineRail({
           style={row}
           onPress={() => onEditStep(r.id)}
           accessibilityRole="button"
-          accessibilityLabel={`Edit ${r.label}`}
+          accessibilityLabel={tr('rail.editA11y', { label: r.label })}
         >
           <PlanRail
             state="next"
@@ -250,7 +252,7 @@ export function RoutineRail({
                 {r.label}
               </AppText>
               <AppText style={metaStyle} numberOfLines={1}>
-                {categoryName(r.category)} · {r.honestMin}m honest
+                {categoryName(r.category)} · {tr('rail.honestMinutes', { count: r.honestMin })}
                 {r.clockMin !== null ? ` · ${clockLabel(r.clockMin) ?? ''}` : ''}
               </AppText>
             </View>
@@ -269,11 +271,11 @@ export function RoutineRail({
         onPress={onAddStep}
         style={row}
         accessibilityRole="button"
-        accessibilityLabel="Add a step"
+        accessibilityLabel={tr('rail.addStepA11y')}
       >
         <PlanRail state="next" isLast prevState="next" />
         <View style={contentCol}>
-          <AppText style={addStyle}>＋ add step</AppText>
+          <AppText style={addStyle}>{tr('rail.addStepTail')}</AppText>
         </View>
       </Pressable>
     </View>

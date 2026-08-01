@@ -1,4 +1,5 @@
 import { View, Text, type ViewStyle, type TextStyle } from 'react-native';
+import { Trans, useTranslation } from 'react-i18next';
 import { HonestNumber } from '@/src/components/HonestNumber';
 import { HoneyHex } from '@/src/components/HoneyHex';
 import { useTheme } from '@/src/theme/useTheme';
@@ -34,17 +35,12 @@ interface HonestCardProps {
   firstHonestRange?: HonestRange | null;
 }
 
-// Plain-language meaning for the one-word tier pill (replaces "6 to Ripening").
-const TIER_MEANING: Record<Exclude<CalibrationConfidence, 'honest'>, string> = {
-  raw: 'just getting to know your pace',
-  setting: 'still sharpening your pace',
-};
-
 export function HonestCard({
   honestMinutes, multiplier, tier, n = 0, confidence, range,
   reasonNote, isPro = false, firstHonestRange,
 }: HonestCardProps) {
   const t = useTheme();
+  const { t: tr } = useTranslation('categoryDetail');
   const showRange = confidence !== undefined && confidence !== 'honest' && range != null;
 
   // The tier pill lives in the screen header now; the hero keeps only the
@@ -92,22 +88,31 @@ export function HonestCard({
     // ── Learning state — the honest RANGE is the hero (band removed 2026-07-04) ──
     return (
       <View style={{ gap: t.space[4] }}>
-        {tier ? <Text style={meaning}>{TIER_MEANING[learningTier]}</Text> : null}
+        {tier ? <Text style={meaning}>{tr(`honestCard.tierMeaning.${learningTier}`)}</Text> : null}
 
         <View style={heroBlock}>
-          <Text style={eyebrow}>YOUR HONEST RANGE</Text>
+          <Text style={eyebrow}>{tr('honestCard.eyebrowRange')}</Text>
           <View style={numberRow}>
-            <HonestNumber size="xl" tone="ink" value={`${range.lowMinutes}–${range.highMinutes}`} unit="min" />
+            <HonestNumber size="xl" tone="ink" value={`${range.lowMinutes}–${range.highMinutes}`} unit={tr('honestCard.unitMin')} />
           </View>
           {showPoint ? (
             <Text style={landLine}>
-              Most tasks land near <Text style={landPoint}>~{honestMinutes} min</Text>.
+              <Trans
+                i18nKey="honestCard.landNear"
+                ns="categoryDetail"
+                values={{ minutes: honestMinutes }}
+                components={{ point: <Text style={landPoint} /> }}
+              />
             </Text>
           ) : null}
           {narrowed && firstHonestRange ? (
             <Text style={narrowCaption}>
-              <Text style={strong}>Tightened from {firstHonestRange.lowMinutes}–{firstHonestRange.highMinutes}</Text>
-              {' as you logged.'}
+              <Trans
+                i18nKey="honestCard.narrowed"
+                ns="categoryDetail"
+                values={{ low: firstHonestRange.lowMinutes, high: firstHonestRange.highMinutes }}
+                components={{ strong: <Text style={strong} /> }}
+              />
             </Text>
           ) : (
             <MaturityMeter meter={meter} />
@@ -121,15 +126,16 @@ export function HonestCard({
   // ── Honest (collapsed) state — A: number-as-hero on the bare page, no card ──
   return (
     <View style={heroNaked}>
-      <HonestNumber size="xl" tone="ink" value={`~${honestMinutes}`} unit="min" />
+      <HonestNumber size="xl" tone="ink" value={`~${honestMinutes}`} unit={tr('honestCard.unitMin')} />
       <View style={metaRow}>
         <HoneyHex size={t.fontSize.caption} />
         <Text style={metaBase}>
-          <Text style={metaStrong}>{multiplier.toFixed(1)}×</Text> your guess
+          <Text style={metaStrong}>{multiplier.toFixed(1)}×</Text>
+          {tr('honestCard.metaGuess')}
           {confidence === 'honest' ? (
             <Text>
               {'   ·   '}
-              <Text style={metaSeal}>honest now</Text>
+              <Text style={metaSeal}>{tr('honestCard.metaSeal')}</Text>
             </Text>
           ) : null}
         </Text>

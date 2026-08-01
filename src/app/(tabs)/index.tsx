@@ -2,6 +2,7 @@ import { View, Text, Pressable, ScrollView, RefreshControl, type TextStyle } fro
 import { useState, useCallback, useEffect, useMemo } from 'react';
 import { router } from 'expo-router';
 import Animated, { FadeIn } from 'react-native-reanimated';
+import { useTranslation } from 'react-i18next';
 import { haptics } from '@/src/lib/haptics';
 import { Ionicons } from '@expo/vector-icons';
 import { AppText } from '@/src/components/AppText';
@@ -29,7 +30,7 @@ import { useTimerStore } from '@/src/stores/timerStore';
 import { useSettingsStore } from '@/src/stores/settingsStore';
 import { projectedFinish, formatClockMeridiem, formatClock } from '@/src/lib/time';
 import { useDayTasksStore } from '@/src/stores/dayTasksStore';
-import { toLocalDayKey, addDays, weekdayOf, compareDayKeys } from '@/src/lib/day';
+import { toLocalDayKey, addDays, compareDayKeys } from '@/src/lib/day';
 import { kv } from '@/src/lib/kv';
 import { useFocusedValue } from '@/src/hooks/useFocusedValue';
 import { useGreeting } from '@/src/features/today/useGreeting';
@@ -52,25 +53,26 @@ import { useScheduledRoutines } from '@/src/features/today/useScheduledRoutines'
 import { ScheduledRoutineBlock } from '@/src/features/today/ScheduledRoutineBlock';
 import { useDayPlan } from '@/src/features/today/useDayPlan';
 import { useStartByReminder } from '@/src/features/today/useStartByReminder';
+import { useLocalizedFormat } from '@/src/i18n/useLocalizedFormat';
 
 // Date label for a day-key, e.g. "Fri · Jun 12" — the day + date, no clock.
-function dateLabel(key: string): string {
+// `fmt` comes from `useLocalizedFormat()` in the caller — locale-aware, hoisted.
+function dateLabel(key: string, fmt: ReturnType<typeof useLocalizedFormat>): string {
   const [y, m, d] = key.split('-').map(Number) as [number, number, number];
   const date = new Date(y, m - 1, d);
-  const day = date.toLocaleDateString('en-US', { weekday: 'short' });
-  const monthDay = date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
-  return `${day} · ${monthDay}`;
+  return `${fmt.weekdayShort(date)} · ${fmt.monthDay(date)}`;
 }
 
 /** Full weekday name for the header title when a non-today day is selected. */
-const WEEKDAY_NAMES = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'] as const;
-
-function weekdayName(key: string): string {
-  return WEEKDAY_NAMES[weekdayOf(key)] ?? 'Today';
+function weekdayName(key: string, fmt: ReturnType<typeof useLocalizedFormat>): string {
+  const [y, m, d] = key.split('-').map(Number) as [number, number, number];
+  return fmt.weekdayLong(new Date(y, m - 1, d));
 }
 
 export default function Today() {
   const t = useTheme();
+  const { t: tr } = useTranslation('today');
+  const { t: translate } = useTranslation();
   const {
     focus,
     summary,
@@ -93,8 +95,9 @@ export default function Today() {
   // Scheduled routine blocks for the selected day — derived read, no DB writes.
   // Only shown on today/future days (past days use DayRecapCard).
   const { blocks: scheduledRoutineBlocks } = useScheduledRoutines(selectedDate);
-  const headerTitle = selectedDate === today ? 'Today' : weekdayName(selectedDate);
-  const headerSubtitle = dateLabel(selectedDate);
+  const fmt = useLocalizedFormat();
+  const headerTitle = selectedDate === today ? tr('header.todayTitle') : weekdayName(selectedDate, fmt);
+  const headerSubtitle = dateLabel(selectedDate, fmt);
 
   // Day plan — read here for the plan-entry strip + the export wire. DayTimeline
   // re-reads it inside the sheet.
@@ -203,10 +206,10 @@ export default function Today() {
   // Next 7 days (tomorrow through +7) as pick-a-day menu items.
   function dayPickerItems(id: string): ActionSheetItem[] {
     const today = toLocalDayKey(Date.now());
-    const WEEKDAY_LABELS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'] as const;
     return Array.from({ length: 7 }, (_, i) => {
       const key = addDays(today, i + 1);
-      const label = i === 0 ? 'Tomorrow' : WEEKDAY_LABELS[weekdayOf(key)] ?? key;
+      const [y, m, d] = key.split('-').map(Number) as [number, number, number];
+      const label = i === 0 ? tr('actions.tomorrow') : fmt.weekdayShort(new Date(y, m - 1, d));
       return { label, onPress: () => void useDayTasksStore.getState().moveTask(id, key) };
     });
   }
@@ -396,7 +399,7 @@ export default function Today() {
                 <Pressable
                   onPress={() => router.push('/settings')}
                   accessibilityRole="button"
-                  accessibilityLabel="Settings"
+                  accessibilityLabel={tr('header.settingsA11y')}
                   hitSlop={8}
                 >
                   <Ionicons name="settings-outline" size={22} color={t.colors.inkSoft} />
@@ -468,7 +471,7 @@ export default function Today() {
                   onLongPress={() => promptRowActions(focus.id, focus.label)}
                   delayLongPress={300}
                   accessibilityRole="button"
-                  accessibilityLabel={`${focus.label}. Long-press to delete.`}
+                  accessibilityLabel={tr('focusCardWrap.longPressA11y', { label: focus.label })}
                 >
                   <FocusCard
                     categoryLabel={categoryName(focus.category)}
@@ -502,7 +505,7 @@ export default function Today() {
                         ? 'daily'
                         : 'first-run'
                   }
-                  weekday={selectedDate !== today ? weekdayName(selectedDate) : undefined}
+                  weekday={selectedDate !== today ? weekdayName(selectedDate, fmt) : undefined}
                   onPrimary={() => {
                     haptics.light();
                     router.push('/(modals)/add-task');
@@ -522,7 +525,7 @@ export default function Today() {
                 {/* Scheduled routine blocks — Pro, derived read (no DB rows). */}
                 {isPro && scheduledRoutineBlocks.length > 0 ? (
                   <View style={{ gap: t.space[2], marginBottom: t.space[2] }}>
-                    <Text style={sectionLabel}>{"TODAY'S ROUTINES"}</Text>
+                    <Text style={sectionLabel}>{tr('sections.todaysRoutines')}</Text>
                     {scheduledRoutineBlocks.map((block) => (
                       <ScheduledRoutineBlock key={block.routineId} block={block} />
                     ))}
@@ -538,7 +541,7 @@ export default function Today() {
                         justifyContent: 'space-between',
                       }}
                     >
-                      <Text style={sectionLabel}>TASKS</Text>
+                      <Text style={sectionLabel}>{tr('sections.tasks')}</Text>
                       {totalCount > 0 ? (
                         <PlanButton
                           hasPlan={hasPlan}
@@ -568,10 +571,14 @@ export default function Today() {
                         onLongPress={() => { dismissLongPressHint(); promptRowActions(row.id, row.label); }}
                         onMove={() => void useDayTasksStore.getState().moveToTomorrow(row.id)}
                         showCoachMark={showLongPressHint && idx === 0}
-                        coachLabel="Press & hold for options"
+                        coachLabel={tr('taskRow.longPressCoach')}
                         onCoachMarkDismiss={dismissLongPressHint}
                         isExiting={deletingId === row.id}
-                        endsAtLabel={endsById.has(row.id) ? `ends ~${endsById.get(row.id)}` : undefined}
+                        endsAtLabel={
+                          endsById.has(row.id)
+                            ? tr('taskRow.endsAt', { clock: endsById.get(row.id) })
+                            : undefined
+                        }
                         isTail={isToday && landing.landing.tail?.id === row.id}
                       />
                     ))}
@@ -624,8 +631,8 @@ export default function Today() {
 
           {totalCount === 0 && !isTimerRunning ? null : (
             <RetroLogChip
-              firstText="Finished something else? "
-              secondText="Log it too"
+              firstText={tr('retroChip.lead')}
+              secondText={tr('retroChip.action')}
               onPress={() => router.push('/(modals)/retro')}
             />
           )}
@@ -640,11 +647,11 @@ export default function Today() {
           rowActions
             ? [
                 ...(canEditRow(isTimerRunning, runningTaskId, rowActions.id, rowActions.done)
-                  ? [{ label: 'Edit', onPress: () => editRow(rowActions.id) }]
+                  ? [{ label: translate('edit'), onPress: () => editRow(rowActions.id) }]
                   : []),
-                { label: 'Move to tomorrow', onPress: () => void useDayTasksStore.getState().moveToTomorrow(rowActions.id) },
-                { label: 'Pick a day…', onPress: () => showDayPicker(rowActions.id) },
-                { label: 'Remove', destructive: true, onPress: () => setDeletingId(rowActions.id) },
+                { label: tr('actions.moveToTomorrow'), onPress: () => void useDayTasksStore.getState().moveToTomorrow(rowActions.id) },
+                { label: tr('actions.pickADay'), onPress: () => showDayPicker(rowActions.id) },
+                { label: tr('actions.remove'), destructive: true, onPress: () => setDeletingId(rowActions.id) },
               ]
             : []
         }
@@ -652,7 +659,7 @@ export default function Today() {
 
       <ActionSheet
         visible={dayPickerId !== null}
-        title="Pick a day"
+        title={tr('actions.pickDayTitle')}
         onCancel={() => setDayPickerId(null)}
         items={dayPickerId ? dayPickerItems(dayPickerId) : []}
       />

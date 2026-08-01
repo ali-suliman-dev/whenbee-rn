@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { KeyboardAvoidingView, Platform, View, TextInput, type TextStyle, type ViewStyle } from 'react-native';
+import { useTranslation } from 'react-i18next';
 import { router } from 'expo-router';
 import { Screen } from '@/src/components/Screen';
 import { AppText } from '@/src/components/AppText';
@@ -21,6 +22,7 @@ const NAME_MAX = 20;
 
 export default function CompanionRoute() {
   const t = useTheme();
+  const { t: tr } = useTranslation('whenbee');
   const loadReclaimSummary = useCalibrationStore((s) => s.loadReclaimSummary);
   const nameCompanion = useCalibrationStore((s) => s.nameCompanion);
 
@@ -82,7 +84,7 @@ export default function CompanionRoute() {
           name={draft.trim() || undefined}
         />
 
-        <AppText style={lead}>Give your companion a name, if you like. You can change it any time.</AppText>
+        <AppText style={lead}>{tr('companion.namePrompt')}</AppText>
 
         <View style={field}>
           <TextInput
@@ -90,16 +92,16 @@ export default function CompanionRoute() {
             value={draft}
             onChangeText={setDraft}
             onSubmitEditing={save}
-            placeholder="e.g. Buzz"
+            placeholder={tr('companion.namePlaceholder')}
             placeholderTextColor={t.colors.inkSoft}
             maxLength={NAME_MAX}
             returnKeyType="done"
-            accessibilityLabel="Companion name"
+            accessibilityLabel={tr('companion.nameA11y')}
             style={input}
           />
         </View>
 
-        <AppButton label="Save" variant="indigo" fullWidth onPress={save} />
+        <AppButton label={tr('companion.save')} variant="indigo" fullWidth onPress={save} />
       </View>
       </KeyboardAvoidingView>
     </Screen>

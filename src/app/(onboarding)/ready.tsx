@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { View, TextInput, KeyboardAvoidingView, Platform, Pressable, type TextStyle } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
+import { Trans, useTranslation } from 'react-i18next';
 import { Screen } from '@/src/components/Screen';
 import { AppText } from '@/src/components/AppText';
 import { AppButton } from '@/src/components/AppButton';
@@ -21,6 +22,7 @@ import { useOnce } from '@/src/lib/useOnce';
 
 export default function Ready() {
   const t = useTheme();
+  const { t: tr } = useTranslation('onboarding');
   const insets = useSafeAreaInsets();
   const { complete } = useOnboarding();
   const { saveName } = usePersonalize();
@@ -82,18 +84,22 @@ export default function Ready() {
                 color: t.colors.ink,
               }}
             >
-              Your first{' '}
-              <AppText
-                style={{
-                  fontSize: t.fontSize.xl,
-                  fontWeight: t.fontWeight.bold as '700',
-                  letterSpacing: t.letterSpacing.tight,
-                  color: t.colors.accent,
+              <Trans
+                i18nKey="ready.headline"
+                ns="onboarding"
+                components={{
+                  honest: (
+                    <AppText
+                      style={{
+                        fontSize: t.fontSize.xl,
+                        fontWeight: t.fontWeight.bold as '700',
+                        letterSpacing: t.letterSpacing.tight,
+                        color: t.colors.accent,
+                      }}
+                    />
+                  ),
                 }}
-              >
-                honest
-              </AppText>{' '}
-              times are already set.
+              />
             </AppText>
           </Reveal>
 
@@ -102,8 +108,7 @@ export default function Ready() {
               variant="body"
               style={{ color: t.colors.inkSoft, lineHeight: t.fontSize.base * t.lineHeight.relaxed }}
             >
-              I read them from your time-style, so you start with real numbers, not
-              blank guesses. Log a task and they sharpen.
+              {tr('ready.body')}
             </AppText>
           </Reveal>
 
@@ -121,11 +126,11 @@ export default function Ready() {
                 value={name}
                 onChangeText={setName}
                 autoFocus
-                placeholder="Anything you answer to"
+                placeholder={tr('ready.nicknamePlaceholder')}
                 placeholderTextColor={t.colors.inkFaint}
                 maxLength={MAX_CUSTOM_NAME}
                 returnKeyType="done"
-                accessibilityLabel="Your name"
+                accessibilityLabel={tr('ready.nicknameAccessibilityLabel')}
                 style={{
                   height: t.size.control.md,
                   fontSize: t.fontSize.base,
@@ -140,8 +145,8 @@ export default function Ready() {
               <Pressable
                 onPress={() => setExpanded(true)}
                 accessibilityRole="button"
-                accessibilityLabel="What should I call you?"
-                accessibilityHint="Optional"
+                accessibilityLabel={tr('ready.nicknameLink')}
+                accessibilityHint={tr('ready.nicknameHint')}
               >
                 <View
                   style={{
@@ -155,9 +160,9 @@ export default function Ready() {
                     ＋
                   </AppText>
                   <AppText style={{ fontSize: t.fontSize.base, fontWeight: t.fontWeight.medium as '500', color: t.colors.primary }}>
-                    What should I call you?
+                    {tr('ready.nicknameLink')}
                   </AppText>
-                  <AppText style={{ fontSize: t.fontSize.sm, color: t.colors.inkFaint }}>optional</AppText>
+                  <AppText style={{ fontSize: t.fontSize.sm, color: t.colors.inkFaint }}>{tr('ready.nicknameOptional')}</AppText>
                 </View>
               </Pressable>
             )}
@@ -172,12 +177,17 @@ export default function Ready() {
 
         <Reveal index={5}>
           <AppText style={{ ...(type.caption as TextStyle), color: t.colors.inkSoft, textAlign: 'center' }}>
-            <AppText style={{ ...(type.captionBold as TextStyle), color: t.colors.ink }}>Made by one person. </AppText>
-            Tell me what to add, it&apos;s in Settings.
+            <Trans
+              i18nKey="ready.footer"
+              ns="onboarding"
+              components={{
+                strong: <AppText style={{ ...(type.captionBold as TextStyle), color: t.colors.ink }} />,
+              }}
+            />
           </AppText>
         </Reveal>
         <Reveal index={6} style={{ paddingTop: t.space[4] }}>
-          <AppButton label="Time my first thing →" fullWidth onPress={timeFirstThing} />
+          <AppButton label={tr('ready.cta')} fullWidth onPress={timeFirstThing} />
         </Reveal>
         <View style={{ height: insets.bottom }} />
       </KeyboardAvoidingView>

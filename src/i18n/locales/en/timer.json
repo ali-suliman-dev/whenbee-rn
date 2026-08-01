@@ -1,0 +1,80 @@
+{
+  "eyebrow": "Timing now",
+  "defaultTaskLabel": "Focus session",
+  "overBadge": "+{{duration}} over",
+  "switchFallback": {
+    "runningTimer": "your timer",
+    "quickTimer": "a quick timer"
+  },
+  "minimizeA11y": "Minimize timer",
+  "abandonA11y": "Abandon task",
+  "reframe": {
+    "guessed": "guessed {{count}}m",
+    "honestLabel": "honest",
+    "honestValue": "~{{count}}m"
+  },
+  "stopAndLog": "Stop & log",
+  "abandonConfirm": {
+    "title": "Abandon this task?",
+    "message": "No guilt. It just won’t count toward your honey.",
+    "keepTiming": "Keep timing",
+    "abandon": "Abandon"
+  },
+  "finish": {
+    "started": "Started {{clock}}",
+    "reprojecting": "now finishing ~{{clock}}",
+    "rangeDone": "Done {{low}}–{{high}}",
+    "pointDone": "Done ~{{clock}}",
+    "rangeA11y": "Honest finish range {{low}} to {{high}}.",
+    "rangeA11yLearning": "Honest finish range {{low}} to {{high}}, still learning.",
+    "stillLearning": "still learning",
+    "finishLabel": "Finish ~",
+    "startedLabel": "Started"
+  },
+  "ring": {
+    "a11y_one": "Timer running. Honest target about {{count}} minute. Elapsed time is shown in the center.",
+    "a11y_other": "Timer running. Honest target about {{count}} minutes. Elapsed time is shown in the center."
+  },
+  "guardrail": {
+    "heading": "Still on this?",
+    "body_one": "You’ve been on “{{taskLabel}}” for {{count}} minute. Still the right thing, or want to surface?",
+    "body_other": "You’ve been on “{{taskLabel}}” for {{count}} minutes. Still the right thing, or want to surface?",
+    "keepGoing": "Keep going",
+    "wrapUp": "Wrap up"
+  },
+  "pace": {
+    "over": "{{duration}} over your guess. Now you know",
+    "closing": "Almost at your guess",
+    "onTrack": "You’ve got time",
+    "forgotToStop": "Forgot to stop?",
+    "overNoAmount": "Past your guess. Now you know",
+    "forgotA11y": "Forgot to stop the timer earlier"
+  },
+  "forgotStop": {
+    "headingStopped": "When did you actually stop?",
+    "headingFinished": "When did you finish?",
+    "spinBody": "Spin to the time you actually stopped.",
+    "notSure": "Not sure yet",
+    "back": "Back",
+    "backA11y": "Back to the quick options",
+    "notSureSkipA11y": "Not sure yet, skip logging this session",
+    "notSureStopA11y": "Not sure yet, stop without a trained log",
+    "pickExact": "Pick the exact time",
+    "presetOption": "~{{minutes}} min ago  ·  {{duration}}",
+    "logAt": "Log {{clock}}  ·  {{duration}}",
+    "stillGoing": "Still going",
+    "overranBody": "The timer kept running past your finish. Pick when you really stopped. I’ll log that, not the full {{duration}}."
+  },
+  "ledger": {
+    "yourGuess": "Your guess",
+    "honest": "Honest"
+  },
+  "forgotCard": {
+    "heading": "Wrapped up \"{{label}}\" while you were away",
+    "logHonest": "Log honest finish · {{duration}}",
+    "logGuess": "Log your first guess · {{duration}}",
+    "logAt": "Log {{clock}} · {{duration}}",
+    "bodySeen": "It ran past your honest finish, so I paused it. When did you actually stop?",
+    "bodyFirst": "It ran well past your estimate, so I paused it. When did you actually stop? You can change when I step in from Settings."
+  }
+}

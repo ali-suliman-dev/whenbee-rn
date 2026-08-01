@@ -1,0 +1,340 @@
+{
+  "tiers": {
+    "raw": "Rå",
+    "setting": "Stelnar",
+    "ripening": "Mognar",
+    "thickening": "Tjocknar",
+    "honest": "Ärlig"
+  },
+  "header": {
+    "todayTitle": "Idag",
+    "settingsA11y": "Inställningar"
+  },
+  "viewToggle": {
+    "list": "Lista",
+    "listA11y": "Listvy",
+    "timeline": "Tidslinje",
+    "timelineA11y": "Tidslinjevy",
+    "timelineProA11y": "Tidslinjevy, Pro-funktion"
+  },
+  "planMyDay": {
+    "plan": "Planera min dag",
+    "replan": "Planera om"
+  },
+  "sections": {
+    "todaysRoutines": "DAGENS RUTINER",
+    "upNext": "PÅ TUR",
+    "tasks": "UPPGIFTER"
+  },
+  "retroChip": {
+    "lead": "Blev något annat klart? ",
+    "action": "Logga det också"
+  },
+  "switchSheetFallback": {
+    "currentTask": "aktuell uppgift"
+  },
+  "focusCardWrap": {
+    "longPressA11y": "{{label}}. Håll intryckt för att ta bort."
+  },
+  "actions": {
+    "tomorrow": "Imorgon",
+    "pickDayTitle": "Välj en dag",
+    "cancel": "Avbryt",
+    "moveToTomorrow": "Flytta till imorgon",
+    "pickADay": "Välj en dag…",
+    "remove": "Ta bort"
+  },
+  "calendarOverlay": {
+    "eyebrow": "Kalender",
+    "busyFallback": "Upptagen",
+    "eventA11y": "{{title}}, {{range}}, öppna i Kalender",
+    "allDay": "Heldag: {{list}}"
+  },
+  "capacityChip": {
+    "todayLabel": "Idag",
+    "teaserA11y": "Se om {{weekday}} går ihop. Pro-funktion.",
+    "teaserText": "Se om {{weekday}} går ihop",
+    "proPill": "Pro",
+    "verdict": {
+      "fits": "· får plats",
+      "snug": "· trångt",
+      "heavy": "· ~{{count}} tim för mycket"
+    },
+    "collapsedA11y": "Ärlig dag {{duration}} {{verdict}}. Tryck för att {{action}}.",
+    "collapseAction": "fälla ihop",
+    "expandAction": "fälla ut",
+    "honestDayPrefix": "Ärlig dag {{duration}}",
+    "dismissA11y": "Stäng kapacitetsraden",
+    "legendTasks": "uppgifter {{duration}}",
+    "legendMeetings": "möten {{duration}}",
+    "overCopy": "~{{count}} tim för mycket. Flytta en?",
+    "calendarNudge": "Slå på kalendern i Inställningar för att räkna med möten",
+    "openSuffix": "ledigt",
+    "padCalendarA11y": "Lägg in marginal i kalendern: ärliga marginaler på dagens händelser",
+    "padCalendarPill": "Lägg in marginal"
+  },
+  "dayRecap": {
+    "stats": {
+      "doneValue": "{{done}} av {{planned}}",
+      "doneLabel": "klara",
+      "realFocusValue": "{{count}} min",
+      "realFocusLabel": "verklig fokustid",
+      "vsGuessLabel": "mot din gissning"
+    },
+    "nothingLogged": "Inget loggat den dagen",
+    "allTasksA11y": "Alla uppgifter · {{day}}. {{action}}",
+    "collapseAction": "Tryck för att fälla ihop.",
+    "expandAction": "Tryck för att fälla ut.",
+    "allTasksHeader": "ALLA UPPGIFTER · {{day}}",
+    "allTasksLabel": "ALLA UPPGIFTER · {{day}}",
+    "recap": {
+      "nothingLogged": "Inget loggat den dagen.",
+      "even": "Landade precis på den dag du hade tänkt dig.",
+      "overLead": "Drog ",
+      "underLead": "Landade ",
+      "trail": " den dag du hade tänkt dig.",
+      "gapOver": "{{duration}} över",
+      "gapUnder": "{{duration}} under",
+      "scaleLeft": "gissat {{duration}}",
+      "scaleRight": "verkligt {{duration}}"
+    }
+  },
+  "dayTimeline": {
+    "overflow": {
+      "cutOne": "Allt ryms inte idag. Flytta ”{{label}}” till imorgon?",
+      "multiCut_one": "{{count}} uppgift ryms inte idag. Flytta den till imorgon?",
+      "multiCut_other": "{{count}} uppgifter ryms inte idag. Flytta dem till imorgon?",
+      "pushDeadline": "Du skulle behöva ända till {{time}} för att hinna med allt. Flytta en till imorgon?"
+    },
+    "meetingA11y": "Möte: {{label}}, {{start}} till {{end}}",
+    "meetingA11yHint": "Skrivskyddad kalenderhändelse",
+    "taskA11y": "{{label}}, börjar {{start}}, {{duration}}",
+    "moveTaskA11y": "Flytta uppgiften till imorgon",
+    "moveButton": "Flytta",
+    "startBy": "Börja senast {{time}}",
+    "doneBy": {
+      "setTime": "Ange när du vill vara klar",
+      "label": "Klar senast {{time}}",
+      "cancel": "Avbryt",
+      "sheetTitle": "Klar senast",
+      "sheetMessage": "När vill du vara klar idag?",
+      "hint": "Tryck för att ändra när du vill vara klar"
+    }
+  },
+  "doneSection": {
+    "header": "KLART IDAG · {{count}}",
+    "headerA11y_one": "Klart idag, {{count}} uppgift. {{action}}",
+    "headerA11y_other": "Klart idag, {{count}} uppgifter. {{action}}",
+    "collapseAction": "Tryck för att fälla ihop.",
+    "expandAction": "Tryck för att fälla ut."
+  },
+  "focusCard": {
+    "eyebrow": "NÄSTA · {{category}}",
+    "guessed": "gissade {{count}}",
+    "learned": "+ {{count}} från erfarenhet",
+    "done": "klar {{time}}",
+    "startButton": "Starta"
+  },
+  "honeycombStrip": {
+    "title": "Din honungskaka",
+    "a11y": "Din honungskaka, {{pct}} % honung, nivå {{tier}}, {{logs}} loggar",
+    "subline_one": "{{pct}} % honung · {{count}} logg",
+    "subline_other": "{{pct}} % honung · {{count}} loggar",
+    "nextLine_one": "{{count}} logg till {{tier}}",
+    "nextLine_other": "{{count}} loggar till {{tier}}"
+  },
+  "planMyDayButton": {
+    "proSuffixA11y": "{{label}}, Pro-funktion"
+  },
+  "ritualSeal": {
+    "doneA11y": "Loggade en ärlig sak idag.",
+    "pendingA11y": "Logga en ärlig sak idag. Helt okej att hoppa över.",
+    "doneLabel": "Dagens honung har stelnat ✦",
+    "pendingLabel": "Logga en ärlig sak"
+  },
+  "runningFocusCard": {
+    "fallbackLabel": "Tidtagning pågår",
+    "aTask": "en uppgift",
+    "a11y": "Tar tid på {{label}}, {{elapsed}} har gått av ungefär {{honestMin}} minuter. Tryck för att öppna igen.",
+    "eyebrow": "NU · {{category}}",
+    "elapsedHeader": "TID HITTILLS",
+    "guessed": "gissade {{duration}}",
+    "plan": "plan ~{{duration}}"
+  },
+  "scheduledRoutine": {
+    "minutesSuffix": "{{count}} min",
+    "headerA11y": "{{name}}, {{minutes}} minuter{{startBy}}. {{action}} steg.",
+    "startByA11y": ", börja senast {{time}}",
+    "startBySuffix": "· börja senast {{time}}",
+    "collapseAction": "Fäll ihop",
+    "expandAction": "Fäll ut",
+    "runA11y": "Kör {{name}}",
+    "runHint": "Startar den guidade sekvensen med tidtagning"
+  },
+  "shelfSection": {
+    "summaryA11y_one": "Ingen dag ännu, {{count}} uppgift",
+    "summaryA11y_other": "Ingen dag ännu, {{count}} uppgifter",
+    "headerA11y": "Ingen dag ännu · {{count}}. {{action}}",
+    "header": "Ingen dag ännu · {{count}}",
+    "collapseAction": "Fäll ihop",
+    "expandAction": "Fäll ut"
+  },
+  "switchSheet": {
+    "title": "Byta uppgift?",
+    "body": "<bold>{{leaving}}</bold> loggas inte. Ingen skuldkänsla. <bold>{{starting}}</bold> börjar från noll.",
+    "confirmButton": "Ja, byt",
+    "cancelButton": "Fortsätt",
+    "dismissA11y": "Stäng"
+  },
+  "taskRow": {
+    "carriedFrom": "· från {{day}}",
+    "tookPrefix": "tog ",
+    "min": "min",
+    "guessed": "gissade {{count}}",
+    "swipeCoachMark": "← svep för att ta bort",
+    "moveA11y": "Flytta {{title}} till imorgon",
+    "tomorrow": "Imorgon",
+    "deleteA11y": "Ta bort {{title}}",
+    "remove": "Ta bort",
+    "startA11y": "{{title}}, {{category}}, planerad för {{honestMin}} minuter, du gissade {{guessMin}}. Tryck för att starta.",
+    "startA11yEnds": "{{title}}, {{category}}, planerad för {{honestMin}} minuter, du gissade {{guessMin}}, {{ends}}. Tryck för att starta.",
+    "titleCategoryA11y": "{{title}}, {{category}}",
+    "longPressCoach": "Håll intryckt för fler val",
+    "endsAt": "slutar ~{{clock}}"
+  },
+  "emptyState": {
+    "eyebrow": "Inget inplanerat ännu",
+    "firstRun": {
+      "lead": "Ta tid på din första sak",
+      "sub": "Gissa hur lång tid det tar, tryck på start, så visar jag det ärliga talet.",
+      "primary": "Starta nu",
+      "chipLead": "Redan klar med något? ",
+      "chipAction": "Logga det"
+    },
+    "daily": {
+      "lead": "Vad står på schemat idag?",
+      "sub": "Lägg till en uppgift så visar jag dess ärliga sluttid och om dagen faktiskt går ihop.",
+      "primary": "Planera en uppgift",
+      "chipLead": "Eller logga något ",
+      "chipAction": "du redan gjort klart"
+    },
+    "future": {
+      "lead": "{{weekday}} är helt öppen",
+      "sub": "Lägg till det som ditt framtida jag ska ta tag i. Kommer livet emellan följer det bara med till nästa dag.",
+      "primary": "Planera framåt",
+      "fallbackWeekday": "Den dagen"
+    }
+  },
+  "focusHook": {
+    "proA11y": "Skarpast {{range}}, ditt fönster för svåra uppgifter",
+    "freeA11y": "Ditt fokusfönster är klart. Uppgradera till Pro för att se dina skarpaste timmar.",
+    "sharpestLead": "Skarpast",
+    "hardTasksSuffix": "· svåra uppgifter",
+    "freeInsight": "Ditt fokusfönster är klart",
+    "proPill": "Pro"
+  },
+  "headerRing": {
+    "a11y": "Whenbee, honungsnivå {{tier}}. Tryck för att öppna din honungskaka."
+  },
+  "honestLanding": {
+    "headline": {
+      "pastLead": "Din dag tog slut ",
+      "pastClock": "för {{duration}} sedan",
+      "pastTrail": " · {{duration}} står kvar",
+      "roughlyLead": "Ungefär klar ",
+      "doneLead": "Klar ",
+      "clearTrail": " · {{duration}} ledigt kvar",
+      "overTrail": " · {{duration}} efter dagens slut",
+      "overTrailAlt": ". Det är {{duration}} efter dagens slut."
+    },
+    "scale": {
+      "now": "nu · {{clock}}"
+    },
+    "footer": {
+      "doneLogged": "{{done}} klara · {{duration}} loggat",
+      "moveToTomorrow": "Flytta {{n}} till imorgon",
+      "tailLands": "{{label}} landar efter {{dayEnd}}",
+      "moveIt": "Flytta den",
+      "booked": "{{duration}} redan bokat idag",
+      "padCalendar": "Lägg in marginal",
+      "addTask": "Lägg till en uppgift"
+    },
+    "legend": {
+      "tasks": "uppgifter",
+      "booked": "bokat",
+      "over": "över"
+    },
+    "upsell": {
+      "text": "Utgår från en tom kalender",
+      "action": "Lägg till min"
+    }
+  },
+  "postStopCapture": {
+    "headline": "Vad jobbade du med?",
+    "subline": "Sortera in det, så skärps dina uppskattningar.",
+    "taskNameLabel": "Uppgiftens namn (valfritt)",
+    "categoryLabel": "Kategori",
+    "savingHint": "Sparar du, lär jag mig ditt ärliga tempo.",
+    "skipForNow": "Hoppa över just nu",
+    "namePlaceholder": "Ge den ett namn (valfritt)",
+    "nameA11y": "Uppgiftens namn",
+    "nameThisTask": "Ge uppgiften ett namn"
+  },
+  "quickTaskChips": {
+    "tapToStartAgain": "Tryck för att starta igen",
+    "startA11y": "Starta {{label}}, ungefär {{minutes}} minuter"
+  },
+  "greeting": {
+    "morning": "God morgon",
+    "afternoon": "God eftermiddag",
+    "evening": "God kväll"
+  },
+  "daySoFar": {
+    "eyebrow": "DIN DAG HITTILLS",
+    "headline_one": "En ärlig logg är inne. Du gissade {{guessed}}, det tog egentligen <honest>{{honest}}</honest>.",
+    "headline_other": "{{count}} ärliga loggar är inne. Du gissade {{guessed}}, det tog egentligen <honest>{{honest}}</honest>.",
+    "unit_one": "uppgift",
+    "unit_other": "uppgifter",
+    "loggedLabel": "LOGGAT",
+    "guessedLabel": "GISSAT",
+    "honestLabel": "ÄRLIGT",
+    "milestone": {
+      "equal": "Precis på din gissning idag.",
+      "over": "<strong>+{{gap}} över</strong> din gissning idag. Det är precis den luckan Whenbee lär sig av.",
+      "under": "<strong>{{gap}} under</strong> din gissning idag. Snyggt gissat."
+    }
+  },
+  "timeline": {
+    "tomorrowChip": "Imorgon",
+    "overrunSentence": "Efter det här drar du över tiden. Flytta fram till <clock>{{clock}}</clock> eller flytta en uppgift till imorgon.",
+    "reorderHint": "Håll in och dra för att ändra ordning på uppgiften",
+    "doneBy": "Klar senast {{clock}}",
+    "setDoneBy": "Ange när du vill vara klar",
+    "starting": "Startar",
+    "startBy": "Börja senast",
+    "overBy": "+{{duration}} över",
+    "doneByRule": "{{clock}} KLAR SENAST",
+    "reorderA11y": "Ändra ordning på {{label}}",
+    "overflowA11yDoneBy": "{{label}}, drar {{duration}} förbi när du vill vara klar",
+    "overflowA11yDayEnd": "{{label}}, drar {{duration}} förbi dagens slut"
+  },
+  "planStrip": {
+    "doneBy": "klar senast {{clock}}",
+    "nudgeOn": "påminnelse på",
+    "nudgeOff": "påminnelse av",
+    "a11y": "Dagens plan. {{startWord}} {{clock}}. Påminnelse {{state}}.{{doneBy}} Tryck för att öppna.",
+    "a11yStateOn": "på",
+    "a11yStateOff": "av",
+    "a11yDoneBy": " Klar senast {{clock}}."
+  },
+  "planButton": {
+    "label": "Plan",
+    "a11y": "Plan. {{startWord}} {{clock}}. Tryck för att öppna."
+  },
+  "planReminder": {
+    "on": "Påminn mig {{clock}}",
+    "off": "Påminn mig att börja",
+    "a11yOn": "Startpåminnelse på, {{clock}}. Tryck för att stänga av.",
+    "a11yOff": "Startpåminnelse av. Tryck för att slå på."
+  }
+}

@@ -20,9 +20,10 @@ import { View, Text, type ViewStyle, type TextStyle } from 'react-native';
 import Animated, { FadeIn } from 'react-native-reanimated';
 import { useTheme } from '@/src/theme/useTheme';
 import { type } from '@/src/theme/typography';
-import { fmtHm } from '@/src/lib/time';
-import { countLine, gapMilestone } from '@/src/features/today/daySoFar';
+import { gapMilestone } from '@/src/features/today/daySoFar';
+import { formatDuration } from '@/src/i18n/formatDuration';
 import type { DaySoFar } from '@/src/features/today/useDaySoFar';
+import { Trans, useTranslation } from 'react-i18next';
 import { StatColumn } from './StatColumn';
 
 export interface DaySoFarCardProps {
@@ -31,12 +32,13 @@ export interface DaySoFarCardProps {
 
 export function DaySoFarCard({ recap }: DaySoFarCardProps) {
   const t = useTheme();
+  const { t: tr } = useTranslation('today');
+  const { t: translate } = useTranslation();
   const { completedCount, guessedMin, totalMin } = recap;
 
   const milestone = gapMilestone(guessedMin, totalMin);
-  const guessed = fmtHm(guessedMin);
-  const honest = fmtHm(totalMin);
-  const milestoneBoldEnd = milestone.boldPrefix?.length ?? 0;
+  const guessed = formatDuration(guessedMin, translate);
+  const honest = formatDuration(totalMin, translate);
 
   const card: ViewStyle = {
     // Self-managed vertical margins — the parent Animated.View stacks Today's
@@ -102,19 +104,28 @@ export function DaySoFarCard({ recap }: DaySoFarCardProps) {
   return (
     <Animated.View entering={FadeIn.duration(t.motion.base)} style={card}>
       <View style={header}>
-        <Text style={eyebrow}>YOUR DAY SO FAR</Text>
+        <Text style={eyebrow}>{tr('daySoFar.eyebrow')}</Text>
         <Text style={headline}>
-          {countLine(completedCount)} Guessed {guessed}, really took{' '}
-          <Text style={{ color: t.colors.accent }}>{honest}</Text>.
+          <Trans
+            i18nKey="daySoFar.headline"
+            ns="today"
+            count={completedCount}
+            values={{ guessed, honest }}
+            components={{ honest: <Text style={{ color: t.colors.accent }} /> }}
+          />
         </Text>
       </View>
 
       <View style={divider} />
 
       <View style={statsRow}>
-        <StatColumn value={String(completedCount)} unit={completedCount === 1 ? 'task' : 'tasks'} label="LOGGED" />
-        <StatColumn value={guessed} label="GUESSED" dotColor={t.colors.primary} divided />
-        <StatColumn value={honest} label="HONEST" dotColor={t.colors.accent} divided />
+        <StatColumn
+          value={String(completedCount)}
+          unit={tr('daySoFar.unit', { count: completedCount })}
+          label={tr('daySoFar.loggedLabel')}
+        />
+        <StatColumn value={guessed} label={tr('daySoFar.guessedLabel')} dotColor={t.colors.primary} divided />
+        <StatColumn value={honest} label={tr('daySoFar.honestLabel')} dotColor={t.colors.accent} divided />
       </View>
 
       <View style={divider} />
@@ -122,14 +133,12 @@ export function DaySoFarCard({ recap }: DaySoFarCardProps) {
       <View style={milestoneRow}>
         <Text style={glyph}>{'⬢'}</Text>
         <Text style={milestoneCopy}>
-          {milestone.boldPrefix ? (
-            <>
-              <Text style={milestoneBold}>{milestone.text.slice(0, milestoneBoldEnd)}</Text>
-              {milestone.text.slice(milestoneBoldEnd)}
-            </>
-          ) : (
-            milestone.text
-          )}
+          <Trans
+            i18nKey={`daySoFar.milestone.${milestone.direction}`}
+            ns="today"
+            values={{ gap: formatDuration(milestone.gapMin, translate) }}
+            components={{ strong: <Text style={milestoneBold} /> }}
+          />
         </Text>
       </View>
     </Animated.View>

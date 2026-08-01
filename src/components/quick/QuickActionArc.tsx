@@ -27,6 +27,7 @@ import Animated, {
   withTiming,
 } from 'react-native-reanimated';
 import { Ionicons } from '@expo/vector-icons';
+import { useTranslation } from 'react-i18next';
 import { useTheme } from '@/src/theme/useTheme';
 
 // ─── types ────────────────────────────────────────────────────────────────────
@@ -51,14 +52,16 @@ export interface QuickActionArcProps {
 interface BubbleDef {
   key: 'voice' | 'timer' | 'type';
   icon: 'mic' | 'play' | 'pencil';
-  label: string;
+  /** i18n key, not copy — this module const is evaluated before any translator
+   *  exists, so the spoken label is resolved inside the bubble component. */
+  labelKey: 'quickAction.timer' | 'quickAction.voice' | 'quickAction.type';
   isCenter: boolean;
 }
 
 const BUBBLES: readonly BubbleDef[] = [
-  { key: 'timer', icon: 'play',   label: 'Start timer',  isCenter: false },
-  { key: 'voice', icon: 'mic',    label: 'Voice',  isCenter: true  },
-  { key: 'type',  icon: 'pencil', label: 'Type',   isCenter: false },
+  { key: 'timer', icon: 'play',   labelKey: 'quickAction.timer', isCenter: false },
+  { key: 'voice', icon: 'mic',    labelKey: 'quickAction.voice', isCenter: true  },
+  { key: 'type',  icon: 'pencil', labelKey: 'quickAction.type',  isCenter: false },
 ] as const;
 
 function toRad(deg: number): number {
@@ -164,6 +167,7 @@ function ArcBubble({
   onPress,
 }: ArcBubbleProps) {
   const t = useTheme();
+  const { t: tc } = useTranslation('common');
   const { arc } = t.quick;
 
   const angle = toRad(angleDeg);
@@ -229,7 +233,7 @@ function ArcBubble({
       <Pressable
         onPress={onPress}
         accessibilityRole="button"
-        accessibilityLabel={bubble.label}
+        accessibilityLabel={tc(bubble.labelKey)}
         style={{ width: size, height: size }}
       >
         {/* Flat bubble — no coin edge */}

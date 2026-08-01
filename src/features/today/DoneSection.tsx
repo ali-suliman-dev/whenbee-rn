@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { View, Text, Pressable, type ViewStyle, type TextStyle } from 'react-native';
 import Animated, { FadeIn } from 'react-native-reanimated';
 import { Ionicons } from '@expo/vector-icons';
+import { useTranslation } from 'react-i18next';
 import { useTheme } from '@/src/theme/useTheme';
 import { type } from '@/src/theme/typography';
 import { haptics } from '@/src/lib/haptics';
@@ -35,6 +36,7 @@ export function DoneSection({
   onCoachMarkDismiss,
 }: DoneSectionProps) {
   const t = useTheme();
+  const { t: tr } = useTranslation('today');
   const [expanded, setExpanded] = useState(false);
 
   // The coach-mark only matters while the list is open: start its 4s auto-dismiss
@@ -69,11 +71,14 @@ export function DoneSection({
         onPress={toggle}
         accessibilityRole="button"
         accessibilityState={{ expanded }}
-        accessibilityLabel={`Done today, ${rows.length} ${rows.length === 1 ? 'task' : 'tasks'}. ${expanded ? 'Tap to collapse.' : 'Tap to expand.'}`}
+        accessibilityLabel={tr('doneSection.headerA11y', {
+          count: rows.length,
+          action: expanded ? tr('doneSection.collapseAction') : tr('doneSection.expandAction'),
+        })}
         hitSlop={t.size.hitSlop}
         style={header}
       >
-        <Text style={label}>DONE TODAY · {rows.length}</Text>
+        <Text style={label}>{tr('doneSection.header', { count: rows.length })}</Text>
         <Ionicons
           name={expanded ? 'chevron-up' : 'chevron-down'}
           size={t.iconSize.sm}

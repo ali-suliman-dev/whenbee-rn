@@ -5,7 +5,6 @@
 //
 // No guilt. This is a recap, not a score — copy never implies "should have".
 
-import { fmtHm } from '@/src/lib/time';
 
 /**
  * Visible only on a sparse-done day: nothing running, nothing still queued,
@@ -21,35 +20,28 @@ export function daySoFarVisible(
   return !isTimerRunning && unfinishedCount === 0 && completedCount >= 1;
 }
 
-/** "One honest log in." / "{n} honest logs in." */
-export function countLine(completedCount: number): string {
-  return completedCount === 1 ? 'One honest log in.' : `${completedCount} honest logs in.`;
-}
-
 export interface MilestoneCopy {
-  /** Full milestone line. */
-  text: string;
-  /** The leading bold span within `text` (the gap phrase), or null when spot-on. */
-  boldPrefix: string | null;
+  /** Which milestone sentence to render. */
+  direction: 'over' | 'under' | 'equal';
+  /** Absolute size of the gap in minutes; 0 when spot-on. */
+  gapMin: number;
 }
 
 /**
  * States today's guess-vs-honest gap as a calm fact — never a scold (no guilt).
  * The gap IS the signal Whenbee learns from, so the copy frames it as progress:
- *   - over  ("+Xh Ym over"): the optimism the model is trimming.
- *   - under ("Xh Ym under"): a win — "nicely called".
- *   - equal: "Spot on your guess today." (no bold span).
- * Durations render via fmtHm so they match the stat row + capacity chip.
+ *   - over:  the optimism the model is trimming.
+ *   - under: a win — "nicely called".
+ *   - equal: spot on.
+ *
+ * Returns the DECISION, not the sentence. The card renders it through i18next so
+ * the bold gap phrase is a `<strong>` component inside the translated string —
+ * the old version pre-baked an English sentence and the card sliced it by index
+ * to bold the prefix, which cannot survive a language with different word order.
  */
 export function gapMilestone(guessedMin: number, totalMin: number): MilestoneCopy {
   const delta = totalMin - guessedMin;
-  if (delta === 0) {
-    return { text: 'Spot on your guess today.', boldPrefix: null };
-  }
-  if (delta > 0) {
-    const boldPrefix = `+${fmtHm(delta)} over`;
-    return { text: `${boldPrefix} your guess today — that gap is what Whenbee's learning.`, boldPrefix };
-  }
-  const boldPrefix = `${fmtHm(-delta)} under`;
-  return { text: `${boldPrefix} your guess today — nicely called.`, boldPrefix };
+  if (delta === 0) return { direction: 'equal', gapMin: 0 };
+  if (delta > 0) return { direction: 'over', gapMin: delta };
+  return { direction: 'under', gapMin: -delta };
 }

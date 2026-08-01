@@ -1,4 +1,5 @@
-import { CATEGORY_NAMES } from '@/src/engine';
+import type { TFunction } from 'i18next';
+import { categoryName } from '@/src/features/shared/categoryName';
 
 // ──────────────────────────────────────────────────────────────────────────────
 // Discovery display helpers — pure presentation logic shared by the hub featured
@@ -19,31 +20,34 @@ export function multiplierValue(multiplier: number): string {
   return multiplier.toFixed(1);
 }
 
-export function dirLabel(direction: DiscoveryDirection): string {
-  return direction === 'longer' ? 'LONGER' : 'FASTER';
+/** `tr` is the whenbee-namespace translator (from `useTranslation('whenbee')`).
+ *  Required: this is display copy, so there is no correct untranslated answer. */
+export function dirLabel(direction: DiscoveryDirection, tr: TFunction<'whenbee'>): string {
+  return tr(`discoveries.gallery.dirLabel.${direction}`);
 }
 
 /** Gallery proof line, 15m baseline. */
-export function discoveryProof(honestForFifteen: number, direction: DiscoveryDirection): string {
+export function discoveryProof(
+  honestForFifteen: number,
+  direction: DiscoveryDirection,
+  tr: TFunction<'whenbee'>,
+): string {
   return direction === 'longer'
-    ? `You plan 15m · really runs ~${honestForFifteen}m`
-    : `You plan 15m · really only ~${honestForFifteen}m`;
+    ? tr('discoveries.gallery.proofLonger', { minutes: honestForFifteen })
+    : tr('discoveries.gallery.proofFaster', { minutes: honestForFifteen });
 }
 
 /** Hub featured sentence, 15m baseline. */
-export function discoverySentence(honestForFifteen: number, direction: DiscoveryDirection): string {
+export function discoverySentence(
+  honestForFifteen: number,
+  direction: DiscoveryDirection,
+  tr: TFunction<'whenbee'>,
+): string {
   return direction === 'longer'
-    ? `You plan 15 minutes — it really takes about ${honestForFifteen}.`
-    : `You plan 15 minutes — it really takes only about ${honestForFifteen}.`;
+    ? tr('discoveries.preview.sentenceLonger', { minutes: honestForFifteen })
+    : tr('discoveries.preview.sentenceFaster', { minutes: honestForFifteen });
 }
 
-/** Seed-name map, else title-case the slug ("deep_work" → "Deep Work"). */
-export function categoryLabel(id: string): string {
-  const seed = CATEGORY_NAMES[id];
-  if (seed) return seed;
-  return id
-    .split(/[_\-\s]+/)
-    .filter(Boolean)
-    .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
-    .join(' ');
-}
+/** Localized display name for a discovery's category (built-in ids translate;
+ *  a user-authored slug title-cases and is never translated). */
+export const categoryLabel = categoryName;

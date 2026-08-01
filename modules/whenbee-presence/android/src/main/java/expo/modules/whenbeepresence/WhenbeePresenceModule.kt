@@ -52,6 +52,23 @@ class WhenbeePresenceModule : Module() {
     pi.cancel()
   }
 
+
+  /** Display strings JS sends alongside the timer. They are already translated in the
+   *  app's language (i18next), because the in-app picker can disagree with the system
+   *  locale — a string resource would follow the phone, not the picker. */
+  private fun notifStringsFrom(attrs: Map<String, Any?>): PresenceNotifier.NotifStrings {
+    val raw = attrs["strings"] as? Map<*, *> ?: return PresenceNotifier.NotifStrings()
+    val d = PresenceNotifier.NotifStrings()
+    fun pick(key: String, fallback: String) = (raw[key] as? String)?.takeIf { it.isNotBlank() } ?: fallback
+    return PresenceNotifier.NotifStrings(
+      finish = pick("finish", d.finish),
+      overrun = pick("overrun", d.overrun),
+      guessSuffix = pick("guessSuffix", d.guessSuffix),
+      chipOver = pick("chipOver", d.chipOver),
+      stopAction = pick("stopAction", d.stopAction),
+    )
+  }
+
   override fun definition() = ModuleDefinition {
     Name("WhenbeePresence")
 
@@ -66,7 +83,7 @@ class WhenbeePresenceModule : Module() {
       val guessFinish = (attrs["guessFinishEpoch"] as? Number)?.toDouble() ?: 0.0
 
       // Persist for the background alarm, and keep the in-memory fast path.
-      PresenceNotifier.saveTimer(context, label, start, finish, proRich, guessFinish)
+      PresenceNotifier.saveTimer(context, label, start, finish, proRich, guessFinish, notifStringsFrom(attrs))
       lastLabel = label; lastStart = start; lastFinish = finish; lastProRich = proRich
 
       val finishMs = (finish * 1000).toLong()
@@ -92,6 +109,19 @@ class WhenbeePresenceModule : Module() {
       val label = lastLabel ?: persisted?.label ?: return@Function
       val finish = lastFinish ?: persisted?.finishEpochSec ?: return@Function
       val proRich = lastProRich || (persisted?.isProRich ?: false)
+      // Re-persist the strings on every update so switching language mid-timer repaints
+      // the notification (and any later background re-post) in the new language.
+      if (state["strings"] != null && persisted != null) {
+        PresenceNotifier.saveTimer(
+          context,
+          label,
+          persisted.startEpochSec,
+          finish,
+          proRich,
+          persisted.guessFinishEpochSec,
+          notifStringsFrom(state),
+        )
+      }
       PresenceNotifier.post(context, label, finish, isOverrun = overrun, isProRich = proRich)
       // A foreground flip to overrun means the bar is full — stop advancing it.
       if (overrun) TimerAlarmReceiver.cancelProgress(context)

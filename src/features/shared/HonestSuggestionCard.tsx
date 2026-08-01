@@ -1,10 +1,12 @@
 import { useEffect, useRef } from 'react';
 import { StyleSheet, View, type TextStyle, type ViewStyle } from 'react-native';
+import { useTranslation } from 'react-i18next';
 import { AppText } from '@/src/components/AppText';
 import { useEntitlement } from '@/src/features/paywall/useEntitlement';
 import { useTheme } from '@/src/theme/useTheme';
 import { analytics } from '@/src/services/analytics';
 import { formatHonestMinutes } from '@/src/lib/time';
+import { formatDuration } from '@/src/i18n/formatDuration';
 import type { CalibrationConfidence, HonestRange } from '@/src/domain/types';
 
 // ──────────────────────────────────────────────────────────────────────────────
@@ -53,6 +55,8 @@ export function HonestSuggestionCard({
   categoryName?: string;
 }) {
   const t = useTheme();
+  const { t: tr } = useTranslation('shared');
+  const { t: translate } = useTranslation();
   const isPro = useEntitlement((s) => s.isPro);
 
   // Pre-data everyone sees a soft range (never a precise target); post-data the
@@ -139,27 +143,31 @@ export function HonestSuggestionCard({
   const valueText =
     showRange && range ? `${range.lowMinutes}–${range.highMinutes}${NBSP}min` : pointValue;
 
-  const categoryLabel = categoryName?.toLowerCase() ?? 'similar';
+  const categoryLabel = categoryName?.toLowerCase() ?? tr('honestSuggestionCard.similar');
   const sentenceLead = preEstimate
-    ? 'Tasks like this usually land around '
-    : `Your last few ${categoryLabel} tasks landed around `;
+    ? tr('honestSuggestionCard.leadGeneric')
+    : tr('honestSuggestionCard.lastFewPrefix', { category: categoryLabel });
   const footerText = preEstimate
-    ? 'No need to pad your guess. This range does it for you. Sharpens as you log.'
-    : 'Not a target, just what usually happens. Keep guessing with your gut.';
+    ? tr('honestSuggestionCard.footerPre')
+    : tr('honestSuggestionCard.footerPost');
 
   const spokenValue =
     showRange && range
-      ? `${range.lowMinutes} to ${range.highMinutes} minutes`
-      : `${honestMinutes} minutes`;
+      ? tr('honestSuggestionCard.spokenRange', { low: range.lowMinutes, high: range.highMinutes })
+      : tr('honestSuggestionCard.spokenPoint', { count: honestMinutes });
   const a11yLabel = preEstimate
-    ? `Tasks like this usually land around ${spokenValue}. No need to pad your guess — this range does it for you.`
-    : `Your last few ${categoryLabel} tasks usually land around ${spokenValue}. Not a target, just what usually happens.`;
+    ? tr('honestSuggestionCard.a11yGeneric', { value: spokenValue })
+    : tr('honestSuggestionCard.a11yCategory', { category: categoryLabel, value: spokenValue });
 
   return (
     <View style={card} accessibilityLabel={a11yLabel}>
       <View style={topRow}>
-        <AppText style={eyebrow}>{preEstimate ? 'A starting hunch' : 'Usually, for you'}</AppText>
-        <AppText style={guessNote}>you guessed {guessMinutes}m</AppText>
+        <AppText style={eyebrow}>
+          {preEstimate
+            ? tr('honestSuggestionCard.eyebrowPre')
+            : tr('honestSuggestionCard.eyebrowPost')}
+        </AppText>
+        <AppText style={guessNote}>{tr('honestSuggestionCard.youGuessed', { duration: formatDuration(guessMinutes, translate) })}</AppText>
       </View>
 
       <AppText style={sentence}>

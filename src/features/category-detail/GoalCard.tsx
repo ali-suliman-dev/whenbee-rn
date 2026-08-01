@@ -11,6 +11,7 @@ import Animated, {
 } from 'react-native-reanimated';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import { Ionicons } from '@expo/vector-icons';
+import { Trans, useTranslation } from 'react-i18next';
 import { Card } from '@/src/components/Card';
 import { AppText } from '@/src/components/AppText';
 import { useTheme } from '@/src/theme/useTheme';
@@ -159,6 +160,7 @@ export function GoalCard({
   currentAccuracy: number;
 }) {
   const t = useTheme();
+  const { t: tr } = useTranslation('categoryDetail');
   const { goal, progress, canSet, presets, recommended, currentBand, justMet, setGoal, keep } =
     useCategoryGoal(categoryId);
   const n = useCalibrationStore((s) => s.statsByCategory[categoryId]?.n ?? 0);
@@ -245,10 +247,12 @@ export function GoalCard({
     <Card>
       {/* ── Header ── */}
       <View style={styles(t).headerRow}>
-        <AppText style={styles(t).eyebrow}>{goal?.met ? 'GOAL · REACHED' : 'GOAL'}</AppText>
+        <AppText style={styles(t).eyebrow}>
+          {goal?.met ? tr('goalCard.eyebrowReached') : tr('goalCard.eyebrow')}
+        </AppText>
         {goal ? (
           <View style={styles(t).chip}>
-            <AppText style={styles(t).chipText}>within {targetBand}%</AppText>
+            <AppText style={styles(t).chipText}>{tr('goalCard.withinChip', { band: targetBand })}</AppText>
           </View>
         ) : null}
       </View>
@@ -257,9 +261,9 @@ export function GoalCard({
       {!canSet ? (
         // 1 · Not enough
         <View style={styles(t).body}>
-          <AppText style={styles(t).headline}>A few more logs and you can aim here</AppText>
+          <AppText style={styles(t).headline}>{tr('goalCard.notEnough.headline')}</AppText>
           <AppText style={styles(t).sub}>
-            {n} of {GOAL_MIN_LOGS} logged
+            {tr('goalCard.notEnough.sub', { n, min: GOAL_MIN_LOGS })}
           </AppText>
           <View style={styles(t).mutedTrack}>
             <View style={[styles(t).mutedFill, { width: `${Math.min(1, n / GOAL_MIN_LOGS) * 100}%` }]} />
@@ -268,10 +272,14 @@ export function GoalCard({
       ) : picking ? (
         // 3 · Pick — presets + adjustable drawer
         <Animated.View entering={EnteringReveal} style={styles(t).body}>
-          <AppText style={styles(t).headline}>Pick how close to aim</AppText>
+          <AppText style={styles(t).headline}>{tr('goalCard.picker.headline')}</AppText>
           <AppText style={styles(t).sub}>
-            You land within <AppText style={styles(t).subStrong}>±{currentBand}%</AppText> now — every choice
-            is tighter.
+            <Trans
+              i18nKey="goalCard.picker.sub"
+              ns="categoryDetail"
+              values={{ band: currentBand }}
+              components={{ strong: <AppText style={styles(t).subStrong} /> }}
+            />
           </AppText>
           <View style={styles(t).presets}>
             {presets.map((p) => {
@@ -289,7 +297,7 @@ export function GoalCard({
                 >
                   <View style={[styles(t).preset, on && styles(t).presetOn]}>
                     <AppText style={[styles(t).presetVal, on && styles(t).presetValOn]}>{p}%</AppText>
-                    <AppText style={[styles(t).presetLbl, on && styles(t).presetValOn]}>within</AppText>
+                    <AppText style={[styles(t).presetLbl, on && styles(t).presetValOn]}>{tr('goalCard.picker.presetWithin')}</AppText>
                   </View>
                 </Pressable>
               );
@@ -303,7 +311,7 @@ export function GoalCard({
                 {band}
                 <AppText style={styles(t).drNumUnit}>%</AppText>
               </AppText>
-              <AppText style={styles(t).drCap}>aim to land within</AppText>
+              <AppText style={styles(t).drCap}>{tr('goalCard.picker.drawerCaption')}</AppText>
             </View>
             <GestureDetector gesture={pan}>
               <View style={styles(t).dBandHit}>
@@ -314,14 +322,14 @@ export function GoalCard({
               </View>
             </GestureDetector>
             <View style={styles(t).dEnds}>
-              <AppText style={styles(t).dEnd}>spot on</AppText>
-              <AppText style={[styles(t).dEnd, styles(t).dEndNow]}>±{currentBand}% now</AppText>
+              <AppText style={styles(t).dEnd}>{tr('goalCard.picker.endSpotOn')}</AppText>
+              <AppText style={[styles(t).dEnd, styles(t).dEndNow]}>{tr('goalCard.picker.endNow', { band: currentBand })}</AppText>
             </View>
           </View>
 
           <View style={styles(t).btnRow}>
-            <Btn label="Not now" variant="ghost" onPress={() => setPicking(false)} />
-            <Btn label="Set goal" variant="coin" onPress={confirmGoal} />
+            <Btn label={tr('goalCard.picker.notNow')} variant="ghost" onPress={() => setPicking(false)} />
+            <Btn label={tr('goalCard.picker.setGoal')} variant="coin" onPress={confirmGoal} />
           </View>
         </Animated.View>
       ) : goal?.met ? (
@@ -333,36 +341,47 @@ export function GoalCard({
                 <AppText style={styles(t).sealMark}>✦</AppText>
               </View>
               <View style={{ flex: 1 }}>
-                <AppText style={styles(t).headline}>You did it</AppText>
-                <AppText style={styles(t).sub}>Your {categoryName.toLowerCase()} estimates landed within {targetBand}%.</AppText>
+                <AppText style={styles(t).headline}>{tr('goalCard.reached.headline')}</AppText>
+                <AppText style={styles(t).sub}>
+                  {tr('goalCard.reached.sub', { categoryName: categoryName.toLowerCase(), band: targetBand })}
+                </AppText>
               </View>
             </View>
             <HoneyTrack fraction={1} sealed />
             <View style={styles(t).btnRow}>
-              <Btn label="I'm happy here" variant="ghost" onPress={keep} />
-              <Btn label="Aim tighter" variant="coin" trailingMark onPress={openTighterPicker} />
+              <Btn label={tr('goalCard.reached.keep')} variant="ghost" onPress={keep} />
+              <Btn label={tr('goalCard.reached.aimTighter')} variant="coin" trailingMark onPress={openTighterPicker} />
             </View>
           </Animated.View>
         ) : (
           <View style={styles(t).body}>
-            <AppText style={styles(t).sub}>Reached — within {targetBand}%.</AppText>
+            <AppText style={styles(t).sub}>{tr('goalCard.reached.subCompact', { band: targetBand })}</AppText>
             <HoneyTrack fraction={1} sealed />
           </View>
         )
       ) : goal ? (
         // 4 · Active — the coach
         <View style={styles(t).body}>
-          <AppText style={styles(t).headline}>Closing in</AppText>
+          <AppText style={styles(t).headline}>{tr('goalCard.active.headline')}</AppText>
           <HoneyTrack fraction={progress} />
           <AppText style={styles(t).statLine}>
-            Best so far <AppText style={styles(t).statStrong}>±{bestBand}%</AppText>
+            <Trans
+              i18nKey="goalCard.active.bestSoFar"
+              ns="categoryDetail"
+              values={{ band: bestBand }}
+              components={{ strong: <AppText style={styles(t).statStrong} /> }}
+            />
             {eta !== null && eta > 0 ? (
               <AppText style={styles(t).statLine}>
-                {' '}
-                · about <AppText style={styles(t).statStrong}>{eta} logs</AppText> to ±{targetBand}%
+                <Trans
+                  i18nKey="goalCard.active.etaTail"
+                  ns="categoryDetail"
+                  values={{ eta, band: targetBand }}
+                  components={{ strong: <AppText style={styles(t).statStrong} /> }}
+                />
               </AppText>
             ) : (
-              <AppText style={styles(t).statLine}> · keep logging, it tightens</AppText>
+              <AppText style={styles(t).statLine}>{tr('goalCard.active.etaFallback')}</AppText>
             )}
           </AppText>
           {lever ? (
@@ -371,10 +390,14 @@ export function GoalCard({
                 <Ionicons name="bulb-outline" size={t.iconSize.sm} color={t.colors.amberText} />
               </View>
               <View style={{ flex: 1 }}>
-                <AppText style={styles(t).cl}>Your biggest lever</AppText>
+                <AppText style={styles(t).cl}>{tr('goalCard.active.leverLabel')}</AppText>
                 <AppText style={styles(t).ctext}>
-                  Your <AppText style={styles(t).ctextK}>{lever.worstValue}</AppText> miss widest — tighten
-                  those first.
+                  <Trans
+                    i18nKey="goalCard.active.leverText"
+                    ns="categoryDetail"
+                    values={{ worstValue: lever.worstValue }}
+                    components={{ strong: <AppText style={styles(t).ctextK} /> }}
+                  />
                 </AppText>
               </View>
             </View>
@@ -382,13 +405,13 @@ export function GoalCard({
         </View>
       ) : (
         // 2 · Empty (Pro, can set, no goal) — tap to open the picker
-        <Pressable onPress={openPicker} accessibilityRole="button" accessibilityLabel="Set a goal — Whenbee coaches you there">
+        <Pressable onPress={openPicker} accessibilityRole="button" accessibilityLabel={tr('goalCard.empty.accessibilityLabel')}>
           <View style={styles(t).body}>
             <View style={styles(t).titleRow}>
-              <AppText style={styles(t).headline}>Set a target and I&apos;ll coach you there</AppText>
+              <AppText style={styles(t).headline}>{tr('goalCard.empty.headline')}</AppText>
               <Ionicons name="chevron-forward" size={t.iconSize.sm} color={t.colors.inkSoft} />
             </View>
-            <AppText style={styles(t).sub}>You land within ±{currentBand}% now — aim tighter.</AppText>
+            <AppText style={styles(t).sub}>{tr('goalCard.empty.sub', { band: currentBand })}</AppText>
           </View>
         </Pressable>
       )}

@@ -12,6 +12,7 @@ import {
   type ViewStyle,
 } from 'react-native';
 import Animated, { useAnimatedStyle, useSharedValue, withTiming } from 'react-native-reanimated';
+import { useTranslation } from 'react-i18next';
 import type { BlindSpot } from './useWhenbeeHub';
 
 // ──────────────────────────────────────────────────────────────────────────────
@@ -31,6 +32,7 @@ import type { BlindSpot } from './useWhenbeeHub';
 
 export function BlindSpotCard({ blindSpot }: { blindSpot: BlindSpot }) {
   const t = useTheme();
+  const { t: tr } = useTranslation('whenbee');
 
   const scale = useSharedValue(1);
   const pressStyle = useAnimatedStyle(() => ({ transform: [{ scale: scale.get() }] }));
@@ -86,7 +88,7 @@ export function BlindSpotCard({ blindSpot }: { blindSpot: BlindSpot }) {
         scale.set(withTiming(1, { duration: t.motion.fast, easing: t.motion.easing.out }))
       }
       accessibilityRole="button"
-      accessibilityLabel={`Calibrate ${blindSpot.name} next`}
+      accessibilityLabel={tr('blindSpot.a11y', { name: blindSpot.name })}
     >
       <Animated.View style={pressStyle}>
         <Card style={{ gap: t.space[5] }}>
@@ -96,14 +98,14 @@ export function BlindSpotCard({ blindSpot }: { blindSpot: BlindSpot }) {
                 <Ionicons name="bulb-outline" size={t.iconSize.sm} color={t.colors.ink} />
               </View>
               <View style={titleCol}>
-                <Text style={eyebrow}>STILL LEARNING</Text>
+                <Text style={eyebrow}>{tr('blindSpot.eyebrow')}</Text>
                 <Text style={title} numberOfLines={1}>
                   {blindSpot.name}
                 </Text>
               </View>
               <Ionicons name="chevron-forward" size={t.iconSize.sm} color={t.colors.inkFaint} />
             </View>
-            <Text style={body}>A few honest logs and this number gets sharper.</Text>
+            <Text style={body}>{tr('blindSpot.body')}</Text>
           </View>
           <View style={track}>
             <View style={fill} />

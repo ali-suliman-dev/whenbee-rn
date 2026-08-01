@@ -1,5 +1,6 @@
 import { useEffect } from 'react';
 import { View } from 'react-native';
+import { useTranslation } from 'react-i18next';
 import Animated, {
   useAnimatedStyle,
   useReducedMotion,
@@ -17,11 +18,12 @@ import { useTheme } from '@/src/theme/useTheme';
  */
 export function StepProgress({ current, total }: { current: number; total: number }) {
   const t = useTheme();
+  const { t: tr } = useTranslation('onboarding');
   return (
     <View
       accessible
       accessibilityRole="progressbar"
-      accessibilityLabel={`Step ${current + 1} of ${total}`}
+      accessibilityLabel={tr('stepProgress.accessibilityLabel', { current: current + 1, total })}
       accessibilityValue={{ min: 0, max: total, now: current + 1 }}
       style={{ flexDirection: 'row', gap: t.space[1], paddingVertical: t.space[3] }}
     >

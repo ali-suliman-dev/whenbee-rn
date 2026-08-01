@@ -1,5 +1,7 @@
 import { useCallback, useRef, useState } from 'react';
 import { useFocusEffect } from 'expo-router';
+import i18n from '@/src/i18n';
+import { accuracyLabel } from '@/src/i18n/bucketLabel';
 import {
   resolveWeekPeriod,
   resolveMonthPeriod,
@@ -9,8 +11,10 @@ import {
   deriveWeekRead,
   deriveForwardAction,
   deriveConfidenceBand,
+  REVIEW_REFLECTION_QUESTION_COUNT,
   type TightenedEntry,
   type AccuracyCorrelation,
+  type ReviewReflection,
 } from '@/src/engine';
 import type { ReviewPeriod, ReviewSummary } from '@/src/domain/types';
 import {
@@ -53,9 +57,9 @@ function logsInWindow(logs: PatternLog[], period: ReviewPeriod): PatternLog[] {
 function accuracyLineFor(windowData: PatternsData): string | null {
   const yp = deriveYouVsPast(windowData);
   if (!yp) return null;
-  if (yp.delta > 2) return 'Your estimates got a little sharper.';
-  if (yp.delta < -2) return 'Estimates ran a bit looser. That is just data, not a verdict.';
-  return 'Steady week. Your reads held.';
+  if (yp.delta > 2) return i18n.t('review:accuracyLine.sharper');
+  if (yp.delta < -2) return i18n.t('review:accuracyLine.looser');
+  return i18n.t('review:accuracyLine.steady');
 }
 
 /** A short "you're sharpest in the …" phrase from the strongest accuracy
@@ -63,9 +67,25 @@ function accuracyLineFor(windowData: PatternsData): string | null {
 function sharpestPhraseFor(correlations: AccuracyCorrelation[]): string | null {
   const top = correlations[0];
   if (!top) return null;
+  const label = accuracyLabel(top.betterLabel);
   return top.dimension === 'time'
-    ? `You were sharpest in the ${top.betterLabel}.`
-    : `${top.betterLabel} was your sharpest day.`;
+    ? i18n.t('review:sharpestPhrase.time', { label })
+    : i18n.t('review:sharpestPhrase.day', { label });
+}
+
+/** Word the engine's reflection descriptor. The engine picks the angle (a quiet
+ *  win, the period's drift, or a rotating question index); the sentence is copy,
+ *  so it lives in the bundle and gets chosen here at the i18n boundary. */
+function reflectionText(reflection: ReviewReflection): string {
+  if (reflection.kind === 'tightened') {
+    return i18n.t('review:reflection.tightened', { category: reflection.categoryName });
+  }
+  if (reflection.kind === 'surprise') {
+    return i18n.t('review:reflection.surprise', { category: reflection.categoryName });
+  }
+  const questions = i18n.t('review:reflection.questions', { returnObjects: true }) as string[];
+  const index = reflection.index % REVIEW_REFLECTION_QUESTION_COUNT;
+  return questions[index] ?? questions[0] ?? '';
 }
 
 /** Per-category clamped ratios within the window (oldest → newest) for tightening. */
@@ -111,18 +131,21 @@ export function buildReviewFromData(data: PatternsData, period: ReviewPeriod): R
     ? deriveConfidenceBand(data.logs, biggestSurprise.categoryId)
     : null;
 
-  return buildReviewSummary({
-    period,
-    loggedCount,
-    loggedMinutes,
-    accuracyLine: accuracyLineFor(windowData),
-    sharpestPhrase: sharpestPhraseFor(correlations),
-    tightenedEntries,
-    biggestSurprise,
-    weekRead,
-    forwardAction,
-    confidenceBand,
-  });
+  return buildReviewSummary(
+    {
+      period,
+      loggedCount,
+      loggedMinutes,
+      accuracyLine: accuracyLineFor(windowData),
+      sharpestPhrase: sharpestPhraseFor(correlations),
+      tightenedEntries,
+      biggestSurprise,
+      weekRead,
+      forwardAction,
+      confidenceBand,
+    },
+    reflectionText,
+  );
 }
 
 /** Resolve the current review period (weekly, or monthly on the 1st). */

@@ -7,6 +7,7 @@
 
 import { requireOptionalNativeModule } from 'expo-modules-core';
 import { isExpoGo } from '@/src/lib/isExpoGo';
+import i18n from '@/src/i18n';
 
 type NotificationsModule = typeof import('expo-notifications');
 
@@ -95,8 +96,8 @@ export async function scheduleTrialReminder(purchasedAt: Date): Promise<TrialRem
     await N.scheduleNotificationAsync({
       identifier: REMINDER_IDENTIFIER,
       content: {
-        title: 'Your Pro trial ends in 2 days',
-        body: 'Keep it or cancel in Settings. Either way, your calibration stays.',
+        title: i18n.t('notifications:trialEnding.title'),
+        body: i18n.t('notifications:trialEnding.body'),
         data: { url: 'whenbee:///settings' },
       },
       trigger: { type: N.SchedulableTriggerInputTypes.DATE, date: trialReminderDate(purchasedAt) },

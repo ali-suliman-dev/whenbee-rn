@@ -37,7 +37,7 @@ describe('TodayEmptyState', () => {
     );
     expect(screen.getByText("Thursday's wide open")).toBeOnTheScreen();
     expect(
-      screen.getByText("Add what future-you should tackle — it carries over free if life happens."),
+      screen.getByText("Add what future-you should tackle. It carries over free if life happens."),
     ).toBeOnTheScreen();
     // no guilt/overdue language
     expect(screen.queryByText(/overdue/i)).toBeNull();

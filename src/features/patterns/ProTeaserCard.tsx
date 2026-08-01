@@ -1,6 +1,7 @@
 import { View, Text, type ViewStyle, type TextStyle } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
+import { useTranslation } from 'react-i18next';
 import { useTheme } from '@/src/theme/useTheme';
 import { type } from '@/src/theme/typography';
 import { AppButton } from '@/src/components/AppButton';
@@ -27,6 +28,7 @@ export interface ProTeaserProps {
 /** Teased, deliberately-illegible feature visual behind a scrim. */
 function Preview({ kind }: { kind: ProTeaserPreview }) {
   const t = useTheme();
+  const { t: tr } = useTranslation('patterns');
   const heights = kind === 'rhythm' ? [0.42, 0.66, 0.34, 1, 0.58, 0.4, 0.3] : [0.5, 0.8, 0.45, 0.7, 0.95, 0.6, 0.4];
   const panel: ViewStyle = {
     position: 'relative', overflow: 'hidden',
@@ -51,7 +53,7 @@ function Preview({ kind }: { kind: ProTeaserPreview }) {
       <View style={scrim} pointerEvents="none" />
       <View style={pill}>
         <Ionicons name="lock-closed" size={t.iconSize.xs} color={t.colors.onAmber} />
-        <Text style={pillText}>Pro</Text>
+        <Text style={pillText}>{tr('proTeaserCard.proPill')}</Text>
       </View>
     </View>
   );
@@ -59,6 +61,7 @@ function Preview({ kind }: { kind: ProTeaserPreview }) {
 
 export function ProTeaserCard({ eyebrow, headline, sub, cta, trigger, preview }: ProTeaserProps) {
   const t = useTheme();
+  const { t: tr } = useTranslation('patterns');
   const cardStyle: ViewStyle = {
     backgroundColor: t.colors.surfaceRaised, borderRadius: t.radii.card, borderCurve: 'continuous',
     borderWidth: t.borderWidth.share, borderColor: t.colors.border, padding: t.space[4], gap: t.space[3],
@@ -80,7 +83,7 @@ export function ProTeaserCard({ eyebrow, headline, sub, cta, trigger, preview }:
         <Text style={subStyle}>{sub}</Text>
       </View>
       <AppButton label={cta} variant="amber" size="lg" fullWidth onPress={openPaywall} />
-      <Text style={foot}>Cancel anytime · learned on-device</Text>
+      <Text style={foot}>{tr('proTeaserCard.footer')}</Text>
     </View>
   );
 }

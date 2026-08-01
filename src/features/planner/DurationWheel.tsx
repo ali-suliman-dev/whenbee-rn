@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { View, type ViewStyle } from 'react-native';
+import { useTranslation } from 'react-i18next';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import Animated, {
   useSharedValue,
@@ -71,6 +72,7 @@ export function DurationWheel({
   fullWidth?: boolean;
 }) {
   const t = useTheme();
+  const { t: tr } = useTranslation('planner');
   const reducedMotion = useReducedMotion();
 
   // Build data only when step changes (stable across renders).
@@ -180,7 +182,7 @@ export function DurationWheel({
     <View
       style={container}
       accessibilityRole="adjustable"
-      accessibilityLabel="Duration in minutes"
+      accessibilityLabel={tr('durationWheel.a11y')}
       accessibilityValue={{
         min: step,
         max: 180,

@@ -18,26 +18,18 @@ export interface DayCell {
   hasTasks: boolean;
 }
 
-// ─── Constants ────────────────────────────────────────────────────────────────
-
-/** Short 3-char weekday labels, index 0 = Sunday. */
-const WEEKDAY_LABELS: readonly string[] = [
-  'Sun',
-  'Mon',
-  'Tue',
-  'Wed',
-  'Thu',
-  'Fri',
-  'Sat',
-] as const;
-
 // ─── formatA11yLabel ───────────────────────────────────────────────────────────
 
-/** Formats a day-key as "Weekday Month DD" for a11y labels (e.g. "Wednesday June 24"). */
-export function formatA11yLabel(key: string): string {
+/**
+ * Formats a day-key as "Weekday Month DD" for a11y labels (e.g. "Wednesday June 24").
+ * `fullDate` is a locale-aware formatter (see `makeFormatters`/`useLocalizedFormat`
+ * in `src/i18n`) threaded in from the calling component — this file stays pure
+ * and never imports i18n directly.
+ */
+export function formatA11yLabel(key: string, fullDate: (d: Date) => string): string {
   const [y, m, d] = key.split('-').map(Number) as [number, number, number];
   const date = new Date(y, m - 1, d);
-  return date.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' });
+  return fullDate(date);
 }
 
 // ─── weekFor ──────────────────────────────────────────────────────────────────
@@ -79,23 +71,27 @@ export function weekFor(anchorKey: string, weekStartsOn: 0 | 1): string[] {
  * @param today       Today's key (for isToday)
  * @param selected    Currently selected key (for isSelected)
  * @param datesWithTasks  Set of keys that have at least one task
+ * @param weekdayShort  Locale-aware short-weekday formatter (see `makeFormatters`/
+ *   `useLocalizedFormat` in `src/i18n`) threaded in from the calling component —
+ *   this file stays pure and never imports i18n directly.
  */
 export function dayCells(
   weekKeys: string[],
   today: string,
   selected: string,
   datesWithTasks: ReadonlySet<string>,
+  weekdayShort: (d: Date) => string,
 ): DayCell[] {
   return weekKeys.map((key) => {
-    const weekday = weekdayOf(key);
-    const label = WEEKDAY_LABELS[weekday];
+    const [y, m, d] = key.split('-').map(Number) as [number, number, number];
+    const label = weekdayShort(new Date(y, m - 1, d));
     // dayNum: extract the DD portion from YYYY-MM-DD and strip leading zero
     const ddPart = key.slice(8); // '08' or '24'
     const dayNum = String(parseInt(ddPart, 10)); // '8' or '24'
 
     return {
       key,
-      weekdayLabel: label ?? '',
+      weekdayLabel: label,
       dayNum,
       isToday: key === today,
       isSelected: key === selected,

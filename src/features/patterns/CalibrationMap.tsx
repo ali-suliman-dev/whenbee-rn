@@ -1,4 +1,6 @@
 import { View, Text, type ViewStyle, type TextStyle } from 'react-native';
+import { useTranslation } from 'react-i18next';
+import type { TFunction } from 'i18next';
 import { useTheme } from '@/src/theme/useTheme';
 import { type } from '@/src/theme/typography';
 import type { CalibrationConfidence } from '@/src/domain/types';
@@ -16,6 +18,12 @@ import type { CalibrationMapRow } from './usePatterns';
 
 const DIAL_STEPS: CalibrationConfidence[] = ['raw', 'setting', 'honest'];
 
+const CONFIDENCE_KEY = {
+  raw: 'honestMap.confidence.raw',
+  setting: 'honestMap.confidence.setting',
+  honest: 'honestMap.confidence.honest',
+} as const;
+
 /** Steps lit, 1–3, for each readiness stage. */
 function filledSteps(confidence: CalibrationConfidence): number {
   if (confidence === 'honest') return 3;
@@ -26,9 +34,11 @@ function filledSteps(confidence: CalibrationConfidence): number {
 function ConfidenceDial({
   confidence,
   categoryName,
+  tr,
 }: {
   confidence: CalibrationConfidence;
   categoryName: string;
+  tr: TFunction<'patterns'>;
 }) {
   const t = useTheme();
   const lit = filledSteps(confidence);
@@ -42,7 +52,11 @@ function ConfidenceDial({
     <View
       style={dial}
       accessibilityRole="progressbar"
-      accessibilityLabel={`${categoryName} readiness: ${confidence}, ${lit} of 3`}
+      accessibilityLabel={tr('honestMap.dial.accessibilityLabel', {
+        category: categoryName,
+        confidence: tr(CONFIDENCE_KEY[confidence]),
+        lit,
+      })}
     >
       {DIAL_STEPS.map((step, i) => (
         <View
@@ -56,16 +70,17 @@ function ConfidenceDial({
 
 /** Warm, no-guilt framing from the row mix. Settled areas are celebrated; the rest
  *  are simply "still settling" — never behind, never a chore. */
-function readinessLine(rows: CalibrationMapRow[]): string {
+function readinessLine(tr: TFunction<'patterns'>, rows: CalibrationMapRow[]): string {
   const honest = rows.filter((r) => r.confidence === 'honest').length;
-  if (honest === 0) return 'Your areas are still settling. A few more logs and the numbers sharpen.';
-  if (honest === 1) return 'One area reads honest now. The rest are catching up.';
-  if (honest === rows.length) return 'Every area reads honest now. Your numbers are yours.';
-  return `${honest} of your areas read honest now.`;
+  if (honest === 0) return tr('honestMap.readiness.none');
+  if (honest === 1) return tr('honestMap.readiness.one');
+  if (honest === rows.length) return tr('honestMap.readiness.all');
+  return tr('honestMap.readiness.some', { count: honest });
 }
 
 export function HonestMap({ rows }: { rows: CalibrationMapRow[] }) {
   const t = useTheme();
+  const { t: tr } = useTranslation('patterns');
 
   const lead: TextStyle = { ...(type.bodySm as unknown as TextStyle), color: t.colors.inkSoft, paddingHorizontal: t.space[4], paddingTop: t.space[3] };
   const cardStyle: ViewStyle = { backgroundColor: t.colors.surface, borderRadius: t.radii.card, borderCurve: 'continuous' };
@@ -85,20 +100,22 @@ export function HonestMap({ rows }: { rows: CalibrationMapRow[] }) {
 
   return (
     <View style={cardStyle}>
-      <Text style={lead}>{readinessLine(rows)}</Text>
+      <Text style={lead}>{readinessLine(tr, rows)}</Text>
       {rows.map((r, i) => (
         <View key={r.categoryId} style={[row, i === rows.length - 1 ? { borderBottomWidth: 0 } : null]}>
           <View style={leftCol}>
             <Text style={name} numberOfLines={1}>{r.categoryName}</Text>
-            <Text style={sub}>runs {r.multiplier.toFixed(1)}× · {r.confidence}</Text>
+            <Text style={sub}>
+              {tr('honestMap.sub', { multiplier: r.multiplier.toFixed(1), confidence: tr(CONFIDENCE_KEY[r.confidence]) })}
+            </Text>
           </View>
-          <ConfidenceDial confidence={r.confidence} categoryName={r.categoryName} />
+          <ConfidenceDial confidence={r.confidence} categoryName={r.categoryName} tr={tr} />
           <View style={rightCol}>
             <View style={honestRow}>
               <Text style={honest}>~{r.honestMin}</Text>
-              <Text style={unit}>m</Text>
+              <Text style={unit}>{tr('honestMap.unit')}</Text>
             </View>
-            <Text style={guess}>vs {r.guessMin} guess</Text>
+            <Text style={guess}>{tr('honestMap.guess', { guessMin: r.guessMin })}</Text>
           </View>
         </View>
       ))}

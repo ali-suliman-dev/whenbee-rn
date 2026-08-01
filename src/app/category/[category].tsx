@@ -8,6 +8,7 @@ import {
   type ViewStyle,
   type TextStyle,
 } from 'react-native';
+import { useTranslation } from 'react-i18next';
 import { router, useLocalSearchParams } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { Screen } from '@/src/components/Screen';
@@ -29,6 +30,7 @@ import { GoalLocked } from '@/src/features/category-detail/GoalLocked';
 import { ManageAreaCard } from '@/src/features/category-detail/ManageAreaCard';
 import { ProGate } from '@/src/features/paywall/ProGate';
 import { TIERS } from '@/src/engine';
+import type { Tier } from '@/src/domain/types';
 
 // ──────────────────────────────────────────────────────────────────────────────
 // Category Detail / Tune — pushes over the tab shell (no tab bar), back chevron.
@@ -39,8 +41,15 @@ import { TIERS } from '@/src/engine';
 // streaks — over-runs read amber.
 // ──────────────────────────────────────────────────────────────────────────────
 
+/** Engine Tier → its lowercase i18n key segment (the engine stays English-only,
+ *  so the tier word is localized here at the UI boundary like every other one). */
+function tierKey(tier: Tier): 'raw' | 'setting' | 'ripening' | 'thickening' | 'honest' {
+  return tier.toLowerCase() as 'raw' | 'setting' | 'ripening' | 'thickening' | 'honest';
+}
+
 export default function CategoryDetailScreen() {
   const t = useTheme();
+  const { t: tr } = useTranslation('categoryDetail');
   const { category } = useLocalSearchParams<{ category: string }>();
   const categoryId = category ?? '';
   const {
@@ -66,13 +75,13 @@ export default function CategoryDetailScreen() {
 
   function handleSetAdapt(speed: 'steady' | 'balanced' | 'reactive') {
     setAdaptSpeed(speed);
-    const label = speed.charAt(0).toUpperCase() + speed.slice(1);
-    showToast(`Adaptation set to ${label}`);
+    const label = tr(`adaptSegment.options.${speed}`);
+    showToast(tr('screen.toastAdaptSet', { label }));
   }
 
   async function handleReset() {
     await resetCategory();
-    showToast('Learning reset — your honey stays');
+    showToast(tr('screen.toastResetDone'));
   }
 
   async function handleDelete() {
@@ -91,19 +100,21 @@ export default function CategoryDetailScreen() {
           <Pressable
             onPress={() => router.back()}
             accessibilityRole="button"
-            accessibilityLabel="Back"
+            accessibilityLabel={tr('screen.backLabel')}
             hitSlop={t.size.hitSlop}
             style={styles(t).crumb}
           >
             <Ionicons name="chevron-back" size={t.iconSize.md} color={t.colors.inkSoft} />
-            <Text style={styles(t).crumbText}>Category insights</Text>
+            <Text style={styles(t).crumbText}>{tr('screen.crumb')}</Text>
           </Pressable>
           <View style={styles(t).titleRow}>
             <Text style={styles(t).h2} numberOfLines={1}>{detail?.categoryName ?? ' '}</Text>
             {detail?.tier ? (
               <View style={styles(t).tierPill}>
                 <HoneyHex size={t.space[2.5]} />
-                <Text style={styles(t).tierPillText}>{detail.tier}</Text>
+                <Text style={styles(t).tierPillText}>
+                  {tr(`tiers.${tierKey(detail.tier)}`)}
+                </Text>
               </View>
             ) : null}
           </View>
@@ -177,7 +188,7 @@ export default function CategoryDetailScreen() {
           </ScrollView>
         ) : (
           <View style={styles(t).loading}>
-            <Text style={styles(t).loadingText}>Reading your patterns…</Text>
+            <Text style={styles(t).loadingText}>{tr('screen.loading')}</Text>
           </View>
         )}
 

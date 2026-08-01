@@ -13,29 +13,30 @@ import { useState } from 'react';
 import { View, Text, Pressable, type ViewStyle, type TextStyle } from 'react-native';
 import Animated, { FadeIn } from 'react-native-reanimated';
 import { Ionicons } from '@expo/vector-icons';
+import { useTranslation } from 'react-i18next';
 import { useTheme } from '@/src/theme/useTheme';
 import { type } from '@/src/theme/typography';
 import { haptics } from '@/src/lib/haptics';
-import { weekdayOf } from '@/src/lib/day';
-import { fmtHm } from '@/src/lib/time';
+import { formatDuration } from '@/src/i18n/formatDuration';
 import { recapHeadline, recapScale } from './dayRecapCopy';
 import { StatColumn } from './StatColumn';
+import { useLocalizedFormat } from '@/src/i18n/useLocalizedFormat';
 import { TaskRow } from './TaskRow';
 import type { TodayRow } from './useToday';
 import type { DayRecap } from './useDayRecap';
 
-const SHORT_WEEKDAY = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'] as const;
-const SHORT_MONTH = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'] as const;
-function shortWeekday(key: string): string {
-  return SHORT_WEEKDAY[weekdayOf(key)] ?? key;
+function dateOf(key: string): Date {
+  const [y, m, d] = key.split('-').map(Number) as [number, number, number];
+  return new Date(y, m - 1, d);
+}
+
+/** Short weekday, e.g. "Tue" — locale-aware. */
+function shortWeekday(key: string, fmt: ReturnType<typeof useLocalizedFormat>): string {
+  return fmt.weekdayShort(dateOf(key));
 }
 /** "Tue · Jun 23" — a dated header so the card reads as a record of a real day. */
-function datedLabel(key: string): string {
-  const parts = key.split('-').map(Number);
-  const month = parts[1];
-  const day = parts[2];
-  if (month === undefined || day === undefined) return shortWeekday(key);
-  return `${shortWeekday(key)} · ${SHORT_MONTH[month - 1] ?? ''} ${day}`;
+function datedLabel(key: string, fmt: ReturnType<typeof useLocalizedFormat>): string {
+  return `${fmt.weekdayShort(dateOf(key))} · ${fmt.monthDay(dateOf(key))}`;
 }
 
 // ──────────────────────────────────────────────────────────────────────────────
@@ -53,17 +54,20 @@ export interface DayRecapCardProps {
 
 export function DayRecapCard({ recap, rows }: DayRecapCardProps) {
   const t = useTheme();
+  const { t: tr } = useTranslation('today');
+  const { t: translate } = useTranslation();
+  const fmt = useLocalizedFormat();
   const [expanded, setExpanded] = useState(false);
 
-  const dayLabel = shortWeekday(recap.date);
-  const headerLabel = datedLabel(recap.date);
+  const dayLabel = shortWeekday(recap.date, fmt);
+  const headerLabel = datedLabel(recap.date, fmt);
   // Keyed on doneCount, not rows.length: a past day can carry queued (not-done)
   // rows in `rows` (leftover tasks never logged that day) while doneCount is 0 —
   // that's still an empty day for this card's purposes.
   const isEmpty = recap.doneCount === 0;
 
-  const headline = recapHeadline(recap);
-  const scale = recapScale(recap.guessedMin, recap.honestMin);
+  const headline = recapHeadline(recap, translate);
+  const scale = recapScale(recap.guessedMin, recap.honestMin, translate);
   // No guilt: over reads in accent, under in a quiet ink-soft — never danger/red,
   // since running under a guess isn't a win any more than over is a loss.
   const gapColor = headline.direction === 'over' ? t.colors.accent : t.colors.inkSoft;
@@ -205,9 +209,9 @@ export function DayRecapCard({ recap, rows }: DayRecapCardProps) {
 
       {/* Stats — three columns matching the day-so-far card's treatment. */}
       <View style={statsRow}>
-        <StatColumn value={String(recap.doneCount)} unit={recap.doneCount === 1 ? 'task' : 'tasks'} label="LOGGED" />
-        <StatColumn value={fmtHm(recap.guessedMin)} label="GUESSED" dotColor={t.colors.primary} divided />
-        <StatColumn value={fmtHm(recap.honestMin)} label="HONEST" dotColor={t.colors.accent} divided />
+        <StatColumn value={String(recap.doneCount)} unit={tr('daySoFar.unit', { count: recap.doneCount })} label={tr('daySoFar.loggedLabel')} />
+        <StatColumn value={formatDuration(recap.guessedMin, translate)} label={tr('daySoFar.guessedLabel')} dotColor={t.colors.primary} divided />
+        <StatColumn value={formatDuration(recap.honestMin, translate)} label={tr('daySoFar.honestLabel')} dotColor={t.colors.accent} divided />
       </View>
 
       {/* Disclosure toggle */}
@@ -217,11 +221,14 @@ export function DayRecapCard({ recap, rows }: DayRecapCardProps) {
         onPress={toggle}
         accessibilityRole="button"
         accessibilityState={{ expanded }}
-        accessibilityLabel={`All tasks · ${dayLabel}. ${expanded ? 'Tap to collapse.' : 'Tap to expand.'}`}
+        accessibilityLabel={tr('dayRecap.allTasksA11y', {
+          day: dayLabel,
+          action: expanded ? tr('dayRecap.collapseAction') : tr('dayRecap.expandAction'),
+        })}
         hitSlop={t.size.hitSlop}
         style={disclosure}
       >
-        <Text style={disclosureLabel}>ALL TASKS · {dayLabel.toUpperCase()}</Text>
+        <Text style={disclosureLabel}>{tr('dayRecap.allTasksLabel', { day: dayLabel.toUpperCase() })}</Text>
         <Ionicons
           name={expanded ? 'chevron-up' : 'chevron-down'}
           size={t.iconSize.sm}

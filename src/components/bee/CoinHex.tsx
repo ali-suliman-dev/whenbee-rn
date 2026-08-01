@@ -1,4 +1,5 @@
 import { View, type ViewStyle, type TextStyle } from 'react-native';
+import { useTranslation } from 'react-i18next';
 import Svg, { Circle, Defs, LinearGradient, Stop } from 'react-native-svg';
 import { useTheme } from '@/src/theme/useTheme';
 import { AppText } from '@/src/components/AppText';
@@ -16,6 +17,7 @@ import { AppText } from '@/src/components/AppText';
 
 export function CoinHex({ size, mark = '✦' }: { size?: number; mark?: string }) {
   const t = useTheme();
+  const { t: ts } = useTranslation('shared');
 
   const w = size ?? t.reveal.coinHex;
   const r = w / 2;
@@ -43,7 +45,7 @@ export function CoinHex({ size, mark = '✦' }: { size?: number; mark?: string }
   };
 
   return (
-    <View style={wrapper} accessibilityRole="image" accessibilityLabel="Honey coin seal">
+    <View style={wrapper} accessibilityRole="image" accessibilityLabel={ts('a11y.honeyCoinSeal')}>
       <Svg width={w} height={w + edge}>
         <Defs>
           {/* Lit honey at the top settling to the amber accent at the foot — a coin

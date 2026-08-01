@@ -1,0 +1,92 @@
+{
+  "overflowBar": {
+    "guessed": "you guessed",
+    "minutesShort": "{{minutes}}m",
+    "example": "An example. Yours come from your own timers."
+  },
+  "presenceRingTeaser": {
+    "body": "Your honest finish, live on the Lock Screen while a timer runs.",
+    "cta": "Unlock Lock Screen presence",
+    "now": "Now"
+  },
+  "proUpsellCard": {
+    "tag": "Pro"
+  },
+  "shareableCard": {
+    "footer": "Made with Whenbee · learned on-device",
+    "finishBy": "to finish by {{time}}",
+    "archetypeEyebrow": "MY TIME ARCHETYPE",
+    "averageMultiplier": "On average my tasks run {{multiplier}}× my first guess."
+  },
+  "honestBandLockedTeaser": {
+    "caption": "See the range your tasks land in, and watch it tighten.",
+    "label": "Honest range",
+    "proTag": "Pro",
+    "unlockA11y": "Unlock the honest range with Pro."
+  },
+  "honestSuggestionCard": {
+    "lead": "Honestly",
+    "stillLearning": "still learning",
+    "roughly": "Still learning. Roughly {{low}}–{{high}}m",
+    "more": " more",
+    "range": "Range",
+    "startingEstimate": "Starting estimate · sharpens as you log",
+    "unlockA11y": "Unlock the honest range with Pro.",
+    "a11y": {
+      "honestRange": "Honest range {{low}} to {{high}} minutes.",
+      "honestRangeLearning": "Honest range {{low}} to {{high}} minutes, still learning.",
+      "roughly": "Still learning. Roughly {{low}} to {{high}} minutes.",
+      "honestAbout": "Honest estimate about {{minutes}} minutes",
+      "honestAboutDelta": "Honest estimate about {{minutes}} minutes, {{delta}} more than your guess",
+      "startingSuffix": "{{base}}, starting estimate, sharpens as you log"
+    },
+    "youGuessed": "you guessed {{duration}}",
+    "lastFewPrefix": "Your last few {{category}} tasks landed around ",
+    "a11yGeneric": "Tasks like this usually land around {{value}}. No need to pad your guess. This range does it for you.",
+    "a11yCategory": "Your last few {{category}} tasks usually land around {{value}}. Not a target, just what usually happens.",
+    "similar": "similar",
+    "leadGeneric": "Tasks like this usually land around ",
+    "footerPre": "No need to pad your guess. This range does it for you. Sharpens as you log.",
+    "footerPost": "Not a target, just what usually happens. Keep guessing with your gut.",
+    "spokenRange": "{{low}} to {{high}} minutes",
+    "spokenPoint": "{{count}} minutes",
+    "eyebrowPre": "A starting hunch",
+    "eyebrowPost": "Usually, for you"
+  },
+  "a11y": {
+    "addTask": "Add a task",
+    "honeyCoinSeal": "Honey coin seal",
+    "companion": "Your Whenbee companion",
+    "locked": "Locked, stored on this device",
+    "dismiss": "Dismiss",
+    "honey": "Honey"
+  },
+  "categoryChips": {
+    "new": "New"
+  },
+  "reasons": {
+    "contextSwitch": "getting pulled away",
+    "interrupted": "getting interrupted",
+    "underestimated": "the task being bigger than it looked",
+    "fallback": "a few recurring snags"
+  },
+  "weekdays": {
+    "sunday": "Sunday",
+    "monday": "Monday",
+    "tuesday": "Tuesday",
+    "wednesday": "Wednesday",
+    "thursday": "Thursday",
+    "friday": "Friday",
+    "saturday": "Saturday"
+  },
+  "timeField": {
+    "a11y": "Duration in minutes"
+  },
+  "activeTimerBar": {
+    "a11y": "Timing now: {{label}}, {{elapsed}} elapsed",
+    "a11yOver": ", {{count}} minutes over your honest estimate",
+    "a11yTail": ". Tap to reopen.",
+    "aTask": "a task",
+    "timingNow": "Timing now"
+  }
+}

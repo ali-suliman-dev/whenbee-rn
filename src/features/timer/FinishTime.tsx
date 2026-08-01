@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { type TextStyle } from 'react-native';
+import { useTranslation } from 'react-i18next';
 import {
   useDerivedValue,
   useAnimatedReaction,
@@ -57,6 +58,7 @@ export function FinishTime({
   isPro?: boolean;
 }) {
   const t = useTheme();
+  const { t: tr } = useTranslation('timer');
   const [over, setOver] = useState(false);
   // Re-projected finish minute (epoch ms, floored to the current minute of now).
   const [reprojectClock, setReprojectClock] = useState(finishClock);
@@ -126,15 +128,17 @@ export function FinishTime({
   };
 
   const a11yRange = range
-    ? `Honest finish range ${finishLowClock} to ${finishHighClock}${confidence === 'setting' ? ', still learning' : ''}.`
+    ? confidence === 'setting'
+      ? tr('finish.rangeA11yLearning', { low: finishLowClock, high: finishHighClock })
+      : tr('finish.rangeA11y', { low: finishLowClock, high: finishHighClock })
     : undefined;
 
   return (
     <>
-      <InfoRow label="Started">
+      <InfoRow label={tr('finish.startedLabel')}>
         <LedgerValue>{startedClock}</LedgerValue>
       </InfoRow>
-      <InfoRow label="Finish ~">
+      <InfoRow label={tr('finish.finishLabel')}>
         {over ? (
           <LedgerValue amber>~{reprojectClock}</LedgerValue>
         ) : showRange && range ? (
@@ -142,7 +146,7 @@ export function FinishTime({
             <LedgerValue amber accessibilityLabel={a11yRange}>
               {finishLowClock}–{finishHighClock}
             </LedgerValue>
-            <AppText style={learningTag}>still learning</AppText>
+            <AppText style={learningTag}>{tr('finish.stillLearning')}</AppText>
           </>
         ) : (
           <LedgerValue>{finishClock}</LedgerValue>

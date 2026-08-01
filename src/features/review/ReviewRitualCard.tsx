@@ -2,6 +2,7 @@ import { useEffect } from 'react';
 import { View, Text, Pressable, type ViewStyle, type TextStyle } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
+import { useTranslation } from 'react-i18next';
 import { useTheme } from '@/src/theme/useTheme';
 import { type } from '@/src/theme/typography';
 import { analytics } from '@/src/services/analytics';
@@ -17,7 +18,9 @@ import type { ReviewSummary } from '@/src/domain/types';
 
 export function ReviewRitualCard({ summary }: { summary: ReviewSummary }) {
   const t = useTheme();
+  const { t: tt } = useTranslation('review');
   const isMonth = summary.period.kind === 'month';
+  const periodKey = isMonth ? 'month' : 'week';
 
   useEffect(() => {
     analytics.capture('review_card_shown', {
@@ -33,7 +36,6 @@ export function ReviewRitualCard({ summary }: { summary: ReviewSummary }) {
     router.push({ pathname: '/(modals)/review', params: { source: 'card' } });
   }
 
-  const periodWord = isMonth ? 'month' : 'week';
 
   const eyebrowRow: ViewStyle = { flexDirection: 'row', alignItems: 'center', gap: t.space[2] };
   const eyebrow: TextStyle = { ...(type.eyebrow as unknown as TextStyle), color: t.colors.amberText };
@@ -53,16 +55,20 @@ export function ReviewRitualCard({ summary }: { summary: ReviewSummary }) {
   };
 
   return (
-    <Pressable onPress={open} accessibilityRole="button" accessibilityLabel={`Open your honest ${periodWord}`}>
+    <Pressable
+      onPress={open}
+      accessibilityRole="button"
+      accessibilityLabel={tt(`ritualCard.openReadyLabel.${periodKey}`)}
+    >
       <View style={envelope}>
         <View style={eyebrowRow}>
           <Ionicons name="mail-unread-outline" size={t.iconSize.sm} color={t.colors.accent} />
-          <Text style={eyebrow}>{isMonth ? 'YOUR HONEST MONTH' : 'YOUR HONEST WEEK'}</Text>
+          <Text style={eyebrow}>{tt(`eyebrow.${periodKey}`)}</Text>
         </View>
-        <Text style={headline}>Your honest {periodWord} is ready.</Text>
-        <Text style={lead}>Seven days are in. Here is where your time actually went.</Text>
+        <Text style={headline}>{tt(`ritualCard.readyHeadline.${periodKey}`)}</Text>
+        <Text style={lead}>{tt('ritualCard.lead')}</Text>
         <View style={ctaRow}>
-          <Text style={ctaText}>Open your {periodWord}</Text>
+          <Text style={ctaText}>{tt(`ritualCard.openCta.${periodKey}`)}</Text>
           <Ionicons name="arrow-forward" size={t.iconSize.xs} color={t.colors.amberText} />
         </View>
       </View>

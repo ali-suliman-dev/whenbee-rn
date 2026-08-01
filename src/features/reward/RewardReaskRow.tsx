@@ -8,6 +8,8 @@
 // needs 'declined'). Opacity-only entrance; reduced-motion → final state.
 
 import { AppButton } from '@/src/components/AppButton';
+import { formatDuration } from '@/src/i18n/formatDuration';
+import { useTranslation } from 'react-i18next';
 import { Card } from '@/src/components/Card';
 import { useNotifReask } from '@/src/features/notifications/useNotifReask';
 import { useRewardStore } from '@/src/stores/rewardStore';
@@ -22,10 +24,11 @@ import Animated, {
   useSharedValue,
   withTiming,
 } from 'react-native-reanimated';
-import { fmtHm } from '@/src/lib/time';
 
 export function RewardReaskRow() {
   const t = useTheme();
+  const { t: trw } = useTranslation('reward');
+  const { t: translate } = useTranslation();
   const guessMin = useRewardStore((s) => s.guessMin);
   const actualMin = useRewardStore((s) => s.actualMin);
   const { show, trigger, overrunMin, onAccept, onDismiss } = useNotifReask({
@@ -51,12 +54,9 @@ export function RewardReaskRow() {
 
   const title =
     trigger === 'granted'
-      ? 'Add the honest-finish ping?'
-      : `This ran ${fmtHm(overrunMin)} past your guess`;
-  const sub =
-    trigger === 'granted'
-      ? 'Notifications are already allowed. One tap.'
-      : 'Want a quiet tap at your honest finish?';
+      ? trw('reask.grantedTitle')
+      : trw('reask.overran', { duration: formatDuration(overrunMin, translate) });
+  const sub = trigger === 'granted' ? trw('reask.grantedSub') : trw('reask.overranSub');
 
   const titleText: TextStyle = {
     ...(type.bodySmBold as unknown as TextStyle),
@@ -84,12 +84,12 @@ export function RewardReaskRow() {
           <Text style={titleText}>{title}</Text>
           <Text style={subText}>{sub}</Text>
         </View>
-        <AppButton label="Turn on" variant="amber" size="xs" onPress={() => { void onAccept(); }} />
+        <AppButton label={trw('reask.accept')} variant="amber" size="xs" onPress={() => { void onAccept(); }} />
         <Pressable
           onPress={onDismiss}
           hitSlop={t.size.hitSlop}
           accessibilityRole="button"
-          accessibilityLabel="No thanks"
+          accessibilityLabel={trw('reask.decline')}
           style={dismiss}
         >
           <Ionicons name="close" size={t.iconSize.sm} color={t.colors.inkFaint} />

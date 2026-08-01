@@ -1,4 +1,6 @@
+import { formatDuration } from '@/src/i18n/formatDuration';
 import { useCallback, useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import {
   View,
   Pressable,
@@ -13,7 +15,7 @@ import { AppButton } from '@/src/components/AppButton';
 import { useTheme } from '@/src/theme/useTheme';
 import { type } from '@/src/theme/typography';
 import { haptics } from '@/src/lib/haptics';
-import { formatClock, fmtHm } from '@/src/lib/time';
+import { formatClock } from '@/src/lib/time';
 import { FinishTimeWheel } from '@/src/features/planner/FinishTimeWheel';
 import { useForgotStore } from '@/src/stores/forgotStore';
 import { useCalibrationStore } from '@/src/stores/calibrationStore';
@@ -46,6 +48,8 @@ import type { AdaptSpeed, LogStatus } from '@/src/domain/types';
 
 export function ForgotCard(): React.JSX.Element | null {
   const t = useTheme();
+  const { t: tr } = useTranslation('timer');
+  const { t: translate } = useTranslation();
   const insets = useSafeAreaInsets();
   const reducedMotion = useReducedMotion();
   const pending = useForgotStore((s) => s.pending);
@@ -177,15 +181,15 @@ export function ForgotCard(): React.JSX.Element | null {
         >
           {mode === 'choices' ? (
             <>
-              <AppText style={heading}>{`Wrapped up "${pending.taskLabel}" while you were away`}</AppText>
+              <AppText style={heading}>{tr('forgotCard.heading', { label: pending.taskLabel })}</AppText>
               <AppText style={body}>
-                {seen
-                  ? 'It ran past your honest finish, so I paused it. When did you actually stop?'
-                  : 'It ran well past your estimate, so I paused it. When did you actually stop? You can change when I step in from Settings.'}
+                {seen ? tr('forgotCard.bodySeen') : tr('forgotCard.bodyFirst')}
               </AppText>
               <View style={{ gap: t.space[2.5] }}>
                 <AppButton
-                  label={`Log honest finish · ${fmtHm(pending.recoveredActualMin)}`}
+                  label={tr('forgotCard.logHonest', {
+                    duration: formatDuration(pending.recoveredActualMin, translate),
+                  })}
                   variant="amber"
                   size="md"
                   fullWidth
@@ -195,7 +199,9 @@ export function ForgotCard(): React.JSX.Element | null {
                   }}
                 />
                 <AppButton
-                  label={`Log your first guess · ${fmtHm(pending.guessMin)}`}
+                  label={tr('forgotCard.logGuess', {
+                    duration: formatDuration(pending.guessMin, translate),
+                  })}
                   variant="ghost"
                   size="md"
                   fullWidth
@@ -205,7 +211,7 @@ export function ForgotCard(): React.JSX.Element | null {
                   }}
                 />
                 <AppButton
-                  label="Pick the exact time"
+                  label={tr('forgotStop.pickExact')}
                   variant="ghost"
                   size="md"
                   fullWidth
@@ -218,22 +224,22 @@ export function ForgotCard(): React.JSX.Element | null {
               <View style={{ height: StyleSheet.hairlineWidth, backgroundColor: t.colors.hairline }} />
               <View style={{ flexDirection: 'row', gap: t.space[2.5] }}>
                 <View style={{ flex: 1 }}>
-                  <AppButton label="Still going" variant="ghost" size="md" fullWidth onPress={stillGoing} />
+                  <AppButton label={tr('forgotStop.stillGoing')} variant="ghost" size="md" fullWidth onPress={stillGoing} />
                 </View>
                 <Pressable
                   accessibilityRole="button"
-                  accessibilityLabel="Not sure yet — skip logging this session"
+                  accessibilityLabel={tr('forgotStop.notSureSkipA11y')}
                   onPress={() => void write(pending.recoveredActualMin, 'partial')}
                   style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}
                 >
-                  <AppText style={skip}>Not sure yet</AppText>
+                  <AppText style={skip}>{tr('forgotStop.notSure')}</AppText>
                 </Pressable>
               </View>
             </>
           ) : (
             <>
-              <AppText style={heading}>When did you finish?</AppText>
-              <AppText style={body}>Spin to the time you actually stopped.</AppText>
+              <AppText style={heading}>{tr('forgotStop.headingFinished')}</AppText>
+              <AppText style={body}>{tr('forgotStop.spinBody')}</AppText>
               <View style={wheelWrap}>
                 <FinishTimeWheel
                   valueMs={clampedFinishMs}
@@ -245,7 +251,10 @@ export function ForgotCard(): React.JSX.Element | null {
                 />
               </View>
               <AppButton
-                label={`Log ${formatClock(clampedFinishMs)} · ${fmtHm(pickedActualMin)}`}
+                label={tr('forgotCard.logAt', {
+                  clock: formatClock(clampedFinishMs),
+                  duration: formatDuration(pickedActualMin, translate),
+                })}
                 variant="amber"
                 size="md"
                 fullWidth
@@ -256,14 +265,14 @@ export function ForgotCard(): React.JSX.Element | null {
               />
               <Pressable
                 accessibilityRole="button"
-                accessibilityLabel="Back to the quick options"
+                accessibilityLabel={tr('forgotStop.backA11y')}
                 onPress={() => {
                   haptics.light();
                   setMode('choices');
                 }}
                 style={{ alignItems: 'center', justifyContent: 'center', paddingTop: t.space[1] }}
               >
-                <AppText style={skip}>Back</AppText>
+                <AppText style={skip}>{tr('forgotStop.back')}</AppText>
               </Pressable>
             </>
           )}

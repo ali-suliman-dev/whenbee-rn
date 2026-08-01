@@ -1,4 +1,5 @@
 import { View, Text, StyleSheet, type TextStyle } from 'react-native';
+import { useTranslation } from 'react-i18next';
 import { Card } from '@/src/components/Card';
 import { useTheme } from '@/src/theme/useTheme';
 import { type } from '@/src/theme/typography';
@@ -19,6 +20,7 @@ interface Props {
 
 export function ForwardActionCard({ action }: Props) {
   const t = useTheme();
+  const { t: tt } = useTranslation('review');
   const rv = t.reviewViz;
 
   // Split point: how much of the goal is already planned. Clamped so a zero or
@@ -73,10 +75,10 @@ export function ForwardActionCard({ action }: Props) {
     <Card tone="flat">
       <View style={styles.container}>
         <View style={styles.headerGroup}>
-          <Text style={styles.eyebrow}>ONE THING TO TRY</Text>
+          <Text style={styles.eyebrow}>{tt('forwardAction.eyebrow')}</Text>
           <Text style={styles.heading}>
             <Text style={styles.categoryName}>{action.categoryName}</Text>
-            {' keeps running over.'}
+            {tt('forwardAction.headingSuffix')}
           </Text>
         </View>
 
@@ -90,20 +92,20 @@ export function ForwardActionCard({ action }: Props) {
           </View>
           <View style={styles.railLabels}>
             <Text style={styles.labelPlan}>
-              <Text style={styles.numPlan}>{action.plannedMin}m</Text>
-              {' planned'}
+              <Text style={styles.numPlan}>{tt('forwardAction.minutesLabel', { min: action.plannedMin })}</Text>
+              {tt('forwardAction.plannedSuffix')}
             </Text>
             <Text style={styles.labelGoal}>
-              {'give it '}
-              <Text style={styles.numGoal}>~{action.recommendedMin}m</Text>
+              {tt('forwardAction.giveItPrefix')}
+              <Text style={styles.numGoal}>{tt('forwardAction.amountApprox', { min: action.recommendedMin })}</Text>
             </Text>
           </View>
         </View>
 
         <Text style={styles.desc}>
-          {'Plan '}
-          <Text style={styles.descAmber}>~{action.recommendedMin}m</Text>
-          {' next week and the overflow disappears.'}
+          {tt('forwardAction.descPrefix')}
+          <Text style={styles.descAmber}>{tt('forwardAction.amountApprox', { min: action.recommendedMin })}</Text>
+          {tt('forwardAction.descSuffix')}
         </Text>
       </View>
     </Card>

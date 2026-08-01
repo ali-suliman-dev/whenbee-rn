@@ -1,10 +1,20 @@
-// buildReportHtml — PURE: a ReportModel + the print CSS in, a self-contained HTML
-// string out. No React, no native, NO network (a test asserts it never calls
-// fetch). Every user-controlled string (category names, labels, companion name) is
+// buildReportHtml — PURE (no db, no native, NO network — a test asserts it never
+// calls fetch): a ReportModel + the print CSS in, a self-contained HTML string
+// out. Every user-controlled string (category names, labels, companion name) is
 // HTML-escaped before it enters the document so a clinician doc never breaks on a
 // `<` in a task label. NO reclaim / "time saved" section — reclaim was removed from
 // the product. The page leads with calibration: accuracy, bias table, surprises,
 // sharpest window.
+//
+// Localization: copy comes from the `report` namespace via the app's shared i18n
+// singleton (mirrors `useReview.ts`'s `sharpestPhraseFor` — a raw `i18n.t` call
+// outside a component, since this builder has no React tree of its own). Month
+// names are locale-derived through `Intl.DateTimeFormat`, never a hardcoded
+// English array. Production callers never pass anything beyond `model`/`css` — the
+// singleton always reflects the app's active language — but tests may inject an
+// override instance to exercise a different language deterministically.
+import defaultI18n from '@/src/i18n';
+import { localeForLang } from '@/src/i18n/format';
 import type { ReportModel, ReportCategoryRow, ReportSurprise } from './reportModel';
 
 /** Escape the five HTML-significant characters. Applied to every dynamic string. */
@@ -17,11 +27,11 @@ function esc(value: string): string {
     .replace(/'/g, '&#39;');
 }
 
-/** A plain, locale-stable date for the subline (e.g. "21 Jun 2026"). */
-function formatDate(ms: number): string {
+/** A plain, locale-aware date for the subline (e.g. "21 Jun 2026" / "21 juni 2026"). */
+function formatDate(ms: number, locale: string): string {
   const d = new Date(ms);
-  const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-  return `${d.getUTCDate()} ${months[d.getUTCMonth()]} ${d.getUTCFullYear()}`;
+  const month = new Intl.DateTimeFormat(locale, { month: 'short', timeZone: 'UTC' }).format(d);
+  return `${d.getUTCDate()} ${month} ${d.getUTCFullYear()}`;
 }
 
 /** The bias multiplier as `×1.6`, with the `×` a smaller muted suffix. */
@@ -61,47 +71,51 @@ function categoryRow(row: ReportCategoryRow): string {
 </tr>`;
 }
 
-function surpriseLine(s: ReportSurprise): string {
+function surpriseLine(s: ReportSurprise, t: typeof defaultI18n.t): string {
   const label = s.label ? ` ${esc(s.label)}` : '';
+  const rest = t('report:pdf.surprises.line', { estimate: s.estimateMin, actual: s.actualMin });
   // Numbers stay inline (the whole line carries `num` for tabular figures) so the
   // sentence reads as one clean phrase a clinician can quote.
-  return `<p class="surprise num">${esc(s.categoryName)}${label} — guessed ${s.estimateMin}m, took ${s.actualMin}m</p>`;
+  return `<p class="surprise num">${esc(s.categoryName)}${label} — ${rest}</p>`;
 }
 
-const FOOTER_LEFT = 'Whenbee · personal time report';
-const DISCLAIMER = 'These are personal estimates, not a clinical measure.';
+export function buildReportHtml(
+  model: ReportModel,
+  css: string,
+  i18nInstance: typeof defaultI18n = defaultI18n,
+): string {
+  const t = i18nInstance.t.bind(i18nInstance);
+  const locale = localeForLang(i18nInstance.language);
+  const htmlLang = i18nInstance.language || 'en';
 
-export function buildReportHtml(model: ReportModel, css: string): string {
   const prepared =
     model.companionName !== null && model.companionName.trim().length > 0
-      ? `<p class="prepared">Prepared by Whenbee for ${esc(model.companionName)}'s data</p>`
+      ? `<p class="prepared">${t('report:pdf.preparedBy', { name: esc(model.companionName) })}</p>`
       : '';
 
   const glance = `<div class="glance">
-  <div class="glance-cell"><p class="glance-label">Tasks logged</p><p class="glance-value num">${model.totalLogs}</p></div>
-  <div class="glance-cell"><p class="glance-label">Categories tracked</p><p class="glance-value num">${model.categoryCount}</p></div>
-  <div class="glance-cell"><p class="glance-label">Steadiest category</p><p class="glance-value">${
-    model.steadiestCategoryName ? esc(model.steadiestCategoryName) : '—'
+  <div class="glance-cell"><p class="glance-label">${t('report:pdf.glance.tasksLogged')}</p><p class="glance-value num">${model.totalLogs}</p></div>
+  <div class="glance-cell"><p class="glance-label">${t('report:pdf.glance.categoriesTracked')}</p><p class="glance-value num">${model.categoryCount}</p></div>
+  <div class="glance-cell"><p class="glance-label">${t('report:pdf.glance.steadiestCategory')}</p><p class="glance-value">${
+    model.steadiestCategoryName ? esc(model.steadiestCategoryName) : t('report:pdf.glance.none')
   }</p></div>
 </div>`;
 
   const tableRows = model.categories.map(categoryRow).join('\n');
   const omitted =
     model.omittedCategoryCount > 0
-      ? `<p class="omitted">${model.omittedCategoryCount} more ${
-          model.omittedCategoryCount === 1 ? 'category is' : 'categories are'
-        } still settling and ${model.omittedCategoryCount === 1 ? 'was' : 'were'} left out.</p>`
+      ? `<p class="omitted">${t('report:pdf.omitted', { count: model.omittedCategoryCount })}</p>`
       : '';
 
   const biasTable = `<div class="section">
-  <h2 class="heading">How long things really take you</h2>
+  <h2 class="heading">${t('report:pdf.biasTable.heading')}</h2>
   <table>
     <thead><tr>
-      <th>Category</th>
-      <th class="r">Logs</th>
-      <th class="r">You guess</th>
-      <th class="r">It really takes</th>
-      <th class="r">Bias</th>
+      <th>${t('report:pdf.biasTable.category')}</th>
+      <th class="r">${t('report:pdf.biasTable.logs')}</th>
+      <th class="r">${t('report:pdf.biasTable.youGuess')}</th>
+      <th class="r">${t('report:pdf.biasTable.reallyTakes')}</th>
+      <th class="r">${t('report:pdf.biasTable.bias')}</th>
     </tr></thead>
     <tbody>
 ${tableRows}
@@ -113,38 +127,38 @@ ${tableRows}
   const surprises =
     model.surprises.length > 0
       ? `<div class="section">
-  <h2 class="heading">Biggest surprises</h2>
-  ${model.surprises.map(surpriseLine).join('\n  ')}
+  <h2 class="heading">${t('report:pdf.surprises.heading')}</h2>
+  ${model.surprises.map((s) => surpriseLine(s, t)).join('\n  ')}
 </div>`
       : '';
 
   const sharpest =
     model.sharpestNote !== null
       ? `<div class="section">
-  <h2 class="heading">When your estimates land closest</h2>
+  <h2 class="heading">${t('report:pdf.sharpest.heading')}</h2>
   <p class="note">${esc(model.sharpestNote)}</p>
 </div>`
       : '';
 
   const footer = `<div class="footer">
-  <span>${FOOTER_LEFT}</span>
-  <span>${DISCLAIMER}</span>
+  <span>${t('report:pdf.footer.left')}</span>
+  <span>${t('report:pdf.footer.disclaimer')}</span>
 </div>`;
 
   return `<!DOCTYPE html>
-<html lang="en">
+<html lang="${htmlLang}">
 <head><meta charset="utf-8" /><style>${css}</style></head>
 <body>
   <header>
-    <h1 class="title">Time report</h1>
-    <p class="subline">Generated ${formatDate(model.generatedAtMs)} · ${esc(model.window.label)}</p>
+    <h1 class="title">${t('report:pdf.title')}</h1>
+    <p class="subline">${t('report:pdf.subline', { date: formatDate(model.generatedAtMs, locale), window: esc(model.window.label) })}</p>
     ${prepared}
   </header>
 
   <div class="section">
-    <p class="eyebrow">Estimation accuracy</p>
+    <p class="eyebrow">${t('report:pdf.eyebrowAccuracy')}</p>
     <p class="hero num">${model.accuracyPct}%</p>
-    <p class="hero-def">How close your time guesses landed to reality, on average.</p>
+    <p class="hero-def">${t('report:pdf.accuracyDefinition')}</p>
     ${sparkline(model.accuracySpark)}
   </div>
 

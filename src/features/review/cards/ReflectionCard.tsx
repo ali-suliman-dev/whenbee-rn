@@ -1,4 +1,5 @@
 import { Text, type TextStyle } from 'react-native';
+import { useTranslation } from 'react-i18next';
 import { Card } from '@/src/components/Card';
 import { useTheme } from '@/src/theme/useTheme';
 import { type } from '@/src/theme/typography';
@@ -11,6 +12,7 @@ import { type } from '@/src/theme/typography';
 
 export function ReflectionCard({ question }: { question: string }) {
   const t = useTheme();
+  const { t: tt } = useTranslation('review');
   const eyebrow: TextStyle = { ...(type.eyebrow as unknown as TextStyle), color: t.colors.primary };
   const prompt: TextStyle = {
     ...(type.body as unknown as TextStyle),
@@ -19,7 +21,7 @@ export function ReflectionCard({ question }: { question: string }) {
   };
   return (
     <Card tone="flat" style={{ gap: t.space[2] }}>
-      <Text style={eyebrow}>ONE TO SIT WITH</Text>
+      <Text style={eyebrow}>{tt('reflection.eyebrow')}</Text>
       <Text style={prompt}>{question}</Text>
     </Card>
   );

@@ -1,0 +1,122 @@
+{
+  "welcome": {
+    "titlePrefix": "Du är inte lat. Du är en ",
+    "titleEmphasis": "tidsoptimist.",
+    "subtitle": "Jag lär mig hur lång tid saker faktiskt tar för dig och visar dig sedan det ärliga talet. Inga fler planer byggda på en gissning.",
+    "overflowLabel": "Hur lång tid det faktiskt tar",
+    "footer": "Inget konto, ingen mejladress. Allt stannar i den här telefonen.",
+    "cta": "Kom igång →"
+  },
+  "categories": {
+    "title": "Var rinner tiden iväg mest?",
+    "subtitle": "Välj några. Jag skärper ditt ärliga tal här först.",
+    "namePlaceholder": "Namnge den…",
+    "nameAccessibilityLabel": "Nytt kategorinamn",
+    "addYourOwn": "Lägg till egen",
+    "pickedLine": {
+      "plenty": "{{count}} valda. Det räcker gott och väl för mig att lära av.",
+      "coupleMore": "{{count}} vald. Ett par till så lär jag mig ditt tempo snabbare.",
+      "oneMore": "{{count}} valda. En till så lär jag mig ditt tempo snabbare."
+    },
+    "continueCta": "Fortsätt →",
+    "seed": {
+      "gettingReady": "Göra sig i ordning",
+      "cleaning": "Städning",
+      "admin": "Admin & mejl",
+      "errands": "Ärenden",
+      "cooking": "Matlagning",
+      "outTheDoor": "Ut genom dörren"
+    },
+    "manageHint": "Ändra eller ta bort dem när du vill i Whenbee-fliken.",
+    "pickAtLeastOne": "Välj minst en för att fortsätta",
+    "customError": {
+      "invalid": "Prova bokstäver eller siffror",
+      "duplicate": "Den håller du redan koll på"
+    }
+  },
+  "quiz": {
+    "subtext": "Inget svar är rätt eller fel. Välj det som stämmer de flesta dagar, så lär jag mig av det.",
+    "skip": "Hoppa till min typ",
+    "next": "Nästa →",
+    "seeMyType": "Se min typ",
+    "skipShort": "Hoppa över",
+    "questions": {
+      "pace": {
+        "prompt": "När du planerar din dag brukar saker ta…",
+        "options": {
+          "about": "Ungefär rätt tid",
+          "bit": "Lite längre tid",
+          "lot": "Mycket längre tid",
+          "lose": "Jag tappar bort tiden"
+        }
+      },
+      "mid": {
+        "prompt": "Mitt i en uppgift brukar du…",
+        "options": {
+          "track": "Hålla dig på spåret",
+          "rabbit": "Fastna i sidospår"
+        }
+      },
+      "sink": {
+        "prompt": "Var rinner tiden iväg mest för dig?",
+        "options": {
+          "meetings": "Telefonsamtal och möten",
+          "chores": "Sysslor",
+          "errands": "Ärenden",
+          "deepwork": "Fokusarbete"
+        }
+      },
+      "focus": {
+        "prompt": "Du fokuserar bäst…",
+        "options": {
+          "morning": "På morgonen",
+          "evening": "På kvällen",
+          "varies": "Det varierar"
+        }
+      }
+    },
+    "pickOne": "Välj ett för att fortsätta"
+  },
+  "ready": {
+    "headline": "Dina första <honest>ärliga</honest> tider är redan satta.",
+    "body": "Jag läser av dem från din tidsstil, så du börjar med riktiga siffror i stället för att gissa i blindo. Logga en uppgift så skärps de.",
+    "nicknameLink": "Vad ska jag kalla dig?",
+    "nicknameOptional": "valfritt",
+    "nicknameHint": "Valfritt",
+    "nicknamePlaceholder": "Något du svarar på",
+    "nicknameAccessibilityLabel": "Ditt namn",
+    "footer": "<strong>Byggd av en enda person. </strong>Säg vad du vill se härnäst, det gör du i Inställningar.",
+    "cta": "Ta tid på min första grej →"
+  },
+  "archetypeCrest": {
+    "accessibilityLabel": "Emblemet för din tidspersonlighet"
+  },
+  "archetypeReveal": {
+    "eyebrow": "DIN TIDSPERSONLIGHET",
+    "echoLine": "Utifrån dina svar: {{echo}}",
+    "multCaption": "din startuppskattning",
+    "note": "En första bild utifrån dina svar. Varje uppgift du tar tid på gör den skarpare, och din typ kan flytta på sig i takt med dina siffror.",
+    "cta": "Skärp den med mina uppgifter →"
+  },
+  "archetype": {
+    "steady": {
+      "title": "Den stadiga bedömaren",
+      "blurb": "Dina gissningar ligger redan nära verkligheten. Jag skärper dem med varje uppgift du loggar."
+    },
+    "gentle": {
+      "title": "Den milda optimisten",
+      "blurb": "Du lutar åt det hoppfulla, men hinner oftast ikapp. Lite marginal räcker."
+    },
+    "sprint": {
+      "title": "Den snabba optimisten",
+      "blurb": "Tanken går snabbt, men själva görandet tar lite längre tid. Nu vet du hur mycket."
+    },
+    "dreamer": {
+      "title": "Drömmaren",
+      "blurb": "Stora planer, generösa tidsramar. Dina ärliga siffror håller dem på jorden."
+    }
+  },
+  "stepProgress": {
+    "accessibilityLabel": "Steg {{current}} av {{total}}"
+  }
+}

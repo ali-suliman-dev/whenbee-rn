@@ -1,0 +1,223 @@
+{
+  "eyebrow": "WHENBEE PRO",
+  "honest": {
+    "title": "Your numbers are real now.",
+    "sub": "You did the logging. Whenbee knows how your days actually run. Now let Pro put those real numbers to work everywhere you plan."
+  },
+  "triggers": {
+    "makeDayHonest": {
+      "title": "Your real day, before you live it.",
+      "sub": "You did the logging. Whenbee knows how your days actually run. Pro carries those real numbers into everything you plan."
+    },
+    "calendarExport": {
+      "title": "Your real day, before you live it.",
+      "sub": "You did the logging. Whenbee knows how your days actually run. Pro carries those real numbers into everything you plan."
+    },
+    "dayCapacity": {
+      "title": "Know what the day can hold.",
+      "sub": "Before you say yes to one more thing, see whether it actually fits your real hours."
+    },
+    "goals": {
+      "title": "You set the aim. Now get a coach.",
+      "sub": "Pick an accuracy goal for any category. Whenbee coaches you at guess-time and shows your ETA to hitting it."
+    },
+    "routines": {
+      "title": "Set it once. It remembers the honest length.",
+      "sub": "Your morning routine takes 50 minutes, not 20. Pro learns the whole chain and tells you when to actually start."
+    },
+    "stealsYourTime": {
+      "title": "See exactly what steals your time.",
+      "sub": "Your logs already hold the pattern: when you slip, what context costs you, and the hours you're sharpest. Pro reads it back."
+    },
+    "focusWindow": {
+      "title": "Plan around your sharpest hours.",
+      "sub": "Whenbee learns when your estimates land tight and when they slip, so you can put the hard work where it fits."
+    },
+    "honestRange": {
+      "title": "How sure is that number?",
+      "sub": "Pro shows the confidence band around your honest estimate, and watches it narrow as you calibrate."
+    },
+    "reviewRitual": {
+      "title": "See exactly what steals your time.",
+      "sub": "Your logs already hold the pattern: when you slip, what context costs you, and the hours you're sharpest. Pro reads it back."
+    },
+    "pdfExport": {
+      "title": "Hand someone your honest numbers.",
+      "sub": "A clean weekly or monthly report, made on your phone, shared only when you choose."
+    },
+    "hyperfocusGuard": {
+      "title": "Whenbee stays with you while you work.",
+      "sub": "Your live timer and honest finish-time on the lock screen, plus a gentle nudge when you've run well past your guess."
+    },
+    "persistentPresence": {
+      "title": "Whenbee stays with you while you work.",
+      "sub": "Your live timer and honest finish-time on the lock screen, plus a gentle nudge when you've run well past your guess."
+    },
+    "settingsUpgrade": {
+      "title": "Everything your honest numbers can do.",
+      "sub": "You did the logging. Pro puts those real numbers to work everywhere you plan."
+    },
+    "proReveal": {
+      "title": "Everything your honest numbers can do.",
+      "sub": "You did the logging. Pro puts those real numbers to work everywhere you plan."
+    },
+    "proPreview": {
+      "title": "Everything your honest numbers can do.",
+      "sub": "You did the logging. Pro puts those real numbers to work everywhere you plan."
+    }
+  },
+  "stack": {
+    "calendar": {
+      "title": "Honest calendar & capacity",
+      "desc": "Every event padded with your real buffers. See what the day can actually hold, and plan around your sharpest hours."
+    },
+    "coach": {
+      "title": "Routines & goal coach",
+      "desc": "Recurring chains learn their honest length. Set an accuracy aim per category and get help at guess-time, with an ETA to your goal."
+    },
+    "insight": {
+      "title": "Sharper self-insight",
+      "desc": "The patterns your logs already hold: what steals your time, when you're most accurate, and what context costs you."
+    },
+    "review": {
+      "title": "Your week, reviewed",
+      "desc": "A calm weekly & monthly recap, long-range history, and a clean PDF or one-tap share. Made on your phone, never sent without you."
+    },
+    "presence": {
+      "title": "Always there",
+      "desc": "Live timer and finish-time on your lock screen, plus a gentle nudge when you've run well past your guess."
+    }
+  },
+  "features": {
+    "calendar": "Honest calendar",
+    "capacity": "Day capacity",
+    "focusWindows": "Focus windows",
+    "confidenceBand": "Confidence band",
+    "routines": "Routines",
+    "goalCoach": "Goal coach",
+    "presence": "Lock-screen timer",
+    "hyperfocusGuard": "Hyperfocus guard",
+    "stealsTime": "What steals your time",
+    "weeklyReview": "Weekly review",
+    "pdfExport": "PDF export",
+    "history": "Full history"
+  },
+  "groups": {
+    "plan": "Plan honestly",
+    "run": "Run the day",
+    "learn": "Learn your patterns"
+  },
+  "moments": {
+    "morning": "The morning starts honest",
+    "deepwork": "Deep work, kept company",
+    "midday": "Before you say yes to more",
+    "evening": "The evening actually fits",
+    "week": "The week, understood",
+    "weekTime": "Sun"
+  },
+  "topProof": {
+    "coachCaption": "On track. About 2 weeks to your goal.",
+    "insightCaption": "Mornings land tight. Late afternoons slip."
+  },
+  "beforeAfter": {
+    "planLabel": "YOUR PLAN",
+    "honestLabel": "HONEST DAY",
+    "planNote": "Crashes 5:00. Runs over.",
+    "honestNote": "Ends 7:10. It fits.",
+    "legendReal": "your real time",
+    "legendBuffer": "the buffer Whenbee adds"
+  },
+  "founderReserve": {
+    "eyebrow": "Early founder price",
+    "headline": "Lock the founder price: {{price}}",
+    "sub": "Set it aside now. Nothing is charged until your numbers turn honest, and then Pro is yours at this price.",
+    "cta": "Lock founder price",
+    "ctaLocked": "Founder price locked in"
+  },
+  "planPicker": {
+    "title": {
+      "yearly": "Yearly",
+      "lifetime": "Lifetime",
+      "monthly": "Monthly",
+      "other": "Plan"
+    },
+    "note": {
+      "lifetime": "Pay once. Yours forever.",
+      "yearly": "7 days free, then billed yearly",
+      "yearlyWithPrice": "7 days free, then {{price}} a year",
+      "monthly": "7 days free, then billed monthly"
+    },
+    "savingsFallback": "Save 42%",
+    "savingsLabel": "Save {{pct}}%",
+    "accessibilityLabel": "{{title}}, {{note}}, {{price}}",
+    "mostPopular": "MOST POPULAR",
+    "perMonth": "per month"
+  },
+  "trialTimeline": {
+    "today": {
+      "head": "Today",
+      "desc": "All of Pro, free. Nothing is charged."
+    },
+    "day5": {
+      "head": "Day 5",
+      "desc": "<strong>We remind you</strong> the trial is ending."
+    },
+    "day7": {
+      "head": "Day 7",
+      "desc": "Trial ends. Cancel before and you pay nothing."
+    }
+  },
+  "plans": {
+    "loading": "Loading plans…",
+    "unavailable": "Plans are not available right now. Check your connection and reopen this screen.",
+    "ctaBusy": "One moment…",
+    "ctaLifetime": "Get Pro forever · {{price}}",
+    "ctaTrial": "Try 7 days free",
+    "ctaRetry": "Try again",
+    "purchaseErrorTitle": "That didn't go through.",
+    "purchaseError": "You weren't charged. Check your connection and try once more.",
+    "declinedTitle": "Your payment method was declined.",
+    "declinedError": "You weren't charged. Check it in your store settings, then try again.",
+    "restoreNone": "No earlier purchase on this account. If you subscribed with another one, switch and restore there.",
+    "restoreErrorTitle": "Couldn't reach the store.",
+    "restoreError": "Try again in a moment.",
+    "finePrint": "No charge today. We will remind you before the trial ends. Cancel anytime. On-device and private.",
+    "restoreLink": "Restore",
+    "restoreLinkA11y": "Restore purchases",
+    "manageLink": "Manage subscription",
+    "manageLinkA11y": "Manage your subscription",
+    "freeStripBold": "Calibration stays free, always.",
+    "freeStripRest": "No card, no renewal. That is your real trial. Pro just adds the payoff.",
+    "trustLine": "Built by people who are late to everything. It is the tool we needed first.",
+    "expoGoNotice": "Running in Expo Go. Purchases are simulated."
+  },
+  "footer": {
+    "renew": "Plans renew until cancelled.",
+    "restore": "Restore Purchases",
+    "terms": "Terms",
+    "privacy": "Privacy",
+    "privacyA11y": "Privacy Policy",
+    "termsA11y": "Terms of Use",
+    "lifetimeNote": "One payment. No renewals, ever.",
+    "subNote": "No payment now. Cancel anytime."
+  },
+  "proWelcome": {
+    "sub": "Every honest number you earned now works everywhere you plan.",
+    "title": "You're Pro.",
+    "cta": "See my honest day",
+    "reminderSet": "Reminder set for {{day}}.",
+    "reminderRest": "We'll nudge you before the trial ends.",
+    "reminderPending": "Setting up your reminder…",
+    "trialEnds": "Trial ends {{day}}.",
+    "trialStarted": "7-day free trial started.",
+    "nothingCharged": "Nothing is charged before {{day}}.",
+    "askStrong": "Get the Day-5 reminder.",
+    "askRest": "One nudge before the trial ends, nothing else.",
+    "deniedStrong": "Reminder needs notifications.",
+    "deniedRest": "You can still cancel anytime in Settings.",
+    "lifetimeStrong": "Pro is yours, forever.",
+    "lifetimeRest": "One payment, no renewals.",
+    "dayStrong": "Your day is honest now.",
+    "dayRest": "Calendar, routines, insights, review, lock-screen timer."
+  }
+}

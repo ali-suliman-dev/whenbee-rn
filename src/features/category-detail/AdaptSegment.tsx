@@ -9,6 +9,7 @@ import {
   type TextStyle,
 } from 'react-native';
 import Animated, { Easing, useAnimatedStyle, useSharedValue, withTiming } from 'react-native-reanimated';
+import { Trans, useTranslation } from 'react-i18next';
 import { useTheme } from '@/src/theme/useTheme';
 import { type } from '@/src/theme/typography';
 import type { AdaptSpeed } from '@/src/domain/types';
@@ -25,39 +26,7 @@ import { AdaptGlyph } from './AdaptGlyph';
 // No guilt, no red — this is a "you're in control" lever (Nielsen #3).
 // ──────────────────────────────────────────────────────────────────────────────
 
-const OPTIONS: { value: AdaptSpeed; label: string }[] = [
-  { value: 'steady', label: 'Steady' },
-  { value: 'balanced', label: 'Balanced' },
-  { value: 'reactive', label: 'Reactive' },
-];
-
-// Hints as colored runs: `em` words read in the high-contrast ink (brighter on
-// dark, darker on light), the rest in inkSoft — so each line is scannable.
-type HintRun = { t: string; em?: boolean };
-
-const HINTS: Record<AdaptSpeed, HintRun[]> = {
-  steady: [
-    { t: 'Slow to change', em: true },
-    { t: '. It leans on your ' },
-    { t: 'whole history', em: true },
-    { t: ', so it fits when your pace stays ' },
-    { t: 'consistent', em: true },
-    { t: '.' },
-  ],
-  balanced: [
-    { t: 'The everyday setting. A ' },
-    { t: 'fair mix', em: true },
-    { t: ' of your history and your ' },
-    { t: 'recent runs', em: true },
-    { t: '.' },
-  ],
-  reactive: [
-    { t: 'Catches up fast', em: true },
-    { t: ' when your pace ' },
-    { t: 'changes', em: true },
-    { t: ', like after new meds, a rough night, or a new routine.' },
-  ],
-};
+const OPTIONS: AdaptSpeed[] = ['steady', 'balanced', 'reactive'];
 
 const PAD = 4; // inner track padding (= space[1]); the pill insets by this much
 
@@ -68,7 +37,8 @@ interface AdaptSegmentProps {
 
 export function AdaptSegment({ value, onChange }: AdaptSegmentProps) {
   const t = useTheme();
-  const index = Math.max(0, OPTIONS.findIndex((o) => o.value === value));
+  const { t: tr } = useTranslation('categoryDetail');
+  const index = Math.max(0, OPTIONS.findIndex((o) => o === value));
 
   const [trackW, setTrackW] = useState(0);
   const segW = trackW > 0 ? (trackW - PAD * 2) / OPTIONS.length : 0;
@@ -144,24 +114,25 @@ export function AdaptSegment({ value, onChange }: AdaptSegmentProps) {
 
   return (
     <View style={{ gap: t.space[4] }}>
-      <Text style={header}>Tune how I learn</Text>
+      <Text style={header}>{tr('adaptSegment.title')}</Text>
 
       <View style={track} onLayout={onLayout} accessibilityRole="tablist">
         {segW > 0 ? <Animated.View pointerEvents="none" style={[pill, pillStyle]} /> : null}
         {OPTIONS.map((opt) => {
-          const selected = opt.value === value;
+          const selected = opt === value;
+          const label = tr(`adaptSegment.options.${opt}`);
           return (
             <Pressable
-              key={opt.value}
-              onPress={() => onChange(opt.value)}
+              key={opt}
+              onPress={() => onChange(opt)}
               accessibilityRole="button"
               accessibilityState={{ selected }}
-              accessibilityLabel={`${opt.label} learning mode`}
+              accessibilityLabel={tr('adaptSegment.optionLabel', { label })}
               style={segment}
             >
-              <AdaptGlyph kind={opt.value} active={selected} />
+              <AdaptGlyph kind={opt} active={selected} />
               <Text style={labelStyle(selected)} numberOfLines={1}>
-                {opt.label}
+                {label}
               </Text>
             </Pressable>
           );
@@ -169,11 +140,11 @@ export function AdaptSegment({ value, onChange }: AdaptSegmentProps) {
       </View>
 
       <Text style={hint}>
-        {HINTS[value].map((run, i) => (
-          <Text key={i} style={run.em ? hintEm : undefined}>
-            {run.t}
-          </Text>
-        ))}
+        <Trans
+          i18nKey={`adaptSegment.hints.${value}`}
+          ns="categoryDetail"
+          components={{ em: <Text style={hintEm} /> }}
+        />
       </Text>
     </View>
   );

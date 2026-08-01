@@ -1,0 +1,72 @@
+{
+  "weekdayShort": [
+    "Sun",
+    "Mon",
+    "Tue",
+    "Wed",
+    "Thu",
+    "Fri",
+    "Sat"
+  ],
+  "day": {
+    "today": "Today",
+    "tomorrow": "Tomorrow",
+    "noDayYet": "No day yet"
+  },
+  "datePicker": {
+    "sheetTitle": "When should this happen?",
+    "cancel": "Cancel"
+  },
+  "header": {
+    "addingTo": "Adding to {{day}}",
+    "changeDayA11y": "Change target day",
+    "title": "New task",
+    "subtitle": "What are you working on?",
+    "editTitle": "Edit task",
+    "editSubtitle": "Adjust the details.",
+    "scheduledFor": "Scheduled for {{day}}"
+  },
+  "taskField": {
+    "label": "TASK",
+    "placeholder": "e.g. Reply to that email",
+    "a11y": "Task title",
+    "promptLabel": "What are you working on?"
+  },
+  "categoryField": {
+    "label": "CATEGORY",
+    "guessedHint": "Guessed {{category}} · tap to change",
+    "newCategoryPlaceholder": "Name a new category",
+    "newCategoryA11y": "New category name",
+    "addCategoryA11y": "Add category"
+  },
+  "guessField": {
+    "label": "YOUR GUT GUESS"
+  },
+  "cta": {
+    "addAndStart": "Add & start timer",
+    "addToShelf": "Add to shelf",
+    "addToToday": "Add to today",
+    "addToDay": "Add to {{day}}",
+    "save": "Save & start"
+  },
+  "toast": {
+    "savedToShelf": "Saved to shelf",
+    "addedToToday": "Added to today",
+    "addedToDay": "Added to {{day}}"
+  },
+  "goalCoach": {
+    "eyebrow": "GOAL · {{category}}",
+    "chip": "goal ±{{band}}%",
+    "bestSoFar": "your best so far",
+    "insideBand_one": "{{inside}} of your last {{count}} log landed inside the band",
+    "insideBand_other": "{{inside}} of your last {{count}} logs landed inside the band",
+    "lever": "You land closest to your guess in the <strong>{{best}}</strong>: within <strong>±{{bestBand}}%</strong>, vs ±{{worstBand}}% in the {{worst}}.",
+    "a11y": "Goal for {{category}}: best within {{bestBand}} percent, target {{targetBand}} percent.",
+    "a11yInside_one": " {{inside}} of your last {{count}} log inside the band.",
+    "a11yInside_other": " {{inside}} of your last {{count}} logs inside the band.",
+    "a11yLever": " You land closest to your guess in the {{best}}, within {{bestBand}} percent, versus {{worstBand}} percent in the {{worst}}."
+  },
+  "antiChase": {
+    "body": "No need to pad it yourself. Guess how long it feels, and Whenbee adds the reality part."
+  }
+}

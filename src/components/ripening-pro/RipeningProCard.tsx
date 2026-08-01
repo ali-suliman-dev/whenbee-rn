@@ -7,6 +7,7 @@ import Animated, {
   useReducedMotion,
 } from 'react-native-reanimated';
 import { haptics } from '@/src/lib/haptics';
+import { useTranslation } from 'react-i18next';
 import { useTheme } from '@/src/theme/useTheme';
 import { type } from '@/src/theme/typography';
 import type { ProFeatureId } from '@/src/engine';
@@ -59,6 +60,7 @@ export function RipeningProCard({
   onPreview,
 }: RipeningProCardProps) {
   const t = useTheme();
+  const { t: tr } = useTranslation('patterns');
   const reducedMotion = useReducedMotion();
 
   // Vertical travel for reveal entrance — token t.space[2.5] = 10pt (calm settle, not a pop).
@@ -311,18 +313,20 @@ export function RipeningProCard({
   };
 
   // ── pill label ────────────────────────────────────────────────────────────
+  const ripeningCopy = RIPENING_COPY(tr);
+  const revealCopy = REVEAL_COPY(tr);
   const pillLabel = pitchUnlocked
-    ? `${REVEAL_COPY.pill} ✦`
+    ? `${revealCopy.pill} ✦`
     : nextTierName != null
-      ? `${RIPENING_COPY.pillPrefix} ${nextTierName}`
-      : RIPENING_COPY.pillPrefix;
+      ? `${ripeningCopy.pillPrefix} ${nextTierName}`
+      : ripeningCopy.pillPrefix;
 
-  const eyebrow = pitchUnlocked ? REVEAL_COPY.eyebrow : RIPENING_COPY.eyebrow;
+  const eyebrow = pitchUnlocked ? revealCopy.eyebrow : ripeningCopy.eyebrow;
 
   // ── ripening header + tally derivations ───────────────────────────────────
   const readyCount = features.filter((f) => f.ready).length;
   const totalFeatures = features.length;
-  const header = ripeningHeaderCopy(readyCount, totalFeatures);
+  const header = ripeningHeaderCopy(tr, readyCount, totalFeatures);
   const nextUpId = features.find((f) => !f.ready)?.id;
   const tallyCaption = `${readyCount} of ${totalFeatures}`;
 
@@ -346,8 +350,8 @@ export function RipeningProCard({
         <Animated.View style={[{ gap: t.space[3] }, revealStyle]}>
           {/* Headline + sub */}
           <View style={{ gap: t.space[1] }}>
-            <Text style={headlineText}>{REVEAL_COPY.headline}</Text>
-            <Text style={subText}>{REVEAL_COPY.sub}</Text>
+            <Text style={headlineText}>{revealCopy.headline}</Text>
+            <Text style={subText}>{revealCopy.sub}</Text>
           </View>
 
           {/* Ripening band (revealed) — no fabricated tick labels. */}
@@ -360,13 +364,13 @@ export function RipeningProCard({
           {/* Amber coin-edge CTA */}
           <Pressable onPress={onSeePro} accessibilityRole="button">
             <View style={ctaInner}>
-              <Text style={ctaText}>{REVEAL_COPY.cta}</Text>
+              <Text style={ctaText}>{revealCopy.cta}</Text>
             </View>
           </Pressable>
 
           {/* Escape hatch */}
           <Pressable onPress={onPreview} accessibilityRole="link">
-            <Text style={escapeText}>{REVEAL_COPY.escape}</Text>
+            <Text style={escapeText}>{revealCopy.escape}</Text>
           </Pressable>
         </Animated.View>
       ) : (
@@ -412,27 +416,27 @@ export function RipeningProCard({
               ⬢
             </Text>
             <View style={ticketLeft}>
-              <Text style={ticketTitleText}>{RIPENING_COPY.ticketTitle}</Text>
-              <Text style={ticketSubText}>{RIPENING_COPY.ticketSub}</Text>
+              <Text style={ticketTitleText}>{ripeningCopy.ticketTitle}</Text>
+              <Text style={ticketSubText}>{ripeningCopy.ticketSub}</Text>
             </View>
             <Pressable
               onPress={onSeePro}
               onPressIn={handleChipPressIn}
               onPressOut={handleChipPressOut}
               accessibilityRole="button"
-              accessibilityLabel={RIPENING_COPY.chipLabel}
+              accessibilityLabel={ripeningCopy.chipLabel}
             >
               <Animated.View style={chipStyle}>
                 <View style={chipInner}>
                   <View style={chipSheen} pointerEvents="none" />
-                  <Text style={chipLabelText}>{RIPENING_COPY.chipLabel}</Text>
+                  <Text style={chipLabelText}>{ripeningCopy.chipLabel}</Text>
                 </View>
               </Animated.View>
             </Pressable>
           </View>
 
           {/* Footer — no CTA pressure, just the plain fact */}
-          <Text style={footerText}>{RIPENING_COPY.footer}</Text>
+          <Text style={footerText}>{ripeningCopy.footer}</Text>
         </>
       )}
     </View>

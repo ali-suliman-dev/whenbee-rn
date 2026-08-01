@@ -1,5 +1,6 @@
 import { useCallback, useEffect } from 'react';
 import { View, type TextStyle, type ViewStyle } from 'react-native';
+import { useTranslation } from 'react-i18next';
 import Animated, {
   ReduceMotion,
   runOnJS,
@@ -44,6 +45,7 @@ export function GuardrailCheckIn({
   onWrapUp: () => void;
 }) {
   const t = useTheme();
+  const { t: tr } = useTranslation('timer');
   const reducedMotion = useReducedMotion();
 
   // 0 = resting (card up, fully shown); 1 = off-screen below + faded. Starts at 1 so
@@ -127,14 +129,25 @@ export function GuardrailCheckIn({
       accessibilityViewIsModal={false}
       accessibilityLiveRegion="polite"
     >
-      <AppText style={headingStyle}>Still on this?</AppText>
+      <AppText style={headingStyle}>{tr('guardrail.heading')}</AppText>
       <AppText style={bodyStyle}>
-        You&rsquo;ve been on &ldquo;{taskLabel}&rdquo; for {elapsedMin} minutes. Still the right
-        thing, or want to surface?
+        {tr('guardrail.body', { count: elapsedMin, taskLabel })}
       </AppText>
       <View style={actions}>
-        <AppButton label="Keep going" variant="amber" size="md" fullWidth onPress={keepGoing} />
-        <AppButton label="Wrap up" variant="ghost" size="md" fullWidth onPress={wrapUp} />
+        <AppButton
+          label={tr('guardrail.keepGoing')}
+          variant="amber"
+          size="md"
+          fullWidth
+          onPress={keepGoing}
+        />
+        <AppButton
+          label={tr('guardrail.wrapUp')}
+          variant="ghost"
+          size="md"
+          fullWidth
+          onPress={wrapUp}
+        />
       </View>
     </Animated.View>
   );

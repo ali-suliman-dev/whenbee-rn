@@ -1,3 +1,4 @@
+import i18n from '@/src/i18n';
 import type { CalibrationMapRow } from './usePatterns';
 
 // ──────────────────────────────────────────────────────────────────────────────
@@ -18,7 +19,10 @@ export function archetypeStats(map: CalibrationMapRow[]): ArchetypeStatRow[] {
 
   const totalLogs = map.reduce((sum, r) => sum + r.sampleSize, 0);
   const rows: ArchetypeStatRow[] = [
-    { label: 'Tracked', value: `${totalLogs} ${totalLogs === 1 ? 'task' : 'tasks'}` },
+    {
+      label: i18n.t('patterns:archetypeStats.tracked.label'),
+      value: i18n.t('patterns:archetypeStats.tracked.value', { count: totalLogs }),
+    },
   ];
 
   // Most accurate = multiplier closest to 1×; runs longest = the highest multiplier.
@@ -26,13 +30,13 @@ export function archetypeStats(map: CalibrationMapRow[]): ArchetypeStatRow[] {
     (a, b) => Math.abs(a.multiplier - 1) - Math.abs(b.multiplier - 1),
   )[0];
   if (mostAccurate) {
-    rows.push({ label: 'Most accurate', value: mostAccurate.categoryName });
+    rows.push({ label: i18n.t('patterns:archetypeStats.mostAccurate.label'), value: mostAccurate.categoryName });
   }
 
   if (map.length >= 2) {
     const runsLongest = [...map].sort((a, b) => b.multiplier - a.multiplier)[0];
     if (runsLongest && runsLongest.categoryId !== mostAccurate?.categoryId) {
-      rows.push({ label: 'Runs longest', value: runsLongest.categoryName });
+      rows.push({ label: i18n.t('patterns:archetypeStats.runsLongest.label'), value: runsLongest.categoryName });
     }
   }
 

@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Pressable, ScrollView, Text, View, type TextStyle, type ViewStyle } from 'react-native';
 import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
@@ -15,6 +16,7 @@ import { Screen } from '@/src/components/Screen';
 import { BeeBurst } from '@/src/components/bee/BeeBurst';
 import { useTheme } from '@/src/theme/useTheme';
 import { type } from '@/src/theme/typography';
+import { localeForLang } from '@/src/i18n/format';
 import { analytics } from '@/src/services/analytics';
 import {
   getNotificationPermissionState,
@@ -36,8 +38,10 @@ import {
 
 type ReminderState = 'checking' | 'scheduled' | 'ask' | 'denied' | 'unavailable';
 
-function formatDay(d: Date): string {
-  return d.toLocaleDateString(undefined, { month: 'long', day: 'numeric' });
+/** The trial dates follow the APP language, not the device's. A Swedish user on
+ *  an English phone reads "5 augusti", not "August 5". */
+function formatDay(d: Date, lang: string): string {
+  return d.toLocaleDateString(localeForLang(lang), { month: 'long', day: 'numeric' });
 }
 
 /** Staggered opacity-only entrance (reduced motion → final state). */
@@ -112,13 +116,14 @@ function Row({
 
 export function ProWelcome({ plan, purchasedAt }: { plan: string; purchasedAt: string }) {
   const t = useTheme();
+  const { t: tr, i18n } = useTranslation('paywall');
   const insets = useSafeAreaInsets();
 
   const parsed = new Date(purchasedAt);
   const purchased = Number.isNaN(parsed.getTime()) ? new Date() : parsed;
   const isSub = plan === 'yearly' || plan === 'monthly';
-  const reminderDay = formatDay(trialReminderDate(purchased));
-  const chargeDay = formatDay(trialChargeDate(purchased));
+  const reminderDay = formatDay(trialReminderDate(purchased), i18n.language);
+  const chargeDay = formatDay(trialChargeDate(purchased), i18n.language);
 
   const [reminder, setReminder] = useState<ReminderState>('checking');
 
@@ -210,25 +215,25 @@ export function ProWelcome({ plan, purchasedAt }: { plan: string; purchasedAt: s
     switch (reminder) {
       case 'scheduled':
         return (
-          <Row icon="notifications-outline" strong={`Reminder set for ${reminderDay}.`} rest="We'll nudge you before the trial ends." />
+          <Row icon="notifications-outline" strong={tr('proWelcome.reminderSet', { day: reminderDay })} rest={tr('proWelcome.reminderRest')} />
         );
       case 'ask':
         return (
           <Row
             icon="notifications-outline"
-            strong="Get the Day-5 reminder."
-            rest="One nudge before the trial ends, nothing else."
+            strong={tr('proWelcome.askStrong')}
+            rest={tr('proWelcome.askRest')}
             onPress={() => void onAskReminder()}
           />
         );
       case 'denied':
       case 'unavailable':
         return (
-          <Row icon="notifications-outline" strong="Reminder needs notifications." rest="You can still cancel anytime in Settings." />
+          <Row icon="notifications-outline" strong={tr('proWelcome.deniedStrong')} rest={tr('proWelcome.deniedRest')} />
         );
       default:
         return (
-          <Row icon="notifications-outline" strong="Setting up your reminder…" rest={`Trial ends ${chargeDay}.`} />
+          <Row icon="notifications-outline" strong={tr('proWelcome.reminderPending')} rest={tr('proWelcome.trialEnds', { day: chargeDay })} />
         );
     }
   })();
@@ -257,16 +262,16 @@ export function ProWelcome({ plan, purchasedAt }: { plan: string; purchasedAt: s
         </View>
 
         <Animated.View style={[{ gap: t.space[2] }, headerAnim]}>
-          <Text style={title}>{"You're Pro."}</Text>
-          <Text style={sub}>Every honest number you earned now works everywhere you plan.</Text>
+          <Text style={title}>{tr('proWelcome.title')}</Text>
+          <Text style={sub}>{tr('proWelcome.sub')}</Text>
         </Animated.View>
 
         <Animated.View style={cardAnim}>
           <View style={card}>
             {isSub ? (
-              <Row icon="checkmark" strong="7-day free trial started." rest={`Nothing is charged before ${chargeDay}.`} />
+              <Row icon="checkmark" strong={tr('proWelcome.trialStarted')} rest={tr('proWelcome.nothingCharged', { day: chargeDay })} />
             ) : (
-              <Row icon="checkmark" strong="Pro is yours, forever." rest="One payment, no renewals." />
+              <Row icon="checkmark" strong={tr('proWelcome.lifetimeStrong')} rest={tr('proWelcome.lifetimeRest')} />
             )}
             {reminderRow ? (
               <>
@@ -277,13 +282,13 @@ export function ProWelcome({ plan, purchasedAt }: { plan: string; purchasedAt: s
             <View style={divider} />
             <Row
               icon="calendar-outline"
-              strong="Your day is honest now."
-              rest="Calendar, routines, insights, review, lock-screen timer."
+              strong={tr('proWelcome.dayStrong')}
+              rest={tr('proWelcome.dayRest')}
             />
           </View>
         </Animated.View>
 
-        <AppButton label="See my honest day" variant="amber" fullWidth onPress={onSeeMyDay} />
+        <AppButton label={tr('proWelcome.cta')} variant="amber" fullWidth onPress={onSeeMyDay} />
       </ScrollView>
     </Screen>
   );

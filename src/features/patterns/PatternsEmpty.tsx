@@ -1,5 +1,6 @@
 import { View, Text, type ViewStyle, type TextStyle } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { useTranslation } from 'react-i18next';
 import { useTheme } from '@/src/theme/useTheme';
 import { type } from '@/src/theme/typography';
 
@@ -11,6 +12,7 @@ import { type } from '@/src/theme/typography';
 
 export function PatternsEmpty({ archetypeShown = false }: { archetypeShown?: boolean }) {
   const t = useTheme();
+  const { t: tr } = useTranslation('patterns');
 
   // With the provisional archetype card above, this block is a footnote, not the
   // whole screen — it hugs the card and stops promising the personality reveal.
@@ -34,10 +36,7 @@ export function PatternsEmpty({ archetypeShown = false }: { archetypeShown?: boo
   if (archetypeShown) {
     return (
       <View style={wrap}>
-        <Text style={body}>
-          Time a few tasks and this fills in with your sharpest category and the surprises worth
-          noticing.
-        </Text>
+        <Text style={body}>{tr('patternsEmpty.bodyAfterArchetype')}</Text>
       </View>
     );
   }
@@ -47,11 +46,8 @@ export function PatternsEmpty({ archetypeShown = false }: { archetypeShown?: boo
       <View style={disc}>
         <Ionicons name="analytics-outline" size={t.iconSize.lg} color={t.colors.primary} />
       </View>
-      <Text style={title}>Your patterns are on the way</Text>
-      <Text style={body}>
-        Time a few tasks and this is where you&apos;ll meet your time personality, your sharpest
-        category, and the surprises worth noticing.
-      </Text>
+      <Text style={title}>{tr('patternsEmpty.title')}</Text>
+      <Text style={body}>{tr('patternsEmpty.body')}</Text>
     </View>
   );
 }

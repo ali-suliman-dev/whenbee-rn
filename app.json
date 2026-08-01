@@ -38,6 +38,9 @@
       "output": "static",
       "favicon": "./assets/images/favicon.png"
     },
+    "locales": {
+      "sv": "./locales/sv.json"
+    },
     "plugins": [
       "expo-router",
       [
@@ -80,7 +83,7 @@
         "expo-speech-recognition",
         {
           "microphonePermission": "Whenbee uses the mic so you can speak a task instead of typing.",
-          "speechRecognitionPermission": "Speech is transcribed on your device — it never leaves your phone."
+          "speechRecognitionPermission": "Speech is transcribed on your device. It never leaves your phone."
         }
       ],
       [

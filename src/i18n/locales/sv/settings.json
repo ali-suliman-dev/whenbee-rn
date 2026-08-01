@@ -1,0 +1,278 @@
+{
+  "soundOptions": {
+    "honey": "Honung",
+    "default": "Standard",
+    "none": "Ingen"
+  },
+  "restoreMessage": {
+    "success": "Pro återställt.",
+    "none": "Inget tidigare köp hittades.",
+    "error": "Kunde inte nå butiken. Försök igen."
+  },
+  "reminderDenied": "Tillåt aviseringar i Inställningar för att få påminnelser.",
+  "dismissA11y": "Stäng",
+  "proSection": {
+    "label": "Whenbee Pro",
+    "title": "Gör hela min dag ärlig",
+    "noteOn": "Lägg dina verkliga marginaler ovanpå dagens kalender.",
+    "noteOff": "Lägg in dina verkliga marginaler i kalendern automatiskt.",
+    "a11yOn": "Gör hela min dag ärlig",
+    "a11yOff": "Uppgradera till Pro och gör hela din dag ärlig"
+  },
+  "language": {
+    "title": "Språk",
+    "system": "Systemstandard",
+    "en": "English",
+    "sv": "Svenska",
+    "sheetTitle": "Välj språk",
+    "rowA11y": "Språk, just nu {{name}}"
+  },
+  "appearance": {
+    "label": "Utseende",
+    "modes": {
+      "system": "system",
+      "light": "ljust",
+      "dark": "mörkt"
+    }
+  },
+  "yourWhenbee": {
+    "label": "Din Whenbee",
+    "categories": {
+      "title": "Kategorier",
+      "note": "{{count}} spårade"
+    },
+    "nameInput": {
+      "a11y": "Ditt namn",
+      "placeholder": "Berätta för Whenbee vad du heter"
+    },
+    "retakeQuiz": {
+      "title": "Gör om tidsstil-quizet",
+      "note": "Uppdaterar utgångsläget för din tidsstil.",
+      "a11y": "Gör om tidsstil-quizet"
+    },
+    "nameCompanion": {
+      "title": "Namnge din Whenbee",
+      "note": "Ge din kompis ett namn."
+    }
+  },
+  "notifications": {
+    "label": "Aviseringar",
+    "reminders": {
+      "title": "Påminnelser",
+      "note": "Pling vid ärlig sluttid, med mera.",
+      "a11y": "Påminnelser"
+    },
+    "honestReached": {
+      "title": "Ärlig sluttid nådd",
+      "note": "En pling när du nått din ärliga sluttid.",
+      "a11y": "Ärlig sluttid nådd"
+    },
+    "startBy": {
+      "title": "Påminnelse om att börja",
+      "note": "En påminnelse när det är dags att sätta i gång med nästa uppgift.",
+      "a11y": "Påminnelse om att börja"
+    },
+    "mondayReview": {
+      "title": "Måndagsöversikt",
+      "note": "En mjuk påminnelse när din ärliga vecka är klar. Av som standard.",
+      "a11y": "Måndagsöversikt"
+    },
+    "quietHours": {
+      "title": "Tysta timmar",
+      "note": "Stäng av aviseringar under sömn eller fokustid.",
+      "a11y": "Tysta timmar",
+      "from": "Från  {{time}}",
+      "fromNote": "Den tysta perioden börjar",
+      "fromA11y": "Starttid för tysta timmar",
+      "until": "Till  {{time}}",
+      "untilNote": "Den tysta perioden slutar",
+      "untilA11y": "Sluttid för tysta timmar"
+    },
+    "sound": {
+      "title": "Ljud",
+      "note": "Ton som spelas när en avisering kommer."
+    },
+    "dailyCheckin": {
+      "title": "Daglig incheckning",
+      "note": "Lägger en rad på Idag som påminner dig om att logga en sak, och bockar av den när du gjort det. Hoppar du över en dag går inget sönder.",
+      "a11y": "Daglig incheckning"
+    },
+    "quickStart": {
+      "title": "Tryck för att starta igen",
+      "note": "En rad med uppgifter du kör ofta, högst upp på Idag. Ett tryck startar dem igen. Stäng av för en renare skärm.",
+      "a11y": "Tryck för att starta igen"
+    }
+  },
+  "scheduling": {
+    "label": "Schemaläggning",
+    "endOfDay": {
+      "title": "Dagens slut",
+      "noteOn": "Din dag varvar ner runt {{time}}",
+      "noteOff": "Av",
+      "a11yOn": "Dagens slut, just nu {{time}}. Tryck för att ändra.",
+      "a11yOff": "Dagens slut, av",
+      "switchA11y": "Dagens slut"
+    }
+  },
+  "calendar": {
+    "label": "Kalender",
+    "showEvents": {
+      "title": "Visa kalenderhändelser",
+      "note": "Händelser visas skrivskyddade och räknas med i kapaciteten för din ärliga dag.",
+      "a11y": "Visa kalenderhändelser"
+    },
+    "accessDeniedHint": "Kalenderåtkomsten är av. Öppna Inställningar → Whenbee → Kalender för att tillåta den.",
+    "calendarRow": {
+      "a11yVisible": "{{title}}, synlig",
+      "a11yHidden": "{{title}}, dold"
+    },
+    "export": {
+      "title": "Lägg planen i en Whenbee-kalender",
+      "noteOn": "Whenbee använder sin egen kalender. Stänger du av det tas de händelserna bort.",
+      "noteOff": "När du kört ”Planera min dag” går schemat direkt till din kalender.",
+      "a11yOn": "Lägg planen i en Whenbee-kalender, just nu på. Stänger du av det tas de händelserna bort.",
+      "a11yOff": "Lägg planen i en Whenbee-kalender, just nu av",
+      "writeDeniedHint": "Kalenderåtkomsten är av. Gå till Inställningar, sedan Whenbee, sedan Kalender för att tillåta den.",
+      "removeConfirmTitle": "Ta bort planen från kalendern?",
+      "removeConfirmMessage": "Det här tar bort alla händelser Whenbee lagt i sin egen kalender. Dina andra kalendrar rörs inte.",
+      "removeConfirmKeep": "Behåll händelser",
+      "removeConfirmConfirm": "Ta bort och stäng av",
+      "lockedA11y": "Lägg planen i en Whenbee-kalender. Pro-funktion. Tryck för att uppgradera.",
+      "proLabel": "Pro"
+    }
+  },
+  "data": {
+    "label": "Din data",
+    "exportReport": {
+      "title": "Exportera en rapport",
+      "note": "En ren PDF med din verkliga tidsdata att spara eller dela med en coach eller läkare."
+    },
+    "privacy": {
+      "title": "Integritet",
+      "note": "Vad som stannar på din telefon."
+    }
+  },
+  "presence": {
+    "label": "Närvaro",
+    "title": "Håll din uppgift på skärmen",
+    "note": "Din nästa uppgift och dess ärliga sluttid syns kvar, även när Whenbee är stängd.",
+    "widgetHelpButton": "Så lägger du till widgeten",
+    "availableCaption": "Tillgängligt i App Store-versionen.",
+    "ringOnCaption": "Ringen är på. Din ärliga sluttid visas på låsskärmen medan timern går.",
+    "onNote": "Närvaro är på. Din ärliga sluttid visas på låsskärmen medan en timer går."
+  },
+  "widgetHelpAlert": {
+    "title": "Så lägger du till widgeten",
+    "message": "Tryck och håll på hemskärmen, tryck på +, sök efter Whenbee och välj ”Nästa uppgift”."
+  },
+  "account": {
+    "label": "Konto",
+    "manageSubscription": {
+      "title": "Hantera prenumeration",
+      "note": "Byt plan eller säg upp prenumerationen i App Store."
+    },
+    "restorePurchases": {
+      "title": "Återställ köp",
+      "note": "Har du betalat tidigare? Få tillbaka din Pro-åtkomst."
+    }
+  },
+  "dangerZone": {
+    "label": "Riskzon",
+    "resetProgress": {
+      "title": "Återställ framsteg",
+      "note": "Glömmer det jag lärt mig, behåller dina inställningar."
+    },
+    "eraseEverything": {
+      "title": "Radera allt",
+      "note": "Rensa appen och börja om från välkomstskärmen."
+    }
+  },
+  "developer": {
+    "label": "Utvecklare",
+    "unlockPro": {
+      "title": "Lås upp Pro (test)",
+      "note": "Slå på Pro-behörigheten för att förhandsgranska varje låst skärm. För test: lämna av vid vanlig användning.",
+      "a11y": "Lås upp Pro (test)"
+    },
+    "seedDemo": {
+      "title": "Lägg in demodata",
+      "note": "Lägg in ~2 månaders loggar fördelat på fyra kategorier så att varje Pro-yta har något att visa. Endast i simulatorn: återställer demokategorierna varje gång."
+    },
+    "landingHeadline": "Landningsrubrik",
+    "paywallLayout": "Betalväggens funktionslayout"
+  },
+  "toasts": {
+    "resetDone": "Återställt. Ny start.",
+    "seeded": "Lade in {{count}} loggar fördelade på 2 månader."
+  },
+  "confirmSheets": {
+    "resetProgress": {
+      "title": "Återställa dina framsteg?",
+      "bullet1": "Rensar all loggad tid och det Whenbee lärt sig.",
+      "bullet2": "Behåller dina kategorier, utseende och påminnelser.",
+      "bullet3": "Din Whenbee behåller sitt namn och börjar bara växa igen.",
+      "confirmLabel": "Återställ framsteg"
+    },
+    "eraseEverything": {
+      "title": "Radera allt?",
+      "bullet1": "Tar bort allt: uppgifter, inlärning, kategorier, inställningar.",
+      "bullet2": "Du börjar om från välkomstskärmen, som en ny installation.",
+      "bullet3": "Pro lagras inte här, så ”Återställ köp” tar tillbaka det.",
+      "confirmLabel": "Radera allt"
+    }
+  },
+  "dayEndModal": {
+    "title": "När varvar din dag ner?",
+    "doneButton": "Klar"
+  },
+  "quietHoursModal": {
+    "fromTitle": "Tyst från",
+    "untilTitle": "Tyst till",
+    "doneButton": "Klar"
+  },
+  "guardrail": {
+    "title": "Hyperfokus-incheckning",
+    "captionLocked": "En förvarning innan en uppgift äter upp kvällen.",
+    "captionFree": "En vänlig påminnelse när en uppgift drar ut på tiden.",
+    "lockedA11y": "Hyperfokus-incheckning, Pro-funktion. Tryck för att läsa mer.",
+    "lockedValue": "2×",
+    "options": {
+      "off": "Av",
+      "oneAndHalfX": "1,5×",
+      "twoX": "2×",
+      "threeX": "3×"
+    }
+  },
+  "stripSwitcher": {
+    "label": "Kalenderstil",
+    "segment": {
+      "label": "Segment",
+      "note": "Glidande markör på ett spår"
+    },
+    "lens": {
+      "label": "Lins",
+      "note": "Vald dag växer"
+    },
+    "fallbackNote": "Byter Idag-raden",
+    "tabA11y": "Kalenderstil {{label}}",
+    "caption": "{{note}}. Byter Idag-raden direkt."
+  },
+  "forgotStepIn": {
+    "title": "Glömde stoppa",
+    "caption": "Om en timer får rulla länge medan du är borta, avslutar Whenbee den och frågar när du blev klar.",
+    "options": {
+      "room": "Gott om utrymme",
+      "balanced": "Balanserat",
+      "early": "Kliv in tidigt"
+    }
+  },
+  "sections": {
+    "feedback": "Feedback",
+    "sendFeedback": "Skicka feedback",
+    "whatsNewNote": "Det du bad om, och det jag släppte."
+  },
+  "legal": {
+    "termsTitle": "Användarvillkor",
+    "termsNote": "Avtalet för att använda Whenbee, på vanlig svenska."
+  }
+}

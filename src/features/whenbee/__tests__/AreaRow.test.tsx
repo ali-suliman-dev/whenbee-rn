@@ -14,6 +14,6 @@ describe('AreaRow', () => {
   });
   it('shows an em dash when no multiplier yet', () => {
     const { getByText } = render(<AreaRow name="Email" sharpness={0} onPress={() => {}} />);
-    expect(getByText('—')).toBeTruthy();
+    expect(getByText('–')).toBeTruthy();
   });
 });

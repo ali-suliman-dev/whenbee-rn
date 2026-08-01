@@ -1,5 +1,7 @@
 import { useMemo } from 'react';
 import { Pressable, View, Text, type ViewStyle, type TextStyle } from 'react-native';
+import { useTranslation } from 'react-i18next';
+import type { TFunction } from 'i18next';
 import { useTheme } from '@/src/theme/useTheme';
 import { type } from '@/src/theme/typography';
 import { haptics } from '@/src/lib/haptics';
@@ -19,14 +21,10 @@ import type { Offering, Package, PackageDuration } from '@/src/services/purchase
 
 const ORDER: PackageDuration[] = ['lifetime', 'yearly', 'monthly'];
 
-const TITLE: Record<PackageDuration, string> = {
-  yearly: 'Yearly',
-  lifetime: 'Lifetime',
-  monthly: 'Monthly',
-  other: 'Plan',
-};
-
-const BADGE_LABEL = 'MOST POPULAR';
+/** Localized plan title per duration. `other` never surfaces in `ORDER` today. */
+function titleFor(tr: TFunction<'paywall'>, duration: PackageDuration): string {
+  return tr(`planPicker.title.${duration}`);
+}
 
 /** Pull the first numeric value out of a localized price string (e.g. "USD 12,50" → 12.5). */
 function parsePrice(priceString: string): number | null {
@@ -61,17 +59,18 @@ function perMonthValue(yearly: Package | undefined): string | null {
   return `${symbol}${separator}${per}`;
 }
 
-/** Plain-language note under each plan title. No guilt, no fake urgency. */
-function noteFor(pkg: Package, perMonth: string | null): string {
+/** Plain-language note under each plan title. No guilt, no fake urgency.
+ * `other` (e.g. weekly) is dropped by `ORDER` before rendering and has no copy. */
+function noteFor(tr: TFunction<'paywall'>, pkg: Package, perMonth: string | null): string {
   switch (pkg.duration) {
     case 'lifetime':
-      return 'Pay once. Yours forever.';
+      return tr('planPicker.note.lifetime');
     case 'yearly':
       return perMonth != null
-        ? `7 days free, then ${pkg.priceString} a year`
-        : '7 days free, then billed yearly';
+        ? tr('planPicker.note.yearlyWithPrice', { price: pkg.priceString })
+        : tr('planPicker.note.yearly');
     case 'monthly':
-      return '7 days free, then billed monthly';
+      return tr('planPicker.note.monthly');
     default:
       return '';
   }
@@ -87,6 +86,7 @@ export function PlanPicker({
   onSelect: (pkg: Package) => void;
 }) {
   const t = useTheme();
+  const { t: tr } = useTranslation('paywall');
 
   // Order the offering's packages into the anchor → hero → monthly sequence,
   // dropping any duration we don't surface (e.g. weekly/"other").
@@ -159,23 +159,27 @@ export function PlanPicker({
             }}
             accessibilityRole="radio"
             accessibilityState={{ selected, checked: selected }}
-            accessibilityLabel={`${TITLE[pkg.duration]}, ${noteFor(pkg, perMonth)}, ${pkg.priceString}`}
+            accessibilityLabel={tr('planPicker.accessibilityLabel', {
+              title: titleFor(tr, pkg.duration),
+              note: noteFor(tr, pkg, perMonth),
+              price: pkg.priceString,
+            })}
             style={row}
           >
             <View style={{ flex: 1, gap: t.space[0.5] }}>
               <View style={{ flexDirection: 'row', alignItems: 'center', gap: t.space[2] }}>
-                <Text style={titleStyle}>{TITLE[pkg.duration]}</Text>
+                <Text style={titleStyle}>{titleFor(tr, pkg.duration)}</Text>
                 {isHero ? (
                   <View style={badge}>
-                    <Text style={badgeText}>{BADGE_LABEL}</Text>
+                    <Text style={badgeText}>{tr('planPicker.mostPopular')}</Text>
                   </View>
                 ) : null}
               </View>
-              <Text style={noteStyle}>{noteFor(pkg, perMonth)}</Text>
+              <Text style={noteStyle}>{noteFor(tr, pkg, perMonth)}</Text>
             </View>
             <View style={{ alignItems: 'flex-end', gap: t.space[0.5] }}>
               <Text style={priceStyle}>{heroPerMonth ?? pkg.priceString}</Text>
-              {heroPerMonth ? <Text style={perUnitStyle}>per month</Text> : null}
+              {heroPerMonth ? <Text style={perUnitStyle}>{tr('planPicker.perMonth')}</Text> : null}
             </View>
           </Pressable>
         );

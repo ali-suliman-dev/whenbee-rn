@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { categoryDisplayName } from '@/src/features/shared/categoryName';
 import {
   View,
   TextInput,
@@ -11,6 +12,7 @@ import {
   type TextStyle,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useTranslation } from 'react-i18next';
 import { Ionicons } from '@expo/vector-icons';
 import { Screen } from '@/src/components/Screen';
 import { AppText } from '@/src/components/AppText';
@@ -37,12 +39,14 @@ function CategoryRow({
   onRemove: (id: string) => void;
 }) {
   const t = useTheme();
-  const [draft, setDraft] = useState(category.name);
+  const { t: tr } = useTranslation('categoryDetail');
+  const displayName = categoryDisplayName(category.id, category.name);
+  const [draft, setDraft] = useState(displayName);
 
   function commit() {
     const trimmed = draft.trim();
     if (!trimmed) {
-      setDraft(category.name);
+      setDraft(displayName);
       return;
     }
     onRename(category.id, trimmed);
@@ -78,14 +82,14 @@ function CategoryRow({
         maxLength={MAX_CUSTOM_NAME}
         returnKeyType="done"
         placeholderTextColor={t.colors.inkSoft}
-        accessibilityLabel={`Category name, ${category.name}`}
+        accessibilityLabel={tr('categoriesList.nameLabel', { name: displayName })}
         style={input}
       />
       <Pressable
         onPress={() => onRemove(category.id)}
         disabled={!canRemove}
         accessibilityRole="button"
-        accessibilityLabel={`Stop tracking ${category.name}`}
+        accessibilityLabel={tr('categoriesList.stopTrackingLabel', { name: displayName })}
         accessibilityState={{ disabled: !canRemove }}
         hitSlop={8}
         style={{
@@ -104,6 +108,7 @@ function CategoryRow({
 
 export default function Categories() {
   const t = useTheme();
+  const { t: tr } = useTranslation('categoryDetail');
   const insets = useSafeAreaInsets();
   const categories = useCategoriesStore((s) => s.categories);
   const addCategory = useCategoriesStore((s) => s.addCategory);
@@ -145,10 +150,7 @@ export default function Categories() {
         keyboardShouldPersistTaps="handled"
         contentContainerStyle={{ gap: t.space[3], paddingTop: t.space[4], paddingBottom: insets.bottom + t.space[6] }}
       >
-        <AppText style={lead}>
-          The tasks Whenbee learns for you. Rename anything, or remove what you no longer do. Past
-          logs stay either way.
-        </AppText>
+        <AppText style={lead}>{tr('categoriesList.lead')}</AppText>
 
         {categories.map((c) => (
           <CategoryRow
@@ -168,11 +170,11 @@ export default function Categories() {
               onChangeText={setDraft}
               onSubmitEditing={commitNew}
               onBlur={commitNew}
-              placeholder="Name it…"
+              placeholder={tr('categoriesList.newPlaceholder')}
               placeholderTextColor={t.colors.inkSoft}
               maxLength={MAX_CUSTOM_NAME}
               returnKeyType="done"
-              accessibilityLabel="New category name"
+              accessibilityLabel={tr('categoriesList.newNameLabel')}
               style={{
                 flex: 1,
                 ...(type.bodyLg as unknown as TextStyle),
@@ -184,7 +186,7 @@ export default function Categories() {
         ) : (
           <View style={{ flexDirection: 'row' }}>
             <Chip
-              label="+ New category"
+              label={tr('categoriesList.addChip')}
               variant="add"
               onPress={() => {
                 Keyboard.dismiss();

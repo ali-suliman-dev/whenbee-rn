@@ -8,5 +8,5 @@ jest.mock('expo-router', () => ({
 
 test('renders a lock with accessible label', () => {
   const { getByLabelText } = render(<LockGlyph />);
-  expect(getByLabelText('Locked — stored on this device')).toBeTruthy();
+  expect(getByLabelText('Locked, stored on this device')).toBeTruthy();
 });

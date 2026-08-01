@@ -26,6 +26,7 @@ import {
 } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import Animated, { FadeIn, ReduceMotion } from 'react-native-reanimated';
+import { useTranslation } from 'react-i18next';
 import { useTheme } from '@/src/theme/useTheme';
 import { type } from '@/src/theme/typography';
 import { tokens } from '@/src/theme/tokens';
@@ -44,7 +45,8 @@ interface FinishEditorSheetProps {
   onChange: (ms: number) => void;
   onClear: () => void;
   onClose: () => void;
-  /** Quiet caption above the wheel — names which end of the day is being set. */
+  /** Quiet caption above the wheel: names which end of the day is being set.
+   *  Defaults to the translated "Finish by". */
   title?: string;
   /**
    * Start row only: drops the pinned time and hands the row back to the live
@@ -70,12 +72,17 @@ export function FinishEditorSheet({
   onChange,
   onClear,
   onClose,
-  title = 'Finish by',
+  title,
   onUseNow,
 }: FinishEditorSheetProps): ReactElement | null {
   const t = useTheme();
+  const { t: tr } = useTranslation('routines');
 
   if (!visible) return null;
+
+  // Defaulted here, not in the signature: a default parameter can't call a hook,
+  // so an English literal there would freeze the caption for every caller.
+  const titleText = title ?? tr('finishSheet.title');
 
   // ─── Styles ─────────────────────────────────────────────────────────────────
 
@@ -137,7 +144,7 @@ export function FinishEditorSheet({
           <Pressable
             style={StyleSheet.absoluteFillObject}
             onPress={onClose}
-            accessibilityLabel="Dismiss"
+            accessibilityLabel={tr('finishSheet.dismissA11y')}
           />
           <View style={sheet}>
             <SheetGrabber />
@@ -145,20 +152,20 @@ export function FinishEditorSheet({
                 existing finish picker keeps the exact rhythm it shipped with. */}
             {onUseNow ? (
               <View style={titleRow}>
-                <AppText style={titleStyle}>{title}</AppText>
+                <AppText style={titleStyle}>{titleText}</AppText>
                 <Pressable
                   testID="finish-editor-use-now"
                   onPress={onUseNow}
                   accessibilityRole="button"
-                  accessibilityLabel="Use now"
-                  accessibilityHint="Starts from the current time and keeps moving with the clock"
+                  accessibilityLabel={tr('finishSheet.useNowA11y')}
+                  accessibilityHint={tr('finishSheet.useNowHint')}
                   hitSlop={t.size.hitSlop}
                 >
-                  <AppText style={useNowStyle}>Use now</AppText>
+                  <AppText style={useNowStyle}>{tr('finishSheet.useNow')}</AppText>
                 </Pressable>
               </View>
             ) : (
-              <AppText style={titleStyle}>{title}</AppText>
+              <AppText style={titleStyle}>{titleText}</AppText>
             )}
             <View style={wheelWrap}>
               <FinishTimeWheel
@@ -170,9 +177,9 @@ export function FinishEditorSheet({
             </View>
             <View style={{ flexDirection: 'row', justifyContent: 'flex-end', gap: t.space[2] }}>
               {valueMs !== null ? (
-                <AppButton label="Clear" variant="ghost" size="2xs" onPress={onClear} />
+                <AppButton label={tr('finishSheet.clear')} variant="ghost" size="2xs" onPress={onClear} />
               ) : null}
-              <AppButton label="Done" variant="indigo" size="sm" onPress={onClose} />
+              <AppButton label={tr('finishSheet.done')} variant="indigo" size="sm" onPress={onClose} />
             </View>
           </View>
         </Animated.View>

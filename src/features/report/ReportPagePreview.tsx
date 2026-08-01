@@ -1,4 +1,5 @@
 import { View } from 'react-native';
+import { useTranslation } from 'react-i18next';
 import { useTheme } from '@/src/theme/useTheme';
 import { type } from '@/src/theme/typography';
 import { Text, type TextStyle } from 'react-native';
@@ -38,6 +39,7 @@ function Sparkline({ values, color, track }: { values: number[]; color: string; 
 
 export function ReportPagePreview({ model }: { model: ReportModel }) {
   const t = useTheme();
+  const { t: tr } = useTranslation('report');
   const rows = model.categories.slice(0, 3);
 
   const labelStyle: TextStyle = { ...(type.eyebrow as unknown as TextStyle), color: t.colors.inkSoft };
@@ -58,13 +60,13 @@ export function ReportPagePreview({ model }: { model: ReportModel }) {
     >
       {/* Title block */}
       <View style={{ gap: t.space[0.5] }}>
-        <Text style={{ ...(type.subtitle as unknown as TextStyle), color: t.colors.ink }}>Time report</Text>
+        <Text style={{ ...(type.subtitle as unknown as TextStyle), color: t.colors.ink }}>{tr('pdf.title')}</Text>
         <Text style={defStyle}>{model.window.label}</Text>
       </View>
 
       {/* Accuracy hero + sparkline */}
       <View style={{ gap: t.space[1] }}>
-        <Text style={labelStyle}>Estimation accuracy</Text>
+        <Text style={labelStyle}>{tr('pdf.eyebrowAccuracy')}</Text>
         <Text style={heroStyle}>{model.accuracyPct}%</Text>
         {model.accuracySpark.length > 1 ? (
           <Sparkline values={model.accuracySpark} color={t.colors.primary} track={t.colors.primarySoft} />

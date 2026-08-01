@@ -1,4 +1,5 @@
 import Svg, { Defs, LinearGradient, Path, Stop } from 'react-native-svg';
+import { useTranslation } from 'react-i18next';
 import { useTheme } from '@/src/theme/useTheme';
 
 // ──────────────────────────────────────────────────────────────────────────────
@@ -36,13 +37,14 @@ function hexPath(w: number, h: number): string {
 
 export function HoneyHexGlyph({ size }: HoneyHexGlyphProps) {
   const t = useTheme();
+  const { t: ts } = useTranslation('shared');
 
   const w = size ?? t.honeyGlyph.w;
   const h = w * HEX_RATIO;
   const path = hexPath(w, h);
 
   return (
-    <Svg width={w} height={h} accessibilityRole="image" accessibilityLabel="Honey">
+    <Svg width={w} height={h} accessibilityRole="image" accessibilityLabel={ts('a11y.honey')}>
       <Defs>
         {/* Top-down honey gradient: lit honey crest → amber accent → darker edge. */}
         <LinearGradient id="honeyHexFill" x1="0" y1="0" x2="0" y2="1">

@@ -1,5 +1,6 @@
 import { View, Text, type ViewStyle, type TextStyle } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { useTranslation } from 'react-i18next';
 import { Card } from '@/src/components/Card';
 import { AppButton } from '@/src/components/AppButton';
 import { useTheme } from '@/src/theme/useTheme';
@@ -35,6 +36,7 @@ function endClock(block: HonestBlock): string {
 
 export function HonestDayPreview({ result, onApply, onCancel, applying }: HonestDayPreviewProps) {
   const t = useTheme();
+  const { t: tr } = useTranslation('calendar');
   const { before, after, overflowsDay } = result;
 
   const lastBefore = before[before.length - 1];
@@ -52,16 +54,20 @@ export function HonestDayPreview({ result, onApply, onCancel, applying }: Honest
   return (
     <View style={{ gap: t.space[5] }}>
       <Card tone="focal" style={{ gap: t.space[3] }}>
-        <Text style={sectionLabel}>YOUR HONEST DAY</Text>
+        <Text style={sectionLabel}>{tr('preview.sectionLabel')}</Text>
         {lastBefore && lastAfter ? (
           <View style={summaryRow}>
-            <Text style={plannedEnd}>ends {formatClockMeridiem(lastBefore.endMs)}</Text>
+            <Text style={plannedEnd}>
+              {tr('preview.endsPlanned', { time: formatClockMeridiem(lastBefore.endMs) })}
+            </Text>
             <Ionicons name="arrow-forward" size={t.iconSize.sm} color={t.colors.inkSoft} />
-            <Text style={honestEnd}>really ends {formatClockMeridiem(lastAfter.endMs)}</Text>
+            <Text style={honestEnd}>
+              {tr('preview.endsHonest', { time: formatClockMeridiem(lastAfter.endMs) })}
+            </Text>
           </View>
         ) : (
           <Text style={{ ...(type.body as unknown as TextStyle), color: t.colors.inkSoft }}>
-            Nothing on the calendar today — add an event and your honest day shows up here.
+            {tr('preview.empty')}
           </Text>
         )}
 
@@ -70,7 +76,7 @@ export function HonestDayPreview({ result, onApply, onCancel, applying }: Honest
 
       {after.length > 0 ? (
         <View style={{ gap: t.space[2] }}>
-          <Text style={sectionLabel}>BLOCK BY BLOCK</Text>
+          <Text style={sectionLabel}>{tr('preview.blockByBlock')}</Text>
           {after.map((block, index) => (
             <BlockRow key={block.id} planned={before[index]} honest={block} />
           ))}
@@ -79,13 +85,13 @@ export function HonestDayPreview({ result, onApply, onCancel, applying }: Honest
 
       <View style={{ gap: t.space[3] }}>
         <AppButton
-          label={applying ? 'Applying…' : 'Apply to my calendar'}
+          label={applying ? tr('preview.applying') : tr('preview.apply')}
           variant="amber"
           fullWidth
           disabled={applying || after.length === 0}
           onPress={onApply}
         />
-        <AppButton label="Not now" variant="ghost" fullWidth disabled={applying} onPress={onCancel} />
+        <AppButton label={tr('preview.notNow')} variant="ghost" fullWidth disabled={applying} onPress={onCancel} />
       </View>
     </View>
   );
@@ -94,6 +100,7 @@ export function HonestDayPreview({ result, onApply, onCancel, applying }: Honest
 // One block's planned → honest time. Amber only when the honest block grows.
 function BlockRow({ planned, honest }: { planned: HonestBlock | undefined; honest: HonestBlock }) {
   const t = useTheme();
+  const { t: tr } = useTranslation('calendar');
   const grew = planned !== undefined && honest.durationMin > planned.durationMin;
 
   const row: ViewStyle = {
@@ -128,7 +135,7 @@ function BlockRow({ planned, honest }: { planned: HonestBlock | undefined; hones
           {formatClock(honest.startMs)}–{endClock(honest)}
         </Text>
       </View>
-      <Text style={duration}>{honest.durationMin} min</Text>
+      <Text style={duration}>{tr('preview.duration', { count: honest.durationMin })}</Text>
     </View>
   );
 }
@@ -137,6 +144,7 @@ function BlockRow({ planned, honest }: { planned: HonestBlock | undefined; hones
 // real choice (trim one) without shame; never red, never "you overcommitted".
 function CapacityNote() {
   const t = useTheme();
+  const { t: tr } = useTranslation('calendar');
   const pill: ViewStyle = {
     flexDirection: 'row',
     alignItems: 'center',
@@ -153,10 +161,10 @@ function CapacityNote() {
     <View
       style={pill}
       accessibilityRole="text"
-      accessibilityLabel="This is a full day. Trimming one block buys back the most time."
+      accessibilityLabel={tr('capacityNote.accessibilityLabel')}
     >
       <Ionicons name="time-outline" size={15} color={t.colors.amberText} />
-      <Text style={copy}>That&apos;s a full day. Trim one block and the rest has room to breathe.</Text>
+      <Text style={copy}>{tr('capacityNote.text')}</Text>
     </View>
   );
 }

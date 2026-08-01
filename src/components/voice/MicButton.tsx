@@ -13,6 +13,7 @@ import { Platform, Pressable } from 'react-native';
 import { SymbolView } from 'expo-symbols';
 import { Ionicons } from '@expo/vector-icons';
 import Animated, { useAnimatedStyle, useSharedValue, withSpring } from 'react-native-reanimated';
+import { useTranslation } from 'react-i18next';
 import { useTheme } from '@/src/theme/useTheme';
 import type { VoiceStatus } from '@/src/features/voice/useVoiceCapture';
 
@@ -23,6 +24,7 @@ interface MicButtonProps {
 
 export const MicButton = ({ status, onPress }: MicButtonProps) => {
   const t = useTheme();
+  const { t: tr } = useTranslation('voice');
   const scale = useSharedValue(1);
   const active = status === 'listening';
 
@@ -36,7 +38,7 @@ export const MicButton = ({ status, onPress }: MicButtonProps) => {
       onPressOut={() => scale.set(withSpring(1, t.motion.spring))}
       hitSlop={12}
       accessibilityRole="button"
-      accessibilityLabel="Speak your task"
+      accessibilityLabel={tr('micButton.speakA11y')}
     >
       <Animated.View
         style={[

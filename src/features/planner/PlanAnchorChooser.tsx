@@ -19,6 +19,8 @@
 // animate in.
 
 import { type ReactElement } from 'react';
+import { useTranslation } from 'react-i18next';
+import type { TFunction } from 'i18next';
 import { Pressable, Text, View, type TextStyle, type ViewStyle } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '@/src/theme/useTheme';
@@ -54,7 +56,7 @@ export interface PlanAnchorChooserProps {
 }
 
 /** Rendered when a derived clock exists but the engine placed nothing to read it from. */
-const NO_CLOCK = '—';
+const NO_CLOCK = '–';
 
 // ──────────────────────────────────────────────────────────────────────────────
 // Derived-line copy
@@ -68,15 +70,21 @@ const NO_CLOCK = '—';
  * "you missed it" (the no-guilt invariant).
  */
 function startDerivedText(
+  t: TFunction<'planner'>,
   startAtMs: number | null,
   effectiveStartMs: number,
   startHasPassed: boolean,
   derivedFinishMs: number | null,
 ): string {
   if (startHasPassed && startAtMs !== null) {
-    return `${formatClock(startAtMs)} has passed · starting ${formatClock(effectiveStartMs)}`;
+    return t('anchor.startPassed', {
+      planned: formatClock(startAtMs),
+      actual: formatClock(effectiveStartMs),
+    });
   }
-  return derivedFinishMs === null ? NO_CLOCK : `finish ${formatClock(derivedFinishMs)}`;
+  return derivedFinishMs === null
+    ? NO_CLOCK
+    : t('anchor.finishAt', { clock: formatClock(derivedFinishMs) });
 }
 
 /**
@@ -84,9 +92,15 @@ function startDerivedText(
  * start to quote — the planner would be answering against a default deadline the
  * user never chose — so the row says so plainly.
  */
-function finishDerivedText(finishByMs: number | null, derivedStartByMs: number | null): string {
-  if (finishByMs === null) return 'not set';
-  return derivedStartByMs === null ? NO_CLOCK : `start by ${formatClock(derivedStartByMs)}`;
+function finishDerivedText(
+  t: TFunction<'planner'>,
+  finishByMs: number | null,
+  derivedStartByMs: number | null,
+): string {
+  if (finishByMs === null) return t('anchor.notSet');
+  return derivedStartByMs === null
+    ? NO_CLOCK
+    : t('anchor.startBy', { clock: formatClock(derivedStartByMs) });
 }
 
 // ──────────────────────────────────────────────────────────────────────────────
@@ -252,6 +266,7 @@ export function PlanAnchorChooser({
   onEditFinish,
 }: PlanAnchorChooserProps): ReactElement {
   const t: Theme = useTheme();
+  const { t: tpl } = useTranslation('planner');
 
   const group: ViewStyle = {
     borderRadius: t.radii.md,
@@ -264,10 +279,10 @@ export function PlanAnchorChooser({
     <View testID="plan-anchor-chooser" style={group} accessibilityRole="radiogroup">
       <AnchorRow
         testID="plan-anchor-start"
-        label="Start at"
-        valueText={startAtMs === null ? 'Now' : formatClock(startAtMs)}
-        derivedText={startDerivedText(startAtMs, effectiveStartMs, startHasPassed, derivedFinishMs)}
-        editHint="Tap to pick when you start. Whenbee works out your finish."
+        label={tpl('planSheet.startAt')}
+        valueText={startAtMs === null ? tpl('planSheet.now') : formatClock(startAtMs)}
+        derivedText={startDerivedText(tpl, startAtMs, effectiveStartMs, startHasPassed, derivedFinishMs)}
+        editHint={tpl('anchor.editStartHint')}
         selected={selected === 'start'}
         first
         onSelect={() => onSelect('start')}
@@ -275,10 +290,10 @@ export function PlanAnchorChooser({
       />
       <AnchorRow
         testID="plan-anchor-finish"
-        label="Finish by"
-        valueText={finishByMs === null ? 'Set' : formatClock(finishByMs)}
-        derivedText={finishDerivedText(finishByMs, derivedStartByMs)}
-        editHint="Tap to pick when you need to be done. Whenbee works out your latest start."
+        label={tpl('planSheet.finishBy')}
+        valueText={finishByMs === null ? tpl('anchor.set') : formatClock(finishByMs)}
+        derivedText={finishDerivedText(tpl, finishByMs, derivedStartByMs)}
+        editHint={tpl('anchor.editFinishHint')}
         selected={selected === 'finish'}
         first={false}
         onSelect={() => onSelect('finish')}

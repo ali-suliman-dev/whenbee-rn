@@ -1,14 +1,33 @@
+import type { TFunction } from 'i18next';
 import type { PickedCategory } from '@/src/stores/onboardingStore';
 
-/** The seed task categories offered on Step 1, in display order. */
-export const ONBOARDING_CATEGORIES: PickedCategory[] = [
-  { id: 'getting_ready', name: 'Getting ready' },
-  { id: 'cleaning', name: 'Cleaning' },
-  { id: 'admin', name: 'Admin & email' },
-  { id: 'errands', name: 'Errands' },
-  { id: 'cooking', name: 'Cooking' },
-  { id: 'out_the_door', name: 'Out the door' },
-];
+/** The seed task category ids offered on Step 1, in display order. */
+const ONBOARDING_CATEGORY_IDS = [
+  'getting_ready',
+  'cleaning',
+  'admin',
+  'errands',
+  'cooking',
+  'out_the_door',
+] as const;
+
+/** Full translation key for each seed category id's localized name. */
+const SEED_KEY = {
+  getting_ready: 'categories.seed.gettingReady',
+  cleaning: 'categories.seed.cleaning',
+  admin: 'categories.seed.admin',
+  errands: 'categories.seed.errands',
+  cooking: 'categories.seed.cooking',
+  out_the_door: 'categories.seed.outTheDoor',
+} as const satisfies Record<(typeof ONBOARDING_CATEGORY_IDS)[number], string>;
+
+/** The seed task categories offered on Step 1, in display order, with localized names. */
+export function getOnboardingCategories(t: TFunction<'onboarding'>): PickedCategory[] {
+  return ONBOARDING_CATEGORY_IDS.map((id) => ({
+    id,
+    name: t(SEED_KEY[id]),
+  }));
+}
 
 /**
  * Turn a custom category name into a stable id: lowercase, collapse any run of

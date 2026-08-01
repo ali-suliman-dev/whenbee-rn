@@ -1,4 +1,5 @@
 import { View, Text, type ViewStyle, type TextStyle } from 'react-native';
+import { useTranslation } from 'react-i18next';
 import { useTheme } from '@/src/theme/useTheme';
 import { type } from '@/src/theme/typography';
 import { PatternCard } from './PatternCard';
@@ -20,18 +21,17 @@ function acc(error: number): number {
 
 export function PlanExperiment({ card }: { card: PlanExperimentCard }) {
   const t = useTheme();
+  const { t: tr } = useTranslation('patterns');
 
   const verdict: TextStyle = { ...(type.bodyLg as unknown as TextStyle), color: t.colors.ink };
   const detail: TextStyle = { ...(type.bodySm as unknown as TextStyle), color: t.colors.inkSoft };
   const note: TextStyle = { ...(type.caption as unknown as TextStyle), color: t.colors.inkFaint };
   const block: ViewStyle = { gap: t.space[1.5] };
 
-  const headline = card.planWins
-    ? 'Running the timer keeps you sharper.'
-    : 'You read time fine without the timer.';
+  const headline = tr(card.planWins ? 'planExperiment.headline.planWins' : 'planExperiment.headline.gutWins');
   const supporting = card.planWins
-    ? `Timed tasks land ${acc(card.timedError)}% accurate vs ${acc(card.retroError)}% when logged after.`
-    : `Logged-after tasks land ${acc(card.retroError)}% accurate vs ${acc(card.timedError)}% when timed. Honestly — your gut does well here.`;
+    ? tr('planExperiment.supporting.planWins', { timedPct: acc(card.timedError), retroPct: acc(card.retroError) })
+    : tr('planExperiment.supporting.gutWins', { retroPct: acc(card.retroError), timedPct: acc(card.timedError) });
 
   // dismissId: "experiment:{timedCount}:{retroCount}" — encodes the observation
   // counts so that a new batch of data (different counts) re-shows the updated
@@ -39,12 +39,21 @@ export function PlanExperiment({ card }: { card: PlanExperimentCard }) {
   const dismissId = `experiment:${card.timedCount}:${card.retroCount}`;
 
   return (
-    <PatternCard eyebrow="PLAN VS WING IT" icon="flask-outline" dismissLabel="Hide the plan experiment" dismissId={dismissId}>
+    <PatternCard
+      eyebrow={tr('planExperiment.eyebrow')}
+      icon="flask-outline"
+      dismissLabel={tr('planExperiment.dismissLabel')}
+      dismissId={dismissId}
+    >
       <View style={block}>
         <Text style={verdict}>{headline}</Text>
         <Text style={detail}>{supporting}</Text>
         <Text style={note}>
-          Based on {card.timedCount} timed and {card.retroCount} logged-after {card.timedCount + card.retroCount === 1 ? 'task' : 'tasks'}.
+          {tr('planExperiment.note', {
+            count: card.timedCount + card.retroCount,
+            timedCount: card.timedCount,
+            retroCount: card.retroCount,
+          })}
         </Text>
       </View>
     </PatternCard>
@@ -54,13 +63,16 @@ export function PlanExperiment({ card }: { card: PlanExperimentCard }) {
 /** The calm gated state — shown when one arm hasn't enough logs to compare yet. */
 export function PlanExperimentPending() {
   const t = useTheme();
+  const { t: tr } = useTranslation('patterns');
   const body: TextStyle = { ...(type.bodySm as unknown as TextStyle), color: t.colors.inkSoft };
   return (
-    <PatternCard eyebrow="PLAN VS WING IT" icon="flask-outline" dismissLabel="Hide the plan experiment" dismissId="experiment-pending">
-      <Text style={body}>
-        A few more timed and a few logged-after tasks and you&apos;ll see whether the timer makes you
-        sharper. No rush.
-      </Text>
+    <PatternCard
+      eyebrow={tr('planExperiment.eyebrow')}
+      icon="flask-outline"
+      dismissLabel={tr('planExperiment.dismissLabel')}
+      dismissId="experiment-pending"
+    >
+      <Text style={body}>{tr('planExperiment.pending.body')}</Text>
     </PatternCard>
   );
 }

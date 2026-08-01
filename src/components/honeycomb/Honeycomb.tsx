@@ -8,6 +8,7 @@ import Animated, {
   useReducedMotion,
   withTiming,
 } from 'react-native-reanimated';
+import { useTranslation } from 'react-i18next';
 import { useTheme } from '@/src/theme/useTheme';
 import type { Tier } from '@/src/domain/types';
 
@@ -36,6 +37,16 @@ const CAP_AT = 93;
 const HEX_RATIO = Math.sqrt(3) / 2;
 /** Gap between packed cells, as a fraction of cell width. */
 const GAP_RATIO = 0.18;
+
+// The engine's Tier is an English enum, so the spoken tier comes from the
+// whenbee bundle rather than the raw value.
+const TIER_KEYS = {
+  Raw: 'tiers.raw',
+  Setting: 'tiers.setting',
+  Ripening: 'tiers.ripening',
+  Thickening: 'tiers.thickening',
+  Honest: 'tiers.honest',
+} as const satisfies Record<Tier, string>;
 
 export interface HoneycombCell {
   categoryId: string;
@@ -74,6 +85,8 @@ interface CellProps {
 
 function HoneycombCellSvg({ cell, w, h, capRim }: CellProps) {
   const t = useTheme();
+  const { t: tc } = useTranslation('common');
+  const { t: tw } = useTranslation('whenbee');
   const reducedMotion = useReducedMotion();
 
   const pct = Math.max(0, Math.min(100, cell.sharpness));
@@ -105,7 +118,11 @@ function HoneycombCellSvg({ cell, w, h, capRim }: CellProps) {
     <G
       testID={`honeycomb-cell-${cell.categoryId}`}
       accessibilityRole="image"
-      accessibilityLabel={`${cell.label} cell — ${Math.round(cell.sharpness)}% honey, tier ${cell.tier}`}
+      accessibilityLabel={tc('a11y.honeycombCell', {
+        label: cell.label,
+        pct: Math.round(cell.sharpness),
+        tier: tw(TIER_KEYS[cell.tier]),
+      })}
       accessibilityState={{ selected: capped }}
     >
       <Defs>

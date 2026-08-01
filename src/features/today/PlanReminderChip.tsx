@@ -7,6 +7,7 @@
 // animation live on the inner Animated.View (shared value via .get()/.set()).
 
 import { useCallback } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Pressable, Text, View } from 'react-native';
 import Animated, { useAnimatedStyle, useSharedValue, withTiming } from 'react-native-reanimated';
 import { Ionicons } from '@expo/vector-icons';
@@ -22,6 +23,7 @@ interface PlanReminderChipProps {
 
 export function PlanReminderChip({ startByClock }: PlanReminderChipProps) {
   const t = useTheme();
+  const { t: tr } = useTranslation('today');
   const { enabled, toggle } = useStartByToggle();
   const scale = useSharedValue(1);
 
@@ -42,7 +44,9 @@ export function PlanReminderChip({ startByClock }: PlanReminderChipProps) {
 
   const bg = enabled ? t.colors.accentSoft : t.colors.surfaceSunken;
   const fg = enabled ? t.colors.amberText : t.colors.inkSoft;
-  const label = enabled ? `Nudge me at ${startByClock}` : 'Remind me to start';
+  const label = enabled
+    ? tr('planReminder.on', { clock: startByClock })
+    : tr('planReminder.off');
 
   return (
     <Pressable
@@ -54,8 +58,8 @@ export function PlanReminderChip({ startByClock }: PlanReminderChipProps) {
       accessibilityState={{ checked: enabled }}
       accessibilityLabel={
         enabled
-          ? `Start reminder on, ${startByClock}. Tap to turn off.`
-          : 'Start reminder off. Tap to turn on.'
+          ? tr('planReminder.a11yOn', { clock: startByClock })
+          : tr('planReminder.a11yOff')
       }
       hitSlop={t.space[1.5]}
     >

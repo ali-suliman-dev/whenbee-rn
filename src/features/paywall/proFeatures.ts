@@ -27,7 +27,11 @@ export type ProFeatureMoment = 'morning' | 'deepwork' | 'midday' | 'evening' | '
 
 export interface ProFeature {
   key: ProFeatureKey;
-  label: string;
+  /** `paywall` namespace key carrying the visible label, never English text: the
+   *  registry stays pure data, so translation happens at the render site. The
+   *  template-literal type keeps the key in lockstep with `key`, so i18next's
+   *  typed lookup fails the build if a `features.*` entry is ever missing. */
+  labelKey: `features.${ProFeatureKey}`;
   group: ProFeatureGroup;
   moment: ProFeatureMoment;
   /** Ionicons glyph name; kept as a string so this module stays UI-free. */
@@ -35,18 +39,18 @@ export interface ProFeature {
 }
 
 export const PRO_FEATURES: readonly ProFeature[] = [
-  { key: 'calendar', label: 'Honest calendar', group: 'plan', moment: 'evening', icon: 'calendar-outline' },
-  { key: 'capacity', label: 'Day capacity', group: 'plan', moment: 'midday', icon: 'battery-half-outline' },
-  { key: 'focusWindows', label: 'Focus windows', group: 'plan', moment: 'deepwork', icon: 'sunny-outline' },
-  { key: 'confidenceBand', label: 'Confidence band', group: 'plan', moment: 'midday', icon: 'pulse-outline' },
-  { key: 'routines', label: 'Routines', group: 'run', moment: 'morning', icon: 'repeat-outline' },
-  { key: 'goalCoach', label: 'Goal coach', group: 'run', moment: 'morning', icon: 'flag-outline' },
-  { key: 'presence', label: 'Lock-screen timer', group: 'run', moment: 'deepwork', icon: 'notifications-outline' },
-  { key: 'hyperfocusGuard', label: 'Hyperfocus guard', group: 'run', moment: 'deepwork', icon: 'shield-outline' },
-  { key: 'stealsTime', label: 'What steals your time', group: 'learn', moment: 'week', icon: 'hourglass-outline' },
-  { key: 'weeklyReview', label: 'Weekly review', group: 'learn', moment: 'week', icon: 'document-text-outline' },
-  { key: 'pdfExport', label: 'PDF export', group: 'learn', moment: 'week', icon: 'share-outline' },
-  { key: 'history', label: 'Full history', group: 'learn', moment: 'week', icon: 'time-outline' },
+  { key: 'calendar', labelKey: 'features.calendar', group: 'plan', moment: 'evening', icon: 'calendar-outline' },
+  { key: 'capacity', labelKey: 'features.capacity', group: 'plan', moment: 'midday', icon: 'battery-half-outline' },
+  { key: 'focusWindows', labelKey: 'features.focusWindows', group: 'plan', moment: 'deepwork', icon: 'sunny-outline' },
+  { key: 'confidenceBand', labelKey: 'features.confidenceBand', group: 'plan', moment: 'midday', icon: 'pulse-outline' },
+  { key: 'routines', labelKey: 'features.routines', group: 'run', moment: 'morning', icon: 'repeat-outline' },
+  { key: 'goalCoach', labelKey: 'features.goalCoach', group: 'run', moment: 'morning', icon: 'flag-outline' },
+  { key: 'presence', labelKey: 'features.presence', group: 'run', moment: 'deepwork', icon: 'notifications-outline' },
+  { key: 'hyperfocusGuard', labelKey: 'features.hyperfocusGuard', group: 'run', moment: 'deepwork', icon: 'shield-outline' },
+  { key: 'stealsTime', labelKey: 'features.stealsTime', group: 'learn', moment: 'week', icon: 'hourglass-outline' },
+  { key: 'weeklyReview', labelKey: 'features.weeklyReview', group: 'learn', moment: 'week', icon: 'document-text-outline' },
+  { key: 'pdfExport', labelKey: 'features.pdfExport', group: 'learn', moment: 'week', icon: 'share-outline' },
+  { key: 'history', labelKey: 'features.history', group: 'learn', moment: 'week', icon: 'time-outline' },
 ] as const;
 
 export function featuresByGroup(group: ProFeatureGroup): ProFeature[] {

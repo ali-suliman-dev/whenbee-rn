@@ -13,6 +13,7 @@ import { useTheme } from '@/src/theme/useTheme';
 import { Ionicons } from '@expo/vector-icons';
 import { useEffect } from 'react';
 import { Pressable, Text, View, type TextStyle, type ViewStyle } from 'react-native';
+import { useTranslation } from 'react-i18next';
 import Animated, {
   useAnimatedStyle,
   useReducedMotion,
@@ -36,6 +37,7 @@ import Animated, {
 
 export function NotifSoftAskCard() {
   const t = useTheme();
+  const { t: tr } = useTranslation('reward');
   const { show, onAccept, onDecline } = useNotifSoftAsk();
   const reducedMotion = useReducedMotion();
 
@@ -97,19 +99,16 @@ export function NotifSoftAskCard() {
               <Ionicons name="notifications-outline" size={t.iconSize.sm} color={t.colors.ink} />
             </View>
             <View style={titleCol}>
-              <Text style={eyebrow}>One tap, when it counts</Text>
-              <Text style={title}>A quiet ping at your honest finish</Text>
+              <Text style={eyebrow}>{tr('notifSoftAsk.eyebrow')}</Text>
+              <Text style={title}>{tr('notifSoftAsk.title')}</Text>
             </View>
           </View>
-          <Text style={body}>
-            When a timer hits your real number, not your guess, Whenbee taps you once. No streaks,
-            no scolding.
-          </Text>
+          <Text style={body}>{tr('notifSoftAsk.body')}</Text>
         </View>
 
         <View style={{ gap: t.space[3] }}>
           <AppButton
-            label="Turn on the ping"
+            label={tr('notifSoftAsk.acceptA11y')}
             variant="amber"
             fullWidth
             onPress={() => { void onAccept(); }}
@@ -118,10 +117,10 @@ export function NotifSoftAskCard() {
             onPress={onDecline}
             hitSlop={t.size.hitSlop}
             accessibilityRole="button"
-            accessibilityLabel="Not now"
+            accessibilityLabel={tr('notifSoftAsk.decline')}
             style={decline}
           >
-            <Text style={declineText}>Not now</Text>
+            <Text style={declineText}>{tr('notifSoftAsk.decline')}</Text>
           </Pressable>
         </View>
       </Card>

@@ -14,6 +14,7 @@ import Animated, {
 import { useAmbientMotion } from '@/src/hooks/useAmbientMotion';
 import Svg, { Circle, Defs, LinearGradient, Path, Polygon, Rect, Stop } from 'react-native-svg';
 import { Ionicons } from '@expo/vector-icons';
+import { useTranslation } from 'react-i18next';
 import { AppText } from './AppText';
 import { useTheme } from '@/src/theme/useTheme';
 import { type } from '@/src/theme/typography';
@@ -68,6 +69,7 @@ function ShimmerStripe({ width, height }: { width: number; height: number }) {
 
 export function ProUpsellCard({ title, note, onPress, accessibilityLabel }: ProUpsellCardProps) {
   const t = useTheme();
+  const { t: tr } = useTranslation('shared');
   const reducedMotion = useReducedMotion();
 
   // ── press scale ───────────────────────────────────────────────────────────
@@ -196,7 +198,7 @@ export function ProUpsellCard({ title, note, onPress, accessibilityLabel }: ProU
         </View>
         <View style={body}>
           <View style={{ flex: 1 }}>
-            <AppText style={proTag}>Pro</AppText>
+            <AppText style={proTag}>{tr('proUpsellCard.tag')}</AppText>
             <AppText style={titleStyle}>{title}</AppText>
             <AppText style={noteStyle}>{note}</AppText>
           </View>

@@ -8,8 +8,21 @@
 //   · "logged", never "banked" (Reclaim vocabulary, cut as off-thesis).
 //   · "tightens", never "narrows" (that's the Pro confidence-band verb).
 //   · No scold in any state. The past-end-of-day line is a fact plus an offer.
-import { fmtHm, formatClockMeridiem } from '@/src/lib/time';
+//
+// Every string is looked up through the `t` the caller passes in (the default,
+// common-namespace translator, so `formatDuration` finds its unit words) with
+// `today:`-qualified keys. Nothing is written in English here.
+import type { TFunction } from 'i18next';
+import { formatClockMeridiem } from '@/src/lib/time';
+import { formatDuration } from '@/src/i18n/formatDuration';
 import type { LandingResult } from '@/src/engine';
+
+/**
+ * The translator these helpers take. `common` stays the default namespace so
+ * `formatDuration` finds its unit words; `today` is reachable through the
+ * `today:` prefix. A plain `useTranslation()` result satisfies it.
+ */
+export type LandingT = TFunction<['common', 'today']>;
 
 export interface HeadlineOpts {
   rangeLowMs?: number;
@@ -60,6 +73,7 @@ export interface FooterCopy {
 export function landingHeadline(
   landing: LandingResult,
   { rangeLowMs, rangeHighMs, variant = 'd' }: HeadlineOpts,
+  t: LandingT,
 ): HeadlineCopy {
   // No plan yet — `landingMs` is null exactly here; never fall through to the
   // `?? 0` epoch fallback below.
@@ -69,31 +83,51 @@ export function landingHeadline(
 
   if (landing.kind === 'past') {
     return {
-      lead: 'Your day ended ',
-      clock: `${fmtHm(landing.overMin)} ago`,
-      trail: ` · ${fmtHm(landing.remainingMin)} still queued`,
+      lead: t('today:honestLanding.headline.pastLead'),
+      clock: t('today:honestLanding.headline.pastClock', {
+        duration: formatDuration(landing.overMin, t),
+      }),
+      trail: t('today:honestLanding.headline.pastTrail', {
+        duration: formatDuration(landing.remainingMin, t),
+      }),
     };
   }
 
   // Cold start wins over the exact-time forms: a seeded prior can't name a minute.
   if (rangeLowMs !== undefined && rangeHighMs !== undefined) {
     return {
-      lead: 'Roughly done ',
+      lead: t('today:honestLanding.headline.roughlyLead'),
       clock: `${formatClockMeridiem(rangeLowMs)} – ${formatClockMeridiem(rangeHighMs)}`,
       trail: '',
     };
   }
 
   const clock = `~${formatClockMeridiem(landing.landingMs ?? 0)}`;
+  const doneLead = t('today:honestLanding.headline.doneLead');
 
   if (landing.kind === 'clear') {
-    return { lead: 'Done ', clock, trail: ` · ${fmtHm(landing.openMin)} still open` };
+    return {
+      lead: doneLead,
+      clock,
+      trail: t('today:honestLanding.headline.clearTrail', {
+        duration: formatDuration(landing.openMin, t),
+      }),
+    };
   }
 
+  const overDuration = formatDuration(landing.overMin, t);
   if (variant === 'dAlt') {
-    return { lead: '', clock, trail: `. That's ${fmtHm(landing.overMin)} past your day.` };
+    return {
+      lead: '',
+      clock,
+      trail: t('today:honestLanding.headline.overTrailAlt', { duration: overDuration }),
+    };
   }
-  return { lead: 'Done ', clock, trail: ` · ${fmtHm(landing.overMin)} past your day` };
+  return {
+    lead: doneLead,
+    clock,
+    trail: t('today:honestLanding.headline.overTrail', { duration: overDuration }),
+  };
 }
 
 export interface ScaleCtx {
@@ -125,10 +159,14 @@ export interface ScaleCtx {
 export function landingScale(
   landing: LandingResult,
   { nowMs, dayEndMs, hasRange = false }: ScaleCtx,
+  t: LandingT,
 ): string[] {
   if (landing.kind === 'empty' || landing.kind === 'past') return [];
 
-  const labels = [`now · ${formatClockMeridiem(nowMs)}`, formatClockMeridiem(dayEndMs)];
+  const labels = [
+    t('today:honestLanding.scale.now', { clock: formatClockMeridiem(nowMs) }),
+    formatClockMeridiem(dayEndMs),
+  ];
   if (!hasRange && landing.kind === 'over' && landing.landingMs !== null) {
     labels.push(formatClockMeridiem(landing.landingMs));
   }
@@ -144,21 +182,34 @@ export function landingScale(
 export function landingFooter(
   landing: LandingResult,
   { doneCount, doneHonestMin, logsToWarm, dayEndShort, bookedMinAll = 0 }: FooterCtx,
+  t: LandingT,
 ): FooterCopy | null {
+  const loggedDuration = formatDuration(doneHonestMin, t);
+  const doneLogged = t('today:honestLanding.footer.doneLogged', {
+    done: doneCount,
+    duration: loggedDuration,
+  });
+
   if (landing.kind === 'past') {
     return {
-      text: `${doneCount} done · ${fmtHm(doneHonestMin)} logged`,
-      boldSpan: fmtHm(doneHonestMin),
-      action: landing.ends.length > 0 ? `Move ${landing.ends.length} to tomorrow` : null,
+      text: doneLogged,
+      boldSpan: loggedDuration,
+      action:
+        landing.ends.length > 0
+          ? t('today:honestLanding.footer.moveToTomorrow', { n: landing.ends.length })
+          : null,
     };
   }
 
   if (landing.kind === 'over' && landing.tail) {
     // "lands after 9" — the end-of-day hour spoken the way a person would say it.
     return {
-      text: `${landing.tail.label} lands after ${dayEndShort}`,
+      text: t('today:honestLanding.footer.tailLands', {
+        label: landing.tail.label,
+        dayEnd: dayEndShort,
+      }),
       boldSpan: landing.tail.label,
-      action: 'Move it',
+      action: t('today:honestLanding.footer.moveIt'),
     };
   }
 
@@ -168,8 +219,12 @@ export function landingFooter(
   // amount now lives in `text`, read from the TRUE total, not the bar's
   // span-clamped segment — see `bookedMinAll` above).
   if (bookedMinAll > 0) {
-    const total = fmtHm(bookedMinAll);
-    return { text: `${total} already booked today`, boldSpan: total, action: 'Pad calendar' };
+    const total = formatDuration(bookedMinAll, t);
+    return {
+      text: t('today:honestLanding.footer.booked', { duration: total }),
+      boldSpan: total,
+      action: t('today:honestLanding.footer.padCalendar'),
+    };
   }
 
   // Nothing logged yet: no row. Naming the absence adds nothing the user can't
@@ -177,9 +232,9 @@ export function landingFooter(
   if (doneCount === 0) return null;
 
   return {
-    text: `${doneCount} done · ${fmtHm(doneHonestMin)} logged`,
-    boldSpan: fmtHm(doneHonestMin),
-    action: 'Add a task',
+    text: doneLogged,
+    boldSpan: loggedDuration,
+    action: t('today:honestLanding.footer.addTask'),
   };
 }
 
@@ -209,16 +264,31 @@ export interface LegendEntry {
  * the landing) renders no indigo segment at all, so a legend explaining an
  * indigo dot would be decoding a colour that isn't on screen.
  */
-export function landingLegend({ taskMin, bookedMin, overMin }: LegendEntryArgs): LegendEntry[] {
+export function landingLegend(
+  { taskMin, bookedMin, overMin }: LegendEntryArgs,
+  t: LandingT,
+): LegendEntry[] {
   if (bookedMin <= 0) return [];
 
   const entries: LegendEntry[] = [];
   if (taskMin > 0) {
-    entries.push({ key: 'tasks', value: fmtHm(taskMin), label: 'tasks' });
+    entries.push({
+      key: 'tasks',
+      value: formatDuration(taskMin, t),
+      label: t('today:honestLanding.legend.tasks'),
+    });
   }
-  entries.push({ key: 'booked', value: fmtHm(bookedMin), label: 'booked' });
+  entries.push({
+    key: 'booked',
+    value: formatDuration(bookedMin, t),
+    label: t('today:honestLanding.legend.booked'),
+  });
   if (overMin > 0) {
-    entries.push({ key: 'over', value: fmtHm(overMin), label: 'over' });
+    entries.push({
+      key: 'over',
+      value: formatDuration(overMin, t),
+      label: t('today:honestLanding.legend.over'),
+    });
   }
   return entries;
 }
@@ -234,6 +304,9 @@ export interface UpsellCopy {
  * "you're missing out". Kept short enough to survive `numberOfLines={1}` beside
  * the action on a narrow Android screen.
  */
-export function landingUpsell(): UpsellCopy {
-  return { text: 'Assumes an empty calendar', action: 'Add mine' };
+export function landingUpsell(t: LandingT): UpsellCopy {
+  return {
+    text: t('today:honestLanding.upsell.text'),
+    action: t('today:honestLanding.upsell.action'),
+  };
 }

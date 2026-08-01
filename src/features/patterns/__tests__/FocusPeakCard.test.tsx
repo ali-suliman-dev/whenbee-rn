@@ -18,7 +18,7 @@ jest.mock('@/src/stores/settingsStore', () => ({
 // Revealed + steady confidence — the precise-window hero.
 const revealedSteady = {
   startMin: 810, endMin: 960, basis: 'revealed' as const, confidence: 0.9,
-  confidenceTier: 'steady' as const, coarseBlockLabel: 'Afternoons',
+  confidenceTier: 'steady' as const, coarseBlockLabel: 'afternoons',
   scoreByBin: Array.from({ length: 19 }, (_, i) => (i === 9 ? 1 : 0.3)),
   sampleCount: 137, distinctDays: 21, held: false, hydrated: true,
   gates: { sessions: { have: 137, need: 15 }, days: { have: 21, need: 5 } },
@@ -27,7 +27,7 @@ const revealedSteady = {
 // Revealed but still low-confidence — coarse block reveal.
 const revealedLow = {
   startMin: 480, endMin: 690, basis: 'revealed' as const, confidence: 0.4,
-  confidenceTier: 'low' as const, coarseBlockLabel: 'Mornings',
+  confidenceTier: 'low' as const, coarseBlockLabel: 'mornings',
   scoreByBin: Array(19).fill(0.5), sampleCount: 16, distinctDays: 5, held: false, hydrated: true,
   gates: { sessions: { have: 16, need: 15 }, days: { have: 5, need: 5 } },
 };
@@ -44,7 +44,7 @@ const forming = {
 // Forming with a leaning coarse block already known.
 const formingWithHint = {
   ...forming,
-  coarseBlockLabel: 'Mornings',
+  coarseBlockLabel: 'mornings',
 };
 
 // Sessions cleared, days still short (1 of 2 unlocked).

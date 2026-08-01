@@ -1,5 +1,7 @@
 import { forwardRef } from 'react';
 import { View, Text, type TextStyle, type ViewStyle } from 'react-native';
+import { useTranslation } from 'react-i18next';
+import type { TFunction } from 'i18next';
 import { useTheme } from '@/src/theme/useTheme';
 import { type } from '@/src/theme/typography';
 import { formatClock } from '@/src/lib/time';
@@ -36,13 +38,12 @@ export interface ArchetypeShareData {
 
 export type ShareCardData = PlanShareData | ArchetypeShareData;
 
-const FOOTER = 'Made with Whenbee · learned on-device';
-
 export const ShareableCard = forwardRef<View, { data: ShareCardData }>(function ShareableCard(
   { data },
   ref,
 ) {
   const t = useTheme();
+  const { t: tr } = useTranslation('shared');
 
   const card: ViewStyle = {
     width: t.size.shareCard,
@@ -65,11 +66,11 @@ export const ShareableCard = forwardRef<View, { data: ShareCardData }>(function 
 
   return (
     <View ref={ref} collapsable={false} style={card}>
-      {data.kind === 'plan' ? <PlanBody t={t} eyebrow={eyebrow} data={data} /> : null}
-      {data.kind === 'archetype' ? <ArchetypeBody t={t} eyebrow={eyebrow} data={data} /> : null}
+      {data.kind === 'plan' ? <PlanBody t={t} tr={tr} eyebrow={eyebrow} data={data} /> : null}
+      {data.kind === 'archetype' ? <ArchetypeBody t={t} tr={tr} eyebrow={eyebrow} data={data} /> : null}
 
       <View style={footerRule}>
-        <Text style={footer}>{FOOTER}</Text>
+        <Text style={footer}>{tr('shareableCard.footer')}</Text>
       </View>
     </View>
   );
@@ -77,7 +78,17 @@ export const ShareableCard = forwardRef<View, { data: ShareCardData }>(function 
 
 type Theme = ReturnType<typeof useTheme>;
 
-function PlanBody({ t, eyebrow, data }: { t: Theme; eyebrow: TextStyle; data: PlanShareData }) {
+function PlanBody({
+  t,
+  tr,
+  eyebrow,
+  data,
+}: {
+  t: Theme;
+  tr: TFunction<'shared'>;
+  eyebrow: TextStyle;
+  data: PlanShareData;
+}) {
   const focalGroup: ViewStyle = { gap: t.space[1] };
   const deadline: TextStyle = { ...(type.bodySm as unknown as TextStyle), color: t.colors.inkSoft };
   const timeCol: TextStyle = {
@@ -94,7 +105,9 @@ function PlanBody({ t, eyebrow, data }: { t: Theme; eyebrow: TextStyle; data: Pl
       <View style={focalGroup}>
         <Text style={eyebrow}>{data.eyebrow}</Text>
         <HonestNumber size="xl" tone="indigo" value={formatClock(data.focalClock)} />
-        <Text style={deadline}>to finish by {formatClock(data.deadlineClock)}</Text>
+        <Text style={deadline}>
+          {tr('shareableCard.finishBy', { time: formatClock(data.deadlineClock) })}
+        </Text>
       </View>
 
       {data.timeline.length > 0 ? (
@@ -117,10 +130,12 @@ function PlanBody({ t, eyebrow, data }: { t: Theme; eyebrow: TextStyle; data: Pl
 
 function ArchetypeBody({
   t,
+  tr,
   eyebrow,
   data,
 }: {
   t: Theme;
+  tr: TFunction<'shared'>;
   eyebrow: TextStyle;
   data: ArchetypeShareData;
 }) {
@@ -132,12 +147,12 @@ function ArchetypeBody({
   return (
     <>
       <View style={head}>
-        <Text style={eyebrow}>MY TIME ARCHETYPE</Text>
+        <Text style={eyebrow}>{tr('shareableCard.archetypeEyebrow')}</Text>
         <Text style={title}>{data.title}</Text>
       </View>
       <Text style={blurb}>{data.blurb}</Text>
       <Text style={avg}>
-        On average my tasks run {data.averageMultiplier.toFixed(1)}× my first guess.
+        {tr('shareableCard.averageMultiplier', { multiplier: data.averageMultiplier.toFixed(1) })}
       </Text>
     </>
   );

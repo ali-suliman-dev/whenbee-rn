@@ -5,6 +5,7 @@
 // scale live on the inner Animated.View (shared value via .get()/.set()). No bounce.
 
 import { useCallback } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Pressable, Text, View, type TextStyle, type ViewStyle } from 'react-native';
 import Animated, { useAnimatedStyle, useSharedValue, withTiming } from 'react-native-reanimated';
 import { Ionicons } from '@expo/vector-icons';
@@ -38,6 +39,7 @@ export function PlanStrip({
   onPress,
 }: PlanStripProps) {
   const t = useTheme();
+  const { t: tr } = useTranslation('today');
   const scale = useSharedValue(1);
   const aStyle = useAnimatedStyle(() => ({ transform: [{ scale: scale.get() }] }));
 
@@ -78,11 +80,13 @@ export function PlanStrip({
   };
   const dot: TextStyle = { fontSize: t.fontSize.sm, color: t.colors.inkFaint };
 
-  const startWord = planAnchor === 'start' ? 'Starting' : 'Start by';
-  const a11yLabel =
-    `Today's plan. ${startWord} ${startByClock}. Reminder ${reminderOn ? 'on' : 'off'}.` +
-    (doneByClock ? ` Done by ${doneByClock}.` : '') +
-    ' Tap to open.';
+  const startWord = planAnchor === 'start' ? tr('timeline.starting') : tr('timeline.startBy');
+  const a11yLabel = tr('planStrip.a11y', {
+    startWord,
+    clock: startByClock,
+    state: reminderOn ? tr('planStrip.a11yStateOn') : tr('planStrip.a11yStateOff'),
+    doneBy: doneByClock ? tr('planStrip.a11yDoneBy', { clock: doneByClock }) : '',
+  });
 
   return (
     <Pressable
@@ -103,11 +107,13 @@ export function PlanStrip({
           size={t.iconSize.xs}
           color={reminderOn ? t.colors.primary : t.colors.inkSoft}
         />
-        <Text style={softText}>{reminderOn ? 'nudge on' : 'nudge off'}</Text>
+        <Text style={softText}>
+          {reminderOn ? tr('planStrip.nudgeOn') : tr('planStrip.nudgeOff')}
+        </Text>
         {doneByClock ? (
           <>
             <Text style={dot}>·</Text>
-            <Text style={softText}>done by {doneByClock}</Text>
+            <Text style={softText}>{tr('planStrip.doneBy', { clock: doneByClock })}</Text>
           </>
         ) : null}
         <View style={{ flex: 1 }} />

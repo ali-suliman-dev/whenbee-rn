@@ -1,4 +1,5 @@
 import { Pressable, ScrollView, Text, View, type TextStyle, type ViewStyle } from 'react-native';
+import { useTranslation } from 'react-i18next';
 import Animated, {
   FadeInDown,
   useAnimatedStyle,
@@ -36,6 +37,7 @@ function QuickChip({
   onPress: (chip: QuickTaskChip) => void;
   index: number;
 }) {
+  const { t: tq } = useTranslation('today');
   const t = useTheme();
   const reducedMotion = useReducedMotion();
   const pressScale = useSharedValue(1);
@@ -92,7 +94,10 @@ function QuickChip({
       onPressIn={handlePressIn}
       onPressOut={handlePressOut}
       accessibilityRole="button"
-      accessibilityLabel={`Start ${chip.label}, about ${chip.honestMin} minutes`}
+      accessibilityLabel={tq('quickTaskChips.startA11y', {
+        label: chip.label,
+        minutes: chip.honestMin,
+      })}
     >
       <Animated.View
         style={pressStyle}
@@ -115,6 +120,7 @@ function QuickChip({
 
 export function QuickTaskChips() {
   const t = useTheme();
+  const { t: tr } = useTranslation('today');
   const { chips, startQuickTask } = useQuickTasks();
 
   if (chips.length === 0) return null;
@@ -134,7 +140,7 @@ export function QuickTaskChips() {
 
   return (
     <View style={{ gap: t.space[2] }}>
-      <Text style={sectionLabel}>Tap to start again</Text>
+      <Text style={sectionLabel}>{tr('quickTaskChips.tapToStartAgain')}</Text>
       <ScrollView
         horizontal
         showsHorizontalScrollIndicator={false}

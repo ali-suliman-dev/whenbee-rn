@@ -1,5 +1,6 @@
 import { View, Text, type ViewStyle, type TextStyle } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { useTranslation } from 'react-i18next';
 import { useTheme } from '@/src/theme/useTheme';
 import { type } from '@/src/theme/typography';
 import type { RecentLog } from '@/src/stores/calibrationStore';
@@ -22,6 +23,7 @@ interface RecentListProps {
 
 export function RecentList({ recent }: RecentListProps) {
   const t = useTheme();
+  const { t: tr } = useTranslation('categoryDetail');
 
   const header: TextStyle = { ...(type.heading as unknown as TextStyle), color: t.colors.ink };
   const empty: TextStyle = { ...(type.caption as unknown as TextStyle), color: t.colors.inkSoft };
@@ -29,8 +31,8 @@ export function RecentList({ recent }: RecentListProps) {
   if (recent.length === 0) {
     return (
       <View style={{ gap: t.space[3] }}>
-        <Text style={header}>Recent tasks</Text>
-        <Text style={empty}>No completed tasks here yet — they&apos;ll show up as you log them.</Text>
+        <Text style={header}>{tr('recentList.header')}</Text>
+        <Text style={empty}>{tr('recentList.empty')}</Text>
       </View>
     );
   }
@@ -39,7 +41,7 @@ export function RecentList({ recent }: RecentListProps) {
 
   return (
     <View style={{ gap: t.space[3] }}>
-      <Text style={header}>Recent tasks</Text>
+      <Text style={header}>{tr('recentList.header')}</Text>
       {rows.map((row, i) => (
         <RecentRow key={`${row.createdAt}-${i}`} row={row} />
       ))}
@@ -49,6 +51,7 @@ export function RecentList({ recent }: RecentListProps) {
 
 function RecentRow({ row }: { row: RecentLog }) {
   const t = useTheme();
+  const { t: tr } = useTranslation('categoryDetail');
   const over = row.actualMin > row.estimateMin;
   const ratioColor = over ? t.colors.accent : t.colors.primary;
 
@@ -89,9 +92,9 @@ function RecentRow({ row }: { row: RecentLog }) {
     <View style={{ gap: t.space[1.5] }}>
       <View style={labelRow}>
         <View style={guessRow}>
-          <Text style={label}>guessed {row.estimateMin}</Text>
+          <Text style={label}>{tr('recentList.guessed', { estimate: row.estimateMin })}</Text>
           <Ionicons name="arrow-forward" size={t.iconSize.xs} color={t.colors.inkFaint} />
-          <Text style={label}>took {row.actualMin}</Text>
+          <Text style={label}>{tr('recentList.took', { actual: row.actualMin })}</Text>
         </View>
         <Text style={ratio}>{row.ratio.toFixed(1)}×</Text>
       </View>

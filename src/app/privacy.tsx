@@ -1,37 +1,23 @@
 import { View, ScrollView, type ViewStyle, type TextStyle } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useTranslation } from 'react-i18next';
 import { Screen } from '@/src/components/Screen';
 import { AppText } from '@/src/components/AppText';
 import { PrivacyGlyph, type PrivacyGlyphKind } from '@/src/components/icons/PrivacyGlyph';
 import { useTheme } from '@/src/theme/useTheme';
 import { type } from '@/src/theme/typography';
 
-const POINTS: { icon: PrivacyGlyphKind; title: string; body: string }[] = [
-  {
-    icon: 'phone',
-    title: 'It stays on this phone',
-    body: 'Your tasks, the times you log, and the multipliers Whenbee works out from them live in a database on your device. They are never uploaded.',
-  },
-  {
-    icon: 'person',
-    title: 'No account, no email',
-    body: "You didn't sign up for anything, so there's no profile of you on a server somewhere. Nothing ties your data to your name.",
-  },
-  {
-    icon: 'bug',
-    title: 'Anonymous crash and usage counts',
-    body: 'To find bugs and see which screens get used, Whenbee sends anonymous events — taps and crashes, never your task names, times, or categories.',
-  },
-  {
-    icon: 'calendar',
-    title: 'Your calendar, read on request',
-    body: 'Honest-Day reads your calendar only when you open it, and writes a padded block back only after you confirm. Nothing is sent anywhere.',
-  },
-];
-
 export default function Privacy() {
   const t = useTheme();
+  const { t: tr } = useTranslation('legal');
   const insets = useSafeAreaInsets();
+
+  const POINTS: { icon: PrivacyGlyphKind; title: string; body: string }[] = [
+    { icon: 'phone', title: tr('points.onDevice.title'), body: tr('points.onDevice.body') },
+    { icon: 'person', title: tr('points.noAccount.title'), body: tr('points.noAccount.body') },
+    { icon: 'bug', title: tr('points.analytics.title'), body: tr('points.analytics.body') },
+    { icon: 'calendar', title: tr('points.calendar.title'), body: tr('points.calendar.body') },
+  ];
 
   const lead: TextStyle = { ...(type.body as unknown as TextStyle), color: t.colors.inkSoft };
   const card: ViewStyle = {
@@ -56,9 +42,7 @@ export default function Privacy() {
           paddingBottom: insets.bottom + t.space[6],
         }}
       >
-        <AppText style={lead}>
-          Exactly what Whenbee keeps on your phone, and what it never sends anywhere.
-        </AppText>
+        <AppText style={lead}>{tr('lead')}</AppText>
 
         {POINTS.map((p, i) => (
           // Cards stay static — only the glyph animates (a staggered one-shot mount

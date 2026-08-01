@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Pressable, View, type TextStyle, type ViewStyle } from 'react-native';
 import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
@@ -6,7 +7,7 @@ import { useTheme } from '@/src/theme/useTheme';
 import { type } from '@/src/theme/typography';
 import { AppText } from './AppText';
 import { useTimerStore } from '@/src/stores/timerStore';
-import { fmtHm } from '@/src/lib/time';
+import { formatDuration } from '@/src/i18n/formatDuration';
 
 // ──────────────────────────────────────────────────────────────────────────────
 // ActiveTimerBar — a slim persistent pill shown while a timer is running, so a
@@ -25,6 +26,9 @@ function elapsedLabel(sec: number): string {
 
 export function ActiveTimerBar() {
   const t = useTheme();
+  const { t: ts } = useTranslation('shared');
+  const { t: tt } = useTranslation('timer');
+  const { t: translate } = useTranslation();
   const isRunning = useTimerStore((s) => s.isRunning);
   const startedAt = useTimerStore((s) => s.startedAt);
   const taskLabel = useTimerStore((s) => s.taskLabel);
@@ -88,7 +92,7 @@ export function ActiveTimerBar() {
       pathname: '/(modals)/timer',
       params: {
         ...(taskId ? { taskId } : null),
-        label: taskLabel || 'Timing now',
+        label: taskLabel || ts('activeTimerBar.timingNow'),
         category: category ?? 'getting_ready',
         estimateMin: String(estimateMin),
         guessMin: String(guessMin),
@@ -103,17 +107,26 @@ export function ActiveTimerBar() {
     <Pressable
       onPress={reopen}
       accessibilityRole="button"
-      accessibilityLabel={`Timing now: ${taskLabel ?? 'a task'}, ${elapsedLabel(elapsedSec)} elapsed${
-        isOver ? `, ${overMin} minutes over your honest estimate` : ''
-      }. Tap to reopen.`}
+      accessibilityLabel={
+        ts('activeTimerBar.a11y', {
+          label: taskLabel ?? ts('activeTimerBar.aTask'),
+          elapsed: elapsedLabel(elapsedSec),
+        }) +
+        (isOver ? ts('activeTimerBar.a11yOver', { count: overMin }) : '') +
+        ts('activeTimerBar.a11yTail')
+      }
       style={bar}
     >
       <View style={dot} />
       <AppText style={labelStyle} numberOfLines={1}>
-        {taskLabel || 'Timing now'}
+        {taskLabel || ts('activeTimerBar.timingNow')}
       </AppText>
       <AppText style={elapsedStyle}>{elapsedLabel(elapsedSec)}</AppText>
-      {isOver ? <AppText style={overStyle}>{`+${fmtHm(overMin)} over`}</AppText> : null}
+      {isOver ? (
+        <AppText style={overStyle}>
+          {tt('overBadge', { duration: formatDuration(overMin, translate) })}
+        </AppText>
+      ) : null}
       <Ionicons name="chevron-forward" size={t.iconSize.sm} color={isOver ? t.colors.accentEdge : t.colors.inkSoft} />
     </Pressable>
   );

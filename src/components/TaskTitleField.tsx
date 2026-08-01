@@ -8,6 +8,7 @@ import { useRef, useState } from 'react';
 import { Platform, TextInput, View, type TextStyle, type ViewStyle } from 'react-native';
 import { MicButton } from '@/src/components/voice/MicButton';
 import { ListeningSheet } from '@/src/components/voice/ListeningSheet';
+import { NetworkSttConsentSheet, DownloadModelPrompt } from '@/src/components/voice/NetworkSttConsentSheet';
 import { useVoiceCapture } from '@/src/features/voice/useVoiceCapture';
 import { useIsScreenFocused } from '@/src/hooks/useIsScreenFocused';
 import { useTheme } from '@/src/theme/useTheme';
@@ -115,6 +116,16 @@ export const TaskTitleField = ({
         <MicButton status={voice.status} onPress={voice.start} />
       </View>
       <ListeningSheet visible={voice.status === 'listening'} partial={voice.partial} onStop={voice.stop} />
+      <NetworkSttConsentSheet
+        visible={voice.status === 'needsNetworkConsent'}
+        onConfirm={voice.confirmNetworkConsent}
+        onCancel={voice.stop}
+      />
+      <DownloadModelPrompt
+        visible={voice.status === 'needsDownload'}
+        onDownload={voice.triggerDownload}
+        onCancel={voice.stop}
+      />
     </>
   );
 };

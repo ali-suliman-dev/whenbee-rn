@@ -1,10 +1,12 @@
 import { useState, useCallback } from 'react';
 import { View, Text, Pressable, type ViewStyle, type TextStyle } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { useTranslation } from 'react-i18next';
 import { useTheme } from '@/src/theme/useTheme';
 import { type } from '@/src/theme/typography';
 import { TaskRow } from '@/src/features/today/TaskRow';
 import { useCategoriesStore } from '@/src/stores/categoriesStore';
+import { categoryDisplayName } from '@/src/features/shared/categoryName';
 import type { DayTask } from '@/src/engine/daySelectors';
 
 // ──────────────────────────────────────────────────────────────────────────────
@@ -23,12 +25,13 @@ export interface ShelfSectionProps {
 
 export function ShelfSection({ shelfTasks, onMoveTask, onDeleteTask }: ShelfSectionProps) {
   const t = useTheme();
+  const { t: tr } = useTranslation('today');
   const [expanded, setExpanded] = useState(false);
   const categories = useCategoriesStore((s) => s.categories);
 
   const categoryName = useCallback(
     (id: string): string =>
-      categories.find((c) => c.id === id)?.name ?? id,
+      categoryDisplayName(id, categories.find((c) => c.id === id)?.name),
     [categories],
   );
 
@@ -62,15 +65,18 @@ export function ShelfSection({ shelfTasks, onMoveTask, onDeleteTask }: ShelfSect
   };
 
   return (
-    <View accessibilityRole="summary" accessibilityLabel={`No day yet, ${shelfTasks.length} task${shelfTasks.length === 1 ? '' : 's'}`}>
+    <View accessibilityRole="summary" accessibilityLabel={tr('shelfSection.summaryA11y', { count: shelfTasks.length })}>
       <Pressable
         onPress={toggleExpanded}
         accessibilityRole="button"
-        accessibilityLabel={`No day yet · ${shelfTasks.length}. ${expanded ? 'Collapse' : 'Expand'}`}
+        accessibilityLabel={tr('shelfSection.headerA11y', {
+          count: shelfTasks.length,
+          action: expanded ? tr('shelfSection.collapseAction') : tr('shelfSection.expandAction'),
+        })}
         hitSlop={t.size.hitSlop}
         style={headerRow}
       >
-        <Text style={headerText}>{`No day yet · ${shelfTasks.length}`}</Text>
+        <Text style={headerText}>{tr('shelfSection.header', { count: shelfTasks.length })}</Text>
         <View style={countText}>
           <Ionicons
             name={expanded ? 'chevron-up' : 'chevron-down'}

@@ -4,8 +4,11 @@ import {
   reviewCadenceFor,
   deriveTightened,
   buildReviewSummary,
-  REVIEW_REFLECTION_QUESTIONS,
+  deriveReflection,
+  deriveWeekRead,
+  REVIEW_REFLECTION_QUESTION_COUNT,
 } from '../review';
+import type { ReviewReflection } from '../review';
 import { REVIEW_MAX_TIGHTENED } from '../constants';
 import type { ReviewBiggestSurprise } from '../../domain/types';
 
@@ -80,11 +83,14 @@ describe('resolveWeekPeriod', () => {
     expect(new Date(p.endMs).getDate()).toBe(29); // exclusive end = this week's Monday
   });
 
-  it('produces a stable, non-empty id and label', () => {
+  it('produces a stable id and a locale-free label (no month names)', () => {
     const now = new Date(2026, 5, 17, 14, 0, 0).getTime();
     const p = resolveWeekPeriod(now);
     expect(p.id.length).toBeGreaterThan(0);
-    expect(p.label.length).toBeGreaterThan(0);
+    // The engine emits no copy: the label is the period id, and the UI formats
+    // the human label from startMs/endMs.
+    expect(p.label).toBe(p.id);
+    expect(p.label).toMatch(/^\d{4}-W\d{2}$/);
     // deterministic for the same now
     expect(resolveWeekPeriod(now).id).toBe(p.id);
   });
@@ -118,6 +124,12 @@ describe('resolveMonthPeriod', () => {
     const start = new Date(p.startMs);
     expect(start.getFullYear()).toBe(2025);
     expect(start.getMonth()).toBe(11); // December
+  });
+
+  it('labels the month with the locale-free period id, never a month name', () => {
+    const p = resolveMonthPeriod(new Date(2026, 5, 17, 9, 0, 0).getTime());
+    expect(p.id).toBe('2026-05');
+    expect(p.label).toBe(p.id);
   });
 
   it('captures the full length of a leap February', () => {
@@ -210,20 +222,91 @@ const surprise: ReviewBiggestSurprise = {
 
 const fixedPeriod = resolveWeekPeriod(new Date(2026, 5, 17, 14, 0, 0).getTime());
 
+// The engine never words the reflection: it hands back a descriptor and the
+// caller (the i18n boundary) turns it into a sentence. The stub below renders
+// the descriptor verbatim so these tests assert STRUCTURE, not English.
+const asJson = (r: ReviewReflection) => JSON.stringify(r);
+
+const emptyInput = {
+  period: fixedPeriod,
+  loggedCount: 0,
+  loggedMinutes: 0,
+  accuracyLine: null,
+  sharpestPhrase: null,
+  tightenedEntries: [],
+  biggestSurprise: null,
+  weekRead: null,
+  forwardAction: null,
+  confidenceBand: null,
+};
+
+describe('deriveReflection', () => {
+  it('names the strongest tightening when one was earned', () => {
+    const r = deriveReflection(
+      fixedPeriod,
+      [{ categoryId: 'admin', categoryName: 'Admin', earlyMultiplier: 2, recentMultiplier: 1.1 }],
+      surprise,
+    );
+    expect(r).toEqual({ kind: 'tightened', categoryName: 'Admin' });
+  });
+
+  it('falls back to the biggest surprise when nothing tightened', () => {
+    expect(deriveReflection(fixedPeriod, [], surprise)).toEqual({
+      kind: 'surprise',
+      categoryName: 'Admin',
+    });
+  });
+
+  it('falls back to a question index inside the bundle range', () => {
+    const r = deriveReflection(fixedPeriod, [], null);
+    expect(r.kind).toBe('question');
+    if (r.kind !== 'question') throw new Error('unreachable');
+    expect(r.index).toBeGreaterThanOrEqual(0);
+    expect(r.index).toBeLessThan(REVIEW_REFLECTION_QUESTION_COUNT);
+  });
+
+  it('is deterministic per period id', () => {
+    expect(deriveReflection(fixedPeriod, [], null)).toEqual(
+      deriveReflection(fixedPeriod, [], null),
+    );
+  });
+});
+
+// ── deriveWeekRead ────────────────────────────────────────────────────────────
+
+describe('deriveWeekRead', () => {
+  const noLogs: { createdAt: number }[] = [];
+  const entry = (categoryId: string, ratio: number) => ({
+    categoryId,
+    categoryName: categoryId,
+    ratios: [ratio, ratio],
+  });
+
+  it("returns the 'tight' id when most areas landed close", () => {
+    const wr = deriveWeekRead([entry('a', 1.0), entry('b', 1.1)], fixedPeriod, noLogs);
+    expect(wr.verdict).toBe('tight');
+    expect(wr.areasClose).toBe(2);
+  });
+
+  it("returns the 'loose' id when almost nothing landed close", () => {
+    const wr = deriveWeekRead([entry('a', 2.5), entry('b', 2.2)], fixedPeriod, noLogs);
+    expect(wr.verdict).toBe('loose');
+    expect(wr.areasClose).toBe(0);
+  });
+
+  it("returns the 'mixed' id in between", () => {
+    const wr = deriveWeekRead(
+      [entry('a', 1.0), entry('b', 2.5), entry('c', 2.4)],
+      fixedPeriod,
+      noLogs,
+    );
+    expect(wr.verdict).toBe('mixed');
+  });
+});
+
 describe('buildReviewSummary', () => {
   it('reports zero logs with null card fields but a present reflection', () => {
-    const s = buildReviewSummary({
-      period: fixedPeriod,
-      loggedCount: 0,
-      loggedMinutes: 0,
-      accuracyLine: null,
-      sharpestPhrase: null,
-      tightenedEntries: [],
-      biggestSurprise: null,
-      weekRead: null,
-      forwardAction: null,
-      confidenceBand: null,
-    });
+    const s = buildReviewSummary(emptyInput, asJson);
     expect(s.loggedCount).toBe(0);
     expect(s.loggedMinutes).toBe(0);
     expect(s.accuracyLine).toBeNull();
@@ -234,20 +317,19 @@ describe('buildReviewSummary', () => {
   });
 
   it('passes through only the cards that were earned', () => {
-    const s = buildReviewSummary({
-      period: fixedPeriod,
-      loggedCount: 9,
-      loggedMinutes: 240,
-      accuracyLine: 'Your estimates got a little sharper.',
-      sharpestPhrase: null,
-      tightenedEntries: [
-        { categoryId: 'admin', categoryName: 'Admin', ratios: [2.0, 2.0, 1.2, 1.2] },
-      ],
-      biggestSurprise: surprise,
-      weekRead: null,
-      forwardAction: null,
-      confidenceBand: null,
-    });
+    const s = buildReviewSummary(
+      {
+        ...emptyInput,
+        loggedCount: 9,
+        loggedMinutes: 240,
+        accuracyLine: 'Your estimates got a little sharper.',
+        tightenedEntries: [
+          { categoryId: 'admin', categoryName: 'Admin', ratios: [2.0, 2.0, 1.2, 1.2] },
+        ],
+        biggestSurprise: surprise,
+      },
+      asJson,
+    );
     expect(s.loggedCount).toBe(9);
     expect(s.loggedMinutes).toBe(240);
     expect(s.accuracyLine).toBe('Your estimates got a little sharper.');
@@ -256,89 +338,79 @@ describe('buildReviewSummary', () => {
     expect(s.biggestSurprise).toEqual(surprise);
   });
 
-  it('is deterministic for a fixed input + period (same reflection question)', () => {
-    const input = {
-      period: fixedPeriod,
-      loggedCount: 3,
-      loggedMinutes: 50,
-      accuracyLine: null,
-      sharpestPhrase: null,
-      tightenedEntries: [],
-      biggestSurprise: null,
-      weekRead: null,
-      forwardAction: null,
-      confidenceBand: null,
-    };
-    expect(buildReviewSummary(input).reflection).toBe(buildReviewSummary(input).reflection);
-    expect(REVIEW_REFLECTION_QUESTIONS).toContain(buildReviewSummary(input).reflection);
+  it('is deterministic for a fixed input + period (same reflection)', () => {
+    const input = { ...emptyInput, loggedCount: 3, loggedMinutes: 50 };
+    expect(buildReviewSummary(input, asJson).reflection).toBe(
+      buildReviewSummary(input, asJson).reflection,
+    );
   });
 
-  it('rotates the reflection by period id', () => {
+  it('rotates the question index by period id', () => {
     const week2 = resolveWeekPeriod(new Date(2026, 5, 24, 14, 0, 0).getTime());
-    const base = {
-      loggedCount: 3,
-      loggedMinutes: 50,
-      accuracyLine: null,
-      sharpestPhrase: null,
-      tightenedEntries: [],
-      biggestSurprise: null,
-      weekRead: null,
-      forwardAction: null,
-      confidenceBand: null,
-    };
-    const a = buildReviewSummary({ ...base, period: fixedPeriod }).reflection;
-    const b = buildReviewSummary({ ...base, period: week2 }).reflection;
-    // Different period ids should be capable of selecting different questions;
-    // at minimum both are valid members of the question set.
-    expect(REVIEW_REFLECTION_QUESTIONS).toContain(a);
-    expect(REVIEW_REFLECTION_QUESTIONS).toContain(b);
+    const base = { ...emptyInput, loggedCount: 3, loggedMinutes: 50 };
+    const seen: ReviewReflection[] = [];
+    buildReviewSummary({ ...base, period: fixedPeriod }, (r) => {
+      seen.push(r);
+      return '';
+    });
+    buildReviewSummary({ ...base, period: week2 }, (r) => {
+      seen.push(r);
+      return '';
+    });
+    for (const r of seen) {
+      expect(r.kind).toBe('question');
+      if (r.kind !== 'question') throw new Error('unreachable');
+      expect(r.index).toBeLessThan(REVIEW_REFLECTION_QUESTION_COUNT);
+    }
   });
 
-  it('names the strongest tightening in the reflection (data-specific)', () => {
-    const s = buildReviewSummary({
-      period: fixedPeriod,
-      loggedCount: 9,
-      loggedMinutes: 240,
-      accuracyLine: null,
-      sharpestPhrase: null,
-      tightenedEntries: [{ categoryId: 'admin', categoryName: 'Admin', ratios: [2.0, 2.0, 1.1, 1.1] }],
-      biggestSurprise: surprise,
-      weekRead: null,
-      forwardAction: null,
-      confidenceBand: null,
-    });
-    expect(s.reflection).toBe('Admin is quietly getting sharper. What changed?');
+  it('hands the strongest tightening to the formatter (data-specific)', () => {
+    const seen: ReviewReflection[] = [];
+    buildReviewSummary(
+      {
+        ...emptyInput,
+        loggedCount: 9,
+        loggedMinutes: 240,
+        tightenedEntries: [
+          { categoryId: 'admin', categoryName: 'Admin', ratios: [2.0, 2.0, 1.1, 1.1] },
+        ],
+        biggestSurprise: surprise,
+      },
+      (r) => {
+        seen.push(r);
+        return '';
+      },
+    );
+    expect(seen[0]).toEqual({ kind: 'tightened', categoryName: 'Admin' });
   });
 
   it('falls back to the biggest surprise when nothing tightened', () => {
-    const s = buildReviewSummary({
-      period: fixedPeriod,
-      loggedCount: 9,
-      loggedMinutes: 240,
-      accuracyLine: null,
-      sharpestPhrase: null,
-      tightenedEntries: [],
-      biggestSurprise: surprise,
-      weekRead: null,
-      forwardAction: null,
-      confidenceBand: null,
-    });
-    expect(s.reflection).toBe('Admin drifted the most this week. What was going on?');
+    const seen: ReviewReflection[] = [];
+    buildReviewSummary(
+      { ...emptyInput, loggedCount: 9, loggedMinutes: 240, biggestSurprise: surprise },
+      (r) => {
+        seen.push(r);
+        return '';
+      },
+    );
+    expect(seen[0]).toEqual({ kind: 'surprise', categoryName: 'Admin' });
   });
 
   it('ignores earned signals when there are no logs (stays generic)', () => {
-    const s = buildReviewSummary({
-      period: fixedPeriod,
-      loggedCount: 0,
-      loggedMinutes: 0,
-      accuracyLine: null,
-      sharpestPhrase: null,
-      tightenedEntries: [{ categoryId: 'admin', categoryName: 'Admin', ratios: [2.0, 2.0, 1.1, 1.1] }],
-      biggestSurprise: surprise,
-      weekRead: null,
-      forwardAction: null,
-      confidenceBand: null,
-    });
-    expect(REVIEW_REFLECTION_QUESTIONS).toContain(s.reflection);
+    const seen: ReviewReflection[] = [];
+    buildReviewSummary(
+      {
+        ...emptyInput,
+        tightenedEntries: [
+          { categoryId: 'admin', categoryName: 'Admin', ratios: [2.0, 2.0, 1.1, 1.1] },
+        ],
+        biggestSurprise: surprise,
+      },
+      (r) => {
+        seen.push(r);
+        return '';
+      },
+    );
+    expect(seen[0]?.kind).toBe('question');
   });
 });

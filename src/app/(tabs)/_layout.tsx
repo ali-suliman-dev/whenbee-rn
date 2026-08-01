@@ -11,10 +11,14 @@ export default function TabsLayout() {
         headerShown: false,
       }}
     >
-      <Tabs.Screen name="index" options={{ title: 'Today' }} />
-      <Tabs.Screen name="routines" options={{ title: 'Routines' }} />
-      <Tabs.Screen name="whenbee" options={{ title: 'Whenbee' }} />
-      <Tabs.Screen name="patterns" options={{ title: 'Patterns' }} />
+      {/* No `title` here on purpose. Expo Router evaluates screen options
+          outside React, so a title set here can never follow the app language.
+          WhenbeeTabBar translates each tab label from the route name instead
+          (see TAB_TITLE_KEYS). These entries stay only to fix tab order. */}
+      <Tabs.Screen name="index" />
+      <Tabs.Screen name="routines" />
+      <Tabs.Screen name="whenbee" />
+      <Tabs.Screen name="patterns" />
     </Tabs>
   );
 }

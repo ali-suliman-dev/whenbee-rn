@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { View, Text, Pressable, type ViewStyle, type TextStyle } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { useTranslation } from 'react-i18next';
 import { useTheme } from '@/src/theme/useTheme';
 import { type } from '@/src/theme/typography';
 import { CoinBadge } from '@/src/components/bee/CoinBadge';
@@ -26,6 +27,7 @@ interface AhaCardProps {
 
 export function AhaCard({ insight, categoryName, n }: AhaCardProps) {
   const t = useTheme();
+  const { t: tr } = useTranslation('categoryDetail');
   const [dismissed, setDismissed] = useState(false);
   if (dismissed) return null;
 
@@ -68,11 +70,11 @@ export function AhaCard({ insight, categoryName, n }: AhaCardProps) {
   return (
     <View style={card}>
       <View style={headerRow}>
-        <CoinBadge tone="indigo" label="aha" />
+        <CoinBadge tone="indigo" label={tr('ahaCard.badgeLabel')} />
         <Pressable
           onPress={() => setDismissed(true)}
           accessibilityRole="button"
-          accessibilityLabel="Dismiss discovery"
+          accessibilityLabel={tr('ahaCard.dismissLabel')}
           hitSlop={8}
           style={dismiss}
         >
@@ -83,9 +85,11 @@ export function AhaCard({ insight, categoryName, n }: AhaCardProps) {
       <Text style={headline}>{insight.headline}</Text>
 
       <Text style={body}>
-        Based on your last {n} completed {categoryName.toLowerCase()} {n === 1 ? 'task' : 'tasks'},
-        you run about {insight.multiplier.toFixed(1)}×. No guilt — your brain thinks fast, execution
-        just takes longer.
+        {tr('ahaCard.body', {
+          count: n,
+          categoryName: categoryName.toLowerCase(),
+          multiplier: insight.multiplier.toFixed(1),
+        })}
       </Text>
     </View>
   );

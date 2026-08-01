@@ -1,5 +1,7 @@
 import { Pressable, View, Text, type ViewStyle, type TextStyle } from 'react-native';
 import Svg, { Polygon } from 'react-native-svg';
+import { useTranslation } from 'react-i18next';
+import type { TFunction } from 'i18next';
 import { useCalibrationStore } from '@/src/stores/calibrationStore';
 import { useTheme } from '@/src/theme/useTheme';
 import { type } from '@/src/theme/typography';
@@ -44,8 +46,15 @@ function aggregate(
   return { pct: Math.round(sharpness), logs, tier, nextTier, logsToNext: logsToNextTier(sharpness) };
 }
 
+/** Maps an engine Tier value to its translated display word. */
+function tierLabel(tier: Tier, tr: TFunction<'today'>): string {
+  const key = tier.toLowerCase() as 'raw' | 'setting' | 'ripening' | 'thickening' | 'honest';
+  return tr(`tiers.${key}`);
+}
+
 export function HoneycombStripPlaceholder({ onPress }: { onPress: () => void }) {
   const t = useTheme();
+  const { t: tr } = useTranslation('today');
   const stats = useCalibrationStore((s) => s.statsByCategory);
   const logs = useCalibrationStore((s) => s.logs);
 
@@ -97,7 +106,7 @@ export function HoneycombStripPlaceholder({ onPress }: { onPress: () => void }) 
     <Pressable
       onPress={onPress}
       accessibilityRole="button"
-      accessibilityLabel={`Your honeycomb — ${pct}% honey, tier ${tier}, ${logs} logs`}
+      accessibilityLabel={tr('honeycombStrip.a11y', { pct, tier: tierLabel(tier, tr), logs })}
       style={card}
     >
       <View style={hexBadge}>
@@ -108,17 +117,17 @@ export function HoneycombStripPlaceholder({ onPress }: { onPress: () => void }) 
       </View>
       <View style={{ flex: 1, gap: t.space[0.5] }}>
         <View style={headingRow}>
-          <Text style={heading}>Your honeycomb</Text>
+          <Text style={heading}>{tr('honeycombStrip.title')}</Text>
           <View style={pill}>
-            <Text style={pillText}>{tier}</Text>
+            <Text style={pillText}>{tierLabel(tier, tr)}</Text>
           </View>
         </View>
         <Text style={subline}>
-          {pct}% honey · {logs} {logs === 1 ? 'log' : 'logs'}
+          {tr('honeycombStrip.subline', { pct, count: logs })}
         </Text>
         {nextTier ? (
           <Text style={nextLine}>
-            {logsToNext} logs to {nextTier} <Text style={{ color: t.colors.amberText }}>→</Text>
+            {tr('honeycombStrip.nextLine', { count: logsToNext, tier: tierLabel(nextTier, tr) })} <Text style={{ color: t.colors.amberText }}>→</Text>
           </Text>
         ) : null}
       </View>

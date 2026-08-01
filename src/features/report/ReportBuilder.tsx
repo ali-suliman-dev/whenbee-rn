@@ -3,6 +3,7 @@ import { View, Text, Pressable, ScrollView, ActivityIndicator, type TextStyle } 
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
+import { useTranslation } from 'react-i18next';
 import { Screen } from '@/src/components/Screen';
 import { AppText } from '@/src/components/AppText';
 import { AppButton } from '@/src/components/AppButton';
@@ -26,20 +27,14 @@ import type { ReportWindow } from './reportModel';
 // as a fault. The PDF is always built from the LIGHT palette (white paper).
 // ──────────────────────────────────────────────────────────────────────────────
 
-const WINDOWS: { kind: ReportWindow['kind']; label: string }[] = [
-  { kind: '30d', label: 'Last 30 days' },
-  { kind: '90d', label: 'Last 90 days' },
-  { kind: 'all', label: 'All time' },
-];
-
 // The PDF is always rendered light (paper is white), so the CSS reads from the
 // light palette regardless of the app's color mode.
 const REPORT_CSS = buildReportCss(tokens.colors.light);
 
-function CloseButton({ onPress }: { onPress: () => void }) {
+function CloseButton({ onPress, label }: { onPress: () => void; label: string }) {
   const t = useTheme();
   return (
-    <Pressable onPress={onPress} hitSlop={t.size.hitSlop} accessibilityRole="button" accessibilityLabel="Close">
+    <Pressable onPress={onPress} hitSlop={t.size.hitSlop} accessibilityRole="button" accessibilityLabel={label}>
       <View
         style={{
           width: t.size.control.sm,
@@ -58,6 +53,7 @@ function CloseButton({ onPress }: { onPress: () => void }) {
 
 export function ReportBuilder() {
   const t = useTheme();
+  const { t: tr } = useTranslation('report');
   const insets = useSafeAreaInsets();
   const [windowKind, setWindowKind] = useState<ReportWindow['kind']>('30d');
   const { model, status } = useReportModel(windowKind);
@@ -65,6 +61,12 @@ export function ReportBuilder() {
 
   const [working, setWorking] = useState(false);
   const [errored, setErrored] = useState(false);
+
+  const windows: { kind: ReportWindow['kind']; label: string }[] = [
+    { kind: '30d', label: tr('window.last30') },
+    { kind: '90d', label: tr('window.last90') },
+    { kind: 'all', label: tr('window.allTime') },
+  ];
 
   useEffect(() => {
     analytics.capture('report_opened', { is_pro: true });
@@ -100,15 +102,15 @@ export function ReportBuilder() {
         }}
       >
         <AppText variant="display" style={{ color: t.colors.ink }}>
-          Export a report
+          {tr('screenTitle')}
         </AppText>
-        <CloseButton onPress={() => router.back()} />
+        <CloseButton onPress={() => router.back()} label={tr('close')} />
       </View>
 
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: t.space[8] }}>
-        <Text style={eyebrowStyle}>TIME WINDOW</Text>
+        <Text style={eyebrowStyle}>{tr('timeWindow')}</Text>
         <View style={{ flexDirection: 'row', gap: t.space[2], marginTop: t.space[2] }}>
-          {WINDOWS.map((w) => (
+          {windows.map((w) => (
             <Chip
               key={w.kind}
               label={w.label}
@@ -118,10 +120,7 @@ export function ReportBuilder() {
           ))}
         </View>
 
-        <Text style={[includedStyle, { marginTop: t.space[3] }]}>
-          Includes your accuracy, how long things really take you per category, and your biggest
-          surprises.
-        </Text>
+        <Text style={[includedStyle, { marginTop: t.space[3] }]}>{tr('includesLine')}</Text>
 
         <View style={{ marginTop: t.space[5] }}>
           {isThin ? (
@@ -150,7 +149,7 @@ export function ReportBuilder() {
             }}
           >
             <Text style={{ ...(type.caption as unknown as TextStyle), color: t.colors.inkSoft }}>
-              Couldn&apos;t build the report just now. Try again?
+              {tr('errorLine')}
             </Text>
           </View>
         ) : null}
@@ -158,14 +157,14 @@ export function ReportBuilder() {
 
       <View style={{ paddingBottom: insets.bottom + t.space[3], paddingTop: t.space[2], gap: t.space[2] }}>
         <AppButton
-          label={working ? 'Building your report…' : 'Create PDF'}
+          label={working ? tr('building') : tr('createPdf')}
           variant="indigo"
           fullWidth
           disabled={working || isThin}
           onPress={onCreate}
           icon={working ? <ActivityIndicator color={t.colors.primaryText} /> : undefined}
         />
-        <Text style={microStyle}>Made on your phone. Nothing leaves your device unless you share it.</Text>
+        <Text style={microStyle}>{tr('madeOnPhone')}</Text>
       </View>
     </Screen>
   );
@@ -173,12 +172,13 @@ export function ReportBuilder() {
 
 function ThinState({ onUseAllTime, showUseAllTime }: { onUseAllTime: () => void; showUseAllTime: boolean }) {
   const t = useTheme();
+  const { t: tr } = useTranslation('report');
   return (
     <Card tone="flat">
       <View style={{ alignItems: 'center', gap: t.space[3], paddingVertical: t.space[5] }}>
         <Ionicons name="document-text-outline" size={t.iconSize.xl} color={t.colors.inkFaint} />
         <AppText variant="title" style={{ color: t.colors.ink, textAlign: 'center' }}>
-          Not enough logged time here yet
+          {tr('thin.heading')}
         </AppText>
         <Text
           style={{
@@ -187,11 +187,10 @@ function ThinState({ onUseAllTime, showUseAllTime }: { onUseAllTime: () => void;
             textAlign: 'center',
           }}
         >
-          A report gets useful after about six finished tasks in this window. Try &quot;All
-          time&quot;, or come back after a few more.
+          {tr('thin.body')}
         </Text>
         {showUseAllTime ? (
-          <Chip label="Use all time" selected={false} onPress={onUseAllTime} />
+          <Chip label={tr('thin.useAllTime')} selected={false} onPress={onUseAllTime} />
         ) : null}
       </View>
     </Card>

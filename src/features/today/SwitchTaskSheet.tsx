@@ -1,6 +1,7 @@
 import { useEffect } from 'react';
 import { Modal, Pressable, View, type ViewStyle, type TextStyle } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { Trans, useTranslation } from 'react-i18next';
 import Animated, {
   Easing,
   useAnimatedStyle,
@@ -30,6 +31,7 @@ export function SwitchTaskSheet({
   onCancel,
 }: SwitchTaskSheetProps) {
   const t = useTheme();
+  const { t: tr } = useTranslation('today');
   const insets = useSafeAreaInsets();
   const reduced = useReducedMotion();
 
@@ -87,27 +89,32 @@ export function SwitchTaskSheet({
             scrimStyle,
           ]}
         >
-          <Pressable style={{ flex: 1 }} accessibilityLabel="Dismiss" onPress={onCancel} />
+          <Pressable style={{ flex: 1 }} accessibilityLabel={tr('switchSheet.dismissA11y')} onPress={onCancel} />
         </Animated.View>
 
         <Animated.View style={[sheet, sheetStyle]}>
           <View style={{ gap: t.space[2] }}>
-            <AppText variant="title" style={heading}>Switch tasks?</AppText>
+            <AppText variant="title" style={heading}>{tr('switchSheet.title')}</AppText>
             <AppText variant="body" style={body}>
-              <AppText variant="body" style={{ color: t.colors.ink, fontWeight: t.fontWeight.semibold as TextStyle['fontWeight'] }}>
-                {leavingLabel}
-              </AppText>
-              {" won't log. No guilt. "}
-              <AppText variant="body" style={{ color: t.colors.ink, fontWeight: t.fontWeight.semibold as TextStyle['fontWeight'] }}>
-                {startingLabel}
-              </AppText>
-              {" starts fresh."}
+              <Trans
+                t={tr}
+                i18nKey="switchSheet.body"
+                values={{ leaving: leavingLabel, starting: startingLabel }}
+                components={{
+                  bold: (
+                    <AppText
+                      variant="body"
+                      style={{ color: t.colors.ink, fontWeight: t.fontWeight.semibold as TextStyle['fontWeight'] }}
+                    />
+                  ),
+                }}
+              />
             </AppText>
           </View>
 
           <View style={{ gap: t.space[2] }}>
-            <AppButton label="Yes, switch" variant="amber" fullWidth onPress={onConfirm} />
-            <AppButton label="Keep going" variant="ghost" fullWidth onPress={onCancel} />
+            <AppButton label={tr('switchSheet.confirmButton')} variant="amber" fullWidth onPress={onConfirm} />
+            <AppButton label={tr('switchSheet.cancelButton')} variant="ghost" fullWidth onPress={onCancel} />
           </View>
         </Animated.View>
       </View>

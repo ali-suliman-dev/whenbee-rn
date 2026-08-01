@@ -10,6 +10,7 @@ import Animated, {
   withTiming,
 } from 'react-native-reanimated';
 import Svg, { Circle, Ellipse, Line } from 'react-native-svg';
+import { useTranslation } from 'react-i18next';
 import { useAmbientMotion } from '@/src/hooks/useAmbientMotion';
 import { useTheme } from '@/src/theme/useTheme';
 import { AppText } from './AppText';
@@ -36,6 +37,14 @@ import { BeeMascot } from './BeeMascot';
 // ──────────────────────────────────────────────────────────────────────────────
 
 export type TrailState = 'done' | 'now' | 'ahead';
+
+// Spoken name per state — the raw enum must never reach a screen reader.
+const TRAIL_STATE_KEYS = {
+  done: 'trailState.done',
+  now: 'trailState.now',
+  ahead: 'trailState.ahead',
+} as const satisfies Record<TrailState, string>;
+
 export interface TrailNode {
   label: string;
   state: TrailState;
@@ -157,6 +166,7 @@ function labelColor(
 
 export function HoneyTrail({ nodes, lively = false }: { nodes: TrailNode[]; lively?: boolean }) {
   const t = useTheme();
+  const { t: tc } = useTranslation('common');
   const reduced = useReducedMotion();
   const animate = lively && !reduced;
   // Let the surrounding card settle first, then cascade the trail to life.
@@ -188,7 +198,10 @@ export function HoneyTrail({ nodes, lively = false }: { nodes: TrailNode[]; live
             >
               <View
                 accessible
-                accessibilityLabel={`${node.label}: ${node.state}`}
+                accessibilityLabel={tc('a11y.trailNode', {
+                  label: node.label,
+                  state: tc(TRAIL_STATE_KEYS[node.state]),
+                })}
               >
                 <Node state={node.state} lively={lively} />
               </View>

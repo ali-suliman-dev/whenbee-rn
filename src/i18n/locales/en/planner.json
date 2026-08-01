@@ -1,0 +1,66 @@
+{
+  "durationWheel": {
+    "a11y": "Duration in minutes"
+  },
+  "finishTimeWheel": {
+    "modes": {
+      "leaveBy": "leave by",
+      "beDoneBy": "be done by",
+      "beAt": "be at"
+    },
+    "hourA11y": "Hour",
+    "minuteA11y": "Minute",
+    "editA11y": "Edit time, currently {{clock}}",
+    "hintWheel": "Show the time wheel",
+    "hintType": "Type an exact time"
+  },
+  "focusCurve": {
+    "a11y": "Focus window curve",
+    "axisHigh": "Hi",
+    "axisLow": "Low"
+  },
+  "editorSheet": {
+    "dismissA11y": "Dismiss",
+    "startPrompt": "When does your focus window start?",
+    "endPrompt": "And when does it end?",
+    "endHint": "Pick a time after it starts.",
+    "next": "Next",
+    "saveWindow": "Save window",
+    "cancel": "Cancel"
+  },
+  "detail": {
+    "eyebrow": "WHEN YOU'RE SHARP",
+    "footer": "Whenbee plans your day around this stretch.",
+    "checkAgainstTimers": "I'll check that against your timers.",
+    "editWindowA11y": "Edit focus window",
+    "editWindow": "Edit window",
+    "earlyRead": "An early read from {{count}} sessions. Keep timing and I'll sharpen it as your hours cluster.",
+    "heldRead": "Your last {{count}} sessions agree, and it has held for {{weeks}} weeks.",
+    "whyWithNarrative": "{{narrative}}{{contrast}}. Your last {{count}} sessions agree, and it has held for {{weeks}} weeks."
+  },
+  "planSheet": {
+    "heading": "Today's plan",
+    "clear": "Clear",
+    "finish": "finish",
+    "nudge": "Nudge me to start",
+    "clearA11y": "Clear plan",
+    "startAt": "Start at",
+    "finishBy": "Finish by",
+    "now": "Now",
+    "nudgeA11yOn": "Start nudge on{{suffix}}. Tap to turn off.",
+    "nudgeA11yOff": "Start nudge off. Tap to turn on."
+  },
+  "keypad": {
+    "delete": "Delete",
+    "digit": "Digit {{digit}}"
+  },
+  "anchor": {
+    "notSet": "not set",
+    "set": "Set",
+    "startPassed": "{{planned}} has passed · starting {{actual}}",
+    "finishAt": "finish {{clock}}",
+    "startBy": "start by {{clock}}",
+    "editStartHint": "Tap to pick when you start. Whenbee works out your finish.",
+    "editFinishHint": "Tap to pick when you need to be done. Whenbee works out your latest start."
+  }
+}

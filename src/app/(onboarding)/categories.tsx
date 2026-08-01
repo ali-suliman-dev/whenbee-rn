@@ -10,6 +10,7 @@ import {
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
+import { useTranslation } from 'react-i18next';
 import { Screen } from '@/src/components/Screen';
 import { AppText } from '@/src/components/AppText';
 import { AppButton } from '@/src/components/AppButton';
@@ -24,15 +25,17 @@ import { StepProgress } from '@/src/features/onboarding/StepProgress';
 import { onboardingStepIndex, ONBOARDING_TOTAL } from '@/src/features/onboarding/onboardingFlow';
 import { Reveal } from '@/src/features/onboarding/Reveal';
 import { useOnce } from '@/src/lib/useOnce';
-import { sinkCategoryFor, CATEGORY_NAMES } from '@/src/engine';
+import { sinkCategoryFor } from '@/src/engine';
+import { categoryName } from '@/src/features/shared/categoryName';
 import {
-  ONBOARDING_CATEGORIES,
+  getOnboardingCategories,
   slugify,
   MAX_CUSTOM_NAME,
 } from '@/src/features/onboarding/categories';
 
 export default function Categories() {
   const t = useTheme();
+  const { t: tr } = useTranslation('onboarding');
   const insets = useSafeAreaInsets();
   const { picked, isPicked, togglePick, trackCategoriesCommitted } = useOnboarding();
   const sink = useOnboardingStore((s) => s.quizAnswers.sink);
@@ -47,11 +50,15 @@ export default function Categories() {
   useEffect(() => {
     if (sink === undefined) return;
     const id = sinkCategoryFor(sink);
-    if (!isPicked(id)) togglePick({ id, name: CATEGORY_NAMES[id] ?? id });
+    // The id is what's persisted and what the engine trains on; the name is only
+    // ever a display projection, so it must be the LOCALIZED one (this used to
+    // stamp the engine's English label into storage, permanently).
+    if (!isPicked(id)) togglePick({ id, name: categoryName(id) });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const canContinue = picked.length >= 1;
+  const onboardingCategories = getOnboardingCategories(tr);
 
   // Shared validation core: what would committing the current draft produce?
   // Both the explicit (onSubmitEditing, shows errors) and implicit (blur/
@@ -76,11 +83,11 @@ export default function Categories() {
     }
     const id = slugify(name);
     if (id.length === 0) {
-      setCustomError('Try letters or numbers');
+      setCustomError(tr('categories.customError.invalid'));
       return;
     }
     if (isPicked(id)) {
-      setCustomError('Already tracking that one');
+      setCustomError(tr('categories.customError.duplicate'));
       return;
     }
     togglePick({ id, name });
@@ -117,13 +124,14 @@ export default function Categories() {
   // Count-aware nudge: encourage one or two more early, then affirm once there's
   // plenty — so "one more" never lingers after the grid is full.
   function pickedLine(n: number): string {
-    if (n >= 3) return `${n} picked. That's plenty to learn from.`;
-    const more = n === 1 ? 'A couple more' : 'One more';
-    return `${n} picked. ${more} and I'll learn your pace faster.`;
+    if (n >= 3) return tr('categories.pickedLine.plenty', { count: n });
+    return n === 1
+      ? tr('categories.pickedLine.coupleMore', { count: n })
+      : tr('categories.pickedLine.oneMore', { count: n });
   }
 
   // Custom picks that aren't part of the seed grid, so they render as their own chips.
-  const seedIds = new Set(ONBOARDING_CATEGORIES.map((c) => c.id));
+  const seedIds = new Set(onboardingCategories.map((c) => c.id));
   const customPicks = picked.filter((p) => !seedIds.has(p.id));
 
   const inputChip: ViewStyle = {
@@ -161,18 +169,18 @@ export default function Categories() {
               letterSpacing: t.letterSpacing.tight,
             }}
           >
-            Where does time slip most?
+            {tr('categories.title')}
           </AppText>
         </Reveal>
         <Reveal index={1}>
           <AppText variant="body" style={{ color: t.colors.inkSoft }}>
-            {"Pick a few. I'll sharpen your honest number here first."}
+            {tr('categories.subtitle')}
           </AppText>
         </Reveal>
 
         <Reveal index={2}>
           <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: t.space[2] }}>
-            {ONBOARDING_CATEGORIES.map((cat) => (
+            {onboardingCategories.map((cat) => (
               <Chip
                 key={cat.id}
                 label={cat.name}
@@ -200,11 +208,11 @@ export default function Categories() {
                     if (customError) setCustomError(null);
                   }}
                   onSubmitEditing={commitCustom}
-                  placeholder="Name it…"
+                  placeholder={tr('categories.namePlaceholder')}
                   placeholderTextColor={t.colors.inkSoft}
                   maxLength={MAX_CUSTOM_NAME}
                   returnKeyType="done"
-                  accessibilityLabel="New category name"
+                  accessibilityLabel={tr('categories.nameAccessibilityLabel')}
                   style={{
                     flex: 1,
                     fontSize: t.fontSize.sm,
@@ -215,7 +223,7 @@ export default function Categories() {
               </View>
             ) : (
               <Chip
-                label="Add your own"
+                label={tr('categories.addYourOwn')}
                 variant="add"
                 onPress={() => {
                   setCustomError(null);
@@ -231,7 +239,7 @@ export default function Categories() {
           </AppText>
         ) : null}
         <AppText style={{ fontSize: t.fontSize.sm, color: t.colors.inkFaint }}>
-          Change or remove these any time in the Whenbee tab.
+          {tr('categories.manageHint')}
         </AppText>
         <View style={{ flex: 1 }} />
         {picked.length > 0 ? (
@@ -255,11 +263,11 @@ export default function Categories() {
               marginBottom: t.space[2],
             }}
           >
-            Pick at least one to continue
+            {tr('categories.pickAtLeastOne')}
           </AppText>
         ) : null}
         <AppButton
-          label="Continue →"
+          label={tr('categories.continueCta')}
           fullWidth
           disabled={!canContinue}
           onPress={onContinue}

@@ -2,7 +2,7 @@ import { render, screen } from '@testing-library/react-native';
 import { Honeycomb } from '../Honeycomb';
 
 describe('Honeycomb', () => {
-  it('exposes a per-cell a11y label of "<label> cell — <pct>% honey, tier <tier>"', () => {
+  it('exposes a per-cell a11y label of "<label> cell, <pct>% honey, tier <tier>"', () => {
     render(
       <Honeycomb
         size="strip"
@@ -10,7 +10,7 @@ describe('Honeycomb', () => {
       />,
     );
 
-    expect(screen.getByLabelText('Cleaning cell — 78% honey, tier Ripening')).toBeOnTheScreen();
+    expect(screen.getByLabelText('Cleaning cell, 78% honey, tier Ripening')).toBeOnTheScreen();
   });
 
   it('rounds sharpness in the a11y label', () => {
@@ -21,7 +21,7 @@ describe('Honeycomb', () => {
       />,
     );
 
-    expect(screen.getByLabelText('Errands cell — 41% honey, tier Setting')).toBeOnTheScreen();
+    expect(screen.getByLabelText('Errands cell, 41% honey, tier Setting')).toBeOnTheScreen();
   });
 
   it('marks a fully-ripened cell (sharpness ≥ 93) as capped', () => {

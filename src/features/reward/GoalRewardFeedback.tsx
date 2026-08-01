@@ -1,5 +1,6 @@
 import { View, type ViewStyle, type TextStyle } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { useTranslation } from 'react-i18next';
 import { AppText } from '@/src/components/AppText';
 import { useTheme } from '@/src/theme/useTheme';
 import { type } from '@/src/theme/typography';
@@ -11,16 +12,26 @@ import type { GoalLogFeedback } from './useReward';
 // voice): worst case is "typical", never "behind". Amber, calm, no streak.
 // ──────────────────────────────────────────────────────────────────────────────
 
+type GoalHeadlineKey =
+  | 'goalFeedback.headline.tightestWeek'
+  | 'goalFeedback.headline.tighterThanUsual'
+  | 'goalFeedback.headline.typical';
+
 /** Verdict → the leading sentence. `typical` stays neutral, never a deficit. */
-function headlineFor(thisBand: number, quality: GoalLogFeedback['quality']): string {
-  const base = `That one landed within ${thisBand}%`;
-  if (quality === 'tightest_week') return `${base} — your tightest this week.`;
-  if (quality === 'tighter_than_usual') return `${base} — tighter than usual.`;
-  return `${base}.`;
+function headlineFor(
+  t: (key: GoalHeadlineKey, opts?: Record<string, unknown>) => string,
+  thisBand: number,
+  quality: GoalLogFeedback['quality'],
+): string {
+  if (quality === 'tightest_week') return t('goalFeedback.headline.tightestWeek', { band: thisBand });
+  if (quality === 'tighter_than_usual')
+    return t('goalFeedback.headline.tighterThanUsual', { band: thisBand });
+  return t('goalFeedback.headline.typical', { band: thisBand });
 }
 
 export function GoalRewardFeedback({ feedback }: { feedback: GoalLogFeedback }) {
   const t = useTheme();
+  const { t: tr } = useTranslation('reward');
 
   const card: ViewStyle = {
     flexDirection: 'row',
@@ -49,14 +60,16 @@ export function GoalRewardFeedback({ feedback }: { feedback: GoalLogFeedback }) 
     marginTop: t.space[0.5],
   };
 
+  const headline = headlineFor(tr, feedback.thisBand, feedback.quality);
+
   return (
-    <View style={card} accessibilityLabel={headlineFor(feedback.thisBand, feedback.quality)}>
+    <View style={card} accessibilityLabel={headline}>
       <View style={iconWell}>
         <Ionicons name="checkmark" size={t.iconSize.sm} color={t.colors.amberText} />
       </View>
       <View style={{ flex: 1 }}>
-        <AppText style={line}>{headlineFor(feedback.thisBand, feedback.quality)}</AppText>
-        <AppText style={caption}>toward your ±{feedback.targetBand}% goal</AppText>
+        <AppText style={line}>{headline}</AppText>
+        <AppText style={caption}>{tr('goalFeedback.caption', { band: feedback.targetBand })}</AppText>
       </View>
     </View>
   );

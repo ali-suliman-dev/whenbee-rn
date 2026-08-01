@@ -1,0 +1,80 @@
+{
+  "eyebrow": "Tidtagning pågår",
+  "defaultTaskLabel": "Fokuspass",
+  "overBadge": "+{{duration}} över",
+  "switchFallback": {
+    "runningTimer": "din timer",
+    "quickTimer": "en snabb timer"
+  },
+  "minimizeA11y": "Minimera timer",
+  "abandonA11y": "Avbryt uppgiften utan att logga",
+  "reframe": {
+    "guessed": "gissade {{count}} min",
+    "honestLabel": "ärligt",
+    "honestValue": "~{{count}} min"
+  },
+  "stopAndLog": "Stoppa & logga",
+  "abandonConfirm": {
+    "title": "Avbryta den här uppgiften?",
+    "message": "Ingen skuld. Den räknas bara inte mot din honung.",
+    "keepTiming": "Fortsätt ta tid",
+    "abandon": "Ja, avbryt"
+  },
+  "finish": {
+    "started": "Startade {{clock}}",
+    "reprojecting": "blir nu klar ~{{clock}}",
+    "rangeDone": "Klar {{low}}–{{high}}",
+    "pointDone": "Klar ~{{clock}}",
+    "rangeA11y": "Ärligt intervall för sluttid, {{low}} till {{high}}.",
+    "rangeA11yLearning": "Ärligt intervall för sluttid, {{low}} till {{high}}, jag lär mig ännu.",
+    "stillLearning": "lär mig fortfarande",
+    "finishLabel": "Klar ~",
+    "startedLabel": "Startade"
+  },
+  "ring": {
+    "a11y_one": "Timer igång. Ärligt mål cirka {{count}} minut. Förfluten tid visas i mitten.",
+    "a11y_other": "Timer igång. Ärligt mål cirka {{count}} minuter. Förfluten tid visas i mitten."
+  },
+  "guardrail": {
+    "heading": "Håller du på än?",
+    "body_one": "Du har hållit på med ”{{taskLabel}}” i {{count}} minut. Är det fortfarande rätt sak, eller dags att lyfta blicken?",
+    "body_other": "Du har hållit på med ”{{taskLabel}}” i {{count}} minuter. Är det fortfarande rätt sak, eller dags att lyfta blicken?",
+    "keepGoing": "Fortsätt",
+    "wrapUp": "Runda av"
+  },
+  "pace": {
+    "over": "{{duration}} över din gissning. Nu vet du",
+    "closing": "Snart uppe i din gissning",
+    "onTrack": "Du har tid",
+    "forgotToStop": "Glömde du stoppa?",
+    "overNoAmount": "Förbi din gissning. Nu vet du",
+    "forgotA11y": "Glömde stoppa timern tidigare"
+  },
+  "forgotStop": {
+    "headingStopped": "När slutade du egentligen?",
+    "headingFinished": "När blev du klar?",
+    "spinBody": "Snurra fram tiden då du faktiskt slutade.",
+    "notSure": "Vet inte än",
+    "back": "Tillbaka",
+    "backA11y": "Tillbaka till snabbvalen",
+    "notSureSkipA11y": "Vet inte än, hoppa över att logga passet",
+    "notSureStopA11y": "Vet inte än, stoppa utan en logg som tränar upp gissningarna",
+    "pickExact": "Välj exakt tid",
+    "presetOption": "~{{minutes}} min sedan  ·  {{duration}}",
+    "logAt": "Logga {{clock}}  ·  {{duration}}",
+    "stillGoing": "Håller på än",
+    "overranBody": "Timern fortsatte förbi din sluttid. Välj när du faktiskt slutade, så loggar jag det i stället för hela {{duration}}."
+  },
+  "ledger": {
+    "yourGuess": "Din gissning",
+    "honest": "Ärligt"
+  },
+  "forgotCard": {
+    "heading": "Jag avslutade ”{{label}}” medan du var borta",
+    "logHonest": "Logga ärlig sluttid · {{duration}}",
+    "logGuess": "Logga din första gissning · {{duration}}",
+    "logAt": "Logga {{clock}} · {{duration}}",
+    "bodySeen": "Den drog förbi din ärliga sluttid, så jag pausade den. När slutade du egentligen?",
+    "bodyFirst": "Den drog långt förbi din uppskattning, så jag pausade den. När slutade du egentligen? I Inställningar kan du ändra när jag kliver in."
+  }
+}

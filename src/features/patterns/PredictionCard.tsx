@@ -1,4 +1,5 @@
 import { View, Text, type ViewStyle, type TextStyle } from 'react-native';
+import { useTranslation } from 'react-i18next';
 import { useTheme } from '@/src/theme/useTheme';
 import { type } from '@/src/theme/typography';
 import { HonestNumber } from '@/src/components/HonestNumber';
@@ -13,6 +14,7 @@ import type { PredictionCard as PredictionCardData } from './usePatterns';
 
 export function PredictionCard({ card }: { card: PredictionCardData }) {
   const t = useTheme();
+  const { t: tr } = useTranslation('patterns');
 
   const lead: TextStyle = { ...(type.bodyLg as unknown as TextStyle), color: t.colors.ink };
   const numberRow: ViewStyle = { flexDirection: 'row', alignItems: 'flex-end', gap: t.space[3], flexWrap: 'wrap' };
@@ -24,15 +26,18 @@ export function PredictionCard({ card }: { card: PredictionCardData }) {
   const dismissId = `prediction:${card.categoryId}:${card.sampleSize}`;
 
   return (
-    <PatternCard eyebrow="WHAT TO EXPECT" icon="time-outline" dismissLabel="Hide the prediction" dismissId={dismissId}>
-      <Text style={lead}>A typical {card.categoryName.toLowerCase()} task usually runs</Text>
+    <PatternCard
+      eyebrow={tr('predictionCard.eyebrow')}
+      icon="time-outline"
+      dismissLabel={tr('predictionCard.dismissLabel')}
+      dismissId={dismissId}
+    >
+      <Text style={lead}>{tr('predictionCard.lead', { category: card.categoryName.toLowerCase() })}</Text>
       <View style={numberRow}>
-        <HonestNumber size="xl" tone="indigo" value={`~${card.honestForFifteen}`} unit="min" />
-        <Text style={multNote}>about {card.multiplier.toFixed(1)}× your guess</Text>
+        <HonestNumber size="xl" tone="indigo" value={`~${card.honestForFifteen}`} unit={tr('predictionCard.unit')} />
+        <Text style={multNote}>{tr('predictionCard.multNote', { multiplier: card.multiplier.toFixed(1) })}</Text>
       </View>
-      <Text style={note}>
-        From your last {card.sampleSize} {card.sampleSize === 1 ? 'task' : 'tasks'}, for a 15-min guess.
-      </Text>
+      <Text style={note}>{tr('predictionCard.note', { count: card.sampleSize })}</Text>
     </PatternCard>
   );
 }

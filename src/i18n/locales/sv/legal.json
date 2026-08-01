@@ -1,0 +1,21 @@
+{
+  "lead": "Exakt vad Whenbee sparar på din telefon, och vad appen aldrig skickar någonstans.",
+  "points": {
+    "onDevice": {
+      "title": "Det stannar på den här telefonen",
+      "body": "Dina uppgifter, tiderna du loggar och multiplikatorerna som Whenbee räknar fram utifrån dem ligger i en databas på din enhet. De laddas aldrig upp."
+    },
+    "noAccount": {
+      "title": "Inget konto, ingen e-post",
+      "body": "Du har inte registrerat dig för något, så det finns ingen profil av dig på någon server. Inget kopplar dina data till ditt namn."
+    },
+    "analytics": {
+      "title": "Anonym krasch- och användningsstatistik",
+      "body": "För att hitta buggar och se vilka skärmar som används skickar Whenbee anonyma händelser: tryck och krascher, aldrig dina uppgiftsnamn, tider eller kategorier."
+    },
+    "calendar": {
+      "title": "Din kalender, bara när du ber om det",
+      "body": "Ärlig dag läser din kalender bara när du öppnar vyn, och skriver in ett block med marginal först när du har bekräftat det. Inget skickas någonstans."
+    }
+  }
+}

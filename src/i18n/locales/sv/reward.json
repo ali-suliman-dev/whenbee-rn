@@ -1,0 +1,99 @@
+{
+  "headlines": {
+    "timed": [
+      "Loggat. Snyggt.",
+      "Det är det ärliga talet.",
+      "Fångad. Bra.",
+      "Ännu en, loggad."
+    ],
+    "retro": "Ikapp. Tack."
+  },
+  "capSealed": "{{tier}}-cell förseglad",
+  "ritual": {
+    "default": "En ärlig loggning om dagen. Ingen räcka att hålla igång.",
+    "sealed": "Ny ärlig cell. Inget att hålla igång."
+  },
+  "goalFeedback": {
+    "headline": {
+      "tightestWeek": "Den hamnade inom {{band}} %. Din snävaste den här veckan.",
+      "tighterThanUsual": "Den hamnade inom {{band}} %. Snävare än vanligt.",
+      "typical": "Den hamnade inom {{band}} %."
+    },
+    "caption": "mot ditt mål på ±{{band}} %"
+  },
+  "notifSoftAsk": {
+    "body": "När en timer når ditt riktiga tal, inte din gissning, plingar Whenbee till en gång. Inga räckor, inget tjat.",
+    "accept": "Låter bra",
+    "decline": "Inte nu",
+    "eyebrow": "Ett pling, när det räknas",
+    "title": "Ett tyst pling vid din ärliga sluttid",
+    "acceptA11y": "Slå på plinget"
+  },
+  "energy": {
+    "options": {
+      "low": "Låg",
+      "ok": "OK",
+      "high": "Hög"
+    },
+    "hints": {
+      "low": "går på reservkraft",
+      "ok": "vanlig dag",
+      "high": "fulladdad"
+    },
+    "header": "Hur var din energi?",
+    "receipt": "Energi: <b>{{level}}</b>. Noterat."
+  },
+  "reason": {
+    "overHeader": "Vart tog tiden vägen?",
+    "underHeader": "Vad gjorde det snabbt?",
+    "over": {
+      "interrupted": "Pausad",
+      "underestimated": "Växte",
+      "contextSwitch": "Distraherad"
+    },
+    "under": {
+      "focused": "Flow",
+      "overestimated": "Snabbt"
+    },
+    "hints": {
+      "interrupted": "stannade mitt i",
+      "underestimated": "större än den såg ut",
+      "contextSwitch": "något drog bort dig",
+      "focused": "helt inne i det",
+      "overestimated": "mindre än den såg ut"
+    },
+    "receipts": {
+      "interrupted": "Du blev <b>pausad</b> på vägen. Bra att veta.",
+      "underestimated": "Den <b>växte</b> medan du höll på. Bra att veta.",
+      "contextSwitch": "Något <b>drog</b> bort dig. Bra att veta.",
+      "focused": "Du hittade <b>flow</b>. Bra att veta.",
+      "overestimated": "<b>Snabbare</b> än du trodde. Bra att veta."
+    },
+    "skip": "Hoppa över"
+  },
+  "stepCounter": "{{step}} av {{total}} · ett tryck, eller hoppa över",
+  "screen": {
+    "empty": {
+      "title": "Inget att fira än",
+      "subtitle": "Logga något så mognar honungen här."
+    },
+    "backToToday": "Tillbaka till idag",
+    "tookEyebrow": "DET TOG FAKTISKT",
+    "unitMin": "min",
+    "honeyLabel": "HONUNG",
+    "delta": {
+      "over": "{{duration}} över din gissning",
+      "under": "{{duration}} under din gissning",
+      "equal": "precis på din gissning"
+    },
+    "seeYourBee": "Se ditt bi"
+  },
+  "reask": {
+    "decline": "Nej tack",
+    "accept": "Slå på",
+    "overran": "Den drog över din gissning med {{duration}}",
+    "grantedTitle": "Vill du ha ett pling vid ärlig sluttid?",
+    "grantedSub": "Aviseringar är redan påslagna. Ett tryck.",
+    "overranSub": "Vill du ha ett tyst pling vid din ärliga sluttid?"
+  }
+}

@@ -37,13 +37,15 @@ import ReorderableList, {
 } from 'react-native-reorderable-list';
 import { Ionicons, MaterialCommunityIcons } from '@expo/vector-icons';
 import { useDayPlan, localMidnight } from './useDayPlan';
+import { Trans, useTranslation } from 'react-i18next';
 import { useLearnedFocusWindow } from '@/src/features/planner/useLearnedFocusWindow';
 import { useDayTasksStore } from '@/src/stores/dayTasksStore';
 import { useEntitlement } from '@/src/features/paywall/useEntitlement';
 import { useTheme } from '@/src/theme/useTheme';
 import { AppText } from '@/src/components/AppText';
 import { FinishEditorSheet } from '@/src/features/routines/FinishEditorSheet';
-import { formatClock, fmtHm } from '@/src/lib/time';
+import { formatClock } from '@/src/lib/time';
+import { formatDuration } from '@/src/i18n/formatDuration';
 import type { PlanTimelineItem } from '@/src/domain/types';
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -184,7 +186,10 @@ function RowContent({
   onDragHandleLongPress?: () => void;
 }) {
   const t = useTheme();
+  const { t: translate } = useTranslation();
+  const { t: tr } = useTranslation('today');
   const durationMin = Math.round((item.endAt - item.startAt) / 60_000);
+  const durationLabel = formatDuration(durationMin, translate);
 
   // Shared geometry so task + event clocks line up to the same x.
   const clockWidth = t.space[10]; // fits "21:00" at mono xs without clipping
@@ -253,8 +258,12 @@ function RowContent({
         testID={`timeline-event-${item.id}`}
         accessible
         accessibilityRole="text"
-        accessibilityLabel={`Meeting: ${item.label}, ${formatClock(item.startAt)} to ${formatClock(item.endAt)}`}
-        accessibilityHint="Read-only calendar event"
+        accessibilityLabel={tr('dayTimeline.meetingA11y', {
+          label: item.label,
+          start: formatClock(item.startAt),
+          end: formatClock(item.endAt),
+        })}
+        accessibilityHint={tr('dayTimeline.meetingA11yHint')}
       >
         <View style={tickStyle} />
         <AppText style={clockStyle}>{formatClock(item.startAt)}</AppText>
@@ -262,7 +271,7 @@ function RowContent({
         <AppText style={labelStyle} numberOfLines={1}>
           {item.label}
         </AppText>
-        <AppText style={tagStyle}>{fmtHm(durationMin)}</AppText>
+        <AppText style={tagStyle}>{durationLabel}</AppText>
       </View>
     );
   }
@@ -310,7 +319,7 @@ function RowContent({
       fontWeight: t.fontWeight.semibold as TextStyle['fontWeight'],
       color: t.colors.amberText,
     };
-    const overLabel = `+${fmtHm(overMin)} over`;
+    const overLabel = tr('timeline.overBy', { duration: formatDuration(overMin, translate) });
 
     return (
       <View
@@ -318,19 +327,18 @@ function RowContent({
         testID={`timeline-overflow-${item.id}`}
         accessible
         accessibilityRole="text"
-        accessibilityLabel={
-          hasFinishTarget
-            ? `${item.label}, runs ${fmtHm(overMin)} past your done-by time`
-            : `${item.label}, runs ${fmtHm(overMin)} past when today ends`
-        }
+        accessibilityLabel={tr(
+          hasFinishTarget ? 'timeline.overflowA11yDoneBy' : 'timeline.overflowA11yDayEnd',
+          { label: item.label, duration: formatDuration(overMin, translate) },
+        )}
       >
         {onDragHandleLongPress ? (
           <Pressable
             testID={`timeline-drag-handle-${item.id}`}
             onLongPress={onDragHandleLongPress}
             accessibilityRole="button"
-            accessibilityLabel={`Reorder ${item.label}`}
-            accessibilityHint="Long-press and drag to reorder this task"
+            accessibilityLabel={tr('timeline.reorderA11y', { label: item.label })}
+            accessibilityHint={tr('timeline.reorderHint')}
             hitSlop={t.size.hitSlop}
           >
             <MaterialCommunityIcons
@@ -350,11 +358,11 @@ function RowContent({
           testID={`timeline-move-tomorrow-${item.id}`}
           onPress={() => onMoveToTomorrow(item.id)}
           accessibilityRole="button"
-          accessibilityLabel={`Move ${item.label} to tomorrow`}
+          accessibilityLabel={tr('taskRow.moveA11y', { title: item.label })}
           hitSlop={t.size.hitSlop}
         >
           <View style={chipFace}>
-            <AppText style={chipText}>Tomorrow</AppText>
+            <AppText style={chipText}>{tr('timeline.tomorrowChip')}</AppText>
           </View>
         </Pressable>
       </View>
@@ -413,15 +421,19 @@ function RowContent({
       style={row}
       accessible
       accessibilityRole="text"
-      accessibilityLabel={`${item.label}, starts ${formatClock(item.startAt)}, ${fmtHm(durationMin)}`}
+      accessibilityLabel={tr('dayTimeline.taskA11y', {
+        label: item.label,
+        start: formatClock(item.startAt),
+        duration: durationLabel,
+      })}
     >
       {onDragHandleLongPress ? (
         <Pressable
           testID={`timeline-drag-handle-${item.id}`}
           onLongPress={onDragHandleLongPress}
           accessibilityRole="button"
-          accessibilityLabel={`Reorder ${item.label}`}
-          accessibilityHint="Long-press and drag to reorder this task"
+          accessibilityLabel={tr('timeline.reorderA11y', { label: item.label })}
+          accessibilityHint={tr('timeline.reorderHint')}
           hitSlop={t.size.hitSlop}
         >
           <MaterialCommunityIcons
@@ -436,7 +448,7 @@ function RowContent({
       <AppText style={labelStyle} numberOfLines={2}>
         {item.label}
       </AppText>
-      <AppText style={durationStyle}>{fmtHm(durationMin)}</AppText>
+      <AppText style={durationStyle}>{durationLabel}</AppText>
     </View>
   );
 }
@@ -457,6 +469,7 @@ function OverflowBoundary({
   overrunFinishMs: number;
 }) {
   const t = useTheme();
+  const { t: tr } = useTranslation('today');
 
   const wrapStyle: ViewStyle = {
     paddingHorizontal: t.space[3],
@@ -501,13 +514,18 @@ function OverflowBoundary({
   return (
     <View style={wrapStyle} testID="timeline-overflow-boundary">
       <View style={ruleRowStyle}>
-        <AppText style={labelStyle}>{`${formatClock(doneByMs)} DONE BY`}</AppText>
+        <AppText style={labelStyle}>
+          {tr('timeline.doneByRule', { clock: formatClock(doneByMs) })}
+        </AppText>
         <View style={ruleStyle} />
       </View>
       <AppText style={sentenceStyle}>
-        Past here you run over. Push it to{' '}
-        <AppText style={clockStyle}>{overrunClock}</AppText>, or move a task to
-        tomorrow.
+        <Trans
+          i18nKey="timeline.overrunSentence"
+          ns="today"
+          values={{ clock: overrunClock }}
+          components={{ clock: <AppText style={clockStyle} /> }}
+        />
       </AppText>
     </View>
   );
@@ -525,6 +543,7 @@ function DoneByChip({
   onSelect: (m: number | null) => void;
 }) {
   const t = useTheme();
+  const { t: tr } = useTranslation('today');
   const [pickerOpen, setPickerOpen] = useState(false);
 
   // Epoch from LOCAL midnight of today so formatClock/FinishTimeWheel reflect
@@ -536,9 +555,9 @@ function DoneByChip({
   }, []);
 
   const label = useMemo(() => {
-    if (doneByMin === null) return 'Set done-by time';
-    return `Done by ${formatClock(localMidnightMs + doneByMin * 60_000)}`;
-  }, [doneByMin, localMidnightMs]);
+    if (doneByMin === null) return tr('timeline.setDoneBy');
+    return tr('timeline.doneBy', { clock: formatClock(localMidnightMs + doneByMin * 60_000) });
+  }, [doneByMin, localMidnightMs, tr]);
 
   const chipStyle: ViewStyle = {
     flexDirection: 'row',
@@ -576,7 +595,7 @@ function DoneByChip({
         onPress={() => setPickerOpen(true)}
         accessibilityRole="button"
         accessibilityLabel={label}
-        accessibilityHint="Tap to change your done-by target time"
+        accessibilityHint={tr('dayTimeline.doneBy.hint')}
       >
         <View style={chipStyle}>
           <AppText style={textStyle}>{label}</AppText>
@@ -616,6 +635,7 @@ export interface DayTimelineProps {
  */
 export function DayTimeline({ hideHeader = false }: DayTimelineProps = {}) {
   const t = useTheme();
+  const { t: tr } = useTranslation('today');
   const reducedMotion = useReducedMotion();
 
   // ── Pro guard (defence-in-depth — should be unreachable for free users) ──
@@ -838,7 +858,7 @@ export function DayTimeline({ hideHeader = false }: DayTimelineProps = {}) {
         <View style={headerStyle}>
           {'startBy' in plan.verdict && plan.verdict.startBy ? (
             <AppText style={startByStyle}>
-              {planAnchor === 'start' ? 'Starting' : 'Start by'}{' '}
+              {planAnchor === 'start' ? tr('timeline.starting') : tr('timeline.startBy')}{' '}
               {formatClock(plan.verdict.startBy)}
             </AppText>
           ) : (

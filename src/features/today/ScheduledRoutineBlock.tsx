@@ -2,6 +2,7 @@ import { useState, useCallback } from 'react';
 import { View, Pressable } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
+import { useTranslation } from 'react-i18next';
 import { useTheme } from '@/src/theme/useTheme';
 import { AppText } from '@/src/components/AppText';
 import { formatClock } from '@/src/lib/time';
@@ -36,6 +37,7 @@ function clockFor(minuteOfDay: number): string {
 
 export function ScheduledRoutineBlock({ block }: Props) {
   const t = useTheme();
+  const { t: tr } = useTranslation('today');
   const startRun = useRoutinesStore((s) => s.startRun);
   const [expanded, setExpanded] = useState(false);
 
@@ -117,7 +119,15 @@ export function ScheduledRoutineBlock({ block }: Props) {
         testID="routine-block-header"
         onPress={handleToggle}
         accessibilityRole="button"
-        accessibilityLabel={`${block.name}, ${block.honestTotalMin} minutes${block.startByMin !== null ? `, start by ${clockFor(block.startByMin)}` : ''}. ${expanded ? 'Collapse' : 'Expand'} steps.`}
+        accessibilityLabel={tr('scheduledRoutine.headerA11y', {
+          name: block.name,
+          minutes: block.honestTotalMin,
+          startBy:
+            block.startByMin !== null
+              ? tr('scheduledRoutine.startByA11y', { time: clockFor(block.startByMin) })
+              : '',
+          action: expanded ? tr('scheduledRoutine.collapseAction') : tr('scheduledRoutine.expandAction'),
+        })}
         accessibilityState={{ expanded }}
         hitSlop={4}
       >
@@ -129,9 +139,9 @@ export function ScheduledRoutineBlock({ block }: Props) {
 
           {/* Total + start-by metadata */}
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: t.space[2] }}>
-            <AppText style={metaStyle}>{block.honestTotalMin}m</AppText>
+            <AppText style={metaStyle}>{tr('scheduledRoutine.minutesSuffix', { count: block.honestTotalMin })}</AppText>
             {block.startByMin !== null ? (
-              <AppText style={metaStyle}>· start by {clockFor(block.startByMin)}</AppText>
+              <AppText style={metaStyle}>{tr('scheduledRoutine.startBySuffix', { time: clockFor(block.startByMin) })}</AppText>
             ) : null}
           </View>
 
@@ -143,8 +153,8 @@ export function ScheduledRoutineBlock({ block }: Props) {
             testID="routine-block-run-btn"
             onPress={handleRun}
             accessibilityRole="button"
-            accessibilityLabel={`Run ${block.name}`}
-            accessibilityHint="Starts the guided timer sequence"
+            accessibilityLabel={tr('scheduledRoutine.runA11y', { name: block.name })}
+            accessibilityHint={tr('scheduledRoutine.runHint')}
             hitSlop={8}
           >
             <View
@@ -171,7 +181,7 @@ export function ScheduledRoutineBlock({ block }: Props) {
               <AppText style={stepLabelStyle} numberOfLines={1}>
                 {step.label}
               </AppText>
-              <AppText style={stepMinStyle}>{step.honestMin}m</AppText>
+              <AppText style={stepMinStyle}>{tr('scheduledRoutine.minutesSuffix', { count: step.honestMin })}</AppText>
             </View>
           ))}
         </View>

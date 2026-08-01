@@ -1,4 +1,5 @@
 import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { View, Text, type TextStyle, type ViewStyle } from 'react-native';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import Animated, {
@@ -76,6 +77,7 @@ export function TimeField({
   onChange: (min: number) => void;
 }) {
   const t = useTheme();
+  const { t: ts } = useTranslation('shared');
   const reducedMotion = useReducedMotion();
 
   const itemHeight = t.size.control.sm; // 36 — keeps a 5-row wheel compact.
@@ -175,7 +177,7 @@ export function TimeField({
       <View
         style={container}
         accessibilityRole="adjustable"
-        accessibilityLabel="Duration in minutes"
+        accessibilityLabel={ts('timeField.a11y')}
         accessibilityValue={{
           min: MIN,
           max: MAX,

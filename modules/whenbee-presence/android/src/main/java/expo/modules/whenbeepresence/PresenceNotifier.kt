@@ -49,6 +49,48 @@ object PresenceNotifier {
   // First API level where the promoted "Live Update" chip + ProgressStyle actually render.
   private const val PROMOTED_API = 36
 
+  /** Placeholder JS leaves in a display string; the clock itself is formatted natively so
+   *  it honours the device's 12/24-hour setting. */
+  private const val CLOCK_TOKEN = "{clock}"
+
+
+  // ── Display strings ─────────────────────────────────────────────────────────
+  // The user reads these, so they must follow the IN-APP language picker (i18next,
+  // in JS) — NOT the system locale, which is what a string resource would give us.
+  // A Swedish phone with the app set to English must show English here. So JS sends
+  // the already-translated strings and we PERSIST them: the progress re-post and the
+  // overrun flip both fire from AlarmManager with no JS alive, and must still render
+  // in the user's language. Falls back to English when a payload predates this field.
+  // `{clock}` is substituted natively so the time itself honours the device's 12/24h
+  // setting.
+  data class NotifStrings(
+    val finish: String = "Finish {clock}",
+    val overrun: String = "Over · honest finish was {clock}",
+    val guessSuffix: String = " · guessed {clock}",
+    val chipOver: String = "over",
+    val stopAction: String = "Stop & log",
+  )
+
+  private fun stringsFromJson(json: JSONObject): NotifStrings {
+    val d = NotifStrings()
+    val o = json.optJSONObject("strings") ?: return d
+    return NotifStrings(
+      finish = o.optString("finish", d.finish),
+      overrun = o.optString("overrun", d.overrun),
+      guessSuffix = o.optString("guessSuffix", d.guessSuffix),
+      chipOver = o.optString("chipOver", d.chipOver),
+      stopAction = o.optString("stopAction", d.stopAction),
+    )
+  }
+
+  private fun stringsToJson(v: NotifStrings): JSONObject =
+    JSONObject()
+      .put("finish", v.finish)
+      .put("overrun", v.overrun)
+      .put("guessSuffix", v.guessSuffix)
+      .put("chipOver", v.chipOver)
+      .put("stopAction", v.stopAction)
+
   fun prefs(context: Context): SharedPreferences =
     context.getSharedPreferences(context.packageName + ".presence", Context.MODE_PRIVATE)
 
@@ -62,6 +104,7 @@ object PresenceNotifier {
     finishEpochSec: Double,
     isProRich: Boolean,
     guessFinishEpochSec: Double = 0.0,
+    strings: NotifStrings = NotifStrings(),
   ) {
     val json = JSONObject()
       .put("taskLabel", label)
@@ -69,6 +112,7 @@ object PresenceNotifier {
       .put("finishEpoch", finishEpochSec)
       .put("isProRich", isProRich)
       .put("guessFinishEpoch", guessFinishEpochSec)
+      .put("strings", stringsToJson(strings))
     prefs(context).edit().putString(KEY_TIMER, json.toString()).apply()
   }
 
@@ -88,6 +132,7 @@ object PresenceNotifier {
         finishEpochSec = json.getDouble("finishEpoch"),
         isProRich = json.optBoolean("isProRich", false),
         guessFinishEpochSec = json.optDouble("guessFinishEpoch", 0.0),
+        strings = stringsFromJson(json),
       )
     } catch (_: Throwable) {
       null
@@ -100,9 +145,16 @@ object PresenceNotifier {
     if (mgr.getNotificationChannel(LEGACY_CHANNEL_ID) != null) {
       mgr.deleteNotificationChannel(LEGACY_CHANNEL_ID)
     }
-    if (mgr.getNotificationChannel(CHANNEL_ID) == null) {
-      val channel = NotificationChannel(CHANNEL_ID, "Running timer", NotificationManager.IMPORTANCE_DEFAULT).apply {
-        description = "Shows your live timer on the lock screen while a task is running"
+    // Channel name/description render inside Android's OWN settings UI, a system-locale
+    // surface, so these stay string resources (values/ + values-sv/). Re-creating with the
+    // same id refreshes name + description; importance is locked and unchanged.
+    run {
+      val channel = NotificationChannel(
+        CHANNEL_ID,
+        context.getString(R.string.timer_channel_name),
+        NotificationManager.IMPORTANCE_DEFAULT,
+      ).apply {
+        description = context.getString(R.string.timer_channel_description)
         setShowBadge(false)
         // Silent: DEFAULT importance pins on the lock screen, but the timer must never beep
         // on start or on each progress re-post.
@@ -141,15 +193,17 @@ object PresenceNotifier {
 
     // Device-local finish clock (respects the user's 12/24h setting).
     val clock = DateFormat.getTimeFormat(context).format(Date(finishMs))
-    val guessSec = readTimer(context)?.guessFinishEpochSec ?: 0.0
+    val persistedTimer = readTimer(context)
+    val copy = persistedTimer?.strings ?: NotifStrings()
+    val guessSec = persistedTimer?.guessFinishEpochSec ?: 0.0
     val guessSuffix = if (guessSec > 0.0)
-      " · guessed " + DateFormat.getTimeFormat(context).format(Date((guessSec * 1000).toLong()))
+      copy.guessSuffix.replace(CLOCK_TOKEN, DateFormat.getTimeFormat(context).format(Date((guessSec * 1000).toLong())))
     else ""
 
     val builder = NotificationCompat.Builder(context, CHANNEL_ID)
       .setSmallIcon(context.applicationInfo.icon)
       .setContentTitle(label) // required for promotion
-      .setContentText((if (isOverrun) "Over · honest finish was $clock" else "Finish $clock") + guessSuffix)
+      .setContentText((if (isOverrun) copy.overrun else copy.finish).replace(CLOCK_TOKEN, clock) + guessSuffix)
       .setOngoing(true)
       .setOnlyAlertOnce(true)
       .setCategory(NotificationCompat.CATEGORY_STOPWATCH)
@@ -160,14 +214,14 @@ object PresenceNotifier {
       .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
       .setContentIntent(openTimerPendingIntent(context, stop = false)) // tap body → open timer
       // Stop from the lock screen — opens the timer already asking to stop + log.
-      .addAction(android.R.drawable.ic_menu_close_clear_cancel, "Stop & log", openTimerPendingIntent(context, stop = true))
+      .addAction(android.R.drawable.ic_menu_close_clear_cancel, copy.stopAction, openTimerPendingIntent(context, stop = true))
       .setShowWhen(true)
       .setWhen(finishMs) // future while running → chronometer counts down to it; past → counts up
       .setUsesChronometer(true)
       .setChronometerCountDown(!isOverrun) // down while running, up on overrun
 
     // startEpoch is persisted alongside the timer; use it to compute the elapsed fraction.
-    val startMs = readTimer(context)?.startEpochSec
+    val startMs = persistedTimer?.startEpochSec
       ?.takeIf { !it.isNaN() }
       ?.let { (it * 1000).toLong() }
     val pct = progressPct(startMs, finishMs, now, isOverrun)
@@ -181,7 +235,7 @@ object PresenceNotifier {
       // counts UP (a growing "time since finish"), which reads oddly in a glanceable chip, so we
       // pin a short "over" there instead. (Body content text stays "Finish H:mm" / "Over · …".)
       if (isOverrun) {
-        builder.setShortCriticalText("over")
+        builder.setShortCriticalText(copy.chipOver)
       }
       // ProgressStyle needs at least one segment to define the track length (0..100 here).
       val progressStyle = NotificationCompat.ProgressStyle()
@@ -216,5 +270,6 @@ object PresenceNotifier {
     val finishEpochSec: Double,
     val isProRich: Boolean,
     val guessFinishEpochSec: Double,
+    val strings: NotifStrings = NotifStrings(),
   )
 }

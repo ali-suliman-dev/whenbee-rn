@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { View, Text, Pressable, type TextStyle, type ViewStyle } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { useTranslation } from 'react-i18next';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import Animated, {
   useSharedValue,
@@ -57,6 +58,13 @@ const FLING_PROJECTION = 0.1;
 
 type DeadlineMode = 'leave by' | 'be done by' | 'be at';
 const MODES: DeadlineMode[] = ['leave by', 'be done by', 'be at'];
+
+/** Translation key (within the `planner` namespace) for each mode's chip label. */
+const MODE_LABEL_KEY = {
+  'leave by': 'finishTimeWheel.modes.leaveBy',
+  'be done by': 'finishTimeWheel.modes.beDoneBy',
+  'be at': 'finishTimeWheel.modes.beAt',
+} as const satisfies Record<DeadlineMode, string>;
 
 // ── helpers ───────────────────────────────────────────────────────────────────
 
@@ -340,6 +348,7 @@ function ColumnWheel({
 const KEYS: (string | null)[] = ['1', '2', '3', '4', '5', '6', '7', '8', '9', null, '0', '⌫'];
 
 function Keypad({ onDigit, onBackspace }: { onDigit: (d: string) => void; onBackspace: () => void }) {
+  const { t: tk } = useTranslation('planner');
   const t = useTheme();
 
   const key: ViewStyle = {
@@ -368,7 +377,7 @@ function Keypad({ onDigit, onBackspace }: { onDigit: (d: string) => void; onBack
           <View key={k} style={cell}>
             <Pressable
               accessibilityRole="button"
-              accessibilityLabel={isBack ? 'Delete' : `Digit ${k}`}
+              accessibilityLabel={isBack ? tk('keypad.delete') : tk('keypad.digit', { digit: k })}
               onPress={() => {
                 haptics.light();
                 if (isBack) onBackspace();
@@ -423,6 +432,7 @@ export function FinishTimeWheel({
   maxMs?: number;
 }) {
   const t = useTheme();
+  const { t: tr } = useTranslation('planner');
   const reducedMotion = useReducedMotion();
 
   // Bounded mode = both edges provided. Guard every new branch on this flag so the
@@ -645,7 +655,7 @@ export function FinishTimeWheel({
           inkColor={t.colors.ink}
           inkFaintColor={t.colors.inkFaint}
           fontSize={t.fontSize.base}
-          accessibilityLabel="Hour"
+          accessibilityLabel={tr('finishTimeWheel.hourA11y')}
           accessibilityMin={hours[0]?.value ?? 0}
           accessibilityMax={hours[hours.length - 1]?.value ?? 23}
           accessibilityValue={curHour}
@@ -663,7 +673,7 @@ export function FinishTimeWheel({
           inkColor={t.colors.ink}
           inkFaintColor={t.colors.inkFaint}
           fontSize={t.fontSize.base}
-          accessibilityLabel="Minute"
+          accessibilityLabel={tr('finishTimeWheel.minuteA11y')}
           accessibilityMin={minutes[curMinuteRange.lo]?.value ?? 0}
           accessibilityMax={minutes[curMinuteRange.hi]?.value ?? 59}
           accessibilityValue={curMin}
@@ -681,7 +691,12 @@ export function FinishTimeWheel({
       {showModes ? (
         <View style={chipRow}>
           {MODES.map((m) => (
-            <Chip key={m} label={m} selected={mode === m} onPress={() => handleModePress(m)} />
+            <Chip
+              key={m}
+              label={tr(MODE_LABEL_KEY[m])}
+              selected={mode === m}
+              onPress={() => handleModePress(m)}
+            />
           ))}
         </View>
       ) : null}
@@ -690,8 +705,12 @@ export function FinishTimeWheel({
       {editable ? (
         <Pressable
           accessibilityRole="button"
-          accessibilityLabel={`Edit time, currently ${pad2(curHour)}:${pad2(curMin)}`}
-          accessibilityHint={typing ? 'Show the time wheel' : 'Type an exact time'}
+          accessibilityLabel={tr('finishTimeWheel.editA11y', {
+            clock: `${pad2(curHour)}:${pad2(curMin)}`,
+          })}
+          accessibilityHint={
+            typing ? tr('finishTimeWheel.hintWheel') : tr('finishTimeWheel.hintType')
+          }
           onPress={toggleTyping}
         >
           <View

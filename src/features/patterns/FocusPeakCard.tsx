@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { View, Pressable, type ViewStyle, type TextStyle } from 'react-native';
 import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
+import { useTranslation } from 'react-i18next';
 import { useTheme } from '@/src/theme/useTheme';
 import { type } from '@/src/theme/typography';
 import { AppText } from '@/src/components/AppText';
@@ -24,7 +25,8 @@ import {
   focusUnlockedTag,
   focusRewardCaption,
   coarseHintCopy,
-  FOCUS_GATE_LABELS,
+  focusGateLabels,
+  coarseBlockLabel,
 } from '@/src/features/patterns/focusCopy';
 import { useSettingsStore } from '@/src/stores/settingsStore';
 
@@ -40,6 +42,7 @@ import { useSettingsStore } from '@/src/stores/settingsStore';
 
 export function FocusPeakCard() {
   const t = useTheme();
+  const { t: tr } = useTranslation('patterns');
   const isPro = useEntitlement((s) => s.isPro);
   const win = useLearnedFocusWindow();
   const insights = useFocusInsights(win.startMin, win.endMin);
@@ -64,7 +67,7 @@ export function FocusPeakCard() {
   const Eyebrow = () => (
     <View style={{ flexDirection: 'row', alignItems: 'center', gap: t.space[1.5] }}>
       <Ionicons name="flash" size={t.iconSize.xs} color={t.colors.primary} />
-      <AppText style={eyebrow}>WHEN YOU&apos;RE SHARP</AppText>
+      <AppText style={eyebrow}>{tr('focusPeakCard.eyebrow')}</AppText>
     </View>
   );
 
@@ -140,7 +143,7 @@ export function FocusPeakCard() {
           <FocusGateRow
             first
             state={sessionsState}
-            label={FOCUS_GATE_LABELS.sessions}
+            label={focusGateLabels().sessions}
             valueText={sessionsCopy.valueText}
             sub={sessionsCopy.sub}
             pips={
@@ -151,7 +154,7 @@ export function FocusPeakCard() {
           />
           <FocusGateRow
             state={daysState}
-            label={FOCUS_GATE_LABELS.days}
+            label={focusGateLabels().days}
             valueText={daysCopy.valueText}
             sub={daysCopy.sub}
             pips={
@@ -162,13 +165,13 @@ export function FocusPeakCard() {
           />
         </View>
         <AppButton
-          label="Set my hours myself"
+          label={tr('focusPeakCard.forming.setHoursCta')}
           variant="ghost"
           tone="sunken"
           size="md"
           fullWidth
           onPress={() => setEditing(true)}
-          accessibilityLabel="Set focus window manually"
+          accessibilityLabel={tr('focusPeakCard.forming.setHoursA11y')}
         />
         <FocusWindowEditorSheet
           visible={editing}
@@ -186,7 +189,7 @@ export function FocusPeakCard() {
 
   const whyLead = insights ? whyNarrative(insights.peakMin) : '';
   const contrastAccent = insights?.contrast != null ? `${insights.contrast.toFixed(1)}×` : null;
-  const contrastRest = contrastAccent != null ? ' above your dip' : '';
+  const contrastRest = contrastAccent != null ? tr('focusPeakCard.contrastSuffix') : '';
 
   const weeks = Math.max(1, Math.round(win.distinctDays / 7));
   const footerMeta =
@@ -209,8 +212,8 @@ export function FocusPeakCard() {
     };
     const teaser =
       insights?.contrast != null
-        ? `We found your sharpest stretch — ${insights.contrast.toFixed(1)}× above your slump.`
-        : 'We found your sharpest stretch.';
+        ? tr('focusPeakCard.locked.teaserWithContrast', { contrast: insights.contrast.toFixed(1) })
+        : tr('focusPeakCard.locked.teaserDefault');
     return (
       <View style={card} testID="focus-locked-teaser">
         <Eyebrow />
@@ -226,16 +229,16 @@ export function FocusPeakCard() {
           </View>
         </View>
         <AppText style={body}>{teaser}</AppText>
-        <AppText style={meta}>{`Learned from ${sampleCount} sessions.`}</AppText>
+        <AppText style={meta}>{tr('focusPeakCard.locked.meta', { count: sampleCount })}</AppText>
         <Pressable
           onPress={() =>
             router.push({ pathname: '/(modals)/paywall', params: { trigger: 'focus_window' } })
           }
           accessibilityRole="button"
-          accessibilityLabel="Unlock my focus window"
+          accessibilityLabel={tr('focusPeakCard.locked.unlockA11y')}
         >
           <AppText style={{ ...(type.captionBold as TextStyle), color: t.colors.primary }}>
-            Unlock my focus window ›
+            {tr('focusPeakCard.locked.unlockCta')}
           </AppText>
         </Pressable>
       </View>
@@ -244,12 +247,12 @@ export function FocusPeakCard() {
 
   // ── revealed + Pro, low confidence — coarse block, not yet precise ──
   if (win.confidenceTier === 'low') {
-    const blockLabel = win.coarseBlockLabel;
+    const blockLabel = coarseBlockLabel(win.coarseBlockLabel);
     return (
       <Pressable
         onPress={() => router.push('/(modals)/focus-window')}
         accessibilityRole="button"
-        accessibilityLabel="Open focus window detail"
+        accessibilityLabel={tr('focusPeakCard.personal.openA11y')}
       >
         <View style={card}>
           <Eyebrow />
@@ -276,7 +279,7 @@ export function FocusPeakCard() {
           >
             <AppText style={meta}>{`${sampleCount} sessions · ${win.distinctDays} days`}</AppText>
             <AppText style={{ ...(type.captionBold as TextStyle), color: t.colors.primary }}>
-              See details ›
+              {tr('focusPeakCard.personal.seeDetails')}
             </AppText>
           </View>
         </View>
@@ -289,7 +292,7 @@ export function FocusPeakCard() {
     <Pressable
       onPress={() => router.push('/(modals)/focus-window')}
       accessibilityRole="button"
-      accessibilityLabel="Open focus window detail"
+      accessibilityLabel={tr('focusPeakCard.personal.openA11y')}
     >
       <View style={card}>
         <Eyebrow />
@@ -332,7 +335,7 @@ export function FocusPeakCard() {
         >
           <AppText style={meta}>{footerMeta}</AppText>
           <AppText style={{ ...(type.captionBold as TextStyle), color: t.colors.primary }}>
-            Open ›
+            {tr('focusPeakCard.personal.open')}
           </AppText>
         </View>
       </View>

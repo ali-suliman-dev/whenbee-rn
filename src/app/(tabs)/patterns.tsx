@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { ScrollView, Text } from 'react-native';
 import Animated, { FadeInDown, useReducedMotion } from 'react-native-reanimated';
 import { useRouter } from 'expo-router';
@@ -45,6 +46,7 @@ import { PatternsSegment, type PatternsTab } from '@/src/features/patterns/Patte
 
 export default function Patterns() {
   const t = useTheme();
+  const { t: tp } = useTranslation('patterns');
   const reduced = useReducedMotion();
   const router = useRouter();
   const { view } = usePatterns();
@@ -79,14 +81,14 @@ export default function Patterns() {
       <>
         {/* Progress — always rendered; ProgressChart handles its own empty state */}
         <Animated.View entering={rise()} style={{ gap: t.space[3] }}>
-          <SectionHeader label="Your progress" />
+          <SectionHeader label={tp('screen.progressSection')} />
           <ProgressChart trend={view.accuracyTrend} fallback={view.youVsPast} />
         </Animated.View>
 
         {/* Your numbers */}
         {view.calibrationMap.length > 0 ? (
           <Animated.View entering={rise()} style={{ gap: t.space[3] }}>
-            <SectionHeader label="Your numbers" />
+            <SectionHeader label={tp('screen.numbersSection')} />
             <HonestMap rows={view.calibrationMap} />
           </Animated.View>
         ) : null}
@@ -147,7 +149,7 @@ export default function Patterns() {
 
   return (
     <Screen>
-      <ScreenHeader title="Patterns" subtitle="What your time keeps telling you." />
+      <ScreenHeader title={tp('screen.title')} subtitle={tp('screen.subtitle')} />
       <ScrollView
         contentContainerStyle={{ gap: t.space[4], paddingBottom: t.space[12] }}
         showsVerticalScrollIndicator={false}

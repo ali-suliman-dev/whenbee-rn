@@ -1,3 +1,4 @@
+import i18n from '@/src/i18n';
 import type { LogResult } from '@/src/stores/calibrationStore';
 
 // ──────────────────────────────────────────────────────────────────────────────
@@ -8,15 +9,6 @@ import type { LogResult } from '@/src/stores/calibrationStore';
 // fresh sequence of logs cycles through the set.
 // ──────────────────────────────────────────────────────────────────────────────
 
-export const TIMED_HEADLINES = [
-  'Logged. Nice one.',
-  "That's the honest number.",
-  'Caught it. Good.',
-  "That's one more, logged.",
-] as const;
-
-export const RETRO_HEADLINE = 'Caught up. Thank you.';
-
 /**
  * Pick a headline deterministically.
  * - retro source → the dedicated "caught up" line.
@@ -24,9 +16,10 @@ export const RETRO_HEADLINE = 'Caught up. Thank you.';
  *   counter on calibrationStore), so consecutive logs vary.
  */
 export function rewardHeadline(source: 'timed' | 'retro', logs: number): string {
-  if (source === 'retro') return RETRO_HEADLINE;
-  const idx = ((logs % TIMED_HEADLINES.length) + TIMED_HEADLINES.length) % TIMED_HEADLINES.length;
-  return TIMED_HEADLINES[idx] ?? TIMED_HEADLINES[0];
+  if (source === 'retro') return i18n.t('reward:headlines.retro');
+  const timed = i18n.t('reward:headlines.timed', { returnObjects: true }) as readonly string[];
+  const idx = ((logs % timed.length) + timed.length) % timed.length;
+  return timed[idx] ?? timed[0] ?? '';
 }
 
 /** True when this log sealed a new Honest cell (tier climbed to the top). */

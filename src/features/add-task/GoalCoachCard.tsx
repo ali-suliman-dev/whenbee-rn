@@ -1,9 +1,11 @@
 import { View, type ViewStyle, type TextStyle } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { Trans, useTranslation } from 'react-i18next';
 import { AppText } from '@/src/components/AppText';
 import { useTheme } from '@/src/theme/useTheme';
 import { type } from '@/src/theme/typography';
 import type { GoalCoachInfo } from '@/src/stores/calibrationStore';
+import { bucketLabel } from '@/src/i18n/bucketLabel';
 
 // ──────────────────────────────────────────────────────────────────────────────
 // GoalCoachCard — read-only add-sheet goal status (spec 2026-07-13-goal-lever-
@@ -29,6 +31,8 @@ export function GoalCoachCard({
   info: GoalCoachInfo;
 }) {
   const t = useTheme();
+  const { t: tr } = useTranslation('addTask');
+  const { t: patternsT } = useTranslation('patterns');
   const { targetBand, bestBand, progress, insideCount, windowCount, lever } = info;
 
   const card: ViewStyle = {
@@ -102,20 +106,28 @@ export function GoalCoachCard({
   const leverLine: TextStyle = { ...(type.bodySm as unknown as TextStyle), color: t.colors.ink, flex: 1 };
   const strong: TextStyle = { color: t.colors.amberText, fontFamily: 'Jakarta-Bold' };
 
-  const logsWord = windowCount === 1 ? 'log' : 'logs';
+  const bestBucket = lever ? bucketLabel(patternsT, lever.bestValue) : '';
+  const worstBucket = lever ? bucketLabel(patternsT, lever.worstValue) : '';
   const a11y =
-    `Goal for ${categoryName}: best within ${bestBand} percent, target ${targetBand} percent.` +
-    (windowCount > 0 ? ` ${insideCount} of your last ${windowCount} ${logsWord} inside the band.` : '') +
+    tr('goalCoach.a11y', { category: categoryName, bestBand, targetBand }) +
+    (windowCount > 0
+      ? tr('goalCoach.a11yInside', { inside: insideCount, count: windowCount })
+      : '') +
     (lever
-      ? ` You land closest to your guess in the ${lever.bestValue}, within ${lever.bestBand} percent, versus ${lever.worstBand} percent in the ${lever.worstValue}.`
+      ? tr('goalCoach.a11yLever', {
+          best: bestBucket,
+          bestBand: lever.bestBand,
+          worstBand: lever.worstBand,
+          worst: worstBucket,
+        })
       : '');
 
   return (
     <View style={card} accessible accessibilityLabel={a11y}>
       <View style={headRow}>
-        <AppText style={eyebrow}>GOAL · {categoryName}</AppText>
+        <AppText style={eyebrow}>{tr('goalCoach.eyebrow', { category: categoryName })}</AppText>
         <View style={chip}>
-          <AppText style={chipText}>goal ±{targetBand}%</AppText>
+          <AppText style={chipText}>{tr('goalCoach.chip', { band: targetBand })}</AppText>
         </View>
       </View>
 
@@ -123,7 +135,7 @@ export function GoalCoachCard({
         <View style={meterHead}>
           <View style={meterNowRow}>
             <AppText style={meterNow}>±{bestBand}%</AppText>
-            <AppText style={meterNowLabel}>your best so far</AppText>
+            <AppText style={meterNowLabel}>{tr('goalCoach.bestSoFar')}</AppText>
           </View>
           <AppText style={meterGoal}>±{targetBand}%</AppText>
         </View>
@@ -132,7 +144,7 @@ export function GoalCoachCard({
         </View>
         {windowCount > 0 ? (
           <AppText style={countLine}>
-            {insideCount} of your last {windowCount} {logsWord} landed inside the band
+            {tr('goalCoach.insideBand', { inside: insideCount, count: windowCount })}
           </AppText>
         ) : null}
       </View>
@@ -147,9 +159,17 @@ export function GoalCoachCard({
             />
           </View>
           <AppText style={leverLine}>
-            You land closest to your guess in the <AppText style={strong}>{lever.bestValue}</AppText> —
-            within <AppText style={strong}>±{lever.bestBand}%</AppText>, vs ±{lever.worstBand}% in the{' '}
-            {lever.worstValue}.
+            <Trans
+              i18nKey="goalCoach.lever"
+              ns="addTask"
+              values={{
+                best: bestBucket,
+                bestBand: lever.bestBand,
+                worstBand: lever.worstBand,
+                worst: worstBucket,
+              }}
+              components={{ strong: <AppText style={strong} /> }}
+            />
           </AppText>
         </View>
       ) : null}

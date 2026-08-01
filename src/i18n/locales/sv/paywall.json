@@ -1,0 +1,223 @@
+{
+  "eyebrow": "WHENBEE PRO",
+  "honest": {
+    "title": "Dina siffror är på riktigt nu.",
+    "sub": "Du har loggat dina pass. Whenbee vet hur dina dagar faktiskt ser ut. Låt Pro använda de riktiga siffrorna överallt där du planerar."
+  },
+  "triggers": {
+    "makeDayHonest": {
+      "title": "Din verkliga dag, innan du lever den.",
+      "sub": "Du har loggat dina pass. Whenbee vet hur dina dagar faktiskt ser ut. Pro tar med de riktiga siffrorna in i allt du planerar."
+    },
+    "calendarExport": {
+      "title": "Din verkliga dag, innan du lever den.",
+      "sub": "Du har loggat dina pass. Whenbee vet hur dina dagar faktiskt ser ut. Pro tar med de riktiga siffrorna in i allt du planerar."
+    },
+    "dayCapacity": {
+      "title": "Se vad dagen faktiskt rymmer.",
+      "sub": "Innan du säger ja till en sak till: se om den verkligen får plats i dina riktiga timmar."
+    },
+    "goals": {
+      "title": "Du sätter målet. Nu får du en coach.",
+      "sub": "Välj ett träffsäkerhetsmål för vilken kategori du vill. Whenbee coachar dig när du gissar och visar hur långt du har kvar till målet."
+    },
+    "routines": {
+      "title": "Ställ in en gång. Den minns den ärliga längden.",
+      "sub": "Din morgonrutin tar 50 minuter, inte 20. Pro lär sig hela kedjan och säger till när du faktiskt behöver börja."
+    },
+    "stealsYourTime": {
+      "title": "Se exakt vad som stjäl din tid.",
+      "sub": "Mönstret finns redan i dina loggar: när du missar, vad sammanhanget kostar dig och vilka timmar du är som skarpast. Pro läser ut det åt dig."
+    },
+    "focusWindow": {
+      "title": "Planera runt dina skarpaste timmar.",
+      "sub": "Whenbee lär sig när dina gissningar sitter och när de glider, så att du kan lägga det svåra jobbet där det passar bäst."
+    },
+    "honestRange": {
+      "title": "Hur säker är den siffran?",
+      "sub": "Pro visar säkerhetsintervallet runt din ärliga uppskattning, och du ser det smalna av ju mer du kalibrerar."
+    },
+    "reviewRitual": {
+      "title": "Se exakt vad som stjäl din tid.",
+      "sub": "Mönstret finns redan i dina loggar: när du missar, vad sammanhanget kostar dig och vilka timmar du är som skarpast. Pro läser ut det åt dig."
+    },
+    "pdfExport": {
+      "title": "Ge någon dina ärliga siffror.",
+      "sub": "En ren vecko- eller månadsrapport, gjord på din telefon och delad bara när du väljer det."
+    },
+    "hyperfocusGuard": {
+      "title": "Whenbee stannar med dig medan du jobbar.",
+      "sub": "Timern och den ärliga sluttiden syns på låsskärmen, plus en vänlig påminnelse när du dragit långt över din gissning."
+    },
+    "persistentPresence": {
+      "title": "Whenbee stannar med dig medan du jobbar.",
+      "sub": "Timern och den ärliga sluttiden syns på låsskärmen, plus en vänlig påminnelse när du dragit långt över din gissning."
+    },
+    "settingsUpgrade": {
+      "title": "Allt dina ärliga siffror kan göra.",
+      "sub": "Du har loggat dina pass. Pro använder de riktiga siffrorna överallt där du planerar."
+    },
+    "proReveal": {
+      "title": "Allt dina ärliga siffror kan göra.",
+      "sub": "Du har loggat dina pass. Pro använder de riktiga siffrorna överallt där du planerar."
+    },
+    "proPreview": {
+      "title": "Allt dina ärliga siffror kan göra.",
+      "sub": "Du har loggat dina pass. Pro använder de riktiga siffrorna överallt där du planerar."
+    }
+  },
+  "stack": {
+    "calendar": {
+      "title": "Ärlig kalender & kapacitet",
+      "desc": "Varje händelse får dina riktiga marginaler. Se vad dagen faktiskt rymmer, och planera runt dina skarpaste timmar."
+    },
+    "coach": {
+      "title": "Rutiner & målcoach",
+      "desc": "Återkommande kedjor lär sig sin ärliga längd. Sätt ett träffsäkerhetsmål per kategori och få hjälp när du gissar, plus hur långt du har kvar till målet."
+    },
+    "insight": {
+      "title": "Skarpare självinsikt",
+      "desc": "Mönstren som redan finns i dina loggar: vad som stjäl din tid, när du träffar bäst och vad sammanhanget kostar dig."
+    },
+    "review": {
+      "title": "Din vecka, granskad",
+      "desc": "En lugn vecko- och månadssammanfattning, lång historik och en ren PDF eller delning med ett tryck. Allt görs på din telefon och skickas aldrig utan att du säger till."
+    },
+    "presence": {
+      "title": "Alltid där",
+      "desc": "Timer och sluttid på låsskärmen, plus en vänlig påminnelse när du dragit långt över din gissning."
+    }
+  },
+  "features": {
+    "calendar": "Ärlig kalender",
+    "capacity": "Dagens kapacitet",
+    "focusWindows": "Fokusfönster",
+    "confidenceBand": "Säkerhetsintervall",
+    "routines": "Rutiner",
+    "goalCoach": "Målcoach",
+    "presence": "Timer på låsskärmen",
+    "hyperfocusGuard": "Hyperfokusvakt",
+    "stealsTime": "Vad som stjäl din tid",
+    "weeklyReview": "Veckogenomgång",
+    "pdfExport": "PDF-export",
+    "history": "Hela historiken"
+  },
+  "groups": {
+    "plan": "Planera ärligt",
+    "run": "Ta dig igenom dagen",
+    "learn": "Lär känna dina mönster"
+  },
+  "moments": {
+    "morning": "Morgonen börjar ärligt",
+    "deepwork": "Djupt arbete, med sällskap",
+    "midday": "Innan du säger ja till mer",
+    "evening": "Kvällen får faktiskt plats",
+    "week": "Veckan, förstådd",
+    "weekTime": "sön"
+  },
+  "topProof": {
+    "coachCaption": "På god väg. Ungefär 2 veckor kvar till målet.",
+    "insightCaption": "Förmiddagar sitter exakt. Sena eftermiddagar glider."
+  },
+  "beforeAfter": {
+    "planLabel": "DIN PLAN",
+    "honestLabel": "ÄRLIG DAG",
+    "planNote": "Spricker 17:00. Drar över.",
+    "honestNote": "Slutar 19:10. Det går ihop.",
+    "legendReal": "din riktiga tid",
+    "legendBuffer": "marginalen Whenbee lägger till"
+  },
+  "founderReserve": {
+    "eyebrow": "Tidigt grundarpris",
+    "headline": "Lås grundarpriset: {{price}}",
+    "sub": "Reservera det nu. Inget dras förrän dina siffror blir ärliga, och då är Pro ditt till det här priset.",
+    "cta": "Lås grundarpriset",
+    "ctaLocked": "Grundarpriset är låst"
+  },
+  "planPicker": {
+    "title": {
+      "yearly": "Årsvis",
+      "lifetime": "Livstid",
+      "monthly": "Månadsvis",
+      "other": "Plan"
+    },
+    "note": {
+      "lifetime": "Betala en gång. Sedan är det ditt för alltid.",
+      "yearly": "7 dagar gratis, sedan årsvis betalning",
+      "yearlyWithPrice": "7 dagar gratis, sedan {{price}} per år",
+      "monthly": "7 dagar gratis, sedan månadsvis betalning"
+    },
+    "savingsFallback": "Spara 42 %",
+    "savingsLabel": "Spara {{pct}} %",
+    "accessibilityLabel": "{{title}}, {{note}}, {{price}}",
+    "mostPopular": "POPULÄRAST",
+    "perMonth": "per månad"
+  },
+  "trialTimeline": {
+    "today": {
+      "head": "Idag",
+      "desc": "Hela Pro, gratis. Inget dras."
+    },
+    "day5": {
+      "head": "Dag 5",
+      "desc": "<strong>Vi påminner dig</strong> om att provperioden snart tar slut."
+    },
+    "day7": {
+      "head": "Dag 7",
+      "desc": "Provperioden tar slut. Avsluta innan dess så betalar du ingenting."
+    }
+  },
+  "plans": {
+    "loading": "Laddar planer…",
+    "unavailable": "Planerna går inte att hämta just nu. Kolla din anslutning och öppna skärmen igen.",
+    "ctaBusy": "Ett ögonblick…",
+    "ctaLifetime": "Pro för alltid · {{price}}",
+    "ctaTrial": "Prova 7 dagar gratis",
+    "ctaRetry": "Försök igen",
+    "purchaseErrorTitle": "Det gick inte igenom.",
+    "purchaseError": "Du blev inte debiterad. Kolla din anslutning och försök en gång till.",
+    "declinedTitle": "Ditt betalsätt nekades.",
+    "declinedError": "Du blev inte debiterad. Kolla det i butikens inställningar och försök igen.",
+    "restoreNone": "Inget tidigare köp på det här kontot. Om du prenumererade med ett annat, byt till det och återställ där.",
+    "restoreErrorTitle": "Kunde inte nå butiken.",
+    "restoreError": "Försök igen om en stund.",
+    "finePrint": "Inget dras idag. Vi påminner dig innan provperioden tar slut. Avsluta när du vill. Allt sker på din enhet och är privat.",
+    "restoreLink": "Återställ",
+    "restoreLinkA11y": "Återställ köp",
+    "manageLink": "Hantera prenumeration",
+    "manageLinkA11y": "Hantera din prenumeration",
+    "freeStripBold": "Kalibreringen är alltid gratis.",
+    "freeStripRest": "Inget kort, ingen förnyelse. Det är din riktiga provperiod. Pro lägger bara till belöningen.",
+    "trustLine": "Byggd av folk som är sena till allt. Det är verktyget vi själva behövde först.",
+    "expoGoNotice": "Körs i Expo Go. Köp simuleras."
+  },
+  "footer": {
+    "renew": "Prenumerationer förnyas tills du säger upp dem.",
+    "restore": "Återställ köp",
+    "terms": "Villkor",
+    "privacy": "Integritet",
+    "privacyA11y": "Integritetspolicy",
+    "termsA11y": "Användarvillkor",
+    "lifetimeNote": "En betalning. Inga förnyelser, någonsin.",
+    "subNote": "Ingen betalning nu. Avsluta när du vill."
+  },
+  "proWelcome": {
+    "sub": "Varje ärligt tal du har jobbat ihop gäller nu överallt där du planerar.",
+    "title": "Du är Pro.",
+    "cta": "Visa min ärliga dag",
+    "reminderSet": "Påminnelsen är inställd på {{day}}.",
+    "reminderRest": "Vi puffar till dig innan provperioden tar slut.",
+    "reminderPending": "Ställer in din påminnelse…",
+    "trialEnds": "Provperioden tar slut {{day}}.",
+    "trialStarted": "7 dagars gratis provperiod har börjat.",
+    "nothingCharged": "Inget dras före {{day}}.",
+    "askStrong": "Få påminnelsen dag 5.",
+    "askRest": "En påminnelse innan provperioden tar slut, inget annat.",
+    "deniedStrong": "Påminnelsen kräver aviseringar.",
+    "deniedRest": "Du kan fortfarande avsluta när du vill i Inställningar.",
+    "lifetimeStrong": "Pro är ditt, för alltid.",
+    "lifetimeRest": "En betalning, inga förnyelser.",
+    "dayStrong": "Din dag är ärlig nu.",
+    "dayRest": "Kalender, rutiner, insikter, genomgång, timer på låsskärmen."
+  }
+}

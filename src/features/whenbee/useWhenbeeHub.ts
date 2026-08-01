@@ -3,11 +3,12 @@ import { useCalibrationStore } from '@/src/stores/calibrationStore';
 import type { CompanionPresence } from '@/src/stores/calibrationStore';
 import type { ProFeatureId } from '@/src/engine';
 import { useCategoriesStore } from '@/src/stores/categoriesStore';
-import { tierFor, capabilityFor, CATEGORY_NAMES } from '@/src/engine';
+import { tierFor, capabilityFor } from '@/src/engine';
 import { analytics } from '@/src/services/analytics';
 import { kv } from '@/src/lib/kv';
 import type { HoneycombCell } from '@/src/components/honeycomb/Honeycomb';
 import type { Tier, Discovery } from '@/src/domain/types';
+import { categoryDisplayName, categoryName } from '@/src/features/shared/categoryName';
 import { leadSharpnessOf } from './leadSharpness';
 import { blindSpotFor, driftRecheckVisible, type BlindSpot } from './hubGates';
 
@@ -59,17 +60,6 @@ export interface WhenbeeHubVM {
 /** kv flag: set while the drift re-check card has been dismissed; cleared the
  *  moment drift returns to 'settled' so a fresh drift can surface the card again. */
 const DRIFT_DISMISS_KEY = 'whenbee.driftRecheckDismissed';
-
-/** Title-case a custom-category slug (e.g. "deep_work" → "Deep Work"). */
-function categoryName(id: string): string {
-  const seed = CATEGORY_NAMES[id];
-  if (seed) return seed;
-  return id
-    .split(/[_\-\s]+/)
-    .filter(Boolean)
-    .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
-    .join(' ');
-}
 
 /** Pre-load companion default — a stage-1 Raw bee, calm and ungated, so the hero
  *  renders coherently before the async summary resolves (no flash of empty bee). */
@@ -144,7 +134,10 @@ export function useWhenbeeHub(): WhenbeeHubVM {
         const stat = statsByCategory[c.id];
         return {
           categoryId: c.id,
-          label: c.name,
+          // The stored name is a snapshot from whenever the category was picked
+          // (English for anyone who onboarded before switching language) — a
+          // built-in id re-localizes, a name the user typed passes through.
+          label: categoryDisplayName(c.id, c.name),
           sharpness: stat?.sharpness ?? 0,
           tier: stat?.tier ?? 'Raw',
         };

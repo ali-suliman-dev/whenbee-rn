@@ -1,4 +1,6 @@
+import { formatDuration } from '@/src/i18n/formatDuration';
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { View, Pressable, StyleSheet, type ViewStyle, type TextStyle } from 'react-native';
 import Animated, { FadeIn, useReducedMotion } from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -7,7 +9,7 @@ import { AppButton } from '@/src/components/AppButton';
 import { useTheme } from '@/src/theme/useTheme';
 import { type } from '@/src/theme/typography';
 import { haptics } from '@/src/lib/haptics';
-import { formatClock, fmtHm } from '@/src/lib/time';
+import { formatClock } from '@/src/lib/time';
 import { FinishTimeWheel } from '@/src/features/planner/FinishTimeWheel';
 import { buildForgotPresets } from '@/src/features/timer/forgotPresets';
 
@@ -37,6 +39,8 @@ export function ForgotStopSheet({
   startedAt, elapsedMin, honestMin, onConfirm, onStillGoing, onNotSure,
 }: ForgotStopSheetProps): React.JSX.Element {
   const t = useTheme();
+  const { t: tr } = useTranslation('timer');
+  const { t: translate } = useTranslation();
   const insets = useSafeAreaInsets();
   const reducedMotion = useReducedMotion();
 
@@ -73,15 +77,20 @@ export function ForgotStopSheet({
         <Animated.View entering={enter} style={card} accessibilityViewIsModal accessibilityLiveRegion="polite">
           {mode === 'choices' ? (
             <>
-              <AppText style={heading}>When did you actually stop?</AppText>
+              <AppText style={heading}>{tr('forgotStop.headingStopped')}</AppText>
               <AppText style={body}>
-                {`The timer kept running past your finish. Pick when you really stopped — I’ll log that, not the full ${fmtHm(elapsedMin)}.`}
+                {tr('forgotStop.overranBody', {
+                  duration: formatDuration(elapsedMin, translate),
+                })}
               </AppText>
               <View style={{ gap: t.space[2.5] }}>
                 {presets.map((p) => (
                   <AppButton
                     key={p.offsetMin}
-                    label={`~${p.offsetMin} min ago  ·  ${fmtHm(p.actualMin)}`}
+                    label={tr('forgotStop.presetOption', {
+                      minutes: p.offsetMin,
+                      duration: formatDuration(p.actualMin, translate),
+                    })}
                     variant="amber"
                     size="md"
                     fullWidth
@@ -92,7 +101,7 @@ export function ForgotStopSheet({
                   />
                 ))}
                 <AppButton
-                  label="Pick the exact time"
+                  label={tr('forgotStop.pickExact')}
                   variant="ghost"
                   size="md"
                   fullWidth
@@ -102,22 +111,22 @@ export function ForgotStopSheet({
               <View style={{ height: StyleSheet.hairlineWidth, backgroundColor: t.colors.hairline }} />
               <View style={{ flexDirection: 'row', gap: t.space[2.5] }}>
                 <View style={{ flex: 1 }}>
-                  <AppButton label="Still going" variant="ghost" size="md" fullWidth onPress={onStillGoing} />
+                  <AppButton label={tr('forgotStop.stillGoing')} variant="ghost" size="md" fullWidth onPress={onStillGoing} />
                 </View>
                 <Pressable
                   accessibilityRole="button"
-                  accessibilityLabel="Not sure yet — stop without a trained log"
+                  accessibilityLabel={tr('forgotStop.notSureStopA11y')}
                   onPress={onNotSure}
                   style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}
                 >
-                  <AppText style={skip}>Not sure yet</AppText>
+                  <AppText style={skip}>{tr('forgotStop.notSure')}</AppText>
                 </Pressable>
               </View>
             </>
           ) : (
             <>
-              <AppText style={heading}>When did you finish?</AppText>
-              <AppText style={body}>Spin to the time you actually stopped.</AppText>
+              <AppText style={heading}>{tr('forgotStop.headingFinished')}</AppText>
+              <AppText style={body}>{tr('forgotStop.spinBody')}</AppText>
               <View style={{ paddingVertical: t.space[2] }}>
                 <FinishTimeWheel
                   valueMs={clampedFinishMs}
@@ -129,7 +138,10 @@ export function ForgotStopSheet({
                 />
               </View>
               <AppButton
-                label={`Log ${formatClock(clampedFinishMs)}  ·  ${fmtHm(pickedActualMin)}`}
+                label={tr('forgotStop.logAt', {
+                  clock: formatClock(clampedFinishMs),
+                  duration: formatDuration(pickedActualMin, translate),
+                })}
                 variant="amber"
                 size="md"
                 fullWidth
@@ -137,11 +149,11 @@ export function ForgotStopSheet({
               />
               <Pressable
                 accessibilityRole="button"
-                accessibilityLabel="Back to the quick options"
+                accessibilityLabel={tr('forgotStop.backA11y')}
                 onPress={() => { haptics.light(); setMode('choices'); }}
                 style={{ alignItems: 'center', justifyContent: 'center', paddingTop: t.space[1] }}
               >
-                <AppText style={skip}>Back</AppText>
+                <AppText style={skip}>{tr('forgotStop.back')}</AppText>
               </Pressable>
             </>
           )}

@@ -7,6 +7,8 @@ import Animated, {
   useReducedMotion,
 } from 'react-native-reanimated';
 import { router } from 'expo-router';
+import { useTranslation } from 'react-i18next';
+import type { TFunction } from 'i18next';
 import { HoneyRing } from '@/src/features/whenbee/HoneyRing';
 import { BeeMascot, type BeeVariant } from '@/src/components/BeeMascot';
 import { BeeCoin } from '@/src/components/BeeCoin';
@@ -21,6 +23,12 @@ import type { HoneycombCell } from '@/src/components/honeycomb/Honeycomb';
 // the SAME soft BeeCoin the hub uses (colors.companionCoin) — shrunk to
 // headerRing.coinSize so it backs the bee inside the ring without enlarging the bee
 // or ring. Honey is monotonic; the ring only ever fills forward.
+/** Maps an engine Tier value to its translated display word. */
+function tierLabel(tier: HoneycombCell['tier'], tr: TFunction<'today'>): string {
+  const key = tier.toLowerCase() as 'raw' | 'setting' | 'ripening' | 'thickening' | 'honest';
+  return tr(`tiers.${key}`);
+}
+
 export function TodayHeaderRing({
   sharpness,
   tier,
@@ -33,6 +41,7 @@ export function TodayHeaderRing({
   seed: number;
 }) {
   const t = useTheme();
+  const { t: tr } = useTranslation('today');
   const reduced = useReducedMotion();
   const scale = useSharedValue(1);
   const pressStyle = useAnimatedStyle(() => ({ transform: [{ scale: scale.get() }] }));
@@ -62,7 +71,7 @@ export function TodayHeaderRing({
         if (!reduced) scale.set(withSpring(1, t.motion.spring));
       }}
       accessibilityRole="button"
-      accessibilityLabel={`Whenbee, honey tier ${tier}. Tap to open your honeycomb.`}
+      accessibilityLabel={tr('headerRing.a11y', { tier: tierLabel(tier, tr) })}
     >
       <Animated.View style={[{ alignItems: 'center' }, pressStyle]}>
         <HoneyRing
@@ -82,7 +91,7 @@ export function TodayHeaderRing({
             />
           </View>
         </HoneyRing>
-        <Text style={caption}>{tier}</Text>
+        <Text style={caption}>{tierLabel(tier, tr)}</Text>
       </Animated.View>
     </Pressable>
   );

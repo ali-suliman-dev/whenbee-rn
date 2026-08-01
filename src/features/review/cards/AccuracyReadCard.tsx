@@ -1,4 +1,5 @@
 import { View, Text, type ViewStyle, type TextStyle } from 'react-native';
+import { useTranslation } from 'react-i18next';
 import { Card } from '@/src/components/Card';
 import { useTheme } from '@/src/theme/useTheme';
 import { type } from '@/src/theme/typography';
@@ -18,6 +19,7 @@ export function AccuracyReadCard({
   sharpestPhrase: string | null;
 }) {
   const t = useTheme();
+  const { t: tt } = useTranslation('review');
 
   const eyebrow: TextStyle = { ...(type.eyebrow as unknown as TextStyle), color: t.colors.primary };
   const headline: TextStyle = { ...(type.bodyLg as unknown as TextStyle), color: t.colors.ink };
@@ -26,7 +28,7 @@ export function AccuracyReadCard({
 
   return (
     <Card tone="flat" style={{ gap: t.space[3] }}>
-      <Text style={eyebrow}>HOW YOUR GUESSES LANDED</Text>
+      <Text style={eyebrow}>{tt('accuracyRead.eyebrow')}</Text>
       <View style={block}>
         <Text style={headline}>{line}</Text>
         {sharpestPhrase ? <Text style={detail}>{sharpestPhrase}</Text> : null}

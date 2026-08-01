@@ -20,6 +20,7 @@ import { Platform } from 'react-native';
 import { analytics } from '@/src/services/analytics';
 import { isExpoGo } from '@/src/lib/isExpoGo';
 import { loadAndroidPresence } from '@/src/services/presence/androidPresence';
+import i18n from '@/src/i18n';
 
 /** App Group id — MUST match `kAppGroupId` in targets/widget/SharedStore.swift. */
 export const APP_GROUP_ID = 'group.com.whenbee.app';
@@ -87,8 +88,8 @@ export interface NativePresenceModule {
   clearWidgetData: (key: string) => void;
   writeSnapshot: (snapshot: WidgetSnapshot) => void;
   clearSnapshot: () => void;
-  startLiveActivity: (attributes: LiveActivityAttributes) => void;
-  updateLiveActivity: (state: { isOverrun: boolean }) => void;
+  startLiveActivity: (attributes: LiveActivityAttributes & { strings?: Record<string, string> }) => void;
+  updateLiveActivity: (state: { isOverrun: boolean; strings?: Record<string, string> }) => void;
   endLiveActivity: () => void;
 }
 
@@ -169,6 +170,27 @@ export function clearWidgetSnapshot(): void {
   }
 }
 
+
+/**
+ * Display strings for the Android running-timer notification, already translated.
+ *
+ * They travel across the bridge (rather than living in `res/values-sv/`) because the
+ * app's language comes from the in-app picker, not the system locale: a Swedish phone
+ * with the app set to English must show English on the lock screen. Native persists
+ * them, so the AlarmManager progress re-post and the overrun flip still render in the
+ * right language with no JS running. `{clock}` is filled in natively so the time itself
+ * honours the device's 12/24-hour setting.
+ */
+function presenceStrings(): Record<string, string> {
+  return {
+    finish: i18n.t('notifications:presence.finish'),
+    overrun: i18n.t('notifications:presence.overrun'),
+    guessSuffix: i18n.t('notifications:presence.guessSuffix'),
+    chipOver: i18n.t('notifications:presence.chipOver'),
+    stopAction: i18n.t('timer:stopAndLog'),
+  };
+}
+
 /**
  * Start the running-timer Live Activity (Lock Screen + Dynamic Island finish-time
  * ring). Call on timer start. No-op in Expo Go / tests.
@@ -177,7 +199,7 @@ export function startFinishTimeActivity(attributes: LiveActivityAttributes): voi
   finishTimeActivityActive = true;
   try {
     const presence = getNativePresence();
-    presence.startLiveActivity(attributes);
+    presence.startLiveActivity({ ...attributes, strings: presenceStrings() });
     if (!presence.isStub) analytics.capture('widget_added', { surface: 'live_activity' });
   } catch {
     // best-effort
@@ -187,7 +209,7 @@ export function startFinishTimeActivity(attributes: LiveActivityAttributes): voi
 /** Flip the Live Activity into/out of its over-the-guess state. No-op in Expo Go / tests. */
 export function updateFinishTimeActivity(state: { isOverrun: boolean }): void {
   try {
-    getNativePresence().updateLiveActivity(state);
+    getNativePresence().updateLiveActivity({ ...state, strings: presenceStrings() });
   } catch {
     // best-effort
   }

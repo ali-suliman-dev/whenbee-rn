@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { View, Text, type TextStyle } from 'react-native';
 import { router } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
+import { useTranslation } from 'react-i18next';
 import { Screen } from '@/src/components/Screen';
 import { SheetScrollView } from '@/src/components/SheetScrollView';
 import { AppButton } from '@/src/components/AppButton';
@@ -18,7 +19,7 @@ import { useOfferings } from './useOfferings';
 import { useFounderReserve } from './useFounderReserve';
 import { FounderReserveCard } from './FounderReserveCard';
 import { PlanPicker } from './PlanPicker';
-import { copyFor, isTrigger, FREE_PROMISE, type Trigger } from './paywallCopy';
+import { copyFor, isTrigger, freePromise, type Trigger } from './paywallCopy';
 import { TrialTimeline } from './TrialTimeline';
 import { DayWithPro } from './DayWithPro';
 import { FeatureGroups } from './FeatureGroups';
@@ -42,25 +43,40 @@ import { usePaywallVariant } from './usePaywallVariant';
 /** Earned-readiness framing for the lead heading. */
 type Readiness = 'pre' | 'honest';
 
+/** A notice carries translation KEYS, not sentences — it is built outside the
+ *  render and resolved against the live language when it is shown. */
 interface Notice {
   tone: 'danger' | 'neutral';
-  title?: string;
-  message: string;
+  titleKey?: 'plans.purchaseErrorTitle' | 'plans.declinedTitle' | 'plans.restoreErrorTitle';
+  messageKey: 'plans.purchaseError' | 'plans.declinedError' | 'plans.restoreNone' | 'plans.restoreError';
   retryable: boolean;
 }
 
 const GENERIC_PURCHASE_NOTICE: Notice = {
   tone: 'danger',
-  title: "That didn't go through.",
-  message: "You weren't charged. Check your connection and try once more.",
+  titleKey: 'plans.purchaseErrorTitle',
+  messageKey: 'plans.purchaseError',
   retryable: true,
 };
 
 const DECLINED_PURCHASE_NOTICE: Notice = {
   tone: 'danger',
-  title: 'Your payment method was declined.',
-  message: "You weren't charged. Check it in your store settings, then try again.",
+  titleKey: 'plans.declinedTitle',
+  messageKey: 'plans.declinedError',
   retryable: true,
+};
+
+const RESTORE_NONE_NOTICE: Notice = {
+  tone: 'neutral',
+  messageKey: 'plans.restoreNone',
+  retryable: false,
+};
+
+const RESTORE_ERROR_NOTICE: Notice = {
+  tone: 'danger',
+  titleKey: 'plans.restoreErrorTitle',
+  messageKey: 'plans.restoreError',
+  retryable: false,
 };
 
 /** Map a package to its analytics plan name. */
@@ -84,6 +100,7 @@ function findFounderPackage(packages: readonly Package[]): Package | null {
 
 export function Paywall({ trigger, readiness = 'pre' }: { trigger?: string; readiness?: Readiness }) {
   const t = useTheme();
+  const { t: tr } = useTranslation('paywall');
   const purchase = useEntitlement((s) => s.purchase);
   const restore = useEntitlement((s) => s.restore);
   const { status, offering } = useOfferings();
@@ -174,21 +191,10 @@ export function Paywall({ trigger, readiness = 'pre' }: { trigger?: string; read
       const isPro = useEntitlement.getState().isPro;
       analytics.capture('restore_purchases', { result: isPro ? 'success' : 'none' });
       if (isPro) routeToWelcome('restore');
-      else
-        setNotice({
-          tone: 'neutral',
-          message:
-            'No earlier purchase on this account. If you subscribed with another one, switch and restore there.',
-          retryable: false,
-        });
+      else setNotice(RESTORE_NONE_NOTICE);
     } catch {
       analytics.capture('restore_purchases', { result: 'error' });
-      setNotice({
-        tone: 'danger',
-        title: "Couldn't reach the store.",
-        message: 'Try again in a moment.',
-        retryable: false,
-      });
+      setNotice(RESTORE_ERROR_NOTICE);
     } finally {
       setBusy(false);
     }
@@ -197,14 +203,14 @@ export function Paywall({ trigger, readiness = 'pre' }: { trigger?: string; read
   // CTA label tracks the selection and the error state.
   const isLifetime = selected?.duration === 'lifetime';
   const ctaLabel = busy
-    ? 'One moment…'
+    ? tr('plans.ctaBusy')
     : notice?.retryable
-      ? 'Try again'
+      ? tr('plans.ctaRetry')
       : isLifetime && selected
-        ? `Get Pro forever · ${selected.priceString}`
-        : 'Try 7 days free';
+        ? tr('plans.ctaLifetime', { price: selected.priceString })
+        : tr('plans.ctaTrial');
 
-  const copy = copyFor(resolvedTrigger, readiness);
+  const copy = copyFor(tr, resolvedTrigger, readiness);
   const showTimeline = selected ? selected.duration !== 'lifetime' : true;
 
   const heading: TextStyle = { ...(type.title as unknown as TextStyle), color: t.colors.ink };
@@ -240,7 +246,7 @@ export function Paywall({ trigger, readiness = 'pre' }: { trigger?: string; read
           <View style={{ gap: t.space[2] }}>
             <Text style={heading}>{copy.title}</Text>
             <Text style={sub}>
-              {copy.sub} <Text style={subStrong}>{FREE_PROMISE}</Text>
+              {copy.sub} <Text style={subStrong}>{freePromise(tr)}</Text>
             </Text>
           </View>
         </View>
@@ -250,11 +256,9 @@ export function Paywall({ trigger, readiness = 'pre' }: { trigger?: string; read
 
         {/* Plans — store-priced, three states. */}
         {status === 'loading' ? (
-          <Text style={[sub, { textAlign: 'center' }]}>Loading plans…</Text>
+          <Text style={[sub, { textAlign: 'center' }]}>{tr('plans.loading')}</Text>
         ) : status === 'unavailable' || !offering ? (
-          <Text style={[sub, { textAlign: 'center' }]}>
-            Plans are not available right now. Check your connection and reopen this screen.
-          </Text>
+          <Text style={[sub, { textAlign: 'center' }]}>{tr('plans.unavailable')}</Text>
         ) : (
           <>
             {showFounderReserve && founderPkg ? (
@@ -274,7 +278,11 @@ export function Paywall({ trigger, readiness = 'pre' }: { trigger?: string; read
             {showTimeline ? <TrialTimeline /> : null}
 
             {notice ? (
-              <InlineNotice tone={notice.tone} title={notice.title} message={notice.message} />
+              <InlineNotice
+                tone={notice.tone}
+                title={notice.titleKey === undefined ? undefined : tr(notice.titleKey)}
+                message={tr(notice.messageKey)}
+              />
             ) : null}
 
             <AppButton
@@ -294,7 +302,7 @@ export function Paywall({ trigger, readiness = 'pre' }: { trigger?: string; read
         )}
 
         {isExpoGo ? (
-          <Text style={fineText}>Running in Expo Go — purchases are simulated.</Text>
+          <Text style={fineText}>{tr('plans.expoGoNotice')}</Text>
         ) : null}
       </SheetScrollView>
     </Screen>

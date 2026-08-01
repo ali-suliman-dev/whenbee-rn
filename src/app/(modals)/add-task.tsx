@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { View, Text, TextInput, Pressable, KeyboardAvoidingView, Platform, useWindowDimensions, type ViewStyle, type TextStyle } from 'react-native';
 import { router, useLocalSearchParams } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
+import { useTranslation } from 'react-i18next';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Screen } from '@/src/components/Screen';
 import { SheetScrollView } from '@/src/components/SheetScrollView';
@@ -20,6 +21,7 @@ import { AntiChaseCoachCard } from '@/src/features/add-task/AntiChaseCoachCard';
 import { GoalCoachCard } from '@/src/features/add-task/GoalCoachCard';
 import { useDayTasksStore } from '@/src/stores/dayTasksStore';
 import { toLocalDayKey, addDays, weekdayOf } from '@/src/lib/day';
+import i18n from '@/src/i18n';
 
 // ──────────────────────────────────────────────────────────────────────────────
 // Add Task (Screen 10, formSheet) — add an ad-hoc task and surface the honest
@@ -29,29 +31,34 @@ import { toLocalDayKey, addDays, weekdayOf } from '@/src/lib/day';
 // Actions gate gently on title + category (no scold).
 // ──────────────────────────────────────────────────────────────────────────────
 
-// Short weekday labels for the date picker sheet.
-const WEEKDAY_SHORT = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'] as const;
+/** Short weekday labels for the date picker sheet (module-scope — read the raw
+ *  i18n instance, not a hook, since these helpers run outside a component). */
+function weekdayShort(): readonly string[] {
+  return i18n.t('addTask:weekdayShort', { returnObjects: true }) as readonly string[];
+}
 
 /** Human label for a day option in the picker. */
 function dayLabel(key: string, offsetFromToday: number): string {
-  if (offsetFromToday === 0) return 'Today';
-  if (offsetFromToday === 1) return 'Tomorrow';
-  return WEEKDAY_SHORT[weekdayOf(key)] ?? key;
+  if (offsetFromToday === 0) return i18n.t('addTask:day.today');
+  if (offsetFromToday === 1) return i18n.t('addTask:day.tomorrow');
+  return weekdayShort()[weekdayOf(key)] ?? key;
 }
 
 /** Header label showing which day the task will be added to. */
 function targetDayLabel(targetDate: string | null, today: string): string {
-  if (targetDate === null) return 'No day yet';
-  if (targetDate === today) return 'Today';
+  if (targetDate === null) return i18n.t('addTask:day.noDayYet');
+  if (targetDate === today) return i18n.t('addTask:day.today');
   const offset = Math.round(
     (new Date(targetDate).getTime() - new Date(today).getTime()) / 86400000,
   );
-  if (offset === 1) return 'Tomorrow';
-  return WEEKDAY_SHORT[weekdayOf(targetDate)] ?? targetDate;
+  if (offset === 1) return i18n.t('addTask:day.tomorrow');
+  return weekdayShort()[weekdayOf(targetDate)] ?? targetDate;
 }
 
 export default function AddTask() {
   const t = useTheme();
+  const { t: tc } = useTranslation();
+  const { t: tr } = useTranslation('addTask');
   const insets = useSafeAreaInsets();
   const { height: winH } = useWindowDimensions();
   const toastDismissMs = t.motion.pulse; // let the toast land before the sheet closes
@@ -87,6 +94,10 @@ export default function AddTask() {
   // Day options for the "when" picker: Today, Tomorrow, next 5 weekdays, then shelf.
   // Rendered via the cross-platform <ActionSheet> — ActionSheetIOS is iOS-only and
   // crashes on Android.
+  const headerTargetLabel = a.isEditing
+    ? tr('header.scheduledFor', { day: targetDayLabel(targetDate, today) })
+    : tr('header.addingTo', { day: targetDayLabel(targetDate, today) });
+
   const dayPickerItems: ActionSheetItem[] = [
     ...Array.from({ length: 7 }, (_, i) => {
       const key = addDays(today, i);
@@ -121,10 +132,10 @@ export default function AddTask() {
   // weekday/"Tomorrow".
   const addCtaLabel =
     targetDate === null
-      ? 'Add to shelf'
+      ? tr('cta.addToShelf')
       : targetDate === today
-      ? 'Add to today'
-      : `Add to ${targetDayLabel(targetDate, today)}`;
+      ? tr('cta.addToToday')
+      : tr('cta.addToDay', { day: targetDayLabel(targetDate, today) });
 
   const heading: TextStyle = { ...(type.subtitle as unknown as TextStyle), color: t.colors.ink };
   const sub: TextStyle = { ...(type.body as unknown as TextStyle), color: t.colors.inkSoft };
@@ -242,13 +253,16 @@ export default function AddTask() {
         <View style={{ paddingTop: t.space[4], paddingBottom: t.space[3], gap: t.space[2] }}>
           <SheetGrabber />
           <View style={targetRow}>
-            <Text style={targetLabel} accessibilityLabel={`${a.isEditing ? 'Scheduled for' : 'Adding to'} ${targetDayLabel(targetDate, today)}`}>
-              {`${a.isEditing ? 'Scheduled for' : 'Adding to'} ${targetDayLabel(targetDate, today)}`}
+            <Text
+              style={targetLabel}
+              accessibilityLabel={headerTargetLabel}
+            >
+              {headerTargetLabel}
             </Text>
             <Pressable
               onPress={() => setDatePickerVisible(true)}
               accessibilityRole="button"
-              accessibilityLabel="Change target day"
+              accessibilityLabel={tr('header.changeDayA11y')}
               hitSlop={t.size.hitSlop}
             >
               <View style={dateChip}>
@@ -261,8 +275,8 @@ export default function AddTask() {
           </View>
           {a.isEditing ? (
             <>
-              <Text style={heading}>Edit task</Text>
-              <Text style={sub}>Adjust the details.</Text>
+              <Text style={heading}>{tr('header.editTitle')}</Text>
+              <Text style={sub}>{tr('header.editSubtitle')}</Text>
             </>
           ) : null}
         </View>
@@ -282,15 +296,15 @@ export default function AddTask() {
         >
           <View style={{ gap: t.space[2] }}>
             <Text style={a.isEditing ? fieldLabel : promptLabel}>
-              {a.isEditing ? 'TASK' : 'What are you working on?'}
+              {a.isEditing ? tr('taskField.label') : tr('taskField.promptLabel')}
             </Text>
             <TaskTitleField
               variant="boxed"
               value={a.title}
               onChangeText={a.setTitle}
-              placeholder="e.g. Reply to that email"
+              placeholder={tr('taskField.placeholder')}
               returnKeyType="done"
-              accessibilityLabel="Task title"
+              accessibilityLabel={tr('taskField.a11y')}
               // Title's already filled when spoken — don't grab focus over the
               // keyboard so the user can go straight to the guess field.
               autoFocus={!spokenTitle}
@@ -298,7 +312,7 @@ export default function AddTask() {
           </View>
 
           <View style={{ gap: t.space[2] }}>
-            <Text style={fieldLabel}>CATEGORY</Text>
+            <Text style={fieldLabel}>{tr('categoryField.label')}</Text>
             <CategoryChips
               categories={a.categories}
               value={a.category}
@@ -314,16 +328,16 @@ export default function AddTask() {
                   value={newCategory}
                   onChangeText={setNewCategory}
                   onSubmitEditing={confirmNewCategory}
-                  placeholder="Name a new category"
+                  placeholder={tr('categoryField.newCategoryPlaceholder')}
                   placeholderTextColor={t.colors.inkSoft}
                   autoFocus
                   returnKeyType="done"
-                  accessibilityLabel="New category name"
+                  accessibilityLabel={tr('categoryField.newCategoryA11y')}
                 />
                 <Pressable
                   onPress={confirmNewCategory}
                   accessibilityRole="button"
-                  accessibilityLabel="Add category"
+                  accessibilityLabel={tr('categoryField.addCategoryA11y')}
                   hitSlop={6}
                   style={confirmCatBtn}
                 >
@@ -338,7 +352,7 @@ export default function AddTask() {
           </View>
 
           <View style={{ gap: t.space[2] }}>
-            <Text style={fieldLabel}>YOUR GUT GUESS</Text>
+            <Text style={fieldLabel}>{tr('guessField.label')}</Text>
             <TimeField value={a.guessMin} onChange={a.setGuessMin} />
           </View>
 
@@ -375,14 +389,14 @@ export default function AddTask() {
           {a.isEditing ? (
             <>
               <AppButton
-                label="Save"
+                label={tc('save')}
                 variant="indigo"
                 fullWidth
                 disabled={!a.canSubmit || a.loadedDate === undefined}
                 onPress={handleSave}
               />
               <AppButton
-                label="Save & start"
+                label={tr('cta.save')}
                 variant="ghost"
                 fullWidth
                 disabled={!a.canSubmit || a.loadedDate === undefined}
@@ -392,7 +406,7 @@ export default function AddTask() {
           ) : (
             <>
               <AppButton
-                label="Add & start timer"
+                label={tr('cta.addAndStart')}
                 variant="indigo"
                 fullWidth
                 disabled={!a.canSubmit}
@@ -417,15 +431,15 @@ export default function AddTask() {
             : targetDate === null
             ? 'Saved to shelf'
             : targetDate === today
-            ? 'Added to today'
-            : `Added to ${targetDayLabel(targetDate, today)}`
+            ? tr('toast.addedToToday')
+            : tr('toast.addedToDay', { day: targetDayLabel(targetDate, today) })
         }
         visible={toastVisible}
       />
 
       <ActionSheet
         visible={datePickerVisible}
-        title="When should this happen?"
+        title={tr('datePicker.sheetTitle')}
         items={dayPickerItems}
         onCancel={() => setDatePickerVisible(false)}
       />

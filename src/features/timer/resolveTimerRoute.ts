@@ -29,6 +29,8 @@
 //   6. Otherwise → fresh session from the route params.
 // ──────────────────────────────────────────────────────────────────────────────
 
+import i18n from '@/src/i18n';
+
 export interface TimerRouteParams {
   taskId?: string | string[];
   label?: string | string[];
@@ -73,15 +75,19 @@ export type ResolvedTimerRoute =
   | { kind: 'confirm-switch'; leavingLabel: string; startingLabel: string; session: TimerSessionParams }
   | { kind: 'redirect-today' };
 
-const FALLBACK_LABEL = 'Focus session';
+// Copy read through the i18n singleton, not `useTranslation` — this module is
+// pure logic with no React around it (same pattern as features/review/useReview).
+// Each one is a function, never a module-level const: the bundle is only ready
+// after initI18n(), which runs well after this module is imported.
+const fallbackLabel = (): string => i18n.t('timer:defaultTaskLabel');
 const FALLBACK_CATEGORY = 'getting_ready';
 const FALLBACK_ESTIMATE_MIN = 15;
 // A running quick session carries no label of its own (captured at stop) — this
 // stands in for "the thing currently running" in the confirm-switch copy.
-const RUNNING_FALLBACK_LABEL = 'your timer';
+const runningFallbackLabel = (): string => i18n.t('timer:switchFallback.runningTimer');
 // The FAB quick-start's confirm-switch copy needs a starting label when no
 // explicit label param is given (quick=1 with no task identity).
-const QUICK_START_LABEL = 'a quick timer';
+const quickStartLabel = (): string => i18n.t('timer:switchFallback.quickTimer');
 
 function first(v: string | string[] | undefined): string | undefined {
   const raw = Array.isArray(v) ? v[0] : v;
@@ -98,7 +104,7 @@ function sessionFromParams(params: TimerRouteParams): TimerSessionParams {
   const estimateMin = firstNum(params.estimateMin, FALLBACK_ESTIMATE_MIN);
   return {
     taskId: first(params.taskId),
-    label: first(params.label) ?? FALLBACK_LABEL,
+    label: first(params.label) ?? fallbackLabel(),
     category: first(params.category) ?? FALLBACK_CATEGORY,
     estimateMin,
     // guessMin drives calibration; falls back to the honest estimate. The honest
@@ -113,7 +119,7 @@ function sessionFromParams(params: TimerRouteParams): TimerSessionParams {
 function sessionFromStore(store: TimerStoreSnapshot): TimerSessionParams {
   return {
     taskId: store.taskId ?? undefined,
-    label: store.taskLabel ?? FALLBACK_LABEL,
+    label: store.taskLabel ?? fallbackLabel(),
     category: store.category ?? FALLBACK_CATEGORY,
     estimateMin: store.estimateMin,
     guessMin: store.guessMin,
@@ -139,8 +145,8 @@ export function resolveTimerRoute(
       // `||` — `??` would leave the sheet copy blank instead of falling back.
       return {
         kind: 'confirm-switch',
-        leavingLabel: store.taskLabel || RUNNING_FALLBACK_LABEL,
-        startingLabel: first(params.label) ?? QUICK_START_LABEL,
+        leavingLabel: store.taskLabel || runningFallbackLabel(),
+        startingLabel: first(params.label) ?? quickStartLabel(),
         session: sessionFromParams(params),
       };
     }
@@ -160,7 +166,7 @@ export function resolveTimerRoute(
       const session = sessionFromParams(params);
       return {
         kind: 'confirm-switch',
-        leavingLabel: store.taskLabel || RUNNING_FALLBACK_LABEL,
+        leavingLabel: store.taskLabel || runningFallbackLabel(),
         startingLabel: session.label,
         session,
       };
@@ -177,7 +183,7 @@ export function resolveTimerRoute(
     const session = sessionFromParams(params);
     return {
       kind: 'confirm-switch',
-      leavingLabel: store.taskLabel || RUNNING_FALLBACK_LABEL,
+      leavingLabel: store.taskLabel || runningFallbackLabel(),
       startingLabel: session.label,
       session,
     };

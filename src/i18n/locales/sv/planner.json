@@ -1,0 +1,66 @@
+{
+  "durationWheel": {
+    "a11y": "Längd i minuter"
+  },
+  "finishTimeWheel": {
+    "modes": {
+      "leaveBy": "gå senast",
+      "beDoneBy": "klar senast",
+      "beAt": "vara på plats"
+    },
+    "hourA11y": "Timme",
+    "minuteA11y": "Minut",
+    "editA11y": "Redigera tid, just nu {{clock}}",
+    "hintWheel": "Visa tidshjulet",
+    "hintType": "Skriv en exakt tid"
+  },
+  "focusCurve": {
+    "a11y": "Kurva över ditt fokusfönster",
+    "axisHigh": "Hög",
+    "axisLow": "Låg"
+  },
+  "editorSheet": {
+    "dismissA11y": "Stäng",
+    "startPrompt": "När börjar ditt fokusfönster?",
+    "endPrompt": "Och när slutar det?",
+    "endHint": "Välj en tid efter starten.",
+    "next": "Nästa",
+    "saveWindow": "Spara fönster",
+    "cancel": "Avbryt"
+  },
+  "detail": {
+    "eyebrow": "NÄR DU ÄR SKARP",
+    "footer": "Whenbee planerar din dag runt den här perioden.",
+    "checkAgainstTimers": "Jag stämmer av det mot din tidtagning.",
+    "editWindowA11y": "Redigera fokusfönstret",
+    "editWindow": "Redigera fönstret",
+    "earlyRead": "En tidig avläsning från {{count}} pass. Fortsätt ta tid så skärper jag den när dina timmar börjar samlas.",
+    "heldRead": "Dina senaste {{count}} pass är överens, och det har hållit i {{weeks}} veckor.",
+    "whyWithNarrative": "{{narrative}}{{contrast}}. Dina senaste {{count}} pass är överens, och det har hållit i {{weeks}} veckor."
+  },
+  "planSheet": {
+    "heading": "Dagens plan",
+    "clear": "Rensa",
+    "finish": "klart",
+    "nudge": "Påminn mig att börja",
+    "clearA11y": "Rensa planen",
+    "startAt": "Börja",
+    "finishBy": "Klar senast",
+    "now": "Nu",
+    "nudgeA11yOn": "Startpåminnelse på{{suffix}}. Tryck för att stänga av.",
+    "nudgeA11yOff": "Startpåminnelse av. Tryck för att slå på."
+  },
+  "keypad": {
+    "delete": "Radera",
+    "digit": "Siffran {{digit}}"
+  },
+  "anchor": {
+    "notSet": "inte satt",
+    "set": "Välj",
+    "startPassed": "{{planned}} har passerat · du börjar {{actual}}",
+    "finishAt": "klar {{clock}}",
+    "startBy": "börja senast {{clock}}",
+    "editStartHint": "Tryck för att välja när du börjar. Whenbee räknar ut när du blir klar.",
+    "editFinishHint": "Tryck för att välja när du behöver vara klar. Whenbee räknar ut din senaste starttid."
+  }
+}

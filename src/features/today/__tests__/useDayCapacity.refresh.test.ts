@@ -15,6 +15,8 @@ import {
   formatCalendarAge,
   CALENDAR_STALE_AFTER_MS,
 } from '../useDayCapacity';
+import type { TFunction } from 'i18next';
+import i18n from '@/src/i18n';
 import { useDayTasksStore } from '@/src/stores/dayTasksStore';
 import { useSettingsStore } from '@/src/stores/settingsStore';
 import { useCalibrationStore } from '@/src/stores/calibrationStore';
@@ -133,38 +135,40 @@ afterEach(() => {
 
 describe('formatCalendarAge', () => {
   const NOW = new Date('2024-03-15T12:00:00').getTime();
+  // Real, initialized i18n (jest.setup boots it) — production English copy.
+  const tr = i18n.t as unknown as TFunction<['common', 'calendar']>;
 
   it('is silent when the calendar was never read', () => {
-    expect(formatCalendarAge(null, NOW)).toBeNull();
+    expect(formatCalendarAge(null, NOW, tr)).toBeNull();
   });
 
   it('is silent on a read that just happened', () => {
-    expect(formatCalendarAge(NOW, NOW)).toBeNull();
+    expect(formatCalendarAge(NOW, NOW, tr)).toBeNull();
   });
 
   it('is silent right up to the 2-minute threshold', () => {
-    expect(formatCalendarAge(NOW - (CALENDAR_STALE_AFTER_MS - 1), NOW)).toBeNull();
+    expect(formatCalendarAge(NOW - (CALENDAR_STALE_AFTER_MS - 1), NOW, tr)).toBeNull();
   });
 
   it('appears exactly at the 2-minute threshold', () => {
-    expect(formatCalendarAge(NOW - CALENDAR_STALE_AFTER_MS, NOW)).toBe('updated 2m ago');
+    expect(formatCalendarAge(NOW - CALENDAR_STALE_AFTER_MS, NOW, tr)).toBe('updated 2m ago');
   });
 
   it('reads whole minutes past the threshold', () => {
-    expect(formatCalendarAge(NOW - 6 * MIN, NOW)).toBe('updated 6m ago');
+    expect(formatCalendarAge(NOW - 6 * MIN, NOW, tr)).toBe('updated 6m ago');
   });
 
   it('floors partial minutes rather than rounding up', () => {
-    expect(formatCalendarAge(NOW - (6 * MIN + 59_000), NOW)).toBe('updated 6m ago');
+    expect(formatCalendarAge(NOW - (6 * MIN + 59_000), NOW, tr)).toBe('updated 6m ago');
   });
 
   it('switches to whole hours at 60 minutes', () => {
-    expect(formatCalendarAge(NOW - 60 * MIN, NOW)).toBe('updated 1h ago');
-    expect(formatCalendarAge(NOW - 200 * MIN, NOW)).toBe('updated 3h ago');
+    expect(formatCalendarAge(NOW - 60 * MIN, NOW, tr)).toBe('updated 1h ago');
+    expect(formatCalendarAge(NOW - 200 * MIN, NOW, tr)).toBe('updated 3h ago');
   });
 
   it('stays silent if the clock moved backwards (negative age)', () => {
-    expect(formatCalendarAge(NOW + 5 * MIN, NOW)).toBeNull();
+    expect(formatCalendarAge(NOW + 5 * MIN, NOW, tr)).toBeNull();
   });
 
   it('threshold is two minutes', () => {

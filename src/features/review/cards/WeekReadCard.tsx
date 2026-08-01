@@ -1,4 +1,5 @@
 import { View, Text, StyleSheet } from 'react-native';
+import { useTranslation } from 'react-i18next';
 import { Card } from '@/src/components/Card';
 import { useTheme } from '@/src/theme/useTheme';
 import type { ReviewSummary } from '@/src/domain/types';
@@ -12,8 +13,11 @@ interface Props {
   summary: ReviewSummary;
 }
 
+const VERDICTS: readonly string[] = ['tight', 'loose', 'mixed'];
+
 export function WeekReadCard({ summary }: Props) {
   const t = useTheme();
+  const { t: tt } = useTranslation('review');
   const wr = summary.weekRead;
   if (!wr) return null;
 
@@ -27,9 +31,16 @@ export function WeekReadCard({ summary }: Props) {
   const weekdayAvg = weekdayTotal / 5;
   const weekendAvg = weekendTotal / 2;
   const hasVariance = weekdayAvg > weekendAvg * 1.5 && weekendAvg < weekdayAvg * 0.7;
-  const caption = hasVariance ? 'Weekdays sharpest · weekend light' : null;
+  const caption = hasVariance ? tt('weekRead.varianceCaption') : null;
 
-  const days = ['M', 'T', 'W', 'T', 'F', 'S', 'S'] as const;
+  const days = tt('weekRead.dayLetters', { returnObjects: true }) as readonly string[];
+
+  // `verdict` is an ID out of the pure engine ('tight' | 'loose' | 'mixed'), not
+  // a sentence — the wording is ours, in the user's language. An unknown id
+  // (older cached shape) reads as mixed rather than surfacing a raw key.
+  const verdictText = tt(
+    `weekRead.verdict.${VERDICTS.includes(wr.verdict) ? wr.verdict : 'mixed'}` as never,
+  ) as string;
 
   const styles = StyleSheet.create({
     // One gap-based rhythm per axis (no mixed gap + margin): a clearly bigger
@@ -52,10 +63,11 @@ export function WeekReadCard({ summary }: Props) {
     <Card tone="flat">
       <View style={styles.container}>
         <View style={styles.verdictGroup}>
-          <Text style={styles.verdict}>{wr.verdict}</Text>
+          <Text style={styles.verdict}>{verdictText}</Text>
           <Text style={styles.subtitle}>
-            {wr.areasClose} of {wr.areasTotal} areas landed close.{' '}
-            <Text style={styles.logCount}>{summary.loggedCount}</Text> logs.
+            {tt('weekRead.subtitlePrefix', { close: wr.areasClose, total: wr.areasTotal })}{' '}
+            <Text style={styles.logCount}>{summary.loggedCount}</Text>
+            {tt('weekRead.subtitleSuffix')}
           </Text>
         </View>
         <View style={styles.chartGroup}>

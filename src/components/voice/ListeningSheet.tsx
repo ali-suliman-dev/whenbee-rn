@@ -15,6 +15,7 @@ import Animated, {
   withTiming,
 } from 'react-native-reanimated';
 import { SymbolView } from 'expo-symbols';
+import { useTranslation } from 'react-i18next';
 import { AppButton } from '@/src/components/AppButton';
 import { useTheme } from '@/src/theme/useTheme';
 
@@ -26,6 +27,7 @@ interface ListeningSheetProps {
 
 export const ListeningSheet = ({ visible, partial, onStop }: ListeningSheetProps) => {
   const t = useTheme();
+  const { t: tr } = useTranslation('voice');
   const insets = useSafeAreaInsets();
   // 0 = ring at rest; 1 = ring fully expanded + faded
   const pulse = useSharedValue(0);
@@ -109,10 +111,10 @@ export const ListeningSheet = ({ visible, partial, onStop }: ListeningSheetProps
               minHeight: t.space[10],
             }}
           >
-            {partial.length > 0 ? partial : 'Listening…'}
+            {partial.length > 0 ? partial : tr('listeningSheet.listening')}
           </Text>
 
-          <AppButton label="Stop" variant="ghost" size="md" fullWidth onPress={onStop} />
+          <AppButton label={tr('listeningSheet.stop')} variant="ghost" size="md" fullWidth onPress={onStop} />
         </Animated.View>
       </View>
     </Modal>

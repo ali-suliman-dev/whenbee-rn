@@ -1,0 +1,38 @@
+{
+  "save": "Spara",
+  "cancel": "Avbryt",
+  "done": "Klar",
+  "edit": "Redigera",
+  "delete": "Ta bort",
+  "duration": {
+    "h": "{{count}} tim",
+    "m": "{{count}} min"
+  },
+  "toTier": " till {{tier}}",
+  "fullyRipened": "Helt mogen",
+  "screenTitle": {
+    "settings": "Inställningar",
+    "categories": "Kategorier",
+    "privacy": "Integritet",
+    "today": "Idag",
+    "routines": "Rutiner",
+    "whenbee": "Whenbee",
+    "patterns": "Mönster"
+  },
+  "quickAction": {
+    "timer": "Starta timer",
+    "voice": "Röst",
+    "type": "Skriv"
+  },
+  "overflowDelta": "+{{delta}} i verkligheten",
+  "trailState": {
+    "done": "klart",
+    "now": "nu",
+    "ahead": "längre fram"
+  },
+  "a11y": {
+    "honeycombCell": "{{label}}-cell, {{pct}} % honung, nivå {{tier}}",
+    "trailNode": "{{label}}: {{state}}",
+    "ringBadge": "{{tier}}, {{pct}} procent. {{line}}. {{next}}"
+  }
+}

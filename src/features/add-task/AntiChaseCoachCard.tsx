@@ -1,4 +1,5 @@
 import { View, Pressable, type ViewStyle, type TextStyle } from 'react-native';
+import { useTranslation } from 'react-i18next';
 import { Ionicons } from '@expo/vector-icons';
 import Animated, { FadeIn } from 'react-native-reanimated';
 import { AppText } from '@/src/components/AppText';
@@ -16,6 +17,8 @@ import { useTheme } from '@/src/theme/useTheme';
 
 export function AntiChaseCoachCard({ onDismiss }: { onDismiss: () => void }) {
   const t = useTheme();
+  const { t: ts } = useTranslation('shared');
+  const { t: tr } = useTranslation('addTask');
 
   const card: ViewStyle = {
     flexDirection: 'row',
@@ -55,18 +58,16 @@ export function AntiChaseCoachCard({ onDismiss }: { onDismiss: () => void }) {
     <Animated.View
       entering={FadeIn.duration(t.motion.base)}
       style={card}
-      accessibilityLabel="No need to pad it yourself. Guess how long it feels, and Whenbee adds the reality part."
+      accessibilityLabel={tr('antiChase.body')}
     >
       <View style={coin}>
         <Ionicons name="bulb-outline" size={t.iconSize.md} color={t.colors.primary} />
       </View>
-      <AppText style={body}>
-        No need to pad it yourself. Guess how long it feels, and Whenbee adds the reality part.
-      </AppText>
+      <AppText style={body}>{tr('antiChase.body')}</AppText>
       <Pressable
         onPress={onDismiss}
         accessibilityRole="button"
-        accessibilityLabel="Dismiss"
+        accessibilityLabel={ts('a11y.dismiss')}
         hitSlop={t.size.hitSlop}
         style={dismiss}
       >

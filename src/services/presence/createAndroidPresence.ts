@@ -36,9 +36,9 @@ export function createAndroidPresence(deps: AndroidPresenceDeps): NativePresence
     writeSnapshot: (snapshot: WidgetSnapshot) =>
       swallow(() => deps.notif?.writeWidgetData(NEXT_TASK_WIDGET_KEY, JSON.stringify(snapshot))),
     clearSnapshot: () => swallow(() => deps.notif?.clearWidgetData(NEXT_TASK_WIDGET_KEY)),
-    startLiveActivity: (attributes: LiveActivityAttributes) =>
+    startLiveActivity: (attributes: LiveActivityAttributes & { strings?: Record<string, string> }) =>
       swallow(() => deps.notif?.startTimerNotification({ ...attributes })),
-    updateLiveActivity: (state: { isOverrun: boolean }) =>
+    updateLiveActivity: (state: { isOverrun: boolean; strings?: Record<string, string> }) =>
       swallow(() => deps.notif?.updateTimerNotification({ ...state })),
     endLiveActivity: () => swallow(() => deps.notif?.stopTimerNotification()),
   };

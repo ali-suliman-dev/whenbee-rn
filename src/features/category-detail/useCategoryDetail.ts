@@ -3,7 +3,9 @@ import { useFocusEffect } from 'expo-router';
 import { useCalibrationStore, type CategoryDetail } from '@/src/stores/calibrationStore';
 import { useCategoriesStore } from '@/src/stores/categoriesStore';
 import { useEntitlement } from '@/src/features/paywall/useEntitlement';
-import { REASON_NOTE_MIN_SHARE, reasonPhrase } from '@/src/engine';
+import { useTranslation } from 'react-i18next';
+import { REASON_NOTE_MIN_SHARE } from '@/src/engine';
+import { reasonPhrase } from '@/src/i18n/bucketLabel';
 import type { AdaptSpeed } from '@/src/domain/types';
 
 // ──────────────────────────────────────────────────────────────────────────────
@@ -50,6 +52,7 @@ export function useCategoryDetail(categoryId: string): UseCategoryDetailResult {
   const removeCategory = useCategoriesStore((s) => s.removeCategory);
   const categories = useCategoriesStore((s) => s.categories);
   const isPro = useEntitlement((s) => s.isPro);
+  const { t: tr } = useTranslation('categoryDetail');
 
   // The chosen learning mode lives in the categories store; default Balanced.
   const adaptSpeed = useCategoriesStore(
@@ -100,9 +103,11 @@ export function useCategoryDetail(categoryId: string): UseCategoryDetailResult {
       (i) => i.categoryId === categoryId && i.share >= REASON_NOTE_MIN_SHARE,
     );
     setReasonNote(
-      dominant ? `Most overruns here trace back to ${reasonPhrase(dominant.reason)}.` : undefined,
+      dominant
+        ? tr('honestCard.reasonNote', { reason: reasonPhrase(dominant.reason) })
+        : undefined,
     );
-  }, [categoryId, loadCategoryDetail, isGraduated, markGraduated, isPro, loadReasonInsights]);
+  }, [categoryId, loadCategoryDetail, isGraduated, markGraduated, isPro, loadReasonInsights, tr]);
 
   const clearJustGraduated = useCallback(() => setJustGraduated(false), []);
 

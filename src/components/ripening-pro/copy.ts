@@ -1,63 +1,71 @@
+import type { TFunction } from 'i18next';
 import type { ProFeatureId } from '@/src/engine';
 
 /**
  * Copy for the ripening state: Pro features are teased but not yet ready.
  * Tone: calm, encouraging, zero guilt. The user is doing fine; the model
  * just needs more data to be honest.
+ *
+ * Every string is resolved through the `patterns` namespace — nothing here is
+ * hardcoded English, so a new locale is a JSON drop-in with no code change.
  */
-export const RIPENING_COPY = {
-  /** Small eyebrow badge above the card. */
-  eyebrow: 'Pro · ripening',
-  /** Prefix shown before the tier name in the pill, e.g. "Ripens at Sharpening". */
-  pillPrefix: 'Ripens at',
-  /** Shown when the model is mid-calibration within this tier (RipeningBand, reveal state). */
-  settling: 'Still settling…',
-  /** Ticket-strip title — the calm ownership frame, not a pitch. */
-  ticketTitle: 'Own Pro from day one',
-  /** Ticket-strip sub — states the mechanism plainly (opens, never "unlocks"). */
-  ticketSub: "Everything here lights up the moment it's ready.",
-  /** Honey chip label. No price text — RevenueCat owns that, on the paywall. */
-  chipLabel: 'Get Pro',
-  /**
-   * Footer under the ripening card. No imperative, no urgency.
-   * Each log naturally sharpens the model; nothing for the user to "do".
-   */
-  footer: 'No streak, no rush. Logging normally gets you there.',
-} as const;
+export function RIPENING_COPY(t: TFunction<'patterns'>) {
+  return {
+    /** Small eyebrow badge above the card. */
+    eyebrow: t('ripeningPro.ripening.eyebrow'),
+    /** Prefix shown before the tier name in the pill, e.g. "Ripens at Sharpening". */
+    pillPrefix: t('ripeningPro.ripening.pillPrefix'),
+    /** Shown when the model is mid-calibration within this tier (RipeningBand, reveal state). */
+    settling: t('ripeningPro.ripening.settling'),
+    /** Ticket-strip title — the calm ownership frame, not a pitch. */
+    ticketTitle: t('ripeningPro.ripening.ticketTitle'),
+    /** Ticket-strip sub — states the mechanism plainly (opens, never "unlocks"). */
+    ticketSub: t('ripeningPro.ripening.ticketSub'),
+    /** Honey chip label. No price text — RevenueCat owns that, on the paywall. */
+    chipLabel: t('ripeningPro.ripening.chipLabel'),
+    /**
+     * Footer under the ripening card. No imperative, no urgency.
+     * Each log naturally sharpens the model; nothing for the user to "do".
+     */
+    footer: t('ripeningPro.ripening.footer'),
+  } as const;
+}
 
 /**
  * Header title + sub for the ripening state, keyed off how many Pro features
- * are already ready out of the total shown. Pure — no store/hook access —
- * so the three count bands are exhaustively unit-tested.
+ * are already ready out of the total shown. Pure apart from the translator it
+ * is handed, so the three count bands stay exhaustively unit-testable.
  */
 export function ripeningHeaderCopy(
+  t: TFunction<'patterns'>,
   readyCount: number,
   total: number,
 ): { title: string; sub: string } {
   if (readyCount === 0) {
     return {
-      title: 'Your Pro features are on the way.',
-      sub: 'Each one opens once your logs can back it up.',
+      title: t('ripeningPro.header.none.title'),
+      sub: t('ripeningPro.header.none.sub'),
     };
   }
   if (readyCount === 1) {
     return {
-      title: 'Your first Pro feature is ready.',
-      sub: 'The rest open as you log more tasks.',
+      title: t('ripeningPro.header.first.title'),
+      sub: t('ripeningPro.header.first.sub'),
     };
   }
   return {
-    title: `${readyCount} of ${total} Pro features are ready.`,
-    sub: 'The rest open as you log more tasks.',
+    title: t('ripeningPro.header.some.title', { ready: readyCount, total }),
+    sub: t('ripeningPro.header.some.sub'),
   };
 }
 
 /**
  * "{k} logs to go" — the register shared by the next-up feature's pip number
- * and status label. Singular-aware so "1 log to go" never reads as a typo.
+ * and status label. Plural handling belongs to the translator ({{count}}), so
+ * a language with more than two plural forms needs no code change here.
  */
-export function logsToGoLabel(remaining: number): string {
-  return `${remaining} log${remaining === 1 ? '' : 's'} to go`;
+export function logsToGoLabel(t: TFunction<'patterns'>, remaining: number): string {
+  return t('ripeningPro.logsToGo', { count: remaining });
 }
 
 /**
@@ -66,10 +74,14 @@ export function logsToGoLabel(remaining: number): string {
  * how the user thinks about them; every other log-gated feature reads in the
  * same "N logs to go" register as the next-up pip, just with its own count.
  */
-export function waitLabelFor(id: ProFeatureId, remainingLogs: number): string {
-  if (id === 'honest-week') return 'about a week';
-  if (id === 'honest-month') return 'about a month';
-  return logsToGoLabel(remainingLogs);
+export function waitLabelFor(
+  t: TFunction<'patterns'>,
+  id: ProFeatureId,
+  remainingLogs: number,
+): string {
+  if (id === 'honest-week') return t('ripeningPro.wait.aboutAWeek');
+  if (id === 'honest-month') return t('ripeningPro.wait.aboutAMonth');
+  return logsToGoLabel(t, remainingLogs);
 }
 
 /**
@@ -77,37 +89,39 @@ export function waitLabelFor(id: ProFeatureId, remainingLogs: number): string {
  * Pro features now have enough data to be genuinely useful.
  * Tone: warm payoff, soft CTA — not hype, not pressure.
  */
-export const REVEAL_COPY = {
-  /** Small eyebrow badge. */
-  eyebrow: 'Pro · ready',
-  /** Pill label replacing the ripening tier name. */
-  pill: 'Ready',
-  /** Main headline. Specific about what changed — not vague celebration. */
-  headline: 'Your range just got honest.',
-  /** Sub-copy. Explains the payoff without overselling. */
-  sub: "Whenbee has seen enough of your timing. The Pro features below now have real data to work with — not guesses.",
-  /** Primary CTA. Warm, not pushy. */
-  cta: 'See what Pro adds',
-  /** Escape hatch for users who want to look before committing. */
-  escape: 'Take a quick look first',
-} as const;
+export function REVEAL_COPY(t: TFunction<'patterns'>) {
+  return {
+    /** Small eyebrow badge. */
+    eyebrow: t('ripeningPro.reveal.eyebrow'),
+    /** Pill label replacing the ripening tier name. */
+    pill: t('ripeningPro.reveal.pill'),
+    /** Main headline. Specific about what changed — not vague celebration. */
+    headline: t('ripeningPro.reveal.headline'),
+    /** Sub-copy. Explains the payoff without overselling. */
+    sub: t('ripeningPro.reveal.sub'),
+    /** Primary CTA. Warm, not pushy. */
+    cta: t('ripeningPro.reveal.cta'),
+    /** Escape hatch for users who want to look before committing. */
+    escape: t('ripeningPro.reveal.escape'),
+  } as const;
+}
 
 /**
  * Short, specific labels for each Pro feature.
  * Used in ripening previews, reveal lists, and paywall callouts.
  * Deliberately brief — context lives in the feature screen itself.
  */
-const FEATURE_LABELS: Record<ProFeatureId, string> = {
-  'confidence-band': 'Honest range',
-  'steals-your-time': 'What steals your time',
-  'accuracy-correlations': 'When you are sharpest',
-  'context-correlations': 'What shifts your accuracy',
-  'day-capacity': 'Day capacity check',
-  'honest-week': 'Honest week review',
-  'honest-month': 'Honest month review',
-};
+const FEATURE_LABEL_KEYS = {
+  'confidence-band': 'ripeningPro.featureLabel.confidenceBand',
+  'steals-your-time': 'ripeningPro.featureLabel.stealsYourTime',
+  'accuracy-correlations': 'ripeningPro.featureLabel.accuracyCorrelations',
+  'context-correlations': 'ripeningPro.featureLabel.contextCorrelations',
+  'day-capacity': 'ripeningPro.featureLabel.dayCapacity',
+  'honest-week': 'ripeningPro.featureLabel.honestWeek',
+  'honest-month': 'ripeningPro.featureLabel.honestMonth',
+} as const satisfies Record<ProFeatureId, string>;
 
 /** Returns the short display label for a given Pro feature. */
-export function featureLabel(id: ProFeatureId): string {
-  return FEATURE_LABELS[id];
+export function featureLabel(t: TFunction<'patterns'>, id: ProFeatureId): string {
+  return t(FEATURE_LABEL_KEYS[id]);
 }

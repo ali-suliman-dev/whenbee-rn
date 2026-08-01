@@ -20,7 +20,7 @@ export { planBackward, reproject, DEFAULT_BUFFER_MIN } from './planner';
 export type { ReprojectResult } from './planner';
 export { reclaimDividendMinutes, formatReclaim } from './reclaim';
 export { arcFraction } from './presence';
-export { correlateReasons, reasonNoteFor, reasonPhrase } from './reasons';
+export { correlateReasons, dominantReasonFor } from './reasons';
 export { correlateAccuracy } from './accuracy';
 export type { AccuracySample, AccuracyCorrelation } from './accuracy';
 export { buildAccuracySeries } from './accuracyTrend';
@@ -36,7 +36,8 @@ export {
 export type { CompanionStage, CompanionCapability, DriftHealth } from './companion';
 export { seedMultiplierFor, provisionalArchetypeMultiplier, buildRevealEcho, sinkCategoryFor } from './archetypeSeed';
 export type { QuizAnswers } from './archetypeSeed';
-export { greetingFor } from './greeting';
+export { greetingFor, greetingPart } from './greeting';
+export type { GreetingPart } from './greeting';
 export {
   accuracyToErrorBand, errorBandToAccuracy, goalProgress, isGoalMet,
   reconcileGoal, canSetGoal, presetsForAccuracy, recommendedPreset,
@@ -63,9 +64,15 @@ export {
   deriveWeekRead,
   deriveForwardAction,
   deriveConfidenceBand,
-  REVIEW_REFLECTION_QUESTIONS,
+  deriveReflection,
+  REVIEW_REFLECTION_QUESTION_COUNT,
 } from './review';
-export type { TightenedEntry, BuildReviewSummaryInput } from './review';
+export type {
+  TightenedEntry,
+  BuildReviewSummaryInput,
+  ReviewReflection,
+  WeekReadVerdict,
+} from './review';
 export { learnFocusWindow, peakBucketLabel, permutationStrength } from './focusWindowLearn';
 export { computeFocusInsights, confidenceLabel } from './focusWindowInsights';
 export type { FocusInsights } from './focusWindowInsights';

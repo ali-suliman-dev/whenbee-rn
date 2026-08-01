@@ -310,7 +310,7 @@ describe('Paywall', () => {
     mockGetOfferings.mockResolvedValue(OFFERING_WITH_FOUNDER);
     render(<Paywall trigger="make_day_honest" readiness="pre" />);
 
-    await waitFor(() => expect(screen.getByText('Lock the founder price — PRICE_FOUNDER_49')).toBeTruthy());
+    await waitFor(() => expect(screen.getByText('Lock the founder price: PRICE_FOUNDER_49')).toBeTruthy());
     expect(screen.getByText('Lock founder price')).toBeTruthy();
   });
 
