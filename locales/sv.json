@@ -3,7 +3,7 @@
     "CFBundleDisplayName": "Whenbee",
     "NSCalendarsUsageDescription": "Whenbee läser dagens händelser så att appen kan visa din ärliga dag, och skriver bara tillbaka tiderna du bekräftar.",
     "NSMicrophoneUsageDescription": "Whenbee använder mikrofonen så att du kan tala in en uppgift istället för att skriva.",
-    "NSSpeechRecognitionUsageDescription": "Talet transkriberas på din enhet — det lämnar aldrig din telefon."
+    "NSSpeechRecognitionUsageDescription": "Talet transkriberas på din enhet. Det lämnar aldrig telefonen."
   },
   "android": {
     "app_name": "Whenbee"
