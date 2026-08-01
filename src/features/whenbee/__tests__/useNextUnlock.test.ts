@@ -14,7 +14,7 @@ function statFor(sharpness: number, tier: CachedStat['tier']): CachedStat {
 }
 
 beforeEach(() => {
-  useCalibrationStore.setState({ logs: 0, statsByCategory: {} });
+  useCalibrationStore.setState({ logs: 0, statsByCategory: {}, companionStage: 1 });
 });
 
 describe('useNextUnlock', () => {
@@ -75,5 +75,55 @@ describe('useNextUnlock', () => {
     expect(result.current.logsToNext).toBe(0);
     expect(result.current.nextCapabilityLabel).toBeNull();
     expect(result.current.sealed).toBe(true);
+  });
+
+  it('holds the reached stage at the monotonic companion stage when live sharpness falls', () => {
+    // Capped at Honest once (companionStage 5), then 8 sloppy logs dragged the
+    // lead category's rolling window back down to Ripening. The progress read
+    // may fall; the stage may not, and no passed capability may be re-offered.
+    useCalibrationStore.setState({
+      logs: 60,
+      companionStage: 5,
+      statsByCategory: { cleaning: statFor(70, 'Ripening') },
+    });
+
+    const { result } = renderHook(() => useNextUnlock());
+
+    expect(result.current.stage).toBe(5);
+    expect(result.current.sealed).toBe(true);
+    expect(result.current.nextCapabilityId).toBeNull();
+    expect(result.current.nextCapabilityLabel).toBeNull();
+    // The live progress read still reports the truth — it is not a gate.
+    expect(result.current.tier).toBe('Ripening');
+    expect(result.current.pct).toBe(70);
+  });
+
+  it('never reads below what the live tier already proves (cold-boot mirror)', () => {
+    // A cold boot before loadReclaimSummary() fills the mirror: companionStage
+    // is still 1 but the cached stats prove Thickening, so the floor wins.
+    useCalibrationStore.setState({
+      logs: 30,
+      companionStage: 1,
+      statsByCategory: { cleaning: statFor(85, 'Thickening') },
+    });
+
+    const { result } = renderHook(() => useNextUnlock());
+
+    expect(result.current.stage).toBe(4);
+    expect(result.current.nextCapabilityId).toBe('drift-recalibration');
+    expect(result.current.nextCapabilityIsPro).toBe(false);
+  });
+
+  it('flags a Pro-gated next capability', () => {
+    useCalibrationStore.setState({
+      logs: 20,
+      companionStage: 3,
+      statsByCategory: { cleaning: statFor(64, 'Ripening') },
+    });
+
+    const { result } = renderHook(() => useNextUnlock());
+
+    expect(result.current.nextCapabilityId).toBe('honest-day-forecast');
+    expect(result.current.nextCapabilityIsPro).toBe(true);
   });
 });

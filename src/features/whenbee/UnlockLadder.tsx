@@ -5,10 +5,13 @@ import { useTheme } from '@/src/theme/useTheme';
 import { type } from '@/src/theme/typography';
 import { useCategoriesStore } from '@/src/stores/categoriesStore';
 import { useCalibrationStore } from '@/src/stores/calibrationStore';
-import { TIERS, capabilityFor, COMPANION_KEEPER_QUOTA } from '@/src/engine';
+import { ProCoinPill } from '@/src/components/ProCoinPill';
+import { useEntitlement } from '@/src/features/paywall/useEntitlement';
+import { capabilityFor, COMPANION_KEEPER_QUOTA } from '@/src/engine';
 import type { CompanionStage } from '@/src/engine';
 import { useNextUnlock } from './useNextUnlock';
 import { capabilityLabel } from './capabilityCopy';
+import { isCapabilityPro } from './capabilityGating';
 
 // ──────────────────────────────────────────────────────────────────────────────
 // UnlockLadder — the Progress tab's "what your logs unlock" card (Task 6,
@@ -24,8 +27,17 @@ import { capabilityLabel } from './capabilityCopy';
 // Reads `useNextUnlock()` for the SAME tier/pct/logsToNext this card's Today
 // counterpart (`CalibrationCard`) shows — one source of truth for "how far
 // along am I" across screens. The header also carries the tier WORD, not just
-// the percentage (review fix round 1) — `RingBadge` used to be the only place
-// that said it, and it no longer renders on this tab.
+// the percentage (review fix round 1).
+//
+// Which rungs are LIT comes from the monotonic companion stage, never from the
+// live tier: sharpness is a rolling window that falls after sloppy estimates, and
+// an earned capability must never un-light (see `useNextUnlock`). The tier/pct in
+// the header is the progress read, and that one may legitimately move both ways.
+//
+// Two of the six rungs are Pro (`capabilityGating.ts`). A free user sees the
+// app's standard `ProCoinPill` on those, so the ladder never sells a paywalled
+// feature as something logging alone will buy. A Pro subscriber sees no pill —
+// for them the rung simply is what it says.
 //
 // Rung 6 (Keeper) sits outside the tier ladder — `capabilityFor(6).tier` is
 // null; it's gated by `keeperReached`'s "every tracked category capped, at
@@ -46,16 +58,16 @@ const KEEPER_STAGE: CompanionStage = 6;
 export function UnlockLadder({ keeper }: { keeper: boolean }) {
   const t = useTheme();
   const { t: tr } = useTranslation('whenbee');
-  const { tier, tierLabel, pct, logsToNext, sealed } = useNextUnlock();
+  const { tierLabel, pct, logsToNext, stage, sealed } = useNextUnlock();
   const categories = useCategoriesStore((s) => s.categories);
   const statsByCategory = useCalibrationStore((s) => s.statsByCategory);
+  const isPro = useEntitlement((s) => s.isPro);
 
-  // Ground truth for "how many rungs are lit" — the tier ladder covers stages
-  // 1..5 (companionStageFor(maxTier) = tierIdx + 1); stage 6 (Keeper) sits
-  // outside the tier ladder entirely (its own all-categories-capped quota), so
-  // it only lights up once `keeper` says so, never merely because tier capped.
-  const tierReachedStage = TIERS.indexOf(tier) + 1;
-  const reachedStage = keeper ? 6 : tierReachedStage;
+  // Ground truth for "how many rungs are lit" — the MONOTONIC companion stage,
+  // which covers 1..5 off the tier ladder; stage 6 (Keeper) sits outside it
+  // entirely (its own all-categories-capped quota), so it only lights up once
+  // `keeper` says so, never merely because the tier capped.
+  const reachedStage = keeper ? 6 : stage;
   const effectiveSealed = sealed || keeper;
   const currentStage = effectiveSealed ? null : reachedStage + 1;
 
@@ -92,24 +104,25 @@ export function UnlockLadder({ keeper }: { keeper: boolean }) {
         <Text style={statusStyle}>{tr('ladder.headerStatus', { tier: tierLabel, pct })}</Text>
       </View>
       <View style={rungs}>
-        {STAGES.map((stage) => {
-          const id = capabilityFor(stage).id;
+        {STAGES.map((rungStage) => {
+          const id = capabilityFor(rungStage).id;
           const label = capabilityLabel(id, tr);
-          const isReached = stage <= reachedStage;
-          const isCurrent = stage === currentStage;
-          const isKeeperStage = stage === KEEPER_STAGE;
+          const isReached = rungStage <= reachedStage;
+          const isCurrent = rungStage === currentStage;
+          const isKeeperStage = rungStage === KEEPER_STAGE;
           const keeperProgress =
             isKeeperStage && !isReached
               ? tr('ladder.keeperProgress', { done: keeperDone, total: keeperTotal })
               : null;
           return (
             <Rung
-              key={stage}
+              key={rungStage}
               label={label}
               awayCount={isCurrent ? logsToNext : null}
               keeperProgress={keeperProgress}
               reached={isReached}
               current={isCurrent}
+              pro={!isPro && isCapabilityPro(id)}
             />
           );
         })}
@@ -124,6 +137,7 @@ function Rung({
   keeperProgress,
   reached,
   current,
+  pro,
 }: {
   label: string;
   /** Set only on the current (tier-ladder) rung — null everywhere else. */
@@ -132,6 +146,8 @@ function Rung({
   keeperProgress: string | null;
   reached: boolean;
   current: boolean;
+  /** True when this capability is Pro-gated AND the viewer isn't Pro. */
+  pro: boolean;
 }) {
   const t = useTheme();
   const { t: tr } = useTranslation('whenbee');
@@ -175,14 +191,23 @@ function Rung({
   };
   const subStyle: TextStyle = { ...(type.caption as unknown as TextStyle), color: subTone };
 
+  // One whole sentence per state — never a base label with a "Pro" fragment
+  // appended, so the translator owns word order in both branches.
   const a11yLabel =
     current && awayCount !== null
-      ? tr('ladder.rungCurrentA11y', { capability: label, count: awayCount })
+      ? tr(pro ? 'ladder.rungCurrentProA11y' : 'ladder.rungCurrentA11y', {
+          capability: label,
+          count: awayCount,
+        })
       : keeperProgress !== null
         ? tr('ladder.rungKeeperProgressA11y', { capability: label, progress: keeperProgress })
         : reached
-          ? tr('ladder.rungReachedA11y', { capability: label })
-          : tr('ladder.rungUpcomingA11y', { capability: label });
+          ? tr(pro ? 'ladder.rungReachedProA11y' : 'ladder.rungReachedA11y', { capability: label })
+          : tr(pro ? 'ladder.rungUpcomingProA11y' : 'ladder.rungUpcomingA11y', { capability: label });
+
+  // The pill rides beside the label on one cap-aligned row; the label keeps
+  // flex:1 so a long capability wraps under itself, not under the pill.
+  const labelRow: ViewStyle = { flexDirection: 'row', alignItems: 'center', gap: t.space[2] };
 
   return (
     <View style={row} accessible accessibilityLabel={a11yLabel}>
@@ -196,7 +221,10 @@ function Rung({
         )}
       </View>
       <View style={content}>
-        <Text style={labelStyle}>{label}</Text>
+        <View style={labelRow}>
+          <Text style={[labelStyle, { flexShrink: 1 }]}>{label}</Text>
+          {pro ? <ProCoinPill /> : null}
+        </View>
         {subText ? <Text style={subStyle}>{subText}</Text> : null}
       </View>
     </View>

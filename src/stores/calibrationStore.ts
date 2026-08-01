@@ -414,6 +414,20 @@ export interface GoalCoachInfo {
 interface CalibrationState {
   logs: number;
   statsByCategory: Record<string, CachedStat>;
+  /** MONOTONIC companion stage (1..6), mirrored from the companion fuel row so the
+   *  unlock ladder can read "what have I actually unlocked" synchronously.
+   *
+   *  This is a CACHE of `companionStageFor({ maxTier, keeper })`, not a second
+   *  source of truth: `companionRepo` still owns the persisted `maxTier` (which
+   *  "never lowers it") and every write below re-derives from that row. Nothing
+   *  here is persisted — a cold boot starts at 1 and the first
+   *  `loadReclaimSummary()` / `applyLog()` fills it in.
+   *
+   *  Why it exists: the live per-category `sharpness` is a rolling window that
+   *  FALLS after sloppy estimates, so deriving "rungs reached" from the current
+   *  tier un-lights capabilities the user already earned — a direct violation of
+   *  the monotonic-tier invariant. */
+  companionStage: CompanionStage;
   /** Category ids that have reached 'honest' confidence and already fired their
    *  graduation moment. Mirrors the kv ledger; Step 9 reads it to fire once each. */
   graduatedCategories: Set<string>;
@@ -529,6 +543,7 @@ const REASON_SCAN_LIMIT = 500;
 export const useCalibrationStore = create<CalibrationState>((set, get) => ({
   logs: 0,
   statsByCategory: {},
+  companionStage: 1,
   graduatedCategories: new Set(),
   db: null,
 
@@ -738,6 +753,14 @@ export const useCalibrationStore = create<CalibrationState>((set, get) => ({
       if (keeperReached({ cappedCellCount, trackedCount: tracked.length })) {
         await companionRepo.setKeeper();
       }
+
+      // Refresh the mirrored monotonic stage off the row we just fuelled, so the
+      // Reward screen's unlock ladder is already correct without waiting for a
+      // hub/Today focus to run loadReclaimSummary(). Re-derived from the
+      // persisted maxTier/keeper — never from the volatile live sharpness.
+      const fuelled = await companionRepo.get();
+      const stageAfter = companionStageFor({ maxTier: fuelled.maxTier, keeper: fuelled.keeper });
+      set((state) => (stageAfter > state.companionStage ? { companionStage: stageAfter } : {}));
     }
 
     // 8. Patch the cache (O(1)). Count every stored log; only refresh stats when counted.
@@ -1089,6 +1112,10 @@ export const useCalibrationStore = create<CalibrationState>((set, get) => ({
       seed: companion.seed,
       name: companion.name ?? null,
     };
+    // Mirror the monotonic stage into the cache so synchronous readers (the
+    // unlock ladder) don't have to await this read. Never lowered here: the
+    // source `maxTier` is itself monotonic, and `reset()` is the only way down.
+    set((state) => (stage > state.companionStage ? { companionStage: stage } : {}));
 
     return {
       lifetimeMin: companion.reclaimedMinutesLifetime,
@@ -1371,6 +1398,8 @@ export const useCalibrationStore = create<CalibrationState>((set, get) => ({
     // a fresh start should require re-earning the pitch gate.
     kv.delete(GLOBAL_BIAS_KEY);
     kv.delete(PRO_PITCH_LATCH_KEY);
-    set({ logs: 0, statsByCategory: {}, graduatedCategories: new Set() });
+    // The companion fuel row is wiped by the dataReset service; drop the mirrored
+    // stage with it so the ladder doesn't keep lighting rungs from the old life.
+    set({ logs: 0, statsByCategory: {}, companionStage: 1, graduatedCategories: new Set() });
   },
 }));

@@ -5,7 +5,7 @@ import { createMemoryDatabase, makeCompanionRepo, makeCategoryStatsRepo, type Da
  *  uses elsewhere (`setDatabase` / `resolveDb`). Returns the db for assertions. */
 function freshStore(): Database {
   const db = createMemoryDatabase();
-  useCalibrationStore.setState({ logs: 0, statsByCategory: {} });
+  useCalibrationStore.setState({ logs: 0, statsByCategory: {}, companionStage: 1 });
   useCalibrationStore.getState().setDatabase(db);
   return db;
 }
@@ -124,5 +124,82 @@ describe('applyLog — fuel Layer 3 is positive-only', () => {
       nowMs: 3000,
     });
     expect(['settled', 'curious']).toContain((await makeCompanionRepo(db).get()).driftHealth);
+  });
+});
+
+describe('companionStage mirror — the ladder reads it synchronously', () => {
+  /** Seed a category already at the top of the sharpness ladder so the next
+   *  counted log fuels a high maxTier. */
+  async function seedRipe(db: Database) {
+    await makeCategoryStatsRepo(db).upsert({
+      categoryId: 'cleaning',
+      n: 8,
+      logEwma: 0,
+      mEffective: 1.0,
+      sharpness: 95,
+      priorMult: 2.0,
+      adaptSpeed: 'balanced',
+      updatedAt: 1,
+      reclaimedMinutes: 0,
+      sw: 0, swx: 0, swy: 0, swxx: 0, swxy: 0,
+    });
+  }
+
+  it('applyLog raises the mirrored stage without waiting for loadReclaimSummary', async () => {
+    const db = freshStore();
+    await seedRipe(db);
+    expect(useCalibrationStore.getState().companionStage).toBe(1);
+
+    await useCalibrationStore.getState().applyLog({
+      category: 'cleaning',
+      estimateMin: 10,
+      actualMin: 10,
+      status: 'completed',
+      source: 'timed',
+      adaptSpeed: 'balanced',
+      nowMs: 2000,
+    });
+
+    const mirrored = useCalibrationStore.getState().companionStage;
+    expect(mirrored).toBeGreaterThan(1);
+    // …and it agrees with the authoritative async read.
+    const summary = await useCalibrationStore.getState().loadReclaimSummary();
+    expect(mirrored).toBe(summary.companion.stage);
+  });
+
+  it('never lowers the mirrored stage when a later log lands at a lower tier', async () => {
+    const db = freshStore();
+    await seedRipe(db);
+    await useCalibrationStore.getState().applyLog({
+      category: 'cleaning',
+      estimateMin: 10,
+      actualMin: 10,
+      status: 'completed',
+      source: 'timed',
+      adaptSpeed: 'balanced',
+      nowMs: 2000,
+    });
+    const peak = useCalibrationStore.getState().companionStage;
+
+    // A badly-missed estimate drags this category's rolling sharpness down.
+    for (const nowMs of [3000, 4000, 5000, 6000]) {
+      await useCalibrationStore.getState().applyLog({
+        category: 'cleaning',
+        estimateMin: 10,
+        actualMin: 40,
+        status: 'completed',
+        source: 'timed',
+        adaptSpeed: 'balanced',
+        nowMs,
+      });
+    }
+
+    expect(useCalibrationStore.getState().companionStage).toBe(peak);
+  });
+
+  it('reset() drops the mirror back to stage 1 with the wiped fuel row', () => {
+    useCalibrationStore.setState({ companionStage: 5 });
+    useCalibrationStore.getState().reset();
+    expect(useCalibrationStore.getState().companionStage).toBe(1);
   });
 });
