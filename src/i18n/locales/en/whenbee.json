@@ -7,7 +7,9 @@
     "honest": "Honest"
   },
   "card": {
-    "a11y": "{{tier}}, {{pct}} percent calibrated. {{unlock}}"
+    "eyebrow": "Your sharpest area",
+    "pct": "{{pct}}%",
+    "a11y": "{{scope}}, {{tier}}, {{pct}} percent calibrated. {{unlock}}"
   },
   "ring": {
     "sealed": "Calibrated ✦"
@@ -86,7 +88,7 @@
   "ladder": {
     "title": "What your logs sharpen",
     "headerStatus": "{{tier}} · {{pct}}%",
-    "keeperProgress": "{{done}} of {{total}} areas sealed",
+    "keeperProgress": "{{done}} of {{total}} areas calibrated",
     "runningFinishTime": "Live finish-time on your timer",
     "todayDoneTime": "Done-time on Today and Add task",
     "startByAnchor": "Reverse start-by anchor",

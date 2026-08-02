@@ -7,7 +7,9 @@
     "honest": "Ärlig"
   },
   "card": {
-    "a11y": "{{tier}}, {{pct}} procent kalibrerad. {{unlock}}"
+    "eyebrow": "Ditt skarpaste område",
+    "pct": "{{pct}} %",
+    "a11y": "{{scope}}, {{tier}}, {{pct}} procent kalibrerad. {{unlock}}"
   },
   "ring": {
     "sealed": "Kalibrerad ✦"
@@ -85,11 +87,11 @@
   },
   "ladder": {
     "title": "Vad dina loggar skärper",
-    "headerStatus": "{{tier}} · {{pct}}%",
+    "headerStatus": "{{tier}} · {{pct}} %",
     "keeperProgress": "{{done}} av {{total}} områden kalibrerade",
     "runningFinishTime": "Livesluttid på din timer",
-    "todayDoneTime": "Klar-tid på Idag och Ny uppgift",
-    "startByAnchor": "Omvänt börja-senast-ankare",
+    "todayDoneTime": "Klartid på Idag och Ny uppgift",
+    "startByAnchor": "Omvänd börja-senast-tid",
     "honestDayForecast": "Ärlig dag-prognos när du planerar",
     "driftRecalibration": "Avdriftskoll när livet skiftar",
     "keeperStanding": "Väktare – varje område kalibrerat",

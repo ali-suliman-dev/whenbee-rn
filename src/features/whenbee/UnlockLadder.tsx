@@ -121,17 +121,28 @@ export function UnlockLadder({ keeper }: { keeper: boolean }) {
     justifyContent: 'space-between',
     gap: t.space[2],
   };
-  const titleStyle: TextStyle = { ...(type.eyebrow as unknown as TextStyle), color: t.colors.inkSoft };
+  // F12: the title shrinks (and ellipsises) first — the status block on the
+  // right carries the tier word AND the percentage in one string, and Swedish
+  // tier words run long enough to break this row, so it stays fixed-width
+  // and never truncates.
+  const titleStyle: TextStyle = {
+    ...(type.eyebrow as unknown as TextStyle),
+    color: t.colors.inkSoft,
+    flexShrink: 1,
+  };
   const statusStyle: TextStyle = {
     ...(type.numLedger as unknown as TextStyle),
     color: t.colors.amberText,
+    flexShrink: 0,
   };
   const rungs: ViewStyle = { gap: t.space[3] };
 
   return (
     <Card style={card}>
       <View style={headRow}>
-        <Text style={titleStyle}>{tr('ladder.title')}</Text>
+        <Text style={titleStyle} numberOfLines={1}>
+          {tr('ladder.title')}
+        </Text>
         <Text style={statusStyle}>{tr('ladder.headerStatus', { tier: tierLabel, pct })}</Text>
       </View>
       <View style={rungs}>
@@ -216,7 +227,12 @@ function Rung({
     // halo circle so the two can never drift apart (review fix round 1).
     height: halo,
   };
-  const markerColor = reached || current ? t.colors.accent : t.colors.surfaceSunken;
+  // F11: an unreached marker used `surfaceSunken` (1.14:1 on `surface` in light,
+  // 1.13:1 in dark — effectively invisible, well under the 3:1 WCAG floor for
+  // non-text UI components). `inkSoft` clears it comfortably in both modes
+  // (see `labelStyle` below for the measured ratios) while still reading
+  // clearly quieter than the reached/current marker's solid `accent`.
+  const markerColor = reached || current ? t.colors.accent : t.colors.inkSoft;
   const marker: ViewStyle = {
     width: dot,
     height: dot,
@@ -232,9 +248,14 @@ function Rung({
     justifyContent: 'center',
   };
   const content: ViewStyle = { flex: 1, gap: t.space[1] };
+  // F11: an unreached rung is essential information (the thing the user is
+  // working toward), not decoration — `inkFaint` measured 2.69:1 on `surface`
+  // in light and 3.44:1 in dark, both below the 4.5:1 AA floor for body text.
+  // `inkSoft` clears AA in both modes (6.29:1 light, 6.92:1 dark on `surface`)
+  // while staying a visible step below the reached rung's full `ink`.
   const labelStyle: TextStyle = {
     ...(type.bodySmSemibold as unknown as TextStyle),
-    color: current ? t.colors.amberText : reached ? t.colors.ink : t.colors.inkFaint,
+    color: current ? t.colors.amberText : reached ? t.colors.ink : t.colors.inkSoft,
   };
   const subStyle: TextStyle = { ...(type.caption as unknown as TextStyle), color: subTone };
 
@@ -262,9 +283,15 @@ function Rung({
             ? tr('ladder.rungGatedA11y', { capability: label })
             : tr(pro ? 'ladder.rungUpcomingProA11y' : 'ladder.rungUpcomingA11y', { capability: label });
 
-  // The pill rides beside the label on one cap-aligned row; the label keeps
-  // flex:1 so a long capability wraps under itself, not under the pill.
-  const labelRow: ViewStyle = { flexDirection: 'row', alignItems: 'center', gap: t.space[2] };
+  // F13: the Pro pill's own coin-edge makes it render ~6pt taller than the
+  // label's single line — `alignItems:'center'` used to vertically center the
+  // (unchanged-height) label inside that taller row, sliding it ~3pt away
+  // from the marker it must stay cap-aligned to on every rung, pill or not.
+  // `flex-start` pins both children to the row's top instead, so the label's
+  // position — and the marker's alignment to it — never depends on whether a
+  // pill is present; only the pill (which sits beside, not below, the label)
+  // grows the row.
+  const labelRow: ViewStyle = { flexDirection: 'row', alignItems: 'flex-start', gap: t.space[2] };
 
   return (
     <View style={row} accessible accessibilityLabel={a11yLabel}>
@@ -278,7 +305,7 @@ function Rung({
         )}
       </View>
       <View style={content}>
-        <View style={labelRow}>
+        <View style={labelRow} testID="unlock-ladder-label-row">
           <Text style={[labelStyle, { flexShrink: 1 }]}>{label}</Text>
           {pro ? <ProCoinPill /> : null}
         </View>

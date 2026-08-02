@@ -1,9 +1,11 @@
 import { render, screen } from '@testing-library/react-native';
+import { StyleSheet } from 'react-native';
 import { UnlockLadder } from '../UnlockLadder';
 import { useCalibrationStore } from '@/src/stores/calibrationStore';
 import type { CachedStat } from '@/src/stores/calibrationStore';
 import { useCategoriesStore } from '@/src/stores/categoriesStore';
 import { useEntitlement } from '@/src/features/paywall/useEntitlement';
+import { resolveTheme } from '@/src/theme/useTheme';
 
 // ──────────────────────────────────────────────────────────────────────────────
 // UnlockLadder — the Progress tab's six-stage capability list. Reads
@@ -126,7 +128,7 @@ describe('UnlockLadder', () => {
     expect(screen.queryAllByText(/\d+ logs? away/)).toHaveLength(0);
   });
 
-  it('at the cap without keeper, rung 6 shows a countable "N of M areas sealed" milestone, never an unexplained dead end', () => {
+  it('at the cap without keeper, rung 6 shows a countable "N of M areas calibrated" milestone, never an unexplained dead end', () => {
     useCategoriesStore.setState({
       categories: [
         { id: 'cleaning', name: 'Cleaning', adaptSpeed: 'balanced' },
@@ -145,13 +147,13 @@ describe('UnlockLadder', () => {
     render(<UnlockLadder keeper={false} />);
 
     // 1 of 2 tracked categories capped; the quota floors the denominator at 3.
-    expect(screen.getByText('1 of 3 areas sealed')).toBeOnTheScreen();
+    expect(screen.getByText('1 of 3 areas calibrated')).toBeOnTheScreen();
     expect(
-      screen.getByLabelText('Keeper – every area calibrated, 1 of 3 areas sealed'),
+      screen.getByLabelText('Keeper – every area calibrated, 1 of 3 areas calibrated'),
     ).toBeOnTheScreen();
   });
 
-  it('F5 regression: a sealed area drifting back off Honest does not decrement "N of M areas sealed"', () => {
+  it('F5 regression: a sealed area drifting back off Honest does not decrement "N of M areas calibrated"', () => {
     useCategoriesStore.setState({
       categories: [
         { id: 'cleaning', name: 'Cleaning', adaptSpeed: 'balanced' },
@@ -182,8 +184,8 @@ describe('UnlockLadder', () => {
     render(<UnlockLadder keeper={false} />);
 
     // The milestone must NOT count down — it stays at the session high-water.
-    expect(screen.getByText('1 of 3 areas sealed')).toBeOnTheScreen();
-    expect(screen.queryByText('0 of 3 areas sealed')).toBeNull();
+    expect(screen.getByText('1 of 3 areas calibrated')).toBeOnTheScreen();
+    expect(screen.queryByText('0 of 3 areas calibrated')).toBeNull();
   });
 
   it('once keeper is reached, rung 6 is marked reached and drops the progress line', () => {
@@ -195,7 +197,7 @@ describe('UnlockLadder', () => {
 
     render(<UnlockLadder keeper />);
 
-    expect(screen.queryByText(/areas sealed/)).toBeNull();
+    expect(screen.queryByText(/areas calibrated/)).toBeNull();
     expect(screen.getByLabelText('Keeper – every area calibrated, unlocked')).toBeOnTheScreen();
   });
 
@@ -267,5 +269,36 @@ describe('UnlockLadder', () => {
     // no "unlocked" text renders anywhere for a rung that only sharpens.
     expect(screen.queryByText('unlocked')).toBeNull();
     expect(screen.getByText('sharp enough to trust')).toBeOnTheScreen();
+  });
+
+  it('F11: an unreached rung reads at AA contrast, not the sub-3:1 faint tokens', () => {
+    // Zero logs → only stage 1 is reached; every later rung (besides the
+    // current one) is unreached and used to render at `inkFaint`/`surfaceSunken`
+    // — 2.69:1 / 1.14:1 on `surface` in light mode, both failing WCAG.
+    render(<UnlockLadder keeper={false} />);
+
+    const light = resolveTheme('light');
+    const label = screen.getByText('Reverse start-by anchor');
+    const labelStyle = StyleSheet.flatten(label.props.style);
+    expect(labelStyle.color).toBe(light.colors.inkSoft);
+    expect(labelStyle.color).not.toBe(light.colors.inkFaint);
+  });
+
+  it('F13: the label row pins its children to the top so a Pro pill never shifts the label off the marker\'s cap-height', () => {
+    render(<UnlockLadder keeper={false} />);
+
+    const rows = screen.getAllByTestId('unlock-ladder-label-row');
+    for (const row of rows) {
+      expect(StyleSheet.flatten(row.props.style).alignItems).toBe('flex-start');
+    }
+  });
+
+  it('F12: the header title can shrink; the tier/percent status never does', () => {
+    render(<UnlockLadder keeper={false} />);
+
+    const title = screen.getByText('What your logs sharpen');
+    const status = screen.getByText('Just started · 0%');
+    expect(StyleSheet.flatten(title.props.style).flexShrink).toBe(1);
+    expect(StyleSheet.flatten(status.props.style).flexShrink).toBe(0);
   });
 });
