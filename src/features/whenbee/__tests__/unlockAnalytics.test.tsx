@@ -92,7 +92,9 @@ describe('unlock_ladder_viewed', () => {
 
   it('reports the monotonic stage, not the live tier, as rungs reached', () => {
     // Live sharpness has fallen back to Raw, but the companion has earned stage 4.
-    useCategoriesStore.setState({ categories: [{ id: 'deep', name: 'Deep work', emoji: '🎯' }] });
+    useCategoriesStore.setState({
+      categories: [{ id: 'deep', name: 'Deep work', adaptSpeed: 'balanced' }],
+    });
     useCalibrationStore.setState({
       logs: 40,
       statsByCategory: { deep: statFor(20, 'Raw') },
