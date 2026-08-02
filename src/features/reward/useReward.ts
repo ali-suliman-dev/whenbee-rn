@@ -1,13 +1,16 @@
 import { useEffect, useState } from 'react';
 import { router } from 'expo-router';
 import { useTranslation } from 'react-i18next';
+import i18n from '@/src/i18n';
 import { useRewardStore } from '@/src/stores/rewardStore';
 import { useCalibrationStore } from '@/src/stores/calibrationStore';
 import { haptics } from '@/src/services/haptics';
 import { rewardHeadline, isCapSeal } from './headline';
 import { categoryName } from '@/src/features/shared/categoryName';
+import { TIERS, capabilityFor } from '@/src/engine';
 import type { LogResult } from '@/src/stores/calibrationStore';
-import type { PostLogQuality } from '@/src/engine';
+import type { CompanionCapability, CompanionStage, PostLogQuality } from '@/src/engine';
+import type { Tier } from '@/src/domain/types';
 
 /** Reward-screen goal feedback: this log's band, a never-negative verdict, target. */
 export interface GoalLogFeedback {
@@ -55,6 +58,10 @@ export interface RewardView {
   /** 'over' / 'under' when the run diverged from the guess past the gate; else null. */
   reasonDirection: RunDirection | null;
   result: LogResult | null;
+  /** The capability this exact log unlocked, or null when it crossed no new rung.
+   *  Lets the payoff screen say what was just earned instead of only ever handing
+   *  the user the next demand. */
+  justUnlockedId: CompanionCapability['id'] | null;
   /** Goal coach feedback for this log (goaled category only); null otherwise. */
   goalFeedback: GoalLogFeedback | null;
   onSeeWhenbee: () => void;
@@ -65,6 +72,44 @@ export interface RewardView {
 // worth a why. |ratio − 1| > 0.25 → roughly a quarter over or under. Below that,
 // the gap is noise and the chips would just nag, so they stay hidden.
 const REASON_GATE = 0.25;
+
+/**
+ * The capability THIS log just bought, or null when it bought no new rung.
+ *
+ * Uses only what `LogResult` already carries (`tierBefore` / `tierAfter` — the
+ * same pair that drives the `tier_up` analytics event — plus `stageJustRose`,
+ * the store's own before-vs-after read of the monotonic companion stage). No
+ * new plumbing, no new persistence.
+ *
+ * Three conditions, all required:
+ *   1. the tier moved UP (`leveledUp` alone also fires on a tier that fell);
+ *   2. the log was counted, i.e. it trained the model;
+ *   3. `stageJustRose` — THIS log's fuel update is what raised the monotonic
+ *      stage. Comparing the crossed stage against the CURRENT companionStage
+ *      (the old approach) compares after-with-after once the store's mirror
+ *      has already advanced inside `applyLog`, so a second category catching
+ *      up to a rung a different category earned weeks ago would re-announce
+ *      it as newly earned (F4). `stageJustRose` is captured at the moment of
+ *      the write and can't be fooled by that.
+ */
+function justUnlockedBy(result: LogResult): CompanionCapability['id'] | null {
+  if (!result.counted || !result.leveledUp || !result.stageJustRose) return null;
+  const afterIdx = TIERS.indexOf(result.tierAfter);
+  if (afterIdx <= TIERS.indexOf(result.tierBefore)) return null;
+  const crossedStage = afterIdx + 1;
+  return capabilityFor(crossedStage as CompanionStage).id;
+}
+
+/** The engine's raw `Tier` value ('Ripening', …) is not display copy — it is
+ *  the same honey vocabulary this branch replaced everywhere else, and it is
+ *  never translated. Resolve it through the shared `whenbee:tiers.*` lookup
+ *  every other tier-word surface (Today's header ring, the ladder header)
+ *  already uses, so the reward screen's cap eyebrow matches the active
+ *  language instead of leaking English. */
+function tierWord(tier: Tier): string {
+  const key = tier.toLowerCase() as 'raw' | 'setting' | 'ripening' | 'thickening' | 'honest';
+  return i18n.t(`whenbee:tiers.${key}` as never);
+}
 
 /** 'over' / 'under' when actual diverged from the guess past REASON_GATE; else null. */
 function reasonDirectionFor(actualMin: number, guessMin: number): RunDirection | null {
@@ -144,6 +189,7 @@ export function useReward(): RewardView {
       eventId: null,
       reasonDirection: null,
       result: null,
+      justUnlockedId: null,
       goalFeedback: null,
       onSeeWhenbee,
       onBackToToday,
@@ -173,11 +219,12 @@ export function useReward(): RewardView {
     honeyPct: Math.round(result.sharpness),
     multiplier: result.multiplier,
     sealed,
-    capEyebrow: result.leveledUp ? t('capSealed', { tier: result.tierAfter }) : null,
+    capEyebrow: result.leveledUp ? t('capSealed', { tier: tierWord(result.tierAfter) }) : null,
     ritualLine: sealed ? t('ritual.sealed') : t('ritual.default'),
     eventId: result.eventId,
     reasonDirection: reasonDirectionFor(actualMin, guessMin),
     result,
+    justUnlockedId: justUnlockedBy(result),
     goalFeedback,
     onSeeWhenbee,
     onBackToToday,

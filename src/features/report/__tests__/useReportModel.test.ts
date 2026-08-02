@@ -26,7 +26,7 @@ describe('buildReportModel', () => {
       nowMs: NOW,
       events,
       statsByCategory: {},
-      companionName: null,
+      personName: null,
       nameOf,
     });
     expect(status).toBe('thin');
@@ -43,7 +43,7 @@ describe('buildReportModel', () => {
       nowMs: NOW,
       events,
       statsByCategory: { admin: { n: 8, mEffective: 1.4 } },
-      companionName: null,
+      personName: null,
       nameOf,
     });
     expect(status).toBe('ready');
@@ -66,7 +66,7 @@ describe('buildReportModel', () => {
         admin: { n: 6, mEffective: 1.2 },
         writing: { n: 2, mEffective: 3 },
       },
-      companionName: null,
+      personName: null,
       nameOf,
     });
     expect(model?.categories.map((c) => c.categoryId)).toEqual(['admin']);
@@ -85,13 +85,13 @@ describe('buildReportModel', () => {
       nowMs: NOW,
       events: [...inWindow, ...old],
       statsByCategory: { admin: { n: 12, mEffective: 1.2 } },
-      companionName: null,
+      personName: null,
       nameOf,
     });
     expect(model?.totalLogs).toBe(6);
   });
 
-  it('carries the companion name through when set', () => {
+  it('carries the person name through when set', () => {
     const events: ReportEventRow[] = Array.from({ length: 6 }, (_, i) =>
       row({ endedAt: NOW - i * DAY }),
     );
@@ -100,10 +100,10 @@ describe('buildReportModel', () => {
       nowMs: NOW,
       events,
       statsByCategory: { admin: { n: 6, mEffective: 1.2 } },
-      companionName: 'Buzz',
+      personName: 'Buzz',
       nameOf,
     });
-    expect(model?.companionName).toBe('Buzz');
+    expect(model?.personName).toBe('Buzz');
   });
 
   it('produces a model with no reclaim / time-saved field', () => {
@@ -115,7 +115,7 @@ describe('buildReportModel', () => {
       nowMs: NOW,
       events,
       statsByCategory: { admin: { n: 6, mEffective: 1.2 } },
-      companionName: null,
+      personName: null,
       nameOf,
     });
     const keys = Object.keys(model ?? {});

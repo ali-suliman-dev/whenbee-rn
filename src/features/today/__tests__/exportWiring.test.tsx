@@ -155,7 +155,6 @@ function summary(): ReclaimSummary {
       lifetimeNectar: 0,
       driftHealth: 'settled',
       seed: 1,
-      name: null,
     },
   };
 }

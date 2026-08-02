@@ -362,12 +362,6 @@ export default function Settings() {
             onPress={() => router.push('/(modals)/archetype-quiz')}
             accessibilityLabel={tr('yourWhenbee.retakeQuiz.a11y')}
           />
-          <SettingRow
-            icon="happy-outline"
-            title={tr('yourWhenbee.nameCompanion.title')}
-            note={tr('yourWhenbee.nameCompanion.note')}
-            onPress={() => router.push('/(modals)/companion')}
-          />
         </View>
 
         <View style={{ gap: t.space[3] }}>

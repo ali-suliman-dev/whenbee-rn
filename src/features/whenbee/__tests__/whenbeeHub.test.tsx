@@ -33,7 +33,6 @@ const COMPANION_FIXTURE: CompanionPresence = {
   lifetimeNectar: 0,
   driftHealth: 'settled',
   seed: 1,
-  name: null,
 };
 
 function vm(overrides: Partial<WhenbeeHubVM> = {}): WhenbeeHubVM {
@@ -43,15 +42,12 @@ function vm(overrides: Partial<WhenbeeHubVM> = {}): WhenbeeHubVM {
     leadSharpness: 0,
     tier: 'Raw',
     companion: COMPANION_FIXTURE,
-    cells: [],
     discoveries: [],
     discoveryCount: 0,
     refresh: jest.fn(),
-    renameCompanion: jest.fn(),
     showDriftRecheck: false,
     dismissDriftRecheck: jest.fn(),
     proReadiness: { pitchUnlocked: false, perFeatureReady: {} as WhenbeeHubVM['proReadiness']['perFeatureReady'] },
-    honeyPct: 0,
     ...overrides,
   };
 }
@@ -60,7 +56,10 @@ describe('WhenbeeHub', () => {
   beforeEach(() => {
     // Start each test with empty stores — tests that need categories set them explicitly.
     useCategoriesStore.setState({ categories: [] });
-    useCalibrationStore.setState({ statsByCategory: {} } as Parameters<typeof useCalibrationStore.setState>[0]);
+    useCalibrationStore.setState({
+      statsByCategory: {},
+      logs: 0,
+    } as Parameters<typeof useCalibrationStore.setState>[0]);
     useEntitlement.setState({ isPro: false, ready: true });
   });
   afterEach(() => jest.clearAllMocks());
@@ -84,17 +83,32 @@ describe('WhenbeeHub', () => {
     expect(screen.getByText('Deep Work')).toBeOnTheScreen();
   });
 
-  it('renders the ring badge tier, the labeled zones and area rows', () => {
+  it('renders the compact header, the unlock ladder, the labeled zones and area rows', () => {
     // Provide one category so the YOUR AREAS zone renders.
     useCategoriesStore.setState({
       categories: [{ id: 'deep_work', name: 'Deep Work', adaptSpeed: 'balanced' }],
+    });
+    // UnlockLadder reads useNextUnlock() straight off the calibration store (the
+    // single "lead category" rollup, Task 3) — independent of the mocked vm —
+    // so the store is seeded to match the useNextUnlock fixture exactly
+    // (see useNextUnlock.test.ts's "mid-tier" case) for a deterministic ladder.
+    useCalibrationStore.setState({
+      logs: 12,
+      statsByCategory: {
+        cleaning: { mEffective: 1, n: 5, sharpness: 50, tier: 'Setting', fit: { a: 0, b: 1 } },
+        admin: { mEffective: 1, n: 1, sharpness: 10, tier: 'Raw', fit: { a: 0, b: 1 } },
+      },
     });
     mockHook.mockReturnValue(vm({ leadSharpness: 46, honestLogCount: 5, tier: 'Setting' }));
 
     render(<WhenbeeHub />);
 
-    // RingBadge: ringCopy(46) → tier "Setting"
-    expect(screen.getByText(/Setting/)).toBeTruthy();
+    // Compact header — the screen title, now "Progress" (common:screenTitle.whenbee).
+    expect(screen.getByText('Progress')).toBeOnTheScreen();
+    // Unlock ladder — card title, the current-rung capability + away-count line.
+    expect(screen.getByText('What your logs sharpen')).toBeOnTheScreen();
+    expect(screen.getByText('Reverse start-by anchor')).toBeOnTheScreen();
+    expect(screen.getByText('4 logs away')).toBeOnTheScreen();
     // Zone label
     expect(screen.getByText('Your areas')).toBeTruthy();
   });

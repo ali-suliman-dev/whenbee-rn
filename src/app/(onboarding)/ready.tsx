@@ -116,10 +116,9 @@ export default function Ready() {
               the real input on tap. The link is the APP asking ("What should I
               call you?"), matching the body copy's voice: the screen also speaks
               in the user's first person ("Time my first thing"), so a link that
-              said "give me a name" had no fixed referent — and the app has a real
-              companion-naming screen, so half of readers named the bee. The
-              placeholder stays deliberately open ("Anything you answer to"): the
-              field is just as happy with a handle as a first name. */}
+              said "give me a name" had no fixed referent. The placeholder stays
+              deliberately open ("Anything you answer to"): the field is just as
+              happy with a handle as a first name. */}
           <Reveal index={3} style={{ marginTop: t.space[4] }}>
             {expanded ? (
               <TextInput

@@ -1,22 +1,18 @@
 {
   "tiers": {
-    "raw": "Raw",
-    "setting": "Setting",
-    "ripening": "Ripening",
-    "thickening": "Thickening",
+    "raw": "Just started",
+    "setting": "Learning",
+    "ripening": "Getting closer",
+    "thickening": "Nearly there",
     "honest": "Honest"
   },
+  "card": {
+    "eyebrow": "Your sharpest area",
+    "pct": "{{pct}}%",
+    "a11y": "{{scope}}, {{tier}}, {{pct}} percent calibrated. {{unlock}}"
+  },
   "ring": {
-    "stage": {
-      "raw": "Just getting started",
-      "setting": "Getting sharper",
-      "ripening": "Landing closer",
-      "thickening": "You know your timing",
-      "honest": "Plans match reality"
-    },
-    "sealed": "Honeycomb sealed ✦",
-    "logsToNext_one": "~{{count}} log to {{tier}}",
-    "logsToNext_other": "~{{count}} logs to {{tier}}"
+    "sealed": "Calibrated ✦"
   },
   "hub": {
     "discoveries": {
@@ -30,7 +26,7 @@
     },
     "cta": {
       "logFirst": "Log your first task",
-      "logFirstSub": "Honest-day planning unlocks once your honey sets.",
+      "logFirstSub": "Honest-day planning unlocks after your first few logs.",
       "dayHonest": "Make my whole day honest"
     },
     "ripeningWait": {
@@ -80,19 +76,47 @@
       "sentenceFaster": "You plan 15 minutes. It really takes only about {{minutes}}."
     }
   },
-  "companion": {
-    "namePrompt": "Give your companion a name, if you like. You can change it any time.",
-    "namePlaceholder": "e.g. Buzz",
-    "nameA11y": "Companion name",
-    "save": "Save"
-  },
   "discoveriesRoute": {
     "heading": "Things you’ve learned",
     "sub": "{{count}} truths Whenbee found in your tracking"
   },
   "honeycomb": {
-    "a11yRipening_one": "Your honeycomb, tier {{tier}}, {{count}} log to {{nextTier}}, {{logs}} logged",
-    "a11yRipening_other": "Your honeycomb, tier {{tier}}, {{count}} logs to {{nextTier}}, {{logs}} logged",
-    "a11yRipened": "Your honeycomb, tier {{tier}}, fully ripened, {{logs}} logged"
+    "a11yRipening_one": "Tier {{tier}}, {{count}} log to {{nextTier}}, {{logs}} logged",
+    "a11yRipening_other": "Tier {{tier}}, {{count}} logs to {{nextTier}}, {{logs}} logged",
+    "a11yRipened": "Tier {{tier}}, honest, {{logs}} logged"
+  },
+  "ladder": {
+    "title": "What your logs sharpen",
+    "headerStatus": "{{tier}} · {{pct}}%",
+    "keeperProgress": "{{done}} of {{total}} areas calibrated",
+    "runningFinishTime": "Live finish-time on your timer",
+    "todayDoneTime": "Done-time on Today and Add task",
+    "startByAnchor": "Reverse start-by anchor",
+    "honestDayForecast": "Honest-Day forecast when you plan",
+    "driftRecalibration": "Drift re-check when life shifts",
+    "keeperStanding": "Keeper – every area calibrated",
+    "away_one": "{{count}} log away",
+    "away_other": "{{count}} logs away",
+    "stateSharp": "sharp enough to trust",
+    "stateGated": "unlocks at Honest",
+    "sharpen_one": "1 more log sharpens {{capability}}",
+    "sharpen_other": "{{count}} more logs sharpen {{capability}}",
+    "sharpenPro_one": "1 more log sharpens {{capability}}, a Pro feature",
+    "sharpenPro_other": "{{count}} more logs sharpen {{capability}}, a Pro feature",
+    "unlock_one": "1 more log unlocks {{capability}}",
+    "unlock_other": "{{count}} more logs unlock {{capability}}",
+    "justSharpened": "{{capability}} just got sharper",
+    "justUnlocked": "Just unlocked: {{capability}}",
+    "rungReachedA11y": "{{capability}}, unlocked",
+    "rungSharpA11y": "{{capability}}, sharp enough to trust",
+    "rungSharpProA11y": "{{capability}}, sharp enough to trust, opens with Pro",
+    "rungGatedA11y": "{{capability}}, unlocks at Honest",
+    "rungCurrentA11y_one": "{{capability}}, current stage, {{count}} log away",
+    "rungCurrentA11y_other": "{{capability}}, current stage, {{count}} logs away",
+    "rungUpcomingA11y": "{{capability}}, not yet reached",
+    "rungKeeperProgressA11y": "{{capability}}, {{progress}}",
+    "rungCurrentProA11y_one": "{{capability}}, current stage, {{count}} log away, opens with Pro",
+    "rungCurrentProA11y_other": "{{capability}}, current stage, {{count}} logs away, opens with Pro",
+    "rungUpcomingProA11y": "{{capability}}, not yet reached, opens with Pro"
   }
 }

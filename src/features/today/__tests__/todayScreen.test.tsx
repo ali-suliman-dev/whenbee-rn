@@ -102,7 +102,6 @@ function summary(over: Partial<{ lifetimeMin: number; lifetimeNectar: number; st
       lifetimeNectar: over.lifetimeNectar ?? 0,
       driftHealth: 'settled',
       seed: 1,
-      name: null,
     },
   };
 }

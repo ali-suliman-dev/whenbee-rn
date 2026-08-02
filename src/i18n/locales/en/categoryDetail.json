@@ -3,9 +3,9 @@
     "backLabel": "Back",
     "crumb": "Category insights",
     "toastAdaptSet": "Adaptation set to {{label}}",
-    "toastResetDone": "Start fresh. Your honey stays",
+    "toastResetDone": "Start fresh. Your progress stays",
     "resetConfirm": {
-      "copy": "Reset this category's learning? Start fresh. Your honey stays.",
+      "copy": "Reset this category's learning? Start fresh. Your progress stays.",
       "keepLabel": "Keep this category's learning",
       "keep": "Keep it",
       "confirmLabel": "Confirm reset category learning",
@@ -154,13 +154,13 @@
   "manageArea": {
     "header": "Manage this area",
     "resetTitle": "Reset learning",
-    "resetSub": "Clears the guess history, keeps your honey",
+    "resetSub": "Clears the guess history. Your progress and tier stay.",
     "deleteTitle": "Delete area",
     "deleteSub": "Removes this area and its data",
     "resetConfirmTitle": "Reset what {{category}} has learned?",
     "resetConfirmBullets": [
       "Whenbee starts over learning this area.",
-      "Your honey and tier stay. Only the guess history resets."
+      "Your progress stays. Only the guess history resets."
     ],
     "deleteConfirmTitle": "Delete {{category}}?",
     "deleteConfirmBullets": [
@@ -169,10 +169,10 @@
     ]
   },
   "tiers": {
-    "raw": "Raw",
-    "setting": "Setting",
-    "ripening": "Ripening",
-    "thickening": "Thickening",
+    "raw": "Just started",
+    "setting": "Learning",
+    "ripening": "Getting closer",
+    "thickening": "Nearly there",
     "honest": "Honest"
   }
 }

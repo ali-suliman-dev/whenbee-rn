@@ -9,14 +9,14 @@
     "m": "{{count}} min"
   },
   "toTier": " till {{tier}}",
-  "fullyRipened": "Helt mogen",
+  "fullyRipened": "Ärlig",
   "screenTitle": {
     "settings": "Inställningar",
     "categories": "Kategorier",
     "privacy": "Integritet",
     "today": "Idag",
     "routines": "Rutiner",
-    "whenbee": "Whenbee",
+    "whenbee": "Framsteg",
     "patterns": "Mönster"
   },
   "quickAction": {
@@ -31,8 +31,7 @@
     "ahead": "längre fram"
   },
   "a11y": {
-    "honeycombCell": "{{label}}-cell, {{pct}} % honung, nivå {{tier}}",
-    "trailNode": "{{label}}: {{state}}",
-    "ringBadge": "{{tier}}, {{pct}} procent. {{line}}. {{next}}"
+    "honeycombCell": "{{label}}, {{pct}} % kalibrerad, nivå {{tier}}",
+    "trailNode": "{{label}}: {{state}}"
   }
 }

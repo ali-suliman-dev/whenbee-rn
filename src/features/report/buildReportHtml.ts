@@ -1,6 +1,6 @@
 // buildReportHtml — PURE (no db, no native, NO network — a test asserts it never
 // calls fetch): a ReportModel + the print CSS in, a self-contained HTML string
-// out. Every user-controlled string (category names, labels, companion name) is
+// out. Every user-controlled string (category names, labels, the person's name) is
 // HTML-escaped before it enters the document so a clinician doc never breaks on a
 // `<` in a task label. NO reclaim / "time saved" section — reclaim was removed from
 // the product. The page leads with calibration: accuracy, bias table, surprises,
@@ -89,8 +89,8 @@ export function buildReportHtml(
   const htmlLang = i18nInstance.language || 'en';
 
   const prepared =
-    model.companionName !== null && model.companionName.trim().length > 0
-      ? `<p class="prepared">${t('report:pdf.preparedBy', { name: esc(model.companionName) })}</p>`
+    model.personName !== null && model.personName.trim().length > 0
+      ? `<p class="prepared">${t('report:pdf.preparedBy', { name: esc(model.personName) })}</p>`
       : '';
 
   const glance = `<div class="glance">

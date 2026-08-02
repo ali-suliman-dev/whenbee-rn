@@ -272,6 +272,11 @@ export interface LogResult {
   reclaimDeltaMin: number;
   /** Lifetime reclaim total AFTER this log's deposit (unchanged when nothing banked). */
   reclaimLifetimeMin: number;
+  /** True only when THIS log's fuel update raised the monotonic companion stage
+   *  (before → after, not after-vs-after). A tier crossing that merely catches a
+   *  category up to a rung the user already owns leaves this false, so the
+   *  reward screen never re-announces an already-owned capability (F4). */
+  stageJustRose: boolean;
 }
 
 /** A recent est-vs-actual receipt row for the category-detail screen (newest first). */
@@ -372,8 +377,6 @@ export interface CompanionPresence {
   driftHealth: DriftHealth;
   /** Per-install procedural seed — drives the deterministic stripe recolor. */
   seed: number;
-  /** Optional user-set display name; null when the companion is still unnamed. */
-  name: string | null;
 }
 
 /** Read-only snapshot of reclaim/companion state for the Whenbee hub. */
@@ -414,6 +417,33 @@ export interface GoalCoachInfo {
 interface CalibrationState {
   logs: number;
   statsByCategory: Record<string, CachedStat>;
+  /** MONOTONIC companion stage (1..6), mirrored from the companion fuel row so the
+   *  unlock ladder can read "what have I actually unlocked" synchronously.
+   *
+   *  This is a CACHE of `companionStageFor({ maxTier, keeper })`, not a second
+   *  source of truth: `companionRepo` still owns the persisted `maxTier` (which
+   *  "never lowers it") and every write below re-derives from that row. Nothing
+   *  here is persisted — a cold boot starts at 1 and the first
+   *  `loadReclaimSummary()` / `applyLog()` fills it in.
+   *
+   *  Why it exists: the live per-category `sharpness` is a rolling window that
+   *  FALLS after sloppy estimates, so deriving "rungs reached" from the current
+   *  tier un-lights capabilities the user already earned — a direct violation of
+   *  the monotonic-tier invariant. */
+  companionStage: CompanionStage;
+  /** MONOTONIC, in-memory-only high-water mark for the Keeper milestone's "N of
+   *  M areas sealed" count (`UnlockLadder`'s rung 6). There is no per-category
+   *  "ever reached Honest" persisted anywhere — only the one-shot `keeper`
+   *  boolean is durable — so this cannot be a true all-time high-water mark
+   *  without new persistence (F5 ruling: don't add it). What it CAN do is never
+   *  go backward within a session: seeded from the persisted per-category
+   *  sharpness at `hydrate()` and raised alongside the live `cappedCellCount`
+   *  computed in `applyLog()` (the same count `keeperReached` itself reads).
+   *  Resets to 0 on a fresh app launch or a full `reset()` — a known limit,
+   *  not a bug: a category capped in a PREVIOUS session, then reset in this
+   *  one before ever being re-observed this session, could undercount by one
+   *  until the next hydrate. It can never OVERcount or count down mid-session. */
+  keeperCappedHighWater: number;
   /** Category ids that have reached 'honest' confidence and already fired their
    *  graduation moment. Mirrors the kv ledger; Step 9 reads it to fire once each. */
   graduatedCategories: Set<string>;
@@ -428,8 +458,6 @@ interface CalibrationState {
   applyLog: (input: ApplyLogParams) => Promise<LogResult>;
   loadCategoryDetail: (categoryId: string) => Promise<CategoryDetail>;
   loadReclaimSummary: () => Promise<ReclaimSummary>;
-  /** Set (or clear, when blank) the companion's optional display name. */
-  nameCompanion: (name: string | null) => Promise<void>;
   /** The banked distinct-discovery gallery, newest-first, plus the live count. */
   loadDiscoveries: () => Promise<{ discoveries: Discovery[]; discoveryCount: number }>;
   /** Cross-category snapshot for the read-only Patterns self-insight surface. */
@@ -531,6 +559,8 @@ const REASON_SCAN_LIMIT = 500;
 export const useCalibrationStore = create<CalibrationState>((set, get) => ({
   logs: 0,
   statsByCategory: {},
+  companionStage: 1,
+  keeperCappedHighWater: 0,
   graduatedCategories: new Set(),
   db: null,
 
@@ -586,10 +616,31 @@ export const useCalibrationStore = create<CalibrationState>((set, get) => ({
     }
     set({ statsByCategory: next });
 
+    // Seed the Keeper milestone's session high-water mark from the persisted
+    // per-category sharpness this same hydrate just read (F5) — the same
+    // "tierFor(sharpness) === 'Honest'" count `keeperReached`/`applyLog` use,
+    // just read once here instead of waiting for the next counted log so a
+    // fresh mount of the Progress tab never opens on a false "0 of M".
+    const cappedAtHydrate = Object.values(next).filter((s) => s.tier === 'Honest').length;
+    set((state) => ({
+      keeperCappedHighWater: Math.max(state.keeperCappedHighWater, cappedAtHydrate),
+    }));
+
     // Seed the companion's per-install presence seed exactly once. Date.now is
     // allowed here (store layer) — the engine stays clock-free. setSeed is a
     // no-op when a seed already exists, so this is safe on every hydrate.
-    await makeCompanionRepo(db).ensureSeed(() => (Date.now() % 1_000_000) + 1);
+    const companionRepo = makeCompanionRepo(db);
+    await companionRepo.ensureSeed(() => (Date.now() % 1_000_000) + 1);
+
+    // Seed the monotonic stage mirror from the companion row this same hydrate
+    // already read, so a capped user never sees a dark rung / re-offered
+    // capability in the window before loadReclaimSummary()/applyLog() next
+    // run (F6). The companion row (maxTier + keeper) is already the source of
+    // truth — this reads it, never adds new persistence — and the raise-only
+    // guard matches every other write path (loadReclaimSummary, applyLog).
+    const companion = await companionRepo.get();
+    const stage = companionStageFor({ maxTier: companion.maxTier, keeper: companion.keeper });
+    set((state) => (stage > state.companionStage ? { companionStage: stage } : {}));
   },
 
   applyLog: async (input) => {
@@ -670,6 +721,12 @@ export const useCalibrationStore = create<CalibrationState>((set, get) => ({
     // it's the unchanged current total — read once below and overwritten when we
     // actually bank, so the Reward count-up always lands on the live number.
     let reclaimLifetimeMin = (await companionRepo.get()).reclaimedMinutesLifetime;
+    // Whether THIS log's fuel update raised the monotonic stage — captured
+    // before/after around the mirror write below, never compared after-with-
+    // after (F4: `crossedStage !== companionStage` used to compare the
+    // post-log stage with itself once a later category caught up to a rung
+    // already earned, so the reward screen re-announced it as newly earned).
+    let stageJustRose = false;
     if (result.counted) {
       // Capture firstHonestRange once — the first time this category's confidence
       // reaches a meaningful band ('setting' or beyond). Frozen thereafter; it is
@@ -740,6 +797,23 @@ export const useCalibrationStore = create<CalibrationState>((set, get) => ({
       if (keeperReached({ cappedCellCount, trackedCount: tracked.length })) {
         await companionRepo.setKeeper();
       }
+      // Raise-only mirror of this same cappedCellCount (F5) — see the
+      // `keeperCappedHighWater` doc comment for why this can't be a true
+      // per-category all-time high-water mark without new persistence.
+      set((state) => ({
+        keeperCappedHighWater: Math.max(state.keeperCappedHighWater, cappedCellCount),
+      }));
+
+      // Refresh the mirrored monotonic stage off the row we just fuelled, so the
+      // Reward screen's unlock ladder is already correct without waiting for a
+      // hub/Today focus to run loadReclaimSummary(). Re-derived from the
+      // persisted maxTier/keeper — never from the volatile live sharpness.
+      const fuelled = await companionRepo.get();
+      const stageAfter = companionStageFor({ maxTier: fuelled.maxTier, keeper: fuelled.keeper });
+      set((state) => {
+        stageJustRose = stageAfter > state.companionStage;
+        return stageJustRose ? { companionStage: stageAfter } : {};
+      });
     }
 
     // 8. Patch the cache (O(1)). Count every stored log; only refresh stats when counted.
@@ -876,6 +950,7 @@ export const useCalibrationStore = create<CalibrationState>((set, get) => ({
       leveledUp,
       reclaimDeltaMin: result.reclaimDeltaMin,
       reclaimLifetimeMin,
+      stageJustRose,
     };
   },
 
@@ -1089,8 +1164,11 @@ export const useCalibrationStore = create<CalibrationState>((set, get) => ({
       lifetimeNectar: companion.lifetimeDataPoints,
       driftHealth: companion.driftHealth ?? 'settled',
       seed: companion.seed,
-      name: companion.name ?? null,
     };
+    // Mirror the monotonic stage into the cache so synchronous readers (the
+    // unlock ladder) don't have to await this read. Never lowered here: the
+    // source `maxTier` is itself monotonic, and `reset()` is the only way down.
+    set((state) => (stage > state.companionStage ? { companionStage: stage } : {}));
 
     return {
       lifetimeMin: companion.reclaimedMinutesLifetime,
@@ -1100,11 +1178,6 @@ export const useCalibrationStore = create<CalibrationState>((set, get) => ({
       companion: presence,
       discoveryCount: companion.discoveryCount,
     };
-  },
-
-  nameCompanion: async (name: string | null) => {
-    const db = await resolveDb(get, set);
-    await makeCompanionRepo(db).setName(name);
   },
 
   loadDiscoveries: async () => {
@@ -1378,6 +1451,14 @@ export const useCalibrationStore = create<CalibrationState>((set, get) => ({
     // a fresh start should require re-earning the pitch gate.
     kv.delete(GLOBAL_BIAS_KEY);
     kv.delete(PRO_PITCH_LATCH_KEY);
-    set({ logs: 0, statsByCategory: {}, graduatedCategories: new Set() });
+    // The companion fuel row is wiped by the dataReset service; drop the mirrored
+    // stage with it so the ladder doesn't keep lighting rungs from the old life.
+    set({
+      logs: 0,
+      statsByCategory: {},
+      companionStage: 1,
+      keeperCappedHighWater: 0,
+      graduatedCategories: new Set(),
+    });
   },
 }));

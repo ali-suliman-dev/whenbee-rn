@@ -29,11 +29,11 @@ describe('useWhenbeeHub', () => {
     });
 
     expect(result.current.blindSpot).toBeNull();
-    expect(result.current.cells).toEqual([]);
+    expect(result.current.leadSharpness).toBe(0);
     expect(result.current.tier).toBe('Raw');
   });
 
-  it('composes honest-log count, blind spot, and cells', async () => {
+  it('composes honest-log count, blind spot, and the lead tier/sharpness', async () => {
     const db = createMemoryDatabase();
     useCalibrationStore.getState().setDatabase(db);
     trackCategories(['cleaning', 'admin', 'errands']);
@@ -100,21 +100,10 @@ describe('useWhenbeeHub', () => {
 
     // lead tier = tierFor of the max sharpness (70) → 'Ripening'.
     expect(result.current.tier).toBe('Ripening');
-
-    // cells: one per tracked category, ready for <Honeycomb size="hub" />.
-    expect(result.current.cells.map((c) => c.categoryId)).toEqual([
-      'cleaning',
-      'admin',
-      'errands',
-    ]);
-    expect(result.current.cells[0]).toMatchObject({
-      categoryId: 'cleaning',
-      sharpness: 70,
-      tier: 'Ripening',
-    });
+    expect(result.current.leadSharpness).toBe(70);
   });
 
-  it('pitchUnlocked flips true once a category reaches setting confidence (n >= 3), and honeyPct matches the lead sharpness', async () => {
+  it('pitchUnlocked flips true once a category reaches setting confidence (n >= 3), and leadSharpness matches the seeded lead', async () => {
     const db = createMemoryDatabase();
     useCalibrationStore.getState().setDatabase(db);
     trackCategories(['focus']);
@@ -125,7 +114,7 @@ describe('useWhenbeeHub', () => {
     await store.applyLog({ category: 'focus', estimateMin: 20, actualMin: 22, status: 'completed', source: 'timed', adaptSpeed: 'balanced' });
     await store.applyLog({ category: 'focus', estimateMin: 20, actualMin: 22, status: 'completed', source: 'timed', adaptSpeed: 'balanced' });
 
-    // Seed the calibration cache with a known sharpness so honeyPct is deterministic.
+    // Seed the calibration cache with a known sharpness so leadSharpness is deterministic.
     useCalibrationStore.setState({
       statsByCategory: {
         focus: { mEffective: 1.1, n: 3, sharpness: 42, tier: 'Setting', fit: { a: 0, b: 1.1 } },
@@ -138,8 +127,7 @@ describe('useWhenbeeHub', () => {
       expect(result.current.proReadiness.pitchUnlocked).toBe(true);
     });
 
-    // honeyPct must be Math.round(leadSharpness) for the seeded sharpness of 42.
-    expect(result.current.honeyPct).toBe(42);
+    expect(result.current.leadSharpness).toBe(42);
   });
 
   it('blind spot is null when no tracked category has a log', async () => {
@@ -154,7 +142,7 @@ describe('useWhenbeeHub', () => {
     const { result } = renderHook(() => useWhenbeeHub());
 
     await waitFor(() => {
-      expect(result.current.cells).toHaveLength(1);
+      expect(result.current.honestLogCount).toBe(0);
     });
     expect(result.current.blindSpot).toBeNull();
   });

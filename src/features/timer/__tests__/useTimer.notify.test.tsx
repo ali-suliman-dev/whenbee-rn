@@ -96,6 +96,7 @@ const okResult: LogResult = {
   leveledUp: true,
   reclaimDeltaMin: 0,
   reclaimLifetimeMin: 0,
+  stageJustRose: false,
 };
 
 /** Route params for a normal timer session with a 30-min honest anchor. */

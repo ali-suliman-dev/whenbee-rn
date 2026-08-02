@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next';
 import { router, useFocusEffect } from 'expo-router';
 import { AppButton } from '@/src/components/AppButton';
 import { AppText } from '@/src/components/AppText';
+import { BeeMascot, type BeeVariant } from '@/src/components/BeeMascot';
 import { RipeningProCard } from '@/src/components/ripening-pro/RipeningProCard';
 import { ScreenHeader } from '@/src/components/ScreenHeader';
 import { useTheme } from '@/src/theme/useTheme';
@@ -11,15 +12,12 @@ import { type } from '@/src/theme/typography';
 import { useCategoriesStore } from '@/src/stores/categoriesStore';
 import { useCalibrationStore } from '@/src/stores/calibrationStore';
 import { useEntitlement } from '@/src/features/paywall/useEntitlement';
-import { useFocusedValue } from '@/src/hooks/useFocusedValue';
 import { analytics } from '@/src/services/analytics';
 import { TIERS, logsToNextTier, tierBandProgress, FEATURE_MIN_LOGS } from '@/src/engine';
 import type { ProFeatureId } from '@/src/engine';
 import { waitLabelFor } from '@/src/components/ripening-pro/copy';
 import { useWhenbeeHub } from './useWhenbeeHub';
-import { WhenbeeAvatar } from './WhenbeeAvatar';
-import { HoneyRing } from './HoneyRing';
-import { RingBadge } from './RingBadge';
+import { UnlockLadder } from './UnlockLadder';
 import { AreaRow } from './AreaRow';
 import { DiscoveriesPreviewCard } from './DiscoveriesPreviewCard';
 import { categoryLabel } from './discoveryDisplay';
@@ -27,26 +25,30 @@ import { BlindSpotCard } from './BlindSpotCard';
 import { LifeDriftCard } from './LifeDriftCard';
 
 // ──────────────────────────────────────────────────────────────────────────────
-// WhenbeeHub — ring hero + labeled zones (Discoveries, Your Areas).
+// WhenbeeHub — "Progress" tab. Compact header + labeled zones (Discoveries,
+// the unlock ladder, Your Areas).
 //
 // Vertical order:
-//   1. ScreenHeader (title + context-aware subtitle)
-//   2. HERO: HoneyRing wrapping WhenbeeAvatar + RingBadge below
-//   3. DISCOVERIES zone: label + explain + DiscoveriesPreviewCard (when any exist)
+//   1. Compact header: screen title left, a small BeeMascot mark right (the
+//      bee is demoted from full-screen hero to a mark — Task 6,
+//      plain-calibration-copy plan; it keeps every other appearance —
+//      onboarding, archetype crest, reward burst, empty states)
+//   2. DISCOVERIES zone: label + explain + DiscoveriesPreviewCard (when any exist)
+//   3. UNLOCK LADDER: <UnlockLadder/> — the six-stage capability list, the
+//      thing that actually motivates logging, now visible instead of buried
+//      behind the ring hero
 //   4. Conditional gentle cards: LifeDriftCard, BlindSpotCard
 //   5. YOUR AREAS zone: label + explain + one AreaRow per category
 //   6. CTA: empty → "Log your first task"; populated → "Make my whole day honest"
 //
-// No RayBurst, no TierTrailHub, no Honeycomb grid.
-// Bee: no glow halo (glow={false}); a soft-edge neutral coin backs it off the ring
-// interior (backdrop="soft" — fades at the rim, no edge line), and it runs the calm
-// micro-life (soft wing flutter, slow blink, glance whose body-lean conveys direction).
+// No RayBurst, no TierTrailHub, no Honeycomb grid, no ring hero.
 // ──────────────────────────────────────────────────────────────────────────────
 
 
 export function WhenbeeHub() {
   const t = useTheme();
   const { t: tr } = useTranslation('whenbee');
+  const { t: tc } = useTranslation('common');
   const { t: patternsT } = useTranslation('patterns');
   const vm = useWhenbeeHub();
   const categories = useCategoriesStore((s) => s.categories);
@@ -73,14 +75,6 @@ export function WhenbeeHub() {
 
   const isEmpty = vm.honestLogCount === 0;
 
-  // Sharpness flows LIVE into the ring — HoneyRing itself gates animate-vs-snap on
-  // focus (live growth animates; growth earned off-screen is already-full on
-  // arrival, no replay). Seal + stage stay deferred: those are once-per-arrival
-  // celebrations you want to actually witness when you land.
-  const shownSharpness = vm.leadSharpness;
-  const shownSealed = useFocusedValue(vm.tier === 'Honest');
-  const shownStage = useFocusedValue(vm.companion.stage);
-
   function openCategory(id: string) {
     router.push({ pathname: '/category/[category]', params: { category: id } });
   }
@@ -97,7 +91,6 @@ export function WhenbeeHub() {
     router.push('/(modals)/add-task');
   }
 
-  const heroZone: ViewStyle = { alignItems: 'center', gap: t.space[3] };
   const zoneWrap: ViewStyle = { gap: t.space[2] };
   // The Areas zone gets extra air above its label so it reads as a fresh section,
   // not crowding the conditional card (BlindSpot/Discoveries) above it.
@@ -115,7 +108,6 @@ export function WhenbeeHub() {
   };
 
   // ── Ripening Pro card derivations (non-Pro path only) ────────────────────
-  // Mirror the same tier-index pattern as HoneycombStripPlaceholder.
   const tierIdx = TIERS.indexOf(vm.tier);
   const nextTierName =
     tierIdx >= 0 && tierIdx < TIERS.length - 1 ? (TIERS[tierIdx + 1] ?? null) : null;
@@ -152,25 +144,25 @@ export function WhenbeeHub() {
 
   return (
     <View style={{ gap: t.space[5] }}>
-      {/* Header — title only; the ring + zones carry the context. */}
-      <ScreenHeader title="Whenbee" />
-
-      {/* HERO — honey ring + bee (no glow) + ring badge */}
-      <View style={heroZone}>
-        <HoneyRing sharpness={shownSharpness} sealed={shownSealed}>
-          <WhenbeeAvatar
-            stage={shownStage}
+      {/* Compact header — title left, a small bee MARK right (not a hero). */}
+      <ScreenHeader
+        title={tc('screenTitle.whenbee')}
+        right={
+          <BeeMascot
+            size={t.companion.headerMark}
+            // The mark reflects the companion's growth, same stage→variant
+            // mapping the Today header ring uses. Without it the bee is frozen
+            // at stage-1 art forever.
+            variant={`stage-${vm.companion.stage}` as BeeVariant}
             seed={vm.companion.seed}
-            driftHealth={vm.companion.driftHealth}
-            name={vm.companion.name ?? undefined}
             glow={false}
-            size={t.companion.ringBee}
-            backdrop="soft"
-            animated
+            // F10: decorative next to a heading that already says "Progress"/
+            // "Whenbee" — hide it from assistive tech instead of announcing a
+            // redundant image.
+            decorative
           />
-        </HoneyRing>
-        <RingBadge sharpness={shownSharpness} />
-      </View>
+        }
+      />
 
       {/* DISCOVERIES zone — shown once any aha card has been banked */}
       {vm.discoveryCount > 0 ? (
@@ -184,13 +176,12 @@ export function WhenbeeHub() {
         </View>
       ) : null}
 
+      {/* UNLOCK LADDER — the six-stage capability list; what your logs buy you */}
+      <UnlockLadder keeper={vm.companion.keeper} />
+
       {/* Conditional gentle cards (no-guilt, never punitive) */}
       {vm.showDriftRecheck ? (
-        <LifeDriftCard
-          companionName={vm.companion.name}
-          blindSpot={vm.blindSpot}
-          onDismiss={vm.dismissDriftRecheck}
-        />
+        <LifeDriftCard blindSpot={vm.blindSpot} onDismiss={vm.dismissDriftRecheck} />
       ) : null}
       {vm.blindSpot ? <BlindSpotCard blindSpot={vm.blindSpot} /> : null}
 

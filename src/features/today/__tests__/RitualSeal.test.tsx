@@ -18,6 +18,6 @@ describe('RitualSeal', () => {
 
   it('shows the sealed label when done', () => {
     render(<RitualSeal done onLog={() => {}} />);
-    expect(screen.getByText("Today's honey set ✦")).toBeOnTheScreen();
+    expect(screen.getByText("Today's logs are in ✦")).toBeOnTheScreen();
   });
 });

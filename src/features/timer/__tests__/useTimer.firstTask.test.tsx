@@ -75,6 +75,7 @@ const okResult: LogResult = {
   leveledUp: true,
   reclaimDeltaMin: 3,
   reclaimLifetimeMin: 3,
+  stageJustRose: false,
 };
 
 const TIMER_PARAMS: Record<string, string> = {

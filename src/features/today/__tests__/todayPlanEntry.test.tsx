@@ -86,7 +86,7 @@ beforeEach(() => {
     logs: 0, statsByCategory: {}, hydrate: async () => {},
     loadReclaimSummary: async () => ({
       lifetimeMin: 0, byCategory: [], biggestArea: null, honestLogCount: 0, discoveryCount: 0,
-      companion: { stage: 2, capability: 'finish_time' as never, keeper: false, lifetimeNectar: 0, driftHealth: 'settled', seed: 1, name: null },
+      companion: { stage: 2, capability: 'finish_time' as never, keeper: false, lifetimeNectar: 0, driftHealth: 'settled', seed: 1 },
     } as never),
   });
 });

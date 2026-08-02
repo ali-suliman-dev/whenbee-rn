@@ -23,7 +23,6 @@ import {
 } from '@/src/engine';
 import { makeTaskEventsRepo } from '@/src/db/repositories/taskEventsRepo';
 import { makeCategoryStatsRepo } from '@/src/db/repositories/categoryStatsRepo';
-import { makeCompanionRepo } from '@/src/db/repositories/companionRepo';
 import { useCalibrationStore } from '@/src/stores/calibrationStore';
 import { useCategoriesStore } from '@/src/stores/categoriesStore';
 import { useSettingsStore } from '@/src/stores/settingsStore';
@@ -71,7 +70,7 @@ export interface BuildReportModelDeps {
   nowMs: number;
   events: ReportEventRow[];
   statsByCategory: Record<string, ReportCategoryStat>;
-  companionName: string | null;
+  personName: string | null;
   nameOf: (categoryId: string) => string;
 }
 
@@ -111,7 +110,7 @@ function sharpestNoteFrom(samples: AccuracySample[]): string | null {
  * when the window holds fewer than REPORT_MIN_LOGS completed logs.
  */
 export function buildReportModel(deps: BuildReportModelDeps): BuildReportModelResult {
-  const { windowKind, nowMs, events, statsByCategory, companionName, nameOf } = deps;
+  const { windowKind, nowMs, events, statsByCategory, personName, nameOf } = deps;
   const window = windowFor(windowKind, nowMs);
 
   const completed = events
@@ -204,7 +203,7 @@ export function buildReportModel(deps: BuildReportModelDeps): BuildReportModelRe
   const model: ReportModel = {
     window,
     generatedAtMs: nowMs,
-    companionName,
+    personName,
     accuracyPct,
     accuracySpark,
     totalLogs: completed.length,
@@ -232,7 +231,7 @@ export interface UseReportModelResult {
   status: ReportStatus;
 }
 
-/** Loads windowed logs + per-category stats + the companion name, then builds the model. */
+/** Loads windowed logs + per-category stats + the user's display name, then builds the model. */
 export function useReportModel(
   windowKind: ReportWindow['kind'],
   nowMs: number = Date.now(),
@@ -246,7 +245,6 @@ export function useReportModel(
     try {
       const taskEventsRepo = makeTaskEventsRepo(db);
       const categoryStatsRepo = makeCategoryStatsRepo(db);
-      const companionRepo = makeCompanionRepo(db);
 
       const rows = await taskEventsRepo.listRecent(500);
       const events: ReportEventRow[] = rows.map((e) => ({
@@ -267,7 +265,7 @@ export function useReportModel(
         }),
       );
 
-      const companionName = (await companionRepo.get()).name ?? null;
+      const personName = useSettingsStore.getState().displayName?.trim() || null;
 
       setResult(
         buildReportModel({
@@ -275,7 +273,7 @@ export function useReportModel(
           nowMs: nowRef.current,
           events,
           statsByCategory,
-          companionName,
+          personName,
           nameOf: makeNameResolver(),
         }),
       );

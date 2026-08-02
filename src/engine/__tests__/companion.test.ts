@@ -38,9 +38,8 @@ describe('capabilityFor — each stage unlocks a real capability', () => {
     expect(capabilityFor(6).id).toBe('keeper-standing');
     expect(capabilityFor(6).gatesNewFeature).toBe(false);
   });
-  it('stage 1..5 labels align with the honey tier name', () => {
+  it('stage 1..5 tiers align with the honey tier name', () => {
     for (let s = 1 as CompanionStage; s <= 5; s = (s + 1) as CompanionStage) {
-      expect(capabilityFor(s).label.length).toBeGreaterThan(0);
       expect(capabilityFor(s).tier).toBe(TIERS[s - 1]);
     }
   });

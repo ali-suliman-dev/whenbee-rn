@@ -41,7 +41,7 @@ describe('HoneycombStrip', () => {
       />,
     );
 
-    expect(screen.getByText('Fully ripened')).toBeOnTheScreen();
+    expect(screen.getByText('Honest')).toBeOnTheScreen();
     expect(screen.queryByText(/logs? to /)).toBeNull();
     // A satisfied full row — every pip lit, none empty.
     expect(screen.queryAllByTestId('honey-pip-empty')).toHaveLength(0);

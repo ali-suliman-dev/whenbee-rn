@@ -1,4 +1,4 @@
-import { Pressable, Text, View, type TextStyle } from 'react-native';
+import { Pressable, View } from 'react-native';
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
@@ -13,16 +13,26 @@ import { HoneyRing } from '@/src/features/whenbee/HoneyRing';
 import { BeeMascot, type BeeVariant } from '@/src/components/BeeMascot';
 import { BeeCoin } from '@/src/components/BeeCoin';
 import { useTheme } from '@/src/theme/useTheme';
-import { type } from '@/src/theme/typography';
 import type { CompanionStage } from '@/src/engine';
 import type { HoneycombCell } from '@/src/components/honeycomb/Honeycomb';
 
 // Compact Today-header honey ring: the SAME animated HoneyRing as the hub, shrunk
 // to t.headerRing.size, with a nameless BeeMascot inside (no name overlay, no
-// RingBadge) and the tier word beneath. Tap → the Whenbee hub. Behind the bee sits
-// the SAME soft BeeCoin the hub uses (colors.companionCoin) — shrunk to
-// headerRing.coinSize so it backs the bee inside the ring without enlarging the bee
-// or ring. Honey is monotonic; the ring only ever fills forward.
+// tier/percent badge). Tap → the Whenbee hub. Behind the bee sits the SAME soft
+// BeeCoin the hub uses (colors.companionCoin) — shrunk to headerRing.coinSize so
+// it backs the bee inside the ring without enlarging the bee or ring. Honey is
+// monotonic; the ring only ever fills forward.
+//
+// F14: the tier word used to also render as a caption under the ring — the
+// SAME read `CalibrationCard` shows ~10pt below it on Today, an identical
+// read stacked twice. The card is the fuller statement (tier word AND the
+// percentage AND the next-unlock line), so the caption here was the one to
+// drop; the ring's own accessibilityLabel (`headerRing.a11y`) still speaks
+// the tier word, it just isn't drawn twice on screen. The caption was always
+// `position:'absolute', top:'100%'` — excluded from this block's measured
+// layout — so removing it does not change the block's height, and the
+// sibling settings-gear icon (centered against the ring in the header row)
+// does not move.
 /** Maps an engine Tier value to its translated display word. */
 function tierLabel(tier: HoneycombCell['tier'], tr: TFunction<'today'>): string {
   const key = tier.toLowerCase() as 'raw' | 'setting' | 'ripening' | 'thickening' | 'honest';
@@ -45,21 +55,6 @@ export function TodayHeaderRing({
   const reduced = useReducedMotion();
   const scale = useSharedValue(1);
   const pressStyle = useAnimatedStyle(() => ({ transform: [{ scale: scale.get() }] }));
-
-  // Tier word caption: absolutely positioned below the ring so the block measures
-  // as the ring circle alone — that keeps the sibling gear centered to the circle,
-  // not to circle + label (which would sit it too high).
-  const caption: TextStyle = {
-    ...(type.micro as unknown as TextStyle),
-    position: 'absolute',
-    top: '100%',
-    left: 0,
-    right: 0,
-    fontSize: t.headerRing.caption,
-    color: t.colors.inkSoft,
-    textAlign: 'center',
-    marginTop: t.space[1],
-  };
 
   return (
     <Pressable
@@ -91,7 +86,6 @@ export function TodayHeaderRing({
             />
           </View>
         </HoneyRing>
-        <Text style={caption}>{tierLabel(tier, tr)}</Text>
       </Animated.View>
     </Pressable>
   );

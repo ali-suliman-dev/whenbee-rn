@@ -306,8 +306,8 @@
   },
   "ripeningPro": {
     "ripening": {
-      "eyebrow": "Pro · mognar",
-      "pillPrefix": "Mognar vid",
+      "eyebrow": "Pro · nästan klar",
+      "pillPrefix": "Låses upp vid",
       "settling": "Sätter sig fortfarande…",
       "footer": "Inget att hålla vid liv, ingen brådska. Logga som vanligt, så kommer du dit.",
       "ticketTitle": "Äg Pro från dag ett",
@@ -335,7 +335,7 @@
       "readyStatus": "Klar"
     },
     "card": {
-      "honeyPct": "{{pct}} % honung",
+      "honeyPct": "{{pct}} % kalibrerad",
       "logsToNext": "~{{count}} loggar kvar"
     },
     "header": {

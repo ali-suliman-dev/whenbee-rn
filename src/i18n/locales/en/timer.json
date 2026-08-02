@@ -16,7 +16,7 @@
   "stopAndLog": "Stop & log",
   "abandonConfirm": {
     "title": "Abandon this task?",
-    "message": "No guilt. It just won’t count toward your honey.",
+    "message": "No guilt. It just won’t count toward your calibration.",
     "keepTiming": "Keep timing",
     "abandon": "Abandon"
   },

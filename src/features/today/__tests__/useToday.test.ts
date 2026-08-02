@@ -25,7 +25,6 @@ const defaultSummary: ReclaimSummary = {
     lifetimeNectar: 0,
     driftHealth: 'settled' as const,
     seed: 1,
-    name: null,
   },
 };
 

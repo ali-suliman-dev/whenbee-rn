@@ -1,22 +1,18 @@
 {
   "tiers": {
-    "raw": "Rå",
-    "setting": "Stelnar",
-    "ripening": "Mognar",
-    "thickening": "Tjocknar",
+    "raw": "Precis börjat",
+    "setting": "Lär sig",
+    "ripening": "Närmar sig",
+    "thickening": "Nästan där",
     "honest": "Ärlig"
   },
+  "card": {
+    "eyebrow": "Ditt skarpaste område",
+    "pct": "{{pct}} %",
+    "a11y": "{{scope}}, {{tier}}, {{pct}} procent kalibrerad. {{unlock}}"
+  },
   "ring": {
-    "stage": {
-      "raw": "Precis igång",
-      "setting": "Blir skarpare",
-      "ripening": "Landar närmare",
-      "thickening": "Du kan din tajmning",
-      "honest": "Planer stämmer med verkligheten"
-    },
-    "sealed": "Honungskakan förseglad ✦",
-    "logsToNext_one": "~{{count}} logg kvar till {{tier}}",
-    "logsToNext_other": "~{{count}} loggar kvar till {{tier}}"
+    "sealed": "Kalibrerad ✦"
   },
   "hub": {
     "discoveries": {
@@ -30,7 +26,7 @@
     },
     "cta": {
       "logFirst": "Logga din första uppgift",
-      "logFirstSub": "Planeringen av din ärliga dag låses upp när honungen stelnar.",
+      "logFirstSub": "Planeringen av din ärliga dag låses upp efter dina första loggar.",
       "dayHonest": "Gör hela min dag ärlig"
     },
     "ripeningWait": {
@@ -80,19 +76,47 @@
       "sentenceFaster": "Du planerar 15 minuter. I verkligheten tar det bara omkring {{minutes}}."
     }
   },
-  "companion": {
-    "namePrompt": "Ge din kompis ett namn, om du vill. Du kan ändra det när som helst.",
-    "namePlaceholder": "t.ex. Surre",
-    "nameA11y": "Kompisens namn",
-    "save": "Spara"
-  },
   "discoveriesRoute": {
     "heading": "Saker du har lärt dig",
     "sub": "{{count}} sanningar som Whenbee hittat i din tidtagning"
   },
   "honeycomb": {
-    "a11yRipening_one": "Din honungskaka, nivå {{tier}}, {{count}} logg kvar till {{nextTier}}, {{logs}} loggade",
-    "a11yRipening_other": "Din honungskaka, nivå {{tier}}, {{count}} loggar kvar till {{nextTier}}, {{logs}} loggade",
-    "a11yRipened": "Din honungskaka, nivå {{tier}}, helt mogen, {{logs}} loggade"
+    "a11yRipening_one": "Nivå {{tier}}, {{count}} logg kvar till {{nextTier}}, {{logs}} loggade",
+    "a11yRipening_other": "Nivå {{tier}}, {{count}} loggar kvar till {{nextTier}}, {{logs}} loggade",
+    "a11yRipened": "Nivå {{tier}}, ärlig, {{logs}} loggade"
+  },
+  "ladder": {
+    "title": "Vad dina loggar skärper",
+    "headerStatus": "{{tier}} · {{pct}} %",
+    "keeperProgress": "{{done}} av {{total}} områden kalibrerade",
+    "runningFinishTime": "Livesluttid på din timer",
+    "todayDoneTime": "Klartid på Idag och Ny uppgift",
+    "startByAnchor": "Omvänd börja-senast-tid",
+    "honestDayForecast": "Ärlig dag-prognos när du planerar",
+    "driftRecalibration": "Avdriftskoll när livet skiftar",
+    "keeperStanding": "Väktare – varje område kalibrerat",
+    "away_one": "{{count}} logg kvar",
+    "away_other": "{{count}} loggar kvar",
+    "stateSharp": "skarp nog att lita på",
+    "stateGated": "låses upp vid Ärlig",
+    "sharpen_one": "1 logg till skärper {{capability}}",
+    "sharpen_other": "{{count}} loggar till skärper {{capability}}",
+    "sharpenPro_one": "1 logg till skärper {{capability}}, en Pro-funktion",
+    "sharpenPro_other": "{{count}} loggar till skärper {{capability}}, en Pro-funktion",
+    "unlock_one": "1 logg till låser upp {{capability}}",
+    "unlock_other": "{{count}} loggar till låser upp {{capability}}",
+    "justSharpened": "{{capability}} blev nyss skarpare",
+    "justUnlocked": "Nyss upplåst: {{capability}}",
+    "rungReachedA11y": "{{capability}}, upplåst",
+    "rungSharpA11y": "{{capability}}, skarp nog att lita på",
+    "rungSharpProA11y": "{{capability}}, skarp nog att lita på, öppnas med Pro",
+    "rungGatedA11y": "{{capability}}, låses upp vid Ärlig",
+    "rungCurrentA11y_one": "{{capability}}, pågående steg, {{count}} logg kvar",
+    "rungCurrentA11y_other": "{{capability}}, pågående steg, {{count}} loggar kvar",
+    "rungUpcomingA11y": "{{capability}}, inte nådd än",
+    "rungKeeperProgressA11y": "{{capability}}, {{progress}}",
+    "rungCurrentProA11y_one": "{{capability}}, pågående steg, {{count}} logg kvar, öppnas med Pro",
+    "rungCurrentProA11y_other": "{{capability}}, pågående steg, {{count}} loggar kvar, öppnas med Pro",
+    "rungUpcomingProA11y": "{{capability}}, inte nådd än, öppnas med Pro"
   }
 }

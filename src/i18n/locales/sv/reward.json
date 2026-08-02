@@ -75,18 +75,20 @@
   "screen": {
     "empty": {
       "title": "Inget att fira än",
-      "subtitle": "Logga något så mognar honungen här."
+      "subtitle": "Logga en uppgift, så visas ditt första riktiga tal här."
     },
     "backToToday": "Tillbaka till idag",
     "tookEyebrow": "DET TOG FAKTISKT",
     "unitMin": "min",
-    "honeyLabel": "HONUNG",
+    "honeyLabel": "{{category}} · kalibrering",
+    "payoffA11y": "{{category}}, kalibrering {{pct}} procent, multiplikator {{multiplier}} gånger.",
     "delta": {
       "over": "{{duration}} över din gissning",
       "under": "{{duration}} under din gissning",
       "equal": "precis på din gissning"
     },
-    "seeYourBee": "Se ditt bi"
+    "seeYourBee": "Se din framstegsflik",
+    "unlockEyebrow": "Ditt skarpaste område"
   },
   "reask": {
     "decline": "Nej tack",

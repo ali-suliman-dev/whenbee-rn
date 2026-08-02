@@ -9,6 +9,29 @@ jest.mock('expo-router', () => ({
   }),
 }));
 
+describe('BeeMascot decorative prop', () => {
+  it('hides the mark from assistive tech instead of announcing it as an image', () => {
+    const tree = render(<BeeMascot size={40} decorative />).toJSON();
+    const findRoot = (node: unknown): { props?: Record<string, unknown> } | null => {
+      if (!node) return null;
+      if (Array.isArray(node)) return (node[0] as { props?: Record<string, unknown> }) ?? null;
+      return node as { props?: Record<string, unknown> };
+    };
+    const root = findRoot(tree);
+    expect(root?.props?.accessibilityElementsHidden).toBe(true);
+    expect(root?.props?.importantForAccessibility).toBe('no-hide-descendants');
+    expect(root?.props?.accessibilityLabel).toBeUndefined();
+    expect(root?.props?.accessibilityRole).toBeUndefined();
+  });
+
+  it('keeps the default announced-image behaviour when not decorative', () => {
+    const tree = render(<BeeMascot size={40} />).toJSON();
+    const root = (Array.isArray(tree) ? tree[0] : tree) as { props?: Record<string, unknown> } | null;
+    expect(root?.props?.accessibilityRole).toBe('image');
+    expect(root?.props?.accessibilityElementsHidden).toBeUndefined();
+  });
+});
+
 describe('BeeMascot sleepy prop', () => {
   it('renders without crashing when sleepy', () => {
     const { toJSON } = render(<BeeMascot size={120} sleepy />);

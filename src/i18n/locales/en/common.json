@@ -9,14 +9,14 @@
     "m": "{{count}}m"
   },
   "toTier": " to {{tier}}",
-  "fullyRipened": "Fully ripened",
+  "fullyRipened": "Honest",
   "screenTitle": {
     "settings": "Settings",
     "categories": "Categories",
     "privacy": "Privacy",
     "today": "Today",
     "routines": "Routines",
-    "whenbee": "Whenbee",
+    "whenbee": "Progress",
     "patterns": "Patterns"
   },
   "quickAction": {
@@ -31,8 +31,7 @@
     "ahead": "ahead"
   },
   "a11y": {
-    "honeycombCell": "{{label}} cell, {{pct}}% honey, tier {{tier}}",
-    "trailNode": "{{label}}: {{state}}",
-    "ringBadge": "{{tier}}, {{pct}} percent. {{line}}. {{next}}"
+    "honeycombCell": "{{label}}, {{pct}}% calibrated, tier {{tier}}",
+    "trailNode": "{{label}}: {{state}}"
   }
 }

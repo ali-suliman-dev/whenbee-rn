@@ -76,6 +76,7 @@ const okResult: LogResult = {
   leveledUp: true,
   reclaimDeltaMin: 0,
   reclaimLifetimeMin: 0,
+  stageJustRose: false,
 };
 
 const STARTED_AT = 1_700_000_000_000;

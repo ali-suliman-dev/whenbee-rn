@@ -18,7 +18,7 @@ function model(overrides: Partial<ReportModel> = {}): ReportModel {
   return {
     window: { kind: '30d', sinceMs: 0, label: 'Last 30 days' },
     generatedAtMs: Date.UTC(2026, 5, 21),
-    companionName: null,
+    personName: null,
     accuracyPct: 72,
     accuracySpark: [60, 64, 68, 70, 71, 72],
     totalLogs: 24,
@@ -103,9 +103,9 @@ describe('buildReportHtml', () => {
     expect(html).toMatch(/still settling/);
   });
 
-  it('includes the "Prepared by" line only when the companion name is set', () => {
+  it('includes the "Prepared by" line only when the person name is set', () => {
     expect(buildReportHtml(model(), css)).not.toContain('Prepared by Whenbee');
-    const named = buildReportHtml(model({ companionName: 'Buzz' }), css);
+    const named = buildReportHtml(model({ personName: 'Buzz' }), css);
     expect(named).toContain('Prepared by Whenbee');
     expect(named).toContain('Buzz');
   });
@@ -123,8 +123,8 @@ describe('buildReportHtml', () => {
     expect(html).toContain('&lt;script&gt;');
   });
 
-  it('escapes a malicious companion name', () => {
-    const html = buildReportHtml(model({ companionName: '<b>x</b>' }), css);
+  it('escapes a malicious person name', () => {
+    const html = buildReportHtml(model({ personName: '<b>x</b>' }), css);
     expect(html).not.toContain('<b>x</b>');
     expect(html).toContain('&lt;b&gt;x&lt;/b&gt;');
   });

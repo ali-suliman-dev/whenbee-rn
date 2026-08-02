@@ -38,7 +38,6 @@ function reclaimWith(lifetimeNectar: number): ReclaimSummary {
       lifetimeNectar,
       driftHealth: 'settled',
       seed: 1,
-      name: null,
     },
   };
 }

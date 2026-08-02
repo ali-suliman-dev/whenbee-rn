@@ -198,6 +198,20 @@ export interface AppEventProps {
   drift_recheck: { action: 'shown' | 'recheck' | 'dismissed' };
   context_tagged: { key: string; value: string };
 
+  // ── Unlock ladder (calibration -> capability) ────────────────────────────────
+  // The branch that surfaced the ladder rests on one hypothesis: telling people
+  // what their logs sharpen makes them log more. These two are what make that
+  // checkable. Ids and numbers only — never a task or category name.
+  unlock_sentence_shown: {
+    surface: 'today' | 'reward';
+    stage: number;
+    capability: string;
+    is_pro: boolean;
+    /** True on the log that just crossed a stage — the "you just earned X" beat. */
+    just_earned: boolean;
+  };
+  unlock_ladder_viewed: { stage: number; rungs_reached: number; is_pro: boolean };
+
   // ── Per-category goals (Pro) ──────────────────────────────────────────────────
   goal_card_viewed: { category: string; state: 'empty' | 'active' | 'met' | 'not_enough' | 'locked' };
   goal_set: { category: string; target_band: number; baseline_band: number };
