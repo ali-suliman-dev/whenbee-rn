@@ -84,6 +84,7 @@ export function BeeMascot({
   glow = true,
   celebrate = false,
   sleepy = false,
+  decorative = false,
 }: {
   size?: number;
   variant?: BeeVariant;
@@ -111,6 +112,15 @@ export function BeeMascot({
    * wins and renders the calm resting artwork regardless of those props.
    */
   sleepy?: boolean;
+  /**
+   * True when the bee is a small mark BESIDE text that already says the same
+   * thing (e.g. the Whenbee hub's compact header mark, next to a title
+   * literally reading "Progress"/"Whenbee") — hides it from assistive tech
+   * instead of announcing it as a redundant image. Default false: every other
+   * usage (the Today header ring, onboarding) is the ONLY visual carrier of
+   * "here is your companion" and stays announced.
+   */
+  decorative?: boolean;
 }) {
   const t = useTheme();
   const { t: ts } = useTranslation('shared');
@@ -420,10 +430,9 @@ export function BeeMascot({
     </>
   );
 
-  const a11y = {
-    accessibilityRole: 'image' as const,
-    accessibilityLabel: ts('a11y.companion'),
-  };
+  const a11y = decorative
+    ? { accessibilityElementsHidden: true, importantForAccessibility: 'no-hide-descendants' as const }
+    : { accessibilityRole: 'image' as const, accessibilityLabel: ts('a11y.companion') };
 
   // Static path (every shared usage, and celebrate under reduced-motion): one
   // Svg, original z-order preserved — final state, no motion. `sleepy` always

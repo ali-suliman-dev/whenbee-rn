@@ -3,6 +3,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '@/src/theme/useTheme';
 import { type } from '@/src/theme/typography';
 import { useUnlockSentence } from './useUnlockSentence';
+import { spokenText } from './a11yText';
 import type { CompanionCapability } from '@/src/engine';
 
 // ──────────────────────────────────────────────────────────────────────────────
@@ -51,7 +52,9 @@ export function NextUnlock({ justUnlockedId = null }: NextUnlockProps) {
   };
 
   return (
-    <View style={row} accessible accessibilityLabel={sentence}>
+    // F10: the ✦ in the sealed sentence is a visual-only cue (see `a11yText`)
+    // — spoken through `spokenText` so VoiceOver/TalkBack never announces it.
+    <View style={row} accessible accessibilityLabel={spokenText(sentence)}>
       <Ionicons name="key-outline" size={t.iconSize.sm} color={t.colors.amberText} />
       <Text style={line}>{sentence}</Text>
     </View>

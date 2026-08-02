@@ -157,6 +157,10 @@ export function WhenbeeHub() {
             variant={`stage-${vm.companion.stage}` as BeeVariant}
             seed={vm.companion.seed}
             glow={false}
+            // F10: decorative next to a heading that already says "Progress"/
+            // "Whenbee" — hide it from assistive tech instead of announcing a
+            // redundant image.
+            decorative
           />
         }
       />
