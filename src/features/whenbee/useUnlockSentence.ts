@@ -2,7 +2,7 @@ import { useTranslation } from 'react-i18next';
 import { useEntitlement } from '@/src/features/paywall/useEntitlement';
 import type { CompanionCapability } from '@/src/engine';
 import { capabilityLabel } from './capabilityCopy';
-import { isCapabilityPro } from './capabilityGating';
+import { isCapabilityStageGated } from './capabilityGating';
 import { useNextUnlock } from './useNextUnlock';
 
 // ──────────────────────────────────────────────────────────────────────────────
@@ -12,18 +12,27 @@ import { useNextUnlock } from './useNextUnlock';
 // which is how the visible row could say "a Pro feature" while the spoken label
 // promised it outright.
 //
-// Every branch is a SINGLE translation key, never fragments glued in JS:
+// Every branch is a SINGLE translation key, never fragments glued in JS. There
+// are TWO shapes for "the next capability", chosen by `isCapabilityStageGated`
+// (F1, 2026-08-02): only `drift-recalibration` is a real feature gate — logs
+// crossing every other rung's tier merely make that capability's own accuracy
+// sharper, they don't reveal anything that wasn't already there.
 //
-//   ladder.justUnlocked / ladder.justUnlockedPro  what THIS log just bought
-//   ladder.row_* / ladder.rowPro_*                the next capability
-//   ring.sealed                                   nothing further for logs to buy
-//   '' (empty)                                     nothing honest to say — see below
+//   ladder.sharpen_* / ladder.sharpenPro_*   the next capability, NOT gated
+//   ladder.unlock_*                          the next capability, genuinely gated
+//   ladder.justSharpened                     what THIS log just sharpened, not gated
+//   ladder.justUnlocked                      what THIS log just unlocked, gated
+//   ring.sealed                              nothing further for logs to buy
+//   '' (empty)                                nothing honest to say — see below
 //
 // The Pro branches exist because two of the six ladder capabilities sit behind
-// the paywall (`capabilityGating.ts`). Naming a Pro feature is fine — a feature
-// NAME is not a gated VALUE — but promising it as a logging reward would walk a
-// free user into a paywall for something the app said they earned. The sentence
-// states a fact: no countdown, no nag, no guilt.
+// the paywall (`capabilityGating.ts`) — independently of whether they're stage-
+// gated; start-by-anchor/honest-day-forecast are Pro but NOT stage-gated, and
+// the one stage-gated rung (drift-recalibration) is free. Naming a Pro feature
+// is fine — a feature NAME is not a gated VALUE — but promising it as a
+// logging reward would walk a free user into a paywall for something the app
+// said they earned. `justSharpened` has no Pro variant: it's a fact about
+// accuracy the crossing log measured, not an offer, so it never mentions Pro.
 //
 // `ring.sealed` is gated on `visibleSealed`, not the monotonic `sealed` — see
 // `useNextUnlock`'s header comment (F3). The empty string is the suppression
@@ -35,16 +44,17 @@ import { useNextUnlock } from './useNextUnlock';
 /** @param justUnlockedId set on the log that just crossed a tier; null otherwise. */
 export function useUnlockSentence(justUnlockedId: CompanionCapability['id'] | null = null): string {
   const { t: tr } = useTranslation('whenbee');
-  const { nextCapabilityLabel, nextCapabilityIsPro, logsToNext, visibleSealed } = useNextUnlock();
+  const { nextCapabilityId, nextCapabilityLabel, nextCapabilityIsPro, logsToNext, visibleSealed } =
+    useNextUnlock();
   const isPro = useEntitlement((s) => s.isPro);
 
   if (justUnlockedId !== null) {
     const capability = capabilityLabel(justUnlockedId, tr);
-    return !isPro && isCapabilityPro(justUnlockedId)
-      ? tr('ladder.justUnlockedPro', { capability })
-      : tr('ladder.justUnlocked', { capability });
+    return isCapabilityStageGated(justUnlockedId)
+      ? tr('ladder.justUnlocked', { capability })
+      : tr('ladder.justSharpened', { capability });
   }
-  if (nextCapabilityLabel === null) {
+  if (nextCapabilityId === null || nextCapabilityLabel === null) {
     // `nextCapabilityLabel === null` means the MONOTONIC stage is sealed —
     // but "Calibrated ✦" is a claim about the number beside it, so it only
     // renders when the LIVE tier backs that claim up too (`visibleSealed`,
@@ -61,5 +71,6 @@ export function useUnlockSentence(justUnlockedId: CompanionCapability['id'] | nu
   // the sentence rather than print a fabricated count (F2).
   if (logsToNext === null) return '';
   const vars = { count: logsToNext, capability: nextCapabilityLabel };
-  return !isPro && nextCapabilityIsPro ? tr('ladder.rowPro', vars) : tr('ladder.row', vars);
+  if (isCapabilityStageGated(nextCapabilityId)) return tr('ladder.unlock', vars);
+  return !isPro && nextCapabilityIsPro ? tr('ladder.sharpenPro', vars) : tr('ladder.sharpen', vars);
 }

@@ -109,7 +109,7 @@ describe('WhenbeeHub', () => {
     // Compact header — the screen title, now "Progress" (common:screenTitle.whenbee).
     expect(screen.getByText('Progress')).toBeOnTheScreen();
     // Unlock ladder — card title, the current-rung capability + away-count line.
-    expect(screen.getByText('What your logs unlock')).toBeOnTheScreen();
+    expect(screen.getByText('What your logs sharpen')).toBeOnTheScreen();
     expect(screen.getByText('Reverse start-by anchor')).toBeOnTheScreen();
     expect(screen.getByText('4 logs away')).toBeOnTheScreen();
     // Zone label

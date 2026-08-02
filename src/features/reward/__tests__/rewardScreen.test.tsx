@@ -194,12 +194,14 @@ describe('Reward screen', () => {
     expect(screen.getByText('Flow')).toBeOnTheScreen();
   });
 
-  it('shows what this log unlocks next, mid-ladder', () => {
+  it('shows what this log sharpens next, mid-ladder', () => {
     // Same fixture as CalibrationCard's mid-ladder test: sharpness 64 lands
     // exactly on the Ripening threshold; 18 points to Thickening (82) →
-    // ceil(18/4) = 5 logs; the NEXT stage (4) unlocks the honest-day forecast.
-    // That capability is Pro, so a free user gets the Pro-honest sentence — the
-    // screen must not sell a paywalled feature as a logging reward.
+    // ceil(18/4) = 5 logs; the NEXT stage (4) sharpens the honest-day forecast.
+    // That capability is Pro, so a free user gets the Pro-sharpen sentence —
+    // the screen must not sell a paywalled feature as a logging reward. It's
+    // "sharpen" phrasing, not "unlock", because stage 4 is not the one
+    // genuinely stage-gated rung (only drift-recalibration, stage 5, is — F1).
     useCalibrationStore.setState({
       statsByCategory: {
         cleaning: { sharpness: 64, tier: 'Ripening' } as unknown as CachedStat,
@@ -216,7 +218,7 @@ describe('Reward screen', () => {
     });
     render(<Reward />);
     expect(
-      screen.getByText('5 more logs and Honest-Day forecast on the widget, a Pro feature'),
+      screen.getByText('5 more logs sharpen Honest-Day forecast when you plan, a Pro feature'),
     ).toBeOnTheScreen();
   });
 
@@ -238,17 +240,20 @@ describe('Reward screen', () => {
     });
     render(<Reward />);
     expect(
-      screen.getByText('5 more logs and Honest-Day forecast on the widget'),
+      screen.getByText('5 more logs sharpen Honest-Day forecast when you plan'),
     ).toBeOnTheScreen();
   });
 
-  it('says what THIS log unlocked on the log that crossed a tier', () => {
+  it('says what THIS log sharpened on a crossing that is NOT the genuinely gated rung', () => {
     // tierBefore Setting → tierAfter Ripening is an upward crossing, and
     // `stageJustRose` says THIS log's fuel write is what raised the monotonic
     // stage — the store's own before-vs-after read, not a re-derived compare
-    // against the (already-advanced) current stage — so this log genuinely
-    // earned the rung. The payoff screen names it instead of handing the user
-    // the next demand.
+    // against the (already-advanced) current stage. The rung this crossing
+    // buys is start-by-anchor (stage 3), which is Pro but NOT stage-gated
+    // (F1 — only drift-recalibration genuinely gates), so the payoff line is
+    // a neutral fact regardless of the viewer's entitlement: no Pro mention,
+    // because crossing this tier didn't grant or reveal anything new to
+    // ANYONE, subscriber or not.
     useCalibrationStore.setState({
       statsByCategory: {
         cleaning: { sharpness: 64, tier: 'Ripening' } as unknown as CachedStat,
@@ -264,16 +269,14 @@ describe('Reward screen', () => {
       result: { ...baseResult, leveledUp: true, stageJustRose: true },
     });
     render(<Reward />);
-    // start-by-anchor is Pro, so a free user is told the truth about it rather
-    // than being handed it as an earned reward.
-    expect(
-      screen.getByText('You reached Reverse start-by anchor, it opens with Pro'),
-    ).toBeOnTheScreen();
+    expect(screen.getByText('Reverse start-by anchor just got sharper')).toBeOnTheScreen();
+    expect(screen.queryByText(/opens with Pro/)).toBeNull();
+    expect(screen.queryByText(/Just unlocked/)).toBeNull();
     // …and it does NOT also show the next target on the same beat.
-    expect(screen.queryByText(/more logs and/)).toBeNull();
+    expect(screen.queryByText(/more logs/)).toBeNull();
   });
 
-  it('names the freshly-unlocked capability plainly for a subscriber', () => {
+  it('names the freshly-sharpened capability the same way for a subscriber (no Pro branch on a non-gated crossing)', () => {
     useEntitlement.setState({ isPro: true });
     useCalibrationStore.setState({
       statsByCategory: {
@@ -290,7 +293,36 @@ describe('Reward screen', () => {
       result: { ...baseResult, leveledUp: true, stageJustRose: true },
     });
     render(<Reward />);
-    expect(screen.getByText('Just unlocked: Reverse start-by anchor')).toBeOnTheScreen();
+    expect(screen.getByText('Reverse start-by anchor just got sharper')).toBeOnTheScreen();
+  });
+
+  it('F1 regression: says "Just unlocked" only on a crossing of the ONE genuinely gated rung (drift-recalibration)', () => {
+    // tierBefore Thickening → tierAfter Honest is the ONE crossing that buys
+    // a real feature gate (stage 5, drift-recalibration — `DRIFT_RECHECK_MIN_STAGE`
+    // in hubGates.ts is the only place the app reads companion stage as a gate).
+    useCalibrationStore.setState({
+      statsByCategory: {
+        cleaning: { sharpness: 90, tier: 'Thickening' } as unknown as CachedStat,
+      },
+      logs: 40,
+      companionStage: 5,
+    });
+    useRewardStore.getState().setReward({
+      actualMin: 16,
+      guessMin: 15,
+      category: 'cleaning',
+      label: null,
+      result: {
+        ...baseResult,
+        tierBefore: 'Thickening',
+        tierAfter: 'Honest',
+        leveledUp: true,
+        stageJustRose: true,
+      },
+    });
+    render(<Reward />);
+    expect(screen.getByText('Just unlocked: Drift re-check when life shifts')).toBeOnTheScreen();
+    expect(screen.queryByText(/just got sharper/)).toBeNull();
   });
 
   it('does not re-announce a rung the user passed long ago', () => {
@@ -410,7 +442,7 @@ describe('Reward screen', () => {
     ).toBeOnTheScreen();
     // The unlock row is its own focusable unit, derived from the 64% lead.
     expect(
-      screen.getByLabelText('5 more logs and Honest-Day forecast on the widget, a Pro feature'),
+      screen.getByLabelText('5 more logs sharpen Honest-Day forecast when you plan, a Pro feature'),
     ).toBeOnTheScreen();
     // And it is explicitly introduced as a different subject.
     expect(screen.getByText('Across everything you track')).toBeOnTheScreen();

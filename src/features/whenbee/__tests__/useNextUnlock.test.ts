@@ -58,7 +58,7 @@ describe('useNextUnlock', () => {
 
     expect(result.current.tier).toBe('Ripening');
     expect(result.current.logsToNext).toBe(1);
-    expect(result.current.nextCapabilityLabel).toBe('Honest-Day forecast on the widget');
+    expect(result.current.nextCapabilityLabel).toBe('Honest-Day forecast when you plan');
     expect(result.current.sealed).toBe(false);
   });
 

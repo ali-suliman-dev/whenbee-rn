@@ -11,18 +11,33 @@ import { capabilityFor, COMPANION_KEEPER_QUOTA } from '@/src/engine';
 import type { CompanionStage } from '@/src/engine';
 import { useNextUnlock } from './useNextUnlock';
 import { capabilityLabel } from './capabilityCopy';
-import { isCapabilityPro } from './capabilityGating';
+import { isCapabilityPro, isCapabilityStageGated } from './capabilityGating';
 
 // ──────────────────────────────────────────────────────────────────────────────
-// UnlockLadder — the Progress tab's "what your logs unlock" card (Task 6,
-// plain-calibration-copy plan). Lists all six companion stages top to bottom:
-// reached stages get a filled amber marker + full-ink label, the CURRENT stage
-// (the one being chased) gets an amber-haloed marker, an amber label, AND the
-// away-count line, and every later stage stays a faint, unreached dot with a
-// faint label. Mock reference: docs/product/mocks/mascot-honey-fix.html,
-// screen 3 — geometry/coloring transcribed from there; copy comes from the
-// capability ladder's own locked strings (`capabilityCopy.ts`, `ladder.*`),
-// not the mock's placeholder tier-name labels.
+// UnlockLadder — the Progress tab's "what your logs sharpen" card (Task 6,
+// plain-calibration-copy plan; reworded F1, 2026-08-02). Lists all six
+// companion stages top to bottom: reached stages get a filled amber marker +
+// full-ink label, the CURRENT stage (the one being chased) gets an amber-haloed
+// marker, an amber label, AND the away-count line, and every later stage stays
+// a faint, unreached dot with a faint label. Mock reference: docs/product/mocks/
+// mascot-honey-fix.html, screen 3 — geometry/coloring transcribed from there;
+// copy comes from the capability ladder's own locked strings
+// (`capabilityCopy.ts`, `ladder.*`), not the mock's placeholder tier-name labels.
+//
+// F1: only ONE of the six rungs (`drift-recalibration`) is a real feature gate
+// — `CAPABILITY_STAGE_GATED` in `capabilityGating.ts` has the trace. The other
+// five don't reveal anything new when their tier is crossed; they only measure
+// that category's own accuracy getting sharper. So:
+//   - a REACHED, non-gated, non-Keeper rung shows `stateSharp` ("sharp enough
+//     to trust") — a fact about calibration, not a claim of newly-granted access.
+//   - the GATED rung (drift-recalibration), while unreached AND not the rung
+//     currently being chased, previews `stateGated` ("unlocks at Honest") —
+//     so it reads differently from the five sharpen-only rungs even before the
+//     user is climbing toward it (this repo bans ambiguous locked states).
+//   - the CURRENT rung (whichever is next, gated or not) keeps the away-count
+//     line it already had — that number is real regardless of framing.
+//   - Keeper (rung 6) is a standing, not a tier-ladder capability at all — it
+//     never gets `stateSharp`; reached, it shows nothing (case below).
 //
 // Reads `useNextUnlock()` for the SAME tier/pct/logsToNext this card's Today
 // counterpart (`CalibrationCard`) shows — one source of truth for "how far
@@ -138,6 +153,8 @@ export function UnlockLadder({ keeper }: { keeper: boolean }) {
               keeperProgress={keeperProgress}
               reached={isReached}
               current={isCurrent}
+              gated={isCapabilityStageGated(id)}
+              isKeeperStage={isKeeperStage}
               pro={!isPro && isCapabilityPro(id)}
             />
           );
@@ -153,6 +170,8 @@ function Rung({
   keeperProgress,
   reached,
   current,
+  gated,
+  isKeeperStage,
   pro,
 }: {
   label: string;
@@ -162,6 +181,12 @@ function Rung({
   keeperProgress: string | null;
   reached: boolean;
   current: boolean;
+  /** True only for the one capability a stage crossing genuinely gates
+   *  (`drift-recalibration` — see `capabilityGating.ts`). */
+  gated: boolean;
+  /** True for rung 6 (Keeper) — a standing, not a tier-ladder capability;
+   *  never gets `stateSharp`, and reached shows nothing extra (see below). */
+  isKeeperStage: boolean;
   /** True when this capability is Pro-gated AND the viewer isn't Pro. */
   pro: boolean;
 }) {
@@ -169,10 +194,16 @@ function Rung({
   const { t: tr } = useTranslation('whenbee');
   const { dot, halo, gutter } = t.unlockLadder;
   const away = awayCount !== null ? tr('ladder.away', { count: awayCount }) : null;
-  // Exactly one of these is ever set for a given rung — the tier-ladder away
-  // line (amber, urgent-adjacent) or the Keeper progress line (neutral, no
-  // "hurry" framing — it isn't next in the queue, just not yet earned).
-  const subText = away ?? keeperProgress;
+  // A reached, non-Keeper rung states a fact about calibration ("sharp enough
+  // to trust") — never a claim of newly-granted access, since crossing this
+  // tier didn't grant any (F1). The one genuinely gated rung previews
+  // `stateGated` while it's still unreached AND not yet the one being chased
+  // — so it reads differently from an ordinary sharpen-only rung even before
+  // the user is climbing toward it.
+  const stateSharp = reached && !isKeeperStage ? tr('ladder.stateSharp') : null;
+  const stateGated = !reached && !current && gated ? tr('ladder.stateGated') : null;
+  // Exactly one of these is ever set for a given rung.
+  const subText = away ?? keeperProgress ?? stateSharp ?? stateGated;
   const subTone = away ? t.colors.amberText : t.colors.inkSoft;
 
   const row: ViewStyle = { flexDirection: 'row', gap: t.space[3], alignItems: 'flex-start' };
@@ -208,7 +239,13 @@ function Rung({
   const subStyle: TextStyle = { ...(type.caption as unknown as TextStyle), color: subTone };
 
   // One whole sentence per state — never a base label with a "Pro" fragment
-  // appended, so the translator owns word order in both branches.
+  // appended, so the translator owns word order in both branches. Says the
+  // SAME thing the visible subtext says (F1): "unlocked" only for the one
+  // genuinely gated rung (or Keeper, a standing) reached; "sharp enough to
+  // trust" for every other reached rung; "unlocks at Honest" for the gated
+  // rung while it's still a preview; a bare "not yet reached" everywhere else,
+  // since there's nothing else honest to claim about an ordinary sharpen-only
+  // rung the user hasn't started climbing toward yet.
   const a11yLabel =
     current && awayCount !== null
       ? tr(pro ? 'ladder.rungCurrentProA11y' : 'ladder.rungCurrentA11y', {
@@ -218,8 +255,12 @@ function Rung({
       : keeperProgress !== null
         ? tr('ladder.rungKeeperProgressA11y', { capability: label, progress: keeperProgress })
         : reached
-          ? tr(pro ? 'ladder.rungReachedProA11y' : 'ladder.rungReachedA11y', { capability: label })
-          : tr(pro ? 'ladder.rungUpcomingProA11y' : 'ladder.rungUpcomingA11y', { capability: label });
+          ? gated || isKeeperStage
+            ? tr('ladder.rungReachedA11y', { capability: label })
+            : tr(pro ? 'ladder.rungSharpProA11y' : 'ladder.rungSharpA11y', { capability: label })
+          : gated
+            ? tr('ladder.rungGatedA11y', { capability: label })
+            : tr(pro ? 'ladder.rungUpcomingProA11y' : 'ladder.rungUpcomingA11y', { capability: label });
 
   // The pill rides beside the label on one cap-aligned row; the label keeps
   // flex:1 so a long capability wraps under itself, not under the pill.

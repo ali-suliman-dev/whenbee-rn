@@ -35,8 +35,10 @@ describe('CalibrationCard', () => {
   it('renders the localised tier word, the percentage, and the next-unlock sentence', () => {
     // sharpness 64 lands exactly on the Ripening threshold: tier "Getting
     // closer", 18 points to Thickening (82) → ceil(18/4) = 5 logs, and the
-    // NEXT stage (4) unlocks the honest-day forecast — a Pro feature, so a free
-    // user is told so rather than sold it as a logging reward.
+    // NEXT stage (4) sharpens the honest-day forecast — a Pro feature, so a
+    // free user is told so rather than sold it as a logging reward. Stage 4
+    // is not the one genuinely stage-gated rung (only drift-recalibration,
+    // stage 5, is — F1), so this uses "sharpen" phrasing, not "unlock".
     setStats(64, 'Ripening', 20, 3);
 
     render(<CalibrationCard />);
@@ -44,13 +46,13 @@ describe('CalibrationCard', () => {
     expect(screen.getByText('Getting closer')).toBeOnTheScreen();
     expect(screen.getByText('64%')).toBeOnTheScreen();
     expect(
-      screen.getByText('5 more logs and Honest-Day forecast on the widget, a Pro feature'),
+      screen.getByText('5 more logs sharpen Honest-Day forecast when you plan, a Pro feature'),
     ).toBeOnTheScreen();
     // The grouped a11y label carries the SAME sentence — it used to compose its
     // own copy and silently dropped the Pro qualifier.
     expect(
       screen.getByLabelText(
-        'Getting closer, 64 percent calibrated. 5 more logs and Honest-Day forecast on the widget, a Pro feature',
+        'Getting closer, 64 percent calibrated. 5 more logs sharpen Honest-Day forecast when you plan, a Pro feature',
       ),
     ).toBeOnTheScreen();
   });
@@ -62,7 +64,7 @@ describe('CalibrationCard', () => {
     render(<CalibrationCard />);
 
     expect(
-      screen.getByText('5 more logs and Honest-Day forecast on the widget'),
+      screen.getByText('5 more logs sharpen Honest-Day forecast when you plan'),
     ).toBeOnTheScreen();
   });
 

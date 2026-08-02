@@ -29,7 +29,7 @@ const ALL_CAPABILITY_LABELS = [
   'Live finish-time on your timer',
   'Done-time on Today and Add task',
   'Reverse start-by anchor',
-  'Honest-Day forecast on the widget',
+  'Honest-Day forecast when you plan',
   'Drift re-check when life shifts',
   'Keeper – every area calibrated',
 ];
@@ -72,11 +72,15 @@ describe('UnlockLadder', () => {
     expect(
       screen.getByLabelText('Done-time on Today and Add task, current stage, 10 logs away'),
     ).toBeOnTheScreen();
-    // The reached rung directly below it carries no away-count.
-    expect(screen.getByLabelText('Live finish-time on your timer, unlocked')).toBeOnTheScreen();
-    // A later, unreached rung also carries no away-count.
+    // The reached rung directly below it states a fact about calibration
+    // ("sharp enough to trust"), never "unlocked" — crossing this tier didn't
+    // grant anything new (F1: only the drift-recalibration rung genuinely gates).
     expect(
-      screen.getByLabelText('Honest-Day forecast on the widget, not yet unlocked, opens with Pro'),
+      screen.getByLabelText('Live finish-time on your timer, sharp enough to trust'),
+    ).toBeOnTheScreen();
+    // A later, unreached, non-gated rung has nothing more to claim than that.
+    expect(
+      screen.getByLabelText('Honest-Day forecast when you plan, not yet reached, opens with Pro'),
     ).toBeOnTheScreen();
     // Exactly one away-count line exists anywhere in the ladder.
     expect(screen.queryAllByText(/logs? away/)).toHaveLength(1);
@@ -99,7 +103,9 @@ describe('UnlockLadder', () => {
     expect(
       screen.getByLabelText('Reverse start-by anchor, current stage, 4 logs away, opens with Pro'),
     ).toBeOnTheScreen();
-    expect(screen.getByLabelText('Done-time on Today and Add task, unlocked')).toBeOnTheScreen();
+    expect(
+      screen.getByLabelText('Done-time on Today and Add task, sharp enough to trust'),
+    ).toBeOnTheScreen();
     expect(screen.getByText('Learning · 50%')).toBeOnTheScreen();
     expect(screen.queryAllByText(/logs? away/)).toHaveLength(1);
   });
@@ -207,8 +213,13 @@ describe('UnlockLadder', () => {
     render(<UnlockLadder keeper={false} />);
 
     expect(
-      screen.getByLabelText('Honest-Day forecast on the widget, reached, opens with Pro'),
+      screen.getByLabelText(
+        'Honest-Day forecast when you plan, sharp enough to trust, opens with Pro',
+      ),
     ).toBeOnTheScreen();
+    // drift-recalibration is the ONE genuinely stage-gated rung — reached, it
+    // still says "unlocked" (F1: the founder's call was to keep this rung's
+    // language as-is, since it's the one place the claim is true).
     expect(screen.getByLabelText('Drift re-check when life shifts, unlocked')).toBeOnTheScreen();
     // Nothing on the tier ladder is still being chased, so no rung re-offers a
     // capability the user already holds.
@@ -223,11 +234,15 @@ describe('UnlockLadder', () => {
     // Two PRO pills, on start-by-anchor and honest-day-forecast.
     expect(screen.getAllByText('PRO')).toHaveLength(2);
     expect(
-      screen.getByLabelText('Reverse start-by anchor, not yet unlocked, opens with Pro'),
+      screen.getByLabelText('Reverse start-by anchor, not yet reached, opens with Pro'),
     ).toBeOnTheScreen();
+    // drift-recalibration is unreached and not yet the current rung here (the
+    // current rung is stage 2) — the ONE genuinely gated rung previews its
+    // real gate instead of the blank "not yet reached" every other rung gets.
     expect(
-      screen.getByLabelText('Drift re-check when life shifts, not yet unlocked'),
+      screen.getByLabelText('Drift re-check when life shifts, unlocks at Honest'),
     ).toBeOnTheScreen();
+    expect(screen.getByText('unlocks at Honest')).toBeOnTheScreen();
   });
 
   it('shows no Pro marking to a subscriber', () => {
@@ -237,7 +252,20 @@ describe('UnlockLadder', () => {
 
     expect(screen.queryAllByText('PRO')).toHaveLength(0);
     expect(
-      screen.getByLabelText('Reverse start-by anchor, not yet unlocked'),
+      screen.getByLabelText('Reverse start-by anchor, not yet reached'),
     ).toBeOnTheScreen();
+  });
+
+  it('F1 regression: only the drift-recalibration rung ever claims to unlock; every other rung says it sharpens', () => {
+    // Zero logs → stage 1 reached (running-finish-time), stage 2 current
+    // (today-done-time). Neither is the genuinely gated rung.
+    render(<UnlockLadder keeper={false} />);
+
+    // Card title reflects the reworded framing.
+    expect(screen.getByText('What your logs sharpen')).toBeOnTheScreen();
+    // The reached rung is a fact about accuracy, never a claim of new access —
+    // no "unlocked" text renders anywhere for a rung that only sharpens.
+    expect(screen.queryByText('unlocked')).toBeNull();
+    expect(screen.getByText('sharp enough to trust')).toBeOnTheScreen();
   });
 });

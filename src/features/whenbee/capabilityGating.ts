@@ -46,3 +46,51 @@ export const CAPABILITY_PRO_FEATURE: Record<CompanionCapability['id'], ProFeatur
 export function isCapabilityPro(id: CompanionCapability['id']): boolean {
   return CAPABILITY_PRO_FEATURE[id] !== null;
 }
+
+// ──────────────────────────────────────────────────────────────────────────────
+// CAPABILITY_STAGE_GATED — which rungs a log genuinely UNLOCKS, as opposed to
+// merely sharpens (F1, 2026-08-02 audit).
+//
+// `src/engine/companion.ts` marks `gatesNewFeature: true` on stages 1-5, but
+// tracing every one against the real gating code (2026-08-01, same pass as
+// `CAPABILITY_PRO_FEATURE` above) found only ONE capability actually reads the
+// companion stage anywhere in the app:
+//
+//   running-finish-time  NOT stage-gated — timer.tsx renders the point finish
+//                        for every user from day one, at any stage.
+//   today-done-time      NOT stage-gated — HonestLandingCard/HonestSuggestionCard
+//                        render ungated regardless of stage.
+//   start-by-anchor      NOT stage-gated — gated on Pro entitlement only
+//                        (`handlePlanMyDay`/DayTimeline), never on stage.
+//   honest-day-forecast  NOT stage-gated — gated on Pro entitlement only
+//                        (`openDayHonest`/<ProGate>), never on stage.
+//   drift-recalibration  STAGE-GATED — `DRIFT_RECHECK_MIN_STAGE = 5` in
+//                        `src/features/whenbee/hubGates.ts` is a real,
+//                        load-bearing stage check; nothing else in the app
+//                        reads companion stage as a gate.
+//   keeper-standing      NOT in this record's scope — it's a standing tied to
+//                        `keeperReached`'s own quota, not the tier ladder's
+//                        stage progression; `UnlockLadder` special-cases it.
+//
+// So a day-one user was being told "10 more logs and Done-time on Today and
+// Add task" while Add task already showed a done-time — the ladder claimed
+// logs unlock things they don't. The founder's call (2026-08-02): reword to
+// what logs actually do (sharpen accuracy) everywhere except the one rung
+// that's for real gated by stage.
+// ──────────────────────────────────────────────────────────────────────────────
+
+/** True only for the one capability a companion-stage crossing genuinely gates. */
+export const CAPABILITY_STAGE_GATED: Record<CompanionCapability['id'], boolean> = {
+  'running-finish-time': false,
+  'today-done-time': false,
+  'start-by-anchor': false,
+  'honest-day-forecast': false,
+  'drift-recalibration': true,
+  'keeper-standing': false,
+};
+
+/** True when reaching this capability's stage is a real feature gate — the
+ *  ladder should say "unlocks", not "sharpens". */
+export function isCapabilityStageGated(id: CompanionCapability['id']): boolean {
+  return CAPABILITY_STAGE_GATED[id];
+}

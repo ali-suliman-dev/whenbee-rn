@@ -4,7 +4,11 @@
 > recommendations below shipped: honey/hive vocabulary renamed to plain calibration language
 > (en + sv); an unlock row added to Today and to the reward screen; an unlock ladder added to the
 > Progress tab; the hero bee demoted on the hub; the companion-naming screen removed. The analysis
-> below is left as originally written and is not re-argued here.
+> below is left as originally written and is not re-argued here. **Update, 2026-08-02:** a follow-up
+> audit found the ladder claimed logs "unlock" five capabilities that were, in fact, already visible
+> to every user or gated on Pro instead — only `drift-recalibration` (stage 5) is a real stage gate
+> — so the ladder now describes what logs *sharpen* (accuracy), and reserves "unlocks" for that one
+> genuinely gated rung.
 
 Audit date: 2026-08-01. Scope: every surface where Whenbee uses the bee mascot or the honey/hive
 vocabulary. Question asked by the founder: *"I don't pay them any mind when I use the app. Is that
