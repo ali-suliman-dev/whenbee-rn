@@ -108,7 +108,6 @@ export function WhenbeeHub() {
   };
 
   // ── Ripening Pro card derivations (non-Pro path only) ────────────────────
-  // Mirror the same tier-index pattern as HoneycombStripPlaceholder.
   const tierIdx = TIERS.indexOf(vm.tier);
   const nextTierName =
     tierIdx >= 0 && tierIdx < TIERS.length - 1 ? (TIERS[tierIdx + 1] ?? null) : null;

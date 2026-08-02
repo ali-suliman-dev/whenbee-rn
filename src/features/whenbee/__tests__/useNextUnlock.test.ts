@@ -21,7 +21,6 @@ describe('useNextUnlock', () => {
   it('zero logs: Raw tier, unlocks the next stage capability, not sealed', () => {
     const { result } = renderHook(() => useNextUnlock());
 
-    expect(result.current.tier).toBe('Raw');
     expect(result.current.tierLabel).toBe('Just started');
     expect(result.current.pct).toBe(0);
     expect(result.current.logsToNext).toBeGreaterThan(0);
@@ -40,7 +39,6 @@ describe('useNextUnlock', () => {
 
     const { result } = renderHook(() => useNextUnlock());
 
-    expect(result.current.tier).toBe('Setting');
     expect(result.current.tierLabel).toBe('Learning');
     expect(result.current.pct).toBe(50);
     expect(result.current.logsToNext).toBe(4);
@@ -56,7 +54,7 @@ describe('useNextUnlock', () => {
 
     const { result } = renderHook(() => useNextUnlock());
 
-    expect(result.current.tier).toBe('Ripening');
+    expect(result.current.tierLabel).toBe('Getting closer');
     expect(result.current.logsToNext).toBe(1);
     expect(result.current.nextCapabilityLabel).toBe('Honest-Day forecast when you plan');
     expect(result.current.sealed).toBe(false);
@@ -70,7 +68,6 @@ describe('useNextUnlock', () => {
 
     const { result } = renderHook(() => useNextUnlock());
 
-    expect(result.current.tier).toBe('Honest');
     expect(result.current.tierLabel).toBe('Honest');
     expect(result.current.logsToNext).toBe(0);
     expect(result.current.nextCapabilityLabel).toBeNull();
@@ -94,7 +91,7 @@ describe('useNextUnlock', () => {
     expect(result.current.nextCapabilityId).toBeNull();
     expect(result.current.nextCapabilityLabel).toBeNull();
     // The live progress read still reports the truth — it is not a gate.
-    expect(result.current.tier).toBe('Ripening');
+    expect(result.current.tierLabel).toBe('Getting closer');
     expect(result.current.pct).toBe(70);
   });
 
@@ -132,7 +129,7 @@ describe('useNextUnlock', () => {
     const { result } = renderHook(() => useNextUnlock());
 
     expect(result.current.stage).toBe(4);
-    expect(result.current.tier).toBe('Raw');
+    expect(result.current.tierLabel).toBe('Just started');
     expect(result.current.nextCapabilityId).toBe('drift-recalibration');
     expect(result.current.logsToNext).toBe(19);
     // Never the tier-band number the old bug quoted.

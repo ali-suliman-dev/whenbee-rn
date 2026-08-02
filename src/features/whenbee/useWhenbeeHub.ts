@@ -36,8 +36,6 @@ export interface WhenbeeHubVM {
   tier: Tier;
   /** The companion's 6-stage presence (stage, capability copy, seed, drift, nectar). */
   companion: CompanionPresence;
-  /** One cell per tracked category, ready for <Honeycomb size="hub" />. */
-  cells: HoneycombCell[];
   /** Banked aha cards, newest first — the teaser into the Discoveries gallery. */
   discoveries: Discovery[];
   /** Lifetime discovery count (monotonic — only ever rises). */
@@ -51,8 +49,6 @@ export interface WhenbeeHubVM {
   dismissDriftRecheck: () => void;
   /** Pro-feature gate readiness derived from calibration state. */
   proReadiness: { pitchUnlocked: boolean; perFeatureReady: Record<ProFeatureId, boolean> };
-  /** Lead sharpness rounded to the nearest integer (0–100), for progress display. */
-  honeyPct: number;
 }
 
 /** kv flag: set while the drift re-check card has been dismissed; cleared the
@@ -68,7 +64,6 @@ const EMPTY_COMPANION: CompanionPresence = {
   lifetimeNectar: 0,
   driftHealth: 'settled',
   seed: 1,
-  name: null,
 };
 
 const EMPTY_RECLAIM: Pick<WhenbeeHubVM, 'honestLogCount' | 'companion'> = {
@@ -139,7 +134,6 @@ export function useWhenbeeHub(): WhenbeeHubVM {
   // Lead = the most-ripened cell; its sharpness sets the tier the user is chasing.
   const leadSharpness = useMemo<number>(() => leadSharpnessOf(cells), [cells]);
   const tier = useMemo<Tier>(() => tierFor(leadSharpness), [leadSharpness]);
-  const honeyPct = useMemo<number>(() => Math.round(leadSharpness), [leadSharpness]);
 
   // Pro-readiness reads via get() inside getProReadiness, but we explicitly include
   // statsByCategory and focusTick so the memo recomputes whenever calibration data
@@ -187,11 +181,9 @@ export function useWhenbeeHub(): WhenbeeHubVM {
     blindSpot,
     leadSharpness,
     tier,
-    cells,
     refresh,
     showDriftRecheck,
     dismissDriftRecheck,
     proReadiness,
-    honeyPct,
   };
 }

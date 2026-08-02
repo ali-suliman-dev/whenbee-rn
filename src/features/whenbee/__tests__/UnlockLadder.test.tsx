@@ -1,6 +1,7 @@
 import { render, screen } from '@testing-library/react-native';
 import { StyleSheet } from 'react-native';
 import { UnlockLadder } from '../UnlockLadder';
+import i18n from '@/src/i18n';
 import { useCalibrationStore } from '@/src/stores/calibrationStore';
 import type { CachedStat } from '@/src/stores/calibrationStore';
 import { useCategoriesStore } from '@/src/stores/categoriesStore';
@@ -228,6 +229,61 @@ describe('UnlockLadder', () => {
     expect(screen.queryAllByText(/logs? away/)).toHaveLength(0);
     // The header still shows the honest, live progress read — that one may fall.
     expect(screen.getByText('Getting closer · 70%')).toBeOnTheScreen();
+  });
+
+  it('F16: singular "1 log away" (ladder.away_one / rungCurrentA11y_one) — the free, non-gated current rung', () => {
+    // sharpness 90 (Thickening) lands one log short of Honest (93):
+    // ceil((93-90)/4) = 1. Stage 4's next rung is drift-recalibration —
+    // stage-gated but NOT Pro — so this exercises `rungCurrentA11y_one`
+    // (no "opens with Pro"), not the Pro variant.
+    useCalibrationStore.setState({
+      logs: 40,
+      companionStage: 4,
+      statsByCategory: { cleaning: statFor(90, 'Thickening') },
+    });
+
+    render(<UnlockLadder keeper={false} />);
+
+    expect(screen.getByText('1 log away')).toBeOnTheScreen();
+    expect(screen.queryByText(/logs away/)).toBeNull();
+    expect(
+      screen.getByLabelText('Drift re-check when life shifts, current stage, 1 log away'),
+    ).toBeOnTheScreen();
+  });
+
+  it('F16: singular "1 log away, opens with Pro" (ladder.rungCurrentProA11y_one) — the Pro current rung', () => {
+    // sharpness 61 (Setting) lands one log short of Ripening (64):
+    // ceil((64-61)/4) = 1. Stage 2's next rung is start-by-anchor — Pro AND
+    // not stage-gated, so this is the Pro variant of the current-rung a11y.
+    useCalibrationStore.setState({
+      logs: 20,
+      companionStage: 2,
+      statsByCategory: { cleaning: statFor(61, 'Setting') },
+    });
+
+    render(<UnlockLadder keeper={false} />);
+
+    expect(screen.getByText('1 log away')).toBeOnTheScreen();
+    expect(
+      screen.getByLabelText('Reverse start-by anchor, current stage, 1 log away, opens with Pro'),
+    ).toBeOnTheScreen();
+  });
+
+  it('F16: singular away-count in Swedish too', async () => {
+    await i18n.changeLanguage('sv');
+    try {
+      useCalibrationStore.setState({
+        logs: 40,
+        companionStage: 4,
+        statsByCategory: { cleaning: statFor(90, 'Thickening') },
+      });
+
+      render(<UnlockLadder keeper={false} />);
+
+      expect(screen.getByText('1 logg kvar')).toBeOnTheScreen();
+    } finally {
+      await i18n.changeLanguage('en');
+    }
   });
 
   it('marks the two Pro rungs for a free user and leaves the four free ones plain', () => {

@@ -33,7 +33,6 @@ const COMPANION_FIXTURE: CompanionPresence = {
   lifetimeNectar: 0,
   driftHealth: 'settled',
   seed: 1,
-  name: null,
 };
 
 function vm(overrides: Partial<WhenbeeHubVM> = {}): WhenbeeHubVM {
@@ -43,14 +42,12 @@ function vm(overrides: Partial<WhenbeeHubVM> = {}): WhenbeeHubVM {
     leadSharpness: 0,
     tier: 'Raw',
     companion: COMPANION_FIXTURE,
-    cells: [],
     discoveries: [],
     discoveryCount: 0,
     refresh: jest.fn(),
     showDriftRecheck: false,
     dismissDriftRecheck: jest.fn(),
     proReadiness: { pitchUnlocked: false, perFeatureReady: {} as WhenbeeHubVM['proReadiness']['perFeatureReady'] },
-    honeyPct: 0,
     ...overrides,
   };
 }

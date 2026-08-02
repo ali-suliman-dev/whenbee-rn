@@ -4,11 +4,10 @@ import type { CompanionCapability } from '@/src/engine';
 // ──────────────────────────────────────────────────────────────────────────────
 // capabilityCopy — id → localised label for the companion capability ladder.
 //
-// The engine (`src/engine/companion.ts`) must stay pure (no i18n, no React), so
-// its `CompanionCapability.label` is an internal/English fallback only — never
-// render it directly. This module maps each capability id to its
-// `whenbee:ladder.*` key; `capabilityLabel` resolves that key through the
-// caller's translator.
+// The engine (`src/engine/companion.ts`) must stay pure (no i18n, no React) —
+// `CompanionCapability` carries only an id, never display copy. This module
+// maps each capability id to its `whenbee:ladder.*` key; `capabilityLabel`
+// resolves that key through the caller's translator.
 //
 // The `Record<CompanionCapability['id'], string>` type is exhaustive on purpose:
 // adding a new capability id to the engine without adding its copy here is a

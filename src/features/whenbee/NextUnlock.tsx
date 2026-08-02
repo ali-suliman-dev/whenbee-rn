@@ -1,8 +1,11 @@
 import { View, Text, type ViewStyle, type TextStyle } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { useTranslation } from 'react-i18next';
 import { useTheme } from '@/src/theme/useTheme';
 import { type } from '@/src/theme/typography';
-import { useUnlockSentence } from './useUnlockSentence';
+import { useEntitlement } from '@/src/features/paywall/useEntitlement';
+import { resolveUnlockSentence } from './useUnlockSentence';
+import { useNextUnlock, type NextUnlock as NextUnlockData } from './useNextUnlock';
 import { spokenText } from './a11yText';
 import type { CompanionCapability } from '@/src/engine';
 
@@ -11,9 +14,22 @@ import type { CompanionCapability } from '@/src/engine';
 // full sentence. Shared by Today, the Progress tab, and the reward screen
 // (plain-calibration-copy plan, Task 3).
 //
-// The sentence itself is resolved by `useUnlockSentence` — one owner, so this
-// row and CalibrationCard's spoken label can never disagree about whether the
-// next capability is Pro.
+// The sentence itself is resolved by `resolveUnlockSentence` — one owner, so
+// this row and CalibrationCard's spoken label can never disagree about
+// whether the next capability is Pro.
+//
+// F19: `useNextUnlock()` opens two store subscriptions and recomputes
+// `aggregateCalibration` on every call — cheap once, wasteful 2-3x over in one
+// card subtree. `CalibrationCard` resolves it ONCE and passes it down via the
+// optional `unlock` prop; this component then renders straight off that data
+// with no hook call of its own (`NextUnlockView`, below). But `NextUnlock`
+// also has to stay usable STANDALONE — the reward screen renders it with no
+// parent that resolved anything — so when `unlock` is omitted, `NextUnlockAuto`
+// mounts instead and owns the one hook call. Splitting into three components
+// (rather than a single component branching on whether to call the hook) is
+// what keeps every hook call unconditional, per rules-of-hooks: a component
+// either always calls `useNextUnlock()` or never does, and React decides
+// which component is mounted, not a branch inside one.
 //
 // The row owns its own accessibility label so it is never swallowed into a
 // neighbouring grouped card describing a DIFFERENT subject (see reward.tsx,
@@ -27,11 +43,39 @@ interface NextUnlockProps {
   /** Set on the log that just crossed a tier: render "you unlocked X" instead of
    *  handing the user a fresh target on their payoff screen. */
   justUnlockedId?: CompanionCapability['id'] | null;
+  /** Pre-resolved unlock data from a parent that already called
+   *  `useNextUnlock()` for the subtree (e.g. `CalibrationCard`) — skips this
+   *  component's own store subscription (F19). Omit on a screen with no
+   *  upstream resolve (e.g. the reward screen, where this row is standalone);
+   *  a fallback hook call fills it in. */
+  unlock?: NextUnlockData;
 }
 
-export function NextUnlock({ justUnlockedId = null }: NextUnlockProps) {
+export function NextUnlock({ justUnlockedId = null, unlock }: NextUnlockProps) {
+  return unlock === undefined ? (
+    <NextUnlockAuto justUnlockedId={justUnlockedId} />
+  ) : (
+    <NextUnlockView unlock={unlock} justUnlockedId={justUnlockedId} />
+  );
+}
+
+/** Standalone fallback — the ONE place this file calls `useNextUnlock()`. */
+function NextUnlockAuto({ justUnlockedId }: { justUnlockedId: CompanionCapability['id'] | null }) {
+  const unlock = useNextUnlock();
+  return <NextUnlockView unlock={unlock} justUnlockedId={justUnlockedId} />;
+}
+
+function NextUnlockView({
+  unlock,
+  justUnlockedId,
+}: {
+  unlock: NextUnlockData;
+  justUnlockedId: CompanionCapability['id'] | null;
+}) {
   const t = useTheme();
-  const sentence = useUnlockSentence(justUnlockedId);
+  const { t: tr } = useTranslation('whenbee');
+  const isPro = useEntitlement((s) => s.isPro);
+  const sentence = resolveUnlockSentence(unlock, isPro, justUnlockedId, tr);
 
   // Empty when there's nothing honest to say: the defensive, unreachable-today
   // branch `useNextUnlock` documents (F2 — never print a fabricated count), or

@@ -135,14 +135,6 @@
     "done": "klar {{time}}",
     "startButton": "Starta"
   },
-  "honeycombStrip": {
-    "title": "Hur väl jag känner dig",
-    "a11y": "{{pct}} % kalibrerad, nivå {{tier}}, {{logs}} loggar",
-    "subline_one": "{{pct}} % kalibrerad · {{count}} logg",
-    "subline_other": "{{pct}} % kalibrerad · {{count}} loggar",
-    "nextLine_one": "{{count}} logg till {{tier}}",
-    "nextLine_other": "{{count}} loggar till {{tier}}"
-  },
   "planMyDayButton": {
     "proSuffixA11y": "{{label}}, Pro-funktion"
   },

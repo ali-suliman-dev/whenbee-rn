@@ -1,12 +1,15 @@
-import { TIERS, logsToNextTier } from '@/src/engine';
 import type { Tier } from '@/src/domain/types';
 
 // ──────────────────────────────────────────────────────────────────────────────
 // calibrationAggregate — the single "lead category drives the tier" rollup.
 //
-// Pulled out of `HoneycombStripPlaceholder.tsx` so it has exactly one owner.
-// `useNextUnlock` and `HoneycombStripPlaceholder` both import this rather than
-// each keeping their own copy — see the plain-calibration-copy plan, Task 3.
+// One owner, one caller: `useNextUnlock` (see the plain-calibration-copy plan,
+// Task 3) — which itself feeds `CalibrationCard`, `NextUnlock`, and
+// `UnlockLadder`. Only the fields that caller reads are exposed here; `logs`
+// (an unmodified pass-through of the argument) and a lead-category-relative
+// `nextTier`/`logsToNext` (the wrong rung once the monotonic companion stage
+// has run ahead of the live tier — see `useNextUnlock`'s header comment) were
+// only ever consumed by the deleted `HoneycombStripPlaceholder`.
 // ──────────────────────────────────────────────────────────────────────────────
 
 export interface CalibrationAggregate {
@@ -15,15 +18,11 @@ export interface CalibrationAggregate {
    *  that derive a threshold distance (e.g. `useNextUnlock`'s away-count) need
    *  the exact value, not the display rounding. */
   sharpness: number;
-  logs: number;
   tier: Tier;
-  nextTier: Tier | null;
-  logsToNext: number;
 }
 
 export function aggregateCalibration(
   stats: Record<string, { sharpness: number; tier: Tier }>,
-  logs: number,
 ): CalibrationAggregate {
   const entries = Object.values(stats);
   // Lead = the most-ripened category drives the pill + next-tier line.
@@ -33,14 +32,9 @@ export function aggregateCalibration(
   );
   const sharpness = lead?.sharpness ?? 0;
   const tier = lead?.tier ?? 'Raw';
-  const tierIdx = TIERS.indexOf(tier);
-  const nextTier = tierIdx >= 0 && tierIdx < TIERS.length - 1 ? TIERS[tierIdx + 1]! : null;
   return {
     pct: Math.round(sharpness),
     sharpness,
-    logs,
     tier,
-    nextTier,
-    logsToNext: logsToNextTier(sharpness),
   };
 }

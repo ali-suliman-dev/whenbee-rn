@@ -2,8 +2,9 @@ import { View, Text, type ViewStyle, type TextStyle } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { useTheme } from '@/src/theme/useTheme';
 import { type } from '@/src/theme/typography';
+import { useEntitlement } from '@/src/features/paywall/useEntitlement';
 import { useNextUnlock } from '@/src/features/whenbee/useNextUnlock';
-import { useUnlockSentence } from '@/src/features/whenbee/useUnlockSentence';
+import { resolveUnlockSentence } from '@/src/features/whenbee/useUnlockSentence';
 import { spokenText } from '@/src/features/whenbee/a11yText';
 import { NextUnlock } from '@/src/features/whenbee/NextUnlock';
 
@@ -22,18 +23,25 @@ import { NextUnlock } from '@/src/features/whenbee/NextUnlock';
 // area — an eyebrow names that scope so the number never reads as "your
 // overall calibration" when it's really the sharpest one.
 //
+// F19: `useNextUnlock()` is resolved exactly ONCE here for the whole card
+// subtree (it opens store subscriptions + recomputes `aggregateCalibration`
+// on every call) and passed down to `<NextUnlock unlock={unlock}/>` instead
+// of letting the child re-derive it — see that component's header comment.
+//
 // No animation (hard rule) — the card renders at full opacity from mount.
 // ──────────────────────────────────────────────────────────────────────────────
 
 export function CalibrationCard() {
   const t = useTheme();
   const { t: tr } = useTranslation('whenbee');
-  const { tierLabel, pct } = useNextUnlock();
+  const isPro = useEntitlement((s) => s.isPro);
+  const unlock = useNextUnlock();
+  const { tierLabel, pct } = unlock;
   // The SAME resolver <NextUnlock/> renders below, so the spoken label can never
   // drift from the visible row (it used to compose its own copy and lost the
   // Pro qualifier). Both subjects here are the aggregate, so one grouped label
   // covering the card and the row is honest.
-  const unlockText = useUnlockSentence();
+  const unlockText = resolveUnlockSentence(unlock, isPro, null, tr);
 
   const card: ViewStyle = {
     backgroundColor: t.colors.honeyWash,
@@ -108,7 +116,7 @@ export function CalibrationCard() {
       <View style={track}>
         <View style={fill} testID="calibration-card-fill" />
       </View>
-      <NextUnlock />
+      <NextUnlock unlock={unlock} />
     </View>
   );
 }

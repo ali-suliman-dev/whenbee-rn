@@ -104,7 +104,6 @@ beforeEach(() => {
         lifetimeNectar: 1,
         driftHealth: 'settled',
         seed: 1,
-        name: null,
       },
       discoveryCount: 0,
     })),

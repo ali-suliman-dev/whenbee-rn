@@ -369,7 +369,12 @@ describe('Reward screen', () => {
     // stage 5 crossed no NEW rung — no "just unlocked", just the sealed line
     // (the live lead is genuinely Honest here too, so the sealed claim is
     // consistent with what's on screen — see the F3 test below for the case
-    // where it isn't).
+    // where it isn't). tierBefore/tierAfter mirror the Thickening→Honest
+    // crossing (crossedStage 5) — the SAME stage companionStage already
+    // holds — so this is the equal-stage crossing the F4 bug actually
+    // produced, not a strictly-lower one a broken "after vs. after" compare
+    // would also happen to reject. Only `stageJustRose: false` (this log's
+    // own fuel write did not raise the mirror) tells the truth here.
     useCalibrationStore.setState({
       statsByCategory: {
         cleaning: { sharpness: 95, tier: 'Honest' } as unknown as CachedStat,
@@ -382,7 +387,13 @@ describe('Reward screen', () => {
       guessMin: 15,
       category: 'cleaning',
       label: null,
-      result: { ...baseResult, leveledUp: true },
+      result: {
+        ...baseResult,
+        tierBefore: 'Thickening',
+        tierAfter: 'Honest',
+        leveledUp: true,
+        stageJustRose: false,
+      },
     });
     render(<Reward />);
     expect(screen.queryByText(/Just unlocked/)).toBeNull();

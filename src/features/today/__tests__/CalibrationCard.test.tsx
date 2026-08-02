@@ -1,11 +1,30 @@
 import { act, render, screen } from '@testing-library/react-native';
 import { StyleSheet } from 'react-native';
-import { CalibrationCard } from '../CalibrationCard';
 import i18n from '@/src/i18n';
 import { useCalibrationStore, type CachedStat } from '@/src/stores/calibrationStore';
 import { useEntitlement } from '@/src/features/paywall/useEntitlement';
 import { resolveTheme } from '@/src/theme/useTheme';
 import type { CompanionStage } from '@/src/engine';
+
+// F19 spy: wraps the real hook so the render-count regression test below can
+// assert CalibrationCard's subtree calls it exactly once — every other test
+// in this file exercises the REAL hook through this same wrapper.
+const mockUseNextUnlockSpy = jest.fn();
+jest.mock('@/src/features/whenbee/useNextUnlock', () => {
+  const actual = jest.requireActual<typeof import('@/src/features/whenbee/useNextUnlock')>(
+    '@/src/features/whenbee/useNextUnlock',
+  );
+  return {
+    ...actual,
+    useNextUnlock: (...args: unknown[]) => {
+      mockUseNextUnlockSpy(...args);
+      return actual.useNextUnlock(...(args as []));
+    },
+  };
+});
+
+// eslint-disable-next-line import/first -- must follow the jest.mock above
+import { CalibrationCard } from '../CalibrationCard';
 
 // ──────────────────────────────────────────────────────────────────────────────
 // CalibrationCard — Today's plain calibration read (tier word + percentage +
@@ -27,6 +46,7 @@ function setStats(sharpness: number, tier: CachedStat['tier'], logs: number, sta
 describe('CalibrationCard', () => {
   beforeEach(() => {
     useEntitlement.setState({ isPro: false });
+    mockUseNextUnlockSpy.mockClear();
   });
 
   afterEach(() => {
@@ -72,6 +92,61 @@ describe('CalibrationCard', () => {
     expect(
       screen.getByText('5 more logs sharpen Honest-Day forecast when you plan'),
     ).toBeOnTheScreen();
+  });
+
+  it('F16: singular "1 more log sharpens", a Pro feature (ladder.sharpenPro_one) — a free user, one log short', () => {
+    // sharpness 79 lands one log short of Thickening (82): ceil((82-79)/4) = 1.
+    // The NEXT stage (4) sharpens Honest-Day forecast, a Pro feature. i18next
+    // resolves `_one` off `count === 1`, a different translation key entirely
+    // from `_other` — this only proves out with count exactly 1.
+    setStats(79, 'Ripening', 20, 3);
+
+    render(<CalibrationCard />);
+
+    expect(
+      screen.getByText('1 more log sharpens Honest-Day forecast when you plan, a Pro feature'),
+    ).toBeOnTheScreen();
+    expect(screen.queryByText(/more logs sharpen/)).toBeNull();
+  });
+
+  it('F16: singular "1 more log sharpens" (ladder.sharpen_one) drops the Pro qualifier for a subscriber', () => {
+    useEntitlement.setState({ isPro: true });
+    setStats(79, 'Ripening', 20, 3);
+
+    render(<CalibrationCard />);
+
+    expect(
+      screen.getByText('1 more log sharpens Honest-Day forecast when you plan'),
+    ).toBeOnTheScreen();
+  });
+
+  it('F16: singular "1 more log unlocks" (ladder.unlock_one) on the one genuinely gated rung', () => {
+    // sharpness 90 (Thickening) lands one log short of Honest (93):
+    // ceil((93-90)/4) = 1. Stage 4's next rung is drift-recalibration, the
+    // ONE genuinely stage-gated capability (F1) — "unlocks", not "sharpens".
+    setStats(90, 'Thickening', 40, 4);
+
+    render(<CalibrationCard />);
+
+    expect(
+      screen.getByText('1 more log unlocks Drift re-check when life shifts'),
+    ).toBeOnTheScreen();
+    expect(screen.queryByText(/more logs unlock/)).toBeNull();
+  });
+
+  it('F16: singular ladder copy in Swedish too', async () => {
+    await i18n.changeLanguage('sv');
+    try {
+      setStats(79, 'Ripening', 20, 3);
+
+      render(<CalibrationCard />);
+
+      expect(
+        screen.getByText('1 logg till skärper Ärlig dag-prognos när du planerar, en Pro-funktion'),
+      ).toBeOnTheScreen();
+    } finally {
+      await i18n.changeLanguage('en');
+    }
   });
 
   it('at the cap, renders the sealed line in place of the away-count', () => {
@@ -142,5 +217,20 @@ describe('CalibrationCard', () => {
     } finally {
       await i18n.changeLanguage('en');
     }
+  });
+
+  it('F19: resolves useNextUnlock exactly once per render for the whole card subtree', () => {
+    // Before the fix this hook ran 3x per render in this one card: directly
+    // here, again inside useUnlockSentence, and a third time inside the child
+    // <NextUnlock/> — each opening its own pair of store subscriptions and
+    // recomputing aggregateCalibration over the identical input. CalibrationCard
+    // now resolves it once and passes the result down via NextUnlock's
+    // `unlock` prop (a pure resolveUnlockSentence call replaces the second
+    // internal hook call), so a single render must call the hook exactly once.
+    setStats(64, 'Ripening', 20, 3);
+
+    render(<CalibrationCard />);
+
+    expect(mockUseNextUnlockSpy).toHaveBeenCalledTimes(1);
   });
 });

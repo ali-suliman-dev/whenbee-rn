@@ -498,22 +498,16 @@ export const tokens = {
   // the fill approach this borrows: honeyWash track, accent fill).
   miniHoneyBar: { height: 3, width: 56 },
 
-  // Companion presence — the 6-stage Whenbee growth (Part 2 Group E). Both scales
-  // are indexed by stage 1..6 (array index = stage - 1). They are pure geometry, so
-  // they live mode-independent here (like `burst`); the per-stage DRIFT TINT colors
-  // live in colors.light/dark below (settled = amber family, curious = indigo accent
-  // — amber/indigo only, NEVER red). The bee only ever climbs: each stage adds glow
-  // and float, none subtracts (monotonic by construction).
+  // Companion presence — the 6-stage Whenbee growth (Part 2 Group E). Indexed by
+  // stage 1..6 (array index = stage - 1). Pure geometry, so it lives mode-independent
+  // here (like `burst`); the per-stage DRIFT TINT colors live in colors.light/dark
+  // below (settled = amber family, curious = indigo accent — amber/indigo only,
+  // NEVER red). The bee only ever climbs: each stage adds glow, none subtracts
+  // (monotonic by construction).
   companion: {
-    // Ambient float-lift amplitude (± px) per stage — the calm vertical drift grows
-    // with presence: a barely-there breath at Raw, a confident hover at Keeper.
-    floatLift: [2, 3, 5, 7, 9, 11],
     // Soft glow radius (px) per stage. Stages 1–2 have none (a young bee is plain);
     // it blooms from Ripening on so the felt warmth tracks the comb sealing.
     glow: [0, 0, 6, 12, 18, 24],
-    // BeeMascot size (px) for the compact Today HUD — smaller than the hub/onboarding
-    // bee so the companion reads as a quiet presence beside the honey bar.
-    hudBee: 46,
     // BeeMascot size (px) for the Progress-tab compact header — a small mark beside
     // the screen title (Task 6, plain-calibration-copy plan: the bee is demoted from
     // hero to mark). Sized to roughly the title's cap height, not a hero.
@@ -521,29 +515,6 @@ export const tokens = {
     // BeeMascot size (px) for the onboarding quiz host — the companion "asking" each
     // question, centered above the prompt. Bigger than the HUD, smaller than the hub.
     quizBee: 92,
-    // Soft-coin backing for the HUD bee. Ringless (no honey ring to frame it), so it
-    // needs a HIGH core — a sharp solid disc with only a thin feathered rim — or it
-    // reads as a glow at this small size. hudCoinCore = the solid-hold fraction.
-    hudCoin: 46,
-    hudCoinCore: 0.86,
-    // BeeMascot size (px) when it sits INSIDE the HoneyRing on the hub — a touch
-    // smaller than the 168 hero so the ring breathes around it and the honey pool
-    // (below) reads as a backing halo rather than being crowded to the rim.
-    ringBee: 140,
-    // Soft-edge backing disc behind the ring bee (the chosen no-glow option) — a
-    // neutral raised coin (colors.surfaceRaised) at full tone in the centre that fades
-    // to nothing at the rim: lifts the indigo bee off the dark ring interior with no
-    // hard edge line and no amber bloom.
-    softSize: 170,
-    // Flat hard-edged disc (alt option) — solid raised coin + 1px hairline edge.
-    discSize: 156,
-    discBorder: 1,
-    // Soft "honey pool" backdrop disc (the glow option, kept as a fallback) — a radial
-    // bloom that lifts the bee without a hard edge. poolSize = disc box edge (px);
-    // poolOpacity = centre alpha of the amber bloom (colors.accent), fading to 0 at the
-    // rim so it never collides with the ring arc.
-    poolSize: 176,
-    poolOpacity: 0.16,
   },
 
   // Pro upsell "pass" card geometry (ProUpsellCard) + paywall Reclaim hero. Kept

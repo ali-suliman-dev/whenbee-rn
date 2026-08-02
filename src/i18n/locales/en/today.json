@@ -135,14 +135,6 @@
     "done": "done {{time}}",
     "startButton": "Start"
   },
-  "honeycombStrip": {
-    "title": "How well I know you",
-    "a11y": "{{pct}}% calibrated, tier {{tier}}, {{logs}} logs",
-    "subline_one": "{{pct}}% calibrated · {{count}} log",
-    "subline_other": "{{pct}}% calibrated · {{count}} logs",
-    "nextLine_one": "{{count}} log to {{tier}}",
-    "nextLine_other": "{{count}} logs to {{tier}}"
-  },
   "planMyDayButton": {
     "proSuffixA11y": "{{label}}, Pro feature"
   },

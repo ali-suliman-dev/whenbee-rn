@@ -107,7 +107,7 @@ describe('loadReclaimSummary — companion presence block', () => {
     const summary = await useCalibrationStore.getState().loadReclaimSummary();
     expect(summary.companion.stage).toBeGreaterThan(1);
     expect(summary.companion.lifetimeNectar).toBe(1);
-    expect(summary.companion.capability.label.length).toBeGreaterThan(0);
+    expect(summary.companion.capability.id).toBe('honest-day-forecast');
   });
 });
 
@@ -195,6 +195,36 @@ describe('companionStage mirror — the ladder reads it synchronously', () => {
     }
 
     expect(useCalibrationStore.getState().companionStage).toBe(peak);
+  });
+
+  it('store guard rejects a stage the repo genuinely reports, not just one raiseTier already clamped', async () => {
+    // The test above only proves companionRepo.raiseTier never PERSISTS a
+    // lower maxTier — it never exercises the store's own
+    // `stageAfter > state.companionStage` guard at src/stores/calibrationStore.ts:816-817,
+    // because a normal log's stageAfter is always derived from that same
+    // monotonic repo. Here the mirror is set ahead of anything this log's own
+    // fuel write can compute (companionStage 6, the ceiling), so the read-back
+    // `stageAfter` the store computes off the freshly-fuelled row is
+    // necessarily <= the mirror. If the store guard were removed (e.g.
+    // `set({ companionStage: stageAfter })` unconditionally), this log would
+    // regress the mirror to whatever a single cold log against an
+    // uncalibrated category computes (stage 1) — this test pins the guard,
+    // not the repo.
+    const db = freshStore();
+    await seedRipe(db);
+    useCalibrationStore.setState({ companionStage: 6 });
+
+    await useCalibrationStore.getState().applyLog({
+      category: 'cleaning',
+      estimateMin: 10,
+      actualMin: 10,
+      status: 'completed',
+      source: 'timed',
+      adaptSpeed: 'balanced',
+      nowMs: 2000,
+    });
+
+    expect(useCalibrationStore.getState().companionStage).toBe(6);
   });
 
   it('reset() drops the mirror back to stage 1 with the wiped fuel row', () => {

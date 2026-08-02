@@ -23,11 +23,10 @@ export const KEEP_ON_PROGRESS: ReadonlySet<string> = new Set([
 ]);
 
 /** Reset progress: forget what Whenbee learned, keep the setup. The companion
- *  keeps its name + appearance seed; only its growth resets. */
+ *  keeps its appearance seed; only its growth resets. */
 export async function wipeLearning(db: Database): Promise<void> {
-  const { name, seed } = await db.getCompanion();
+  const { seed } = await db.getCompanion();
   await db.wipeAll();
-  await db.setCompanionName(name);
   await db.setSeed(seed); // wipeAll set seed=0, so this re-applies the kept look
   for (const key of kv.getAllKeys()) {
     if (!KEEP_ON_PROGRESS.has(key)) kv.delete(key);

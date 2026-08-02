@@ -377,8 +377,6 @@ export interface CompanionPresence {
   driftHealth: DriftHealth;
   /** Per-install procedural seed — drives the deterministic stripe recolor. */
   seed: number;
-  /** Optional user-set display name; null when the companion is still unnamed. */
-  name: string | null;
 }
 
 /** Read-only snapshot of reclaim/companion state for the Whenbee hub. */
@@ -1166,7 +1164,6 @@ export const useCalibrationStore = create<CalibrationState>((set, get) => ({
       lifetimeNectar: companion.lifetimeDataPoints,
       driftHealth: companion.driftHealth ?? 'settled',
       seed: companion.seed,
-      name: companion.name ?? null,
     };
     // Mirror the monotonic stage into the cache so synchronous readers (the
     // unlock ladder) don't have to await this read. Never lowered here: the

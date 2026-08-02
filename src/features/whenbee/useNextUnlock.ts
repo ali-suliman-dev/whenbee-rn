@@ -3,7 +3,6 @@ import { useTranslation } from 'react-i18next';
 import { useCalibrationStore } from '@/src/stores/calibrationStore';
 import { TIERS, TIER_THRESHOLDS, SHARPNESS_PER_LOG, capabilityFor } from '@/src/engine';
 import type { CompanionCapability, CompanionStage } from '@/src/engine';
-import type { Tier } from '@/src/domain/types';
 import { aggregateCalibration } from './calibrationAggregate';
 import { capabilityLabel } from './capabilityCopy';
 import { isCapabilityPro } from './capabilityGating';
@@ -32,11 +31,10 @@ import { isCapabilityPro } from './capabilityGating';
 // first `loadReclaimSummary()` / `applyLog()` fills the mirror: the live tier
 // already PROVES that much progress, so the stage can never read lower than it.
 //
-// `logsToNext` ("N more logs") is NOT `aggregateCalibration`'s own
-// `logsToNext` — that measures the lead category's distance to ITS OWN next
-// tier band, which is a different rung whenever the monotonic `stage` has run
-// ahead of the live tier (e.g. right after a `resetCategory` on the lead
-// category — the mirror stays put, the live tier drops). The capability named
+// `logsToNext` ("N more logs") is NOT the lead category's own distance to ITS
+// next tier band, which would be a different rung whenever the monotonic
+// `stage` has run ahead of the live tier (e.g. right after a `resetCategory`
+// on the lead category — the mirror stays put, the live tier drops). The capability named
 // by `nextCapabilityId` is stage `stage + 1`, which requires `maxTier` to
 // reach tier index `stage` — i.e. `TIER_THRESHOLDS[stage]`. So the away-count
 // is computed straight from that threshold and the lead's raw sharpness, using
@@ -69,9 +67,10 @@ import { isCapabilityPro } from './capabilityGating';
 // ──────────────────────────────────────────────────────────────────────────────
 
 export interface NextUnlock {
-  /** Current tier (engine value) of the lead category — a progress read, not a gate. */
-  tier: Tier;
-  /** Localised display word for the current tier. */
+  /** Localised display word for the current (lead-category) tier. No caller
+   *  needs the raw engine `Tier` enum — only this translated word — and
+   *  exposing it too was a standing risk of an English tier word landing
+   *  directly on a Swedish screen (F17). */
   tierLabel: string;
   /** Rounded calibration maturity of the lead category, 0..100. */
   pct: number;
@@ -105,13 +104,17 @@ const TIER_KEYS = ['raw', 'setting', 'ripening', 'thickening', 'honest'] as cons
 const TOP_TIER_STAGE = TIERS.length;
 
 export function useNextUnlock(): NextUnlock {
+  // No `logs` subscription: this hook's output is entirely a function of the
+  // lead category's stats (`aggregateCalibration`) and the monotonic stage —
+  // an uncounted/abandoned log bumps `logs` without moving either, so
+  // subscribing here would invalidate the memo (in every mounted instance —
+  // see F19) for a provably identical result.
   const stats = useCalibrationStore((s) => s.statsByCategory);
-  const logs = useCalibrationStore((s) => s.logs);
   const cachedStage = useCalibrationStore((s) => s.companionStage);
   const { t: tr } = useTranslation('whenbee');
 
   return useMemo(() => {
-    const { pct, tier, sharpness } = aggregateCalibration(stats, logs);
+    const { pct, tier, sharpness } = aggregateCalibration(stats);
     const tierIdx = TIERS.indexOf(tier);
     const tierKey = TIER_KEYS[tierIdx] ?? 'raw';
 
@@ -138,7 +141,6 @@ export function useNextUnlock(): NextUnlock {
         })();
 
     return {
-      tier,
       tierLabel: tr(`tiers.${tierKey}`),
       pct,
       logsToNext,
@@ -149,5 +151,5 @@ export function useNextUnlock(): NextUnlock {
       sealed,
       visibleSealed,
     };
-  }, [stats, logs, cachedStage, tr]);
+  }, [stats, cachedStage, tr]);
 }

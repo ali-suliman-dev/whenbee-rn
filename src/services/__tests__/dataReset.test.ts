@@ -11,12 +11,11 @@ async function seedDb() {
     priorMult: 1.2, adaptSpeed: 'balanced', updatedAt: 1000, reclaimedMinutes: 30,
     sw: 0, swx: 0, swy: 0, swxx: 0, swxy: 0,
   });
-  await db.setCompanionName('Bramble');
   return db;
 }
 
 describe('wipeLearning', () => {
-  it('clears learning data + keys but keeps setup keys and companion identity', async () => {
+  it('clears learning data + keys but keeps setup keys and the companion appearance seed', async () => {
     const db = await seedDb();
     const seedBefore = (await db.getCompanion()).seed;
     kv.set('settings', '{"colorMode":"dark"}');
@@ -31,9 +30,8 @@ describe('wipeLearning', () => {
 
     // db wiped
     expect(await db.getCategoryStat('cooking')).toBeNull();
-    // companion identity preserved (name + the existing appearance seed)
+    // companion's existing appearance seed preserved
     const c = await db.getCompanion();
-    expect(c.name).toBe('Bramble');
     expect(c.seed).toBe(seedBefore);
     // kept keys survive
     expect(kv.getString('settings')).not.toBeNull();
