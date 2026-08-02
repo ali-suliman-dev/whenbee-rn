@@ -203,3 +203,29 @@ describe('companionStage mirror — the ladder reads it synchronously', () => {
     expect(useCalibrationStore.getState().companionStage).toBe(1);
   });
 });
+
+describe('hydrate — seeds the monotonic mirror from the companion row (F6)', () => {
+  it('lifts a stale companionStage=1 mirror to the persisted maxTier on cold boot', async () => {
+    const db = freshStore();
+    // A capped user reopening the app: the companion fuel row already knows
+    // maxTier 3 (Thickening capped, stage 4), but nothing has run applyLog or
+    // loadReclaimSummary yet this session — the mirror is still its default 1.
+    await makeCompanionRepo(db).raiseTier(3);
+    expect(useCalibrationStore.getState().companionStage).toBe(1);
+
+    await useCalibrationStore.getState().hydrate();
+
+    expect(useCalibrationStore.getState().companionStage).toBe(4);
+  });
+
+  it('never lowers an already-higher mirror even if the companion row reads lower', async () => {
+    freshStore();
+    useCalibrationStore.setState({ companionStage: 5 });
+
+    await useCalibrationStore.getState().hydrate();
+
+    // Cold companion row (maxTier 0, no keeper) → stage 1, but the raise-only
+    // guard must keep the higher in-memory value.
+    expect(useCalibrationStore.getState().companionStage).toBe(5);
+  });
+});

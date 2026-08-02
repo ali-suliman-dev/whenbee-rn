@@ -272,6 +272,11 @@ export interface LogResult {
   reclaimDeltaMin: number;
   /** Lifetime reclaim total AFTER this log's deposit (unchanged when nothing banked). */
   reclaimLifetimeMin: number;
+  /** True only when THIS log's fuel update raised the monotonic companion stage
+   *  (before → after, not after-vs-after). A tier crossing that merely catches a
+   *  category up to a rung the user already owns leaves this false, so the
+   *  reward screen never re-announces an already-owned capability (F4). */
+  stageJustRose: boolean;
 }
 
 /** A recent est-vs-actual receipt row for the category-detail screen (newest first). */
@@ -602,7 +607,18 @@ export const useCalibrationStore = create<CalibrationState>((set, get) => ({
     // Seed the companion's per-install presence seed exactly once. Date.now is
     // allowed here (store layer) — the engine stays clock-free. setSeed is a
     // no-op when a seed already exists, so this is safe on every hydrate.
-    await makeCompanionRepo(db).ensureSeed(() => (Date.now() % 1_000_000) + 1);
+    const companionRepo = makeCompanionRepo(db);
+    await companionRepo.ensureSeed(() => (Date.now() % 1_000_000) + 1);
+
+    // Seed the monotonic stage mirror from the companion row this same hydrate
+    // already read, so a capped user never sees a dark rung / re-offered
+    // capability in the window before loadReclaimSummary()/applyLog() next
+    // run (F6). The companion row (maxTier + keeper) is already the source of
+    // truth — this reads it, never adds new persistence — and the raise-only
+    // guard matches every other write path (loadReclaimSummary, applyLog).
+    const companion = await companionRepo.get();
+    const stage = companionStageFor({ maxTier: companion.maxTier, keeper: companion.keeper });
+    set((state) => (stage > state.companionStage ? { companionStage: stage } : {}));
   },
 
   applyLog: async (input) => {
@@ -683,6 +699,12 @@ export const useCalibrationStore = create<CalibrationState>((set, get) => ({
     // it's the unchanged current total — read once below and overwritten when we
     // actually bank, so the Reward count-up always lands on the live number.
     let reclaimLifetimeMin = (await companionRepo.get()).reclaimedMinutesLifetime;
+    // Whether THIS log's fuel update raised the monotonic stage — captured
+    // before/after around the mirror write below, never compared after-with-
+    // after (F4: `crossedStage !== companionStage` used to compare the
+    // post-log stage with itself once a later category caught up to a rung
+    // already earned, so the reward screen re-announced it as newly earned).
+    let stageJustRose = false;
     if (result.counted) {
       // Capture firstHonestRange once — the first time this category's confidence
       // reaches a meaningful band ('setting' or beyond). Frozen thereafter; it is
@@ -760,7 +782,10 @@ export const useCalibrationStore = create<CalibrationState>((set, get) => ({
       // persisted maxTier/keeper — never from the volatile live sharpness.
       const fuelled = await companionRepo.get();
       const stageAfter = companionStageFor({ maxTier: fuelled.maxTier, keeper: fuelled.keeper });
-      set((state) => (stageAfter > state.companionStage ? { companionStage: stageAfter } : {}));
+      set((state) => {
+        stageJustRose = stageAfter > state.companionStage;
+        return stageJustRose ? { companionStage: stageAfter } : {};
+      });
     }
 
     // 8. Patch the cache (O(1)). Count every stored log; only refresh stats when counted.
@@ -897,6 +922,7 @@ export const useCalibrationStore = create<CalibrationState>((set, get) => ({
       leveledUp,
       reclaimDeltaMin: result.reclaimDeltaMin,
       reclaimLifetimeMin,
+      stageJustRose,
     };
   },
 
