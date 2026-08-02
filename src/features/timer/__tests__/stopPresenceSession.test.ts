@@ -23,7 +23,7 @@ jest.mock('@/src/services/liveActivity', () => ({ endFinishTimeActivity: jest.fn
 const okResult: LogResult = {
   eventId: 'evt-1', counted: true, multiplier: 2, sharpness: 50,
   tierBefore: 'Setting', tierAfter: 'Ripening', leveledUp: false,
-  reclaimDeltaMin: 0, reclaimLifetimeMin: 0,
+  reclaimDeltaMin: 0, reclaimLifetimeMin: 0, stageJustRose: false,
 };
 
 const STARTED_AT = 1_700_000_000_000;

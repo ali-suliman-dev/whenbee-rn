@@ -21,6 +21,7 @@ const okResult: LogResult = {
   leveledUp: false,
   reclaimDeltaMin: 0,
   reclaimLifetimeMin: 0,
+  stageJustRose: false,
 };
 
 beforeEach(() => {

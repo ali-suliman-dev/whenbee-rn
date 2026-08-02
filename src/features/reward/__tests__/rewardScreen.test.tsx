@@ -29,6 +29,7 @@ const baseResult: LogResult = {
   leveledUp: false,
   reclaimDeltaMin: 0,
   reclaimLifetimeMin: 0,
+  stageJustRose: false,
 };
 
 beforeEach(() => {
@@ -242,10 +243,12 @@ describe('Reward screen', () => {
   });
 
   it('says what THIS log unlocked on the log that crossed a tier', () => {
-    // tierBefore Setting → tierAfter Ripening is an upward crossing, and the
-    // companion's monotonic stage (3) is exactly the stage that crossing buys,
-    // so this log genuinely earned the rung. The payoff screen names it instead
-    // of handing the user the next demand.
+    // tierBefore Setting → tierAfter Ripening is an upward crossing, and
+    // `stageJustRose` says THIS log's fuel write is what raised the monotonic
+    // stage — the store's own before-vs-after read, not a re-derived compare
+    // against the (already-advanced) current stage — so this log genuinely
+    // earned the rung. The payoff screen names it instead of handing the user
+    // the next demand.
     useCalibrationStore.setState({
       statsByCategory: {
         cleaning: { sharpness: 64, tier: 'Ripening' } as unknown as CachedStat,
@@ -258,7 +261,7 @@ describe('Reward screen', () => {
       guessMin: 15,
       category: 'cleaning',
       label: null,
-      result: { ...baseResult, leveledUp: true },
+      result: { ...baseResult, leveledUp: true, stageJustRose: true },
     });
     render(<Reward />);
     // start-by-anchor is Pro, so a free user is told the truth about it rather
@@ -284,7 +287,7 @@ describe('Reward screen', () => {
       guessMin: 15,
       category: 'cleaning',
       label: null,
-      result: { ...baseResult, leveledUp: true },
+      result: { ...baseResult, leveledUp: true, stageJustRose: true },
     });
     render(<Reward />);
     expect(screen.getByText('Just unlocked: Reverse start-by anchor')).toBeOnTheScreen();
@@ -312,6 +315,44 @@ describe('Reward screen', () => {
     // Stage 5 is the top of the tier ladder → the sealed line, never a rung
     // the monotonic stage already passed.
     expect(screen.getByText('Calibrated ✦')).toBeOnTheScreen();
+  });
+
+  it('F4 regression: a second category crossing the SAME boundary a different category already earned does not re-announce it', () => {
+    // The exact bug: Deep work crossed Ripening→Thickening weeks ago and the
+    // reward screen correctly announced it — the companion stage is already 4.
+    // Now Errands crosses that same boundary; `raiseTier` is a no-op so the
+    // stage stays 4. The OLD guard compared `crossedStage (4) !== companionStage
+    // (4)` — both AFTER the log — and that's always false once the store has
+    // already advanced its own mirror inside applyLog, so it re-announced the
+    // capability as newly earned a second time. `stageJustRose` is a real
+    // before-vs-after read and correctly comes back false here.
+    useCalibrationStore.setState({
+      statsByCategory: {
+        errands: { sharpness: 64, tier: 'Ripening' } as unknown as CachedStat,
+      },
+      logs: 40,
+      companionStage: 4,
+    });
+    useRewardStore.getState().setReward({
+      actualMin: 16,
+      guessMin: 15,
+      category: 'errands',
+      label: null,
+      // tierBefore/tierAfter mirror an upward Thickening crossing (index 3 →
+      // crossedStage 4), the exact value companionStage already holds — the
+      // "after-with-after" trap — but stageJustRose is false because THIS
+      // log's own fuel write did not raise the mirror.
+      result: {
+        ...baseResult,
+        tierBefore: 'Ripening',
+        tierAfter: 'Thickening',
+        leveledUp: true,
+        stageJustRose: false,
+      },
+    });
+    render(<Reward />);
+    expect(screen.queryByText(/Just unlocked/)).toBeNull();
+    expect(screen.queryByText(/You reached/)).toBeNull();
   });
 
   it('never spans two subjects in one a11y label: the card describes THIS category, the unlock row describes the companion', () => {

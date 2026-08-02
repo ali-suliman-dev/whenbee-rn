@@ -75,25 +75,26 @@ const REASON_GATE = 0.25;
  * The capability THIS log just bought, or null when it bought no new rung.
  *
  * Uses only what `LogResult` already carries (`tierBefore` / `tierAfter` — the
- * same pair that drives the `tier_up` analytics event) plus the store's mirrored
- * monotonic companion stage. No new plumbing, no new persistence.
+ * same pair that drives the `tier_up` analytics event — plus `stageJustRose`,
+ * the store's own before-vs-after read of the monotonic companion stage). No
+ * new plumbing, no new persistence.
  *
  * Three conditions, all required:
  *   1. the tier moved UP (`leveledUp` alone also fires on a tier that fell);
  *   2. the log was counted, i.e. it trained the model;
- *   3. the stage this crossing implies IS the companion's current monotonic
- *      stage — so a category catching up to a rung the user passed long ago
- *      never re-announces it as new.
+ *   3. `stageJustRose` — THIS log's fuel update is what raised the monotonic
+ *      stage. Comparing the crossed stage against the CURRENT companionStage
+ *      (the old approach) compares after-with-after once the store's mirror
+ *      has already advanced inside `applyLog`, so a second category catching
+ *      up to a rung a different category earned weeks ago would re-announce
+ *      it as newly earned (F4). `stageJustRose` is captured at the moment of
+ *      the write and can't be fooled by that.
  */
-function justUnlockedBy(
-  result: LogResult,
-  companionStage: CompanionStage,
-): CompanionCapability['id'] | null {
-  if (!result.counted || !result.leveledUp) return null;
+function justUnlockedBy(result: LogResult): CompanionCapability['id'] | null {
+  if (!result.counted || !result.leveledUp || !result.stageJustRose) return null;
   const afterIdx = TIERS.indexOf(result.tierAfter);
   if (afterIdx <= TIERS.indexOf(result.tierBefore)) return null;
   const crossedStage = afterIdx + 1;
-  if (crossedStage !== companionStage) return null;
   return capabilityFor(crossedStage as CompanionStage).id;
 }
 
@@ -114,7 +115,6 @@ export function useReward(): RewardView {
   const result = useRewardStore((s) => s.result);
   const clear = useRewardStore((s) => s.clear);
   const logs = useCalibrationStore((s) => s.logs);
-  const companionStage = useCalibrationStore((s) => s.companionStage);
   const loadGoalLogFeedback = useCalibrationStore((s) => s.loadGoalLogFeedback);
 
   const hasReward = result !== null;
@@ -211,7 +211,7 @@ export function useReward(): RewardView {
     eventId: result.eventId,
     reasonDirection: reasonDirectionFor(actualMin, guessMin),
     result,
-    justUnlockedId: justUnlockedBy(result, companionStage),
+    justUnlockedId: justUnlockedBy(result),
     goalFeedback,
     onSeeWhenbee,
     onBackToToday,

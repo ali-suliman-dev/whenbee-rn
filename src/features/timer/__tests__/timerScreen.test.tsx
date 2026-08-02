@@ -43,6 +43,7 @@ const okResult: LogResult = {
   leveledUp: true,
   reclaimDeltaMin: 0,
   reclaimLifetimeMin: 0,
+  stageJustRose: false,
 };
 
 let alertSpy: jest.SpyInstance;
