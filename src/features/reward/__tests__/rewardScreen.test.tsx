@@ -294,11 +294,14 @@ describe('Reward screen', () => {
   });
 
   it('does not re-announce a rung the user passed long ago', () => {
-    // A second area catching up to Ripening while the companion is already at
-    // stage 5 crossed no NEW rung — no "just unlocked", just the next target.
+    // A second area catching up to Honest while the companion is already at
+    // stage 5 crossed no NEW rung — no "just unlocked", just the sealed line
+    // (the live lead is genuinely Honest here too, so the sealed claim is
+    // consistent with what's on screen — see the F3 test below for the case
+    // where it isn't).
     useCalibrationStore.setState({
       statsByCategory: {
-        cleaning: { sharpness: 64, tier: 'Ripening' } as unknown as CachedStat,
+        cleaning: { sharpness: 95, tier: 'Honest' } as unknown as CachedStat,
       },
       logs: 20,
       companionStage: 5,
@@ -315,6 +318,31 @@ describe('Reward screen', () => {
     // Stage 5 is the top of the tier ladder → the sealed line, never a rung
     // the monotonic stage already passed.
     expect(screen.getByText('Calibrated ✦')).toBeOnTheScreen();
+  });
+
+  it('F3 regression: never claims "Calibrated ✦" when the monotonic stage is sealed but the live tier is not', () => {
+    // The monotonic stage stayed at 5 (an earlier area sealed and that fuel
+    // never lowers), but the just-logged category's live tier is only
+    // Ripening — the exact mismatch a reset/deleted lead produces. The old
+    // code showed the sealed line off the monotonic stage alone; it is not an
+    // honest claim when nothing tracked is visibly Honest.
+    useCalibrationStore.setState({
+      statsByCategory: {
+        cleaning: { sharpness: 64, tier: 'Ripening' } as unknown as CachedStat,
+      },
+      logs: 20,
+      companionStage: 5,
+    });
+    useRewardStore.getState().setReward({
+      actualMin: 16,
+      guessMin: 15,
+      category: 'cleaning',
+      label: null,
+      result: baseResult,
+    });
+    render(<Reward />);
+    expect(screen.queryByText('Calibrated ✦')).toBeNull();
+    expect(screen.queryByText(/more logs/)).toBeNull();
   });
 
   it('F4 regression: a second category crossing the SAME boundary a different category already earned does not re-announce it', () => {

@@ -76,4 +76,26 @@ describe('CalibrationCard', () => {
     expect(screen.getByText('Calibrated ✦')).toBeOnTheScreen();
     expect(screen.queryByText(/more logs/)).not.toBeOnTheScreen();
   });
+
+  it('F3 regression: never shows "Calibrated ✦" next to a lower tier word after the sealed lead is deleted/reset', () => {
+    // The monotonic companion stage stayed at 5 (an earlier area sealed and
+    // that fuel never lowers), but the lead category was deleted/reset — no
+    // tracked category proves Honest live anymore, so the visible tier/pct
+    // read "Just started, 0%". The old bug: the sealed line still rendered
+    // "Calibrated ✦" underneath, directly contradicting the number above it.
+    useCalibrationStore.setState({
+      statsByCategory: {},
+      logs: 40,
+      companionStage: 5,
+    });
+
+    render(<CalibrationCard />);
+
+    expect(screen.getByText('Just started')).toBeOnTheScreen();
+    expect(screen.getByText('0%')).toBeOnTheScreen();
+    // Neither the (now false) sealed claim nor a fabricated capability name —
+    // there is nothing honest left to say on this rung.
+    expect(screen.queryByText('Calibrated ✦')).toBeNull();
+    expect(screen.queryByText(/more logs/)).toBeNull();
+  });
 });

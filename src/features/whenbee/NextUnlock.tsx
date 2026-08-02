@@ -32,9 +32,11 @@ export function NextUnlock({ justUnlockedId = null }: NextUnlockProps) {
   const t = useTheme();
   const sentence = useUnlockSentence(justUnlockedId);
 
-  // Empty only in the defensive branch `useUnlockSentence`/`useNextUnlock`
-  // document as unreachable today — no state to render is better than a row
-  // with a key glyph and no words (F2: never print a fabricated count).
+  // Empty when there's nothing honest to say: the defensive, unreachable-today
+  // branch `useNextUnlock` documents (F2 — never print a fabricated count), or
+  // the monotonic stage is sealed but the live tier/pct beside it disagrees
+  // (F3 — never claim "Calibrated ✦" next to a lower tier word). No row beats
+  // a row with a key glyph and no words, or worse, a false one.
   if (sentence === '') return null;
 
   const row: ViewStyle = {

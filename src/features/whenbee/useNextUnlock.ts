@@ -51,6 +51,21 @@ import { isCapabilityPro } from './capabilityGating';
 // index read comes back `undefined`; that branch is not reachable through any
 // state this store can produce today, but the count is suppressed rather than
 // guessed if it ever is.
+//
+// `sealed` (monotonic) and `visibleSealed` (live-tier) are DIFFERENT claims,
+// and F3 was them getting merged into one piece of copy. `sealed` answers
+// "is there still a rung logs alone can buy" — correctly monotonic, so
+// `UnlockLadder` never un-lights a reached rung. `visibleSealed` answers "does
+// the tier/pct actually ON SCREEN right now say Honest" — the same live-tier
+// source as `tier`/`tierLabel`/`pct` themselves. They agree for the vast
+// majority of users (once genuinely capped, the live tier rarely leaves
+// Honest), but they can diverge right after the lead category is reset or
+// deleted: `sealed` stays true (the mirror doesn't move), `visibleSealed`
+// drops back to false (the lead's live tier does). Showing the "Calibrated ✦"
+// line off `sealed` in that window put it directly under a card reading "Just
+// started, 0%" — two claims about the same subject that contradict each
+// other. `ring.sealed` copy is gated on `visibleSealed`, the same source as
+// the number beside it, so the two can never disagree; see `useUnlockSentence`.
 // ──────────────────────────────────────────────────────────────────────────────
 
 export interface NextUnlock {
@@ -73,8 +88,14 @@ export interface NextUnlock {
   /** True when the next capability sits behind the Pro paywall. */
   nextCapabilityIsPro: boolean;
   /** True once the monotonic stage has reached the top of the tier ladder — there
-   *  is nothing further for logs alone to unlock. */
+   *  is nothing further for logs alone to unlock. Gates which rungs light up;
+   *  never un-sets once true (see header comment). */
   sealed: boolean;
+  /** True when the LIVE tier (the same source as `tier`/`tierLabel`/`pct`) is
+   *  actually Honest right now — a strict subset of `sealed`. Gates whether
+   *  the "Calibrated ✦" copy may render, so that line can never sit next to a
+   *  lower tier word/percentage on the same card (F3). */
+  visibleSealed: boolean;
 }
 
 const TIER_KEYS = ['raw', 'setting', 'ripening', 'thickening', 'honest'] as const;
@@ -97,6 +118,8 @@ export function useNextUnlock(): NextUnlock {
     // Reached rungs: monotonic, floored by what the live tier already proves.
     const stage = Math.max(cachedStage, tierIdx + 1) as CompanionStage;
     const sealed = stage >= TOP_TIER_STAGE;
+    // Live-tier read, same source as tier/tierLabel/pct — see header comment.
+    const visibleSealed = tierIdx + 1 >= TOP_TIER_STAGE;
 
     // Each stage N unlocks CAPABILITIES[N]; the one still to earn is N+1.
     const nextCapabilityId = sealed ? null : capabilityFor((stage + 1) as CompanionStage).id;
@@ -124,6 +147,7 @@ export function useNextUnlock(): NextUnlock {
       nextCapabilityLabel,
       nextCapabilityIsPro: nextCapabilityId !== null && isCapabilityPro(nextCapabilityId),
       sealed,
+      visibleSealed,
     };
   }, [stats, logs, cachedStage, tr]);
 }
