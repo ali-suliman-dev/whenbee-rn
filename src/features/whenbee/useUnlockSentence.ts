@@ -40,6 +40,10 @@ export function useUnlockSentence(justUnlockedId: CompanionCapability['id'] | nu
   // Narrow on the label itself so TypeScript proves it's a string below — no
   // `??` fallback, no `!` assertion.
   if (nextCapabilityLabel === null) return tr('ring.sealed');
+  // logsToNext is null only in the defensive branch `useNextUnlock` documents
+  // as unreachable today (a threshold read coming back undefined) — suppress
+  // the sentence rather than print a fabricated count (F2).
+  if (logsToNext === null) return '';
   const vars = { count: logsToNext, capability: nextCapabilityLabel };
   return !isPro && nextCapabilityIsPro ? tr('ladder.rowPro', vars) : tr('ladder.row', vars);
 }

@@ -114,6 +114,31 @@ describe('useNextUnlock', () => {
     expect(result.current.nextCapabilityIsPro).toBe(false);
   });
 
+  it('F2 regression: away-count measures the rung the capability actually names, not the lead\'s own next tier band', () => {
+    // Deep work reached Thickening (85, sharpness), companionStage 4. The user
+    // resets Deep work from Manage-this-area (sharpness → 0), so the lead
+    // becomes Errands at 20 (Raw) while the monotonic mirror stays at 4 — the
+    // exact "stage runs ahead of the live tier" scenario. The OLD code paired
+    // this with `logsToNextTier(20)` = ceil((40-20)/4) = 5, which measures the
+    // Raw→Setting hop, a rung nothing here is chasing. The capability offered
+    // is stage 5 (Honest tier, threshold 93) — the away-count must measure
+    // THAT distance: ceil((93-20)/4) = 19.
+    useCalibrationStore.setState({
+      logs: 40,
+      companionStage: 4,
+      statsByCategory: { errands: statFor(20, 'Raw') },
+    });
+
+    const { result } = renderHook(() => useNextUnlock());
+
+    expect(result.current.stage).toBe(4);
+    expect(result.current.tier).toBe('Raw');
+    expect(result.current.nextCapabilityId).toBe('drift-recalibration');
+    expect(result.current.logsToNext).toBe(19);
+    // Never the tier-band number the old bug quoted.
+    expect(result.current.logsToNext).not.toBe(5);
+  });
+
   it('flags a Pro-gated next capability', () => {
     useCalibrationStore.setState({
       logs: 20,

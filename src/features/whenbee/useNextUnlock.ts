@@ -1,7 +1,7 @@
 import { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useCalibrationStore } from '@/src/stores/calibrationStore';
-import { TIERS, capabilityFor } from '@/src/engine';
+import { TIERS, TIER_THRESHOLDS, SHARPNESS_PER_LOG, capabilityFor } from '@/src/engine';
 import type { CompanionCapability, CompanionStage } from '@/src/engine';
 import type { Tier } from '@/src/domain/types';
 import { aggregateCalibration } from './calibrationAggregate';
@@ -19,10 +19,10 @@ import { isCapabilityPro } from './capabilityGating';
 //     mirrored from the companion fuel row (`companionStageFor({ maxTier,
 //     keeper })`, and `maxTier` "never lowers it"). An earned capability can
 //     never un-light.
-//   • HOW FAR ALONG THE CURRENT CLIMB IS (the percentage and the "N more logs"
-//     estimate) comes from `aggregateCalibration` — the LEAD category's live
-//     sharpness. That is a rolling 8-log window and it legitimately falls after
-//     sloppy estimates; a progress meter may move both ways.
+//   • HOW FAR ALONG THE CURRENT CLIMB IS (the percentage) comes from
+//     `aggregateCalibration` — the LEAD category's live sharpness. That is a
+//     rolling 8-log window and it legitimately falls after sloppy estimates; a
+//     progress meter may move both ways.
 //
 // Deriving the reached stage from the live tier (what this hook used to do) let
 // a run of bad estimates re-mark rungs 4 and 5 "not yet unlocked" and re-offer a
@@ -31,6 +31,26 @@ import { isCapabilityPro } from './capabilityGating';
 // The `Math.max` below is belt-and-braces for the cold-boot window before the
 // first `loadReclaimSummary()` / `applyLog()` fills the mirror: the live tier
 // already PROVES that much progress, so the stage can never read lower than it.
+//
+// `logsToNext` ("N more logs") is NOT `aggregateCalibration`'s own
+// `logsToNext` — that measures the lead category's distance to ITS OWN next
+// tier band, which is a different rung whenever the monotonic `stage` has run
+// ahead of the live tier (e.g. right after a `resetCategory` on the lead
+// category — the mirror stays put, the live tier drops). The capability named
+// by `nextCapabilityId` is stage `stage + 1`, which requires `maxTier` to
+// reach tier index `stage` — i.e. `TIER_THRESHOLDS[stage]`. So the away-count
+// is computed straight from that threshold and the lead's raw sharpness, using
+// the same "assumed gain per log" the engine already uses for its own
+// same-shaped estimate (`SHARPNESS_PER_LOG`) — never the tier-band number.
+//
+// Because `stage = max(cachedStage, tierIdx + 1)` and TIER_THRESHOLDS is
+// non-decreasing, `TIER_THRESHOLDS[stage] > leadSharpness` always holds inside
+// the unsealed branch (stage ∈ 1..TOP_TIER_STAGE-1, so the index is always in
+// bounds) — the gap is provably positive, never zero or negative. `logsToNext`
+// is `null` only in the defensive, TypeScript-required branch where that
+// index read comes back `undefined`; that branch is not reachable through any
+// state this store can produce today, but the count is suppressed rather than
+// guessed if it ever is.
 // ──────────────────────────────────────────────────────────────────────────────
 
 export interface NextUnlock {
@@ -40,8 +60,10 @@ export interface NextUnlock {
   tierLabel: string;
   /** Rounded calibration maturity of the lead category, 0..100. */
   pct: number;
-  /** Rough "N more logs" to the next tier; 0 once sealed. */
-  logsToNext: number;
+  /** Rough "N more logs" to the NEXT STAGE's threshold (not necessarily the lead
+   *  category's own next tier band — see the header comment). 0 once sealed;
+   *  null in the (unreached, defensive-only) case the threshold can't be read. */
+  logsToNext: number | null;
   /** MONOTONIC companion stage (1..6) — how many rungs are genuinely reached. */
   stage: CompanionStage;
   /** Id of the capability the NEXT stage unlocks; null at the cap. */
@@ -68,7 +90,7 @@ export function useNextUnlock(): NextUnlock {
   const { t: tr } = useTranslation('whenbee');
 
   return useMemo(() => {
-    const { pct, tier, logsToNext } = aggregateCalibration(stats, logs);
+    const { pct, tier, sharpness } = aggregateCalibration(stats, logs);
     const tierIdx = TIERS.indexOf(tier);
     const tierKey = TIER_KEYS[tierIdx] ?? 'raw';
 
@@ -79,6 +101,18 @@ export function useNextUnlock(): NextUnlock {
     // Each stage N unlocks CAPABILITIES[N]; the one still to earn is N+1.
     const nextCapabilityId = sealed ? null : capabilityFor((stage + 1) as CompanionStage).id;
     const nextCapabilityLabel = nextCapabilityId === null ? null : capabilityLabel(nextCapabilityId, tr);
+
+    // Away-count for the NEXT STAGE (not the lead's own next tier band — see
+    // the header comment). `TIER_THRESHOLDS[stage]` is the sharpness a category
+    // needs to reach for `maxTier` to rise to `stage`, which is exactly what
+    // stage `stage + 1` requires.
+    const logsToNext = sealed
+      ? 0
+      : (() => {
+          const target = TIER_THRESHOLDS[stage];
+          if (target === undefined) return null; // defensive only — see header comment
+          return Math.max(1, Math.ceil((target - sharpness) / SHARPNESS_PER_LOG));
+        })();
 
     return {
       tier,

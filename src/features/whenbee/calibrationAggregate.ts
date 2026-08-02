@@ -11,6 +11,10 @@ import type { Tier } from '@/src/domain/types';
 
 export interface CalibrationAggregate {
   pct: number;
+  /** Raw (unrounded) lead-category sharpness `pct` is rounded from — callers
+   *  that derive a threshold distance (e.g. `useNextUnlock`'s away-count) need
+   *  the exact value, not the display rounding. */
+  sharpness: number;
   logs: number;
   tier: Tier;
   nextTier: Tier | null;
@@ -33,6 +37,7 @@ export function aggregateCalibration(
   const nextTier = tierIdx >= 0 && tierIdx < TIERS.length - 1 ? TIERS[tierIdx + 1]! : null;
   return {
     pct: Math.round(sharpness),
+    sharpness,
     logs,
     tier,
     nextTier,

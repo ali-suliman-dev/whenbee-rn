@@ -32,6 +32,11 @@ export function NextUnlock({ justUnlockedId = null }: NextUnlockProps) {
   const t = useTheme();
   const sentence = useUnlockSentence(justUnlockedId);
 
+  // Empty only in the defensive branch `useUnlockSentence`/`useNextUnlock`
+  // document as unreachable today — no state to render is better than a row
+  // with a key glyph and no words (F2: never print a fabricated count).
+  if (sentence === '') return null;
+
   const row: ViewStyle = {
     flexDirection: 'row',
     alignItems: 'center',
