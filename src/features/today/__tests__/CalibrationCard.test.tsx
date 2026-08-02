@@ -1,7 +1,10 @@
 import { act, render, screen } from '@testing-library/react-native';
+import { StyleSheet } from 'react-native';
 import { CalibrationCard } from '../CalibrationCard';
+import i18n from '@/src/i18n';
 import { useCalibrationStore, type CachedStat } from '@/src/stores/calibrationStore';
 import { useEntitlement } from '@/src/features/paywall/useEntitlement';
+import { resolveTheme } from '@/src/theme/useTheme';
 import type { CompanionStage } from '@/src/engine';
 
 // ──────────────────────────────────────────────────────────────────────────────
@@ -43,6 +46,9 @@ describe('CalibrationCard', () => {
 
     render(<CalibrationCard />);
 
+    // F8: an eyebrow names the scope — this tier/pct is the LEAD (sharpest)
+    // tracked area, not an aggregate across everything logged.
+    expect(screen.getByText('Your sharpest area')).toBeOnTheScreen();
     expect(screen.getByText('Getting closer')).toBeOnTheScreen();
     expect(screen.getByText('64%')).toBeOnTheScreen();
     expect(
@@ -52,7 +58,7 @@ describe('CalibrationCard', () => {
     // own copy and silently dropped the Pro qualifier.
     expect(
       screen.getByLabelText(
-        'Getting closer, 64 percent calibrated. 5 more logs sharpen Honest-Day forecast when you plan, a Pro feature',
+        'Your sharpest area, Getting closer, 64 percent calibrated. 5 more logs sharpen Honest-Day forecast when you plan, a Pro feature',
       ),
     ).toBeOnTheScreen();
   });
@@ -77,6 +83,12 @@ describe('CalibrationCard', () => {
     expect(screen.getByText('100%')).toBeOnTheScreen();
     expect(screen.getByText('Calibrated ✦')).toBeOnTheScreen();
     expect(screen.queryByText(/more logs/)).not.toBeOnTheScreen();
+    // F10: the ✦ is a visual-only cue — the spoken a11y label drops it so
+    // VoiceOver/TalkBack never announces a stray glyph.
+    expect(
+      screen.getByLabelText('Your sharpest area, Honest, 100 percent calibrated. Calibrated'),
+    ).toBeOnTheScreen();
+    expect(screen.queryByLabelText(/✦/)).toBeNull();
   });
 
   it('F3 regression: never shows "Calibrated ✦" next to a lower tier word after the sealed lead is deleted/reset', () => {
@@ -99,5 +111,36 @@ describe('CalibrationCard', () => {
     // there is nothing honest left to say on this rung.
     expect(screen.queryByText('Calibrated ✦')).toBeNull();
     expect(screen.queryByText(/more logs/)).toBeNull();
+    // F14: the header ring never reads as an empty circle at 0% (it floors its
+    // fill at `ring.endowedPct`) — this bar sits directly beneath it showing
+    // the SAME number, so its fill follows the same floor rather than reading
+    // as a genuinely empty bar right under a ring that visibly isn't.
+    const light = resolveTheme('light');
+    const fill = screen.getByTestId('calibration-card-fill');
+    expect(StyleSheet.flatten(fill.props.style).width).toBe(`${light.ring.endowedPct}%`);
+  });
+
+  it('F14: floors the bar fill but never fudges the displayed number itself', () => {
+    // sharpness 3 is below the ring's endowed floor — the number stays true.
+    setStats(3, 'Raw', 2, 1);
+
+    render(<CalibrationCard />);
+
+    expect(screen.getByText('3%')).toBeOnTheScreen();
+    const light = resolveTheme('light');
+    const fill = screen.getByTestId('calibration-card-fill');
+    expect(StyleSheet.flatten(fill.props.style).width).toBe(`${light.ring.endowedPct}%`);
+  });
+
+  it('F10: composes the percentage through i18n so Swedish gets its own space-before-% convention', async () => {
+    setStats(64, 'Ripening', 20, 3);
+    await i18n.changeLanguage('sv');
+    try {
+      render(<CalibrationCard />);
+      expect(screen.getByText('64 %')).toBeOnTheScreen();
+      expect(screen.queryByText('64%')).toBeNull();
+    } finally {
+      await i18n.changeLanguage('en');
+    }
   });
 });
