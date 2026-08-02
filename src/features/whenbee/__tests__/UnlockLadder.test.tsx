@@ -35,7 +35,12 @@ const ALL_CAPABILITY_LABELS = [
 ];
 
 beforeEach(() => {
-  useCalibrationStore.setState({ logs: 0, statsByCategory: {}, companionStage: 1 });
+  useCalibrationStore.setState({
+    logs: 0,
+    statsByCategory: {},
+    companionStage: 1,
+    keeperCappedHighWater: 0,
+  });
   useCategoriesStore.setState({ categories: [] });
   useEntitlement.setState({ isPro: false });
 });
@@ -138,6 +143,41 @@ describe('UnlockLadder', () => {
     expect(
       screen.getByLabelText('Keeper – every area calibrated, 1 of 3 areas sealed'),
     ).toBeOnTheScreen();
+  });
+
+  it('F5 regression: a sealed area drifting back off Honest does not decrement "N of M areas sealed"', () => {
+    useCategoriesStore.setState({
+      categories: [
+        { id: 'cleaning', name: 'Cleaning', adaptSpeed: 'balanced' },
+        { id: 'admin', name: 'Admin', adaptSpeed: 'balanced' },
+      ],
+    });
+    useCalibrationStore.setState({
+      logs: 40,
+      companionStage: 5,
+      statsByCategory: {
+        cleaning: statFor(95, 'Honest'),
+        admin: statFor(50, 'Setting'),
+      },
+    });
+    // Establish the session high-water mark the way a real counted log would
+    // (mirrors what `applyLog` does internally) — 1 of 2 areas capped.
+    useCalibrationStore.setState({ keeperCappedHighWater: 1 });
+
+    // A run of sloppy estimates drags cleaning's ROLLING window back off
+    // Honest — the live read alone would now say "0 of 3".
+    useCalibrationStore.setState({
+      statsByCategory: {
+        cleaning: statFor(70, 'Ripening'),
+        admin: statFor(50, 'Setting'),
+      },
+    });
+
+    render(<UnlockLadder keeper={false} />);
+
+    // The milestone must NOT count down — it stays at the session high-water.
+    expect(screen.getByText('1 of 3 areas sealed')).toBeOnTheScreen();
+    expect(screen.queryByText('0 of 3 areas sealed')).toBeNull();
   });
 
   it('once keeper is reached, rung 6 is marked reached and drops the progress line', () => {

@@ -45,9 +45,22 @@ import { isCapabilityPro } from './capabilityGating';
 // an unexplained faint dead end (this repo bans ambiguous locked states — see
 // the focus-unlock-ladder precedent), it carries its own countable "N of M
 // areas sealed" milestone, derived live from the already-subscribed
-// categories + statsByCategory (no new persistence — mirrors the exact
-// cappedCellCount/trackedCount math `calibrationStore` uses to set the
-// keeper flag, review fix round 1, branch (a)).
+// categories + statsByCategory (mirrors the exact cappedCellCount/trackedCount
+// math `calibrationStore` uses to set the keeper flag, review fix round 1,
+// branch (a)).
+//
+// F5: that live count is a ROLLING read (`statsByCategory[id].tier`), so a
+// category that drifted back off Honest after being counted would make this
+// milestone count DOWN — a guilt-shaped failure this project explicitly bans
+// (milestones are monotonic). There's no per-category "ever reached Honest"
+// persisted anywhere to build a true all-time high-water mark from without
+// adding new persistence (out of scope per the fix ruling), so instead the
+// live count is floored by `keeperCappedHighWater`, a monotonic in-memory
+// mirror the store raises alongside the very same cappedCellCount inside
+// `applyLog()` (and seeds from persisted stats at `hydrate()`). That keeps the
+// number non-decreasing for the lifetime of the app session; it can still
+// start over on a cold relaunch, since nothing about a per-category peak is
+// durable — see the store field's doc comment for the exact limit.
 //
 // No motion — every rung renders at its final state from mount (hard rule).
 // ──────────────────────────────────────────────────────────────────────────────
@@ -61,6 +74,7 @@ export function UnlockLadder({ keeper }: { keeper: boolean }) {
   const { tierLabel, pct, logsToNext, stage, sealed } = useNextUnlock();
   const categories = useCategoriesStore((s) => s.categories);
   const statsByCategory = useCalibrationStore((s) => s.statsByCategory);
+  const keeperCappedHighWater = useCalibrationStore((s) => s.keeperCappedHighWater);
   const isPro = useEntitlement((s) => s.isPro);
 
   // Ground truth for "how many rungs are lit" — the MONOTONIC companion stage,
@@ -77,9 +91,11 @@ export function UnlockLadder({ keeper }: { keeper: boolean }) {
   // progress: a lone capped category with only 1 tracked still reads "1 of 3",
   // never "1 of 1" (which would misleadingly look done).
   const trackedCount = categories.length;
-  const cappedCellCount = categories.filter(
+  const liveCappedCellCount = categories.filter(
     (c) => statsByCategory[c.id]?.tier === 'Honest',
   ).length;
+  // Never below the session high-water mark (F5) — see the header comment.
+  const cappedCellCount = Math.max(liveCappedCellCount, keeperCappedHighWater);
   const keeperTotal = Math.max(trackedCount, COMPANION_KEEPER_QUOTA);
   const keeperDone = Math.min(cappedCellCount, keeperTotal);
 

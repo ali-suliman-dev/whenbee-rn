@@ -433,6 +433,19 @@ interface CalibrationState {
    *  tier un-lights capabilities the user already earned — a direct violation of
    *  the monotonic-tier invariant. */
   companionStage: CompanionStage;
+  /** MONOTONIC, in-memory-only high-water mark for the Keeper milestone's "N of
+   *  M areas sealed" count (`UnlockLadder`'s rung 6). There is no per-category
+   *  "ever reached Honest" persisted anywhere — only the one-shot `keeper`
+   *  boolean is durable — so this cannot be a true all-time high-water mark
+   *  without new persistence (F5 ruling: don't add it). What it CAN do is never
+   *  go backward within a session: seeded from the persisted per-category
+   *  sharpness at `hydrate()` and raised alongside the live `cappedCellCount`
+   *  computed in `applyLog()` (the same count `keeperReached` itself reads).
+   *  Resets to 0 on a fresh app launch or a full `reset()` — a known limit,
+   *  not a bug: a category capped in a PREVIOUS session, then reset in this
+   *  one before ever being re-observed this session, could undercount by one
+   *  until the next hydrate. It can never OVERcount or count down mid-session. */
+  keeperCappedHighWater: number;
   /** Category ids that have reached 'honest' confidence and already fired their
    *  graduation moment. Mirrors the kv ledger; Step 9 reads it to fire once each. */
   graduatedCategories: Set<string>;
@@ -549,6 +562,7 @@ export const useCalibrationStore = create<CalibrationState>((set, get) => ({
   logs: 0,
   statsByCategory: {},
   companionStage: 1,
+  keeperCappedHighWater: 0,
   graduatedCategories: new Set(),
   db: null,
 
@@ -603,6 +617,16 @@ export const useCalibrationStore = create<CalibrationState>((set, get) => ({
       };
     }
     set({ statsByCategory: next });
+
+    // Seed the Keeper milestone's session high-water mark from the persisted
+    // per-category sharpness this same hydrate just read (F5) — the same
+    // "tierFor(sharpness) === 'Honest'" count `keeperReached`/`applyLog` use,
+    // just read once here instead of waiting for the next counted log so a
+    // fresh mount of the Progress tab never opens on a false "0 of M".
+    const cappedAtHydrate = Object.values(next).filter((s) => s.tier === 'Honest').length;
+    set((state) => ({
+      keeperCappedHighWater: Math.max(state.keeperCappedHighWater, cappedAtHydrate),
+    }));
 
     // Seed the companion's per-install presence seed exactly once. Date.now is
     // allowed here (store layer) — the engine stays clock-free. setSeed is a
@@ -775,6 +799,12 @@ export const useCalibrationStore = create<CalibrationState>((set, get) => ({
       if (keeperReached({ cappedCellCount, trackedCount: tracked.length })) {
         await companionRepo.setKeeper();
       }
+      // Raise-only mirror of this same cappedCellCount (F5) — see the
+      // `keeperCappedHighWater` doc comment for why this can't be a true
+      // per-category all-time high-water mark without new persistence.
+      set((state) => ({
+        keeperCappedHighWater: Math.max(state.keeperCappedHighWater, cappedCellCount),
+      }));
 
       // Refresh the mirrored monotonic stage off the row we just fuelled, so the
       // Reward screen's unlock ladder is already correct without waiting for a
@@ -1426,6 +1456,12 @@ export const useCalibrationStore = create<CalibrationState>((set, get) => ({
     kv.delete(PRO_PITCH_LATCH_KEY);
     // The companion fuel row is wiped by the dataReset service; drop the mirrored
     // stage with it so the ladder doesn't keep lighting rungs from the old life.
-    set({ logs: 0, statsByCategory: {}, companionStage: 1, graduatedCategories: new Set() });
+    set({
+      logs: 0,
+      statsByCategory: {},
+      companionStage: 1,
+      keeperCappedHighWater: 0,
+      graduatedCategories: new Set(),
+    });
   },
 }));
