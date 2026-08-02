@@ -116,7 +116,7 @@ export function CalibrationCard() {
       <View style={track}>
         <View style={fill} testID="calibration-card-fill" />
       </View>
-      <NextUnlock unlock={unlock} />
+      <NextUnlock unlock={unlock} surface="today" />
     </View>
   );
 }

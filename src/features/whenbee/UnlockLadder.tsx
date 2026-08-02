@@ -1,5 +1,7 @@
+import { useEffect, useRef } from 'react';
 import { View, Text, type ViewStyle, type TextStyle } from 'react-native';
 import { useTranslation } from 'react-i18next';
+import { analytics } from '@/src/services/analytics';
 import { Card } from '@/src/components/Card';
 import { useTheme } from '@/src/theme/useTheme';
 import { type } from '@/src/theme/typography';
@@ -113,6 +115,21 @@ export function UnlockLadder({ keeper }: { keeper: boolean }) {
   const cappedCellCount = Math.max(liveCappedCellCount, keeperCappedHighWater);
   const keeperTotal = Math.max(trackedCount, COMPANION_KEEPER_QUOTA);
   const keeperDone = Math.min(cappedCellCount, keeperTotal);
+
+  // unlock_ladder_viewed: once per state the user is actually looking at, not
+  // per render — same ref-keyed shape as `honest_suggestion_shown` in useToday.
+  // Revisiting the tab after nothing changed is silent; earning a rung is not.
+  const lastViewedRef = useRef<string | null>(null);
+  useEffect(() => {
+    const key = `${stage}|${reachedStage}|${isPro}`;
+    if (lastViewedRef.current === key) return;
+    lastViewedRef.current = key;
+    analytics.capture('unlock_ladder_viewed', {
+      stage,
+      rungs_reached: reachedStage,
+      is_pro: isPro,
+    });
+  }, [stage, reachedStage, isPro]);
 
   const card: ViewStyle = { gap: t.space[4] };
   const headRow: ViewStyle = {

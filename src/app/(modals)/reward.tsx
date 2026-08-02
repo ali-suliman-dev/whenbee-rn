@@ -270,7 +270,7 @@ export default function Reward() {
           </View>
           <View style={unlockBlock}>
             <Text style={unlockEyebrow}>{tr('screen.unlockEyebrow')}</Text>
-            <NextUnlock justUnlockedId={r.justUnlockedId} />
+            <NextUnlock justUnlockedId={r.justUnlockedId} surface="reward" />
           </View>
         </View>
 
