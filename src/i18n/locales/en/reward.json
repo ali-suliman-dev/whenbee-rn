@@ -80,15 +80,15 @@
     "backToToday": "Back to today",
     "tookEyebrow": "IT REALLY TOOK",
     "unitMin": "min",
-    "honeyLabel": "CALIBRATION",
-    "payoffA11y": "Calibration, {{pct}} percent, multiplier {{multiplier}} times.",
+    "honeyLabel": "{{category}} · calibration",
+    "payoffA11y": "{{category}} calibration, {{pct}} percent, multiplier {{multiplier}} times.",
     "delta": {
       "over": "{{duration}} over your guess",
       "under": "{{duration}} under your guess",
       "equal": "right on your guess"
     },
-    "seeYourBee": "See your bee",
-    "unlockEyebrow": "Across everything you track"
+    "seeYourBee": "See your Progress tab",
+    "unlockEyebrow": "Your sharpest area"
   },
   "reask": {
     "decline": "No thanks",

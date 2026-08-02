@@ -80,15 +80,15 @@
     "backToToday": "Tillbaka till idag",
     "tookEyebrow": "DET TOG FAKTISKT",
     "unitMin": "min",
-    "honeyLabel": "KALIBRERING",
-    "payoffA11y": "Kalibrering, {{pct}} procent, multiplikator {{multiplier}} gånger.",
+    "honeyLabel": "{{category}} · kalibrering",
+    "payoffA11y": "{{category}}, kalibrering {{pct}} procent, multiplikator {{multiplier}} gånger.",
     "delta": {
       "over": "{{duration}} över din gissning",
       "under": "{{duration}} under din gissning",
       "equal": "precis på din gissning"
     },
-    "seeYourBee": "Se ditt bi",
-    "unlockEyebrow": "Över allt du följer"
+    "seeYourBee": "Se din framstegsflik",
+    "unlockEyebrow": "Ditt skarpaste område"
   },
   "reask": {
     "decline": "Nej tack",

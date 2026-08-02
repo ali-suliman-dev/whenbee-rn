@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { router } from 'expo-router';
 import { useTranslation } from 'react-i18next';
+import i18n from '@/src/i18n';
 import { useRewardStore } from '@/src/stores/rewardStore';
 import { useCalibrationStore } from '@/src/stores/calibrationStore';
 import { haptics } from '@/src/services/haptics';
@@ -9,6 +10,7 @@ import { categoryName } from '@/src/features/shared/categoryName';
 import { TIERS, capabilityFor } from '@/src/engine';
 import type { LogResult } from '@/src/stores/calibrationStore';
 import type { CompanionCapability, CompanionStage, PostLogQuality } from '@/src/engine';
+import type { Tier } from '@/src/domain/types';
 
 /** Reward-screen goal feedback: this log's band, a never-negative verdict, target. */
 export interface GoalLogFeedback {
@@ -96,6 +98,17 @@ function justUnlockedBy(result: LogResult): CompanionCapability['id'] | null {
   if (afterIdx <= TIERS.indexOf(result.tierBefore)) return null;
   const crossedStage = afterIdx + 1;
   return capabilityFor(crossedStage as CompanionStage).id;
+}
+
+/** The engine's raw `Tier` value ('Ripening', …) is not display copy — it is
+ *  the same honey vocabulary this branch replaced everywhere else, and it is
+ *  never translated. Resolve it through the shared `whenbee:tiers.*` lookup
+ *  every other tier-word surface (Today's header ring, the ladder header)
+ *  already uses, so the reward screen's cap eyebrow matches the active
+ *  language instead of leaking English. */
+function tierWord(tier: Tier): string {
+  const key = tier.toLowerCase() as 'raw' | 'setting' | 'ripening' | 'thickening' | 'honest';
+  return i18n.t(`whenbee:tiers.${key}` as never);
 }
 
 /** 'over' / 'under' when actual diverged from the guess past REASON_GATE; else null. */
@@ -206,7 +219,7 @@ export function useReward(): RewardView {
     honeyPct: Math.round(result.sharpness),
     multiplier: result.multiplier,
     sealed,
-    capEyebrow: result.leveledUp ? t('capSealed', { tier: result.tierAfter }) : null,
+    capEyebrow: result.leveledUp ? t('capSealed', { tier: tierWord(result.tierAfter) }) : null,
     ritualLine: sealed ? t('ritual.sealed') : t('ritual.default'),
     eventId: result.eventId,
     reasonDirection: reasonDirectionFor(actualMin, guessMin),

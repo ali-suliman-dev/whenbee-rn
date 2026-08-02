@@ -203,6 +203,7 @@ export default function Reward() {
   // never span two different subjects, or VoiceOver reads a sentence that claims
   // a 30% area is 5 logs from a capability a 64% area is actually chasing.
   const payoffA11yLabel = tr('screen.payoffA11y', {
+    category: r.categoryLabel,
     pct: r.honeyPct,
     multiplier: r.multiplier.toFixed(1),
   });
@@ -257,7 +258,7 @@ export default function Reward() {
           <View style={payoffRead} accessible accessibilityLabel={payoffA11yLabel}>
             <View style={honeyHeaderRow}>
               <View style={honeyLabelRow}>
-                <Text style={honeyLabel}>{tr('screen.honeyLabel')}</Text>
+                <Text style={honeyLabel}>{tr('screen.honeyLabel', { category: r.categoryLabel })}</Text>
                 <Text style={honeyMultiplier}>
                   · {r.multiplier.toFixed(1)}
                   <Text style={honeyMultiplierUnit}>×</Text>

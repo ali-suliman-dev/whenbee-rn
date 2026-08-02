@@ -1,5 +1,6 @@
 import { render, screen } from '@testing-library/react-native';
 import Reward from '@/src/app/(modals)/reward';
+import i18n from '@/src/i18n';
 import { useRewardStore } from '@/src/stores/rewardStore';
 import { useCalibrationStore } from '@/src/stores/calibrationStore';
 import { useEntitlement } from '@/src/features/paywall/useEntitlement';
@@ -79,6 +80,10 @@ describe('Reward screen', () => {
     expect(screen.getByText('64')).toBeOnTheScreen();
     // Multiplier folded into the HONEY header as a quiet "· 2.2×" meta.
     expect(screen.getByText('· 2.2×')).toBeOnTheScreen();
+    // F8: the label names the LOGGED category — this percentage is the
+    // just-logged area's, not an aggregate, and the word "calibration" alone
+    // used to leave that unstated.
+    expect(screen.getByText('Getting ready · calibration')).toBeOnTheScreen();
   });
 
   it('renders a deterministic timed headline from the rotating set', () => {
@@ -124,6 +129,40 @@ describe('Reward screen', () => {
     ).toBeOnTheScreen();
   });
 
+  it('F7: localises the tier word in the cap eyebrow instead of leaking the raw engine value', () => {
+    // "Ripening" is not display copy (see the tier ladder rewording); the raw
+    // enum value only happened to read fine for "Honest" (identical to its
+    // English tier word) — this pins a tier where the raw string would be
+    // visibly wrong.
+    useRewardStore.getState().setReward({
+      actualMin: 20,
+      guessMin: 15,
+      category: 'email',
+      label: null,
+      result: { ...baseResult, tierAfter: 'Ripening', leveledUp: true },
+    });
+    render(<Reward />);
+    expect(screen.getByText('Getting closer cell sealed')).toBeOnTheScreen();
+    expect(screen.queryByText(/Ripening/)).toBeNull();
+  });
+
+  it('F7: localises the tier word in Swedish too', async () => {
+    await i18n.changeLanguage('sv');
+    try {
+      useRewardStore.getState().setReward({
+        actualMin: 20,
+        guessMin: 15,
+        category: 'email',
+        label: null,
+        result: { ...baseResult, tierAfter: 'Ripening', leveledUp: true },
+      });
+      render(<Reward />);
+      expect(screen.getByText('Närmar sig-cell förseglad')).toBeOnTheScreen();
+    } finally {
+      await i18n.changeLanguage('en');
+    }
+  });
+
   it('renders the graceful fallback when there is no reward (deep-linked)', () => {
     // store is cleared in beforeEach → result is null.
     render(<Reward />);
@@ -145,8 +184,8 @@ describe('Reward screen', () => {
     // No reclaim chip — the beat is gone.
     expect(screen.queryByText(/reclaimed/)).toBeNull();
     expect(screen.queryByLabelText(/banked/)).toBeNull();
-    // The primary CTA now reads "See your bee".
-    expect(screen.getByText('See your bee')).toBeOnTheScreen();
+    // The primary CTA now names the Progress tab (F15), not "your bee".
+    expect(screen.getByText('See your Progress tab')).toBeOnTheScreen();
     expect(screen.getByText('Back to today')).toBeOnTheScreen();
   });
 
@@ -176,7 +215,7 @@ describe('Reward screen', () => {
     expect(screen.getByText('Where did the time go?')).toBeOnTheScreen();
     expect(screen.getByText('Paused')).toBeOnTheScreen();
     // The two exits are still present — the row never blocks them.
-    expect(screen.getByText('See your bee')).toBeOnTheScreen();
+    expect(screen.getByText('See your Progress tab')).toBeOnTheScreen();
     expect(screen.getByText('Back to today')).toBeOnTheScreen();
   });
 
@@ -436,16 +475,17 @@ describe('Reward screen', () => {
     });
     render(<Reward />);
 
-    // The card's own label: this category's number and multiplier, nothing else.
+    // The card's own label: names the LOGGED category (F8) plus its number and
+    // multiplier, nothing else.
     expect(
-      screen.getByLabelText('Calibration, 30 percent, multiplier 2.2 times.'),
+      screen.getByLabelText('Admin & email calibration, 30 percent, multiplier 2.2 times.'),
     ).toBeOnTheScreen();
     // The unlock row is its own focusable unit, derived from the 64% lead.
     expect(
       screen.getByLabelText('5 more logs sharpen Honest-Day forecast when you plan, a Pro feature'),
     ).toBeOnTheScreen();
     // And it is explicitly introduced as a different subject.
-    expect(screen.getByText('Across everything you track')).toBeOnTheScreen();
+    expect(screen.getByText('Your sharpest area')).toBeOnTheScreen();
   });
 
   it('shows the sealed line in place of the away-count once calibration is capped', () => {
